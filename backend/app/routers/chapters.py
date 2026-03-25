@@ -60,7 +60,7 @@ def get_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
 
 @router.patch("/{chapter_id}", response_model=ChapterOut)
 def update_chapter(
-    book_id: str, chapter_id: str, payload: ChapterUpdate, db: Session = Depends(get_db)
+        book_id: str, chapter_id: str, payload: ChapterUpdate, db: Session = Depends(get_db)
 ):
     chapter = (
         db.query(Chapter)
@@ -91,7 +91,7 @@ def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db))
 
 @router.put("/reorder", response_model=list[ChapterOut])
 def reorder_chapters(
-    book_id: str, payload: ChapterReorder, db: Session = Depends(get_db)
+        book_id: str, payload: ChapterReorder, db: Session = Depends(get_db)
 ):
     _get_book_or_404(book_id, db)
     chapters = (

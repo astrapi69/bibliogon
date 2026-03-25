@@ -33,9 +33,9 @@ def _book_to_markdown(book: Book) -> str:
 
 
 def export_book(
-    db: Session,
-    book_id: str,
-    fmt: str = "epub",
+        db: Session,
+        book_id: str,
+        fmt: str = "epub",
 ) -> Path:
     """
     Export a book as EPUB or PDF via Pandoc.

@@ -4,18 +4,18 @@ Open-source book authoring platform with WYSIWYG and Markdown editing, EPUB/PDF 
 
 ## Status
 
-**v0.1.0** - Backend MVP (Book/Chapter CRUD, Pandoc Export)
+**v0.1.0** - Backend MVP + Frontend MVP
 
 ## Tech Stack
 
 - **Backend:** Python 3.11+, FastAPI, SQLAlchemy, SQLite
-- **Frontend:** React, TipTap (geplant)
+- **Frontend:** React 18, TypeScript, TipTap, Vite
 - **Export:** Pandoc (EPUB, PDF)
-- **Tooling:** Poetry, Docker
+- **Tooling:** Poetry, npm, Docker
 
 ## Quickstart
 
-### Ohne Docker
+### Backend
 
 ```bash
 cd backend
@@ -24,6 +24,16 @@ poetry run uvicorn app.main:app --reload
 ```
 
 API-Docs: http://localhost:8000/docs
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App: http://localhost:5173
 
 ### Mit Docker
 
