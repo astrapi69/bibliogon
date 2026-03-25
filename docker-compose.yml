@@ -1,0 +1,13 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - bibliogon-data:/app/data
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+
+volumes:
+  bibliogon-data:
