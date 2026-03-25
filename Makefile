@@ -1,10 +1,25 @@
-.PHONY: dev dev-backend dev-frontend install install-backend install-frontend test clean prod
+.PHONY: dev dev-bg dev-down dev-backend dev-frontend install install-backend install-frontend test clean prod
 
 # --- Development ---
 
-dev: ## Start backend + frontend parallel
+dev: ## Start backend + frontend parallel (Strg+C stoppt beide)
 	@echo "Starting Bibliogon..."
 	@make -j2 dev-backend dev-frontend
+
+dev-bg: ## Start in background (stop with: make dev-down)
+	@echo "Starting Bibliogon (background)..."
+	@cd backend && poetry run uvicorn app.main:app --reload --port 8000 & echo $$! > .pid-backend
+	@cd frontend && npm run dev & echo $$! > .pid-frontend
+	@echo "Backend PID: $$(cat .pid-backend)"
+	@echo "Frontend PID: $$(cat .pid-frontend)"
+	@echo "Stop with: make dev-down"
+
+dev-down: ## Stop background dev servers
+	@if [ -f .pid-backend ]; then kill $$(cat .pid-backend) 2>/dev/null; rm -f .pid-backend; echo "Backend stopped"; fi
+	@if [ -f .pid-frontend ]; then kill $$(cat .pid-frontend) 2>/dev/null; rm -f .pid-frontend; echo "Frontend stopped"; fi
+	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
+	@pkill -f "vite" 2>/dev/null || true
+	@echo "Done"
 
 dev-backend:
 	cd backend && poetry run uvicorn app.main:app --reload --port 8000

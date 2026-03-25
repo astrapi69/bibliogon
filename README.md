@@ -45,31 +45,31 @@ docker compose up --build
 
 ### Books
 
-| Methode | Pfad | Beschreibung |
-|---------|------|--------------|
-| GET | /api/books | Alle Buecher auflisten |
-| POST | /api/books | Neues Buch anlegen |
-| GET | /api/books/{id} | Buch mit Kapiteln laden |
-| PATCH | /api/books/{id} | Buch-Metadaten aktualisieren |
-| DELETE | /api/books/{id} | Buch loeschen |
+| Methode | Pfad            | Beschreibung                 |
+|---------|-----------------|------------------------------|
+| GET     | /api/books      | Alle Buecher auflisten       |
+| POST    | /api/books      | Neues Buch anlegen           |
+| GET     | /api/books/{id} | Buch mit Kapiteln laden      |
+| PATCH   | /api/books/{id} | Buch-Metadaten aktualisieren |
+| DELETE  | /api/books/{id} | Buch loeschen                |
 
 ### Chapters
 
-| Methode | Pfad | Beschreibung |
-|---------|------|--------------|
-| GET | /api/books/{id}/chapters | Kapitel auflisten |
-| POST | /api/books/{id}/chapters | Neues Kapitel anlegen |
-| GET | /api/books/{id}/chapters/{cid} | Kapitel laden |
-| PATCH | /api/books/{id}/chapters/{cid} | Kapitel aktualisieren |
-| DELETE | /api/books/{id}/chapters/{cid} | Kapitel loeschen |
-| PUT | /api/books/{id}/chapters/reorder | Kapitelreihenfolge aendern |
+| Methode | Pfad                             | Beschreibung               |
+|---------|----------------------------------|----------------------------|
+| GET     | /api/books/{id}/chapters         | Kapitel auflisten          |
+| POST    | /api/books/{id}/chapters         | Neues Kapitel anlegen      |
+| GET     | /api/books/{id}/chapters/{cid}   | Kapitel laden              |
+| PATCH   | /api/books/{id}/chapters/{cid}   | Kapitel aktualisieren      |
+| DELETE  | /api/books/{id}/chapters/{cid}   | Kapitel loeschen           |
+| PUT     | /api/books/{id}/chapters/reorder | Kapitelreihenfolge aendern |
 
 ### Export
 
-| Methode | Pfad | Beschreibung |
-|---------|------|--------------|
-| GET | /api/books/{id}/export/epub | EPUB exportieren |
-| GET | /api/books/{id}/export/pdf | PDF exportieren |
+| Methode | Pfad                        | Beschreibung     |
+|---------|-----------------------------|------------------|
+| GET     | /api/books/{id}/export/epub | EPUB exportieren |
+| GET     | /api/books/{id}/export/pdf  | PDF exportieren  |
 
 ## Lizenz
 

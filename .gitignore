@@ -29,3 +29,7 @@ build/
 
 # Temp export files
 /tmp/bibliogon_*
+
+# Dev PID files
+.pid-backend
+.pid-frontend
