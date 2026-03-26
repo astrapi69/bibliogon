@@ -1,4 +1,8 @@
-.PHONY: dev dev-bg dev-down dev-backend dev-frontend install install-backend install-frontend test clean prod
+.PHONY: dev dev-bg dev-down dev-backend dev-frontend \
+       install install-backend install-frontend install-pluginforge install-plugins \
+       test test-backend test-pluginforge test-plugins \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch \
+       clean prod prod-down prod-logs help
 
 # --- Development ---
 
@@ -29,7 +33,7 @@ dev-frontend:
 
 # --- Install ---
 
-install: install-backend install-frontend ## Install all dependencies
+install: install-pluginforge install-plugins install-backend install-frontend ## Install all dependencies
 
 install-backend:
 	cd backend && poetry install
@@ -37,10 +41,54 @@ install-backend:
 install-frontend:
 	cd frontend && npm install
 
+install-pluginforge:
+	cd pluginforge && poetry install
+
+install-plugins:
+	@for dir in plugins/bibliogon-plugin-*; do \
+		if [ -f "$$dir/pyproject.toml" ]; then \
+			echo "Installing $$dir..."; \
+			cd "$$dir" && poetry install && cd ../..; \
+		fi; \
+	done
+
 # --- Test ---
 
-test: ## Run backend tests
+test: test-pluginforge test-plugins test-backend ## Run ALL 111 tests
+	@echo ""
+	@echo "=== All tests complete ==="
+
+test-backend: ## Run backend tests (10 tests)
+	@echo ""
+	@echo "=== Backend Tests ==="
 	cd backend && poetry run pytest tests/ -v
+
+test-pluginforge: ## Run PluginForge framework tests (53 tests)
+	@echo ""
+	@echo "=== PluginForge Tests ==="
+	cd pluginforge && poetry run pytest tests/ -v
+
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch ## Run all plugin tests (48 tests)
+
+test-plugin-export: ## Run export plugin tests (23 tests)
+	@echo ""
+	@echo "=== Export Plugin Tests ==="
+	cd plugins/bibliogon-plugin-export && poetry run pytest tests/ -v
+
+test-plugin-grammar: ## Run grammar plugin tests (7 tests)
+	@echo ""
+	@echo "=== Grammar Plugin Tests ==="
+	cd plugins/bibliogon-plugin-grammar && poetry run pytest tests/ -v
+
+test-plugin-kdp: ## Run KDP plugin tests (10 tests)
+	@echo ""
+	@echo "=== KDP Plugin Tests ==="
+	cd plugins/bibliogon-plugin-kdp && poetry run pytest tests/ -v
+
+test-plugin-kinderbuch: ## Run kinderbuch plugin tests (8 tests)
+	@echo ""
+	@echo "=== Kinderbuch Plugin Tests ==="
+	cd plugins/bibliogon-plugin-kinderbuch && poetry run pytest tests/ -v
 
 # --- Production (Docker) ---
 
@@ -58,10 +106,13 @@ prod-logs: ## Show production logs
 clean: ## Remove build artifacts and caches
 	rm -rf backend/__pycache__ backend/.pytest_cache backend/*.db
 	rm -rf frontend/node_modules frontend/dist
+	rm -rf pluginforge/.pytest_cache pluginforge/pluginforge.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 
 # --- Help ---
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}'
