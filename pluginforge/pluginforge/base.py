@@ -1,21 +1,20 @@
 """Base plugin class for all PluginForge plugins."""
 
 from abc import ABC
-from typing import Any, Callable
+from typing import Any
 
 
 class BasePlugin(ABC):
     """Base class that all plugins must extend.
 
     Plugins follow a lifecycle: init -> activate -> deactivate.
-    They register hook handlers to extend application behavior.
+    They provide hook implementations, optional FastAPI routes,
+    optional DB migrations, and optional frontend manifests.
     """
 
     name: str
     version: str = "0.1.0"
-    description: str = ""
-    author: str = ""
-    license: str = "MIT"
+    api_version: str = "1"
 
     def __init__(self) -> None:
         self.app_config: dict[str, Any] = {}
@@ -27,14 +26,19 @@ class BasePlugin(ABC):
         self.config = plugin_config
 
     def activate(self) -> None:
-        """Called when the plugin is activated. Override to set up resources."""
+        """Called when the plugin is enabled. Override to set up resources."""
 
     def deactivate(self) -> None:
-        """Called when the plugin is deactivated. Override to clean up resources."""
+        """Called when the plugin is disabled. Override to clean up resources."""
 
-    def get_hooks(self) -> dict[str, Callable[..., Any]]:
-        """Return a mapping of hook names to handler functions.
+    def get_routes(self) -> list[Any]:
+        """Return FastAPI routers to mount. Optional."""
+        return []
 
-        Override this to register handlers for application hooks.
-        """
-        return {}
+    def get_migrations_dir(self) -> str | None:
+        """Return path to Alembic migration scripts. Optional."""
+        return None
+
+    def get_frontend_manifest(self) -> dict[str, Any] | None:
+        """Return manifest for frontend UI components. Optional."""
+        return None

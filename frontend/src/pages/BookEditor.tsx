@@ -1,6 +1,6 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {api, BookDetail, Chapter} from "../api/client";
+import {api, BookDetail, Chapter, ChapterType} from "../api/client";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 
@@ -38,11 +38,14 @@ export default function BookEditor() {
         loadBook();
     }, [loadBook]);
 
-    const handleAddChapter = async () => {
+    const handleAddChapter = async (chapterType?: ChapterType) => {
         if (!bookId) return;
         const title = prompt("Kapiteltitel:");
         if (!title?.trim()) return;
-        const chapter = await api.chapters.create(bookId, {title: title.trim()});
+        const chapter = await api.chapters.create(bookId, {
+            title: title.trim(),
+            chapter_type: chapterType || "chapter",
+        });
         setBook((prev) => {
             if (!prev) return prev;
             return {...prev, chapters: [...prev.chapters, chapter]};
@@ -64,11 +67,11 @@ export default function BookEditor() {
         }
     };
 
-    const handleSaveContent = async (html: string) => {
+    const handleSaveContent = async (content: string) => {
         if (!bookId || !activeChapterId) return;
         try {
             const updated = await api.chapters.update(bookId, activeChapterId, {
-                content: html,
+                content,
             });
             setBook((prev) => {
                 if (!prev) return prev;
@@ -84,7 +87,7 @@ export default function BookEditor() {
         }
     };
 
-    const handleExport = (fmt: "epub" | "pdf") => {
+    const handleExport = (fmt: "epub" | "pdf" | "project") => {
         if (!bookId) return;
         window.open(api.books.exportUrl(bookId, fmt), "_blank");
     };
@@ -130,7 +133,7 @@ export default function BookEditor() {
                     <p style={styles.noChapterText}>
                         Erstelle ein Kapitel, um zu beginnen.
                     </p>
-                    <button className="btn btn-primary" onClick={handleAddChapter}>
+                    <button className="btn btn-primary" onClick={() => handleAddChapter()}>
                         Erstes Kapitel anlegen
                     </button>
                 </div>

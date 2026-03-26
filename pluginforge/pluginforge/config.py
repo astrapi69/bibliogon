@@ -1,4 +1,4 @@
-"""YAML configuration loader and validation."""
+"""YAML configuration loader with i18n support."""
 
 from pathlib import Path
 from typing import Any
@@ -29,10 +29,17 @@ class ConfigLoader:
         """Load the main application config."""
         return self.load(path)
 
-    def load_plugin_config(self, plugin_name: str, config_dir: str | Path = "config/plugins") -> dict[str, Any]:
+    def load_plugin_config(
+        self, plugin_name: str, config_dir: str | Path = "config/plugins"
+    ) -> dict[str, Any]:
         """Load config for a specific plugin."""
         plugin_path = Path(config_dir) / f"{plugin_name}.yaml"
         return self.load(plugin_path)
+
+    def load_i18n(self, lang: str, i18n_dir: str | Path = "config/i18n") -> dict[str, Any]:
+        """Load i18n strings for a language."""
+        i18n_path = Path(i18n_dir) / f"{lang}.yaml"
+        return self.load(i18n_path)
 
     def invalidate(self, path: str | Path | None = None) -> None:
         """Clear cached config. If path is None, clear all."""

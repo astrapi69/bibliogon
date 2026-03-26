@@ -6,7 +6,7 @@ from pluginforge.base import BasePlugin
 class SamplePlugin(BasePlugin):
     name = "sample"
     version = "1.0.0"
-    description = "A sample plugin for testing"
+    api_version = "1"
 
     def __init__(self) -> None:
         super().__init__()
@@ -19,13 +19,11 @@ class SamplePlugin(BasePlugin):
     def deactivate(self) -> None:
         self.deactivated = True
 
-    def get_hooks(self) -> dict:
-        return {
-            "test.hook": self._handle_test,
-        }
+    def get_routes(self) -> list:
+        return ["/sample-route"]
 
-    def _handle_test(self, value: str) -> str:
-        return f"handled: {value}"
+    def get_frontend_manifest(self) -> dict:
+        return {"component": "SamplePanel"}
 
 
 class TestBasePlugin:
@@ -51,15 +49,23 @@ class TestBasePlugin:
         plugin.deactivate()
         assert plugin.deactivated
 
-    def test_get_hooks(self) -> None:
+    def test_get_routes(self) -> None:
         plugin = SamplePlugin()
-        hooks = plugin.get_hooks()
-        assert "test.hook" in hooks
-        assert hooks["test.hook"]("hello") == "handled: hello"
+        assert plugin.get_routes() == ["/sample-route"]
 
-    def test_default_get_hooks_is_empty(self) -> None:
+    def test_get_frontend_manifest(self) -> None:
+        plugin = SamplePlugin()
+        assert plugin.get_frontend_manifest() == {"component": "SamplePanel"}
+
+    def test_get_migrations_dir_default_none(self) -> None:
+        plugin = SamplePlugin()
+        assert plugin.get_migrations_dir() is None
+
+    def test_default_methods_return_empty(self) -> None:
         class MinimalPlugin(BasePlugin):
             name = "minimal"
 
         plugin = MinimalPlugin()
-        assert plugin.get_hooks() == {}
+        assert plugin.get_routes() == []
+        assert plugin.get_frontend_manifest() is None
+        assert plugin.get_migrations_dir() is None

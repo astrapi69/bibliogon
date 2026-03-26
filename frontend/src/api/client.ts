@@ -1,5 +1,15 @@
 // --- Types ---
 
+export type ChapterType =
+    | "chapter"
+    | "preface"
+    | "foreword"
+    | "acknowledgments"
+    | "about_author"
+    | "appendix"
+    | "bibliography"
+    | "glossary";
+
 export interface Book {
     id: string;
     title: string;
@@ -23,6 +33,7 @@ export interface Chapter {
     title: string;
     content: string;
     position: number;
+    chapter_type: ChapterType;
     created_at: string;
     updated_at: string;
 }
@@ -41,6 +52,16 @@ export interface ChapterCreate {
     title: string;
     content?: string;
     position?: number;
+    chapter_type?: ChapterType;
+}
+
+export interface Asset {
+    id: string;
+    book_id: string;
+    filename: string;
+    asset_type: string;
+    path: string;
+    uploaded_at: string;
 }
 
 // --- Fetch helper ---
@@ -86,7 +107,7 @@ export const api = {
         delete: (id: string) =>
             request<void>(`/books/${id}`, {method: "DELETE"}),
 
-        exportUrl: (id: string, fmt: "epub" | "pdf") =>
+        exportUrl: (id: string, fmt: "epub" | "pdf" | "project") =>
             `${BASE}/books/${id}/export/${fmt}`,
     },
 
@@ -119,5 +140,59 @@ export const api = {
                 method: "PUT",
                 body: JSON.stringify({chapter_ids: chapterIds}),
             }),
+    },
+
+    assets: {
+        list: (bookId: string) =>
+            request<Asset[]>(`/books/${bookId}/assets`),
+
+        upload: async (bookId: string, file: File, assetType: string): Promise<Asset> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(
+                `${BASE}/books/${bookId}/assets?asset_type=${assetType}`,
+                {method: "POST", body: formData}
+            );
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new Error(err.detail || "Upload failed");
+            }
+            return res.json();
+        },
+
+        delete: (bookId: string, assetId: string) =>
+            request<void>(`/books/${bookId}/assets/${assetId}`, {method: "DELETE"}),
+    },
+
+    backup: {
+        exportUrl: () => `${BASE}/backup/export`,
+
+        import: async (file: File): Promise<{imported_books: number}> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/backup/import`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new Error(err.detail || "Import failed");
+            }
+            return res.json();
+        },
+
+        importProject: async (file: File): Promise<{book_id: string; title: string; chapter_count: number}> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/backup/import-project`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new Error(err.detail || "Import failed");
+            }
+            return res.json();
+        },
     },
 };

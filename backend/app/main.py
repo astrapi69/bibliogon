@@ -1,22 +1,40 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routers import books, chapters, export
+from app.hookspecs import BibliogonHookSpec
+from app.routers import assets, backup, books, chapters, licenses
+
+from pluginforge import PluginManager
+from pluginforge.fastapi import mount_plugin_routes, register_plugin_endpoints
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+manager = PluginManager(
+    app_config_path="config/app.yaml",
+    base_dir=BASE_DIR,
+)
+manager.load_hookspecs(BibliogonHookSpec)
+
+# Configure license routes with the manager
+licenses.configure(manager)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    manager.discover_and_load()
+    mount_plugin_routes(app, manager)
     yield
 
 
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.1.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -30,9 +48,13 @@ app.add_middleware(
 
 app.include_router(books.router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
-app.include_router(export.router, prefix="/api")
+app.include_router(assets.router, prefix="/api")
+app.include_router(backup.router, prefix="/api")
+app.include_router(licenses.router, prefix="/api")
+
+register_plugin_endpoints(app, manager)
 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "0.5.0"}

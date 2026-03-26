@@ -1,4 +1,4 @@
-import {Chapter} from "../api/client";
+import {Chapter, ChapterType} from "../api/client";
 import {
     Plus,
     Trash2,
@@ -13,11 +13,25 @@ interface Props {
     chapters: Chapter[];
     activeChapterId: string | null;
     onSelect: (id: string) => void;
-    onAdd: () => void;
+    onAdd: (chapterType?: ChapterType) => void;
     onDelete: (id: string) => void;
     onBack: () => void;
-    onExport: (fmt: "epub" | "pdf") => void;
+    onExport: (fmt: "epub" | "pdf" | "project") => void;
 }
+
+const FRONT_MATTER_TYPES: ChapterType[] = ["preface", "foreword", "acknowledgments"];
+const BACK_MATTER_TYPES: ChapterType[] = ["about_author", "appendix", "bibliography", "glossary"];
+
+const TYPE_LABELS: Record<ChapterType, string> = {
+    chapter: "Kapitel",
+    preface: "Vorwort",
+    foreword: "Geleitwort",
+    acknowledgments: "Danksagung",
+    about_author: "Ueber den Autor",
+    appendix: "Anhang",
+    bibliography: "Literatur",
+    glossary: "Glossar",
+};
 
 export default function ChapterSidebar({
                                            bookTitle,
@@ -29,6 +43,39 @@ export default function ChapterSidebar({
                                            onBack,
                                            onExport,
                                        }: Props) {
+    const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
+    const mainChapters = chapters.filter((ch) => ch.chapter_type === "chapter");
+    const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
+
+    const renderChapterItem = (ch: Chapter) => (
+        <div
+            key={ch.id}
+            style={{
+                ...styles.item,
+                ...(ch.id === activeChapterId ? styles.itemActive : {}),
+            }}
+            onClick={() => onSelect(ch.id)}
+        >
+            <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
+            <span style={styles.itemTitle}>
+                {ch.chapter_type !== "chapter" && (
+                    <span style={styles.typeTag}>{TYPE_LABELS[ch.chapter_type]}</span>
+                )}
+                {ch.title}
+            </span>
+            <button
+                style={styles.deleteBtn}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(ch.id);
+                }}
+                title="Kapitel loeschen"
+            >
+                <Trash2 size={12}/>
+            </button>
+        </div>
+    );
+
     return (
         <aside style={styles.sidebar}>
             {/* Header */}
@@ -41,44 +88,38 @@ export default function ChapterSidebar({
                 </h2>
             </div>
 
-            {/* Chapter list */}
-            <div style={styles.listHeader}>
-                <span style={styles.listLabel}>Kapitel</span>
-                <button style={styles.addBtn} onClick={onAdd} title="Kapitel hinzufuegen">
-                    <Plus size={14}/>
-                </button>
-            </div>
-
             <div style={styles.list}>
-                {chapters.length === 0 && (
+                {/* Front Matter */}
+                {frontMatter.length > 0 && (
+                    <>
+                        <div style={styles.sectionHeader}>
+                            <span style={styles.listLabel}>Front Matter</span>
+                        </div>
+                        {frontMatter.map(renderChapterItem)}
+                    </>
+                )}
+
+                {/* Main Chapters */}
+                <div style={styles.sectionHeader}>
+                    <span style={styles.listLabel}>Kapitel</span>
+                    <button style={styles.addBtn} onClick={() => onAdd("chapter")} title="Kapitel hinzufuegen">
+                        <Plus size={14}/>
+                    </button>
+                </div>
+                {mainChapters.length === 0 && (
                     <p style={styles.empty}>Noch keine Kapitel</p>
                 )}
-                {chapters.map((ch) => (
-                    <div
-                        key={ch.id}
-                        style={{
-                            ...styles.item,
-                            ...(ch.id === activeChapterId ? styles.itemActive : {}),
-                        }}
-                        onClick={() => onSelect(ch.id)}
-                    >
-                        <GripVertical
-                            size={14}
-                            style={{flexShrink: 0, opacity: 0.3}}
-                        />
-                        <span style={styles.itemTitle}>{ch.title}</span>
-                        <button
-                            style={styles.deleteBtn}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(ch.id);
-                            }}
-                            title="Kapitel loeschen"
-                        >
-                            <Trash2 size={12}/>
-                        </button>
-                    </div>
-                ))}
+                {mainChapters.map(renderChapterItem)}
+
+                {/* Back Matter */}
+                {backMatter.length > 0 && (
+                    <>
+                        <div style={styles.sectionHeader}>
+                            <span style={styles.listLabel}>Back Matter</span>
+                        </div>
+                        {backMatter.map(renderChapterItem)}
+                    </>
+                )}
             </div>
 
             {/* Export */}
@@ -98,6 +139,13 @@ export default function ChapterSidebar({
                     >
                         <FileText size={14}/>
                         PDF
+                    </button>
+                    <button
+                        style={styles.exportBtn}
+                        onClick={() => onExport("project")}
+                    >
+                        <Download size={14}/>
+                        ZIP
                     </button>
                 </div>
             </div>
@@ -142,7 +190,7 @@ const styles: Record<string, React.CSSProperties> = {
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
     },
-    listHeader: {
+    sectionHeader: {
         padding: "16px 16px 8px",
         display: "flex",
         alignItems: "center",
@@ -196,6 +244,19 @@ const styles: Record<string, React.CSSProperties> = {
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap" as const,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+    },
+    typeTag: {
+        fontSize: "0.625rem",
+        fontWeight: 600,
+        textTransform: "uppercase" as const,
+        background: "rgba(255,255,255,0.08)",
+        padding: "1px 4px",
+        borderRadius: 3,
+        color: "rgba(255,255,255,0.4)",
+        flexShrink: 0,
     },
     deleteBtn: {
         background: "none",

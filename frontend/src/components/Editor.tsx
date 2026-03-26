@@ -6,7 +6,7 @@ import Toolbar from "./Toolbar";
 
 interface Props {
     content: string;
-    onSave: (html: string) => void;
+    onSave: (json: string) => void;
     placeholder?: string;
 }
 
@@ -15,17 +15,29 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const lastSaved = useRef(content);
 
     const debouncedSave = useCallback(
-        (html: string) => {
+        (json: string) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
             saveTimer.current = setTimeout(() => {
-                if (html !== lastSaved.current) {
-                    lastSaved.current = html;
-                    onSave(html);
+                if (json !== lastSaved.current) {
+                    lastSaved.current = json;
+                    onSave(json);
                 }
             }, 800);
         },
         [onSave]
     );
+
+    const parseContent = (raw: string): Record<string, unknown> | string => {
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object" && parsed.type === "doc") {
+                return parsed;
+            }
+        } catch {
+            // Not JSON, treat as HTML for backward compatibility
+        }
+        return raw;
+    };
 
     const editor = useEditor({
         extensions: [
@@ -34,9 +46,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
         ],
-        content,
+        content: parseContent(content),
         onUpdate: ({editor}) => {
-            debouncedSave(editor.getHTML());
+            debouncedSave(JSON.stringify(editor.getJSON()));
         },
         editorProps: {
             attributes: {
@@ -47,9 +59,12 @@ export default function Editor({content, onSave, placeholder}: Props) {
 
     // Update content when switching chapters
     useEffect(() => {
-        if (editor && content !== editor.getHTML()) {
-            editor.commands.setContent(content);
-            lastSaved.current = content;
+        if (editor) {
+            const currentJson = JSON.stringify(editor.getJSON());
+            if (content !== currentJson) {
+                editor.commands.setContent(parseContent(content));
+                lastSaved.current = content;
+            }
         }
     }, [content, editor]);
 

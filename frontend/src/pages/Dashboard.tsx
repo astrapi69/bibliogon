@@ -1,15 +1,17 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, useRef} from "react";
 import {useNavigate} from "react-router-dom";
 import {api, Book, BookCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
-import {Plus, BookOpen} from "lucide-react";
+import {Plus, BookOpen, Download, Upload, FolderUp} from "lucide-react";
 
 export default function Dashboard() {
     const [books, setBooks] = useState<Book[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
+    const backupInputRef = useRef<HTMLInputElement>(null);
+    const projectInputRef = useRef<HTMLInputElement>(null);
 
     const loadBooks = async () => {
         try {
@@ -38,6 +40,37 @@ export default function Dashboard() {
         setBooks((prev) => prev.filter((b) => b.id !== id));
     };
 
+    const handleBackupExport = () => {
+        window.open(api.backup.exportUrl(), "_blank");
+    };
+
+    const handleBackupImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const result = await api.backup.import(file);
+            alert(`${result.imported_books} Buch/Buecher importiert.`);
+            loadBooks();
+        } catch (err) {
+            alert(`Import fehlgeschlagen: ${err}`);
+        }
+        e.target.value = "";
+    };
+
+    const handleProjectImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const result = await api.backup.importProject(file);
+            alert(`"${result.title}" importiert (${result.chapter_count} Kapitel).`);
+            loadBooks();
+            navigate(`/book/${result.book_id}`);
+        } catch (err) {
+            alert(`Import fehlgeschlagen: ${err}`);
+        }
+        e.target.value = "";
+    };
+
     return (
         <div style={styles.container}>
             <header style={styles.header}>
@@ -46,10 +79,46 @@ export default function Dashboard() {
                         <BookOpen size={28} strokeWidth={1.5}/>
                         <h1 style={styles.logoText}>Bibliogon</h1>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                        <Plus size={16}/>
-                        Neues Buch
-                    </button>
+                    <div style={styles.headerActions}>
+                        <button className="btn btn-secondary" onClick={handleBackupExport} title="Backup exportieren">
+                            <Download size={16}/>
+                            Backup
+                        </button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => backupInputRef.current?.click()}
+                            title="Backup importieren"
+                        >
+                            <Upload size={16}/>
+                            Restore
+                        </button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => projectInputRef.current?.click()}
+                            title="write-book-template Projekt importieren"
+                        >
+                            <FolderUp size={16}/>
+                            Projekt importieren
+                        </button>
+                        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                            <Plus size={16}/>
+                            Neues Buch
+                        </button>
+                        <input
+                            ref={backupInputRef}
+                            type="file"
+                            accept=".zip"
+                            style={{display: "none"}}
+                            onChange={handleBackupImport}
+                        />
+                        <input
+                            ref={projectInputRef}
+                            type="file"
+                            accept=".zip"
+                            style={{display: "none"}}
+                            onChange={handleProjectImport}
+                        />
+                    </div>
                 </div>
             </header>
 
@@ -61,15 +130,24 @@ export default function Dashboard() {
                         <BookOpen size={48} strokeWidth={1} color="var(--text-muted)"/>
                         <p style={styles.emptyTitle}>Noch keine Buecher</p>
                         <p style={styles.emptyText}>
-                            Erstelle dein erstes Buch und beginne zu schreiben.
+                            Erstelle dein erstes Buch oder importiere ein bestehendes Projekt.
                         </p>
-                        <button
-                            className="btn btn-primary mt-2"
-                            onClick={() => setShowModal(true)}
-                        >
-                            <Plus size={16}/>
-                            Buch erstellen
-                        </button>
+                        <div style={{display: "flex", gap: 12, marginTop: 8}}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowModal(true)}
+                            >
+                                <Plus size={16}/>
+                                Buch erstellen
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => projectInputRef.current?.click()}
+                            >
+                                <FolderUp size={16}/>
+                                Projekt importieren
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div style={styles.grid}>
@@ -124,6 +202,11 @@ const styles: Record<string, React.CSSProperties> = {
         fontWeight: 600,
         color: "var(--text-primary)",
         letterSpacing: "-0.02em",
+    },
+    headerActions: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
     },
     main: {
         maxWidth: 1100,
