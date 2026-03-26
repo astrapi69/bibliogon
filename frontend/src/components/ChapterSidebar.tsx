@@ -8,6 +8,7 @@ import {
     Download,
     FileText,
 } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 interface Props {
     bookTitle: string;
@@ -171,6 +172,9 @@ export default function ChapterSidebar({
                 <h2 style={styles.bookTitle} title={bookTitle}>
                     {bookTitle}
                 </h2>
+                <div style={{marginLeft: "auto"}}>
+                    <ThemeToggle variant="dark"/>
+                </div>
             </div>
 
             <div style={styles.list}>

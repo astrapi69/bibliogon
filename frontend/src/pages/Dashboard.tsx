@@ -4,6 +4,7 @@ import {api, Book, BookCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
 import {Plus, BookOpen, Download, Upload, FolderUp} from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function Dashboard() {
     const [books, setBooks] = useState<Book[]>([]);
@@ -80,6 +81,7 @@ export default function Dashboard() {
                         <h1 style={styles.logoText}>Bibliogon</h1>
                     </div>
                     <div style={styles.headerActions}>
+                        <ThemeToggle />
                         <button className="btn btn-secondary" onClick={handleBackupExport} title="Backup exportieren">
                             <Download size={16}/>
                             Backup
