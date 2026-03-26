@@ -1,0 +1,19 @@
+app:
+  name: "Bibliogon"
+  version: "0.2.0"
+  description: "Open-source book authoring platform"
+  default_language: "de"
+  supported_languages: ["de", "en", "es", "fr", "el"]
+
+plugins:
+  entry_point_group: "bibliogon.plugins"
+  config_dir: "config/plugins"
+  enabled:
+    - "export"
+  disabled: []
+
+ui:
+  title: "Bibliogon"
+  subtitle: "Buecher schreiben und exportieren"
+  logo: "assets/logo.svg"
+  theme: "warm-literary"

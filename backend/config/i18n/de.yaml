@@ -1,0 +1,19 @@
+ui:
+  dashboard:
+    title: "Meine Buecher"
+    new_book: "Neues Buch"
+    no_books: "Noch keine Buecher"
+    confirm_delete: "Buch wirklich loeschen?"
+  editor:
+    new_chapter: "Neues Kapitel"
+    confirm_delete_chapter: "Kapitel wirklich loeschen?"
+    placeholder: "Beginne zu schreiben..."
+    saving: "Speichert..."
+    saved: "Gespeichert"
+  export:
+    title: "Export"
+  common:
+    cancel: "Abbrechen"
+    create: "Erstellen"
+    delete: "Loeschen"
+    save: "Speichern"

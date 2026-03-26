@@ -1,0 +1,34 @@
+plugin:
+  name: "export"
+  display_name:
+    de: "Buch-Export"
+    en: "Book Export"
+    es: "Exportar libro"
+    fr: "Export de livre"
+  description:
+    de: "EPUB, PDF und Projektstruktur-Export via Pandoc"
+    en: "EPUB, PDF and project structure export via Pandoc"
+  version: "1.0.0"
+  license: "MIT"
+  depends_on: []
+  api_version: "1"
+
+settings:
+  pandoc_path: "pandoc"
+  default_format: "epub"
+  pdf_engine: "xelatex"
+  toc_depth: 2
+
+formats:
+  - id: "epub"
+    label: {de: "EPUB", en: "EPUB"}
+    extension: "epub"
+    media_type: "application/epub+zip"
+  - id: "pdf"
+    label: {de: "PDF", en: "PDF"}
+    extension: "pdf"
+    media_type: "application/pdf"
+  - id: "project"
+    label: {de: "Projektstruktur (ZIP)", en: "Project Structure (ZIP)"}
+    extension: "zip"
+    media_type: "application/zip"
