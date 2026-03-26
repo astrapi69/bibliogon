@@ -1,16 +1,29 @@
 # Bibliogon
 
-Open-source book authoring platform. Web-UI zum Schreiben und Exportieren von Buechern, basierend auf der write-book-template Verzeichnisstruktur.
+Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverwendbaren Plugin-Framework. Der gesamte Export (EPUB, PDF, write-book-template) ist selbst ein Plugin.
 
 **Repository:** https://github.com/astrapi69/bibliogon
 **Konzept:** docs/CONCEPT.md
 
+## Zwei-Schichten-Architektur
+
+1. **PluginForge** - Anwendungsunabhaengiges Plugin-Framework (eigenes Paket/Repo)
+   - BasePlugin, HookRegistry, PluginLoader
+   - YAML-Konfiguration (alles anpassbar: Titel, Labels, Einstellungen)
+   - Entry Point Discovery, Plugin-Lifecycle
+   - Kann von beliebigen Python-Anwendungen genutzt werden
+
+2. **Bibliogon App** - Buch-Autoren-Plattform (dieses Repo)
+   - Schlanker Kern: UI, Editor, Book/Chapter CRUD
+   - Alles Weitere ueber Plugins: Export, Kinderbuch, Audiobook, KDP
+
 ## Tech Stack
 
-- **Backend:** Python 3.11+, FastAPI, SQLAlchemy, SQLite (backend/)
-- **Frontend:** React 18, TypeScript, TipTap Editor, Vite (frontend/)
-- **Export:** Pandoc (EPUB, PDF), write-book-template Projektstruktur
-- **Tooling:** Poetry (Backend), npm (Frontend), Docker, Make
+- **PluginForge:** Python 3.11+, YAML, Entry Points
+- **Backend:** FastAPI, SQLAlchemy, SQLite
+- **Frontend:** React 18, TypeScript, TipTap, Vite
+- **Export-Plugin:** Pandoc, write-book-template Struktur
+- **Tooling:** Poetry, npm, Docker, Make
 
 ## Projekt starten
 
@@ -28,25 +41,28 @@ bibliogon/
 │   ├── app/
 │   │   ├── main.py              # FastAPI Entry
 │   │   ├── database.py          # SQLAlchemy + SQLite
-│   │   ├── models/              # Book, Chapter (SQLAlchemy)
+│   │   ├── models/              # Book, Chapter
 │   │   ├── schemas/             # Pydantic Request/Response
 │   │   ├── routers/             # books.py, chapters.py, export.py
-│   │   └── services/            # export_service.py (Pandoc)
+│   │   └── services/            # export_service.py (wird Plugin in Phase 3)
+│   ├── config/
+│   │   ├── app.yaml             # App-Konfiguration (geplant)
+│   │   └── plugins/             # Plugin-YAML-Dateien (geplant)
 │   ├── tests/
-│   └── pyproject.toml           # Poetry, package-mode = false
+│   └── pyproject.toml
 ├── frontend/
 │   ├── src/
 │   │   ├── api/client.ts        # REST-Client + TypeScript-Typen
 │   │   ├── components/          # BookCard, ChapterSidebar, Editor, Toolbar, CreateBookModal
 │   │   ├── pages/               # Dashboard.tsx, BookEditor.tsx
-│   │   └── styles/global.css    # Design-System (Crimson Pro, DM Sans, JetBrains Mono)
+│   │   └── styles/global.css
 │   ├── package.json
-│   └── vite.config.ts           # Proxy /api -> localhost:8000
+│   └── vite.config.ts
 ├── docs/
 │   └── CONCEPT.md               # Gesamtkonzept und Roadmap
 ├── Makefile
-├── docker-compose.yml           # Dev
-├── docker-compose.prod.yml      # Produktion
+├── docker-compose.yml
+├── docker-compose.prod.yml
 └── README.md
 ```
 
@@ -57,32 +73,42 @@ bibliogon/
 - Keine Em-Dashes (--) in Texten, stattdessen Bindestriche (-) oder Kommata
 - Commit Messages auf Englisch, konventionelle Commits (feat/fix/refactor/docs)
 - API-Prefix: /api/
-- Datenbank-Modelle nutzen SQLAlchemy 2.0 Mapped Columns
-- Pydantic v2 Schemas mit model_config = ConfigDict(from_attributes=True)
+- SQLAlchemy 2.0 Mapped Columns
+- Pydantic v2 mit ConfigDict(from_attributes=True)
+- Alle konfigurierbaren Werte in YAML, nicht hartcodiert
 
 ## API-Endpunkte
 
-- GET/POST /api/books - Liste/Erstellen
-- GET/PATCH/DELETE /api/books/{id} - Einzelnes Buch
-- GET/POST /api/books/{id}/chapters - Kapitel Liste/Erstellen
-- GET/PATCH/DELETE /api/books/{id}/chapters/{cid} - Einzelnes Kapitel
-- PUT /api/books/{id}/chapters/reorder - Reihenfolge aendern
-- GET /api/books/{id}/export/{epub|pdf} - Export
+- GET/POST /api/books
+- GET/PATCH/DELETE /api/books/{id}
+- GET/POST /api/books/{id}/chapters
+- GET/PATCH/DELETE /api/books/{id}/chapters/{cid}
+- PUT /api/books/{id}/chapters/reorder
+- GET /api/books/{id}/export/{epub|pdf|project}
 
 ## Datenmodell
 
 Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at
 Chapter: id, book_id (FK), title, content (HTML), position, created_at, updated_at
 
-## Naechste Schritte (Phase 2)
+## Naechste Schritte
 
-Siehe docs/CONCEPT.md Abschnitt 5, Phase 2: write-book-template Integration
-- Export-Service umbauen auf Verzeichnisstruktur-Scaffolding
-- ZIP-Export der kompletten Projektstruktur
-- metadata.yaml Generierung
-- HTML-zu-Markdown Konvertierung beim Export
-- Neuer Endpoint: GET /api/books/{id}/export/project
+Phase 2 - PluginForge Framework:
+- Eigenes Repo/Paket: BasePlugin, HookRegistry, PluginLoader
+- YAML-Konfigurationssystem
+- Entry Point Discovery
+- Bibliogon-Backend auf PluginForge umstellen
+
+Phase 3 - Export als Plugin:
+- bibliogon-plugin-export als erstes Plugin implementieren
+- write-book-template Verzeichnisstruktur
+- HTML-zu-Markdown Konvertierung
+- Alten fest verdrahteten Export-Code entfernen
+
+Details: docs/CONCEPT.md
 
 ## Verwandtes Projekt
 
-Das write-book-template (github.com/astrapi69/write-book-template) definiert die Ziel-Verzeichnisstruktur fuer den Export. Bibliogon generiert diese Struktur aus den Datenbank-Inhalten.
+write-book-template (github.com/astrapi69/write-book-template) definiert die
+Ziel-Verzeichnisstruktur fuer den Export. Das Export-Plugin generiert diese
+Struktur aus den Datenbank-Inhalten.
