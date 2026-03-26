@@ -370,20 +370,37 @@ function PluginCard({name, displayName, description, version, license, enabled, 
     const flatSettings = flattenSettings(localSettings);
     const hasSettings = flatSettings.length > 0;
 
+    const isPremium = license !== "MIT" && license.toLowerCase() !== "free";
+
     return (
-        <div style={styles.card}>
+        <div style={{
+            ...styles.card,
+            borderLeft: enabled ? "3px solid var(--accent)" : "3px solid transparent",
+            opacity: enabled ? 1 : 0.75,
+        }}>
             <div style={styles.pluginHeader}>
                 <div style={{flex: 1}}>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
                         <strong style={{fontSize: "1rem"}}>{displayName}</strong>
-                        <span style={styles.badge}>{version}</span>
-                        <span style={{...styles.badge, background: license === "MIT" ? "var(--accent-light)" : "rgba(168,162,158,0.15)"}}>
-                            {license}
+                        <span style={styles.badge}>v{version}</span>
+                        <span style={{
+                            ...styles.badge,
+                            background: isPremium ? "rgba(168,85,247,0.12)" : "var(--accent-light)",
+                            color: isPremium ? "#7c3aed" : "var(--accent)",
+                        }}>
+                            {isPremium ? "Premium" : "Kostenlos"}
+                        </span>
+                        <span style={{
+                            ...styles.badge,
+                            background: enabled ? "rgba(34,197,94,0.12)" : "rgba(168,162,158,0.12)",
+                            color: enabled ? "#16a34a" : "var(--text-muted)",
+                        }}>
+                            {enabled ? "Aktiv" : "Inaktiv"}
                         </span>
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
                 </div>
-                <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                <div style={{display: "flex", alignItems: "center", gap: 6, flexShrink: 0}}>
                     {hasSettings && (
                         <button className="btn btn-ghost btn-sm" onClick={() => setExpanded(!expanded)}>
                             {expanded ? "Zuklappen" : "Einstellungen"}
@@ -393,7 +410,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                         className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
                         onClick={() => onToggle(!enabled)}
                     >
-                        {enabled ? <><X size={12}/> Deaktivieren</> : <><Check size={12}/> Aktivieren</>}
+                        {enabled ? <><X size={12}/> Aus</> : <><Check size={12}/> An</>}
                     </button>
                     <button
                         className="btn btn-sm btn-danger"
