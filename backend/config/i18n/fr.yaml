@@ -1,0 +1,19 @@
+ui:
+  dashboard:
+    title: "Mes livres"
+    new_book: "Nouveau livre"
+    no_books: "Pas encore de livres"
+    confirm_delete: "Voulez-vous vraiment supprimer ce livre?"
+  editor:
+    new_chapter: "Nouveau chapitre"
+    confirm_delete_chapter: "Voulez-vous vraiment supprimer ce chapitre?"
+    placeholder: "Commencez a ecrire..."
+    saving: "Enregistrement..."
+    saved: "Enregistre"
+  export:
+    title: "Exporter"
+  common:
+    cancel: "Annuler"
+    create: "Creer"
+    delete: "Supprimer"
+    save: "Enregistrer"

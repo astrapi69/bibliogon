@@ -1,0 +1,19 @@
+ui:
+  dashboard:
+    title: "Ta vivlia mou"
+    new_book: "Neo vivlio"
+    no_books: "Den yparxoun vivlia akoma"
+    confirm_delete: "Sigouri thelete na diagrapsete auto to vivlio?"
+  editor:
+    new_chapter: "Neo kefalaio"
+    confirm_delete_chapter: "Sigouri thelete na diagrapsete auto to kefalaio?"
+    placeholder: "Arxiste na grafete..."
+    saving: "Apothikevsi..."
+    saved: "Apothikevtike"
+  export:
+    title: "Exagogi"
+  common:
+    cancel: "Akyrosi"
+    create: "Dimiourgia"
+    delete: "Diagrafi"
+    save: "Apothikevsi"

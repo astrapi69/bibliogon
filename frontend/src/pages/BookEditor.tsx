@@ -87,6 +87,19 @@ export default function BookEditor() {
         }
     };
 
+    const handleReorder = async (chapterIds: string[]) => {
+        if (!bookId) return;
+        try {
+            const reordered = await api.chapters.reorder(bookId, chapterIds);
+            setBook((prev) => {
+                if (!prev) return prev;
+                return {...prev, chapters: reordered};
+            });
+        } catch (err) {
+            console.error("Reorder failed:", err);
+        }
+    };
+
     const handleExport = (fmt: "epub" | "pdf" | "project") => {
         if (!bookId) return;
         window.open(api.books.exportUrl(bookId, fmt), "_blank");
@@ -119,6 +132,7 @@ export default function BookEditor() {
                 onDelete={handleDeleteChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
+                onReorder={handleReorder}
             />
 
             {activeChapter ? (
