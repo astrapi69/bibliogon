@@ -11,7 +11,7 @@
 
 Bibliogon besteht aus zwei Teilen:
 
-1. **PluginForge** - Ein anwendungsunabhaengiges Plugin-Framework fuer Python/FastAPI-Anwendungen. Hook-basiert, konfigurierbar, wiederverwendbar. Kann von jedem Entwickler als Grundlage fuer eigene Plugin-faehige Anwendungen genutzt werden.
+1. **PluginForge** - Ein anwendungsunabhaengiges Plugin-Framework fuer Python/FastAPI-Anwendungen. Aufgebaut auf [pluggy](https://pluggy.readthedocs.io/) (dem Hook-System hinter pytest), erweitert um YAML-Konfiguration, Plugin-Lifecycle, FastAPI-Integration und Frontend-Plugin-Loading. Kann von jedem Entwickler als Grundlage fuer eigene Plugin-faehige Anwendungen genutzt werden.
 
 2. **Bibliogon App** - Eine Open-Source Web-Plattform zum Schreiben und Exportieren von Buechern. Die erste Anwendung, die auf PluginForge aufbaut. Der gesamte Export (EPUB, PDF, write-book-template Struktur) ist selbst ein Plugin.
 
@@ -32,10 +32,11 @@ Langfristiges Ziel ist ein kommerzielles SaaS-Produkt. Sowohl PluginForge als au
 |  Bibliogon App (Backend: FastAPI, Book/Chapter CRUD)     |
 +----------------------------------------------------------+
 |  PluginForge (Framework)                                  |
-|  +-- Hook-Registry                                       |
-|  +-- Plugin-Loader (Entry Points)                        |
-|  +-- Konfigurationssystem (YAML)                         |
+|  +-- pluggy (Hook-Specs + Hook-Impls)                    |
+|  +-- YAML-Konfiguration (App, Plugins, i18n)             |
 |  +-- Plugin-Lifecycle (init, activate, deactivate)       |
+|  +-- FastAPI-Router-Integration                          |
+|  +-- Alembic-Migration-Support fuer Plugin-Tabellen      |
 +----------------------------------------------------------+
 |  Plugins                                                  |
 |  +-- plugin-export       (EPUB, PDF, write-book-template)|
@@ -50,10 +51,10 @@ Langfristiges Ziel ist ein kommerzielles SaaS-Produkt. Sowohl PluginForge als au
 
 | Repository | Beschreibung | Lizenz |
 |------------|-------------|--------|
-| `pluginforge` | Anwendungsunabhaengiges Plugin-Framework | MIT |
+| `pluginforge` | Anwendungsunabhaengiges Plugin-Framework (basiert auf pluggy) | MIT |
 | `bibliogon` | Buch-Autoren-Plattform, nutzt PluginForge | MIT (Core), proprietaer (Premium-Plugins) |
 
-PluginForge ist ein eigenstaendiges PyPI-Paket. Bibliogon haengt davon ab:
+PluginForge ist ein eigenstaendiges PyPI-Paket:
 
 ```toml
 # bibliogon/backend/pyproject.toml
@@ -64,7 +65,7 @@ pluginforge = "^0.1.0"
 Ein anderer Entwickler kann PluginForge unabhaengig nutzen:
 
 ```toml
-# irgendeine-andere-app/pyproject.toml
+# podcast-tool/pyproject.toml
 [tool.poetry.dependencies]
 pluginforge = "^0.1.0"
 ```
@@ -73,7 +74,7 @@ pluginforge = "^0.1.0"
 
 | Komponente | Technologie |
 |------------|-------------|
-| PluginForge | Python 3.11+, YAML-Konfiguration, Entry Points |
+| PluginForge | Python 3.11+, pluggy, YAML, Entry Points, Alembic |
 | Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL |
 | Frontend | React 18, TypeScript, TipTap, Vite |
 | Export-Plugin | Pandoc, write-book-template Struktur |
@@ -85,18 +86,26 @@ pluginforge = "^0.1.0"
 
 ### 3.1 Kernkonzept
 
-PluginForge stellt bereit:
-- **Hook-Registry:** Anwendungen definieren Hook-Punkte, Plugins registrieren sich darauf.
-- **Plugin-Loader:** Automatische Discovery ueber Python Entry Points.
-- **Konfiguration:** Alle Texte, Labels, Einstellungen in YAML-Dateien. Keine hartcodierten Strings.
-- **Lifecycle:** init -> activate -> deactivate. Plugins koennen beim Start Ressourcen laden und beim Stopp aufraeumen.
-- **Typisierte Hooks:** Jeder Hook definiert seine erwarteten Parameter und Rueckgabewerte.
+PluginForge baut auf pluggy auf und ergaenzt:
+
+| Feature | pluggy | PluginForge |
+|---------|--------|-------------|
+| Hook-Specs und Hook-Impls | Ja | Ja (via pluggy) |
+| Entry Point Discovery | Ja | Ja (via pluggy) |
+| YAML-Konfiguration | Nein | Ja (App, Plugins, i18n) |
+| Plugin-Lifecycle | Nein | Ja (init, activate, deactivate) |
+| Enable/Disable per Config | Nein | Ja |
+| FastAPI-Router-Integration | Nein | Ja (Plugin-Routen automatisch einbinden) |
+| DB-Migration Support | Nein | Ja (Alembic pro Plugin) |
+| Plugin-Abhaengigkeiten | Nein | Ja (deklarativ in YAML) |
+| Frontend-Plugin-Loading | Nein | Ja (Manifest fuer UI-Komponenten) |
+| API-Versionierung | Nein | Ja (Hook-Specs versioniert) |
 
 ### 3.2 Konfigurationssystem
 
-Alles was anwendungsspezifisch ist, liegt in YAML-Dateien. Dadurch kann jede Anwendung die auf PluginForge aufbaut, das Framework komplett anpassen ohne Code zu aendern.
+Alles anwendungsspezifische liegt in YAML-Dateien. Keine hartcodierten Strings.
 
-**Anwendungskonfiguration (`config/app.yaml`):**
+**App-Konfiguration (`config/app.yaml`):**
 
 ```yaml
 app:
@@ -104,11 +113,11 @@ app:
   version: "0.2.0"
   description: "Open-source book authoring platform"
   default_language: "de"
+  supported_languages: ["de", "en", "es", "fr", "el"]
 
 plugins:
-  discovery: "entry_points"       # oder "directory", "config"
   entry_point_group: "bibliogon.plugins"
-  config_dir: "config/plugins"    # Plugin-spezifische Konfiguration
+  config_dir: "config/plugins"
   enabled:
     - "export"
     - "kdp"
@@ -119,19 +128,7 @@ ui:
   title: "Bibliogon"
   subtitle: "Buecher schreiben und exportieren"
   logo: "assets/logo.svg"
-  theme: "warm-literary"          # CSS-Theme Auswahl
-
-hooks:
-  custom:                         # App-spezifische Hooks registrieren
-    - "book.create"
-    - "book.delete"
-    - "chapter.pre_save"
-    - "chapter.post_save"
-    - "export.formats"
-    - "export.execute"
-    - "ui.editor_toolbar"
-    - "ui.sidebar_actions"
-    - "ui.settings"
+  theme: "warm-literary"
 ```
 
 **Plugin-Konfiguration (`config/plugins/export.yaml`):**
@@ -139,56 +136,94 @@ hooks:
 ```yaml
 plugin:
   name: "export"
-  display_name: "Buch-Export"
-  description: "EPUB, PDF und Projektstruktur-Export via Pandoc"
+  display_name:
+    de: "Buch-Export"
+    en: "Book Export"
+    es: "Exportar libro"
+    fr: "Export de livre"
+  description:
+    de: "EPUB, PDF und Projektstruktur-Export via Pandoc"
+    en: "EPUB, PDF and project structure export via Pandoc"
   version: "1.0.0"
-  author: "Bibliogon Core Team"
   license: "MIT"
+  depends_on: []            # Keine Abhaengigkeiten
+  api_version: "1"          # Kompatibel mit Hook-Spec v1
 
 settings:
   pandoc_path: "pandoc"
   default_format: "epub"
   pdf_engine: "xelatex"
   toc_depth: 2
-  generate_project_structure: true
 
 formats:
   - id: "epub"
-    label: "EPUB"
+    label: { de: "EPUB", en: "EPUB" }
     extension: "epub"
     media_type: "application/epub+zip"
   - id: "pdf"
-    label: "PDF"
+    label: { de: "PDF", en: "PDF" }
     extension: "pdf"
     media_type: "application/pdf"
   - id: "project"
-    label: "Projektstruktur (ZIP)"
+    label: { de: "Projektstruktur (ZIP)", en: "Project Structure (ZIP)" }
     extension: "zip"
     media_type: "application/zip"
 ```
 
-Wenn jemand PluginForge fuer eine andere Anwendung nutzt (z.B. ein Podcast-Tool), aendert er nur die YAML-Dateien:
+**Internationalisierung (`config/i18n/de.yaml`):**
+
+```yaml
+ui:
+  dashboard:
+    title: "Meine Buecher"
+    new_book: "Neues Buch"
+    no_books: "Noch keine Buecher"
+    confirm_delete: "Buch wirklich loeschen?"
+  editor:
+    new_chapter: "Neues Kapitel"
+    confirm_delete_chapter: "Kapitel wirklich loeschen?"
+    placeholder: "Beginne zu schreiben..."
+    saving: "Speichert..."
+    saved: "Gespeichert"
+  export:
+    title: "Export"
+  common:
+    cancel: "Abbrechen"
+    create: "Erstellen"
+    delete: "Loeschen"
+    save: "Speichern"
+```
+
+Fuer eine andere Anwendung (z.B. Podcast-Tool) aendert man nur die YAML-Dateien:
 
 ```yaml
 # config/app.yaml fuer ein Podcast-Tool
 app:
   name: "PodForge"
   version: "1.0.0"
-  description: "Podcast production platform"
 
 plugins:
   entry_point_group: "podforge.plugins"
-  enabled:
-    - "recording"
-    - "editing"
-    - "publishing"
+  enabled: ["recording", "editing", "publishing"]
 
 ui:
   title: "PodForge"
   subtitle: "Record, edit, publish"
 ```
 
-### 3.3 Plugin-Interface
+### 3.3 Warum pluggy als Basis
+
+pluggy ist der De-facto-Standard fuer Python Plugin-Systeme. Pytest, tox, datasette und kedro nutzen es. Es bietet:
+
+- Hook-Specification und Hook-Implementation als Dekoratoren
+- Entry Point Discovery (`load_setuptools_entrypoints`)
+- firstresult-Hooks (erster Rueckgabewert gewinnt)
+- Call-Order-Management (trylast, tryfirst)
+- Typsichere Hook-Aufrufe
+
+PluginForge erfindet das Rad nicht neu, sondern baut die Schichten darauf, die pluggy fehlen: Konfiguration, Lifecycle, Web-Integration.
+
+### 3.4 Plugin-Interface
 
 ```python
 # pluginforge/base.py
@@ -197,159 +232,175 @@ from abc import ABC
 from typing import Any
 
 class BasePlugin(ABC):
-    """Base class for all plugins."""
+    """Base class for all PluginForge plugins."""
 
-    name: str                    # Eindeutiger Bezeichner
+    name: str
     version: str = "0.1.0"
-    description: str = ""
-    author: str = ""
-    license: str = "MIT"
-    config: dict[str, Any] = {}  # Geladen aus YAML
+    api_version: str = "1"
+    config: dict[str, Any] = {}
 
     def init(self, app_config: dict, plugin_config: dict) -> None:
-        """Called when the plugin is loaded. Receives app and plugin config."""
+        """Called when the plugin is loaded. Receives merged config."""
         self.config = plugin_config
 
     def activate(self) -> None:
-        """Called when the plugin is activated."""
+        """Called when the plugin is enabled."""
         pass
 
     def deactivate(self) -> None:
-        """Called when the plugin is deactivated."""
+        """Called when the plugin is disabled. Cleanup resources."""
         pass
 
-    def get_hooks(self) -> dict[str, callable]:
-        """Return a mapping of hook names to handler functions."""
-        return {}
-```
+    def get_routes(self) -> list:
+        """Return FastAPI routers to mount. Optional."""
+        return []
 
-```python
-# pluginforge/hooks.py
-
-from typing import Any, Callable
-
-class HookRegistry:
-    """Central registry for all hooks."""
-
-    def __init__(self):
-        self._hooks: dict[str, list[Callable]] = {}
-
-    def register(self, hook_name: str, handler: Callable) -> None:
-        self._hooks.setdefault(hook_name, []).append(handler)
-
-    def unregister(self, hook_name: str, handler: Callable) -> None:
-        if hook_name in self._hooks:
-            self._hooks[hook_name].remove(handler)
-
-    def call(self, hook_name: str, **kwargs) -> list[Any]:
-        """Call all handlers for a hook, return list of results."""
-        results = []
-        for handler in self._hooks.get(hook_name, []):
-            result = handler(**kwargs)
-            if result is not None:
-                results.append(result)
-        return results
-
-    def call_first(self, hook_name: str, **kwargs) -> Any | None:
-        """Call handlers until one returns a non-None result."""
-        for handler in self._hooks.get(hook_name, []):
-            result = handler(**kwargs)
-            if result is not None:
-                return result
+    def get_migrations_dir(self) -> str | None:
+        """Return path to Alembic migration scripts. Optional."""
         return None
 
-    def call_pipeline(self, hook_name: str, value: Any, **kwargs) -> Any:
-        """Pass value through handlers in sequence (each transforms it)."""
-        for handler in self._hooks.get(hook_name, []):
-            value = handler(value=value, **kwargs)
-        return value
+    def get_frontend_manifest(self) -> dict | None:
+        """Return manifest for frontend UI components. Optional."""
+        return None
 ```
 
 ```python
-# pluginforge/loader.py
+# pluginforge/manager.py
 
-import importlib.metadata
+import pluggy
 import yaml
 from pathlib import Path
 from .base import BasePlugin
-from .hooks import HookRegistry
 
-class PluginLoader:
-    """Discovers and loads plugins."""
+class PluginManager:
+    """Manages plugin lifecycle, config, and hook dispatch."""
 
     def __init__(self, app_config_path: str = "config/app.yaml"):
         self.app_config = self._load_yaml(app_config_path)
-        self.registry = HookRegistry()
+        self.pm = pluggy.PluginManager(self.app_config["plugins"]["entry_point_group"])
         self.plugins: dict[str, BasePlugin] = {}
+        self._i18n: dict[str, dict] = {}
 
-    def discover(self) -> list[str]:
-        """Find all available plugins via entry points."""
-        group = self.app_config["plugins"]["entry_point_group"]
-        found = []
-        for ep in importlib.metadata.entry_points(group=group):
-            found.append(ep.name)
-        return found
+    def load_hookspecs(self, spec_module) -> None:
+        """Register hook specifications from the application."""
+        self.pm.add_hookspecs(spec_module)
 
-    def load_all(self) -> None:
-        """Load and activate all enabled plugins."""
+    def discover_and_load(self) -> None:
+        """Discover, configure, and activate all enabled plugins."""
         group = self.app_config["plugins"]["entry_point_group"]
         enabled = set(self.app_config["plugins"].get("enabled", []))
         disabled = set(self.app_config["plugins"].get("disabled", []))
         config_dir = Path(self.app_config["plugins"].get("config_dir", "config/plugins"))
 
-        for ep in importlib.metadata.entry_points(group=group):
-            if disabled and ep.name in disabled:
+        # Load via pluggy entry points
+        self.pm.load_setuptools_entrypoints(group)
+
+        # Additionally handle our lifecycle
+        for ep_name, plugin_obj in self._iter_loaded():
+            if ep_name in disabled:
+                self.pm.unregister(plugin_obj)
                 continue
-            if enabled and ep.name not in enabled:
+            if enabled and ep_name not in enabled:
+                self.pm.unregister(plugin_obj)
                 continue
 
-            plugin_class = ep.load()
-            plugin = plugin_class()
-
-            # Load plugin-specific config
+            # Load plugin YAML config
             plugin_config = {}
-            plugin_yaml = config_dir / f"{ep.name}.yaml"
+            plugin_yaml = config_dir / f"{ep_name}.yaml"
             if plugin_yaml.exists():
                 plugin_config = self._load_yaml(str(plugin_yaml))
 
-            plugin.init(self.app_config, plugin_config)
-            plugin.activate()
+            # Check dependencies
+            depends = plugin_config.get("plugin", {}).get("depends_on", [])
+            for dep in depends:
+                if dep not in enabled and dep not in self.plugins:
+                    raise RuntimeError(
+                        f"Plugin '{ep_name}' requires '{dep}' which is not enabled"
+                    )
 
-            # Register hooks
-            for hook_name, handler in plugin.get_hooks().items():
-                self.registry.register(hook_name, handler)
+            # Lifecycle
+            if hasattr(plugin_obj, "init"):
+                plugin_obj.init(self.app_config, plugin_config)
+            if hasattr(plugin_obj, "activate"):
+                plugin_obj.activate()
 
-            self.plugins[ep.name] = plugin
+            self.plugins[ep_name] = plugin_obj
+
+    def get_all_routes(self) -> list:
+        """Collect FastAPI routers from all active plugins."""
+        routes = []
+        for plugin in self.plugins.values():
+            if hasattr(plugin, "get_routes"):
+                routes.extend(plugin.get_routes())
+        return routes
+
+    def get_all_frontend_manifests(self) -> dict:
+        """Collect frontend UI manifests from all active plugins."""
+        manifests = {}
+        for name, plugin in self.plugins.items():
+            if hasattr(plugin, "get_frontend_manifest"):
+                manifest = plugin.get_frontend_manifest()
+                if manifest:
+                    manifests[name] = manifest
+        return manifests
+
+    def load_i18n(self, lang: str) -> dict:
+        """Load i18n strings for a language, merged from app and plugins."""
+        if lang in self._i18n:
+            return self._i18n[lang]
+        i18n_path = Path(f"config/i18n/{lang}.yaml")
+        strings = self._load_yaml(str(i18n_path)) if i18n_path.exists() else {}
+        self._i18n[lang] = strings
+        return strings
 
     def unload(self, name: str) -> None:
         """Deactivate and remove a plugin."""
         if name in self.plugins:
             plugin = self.plugins[name]
-            for hook_name, handler in plugin.get_hooks().items():
-                self.registry.unregister(hook_name, handler)
-            plugin.deactivate()
+            if hasattr(plugin, "deactivate"):
+                plugin.deactivate()
+            self.pm.unregister(plugin)
             del self.plugins[name]
 
     @staticmethod
     def _load_yaml(path: str) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
+
+    def _iter_loaded(self):
+        """Iterate over plugins loaded by pluggy."""
+        for plugin in self.pm.get_plugins():
+            name = self.pm.parse_hookimpl_opts(plugin, "__name__") or type(plugin).__name__
+            yield name, plugin
 ```
 
-### 3.4 PluginForge Paketstruktur
+### 3.5 PluginForge Paketstruktur
 
 ```
 pluginforge/
 ├── pluginforge/
-│   ├── __init__.py          # Public API: BasePlugin, HookRegistry, PluginLoader
+│   ├── __init__.py          # Public API: BasePlugin, PluginManager
 │   ├── base.py              # BasePlugin ABC
-│   ├── hooks.py             # HookRegistry
-│   ├── loader.py            # PluginLoader mit Entry Point Discovery
-│   └── config.py            # YAML-Config Loader und Validierung
+│   ├── manager.py           # PluginManager (wraps pluggy)
+│   ├── config.py            # YAML-Config Loader und Validierung
+│   ├── fastapi.py           # FastAPI-Integration (Router mounting)
+│   └── migration.py         # Alembic-Helfer fuer Plugin-Tabellen
 ├── tests/
 ├── pyproject.toml
 ├── README.md
 └── LICENSE
+```
+
+Abhaengigkeiten: `pluggy`, `pyyaml`. Sonst nichts. FastAPI und Alembic sind optionale Extras:
+
+```toml
+[tool.poetry.dependencies]
+pluggy = "^1.5.0"
+pyyaml = "^6.0"
+
+[tool.poetry.extras]
+fastapi = ["fastapi"]
+migrations = ["alembic"]
 ```
 
 ---
@@ -357,6 +408,8 @@ pluginforge/
 ## 4. Bibliogon App
 
 ### 4.1 Datenmodell
+
+**Aktuell (v0.1.0):**
 
 ```
 Book
@@ -376,13 +429,13 @@ Chapter
   id: str (UUID)
   book_id: str (FK -> Book)
   title: str
-  content: str (HTML von TipTap)
+  content: str (TipTap JSON, siehe 4.3)
   position: int
   created_at: datetime
   updated_at: datetime
 ```
 
-Geplante Erweiterungen:
+**Geplante Erweiterungen:**
 
 ```
 ChapterType (enum)
@@ -396,6 +449,12 @@ Asset
   asset_type: str (cover, figure, diagram, table)
   path: str
   uploaded_at: datetime
+
+UserBackup
+  id: str
+  created_at: datetime
+  format: str (zip)
+  path: str
 ```
 
 ### 4.2 Integration mit PluginForge
@@ -403,24 +462,59 @@ Asset
 ```python
 # bibliogon/backend/app/main.py
 
-from pluginforge import PluginLoader
+from pluginforge import PluginManager
+import bibliogon_hookspecs as hookspecs
 
-loader = PluginLoader("config/app.yaml")
-loader.load_all()
+manager = PluginManager("config/app.yaml")
+manager.load_hookspecs(hookspecs)
+manager.discover_and_load()
 
-# Beim Export: Plugins fragen welche Formate verfuegbar sind
-formats = loader.registry.call("export.formats")
+# Plugin-Routen in FastAPI einbinden
+for router in manager.get_all_routes():
+    app.include_router(router, prefix="/api")
 
-# Beim Export ausfuehren
-result = loader.registry.call_first("export.execute", book=book, fmt="epub")
+# Frontend-Manifests bereitstellen
+@app.get("/api/plugins/manifests")
+def get_manifests():
+    return manager.get_all_frontend_manifests()
 
-# Vor dem Kapitel-Speichern: Pipeline durch alle Plugins
-content = loader.registry.call_pipeline("chapter.pre_save", value=content, chapter=chapter)
+# i18n-Strings bereitstellen
+@app.get("/api/i18n/{lang}")
+def get_i18n(lang: str):
+    return manager.load_i18n(lang)
 ```
 
-### 4.3 Export als Plugin
+### 4.3 Internes Speicherformat
 
-Der gesamte Export ist ein Plugin (`bibliogon-plugin-export`), kein Teil des Kerns:
+TipTap kann Inhalte als HTML oder als JSON speichern. Wir nutzen **TipTap JSON** als internes Format:
+
+- Strukturiert und maschinenlesbar
+- Verlustfreie Roundtrips (JSON -> Editor -> JSON)
+- Leichter zu transformieren als HTML (z.B. fuer Export)
+- Unabhaengig vom Editor (migrierbar zu einem anderen Editor)
+
+Beim Export konvertiert das Export-Plugin TipTap-JSON zu Markdown (fuer write-book-template) oder HTML (fuer EPUB). Die Konvertierung ist damit Plugin-Verantwortung, nicht Kern-Verantwortung.
+
+```json
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "Kapitel 1" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "Es war einmal..." }]
+    }
+  ]
+}
+```
+
+### 4.4 Export als Plugin
+
+Der gesamte Export ist ein Plugin (`bibliogon-plugin-export`):
 
 ```
 bibliogon-plugin-export/
@@ -428,12 +522,13 @@ bibliogon-plugin-export/
 ├── bibliogon_export/
 │   ├── __init__.py
 │   ├── plugin.py            # ExportPlugin(BasePlugin)
+│   ├── hookimpls.py         # Hook-Implementations
 │   ├── scaffolder.py        # write-book-template Verzeichnisstruktur
 │   ├── pandoc_runner.py     # Pandoc-Aufrufe
-│   ├── html_to_markdown.py  # HTML -> Markdown Konvertierung
+│   ├── tiptap_to_md.py     # TipTap-JSON -> Markdown Konvertierung
 │   └── routes.py            # /api/books/{id}/export/{fmt}
 ├── config/
-│   └── export.yaml          # Format-Definitionen, Pandoc-Settings
+│   └── export.yaml
 └── tests/
 ```
 
@@ -443,46 +538,9 @@ bibliogon-plugin-export/
 export = "bibliogon_export.plugin:ExportPlugin"
 ```
 
-```python
-# bibliogon_export/plugin.py
+### 4.5 write-book-template Verzeichnisstruktur
 
-from pluginforge import BasePlugin
-
-class ExportPlugin(BasePlugin):
-    name = "export"
-    version = "1.0.0"
-    description = "EPUB, PDF and project structure export via Pandoc"
-
-    def get_hooks(self):
-        return {
-            "export.formats": self.register_formats,
-            "export.execute": self.execute_export,
-            "ui.sidebar_actions": self.sidebar_actions,
-        }
-
-    def register_formats(self):
-        # Formate aus der Plugin-Konfiguration lesen, nicht hartcodiert
-        return self.config.get("formats", [])
-
-    def execute_export(self, book, fmt, options=None):
-        from .scaffolder import scaffold_project
-        from .pandoc_runner import run_pandoc
-
-        project_dir = scaffold_project(book, self.config)
-        if fmt == "project":
-            return zip_directory(project_dir)
-        return run_pandoc(project_dir, fmt, self.config)
-
-    def sidebar_actions(self):
-        return [
-            {"label": fmt["label"], "icon": "download", "action": f"export_{fmt['id']}"}
-            for fmt in self.config.get("formats", [])
-        ]
-```
-
-### 4.4 write-book-template Verzeichnisstruktur
-
-Das Export-Plugin erzeugt beim Export die vollstaendige Struktur:
+Das Export-Plugin erzeugt beim Export:
 
 ```
 {buch-titel}/
@@ -532,8 +590,39 @@ Mapping DB -> Dateisystem:
 | `Book.series_index` | `config/metadata.yaml` -> `series_index` |
 | `Book.description` | `config/metadata.yaml` -> `description` |
 | `Chapter.title` | Dateiname `{NN}-{slug}.md`, H1 im Inhalt |
-| `Chapter.content` | Markdown-Body (konvertiert aus HTML) |
+| `Chapter.content` | Markdown-Body (konvertiert aus TipTap-JSON) |
 | `Chapter.position` | Numerisches Praefix (`01-`, `02-`, ...) |
+
+### 4.6 Offline/Local-first
+
+Bibliogon muss komplett offline funktionieren:
+
+- SQLite als Default-DB (keine externe DB noetig)
+- Alle Assets lokal im Dateisystem
+- Frontend als statische Dateien auslieferbar (kein CDN-Zwang)
+- Premium-Plugin-Lizenzen offline validierbar (signierte Lizenzschluessel, kein Lizenzserver noetig)
+- Einzige Ausnahme: Plugins die externe APIs nutzen (TTS, KI-Hilfe) brauchen natuerlich Netz
+
+### 4.7 Datensicherung
+
+Full-Data-Backup als ZIP:
+
+```
+bibliogon-backup-2026-03-26/
+├── books/
+│   ├── {book-id-1}/
+│   │   ├── book.json          # Book-Metadaten
+│   │   ├── chapters/
+│   │   │   ├── {chapter-id}.json  # Kapitel mit TipTap-JSON
+│   │   │   └── ...
+│   │   └── assets/            # Zugehoerige Bilder
+│   └── {book-id-2}/
+│       └── ...
+├── settings.json              # App-Einstellungen
+└── manifest.json              # Backup-Metadaten, Version, Datum
+```
+
+Import eines Backups stellt den kompletten Zustand wieder her. Unabhaengig vom Export-Plugin (das write-book-template Struktur erzeugt).
 
 ---
 
@@ -542,7 +631,7 @@ Mapping DB -> Dateisystem:
 | Schicht | Lizenz | Inhalt |
 |---------|--------|--------|
 | PluginForge | MIT (kostenlos) | Framework, fuer jeden nutzbar |
-| Bibliogon Core | MIT (kostenlos) | UI, Editor, Book/Chapter CRUD |
+| Bibliogon Core | MIT (kostenlos) | UI, Editor, Book/Chapter CRUD, Backup |
 | plugin-export | MIT (kostenlos) | EPUB, PDF, Projektstruktur |
 | Community Plugins | MIT (kostenlos) | Von der Community entwickelt |
 | Premium Plugins | Proprietaer (kostenpflichtig) | Audiobook, Kinderbuch, KDP, Kollaboration |
@@ -559,20 +648,70 @@ Mapping DB -> Dateisystem:
 
 **Premium:**
 
-| Plugin | Typ | Beschreibung |
-|--------|-----|-------------|
-| `plugin-kinderbuch` | Export + Editor | Bild-pro-Seite Layout, spezielle Templates |
-| `plugin-kdp` | Export | KDP-Metadaten, Cover-Validierung, Vorschau |
-| `plugin-audiobook` | Export | Text-to-Speech, MP3/M4B, Kapitelmarker |
-| `plugin-grammar` | Editor | LanguageTool-Integration |
-| `plugin-ai-assist` | Editor | KI-Schreibhilfe |
-| `plugin-collaboration` | Struktur | Multi-User Echtzeit-Bearbeitung |
-| `plugin-versioning` | Editor | Kapitel-Versionsgeschichte mit Diff |
-| `plugin-docx` | Export | Word-Export fuer Lektorate |
+| Plugin | Typ | Beschreibung | Abhaengigkeit |
+|--------|-----|-------------|---------------|
+| `plugin-kinderbuch` | Export + Editor | Bild-pro-Seite Layout, spezielle Templates | plugin-export |
+| `plugin-kdp` | Export | KDP-Metadaten, Cover-Validierung, Vorschau | plugin-export |
+| `plugin-audiobook` | Export | Text-to-Speech, MP3/M4B, Kapitelmarker | plugin-export |
+| `plugin-grammar` | Editor | LanguageTool-Integration | - |
+| `plugin-ai-assist` | Editor | KI-Schreibhilfe | - |
+| `plugin-collaboration` | Struktur | Multi-User Echtzeit-Bearbeitung | - |
+| `plugin-versioning` | Editor | Kapitel-Versionsgeschichte mit Diff | - |
+| `plugin-docx` | Export | Word-Export fuer Lektorate | plugin-export |
+
+### 5.2 Plugin-Abhaengigkeiten
+
+Deklariert in der Plugin-YAML:
+
+```yaml
+plugin:
+  name: "kinderbuch"
+  depends_on: ["export"]
+```
+
+PluginForge prueft beim Laden ob alle Abhaengigkeiten aktiv sind. Fehlende Abhaengigkeiten erzeugen einen klaren Fehler.
+
+### 5.3 Plugin-Lizenzierung (Offline)
+
+Premium-Plugins nutzen signierte Lizenzschluessel:
+
+```
+BIBLIOGON-KINDERBUCH-v1-XXXX-XXXX-XXXX-XXXX
+```
+
+Der Schluessel enthaelt (Base64-kodiert + signiert):
+- Plugin-Name und Version
+- Ablaufdatum (oder "lifetime")
+- Maschinen-ID (optional, fuer Einzelplatz-Lizenzen)
+
+Validierung passiert lokal mit einem oeffentlichen Schluessel. Kein Lizenzserver noetig, kein Internet erforderlich.
 
 ---
 
-## 6. Roadmap
+## 6. API-Versionierung
+
+Hook-Specs bekommen eine Version. Plugins deklarieren welche API-Version sie unterstuetzen:
+
+```python
+# bibliogon/hookspecs.py - Version 1
+import pluggy
+hookspec = pluggy.HookspecMarker("bibliogon.plugins")
+
+class BibliogonHookSpec:
+    @hookspec
+    def export_formats(self) -> list[dict]:
+        """Return list of supported export formats."""
+
+    @hookspec(firstresult=True)
+    def export_execute(self, book, fmt: str, options: dict) -> Path:
+        """Execute an export. First plugin to return wins."""
+```
+
+Wenn sich Hooks aendern, wird eine neue Spec-Version erstellt (v2). Alte Plugins (api_version: "1") funktionieren weiter solange die v1-Hooks nicht entfernt werden. Deprecation-Warnungen bei alten Hooks.
+
+---
+
+## 7. Roadmap
 
 ### Phase 1: MVP (v0.1.0) - erledigt
 
@@ -583,10 +722,11 @@ Mapping DB -> Dateisystem:
 ### Phase 2: PluginForge Framework (v0.2.0)
 
 - Eigenes Repository `pluginforge` anlegen
-- BasePlugin, HookRegistry, PluginLoader implementieren
-- YAML-Konfigurationssystem (`config/app.yaml`, `config/plugins/*.yaml`)
+- PluginManager auf Basis von pluggy
+- YAML-Konfigurationssystem (App, Plugins, i18n)
 - Plugin-Lifecycle (init, activate, deactivate)
-- Entry Point Discovery
+- Plugin-Abhaengigkeitspruefung
+- FastAPI-Router-Integration
 - Tests und Dokumentation
 - Auf PyPI veroeffentlichen
 - Bibliogon-Backend auf PluginForge umstellen
@@ -594,33 +734,35 @@ Mapping DB -> Dateisystem:
 ### Phase 3: Export als Plugin (v0.3.0)
 
 - `bibliogon-plugin-export` als erstes Plugin
+- TipTap-JSON als internes Speicherformat (statt HTML)
+- TipTap-JSON -> Markdown Konvertierung
 - write-book-template Verzeichnisstruktur-Scaffolding
-- HTML-zu-Markdown Konvertierung (TipTap -> Markdown)
-- ZIP-Export der kompletten Projektstruktur
-- EPUB/PDF-Export ueber scaffolded Verzeichnis
-- `config/metadata.yaml` Generierung
+- ZIP/EPUB/PDF-Export
 - Alten fest verdrahteten Export-Code entfernen
 - Plugin-Verwaltung in der UI (aktivieren/deaktivieren)
+- i18n fuer UI-Strings (DE, EN als Start)
 
-### Phase 4: Import und erweiterte Kapiteltypen (v0.4.0)
+### Phase 4: Import, Backup, erweiterte Kapiteltypen (v0.4.0)
 
 - write-book-template Projekt importieren (ZIP-Upload)
+- Full-Data-Backup und Restore
 - ChapterType-Enum fuer Front-Matter und Back-Matter
-- UI: Separate Sektionen in der Sidebar
 - Asset-Upload (Cover, Bilder)
+- Alembic-Integration fuer Plugin-Tabellen
 
 ### Phase 5: Erste Premium-Plugins (v0.5.0)
 
 - `plugin-kinderbuch`: Bild-pro-Seite Layout, spezielle Templates
 - `plugin-kdp`: Metadaten-Export, Cover-Validierung, Vorschau
-- Plugin-Lizenzpruefung (lokaler Lizenzschluessel)
+- Offline-Lizenzpruefung (signierte Schluessel)
 
 ### Phase 6: Editor-Erweiterungen (v0.6.0)
 
 - Markdown-Modus im Editor (TipTap Umschaltung WYSIWYG/Markdown)
 - Kapitel Drag-and-Drop Sortierung
-- Autosave-Indikator
+- Autosave-Indikator, Wortzaehler
 - `plugin-grammar`: LanguageTool-Integration
+- i18n: ES, FR, EL hinzufuegen
 
 ### Phase 7: Multi-User und SaaS (v1.0.0)
 
@@ -632,22 +774,23 @@ Mapping DB -> Dateisystem:
 
 ---
 
-## 7. Abgrenzung
+## 8. Abgrenzung
 
 ### Was Bibliogon ist
 
 - Eine Web-UI zum Schreiben von Buechern
-- Aufgebaut auf einem wiederverwendbaren Plugin-Framework (PluginForge)
+- Aufgebaut auf PluginForge (wiederverwendbares Plugin-Framework)
+- Offline-faehig und Local-first
 - Ein Generator fuer write-book-template Projektstrukturen (via Plugin)
 - Ein EPUB/PDF-Export-Tool via Pandoc (via Plugin)
-- Ein Open-Source-Projekt mit SaaS-Potenzial
+- Open Source mit SaaS-Potenzial
 
 ### Was PluginForge ist
 
-- Ein anwendungsunabhaengiges Plugin-Framework fuer Python
-- Wiederverwendbar fuer beliebige Anwendungen (nicht nur Bibliogon)
-- YAML-konfigurierbar (Titel, Labels, Einstellungen, alles anpassbar)
-- Hook-basiert mit typisierter Registry
+- Eine Erweiterungsschicht auf pluggy, kein Ersatz
+- Anwendungsunabhaengig, wiederverwendbar
+- YAML-konfigurierbar (Titel, Labels, Einstellungen, i18n)
+- Mit FastAPI-Integration und DB-Migration-Support
 
 ### Was beides nicht ist
 
@@ -657,31 +800,29 @@ Mapping DB -> Dateisystem:
 
 ---
 
-## 8. Konkurrenzanalyse
+## 9. Konkurrenzanalyse
 
-| Tool | Open Source | Web-basiert | Plugin-System | Projektstruktur | Zielgruppe |
-|------|-----------|-------------|---------------|-----------------|------------|
-| Scrivener | Nein | Nein | Nein | Proprietaer | Power-Autoren |
-| Reedsy Studio | Nein | Ja | Nein | Nein | Einsteiger |
-| Manuskript | Ja | Nein | Nein | Proprietaer | Plotter |
-| Obsidian | Nein | Nein | Ja (Community) | Nein | Allgemein |
-| VS Code | Ja | Ja | Ja (Extensions) | Nein | Entwickler |
-| **Bibliogon** | **Ja** | **Ja** | **Ja (PluginForge)** | **write-book-template** | **Autoren + Entwickler** |
+| Tool | Open Source | Web | Offline | Plugin-System | Projektstruktur |
+|------|-----------|-----|---------|---------------|-----------------|
+| Scrivener | Nein | Nein | Ja | Nein | Proprietaer |
+| Reedsy Studio | Nein | Ja | Nein | Nein | Nein |
+| Manuskript | Ja | Nein | Ja | Nein | Proprietaer |
+| Obsidian | Nein | Nein | Ja | Ja (Community) | Nein |
+| VS Code | Ja | Ja | Ja | Ja (Extensions) | Nein |
+| **Bibliogon** | **Ja** | **Ja** | **Ja** | **Ja (PluginForge)** | **write-book-template** |
 
-Der Differenzierungsfaktor: Kein anderes Autoren-Tool kombiniert Open Source, Web-UI, ein echtes Plugin-Framework, und eine standardisierte Pandoc-kompatible Projektstruktur.
+Kein anderes Autoren-Tool kombiniert Open Source, Web-UI, Offline-Faehigkeit, ein echtes Plugin-Framework auf pluggy-Basis, und eine standardisierte Pandoc-kompatible Projektstruktur.
 
 ---
 
-## 9. Offene Fragen
+## 10. Offene Fragen
 
-1. **HTML zu Markdown:** TipTap speichert Inhalte als HTML. Beim Export muss konvertiert werden. Optionen: `html2text` (Python), Pandoc selbst (`pandoc -f html -t markdown`), oder beides als Fallback-Kette.
+1. **PluginForge Name:** Ist `pluginforge` als PyPI-Paketname frei? Falls belegt, Alternativen pruefen.
 
-2. **Bilder-Handling:** Lokal im Dateisystem, in der DB als Blob, oder S3 (SaaS)?
+2. **Frontend-Plugin-Loading:** Dynamisches Laden von React-Komponenten zur Laufzeit (Module Federation, importmaps) oder statisches Bundling beim Build? Dynamisch ist flexibler, statisch ist zuverlaessiger.
 
-3. **PluginForge Name:** Ist `pluginforge` als PyPI-Paketname frei? Alternativen falls belegt.
+3. **PluginForge Scope Frontend:** Soll PluginForge auch ein npm-Pendant haben fuer Frontend-Plugin-Loading, oder bleibt das Bibliogon-spezifisch?
 
-4. **Frontend-Plugin-Loading:** Dynamisches Laden von React-Komponenten zur Laufzeit (Module Federation) oder statisches Bundling beim Build?
+4. **Plugin-DB-Migrationen:** Alembic mit mehreren `versions`-Ordnern (einer pro Plugin) oder ein zentraler Ordner mit Plugin-Prefix in den Migrationsdateien?
 
-5. **Plugin-Lizenzierung:** Offline-Lizenzschluessel oder Online-Validierung (SaaS-only)?
-
-6. **PluginForge Scope:** Soll PluginForge auch Frontend-Plugin-Loading abdecken (JS/TS), oder nur Backend (Python)? Frontend-Pendant als separates npm-Paket?
+5. **TipTap-JSON Groesse:** Bei langen Kapiteln kann TipTap-JSON deutlich groesser sein als HTML. Ist das ein Problem fuer SQLite-Performance, oder vernachlaessigbar?

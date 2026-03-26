@@ -1,27 +1,27 @@
 # Bibliogon
 
-Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverwendbaren Plugin-Framework. Der gesamte Export (EPUB, PDF, write-book-template) ist selbst ein Plugin.
+Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Der gesamte Export ist selbst ein Plugin. Offline-faehig, i18n-ready, local-first.
 
 **Repository:** https://github.com/astrapi69/bibliogon
 **Konzept:** docs/CONCEPT.md
 
-## Zwei-Schichten-Architektur
+## Architektur (Zwei-Schichten)
 
-1. **PluginForge** - Anwendungsunabhaengiges Plugin-Framework (eigenes Paket/Repo)
-   - BasePlugin, HookRegistry, PluginLoader
-   - YAML-Konfiguration (alles anpassbar: Titel, Labels, Einstellungen)
-   - Entry Point Discovery, Plugin-Lifecycle
-   - Kann von beliebigen Python-Anwendungen genutzt werden
+1. **PluginForge** (eigenes Paket, basiert auf pluggy)
+   - PluginManager: wraps pluggy + YAML-Config + Lifecycle + Dependency Resolution
+   - FastAPI-Router-Integration, Alembic-Migration-Support
+   - i18n ueber YAML (config/i18n/{lang}.yaml)
+   - Anwendungsunabhaengig, jeder kann es nutzen
 
-2. **Bibliogon App** - Buch-Autoren-Plattform (dieses Repo)
-   - Schlanker Kern: UI, Editor, Book/Chapter CRUD
-   - Alles Weitere ueber Plugins: Export, Kinderbuch, Audiobook, KDP
+2. **Bibliogon App** (dieses Repo)
+   - Schlanker Kern: UI, Editor, Book/Chapter CRUD, Backup
+   - Alles Weitere via Plugins: Export, Kinderbuch, Audiobook, KDP
 
 ## Tech Stack
 
-- **PluginForge:** Python 3.11+, YAML, Entry Points
+- **PluginForge:** Python 3.11+, pluggy, PyYAML
 - **Backend:** FastAPI, SQLAlchemy, SQLite
-- **Frontend:** React 18, TypeScript, TipTap, Vite
+- **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite
 - **Export-Plugin:** Pandoc, write-book-template Struktur
 - **Tooling:** Poetry, npm, Docker, Make
 
@@ -29,8 +29,8 @@ Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverw
 
 ```bash
 make install   # Poetry install + npm install
-make dev       # Backend (Port 8000) + Frontend (Port 5173) parallel
-make test      # pytest im Backend
+make dev       # Backend (8000) + Frontend (5173) parallel
+make test      # pytest
 ```
 
 ## Verzeichnisstruktur
@@ -39,76 +39,52 @@ make test      # pytest im Backend
 bibliogon/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI Entry
-│   │   ├── database.py          # SQLAlchemy + SQLite
-│   │   ├── models/              # Book, Chapter
-│   │   ├── schemas/             # Pydantic Request/Response
-│   │   ├── routers/             # books.py, chapters.py, export.py
-│   │   └── services/            # export_service.py (wird Plugin in Phase 3)
+│   │   ├── main.py, database.py
+│   │   ├── models/, schemas/, routers/, services/
 │   ├── config/
-│   │   ├── app.yaml             # App-Konfiguration (geplant)
-│   │   └── plugins/             # Plugin-YAML-Dateien (geplant)
+│   │   ├── app.yaml             # App-Konfiguration
+│   │   ├── plugins/             # Plugin-YAML-Dateien
+│   │   └── i18n/                # Sprachdateien (de.yaml, en.yaml)
 │   ├── tests/
 │   └── pyproject.toml
 ├── frontend/
 │   ├── src/
-│   │   ├── api/client.ts        # REST-Client + TypeScript-Typen
-│   │   ├── components/          # BookCard, ChapterSidebar, Editor, Toolbar, CreateBookModal
-│   │   ├── pages/               # Dashboard.tsx, BookEditor.tsx
-│   │   └── styles/global.css
-│   ├── package.json
-│   └── vite.config.ts
-├── docs/
-│   └── CONCEPT.md               # Gesamtkonzept und Roadmap
+│   │   ├── api/client.ts
+│   │   ├── components/, pages/, styles/
+│   ├── package.json, vite.config.ts
+├── docs/CONCEPT.md
 ├── Makefile
-├── docker-compose.yml
-├── docker-compose.prod.yml
+├── docker-compose.yml, docker-compose.prod.yml
 └── README.md
 ```
 
 ## Konventionen
 
-- Backend-Code in Python, Typehints ueberall
-- Frontend in TypeScript, keine `any`-Typen
-- Keine Em-Dashes (--) in Texten, stattdessen Bindestriche (-) oder Kommata
-- Commit Messages auf Englisch, konventionelle Commits (feat/fix/refactor/docs)
-- API-Prefix: /api/
-- SQLAlchemy 2.0 Mapped Columns
-- Pydantic v2 mit ConfigDict(from_attributes=True)
-- Alle konfigurierbaren Werte in YAML, nicht hartcodiert
-
-## API-Endpunkte
-
-- GET/POST /api/books
-- GET/PATCH/DELETE /api/books/{id}
-- GET/POST /api/books/{id}/chapters
-- GET/PATCH/DELETE /api/books/{id}/chapters/{cid}
-- PUT /api/books/{id}/chapters/reorder
-- GET /api/books/{id}/export/{epub|pdf|project}
+- Python mit Typehints, TypeScript ohne `any`
+- Keine Em-Dashes (--), stattdessen Bindestriche (-) oder Kommata
+- Commit Messages: Englisch, konventionell (feat/fix/refactor/docs)
+- Konfigurierbare Werte in YAML, nicht hartcodiert
+- i18n: Alle UI-Strings in config/i18n/{lang}.yaml
+- Internes Speicherformat: TipTap JSON (nicht HTML)
+- SQLAlchemy 2.0 Mapped Columns, Pydantic v2
 
 ## Datenmodell
 
 Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at
-Chapter: id, book_id (FK), title, content (HTML), position, created_at, updated_at
+Chapter: id, book_id (FK), title, content (TipTap JSON), position, created_at, updated_at
 
 ## Naechste Schritte
 
-Phase 2 - PluginForge Framework:
-- Eigenes Repo/Paket: BasePlugin, HookRegistry, PluginLoader
-- YAML-Konfigurationssystem
-- Entry Point Discovery
-- Bibliogon-Backend auf PluginForge umstellen
+Phase 2 - PluginForge:
+- Eigenes Repo, basiert auf pluggy
+- PluginManager, YAML-Config, Lifecycle, FastAPI-Integration
+- PyPI veroeffentlichen
 
 Phase 3 - Export als Plugin:
-- bibliogon-plugin-export als erstes Plugin implementieren
+- bibliogon-plugin-export
+- TipTap-JSON als Speicherformat
+- TipTap-JSON -> Markdown Konvertierung
 - write-book-template Verzeichnisstruktur
-- HTML-zu-Markdown Konvertierung
-- Alten fest verdrahteten Export-Code entfernen
+- i18n (DE, EN)
 
 Details: docs/CONCEPT.md
-
-## Verwandtes Projekt
-
-write-book-template (github.com/astrapi69/write-book-template) definiert die
-Ziel-Verzeichnisstruktur fuer den Export. Das Export-Plugin generiert diese
-Struktur aus den Datenbank-Inhalten.
