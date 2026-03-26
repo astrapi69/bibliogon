@@ -1,6 +1,7 @@
 import {Routes, Route} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
+import Settings from "./pages/Settings";
 import {useTheme} from "./hooks/useTheme";
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
         <Routes>
             <Route path="/" element={<Dashboard/>}/>
             <Route path="/book/:bookId" element={<BookEditor/>}/>
+            <Route path="/settings" element={<Settings/>}/>
         </Routes>
     );
 }

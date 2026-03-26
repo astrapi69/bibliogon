@@ -195,4 +195,43 @@ export const api = {
             return res.json();
         },
     },
+
+    settings: {
+        getApp: () => request<Record<string, unknown>>("/settings/app"),
+
+        updateApp: (data: Record<string, unknown>) =>
+            request<Record<string, unknown>>("/settings/app", {
+                method: "PATCH",
+                body: JSON.stringify(data),
+            }),
+
+        listPlugins: () => request<Record<string, unknown>>("/settings/plugins"),
+
+        getPlugin: (name: string) => request<Record<string, unknown>>(`/settings/plugins/${name}`),
+
+        updatePlugin: (name: string, settings: Record<string, unknown>) =>
+            request<Record<string, unknown>>(`/settings/plugins/${name}`, {
+                method: "PATCH",
+                body: JSON.stringify({settings}),
+            }),
+
+        enablePlugin: (name: string) =>
+            request<{plugin: string; status: string}>(`/settings/plugins/${name}/enable`, {method: "POST"}),
+
+        disablePlugin: (name: string) =>
+            request<{plugin: string; status: string}>(`/settings/plugins/${name}/disable`, {method: "POST"}),
+    },
+
+    licenses: {
+        list: () => request<Record<string, unknown>>("/licenses"),
+
+        activate: (pluginName: string, licenseKey: string) =>
+            request<Record<string, unknown>>("/licenses", {
+                method: "POST",
+                body: JSON.stringify({plugin_name: pluginName, license_key: licenseKey}),
+            }),
+
+        deactivate: (pluginName: string) =>
+            request<Record<string, unknown>>(`/licenses/${pluginName}`, {method: "DELETE"}),
+    },
 };

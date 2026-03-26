@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.hookspecs import BibliogonHookSpec
-from app.routers import assets, backup, books, chapters, licenses
+from app.routers import assets, backup, books, chapters, licenses, settings
 
 from pluginforge import PluginManager
 from pluginforge.fastapi import mount_plugin_routes, register_plugin_endpoints
@@ -19,8 +19,9 @@ manager = PluginManager(
 )
 manager.load_hookspecs(BibliogonHookSpec)
 
-# Configure license routes with the manager
+# Configure routes with the manager
 licenses.configure(manager)
+settings.configure(BASE_DIR, manager)
 
 
 @asynccontextmanager
@@ -51,6 +52,7 @@ app.include_router(chapters.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(backup.router, prefix="/api")
 app.include_router(licenses.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 register_plugin_endpoints(app, manager)
 
