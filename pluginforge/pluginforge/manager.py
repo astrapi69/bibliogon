@@ -88,6 +88,13 @@ class PluginManager:
                 self.pm.unregister(plugin_obj)
                 continue
 
+            # pluggy may register the class itself rather than an instance.
+            # If so, unregister the class and re-register a proper instance.
+            if isinstance(plugin_obj, type):
+                self.pm.unregister(plugin_obj)
+                plugin_obj = plugin_obj()
+                self.pm.register(plugin_obj, name=name)
+
             plugin_config = self.config_loader.load_plugin_config(name, config_dir)
 
             self._check_dependencies(name, plugin_config)
