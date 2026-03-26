@@ -61,6 +61,14 @@ class PluginManager:
         """Register hook specifications from the application."""
         self.pm.add_hookspecs(spec_module)
 
+    def discover(self) -> list[str]:
+        """Find all available plugins via entry points without loading them."""
+        import importlib.metadata
+        group = self._plugin_settings.get("entry_point_group", "")
+        if not group:
+            return []
+        return [ep.name for ep in importlib.metadata.entry_points(group=group)]
+
     def discover_and_load(self) -> None:
         """Discover, configure, and activate all enabled plugins."""
         group = self._plugin_settings.get("entry_point_group", "")

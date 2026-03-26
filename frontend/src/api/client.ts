@@ -207,7 +207,19 @@ export const api = {
 
         listPlugins: () => request<Record<string, unknown>>("/settings/plugins"),
 
+        discoveredPlugins: () =>
+            request<{name: string; has_config: boolean; enabled: boolean; loaded: boolean}[]>("/settings/plugins/discovered"),
+
         getPlugin: (name: string) => request<Record<string, unknown>>(`/settings/plugins/${name}`),
+
+        createPlugin: (data: {name: string; display_name?: string; description?: string; version?: string; license?: string; settings?: Record<string, unknown>}) =>
+            request<Record<string, unknown>>("/settings/plugins", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        deletePlugin: (name: string) =>
+            request<{plugin: string; status: string}>(`/settings/plugins/${name}`, {method: "DELETE"}),
 
         updatePlugin: (name: string, settings: Record<string, unknown>) =>
             request<Record<string, unknown>>(`/settings/plugins/${name}`, {

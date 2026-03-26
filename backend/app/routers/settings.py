@@ -79,6 +79,114 @@ def list_plugin_configs() -> dict[str, Any]:
     return result
 
 
+@router.get("/plugins/discovered")
+def list_discovered_plugins() -> list[dict[str, Any]]:
+    """List all plugins discovered via entry points (installed on system)."""
+    if not _manager:
+        return []
+
+    discovered = _manager.discover()
+    plugins_dir = _base_dir / "config" / "plugins"
+    enabled = set(
+        _read_yaml(_base_dir / "config" / "app.yaml").get("plugins", {}).get("enabled", [])
+    ) if (_base_dir / "config" / "app.yaml").exists() else set()
+    disabled = set(
+        _read_yaml(_base_dir / "config" / "app.yaml").get("plugins", {}).get("disabled", [])
+    ) if (_base_dir / "config" / "app.yaml").exists() else set()
+
+    result = []
+    for name in discovered:
+        has_config = (plugins_dir / f"{name}.yaml").exists() if plugins_dir.exists() else False
+        is_enabled = name in enabled and name not in disabled
+        is_loaded = name in _manager.plugins
+        result.append({
+            "name": name,
+            "has_config": has_config,
+            "enabled": is_enabled,
+            "loaded": is_loaded,
+        })
+
+    # Also include plugins that have config but weren't discovered (manually added)
+    if plugins_dir.exists():
+        for yaml_file in plugins_dir.glob("*.yaml"):
+            name = yaml_file.stem
+            if name not in [r["name"] for r in result]:
+                result.append({
+                    "name": name,
+                    "has_config": True,
+                    "enabled": name in enabled and name not in disabled,
+                    "loaded": name in _manager.plugins,
+                })
+
+    return result
+
+
+class PluginCreate(BaseModel):
+    name: str
+    display_name: str = ""
+    description: str = ""
+    version: str = "1.0.0"
+    license: str = "MIT"
+    settings: dict[str, Any] = {}
+
+
+@router.post("/plugins")
+def create_plugin_config(body: PluginCreate) -> dict[str, Any]:
+    """Create a new plugin configuration file."""
+    plugins_dir = _base_dir / "config" / "plugins"
+    path = plugins_dir / f"{body.name}.yaml"
+
+    if path.exists():
+        raise HTTPException(status_code=409, detail=f"Plugin config '{body.name}' already exists")
+
+    config: dict[str, Any] = {
+        "plugin": {
+            "name": body.name,
+            "display_name": body.display_name or body.name,
+            "description": body.description,
+            "version": body.version,
+            "license": body.license,
+            "depends_on": [],
+            "api_version": "1",
+        },
+        "settings": body.settings,
+    }
+
+    _write_yaml(path, config)
+    return config
+
+
+@router.delete("/plugins/{plugin_name}")
+def delete_plugin_config(plugin_name: str) -> dict[str, str]:
+    """Delete a plugin configuration file and disable the plugin."""
+    plugins_dir = _base_dir / "config" / "plugins"
+    path = plugins_dir / f"{plugin_name}.yaml"
+
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Plugin config '{plugin_name}' not found")
+
+    # Unload if active
+    if _manager and plugin_name in _manager.plugins:
+        _manager.unload(plugin_name)
+
+    # Remove from enabled list
+    app_path = _base_dir / "config" / "app.yaml"
+    if app_path.exists():
+        app_config = _read_yaml(app_path)
+        enabled = app_config.get("plugins", {}).get("enabled", [])
+        if plugin_name in enabled:
+            enabled.remove(plugin_name)
+            _write_yaml(app_path, app_config)
+
+    # Delete config file
+    path.unlink()
+
+    if _manager:
+        _manager.config_loader.invalidate()
+
+    return {"plugin": plugin_name, "status": "removed"}
+
+
 @router.get("/plugins/{plugin_name}")
 def get_plugin_config(plugin_name: str) -> dict[str, Any]:
     """Get configuration for a specific plugin."""

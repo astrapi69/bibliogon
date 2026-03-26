@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Key, Plus, Trash2} from "lucide-react";
 
 type Tab = "app" | "plugins" | "licenses";
 
@@ -116,6 +116,30 @@ export default function Settings() {
                                 showMessage("Fehler");
                             }
                         }}
+                        onAddPlugin={async (data) => {
+                            try {
+                                await api.settings.createPlugin(data);
+                                const plugins = await api.settings.listPlugins();
+                                setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
+                                showMessage(`${data.name} hinzugefuegt`);
+                            } catch (err) {
+                                showMessage(`Fehler: ${err}`);
+                            }
+                        }}
+                        onRemovePlugin={async (name) => {
+                            try {
+                                await api.settings.deletePlugin(name);
+                                const [plugins, app] = await Promise.all([
+                                    api.settings.listPlugins(),
+                                    api.settings.getApp(),
+                                ]);
+                                setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
+                                setAppConfig(app);
+                                showMessage(`${name} entfernt`);
+                            } catch (err) {
+                                showMessage(`Fehler: ${err}`);
+                            }
+                        }}
                     />
                 )}
                 {tab === "licenses" && (
@@ -213,12 +237,19 @@ function AppSettings({config, onSave, saving}: {
 
 // --- Plugin Settings Tab ---
 
-function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin}: {
+function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin}: {
     configs: Record<string, Record<string, unknown>>;
     appConfig: Record<string, unknown>;
     onSavePlugin: (name: string, settings: Record<string, unknown>) => void;
     onTogglePlugin: (name: string, enable: boolean) => void;
+    onAddPlugin: (data: {name: string; display_name?: string; description?: string}) => void;
+    onRemovePlugin: (name: string) => void;
 }) {
+    const [showAdd, setShowAdd] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [newDisplayName, setNewDisplayName] = useState("");
+    const [newDescription, setNewDescription] = useState("");
+
     const enabled = new Set(
         ((appConfig.plugins as Record<string, unknown>)?.enabled as string[]) || []
     );
@@ -226,9 +257,59 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin}: {
         ((appConfig.plugins as Record<string, unknown>)?.disabled as string[]) || []
     );
 
+    const handleAdd = () => {
+        if (!newName.trim()) return;
+        onAddPlugin({
+            name: newName.trim(),
+            display_name: newDisplayName.trim() || undefined,
+            description: newDescription.trim() || undefined,
+        });
+        setNewName("");
+        setNewDisplayName("");
+        setNewDescription("");
+        setShowAdd(false);
+    };
+
     return (
         <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
+            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
+                    <Plus size={14}/> Plugin hinzufuegen
+                </button>
+            </div>
+
+            {showAdd && (
+                <div style={styles.card}>
+                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Neues Plugin</h3>
+                    <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12}}>
+                        <div className="field">
+                            <label className="label">Name (eindeutig)</label>
+                            <input className="input" placeholder="z.B. my-plugin" value={newName}
+                                onChange={(e) => setNewName(e.target.value)}/>
+                        </div>
+                        <div className="field">
+                            <label className="label">Anzeigename</label>
+                            <input className="input" placeholder="z.B. Mein Plugin" value={newDisplayName}
+                                onChange={(e) => setNewDisplayName(e.target.value)}/>
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label className="label">Beschreibung</label>
+                        <input className="input" placeholder="Was macht das Plugin?" value={newDescription}
+                            onChange={(e) => setNewDescription(e.target.value)}/>
+                    </div>
+                    <div style={{display: "flex", gap: 8}}>
+                        <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={!newName.trim()}>
+                            <Plus size={12}/> Erstellen
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setShowAdd(false)}>
+                            Abbrechen
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {Object.entries(configs).map(([name, config]) => {
                 const pluginMeta = (config.plugin || {}) as Record<string, unknown>;
                 const settings = (config.settings || {}) as Record<string, unknown>;
@@ -248,6 +329,11 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin}: {
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
+                        onRemove={() => {
+                            if (confirm(`Plugin "${displayName}" wirklich entfernen? Die Konfiguration wird geloescht.`)) {
+                                onRemovePlugin(name);
+                            }
+                        }}
                     />
                 );
             })}
@@ -258,7 +344,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin}: {
     );
 }
 
-function PluginCard({name, displayName, description, version, license, enabled, settings, onSave, onToggle}: {
+function PluginCard({name, displayName, description, version, license, enabled, settings, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
     description: string;
@@ -268,6 +354,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
     settings: Record<string, unknown>;
     onSave: (settings: Record<string, unknown>) => void;
     onToggle: (enable: boolean) => void;
+    onRemove: () => void;
 }) {
     const [localSettings, setLocalSettings] = useState(settings);
     const [expanded, setExpanded] = useState(false);
@@ -307,6 +394,14 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                         onClick={() => onToggle(!enabled)}
                     >
                         {enabled ? <><X size={12}/> Deaktivieren</> : <><Check size={12}/> Aktivieren</>}
+                    </button>
+                    <button
+                        className="btn btn-sm btn-danger"
+                        onClick={onRemove}
+                        title="Plugin entfernen"
+                        style={{padding: "4px 6px"}}
+                    >
+                        <Trash2 size={12}/>
                     </button>
                 </div>
             </div>

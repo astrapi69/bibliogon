@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#b45309"/>
+  <path d="M8 7 C8 6 9 5 10 5 L16 5 L16 24 L10 24 C9 24 8 23 8 22 Z" fill="#fef3c7" opacity="0.9"/>
+  <path d="M16 5 L22 5 C23 5 24 6 24 7 L24 22 C24 23 23 24 22 24 L16 24 Z" fill="#fde68a" opacity="0.85"/>
+  <line x1="16" y1="5" x2="16" y2="24" stroke="#b45309" stroke-width="0.5" opacity="0.4"/>
+  <line x1="10.5" y1="9" x2="14" y2="9" stroke="#b45309" stroke-width="0.8" opacity="0.3"/>
+  <line x1="10.5" y1="12" x2="14" y2="12" stroke="#b45309" stroke-width="0.8" opacity="0.3"/>
+  <line x1="10.5" y1="15" x2="13" y2="15" stroke="#b45309" stroke-width="0.8" opacity="0.3"/>
+  <line x1="18" y1="9" x2="21.5" y2="9" stroke="#92400e" stroke-width="0.8" opacity="0.3"/>
+  <line x1="18" y1="12" x2="21.5" y2="12" stroke="#92400e" stroke-width="0.8" opacity="0.3"/>
+  <line x1="18" y1="15" x2="20.5" y2="15" stroke="#92400e" stroke-width="0.8" opacity="0.3"/>
+  <path d="M7 25 Q16 22 25 25 L25 27 Q16 24 7 27 Z" fill="#fef3c7" opacity="0.6"/>
+</svg>
