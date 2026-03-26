@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "bibliogon-plugin-getstarted"
+version = "1.0.0"
+description = "Onboarding and getting started guide for Bibliogon"
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_getstarted"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = {path = "../../pluginforge", develop = true}
+fastapi = "^0.115.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+getstarted = "bibliogon_getstarted.plugin:GetStartedPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

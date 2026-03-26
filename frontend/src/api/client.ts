@@ -222,6 +222,24 @@ export const api = {
             request<{plugin: string; status: string}>(`/settings/plugins/${name}/disable`, {method: "POST"}),
     },
 
+    help: {
+        shortcuts: (lang: string = "de") =>
+            request<{keys: string; action: string}[]>(`/help/shortcuts?lang=${lang}`),
+
+        faq: (lang: string = "de") =>
+            request<{question: string; answer: string}[]>(`/help/faq?lang=${lang}`),
+
+        about: () => request<Record<string, string>>("/help/about"),
+    },
+
+    getStarted: {
+        guide: (lang: string = "de") =>
+            request<{id: string; title: string; description: string; icon: string}[]>(`/get-started/guide?lang=${lang}`),
+
+        sampleBook: (lang: string = "de") =>
+            request<{title: string; author: string; language: string; description: string; chapters: {title: string; content: string}[]}>(`/get-started/sample-book?lang=${lang}`),
+    },
+
     licenses: {
         list: () => request<Record<string, unknown>>("/licenses"),
 

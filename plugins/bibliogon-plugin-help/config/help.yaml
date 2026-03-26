@@ -1,0 +1,82 @@
+plugin:
+  name: "help"
+  display_name:
+    de: "Hilfe"
+    en: "Help"
+  description:
+    de: "In-App Hilfe, Tastenkuerzel und FAQ"
+    en: "In-app help, keyboard shortcuts, and FAQ"
+  version: "1.0.0"
+  license: "MIT"
+  depends_on: []
+  api_version: "1"
+
+shortcuts:
+  - keys: "Ctrl+B"
+    action: {de: "Fett", en: "Bold"}
+  - keys: "Ctrl+I"
+    action: {de: "Kursiv", en: "Italic"}
+  - keys: "Ctrl+Shift+X"
+    action: {de: "Durchgestrichen", en: "Strikethrough"}
+  - keys: "Ctrl+E"
+    action: {de: "Inline-Code", en: "Inline code"}
+  - keys: "Ctrl+Shift+1"
+    action: {de: "Ueberschrift 1", en: "Heading 1"}
+  - keys: "Ctrl+Shift+2"
+    action: {de: "Ueberschrift 2", en: "Heading 2"}
+  - keys: "Ctrl+Shift+3"
+    action: {de: "Ueberschrift 3", en: "Heading 3"}
+  - keys: "Ctrl+Shift+8"
+    action: {de: "Aufzaehlung", en: "Bullet list"}
+  - keys: "Ctrl+Shift+9"
+    action: {de: "Nummerierung", en: "Ordered list"}
+  - keys: "Ctrl+Shift+B"
+    action: {de: "Zitat", en: "Blockquote"}
+  - keys: "Ctrl+Z"
+    action: {de: "Rueckgaengig", en: "Undo"}
+  - keys: "Ctrl+Shift+Z"
+    action: {de: "Wiederholen", en: "Redo"}
+
+faq:
+  - question:
+      de: "Welches Format wird intern gespeichert?"
+      en: "What format is used internally?"
+    answer:
+      de: "Bibliogon speichert Kapitelinhalte als TipTap-JSON. Beim Export wird dieses in Markdown konvertiert."
+      en: "Bibliogon stores chapter content as TipTap JSON. During export, this is converted to Markdown."
+  - question:
+      de: "Wie exportiere ich mein Buch?"
+      en: "How do I export my book?"
+    answer:
+      de: "Oeffne dein Buch im Editor. In der Sidebar unten findest du Export-Buttons fuer EPUB, PDF und ZIP (Projektstruktur)."
+      en: "Open your book in the editor. At the bottom of the sidebar you will find export buttons for EPUB, PDF, and ZIP (project structure)."
+  - question:
+      de: "Kann ich ein bestehendes Projekt importieren?"
+      en: "Can I import an existing project?"
+    answer:
+      de: "Ja. Auf dem Dashboard klicke 'Projekt importieren' und waehle eine ZIP-Datei im write-book-template Format."
+      en: "Yes. On the dashboard click 'Import Project' and select a ZIP file in write-book-template format."
+  - question:
+      de: "Wie funktioniert das Backup?"
+      en: "How does backup work?"
+    answer:
+      de: "Klicke 'Backup' im Dashboard. Alle Buecher, Kapitel und Assets werden als ZIP exportiert. Zum Wiederherstellen nutze 'Restore'."
+      en: "Click 'Backup' on the dashboard. All books, chapters, and assets are exported as ZIP. To restore, use 'Restore'."
+  - question:
+      de: "Was ist der Markdown-Modus?"
+      en: "What is Markdown mode?"
+    answer:
+      de: "Im Editor kannst du zwischen WYSIWYG und Markdown umschalten. Im Markdown-Modus siehst und bearbeitest du den Rohtext."
+      en: "In the editor you can switch between WYSIWYG and Markdown. In Markdown mode you see and edit the raw text."
+  - question:
+      de: "Wie aktiviere ich ein Premium-Plugin?"
+      en: "How do I activate a premium plugin?"
+    answer:
+      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen und deinen Lizenzschluessel ein."
+      en: "Go to Settings > Licenses. Enter the plugin name and your license key."
+  - question:
+      de: "Funktioniert Bibliogon offline?"
+      en: "Does Bibliogon work offline?"
+    answer:
+      de: "Ja. Bibliogon nutzt SQLite und speichert alles lokal. Nur Plugins die externe APIs nutzen (Grammar, KI) brauchen Internet."
+      en: "Yes. Bibliogon uses SQLite and stores everything locally. Only plugins using external APIs (grammar, AI) need internet."

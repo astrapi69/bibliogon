@@ -1,0 +1,106 @@
+plugin:
+  name: "getstarted"
+  display_name:
+    de: "Erste Schritte"
+    en: "Get Started"
+  description:
+    de: "Einfuehrung und Beispielbuch fuer neue Benutzer"
+    en: "Onboarding guide and sample book for new users"
+  version: "1.0.0"
+  license: "MIT"
+  depends_on: []
+  api_version: "1"
+
+guide:
+  steps:
+    - id: "create-book"
+      title:
+        de: "Buch erstellen"
+        en: "Create a Book"
+      description:
+        de: "Klicke auf 'Neues Buch' im Dashboard. Gib Titel, Autor und Sprache ein."
+        en: "Click 'New Book' on the dashboard. Enter title, author, and language."
+      icon: "book-plus"
+
+    - id: "add-chapters"
+      title:
+        de: "Kapitel hinzufuegen"
+        en: "Add Chapters"
+      description:
+        de: "Oeffne dein Buch und klicke das '+' neben 'Kapitel' in der Sidebar."
+        en: "Open your book and click the '+' next to 'Chapters' in the sidebar."
+      icon: "file-plus"
+
+    - id: "write-content"
+      title:
+        de: "Schreiben"
+        en: "Write Content"
+      description:
+        de: "Nutze den WYSIWYG-Editor oder wechsle in den Markdown-Modus. Deine Aenderungen werden automatisch gespeichert."
+        en: "Use the WYSIWYG editor or switch to Markdown mode. Your changes are saved automatically."
+      icon: "pen-tool"
+
+    - id: "organize"
+      title:
+        de: "Kapitel ordnen"
+        en: "Organize Chapters"
+      description:
+        de: "Ziehe Kapitel per Drag-and-Drop in die gewuenschte Reihenfolge."
+        en: "Drag and drop chapters to reorder them."
+      icon: "grip-vertical"
+
+    - id: "export"
+      title:
+        de: "Exportieren"
+        en: "Export"
+      description:
+        de: "Exportiere dein Buch als EPUB, PDF oder ZIP-Projektstruktur ueber die Buttons in der Sidebar."
+        en: "Export your book as EPUB, PDF, or ZIP project structure via the sidebar buttons."
+      icon: "download"
+
+    - id: "settings"
+      title:
+        de: "Einstellungen"
+        en: "Settings"
+      description:
+        de: "Unter Einstellungen konfigurierst du die App, Plugins und Lizenzen."
+        en: "In Settings you can configure the app, plugins, and licenses."
+      icon: "settings"
+
+    - id: "backup"
+      title:
+        de: "Sichern und Importieren"
+        en: "Backup and Import"
+      description:
+        de: "Erstelle Backups deiner Buecher oder importiere bestehende write-book-template Projekte."
+        en: "Create backups of your books or import existing write-book-template projects."
+      icon: "archive"
+
+sample_book:
+  title:
+    de: "Mein erstes Buch"
+    en: "My First Book"
+  author: "Bibliogon"
+  language: "de"
+  description:
+    de: "Ein Beispielbuch zum Kennenlernen von Bibliogon"
+    en: "A sample book to explore Bibliogon"
+  chapters:
+    - title:
+        de: "Willkommen"
+        en: "Welcome"
+      content:
+        de: "Willkommen bei Bibliogon! Dies ist ein Beispielkapitel. Du kannst es bearbeiten oder loeschen und mit deinem eigenen Buch beginnen.\n\nNutze die Toolbar oben fuer Formatierung, oder wechsle in den Markdown-Modus."
+        en: "Welcome to Bibliogon! This is a sample chapter. You can edit or delete it and start your own book.\n\nUse the toolbar above for formatting, or switch to Markdown mode."
+    - title:
+        de: "Kapitelstruktur"
+        en: "Chapter Structure"
+      content:
+        de: "Bibliogon unterstuetzt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Ueber den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
+        en: "Bibliogon supports different chapter types:\n\n- Regular chapters\n- Preface\n- Foreword\n- Acknowledgments\n- About the Author\n- Appendix, Glossary, Bibliography\n\nThese appear in the sidebar in their own sections."
+    - title:
+        de: "Export und Weiterverarbeitung"
+        en: "Export and Processing"
+      content:
+        de: "Dein Buch kann in drei Formaten exportiert werden:\n\n1. **EPUB** - Fuer E-Reader und digitale Veroeffentlichung\n2. **PDF** - Fuer Druck und Weitergabe\n3. **ZIP** - Projektstruktur im write-book-template Format, kompatibel mit Pandoc"
+        en: "Your book can be exported in three formats:\n\n1. **EPUB** - For e-readers and digital publishing\n2. **PDF** - For printing and sharing\n3. **ZIP** - Project structure in write-book-template format, compatible with Pandoc"

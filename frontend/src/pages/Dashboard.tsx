@@ -3,7 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {api, Book, BookCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
-import {Plus, BookOpen, Download, Upload, FolderUp, Settings} from "lucide-react";
+import {Plus, BookOpen, Download, Upload, FolderUp, Settings, HelpCircle, Rocket} from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
 export default function Dashboard() {
@@ -82,6 +82,20 @@ export default function Dashboard() {
                     </div>
                     <div style={styles.headerActions}>
                         <ThemeToggle />
+                        <button
+                            className="btn btn-ghost"
+                            onClick={() => navigate("/get-started")}
+                            title="Erste Schritte"
+                        >
+                            <Rocket size={16}/>
+                        </button>
+                        <button
+                            className="btn btn-ghost"
+                            onClick={() => navigate("/help")}
+                            title="Hilfe"
+                        >
+                            <HelpCircle size={16}/>
+                        </button>
                         <button
                             className="btn btn-ghost"
                             onClick={() => navigate("/settings")}
