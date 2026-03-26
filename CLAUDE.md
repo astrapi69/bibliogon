@@ -27,12 +27,33 @@ Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverw
 - **Export-Plugin:** Pandoc, write-book-template Struktur
 - **Tooling:** Poetry, npm, Docker, Make
 
-## Projekt starten
+## Befehle
 
 ```bash
-make install   # Poetry install + npm install
-make dev       # Backend (8000) + Frontend (5173) parallel
-make test      # pytest im Backend
+# Entwicklung
+make install              # Alle Abhaengigkeiten (Poetry, npm, PluginForge, Plugins)
+make dev                  # Backend (8000) + Frontend (5173) parallel, Strg+C stoppt beide
+make dev-bg               # Hintergrund-Modus
+make dev-down             # Hintergrund stoppen
+
+# Tests
+make test                 # ALLE Tests (PluginForge + alle Plugins + Backend)
+make test-backend         # Nur Backend-Tests
+make test-pluginforge     # Nur PluginForge-Framework-Tests
+make test-plugins         # Alle 4 Plugin-Tests
+make test-plugin-export   # Nur Export-Plugin
+make test-plugin-grammar  # Nur Grammar-Plugin
+make test-plugin-kdp      # Nur KDP-Plugin
+make test-plugin-kinderbuch # Nur Kinderbuch-Plugin
+
+# Produktion
+make prod                 # Docker Compose build + start
+make prod-down            # Docker stoppen
+make prod-logs            # Docker Logs verfolgen
+
+# Sonstiges
+make clean                # Build-Artefakte und Caches entfernen
+make help                 # Alle Targets anzeigen
 ```
 
 ## Verzeichnisstruktur
@@ -51,7 +72,8 @@ bibliogon/
 │   │   │   ├── chapters.py      # Chapter CRUD + Reorder
 │   │   │   ├── assets.py        # Asset Upload/Delete
 │   │   │   ├── backup.py        # Full-Data Backup, Restore, Project Import
-│   │   │   └── licenses.py      # License Management (activate, list, deactivate)
+│   │   │   ├── licenses.py      # License Management (activate, list, deactivate)
+│   │   │   └── settings.py      # Settings API (app.yaml + Plugin-Config lesen/schreiben)
 │   │   └── services/
 │   ├── config/
 │   │   ├── app.yaml             # App-Konfiguration
@@ -100,7 +122,7 @@ bibliogon/
 │       └── tests/                       # 7 Tests
 ├── frontend/
 │   ├── src/
-│   │   ├── api/client.ts        # Typed API Client (Books, Chapters, Assets, Backup, Licenses)
+│   │   ├── api/client.ts        # Typed API Client (Books, Chapters, Assets, Backup, Licenses, Settings)
 │   │   ├── hooks/useTheme.ts    # Dark/Light Theme Hook mit localStorage
 │   │   ├── components/
 │   │   │   ├── Editor.tsx       # TipTap WYSIWYG + Markdown-Modus, Autosave, Wortzaehler
@@ -111,7 +133,8 @@ bibliogon/
 │   │   │   └── CreateBookModal.tsx
 │   │   ├── pages/
 │   │   │   ├── Dashboard.tsx    # Buch-Liste, Backup/Import/Projekt-Import
-│   │   │   └── BookEditor.tsx   # Editor-Layout mit Sidebar
+│   │   │   ├── BookEditor.tsx   # Editor-Layout mit Sidebar
+│   │   │   └── Settings.tsx     # Einstellungen (App, Plugins, Lizenzen)
 │   │   └── styles/global.css    # CSS Variables, Light + Dark Theme
 │   ├── package.json
 │   └── vite.config.ts
@@ -131,6 +154,8 @@ bibliogon/
 - Internes Speicherformat: TipTap JSON (nicht HTML)
 - SQLAlchemy 2.0 Mapped Columns, Pydantic v2 mit ConfigDict(from_attributes=True)
 - CSS Theming via Custom Properties, Dark Mode via [data-theme="dark"]
+- Plugins sind eigenstaendige Pakete unter plugins/
+- Jedes Plugin hat eigene Tests unter tests/
 
 ## API-Endpunkte
 
@@ -147,6 +172,11 @@ bibliogon/
 - POST /api/backup/import
 - POST /api/backup/import-project
 - GET/POST/DELETE /api/licenses
+- GET/PATCH /api/settings/app
+- GET /api/settings/plugins
+- GET/PATCH /api/settings/plugins/{name}
+- POST /api/settings/plugins/{name}/enable
+- POST /api/settings/plugins/{name}/disable
 - GET /api/plugins/manifests
 - GET /api/i18n/{lang}
 - GET /api/health
@@ -213,6 +243,8 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - plugin-grammar (LanguageTool)
 - i18n: ES, FR, EL hinzugefuegt (5 Sprachen total)
 - Dark Mode
+- Settings-Seite (/settings) mit App-, Plugin- und Lizenz-Konfiguration
+- Settings API zum Lesen/Schreiben von YAML-Configs ueber die UI
 
 ## Naechste Schritte
 
