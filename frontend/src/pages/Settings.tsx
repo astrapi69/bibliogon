@@ -20,17 +20,24 @@ export default function Settings() {
     }, []);
 
     const loadData = async () => {
+        // Load each independently so one failure doesn't block the rest
         try {
-            const [app, plugins, lics] = await Promise.all([
-                api.settings.getApp(),
-                api.settings.listPlugins(),
-                api.licenses.list(),
-            ]);
+            const app = await api.settings.getApp();
             setAppConfig(app);
+        } catch (err) {
+            console.error("Failed to load app settings:", err);
+        }
+        try {
+            const plugins = await api.settings.listPlugins();
             setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
+        } catch (err) {
+            console.error("Failed to load plugin configs:", err);
+        }
+        try {
+            const lics = await api.licenses.list();
             setLicenses(lics);
         } catch (err) {
-            console.error("Failed to load settings:", err);
+            console.error("Failed to load licenses:", err);
         }
     };
 
