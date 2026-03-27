@@ -27,7 +27,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 - **PluginForge:** Python 3.11+, pluggy, PyYAML (PyPI: pluginforge ^0.5.0)
 - **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
 - **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite, Lucide Icons
-- **Export-Plugin:** Pandoc, write-book-template Struktur
+- **Export-Plugin:** manuscripta (PyPI ^0.6.0), Pandoc, write-book-template Struktur
 - **Tooling:** Poetry, npm, Docker, Make
 
 ## Befehle
@@ -92,8 +92,8 @@ bibliogon/
 │   │   │   ├── plugin.py                # ExportPlugin(BasePlugin)
 │   │   │   ├── tiptap_to_md.py          # TipTap-JSON -> Markdown
 │   │   │   ├── scaffolder.py            # write-book-template Struktur
-│   │   │   ├── pandoc_runner.py         # Pandoc EPUB/PDF
-│   │   │   └── routes.py               # /api/books/{id}/export/{fmt}
+│   │   │   ├── pandoc_runner.py         # Wrapper um manuscripta compile_book()
+│   │   │   └── routes.py               # /api/books/{id}/export/{fmt} (epub,pdf,docx,html,markdown,project)
 │   │   └── tests/                       # 23 Tests
 │   ├── bibliogon-plugin-kinderbuch/     # Kinderbuch-Layout (Proprietary, depends_on: export)
 │   │   ├── bibliogon_kinderbuch/
@@ -134,6 +134,7 @@ bibliogon/
 │   │   │   ├── Toolbar.tsx      # Formatting Toolbar + Markdown Toggle
 │   │   │   ├── ChapterSidebar.tsx # Kapitel-Sidebar mit Drag-and-Drop, Sektionen
 │   │   │   ├── ThemeToggle.tsx  # Dark/Light Mode Button
+│   │   │   ├── ExportDialog.tsx  # Export-Modal (Format, Buchtyp, TOC-Tiefe)
 │   │   │   ├── BookCard.tsx     # Buch-Karte fuer Dashboard
 │   │   │   └── CreateBookModal.tsx
 │   │   ├── pages/
@@ -165,6 +166,9 @@ bibliogon/
 - Jedes Plugin hat eigene Tests unter tests/
 - Plugin-Abhaengigkeiten als Klassen-Attribut: `depends_on = ["export"]`
 - Lizenzierung ist bibliogon-spezifisch (app/licensing.py), nicht Teil von PluginForge
+- Export nutzt manuscripta (PyPI) - Plugin-Config in export.yaml ist 1:1 manuscripta export-settings.yaml Format
+- Settings-UI: Skalare Werte (string, number) editierbar, Listen/Dicts read-only anzeigen
+- Export-Workflow: Sidebar "Exportieren" Button oeffnet Dialog mit Format/Buchtyp/TOC-Tiefe Auswahl
 
 ## PluginForge v0.5.0 API (Kurzreferenz)
 
@@ -292,6 +296,9 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - Lizenzierung in Backend verschoben (app/licensing.py)
 - pre_activate Callback fuer Lizenzpruefung
 - plugin-help und plugin-getstarted als Standard-Plugins
+- Export-Plugin auf manuscripta umgestellt (kein eigener Pandoc-Aufruf mehr)
+- Export-Dialog mit Format/Buchtyp/TOC-Tiefe Auswahl vor dem Export
+- Settings: Listen/Dicts read-only, nur skalare Werte editierbar
 
 ## Naechste Schritte
 
@@ -320,4 +327,5 @@ PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/p
 ## Verwandte Projekte
 
 - [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin-Framework (PyPI: pluginforge)
+- [manuscripta](https://github.com/astrapi69/manuscripta) - Buch-Export-Pipeline (PyPI: manuscripta) - wird vom Export-Plugin genutzt
 - [write-book-template](https://github.com/astrapi69/write-book-template) - Ziel-Verzeichnisstruktur fuer den Export

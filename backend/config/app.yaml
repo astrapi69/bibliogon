@@ -4,24 +4,22 @@ app:
   description: Open-source book authoring platform
   default_language: de
   supported_languages:
-    - de
-    - en
-    - es
-    - fr
-    - el
-
+  - de
+  - en
+  - es
+  - fr
+  - el
 plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins
   enabled:
-    - export
-    - help
-    - getstarted
+  - help
+  - getstarted
+  - export
   disabled:
-    - grammar
-    - kinderbuch
-    - kdp
-
+  - grammar
+  - kinderbuch
+  - kdp
 ui:
   title: Bibliogon
   subtitle: Buecher schreiben und exportieren

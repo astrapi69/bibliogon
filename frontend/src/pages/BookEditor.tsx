@@ -3,11 +3,13 @@ import {useParams, useNavigate} from "react-router-dom";
 import {api, BookDetail, Chapter, ChapterType} from "../api/client";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
+import ExportDialog from "../components/ExportDialog";
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const [book, setBook] = useState<BookDetail | null>(null);
+    const [showExport, setShowExport] = useState(false);
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -100,9 +102,8 @@ export default function BookEditor() {
         }
     };
 
-    const handleExport = (fmt: "epub" | "pdf" | "project") => {
-        if (!bookId) return;
-        window.open(api.books.exportUrl(bookId, fmt), "_blank");
+    const handleExport = () => {
+        setShowExport(true);
     };
 
     if (loading) {
@@ -151,6 +152,14 @@ export default function BookEditor() {
                         Erstes Kapitel anlegen
                     </button>
                 </div>
+            )}
+
+            {showExport && bookId && (
+                <ExportDialog
+                    bookId={bookId}
+                    bookTitle={book.title}
+                    onClose={() => setShowExport(false)}
+                />
             )}
         </div>
     );

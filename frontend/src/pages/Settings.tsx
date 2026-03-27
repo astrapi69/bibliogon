@@ -374,8 +374,18 @@ function PluginCard({name, displayName, description, version, license, enabled, 
         setLocalSettings((prev) => ({...prev, [key]: value}));
     };
 
-    const flatSettings = flattenSettings(localSettings);
-    const hasSettings = flatSettings.length > 0;
+    // Split settings into editable scalars and read-only complex values
+    const scalarSettings: [string, unknown][] = [];
+    const complexSettings: [string, unknown][] = [];
+    for (const [key, value] of Object.entries(localSettings)) {
+        if (value === null || value === undefined) continue;
+        if (typeof value === "object") {
+            complexSettings.push([key, value]);
+        } else {
+            scalarSettings.push([key, value]);
+        }
+    }
+    const hasSettings = scalarSettings.length > 0 || complexSettings.length > 0;
 
     const isPremium = license !== "MIT" && license.toLowerCase() !== "free";
 
@@ -431,23 +441,48 @@ function PluginCard({name, displayName, description, version, license, enabled, 
             </div>
 
             {expanded && hasSettings && (
-                <div style={styles.settingsGrid}>
-                    {flatSettings.map(([key, value]) => (
-                        <div key={key} className="field">
-                            <label className="label">{key}</label>
-                            <input
-                                className="input"
-                                value={String(value)}
-                                onChange={(e) => {
-                                    const v = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value);
-                                    updateSetting(key, v as string | number);
-                                }}
-                            />
+                <div style={{marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)"}}>
+                    {/* Editable scalar settings */}
+                    {scalarSettings.length > 0 && (
+                        <>
+                            <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
+                                Einstellungen
+                            </h4>
+                            <div style={styles.settingsGrid}>
+                                {scalarSettings.map(([key, value]) => (
+                                    <div key={key} className="field">
+                                        <label className="label">{key}</label>
+                                        <input
+                                            className="input"
+                                            value={String(value)}
+                                            onChange={(e) => {
+                                                const v = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value);
+                                                updateSetting(key, v as string | number);
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="btn btn-primary btn-sm mt-1" onClick={() => onSave(localSettings)}>
+                                <Save size={12}/> Speichern
+                            </button>
+                        </>
+                    )}
+
+                    {/* Read-only complex settings */}
+                    {complexSettings.length > 0 && (
+                        <div style={{marginTop: scalarSettings.length > 0 ? 16 : 0}}>
+                            <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
+                                Konfiguration (nur lesen)
+                            </h4>
+                            {complexSettings.map(([key, value]) => (
+                                <div key={key} style={{marginBottom: 12}}>
+                                    <label className="label">{key}</label>
+                                    {renderReadOnlyValue(value)}
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                    <button className="btn btn-primary btn-sm" onClick={() => onSave(localSettings)}>
-                        <Save size={12}/> Speichern
-                    </button>
+                    )}
                 </div>
             )}
         </div>
@@ -558,17 +593,39 @@ function getLocalized(value: unknown, fallback: string): string {
     return fallback;
 }
 
-function flattenSettings(obj: Record<string, unknown>, prefix = ""): [string, unknown][] {
-    const result: [string, unknown][] = [];
-    for (const [key, value] of Object.entries(obj)) {
-        const fullKey = prefix ? `${prefix}.${key}` : key;
-        if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-            result.push(...flattenSettings(value as Record<string, unknown>, fullKey));
-        } else if (!Array.isArray(value)) {
-            result.push([fullKey, value]);
-        }
+function renderReadOnlyValue(value: unknown): React.ReactNode {
+    if (Array.isArray(value)) {
+        return (
+            <div style={{display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4}}>
+                {value.map((item, i) => (
+                    <span key={i} style={{
+                        fontSize: "0.75rem", padding: "2px 8px",
+                        background: "var(--bg-secondary)", borderRadius: 4,
+                        color: "var(--text-secondary)", fontFamily: "var(--font-mono)",
+                    }}>
+                        {typeof item === "object" ? JSON.stringify(item) : String(item)}
+                    </span>
+                ))}
+            </div>
+        );
     }
-    return result;
+    if (typeof value === "object" && value !== null) {
+        const obj = value as Record<string, unknown>;
+        return (
+            <div style={{marginTop: 4, paddingLeft: 12, borderLeft: "2px solid var(--border)"}}>
+                {Object.entries(obj).map(([k, v]) => (
+                    <div key={k} style={{marginBottom: 4}}>
+                        <span style={{fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)"}}>{k}: </span>
+                        {typeof v === "object" && v !== null
+                            ? renderReadOnlyValue(v)
+                            : <span style={{fontSize: "0.8125rem", color: "var(--text-secondary)"}}>{String(v ?? "null")}</span>
+                        }
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return <span style={{fontSize: "0.8125rem", color: "var(--text-secondary)"}}>{String(value)}</span>;
 }
 
 // --- Styles ---
@@ -621,7 +678,6 @@ const styles: Record<string, React.CSSProperties> = {
         borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-muted)",
     },
     settingsGrid: {
-        marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)",
         display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12,
     },
     licenseRow: {

@@ -6,7 +6,6 @@ import {
     GripVertical,
     ChevronLeft,
     Download,
-    FileText,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -18,7 +17,7 @@ interface Props {
     onAdd: (chapterType?: ChapterType) => void;
     onDelete: (id: string) => void;
     onBack: () => void;
-    onExport: (fmt: "epub" | "pdf" | "project") => void;
+    onExport: () => void;
     onReorder: (chapterIds: string[]) => void;
 }
 
@@ -213,18 +212,9 @@ export default function ChapterSidebar({
 
             {/* Export */}
             <div style={styles.exportSection}>
-                <span style={styles.listLabel}>Export</span>
-                <div style={styles.exportBtns}>
-                    <button style={styles.exportBtn} onClick={() => onExport("epub")}>
-                        <Download size={14}/> EPUB
-                    </button>
-                    <button style={styles.exportBtn} onClick={() => onExport("pdf")}>
-                        <FileText size={14}/> PDF
-                    </button>
-                    <button style={styles.exportBtn} onClick={() => onExport("project")}>
-                        <Download size={14}/> ZIP
-                    </button>
-                </div>
+                <button style={styles.exportBtn} onClick={onExport}>
+                    <Download size={14}/> Exportieren...
+                </button>
             </div>
         </aside>
     );
@@ -288,8 +278,8 @@ const styles: Record<string, React.CSSProperties> = {
         opacity: 0, transition: "opacity 150ms",
     },
     exportSection: { padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" },
-    exportBtns: { display: "flex", gap: 8, marginTop: 8 },
     exportBtn: {
+        width: "100%",
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
         padding: "8px 0", background: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.08)", color: "var(--text-sidebar)",
