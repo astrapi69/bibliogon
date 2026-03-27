@@ -6,29 +6,67 @@ plugin:
     es: "Exportar libro"
     fr: "Export de livre"
   description:
-    de: "EPUB, PDF und Projektstruktur-Export via Pandoc"
-    en: "EPUB, PDF and project structure export via Pandoc"
+    de: "EPUB, PDF, DOCX, HTML und Projektstruktur-Export via manuscripta/Pandoc"
+    en: "EPUB, PDF, DOCX, HTML and project structure export via manuscripta/Pandoc"
   version: "1.0.0"
   license: "MIT"
   depends_on: []
   api_version: "1"
 
 settings:
-  pandoc_path: "pandoc"
   default_format: "epub"
-  pdf_engine: "xelatex"
   toc_depth: 2
+  epub_skip_toc_files:
+    - "front-matter/toc.md"
+    - "front-matter/toc-print.md"
+  formats:
+    markdown: "gfm"
+    pdf: "pdf"
+    epub: "epub"
+    docx: "docx"
+    html: "html"
+  section_order:
+    default:
+      - "front-matter/toc.md"
+      - "front-matter/foreword.md"
+      - "front-matter/preface.md"
+      - "chapters"
+      - "back-matter/epilogue.md"
+      - "back-matter/glossary.md"
+      - "back-matter/appendix.md"
+      - "back-matter/acknowledgments.md"
+      - "back-matter/about-the-author.md"
+      - "back-matter/bibliography.md"
+      - "back-matter/imprint.md"
+    paperback:
+      - "front-matter/toc-print.md"
+      - "front-matter/foreword.md"
+      - "front-matter/preface.md"
+      - "chapters"
+      - "back-matter/epilogue.md"
+      - "back-matter/glossary.md"
+      - "back-matter/appendix.md"
+      - "back-matter/acknowledgments.md"
+      - "back-matter/about-the-author.md"
+      - "back-matter/bibliography.md"
+      - "back-matter/imprint.md"
 
-formats:
+ui_formats:
   - id: "epub"
     label: {de: "EPUB", en: "EPUB"}
-    extension: "epub"
     media_type: "application/epub+zip"
   - id: "pdf"
     label: {de: "PDF", en: "PDF"}
-    extension: "pdf"
     media_type: "application/pdf"
+  - id: "docx"
+    label: {de: "Word", en: "Word"}
+    media_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  - id: "html"
+    label: {de: "HTML", en: "HTML"}
+    media_type: "text/html"
+  - id: "markdown"
+    label: {de: "Markdown", en: "Markdown"}
+    media_type: "text/markdown"
   - id: "project"
     label: {de: "Projektstruktur (ZIP)", en: "Project Structure (ZIP)"}
-    extension: "zip"
     media_type: "application/zip"

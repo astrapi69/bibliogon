@@ -17,6 +17,7 @@ def scaffold_project(
     book: dict[str, Any],
     chapters: list[dict[str, Any]],
     output_dir: Path,
+    export_settings: dict[str, Any] | None = None,
 ) -> Path:
     """Create manuscripta-compatible project structure for a book.
 
@@ -53,8 +54,8 @@ def scaffold_project(
     # Write config/metadata.yaml (manuscripta format)
     _write_metadata(project_dir / "config" / "metadata.yaml", book)
 
-    # Write config/export-settings.yaml (manuscripta format)
-    _write_export_settings(project_dir / "config" / "export-settings.yaml")
+    # Write config/export-settings.yaml (manuscripta format) from plugin config
+    _write_export_settings(project_dir / "config" / "export-settings.yaml", export_settings)
 
     # Write chapters as Markdown
     for chapter in chapters:
@@ -93,9 +94,12 @@ def _write_metadata(path: Path, book: dict[str, Any]) -> None:
         yaml.dump(metadata, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
-def _write_export_settings(path: Path) -> None:
-    """Write config/export-settings.yaml with manuscripta defaults."""
-    settings: dict[str, Any] = {
+def _write_export_settings(path: Path, export_settings: dict[str, Any] | None = None) -> None:
+    """Write config/export-settings.yaml in manuscripta format.
+
+    Uses the plugin config settings if provided, otherwise sensible defaults.
+    """
+    defaults: dict[str, Any] = {
         "formats": {
             "markdown": "gfm",
             "pdf": "pdf",
@@ -110,16 +114,30 @@ def _write_export_settings(path: Path) -> None:
                 "front-matter/foreword.md",
                 "front-matter/preface.md",
                 "chapters",
+                "back-matter/epilogue.md",
                 "back-matter/glossary.md",
                 "back-matter/appendix.md",
                 "back-matter/acknowledgments.md",
                 "back-matter/about-the-author.md",
                 "back-matter/bibliography.md",
+                "back-matter/imprint.md",
             ],
         },
     }
+
+    if export_settings:
+        # Merge plugin config into defaults (plugin config wins)
+        if "formats" in export_settings:
+            defaults["formats"] = export_settings["formats"]
+        if "toc_depth" in export_settings:
+            defaults["toc_depth"] = export_settings["toc_depth"]
+        if "section_order" in export_settings:
+            defaults["section_order"] = export_settings["section_order"]
+        if "epub_skip_toc_files" in export_settings:
+            defaults["epub_skip_toc_files"] = export_settings["epub_skip_toc_files"]
+
     with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(settings, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        yaml.dump(defaults, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:

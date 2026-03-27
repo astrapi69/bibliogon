@@ -29,7 +29,7 @@ class ExportPlugin(BasePlugin):
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         """Return export-related UI manifest."""
-        formats = self.config.get("formats", [])
+        ui_formats = self.config.get("ui_formats", [])
         return {
             "sidebar_actions": [
                 {
@@ -38,6 +38,6 @@ class ExportPlugin(BasePlugin):
                     "icon": "download",
                     "action": f"/api/books/{{book_id}}/export/{fmt['id']}",
                 }
-                for fmt in formats
+                for fmt in ui_formats
             ],
         }

@@ -106,8 +106,18 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_export_"))
 
     try:
-        # Scaffold manuscripta-compatible project structure
-        project_dir = scaffold_project(book_data, chapters_data, tmp_dir)
+        # Load plugin config for export settings
+        import yaml
+        config_path = Path("config/plugins/export.yaml")
+        config: dict[str, Any] = {}
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        export_settings = config.get("settings", {})
+
+        # Scaffold manuscripta-compatible project structure with export settings
+        project_dir = scaffold_project(book_data, chapters_data, tmp_dir, export_settings)
 
         if fmt == "project":
             zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
@@ -117,14 +127,7 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
                 filename=f"{project_dir.name}.zip",
             )
 
-        # Export via manuscripta
-        import yaml
-        config_path = Path("config/plugins/export.yaml")
-        config: dict[str, Any] = {}
-        if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f) or {}
-
+        # Export via manuscripta (reads export-settings.yaml from scaffolded project)
         output_path = run_pandoc(project_dir, fmt, config)
 
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
