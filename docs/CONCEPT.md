@@ -2,8 +2,9 @@
 
 **Repository:** [github.com/astrapi69/bibliogon](https://github.com/astrapi69/bibliogon)
 **Verwandtes Projekt:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
-**Version:** 0.2.0 (geplant)
-**Stand:** 2026-03-26
+**PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
+**Version:** 0.6.0
+**Stand:** 2026-03-27
 
 ---
 
@@ -59,7 +60,7 @@ PluginForge ist ein eigenstaendiges PyPI-Paket:
 ```toml
 # bibliogon/backend/pyproject.toml
 [tool.poetry.dependencies]
-pluginforge = "^0.1.0"
+pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
 ```
 
 Ein anderer Entwickler kann PluginForge unabhaengig nutzen:
@@ -67,7 +68,7 @@ Ein anderer Entwickler kann PluginForge unabhaengig nutzen:
 ```toml
 # podcast-tool/pyproject.toml
 [tool.poetry.dependencies]
-pluginforge = "^0.1.0"
+pluginforge = "^0.5.0"
 ```
 
 ### 2.3 Tech-Stack
@@ -223,168 +224,74 @@ pluggy ist der De-facto-Standard fuer Python Plugin-Systeme. Pytest, tox, datase
 
 PluginForge erfindet das Rad nicht neu, sondern baut die Schichten darauf, die pluggy fehlen: Konfiguration, Lifecycle, Web-Integration.
 
-### 3.4 Plugin-Interface
+### 3.4 Plugin-Interface (v0.5.0)
 
 ```python
-# pluginforge/base.py
+# pluginforge/base.py (PyPI-Paket, nicht lokal)
 
 from abc import ABC
 from typing import Any
 
 class BasePlugin(ABC):
-    """Base class for all PluginForge plugins."""
-
     name: str
     version: str = "0.1.0"
     api_version: str = "1"
-    config: dict[str, Any] = {}
+    description: str = ""
+    author: str = ""
+    depends_on: list[str] = []        # Plugin-Abhaengigkeiten als Klassen-Attribut
+    config_schema: dict[str, type] | None = None  # Optionale Config-Validierung
 
-    def init(self, app_config: dict, plugin_config: dict) -> None:
-        """Called when the plugin is loaded. Receives merged config."""
-        self.config = plugin_config
-
-    def activate(self) -> None:
-        """Called when the plugin is enabled."""
-        pass
-
-    def deactivate(self) -> None:
-        """Called when the plugin is disabled. Cleanup resources."""
-        pass
-
-    def get_routes(self) -> list:
-        """Return FastAPI routers to mount. Optional."""
-        return []
-
-    def get_migrations_dir(self) -> str | None:
-        """Return path to Alembic migration scripts. Optional."""
-        return None
-
-    def get_frontend_manifest(self) -> dict | None:
-        """Return manifest for frontend UI components. Optional."""
-        return None
+    def init(self, app_config, plugin_config) -> None: ...
+    def activate(self) -> None: ...
+    def deactivate(self) -> None: ...
+    def get_routes(self) -> list: ...           # FastAPI Router
+    def get_frontend_manifest(self) -> dict | None: ...  # UI-Manifest
+    def health(self) -> dict[str, Any]: ...     # Health Check
+    def get_migrations_dir(self) -> str | None: ...      # Alembic
 ```
 
 ```python
-# pluginforge/manager.py
+# Bibliogon main.py - Integration mit PluginForge v0.5.0
+from pluginforge import PluginManager
 
-import pluggy
-import yaml
-from pathlib import Path
-from .base import BasePlugin
+manager = PluginManager(
+    config_path="config/app.yaml",
+    pre_activate=license_check,  # Callback vor Plugin-Aktivierung
+    api_version="1",
+)
+manager.register_hookspecs(BibliogonHookSpec)
+manager.discover_plugins()       # Entry Points laden, filtern, sortieren, aktivieren
+manager.mount_routes(app)        # FastAPI-Router mounten (prefix="/api")
 
-class PluginManager:
-    """Manages plugin lifecycle, config, and hook dispatch."""
-
-    def __init__(self, app_config_path: str = "config/app.yaml"):
-        self.app_config = self._load_yaml(app_config_path)
-        self.pm = pluggy.PluginManager(self.app_config["plugins"]["entry_point_group"])
-        self.plugins: dict[str, BasePlugin] = {}
-        self._i18n: dict[str, dict] = {}
-
-    def load_hookspecs(self, spec_module) -> None:
-        """Register hook specifications from the application."""
-        self.pm.add_hookspecs(spec_module)
-
-    def discover_and_load(self) -> None:
-        """Discover, configure, and activate all enabled plugins."""
-        group = self.app_config["plugins"]["entry_point_group"]
-        enabled = set(self.app_config["plugins"].get("enabled", []))
-        disabled = set(self.app_config["plugins"].get("disabled", []))
-        config_dir = Path(self.app_config["plugins"].get("config_dir", "config/plugins"))
-
-        # Load via pluggy entry points
-        self.pm.load_setuptools_entrypoints(group)
-
-        # Additionally handle our lifecycle
-        for ep_name, plugin_obj in self._iter_loaded():
-            if ep_name in disabled:
-                self.pm.unregister(plugin_obj)
-                continue
-            if enabled and ep_name not in enabled:
-                self.pm.unregister(plugin_obj)
-                continue
-
-            # Load plugin YAML config
-            plugin_config = {}
-            plugin_yaml = config_dir / f"{ep_name}.yaml"
-            if plugin_yaml.exists():
-                plugin_config = self._load_yaml(str(plugin_yaml))
-
-            # Check dependencies
-            depends = plugin_config.get("plugin", {}).get("depends_on", [])
-            for dep in depends:
-                if dep not in enabled and dep not in self.plugins:
-                    raise RuntimeError(
-                        f"Plugin '{ep_name}' requires '{dep}' which is not enabled"
-                    )
-
-            # Lifecycle
-            if hasattr(plugin_obj, "init"):
-                plugin_obj.init(self.app_config, plugin_config)
-            if hasattr(plugin_obj, "activate"):
-                plugin_obj.activate()
-
-            self.plugins[ep_name] = plugin_obj
-
-    def get_all_routes(self) -> list:
-        """Collect FastAPI routers from all active plugins."""
-        routes = []
-        for plugin in self.plugins.values():
-            if hasattr(plugin, "get_routes"):
-                routes.extend(plugin.get_routes())
-        return routes
-
-    def get_all_frontend_manifests(self) -> dict:
-        """Collect frontend UI manifests from all active plugins."""
-        manifests = {}
-        for name, plugin in self.plugins.items():
-            if hasattr(plugin, "get_frontend_manifest"):
-                manifest = plugin.get_frontend_manifest()
-                if manifest:
-                    manifests[name] = manifest
-        return manifests
-
-    def load_i18n(self, lang: str) -> dict:
-        """Load i18n strings for a language, merged from app and plugins."""
-        if lang in self._i18n:
-            return self._i18n[lang]
-        i18n_path = Path(f"config/i18n/{lang}.yaml")
-        strings = self._load_yaml(str(i18n_path)) if i18n_path.exists() else {}
-        self._i18n[lang] = strings
-        return strings
-
-    def unload(self, name: str) -> None:
-        """Deactivate and remove a plugin."""
-        if name in self.plugins:
-            plugin = self.plugins[name]
-            if hasattr(plugin, "deactivate"):
-                plugin.deactivate()
-            self.pm.unregister(plugin)
-            del self.plugins[name]
-
-    @staticmethod
-    def _load_yaml(path: str) -> dict:
-        with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-
-    def _iter_loaded(self):
-        """Iterate over plugins loaded by pluggy."""
-        for plugin in self.pm.get_plugins():
-            name = self.pm.parse_hookimpl_opts(plugin, "__name__") or type(plugin).__name__
-            yield name, plugin
+# Laufzeit-API
+manager.get_active_plugins()     # Liste aktiver Plugins
+manager.get_plugin("export")     # Plugin-Instanz nach Name
+manager.deactivate_plugin("x")   # Deaktivieren + Hook-Unregister
+manager.reload_plugin("x")       # Hot Reload
+manager.reload_config()           # Config von Disk neu laden
+manager.health_check()            # Health aller Plugins
+manager.get_load_errors()         # Fehler beim Laden
+manager.call_hook("hook_name")    # Hook aufrufen
+manager.get_text("key", "de")     # i18n String
 ```
 
-### 3.5 PluginForge Paketstruktur
+### 3.5 PluginForge Repository
+
+PluginForge ist ein eigenstaendiges PyPI-Paket: https://github.com/astrapi69/pluginforge
 
 ```
-pluginforge/
+pluginforge/       # Eigenes Repo, nicht Teil von Bibliogon
 ├── pluginforge/
 │   ├── __init__.py          # Public API: BasePlugin, PluginManager
-│   ├── base.py              # BasePlugin ABC
-│   ├── manager.py           # PluginManager (wraps pluggy)
-│   ├── config.py            # YAML-Config Loader und Validierung
-│   ├── fastapi.py           # FastAPI-Integration (Router mounting)
-│   └── migration.py         # Alembic-Helfer fuer Plugin-Tabellen
+│   ├── base.py              # BasePlugin ABC (lifecycle, routes, health, manifest)
+│   ├── manager.py           # PluginManager (wraps pluggy, pre_activate, hot reload)
+│   ├── config.py            # YAML-Config Loader
+│   ├── discovery.py         # Entry Points + topologische Sortierung
+│   ├── lifecycle.py         # init/activate/deactivate Steuerung
+│   ├── fastapi_ext.py       # FastAPI-Router mounten (konfigurierbarer prefix)
+│   ├── alembic_ext.py       # Alembic-Migrations sammeln
+│   ├── i18n.py              # Mehrsprachige Strings aus YAML
+│   └── security.py          # Plugin-Name-Validierung, Path Traversal Prevention
 ├── tests/
 ├── pyproject.toml
 ├── README.md
@@ -457,31 +364,28 @@ UserBackup
   path: str
 ```
 
-### 4.2 Integration mit PluginForge
+### 4.2 Integration mit PluginForge v0.5.0
 
 ```python
 # bibliogon/backend/app/main.py
 
 from pluginforge import PluginManager
-import bibliogon_hookspecs as hookspecs
 
-manager = PluginManager("config/app.yaml")
-manager.load_hookspecs(hookspecs)
-manager.discover_and_load()
+manager = PluginManager(
+    config_path="config/app.yaml",
+    pre_activate=license_check,  # Lizenzpruefung vor Aktivierung
+    api_version="1",
+)
+manager.register_hookspecs(BibliogonHookSpec)
+manager.discover_plugins()
+manager.mount_routes(app)  # FastAPI-Router mounten
 
-# Plugin-Routen in FastAPI einbinden
-for router in manager.get_all_routes():
-    app.include_router(router, prefix="/api")
+# Health Check und Load Errors
+@app.get("/api/plugins/health")
+def health(): return manager.health_check()
 
-# Frontend-Manifests bereitstellen
-@app.get("/api/plugins/manifests")
-def get_manifests():
-    return manager.get_all_frontend_manifests()
-
-# i18n-Strings bereitstellen
-@app.get("/api/i18n/{lang}")
-def get_i18n(lang: str):
-    return manager.load_i18n(lang)
+@app.get("/api/plugins/errors")
+def errors(): return manager.get_load_errors()
 ```
 
 ### 4.3 Internes Speicherformat
@@ -669,14 +573,29 @@ plugin:
   depends_on: ["export"]
 ```
 
-PluginForge prueft beim Laden ob alle Abhaengigkeiten aktiv sind. Fehlende Abhaengigkeiten erzeugen einen klaren Fehler.
+PluginForge prueft beim Laden ob alle Abhaengigkeiten aktiv sind (topologische Sortierung). Fehlende Abhaengigkeiten fuehren zum Ueberspringen mit Warnung (sichtbar via `get_load_errors()`). Abhaengigkeiten werden jetzt als Klassen-Attribut deklariert:
+
+```python
+class KinderbuchPlugin(BasePlugin):
+    name = "kinderbuch"
+    depends_on = ["export"]
+```
 
 ### 5.3 Plugin-Lizenzierung (Offline)
 
-Premium-Plugins nutzen signierte Lizenzschluessel:
+Lizenzierung ist bibliogon-spezifisch (nicht Teil von PluginForge) und lebt in `backend/app/licensing.py`. Die Pruefung erfolgt via `pre_activate` Callback auf dem PluginManager:
+
+```python
+manager = PluginManager(
+    config_path="config/app.yaml",
+    pre_activate=license_check,  # Return False -> Plugin wird nicht aktiviert
+)
+```
+
+Premium-Plugins nutzen HMAC-SHA256 signierte Lizenzschluessel:
 
 ```
-BIBLIOGON-KINDERBUCH-v1-XXXX-XXXX-XXXX-XXXX
+BIBLIOGON-KINDERBUCH-v1-<base64 payload>.<base64 signature>
 ```
 
 Der Schluessel enthaelt (Base64-kodiert + signiert):
@@ -684,7 +603,7 @@ Der Schluessel enthaelt (Base64-kodiert + signiert):
 - Ablaufdatum (oder "lifetime")
 - Maschinen-ID (optional, fuer Einzelplatz-Lizenzen)
 
-Validierung passiert lokal mit einem oeffentlichen Schluessel. Kein Lizenzserver noetig, kein Internet erforderlich.
+Validierung passiert lokal. Kein Lizenzserver noetig, kein Internet erforderlich. Lizenzen werden in `config/licenses.json` gespeichert und ueber die Settings-UI verwaltet.
 
 ---
 
@@ -719,50 +638,52 @@ Wenn sich Hooks aendern, wird eine neue Spec-Version erstellt (v2). Alte Plugins
 - Frontend: Dashboard, Kapitel-Editor mit TipTap, Export-Buttons
 - Deployment: Docker Compose, Makefile
 
-### Phase 2: PluginForge Framework (v0.2.0)
+### Phase 2: PluginForge Framework (v0.2.0) - erledigt
 
-- Eigenes Repository `pluginforge` anlegen
+- Eigenes Repository `pluginforge` auf GitHub und PyPI
 - PluginManager auf Basis von pluggy
 - YAML-Konfigurationssystem (App, Plugins, i18n)
 - Plugin-Lifecycle (init, activate, deactivate)
-- Plugin-Abhaengigkeitspruefung
+- Plugin-Abhaengigkeitspruefung (topologische Sortierung)
 - FastAPI-Router-Integration
-- Tests und Dokumentation
-- Auf PyPI veroeffentlichen
-- Bibliogon-Backend auf PluginForge umstellen
+- Bibliogon-Backend auf PluginForge umgestellt
 
-### Phase 3: Export als Plugin (v0.3.0)
+### Phase 3: Export als Plugin (v0.3.0) - erledigt
 
 - `bibliogon-plugin-export` als erstes Plugin
 - TipTap-JSON als internes Speicherformat (statt HTML)
 - TipTap-JSON -> Markdown Konvertierung
 - write-book-template Verzeichnisstruktur-Scaffolding
 - ZIP/EPUB/PDF-Export
-- Alten fest verdrahteten Export-Code entfernen
-- Plugin-Verwaltung in der UI (aktivieren/deaktivieren)
-- i18n fuer UI-Strings (DE, EN als Start)
+- Alten fest verdrahteten Export-Code entfernt
+- i18n fuer UI-Strings (DE, EN)
 
-### Phase 4: Import, Backup, erweiterte Kapiteltypen (v0.4.0)
+### Phase 4: Import, Backup, erweiterte Kapiteltypen (v0.4.0) - erledigt
 
 - write-book-template Projekt importieren (ZIP-Upload)
 - Full-Data-Backup und Restore
 - ChapterType-Enum fuer Front-Matter und Back-Matter
 - Asset-Upload (Cover, Bilder)
-- Alembic-Integration fuer Plugin-Tabellen
 
-### Phase 5: Erste Premium-Plugins (v0.5.0)
+### Phase 5: Erste Premium-Plugins (v0.5.0) - erledigt
 
 - `plugin-kinderbuch`: Bild-pro-Seite Layout, spezielle Templates
 - `plugin-kdp`: Metadaten-Export, Cover-Validierung, Vorschau
-- Offline-Lizenzpruefung (signierte Schluessel)
+- Offline-Lizenzpruefung (HMAC-SHA256 signierte Schluessel, LicenseStore)
+- pre_activate Callback fuer Lizenzpruefung
 
-### Phase 6: Editor-Erweiterungen (v0.6.0)
+### Phase 6: Editor-Erweiterungen (v0.6.0) - erledigt
 
-- Markdown-Modus im Editor (TipTap Umschaltung WYSIWYG/Markdown)
+- WYSIWYG/Markdown Umschaltung im Editor
 - Kapitel Drag-and-Drop Sortierung
 - Autosave-Indikator, Wortzaehler
 - `plugin-grammar`: LanguageTool-Integration
-- i18n: ES, FR, EL hinzufuegen
+- `plugin-help`: In-App Hilfe, Tastenkuerzel, FAQ
+- `plugin-getstarted`: Onboarding, Beispielbuch
+- i18n: ES, FR, EL hinzugefuegt (5 Sprachen total)
+- Dark Mode
+- Settings-Seite mit App-, Plugin- und Lizenz-Konfiguration
+- PluginForge als PyPI-Paket ausgelagert (v0.5.0)
 
 ### Phase 7: Multi-User und SaaS (v1.0.0)
 
@@ -817,12 +738,12 @@ Kein anderes Autoren-Tool kombiniert Open Source, Web-UI, Offline-Faehigkeit, ei
 
 ## 10. Offene Fragen
 
-1. **PluginForge Name:** Ist `pluginforge` als PyPI-Paketname frei? Falls belegt, Alternativen pruefen.
+1. ~~**PluginForge Name:** Ist `pluginforge` als PyPI-Paketname frei?~~ Erledigt - auf PyPI als `pluginforge` veroeffentlicht.
 
-2. **Frontend-Plugin-Loading:** Dynamisches Laden von React-Komponenten zur Laufzeit (Module Federation, importmaps) oder statisches Bundling beim Build? Dynamisch ist flexibler, statisch ist zuverlaessiger.
+2. **Frontend-Plugin-Loading:** Dynamisches Laden von React-Komponenten zur Laufzeit (Module Federation, importmaps) oder statisches Bundling beim Build?
 
 3. **PluginForge Scope Frontend:** Soll PluginForge auch ein npm-Pendant haben fuer Frontend-Plugin-Loading, oder bleibt das Bibliogon-spezifisch?
 
-4. **Plugin-DB-Migrationen:** Alembic mit mehreren `versions`-Ordnern (einer pro Plugin) oder ein zentraler Ordner mit Plugin-Prefix in den Migrationsdateien?
+4. **Plugin-DB-Migrationen:** Alembic mit mehreren `versions`-Ordnern (einer pro Plugin) oder ein zentraler Ordner mit Plugin-Prefix?
 
-5. **TipTap-JSON Groesse:** Bei langen Kapiteln kann TipTap-JSON deutlich groesser sein als HTML. Ist das ein Problem fuer SQLite-Performance, oder vernachlaessigbar?
+5. **TipTap-JSON Groesse:** Bei langen Kapiteln kann TipTap-JSON deutlich groesser sein als HTML. Relevanz fuer SQLite-Performance bei Phase 7 (PostgreSQL) pruefen.
