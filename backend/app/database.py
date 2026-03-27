@@ -1,7 +1,12 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = "sqlite:///./bibliogon.db"
+# DB file lives in the backend directory, regardless of CWD
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_DB_PATH = _BACKEND_DIR / "bibliogon.db"
+DATABASE_URL = f"sqlite:///{_DB_PATH}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
