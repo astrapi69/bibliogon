@@ -5,15 +5,20 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.licensing import LicenseStore, LicenseValidator
+
 router = APIRouter(prefix="/licenses", tags=["licenses"])
 
-# Will be set by main.py after manager is created
-_manager = None
+_validator: LicenseValidator | None = None
+_store: LicenseStore | None = None
+_manager: Any = None
 
 
-def configure(manager: Any) -> None:
-    global _manager
+def configure(manager: Any, validator: LicenseValidator, store: LicenseStore) -> None:
+    global _manager, _validator, _store
     _manager = manager
+    _validator = validator
+    _store = store
 
 
 class LicenseActivate(BaseModel):
@@ -24,15 +29,15 @@ class LicenseActivate(BaseModel):
 @router.get("")
 def list_licenses() -> dict[str, Any]:
     """List all stored license keys and their status."""
-    if not _manager:
+    if not _store or not _validator:
         raise HTTPException(status_code=500, detail="License system not configured")
 
-    licenses = _manager.license_store.all()
+    licenses = _store.all()
     result: dict[str, Any] = {}
 
     for plugin_name, key in licenses.items():
         try:
-            payload = _manager.license_validator.validate_license(key, plugin_name)
+            payload = _validator.validate_license(key, plugin_name)
             result[plugin_name] = {
                 "status": "valid",
                 "expires": payload.expires,
@@ -50,17 +55,15 @@ def list_licenses() -> dict[str, Any]:
 @router.post("")
 def activate_license(body: LicenseActivate) -> dict[str, Any]:
     """Activate a license key for a plugin."""
-    if not _manager:
+    if not _store or not _validator:
         raise HTTPException(status_code=500, detail="License system not configured")
 
     try:
-        payload = _manager.license_validator.validate_license(
-            body.license_key, body.plugin_name
-        )
+        payload = _validator.validate_license(body.license_key, body.plugin_name)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    _manager.license_store.set(body.plugin_name, body.license_key)
+    _store.set(body.plugin_name, body.license_key)
 
     return {
         "plugin": body.plugin_name,
@@ -72,8 +75,8 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
 @router.delete("/{plugin_name}")
 def deactivate_license(plugin_name: str) -> dict[str, str]:
     """Remove a license key for a plugin."""
-    if not _manager:
+    if not _store:
         raise HTTPException(status_code=500, detail="License system not configured")
 
-    _manager.license_store.remove(plugin_name)
+    _store.remove(plugin_name)
     return {"plugin": plugin_name, "status": "deactivated"}

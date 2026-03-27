@@ -9,6 +9,7 @@ class KdpPlugin(BasePlugin):
     name = "kdp"
     version = "1.0.0"
     api_version = "1"
+    depends_on = ["export"]
 
     def activate(self) -> None:
         self._settings = self.config.get("settings", {})

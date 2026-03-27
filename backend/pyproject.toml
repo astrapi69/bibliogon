@@ -13,7 +13,7 @@ uvicorn = { extras = ["standard"], version = "^0.32.0" }
 sqlalchemy = "^2.0.0"
 pydantic = "^2.0.0"
 python-multipart = "^0.0.12"
-pluginforge = {path = "../pluginforge", develop = true, extras = ["fastapi"]}
+pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
 bibliogon-plugin-export = {path = "../plugins/bibliogon-plugin-export", develop = true}
 
 [tool.poetry.group.dev.dependencies]

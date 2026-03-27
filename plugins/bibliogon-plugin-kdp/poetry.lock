@@ -247,25 +247,19 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginforge"
-version = "0.1.0"
-description = "Application-independent plugin framework for Python, built on pluggy"
+version = "0.5.0"
+description = "Application-agnostic plugin framework built on pluggy"
 optional = false
-python-versions = "^3.11"
+python-versions = "<4.0,>=3.11"
 groups = ["main"]
-files = []
-develop = true
+files = [
+    {file = "pluginforge-0.5.0-py3-none-any.whl", hash = "sha256:e120818bfbb93e915f494383a4b17a3c67ba4af8a4e4453a816fa1d752d3d8f2"},
+    {file = "pluginforge-0.5.0.tar.gz", hash = "sha256:65ae7d4bb2f5fe69757224553d43f356260fe863bf1e1c3eaca6c202e0a2e01f"},
+]
 
 [package.dependencies]
-pluggy = "^1.5.0"
-pyyaml = "^6.0"
-
-[package.extras]
-fastapi = ["fastapi (>=0.115.0,<0.116.0)"]
-migrations = ["alembic (>=1.13.0,<2.0.0)"]
-
-[package.source]
-type = "directory"
-url = "../../pluginforge"
+pluggy = ">=1.5.0,<2.0.0"
+pyyaml = ">=6.0,<7.0"
 
 [[package]]
 name = "pydantic"
@@ -591,4 +585,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "8b76ec3bf1d191773041b292f7d6b6e19c97f0b7cbd25e412d99189dcabc4db7"
+content-hash = "02fdb68a6d95cf63e5b251628583a29ca41b97777e3f17782659795402d580bc"

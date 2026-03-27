@@ -19,6 +19,13 @@ def configure(base_dir: Path, manager: Any) -> None:
     _manager = manager
 
 
+def _active_plugin_names() -> set[str]:
+    """Get names of currently active plugins."""
+    if not _manager:
+        return set()
+    return {p.name for p in _manager.get_active_plugins()}
+
+
 # --- App Settings ---
 
 
@@ -52,9 +59,9 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
 
     _write_yaml(path, current)
 
-    # Invalidate config cache
+    # Reload config in the manager so changes take effect
     if _manager:
-        _manager.config_loader.invalidate()
+        _manager.reload_config()
 
     return current
 
@@ -81,42 +88,27 @@ def list_plugin_configs() -> dict[str, Any]:
 
 @router.get("/plugins/discovered")
 def list_discovered_plugins() -> list[dict[str, Any]]:
-    """List all plugins discovered via entry points (installed on system)."""
+    """List all plugins that have configs, with status."""
     if not _manager:
         return []
 
-    discovered = _manager.discover()
     plugins_dir = _base_dir / "config" / "plugins"
-    enabled = set(
-        _read_yaml(_base_dir / "config" / "app.yaml").get("plugins", {}).get("enabled", [])
-    ) if (_base_dir / "config" / "app.yaml").exists() else set()
-    disabled = set(
-        _read_yaml(_base_dir / "config" / "app.yaml").get("plugins", {}).get("disabled", [])
-    ) if (_base_dir / "config" / "app.yaml").exists() else set()
+    app_config = _manager.get_app_config()
+    plugins_cfg = app_config.get("plugins", {})
+    enabled = set(plugins_cfg.get("enabled", []) or [])
+    disabled = set(plugins_cfg.get("disabled", []) or [])
+    active = _active_plugin_names()
 
     result = []
-    for name in discovered:
-        has_config = (plugins_dir / f"{name}.yaml").exists() if plugins_dir.exists() else False
-        is_enabled = name in enabled and name not in disabled
-        is_loaded = name in _manager.plugins
-        result.append({
-            "name": name,
-            "has_config": has_config,
-            "enabled": is_enabled,
-            "loaded": is_loaded,
-        })
-
-    # Also include plugins that have config but weren't discovered (manually added)
     if plugins_dir.exists():
-        for yaml_file in plugins_dir.glob("*.yaml"):
+        for yaml_file in sorted(plugins_dir.glob("*.yaml")):
             name = yaml_file.stem
-            if name not in [r["name"] for r in result]:
-                result.append({
-                    "name": name,
-                    "has_config": True,
-                    "enabled": name in enabled and name not in disabled,
-                    "loaded": name in _manager.plugins,
-                })
+            result.append({
+                "name": name,
+                "has_config": True,
+                "enabled": name in enabled and name not in disabled,
+                "loaded": name in active,
+            })
 
     return result
 
@@ -165,9 +157,9 @@ def delete_plugin_config(plugin_name: str) -> dict[str, str]:
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Plugin config '{plugin_name}' not found")
 
-    # Unload if active
-    if _manager and plugin_name in _manager.plugins:
-        _manager.unload(plugin_name)
+    # Deactivate if active
+    if _manager and plugin_name in _active_plugin_names():
+        _manager.deactivate_plugin(plugin_name)
 
     # Remove from enabled list
     app_path = _base_dir / "config" / "app.yaml"
@@ -178,12 +170,7 @@ def delete_plugin_config(plugin_name: str) -> dict[str, str]:
             enabled.remove(plugin_name)
             _write_yaml(app_path, app_config)
 
-    # Delete config file
     path.unlink()
-
-    if _manager:
-        _manager.config_loader.invalidate()
-
     return {"plugin": plugin_name, "status": "removed"}
 
 
@@ -211,11 +198,10 @@ def update_plugin_settings(plugin_name: str, body: PluginSettingsUpdate) -> dict
     current.setdefault("settings", {}).update(body.settings)
     _write_yaml(path, current)
 
-    # Invalidate config cache and update loaded plugin
+    # Update loaded plugin config if active
     if _manager:
-        _manager.config_loader.invalidate()
-        if plugin_name in _manager.plugins:
-            plugin = _manager.plugins[plugin_name]
+        plugin = _manager.get_plugin(plugin_name)
+        if plugin:
             plugin.config = current
 
     return current
@@ -239,10 +225,6 @@ def enable_plugin(plugin_name: str) -> dict[str, str]:
         disabled.remove(plugin_name)
 
     _write_yaml(app_path, config)
-
-    if _manager:
-        _manager.config_loader.invalidate()
-
     return {"plugin": plugin_name, "status": "enabled"}
 
 
@@ -262,10 +244,9 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
 
     _write_yaml(app_path, config)
 
-    # Unload the plugin if currently active
-    if _manager and plugin_name in _manager.plugins:
-        _manager.unload(plugin_name)
-        _manager.config_loader.invalidate()
+    # Deactivate the plugin if currently active
+    if _manager and plugin_name in _active_plugin_names():
+        _manager.deactivate_plugin(plugin_name)
 
     return {"plugin": plugin_name, "status": "disabled"}
 

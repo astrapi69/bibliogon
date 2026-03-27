@@ -1,6 +1,6 @@
 .PHONY: dev dev-bg dev-down dev-backend dev-frontend \
-       install install-backend install-frontend install-pluginforge install-plugins \
-       test test-backend test-pluginforge test-plugins \
+       install install-backend install-frontend install-plugins \
+       test test-backend test-plugins \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch \
        clean prod prod-down prod-logs help
 
@@ -33,16 +33,13 @@ dev-frontend:
 
 # --- Install ---
 
-install: install-pluginforge install-plugins install-backend install-frontend ## Install all dependencies
+install: install-plugins install-backend install-frontend ## Install all dependencies
 
 install-backend:
 	cd backend && poetry install
 
 install-frontend:
 	cd frontend && npm install
-
-install-pluginforge:
-	cd pluginforge && poetry install
 
 install-plugins:
 	@for dir in plugins/bibliogon-plugin-*; do \
@@ -54,7 +51,7 @@ install-plugins:
 
 # --- Test ---
 
-test: test-pluginforge test-plugins test-backend ## Run ALL 111 tests
+test: test-plugins test-backend ## Run ALL tests (plugins + backend)
 	@echo ""
 	@echo "=== All tests complete ==="
 
@@ -62,11 +59,6 @@ test-backend: ## Run backend tests (10 tests)
 	@echo ""
 	@echo "=== Backend Tests ==="
 	cd backend && poetry run pytest tests/ -v
-
-test-pluginforge: ## Run PluginForge framework tests (53 tests)
-	@echo ""
-	@echo "=== PluginForge Tests ==="
-	cd pluginforge && poetry run pytest tests/ -v
 
 test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch ## Run all plugin tests (48 tests)
 
@@ -106,7 +98,6 @@ prod-logs: ## Show production logs
 clean: ## Remove build artifacts and caches
 	rm -rf backend/__pycache__ backend/.pytest_cache backend/*.db
 	rm -rf frontend/node_modules frontend/dist
-	rm -rf pluginforge/.pytest_cache pluginforge/pluginforge.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true

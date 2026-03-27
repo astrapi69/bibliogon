@@ -12,9 +12,7 @@ class GrammarPlugin(BasePlugin):
     version = "1.0.0"
     api_version = "1"
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._client: LanguageToolClient | None = None
+    _client: LanguageToolClient | None = None
 
     def activate(self) -> None:
         settings = self.config.get("settings", {})
@@ -49,3 +47,8 @@ class GrammarPlugin(BasePlugin):
                 },
             ],
         }
+
+    def health(self) -> dict[str, Any]:
+        if self._client is None:
+            return {"status": "error", "error": "Not activated"}
+        return {"status": "ok", "url": self._client.base_url}

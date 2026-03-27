@@ -1,27 +1,30 @@
 # Bibliogon
 
-Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Der gesamte Export ist selbst ein Plugin. Offline-faehig, i18n-ready, local-first, mit Dark Mode.
+Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Der gesamte Export ist selbst ein Plugin. Offline-faehig, i18n-ready, local-first, mit Dark Mode.
 
 **Repository:** https://github.com/astrapi69/bibliogon
+**PluginForge:** https://github.com/astrapi69/pluginforge (PyPI: pluginforge ^0.5.0)
 **Konzept:** docs/CONCEPT.md
 **Version:** 0.6.0
 
 ## Architektur (Zwei-Schichten)
 
-1. **PluginForge** (`pluginforge/` - eigenes Paket, basiert auf pluggy)
+1. **PluginForge** (externes PyPI-Paket, basiert auf pluggy)
    - PluginManager: wraps pluggy + YAML-Config + Lifecycle + Dependency Resolution
    - FastAPI-Router-Integration (Plugins liefern eigene Router)
-   - Offline-Lizenzierung (HMAC-SHA256 signierte Schluessel, LicenseStore)
+   - pre_activate Callback (z.B. fuer Lizenzpruefung)
+   - Health Checks, Hot Reload, Plugin Introspection
    - i18n ueber YAML (config/i18n/{lang}.yaml)
    - Anwendungsunabhaengig, jeder kann es nutzen
 
 2. **Bibliogon App** (dieses Repo)
    - Schlanker Kern: UI, Editor, Book/Chapter CRUD, Backup/Restore
-   - Alles Weitere via Plugins: Export, Kinderbuch, KDP, Grammar
+   - Offline-Lizenzierung (HMAC-SHA256, LicenseStore) - bibliogon-spezifisch
+   - Alles Weitere via Plugins: Export, Kinderbuch, KDP, Grammar, Help, Get Started
 
 ## Tech Stack
 
-- **PluginForge:** Python 3.11+, pluggy, PyYAML
+- **PluginForge:** Python 3.11+, pluggy, PyYAML (PyPI: pluginforge ^0.5.0)
 - **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
 - **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite, Lucide Icons
 - **Export-Plugin:** Pandoc, write-book-template Struktur
@@ -31,15 +34,14 @@ Open-source book authoring platform. Aufgebaut auf PluginForge, einem wiederverw
 
 ```bash
 # Entwicklung
-make install              # Alle Abhaengigkeiten (Poetry, npm, PluginForge, Plugins)
+make install              # Alle Abhaengigkeiten (Poetry, npm, Plugins)
 make dev                  # Backend (8000) + Frontend (5173) parallel, Strg+C stoppt beide
 make dev-bg               # Hintergrund-Modus
 make dev-down             # Hintergrund stoppen
 
 # Tests
-make test                 # ALLE Tests (PluginForge + alle Plugins + Backend)
+make test                 # ALLE Tests (alle Plugins + Backend)
 make test-backend         # Nur Backend-Tests
-make test-pluginforge     # Nur PluginForge-Framework-Tests
 make test-plugins         # Alle 4 Plugin-Tests
 make test-plugin-export   # Nur Export-Plugin
 make test-plugin-grammar  # Nur Grammar-Plugin
@@ -62,9 +64,10 @@ make help                 # Alle Targets anzeigen
 bibliogon/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI Entry, PluginManager Init
+│   │   ├── main.py              # FastAPI Entry, PluginManager Init, pre_activate License Check
 │   │   ├── database.py          # SQLAlchemy + SQLite
 │   │   ├── hookspecs.py         # pluggy Hook-Specs (export_formats, export_execute, chapter_pre_save)
+│   │   ├── licensing.py         # LicenseValidator, LicensePayload, LicenseStore (bibliogon-spezifisch)
 │   │   ├── models/              # Book, Chapter (mit ChapterType), Asset
 │   │   ├── schemas/             # Pydantic Request/Response (ChapterType Enum, AssetOut)
 │   │   ├── routers/
@@ -77,21 +80,11 @@ bibliogon/
 │   │   └── services/
 │   ├── config/
 │   │   ├── app.yaml             # App-Konfiguration
-│   │   ├── plugins/export.yaml  # Export-Plugin-Config
+│   │   ├── plugins/             # Plugin-YAML-Dateien (export, kdp, kinderbuch, grammar, help, getstarted)
 │   │   └── i18n/                # de.yaml, en.yaml, es.yaml, fr.yaml, el.yaml
 │   ├── tests/
 │   │   ├── test_api.py          # CRUD Smoke Tests
 │   │   └── test_phase4.py       # ChapterType, Assets, Backup, Import Tests
-│   └── pyproject.toml
-├── pluginforge/
-│   ├── pluginforge/
-│   │   ├── __init__.py          # Public API: BasePlugin, PluginManager, ConfigLoader, License*
-│   │   ├── base.py              # BasePlugin ABC (lifecycle, routes, migrations, manifest)
-│   │   ├── manager.py           # PluginManager (wraps pluggy, config, licensing)
-│   │   ├── config.py            # ConfigLoader (YAML, caching, i18n)
-│   │   ├── licensing.py         # LicenseValidator, LicensePayload, LicenseStore
-│   │   └── fastapi.py           # mount_plugin_routes, register_plugin_endpoints
-│   ├── tests/                   # 53 Tests (base, config, manager, licensing)
 │   └── pyproject.toml
 ├── plugins/
 │   ├── bibliogon-plugin-export/         # EPUB, PDF, ZIP Export (MIT)
@@ -102,24 +95,36 @@ bibliogon/
 │   │   │   ├── pandoc_runner.py         # Pandoc EPUB/PDF
 │   │   │   └── routes.py               # /api/books/{id}/export/{fmt}
 │   │   └── tests/                       # 23 Tests
-│   ├── bibliogon-plugin-kinderbuch/     # Kinderbuch-Layout (Proprietary)
+│   ├── bibliogon-plugin-kinderbuch/     # Kinderbuch-Layout (Proprietary, depends_on: export)
 │   │   ├── bibliogon_kinderbuch/
 │   │   │   ├── plugin.py               # KinderbuchPlugin
 │   │   │   ├── page_layout.py          # Bild-pro-Seite Layout Engine (4 Templates)
 │   │   │   └── routes.py               # /api/kinderbuch/templates, /preview
 │   │   └── tests/                       # 8 Tests
-│   ├── bibliogon-plugin-kdp/           # Amazon KDP (Proprietary)
+│   ├── bibliogon-plugin-kdp/           # Amazon KDP (Proprietary, depends_on: export)
 │   │   ├── bibliogon_kdp/
 │   │   │   ├── plugin.py               # KdpPlugin
 │   │   │   ├── cover_validator.py      # Cover-Validierung + Metadaten-Generator
 │   │   │   └── routes.py               # /api/kdp/metadata, /validate-cover
 │   │   └── tests/                       # 10 Tests
-│   └── bibliogon-plugin-grammar/        # LanguageTool (Proprietary)
-│       ├── bibliogon_grammar/
-│       │   ├── plugin.py               # GrammarPlugin
-│       │   ├── languagetool.py         # Async LanguageTool API Client
-│       │   └── routes.py               # /api/grammar/check, /languages
-│       └── tests/                       # 7 Tests
+│   ├── bibliogon-plugin-grammar/        # LanguageTool (Proprietary)
+│   │   ├── bibliogon_grammar/
+│   │   │   ├── plugin.py               # GrammarPlugin (mit health check)
+│   │   │   ├── languagetool.py         # Async LanguageTool API Client
+│   │   │   └── routes.py               # /api/grammar/check, /languages
+│   │   └── tests/                       # 7 Tests
+│   ├── bibliogon-plugin-help/           # In-App Hilfe (MIT)
+│   │   ├── bibliogon_help/
+│   │   │   ├── plugin.py               # HelpPlugin
+│   │   │   ├── content.py              # Shortcuts, FAQ, About aus YAML
+│   │   │   └── routes.py               # /api/help/shortcuts, /faq, /about
+│   │   └── tests/
+│   └── bibliogon-plugin-getstarted/     # Onboarding (MIT)
+│       ├── bibliogon_getstarted/
+│       │   ├── plugin.py               # GetStartedPlugin
+│       │   ├── guide.py                # Schritt-fuer-Schritt Anleitung + Beispielbuch
+│       │   └── routes.py               # /api/get-started/guide, /sample-book
+│       └── tests/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/client.ts        # Typed API Client (Books, Chapters, Assets, Backup, Licenses, Settings)
@@ -134,7 +139,9 @@ bibliogon/
 │   │   ├── pages/
 │   │   │   ├── Dashboard.tsx    # Buch-Liste, Backup/Import/Projekt-Import
 │   │   │   ├── BookEditor.tsx   # Editor-Layout mit Sidebar
-│   │   │   └── Settings.tsx     # Einstellungen (App, Plugins, Lizenzen)
+│   │   │   ├── Settings.tsx     # Einstellungen (App, Plugins, Lizenzen)
+│   │   │   ├── Help.tsx         # Hilfe (Shortcuts, FAQ, About)
+│   │   │   └── GetStarted.tsx   # Erste Schritte mit Fortschrittsanzeige
 │   │   └── styles/global.css    # CSS Variables, Light + Dark Theme
 │   ├── package.json
 │   └── vite.config.ts
@@ -156,6 +163,33 @@ bibliogon/
 - CSS Theming via Custom Properties, Dark Mode via [data-theme="dark"]
 - Plugins sind eigenstaendige Pakete unter plugins/
 - Jedes Plugin hat eigene Tests unter tests/
+- Plugin-Abhaengigkeiten als Klassen-Attribut: `depends_on = ["export"]`
+- Lizenzierung ist bibliogon-spezifisch (app/licensing.py), nicht Teil von PluginForge
+
+## PluginForge v0.5.0 API (Kurzreferenz)
+
+```python
+# Manager erstellen mit pre_activate Callback fuer Lizenzpruefung
+manager = PluginManager(
+    config_path="config/app.yaml",
+    pre_activate=license_check_callback,
+    api_version="1",
+)
+manager.register_hookspecs(MyHookSpec)
+manager.discover_plugins()
+manager.mount_routes(fastapi_app)  # prefix default "/api"
+
+# Laufzeit
+manager.get_active_plugins()       # Liste aktiver Plugins
+manager.get_plugin("export")       # Plugin-Instanz nach Name
+manager.deactivate_plugin("name")  # Deaktivieren + Hook-Unregister
+manager.reload_plugin("name")      # Hot Reload
+manager.reload_config()            # Config von Disk neu laden
+manager.health_check()             # Health aller Plugins
+manager.get_load_errors()          # Fehler beim Laden
+manager.call_hook("hook_name")     # Hook aufrufen
+manager.get_text("key", "de")      # i18n String
+```
 
 ## API-Endpunkte
 
@@ -178,6 +212,8 @@ bibliogon/
 - POST /api/settings/plugins/{name}/enable
 - POST /api/settings/plugins/{name}/disable
 - GET /api/plugins/manifests
+- GET /api/plugins/health
+- GET /api/plugins/errors
 - GET /api/i18n/{lang}
 - GET /api/health
 
@@ -191,6 +227,11 @@ bibliogon/
 - GET /api/kdp/categories
 - POST /api/grammar/check
 - GET /api/grammar/languages
+- GET /api/help/shortcuts
+- GET /api/help/faq
+- GET /api/help/about
+- GET /api/get-started/guide
+- GET /api/get-started/sample-book
 
 ## Datenmodell
 
@@ -208,6 +249,8 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 | plugin-kinderbuch | Proprietary | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
 | plugin-kdp        | Proprietary | plugin-export | KDP-Metadaten, Cover-Validierung    |
 | plugin-grammar    | Proprietary | -             | LanguageTool Grammatikpruefung      |
+| plugin-help       | MIT         | -             | In-App Hilfe, Shortcuts, FAQ        |
+| plugin-getstarted | MIT         | -             | Onboarding, Beispielbuch            |
 
 ## Erledigte Phasen
 
@@ -245,6 +288,10 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - Dark Mode
 - Settings-Seite (/settings) mit App-, Plugin- und Lizenz-Konfiguration
 - Settings API zum Lesen/Schreiben von YAML-Configs ueber die UI
+- PluginForge als PyPI-Paket ausgelagert (pluginforge ^0.5.0)
+- Lizenzierung in Backend verschoben (app/licensing.py)
+- pre_activate Callback fuer Lizenzpruefung
+- plugin-help und plugin-getstarted als Standard-Plugins
 
 ## Naechste Schritte
 
@@ -260,17 +307,17 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-111 Tests insgesamt:
+58 Tests insgesamt:
 
-- pluginforge: 53 (base, config, manager, licensing)
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
 - backend: 10 (api, phase4)
 
-## Verwandtes Projekt
+PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).
 
-write-book-template (github.com/astrapi69/write-book-template) definiert die
-Ziel-Verzeichnisstruktur fuer den Export. Das Export-Plugin generiert diese
-Struktur aus den Datenbank-Inhalten.
+## Verwandte Projekte
+
+- [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin-Framework (PyPI: pluginforge)
+- [write-book-template](https://github.com/astrapi69/write-book-template) - Ziel-Verzeichnisstruktur fuer den Export
