@@ -55,13 +55,10 @@ class TestScaffolder:
         assert (project_dir / "manuscript" / "chapters").is_dir()
         assert (project_dir / "manuscript" / "front-matter").is_dir()
         assert (project_dir / "manuscript" / "back-matter").is_dir()
-        assert (project_dir / "manuscript" / "figures").is_dir()
-        assert (project_dir / "manuscript" / "tables").is_dir()
         assert (project_dir / "assets" / "covers").is_dir()
         assert (project_dir / "assets" / "figures" / "diagrams").is_dir()
         assert (project_dir / "config").is_dir()
         assert (project_dir / "output").is_dir()
-        assert (project_dir / "scripts").is_dir()
 
     def test_writes_metadata_yaml(self, tmp_path: Path) -> None:
         book = self._sample_book()
@@ -105,8 +102,8 @@ class TestScaffolder:
 
         chapters_dir = project_dir / "manuscript" / "chapters"
         files = sorted(f.name for f in chapters_dir.glob("*.md"))
-        assert files[0] == "01-erstes-kapitel.md"
-        assert files[1] == "02-zweites-kapitel.md"
+        assert files[0] == "02-erstes-kapitel.md"
+        assert files[1] == "03-zweites-kapitel.md"
 
     def test_writes_placeholder_files(self, tmp_path: Path) -> None:
         project_dir = scaffold_project(self._sample_book(), [], tmp_path)

@@ -1,5 +1,9 @@
-"""Scaffold write-book-template directory structure from book data."""
+"""Scaffold write-book-template directory structure from book data.
 
+Uses manuscripta's project structure and writes TipTap-JSON content as Markdown.
+"""
+
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -9,8 +13,16 @@ import yaml
 from .tiptap_to_md import tiptap_to_markdown
 
 
-def scaffold_project(book: dict[str, Any], chapters: list[dict[str, Any]], output_dir: Path) -> Path:
-    """Create write-book-template directory structure for a book.
+def scaffold_project(
+    book: dict[str, Any],
+    chapters: list[dict[str, Any]],
+    output_dir: Path,
+) -> Path:
+    """Create manuscripta-compatible project structure for a book.
+
+    Creates the standard directory layout that manuscripta expects,
+    writes metadata.yaml, export-settings.yaml, and converts all
+    chapters from TipTap-JSON to Markdown.
 
     Args:
         book: Book metadata dict (title, subtitle, author, language, etc.)
@@ -23,40 +35,46 @@ def scaffold_project(book: dict[str, Any], chapters: list[dict[str, Any]], outpu
     slug = _slugify(book["title"])
     project_dir = output_dir / slug
 
-    # Create directory structure
+    # Create manuscripta directory structure
     dirs = [
         "manuscript/chapters",
         "manuscript/front-matter",
         "manuscript/back-matter",
-        "manuscript/figures",
-        "manuscript/tables",
         "assets/covers",
+        "assets/author",
         "assets/figures/diagrams",
         "assets/figures/infographics",
         "config",
         "output",
-        "scripts",
     ]
     for d in dirs:
         (project_dir / d).mkdir(parents=True, exist_ok=True)
 
-    # Write metadata.yaml
+    # Write config/metadata.yaml (manuscripta format)
     _write_metadata(project_dir / "config" / "metadata.yaml", book)
 
-    # Write chapters
+    # Write config/export-settings.yaml (manuscripta format)
+    _write_export_settings(project_dir / "config" / "export-settings.yaml")
+
+    # Write chapters as Markdown
     for chapter in chapters:
         _write_chapter(project_dir / "manuscript" / "chapters", chapter)
 
     # Write placeholder front-matter and back-matter
-    _write_placeholder(project_dir / "manuscript" / "front-matter" / "toc.md", "# Table of Contents\n")
-    _write_placeholder(project_dir / "manuscript" / "back-matter" / "about-the-author.md",
-                       f"# About the Author\n\n{book.get('author', '')}\n")
+    _write_placeholder(
+        project_dir / "manuscript" / "front-matter" / "toc.md",
+        "# Table of Contents\n",
+    )
+    _write_placeholder(
+        project_dir / "manuscript" / "back-matter" / "about-the-author.md",
+        f"# About the Author\n\n{book.get('author', '')}\n",
+    )
 
     return project_dir
 
 
 def _write_metadata(path: Path, book: dict[str, Any]) -> None:
-    """Write config/metadata.yaml from book data."""
+    """Write config/metadata.yaml in manuscripta format."""
     metadata: dict[str, Any] = {
         "title": book["title"],
         "author": book.get("author", ""),
@@ -75,34 +93,65 @@ def _write_metadata(path: Path, book: dict[str, Any]) -> None:
         yaml.dump(metadata, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
+def _write_export_settings(path: Path) -> None:
+    """Write config/export-settings.yaml with manuscripta defaults."""
+    settings: dict[str, Any] = {
+        "formats": {
+            "markdown": "gfm",
+            "pdf": "pdf",
+            "epub": "epub",
+            "docx": "docx",
+            "html": "html",
+        },
+        "toc_depth": 2,
+        "section_order": {
+            "default": [
+                "front-matter/toc.md",
+                "front-matter/foreword.md",
+                "front-matter/preface.md",
+                "chapters",
+                "back-matter/glossary.md",
+                "back-matter/appendix.md",
+                "back-matter/acknowledgments.md",
+                "back-matter/about-the-author.md",
+                "back-matter/bibliography.md",
+            ],
+        },
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(settings, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
 def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
     """Write a single chapter as Markdown file."""
     position = chapter.get("position", 0)
     title = chapter.get("title", "Untitled")
     content = chapter.get("content", "")
 
-    filename = f"{position:02d}-{_slugify(title)}.md"
+    filename = f"{position + 1:02d}-{_slugify(title)}.md"
     filepath = chapters_dir / filename
 
-    # Convert content: TipTap JSON or plain text
-    if isinstance(content, dict):
-        md_body = tiptap_to_markdown(content)
-    elif isinstance(content, str):
-        # Try parsing as JSON
-        try:
-            import json
-            doc = json.loads(content)
-            if isinstance(doc, dict) and doc.get("type") == "doc":
-                md_body = tiptap_to_markdown(doc)
-            else:
-                md_body = content
-        except (json.JSONDecodeError, TypeError):
-            md_body = content
-    else:
-        md_body = str(content)
+    md_body = _content_to_markdown(content)
 
     md = f"# {title}\n\n{md_body}\n"
     filepath.write_text(md, encoding="utf-8")
+
+
+def _content_to_markdown(content: Any) -> str:
+    """Convert content (TipTap JSON, JSON string, or plain text) to Markdown."""
+    if isinstance(content, dict):
+        return tiptap_to_markdown(content)
+
+    if isinstance(content, str):
+        try:
+            doc = json.loads(content)
+            if isinstance(doc, dict) and doc.get("type") == "doc":
+                return tiptap_to_markdown(doc)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return content
+
+    return str(content)
 
 
 def _write_placeholder(path: Path, content: str) -> None:

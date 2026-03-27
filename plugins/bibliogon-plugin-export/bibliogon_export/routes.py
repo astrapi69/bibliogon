@@ -18,6 +18,16 @@ router = APIRouter(prefix="/books/{book_id}/export", tags=["export"])
 _get_db = None
 _book_model = None
 
+SUPPORTED_FORMATS = {"epub", "pdf", "docx", "html", "markdown", "project"}
+
+MEDIA_TYPES = {
+    "epub": "application/epub+zip",
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "html": "text/html",
+    "markdown": "text/markdown",
+}
+
 
 def configure(get_db_dep: Any, book_model: Any) -> None:
     """Configure route dependencies. Called by ExportPlugin.activate()."""
@@ -51,7 +61,6 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
     chapters_data = []
     for ch in sorted(book.chapters, key=lambda c: c.position):
         content = ch.content
-        # Try to parse as JSON (TipTap format)
         try:
             content = json.loads(content)
         except (json.JSONDecodeError, TypeError):
@@ -67,19 +76,23 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
 
 @router.get("/{fmt}")
 def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
-    """Export a book as EPUB, PDF, or project ZIP.
+    """Export a book via manuscripta.
+
+    Supported formats: epub, pdf, docx, html, markdown, project (ZIP).
 
     GET /api/books/{book_id}/export/epub
     GET /api/books/{book_id}/export/pdf
     GET /api/books/{book_id}/export/project
     """
-    if fmt not in ("epub", "pdf", "project"):
-        raise HTTPException(status_code=400, detail="Format must be 'epub', 'pdf', or 'project'")
+    if fmt not in SUPPORTED_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}",
+        )
 
     if _get_db is None:
         raise HTTPException(status_code=500, detail="Export plugin not configured")
 
-    # Get DB session
     db_gen = _get_db()
     db_session = next(db_gen)
     try:
@@ -93,10 +106,10 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_export_"))
 
     try:
+        # Scaffold manuscripta-compatible project structure
         project_dir = scaffold_project(book_data, chapters_data, tmp_dir)
 
         if fmt == "project":
-            # ZIP the project directory
             zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
             return FileResponse(
                 path=zip_path,
@@ -104,28 +117,23 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
                 filename=f"{project_dir.name}.zip",
             )
 
-        # EPUB or PDF via Pandoc
-        from .pandoc_runner import run_pandoc
-
-        # Load plugin config from file if available
+        # Export via manuscripta
+        import yaml
         config_path = Path("config/plugins/export.yaml")
         config: dict[str, Any] = {}
         if config_path.exists():
-            import yaml
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
 
         output_path = run_pandoc(project_dir, fmt, config)
 
-        media_types = {
-            "epub": "application/epub+zip",
-            "pdf": "application/pdf",
-        }
+        media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
+        ext = output_path.suffix
 
         return FileResponse(
             path=str(output_path),
-            media_type=media_types[fmt],
-            filename=f"book.{fmt}",
+            media_type=media_type,
+            filename=f"{project_dir.name}{ext}",
         )
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))
