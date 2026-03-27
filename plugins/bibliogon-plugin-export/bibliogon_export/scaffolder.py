@@ -99,45 +99,44 @@ def _write_export_settings(path: Path, export_settings: dict[str, Any] | None = 
 
     Uses the plugin config settings if provided, otherwise sensible defaults.
     """
-    defaults: dict[str, Any] = {
-        "formats": {
-            "markdown": "gfm",
-            "pdf": "pdf",
-            "epub": "epub",
-            "docx": "docx",
-            "html": "html",
-        },
-        "toc_depth": 2,
-        "section_order": {
-            "default": [
-                "front-matter/toc.md",
-                "front-matter/foreword.md",
-                "front-matter/preface.md",
-                "chapters",
-                "back-matter/epilogue.md",
-                "back-matter/glossary.md",
-                "back-matter/appendix.md",
-                "back-matter/acknowledgments.md",
-                "back-matter/about-the-author.md",
-                "back-matter/bibliography.md",
-                "back-matter/imprint.md",
-            ],
-        },
-    }
-
+    # Write the export settings directly from plugin config if available.
+    # This is a 1:1 pass-through to manuscripta's export-settings.yaml format.
     if export_settings:
-        # Merge plugin config into defaults (plugin config wins)
-        if "formats" in export_settings:
-            defaults["formats"] = export_settings["formats"]
-        if "toc_depth" in export_settings:
-            defaults["toc_depth"] = export_settings["toc_depth"]
-        if "section_order" in export_settings:
-            defaults["section_order"] = export_settings["section_order"]
-        if "epub_skip_toc_files" in export_settings:
-            defaults["epub_skip_toc_files"] = export_settings["epub_skip_toc_files"]
+        # Only write manuscripta-relevant keys (exclude plugin-only keys)
+        manuscripta_keys = [
+            "formats", "toc_depth", "epub_skip_toc_files",
+            "section_order", "export_defaults",
+        ]
+        settings = {k: v for k, v in export_settings.items() if k in manuscripta_keys}
+    else:
+        settings = {
+            "formats": {
+                "markdown": "gfm",
+                "pdf": "pdf",
+                "epub": "epub",
+                "docx": "docx",
+                "html": "html",
+            },
+            "toc_depth": 2,
+            "section_order": {
+                "ebook": [
+                    "front-matter/toc.md",
+                    "front-matter/foreword.md",
+                    "front-matter/preface.md",
+                    "chapters",
+                    "back-matter/epilogue.md",
+                    "back-matter/glossary.md",
+                    "back-matter/appendix.md",
+                    "back-matter/acknowledgments.md",
+                    "back-matter/about-the-author.md",
+                    "back-matter/bibliography.md",
+                    "back-matter/imprint.md",
+                ],
+            },
+        }
 
     with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(defaults, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        yaml.dump(settings, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:

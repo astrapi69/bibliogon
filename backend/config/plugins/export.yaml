@@ -13,44 +13,83 @@ plugin:
   depends_on: []
   api_version: "1"
 
-settings:
-  default_format: "epub"
-  toc_depth: 2
-  epub_skip_toc_files:
-    - "front-matter/toc.md"
-    - "front-matter/toc-print.md"
-  formats:
-    markdown: "gfm"
-    pdf: "pdf"
-    epub: "epub"
-    docx: "docx"
-    html: "html"
-  section_order:
-    default:
-      - "front-matter/toc.md"
-      - "front-matter/foreword.md"
-      - "front-matter/preface.md"
-      - "chapters"
-      - "back-matter/epilogue.md"
-      - "back-matter/glossary.md"
-      - "back-matter/appendix.md"
-      - "back-matter/acknowledgments.md"
-      - "back-matter/about-the-author.md"
-      - "back-matter/bibliography.md"
-      - "back-matter/imprint.md"
-    paperback:
-      - "front-matter/toc-print.md"
-      - "front-matter/foreword.md"
-      - "front-matter/preface.md"
-      - "chapters"
-      - "back-matter/epilogue.md"
-      - "back-matter/glossary.md"
-      - "back-matter/appendix.md"
-      - "back-matter/acknowledgments.md"
-      - "back-matter/about-the-author.md"
-      - "back-matter/bibliography.md"
-      - "back-matter/imprint.md"
+# --- manuscripta export-settings (written into scaffolded project) ---
+# These settings are passed through to manuscripta's export-settings.yaml
+# See: https://github.com/astrapi69/manuscripta
 
+settings:
+  # Supported output formats and their Pandoc targets
+  formats:
+    markdown: gfm       # GitHub-Flavored Markdown
+    pdf: pdf
+    epub: epub
+    docx: docx
+    html: html
+
+  # Default TOC depth for auto-generated TOCs
+  # Depth 2 (# ##): Recommended for most books
+  # Depth 3 (# ## ###): Good for technical/academic books
+  toc_depth: 2
+
+  # TOC files skipped for EPUB (Pandoc generates TOC automatically)
+  # Prevents epubcheck errors from manual TOC links without proper xhtml references
+  epub_skip_toc_files:
+    - front-matter/toc.md
+    - front-matter/toc-print.md
+
+  # Section order per book type
+  # "chapters" expands to all .md files in the chapters/ folder, sorted alphabetically.
+  # hardcover: null means fallback to paperback.
+  section_order:
+
+    ebook:
+      - front-matter/toc.md
+      - front-matter/foreword.md
+      - front-matter/preface.md
+      - chapters
+      - back-matter/epilogue.md
+      - back-matter/glossary.md
+      - back-matter/appendix.md
+      - back-matter/acknowledgments.md
+      - back-matter/about-the-author.md
+      - back-matter/bibliography.md
+      - back-matter/imprint.md
+
+    paperback:
+      - front-matter/toc-print.md
+      - front-matter/foreword.md
+      - front-matter/preface.md
+      - chapters
+      - back-matter/epilogue.md
+      - back-matter/glossary.md
+      - back-matter/appendix.md
+      - back-matter/acknowledgments.md
+      - back-matter/about-the-author.md
+      - back-matter/bibliography.md
+      - back-matter/imprint.md
+
+    # Falls back to paperback
+    hardcover: null
+
+    # Audiobook: No TOC, no imprint, no bibliography
+    audiobook:
+      - front-matter/foreword.md
+      - front-matter/preface.md
+      - chapters
+      - back-matter/epilogue.md
+      - back-matter/glossary.md
+      - back-matter/appendix.md
+      - back-matter/acknowledgments.md
+      - back-matter/about-the-author.md
+
+  # Export defaults (can be overridden via API parameters)
+  export_defaults:
+    book_type: ebook
+    # cover: assets/covers/cover.jpg
+    # lang: de
+    # no_type_suffix: false
+
+# --- UI format list (for frontend sidebar buttons) ---
 ui_formats:
   - id: "epub"
     label: {de: "EPUB", en: "EPUB"}
