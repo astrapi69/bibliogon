@@ -34,8 +34,8 @@ export default function Dashboard() {
 
     const handleCreate = async (data: BookCreate) => {
         const book = await api.books.create(data);
+        setBooks((prev) => [book, ...prev]);
         setShowModal(false);
-        navigate(`/book/${book.id}`);
     };
 
     const handleDelete = async (id: string) => {
