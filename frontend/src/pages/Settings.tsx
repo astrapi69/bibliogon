@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key, Plus, Trash2} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
@@ -63,7 +63,12 @@ export default function Settings() {
                         </button>
                         <h1 style={styles.title}>Einstellungen</h1>
                     </div>
-                    <ThemeToggle/>
+                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
+                            <Home size={18}/>
+                        </button>
+                        <ThemeToggle/>
+                    </div>
                 </div>
             </header>
 

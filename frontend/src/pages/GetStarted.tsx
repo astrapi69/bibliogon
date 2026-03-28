@@ -5,7 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import {toast} from "react-toastify";
 import {
     ChevronLeft, BookPlus, FilePlus, PenTool, GripVertical,
-    Download, Settings, Archive, Rocket, Check,
+    Download, Settings, Archive, Rocket, Check, Home,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -82,7 +82,12 @@ export default function GetStarted() {
                         <Rocket size={22} style={{color: "var(--accent)"}}/>
                         <h1 style={styles.title}>Erste Schritte</h1>
                     </div>
-                    <ThemeToggle/>
+                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
+                            <Home size={18}/>
+                        </button>
+                        <ThemeToggle/>
+                    </div>
                 </div>
             </header>
 

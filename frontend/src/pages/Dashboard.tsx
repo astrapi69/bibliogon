@@ -113,7 +113,7 @@ export default function Dashboard() {
             {/* Header */}
             <header style={styles.header}>
                 <div style={styles.headerInner}>
-                    <div style={styles.logo}>
+                    <div style={styles.logo} onClick={() => navigate("/")} role="button" title="Dashboard">
                         <BookOpen size={28} strokeWidth={1.5}/>
                         <h1 style={styles.logoText}>Bibliogon</h1>
                     </div>
@@ -265,7 +265,7 @@ const styles: Record<string, React.CSSProperties> = {
         maxWidth: 1100, margin: "0 auto", padding: "12px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
     },
-    logo: {display: "flex", alignItems: "center", gap: 10, color: "var(--accent)", flexShrink: 0},
+    logo: {display: "flex", alignItems: "center", gap: 10, color: "var(--accent)", flexShrink: 0, cursor: "pointer"},
     logoText: {
         fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600,
         color: "var(--text-primary)", letterSpacing: "-0.02em",

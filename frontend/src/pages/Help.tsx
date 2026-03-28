@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Keyboard, HelpCircle, Info} from "lucide-react";
+import {ChevronLeft, Keyboard, HelpCircle, Info, Home} from "lucide-react";
 
 type Tab = "shortcuts" | "faq" | "about";
 
@@ -29,7 +29,12 @@ export default function Help() {
                         </button>
                         <h1 style={styles.title}>Hilfe</h1>
                     </div>
-                    <ThemeToggle/>
+                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
+                            <Home size={18}/>
+                        </button>
+                        <ThemeToggle/>
+                    </div>
                 </div>
             </header>
 
