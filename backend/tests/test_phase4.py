@@ -18,7 +18,9 @@ def _create_book(title: str = "Phase4 Test", author: str = "Tester") -> str:
 
 
 def _cleanup_book(book_id: str) -> None:
+    """Soft-delete then permanently delete."""
     client.delete(f"/api/books/{book_id}")
+    client.delete(f"/api/books/trash/{book_id}")
 
 
 # --- ChapterType tests ---

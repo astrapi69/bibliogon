@@ -5,12 +5,14 @@ import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
-    Settings, HelpCircle, Rocket,
+    Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
 export default function Dashboard() {
     const [books, setBooks] = useState<Book[]>([]);
+    const [trash, setTrash] = useState<Book[]>([]);
+    const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
@@ -28,8 +30,18 @@ export default function Dashboard() {
         }
     };
 
+    const loadTrash = async () => {
+        try {
+            const data = await api.books.listTrash();
+            setTrash(data);
+        } catch (err) {
+            console.error("Failed to load trash:", err);
+        }
+    };
+
     useEffect(() => {
         loadBooks();
+        loadTrash();
     }, []);
 
     const handleCreate = async (data: BookCreate) => {
@@ -39,9 +51,28 @@ export default function Dashboard() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Buch wirklich loeschen?")) return;
+        if (!confirm("Buch in den Papierkorb verschieben?")) return;
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
+        loadTrash();
+    };
+
+    const handleRestore = async (id: string) => {
+        await api.books.restore(id);
+        setTrash((prev) => prev.filter((b) => b.id !== id));
+        loadBooks();
+    };
+
+    const handlePermanentDelete = async (id: string) => {
+        if (!confirm("Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden.")) return;
+        await api.books.permanentDelete(id);
+        setTrash((prev) => prev.filter((b) => b.id !== id));
+    };
+
+    const handleEmptyTrash = async () => {
+        if (!confirm(`Papierkorb leeren? ${trash.length} Buecher werden endgueltig geloescht.`)) return;
+        await api.books.emptyTrash();
+        setTrash([]);
     };
 
     const handleBackupExport = () => {
@@ -68,7 +99,6 @@ export default function Dashboard() {
             const result = await api.backup.importProject(file);
             alert(`"${result.title}" importiert (${result.chapter_count} Kapitel).`);
             loadBooks();
-            navigate(`/book/${result.book_id}`);
         } catch (err) {
             alert(`Import fehlgeschlagen: ${err}`);
         }
@@ -85,7 +115,6 @@ export default function Dashboard() {
                         <h1 style={styles.logoText}>Bibliogon</h1>
                     </div>
                     <div style={styles.headerActions}>
-                        {/* Navigation icons */}
                         <ThemeToggle/>
                         <button className="btn-icon" onClick={() => navigate("/get-started")} title="Erste Schritte">
                             <Rocket size={18}/>
@@ -96,10 +125,20 @@ export default function Dashboard() {
                         <button className="btn-icon" onClick={() => navigate("/settings")} title="Einstellungen">
                             <Settings size={18}/>
                         </button>
+                        <button
+                            className="btn-icon"
+                            onClick={() => setShowTrash(!showTrash)}
+                            title="Papierkorb"
+                            style={showTrash ? {color: "var(--accent)"} : undefined}
+                        >
+                            <Trash2 size={18}/>
+                            {trash.length > 0 && (
+                                <span style={styles.trashBadge}>{trash.length}</span>
+                            )}
+                        </button>
 
                         <div style={styles.headerSeparator}/>
 
-                        {/* Actions */}
                         <button className="btn btn-secondary btn-sm" onClick={handleBackupExport} title="Backup exportieren">
                             <Download size={14}/> Backup
                         </button>
@@ -121,7 +160,50 @@ export default function Dashboard() {
 
             {/* Content */}
             <main style={styles.main}>
-                {loading ? (
+                {showTrash ? (
+                    /* Trash view */
+                    <>
+                        <div style={styles.mainHeader}>
+                            <Trash2 size={20} style={{color: "var(--text-muted)"}}/>
+                            <h2 style={styles.mainTitle}>Papierkorb</h2>
+                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? "Buch" : "Buecher"}</span>
+                            <div style={{flex: 1}}/>
+                            {trash.length > 0 && (
+                                <button className="btn btn-danger btn-sm" onClick={handleEmptyTrash}>
+                                    <Trash size={14}/> Papierkorb leeren
+                                </button>
+                            )}
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowTrash(false)}>
+                                Zurueck
+                            </button>
+                        </div>
+                        {trash.length === 0 ? (
+                            <div style={styles.emptyState}>
+                                <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
+                                <p style={styles.emptyTitle}>Papierkorb ist leer</p>
+                            </div>
+                        ) : (
+                            <div style={styles.grid}>
+                                {trash.map((book) => (
+                                    <div key={book.id} style={styles.trashCard}>
+                                        <div style={{flex: 1}}>
+                                            <strong>{book.title}</strong>
+                                            <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>{book.author}</p>
+                                        </div>
+                                        <div style={{display: "flex", gap: 6}}>
+                                            <button className="btn btn-primary btn-sm" onClick={() => handleRestore(book.id)}>
+                                                <RotateCcw size={12}/> Wiederherstellen
+                                            </button>
+                                            <button className="btn btn-danger btn-sm" onClick={() => handlePermanentDelete(book.id)}>
+                                                <Trash size={12}/> Endgueltig
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                ) : loading ? (
                     <p style={styles.empty}>Laden...</p>
                 ) : books.length === 0 ? (
                     <div style={styles.emptyState}>
@@ -174,99 +256,53 @@ export default function Dashboard() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-    container: {
-        minHeight: "100vh",
-        background: "var(--bg-primary)",
-    },
-    header: {
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-card)",
-    },
+    container: {minHeight: "100vh", background: "var(--bg-primary)"},
+    header: {borderBottom: "1px solid var(--border)", background: "var(--bg-card)"},
     headerInner: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "12px 24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
+        maxWidth: 1100, margin: "0 auto", padding: "12px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
     },
-    logo: {
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        color: "var(--accent)",
-        flexShrink: 0,
-    },
+    logo: {display: "flex", alignItems: "center", gap: 10, color: "var(--accent)", flexShrink: 0},
     logoText: {
-        fontFamily: "var(--font-display)",
-        fontSize: "1.5rem",
-        fontWeight: 600,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.02em",
+        fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600,
+        color: "var(--text-primary)", letterSpacing: "-0.02em",
     },
     headerActions: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        flexWrap: "wrap",
-        justifyContent: "flex-end",
+        display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end",
     },
-    headerSeparator: {
-        width: 1,
-        height: 24,
-        background: "var(--border)",
-        margin: "0 4px",
+    headerSeparator: {width: 1, height: 24, background: "var(--border)", margin: "0 4px"},
+    trashBadge: {
+        position: "absolute" as const, top: -4, right: -4,
+        background: "var(--danger)", color: "white", fontSize: "0.625rem",
+        fontWeight: 700, width: 16, height: 16, borderRadius: "50%",
+        display: "flex", alignItems: "center", justifyContent: "center",
     },
-    main: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "32px 24px",
-    },
+    main: {maxWidth: 1100, margin: "0 auto", padding: "32px 24px"},
     mainHeader: {
-        display: "flex",
-        alignItems: "baseline",
-        gap: 12,
-        marginBottom: 20,
+        display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
     },
     mainTitle: {
-        fontFamily: "var(--font-display)",
-        fontSize: "1.25rem",
-        fontWeight: 600,
+        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600,
         color: "var(--text-primary)",
     },
-    bookCount: {
-        fontSize: "0.875rem",
-        color: "var(--text-muted)",
-    },
+    bookCount: {fontSize: "0.875rem", color: "var(--text-muted)"},
     grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        gap: 20,
+        display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20,
     },
-    empty: {
-        textAlign: "center" as const,
-        color: "var(--text-muted)",
-        marginTop: 80,
-    },
+    empty: {textAlign: "center" as const, color: "var(--text-muted)", marginTop: 80},
     emptyState: {
-        display: "flex",
-        flexDirection: "column" as const,
-        alignItems: "center",
-        marginTop: 80,
-        gap: 8,
+        display: "flex", flexDirection: "column" as const, alignItems: "center", marginTop: 80, gap: 8,
     },
     emptyTitle: {
-        fontFamily: "var(--font-display)",
-        fontSize: "1.5rem",
-        fontWeight: 600,
-        marginTop: 16,
+        fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600, marginTop: 16,
     },
     emptyText: {
-        color: "var(--text-muted)",
-        fontSize: "0.9375rem",
-        textAlign: "center" as const,
-        maxWidth: 480,
-        lineHeight: 1.6,
+        color: "var(--text-muted)", fontSize: "0.9375rem",
+        textAlign: "center" as const, maxWidth: 480, lineHeight: 1.6,
+    },
+    trashCard: {
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 16, padding: 16, background: "var(--bg-card)",
+        border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
     },
 };

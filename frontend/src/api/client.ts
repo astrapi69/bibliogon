@@ -107,8 +107,20 @@ export const api = {
         delete: (id: string) =>
             request<void>(`/books/${id}`, {method: "DELETE"}),
 
-        exportUrl: (id: string, fmt: "epub" | "pdf" | "project") =>
+        exportUrl: (id: string, fmt: string) =>
             `${BASE}/books/${id}/export/${fmt}`,
+
+        // Trash
+        listTrash: () => request<Book[]>("/books/trash/list"),
+
+        restore: (id: string) =>
+            request<Book>(`/books/trash/${id}/restore`, {method: "POST"}),
+
+        permanentDelete: (id: string) =>
+            request<void>(`/books/trash/${id}`, {method: "DELETE"}),
+
+        emptyTrash: () =>
+            request<void>("/books/trash/empty", {method: "DELETE"}),
     },
 
     chapters: {

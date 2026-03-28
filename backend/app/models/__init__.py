@@ -42,6 +42,7 @@ class Book(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     chapters: Mapped[list["Chapter"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", order_by="Chapter.position"

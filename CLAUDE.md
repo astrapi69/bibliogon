@@ -201,6 +201,10 @@ manager.get_text("key", "de")      # i18n String
 
 - GET/POST /api/books
 - GET/PATCH/DELETE /api/books/{id}
+- GET /api/books/trash/list
+- POST /api/books/trash/{id}/restore
+- DELETE /api/books/trash/{id}
+- DELETE /api/books/trash/empty
 - GET/POST /api/books/{id}/chapters
 - GET/PATCH/DELETE /api/books/{id}/chapters/{cid}
 - PUT /api/books/{id}/chapters/reorder

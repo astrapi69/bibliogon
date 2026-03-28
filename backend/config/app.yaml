@@ -3,6 +3,7 @@ app:
   version: 0.6.0
   description: Open-source book authoring platform
   default_language: de
+  delete_permanently: false
   supported_languages:
   - de
   - en
