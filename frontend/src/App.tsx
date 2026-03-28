@@ -6,6 +6,8 @@ import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
 import {useTheme} from "./hooks/useTheme";
 import {DialogProvider} from "./components/AppDialog";
+import {ToastContainer} from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
     // Initialize theme on app start (applies data-theme attribute)
@@ -20,6 +22,15 @@ export default function App() {
                 <Route path="/help" element={<Help/>}/>
                 <Route path="/get-started" element={<GetStarted/>}/>
             </Routes>
+            <ToastContainer
+                position="bottom-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                pauseOnHover
+                theme="colored"
+            />
         </DialogProvider>
     );
 }

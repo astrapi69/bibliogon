@@ -5,6 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
+import {toast} from "react-toastify";
 
 type Tab = "app" | "plugins" | "licenses";
 
@@ -43,9 +44,12 @@ export default function Settings() {
         }
     };
 
-    const showMessage = (msg: string) => {
-        setMessage(msg);
-        setTimeout(() => setMessage(""), 3000);
+    const showMessage = (msg: string, isError = false) => {
+        if (isError) {
+            toast.error(msg);
+        } else {
+            toast.success(msg);
+        }
     };
 
     return (
@@ -59,10 +63,7 @@ export default function Settings() {
                         </button>
                         <h1 style={styles.title}>Einstellungen</h1>
                     </div>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                        {message && <span style={styles.message}>{message}</span>}
-                        <ThemeToggle/>
-                    </div>
+                    <ThemeToggle/>
                 </div>
             </header>
 
@@ -91,7 +92,7 @@ export default function Settings() {
                                 setAppConfig(updated);
                                 showMessage("Gespeichert");
                             } catch (err) {
-                                showMessage("Fehler beim Speichern");
+                                showMessage("Fehler beim Speichern", true);
                             }
                             setSaving(false);
                         }}
@@ -108,7 +109,7 @@ export default function Settings() {
                                 setPluginConfigs((prev) => ({...prev, [name]: updated as Record<string, unknown>}));
                                 showMessage(`${name} gespeichert`);
                             } catch (err) {
-                                showMessage("Fehler beim Speichern");
+                                showMessage("Fehler beim Speichern", true);
                             }
                         }}
                         onTogglePlugin={async (name, enable) => {
@@ -122,7 +123,7 @@ export default function Settings() {
                                 setAppConfig(app);
                                 showMessage(`${name} ${enable ? "aktiviert" : "deaktiviert"}`);
                             } catch (err) {
-                                showMessage("Fehler");
+                                showMessage("Fehler", true);
                             }
                         }}
                         onAddPlugin={async (data) => {
@@ -132,7 +133,7 @@ export default function Settings() {
                                 setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
                                 showMessage(`${data.name} hinzugefuegt`);
                             } catch (err) {
-                                showMessage(`Fehler: ${err}`);
+                                showMessage(`Fehler: ${err}`, true);
                             }
                         }}
                         onRemovePlugin={async (name) => {
@@ -146,7 +147,7 @@ export default function Settings() {
                                 setAppConfig(app);
                                 showMessage(`${name} entfernt`);
                             } catch (err) {
-                                showMessage(`Fehler: ${err}`);
+                                showMessage(`Fehler: ${err}`, true);
                             }
                         }}
                     />
@@ -171,7 +172,7 @@ export default function Settings() {
                                 setLicenses(lics);
                                 showMessage("Lizenz entfernt");
                             } catch (err) {
-                                showMessage("Fehler");
+                                showMessage("Fehler", true);
                             }
                         }}
                     />

@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {useDialog} from "../components/AppDialog";
+import {toast} from "react-toastify";
 import {
     ChevronLeft, BookPlus, FilePlus, PenTool, GripVertical,
     Download, Settings, Archive, Rocket, Check,
@@ -27,7 +27,6 @@ interface GuideStep {
 
 export default function GetStarted() {
     const navigate = useNavigate();
-    const dlg = useDialog();
     const [steps, setSteps] = useState<GuideStep[]>([]);
     const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
         const stored = localStorage.getItem("bibliogon-onboarding");
@@ -63,7 +62,7 @@ export default function GetStarted() {
             }
             navigate(`/book/${book.id}`);
         } catch (err) {
-            await dlg.alert("Fehler", `${err}`, "danger");
+            toast.error(`Fehler: ${err}`);
         }
         setCreating(false);
     };

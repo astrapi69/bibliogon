@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
+import {toast} from "react-toastify";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -86,10 +87,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.import(file);
-            await dialog.alert("Import erfolgreich", `${result.imported_books} Buch/Buecher importiert.`, "success");
+            toast.success(`${result.imported_books} Buch/Buecher importiert.`);
             loadBooks();
         } catch (err) {
-            await dialog.alert("Import fehlgeschlagen", `${err}`, "danger");
+            toast.error(`Import fehlgeschlagen: ${err}`);
         }
         e.target.value = "";
     };
@@ -99,10 +100,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.importProject(file);
-            await dialog.alert("Projekt importiert", `"${result.title}" mit ${result.chapter_count} Kapiteln importiert.`, "success");
+            toast.success(`"${result.title}" mit ${result.chapter_count} Kapiteln importiert.`);
             loadBooks();
         } catch (err) {
-            await dialog.alert("Import fehlgeschlagen", `${err}`, "danger");
+            toast.error(`Import fehlgeschlagen: ${err}`);
         }
         e.target.value = "";
     };
