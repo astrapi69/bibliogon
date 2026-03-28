@@ -171,6 +171,7 @@ export default function BookEditor() {
                 <BookMetadataEditor
                     book={book}
                     onSave={handleSaveMetadata}
+                    onBack={() => setShowMetadata(false)}
                     allBooks={allBooks}
                 />
             ) : activeChapter ? (

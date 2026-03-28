@@ -1,15 +1,16 @@
 import {useState, useEffect} from "react";
 import {Book} from "../api/client";
-import {Save, Copy} from "lucide-react";
+import {Save, Copy, ChevronLeft} from "lucide-react";
 import {toast} from "react-toastify";
 
 interface Props {
     book: Book;
     onSave: (data: Record<string, unknown>) => Promise<void>;
+    onBack: () => void;
     allBooks?: Book[];
 }
 
-export default function BookMetadataEditor({book, onSave, allBooks}: Props) {
+export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Props) {
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -76,7 +77,12 @@ export default function BookMetadataEditor({book, onSave, allBooks}: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>Buch-Metadaten</h2>
+                <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <button className="btn-icon" onClick={onBack} title="Zurueck zum Editor">
+                        <ChevronLeft size={18}/>
+                    </button>
+                    <h2 style={styles.title}>Buch-Metadaten</h2>
+                </div>
                 <div style={{display: "flex", gap: 8}}>
                     {otherBooks.length > 0 && (
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowCopyDialog(!showCopyDialog)}>

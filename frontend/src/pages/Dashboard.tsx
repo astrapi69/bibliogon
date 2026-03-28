@@ -73,7 +73,7 @@ export default function Dashboard() {
     };
 
     const handleEmptyTrash = async () => {
-        if (!await dialog.confirm("Papierkorb leeren", `${trash.length} Buecher werden endgueltig geloescht.`, "danger")) return;
+        if (!await dialog.confirm("Papierkorb leeren", `Alle ${trash.length} Buecher im Papierkorb werden unwiderruflich geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden.`, "danger")) return;
         await api.books.emptyTrash();
         setTrash([]);
     };

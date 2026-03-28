@@ -110,6 +110,13 @@ def restore_book(book_id: str, db: Session = Depends(get_db)):
     return book
 
 
+@router.delete("/trash/empty", status_code=status.HTTP_204_NO_CONTENT)
+def empty_trash(db: Session = Depends(get_db)):
+    """Permanently delete all books in the trash."""
+    db.query(Book).filter(Book.deleted_at.is_not(None)).delete()
+    db.commit()
+
+
 @router.delete("/trash/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def permanent_delete(book_id: str, db: Session = Depends(get_db)):
     """Permanently delete a book from the trash."""
@@ -117,11 +124,4 @@ def permanent_delete(book_id: str, db: Session = Depends(get_db)):
     if not book:
         raise HTTPException(status_code=404, detail="Book not found in trash")
     db.delete(book)
-    db.commit()
-
-
-@router.delete("/trash/empty", status_code=status.HTTP_204_NO_CONTENT)
-def empty_trash(db: Session = Depends(get_db)):
-    """Permanently delete all books in the trash."""
-    db.query(Book).filter(Book.deleted_at.is_not(None)).delete()
     db.commit()
