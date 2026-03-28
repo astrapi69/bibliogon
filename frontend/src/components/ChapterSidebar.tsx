@@ -1,4 +1,4 @@
-import {useState, useRef} from "react";
+import {useState, useRef, useEffect} from "react";
 import {Chapter, ChapterType} from "../api/client";
 import {
     Plus,
@@ -50,7 +50,21 @@ export default function ChapterSidebar({
     const mainChapters = chapters.filter((ch) => ch.chapter_type === "chapter");
     const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
 
+    const [showAddMenu, setShowAddMenu] = useState(false);
+    const addMenuRef = useRef<HTMLDivElement>(null);
     const [dragId, setDragId] = useState<string | null>(null);
+
+    // Close menu on outside click
+    useEffect(() => {
+        if (!showAddMenu) return;
+        const handler = (e: MouseEvent) => {
+            if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+                setShowAddMenu(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [showAddMenu]);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const dragCounter = useRef(0);
 
@@ -177,6 +191,44 @@ export default function ChapterSidebar({
             </div>
 
             <div style={styles.list}>
+                {/* Add button with dropdown */}
+                <div ref={addMenuRef} style={{...styles.sectionHeader, position: "relative"}}>
+                    <span style={styles.listLabel}>Inhalt</span>
+                    <button
+                        style={styles.addBtn}
+                        onClick={() => setShowAddMenu(!showAddMenu)}
+                        title="Hinzufuegen"
+                    >
+                        <Plus size={14}/>
+                    </button>
+                    {showAddMenu && (
+                        <div style={styles.addMenu}>
+                            <div style={styles.addMenuGroup}>
+                                <span style={styles.addMenuLabel}>Front Matter</span>
+                                {FRONT_MATTER_TYPES.map((t) => (
+                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
+                                        {TYPE_LABELS[t]}
+                                    </button>
+                                ))}
+                            </div>
+                            <div style={styles.addMenuGroup}>
+                                <span style={styles.addMenuLabel}>Kapitel</span>
+                                <button style={styles.addMenuItem} onClick={() => { onAdd("chapter"); setShowAddMenu(false); }}>
+                                    Neues Kapitel
+                                </button>
+                            </div>
+                            <div style={styles.addMenuGroup}>
+                                <span style={styles.addMenuLabel}>Back Matter</span>
+                                {BACK_MATTER_TYPES.map((t) => (
+                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
+                                        {TYPE_LABELS[t]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Front Matter */}
                 {frontMatter.length > 0 && (
                     <>
@@ -190,9 +242,6 @@ export default function ChapterSidebar({
                 {/* Main Chapters */}
                 <div style={styles.sectionHeader}>
                     <span style={styles.listLabel}>Kapitel</span>
-                    <button style={styles.addBtn} onClick={() => onAdd("chapter")} title="Kapitel hinzufuegen">
-                        <Plus size={14}/>
-                    </button>
                 </div>
                 {mainChapters.length === 0 && (
                     <p style={styles.empty}>Noch keine Kapitel</p>
@@ -276,6 +325,28 @@ const styles: Record<string, React.CSSProperties> = {
         background: "none", border: "none", color: "rgba(255,255,255,0.2)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
         opacity: 0, transition: "opacity 150ms",
+    },
+    addMenu: {
+        position: "absolute" as const, top: "100%", right: 8, zIndex: 50,
+        background: "#2a2725", border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 8, padding: "6px 0", minWidth: 180,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    },
+    addMenuGroup: {
+        padding: "4px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+    },
+    addMenuLabel: {
+        display: "block", padding: "4px 14px", fontSize: "0.625rem", fontWeight: 600,
+        textTransform: "uppercase" as const, letterSpacing: "0.08em",
+        color: "rgba(255,255,255,0.3)",
+    },
+    addMenuItem: {
+        display: "block", width: "100%", padding: "7px 14px", border: "none",
+        background: "transparent", color: "var(--text-sidebar)",
+        fontSize: "0.8125rem", fontFamily: "var(--font-body)",
+        cursor: "pointer", textAlign: "left" as const,
+        transition: "background 100ms",
     },
     exportSection: { padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" },
     exportBtn: {
