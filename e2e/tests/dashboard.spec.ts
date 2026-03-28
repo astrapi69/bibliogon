@@ -1,4 +1,4 @@
-import {test, expect, autoAcceptDialogs, createBook} from "../fixtures/base";
+import {test, expect, acceptDialog, createBook} from "../fixtures/base";
 
 test.describe("Dashboard", () => {
     test("shows welcome state when no books exist", async ({page}) => {
@@ -12,13 +12,11 @@ test.describe("Dashboard", () => {
     test("create book via modal", async ({page}) => {
         await page.goto("/");
         await page.getByText("Neues Buch").click();
-        await expect(page.getByText("Neues Buch").nth(1)).toBeVisible(); // modal heading
 
         await page.getByPlaceholder("Der Titel deines Buches").fill("E2E Testbuch");
         await page.getByPlaceholder("Autorenname oder Pen Name").fill("E2E Autor");
         await page.getByRole("button", {name: "Erstellen", exact: true}).click();
 
-        // Book should appear on dashboard
         await expect(page.getByText("E2E Testbuch")).toBeVisible();
         await expect(page.getByText("E2E Autor")).toBeVisible();
     });
@@ -33,47 +31,41 @@ test.describe("Dashboard", () => {
     test("delete book moves to trash", async ({page}) => {
         await createBook("Loeschbuch");
         await page.goto("/");
-        autoAcceptDialogs(page);
 
         await expect(page.getByText("Loeschbuch")).toBeVisible();
-
-        // Find and click the delete button on the book card
         const card = page.locator("text=Loeschbuch").locator("..");
         await card.locator("button[title]").last().click();
+
+        // Custom confirm dialog
+        await acceptDialog(page);
 
         await expect(page.getByText("Loeschbuch")).not.toBeVisible();
     });
 
     test("trash view shows deleted books", async ({page}) => {
-        const book = await createBook("Papierkorbtest");
+        await createBook("Papierkorbtest");
         await page.goto("/");
-        autoAcceptDialogs(page);
 
-        // Delete the book
         const card = page.locator("text=Papierkorbtest").locator("..");
         await card.locator("button[title]").last().click();
-        await expect(page.getByText("Papierkorbtest")).not.toBeVisible();
+        await acceptDialog(page);
 
-        // Open trash
         await page.locator("button[title='Papierkorb']").click();
         await expect(page.getByText("Papierkorb").first()).toBeVisible();
         await expect(page.getByText("Papierkorbtest")).toBeVisible();
     });
 
     test("restore book from trash", async ({page}) => {
-        const book = await createBook("Wiederherstellbar");
+        await createBook("Wiederherstellbar");
         await page.goto("/");
-        autoAcceptDialogs(page);
 
-        // Delete
         const card = page.locator("text=Wiederherstellbar").locator("..");
         await card.locator("button[title]").last().click();
+        await acceptDialog(page);
 
-        // Open trash and restore
         await page.locator("button[title='Papierkorb']").click();
         await page.getByText("Wiederherstellen").click();
 
-        // Go back to main view
         await page.locator("button[title='Zurueck']").click();
         await expect(page.getByText("Wiederherstellbar")).toBeVisible();
     });

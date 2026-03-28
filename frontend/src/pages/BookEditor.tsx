@@ -4,6 +4,7 @@ import {api, BookDetail, Chapter, ChapterType} from "../api/client";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
+import {useDialog} from "../components/AppDialog";
 
 const TYPE_LABELS: Record<ChapterType, string> = {
     chapter: "Kapitel",
@@ -19,6 +20,7 @@ const TYPE_LABELS: Record<ChapterType, string> = {
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
+    const dialog = useDialog();
     const [book, setBook] = useState<BookDetail | null>(null);
     const [showExport, setShowExport] = useState(false);
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
@@ -53,8 +55,9 @@ export default function BookEditor() {
 
     const handleAddChapter = async (chapterType?: ChapterType) => {
         if (!bookId) return;
-        const title = prompt("Kapiteltitel:");
-        if (!title?.trim()) return;
+        const typeLabel = chapterType ? TYPE_LABELS[chapterType] : "Kapitel";
+        const title = await dialog.prompt(`${typeLabel} erstellen`, `Titel fuer das neue ${typeLabel}:`, `z.B. Mein ${typeLabel}`);
+        if (!title) return;
         const chapter = await api.chapters.create(bookId, {
             title: title.trim(),
             chapter_type: chapterType || "chapter",
@@ -68,7 +71,7 @@ export default function BookEditor() {
 
     const handleDeleteChapter = async (chapterId: string) => {
         if (!bookId) return;
-        if (!confirm("Kapitel wirklich loeschen?")) return;
+        if (!await dialog.confirm("Kapitel loeschen", "Kapitel wirklich loeschen?", "danger")) return;
         await api.chapters.delete(bookId, chapterId);
         setBook((prev) => {
             if (!prev) return prev;

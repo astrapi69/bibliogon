@@ -4,6 +4,7 @@ import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
+import {useDialog} from "../components/AppDialog";
 
 type Tab = "app" | "plugins" | "licenses";
 
@@ -263,6 +264,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onRemovePlugin: (name: string) => void;
 }) {
     const [showAdd, setShowAdd] = useState(false);
+    const pluginDialog = useDialog();
     const [newName, setNewName] = useState("");
     const [newDisplayName, setNewDisplayName] = useState("");
     const [newDescription, setNewDescription] = useState("");
@@ -346,8 +348,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
-                        onRemove={() => {
-                            if (confirm(`Plugin "${displayName}" wirklich entfernen? Die Konfiguration wird geloescht.`)) {
+                        onRemove={async () => {
+                            if (await pluginDialog.confirm("Plugin entfernen", `"${displayName}" wirklich entfernen? Die Konfiguration wird geloescht.`, "danger")) {
                                 onRemovePlugin(name);
                             }
                         }}

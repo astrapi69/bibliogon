@@ -8,8 +8,10 @@ import {
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import {useDialog} from "../components/AppDialog";
 
 export default function Dashboard() {
+    const dialog = useDialog();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
@@ -51,7 +53,7 @@ export default function Dashboard() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Buch in den Papierkorb verschieben?")) return;
+        if (!await dialog.confirm("Buch loeschen", "Buch in den Papierkorb verschieben?")) return;
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         loadTrash();
@@ -64,13 +66,13 @@ export default function Dashboard() {
     };
 
     const handlePermanentDelete = async (id: string) => {
-        if (!confirm("Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden.")) return;
+        if (!await dialog.confirm("Endgueltig loeschen", "Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden.", "danger")) return;
         await api.books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
     };
 
     const handleEmptyTrash = async () => {
-        if (!confirm(`Papierkorb leeren? ${trash.length} Buecher werden endgueltig geloescht.`)) return;
+        if (!await dialog.confirm("Papierkorb leeren", `${trash.length} Buecher werden endgueltig geloescht.`, "danger")) return;
         await api.books.emptyTrash();
         setTrash([]);
     };
@@ -84,10 +86,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.import(file);
-            alert(`${result.imported_books} Buch/Buecher importiert.`);
+            await dialog.alert("Import erfolgreich", `${result.imported_books} Buch/Buecher importiert.`, "success");
             loadBooks();
         } catch (err) {
-            alert(`Import fehlgeschlagen: ${err}`);
+            await dialog.alert("Import fehlgeschlagen", `${err}`, "danger");
         }
         e.target.value = "";
     };
@@ -97,10 +99,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.importProject(file);
-            alert(`"${result.title}" importiert (${result.chapter_count} Kapitel).`);
+            await dialog.alert("Projekt importiert", `"${result.title}" mit ${result.chapter_count} Kapiteln importiert.`, "success");
             loadBooks();
         } catch (err) {
-            alert(`Import fehlgeschlagen: ${err}`);
+            await dialog.alert("Import fehlgeschlagen", `${err}`, "danger");
         }
         e.target.value = "";
     };

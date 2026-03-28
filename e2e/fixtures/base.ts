@@ -2,7 +2,7 @@ import {test as base, type Page} from "@playwright/test";
 import {resetDb, createBook, createChapter} from "../helpers/api";
 
 /**
- * Extended test fixtures with DB reset and dialog auto-handling.
+ * Extended test fixtures with DB reset.
  */
 export const test = base.extend<{
     resetDatabase: void;
@@ -14,17 +14,18 @@ export const test = base.extend<{
 });
 
 /**
- * Auto-accept confirm/prompt/alert dialogs.
- * Call before actions that trigger native dialogs.
+ * Accept a custom confirm/alert dialog by clicking the confirm button.
  */
-export function autoAcceptDialogs(page: Page, promptValue: string = "Testkapitel") {
-    page.on("dialog", async (dialog) => {
-        if (dialog.type() === "prompt") {
-            await dialog.accept(promptValue);
-        } else {
-            await dialog.accept();
-        }
-    });
+export async function acceptDialog(page: Page) {
+    await page.getByRole("button", {name: "Bestaetigen"}).or(page.getByRole("button", {name: "OK"})).click();
+}
+
+/**
+ * Fill and submit a custom prompt dialog.
+ */
+export async function fillPrompt(page: Page, value: string) {
+    await page.locator("input.input").last().fill(value);
+    await page.getByRole("button", {name: "Bestaetigen"}).click();
 }
 
 export {createBook, createChapter, resetDb};
