@@ -1,5 +1,7 @@
-import {useState} from "react";
-import {Download, X} from "lucide-react";
+import {useEffect, useState} from "react";
+import {Download, X, ChevronDown, ChevronUp} from "lucide-react";
+import {api} from "../api/client";
+import OrderedListEditor from "./OrderedListEditor";
 
 interface Props {
     bookId: string;
@@ -26,11 +28,27 @@ export default function ExportDialog({bookId, bookTitle, onClose}: Props) {
     const [format, setFormat] = useState("epub");
     const [bookType, setBookType] = useState("ebook");
     const [tocDepth, setTocDepth] = useState(2);
+    const [showSectionOrder, setShowSectionOrder] = useState(false);
+    const [sectionOrders, setSectionOrders] = useState<Record<string, string[] | null>>({});
     const [exporting, setExporting] = useState(false);
+
+    // Load default section_order from export plugin config
+    useEffect(() => {
+        api.settings.getPlugin("export").then((config) => {
+            const settings = (config.settings || {}) as Record<string, unknown>;
+            const order = settings.section_order as Record<string, string[] | null> | undefined;
+            if (order) {
+                setSectionOrders(order);
+            }
+            const depth = settings.toc_depth;
+            if (typeof depth === "number") setTocDepth(depth);
+        }).catch(() => {});
+    }, []);
+
+    const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
 
     const handleExport = () => {
         setExporting(true);
-        // Build export URL with query params for overrides
         const params = new URLSearchParams();
         if (bookType !== "ebook") params.set("book_type", bookType);
         if (tocDepth !== 2) params.set("toc_depth", String(tocDepth));
@@ -76,7 +94,7 @@ export default function ExportDialog({bookId, bookTitle, onClose}: Props) {
                     </div>
                 </div>
 
-                {/* Book type (only relevant for epub/pdf) */}
+                {/* Book type */}
                 {format !== "project" && format !== "markdown" && (
                     <div style={{marginBottom: 16}}>
                         <label className="label">Buchtyp</label>
@@ -107,6 +125,31 @@ export default function ExportDialog({bookId, bookTitle, onClose}: Props) {
                     </div>
                 )}
 
+                {/* Section order (collapsible) */}
+                {format !== "project" && currentOrder.length > 0 && (
+                    <div style={{marginTop: 12}}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setShowSectionOrder(!showSectionOrder)}
+                            style={{padding: "4px 0", gap: 4}}
+                        >
+                            {showSectionOrder ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                            Kapitelreihenfolge anpassen ({bookType})
+                        </button>
+                        {showSectionOrder && (
+                            <div style={{marginTop: 8}}>
+                                <OrderedListEditor
+                                    items={currentOrder}
+                                    onChange={(newOrder) => {
+                                        setSectionOrders((prev) => ({...prev, [bookType]: newOrder}));
+                                    }}
+                                    addPlaceholder="z.B. back-matter/dedication.md"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Export button */}
                 <div style={{display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20}}>
                     <button className="btn btn-ghost" onClick={onClose}>Abbrechen</button>
@@ -132,7 +175,8 @@ const styles: Record<string, React.CSSProperties> = {
     },
     modal: {
         background: "var(--bg-card)", borderRadius: "var(--radius-lg)",
-        padding: 24, width: "100%", maxWidth: 520,
+        padding: 24, width: "100%", maxWidth: 560,
+        maxHeight: "90vh", overflowY: "auto",
         boxShadow: "var(--shadow-lg)",
     },
     modalHeader: {

@@ -3,6 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2} from "lucide-react";
+import OrderedListEditor from "../components/OrderedListEditor";
 
 type Tab = "app" | "plugins" | "licenses";
 
@@ -374,18 +375,23 @@ function PluginCard({name, displayName, description, version, license, enabled, 
         setLocalSettings((prev) => ({...prev, [key]: value}));
     };
 
-    // Split settings into editable scalars and read-only complex values
+    // Categorize settings: scalar (editable), ordered-list (reorderable), complex (read-only)
     const scalarSettings: [string, unknown][] = [];
+    const orderedListSettings: [string, unknown][] = [];
     const complexSettings: [string, unknown][] = [];
     for (const [key, value] of Object.entries(localSettings)) {
         if (value === null || value === undefined) continue;
-        if (typeof value === "object") {
+        if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
+            orderedListSettings.push([key, value]);
+        } else if (typeof value === "object" && !Array.isArray(value) && isSectionOrder(key, value)) {
+            orderedListSettings.push([key, value]);
+        } else if (typeof value === "object") {
             complexSettings.push([key, value]);
         } else {
             scalarSettings.push([key, value]);
         }
     }
-    const hasSettings = scalarSettings.length > 0 || complexSettings.length > 0;
+    const hasSettings = scalarSettings.length > 0 || orderedListSettings.length > 0 || complexSettings.length > 0;
 
     const isPremium = license !== "MIT" && license.toLowerCase() !== "free";
 
@@ -469,9 +475,64 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                         </>
                     )}
 
+                    {/* Editable ordered lists (section_order, skip files) */}
+                    {orderedListSettings.length > 0 && (
+                        <div style={{marginTop: scalarSettings.length > 0 ? 16 : 0}}>
+                            <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
+                                Reihenfolge und Listen
+                            </h4>
+                            {orderedListSettings.map(([key, value]) => (
+                                <div key={key} style={{marginBottom: 16}}>
+                                    {Array.isArray(value) ? (
+                                        <OrderedListEditor
+                                            label={key}
+                                            items={value as string[]}
+                                            onChange={(newItems) => {
+                                                setLocalSettings((prev) => ({...prev, [key]: newItems}));
+                                            }}
+                                            addPlaceholder="z.B. front-matter/dedication.md"
+                                        />
+                                    ) : (
+                                        /* section_order is a dict of book_type -> string[] */
+                                        Object.entries(value as Record<string, unknown>).map(([subKey, subValue]) => (
+                                            <div key={subKey} style={{marginBottom: 12}}>
+                                                {Array.isArray(subValue) ? (
+                                                    <OrderedListEditor
+                                                        label={`${key} > ${subKey}`}
+                                                        items={subValue as string[]}
+                                                        onChange={(newItems) => {
+                                                            setLocalSettings((prev) => ({
+                                                                ...prev,
+                                                                [key]: {
+                                                                    ...(prev[key] as Record<string, unknown>),
+                                                                    [subKey]: newItems,
+                                                                },
+                                                            }));
+                                                        }}
+                                                        addPlaceholder="z.B. back-matter/epilogue.md"
+                                                    />
+                                                ) : (
+                                                    <div>
+                                                        <label className="label">{key} &gt; {subKey}</label>
+                                                        <span style={{fontSize: "0.8125rem", color: "var(--text-muted)"}}>
+                                                            {subValue === null ? "null (Fallback)" : String(subValue)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            ))}
+                            <button className="btn btn-primary btn-sm" onClick={() => onSave(localSettings)}>
+                                <Save size={12}/> Reihenfolge speichern
+                            </button>
+                        </div>
+                    )}
+
                     {/* Read-only complex settings */}
                     {complexSettings.length > 0 && (
-                        <div style={{marginTop: scalarSettings.length > 0 ? 16 : 0}}>
+                        <div style={{marginTop: (scalarSettings.length > 0 || orderedListSettings.length > 0) ? 16 : 0}}>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                                 Konfiguration (nur lesen)
                             </h4>
@@ -582,6 +643,15 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
 }
 
 // --- Helpers ---
+
+function isSectionOrder(key: string, value: unknown): boolean {
+    // A dict where values are string arrays or null (like section_order with ebook/paperback/etc)
+    if (key !== "section_order") return false;
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    return Object.values(value as Record<string, unknown>).every(
+        (v) => v === null || (Array.isArray(v) && v.every((item) => typeof item === "string"))
+    );
+}
 
 function getLocalized(value: unknown, fallback: string): string {
     if (!value) return fallback;
