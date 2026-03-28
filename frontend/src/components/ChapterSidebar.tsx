@@ -265,7 +265,12 @@ export default function ChapterSidebar({
 
             {/* Export */}
             <div style={styles.exportSection}>
-                <button style={styles.exportBtn} onClick={onExport}>
+                <button
+                    style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
+                    onClick={onExport}
+                    disabled={chapters.length === 0}
+                    title={chapters.length === 0 ? "Erstelle zuerst ein Kapitel" : "Buch exportieren"}
+                >
                     <Download size={14}/> Exportieren...
                 </button>
             </div>
@@ -367,5 +372,8 @@ const styles: Record<string, React.CSSProperties> = {
         border: "1px solid rgba(255,255,255,0.08)", color: "var(--text-sidebar)",
         borderRadius: 6, cursor: "pointer", fontSize: "0.8125rem",
         fontFamily: "var(--font-body)", fontWeight: 500, transition: "background 150ms",
+    },
+    btnDisabled: {
+        opacity: 0.3, cursor: "not-allowed",
     },
 };

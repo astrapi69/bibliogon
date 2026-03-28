@@ -142,7 +142,12 @@ export default function Dashboard() {
 
                         <div style={styles.headerSeparator}/>
 
-                        <button className="btn btn-secondary btn-sm" onClick={handleBackupExport} title="Backup exportieren">
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleBackupExport}
+                            title={books.length === 0 ? "Keine Buecher zum Sichern" : "Backup exportieren"}
+                            disabled={books.length === 0}
+                        >
                             <Download size={14}/> Backup
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => backupInputRef.current?.click()} title="Backup importieren">

@@ -293,6 +293,13 @@ body {
     font-size: 0.8125rem;
 }
 
+.btn:disabled,
+.btn-icon:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .btn-icon {
     padding: 6px;
     background: transparent;
