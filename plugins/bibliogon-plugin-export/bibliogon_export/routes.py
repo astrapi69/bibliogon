@@ -131,7 +131,9 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
         output_path = run_pandoc(project_dir, fmt, config)
 
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
-        ext = output_path.suffix
+        # Ensure filename always has the correct extension
+        ext_map = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}
+        ext = ext_map.get(fmt, output_path.suffix or f".{fmt}")
 
         return FileResponse(
             path=str(output_path),
