@@ -257,6 +257,42 @@ type = "directory"
 url = "../plugins/bibliogon-plugin-export"
 
 [[package]]
+name = "bibliogon-plugin-getstarted"
+version = "1.0.0"
+description = "Onboarding and getting started guide for Bibliogon"
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastapi = "^0.115.0"
+pluginforge = "^0.5.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-getstarted"
+
+[[package]]
+name = "bibliogon-plugin-help"
+version = "1.0.0"
+description = "In-app help, keyboard shortcuts, and FAQ for Bibliogon"
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastapi = "^0.115.0"
+pluginforge = "^0.5.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-help"
+
+[[package]]
 name = "certifi"
 version = "2026.2.25"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -2766,4 +2802,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "8c9367458b2ea6473b841c1e928fbe3ba4aa61319efac9d44bf2b4b981a12194"
+content-hash = "3f97b02ac491584e1f8eecb70b334d2544fab21efe77cea11eacf2d7b7dd3034"
