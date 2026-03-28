@@ -39,7 +39,7 @@
     --transition: 180ms ease;
 }
 
-/* --- Cool Modern Theme --- */
+/* --- Cool Modern Theme (Light) --- */
 [data-app-theme="cool-modern"] {
     --bg-primary: #f8fafc;
     --bg-secondary: #f1f5f9;
@@ -69,7 +69,7 @@
     --font-display: "Inter", system-ui, sans-serif;
 }
 
-/* --- Dark Mode --- */
+/* --- Dark Mode (Warm Literary) --- */
 [data-theme="dark"] {
     --bg-primary: #1a1a1a;
     --bg-secondary: #252525;
@@ -98,6 +98,30 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Dark Mode (Cool Modern) --- */
+[data-app-theme="cool-modern"][data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-sidebar: #020617;
+    --bg-card: #1e293b;
+    --bg-hover: #334155;
+    --bg-editor: #0f172a;
+
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --text-inverse: #0f172a;
+    --text-sidebar: #cbd5e1;
+
+    --accent: #60a5fa;
+    --accent-hover: #93c5fd;
+    --accent-light: rgba(96, 165, 250, 0.15);
+    --accent-subtle: rgba(96, 165, 250, 0.25);
+
+    --border: #334155;
+    --border-strong: #475569;
 }
 
 [data-theme="dark"] .btn-danger:hover {

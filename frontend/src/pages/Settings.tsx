@@ -226,7 +226,12 @@ function AppSettings({config, onSave, saving}: {
                 </div>
                 <div className="field">
                     <label className="label">Theme</label>
-                    <select className="input" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                    <select className="input" value={theme} onChange={(e) => {
+                        setTheme(e.target.value);
+                        // Apply immediately
+                        document.documentElement.setAttribute("data-app-theme", e.target.value);
+                        localStorage.setItem("bibliogon-app-theme", e.target.value);
+                    }}>
                         <option value="warm-literary">Warm Literary</option>
                         <option value="cool-modern">Cool Modern</option>
                     </select>
