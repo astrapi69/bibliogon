@@ -119,11 +119,11 @@ def test_backup_export_and_import():
     # Export backup
     r = client.get("/api/backup/export")
     assert r.status_code == 200
-    assert r.headers["content-type"] == "application/zip"
+    assert r.headers["content-type"] == "application/octet-stream"
 
-    # Verify ZIP contents
-    zip_data = io.BytesIO(r.content)
-    with zipfile.ZipFile(zip_data, "r") as zf:
+    # Verify contents (bgb is a renamed zip)
+    bgb_data = io.BytesIO(r.content)
+    with zipfile.ZipFile(bgb_data, "r") as zf:
         names = zf.namelist()
         assert any("manifest.json" in n for n in names)
         assert any("book.json" in n for n in names)
@@ -131,11 +131,11 @@ def test_backup_export_and_import():
     # Delete original book
     _cleanup_book(book_id)
 
-    # Re-import
-    zip_data.seek(0)
+    # Re-import with .bgb extension
+    bgb_data.seek(0)
     r = client.post(
         "/api/backup/import",
-        files={"file": ("backup.zip", zip_data, "application/zip")},
+        files={"file": ("backup.bgb", bgb_data, "application/octet-stream")},
     )
     assert r.status_code == 200
     assert r.json()["imported_books"] == 1

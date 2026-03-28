@@ -152,7 +152,7 @@ export default function Dashboard() {
                             <Plus size={16}/> Neues Buch
                         </button>
 
-                        <input ref={backupInputRef} type="file" accept=".zip" style={{display: "none"}} onChange={handleBackupImport}/>
+                        <input ref={backupInputRef} type="file" accept=".bgb" style={{display: "none"}} onChange={handleBackupImport}/>
                         <input ref={projectInputRef} type="file" accept=".zip" style={{display: "none"}} onChange={handleProjectImport}/>
                     </div>
                 </div>

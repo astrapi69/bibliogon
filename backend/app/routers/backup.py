@@ -90,39 +90,67 @@ def export_backup(db: Session = Depends(get_db)):
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
 
-    # ZIP it
+    # ZIP it with .bgb extension (Bibliogon Backup)
     zip_path = shutil.make_archive(str(backup_dir), "zip", str(backup_dir))
+    bgb_path = zip_path.replace(".zip", ".bgb")
+    Path(zip_path).rename(bgb_path)
 
     return FileResponse(
-        path=zip_path,
-        media_type="application/zip",
-        filename=f"{backup_dir.name}.zip",
+        path=bgb_path,
+        media_type="application/octet-stream",
+        filename=f"{backup_dir.name}.bgb",
     )
 
 
 @router.post("/import")
 def import_backup(file: UploadFile, db: Session = Depends(get_db)):
-    """Import a full backup ZIP, restoring all books and chapters."""
-    if not file.filename or not file.filename.endswith(".zip"):
-        raise HTTPException(status_code=400, detail="File must be a ZIP archive")
+    """Import a full backup (.bgb file), restoring all books and chapters."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    if not file.filename.endswith(".bgb"):
+        if file.filename.endswith(".zip"):
+            raise HTTPException(
+                status_code=400,
+                detail="Das ist eine ZIP-Datei. Fuer Projekt-Import nutze den 'Import'-Button. "
+                       "Fuer Backup-Restore wird eine .bgb-Datei erwartet (erstellt ueber 'Backup').",
+            )
+        raise HTTPException(status_code=400, detail="Datei muss eine .bgb-Datei sein (Bibliogon Backup)")
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_restore_"))
 
     try:
-        # Save and extract ZIP
-        zip_path = tmp_dir / "backup.zip"
+        # Save and extract
+        zip_path = tmp_dir / "backup.bgb"
         with open(zip_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(tmp_dir / "extracted")
+        try:
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall(tmp_dir / "extracted")
+        except zipfile.BadZipFile:
+            raise HTTPException(status_code=400, detail="Beschaedigte .bgb-Datei")
 
         extracted = tmp_dir / "extracted"
+
+        # Validate: must contain manifest.json (bibliogon-backup format)
+        manifest_found = _find_manifest(extracted)
+        if manifest_found:
+            manifest_data = json.loads(manifest_found.read_text(encoding="utf-8"))
+            if manifest_data.get("format") != "bibliogon-backup":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Ungueltige Backup-Datei. Die Datei hat kein gueltiges Bibliogon-Backup-Format.",
+                )
 
         # Find the books directory (may be nested in backup dir)
         books_dir = _find_books_dir(extracted)
         if not books_dir:
-            raise HTTPException(status_code=400, detail="Invalid backup format: no 'books' directory found")
+            raise HTTPException(
+                status_code=400,
+                detail="Ungueltige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
+                       "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button.",
+            )
 
         imported_count = 0
         for book_dir in sorted(books_dir.iterdir()):
@@ -181,8 +209,17 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
 @router.post("/import-project")
 def import_project(file: UploadFile, db: Session = Depends(get_db)):
     """Import a write-book-template project ZIP as a new book."""
-    if not file.filename or not file.filename.endswith(".zip"):
-        raise HTTPException(status_code=400, detail="File must be a ZIP archive")
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    if file.filename.endswith(".bgb"):
+        raise HTTPException(
+            status_code=400,
+            detail="Das ist eine Backup-Datei (.bgb). Fuer Backup-Restore nutze den 'Restore'-Button. "
+                   "Fuer Projekt-Import wird eine .zip-Datei erwartet.",
+        )
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Datei muss eine .zip-Datei sein (Projektstruktur)")
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_import_"))
 
@@ -196,12 +233,21 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
 
         extracted = tmp_dir / "extracted"
 
+        # Check if this is accidentally a backup file
+        if _find_manifest(extracted):
+            raise HTTPException(
+                status_code=400,
+                detail="Das ist eine Backup-Datei, kein Projekt-ZIP. "
+                       "Fuer Backup-Restore nutze den 'Restore'-Button.",
+            )
+
         # Find the project root (contains config/metadata.yaml or manuscript/)
         project_root = _find_project_root(extracted)
         if not project_root:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid project format: no metadata.yaml or manuscript/ found",
+                detail="Ungueltiges Projektformat: kein metadata.yaml oder manuscript/ gefunden. "
+                       "Erwartet wird ein write-book-template Projekt.",
             )
 
         # Read metadata
@@ -279,6 +325,16 @@ _BACK_MATTER_MAP = {
     "bibliography": ChapterType.BIBLIOGRAPHY,
     "glossary": ChapterType.GLOSSARY,
 }
+
+
+def _find_manifest(extracted: Path) -> Path | None:
+    """Find manifest.json in extracted archive (indicates backup format)."""
+    if (extracted / "manifest.json").exists():
+        return extracted / "manifest.json"
+    for child in extracted.iterdir():
+        if child.is_dir() and (child / "manifest.json").exists():
+            return child / "manifest.json"
+    return None
 
 
 def _find_books_dir(extracted: Path) -> Path | None:
