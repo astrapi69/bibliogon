@@ -5,24 +5,22 @@ app:
   default_language: de
   delete_permanently: false
   supported_languages:
-    - de
-    - en
-    - es
-    - fr
-    - el
-
+  - de
+  - en
+  - es
+  - fr
+  - el
 plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins
   enabled:
-    - export
-    - help
-    - getstarted
-  disabled:
-    - grammar
-    - kinderbuch
-    - kdp
-
+  - export
+  - help
+  - getstarted
+  - grammar
+  - kdp
+  - kinderbuch
+  disabled: []
 ui:
   title: Bibliogon
   subtitle: Buecher schreiben und exportieren
