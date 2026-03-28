@@ -243,7 +243,7 @@ manager.get_text("key", "de")      # i18n String
 
 ## Datenmodell
 
-Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at
+Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at, deleted_at
 Chapter: id, book_id (FK), title, content (TipTap JSON), position, chapter_type (enum), created_at, updated_at
 Asset: id, book_id (FK), filename, asset_type (cover/figure/diagram/table), path, uploaded_at
 
@@ -251,14 +251,17 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 
 ## Plugins
 
-| Plugin            | Lizenz      | Abhaengigkeit | Beschreibung                        |
-| ----------------- | ----------- | ------------- | ----------------------------------- |
-| plugin-export     | MIT         | -             | EPUB, PDF, write-book-template ZIP  |
-| plugin-kinderbuch | Proprietary | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
-| plugin-kdp        | Proprietary | plugin-export | KDP-Metadaten, Cover-Validierung    |
-| plugin-grammar    | Proprietary | -             | LanguageTool Grammatikpruefung      |
-| plugin-help       | MIT         | -             | In-App Hilfe, Shortcuts, FAQ        |
-| plugin-getstarted | MIT         | -             | Onboarding, Beispielbuch            |
+| Plugin             | Lizenz      | Abhaengigkeit | Beschreibung                        |
+| ------------------ | ----------- | ------------- | ----------------------------------- |
+| plugin-export      | MIT         | -             | EPUB, PDF, write-book-template ZIP  |
+| plugin-kinderbuch  | Proprietary | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
+| plugin-kdp         | Proprietary | plugin-export | KDP-Metadaten, Cover-Validierung    |
+| plugin-grammar     | Proprietary | -             | LanguageTool Grammatikpruefung      |
+| plugin-help        | MIT         | -             | In-App Hilfe, Shortcuts, FAQ        |
+| plugin-getstarted  | MIT         | -             | Onboarding, Beispielbuch            |
+| plugin-audiobook   | Proprietary | plugin-export | TTS Audiobook-Generierung (geplant) |
+| plugin-translation | Proprietary | -             | DeepL/LLM Uebersetzung (geplant)    |
+| plugin-ms-tools    | MIT         | -             | Manuskript-Qualitaet (geplant)      |
 
 ## Erledigte Phasen
 
@@ -301,12 +304,66 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - pre_activate Callback fuer Lizenzpruefung
 - plugin-help und plugin-getstarted als Standard-Plugins
 - Export-Plugin auf manuscripta umgestellt (kein eigener Pandoc-Aufruf mehr)
-- Export-Dialog mit Format/Buchtyp/TOC-Tiefe Auswahl vor dem Export
-- Settings: Listen/Dicts read-only, nur skalare Werte editierbar
+- Export-Dialog mit Format/Buchtyp/TOC-Tiefe/Section-Order Auswahl vor dem Export
+- Settings: Skalare Werte editierbar, Listen sortierbar (OrderedListEditor), Dicts read-only
+- Papierkorb (Soft-Delete) mit Wiederherstellen und endgueltigem Loeschen
+- Kapiteltyp-Dropdown im Sidebar und aufgeklappte Auswahl bei leerem Buch
+- Eigene Dateiformate: .bgb (Backup), .bgp (Projekt) - verhindert Verwechslungen
+- Custom Dialog-System (AppDialog) statt nativer Browser-Dialoge
+- Toast-Notifications (react-toastify) fuer Info/Erfolg/Fehler
+- Drei Themes: Warm Literary, Cool Modern, Nord (jeweils Light + Dark)
+- Klickbares Logo + Home-Button auf allen Seiten
+- Buttons deaktiviert wenn Aktion nicht moeglich
+- Markdown-zu-HTML Konvertierung beim WYSIWYG-Wechsel
+- Playwright E2E-Tests (39 Tests)
+- Umfassende Hilfe (23 FAQ, 12 Shortcuts, bilingual DE/EN)
+- write-book-template Import kompatibel mit echten Projekten (series dict, lang normalisierung, print-Varianten)
 
 ## Naechste Schritte
 
-Phase 7 - Multi-User und SaaS (v1.0.0):
+### Phase 7 - Erweiterte Buch-Metadaten und Publishing (v0.7.0)
+
+Pro-Buch-Konfiguration statt nur globale Plugin-Settings:
+
+- Erweiterte Metadaten pro Buch: ISBN (ebook/paperback/hardcover), ASIN, Publisher, Edition, Datum
+- Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung, Autor-Kurzbiographie
+- Keywords pro Buch (7 SEO-optimierte Keywords fuer KDP)
+- Cover-Image Zuordnung pro Buch
+- Custom CSS-Styles pro Buch (EPUB-Styles)
+- "Config von anderem Buch uebernehmen" Wizard/Dialog
+- Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros, Interludien
+- Print-Varianten pro Kapitel (-print Suffix fuer Taschenbuch/Hardcover)
+
+### Phase 8 - Audiobook-Plugin (v0.8.0, Premium)
+
+- plugin-audiobook: TTS-basierte Audiobook-Generierung (Premium, Proprietary)
+- TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- Voice-Settings pro Buch (Stimme, Sprache, Skip-Sektionen)
+- MP3-Generierung pro Kapitel
+- Merge zu einer Audiobook-Datei (via ffmpeg)
+- Audiobook Section-Order (eigene Reihenfolge in export-settings.yaml)
+- Vorhoer-Funktion im Editor
+
+### Phase 9 - Uebersetzungs-Plugin (v0.9.0, Premium)
+
+- plugin-translation: Automatische Buchuebersetzung (Premium, Proprietary)
+- DeepL-Integration (API-Key pro Benutzer)
+- LMStudio-Integration (lokale LLM-Uebersetzung, kostenlos)
+- Kapitelweise Uebersetzung mit Fortschrittsanzeige
+- Uebersetzung als neues Buch anlegen (mit Referenz zum Original)
+- Unterstuetzte Sprachpaare: DE-EN, EN-DE, EN-ES, DE-ES, EN-FR, etc.
+
+### Phase 10 - Manuskript-Qualitaet Plugin (v0.10.0)
+
+- plugin-manuscript-tools: Schreibqualitaet und Formatierung (MIT)
+- Style-Checks: Filler-Woerter, Passiv-Konstruktionen, Satzlaenge
+- Sanitization: Formatierungsfehler automatisch bereinigen
+- Anfuehrungszeichen-Korrektur (deutsch, englisch, franzoesisch)
+- Bold/Italic Formatierungsfehler reparieren
+- Wort-Metriken pro Kapitel und Gesamtbuch (Lesbarkeit, Lesezeit)
+- Markdown-Linting und Codespell-Integration
+
+### Phase 11 - Multi-User und SaaS (v1.0.0)
 
 - Benutzerregistrierung und Authentifizierung
 - PostgreSQL statt SQLite
@@ -318,13 +375,14 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-58 Tests insgesamt:
+97 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
 - backend: 10 (api, phase4)
+- e2e (Playwright): 39 (dashboard, editor, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).
 

@@ -674,18 +674,57 @@ Wenn sich Hooks aendern, wird eine neue Spec-Version erstellt (v2). Alte Plugins
 
 ### Phase 6: Editor-Erweiterungen (v0.6.0) - erledigt
 
-- WYSIWYG/Markdown Umschaltung im Editor
+- WYSIWYG/Markdown Umschaltung mit Markdown-zu-HTML Konvertierung
 - Kapitel Drag-and-Drop Sortierung
 - Autosave-Indikator, Wortzaehler
 - `plugin-grammar`: LanguageTool-Integration
-- `plugin-help`: In-App Hilfe, Tastenkuerzel, FAQ
+- `plugin-help`: In-App Hilfe (23 FAQ, 12 Shortcuts, bilingual)
 - `plugin-getstarted`: Onboarding, Beispielbuch
 - i18n: ES, FR, EL hinzugefuegt (5 Sprachen total)
-- Dark Mode
+- Drei Themes: Warm Literary, Cool Modern, Nord (jeweils Light + Dark)
 - Settings-Seite mit App-, Plugin- und Lizenz-Konfiguration
 - PluginForge als PyPI-Paket ausgelagert (v0.5.0)
+- Export-Plugin auf manuscripta umgestellt
+- Export-Dialog mit Format/Buchtyp/TOC-Tiefe/Section-Order
+- Editierbare Section-Order (global und pro Export)
+- Papierkorb (Soft-Delete) mit Wiederherstellen
+- Eigene Dateiformate: .bgb (Backup), .bgp (Projekt)
+- Custom Dialog-System und Toast-Notifications
+- Playwright E2E-Tests (39 Tests)
+- write-book-template Import kompatibel mit echten Projekten
 
-### Phase 7: Multi-User und SaaS (v1.0.0)
+### Phase 7: Erweiterte Buch-Metadaten und Publishing (v0.7.0)
+
+Pro-Buch-Konfiguration (nicht nur globale Plugin-Settings):
+
+- Erweiterte Metadaten: ISBN (ebook/paperback/hardcover), ASIN, Publisher, Edition
+- Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung
+- Keywords pro Buch (7 SEO-optimierte Keywords fuer KDP)
+- Cover-Image und Custom CSS-Styles pro Buch
+- "Config von anderem Buch uebernehmen" Wizard
+- Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros
+- Print-Varianten pro Kapitel (-print Suffix)
+
+### Phase 8: Audiobook-Plugin (v0.8.0, Premium)
+
+- `plugin-audiobook`: TTS-basierte Audiobook-Generierung
+- TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- Voice-Settings pro Buch, MP3 pro Kapitel, Merge zu Audiobook
+- Vorhoer-Funktion im Editor
+
+### Phase 9: Uebersetzungs-Plugin (v0.9.0, Premium)
+
+- `plugin-translation`: Automatische Buchuebersetzung
+- DeepL-Integration, LMStudio fuer lokale LLM-Uebersetzung
+- Kapitelweise Uebersetzung als neues Buch
+
+### Phase 10: Manuskript-Qualitaet Plugin (v0.10.0)
+
+- `plugin-manuscript-tools`: Style-Checks, Sanitization, Metriken
+- Filler-Woerter, Passiv, Satzlaenge, Lesbarkeit
+- Markdown-Linting, Codespell, Formatierungsreparatur
+
+### Phase 11: Multi-User und SaaS (v1.0.0)
 
 - Benutzerregistrierung und Authentifizierung
 - PostgreSQL statt SQLite
