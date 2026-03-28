@@ -5,6 +5,17 @@ import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 
+const TYPE_LABELS: Record<ChapterType, string> = {
+    chapter: "Kapitel",
+    preface: "Vorwort",
+    foreword: "Geleitwort",
+    acknowledgments: "Danksagung",
+    about_author: "Ueber den Autor",
+    appendix: "Anhang",
+    bibliography: "Literatur",
+    glossary: "Glossar",
+};
+
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
@@ -146,11 +157,33 @@ export default function BookEditor() {
             ) : (
                 <div style={styles.noChapter}>
                     <p style={styles.noChapterText}>
-                        Erstelle ein Kapitel, um zu beginnen.
+                        Erstelle dein erstes Kapitel, um zu beginnen.
                     </p>
-                    <button className="btn btn-primary" onClick={() => handleAddChapter()}>
-                        Erstes Kapitel anlegen
-                    </button>
+
+                    <div style={styles.chapterTypeGrid}>
+                        <div style={styles.typeGroup}>
+                            <span style={styles.typeGroupLabel}>Front Matter</span>
+                            {(["preface", "foreword", "acknowledgments"] as ChapterType[]).map((t) => (
+                                <button key={t} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(t)}>
+                                    {TYPE_LABELS[t]}
+                                </button>
+                            ))}
+                        </div>
+                        <div style={styles.typeGroup}>
+                            <span style={styles.typeGroupLabel}>Kapitel</span>
+                            <button className="btn btn-primary" onClick={() => handleAddChapter("chapter")}>
+                                Neues Kapitel
+                            </button>
+                        </div>
+                        <div style={styles.typeGroup}>
+                            <span style={styles.typeGroupLabel}>Back Matter</span>
+                            {(["about_author", "appendix", "bibliography", "glossary"] as ChapterType[]).map((t) => (
+                                <button key={t} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(t)}>
+                                    {TYPE_LABELS[t]}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -190,5 +223,25 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-muted)",
         fontFamily: "var(--font-display)",
         fontSize: "1.125rem",
+    },
+    chapterTypeGrid: {
+        display: "flex",
+        gap: 24,
+        marginTop: 8,
+    },
+    typeGroup: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        alignItems: "stretch",
+        minWidth: 140,
+    },
+    typeGroupLabel: {
+        fontSize: "0.6875rem",
+        fontWeight: 600,
+        textTransform: "uppercase" as const,
+        letterSpacing: "0.08em",
+        color: "var(--text-muted)",
+        marginBottom: 4,
     },
 };

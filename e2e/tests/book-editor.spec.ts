@@ -100,9 +100,15 @@ test.describe("Book Editor", () => {
         await expect(page).toHaveURL("/");
     });
 
-    test("empty book shows create prompt", async ({page}) => {
+    test("empty book shows chapter type selection", async ({page}) => {
         const emptyBook = await createBook("Leerbuch");
         await page.goto(`/book/${emptyBook.id}`);
-        await expect(page.getByText("Erstelle ein Kapitel, um zu beginnen.")).toBeVisible();
+        await expect(page.getByText("Erstelle dein erstes Kapitel, um zu beginnen.")).toBeVisible();
+        // Should show all chapter type groups
+        await expect(page.getByText("Front Matter")).toBeVisible();
+        await expect(page.getByText("Neues Kapitel")).toBeVisible();
+        await expect(page.getByText("Back Matter")).toBeVisible();
+        await expect(page.getByText("Vorwort")).toBeVisible();
+        await expect(page.getByText("Glossar")).toBeVisible();
     });
 });

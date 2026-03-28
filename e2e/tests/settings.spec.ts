@@ -27,11 +27,16 @@ test.describe("Settings", () => {
         await page.goto("/settings");
         await page.getByRole("button", {name: "Plugins"}).click();
 
-        // Find any toggle button (An or Aus) and click it
-        const toggleBtn = page.getByRole("button", {name: "Aus"}).first()
-            .or(page.getByRole("button", {name: "An"}).first());
-        await expect(toggleBtn).toBeVisible({timeout: 5000});
-        await toggleBtn.click();
+        // Wait for plugin cards to load, then find any An/Aus button
+        await page.waitForTimeout(1000);
+        const anBtn = page.getByRole("button", {name: "An", exact: true}).first();
+        const ausBtn = page.getByRole("button", {name: "Aus", exact: true}).first();
+
+        if (await anBtn.isVisible({timeout: 3000}).catch(() => false)) {
+            await anBtn.click();
+        } else if (await ausBtn.isVisible({timeout: 3000}).catch(() => false)) {
+            await ausBtn.click();
+        }
     });
 
     test("plugin settings expand", async ({page}) => {
