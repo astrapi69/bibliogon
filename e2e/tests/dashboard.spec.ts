@@ -74,7 +74,7 @@ test.describe("Dashboard", () => {
         await page.getByText("Wiederherstellen").click();
 
         // Go back to main view
-        await page.getByText("Zurueck").click();
+        await page.locator("button[title='Zurueck']").click();
         await expect(page.getByText("Wiederherstellbar")).toBeVisible();
     });
 

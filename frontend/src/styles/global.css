@@ -39,6 +39,36 @@
     --transition: 180ms ease;
 }
 
+/* --- Cool Modern Theme --- */
+[data-app-theme="cool-modern"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --bg-sidebar: #0f172a;
+    --bg-card: #ffffff;
+    --bg-hover: #e2e8f0;
+    --bg-editor: #ffffff;
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --text-inverse: #f8fafc;
+    --text-sidebar: #cbd5e1;
+
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: #dbeafe;
+    --accent-subtle: #bfdbfe;
+
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+    --font-display: "Inter", system-ui, sans-serif;
+}
+
 /* --- Dark Mode --- */
 [data-theme="dark"] {
     --bg-primary: #1a1a1a;

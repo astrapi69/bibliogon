@@ -5,7 +5,7 @@ import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
-    Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash,
+    Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -164,6 +164,9 @@ export default function Dashboard() {
                     /* Trash view */
                     <>
                         <div style={styles.mainHeader}>
+                            <button className="btn-icon" onClick={() => setShowTrash(false)} title="Zurueck">
+                                <ChevronLeft size={18}/>
+                            </button>
                             <Trash2 size={20} style={{color: "var(--text-muted)"}}/>
                             <h2 style={styles.mainTitle}>Papierkorb</h2>
                             <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? "Buch" : "Buecher"}</span>
@@ -173,9 +176,6 @@ export default function Dashboard() {
                                     <Trash size={14}/> Papierkorb leeren
                                 </button>
                             )}
-                            <button className="btn btn-ghost btn-sm" onClick={() => setShowTrash(false)}>
-                                Zurueck
-                            </button>
                         </div>
                         {trash.length === 0 ? (
                             <div style={styles.emptyState}>

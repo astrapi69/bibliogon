@@ -226,7 +226,10 @@ function AppSettings({config, onSave, saving}: {
                 </div>
                 <div className="field">
                     <label className="label">Theme</label>
-                    <input className="input" value={theme} onChange={(e) => setTheme(e.target.value)}/>
+                    <select className="input" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                        <option value="warm-literary">Warm Literary</option>
+                        <option value="cool-modern">Cool Modern</option>
+                    </select>
                 </div>
                 <button
                     className="btn btn-primary"
