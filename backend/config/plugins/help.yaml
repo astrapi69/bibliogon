@@ -12,6 +12,7 @@ plugin:
   api_version: "1"
 
 shortcuts:
+  # --- Text-Formatierung ---
   - keys: "Ctrl+B"
     action: {de: "Fett", en: "Bold"}
   - keys: "Ctrl+I"
@@ -20,63 +21,181 @@ shortcuts:
     action: {de: "Durchgestrichen", en: "Strikethrough"}
   - keys: "Ctrl+E"
     action: {de: "Inline-Code", en: "Inline code"}
+  # --- Ueberschriften ---
   - keys: "Ctrl+Shift+1"
     action: {de: "Ueberschrift 1", en: "Heading 1"}
   - keys: "Ctrl+Shift+2"
     action: {de: "Ueberschrift 2", en: "Heading 2"}
   - keys: "Ctrl+Shift+3"
     action: {de: "Ueberschrift 3", en: "Heading 3"}
+  # --- Listen und Bloecke ---
   - keys: "Ctrl+Shift+8"
     action: {de: "Aufzaehlung", en: "Bullet list"}
   - keys: "Ctrl+Shift+9"
     action: {de: "Nummerierung", en: "Ordered list"}
   - keys: "Ctrl+Shift+B"
     action: {de: "Zitat", en: "Blockquote"}
+  # --- Aktionen ---
   - keys: "Ctrl+Z"
     action: {de: "Rueckgaengig", en: "Undo"}
   - keys: "Ctrl+Shift+Z"
     action: {de: "Wiederholen", en: "Redo"}
 
 faq:
+  # === Allgemein ===
   - question:
-      de: "Welches Format wird intern gespeichert?"
-      en: "What format is used internally?"
+      de: "Was ist Bibliogon?"
+      en: "What is Bibliogon?"
     answer:
-      de: "Bibliogon speichert Kapitelinhalte als TipTap-JSON. Beim Export wird dieses in Markdown konvertiert."
-      en: "Bibliogon stores chapter content as TipTap JSON. During export, this is converted to Markdown."
-  - question:
-      de: "Wie exportiere ich mein Buch?"
-      en: "How do I export my book?"
-    answer:
-      de: "Oeffne dein Buch im Editor. In der Sidebar unten findest du Export-Buttons fuer EPUB, PDF und ZIP (Projektstruktur)."
-      en: "Open your book in the editor. At the bottom of the sidebar you will find export buttons for EPUB, PDF, and ZIP (project structure)."
-  - question:
-      de: "Kann ich ein bestehendes Projekt importieren?"
-      en: "Can I import an existing project?"
-    answer:
-      de: "Ja. Auf dem Dashboard klicke 'Projekt importieren' und waehle eine ZIP-Datei im write-book-template Format."
-      en: "Yes. On the dashboard click 'Import Project' and select a ZIP file in write-book-template format."
-  - question:
-      de: "Wie funktioniert das Backup?"
-      en: "How does backup work?"
-    answer:
-      de: "Klicke 'Backup' im Dashboard. Alle Buecher, Kapitel und Assets werden als ZIP exportiert. Zum Wiederherstellen nutze 'Restore'."
-      en: "Click 'Backup' on the dashboard. All books, chapters, and assets are exported as ZIP. To restore, use 'Restore'."
-  - question:
-      de: "Was ist der Markdown-Modus?"
-      en: "What is Markdown mode?"
-    answer:
-      de: "Im Editor kannst du zwischen WYSIWYG und Markdown umschalten. Im Markdown-Modus siehst und bearbeitest du den Rohtext."
-      en: "In the editor you can switch between WYSIWYG and Markdown. In Markdown mode you see and edit the raw text."
-  - question:
-      de: "Wie aktiviere ich ein Premium-Plugin?"
-      en: "How do I activate a premium plugin?"
-    answer:
-      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen und deinen Lizenzschluessel ein."
-      en: "Go to Settings > Licenses. Enter the plugin name and your license key."
+      de: "Bibliogon ist eine Open-Source-Plattform zum Schreiben und Exportieren von Buechern. Sie laeuft komplett offline im Browser, speichert lokal in SQLite und ist ueber Plugins erweiterbar."
+      en: "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
   - question:
       de: "Funktioniert Bibliogon offline?"
       en: "Does Bibliogon work offline?"
     answer:
-      de: "Ja. Bibliogon nutzt SQLite und speichert alles lokal. Nur Plugins die externe APIs nutzen (Grammar, KI) brauchen Internet."
-      en: "Yes. Bibliogon uses SQLite and stores everything locally. Only plugins using external APIs (grammar, AI) need internet."
+      de: "Ja. Bibliogon nutzt SQLite und speichert alles lokal. Frontend und Backend laufen auf deinem Rechner. Nur Plugins die externe APIs nutzen (z.B. Grammatikpruefung via LanguageTool) brauchen Internet."
+      en: "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+  - question:
+      de: "Welches Format wird intern gespeichert?"
+      en: "What format is used internally?"
+    answer:
+      de: "Kapitelinhalte werden als TipTap-JSON gespeichert - ein strukturiertes, maschinenlesbares Format. Beim Export wird dieses automatisch in Markdown konvertiert. Du kannst jederzeit zwischen WYSIWYG- und Markdown-Modus wechseln."
+      en: "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+
+  # === Buecher und Kapitel ===
+  - question:
+      de: "Wie erstelle ich ein neues Buch?"
+      en: "How do I create a new book?"
+    answer:
+      de: "Klicke auf 'Neues Buch' im Dashboard. Gib Titel und Autor ein (Pflichtfelder). Optional kannst du Untertitel, Sprache, Reihe und Band angeben. Nach dem Erstellen erscheint das Buch auf dem Dashboard."
+      en: "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+  - question:
+      de: "Welche Kapiteltypen gibt es?"
+      en: "What chapter types are available?"
+    answer:
+      de: "Es gibt 8 Kapiteltypen, gruppiert in drei Bereiche: Front Matter (Vorwort, Geleitwort, Danksagung), regulaere Kapitel, und Back Matter (Ueber den Autor, Anhang, Literatur, Glossar). Du kannst den Typ beim Erstellen ueber das '+'-Dropdown in der Sidebar waehlen. Bei einem leeren Buch werden alle Typen direkt als Buttons angezeigt."
+      en: "There are 8 chapter types, grouped into three areas: Front Matter (Preface, Foreword, Acknowledgments), regular Chapters, and Back Matter (About the Author, Appendix, Bibliography, Glossary). You can choose the type via the '+' dropdown in the sidebar. For an empty book, all types are shown as direct buttons."
+  - question:
+      de: "Wie ordne ich Kapitel um?"
+      en: "How do I reorder chapters?"
+    answer:
+      de: "Ziehe Kapitel per Drag-and-Drop in der Sidebar in die gewuenschte Reihenfolge. Die Sortierung wird innerhalb der jeweiligen Sektion beibehalten (Front Matter, Kapitel, Back Matter)."
+      en: "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+
+  # === Editor ===
+  - question:
+      de: "Was ist der Markdown-Modus?"
+      en: "What is Markdown mode?"
+    answer:
+      de: "Im Editor kannst du zwischen WYSIWYG und Markdown umschalten (Button rechts in der Toolbar). Im Markdown-Modus siehst und bearbeitest du den Rohtext mit Markdown-Syntax. Im WYSIWYG-Modus siehst du den formatierten Text mit der Formatting-Toolbar."
+      en: "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+  - question:
+      de: "Wie funktioniert das automatische Speichern?"
+      en: "How does autosave work?"
+    answer:
+      de: "Aenderungen werden automatisch 800ms nach dem letzten Tastendruck gespeichert. In der Statusleiste unter dem Editor siehst du 'Speichert...' waehrend des Speicherns und 'Gespeichert' wenn abgeschlossen. Du musst nie manuell speichern."
+      en: "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+  - question:
+      de: "Was zeigt der Wortzaehler?"
+      en: "What does the word counter show?"
+    answer:
+      de: "Der Wortzaehler in der Statusleiste zeigt die Anzahl der Woerter im aktuell ausgewaehlten Kapitel. Er aktualisiert sich in Echtzeit beim Tippen."
+      en: "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+
+  # === Export ===
+  - question:
+      de: "Wie exportiere ich mein Buch?"
+      en: "How do I export my book?"
+    answer:
+      de: "Klicke 'Exportieren...' in der Sidebar. Es oeffnet sich ein Dialog wo du Format (EPUB, PDF, Word, HTML, Markdown, Projekt-ZIP), Buchtyp (E-Book, Taschenbuch, Hardcover) und Inhaltsverzeichnis-Tiefe waehlen kannst. Optional kannst du die Kapitelreihenfolge fuer diesen Export anpassen."
+      en: "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+  - question:
+      de: "Welche Export-Formate werden unterstuetzt?"
+      en: "Which export formats are supported?"
+    answer:
+      de: "6 Formate: EPUB (E-Book), PDF (Druck), Word/DOCX (Lektorate), HTML (Web), Markdown (Rohtext), Projekt-ZIP (.bgp, komplette manuscripta-Projektstruktur). Der Export nutzt manuscripta und Pandoc im Hintergrund."
+      en: "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+  - question:
+      de: "Was ist die Kapitelreihenfolge (Section Order)?"
+      en: "What is the section order?"
+    answer:
+      de: "Die Kapitelreihenfolge bestimmt, welche Abschnitte in welcher Reihenfolge im exportierten Buch erscheinen (z.B. Inhaltsverzeichnis, Vorwort, Kapitel, Glossar, Impressum). Sie kann global in den Einstellungen und pro Export im Export-Dialog angepasst werden. Verschiedene Buchtypen (E-Book, Taschenbuch) koennen unterschiedliche Reihenfolgen haben."
+      en: "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+
+  # === Backup und Import ===
+  - question:
+      de: "Wie funktioniert das Backup?"
+      en: "How does backup work?"
+    answer:
+      de: "Klicke 'Backup' im Dashboard. Alle Buecher, Kapitel und Assets werden als .bgb-Datei (Bibliogon Backup) exportiert. Zum Wiederherstellen klicke 'Restore' und waehle die .bgb-Datei. Achtung: .bgb-Dateien koennen nur ueber 'Restore' importiert werden, nicht ueber 'Import'."
+      en: "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+  - question:
+      de: "Was ist der Unterschied zwischen Backup, Import und Export?"
+      en: "What is the difference between backup, import and export?"
+    answer:
+      de: "Backup (.bgb) sichert ALLE Buecher mit allen Metadaten und stellt sie 1:1 wieder her. Import (.bgp/.zip) importiert ein einzelnes Buch aus einem write-book-template Projekt. Export erzeugt fertige Buchformate (EPUB, PDF) oder Projektstrukturen (.bgp) fuer ein einzelnes Buch. Die verschiedenen Dateiformate verhindern Verwechslungen."
+      en: "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+  - question:
+      de: "Kann ich ein bestehendes Projekt importieren?"
+      en: "Can I import an existing project?"
+    answer:
+      de: "Ja. Klicke 'Import' im Dashboard und waehle eine .bgp-Datei (aus Bibliogon-Export) oder eine .zip-Datei (write-book-template Projektstruktur). Das Buch wird mit allen Kapiteln und Metadaten importiert."
+      en: "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+
+  # === Papierkorb ===
+  - question:
+      de: "Wie funktioniert der Papierkorb?"
+      en: "How does the trash work?"
+    answer:
+      de: "Geloeschte Buecher werden standardmaessig in den Papierkorb verschoben (Soft-Delete). Klicke das Papierkorb-Icon im Dashboard um geloeschte Buecher zu sehen. Dort kannst du einzelne Buecher wiederherstellen oder endgueltig loeschen. 'Papierkorb leeren' loescht alle Buecher endgueltig. In den Einstellungen kannst du unter 'delete_permanently' auch direktes Loeschen ohne Papierkorb aktivieren."
+      en: "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+
+  # === Einstellungen ===
+  - question:
+      de: "Wo finde ich die Einstellungen?"
+      en: "Where do I find the settings?"
+    answer:
+      de: "Klicke das Zahnrad-Icon im Dashboard. Die Einstellungen haben drei Bereiche: Allgemein (Sprache, Titel, Theme), Plugins (aktivieren/deaktivieren, Konfiguration), und Lizenzen (Premium-Plugin-Schluessel)."
+      en: "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+  - question:
+      de: "Welche Themes gibt es?"
+      en: "Which themes are available?"
+    answer:
+      de: "Drei Themes, jeweils mit Light- und Dark-Modus (6 Kombinationen): Warm Literary (Standard, Amber-Akzent, Serif-Schrift), Cool Modern (Blau, Sans-Serif), und Nord (Arktisch-Blau, inspiriert vom beliebten Nord-Farbschema). Das Theme waehlst du in Einstellungen > Allgemein, Dark/Light Mode per Sonnen/Mond-Icon."
+      en: "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+
+  # === Plugins ===
+  - question:
+      de: "Welche Plugins sind verfuegbar?"
+      en: "Which plugins are available?"
+    answer:
+      de: "6 Plugins: Export (EPUB/PDF/DOCX/HTML, kostenlos), Hilfe (In-App Hilfe, kostenlos), Erste Schritte (Onboarding, kostenlos), Grammatik (LanguageTool, Premium), Kinderbuch (Bild-Layout, Premium), KDP (Amazon-Metadaten, Premium). Kostenlose Plugins sind standardmaessig aktiv, Premium-Plugins brauchen eine Lizenz."
+      en: "6 plugins: Export (EPUB/PDF/DOCX/HTML, free), Help (in-app help, free), Get Started (onboarding, free), Grammar (LanguageTool, premium), Children's Book (image layout, premium), KDP (Amazon metadata, premium). Free plugins are active by default, premium plugins require a license."
+  - question:
+      de: "Wie aktiviere ich ein Premium-Plugin?"
+      en: "How do I activate a premium plugin?"
+    answer:
+      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen (z.B. 'grammar') und deinen Lizenzschluessel ein und klicke 'Aktivieren'. Danach aktiviere das Plugin unter Einstellungen > Plugins mit dem 'An'-Button."
+      en: "Go to Settings > Licenses. Enter the plugin name (e.g. 'grammar') and your license key and click 'Activate'. Then enable the plugin under Settings > Plugins with the 'On' button."
+  - question:
+      de: "Kann ich eigene Plugins hinzufuegen?"
+      en: "Can I add custom plugins?"
+    answer:
+      de: "Ja. Unter Einstellungen > Plugins klicke 'Plugin hinzufuegen'. Gib Name, Anzeigename und Beschreibung ein. Das Plugin braucht einen installierten Python-Entry-Point unter der Gruppe 'bibliogon.plugins'. Details zur Plugin-Entwicklung findest du im PluginForge-Wiki (github.com/astrapi69/pluginforge)."
+      en: "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+
+  # === Erste Schritte ===
+  - question:
+      de: "Wo finde ich eine Einfuehrung?"
+      en: "Where can I find an introduction?"
+    answer:
+      de: "Klicke das Raketen-Icon im Dashboard oder gehe zu 'Erste Schritte'. Dort findest du eine Schritt-fuer-Schritt-Anleitung mit Fortschrittsanzeige und kannst ein Beispielbuch erstellen um die Funktionen kennenzulernen."
+      en: "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+
+  # === Dateiformate ===
+  - question:
+      de: "Was bedeuten die Dateiendungen .bgb, .bgp und .zip?"
+      en: "What do the file extensions .bgb, .bgp and .zip mean?"
+    answer:
+      de: ".bgb (Bibliogon Backup) enthalt ein komplettes Backup aller Buecher - nur ueber 'Restore' importierbar. .bgp (Bibliogon Project) enthalt ein einzelnes Buch als Projektstruktur - ueber 'Import' importierbar. .zip sind externe write-book-template Projekte - ebenfalls ueber 'Import' importierbar. Die unterschiedlichen Endungen verhindern Verwechslungen."
+      en: ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
