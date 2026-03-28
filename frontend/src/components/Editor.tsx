@@ -110,8 +110,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
             setMarkdownText(editorToMarkdown(editor));
             setMarkdownMode(true);
         } else {
-            // Switch back to WYSIWYG: parse markdown back into editor
-            editor.commands.setContent(markdownText);
+            // Switch back to WYSIWYG: convert markdown to HTML for TipTap
+            const html = markdownToHtml(markdownText);
+            editor.commands.setContent(html);
             const json = JSON.stringify(editor.getJSON());
             debouncedSave(json);
             updateWordCount(editor.getText());
@@ -129,7 +130,8 @@ export default function Editor({content, onSave, placeholder}: Props) {
         setSaveStatus("saving");
         saveTimer.current = setTimeout(() => {
             if (editor) {
-                editor.commands.setContent(text);
+                const html = markdownToHtml(text);
+                editor.commands.setContent(html);
                 const json = JSON.stringify(editor.getJSON());
                 if (json !== lastSaved.current) {
                     lastSaved.current = json;
@@ -255,6 +257,113 @@ function nodeToMarkdown(node: Record<string, unknown>): string {
 
 function inlineToMarkdown(nodes: Record<string, unknown>[]): string {
     return nodes.map(nodeToMarkdown).join("");
+}
+
+/**
+ * Convert Markdown text to HTML so TipTap can parse it correctly.
+ * Handles headings, bold, italic, strikethrough, code, links, lists,
+ * blockquotes, code blocks, and horizontal rules.
+ */
+function markdownToHtml(md: string): string {
+    const lines = md.split("\n");
+    const htmlLines: string[] = [];
+    let inCodeBlock = false;
+    let codeBlockContent: string[] = [];
+    let inList: "ul" | "ol" | null = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Code blocks
+        if (line.startsWith("```")) {
+            if (inCodeBlock) {
+                htmlLines.push(`<pre><code>${codeBlockContent.join("\n")}</code></pre>`);
+                codeBlockContent = [];
+                inCodeBlock = false;
+            } else {
+                if (inList) { htmlLines.push(inList === "ul" ? "</ul>" : "</ol>"); inList = null; }
+                inCodeBlock = true;
+            }
+            continue;
+        }
+        if (inCodeBlock) {
+            codeBlockContent.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+            continue;
+        }
+
+        // Close list if current line is not a list item
+        if (inList && !line.match(/^[-*]\s/) && !line.match(/^\d+\.\s/) && line.trim() !== "") {
+            htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
+            inList = null;
+        }
+
+        // Empty line
+        if (line.trim() === "") {
+            if (inList) { htmlLines.push(inList === "ul" ? "</ul>" : "</ol>"); inList = null; }
+            continue;
+        }
+
+        // Horizontal rule
+        if (line.match(/^---+$/)) {
+            htmlLines.push("<hr>");
+            continue;
+        }
+
+        // Headings
+        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+            const level = headingMatch[1].length;
+            htmlLines.push(`<h${level}>${inlineMarkdown(headingMatch[2])}</h${level}>`);
+            continue;
+        }
+
+        // Blockquote
+        if (line.startsWith("> ")) {
+            htmlLines.push(`<blockquote><p>${inlineMarkdown(line.slice(2))}</p></blockquote>`);
+            continue;
+        }
+
+        // Unordered list
+        const ulMatch = line.match(/^[-*]\s+(.+)$/);
+        if (ulMatch) {
+            if (inList !== "ul") {
+                if (inList) htmlLines.push("</ol>");
+                htmlLines.push("<ul>");
+                inList = "ul";
+            }
+            htmlLines.push(`<li>${inlineMarkdown(ulMatch[1])}</li>`);
+            continue;
+        }
+
+        // Ordered list
+        const olMatch = line.match(/^\d+\.\s+(.+)$/);
+        if (olMatch) {
+            if (inList !== "ol") {
+                if (inList) htmlLines.push("</ul>");
+                htmlLines.push("<ol>");
+                inList = "ol";
+            }
+            htmlLines.push(`<li>${inlineMarkdown(olMatch[1])}</li>`);
+            continue;
+        }
+
+        // Paragraph
+        htmlLines.push(`<p>${inlineMarkdown(line)}</p>`);
+    }
+
+    if (inList) htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
+    if (inCodeBlock) htmlLines.push(`<pre><code>${codeBlockContent.join("\n")}</code></pre>`);
+
+    return htmlLines.join("\n");
+}
+
+function inlineMarkdown(text: string): string {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/~~(.+?)~~/g, "<s>$1</s>")
+        .replace(/`(.+?)`/g, "<code>$1</code>")
+        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 }
 
 const styles: Record<string, React.CSSProperties> = {
