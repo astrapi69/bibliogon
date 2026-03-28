@@ -8,7 +8,12 @@ export type ChapterType =
     | "about_author"
     | "appendix"
     | "bibliography"
-    | "glossary";
+    | "glossary"
+    | "epilogue"
+    | "imprint"
+    | "next_in_series"
+    | "part_intro"
+    | "interlude";
 
 export interface Book {
     id: string;
@@ -19,6 +24,20 @@ export interface Book {
     series: string | null;
     series_index: number | null;
     description: string | null;
+    edition: string | null;
+    publisher: string | null;
+    publisher_city: string | null;
+    publish_date: string | null;
+    isbn_ebook: string | null;
+    isbn_paperback: string | null;
+    isbn_hardcover: string | null;
+    asin_ebook: string | null;
+    keywords: string | null;
+    html_description: string | null;
+    backpage_description: string | null;
+    backpage_author_bio: string | null;
+    cover_image: string | null;
+    custom_css: string | null;
     created_at: string;
     updated_at: string;
 }

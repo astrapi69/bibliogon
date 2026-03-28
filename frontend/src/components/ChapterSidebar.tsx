@@ -22,7 +22,11 @@ interface Props {
 }
 
 const FRONT_MATTER_TYPES: ChapterType[] = ["preface", "foreword", "acknowledgments"];
-const BACK_MATTER_TYPES: ChapterType[] = ["about_author", "appendix", "bibliography", "glossary"];
+const BACK_MATTER_TYPES: ChapterType[] = [
+    "epilogue", "about_author", "appendix", "bibliography",
+    "glossary", "imprint", "next_in_series",
+];
+const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
 
 const TYPE_LABELS: Record<ChapterType, string> = {
     chapter: "Kapitel",
@@ -33,6 +37,11 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     appendix: "Anhang",
     bibliography: "Literatur",
     glossary: "Glossar",
+    epilogue: "Epilog",
+    imprint: "Impressum",
+    next_in_series: "Naechster Band",
+    part_intro: "Teil-Einleitung",
+    interlude: "Interludium",
 };
 
 export default function ChapterSidebar({
@@ -47,7 +56,9 @@ export default function ChapterSidebar({
                                            onReorder,
                                        }: Props) {
     const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
-    const mainChapters = chapters.filter((ch) => ch.chapter_type === "chapter");
+    const mainChapters = chapters.filter((ch) =>
+        ch.chapter_type === "chapter" || STRUCTURE_TYPES.includes(ch.chapter_type)
+    );
     const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
 
     const [showAddMenu, setShowAddMenu] = useState(false);
@@ -220,6 +231,11 @@ export default function ChapterSidebar({
                                 <button style={styles.addMenuItem} onClick={() => { onAdd("chapter"); setShowAddMenu(false); }}>
                                     Neues Kapitel
                                 </button>
+                                {STRUCTURE_TYPES.map((t) => (
+                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
+                                        {TYPE_LABELS[t]}
+                                    </button>
+                                ))}
                             </div>
                             <div style={styles.addMenuGroup}>
                                 <span style={styles.addMenuLabel}>Back Matter</span>

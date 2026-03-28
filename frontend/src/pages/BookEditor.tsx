@@ -15,6 +15,11 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     appendix: "Anhang",
     bibliography: "Literatur",
     glossary: "Glossar",
+    epilogue: "Epilog",
+    imprint: "Impressum",
+    next_in_series: "Naechster Band",
+    part_intro: "Teil-Einleitung",
+    interlude: "Interludium",
 };
 
 export default function BookEditor() {
@@ -177,10 +182,16 @@ export default function BookEditor() {
                             <button className="btn btn-primary" onClick={() => handleAddChapter("chapter")}>
                                 Neues Kapitel
                             </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleAddChapter("part_intro")}>
+                                {TYPE_LABELS.part_intro}
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleAddChapter("interlude")}>
+                                {TYPE_LABELS.interlude}
+                            </button>
                         </div>
                         <div style={styles.typeGroup}>
                             <span style={styles.typeGroupLabel}>Back Matter</span>
-                            {(["about_author", "appendix", "bibliography", "glossary"] as ChapterType[]).map((t) => (
+                            {(["epilogue", "about_author", "appendix", "bibliography", "glossary", "imprint", "next_in_series"] as ChapterType[]).map((t) => (
                                 <button key={t} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(t)}>
                                     {TYPE_LABELS[t]}
                                 </button>

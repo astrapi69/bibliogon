@@ -16,6 +16,11 @@ class ChapterType(str, Enum):
     APPENDIX = "appendix"
     BIBLIOGRAPHY = "bibliography"
     GLOSSARY = "glossary"
+    EPILOGUE = "epilogue"
+    IMPRINT = "imprint"
+    NEXT_IN_SERIES = "next_in_series"
+    PART_INTRO = "part_intro"
+    INTERLUDE = "interlude"
 
 
 # --- Book schemas ---
@@ -39,6 +44,21 @@ class BookUpdate(BaseModel):
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
+    # Publishing metadata
+    edition: str | None = None
+    publisher: str | None = None
+    publisher_city: str | None = None
+    publish_date: str | None = None
+    isbn_ebook: str | None = None
+    isbn_paperback: str | None = None
+    isbn_hardcover: str | None = None
+    asin_ebook: str | None = None
+    keywords: str | None = None
+    html_description: str | None = None
+    backpage_description: str | None = None
+    backpage_author_bio: str | None = None
+    cover_image: str | None = None
+    custom_css: str | None = None
 
 
 class BookOut(BaseModel):
@@ -52,6 +72,20 @@ class BookOut(BaseModel):
     series: str | None
     series_index: int | None
     description: str | None
+    edition: str | None = None
+    publisher: str | None = None
+    publisher_city: str | None = None
+    publish_date: str | None = None
+    isbn_ebook: str | None = None
+    isbn_paperback: str | None = None
+    isbn_hardcover: str | None = None
+    asin_ebook: str | None = None
+    keywords: str | None = None
+    html_description: str | None = None
+    backpage_description: str | None = None
+    backpage_author_bio: str | None = None
+    cover_image: str | None = None
+    custom_css: str | None = None
     created_at: datetime
     updated_at: datetime
 

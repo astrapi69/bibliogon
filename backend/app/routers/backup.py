@@ -276,6 +276,19 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         if "-" in str(lang):
             lang = str(lang).split("-")[0]  # "en-US" -> "en"
 
+        # Parse ISBN
+        isbn_raw = metadata.get("isbn", {})
+        isbn_ebook = isbn_raw.get("ebook") if isinstance(isbn_raw, dict) else None
+        isbn_pb = isbn_raw.get("paperback") if isinstance(isbn_raw, dict) else None
+        isbn_hc = isbn_raw.get("hardcover") if isinstance(isbn_raw, dict) else None
+
+        asin_raw = metadata.get("asin", {})
+        asin_ebook = asin_raw.get("ebook") if isinstance(asin_raw, dict) else None
+
+        # Parse keywords
+        keywords_raw = metadata.get("keywords", [])
+        keywords_str = json.dumps(keywords_raw) if isinstance(keywords_raw, list) else None
+
         book = Book(
             title=metadata.get("title", project_root.name),
             subtitle=metadata.get("subtitle"),
@@ -284,6 +297,16 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
             series=series_name,
             series_index=series_idx,
             description=metadata.get("description"),
+            edition=metadata.get("edition"),
+            publisher=metadata.get("publisher"),
+            publisher_city=metadata.get("publisher_city"),
+            publish_date=metadata.get("date"),
+            isbn_ebook=isbn_ebook,
+            isbn_paperback=isbn_pb,
+            isbn_hardcover=isbn_hc,
+            asin_ebook=asin_ebook,
+            keywords=keywords_str,
+            cover_image=metadata.get("cover_image"),
         )
         db.add(book)
         db.flush()  # get book.id
@@ -343,8 +366,9 @@ _BACK_MATTER_MAP = {
     "appendix": ChapterType.APPENDIX,
     "bibliography": ChapterType.BIBLIOGRAPHY,
     "glossary": ChapterType.GLOSSARY,
-    "epilogue": ChapterType.APPENDIX,       # no dedicated type, use appendix
-    "imprint": ChapterType.APPENDIX,        # no dedicated type, use appendix
+    "epilogue": ChapterType.EPILOGUE,
+    "imprint": ChapterType.IMPRINT,
+    "next-in-series": ChapterType.NEXT_IN_SERIES,
     "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
 }
 

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -25,6 +25,11 @@ class ChapterType(str, enum.Enum):
     APPENDIX = "appendix"
     BIBLIOGRAPHY = "bibliography"
     GLOSSARY = "glossary"
+    EPILOGUE = "epilogue"
+    IMPRINT = "imprint"
+    NEXT_IN_SERIES = "next_in_series"
+    PART_INTRO = "part_intro"
+    INTERLUDE = "interlude"
 
 
 class Book(Base):
@@ -38,6 +43,23 @@ class Book(Base):
     series: Mapped[str | None] = mapped_column(String(300), nullable=True)
     series_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Publishing metadata
+    edition: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    publisher: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    publisher_city: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    publish_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    isbn_ebook: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    isbn_paperback: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    isbn_hardcover: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    asin_ebook: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    html_description: Mapped[str | None] = mapped_column(Text, nullable=True)  # Amazon book description
+    backpage_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
@@ -83,7 +105,7 @@ class Asset(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
     book_id: Mapped[str] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"))
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
-    asset_type: Mapped[str] = mapped_column(String(50), nullable=False)  # cover, figure, diagram, table
+    asset_type: Mapped[str] = mapped_column(String(50), nullable=False)
     path: Mapped[str] = mapped_column(String(1000), nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
