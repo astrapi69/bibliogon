@@ -190,6 +190,10 @@ export default function ChapterSidebar({
                 </div>
             </div>
 
+            <div style={styles.manuscriptHeader}>
+                <span style={styles.manuscriptTitle}>Manuskript</span>
+            </div>
+
             <div style={styles.list}>
                 {/* Add button with dropdown */}
                 <div ref={addMenuRef} style={{...styles.sectionHeader, position: "relative"}}>
@@ -275,6 +279,13 @@ const styles: Record<string, React.CSSProperties> = {
         background: "var(--bg-sidebar)", color: "var(--text-sidebar)",
         display: "flex", flexDirection: "column",
         borderRight: "1px solid rgba(255,255,255,0.06)",
+    },
+    manuscriptHeader: {
+        padding: "12px 16px 0",
+    },
+    manuscriptTitle: {
+        fontFamily: "var(--font-display)", fontSize: "0.8125rem", fontWeight: 600,
+        color: "rgba(255,255,255,0.5)", letterSpacing: "0.04em",
     },
     header: {
         padding: "16px 12px 12px", display: "flex", alignItems: "center", gap: 6,
