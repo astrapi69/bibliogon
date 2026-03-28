@@ -261,13 +261,28 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
             with open(metadata_path, "r", encoding="utf-8") as f:
                 metadata = yaml.safe_load(f) or {}
 
+        # Parse metadata (handle different formats)
+        series_raw = metadata.get("series")
+        series_name = None
+        series_idx = None
+        if isinstance(series_raw, dict):
+            series_name = series_raw.get("title")
+            series_idx = series_raw.get("volume")
+        elif isinstance(series_raw, str):
+            series_name = series_raw
+            series_idx = metadata.get("series_index")
+
+        lang = metadata.get("lang", metadata.get("language", "de"))
+        if "-" in str(lang):
+            lang = str(lang).split("-")[0]  # "en-US" -> "en"
+
         book = Book(
             title=metadata.get("title", project_root.name),
             subtitle=metadata.get("subtitle"),
             author=metadata.get("author", "Unknown"),
-            language=metadata.get("lang", "de"),
-            series=metadata.get("series"),
-            series_index=metadata.get("series_index"),
+            language=lang,
+            series=series_name,
+            series_index=series_idx,
             description=metadata.get("description"),
         )
         db.add(book)
@@ -328,6 +343,9 @@ _BACK_MATTER_MAP = {
     "appendix": ChapterType.APPENDIX,
     "bibliography": ChapterType.BIBLIOGRAPHY,
     "glossary": ChapterType.GLOSSARY,
+    "epilogue": ChapterType.APPENDIX,       # no dedicated type, use appendix
+    "imprint": ChapterType.APPENDIX,        # no dedicated type, use appendix
+    "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
 }
 
 
@@ -373,11 +391,13 @@ def _extract_title(content: str, fallback: str) -> str:
         stripped = line.strip()
         if stripped.startswith("# ") and not stripped.startswith("## "):
             return stripped[2:].strip()
-    # Clean up fallback from filename like "01-chapter-title"
-    parts = fallback.split("-", 1)
-    if len(parts) > 1 and parts[0].isdigit():
-        return parts[1].replace("-", " ").title()
-    return fallback.replace("-", " ").title()
+    # Clean up fallback from filename like "01-chapter" or "01-0-part-1-intro"
+    # Strip leading numeric prefixes (01-, 01-0-, etc.)
+    import re
+    cleaned = re.sub(r"^[\d]+-[\d]*-?", "", fallback)
+    if not cleaned:
+        cleaned = fallback
+    return cleaned.replace("-", " ").strip().title()
 
 
 def _remove_first_heading(content: str) -> str:
@@ -401,6 +421,9 @@ def _import_special_chapters(
     base_position = 900
     for md_file in sorted(directory.glob("*.md")):
         stem = md_file.stem.lower()
+        # Skip print variants (toc-print, about-the-author-print, etc.)
+        if stem.endswith("-print"):
+            continue
         chapter_type = type_map.get(stem)
         if not chapter_type:
             continue
