@@ -121,10 +121,12 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
 
         if fmt == "project":
             zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
+            bgp_path = zip_path.replace(".zip", ".bgp")
+            Path(zip_path).rename(bgp_path)
             return FileResponse(
-                path=zip_path,
-                media_type="application/zip",
-                filename=f"{project_dir.name}.zip",
+                path=bgp_path,
+                media_type="application/octet-stream",
+                filename=f"{project_dir.name}.bgp",
             )
 
         # Export via manuscripta (reads export-settings.yaml from scaffolded project)

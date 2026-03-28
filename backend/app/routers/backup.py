@@ -216,10 +216,14 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400,
             detail="Das ist eine Backup-Datei (.bgb). Fuer Backup-Restore nutze den 'Restore'-Button. "
-                   "Fuer Projekt-Import wird eine .zip-Datei erwartet.",
+                   "Fuer Projekt-Import wird eine .bgp- oder .zip-Datei erwartet.",
         )
-    if not file.filename.endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Datei muss eine .zip-Datei sein (Projektstruktur)")
+    valid_ext = file.filename.endswith(".bgp") or file.filename.endswith(".zip")
+    if not valid_ext:
+        raise HTTPException(
+            status_code=400,
+            detail="Datei muss eine .bgp-Datei (Bibliogon Projekt) oder .zip-Datei (write-book-template) sein",
+        )
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_import_"))
 
