@@ -10,6 +10,10 @@ class HelpPlugin(BasePlugin):
     version = "1.0.0"
     api_version = "1"
 
+    def activate(self) -> None:
+        from .routes import set_config
+        set_config(self.config)
+
     def get_routes(self) -> list[Any]:
         from .routes import router
         return [router]
