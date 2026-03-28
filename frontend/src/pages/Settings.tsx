@@ -234,6 +234,7 @@ function AppSettings({config, onSave, saving}: {
                     }}>
                         <option value="warm-literary">Warm Literary</option>
                         <option value="cool-modern">Cool Modern</option>
+                        <option value="nord">Nord</option>
                     </select>
                 </div>
                 <button

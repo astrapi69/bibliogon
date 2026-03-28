@@ -69,6 +69,39 @@
     --font-display: "Inter", system-ui, sans-serif;
 }
 
+/* --- Nord Theme (Light) --- */
+[data-app-theme="nord"] {
+    --bg-primary: #eceff4;
+    --bg-secondary: #e5e9f0;
+    --bg-sidebar: #2e3440;
+    --bg-card: #ffffff;
+    --bg-hover: #d8dee9;
+    --bg-editor: #ffffff;
+
+    --text-primary: #2e3440;
+    --text-secondary: #4c566a;
+    --text-muted: #7b88a1;
+    --text-inverse: #eceff4;
+    --text-sidebar: #d8dee9;
+
+    --accent: #5e81ac;
+    --accent-hover: #81a1c1;
+    --accent-light: #d8e2ef;
+    --accent-subtle: #b8cce2;
+
+    --border: #d8dee9;
+    --border-strong: #c8ced9;
+
+    --danger: #bf616a;
+    --danger-hover: #a5444d;
+
+    --shadow-sm: 0 1px 2px rgba(46, 52, 64, 0.06);
+    --shadow-md: 0 4px 12px rgba(46, 52, 64, 0.08);
+    --shadow-lg: 0 8px 24px rgba(46, 52, 64, 0.12);
+
+    --font-display: "DM Sans", system-ui, sans-serif;
+}
+
 /* --- Dark Mode (Warm Literary) --- */
 [data-theme="dark"] {
     --bg-primary: #1a1a1a;
@@ -122,6 +155,33 @@
 
     --border: #334155;
     --border-strong: #475569;
+}
+
+/* --- Dark Mode (Nord) --- */
+[data-app-theme="nord"][data-theme="dark"] {
+    --bg-primary: #2e3440;
+    --bg-secondary: #3b4252;
+    --bg-sidebar: #242933;
+    --bg-card: #3b4252;
+    --bg-hover: #434c5e;
+    --bg-editor: #2e3440;
+
+    --text-primary: #eceff4;
+    --text-secondary: #d8dee9;
+    --text-muted: #7b88a1;
+    --text-inverse: #2e3440;
+    --text-sidebar: #d8dee9;
+
+    --accent: #88c0d0;
+    --accent-hover: #8fbcbb;
+    --accent-light: rgba(136, 192, 208, 0.15);
+    --accent-subtle: rgba(136, 192, 208, 0.25);
+
+    --border: #434c5e;
+    --border-strong: #4c566a;
+
+    --danger: #bf616a;
+    --danger-hover: #d08770;
 }
 
 [data-theme="dark"] .btn-danger:hover {
