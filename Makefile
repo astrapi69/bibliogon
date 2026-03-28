@@ -1,6 +1,6 @@
 .PHONY: dev dev-bg dev-down dev-backend dev-frontend \
-       install install-backend install-frontend install-plugins \
-       test test-backend test-plugins \
+       install install-backend install-frontend install-plugins install-e2e \
+       test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch \
        clean prod prod-down prod-logs help
 
@@ -33,13 +33,16 @@ dev-frontend:
 
 # --- Install ---
 
-install: install-plugins install-backend install-frontend ## Install all dependencies
+install: install-plugins install-backend install-frontend install-e2e ## Install all dependencies
 
 install-backend:
 	cd backend && poetry install
 
 install-frontend:
 	cd frontend && npm install
+
+install-e2e:
+	cd e2e && npm install && npx playwright install chromium
 
 install-plugins:
 	@for dir in plugins/bibliogon-plugin-*; do \
@@ -81,6 +84,14 @@ test-plugin-kinderbuch: ## Run kinderbuch plugin tests (8 tests)
 	@echo ""
 	@echo "=== Kinderbuch Plugin Tests ==="
 	cd plugins/bibliogon-plugin-kinderbuch && poetry run pytest tests/ -v
+
+# --- E2E Tests ---
+
+test-e2e: ## Run Playwright e2e tests (starts servers automatically)
+	cd e2e && npx playwright test
+
+test-e2e-ui: ## Run e2e tests with Playwright UI
+	cd e2e && npx playwright test --ui
 
 # --- Production (Docker) ---
 

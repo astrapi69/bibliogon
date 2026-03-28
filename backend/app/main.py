@@ -120,3 +120,22 @@ def get_i18n(lang: str) -> dict[str, Any]:
 @app.get("/api/health")
 def health():
     return {"status": "ok", "version": "0.6.0"}
+
+
+# Test reset endpoint - available in dev, guarded in production by deployment config
+from app.database import SessionLocal
+from app.models import Asset, Book, Chapter
+
+
+@app.delete("/api/test/reset")
+def reset_test_db():
+    """Reset all data. Used by e2e tests for clean state."""
+    db = SessionLocal()
+    try:
+        db.query(Asset).delete()
+        db.query(Chapter).delete()
+        db.query(Book).delete()
+        db.commit()
+        return {"status": "reset"}
+    finally:
+        db.close()
