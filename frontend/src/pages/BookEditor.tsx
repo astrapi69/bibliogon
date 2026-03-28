@@ -4,6 +4,7 @@ import {api, BookDetail, Chapter, ChapterType} from "../api/client";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
+import BookMetadataEditor from "../components/BookMetadataEditor";
 import {useDialog} from "../components/AppDialog";
 
 const TYPE_LABELS: Record<ChapterType, string> = {
@@ -27,7 +28,9 @@ export default function BookEditor() {
     const navigate = useNavigate();
     const dialog = useDialog();
     const [book, setBook] = useState<BookDetail | null>(null);
+    const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
+    const [showMetadata, setShowMetadata] = useState(false);
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -56,7 +59,14 @@ export default function BookEditor() {
 
     useEffect(() => {
         loadBook();
+        api.books.list().then(setAllBooks).catch(() => {});
     }, [loadBook]);
+
+    const handleSaveMetadata = async (data: Record<string, unknown>) => {
+        if (!bookId) return;
+        const updated = await api.books.update(bookId, data as Partial<import("../api/client").BookCreate>);
+        setBook((prev) => prev ? {...prev, ...updated} : prev);
+    };
 
     const handleAddChapter = async (chapterType?: ChapterType) => {
         if (!bookId) return;
@@ -146,16 +156,24 @@ export default function BookEditor() {
             <ChapterSidebar
                 bookTitle={book.title}
                 chapters={book.chapters}
-                activeChapterId={activeChapterId}
-                onSelect={setActiveChapterId}
+                activeChapterId={showMetadata ? null : activeChapterId}
+                onSelect={(id) => { setActiveChapterId(id); setShowMetadata(false); }}
                 onAdd={handleAddChapter}
                 onDelete={handleDeleteChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
+                onMetadata={() => setShowMetadata(true)}
+                showMetadata={showMetadata}
                 onReorder={handleReorder}
             />
 
-            {activeChapter ? (
+            {showMetadata ? (
+                <BookMetadataEditor
+                    book={book}
+                    onSave={handleSaveMetadata}
+                    allBooks={allBooks}
+                />
+            ) : activeChapter ? (
                 <Editor
                     key={activeChapter.id}
                     content={activeChapter.content}

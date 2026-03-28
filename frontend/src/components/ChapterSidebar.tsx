@@ -6,6 +6,7 @@ import {
     GripVertical,
     ChevronLeft,
     Download,
+    FileText,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -19,6 +20,8 @@ interface Props {
     onBack: () => void;
     onExport: () => void;
     onReorder: (chapterIds: string[]) => void;
+    onMetadata: () => void;
+    showMetadata: boolean;
 }
 
 const FRONT_MATTER_TYPES: ChapterType[] = ["preface", "foreword", "acknowledgments"];
@@ -54,6 +57,8 @@ export default function ChapterSidebar({
                                            onBack,
                                            onExport,
                                            onReorder,
+                                           onMetadata,
+                                           showMetadata,
                                        }: Props) {
     const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
     const mainChapters = chapters.filter((ch) =>
@@ -279,8 +284,14 @@ export default function ChapterSidebar({
                 )}
             </div>
 
-            {/* Export */}
+            {/* Actions */}
             <div style={styles.exportSection}>
+                <button
+                    style={{...styles.exportBtn, ...(showMetadata ? styles.exportBtnActive : {}), marginBottom: 6}}
+                    onClick={onMetadata}
+                >
+                    <FileText size={14}/> Metadaten
+                </button>
                 <button
                     style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
                     onClick={onExport}
@@ -388,6 +399,9 @@ const styles: Record<string, React.CSSProperties> = {
         border: "1px solid rgba(255,255,255,0.08)", color: "var(--text-sidebar)",
         borderRadius: 6, cursor: "pointer", fontSize: "0.8125rem",
         fontFamily: "var(--font-body)", fontWeight: 500, transition: "background 150ms",
+    },
+    exportBtnActive: {
+        background: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.15)",
     },
     btnDisabled: {
         opacity: 0.3, cursor: "not-allowed",
