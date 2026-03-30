@@ -199,3 +199,23 @@ faq:
     answer:
       de: ".bgb (Bibliogon Backup) enthalt ein komplettes Backup aller Buecher - nur ueber 'Restore' importierbar. .bgp (Bibliogon Project) enthalt ein einzelnes Buch als Projektstruktur - ueber 'Import' importierbar. .zip sind externe write-book-template Projekte - ebenfalls ueber 'Import' importierbar. Die unterschiedlichen Endungen verhindern Verwechslungen."
       en: ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+
+  # === Buch-Metadaten ===
+  - question:
+      de: "Wie bearbeite ich Buch-Metadaten (ISBN, Verlag, Keywords)?"
+      en: "How do I edit book metadata (ISBN, publisher, keywords)?"
+    answer:
+      de: "Oeffne dein Buch im Editor und klicke 'Metadaten' in der Sidebar (unterhalb der Kapitelliste). Dort findest du 5 Sektionen: Allgemein (Untertitel, Edition, Datum), Verlag (Name, Stadt), ISBN/ASIN (E-Book, Taschenbuch, Hardcover), Marketing (Keywords, HTML-Beschreibung fuer Amazon, Rueckseitentexte) und Design (Cover-Pfad, Custom CSS). Alle Felder werden pro Buch gespeichert."
+      en: "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+  - question:
+      de: "Kann ich Metadaten von einem anderen Buch uebernehmen?"
+      en: "Can I copy metadata from another book?"
+    answer:
+      de: "Ja. Im Metadaten-Editor klicke 'Von Buch uebernehmen'. Es werden Verlag, Stadt, Autoren-Bio und Custom CSS vom gewaehlten Buch kopiert. Buchspezifische Felder (ISBN, Cover, Beschreibung) bleiben unveraendert."
+      en: "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+  - question:
+      de: "Welche Kapiteltypen gibt es jetzt?"
+      en: "What chapter types are available now?"
+    answer:
+      de: "13 Kapiteltypen in 3 Gruppen: Front Matter (Vorwort, Geleitwort, Danksagung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Ueber den Autor, Anhang, Literatur, Glossar, Impressum, Naechster Band). Alle wahlbar ueber das '+'-Dropdown in der Sidebar oder die Buttons bei einem leeren Buch."
+      en: "13 chapter types in 3 groups: Front Matter (Preface, Foreword, Acknowledgments), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, About the Author, Appendix, Bibliography, Glossary, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar or buttons for an empty book."

@@ -5,7 +5,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 **Repository:** https://github.com/astrapi69/bibliogon
 **PluginForge:** https://github.com/astrapi69/pluginforge (PyPI: pluginforge ^0.5.0)
 **Konzept:** docs/CONCEPT.md
-**Version:** 0.6.0
+**Version:** 0.7.0
 
 ## Architektur (Zwei-Schichten)
 
@@ -135,6 +135,9 @@ bibliogon/
 │   │   │   ├── ChapterSidebar.tsx # Kapitel-Sidebar mit Drag-and-Drop, Sektionen
 │   │   │   ├── ThemeToggle.tsx  # Dark/Light Mode Button
 │   │   │   ├── ExportDialog.tsx  # Export-Modal (Format, Buchtyp, TOC-Tiefe)
+│   │   │   ├── BookMetadataEditor.tsx # Buch-Metadaten (ISBN, Keywords, Publisher)
+│   │   │   ├── AppDialog.tsx    # Custom Confirm/Prompt/Alert Dialoge
+│   │   │   ├── OrderedListEditor.tsx  # Sortierbare Listen (Section-Order)
 │   │   │   ├── BookCard.tsx     # Buch-Karte fuer Dashboard
 │   │   │   └── CreateBookModal.tsx
 │   │   ├── pages/
@@ -244,10 +247,13 @@ manager.get_text("key", "de")      # i18n String
 ## Datenmodell
 
 Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at, deleted_at
+Book (Publishing): edition, publisher, publisher_city, publish_date, isbn_ebook, isbn_paperback, isbn_hardcover, asin_ebook
+Book (Marketing): keywords (JSON), html_description, backpage_description, backpage_author_bio
+Book (Design): cover_image, custom_css
 Chapter: id, book_id (FK), title, content (TipTap JSON), position, chapter_type (enum), created_at, updated_at
 Asset: id, book_id (FK), filename, asset_type (cover/figure/diagram/table), path, uploaded_at
 
-ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary
+ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude
 
 ## Plugins
 
@@ -319,11 +325,7 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - Umfassende Hilfe (23 FAQ, 12 Shortcuts, bilingual DE/EN)
 - write-book-template Import kompatibel mit echten Projekten (series dict, lang normalisierung, print-Varianten)
 
-## Naechste Schritte
-
-### Phase 7 - Erweiterte Buch-Metadaten und Publishing (v0.7.0)
-
-Pro-Buch-Konfiguration statt nur globale Plugin-Settings:
+### Phase 7: Erweiterte Buch-Metadaten (v0.7.0) - erledigt
 
 - Erweiterte Metadaten pro Buch: ISBN (ebook/paperback/hardcover), ASIN, Publisher, Edition, Datum
 - Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung, Autor-Kurzbiographie
@@ -332,7 +334,10 @@ Pro-Buch-Konfiguration statt nur globale Plugin-Settings:
 - Custom CSS-Styles pro Buch (EPUB-Styles)
 - "Config von anderem Buch uebernehmen" Wizard/Dialog
 - Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros, Interludien
-- Print-Varianten pro Kapitel (-print Suffix fuer Taschenbuch/Hardcover)
+- Buch-Metadaten-Editor im BookEditor (5 Sektionen: Allgemein, Verlag, ISBN, Marketing, Design)
+- Playwright E2E-Tests erweitert auf 52 Tests
+
+## Naechste Schritte
 
 ### Phase 8 - Audiobook-Plugin (v0.8.0, Premium)
 
@@ -375,14 +380,14 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-97 Tests insgesamt:
+110 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
 - backend: 10 (api, phase4)
-- e2e (Playwright): 39 (dashboard, editor, export, settings, navigation)
+- e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).
 
