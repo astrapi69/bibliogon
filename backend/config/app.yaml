@@ -14,13 +14,13 @@ plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins
   enabled:
-  - export
   - help
   - getstarted
   - grammar
   - kdp
   - kinderbuch
-  disabled: []
+  disabled:
+  - export
 ui:
   title: Bibliogon
   subtitle: Buecher schreiben und exportieren

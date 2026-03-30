@@ -6,12 +6,10 @@ import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home} from "lucide-react
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
-
-type Tab = "app" | "plugins" | "licenses";
+import * as Tabs from "@radix-ui/react-tabs";
 
 export default function Settings() {
     const navigate = useNavigate();
-    const [tab, setTab] = useState<Tab>("app");
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
     const [licenses, setLicenses] = useState<Record<string, unknown>>({});
@@ -72,22 +70,15 @@ export default function Settings() {
                 </div>
             </header>
 
-            {/* Tabs */}
-            <div style={styles.tabs}>
-                {(["app", "plugins", "licenses"] as Tab[]).map((t) => (
-                    <button
-                        key={t}
-                        style={{...styles.tab, ...(tab === t ? styles.tabActive : {})}}
-                        onClick={() => setTab(t)}
-                    >
-                        {t === "app" ? "Allgemein" : t === "plugins" ? "Plugins" : "Lizenzen"}
-                    </button>
-                ))}
-            </div>
+            <Tabs.Root defaultValue="app">
+                <Tabs.List className="radix-tabs-list">
+                    <Tabs.Trigger value="app" className="radix-tab-trigger">Allgemein</Tabs.Trigger>
+                    <Tabs.Trigger value="plugins" className="radix-tab-trigger">Plugins</Tabs.Trigger>
+                    <Tabs.Trigger value="licenses" className="radix-tab-trigger">Lizenzen</Tabs.Trigger>
+                </Tabs.List>
 
-            {/* Content */}
             <main style={styles.main}>
-                {tab === "app" && (
+                <Tabs.Content value="app">
                     <AppSettings
                         config={appConfig}
                         onSave={async (data) => {
@@ -103,8 +94,8 @@ export default function Settings() {
                         }}
                         saving={saving}
                     />
-                )}
-                {tab === "plugins" && (
+                </Tabs.Content>
+                <Tabs.Content value="plugins">
                     <PluginSettings
                         configs={pluginConfigs}
                         appConfig={appConfig}
@@ -156,8 +147,8 @@ export default function Settings() {
                             }
                         }}
                     />
-                )}
-                {tab === "licenses" && (
+                </Tabs.Content>
+                <Tabs.Content value="licenses">
                     <LicenseSettings
                         licenses={licenses}
                         onActivate={async (pluginName, key) => {
@@ -181,8 +172,9 @@ export default function Settings() {
                             }
                         }}
                     />
-                )}
+                </Tabs.Content>
             </main>
+            </Tabs.Root>
         </div>
     );
 }
@@ -736,18 +728,6 @@ const styles: Record<string, React.CSSProperties> = {
     },
     message: {
         fontSize: "0.8125rem", fontWeight: 500, color: "var(--accent)",
-    },
-    tabs: {
-        maxWidth: 900, margin: "0 auto", padding: "0 24px",
-        display: "flex", gap: 0, borderBottom: "1px solid var(--border)",
-    },
-    tab: {
-        padding: "12px 20px", background: "none", border: "none", borderBottom: "2px solid transparent",
-        cursor: "pointer", fontSize: "0.875rem", fontWeight: 500,
-        fontFamily: "var(--font-body)", color: "var(--text-muted)", transition: "all 150ms",
-    },
-    tabActive: {
-        color: "var(--accent)", borderBottomColor: "var(--accent)",
     },
     main: {maxWidth: 900, margin: "0 auto", padding: "24px"},
     section: {display: "flex", flexDirection: "column", gap: 16},

@@ -48,11 +48,11 @@ test.describe("Navigation", () => {
         await expect(page.getByRole("heading", {name: "Tastenkuerzel"})).toBeVisible();
 
         // FAQ tab
-        await page.getByRole("button", {name: /FAQ/}).click();
+        await page.getByRole("tab", {name: /FAQ/}).click();
         await expect(page.getByRole("heading", {name: "Haeufig gestellte Fragen"})).toBeVisible();
 
         // About tab
-        await page.getByRole("button", {name: /Ueber/}).click();
+        await page.getByRole("tab", {name: /Ueber/}).click();
         await expect(page.getByRole("heading", {name: "Ueber Bibliogon"})).toBeVisible();
     });
 

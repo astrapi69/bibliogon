@@ -76,10 +76,33 @@ pluginforge = "^0.5.0"
 | Komponente | Technologie |
 |------------|-------------|
 | PluginForge | Python 3.11+, pluggy, YAML, Entry Points, Alembic |
-| Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL |
-| Frontend | React 18, TypeScript, TipTap, Vite |
-| Export-Plugin | Pandoc, write-book-template Struktur |
-| Tooling | Poetry, npm, Docker, Make |
+| Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL, Pydantic v2 |
+| Frontend | React 18, TypeScript, TipTap, Vite, Radix UI, @dnd-kit, Lucide Icons |
+| Export-Plugin | manuscripta (PyPI), Pandoc, write-book-template Struktur |
+| Tooling | Poetry, npm, Docker, Make, Playwright (E2E) |
+
+### 2.4 UI-Komponentenstrategie
+
+Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt das Rad neu zu erfinden.
+
+| Bibliothek | Zweck | Lizenz |
+|------------|-------|--------|
+| **Radix UI** | Unstyled accessible Primitives (Dialog, Tabs, Dropdown, Select, Tooltip) | MIT |
+| **@dnd-kit** | Drag-and-Drop (Kapitel-Sortierung, Listen-Reorder) | MIT |
+| **TipTap** | WYSIWYG/Markdown-Editor | MIT |
+| **Lucide React** | Icons | ISC |
+| **react-toastify** | Toast-Notifications | MIT |
+
+Warum Radix UI:
+- Unstyled: Passt zu unserem CSS-Variables-Theming (3 Themes x Light/Dark)
+- Accessible: ARIA-Attribute, Fokus-Management, Keyboard-Navigation out-of-the-box
+- Einzeln installierbar: Nur die Primitives die wir brauchen
+- Kein Tailwind noetig: Wir stylen weiter mit Custom Properties
+
+Abgelehnte Alternativen:
+- shadcn/ui (braucht Tailwind), MUI (zu opinionated), Ant Design (zu schwer), Mantine/Chakra (eigenes Theme-System)
+
+Diese Strategie gilt auch als Referenz fuer andere Projekte die auf PluginForge aufbauen.
 
 ---
 

@@ -3,12 +3,10 @@ import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Keyboard, HelpCircle, Info, Home} from "lucide-react";
-
-type Tab = "shortcuts" | "faq" | "about";
+import * as Tabs from "@radix-ui/react-tabs";
 
 export default function Help() {
     const navigate = useNavigate();
-    const [tab, setTab] = useState<Tab>("shortcuts");
     const [shortcuts, setShortcuts] = useState<{keys: string; action: string}[]>([]);
     const [faq, setFaq] = useState<{question: string; answer: string}[]>([]);
     const [about, setAbout] = useState<Record<string, string>>({});
@@ -38,29 +36,21 @@ export default function Help() {
                 </div>
             </header>
 
-            <div style={styles.tabs}>
-                <button
-                    style={{...styles.tab, ...(tab === "shortcuts" ? styles.tabActive : {})}}
-                    onClick={() => setTab("shortcuts")}
-                >
-                    <Keyboard size={14}/> Tastenkuerzel
-                </button>
-                <button
-                    style={{...styles.tab, ...(tab === "faq" ? styles.tabActive : {})}}
-                    onClick={() => setTab("faq")}
-                >
-                    <HelpCircle size={14}/> FAQ
-                </button>
-                <button
-                    style={{...styles.tab, ...(tab === "about" ? styles.tabActive : {})}}
-                    onClick={() => setTab("about")}
-                >
-                    <Info size={14}/> Ueber
-                </button>
-            </div>
+            <Tabs.Root defaultValue="shortcuts">
+                <Tabs.List className="radix-tabs-list">
+                    <Tabs.Trigger value="shortcuts" className="radix-tab-trigger">
+                        <Keyboard size={14}/> Tastenkuerzel
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="faq" className="radix-tab-trigger">
+                        <HelpCircle size={14}/> FAQ
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="about" className="radix-tab-trigger">
+                        <Info size={14}/> Ueber
+                    </Tabs.Trigger>
+                </Tabs.List>
 
             <main style={styles.main}>
-                {tab === "shortcuts" && (
+                <Tabs.Content value="shortcuts">
                     <div style={styles.section}>
                         <h2 style={styles.sectionTitle}>Tastenkuerzel</h2>
                         <div style={styles.card}>
@@ -84,9 +74,9 @@ export default function Help() {
                             </table>
                         </div>
                     </div>
-                )}
+                </Tabs.Content>
 
-                {tab === "faq" && (
+                <Tabs.Content value="faq">
                     <div style={styles.section}>
                         <h2 style={styles.sectionTitle}>Haeufig gestellte Fragen</h2>
                         {faq.map((item, i) => (
@@ -96,9 +86,9 @@ export default function Help() {
                             </div>
                         ))}
                     </div>
-                )}
+                </Tabs.Content>
 
-                {tab === "about" && (
+                <Tabs.Content value="about">
                     <div style={styles.section}>
                         <h2 style={styles.sectionTitle}>Ueber Bibliogon</h2>
                         <div style={styles.card}>
@@ -113,8 +103,9 @@ export default function Help() {
                             </p>
                         </div>
                     </div>
-                )}
+                </Tabs.Content>
             </main>
+            </Tabs.Root>
         </div>
     );
 }
@@ -134,17 +125,6 @@ const styles: Record<string, React.CSSProperties> = {
     title: {
         fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600, color: "var(--text-primary)",
     },
-    tabs: {
-        maxWidth: 900, margin: "0 auto", padding: "0 24px",
-        display: "flex", gap: 0, borderBottom: "1px solid var(--border)",
-    },
-    tab: {
-        padding: "12px 20px", background: "none", border: "none", borderBottom: "2px solid transparent",
-        cursor: "pointer", fontSize: "0.875rem", fontWeight: 500,
-        fontFamily: "var(--font-body)", color: "var(--text-muted)", transition: "all 150ms",
-        display: "flex", alignItems: "center", gap: 6,
-    },
-    tabActive: {color: "var(--accent)", borderBottomColor: "var(--accent)"},
     main: {maxWidth: 900, margin: "0 auto", padding: "24px"},
     section: {display: "flex", flexDirection: "column", gap: 16},
     sectionTitle: {

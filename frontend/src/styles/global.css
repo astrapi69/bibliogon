@@ -348,6 +348,105 @@ body {
     margin-bottom: 16px;
 }
 
+/* --- Radix Dialog --- */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 2000;
+    animation: fadeIn 150ms ease;
+}
+
+.dialog-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: var(--shadow-lg);
+    z-index: 2001;
+    animation: slideIn 150ms ease;
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.dialog-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+}
+
+.dialog-message {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translate(-50%, -48%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* --- Radix Tabs --- */
+.radix-tabs-list {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.radix-tab-trigger {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    color: var(--text-muted);
+    transition: all 150ms;
+}
+
+.radix-tab-trigger[data-state="active"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.radix-tab-trigger:hover {
+    color: var(--text-primary);
+}
+
+.radix-tab-trigger svg {
+    display: inline;
+    vertical-align: -2px;
+    margin-right: 4px;
+}
+
 /* --- TipTap Editor --- */
 .tiptap-editor {
     min-height: 400px;

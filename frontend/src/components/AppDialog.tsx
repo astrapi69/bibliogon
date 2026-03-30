@@ -1,4 +1,5 @@
 import {useState, useCallback, createContext, useContext} from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {X, AlertTriangle, CheckCircle, Info} from "lucide-react";
 
 // --- Dialog types ---
@@ -93,82 +94,60 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     return (
         <DialogContext.Provider value={{confirm, prompt, alert}}>
             {children}
-            {dialog && (
-                <div style={styles.overlay} onClick={handleCancel}>
-                    <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <div style={styles.header}>
-                            <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                {icon}
-                                <h3 style={styles.title}>{dialog.title}</h3>
-                            </div>
-                            <button style={styles.closeBtn} onClick={handleCancel}>
-                                <X size={16}/>
-                            </button>
-                        </div>
+            <Dialog.Root open={!!dialog} onOpenChange={(open) => { if (!open) handleCancel(); }}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="dialog-overlay"/>
+                    <Dialog.Content className="dialog-content" onEscapeKeyDown={handleCancel}>
+                        {dialog && (
+                            <>
+                                <div className="dialog-header">
+                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                        {icon}
+                                        <Dialog.Title className="dialog-title">{dialog.title}</Dialog.Title>
+                                    </div>
+                                    <Dialog.Close asChild>
+                                        <button className="btn-icon" onClick={handleCancel}>
+                                            <X size={16}/>
+                                        </button>
+                                    </Dialog.Close>
+                                </div>
 
-                        <p style={styles.message}>{dialog.message}</p>
+                                <Dialog.Description className="dialog-message">
+                                    {dialog.message}
+                                </Dialog.Description>
 
-                        {dialog.type === "prompt" && (
-                            <input
-                                className="input"
-                                style={{marginTop: 12}}
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && handleConfirm()}
-                                placeholder={dialog.placeholder || ""}
-                                autoFocus
-                            />
+                                {dialog.type === "prompt" && (
+                                    <input
+                                        className="input"
+                                        style={{marginTop: 12}}
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && handleConfirm()}
+                                        placeholder={dialog.placeholder || ""}
+                                        autoFocus
+                                    />
+                                )}
+
+                                <div className="dialog-footer">
+                                    {dialog.type !== "alert" && (
+                                        <button className="btn btn-ghost" onClick={handleCancel}>
+                                            {dialog.cancelLabel || "Abbrechen"}
+                                        </button>
+                                    )}
+                                    <button
+                                        className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
+                                        onClick={handleConfirm}
+                                        disabled={dialog.type === "prompt" && !inputValue.trim()}
+                                        autoFocus={dialog.type !== "prompt"}
+                                    >
+                                        {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : "Bestaetigen")}
+                                    </button>
+                                </div>
+                            </>
                         )}
-
-                        <div style={styles.footer}>
-                            {dialog.type !== "alert" && (
-                                <button className="btn btn-ghost" onClick={handleCancel}>
-                                    {dialog.cancelLabel || "Abbrechen"}
-                                </button>
-                            )}
-                            <button
-                                className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
-                                onClick={handleConfirm}
-                                disabled={dialog.type === "prompt" && !inputValue.trim()}
-                                autoFocus={dialog.type !== "prompt"}
-                            >
-                                {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : "Bestaetigen")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
         </DialogContext.Provider>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    overlay: {
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 2000, backdropFilter: "blur(2px)",
-    },
-    modal: {
-        background: "var(--bg-card)", borderRadius: "var(--radius-lg)",
-        padding: 24, width: "100%", maxWidth: 440,
-        boxShadow: "var(--shadow-lg)",
-    },
-    header: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 12,
-    },
-    title: {
-        fontFamily: "var(--font-display)", fontSize: "1.0625rem", fontWeight: 600,
-    },
-    closeBtn: {
-        background: "none", border: "none", cursor: "pointer",
-        color: "var(--text-muted)", padding: 4, borderRadius: 4,
-        display: "flex", alignItems: "center",
-    },
-    message: {
-        color: "var(--text-secondary)", fontSize: "0.9375rem", lineHeight: 1.5,
-    },
-    footer: {
-        display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20,
-    },
-};

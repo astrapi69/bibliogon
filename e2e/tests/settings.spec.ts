@@ -17,7 +17,7 @@ test.describe("Settings", () => {
 
     test("plugins tab shows plugin cards", async ({page}) => {
         await page.goto("/settings");
-        await page.getByRole("button", {name: "Plugins"}).click();
+        await page.getByRole("tab", {name: "Plugins"}).click();
 
         // At least export plugin should be visible
         await expect(page.getByText("Buch-Export").first()).toBeVisible();
@@ -25,7 +25,7 @@ test.describe("Settings", () => {
 
     test("plugin enable/disable toggle", async ({page}) => {
         await page.goto("/settings");
-        await page.getByRole("button", {name: "Plugins"}).click();
+        await page.getByRole("tab", {name: "Plugins"}).click();
 
         // Wait for plugin cards to load, then find any An/Aus button
         await page.waitForTimeout(1000);
@@ -41,7 +41,7 @@ test.describe("Settings", () => {
 
     test("plugin settings expand", async ({page}) => {
         await page.goto("/settings");
-        await page.getByRole("button", {name: "Plugins"}).click();
+        await page.getByRole("tab", {name: "Plugins"}).click();
 
         // Click "Einstellungen" on first plugin that has it
         const settingsBtn = page.getByRole("button", {name: "Einstellungen"}).first();
@@ -55,7 +55,7 @@ test.describe("Settings", () => {
 
     test("licenses tab", async ({page}) => {
         await page.goto("/settings");
-        await page.getByRole("button", {name: "Lizenzen"}).click();
+        await page.getByRole("tab", {name: "Lizenzen"}).click();
         await expect(page.getByText("Lizenz aktivieren")).toBeVisible();
         await expect(page.getByPlaceholder("Plugin-Name")).toBeVisible();
         await expect(page.getByPlaceholder("Lizenzschluessel")).toBeVisible();

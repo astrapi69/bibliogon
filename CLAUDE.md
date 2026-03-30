@@ -26,7 +26,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 
 - **PluginForge:** Python 3.11+, pluggy, PyYAML (PyPI: pluginforge ^0.5.0)
 - **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
-- **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite, Lucide Icons
+- **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite, Lucide Icons, Radix UI, @dnd-kit
 - **Export-Plugin:** manuscripta (PyPI ^0.6.0), Pandoc, write-book-template Struktur
 - **Tooling:** Poetry, npm, Docker, Make
 
