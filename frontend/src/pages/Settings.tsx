@@ -292,7 +292,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
                 <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
-                    <Plus size={14}/> Plugin hinzufuegen
+                    <Plus size={14}/> Plugin hinzufügen
                 </button>
             </div>
 

@@ -36,13 +36,13 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     preface: "Vorwort",
     foreword: "Geleitwort",
     acknowledgments: "Danksagung",
-    about_author: "Ueber den Autor",
+    about_author: "Über den Autor",
     appendix: "Anhang",
     bibliography: "Literatur",
     glossary: "Glossar",
     epilogue: "Epilog",
     imprint: "Impressum",
-    next_in_series: "Naechster Band",
+    next_in_series: "Nächster Band",
     part_intro: "Teil-Einleitung",
     interlude: "Interludium",
 };
@@ -184,7 +184,7 @@ export default function ChapterSidebar({
                     e.stopPropagation();
                     onDelete(ch.id);
                 }}
-                title="Kapitel loeschen"
+                title="Kapitel löschen"
             >
                 <Trash2 size={12}/>
             </button>
@@ -195,7 +195,7 @@ export default function ChapterSidebar({
         <aside style={styles.sidebar}>
             {/* Header */}
             <div style={styles.header}>
-                <button style={styles.backBtn} onClick={onBack} title="Zurueck">
+                <button style={styles.backBtn} onClick={onBack} title="Zurück">
                     <ChevronLeft size={18}/>
                 </button>
                 <h2 style={styles.bookTitle} title={bookTitle}>
@@ -217,7 +217,7 @@ export default function ChapterSidebar({
                     <button
                         style={styles.addBtn}
                         onClick={() => setShowAddMenu(!showAddMenu)}
-                        title="Hinzufuegen"
+                        title="Hinzufügen"
                     >
                         <Plus size={14}/>
                     </button>

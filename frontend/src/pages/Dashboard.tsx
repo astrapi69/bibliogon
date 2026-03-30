@@ -54,7 +54,7 @@ export default function Dashboard() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!await dialog.confirm("Buch loeschen", "Buch in den Papierkorb verschieben?")) return;
+        if (!await dialog.confirm("Buch löschen", "Buch in den Papierkorb verschieben?")) return;
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         loadTrash();
@@ -67,13 +67,13 @@ export default function Dashboard() {
     };
 
     const handlePermanentDelete = async (id: string) => {
-        if (!await dialog.confirm("Endgueltig loeschen", "Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden.", "danger")) return;
+        if (!await dialog.confirm("Endgültig löschen", "Buch endgültig löschen? Dies kann nicht rückgängig gemacht werden.", "danger")) return;
         await api.books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
     };
 
     const handleEmptyTrash = async () => {
-        if (!await dialog.confirm("Papierkorb leeren", `Alle ${trash.length} Buecher im Papierkorb werden unwiderruflich geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden.`, "danger")) return;
+        if (!await dialog.confirm("Papierkorb leeren", `Alle ${trash.length} Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.`, "danger")) return;
         await api.books.emptyTrash();
         setTrash([]);
     };
@@ -87,7 +87,7 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.import(file);
-            toast.success(`${result.imported_books} Buch/Buecher importiert.`);
+            toast.success(`${result.imported_books} Buch/Bücher importiert.`);
             loadBooks();
         } catch (err) {
             toast.error(`Import fehlgeschlagen: ${err}`);
@@ -145,7 +145,7 @@ export default function Dashboard() {
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={handleBackupExport}
-                            title={books.length === 0 ? "Keine Buecher zum Sichern" : "Backup exportieren"}
+                            title={books.length === 0 ? "Keine Bücher zum Sichern" : "Backup exportieren"}
                             disabled={books.length === 0}
                         >
                             <Download size={14}/> Backup
@@ -172,12 +172,12 @@ export default function Dashboard() {
                     /* Trash view */
                     <>
                         <div style={styles.mainHeader}>
-                            <button className="btn-icon" onClick={() => setShowTrash(false)} title="Zurueck">
+                            <button className="btn-icon" onClick={() => setShowTrash(false)} title="Zurück">
                                 <ChevronLeft size={18}/>
                             </button>
                             <Trash2 size={20} style={{color: "var(--text-muted)"}}/>
                             <h2 style={styles.mainTitle}>Papierkorb</h2>
-                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? "Buch" : "Buecher"}</span>
+                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? "Buch" : "Bücher"}</span>
                             <div style={{flex: 1}}/>
                             {trash.length > 0 && (
                                 <button className="btn btn-danger btn-sm" onClick={handleEmptyTrash}>
@@ -203,7 +203,7 @@ export default function Dashboard() {
                                                 <RotateCcw size={12}/> Wiederherstellen
                                             </button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handlePermanentDelete(book.id)}>
-                                                <Trash size={12}/> Endgueltig
+                                                <Trash size={12}/> Endgültig
                                             </button>
                                         </div>
                                     </div>
@@ -236,8 +236,8 @@ export default function Dashboard() {
                 ) : (
                     <>
                         <div style={styles.mainHeader}>
-                            <h2 style={styles.mainTitle}>Meine Buecher</h2>
-                            <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Buecher"}</span>
+                            <h2 style={styles.mainTitle}>Meine Bücher</h2>
+                            <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Bücher"}</span>
                         </div>
                         <div style={styles.grid}>
                             {books.map((book) => (

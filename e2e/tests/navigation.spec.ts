@@ -45,20 +45,20 @@ test.describe("Navigation", () => {
         await page.goto("/help");
 
         // Shortcuts tab (default)
-        await expect(page.getByRole("heading", {name: "Tastenkuerzel"})).toBeVisible();
+        await expect(page.getByRole("heading", {name: "Tastenkürzel"})).toBeVisible();
 
         // FAQ tab
         await page.getByRole("tab", {name: /FAQ/}).click();
-        await expect(page.getByRole("heading", {name: "Haeufig gestellte Fragen"})).toBeVisible();
+        await expect(page.getByRole("heading", {name: "Häufig gestellte Fragen"})).toBeVisible();
 
         // About tab
-        await page.getByRole("tab", {name: /Ueber/}).click();
-        await expect(page.getByRole("heading", {name: "Ueber Bibliogon"})).toBeVisible();
+        await page.getByRole("tab", {name: /Über/}).click();
+        await expect(page.getByRole("heading", {name: "Über Bibliogon"})).toBeVisible();
     });
 
     test("get-started page shows steps", async ({page}) => {
         await page.goto("/get-started");
-        await expect(page.getByText("Schritt fuer Schritt")).toBeVisible();
+        await expect(page.getByText("Schritt für Schritt")).toBeVisible();
         await expect(page.getByText("0% abgeschlossen")).toBeVisible();
     });
 

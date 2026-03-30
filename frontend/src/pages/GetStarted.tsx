@@ -121,7 +121,7 @@ export default function GetStarted() {
                 </div>
 
                 {/* Steps */}
-                <h2 style={styles.sectionTitle}>Schritt fuer Schritt</h2>
+                <h2 style={styles.sectionTitle}>Schritt für Schritt</h2>
                 <div style={styles.stepsGrid}>
                     {steps.map((step) => {
                         const done = completedSteps.has(step.id);

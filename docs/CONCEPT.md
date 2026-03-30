@@ -724,24 +724,28 @@ Pro-Buch-Konfiguration (nicht nur globale Plugin-Settings):
 - Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung
 - Keywords pro Buch (7 SEO-optimierte Keywords fuer KDP)
 - Cover-Image und Custom CSS-Styles pro Buch
-- "Config von anderem Buch uebernehmen" Wizard
-- Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros
+- "Config von anderem Buch übernehmen" Wizard
+- Erweiterte Kapiteltypen: Epilog, Impressum, Nächstes-in-der-Reihe, Part-Intros
 - Print-Varianten pro Kapitel (-print Suffix)
+- GetStarted als interaktiver Assistent/Wizard (geplant):
+  Schritt-für-Schritt-Führung durch die erste Bucherstellung mit
+  kontextbezogenen Hinweisen, automatischer Beispielbuch-Generierung
+  und interaktiver Feature-Tour statt nur statischer Checkliste
 
 ### Phase 8: Audiobook-Plugin (v0.8.0, Premium)
 
 - `plugin-audiobook`: TTS-basierte Audiobook-Generierung
 - TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - Voice-Settings pro Buch, MP3 pro Kapitel, Merge zu Audiobook
-- Vorhoer-Funktion im Editor
+- Vorhör-Funktion im Editor
 
-### Phase 9: Uebersetzungs-Plugin (v0.9.0, Premium)
+### Phase 9: Übersetzungs-Plugin (v0.9.0, Premium)
 
-- `plugin-translation`: Automatische Buchuebersetzung
-- DeepL-Integration, LMStudio fuer lokale LLM-Uebersetzung
-- Kapitelweise Uebersetzung als neues Buch
+- `plugin-translation`: Automatische Buchübersetzung
+- DeepL-Integration, LMStudio für lokale LLM-Übersetzung
+- Kapitelweise Übersetzung als neues Buch
 
-### Phase 10: Manuskript-Qualitaet Plugin (v0.10.0)
+### Phase 10: Manuskript-Qualität Plugin (v0.10.0)
 
 - `plugin-manuscript-tools`: Style-Checks, Sanitization, Metriken
 - Filler-Woerter, Passiv, Satzlaenge, Lesbarkeit

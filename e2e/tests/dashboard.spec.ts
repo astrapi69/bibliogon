@@ -66,7 +66,7 @@ test.describe("Dashboard", () => {
         await page.locator("button[title='Papierkorb']").click();
         await page.getByText("Wiederherstellen").click();
 
-        await page.locator("button[title='Zurueck']").click();
+        await page.locator("button[title='Zurück']").click();
         await expect(page.getByText("Wiederherstellbar")).toBeVisible();
     });
 
@@ -74,6 +74,6 @@ test.describe("Dashboard", () => {
         await createBook("Buch Eins");
         await createBook("Buch Zwei");
         await page.goto("/");
-        await expect(page.getByText("2 Buecher")).toBeVisible();
+        await expect(page.getByText("2 Bücher")).toBeVisible();
     });
 });

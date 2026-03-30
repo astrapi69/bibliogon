@@ -156,7 +156,7 @@ export default function Editor({content, onSave, placeholder}: Props) {
             {/* Status bar */}
             <div style={styles.statusBar}>
                 <span style={styles.wordCount}>
-                    {wordCount} {wordCount === 1 ? "Wort" : "Woerter"}
+                    {wordCount} {wordCount === 1 ? "Wort" : "Wörter"}
                 </span>
                 {statusLabel && (
                     <span style={{

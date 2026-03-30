@@ -69,7 +69,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             cover_image: prev.cover_image || "",  // Keep own cover
         }));
         setShowCopyDialog(false);
-        toast.success(`Verlag und Autoren-Info von "${sourceBook.title}" uebernommen`);
+        toast.success(`Verlag und Autoren-Info von "${sourceBook.title}" übernommen`);
     };
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
@@ -78,7 +78,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
         <div style={styles.container}>
             <div style={styles.header}>
                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                    <button className="btn-icon" onClick={onBack} title="Zurueck zum Editor">
+                    <button className="btn-icon" onClick={onBack} title="Zurück zum Editor">
                         <ChevronLeft size={18}/>
                     </button>
                     <h2 style={styles.title}>Buch-Metadaten</h2>
@@ -86,7 +86,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 <div style={{display: "flex", gap: 8}}>
                     {otherBooks.length > 0 && (
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowCopyDialog(!showCopyDialog)}>
-                            <Copy size={14}/> Von Buch uebernehmen
+                            <Copy size={14}/> Von Buch übernehmen
                         </button>
                     )}
                     <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
@@ -145,11 +145,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 <Section title="Marketing und Amazon">
                     <Field label="Keywords (kommagetrennt, max. 7)" value={form.keywords} onChange={(v) => set("keywords", v)}
                         placeholder="z.B. philosophy, AI, consciousness, eternity"/>
-                    <Field label="Buch-Beschreibung (HTML fuer Amazon)" value={form.html_description}
+                    <Field label="Buch-Beschreibung (HTML für Amazon)" value={form.html_description}
                         onChange={(v) => set("html_description", v)} multiline/>
-                    <Field label="Rueckseitenbeschreibung" value={form.backpage_description}
+                    <Field label="Rückseitenbeschreibung" value={form.backpage_description}
                         onChange={(v) => set("backpage_description", v)} multiline/>
-                    <Field label="Autoren-Kurzbiographie (Rueckseite)" value={form.backpage_author_bio}
+                    <Field label="Autoren-Kurzbiographie (Rückseite)" value={form.backpage_author_bio}
                         onChange={(v) => set("backpage_author_bio", v)} multiline/>
                 </Section>
 

@@ -68,7 +68,7 @@ test.describe("Book Metadata Editor", () => {
         await expect(page.getByRole("heading", {name: "Buch-Metadaten"})).toBeVisible();
 
         // Click back
-        await page.locator("button[title='Zurueck zum Editor']").click();
+        await page.locator("button[title='Zurück zum Editor']").click();
 
         // Should show the editor again
         await expect(page.locator(".tiptap-editor")).toBeVisible();
@@ -128,7 +128,7 @@ test.describe("Extended Chapter Types", () => {
         await createChapter(bookId, "Kapitel 1");
         await page.reload();
 
-        await page.locator("button[title='Hinzufuegen']").click();
+        await page.locator("button[title='Hinzufügen']").click();
         await expect(page.getByRole("button", {name: "Teil-Einleitung"})).toBeVisible();
     });
 
@@ -138,7 +138,7 @@ test.describe("Extended Chapter Types", () => {
         await createChapter(bookId, "Kapitel 1");
         await page.reload();
 
-        await page.locator("button[title='Hinzufuegen']").click();
+        await page.locator("button[title='Hinzufügen']").click();
         await expect(page.getByRole("button", {name: "Interludium"})).toBeVisible();
     });
 

@@ -39,20 +39,20 @@ export default function Help() {
             <Tabs.Root defaultValue="shortcuts">
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="shortcuts" className="radix-tab-trigger">
-                        <Keyboard size={14}/> Tastenkuerzel
+                        <Keyboard size={14}/> Tastenkürzel
                     </Tabs.Trigger>
                     <Tabs.Trigger value="faq" className="radix-tab-trigger">
                         <HelpCircle size={14}/> FAQ
                     </Tabs.Trigger>
                     <Tabs.Trigger value="about" className="radix-tab-trigger">
-                        <Info size={14}/> Ueber
+                        <Info size={14}/> Über
                     </Tabs.Trigger>
                 </Tabs.List>
 
             <main style={styles.main}>
                 <Tabs.Content value="shortcuts">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Tastenkuerzel</h2>
+                        <h2 style={styles.sectionTitle}>Tastenkürzel</h2>
                         <div style={styles.card}>
                             <table style={styles.table}>
                                 <thead>
@@ -78,7 +78,7 @@ export default function Help() {
 
                 <Tabs.Content value="faq">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Haeufig gestellte Fragen</h2>
+                        <h2 style={styles.sectionTitle}>Häufig gestellte Fragen</h2>
                         {faq.map((item, i) => (
                             <div key={i} style={styles.card}>
                                 <h3 style={styles.faqQuestion}>{item.question}</h3>
@@ -90,7 +90,7 @@ export default function Help() {
 
                 <Tabs.Content value="about">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Ueber Bibliogon</h2>
+                        <h2 style={styles.sectionTitle}>Über Bibliogon</h2>
                         <div style={styles.card}>
                             <p><strong>{about.name}</strong></p>
                             <p style={{color: "var(--text-muted)", marginTop: 8}}>{about.description}</p>

@@ -12,13 +12,13 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     preface: "Vorwort",
     foreword: "Geleitwort",
     acknowledgments: "Danksagung",
-    about_author: "Ueber den Autor",
+    about_author: "Über den Autor",
     appendix: "Anhang",
     bibliography: "Literatur",
     glossary: "Glossar",
     epilogue: "Epilog",
     imprint: "Impressum",
-    next_in_series: "Naechster Band",
+    next_in_series: "Nächster Band",
     part_intro: "Teil-Einleitung",
     interlude: "Interludium",
 };
@@ -71,7 +71,7 @@ export default function BookEditor() {
     const handleAddChapter = async (chapterType?: ChapterType) => {
         if (!bookId) return;
         const typeLabel = chapterType ? TYPE_LABELS[chapterType] : "Kapitel";
-        const title = await dialog.prompt(`${typeLabel} erstellen`, `Titel fuer das neue ${typeLabel}:`, `z.B. Mein ${typeLabel}`);
+        const title = await dialog.prompt(`${typeLabel} erstellen`, `Titel für das neue ${typeLabel}:`, `z.B. Mein ${typeLabel}`);
         if (!title) return;
         const chapter = await api.chapters.create(bookId, {
             title: title.trim(),

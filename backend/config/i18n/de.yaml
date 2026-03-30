@@ -1,12 +1,12 @@
 ui:
   dashboard:
-    title: "Meine Buecher"
+    title: "Meine Bücher"
     new_book: "Neues Buch"
-    no_books: "Noch keine Buecher"
-    confirm_delete: "Buch wirklich loeschen?"
+    no_books: "Noch keine Bücher"
+    confirm_delete: "Buch wirklich löschen?"
   editor:
     new_chapter: "Neues Kapitel"
-    confirm_delete_chapter: "Kapitel wirklich loeschen?"
+    confirm_delete_chapter: "Kapitel wirklich löschen?"
     placeholder: "Beginne zu schreiben..."
     saving: "Speichert..."
     saved: "Gespeichert"
@@ -15,5 +15,5 @@ ui:
   common:
     cancel: "Abbrechen"
     create: "Erstellen"
-    delete: "Loeschen"
+    delete: "Löschen"
     save: "Speichern"

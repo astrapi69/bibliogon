@@ -25,7 +25,7 @@ test.describe("Book Editor", () => {
     test("create chapter via dropdown", async ({page}) => {
         await page.goto(`/book/${bookId}`);
 
-        await page.locator("button[title='Hinzufuegen']").click();
+        await page.locator("button[title='Hinzufügen']").click();
         await page.getByText("Neues Kapitel").click();
 
         // Custom prompt dialog
@@ -37,7 +37,7 @@ test.describe("Book Editor", () => {
     test("create front-matter chapter", async ({page}) => {
         await page.goto(`/book/${bookId}`);
 
-        await page.locator("button[title='Hinzufuegen']").click();
+        await page.locator("button[title='Hinzufügen']").click();
         await page.getByRole("button", {name: "Vorwort"}).click();
 
         await fillPrompt(page, "Mein Vorwort");
@@ -50,7 +50,7 @@ test.describe("Book Editor", () => {
         await page.goto(`/book/${bookId}`);
 
         const chapterItem = page.getByText("Kapitel Zwei").locator("..");
-        await chapterItem.locator("button[title='Kapitel loeschen']").click();
+        await chapterItem.locator("button[title='Kapitel löschen']").click();
 
         // Custom confirm dialog
         await acceptDialog(page);
@@ -72,7 +72,7 @@ test.describe("Book Editor", () => {
     test("word counter updates", async ({page}) => {
         await page.goto(`/book/${bookId}`);
         await page.getByText("Kapitel Eins").click();
-        await expect(page.getByText(/\d+ Woerter?/)).toBeVisible();
+        await expect(page.getByText(/\d+ Wörter?/)).toBeVisible();
     });
 
     test("markdown mode toggle", async ({page}) => {
@@ -88,7 +88,7 @@ test.describe("Book Editor", () => {
 
     test("back to dashboard", async ({page}) => {
         await page.goto(`/book/${bookId}`);
-        await page.locator("button[title='Zurueck']").click();
+        await page.locator("button[title='Zurück']").click();
         await expect(page).toHaveURL("/");
     });
 
