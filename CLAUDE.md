@@ -173,6 +173,57 @@ bibliogon/
 - Settings-UI: Skalare Werte (string, number) editierbar, Listen/Dicts read-only anzeigen
 - Export-Workflow: Sidebar "Exportieren" Button oeffnet Dialog mit Format/Buchtyp/TOC-Tiefe Auswahl
 
+## UI-Komponentenstrategie
+
+Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt alles selbst zu bauen.
+
+### Installierte Pakete
+
+| Paket | Version | Zweck |
+| ----- | ------- | ----- |
+| @radix-ui/react-dialog | ^1.1 | Modals (AppDialog, ExportDialog, CreateBookModal) |
+| @radix-ui/react-tabs | ^1.1 | Tab-Navigation (Settings, Help) |
+| @radix-ui/react-dropdown-menu | ^2.1 | Dropdown-Menus (Kapiteltyp-Auswahl) |
+| @radix-ui/react-select | ^2.1 | Select-Felder (Theme, Sprache, TOC-Tiefe) |
+| @radix-ui/react-tooltip | ^1.1 | Tooltips (statt title-Attribut) |
+| @radix-ui/react-toggle | ^1.1 | Toggle-Buttons (ThemeToggle) |
+| @dnd-kit/core | ^6.1 | Drag-and-Drop Grundlage |
+| @dnd-kit/sortable | ^8.0 | Sortierbare Listen (Kapitel, Section-Order) |
+| @dnd-kit/utilities | ^3.2 | DnD Hilfsfunktionen |
+| react-toastify | ^11.0 | Toast-Notifications (Info, Erfolg, Fehler) |
+| lucide-react | ^0.468 | Icons |
+| @tiptap/* | ^2.11 | WYSIWYG/Markdown Editor |
+
+### Warum Radix UI
+
+- Unstyled: Passt zu unserem CSS-Variables-Theming (3 Themes x Light/Dark)
+- Accessible: ARIA-Attribute, Fokus-Management, Keyboard-Navigation out-of-the-box
+- MIT-Lizenz, kein Vendor-Lock
+- Einzeln installierbar (nur was wir brauchen)
+- Kein Tailwind noetig
+
+### Abgelehnte Alternativen
+
+- shadcn/ui (braucht Tailwind - grosse Migration)
+- MUI (zu opinionated, eigenes Theme-System kollidiert)
+- Ant Design (zu schwer, 500KB+)
+- Mantine/Chakra (eigenes Theme-System wuerde CSS-Vars ersetzen)
+
+### Migration-Status
+
+| Komponente | Vorher | Jetzt | Status |
+| ---------- | ------ | ----- | ------ |
+| AppDialog (Confirm/Prompt) | Eigenbau div+overlay | Radix Dialog | Migriert |
+| Settings Tabs | Eigenbau button+state | Radix Tabs | Migriert |
+| Help Tabs | Eigenbau button+state | Radix Tabs | Migriert |
+| Kapiteltyp-Dropdown | Eigenbau div+click-away | Radix DropdownMenu | Geplant |
+| Theme/Sprache Select | HTML select | Radix Select | Geplant |
+| Kapitel DnD | HTML5 Drag API | @dnd-kit/sortable | Geplant |
+| OrderedListEditor | Eigenbau up/down Buttons | @dnd-kit/sortable | Geplant |
+| ExportDialog | Eigenbau div+overlay | Radix Dialog | Geplant |
+| CreateBookModal | Eigenbau div+overlay | Radix Dialog | Geplant |
+| Tooltips | title-Attribut | Radix Tooltip | Geplant |
+
 ## PluginForge v0.5.0 API (Kurzreferenz)
 
 ```python
