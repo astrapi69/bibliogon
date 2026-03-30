@@ -287,52 +287,74 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         setShowAdd(false);
     };
 
+    // Inactive plugins that can be activated
+    const inactivePlugins = Object.entries(configs)
+        .filter(([name]) => !enabled.has(name) || disabled.has(name));
+
     return (
         <div style={styles.section}>
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
                 <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
-                    <Plus size={14}/> Plugin hinzufügen
-                </button>
+                {inactivePlugins.length > 0 && (
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
+                        <Plus size={14}/> Plugin hinzufügen
+                    </button>
+                )}
             </div>
 
-            {showAdd && (
+            {showAdd && inactivePlugins.length > 0 && (
                 <div style={styles.card}>
-                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Neues Plugin</h3>
-                    <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12}}>
-                        <div className="field">
-                            <label className="label">Name (eindeutig)</label>
-                            <input className="input" placeholder="z.B. my-plugin" value={newName}
-                                onChange={(e) => setNewName(e.target.value)}/>
-                        </div>
-                        <div className="field">
-                            <label className="label">Anzeigename</label>
-                            <input className="input" placeholder="z.B. Mein Plugin" value={newDisplayName}
-                                onChange={(e) => setNewDisplayName(e.target.value)}/>
-                        </div>
-                    </div>
-                    <div className="field">
-                        <label className="label">Beschreibung</label>
-                        <input className="input" placeholder="Was macht das Plugin?" value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}/>
-                    </div>
-                    <div style={{display: "flex", gap: 8}}>
-                        <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={!newName.trim()}>
-                            <Plus size={12}/> Erstellen
-                        </button>
+                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Verfügbare Plugins</h3>
+                    <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
+                        Diese Plugins sind installiert aber noch nicht aktiviert:
+                    </p>
+                    {inactivePlugins.map(([name, config]) => {
+                        const meta = (config.plugin || {}) as Record<string, unknown>;
+                        const displayName = getLocalized(meta.display_name, name);
+                        const description = getLocalized(meta.description, "");
+                        const lic = (meta.license as string) || "MIT";
+                        const isPremium = lic !== "MIT" && lic.toLowerCase() !== "free";
+                        return (
+                            <div key={name} style={{
+                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                padding: "10px 0", borderBottom: "1px solid var(--border)",
+                            }}>
+                                <div>
+                                    <strong>{displayName}</strong>
+                                    {isPremium && (
+                                        <span style={{
+                                            ...styles.badge, marginLeft: 8,
+                                            background: "rgba(168,85,247,0.12)", color: "#7c3aed",
+                                        }}>Premium</span>
+                                    )}
+                                    {description && (
+                                        <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginTop: 2}}>{description}</p>
+                                    )}
+                                </div>
+                                <button className="btn btn-primary btn-sm" onClick={() => {
+                                    onTogglePlugin(name, true);
+                                    setShowAdd(false);
+                                }}>
+                                    <Check size={12}/> Aktivieren
+                                </button>
+                            </div>
+                        );
+                    })}
+                    <div style={{marginTop: 12}}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setShowAdd(false)}>
-                            Abbrechen
+                            Schließen
                         </button>
                     </div>
                 </div>
             )}
 
-            {Object.entries(configs).map(([name, config]) => {
+            {Object.entries(configs)
+                .filter(([name]) => enabled.has(name) && !disabled.has(name))
+                .map(([name, config]) => {
                 const pluginMeta = (config.plugin || {}) as Record<string, unknown>;
                 const settings = (config.settings || {}) as Record<string, unknown>;
                 const displayName = getLocalized(pluginMeta.display_name, name);
                 const description = getLocalized(pluginMeta.description, "");
-                const isEnabled = enabled.has(name) && !disabled.has(name);
 
                 return (
                     <PluginCard
@@ -342,7 +364,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         description={description}
                         version={(pluginMeta.version as string) || ""}
                         license={(pluginMeta.license as string) || "MIT"}
-                        enabled={isEnabled}
+                        enabled={true}
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
@@ -354,8 +376,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                     />
                 );
             })}
-            {Object.keys(configs).length === 0 && (
-                <p style={{color: "var(--text-muted)"}}>Keine Plugin-Konfigurationen gefunden.</p>
+            {Object.entries(configs).filter(([name]) => enabled.has(name) && !disabled.has(name)).length === 0 && (
+                <p style={{color: "var(--text-muted)"}}>Keine aktiven Plugins. Klicke "Plugin hinzufügen" um verfügbare Plugins zu aktivieren.</p>
             )}
         </div>
     );
