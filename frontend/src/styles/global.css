@@ -628,11 +628,13 @@ body {
 }
 
 /* Figcaption: italic, 1px smaller, centered.
-   Custom TipTap node renders as <p class="figcaption">. */
+   Custom TipTap node renders as <p class="figcaption"> inside .ProseMirror. */
+.ProseMirror p.figcaption,
+.tiptap-editor p.figcaption,
 .tiptap-editor .figcaption,
 .tiptap-editor figcaption {
-    font-family: var(--font-body);
-    font-style: italic;
+    font-family: var(--font-body) !important;
+    font-style: italic !important;
     font-size: calc(1em - 1px);
     color: var(--text-secondary);
     text-align: center;
