@@ -247,6 +247,26 @@ def _content_to_markdown(content: Any) -> str:
             pass
         # If content is HTML, convert to markdown
         if content.strip().startswith("<"):
+            # Step 1: Restore figcaptions from <img/><p><em>caption</em></p>
+            content = re.sub(
+                r'(<img[^>]*/?>)\s*\n?\s*<p><em>(.*?)</em></p>',
+                r'<figure>\n  \1\n  <figcaption>\2</figcaption>\n</figure>',
+                content,
+                flags=re.DOTALL,
+            )
+            # Step 2: Wrap remaining standalone <img> (not inside <figure>)
+            def _wrap_img(m: re.Match) -> str:
+                full = m.group(0)
+                # Check if already inside a <figure>
+                start = m.start()
+                before = content[:start]
+                # Count open vs close figure tags
+                opens = before.count("<figure>")
+                closes = before.count("</figure>")
+                if opens > closes:
+                    return full  # already inside <figure>
+                return f'\n<figure>\n  {m.group(1)}\n</figure>\n'
+            content = re.sub(r'(<img[^>]*/?>)', _wrap_img, content)
             return _html_to_markdown(content)
         return content
 
@@ -295,8 +315,20 @@ def _html_to_markdown(html: str) -> str:
             elif tag == "a":
                 self._buf().append("[")
                 self._href = a.get("href", "")
+            elif tag == "figure":
+                self._in_figure = True
+                self._figure_buf: list[str] = []
+            elif tag == "figcaption":
+                self._in_figcaption = True
+                self._figcaption_buf: list[str] = []
             elif tag == "img":
-                self._buf().append(f"![{a.get('alt', '')}]({a.get('src', '')})")
+                src = a.get("src", "")
+                alt = a.get("alt", "")
+                img_html = f'  <img src="{src}" alt="{alt}" />'
+                if getattr(self, "_in_figure", False):
+                    self._figure_buf.append(img_html)
+                else:
+                    self._buf().append(f'\n<figure>\n{img_html}\n</figure>\n')
             elif tag == "br":
                 self._buf().append("  \n")
             elif tag == "hr":
@@ -319,11 +351,23 @@ def _html_to_markdown(html: str) -> str:
                 self._buf().append(f"]({href})")
             elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
                 self.out.append("\n")
+            elif tag == "figure":
+                fig = "\n<figure>\n" + "\n".join(getattr(self, "_figure_buf", [])) + "\n</figure>\n"
+                self.out.append(fig)
+                self._in_figure = False
+            elif tag == "figcaption":
+                caption = "".join(getattr(self, "_figcaption_buf", [])).strip()
+                if getattr(self, "_in_figure", False):
+                    self._figure_buf.append(f"  <figcaption>\n    {caption}\n  </figcaption>")
+                self._in_figcaption = False
             elif tag == "p":
                 if "li" not in self.tag_stack:
                     self.out.append("\n")
 
         def handle_data(self, data):
+            if getattr(self, "_in_figcaption", False):
+                self._figcaption_buf.append(data)
+                return
             buf = self._buf()
             if "strong" in self.tag_stack:
                 buf.append(f"**{data}**")
