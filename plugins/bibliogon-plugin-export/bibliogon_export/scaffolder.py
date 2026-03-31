@@ -59,6 +59,13 @@ def scaffold_project(
     # Write config/metadata.yaml (manuscripta format)
     _write_metadata(project_dir / "config" / "metadata.yaml", book)
 
+    # Ensure export_defaults has output_file set to the book slug
+    if export_settings is None:
+        export_settings = {}
+    defaults = export_settings.setdefault("export_defaults", {})
+    if not defaults.get("output_file"):
+        defaults["output_file"] = slug
+
     # Write config/export-settings.yaml (manuscripta format) from plugin config
     _write_export_settings(project_dir / "config" / "export-settings.yaml", export_settings)
 
