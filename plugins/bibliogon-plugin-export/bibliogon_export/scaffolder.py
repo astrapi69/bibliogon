@@ -57,21 +57,71 @@ def scaffold_project(
     # Write config/export-settings.yaml (manuscripta format) from plugin config
     _write_export_settings(project_dir / "config" / "export-settings.yaml", export_settings)
 
-    # Write chapters as Markdown
+    # Write chapters to correct directories based on chapter_type
+    has_toc = False
     for chapter in chapters:
-        _write_chapter(project_dir / "manuscript" / "chapters", chapter)
+        ch_type = chapter.get("chapter_type", "chapter")
+        if ch_type == "toc":
+            has_toc = True
+            _write_special_chapter(
+                project_dir / "manuscript" / "front-matter",
+                "toc", chapter,
+            )
+        elif ch_type in _FRONT_MATTER_TYPES:
+            filename = _FRONT_MATTER_TYPES[ch_type]
+            _write_special_chapter(
+                project_dir / "manuscript" / "front-matter",
+                filename, chapter,
+            )
+        elif ch_type in _BACK_MATTER_TYPES:
+            filename = _BACK_MATTER_TYPES[ch_type]
+            _write_special_chapter(
+                project_dir / "manuscript" / "back-matter",
+                filename, chapter,
+            )
+        else:
+            _write_chapter(project_dir / "manuscript" / "chapters", chapter)
 
-    # Write placeholder front-matter and back-matter
-    _write_placeholder(
-        project_dir / "manuscript" / "front-matter" / "toc.md",
-        "# Table of Contents\n",
-    )
+    # Write placeholder TOC only if no TOC chapter exists
+    if not has_toc:
+        _write_placeholder(
+            project_dir / "manuscript" / "front-matter" / "toc.md",
+            "# Table of Contents\n",
+        )
     _write_placeholder(
         project_dir / "manuscript" / "back-matter" / "about-the-author.md",
         f"# About the Author\n\n{book.get('author', '')}\n",
     )
 
     return project_dir
+
+
+# Chapter type to filename mapping for front/back matter
+_FRONT_MATTER_TYPES: dict[str, str] = {
+    "preface": "preface",
+    "foreword": "foreword",
+}
+
+_BACK_MATTER_TYPES: dict[str, str] = {
+    "about_author": "about-the-author",
+    "appendix": "appendix",
+    "bibliography": "bibliography",
+    "glossary": "glossary",
+    "epilogue": "epilogue",
+    "imprint": "imprint",
+    "next_in_series": "next-in-series",
+    "acknowledgments": "acknowledgments",
+}
+
+
+def _write_special_chapter(target_dir: Path, filename: str, chapter: dict[str, Any]) -> None:
+    """Write a front-matter or back-matter chapter as Markdown file."""
+    title = chapter.get("title", "Untitled")
+    content = chapter.get("content", "")
+    md_body = _content_to_markdown(content)
+    md = f"# {title}\n\n{md_body}\n"
+    filepath = target_dir / f"{filename}.md"
+    filepath.write_text(md, encoding="utf-8")
 
 
 def _write_metadata(path: Path, book: dict[str, Any]) -> None:

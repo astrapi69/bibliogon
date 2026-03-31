@@ -398,6 +398,11 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         if assets_dir.exists():
             asset_count = _import_assets(db, book.id, assets_dir)
 
+        # Rewrite image paths in chapter content to point to asset API
+        if asset_count > 0:
+            db.flush()  # ensure assets and chapters are queryable
+            _rewrite_image_paths(db, book.id)
+
         # Set cover_image if found and not already set
         if not book.cover_image:
             db.flush()  # ensure assets are queryable
@@ -592,6 +597,39 @@ def _import_with_section_order(
             count += 1
 
     return count
+
+
+def _rewrite_image_paths(db: Session, book_id: str) -> None:
+    """Rewrite image src paths in chapter content to point to the asset API.
+
+    Converts paths like:
+        assets/figures/diagram.png  ->  /api/books/{id}/assets/file/diagram.png
+        assets/logo/logo.png        ->  /api/books/{id}/assets/file/logo.png
+    """
+    import re
+
+    # Build filename lookup
+    assets = db.query(Asset).filter(Asset.book_id == book_id).all()
+    known_filenames = {a.filename for a in assets}
+
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
+    api_base = f"/api/books/{book_id}/assets/file"
+
+    for ch in chapters:
+        if "<img" not in ch.content:
+            continue
+
+        def replace_src(match: re.Match) -> str:
+            src = match.group(1)
+            # Extract just the filename from any path
+            filename = src.rsplit("/", 1)[-1] if "/" in src else src
+            if filename in known_filenames:
+                return f'src="{api_base}/{filename}"'
+            return match.group(0)
+
+        new_content = re.sub(r'src="([^"]+)"', replace_src, ch.content)
+        if new_content != ch.content:
+            ch.content = new_content
 
 
 _ASSET_TYPE_MAP = {

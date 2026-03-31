@@ -69,6 +69,7 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
             "title": ch.title,
             "content": content,
             "position": ch.position,
+            "chapter_type": ch.chapter_type,
         })
 
     return book_data, chapters_data
