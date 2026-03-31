@@ -14,6 +14,12 @@ RUN poetry config virtualenvs.create false && \
 
 COPY . .
 
+# Create non-root user and data directory
+RUN groupadd -r bibliogon && useradd -r -g bibliogon bibliogon && \
+    mkdir -p /app/data && chown -R bibliogon:bibliogon /app
+
+USER bibliogon
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

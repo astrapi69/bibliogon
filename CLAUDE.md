@@ -49,7 +49,8 @@ make test-plugin-kdp      # Nur KDP-Plugin
 make test-plugin-kinderbuch # Nur Kinderbuch-Plugin
 
 # Produktion
-make prod                 # Docker Compose build + start
+cp .env.example .env      # Konfiguration anpassen (BIBLIOGON_SECRET_KEY setzen!)
+make prod                 # Docker Compose build + start (Port 8080)
 make prod-down            # Docker stoppen
 make prod-logs            # Docker Logs verfolgen
 
@@ -157,6 +158,43 @@ bibliogon/
 ├── docker-compose.yml, docker-compose.prod.yml
 └── README.md
 ```
+
+## Deployment
+
+### Umgebungsvariablen
+
+| Variable | Default | Beschreibung |
+| -------- | ------- | ------------ |
+| BIBLIOGON_PORT | 8080 | Port fuer die App (nur docker-compose) |
+| BIBLIOGON_DEBUG | true | Debug-Modus (false in Produktion) |
+| BIBLIOGON_CORS_ORIGINS | localhost:5173,localhost:3000 | Erlaubte CORS-Origins (kommagetrennt) |
+| BIBLIOGON_SECRET_KEY | (leer) | Secret fuer Lizenz-Validierung |
+| BIBLIOGON_DB_PATH | backend/bibliogon.db | Pfad zur SQLite-Datenbank |
+| DATABASE_URL | sqlite:///... | Volle DB-URL (ueberschreibt DB_PATH) |
+
+### Debug-Modus (BIBLIOGON_DEBUG)
+
+- `true` (Default): `/api/test/reset` aktiv, API-Docs unter `/api/docs`
+- `false` (Produktion): Test-Endpoint deaktiviert, keine API-Docs
+
+### Produktion starten
+
+```bash
+cp .env.example .env          # Konfiguration anpassen
+# BIBLIOGON_SECRET_KEY setzen!
+# BIBLIOGON_DEBUG=false ist bereits gesetzt
+make prod                     # Docker build + start auf Port 8080
+```
+
+### Docker-Architektur (Produktion)
+
+- **Frontend**: nginx (Port 80 im Container, BIBLIOGON_PORT extern)
+  - Statische Dateien aus Vite-Build
+  - Proxy `/api/*` an Backend
+- **Backend**: uvicorn (Port 8000, 2 Workers, nicht exponiert)
+  - Non-root User `bibliogon`
+  - Health-Check via `/api/health`
+- **Volume**: `bibliogon-data` fuer SQLite-DB unter `/app/data/`
 
 ## Konventionen
 

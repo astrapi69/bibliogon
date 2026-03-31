@@ -6,14 +6,25 @@ services:
       - bibliogon-data:/app/data
     environment:
       - PYTHONDONTWRITEBYTECODE=1
+      - BIBLIOGON_DEBUG=false
+      - BIBLIOGON_DB_PATH=/app/data/bibliogon.db
+      - BIBLIOGON_CORS_ORIGINS=${BIBLIOGON_CORS_ORIGINS:-http://localhost:8080}
+      - BIBLIOGON_SECRET_KEY=${BIBLIOGON_SECRET_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   frontend:
     build: ./frontend
     ports:
-      - "8080:80"
+      - "${BIBLIOGON_PORT:-8080}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

@@ -1,3 +1,4 @@
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -17,6 +18,11 @@ from pluginforge.config import load_i18n
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "app.yaml"
 
+# Environment configuration
+DEBUG = os.getenv("BIBLIOGON_DEBUG", "true").lower() in ("true", "1", "yes")
+CORS_ORIGINS = os.getenv("BIBLIOGON_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+SECRET_KEY = os.getenv("BIBLIOGON_SECRET_KEY", "")
+
 # Licensing (bibliogon-specific gate for premium plugins)
 _app_config_raw: dict[str, Any] = {}
 try:
@@ -26,7 +32,7 @@ try:
 except Exception:
     pass
 
-_license_secret = _app_config_raw.get("licensing", {}).get("secret_key", "pluginforge-default-key")
+_license_secret = SECRET_KEY or _app_config_raw.get("licensing", {}).get("secret_key", "pluginforge-default-key")
 _license_file = _app_config_raw.get("licensing", {}).get("store_path", "config/licenses.json")
 license_validator = LicenseValidator(_license_secret)
 license_store = LicenseStore(BASE_DIR / _license_file)
@@ -87,16 +93,18 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
+    docs_url="/api/docs" if DEBUG else None,
+    redoc_url="/api/redoc" if DEBUG else None,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[o.strip() for o in CORS_ORIGINS.split(",") if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 app.include_router(books.router, prefix="/api")
@@ -135,23 +143,23 @@ def get_i18n(lang: str) -> dict[str, Any]:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.6.0"}
+    return {"status": "ok", "version": "0.7.0", "debug": DEBUG}
 
 
-# Test reset endpoint - available in dev, guarded in production by deployment config
-from app.database import SessionLocal
-from app.models import Asset, Book, Chapter
+# Test reset endpoint - only available in debug mode
+if DEBUG:
+    from app.database import SessionLocal
+    from app.models import Asset, Book, Chapter
 
-
-@app.delete("/api/test/reset")
-def reset_test_db():
-    """Reset all data. Used by e2e tests for clean state."""
-    db = SessionLocal()
-    try:
-        db.query(Asset).delete()
-        db.query(Chapter).delete()
-        db.query(Book).delete()
-        db.commit()
-        return {"status": "reset"}
-    finally:
-        db.close()
+    @app.delete("/api/test/reset")
+    def reset_test_db():
+        """Reset all data. Used by e2e tests for clean state. Only available in debug mode."""
+        db = SessionLocal()
+        try:
+            db.query(Asset).delete()
+            db.query(Chapter).delete()
+            db.query(Book).delete()
+            db.commit()
+            return {"status": "reset"}
+        finally:
+            db.close()

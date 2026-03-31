@@ -238,3 +238,10 @@ faq:
     answer:
       de: "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs koennen Plugins Web Components als Custom Elements liefern."
       en: "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+  # --- Deployment ---
+  - question:
+      de: "Wie starte ich Bibliogon in Produktion?"
+      en: "How do I start Bibliogon in production?"
+    answer:
+      de: "Kopiere .env.example nach .env, setze BIBLIOGON_SECRET_KEY auf einen zufaelligen Wert, und fuehre 'make prod' aus. Die App ist dann unter Port 8080 erreichbar. Daten werden in einem Docker-Volume persistent gespeichert."
+      en: "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
