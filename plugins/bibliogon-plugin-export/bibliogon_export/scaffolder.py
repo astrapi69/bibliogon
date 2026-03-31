@@ -254,38 +254,92 @@ def _content_to_markdown(content: Any) -> str:
 
 
 def _html_to_markdown(html: str) -> str:
-    """Convert HTML back to Markdown for export."""
-    text = html
-    # Headings
-    for level in range(6, 0, -1):
-        prefix = "#" * level
-        text = re.sub(
-            rf"<h{level}[^>]*>(.*?)</h{level}>",
-            rf"{prefix} \1",
-            text,
-            flags=re.DOTALL,
-        )
-    # Bold / italic
-    text = re.sub(r"<strong>(.*?)</strong>", r"**\1**", text)
-    text = re.sub(r"<em>(.*?)</em>", r"*\1*", text)
-    # Links
-    text = re.sub(r'<a\s+href="([^"]*)"[^>]*>(.*?)</a>', r"[\2](\1)", text)
-    # Images
-    text = re.sub(r'<img\s+src="([^"]*)"(?:\s+alt="([^"]*)")?[^>]*/?\s*>', r"![\2](\1)", text)
-    # Lists
-    text = re.sub(r"<li>\s*<p>(.*?)</p>\s*</li>", r"- \1", text, flags=re.DOTALL)
-    text = re.sub(r"<li>(.*?)</li>", r"- \1", text, flags=re.DOTALL)
-    # Blockquote
-    text = re.sub(r"<blockquote>\s*<p>(.*?)</p>\s*</blockquote>", r"> \1", text, flags=re.DOTALL)
-    # Code
-    text = re.sub(r"<code>(.*?)</code>", r"`\1`", text)
-    # Paragraphs
-    text = re.sub(r"<p>(.*?)</p>", r"\1\n", text, flags=re.DOTALL)
-    # Horizontal rule (use *** not --- to avoid YAML front matter confusion)
-    text = re.sub(r"<hr\s*/?>", "***", text)
-    # Strip remaining tags
-    text = re.sub(r"</?(?:ul|ol|div|span|br\s*/?)>", "", text)
-    # Clean up whitespace
+    """Convert HTML back to Markdown for export using an element-based parser."""
+    from html.parser import HTMLParser
+
+    class _MD(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.out: list[str] = []
+            self.list_depth = 0
+            self.li_text: list[str] = []  # text content of current <li>
+            self.li_flushed = False  # whether current <li> text was already written
+            self.tag_stack: list[str] = []
+
+        def _buf(self) -> list[str]:
+            """Return current write buffer: li_text if inside <li>, else out."""
+            return self.li_text if "li" in self.tag_stack else self.out
+
+        def _flush_li(self):
+            """Flush the current <li> text before nested list starts."""
+            if self.li_flushed or not self.li_text:
+                return
+            indent = "  " * max(0, self.list_depth - 1)
+            text = "".join(self.li_text).strip()
+            if text:
+                self.out.append(f"{indent}- {text}\n")
+            self.li_text = []
+            self.li_flushed = True
+
+        def handle_starttag(self, tag, attrs):
+            self.tag_stack.append(tag)
+            a = dict(attrs)
+            if tag in ("ul", "ol"):
+                # Flush parent <li> before starting nested list
+                if self.list_depth > 0:
+                    self._flush_li()
+                self.list_depth += 1
+            elif tag == "li":
+                self.li_text = []
+                self.li_flushed = False
+            elif tag == "a":
+                self._buf().append("[")
+                self._href = a.get("href", "")
+            elif tag == "img":
+                self._buf().append(f"![{a.get('alt', '')}]({a.get('src', '')})")
+            elif tag == "br":
+                self._buf().append("  \n")
+            elif tag == "hr":
+                self.out.append("\n***\n")
+            elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                self.out.append(f"\n{'#' * int(tag[1])} ")
+
+        def handle_endtag(self, tag):
+            if self.tag_stack and self.tag_stack[-1] == tag:
+                self.tag_stack.pop()
+            if tag in ("ul", "ol"):
+                self.list_depth -= 1
+            elif tag == "li":
+                if not self.li_flushed:
+                    self._flush_li()
+                self.li_text = []
+                self.li_flushed = False
+            elif tag == "a":
+                href = getattr(self, "_href", "")
+                self._buf().append(f"]({href})")
+            elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                self.out.append("\n")
+            elif tag == "p":
+                if "li" not in self.tag_stack:
+                    self.out.append("\n")
+
+        def handle_data(self, data):
+            buf = self._buf()
+            if "strong" in self.tag_stack:
+                buf.append(f"**{data}**")
+            elif "em" in self.tag_stack:
+                buf.append(f"*{data}*")
+            elif "blockquote" in self.tag_stack and "p" in self.tag_stack:
+                buf.append(f"> {data}")
+            elif "code" in self.tag_stack:
+                buf.append(f"`{data}`")
+            else:
+                buf.append(data)
+
+    parser = _MD()
+    parser.feed(html)
+    text = "".join(parser.out)
+    # Clean up extra blank lines
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
