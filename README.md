@@ -1,76 +1,117 @@
 # Bibliogon
 
-Open-source book authoring platform with WYSIWYG and Markdown editing, EPUB/PDF export via Pandoc.
+Open-source book authoring platform. Write, organize, and export books as EPUB, PDF, or project structures - offline-first, plugin-based, with Dark Mode.
 
-## Status
+Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
-**v0.1.0** - Backend MVP + Frontend MVP
+## Features
 
-## Tech Stack
-
-- **Backend:** Python 3.11+, FastAPI, SQLAlchemy, SQLite
-- **Frontend:** React 18, TypeScript, TipTap, Vite
-- **Export:** Pandoc (EPUB, PDF)
-- **Tooling:** Poetry, npm, Docker
+- WYSIWYG and Markdown editor (TipTap)
+- 13 chapter types (Preface, Foreword, Epilogue, Appendix, ...)
+- Drag-and-drop chapter ordering
+- EPUB, PDF, Word, HTML, Markdown export via [manuscripta](https://github.com/astrapi69/manuscripta)
+- Full-data backup and restore (.bgb), project import (.bgp, .zip)
+- Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
+- Copy config between books (publisher, author bio, styles)
+- Plugin system with ZIP installation for third-party plugins
+- Offline license validation for premium plugins (HMAC-SHA256)
+- 3 themes (Warm Literary, Cool Modern, Nord) x Light/Dark
+- i18n: German, English, Spanish, French, Greek
+- In-app help with FAQ and keyboard shortcuts
+- Get Started guide with sample book
 
 ## Quickstart
 
-### Backend
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) (Docker Desktop or Docker Engine with Compose)
+
+### Start
 
 ```bash
-cd backend
-poetry install
-poetry run uvicorn app.main:app --reload
+git clone https://github.com/astrapi69/bibliogon.git
+cd bibliogon
+./start.sh
 ```
 
-API-Docs: http://localhost:8000/docs
+The script will:
+1. Check that Docker is installed and running
+2. Create a `.env` file with a generated secret key (if missing)
+3. Build and start the containers
+4. Print the URL to open in your browser
 
-### Frontend
+**Default:** http://localhost:8080
+
+### Stop
 
 ```bash
-cd frontend
-npm install
-npm run dev
+./stop.sh
 ```
 
-App: http://localhost:5173
-
-### Mit Docker
+### View Logs
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
-## API-Endpunkte
+## Development
 
-### Books
+```bash
+make install    # Install all dependencies (Poetry, npm, plugins)
+make dev        # Start backend (8000) + frontend (5173) in parallel
+make test       # Run all tests (backend + plugins)
+```
 
-| Methode | Pfad            | Beschreibung                 |
-|---------|-----------------|------------------------------|
-| GET     | /api/books      | Alle Buecher auflisten       |
-| POST    | /api/books      | Neues Buch anlegen           |
-| GET     | /api/books/{id} | Buch mit Kapiteln laden      |
-| PATCH   | /api/books/{id} | Buch-Metadaten aktualisieren |
-| DELETE  | /api/books/{id} | Buch loeschen                |
+See [CLAUDE.md](CLAUDE.md) for full development documentation.
 
-### Chapters
+## Architecture
 
-| Methode | Pfad                             | Beschreibung               |
-|---------|----------------------------------|----------------------------|
-| GET     | /api/books/{id}/chapters         | Kapitel auflisten          |
-| POST    | /api/books/{id}/chapters         | Neues Kapitel anlegen      |
-| GET     | /api/books/{id}/chapters/{cid}   | Kapitel laden              |
-| PATCH   | /api/books/{id}/chapters/{cid}   | Kapitel aktualisieren      |
-| DELETE  | /api/books/{id}/chapters/{cid}   | Kapitel loeschen           |
-| PUT     | /api/books/{id}/chapters/reorder | Kapitelreihenfolge aendern |
+```
+Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
+                                                    |
+                                              PluginForge
+                                                    |
+                              +----------+----------+----------+
+                              |          |          |          |
+                           Export     Help    GetStarted    ...
+```
 
-### Export
+- **Frontend:** React 18, TypeScript, TipTap, Vite, Radix UI, @dnd-kit
+- **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
+- **Plugins:** PluginForge (PyPI), pluggy-based, YAML-configured
+- **Export:** manuscripta (PyPI), Pandoc, [write-book-template](https://github.com/astrapi69/write-book-template) structure
 
-| Methode | Pfad                        | Beschreibung     |
-|---------|-----------------------------|------------------|
-| GET     | /api/books/{id}/export/epub | EPUB exportieren |
-| GET     | /api/books/{id}/export/pdf  | PDF exportieren  |
+## Plugins
 
-## Lizenz
+| Plugin | License | Description |
+|--------|---------|-------------|
+| export | MIT | EPUB, PDF, Word, HTML, Markdown, Project ZIP |
+| help | MIT | In-app help, shortcuts, FAQ |
+| getstarted | MIT | Onboarding guide, sample book |
+| kinderbuch | Proprietary | Children's book page layout (4 templates) |
+| kdp | Proprietary | Amazon KDP metadata, cover validation |
+| grammar | Proprietary | LanguageTool grammar checking |
 
-MIT
+Third-party plugins can be installed as ZIP files via Settings > Plugins.
+
+## Configuration
+
+Environment variables (set in `.env`):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BIBLIOGON_PORT` | 8080 | Port for the web app |
+| `BIBLIOGON_DEBUG` | false | Debug mode (enables test endpoints, API docs) |
+| `BIBLIOGON_SECRET_KEY` | (generated) | Secret for license validation |
+| `BIBLIOGON_CORS_ORIGINS` | localhost:8080 | Allowed CORS origins |
+| `BIBLIOGON_DB_PATH` | /app/data/bibliogon.db | SQLite database path |
+
+## Related Projects
+
+- [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin framework (PyPI)
+- [manuscripta](https://github.com/astrapi69/manuscripta) - Book export pipeline (PyPI)
+- [write-book-template](https://github.com/astrapi69/write-book-template) - Target directory structure for export
+
+## License
+
+MIT (Core + free plugins). Premium plugins are proprietary.
