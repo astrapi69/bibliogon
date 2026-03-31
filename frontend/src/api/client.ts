@@ -13,7 +13,8 @@ export type ChapterType =
     | "imprint"
     | "next_in_series"
     | "part_intro"
-    | "interlude";
+    | "interlude"
+    | "toc";
 
 export interface Book {
     id: string;
@@ -173,6 +174,17 @@ export const api = {
                 method: "PUT",
                 body: JSON.stringify({chapter_ids: chapterIds}),
             }),
+
+        validateToc: (bookId: string) =>
+            request<{
+                valid: boolean;
+                toc_found: boolean;
+                total_links: number;
+                broken_count: number;
+                links: {text: string; anchor: string; toc_chapter_id: string}[];
+                broken: {text: string; anchor: string; toc_chapter_id: string}[];
+                valid_anchors: string[];
+            }>(`/books/${bookId}/chapters/validate-toc`, {method: "POST"}),
     },
 
     assets: {

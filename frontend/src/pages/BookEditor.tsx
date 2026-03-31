@@ -6,6 +6,7 @@ import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import {useDialog} from "../components/AppDialog";
+import {toast} from "react-toastify";
 
 const TYPE_LABELS: Record<ChapterType, string> = {
     chapter: "Kapitel",
@@ -21,6 +22,7 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     next_in_series: "Nächster Band",
     part_intro: "Teil-Einleitung",
     interlude: "Interludium",
+    toc: "Inhaltsverzeichnis",
 };
 
 export default function BookEditor() {
@@ -165,6 +167,23 @@ export default function BookEditor() {
                 onMetadata={() => setShowMetadata(true)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
+                hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
+                onValidateToc={async () => {
+                    if (!bookId) return;
+                    try {
+                        const result = await api.chapters.validateToc(bookId);
+                        if (!result.toc_found) {
+                            toast.info("Kein Inhaltsverzeichnis gefunden.");
+                        } else if (result.valid) {
+                            toast.success(`TOC gültig: ${result.total_links} Links geprüft, alle korrekt.`);
+                        } else {
+                            const broken = result.broken.map((b) => b.text).join(", ");
+                            toast.error(`${result.broken_count} ungültige Links: ${broken}`);
+                        }
+                    } catch {
+                        toast.error("Fehler bei der TOC-Validierung.");
+                    }
+                }}
             />
 
             {showMetadata ? (

@@ -21,6 +21,7 @@ class ChapterType(str, Enum):
     NEXT_IN_SERIES = "next_in_series"
     PART_INTRO = "part_intro"
     INTERLUDE = "interlude"
+    TABLE_OF_CONTENTS = "toc"
 
 
 # --- Book schemas ---

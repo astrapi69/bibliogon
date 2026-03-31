@@ -7,6 +7,7 @@ import {
     ChevronLeft,
     Download,
     FileText,
+    ListChecks,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -40,10 +41,12 @@ interface Props {
     onExport: () => void;
     onReorder: (chapterIds: string[]) => void;
     onMetadata: () => void;
+    onValidateToc?: () => void;
     showMetadata: boolean;
+    hasToc: boolean;
 }
 
-const FRONT_MATTER_TYPES: ChapterType[] = ["preface", "foreword", "acknowledgments"];
+const FRONT_MATTER_TYPES: ChapterType[] = ["toc", "preface", "foreword", "acknowledgments"];
 const BACK_MATTER_TYPES: ChapterType[] = [
     "epilogue", "about_author", "appendix", "bibliography",
     "glossary", "imprint", "next_in_series",
@@ -64,6 +67,7 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     next_in_series: "Nächster Band",
     part_intro: "Teil-Einleitung",
     interlude: "Interludium",
+    toc: "Inhaltsverzeichnis",
 };
 
 // --- Sortable Chapter Item ---
@@ -189,7 +193,9 @@ export default function ChapterSidebar({
                                            onExport,
                                            onReorder,
                                            onMetadata,
+                                           onValidateToc,
                                            showMetadata,
+                                           hasToc,
                                        }: Props) {
     const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
     const mainChapters = chapters.filter((ch) =>
@@ -321,6 +327,14 @@ export default function ChapterSidebar({
                 >
                     <FileText size={14}/> Metadaten
                 </button>
+                {hasToc && onValidateToc && (
+                    <button
+                        style={{...styles.exportBtn, marginBottom: 6}}
+                        onClick={onValidateToc}
+                    >
+                        <ListChecks size={14}/> TOC prüfen
+                    </button>
+                )}
                 <Tooltip content={chapters.length === 0 ? "Erstelle zuerst ein Kapitel" : "Buch exportieren"}>
                     <button
                         style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}

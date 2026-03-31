@@ -1,3 +1,6 @@
+import re
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -113,3 +116,85 @@ def reorder_chapters(
         .order_by(Chapter.position)
         .all()
     )
+
+
+@router.post("/validate-toc")
+def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Validate TOC links against actual chapter titles.
+
+    Finds all anchor links in TOC chapters and checks if they match
+    chapter titles or explicit anchors in the book.
+    """
+    _get_book_or_404(book_id, db)
+    chapters = (
+        db.query(Chapter)
+        .filter(Chapter.book_id == book_id)
+        .order_by(Chapter.position)
+        .all()
+    )
+
+    # Find TOC chapters
+    toc_chapters = [c for c in chapters if c.chapter_type == "toc"]
+    if not toc_chapters:
+        return {"valid": True, "toc_found": False, "links": [], "broken": [], "message": "Kein Inhaltsverzeichnis gefunden."}
+
+    # Build set of valid anchors from all non-TOC chapters
+    valid_anchors: set[str] = set()
+    for ch in chapters:
+        if ch.chapter_type == "toc":
+            continue
+        # Generate anchor from title (GitHub-style slugification)
+        slug = _slugify(ch.title)
+        valid_anchors.add(slug)
+        # Also check for explicit anchors like {#my-anchor} in title
+        explicit = re.search(r"\{#([\w-]+)\}", ch.title)
+        if explicit:
+            valid_anchors.add(explicit.group(1))
+        # Extract anchors from all headings in content (## and ### subheadings)
+        for line in ch.content.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                heading_text = re.sub(r"^#+\s*", "", stripped)
+                heading_slug = _slugify(heading_text)
+                if heading_slug:
+                    valid_anchors.add(heading_slug)
+        # Check content for explicit heading anchors {#my-anchor}
+        for match in re.finditer(r"\{#([\w-]+)\}", ch.content):
+            valid_anchors.add(match.group(1))
+
+    # Extract all links from TOC chapters
+    all_links: list[dict[str, str]] = []
+    broken: list[dict[str, str]] = []
+
+    for toc_ch in toc_chapters:
+        content = toc_ch.content
+        # Match markdown links: [text](#anchor) and [text](url)
+        for match in re.finditer(r"\[([^\]]+)\]\(#([\w-]+)\)", content):
+            text = match.group(1)
+            anchor = match.group(2)
+            link_info = {"text": text, "anchor": anchor, "toc_chapter_id": toc_ch.id}
+            all_links.append(link_info)
+            if anchor not in valid_anchors:
+                broken.append(link_info)
+
+    return {
+        "valid": len(broken) == 0,
+        "toc_found": True,
+        "total_links": len(all_links),
+        "broken_count": len(broken),
+        "links": all_links,
+        "broken": broken,
+        "valid_anchors": sorted(valid_anchors),
+    }
+
+
+def _slugify(text: str) -> str:
+    """Convert text to a URL-friendly anchor slug (GitHub-style)."""
+    # Remove explicit anchor markers {#...}
+    text = re.sub(r"\s*\{#[\w-]+\}", "", text)
+    # Lowercase, replace spaces/special chars with hyphens
+    slug = text.lower().strip()
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = slug.strip("-")
+    return slug
