@@ -605,6 +605,13 @@ body {
     margin-bottom: 0.75em;
 }
 
+.tiptap-editor a,
+.tiptap-editor a.tiptap-link {
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .tiptap-editor img {
     max-width: 100%;
     height: auto;

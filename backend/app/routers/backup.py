@@ -753,6 +753,14 @@ def _md_to_html(text: str) -> str:
         return ""
     # Remove explicit anchor markers {#id} before conversion (Pandoc-specific)
     cleaned = _re.sub(r"\s*\{#[\w-]+\}", "", text)
+    # Python's markdown library requires 4-space indent for nested lists,
+    # but write-book-template uses 2-space indent. Double the indentation.
+    cleaned = _re.sub(
+        r"^( {2,})(?=-|\*|\d+\.)",
+        lambda m: m.group(1) * 2,
+        cleaned,
+        flags=_re.MULTILINE,
+    )
     html = _md.markdown(
         cleaned,
         extensions=["tables", "fenced_code", "attr_list"],
