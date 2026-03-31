@@ -218,14 +218,13 @@ def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
 def _prepend_title(title: str, md_body: str) -> str:
     """Prepend H1 title only if content doesn't already start with one."""
     stripped = md_body.lstrip()
-    if stripped.startswith("# "):
-        # Content already has an H1 heading, don't duplicate
+    if stripped.startswith("# ") or stripped.startswith("<h1"):
         return f"{md_body}\n"
     return f"# {title}\n\n{md_body}\n"
 
 
 def _content_to_markdown(content: Any) -> str:
-    """Convert content (TipTap JSON, JSON string, or plain text) to Markdown."""
+    """Convert content (TipTap JSON, JSON string, HTML, or plain text) to Markdown."""
     if isinstance(content, dict):
         return tiptap_to_markdown(content)
 
@@ -236,9 +235,49 @@ def _content_to_markdown(content: Any) -> str:
                 return tiptap_to_markdown(doc)
         except (json.JSONDecodeError, TypeError):
             pass
+        # If content is HTML, convert to markdown
+        if content.strip().startswith("<"):
+            return _html_to_markdown(content)
         return content
 
     return str(content)
+
+
+def _html_to_markdown(html: str) -> str:
+    """Convert HTML back to Markdown for export."""
+    text = html
+    # Headings
+    for level in range(6, 0, -1):
+        prefix = "#" * level
+        text = re.sub(
+            rf"<h{level}[^>]*>(.*?)</h{level}>",
+            rf"{prefix} \1",
+            text,
+            flags=re.DOTALL,
+        )
+    # Bold / italic
+    text = re.sub(r"<strong>(.*?)</strong>", r"**\1**", text)
+    text = re.sub(r"<em>(.*?)</em>", r"*\1*", text)
+    # Links
+    text = re.sub(r'<a\s+href="([^"]*)"[^>]*>(.*?)</a>', r"[\2](\1)", text)
+    # Images
+    text = re.sub(r'<img\s+src="([^"]*)"(?:\s+alt="([^"]*)")?[^>]*/?\s*>', r"![\2](\1)", text)
+    # Lists
+    text = re.sub(r"<li>\s*<p>(.*?)</p>\s*</li>", r"- \1", text, flags=re.DOTALL)
+    text = re.sub(r"<li>(.*?)</li>", r"- \1", text, flags=re.DOTALL)
+    # Blockquote
+    text = re.sub(r"<blockquote>\s*<p>(.*?)</p>\s*</blockquote>", r"> \1", text, flags=re.DOTALL)
+    # Code
+    text = re.sub(r"<code>(.*?)</code>", r"`\1`", text)
+    # Paragraphs
+    text = re.sub(r"<p>(.*?)</p>", r"\1\n", text, flags=re.DOTALL)
+    # Horizontal rule
+    text = re.sub(r"<hr\s*/?>", "---", text)
+    # Strip remaining tags
+    text = re.sub(r"</?(?:ul|ol|div|span|br\s*/?)>", "", text)
+    # Clean up whitespace
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 _ASSET_TYPE_TO_DIR = {
