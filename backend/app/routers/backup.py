@@ -377,7 +377,7 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
                         continue
                     content = md_file.read_text(encoding="utf-8")
                     title = _extract_title(content, md_file.stem)
-                    body = _remove_first_heading(content)
+                    body = content
                     chapter_type = _detect_chapter_type(md_file.stem)
                     chapter = Chapter(
                         book_id=book.id, title=title,
@@ -392,6 +392,23 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
                     db, book.id, back_dir, _BACK_MATTER_MAP, base_position=900,
                 )
 
+        # Import assets (covers, figures, diagrams, etc.)
+        assets_dir = project_root / "assets"
+        asset_count = 0
+        if assets_dir.exists():
+            asset_count = _import_assets(db, book.id, assets_dir)
+
+        # Set cover_image if found and not already set
+        if not book.cover_image:
+            db.flush()  # ensure assets are queryable
+            cover_asset = (
+                db.query(Asset)
+                .filter(Asset.book_id == book.id, Asset.asset_type == "cover")
+                .first()
+            )
+            if cover_asset:
+                book.cover_image = cover_asset.path
+
         db.commit()
         db.refresh(book)
 
@@ -399,6 +416,7 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
             "book_id": book.id,
             "title": book.title,
             "chapter_count": total_count,
+            "asset_count": asset_count,
         }
 
     finally:
@@ -507,7 +525,7 @@ def _import_with_section_order(
                         continue
                     content = md_file.read_text(encoding="utf-8")
                     title = _extract_title(content, md_file.stem)
-                    body = _remove_first_heading(content)
+                    body = content
                     chapter_type = _detect_chapter_type(md_file.stem)
                     chapter = Chapter(
                         book_id=book_id, title=title,
@@ -535,7 +553,7 @@ def _import_with_section_order(
 
             content = md_path.read_text(encoding="utf-8")
             title = _extract_title(content, stem)
-            body = _remove_first_heading(content)
+            body = content
 
             chapter = Chapter(
                 book_id=book_id, title=title,
@@ -563,7 +581,7 @@ def _import_with_section_order(
             imported_files.add(stem)
             content = md_file.read_text(encoding="utf-8")
             title = _extract_title(content, stem)
-            body = _remove_first_heading(content)
+            body = content
             chapter = Chapter(
                 book_id=book_id, title=title,
                 content=_md_to_html(body.strip()),
@@ -572,6 +590,64 @@ def _import_with_section_order(
             db.add(chapter)
             position += 1
             count += 1
+
+    return count
+
+
+_ASSET_TYPE_MAP = {
+    "covers": "cover",
+    "figures": "figure",
+    "diagrams": "diagram",
+    "tables": "table",
+    "logo": "figure",
+    "author": "figure",
+    "infographics": "figure",
+}
+
+_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".tiff"}
+
+
+def _import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
+    """Import images and other assets from the project's assets directory.
+
+    Walks the assets directory tree, determines asset_type from folder name,
+    and copies files to the uploads directory.
+    """
+    from app.routers.assets import UPLOAD_DIR
+
+    count = 0
+    for file_path in assets_dir.rglob("*"):
+        if not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in _IMAGE_EXTENSIONS:
+            continue
+
+        # Determine asset type from parent directory name
+        rel = file_path.relative_to(assets_dir)
+        parts = rel.parts
+        folder_name = parts[0].lower() if parts else ""
+        asset_type = _ASSET_TYPE_MAP.get(folder_name, "figure")
+
+        # Check subdirectories (e.g. figures/diagrams/)
+        if len(parts) > 2:
+            subfolder = parts[1].lower()
+            if subfolder in _ASSET_TYPE_MAP:
+                asset_type = _ASSET_TYPE_MAP[subfolder]
+
+        # Copy to uploads directory
+        dest_dir = UPLOAD_DIR / book_id / asset_type
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / file_path.name
+        shutil.copy2(file_path, dest_path)
+
+        asset = Asset(
+            book_id=book_id,
+            filename=file_path.name,
+            asset_type=asset_type,
+            path=str(dest_path),
+        )
+        db.add(asset)
+        count += 1
 
     return count
 
@@ -670,7 +746,7 @@ def _import_special_chapters(
 
         content = md_file.read_text(encoding="utf-8")
         title = _extract_title(content, stem)
-        body = _remove_first_heading(content)
+        body = content
 
         chapter = Chapter(
             book_id=book_id,

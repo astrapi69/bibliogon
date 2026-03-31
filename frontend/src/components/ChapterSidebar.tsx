@@ -46,10 +46,10 @@ interface Props {
     hasToc: boolean;
 }
 
-const FRONT_MATTER_TYPES: ChapterType[] = ["toc", "preface", "foreword", "acknowledgments"];
+const FRONT_MATTER_TYPES: ChapterType[] = ["toc", "preface", "foreword"];
 const BACK_MATTER_TYPES: ChapterType[] = [
     "epilogue", "about_author", "appendix", "bibliography",
-    "glossary", "imprint", "next_in_series",
+    "glossary", "imprint", "next_in_series", "acknowledgments",
 ];
 const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
 
