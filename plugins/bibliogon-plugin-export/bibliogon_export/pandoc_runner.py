@@ -42,8 +42,27 @@ def run_pandoc(
     try:
         os.chdir(str(project_dir))
 
+        # Read section_order and output_file from scaffolded export-settings.yaml
+        import yaml
+        export_settings_path = project_dir / "config" / "export-settings.yaml"
+        export_cfg: dict = {}
+        if export_settings_path.exists():
+            with open(export_settings_path, "r", encoding="utf-8") as f:
+                export_cfg = yaml.safe_load(f) or {}
+
         book_type = BookType.EBOOK
-        section_order = pick_section_order(book_type, fmt)
+        so = export_cfg.get("section_order", {})
+        section_order = so.get("ebook", None) or pick_section_order(book_type, fmt)
+
+        # Set manuscripta's global OUTPUT_FILE (normally set by CLI)
+        import manuscripta.export.book as _mbook
+        export_defaults = export_cfg.get("export_defaults", {})
+        output_file = export_defaults.get("output_file", project_dir.name)
+        type_suffix = settings.get("type_suffix_in_filename", True)
+        if type_suffix:
+            _mbook.OUTPUT_FILE = f"{output_file}_{book_type.value}"
+        else:
+            _mbook.OUTPUT_FILE = output_file
 
         compile_book(
             format=fmt,
