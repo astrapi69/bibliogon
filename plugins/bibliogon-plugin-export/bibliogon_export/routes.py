@@ -36,8 +36,8 @@ def configure(get_db_dep: Any, book_model: Any) -> None:
     _book_model = book_model
 
 
-def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Load book and chapters from DB and return as dicts."""
+def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load book, chapters, and assets from DB and return as dicts."""
     from sqlalchemy.orm import joinedload
 
     if _book_model is None:
@@ -49,6 +49,7 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
         raise HTTPException(status_code=404, detail="Book not found")
 
     book_data = {
+        "id": book.id,
         "title": book.title,
         "subtitle": book.subtitle,
         "author": book.author,
@@ -72,18 +73,31 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
             "chapter_type": ch.chapter_type,
         })
 
-    return book_data, chapters_data
+    # Load assets
+    from app.models import Asset
+    assets_data = []
+    for asset in db.query(Asset).filter(Asset.book_id == book_id).all():
+        assets_data.append({
+            "filename": asset.filename,
+            "asset_type": asset.asset_type,
+            "path": asset.path,
+        })
+
+    return book_data, chapters_data, assets_data
 
 
 @router.get("/{fmt}")
-def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
+def export(
+    book_id: str,
+    fmt: str,
+    book_type: str = "ebook",
+    toc_depth: int = 0,
+    db: Any = Depends(lambda: None),
+):
     """Export a book via manuscripta.
 
     Supported formats: epub, pdf, docx, html, markdown, project (ZIP).
-
-    GET /api/books/{book_id}/export/epub
-    GET /api/books/{book_id}/export/pdf
-    GET /api/books/{book_id}/export/project
+    Query params: book_type (ebook/paperback/hardcover), toc_depth (0=default).
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(
@@ -97,7 +111,7 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
     db_gen = _get_db()
     db_session = next(db_gen)
     try:
-        book_data, chapters_data = _get_book_data(book_id, db_session)
+        book_data, chapters_data, assets_data = _get_book_data(book_id, db_session)
     finally:
         try:
             next(db_gen)
@@ -116,9 +130,23 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
                 config = yaml.safe_load(f) or {}
 
         export_settings = config.get("settings", {})
+        if toc_depth > 0:
+            export_settings["toc_depth"] = toc_depth
 
         # Scaffold manuscripta-compatible project structure with export settings
-        project_dir = scaffold_project(book_data, chapters_data, tmp_dir, export_settings)
+        project_dir = scaffold_project(
+            book_data, chapters_data, tmp_dir, export_settings, assets_data,
+        )
+
+        # Build filename
+        slug = project_dir.name
+        type_suffix = export_settings.get("type_suffix_in_filename", True)
+        if type_suffix and book_type != "ebook":
+            base_name = f"{slug}-{book_type}"
+        elif type_suffix:
+            base_name = f"{slug}-{book_type}"
+        else:
+            base_name = slug
 
         if fmt == "project":
             zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
@@ -127,21 +155,20 @@ def export(book_id: str, fmt: str, db: Any = Depends(lambda: None)):
             return FileResponse(
                 path=bgp_path,
                 media_type="application/octet-stream",
-                filename=f"{project_dir.name}.bgp",
+                filename=f"{base_name}.bgp",
             )
 
         # Export via manuscripta (reads export-settings.yaml from scaffolded project)
         output_path = run_pandoc(project_dir, fmt, config)
 
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
-        # Ensure filename always has the correct extension
         ext_map = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}
         ext = ext_map.get(fmt, output_path.suffix or f".{fmt}")
 
         return FileResponse(
             path=str(output_path),
             media_type=media_type,
-            filename=f"{project_dir.name}{ext}",
+            filename=f"{base_name}{ext}",
         )
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))

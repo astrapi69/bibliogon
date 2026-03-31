@@ -5,6 +5,7 @@ Uses manuscripta's project structure and writes TipTap-JSON content as Markdown.
 
 import json
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ def scaffold_project(
     chapters: list[dict[str, Any]],
     output_dir: Path,
     export_settings: dict[str, Any] | None = None,
+    assets: list[dict[str, Any]] | None = None,
 ) -> Path:
     """Create manuscripta-compatible project structure for a book.
 
@@ -51,6 +53,9 @@ def scaffold_project(
     for d in dirs:
         (project_dir / d).mkdir(parents=True, exist_ok=True)
 
+    # Copy assets and build path mapping
+    asset_path_map = _copy_assets(project_dir, assets or [], book.get("id", ""))
+
     # Write config/metadata.yaml (manuscripta format)
     _write_metadata(project_dir / "config" / "metadata.yaml", book)
 
@@ -58,6 +63,12 @@ def scaffold_project(
     _write_export_settings(project_dir / "config" / "export-settings.yaml", export_settings)
 
     # Write chapters to correct directories based on chapter_type
+    # Rewrite image paths in all chapter content before writing
+    for chapter in chapters:
+        content = chapter.get("content", "")
+        if isinstance(content, str) and "/api/books/" in content and "/assets/file/" in content:
+            chapter["content"] = _rewrite_image_paths_for_export(content, asset_path_map)
+
     has_toc = False
     for chapter in chapters:
         ch_type = chapter.get("chapter_type", "chapter")
@@ -219,6 +230,51 @@ def _content_to_markdown(content: Any) -> str:
         return content
 
     return str(content)
+
+
+_ASSET_TYPE_TO_DIR = {
+    "cover": "assets/covers",
+    "figure": "assets/figures",
+    "diagram": "assets/figures/diagrams",
+    "table": "assets/figures",
+}
+
+
+def _copy_assets(
+    project_dir: Path,
+    assets: list[dict[str, Any]],
+    book_id: str,
+) -> dict[str, str]:
+    """Copy asset files into the project and return a filename -> relative path map."""
+    path_map: dict[str, str] = {}
+    for asset in assets:
+        filename = asset["filename"]
+        asset_type = asset.get("asset_type", "figure")
+        src = Path(asset["path"])
+        if not src.exists():
+            continue
+
+        rel_dir = _ASSET_TYPE_TO_DIR.get(asset_type, "assets/figures")
+        dest_dir = project_dir / rel_dir
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest_dir / filename)
+        path_map[filename] = f"{rel_dir}/{filename}"
+
+    return path_map
+
+
+def _rewrite_image_paths_for_export(content: str, asset_path_map: dict[str, str]) -> str:
+    """Rewrite /api/books/{id}/assets/file/{name} back to relative asset paths."""
+    def replace_src(match: re.Match) -> str:
+        src = match.group(1)
+        # Extract filename from API path
+        if "/assets/file/" in src:
+            filename = src.rsplit("/", 1)[-1]
+            if filename in asset_path_map:
+                return f'src="{asset_path_map[filename]}"'
+        return match.group(0)
+
+    return re.sub(r'src="([^"]+)"', replace_src, content)
 
 
 def _write_placeholder(path: Path, content: str) -> None:
