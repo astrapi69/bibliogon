@@ -130,7 +130,7 @@ def _write_special_chapter(target_dir: Path, filename: str, chapter: dict[str, A
     title = chapter.get("title", "Untitled")
     content = chapter.get("content", "")
     md_body = _content_to_markdown(content)
-    md = f"# {title}\n\n{md_body}\n"
+    md = _prepend_title(title, md_body)
     filepath = target_dir / f"{filename}.md"
     filepath.write_text(md, encoding="utf-8")
 
@@ -211,8 +211,17 @@ def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
 
     md_body = _content_to_markdown(content)
 
-    md = f"# {title}\n\n{md_body}\n"
+    md = _prepend_title(title, md_body)
     filepath.write_text(md, encoding="utf-8")
+
+
+def _prepend_title(title: str, md_body: str) -> str:
+    """Prepend H1 title only if content doesn't already start with one."""
+    stripped = md_body.lstrip()
+    if stripped.startswith("# "):
+        # Content already has an H1 heading, don't duplicate
+        return f"{md_body}\n"
+    return f"# {title}\n\n{md_body}\n"
 
 
 def _content_to_markdown(content: Any) -> str:
