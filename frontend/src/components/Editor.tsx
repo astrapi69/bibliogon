@@ -245,6 +245,15 @@ function nodeToMarkdown(node: Record<string, unknown>): string {
         const code = (content || []).map((n) => (n.text as string) || "").join("");
         return "```" + lang + "\n" + code + "\n```";
     }
+    if (type === "image") {
+        const src = (attrs?.src as string) || "";
+        const alt = (attrs?.alt as string) || "";
+        return `![${alt}](${src})`;
+    }
+    if (type === "figcaption") {
+        const text = inlineToMarkdown(content || []);
+        return `*${text}*`;
+    }
     if (type === "horizontalRule") {
         return "---";
     }
@@ -358,6 +367,13 @@ function markdownToHtml(md: string): string {
                 inList = "ol";
             }
             htmlLines.push(`<li>${inlineMarkdown(olMatch[1])}</li>`);
+            continue;
+        }
+
+        // Image: ![alt](src)
+        const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        if (imgMatch) {
+            htmlLines.push(`<img src="${imgMatch[2]}" alt="${imgMatch[1]}" />`);
             continue;
         }
 

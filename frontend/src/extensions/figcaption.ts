@@ -3,8 +3,8 @@ import {Node, mergeAttributes} from "@tiptap/core";
 /**
  * Custom TipTap node for image captions (figcaption).
  *
- * Imported content: <p class="figcaption">Caption text</p>
- * Rendered in editor as styled paragraph with italic, smaller font.
+ * Imported as: <p class="figcaption">text</p> or <figcaption>text</figcaption>
+ * Rendered as: <figcaption>text</figcaption>
  */
 export const Figcaption = Node.create({
     name: "figcaption",
@@ -13,12 +13,12 @@ export const Figcaption = Node.create({
 
     parseHTML() {
         return [
-            {tag: 'p.figcaption'},
-            {tag: 'figcaption'},
+            {tag: "p.figcaption"},
+            {tag: "figcaption"},
         ];
     },
 
     renderHTML({HTMLAttributes}) {
-        return ["p", mergeAttributes(HTMLAttributes, {class: "figcaption"}), 0];
+        return ["figcaption", mergeAttributes(HTMLAttributes), 0];
     },
 });

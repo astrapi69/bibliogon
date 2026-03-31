@@ -429,3 +429,141 @@ def test_asin_all_variants():
     assert book["asin_hardcover"] == "B0CCCC"
 
     _cleanup(book_id)
+
+
+# --- Figcaption ---
+
+
+def test_figcaption_stored_as_class():
+    """Figcaption should be stored as <p class="figcaption"> for TipTap custom node."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Test Image" />\n'
+                '  <figcaption>\n'
+                '    A description of the image.\n'
+                '  </figcaption>\n'
+                '</figure>\n\n'
+                'Some text after.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+
+    # figcaption should be stored as <p class="figcaption">, not raw <figcaption>
+    assert 'class="figcaption"' in ch["content"], \
+        f"Expected figcaption class, got: {ch['content'][:300]}"
+    # Should NOT contain raw <figcaption> or <figure> tags
+    assert "<figcaption>" not in ch["content"]
+    assert "<figure>" not in ch["content"]
+    # Caption text should be present
+    assert "A description of the image" in ch["content"]
+
+    _cleanup(book_id)
+
+
+def test_figure_without_caption():
+    """Figure without figcaption should just be an <img> tag."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Test" />\n'
+                '</figure>\n\n'
+                'Text after.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+
+    # Should contain <img> tag
+    assert "<img" in ch["content"]
+    # Should NOT contain <figure> wrapper (stripped for TipTap)
+    assert "<figure>" not in ch["content"]
+    # alt text should be in the tag attribute, not visible as text
+    assert 'alt="Test"' in ch["content"]
+
+    _cleanup(book_id)
+
+
+def test_image_alt_not_visible_as_text():
+    """Alt text from images should not appear as separate visible text."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Hidden Alt Text" />\n'
+                '</figure>\n\n'
+                'Visible text.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+    content = ch["content"]
+
+    # alt should only appear inside the img tag attribute
+    import re
+    alt_outside_img = re.sub(r"<img[^>]*>", "", content)
+    assert "Hidden Alt Text" not in alt_outside_img, \
+        "Alt text should not appear as visible text outside <img> tag"
+
+    _cleanup(book_id)
+
+
+# --- Export roundtrip ---
+
+
+def test_figcaption_roundtrip_export():
+    """Figcaption should survive import -> export roundtrip as <figure><figcaption>."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Test" />\n'
+                '  <figcaption>My caption text.</figcaption>\n'
+                '</figure>\n\n'
+                'After image.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    # Get stored content
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+
+    # Import stores as <p class="figcaption">
+    assert 'class="figcaption"' in ch["content"]
+
+    # Now test export conversion
+    from bibliogon_export.scaffolder import _content_to_markdown
+    md = _content_to_markdown(ch["content"])
+
+    # Export should restore <figure><figcaption>
+    assert "<figure>" in md
+    assert "<figcaption>" in md
+    assert "My caption text" in md
+
+    _cleanup(book_id)
