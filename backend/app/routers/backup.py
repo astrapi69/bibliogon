@@ -1,12 +1,15 @@
 """Full-data backup and restore, plus write-book-template ZIP import."""
 
 import json
+import re as _re
 import shutil
 import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import markdown as _md
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -362,7 +365,7 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
                 chapter = Chapter(
                     book_id=book.id,
                     title=title,
-                    content=body.strip(),
+                    content=_md_to_html(body.strip()),
                     position=100 + position,
                     chapter_type=chapter_type.value,
                 )
@@ -511,6 +514,25 @@ def _remove_first_heading(content: str) -> str:
     return content
 
 
+def _md_to_html(text: str) -> str:
+    """Convert markdown to HTML for TipTap editor.
+
+    TipTap stores content as JSON internally but can parse HTML via setContent().
+    Storing imported markdown as HTML ensures the editor renders it correctly
+    instead of showing raw markdown symbols.
+    """
+    if not text or not text.strip():
+        return ""
+    # Remove explicit anchor markers {#id} before conversion (Pandoc-specific)
+    cleaned = _re.sub(r"\s*\{#[\w-]+\}", "", text)
+    html = _md.markdown(
+        cleaned,
+        extensions=["tables", "fenced_code", "attr_list"],
+        output_format="html",
+    )
+    return html
+
+
 def _import_special_chapters(
     db: Session,
     book_id: str,
@@ -539,7 +561,7 @@ def _import_special_chapters(
         chapter = Chapter(
             book_id=book_id,
             title=title,
-            content=body.strip(),
+            content=_md_to_html(body.strip()),
             position=base_position + count,
             chapter_type=chapter_type.value,
         )

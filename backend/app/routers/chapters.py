@@ -150,16 +150,40 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
         explicit = re.search(r"\{#([\w-]+)\}", ch.title)
         if explicit:
             valid_anchors.add(explicit.group(1))
-        # Extract anchors from all headings in content (## and ### subheadings)
+        # Add common alternative anchors for special chapter types
+        _TYPE_ANCHORS = {
+            "about_author": ["about-the-author"],
+            "next_in_series": ["next-in-series", "next-in-the-series", "other-publications"],
+            "bibliography": ["bibliography", "further-reading"],
+            "acknowledgments": ["acknowledgments"],
+            "glossary": ["glossary", "glossary-of-key-terms", "glossary-of-key-concepts"],
+            "epilogue": ["epilogue"],
+            "imprint": ["imprint"],
+            "toc": ["table-of-contents", "toc"],
+            "preface": ["preface", "introduction"],
+            "foreword": ["foreword"],
+        }
+        for alt in _TYPE_ANCHORS.get(ch.chapter_type, []):
+            valid_anchors.add(alt)
+        # Extract anchors from all headings in content
         for line in ch.content.split("\n"):
             stripped = line.strip()
+            # Markdown headings: ## Title
             if stripped.startswith("#"):
                 heading_text = re.sub(r"^#+\s*", "", stripped)
                 heading_slug = _slugify(heading_text)
                 if heading_slug:
                     valid_anchors.add(heading_slug)
+            # HTML headings: <h2>Title</h2> or <h3>Title</h3>
+            for hmatch in re.finditer(r"<h[1-6][^>]*>([^<]+)</h[1-6]>", stripped):
+                heading_slug = _slugify(hmatch.group(1))
+                if heading_slug:
+                    valid_anchors.add(heading_slug)
         # Check content for explicit heading anchors {#my-anchor}
         for match in re.finditer(r"\{#([\w-]+)\}", ch.content):
+            valid_anchors.add(match.group(1))
+        # Check HTML id attributes: <h2 id="my-anchor">
+        for match in re.finditer(r'id="([\w-]+)"', ch.content):
             valid_anchors.add(match.group(1))
 
     # Extract all links from TOC chapters
@@ -168,10 +192,18 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
 
     for toc_ch in toc_chapters:
         content = toc_ch.content
-        # Match markdown links: [text](#anchor) and [text](url)
+        # Match markdown links: [text](#anchor)
         for match in re.finditer(r"\[([^\]]+)\]\(#([\w-]+)\)", content):
             text = match.group(1)
             anchor = match.group(2)
+            link_info = {"text": text, "anchor": anchor, "toc_chapter_id": toc_ch.id}
+            all_links.append(link_info)
+            if anchor not in valid_anchors:
+                broken.append(link_info)
+        # Match HTML links: <a href="#anchor">text</a>
+        for match in re.finditer(r'<a\s+href="#([\w-]+)"[^>]*>([^<]+)</a>', content):
+            anchor = match.group(1)
+            text = match.group(2)
             link_info = {"text": text, "anchor": anchor, "toc_chapter_id": toc_ch.id}
             all_links.append(link_info)
             if anchor not in valid_anchors:
@@ -189,9 +221,16 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
 
 
 def _slugify(text: str) -> str:
-    """Convert text to a URL-friendly anchor slug (GitHub-style)."""
+    """Convert text to a URL-friendly anchor slug (GitHub-style).
+
+    Handles Unicode by transliterating common special characters.
+    """
+    import unicodedata
     # Remove explicit anchor markers {#...}
     text = re.sub(r"\s*\{#[\w-]+\}", "", text)
+    # Normalize Unicode (NFD), strip combining marks for transliteration
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
     # Lowercase, replace spaces/special chars with hyphens
     slug = text.lower().strip()
     slug = re.sub(r"[^\w\s-]", "", slug)
