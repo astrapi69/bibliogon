@@ -605,6 +605,17 @@ body {
     margin-bottom: 0.75em;
 }
 
+.tiptap-editor img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    margin: 1em 0;
+}
+
+.tiptap-editor img.ProseMirror-selectednode {
+    outline: 2px solid var(--accent);
+}
+
 .tiptap-editor blockquote {
     border-left: 3px solid var(--accent);
     padding-left: 1rem;

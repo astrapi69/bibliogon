@@ -1,6 +1,7 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Toolbar from "./Toolbar";
 
@@ -58,6 +59,10 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const editor = useEditor({
         extensions: [
             StarterKit,
+            Image.configure({
+                inline: false,
+                allowBase64: true,
+            }),
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
