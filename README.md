@@ -20,13 +20,21 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - In-app help with FAQ and keyboard shortcuts
 - Get Started guide with sample book
 
-## Quickstart
+## Install and Run
 
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) (Docker Desktop or Docker Engine with Compose)
 
-### Start
+### One-liner
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.sh | bash
+```
+
+This downloads Bibliogon to `~/bibliogon`, builds the Docker images, and starts the app at **http://localhost:8080**.
+
+### Manual install
 
 ```bash
 git clone https://github.com/astrapi69/bibliogon.git
@@ -34,18 +42,12 @@ cd bibliogon
 ./start.sh
 ```
 
-The script will:
-1. Check that Docker is installed and running
-2. Create a `.env` file with a generated secret key (if missing)
-3. Build and start the containers
-4. Print the URL to open in your browser
-
-**Default:** http://localhost:8080
-
-### Stop
+### Stop / Start / Uninstall
 
 ```bash
-./stop.sh
+cd ~/bibliogon && ./stop.sh                      # Stop
+cd ~/bibliogon && ./start.sh                      # Start again
+cd ~/bibliogon && ./stop.sh && cd ~ && rm -rf ~/bibliogon  # Uninstall
 ```
 
 ### View Logs
