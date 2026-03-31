@@ -32,7 +32,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 curl -fsSL https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.sh | bash
 ```
 
-This downloads Bibliogon to `~/bibliogon`, builds the Docker images, and starts the app at **http://localhost:8080**.
+This downloads Bibliogon to `~/bibliogon`, builds the Docker images, and starts the app at **http://localhost:7880**.
 
 ### Manual install
 

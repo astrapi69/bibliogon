@@ -62,8 +62,8 @@ if [ ! -f .env ]; then
 fi
 
 # --- Read port from .env ---
-PORT=$(grep -E '^BIBLIOGON_PORT=' .env 2>/dev/null | cut -d= -f2 || echo "8080")
-PORT=${PORT:-8080}
+PORT=$(grep -E '^BIBLIOGON_PORT=' .env 2>/dev/null | cut -d= -f2 || echo "7880")
+PORT=${PORT:-7880}
 
 # --- Build and start ---
 echo ""

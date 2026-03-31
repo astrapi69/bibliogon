@@ -50,7 +50,7 @@ make test-plugin-kinderbuch # Nur Kinderbuch-Plugin
 
 # Produktion
 cp .env.example .env      # Konfiguration anpassen (BIBLIOGON_SECRET_KEY setzen!)
-make prod                 # Docker Compose build + start (Port 8080)
+make prod                 # Docker Compose build + start (Port 7880)
 make prod-down            # Docker stoppen
 make prod-logs            # Docker Logs verfolgen
 
@@ -165,7 +165,7 @@ bibliogon/
 
 | Variable | Default | Beschreibung |
 | -------- | ------- | ------------ |
-| BIBLIOGON_PORT | 8080 | Port fuer die App (nur docker-compose) |
+| BIBLIOGON_PORT | 7880 | Port fuer die App (nur docker-compose) |
 | BIBLIOGON_DEBUG | true | Debug-Modus (false in Produktion) |
 | BIBLIOGON_CORS_ORIGINS | localhost:5173,localhost:3000 | Erlaubte CORS-Origins (kommagetrennt) |
 | BIBLIOGON_SECRET_KEY | (leer) | Secret fuer Lizenz-Validierung |
@@ -183,7 +183,7 @@ bibliogon/
 cp .env.example .env          # Konfiguration anpassen
 # BIBLIOGON_SECRET_KEY setzen!
 # BIBLIOGON_DEBUG=false ist bereits gesetzt
-make prod                     # Docker build + start auf Port 8080
+make prod                     # Docker build + start auf Port 7880
 ```
 
 ### Docker-Architektur (Produktion)
