@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import {Figcaption} from "../extensions/figcaption";
 import Toolbar from "./Toolbar";
 
 type SaveStatus = "idle" | "saving" | "saved";
@@ -70,6 +71,7 @@ export default function Editor({content, onSave, placeholder}: Props) {
                     class: "tiptap-link",
                 },
             }),
+            Figcaption,
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),

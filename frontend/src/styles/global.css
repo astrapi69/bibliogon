@@ -627,12 +627,15 @@ body {
     outline: 2px solid var(--accent);
 }
 
+/* Figcaption: italic, 1px smaller, centered.
+   Custom TipTap node renders as <p class="figcaption">. */
+.tiptap-editor .figcaption,
 .tiptap-editor figcaption {
     font-family: var(--font-body);
     font-style: italic;
-    font-size: 0.875rem;
+    font-size: calc(1em - 1px);
     color: var(--text-secondary);
-    margin-top: 0.5em;
+    text-align: center;
 }
 
 .tiptap-editor blockquote {

@@ -247,7 +247,14 @@ def _content_to_markdown(content: Any) -> str:
             pass
         # If content is HTML, convert to markdown
         if content.strip().startswith("<"):
-            # Step 1: Restore figcaptions from <img/><p><em>caption</em></p>
+            # Step 1: Restore figcaptions from <img/><p class="figcaption">caption</p>
+            content = re.sub(
+                r'(<img[^>]*/?>)\s*\n?\s*<p class="figcaption">(.*?)</p>',
+                r'<figure>\n  \1\n  <figcaption>\2</figcaption>\n</figure>',
+                content,
+                flags=re.DOTALL,
+            )
+            # Also handle legacy format <img/><p><em>caption</em></p>
             content = re.sub(
                 r'(<img[^>]*/?>)\s*\n?\s*<p><em>(.*?)</em></p>',
                 r'<figure>\n  \1\n  <figcaption>\2</figcaption>\n</figure>',
