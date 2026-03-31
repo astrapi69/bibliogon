@@ -32,6 +32,8 @@ export interface Book {
     isbn_paperback: string | null;
     isbn_hardcover: string | null;
     asin_ebook: string | null;
+    asin_paperback: string | null;
+    asin_hardcover: string | null;
     keywords: string | null;
     html_description: string | null;
     backpage_description: string | null;

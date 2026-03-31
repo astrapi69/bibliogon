@@ -276,18 +276,38 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         if "-" in str(lang):
             lang = str(lang).split("-")[0]  # "en-US" -> "en"
 
-        # Parse ISBN
+        # Parse ISBN (supports both isbn.X and identifiers.isbn_X formats)
         isbn_raw = metadata.get("isbn", {})
-        isbn_ebook = isbn_raw.get("ebook") if isinstance(isbn_raw, dict) else None
-        isbn_pb = isbn_raw.get("paperback") if isinstance(isbn_raw, dict) else None
-        isbn_hc = isbn_raw.get("hardcover") if isinstance(isbn_raw, dict) else None
+        identifiers = metadata.get("identifiers", {})
+        isbn_ebook = (
+            (isbn_raw.get("ebook") if isinstance(isbn_raw, dict) else None)
+            or identifiers.get("isbn_ebook")
+        )
+        isbn_pb = (
+            (isbn_raw.get("paperback") if isinstance(isbn_raw, dict) else None)
+            or identifiers.get("isbn_paperback")
+        )
+        isbn_hc = (
+            (isbn_raw.get("hardcover") if isinstance(isbn_raw, dict) else None)
+            or identifiers.get("isbn_hardcover")
+        )
 
+        # Parse ASIN (ebook, paperback, hardcover)
         asin_raw = metadata.get("asin", {})
         asin_ebook = asin_raw.get("ebook") if isinstance(asin_raw, dict) else None
+        asin_pb = asin_raw.get("paperback") if isinstance(asin_raw, dict) else None
+        asin_hc = asin_raw.get("hardcover") if isinstance(asin_raw, dict) else None
 
-        # Parse keywords
+        # Parse keywords (from metadata or config/keywords.md)
         keywords_raw = metadata.get("keywords", [])
-        keywords_str = json.dumps(keywords_raw) if isinstance(keywords_raw, list) else None
+        keywords_str = json.dumps(keywords_raw) if isinstance(keywords_raw, list) and keywords_raw else None
+
+        # Read additional config files
+        config_dir = project_root / "config"
+        html_desc = _read_file_if_exists(config_dir / "book-description.html")
+        backpage_desc = _read_file_if_exists(config_dir / "cover-back-page-description.md")
+        backpage_bio = _read_file_if_exists(config_dir / "cover-back-page-author-introduction.md")
+        custom_css = _read_file_if_exists(config_dir / "styles.css")
 
         book = Book(
             title=metadata.get("title", project_root.name),
@@ -301,44 +321,59 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
             publisher=metadata.get("publisher"),
             publisher_city=metadata.get("publisher_city"),
             publish_date=metadata.get("date"),
-            isbn_ebook=isbn_ebook,
-            isbn_paperback=isbn_pb,
-            isbn_hardcover=isbn_hc,
+            isbn_ebook=isbn_ebook or None,
+            isbn_paperback=isbn_pb or None,
+            isbn_hardcover=isbn_hc or None,
             asin_ebook=asin_ebook,
+            asin_paperback=asin_pb,
+            asin_hardcover=asin_hc,
             keywords=keywords_str,
+            html_description=html_desc,
+            backpage_description=backpage_desc,
+            backpage_author_bio=backpage_bio,
             cover_image=metadata.get("cover_image"),
+            custom_css=custom_css,
         )
         db.add(book)
         db.flush()  # get book.id
 
-        # Import chapters from manuscript/chapters/
+        # Import front-matter first (position 0-99)
+        front_dir = project_root / "manuscript" / "front-matter"
+        front_count = 0
+        if front_dir.exists():
+            front_count = _import_special_chapters(db, book.id, front_dir, _FRONT_MATTER_MAP, base_position=0)
+
+        # Import chapters from manuscript/chapters/ (position 100+)
         chapters_dir = project_root / "manuscript" / "chapters"
+        chapter_count = 0
         if chapters_dir.exists():
             for position, md_file in enumerate(sorted(chapters_dir.glob("*.md"))):
+                # Skip print variants
+                if md_file.stem.endswith("-print"):
+                    continue
+
                 content = md_file.read_text(encoding="utf-8")
-                # Extract title from first H1 or filename
                 title = _extract_title(content, md_file.stem)
-                # Remove H1 from content body
                 body = _remove_first_heading(content)
+
+                # Detect chapter type from filename
+                chapter_type = _detect_chapter_type(md_file.stem)
 
                 chapter = Chapter(
                     book_id=book.id,
                     title=title,
                     content=body.strip(),
-                    position=position,
-                    chapter_type=ChapterType.CHAPTER.value,
+                    position=100 + position,
+                    chapter_type=chapter_type.value,
                 )
                 db.add(chapter)
+                chapter_count += 1
 
-        # Import front-matter
-        front_dir = project_root / "manuscript" / "front-matter"
-        if front_dir.exists():
-            _import_special_chapters(db, book.id, front_dir, _FRONT_MATTER_MAP)
-
-        # Import back-matter
+        # Import back-matter (position 900+)
         back_dir = project_root / "manuscript" / "back-matter"
+        back_count = 0
         if back_dir.exists():
-            _import_special_chapters(db, book.id, back_dir, _BACK_MATTER_MAP)
+            back_count = _import_special_chapters(db, book.id, back_dir, _BACK_MATTER_MAP, base_position=900)
 
         db.commit()
         db.refresh(book)
@@ -346,7 +381,7 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         return {
             "book_id": book.id,
             "title": book.title,
-            "chapter_count": len(book.chapters),
+            "chapter_count": front_count + chapter_count + back_count,
         }
 
     finally:
@@ -359,6 +394,8 @@ _FRONT_MATTER_MAP = {
     "preface": ChapterType.PREFACE,
     "foreword": ChapterType.FOREWORD,
     "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
+    "translators-note": ChapterType.PREFACE,  # Translator's note treated as preface
+    "toc": ChapterType.CHAPTER,  # TOC imported as regular chapter (auto-generated in export)
 }
 
 _BACK_MATTER_MAP = {
@@ -369,7 +406,16 @@ _BACK_MATTER_MAP = {
     "epilogue": ChapterType.EPILOGUE,
     "imprint": ChapterType.IMPRINT,
     "next-in-series": ChapterType.NEXT_IN_SERIES,
+    "other-publications": ChapterType.NEXT_IN_SERIES,
     "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
+}
+
+# Filename patterns for chapter type detection
+_CHAPTER_FILENAME_PATTERNS = {
+    "part": ChapterType.PART_INTRO,
+    "part-intro": ChapterType.PART_INTRO,
+    "interludium": ChapterType.INTERLUDE,
+    "interlude": ChapterType.INTERLUDE,
 }
 
 
@@ -409,6 +455,34 @@ def _find_project_root(extracted: Path) -> Path | None:
     return None
 
 
+def _read_file_if_exists(path: Path) -> str | None:
+    """Read file contents if it exists, otherwise return None."""
+    if path.exists():
+        text = path.read_text(encoding="utf-8").strip()
+        return text if text else None
+    return None
+
+
+def _detect_chapter_type(stem: str) -> ChapterType:
+    """Detect chapter type from filename stem.
+
+    Examples:
+        01-0-part-1-intro -> PART_INTRO
+        05-1-interludium  -> INTERLUDE
+        01-chapter        -> CHAPTER
+    """
+    import re
+    # Strip leading numeric prefixes: "01-0-", "05-1-", "01-"
+    cleaned = re.sub(r"^[\d]+(-[\d]+)?-", "", stem).lower()
+
+    # Check for known patterns
+    for pattern, chapter_type in _CHAPTER_FILENAME_PATTERNS.items():
+        if cleaned.startswith(pattern):
+            return chapter_type
+
+    return ChapterType.CHAPTER
+
+
 def _extract_title(content: str, fallback: str) -> str:
     """Extract title from first H1 heading or use fallback."""
     for line in content.split("\n"):
@@ -416,9 +490,8 @@ def _extract_title(content: str, fallback: str) -> str:
         if stripped.startswith("# ") and not stripped.startswith("## "):
             return stripped[2:].strip()
     # Clean up fallback from filename like "01-chapter" or "01-0-part-1-intro"
-    # Strip leading numeric prefixes (01-, 01-0-, etc.)
     import re
-    cleaned = re.sub(r"^[\d]+-[\d]*-?", "", fallback)
+    cleaned = re.sub(r"^[\d]+(-[\d]+)?-", "", fallback)
     if not cleaned:
         cleaned = fallback
     return cleaned.replace("-", " ").strip().title()
@@ -439,10 +512,13 @@ def _import_special_chapters(
     book_id: str,
     directory: Path,
     type_map: dict[str, ChapterType],
-) -> None:
-    """Import front-matter or back-matter files as special chapter types."""
-    # Use high position numbers so they sort after regular chapters
-    base_position = 900
+    base_position: int = 900,
+) -> int:
+    """Import front-matter or back-matter files as special chapter types.
+
+    Returns the number of imported chapters.
+    """
+    count = 0
     for md_file in sorted(directory.glob("*.md")):
         stem = md_file.stem.lower()
         # Skip print variants (toc-print, about-the-author-print, etc.)
@@ -460,8 +536,9 @@ def _import_special_chapters(
             book_id=book_id,
             title=title,
             content=body.strip(),
-            position=base_position,
+            position=base_position + count,
             chapter_type=chapter_type.value,
         )
         db.add(chapter)
-        base_position += 1
+        count += 1
+    return count

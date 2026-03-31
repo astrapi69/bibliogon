@@ -53,6 +53,8 @@ class BookUpdate(BaseModel):
     isbn_paperback: str | None = None
     isbn_hardcover: str | None = None
     asin_ebook: str | None = None
+    asin_paperback: str | None = None
+    asin_hardcover: str | None = None
     keywords: str | None = None
     html_description: str | None = None
     backpage_description: str | None = None
@@ -80,6 +82,8 @@ class BookOut(BaseModel):
     isbn_paperback: str | None = None
     isbn_hardcover: str | None = None
     asin_ebook: str | None = None
+    asin_paperback: str | None = None
+    asin_hardcover: str | None = None
     keywords: str | None = None
     html_description: str | None = None
     backpage_description: str | None = None

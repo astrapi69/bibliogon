@@ -27,6 +27,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             isbn_paperback: book.isbn_paperback || "",
             isbn_hardcover: book.isbn_hardcover || "",
             asin_ebook: book.asin_ebook || "",
+            asin_paperback: book.asin_paperback || "",
+            asin_hardcover: book.asin_hardcover || "",
             keywords: book.keywords ? tryParseKeywords(book.keywords) : "",
             html_description: book.html_description || "",
             backpage_description: book.backpage_description || "",
@@ -138,6 +140,10 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                     <Row>
                         <Field label="ISBN Hardcover" value={form.isbn_hardcover} onChange={(v) => set("isbn_hardcover", v)}/>
                         <Field label="ASIN E-Book" value={form.asin_ebook} onChange={(v) => set("asin_ebook", v)} placeholder="z.B. B0GV3XBGVB"/>
+                    </Row>
+                    <Row>
+                        <Field label="ASIN Taschenbuch" value={form.asin_paperback} onChange={(v) => set("asin_paperback", v)}/>
+                        <Field label="ASIN Hardcover" value={form.asin_hardcover} onChange={(v) => set("asin_hardcover", v)}/>
                     </Row>
                 </Section>
 

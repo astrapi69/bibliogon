@@ -53,6 +53,8 @@ class Book(Base):
     isbn_paperback: Mapped[str | None] = mapped_column(String(20), nullable=True)
     isbn_hardcover: Mapped[str | None] = mapped_column(String(20), nullable=True)
     asin_ebook: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    asin_paperback: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    asin_hardcover: Mapped[str | None] = mapped_column(String(20), nullable=True)
     keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     html_description: Mapped[str | None] = mapped_column(Text, nullable=True)  # Amazon book description
     backpage_description: Mapped[str | None] = mapped_column(Text, nullable=True)
