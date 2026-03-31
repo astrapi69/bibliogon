@@ -67,7 +67,9 @@ class TestScaffolder:
         metadata_path = project_dir / "config" / "metadata.yaml"
         assert metadata_path.exists()
 
-        metadata = yaml.safe_load(metadata_path.read_text())
+        # metadata.yaml has --- delimiters for Pandoc, use safe_load_all to handle
+        docs = list(yaml.safe_load_all(metadata_path.read_text()))
+        metadata = docs[0]
         assert metadata["title"] == "Mein Testbuch"
         assert metadata["subtitle"] == "Ein Untertitel"
         assert metadata["author"] == "Test Author"

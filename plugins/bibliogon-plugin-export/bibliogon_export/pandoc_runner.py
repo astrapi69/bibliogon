@@ -54,6 +54,17 @@ def run_pandoc(
         so = export_cfg.get("section_order", {})
         section_order = so.get("ebook", None) or pick_section_order(book_type, fmt)
 
+        # Filter out missing files from section_order (e.g. appendix.md if not in project)
+        filtered_order = []
+        for entry in section_order:
+            if entry == "chapters":
+                filtered_order.append(entry)
+            else:
+                entry_path = Path("manuscript") / entry
+                if entry_path.exists():
+                    filtered_order.append(entry)
+        section_order = filtered_order
+
         # Set manuscripta's global OUTPUT_FILE (normally set by CLI)
         import manuscripta.export.book as _mbook
         export_defaults = export_cfg.get("export_defaults", {})

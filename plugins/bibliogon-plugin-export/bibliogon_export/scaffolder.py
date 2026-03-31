@@ -159,7 +159,10 @@ def _write_metadata(path: Path, book: dict[str, Any]) -> None:
         metadata["description"] = book["description"]
 
     with open(path, "w", encoding="utf-8") as f:
+        # Pandoc expects YAML document markers (---) in metadata files
+        f.write("---\n")
         yaml.dump(metadata, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        f.write("---\n")
 
 
 def _write_export_settings(path: Path, export_settings: dict[str, Any] | None = None) -> None:
@@ -278,8 +281,8 @@ def _html_to_markdown(html: str) -> str:
     text = re.sub(r"<code>(.*?)</code>", r"`\1`", text)
     # Paragraphs
     text = re.sub(r"<p>(.*?)</p>", r"\1\n", text, flags=re.DOTALL)
-    # Horizontal rule
-    text = re.sub(r"<hr\s*/?>", "---", text)
+    # Horizontal rule (use *** not --- to avoid YAML front matter confusion)
+    text = re.sub(r"<hr\s*/?>", "***", text)
     # Strip remaining tags
     text = re.sub(r"</?(?:ul|ol|div|span|br\s*/?)>", "", text)
     # Clean up whitespace
