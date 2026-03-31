@@ -1,5 +1,22 @@
 import {useState} from "react";
-import {GripVertical, X, Plus, ChevronUp, ChevronDown} from "lucide-react";
+import {GripVertical, X, Plus} from "lucide-react";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {CSS} from "@dnd-kit/utilities";
 
 interface Props {
     items: string[];
@@ -8,15 +25,63 @@ interface Props {
     addPlaceholder?: string;
 }
 
+function SortableItem({id, item, index, onRemove}: {
+    id: string;
+    item: string;
+    index: number;
+    onRemove: (index: number) => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({id});
+
+    const style: React.CSSProperties = {
+        ...itemStyles.item,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style}>
+            <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}}>
+                <GripVertical size={12} style={{color: "var(--text-muted)", flexShrink: 0}}/>
+            </span>
+            <span style={itemStyles.itemText}>{item}</span>
+            <button
+                style={{...itemStyles.iconBtn, color: "var(--danger)"}}
+                onClick={() => onRemove(index)}
+                title="Entfernen"
+            >
+                <X size={12}/>
+            </button>
+        </div>
+    );
+}
+
 export default function OrderedListEditor({items, onChange, label, addPlaceholder}: Props) {
     const [newItem, setNewItem] = useState("");
 
-    const move = (index: number, direction: -1 | 1) => {
-        const target = index + direction;
-        if (target < 0 || target >= items.length) return;
-        const next = [...items];
-        [next[index], next[target]] = [next[target], next[index]];
-        onChange(next);
+    const sensors = useSensors(
+        useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+    );
+
+    // Generate stable IDs for sortable context
+    const itemIds = items.map((item, i) => `${item}-${i}`);
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const {active, over} = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = itemIds.indexOf(active.id as string);
+        const newIndex = itemIds.indexOf(over.id as string);
+        onChange(arrayMove(items, oldIndex, newIndex));
     };
 
     const remove = (index: number) => {
@@ -32,50 +97,32 @@ export default function OrderedListEditor({items, onChange, label, addPlaceholde
     return (
         <div>
             {label && (
-                <label style={styles.label}>{label}</label>
+                <label style={itemStyles.label}>{label}</label>
             )}
-            <div style={styles.list}>
-                {items.map((item, i) => (
-                    <div key={`${item}-${i}`} style={styles.item}>
-                        <GripVertical size={12} style={{color: "var(--text-muted)", flexShrink: 0}}/>
-                        <span style={styles.itemText}>{item}</span>
-                        <div style={styles.itemActions}>
-                            <button
-                                style={styles.iconBtn}
-                                onClick={() => move(i, -1)}
-                                disabled={i === 0}
-                                title="Nach oben"
-                            >
-                                <ChevronUp size={12}/>
-                            </button>
-                            <button
-                                style={styles.iconBtn}
-                                onClick={() => move(i, 1)}
-                                disabled={i === items.length - 1}
-                                title="Nach unten"
-                            >
-                                <ChevronDown size={12}/>
-                            </button>
-                            <button
-                                style={{...styles.iconBtn, color: "var(--danger)"}}
-                                onClick={() => remove(i)}
-                                title="Entfernen"
-                            >
-                                <X size={12}/>
-                            </button>
-                        </div>
-                    </div>
-                ))}
+            <div style={itemStyles.list}>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                        {items.map((item, i) => (
+                            <SortableItem
+                                key={itemIds[i]}
+                                id={itemIds[i]}
+                                item={item}
+                                index={i}
+                                onRemove={remove}
+                            />
+                        ))}
+                    </SortableContext>
+                </DndContext>
             </div>
-            <div style={styles.addRow}>
+            <div style={itemStyles.addRow}>
                 <input
-                    style={styles.addInput}
+                    style={itemStyles.addInput}
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && add()}
-                    placeholder={addPlaceholder || "Neuen Eintrag hinzufuegen..."}
+                    placeholder={addPlaceholder || "Neuen Eintrag hinzufügen..."}
                 />
-                <button style={styles.addBtn} onClick={add} disabled={!newItem.trim()}>
+                <button style={itemStyles.addBtn} onClick={add} disabled={!newItem.trim()}>
                     <Plus size={12}/>
                 </button>
             </div>
@@ -83,7 +130,7 @@ export default function OrderedListEditor({items, onChange, label, addPlaceholde
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const itemStyles: Record<string, React.CSSProperties> = {
     label: {
         display: "block", fontSize: "0.8125rem", fontWeight: 500,
         color: "var(--text-secondary)", marginBottom: 6,
@@ -102,7 +149,6 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis",
         whiteSpace: "nowrap",
     },
-    itemActions: {display: "flex", gap: 2, flexShrink: 0},
     iconBtn: {
         display: "flex", alignItems: "center", justifyContent: "center",
         width: 20, height: 20, border: "none", background: "transparent",

@@ -630,6 +630,108 @@ Validierung passiert lokal. Kein Lizenzserver noetig, kein Internet erforderlich
 
 ---
 
+## 5.4 Plugin-Installation (ZIP)
+
+Drittanbieter-Plugins koennen als ZIP-Datei ueber die Settings-UI installiert werden. Die Installation erfolgt dynamisch zur Laufzeit (Strategie B: Dynamic Loading).
+
+**ZIP-Struktur:**
+
+```
+mein-plugin.zip
+└── mein-plugin/
+    ├── plugin.yaml          # Plugin-Konfiguration (erforderlich)
+    ├── mein_plugin/          # Python-Paket (erforderlich)
+    │   ├── __init__.py
+    │   ├── plugin.py         # Plugin-Klasse (BasePlugin-Unterklasse)
+    │   └── routes.py         # Optionale FastAPI-Router
+    └── requirements.txt      # Optionale Abhaengigkeiten
+```
+
+**plugin.yaml Mindestinhalt:**
+
+```yaml
+plugin:
+  name: "mein-plugin"
+  display_name:
+    de: "Mein Plugin"
+    en: "My Plugin"
+  description:
+    de: "Beschreibung"
+    en: "Description"
+  version: "1.0.0"
+  license: "MIT"
+  depends_on: []
+  api_version: "1"
+  entry_point: "mein_plugin.plugin"  # Optional, wird auto-detektiert
+
+settings:
+  # Plugin-spezifische Einstellungen
+```
+
+**Installationsablauf:**
+
+1. Benutzer laedt ZIP ueber Settings > Plugins > "ZIP installieren"
+2. Backend validiert ZIP-Struktur (plugin.yaml, Python-Paket, plugin.py)
+3. Extraktion nach `plugins/installed/{plugin-name}/`
+4. Plugin-Config wird nach `config/plugins/{name}.yaml` kopiert
+5. Plugin wird zum `sys.path` hinzugefuegt und dynamisch registriert
+6. Plugin erscheint in den Einstellungen und kann konfiguriert werden
+
+**Sicherheit:**
+
+- Plugin-Namen werden validiert (nur Kleinbuchstaben, Ziffern, Bindestriche)
+- ZIP-Pfade werden auf Path Traversal geprueft
+- Plugins laufen im selben Prozess (kein Sandboxing) - nur vertrauenswuerdige Plugins installieren
+
+**API-Endpunkte:**
+
+- `POST /api/plugins/install` - Plugin-ZIP hochladen und installieren
+- `DELETE /api/plugins/install/{name}` - Plugin deinstallieren
+- `GET /api/plugins/installed` - Installierte Plugins auflisten
+
+### 5.5 Plugin UI-Strategie (Manifest-driven)
+
+Plugins koennen UI-Erweiterungen deklarieren ueber die `get_frontend_manifest()` Methode. Das Frontend fragt `GET /api/plugins/manifests` ab und rendert vordefinierte UI-Slots.
+
+**Vordefinierte UI-Slots:**
+
+| Slot | Beschreibung | Ort in der App |
+|------|-------------|----------------|
+| `sidebar_actions` | Buttons in der Kapitel-Sidebar | BookEditor Sidebar |
+| `toolbar_buttons` | Buttons in der Editor-Toolbar | Editor Toolbar |
+| `editor_panels` | Panels neben dem Editor | BookEditor |
+| `settings_section` | Zusaetzliche Einstellungen | Settings > Plugins |
+| `export_options` | Optionen im Export-Dialog | ExportDialog |
+
+**Manifest-Beispiel (Export-Plugin):**
+
+```python
+def get_frontend_manifest(self) -> dict | None:
+    return {
+        "sidebar_actions": [
+            {
+                "id": "export_epub",
+                "label": {"de": "EPUB exportieren", "en": "Export EPUB"},
+                "icon": "download",
+                "action": "/api/books/{book_id}/export/epub",
+            }
+        ],
+        "export_options": [
+            {
+                "id": "toc_depth",
+                "type": "select",
+                "label": {"de": "Inhaltsverzeichnis-Tiefe", "en": "TOC Depth"},
+                "options": [1, 2, 3, 4],
+                "default": 2,
+            }
+        ],
+    }
+```
+
+**Strategie fuer komplexe Plugin-UIs:**
+
+Fuer Plugins die ueber einfache Manifest-Deklarationen hinausgehen (z.B. interaktive Vorschau, komplexe Formulare), koennen Web Components als Custom Elements geliefert werden. Das Plugin-ZIP enthaelt dann ein kompiliertes JS-Bundle das ueber einen definierten Slot geladen wird.
+
 ## 6. API-Versionierung
 
 Hook-Specs bekommen eine Version. Plugins deklarieren welche API-Version sie unterstuetzen:

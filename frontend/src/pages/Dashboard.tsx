@@ -253,12 +253,11 @@ export default function Dashboard() {
                 )}
             </main>
 
-            {showModal && (
-                <CreateBookModal
-                    onClose={() => setShowModal(false)}
-                    onCreate={handleCreate}
-                />
-            )}
+            <CreateBookModal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                onCreate={handleCreate}
+            />
         </div>
     );
 }

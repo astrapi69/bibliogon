@@ -2,11 +2,13 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
+import * as Select from "@radix-ui/react-select";
+import {ChevronDown as ChevronDownIcon} from "lucide-react";
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -99,6 +101,7 @@ export default function Settings() {
                     <PluginSettings
                         configs={pluginConfigs}
                         appConfig={appConfig}
+                        onReload={loadData}
                         onSavePlugin={async (name, settings) => {
                             try {
                                 const updated = await api.settings.updatePlugin(name, settings);
@@ -207,13 +210,17 @@ function AppSettings({config, onSave, saving}: {
             <div style={styles.card}>
                 <div className="field">
                     <label className="label">Standard-Sprache</label>
-                    <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>
-                        <option value="de">Deutsch</option>
-                        <option value="en">English</option>
-                        <option value="es">Espanol</option>
-                        <option value="fr">Francais</option>
-                        <option value="el">Ellinika</option>
-                    </select>
+                    <RadixSelect
+                        value={lang}
+                        onValueChange={setLang}
+                        options={[
+                            {value: "de", label: "Deutsch"},
+                            {value: "en", label: "English"},
+                            {value: "es", label: "Espanol"},
+                            {value: "fr", label: "Francais"},
+                            {value: "el", label: "Ellinika"},
+                        ]}
+                    />
                 </div>
                 <div className="field">
                     <label className="label">Titel</label>
@@ -225,16 +232,19 @@ function AppSettings({config, onSave, saving}: {
                 </div>
                 <div className="field">
                     <label className="label">Theme</label>
-                    <select className="input" value={theme} onChange={(e) => {
-                        setTheme(e.target.value);
-                        // Apply immediately
-                        document.documentElement.setAttribute("data-app-theme", e.target.value);
-                        localStorage.setItem("bibliogon-app-theme", e.target.value);
-                    }}>
-                        <option value="warm-literary">Warm Literary</option>
-                        <option value="cool-modern">Cool Modern</option>
-                        <option value="nord">Nord</option>
-                    </select>
+                    <RadixSelect
+                        value={theme}
+                        onValueChange={(val) => {
+                            setTheme(val);
+                            document.documentElement.setAttribute("data-app-theme", val);
+                            localStorage.setItem("bibliogon-app-theme", val);
+                        }}
+                        options={[
+                            {value: "warm-literary", label: "Warm Literary"},
+                            {value: "cool-modern", label: "Cool Modern"},
+                            {value: "nord", label: "Nord"},
+                        ]}
+                    />
                 </div>
                 <button
                     className="btn btn-primary"
@@ -253,19 +263,41 @@ function AppSettings({config, onSave, saving}: {
 
 // --- Plugin Settings Tab ---
 
-function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin}: {
+function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload}: {
     configs: Record<string, Record<string, unknown>>;
     appConfig: Record<string, unknown>;
     onSavePlugin: (name: string, settings: Record<string, unknown>) => void;
     onTogglePlugin: (name: string, enable: boolean) => void;
     onAddPlugin: (data: {name: string; display_name?: string; description?: string}) => void;
     onRemovePlugin: (name: string) => void;
+    onReload: () => void;
 }) {
     const [showAdd, setShowAdd] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const pluginDialog = useDialog();
     const [newName, setNewName] = useState("");
     const [newDisplayName, setNewDisplayName] = useState("");
     const [newDescription, setNewDescription] = useState("");
+
+    const handleUploadPlugin = async () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".zip";
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            setUploading(true);
+            try {
+                const result = await api.pluginInstall.install(file);
+                toast.success(result.message);
+                onReload();
+            } catch (err) {
+                toast.error(`Installation fehlgeschlagen: ${err}`);
+            }
+            setUploading(false);
+        };
+        input.click();
+    };
 
     const enabled = new Set(
         ((appConfig.plugins as Record<string, unknown>)?.enabled as string[]) || []
@@ -295,11 +327,20 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         <div style={styles.section}>
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
                 <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
-                {inactivePlugins.length > 0 && (
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
-                        <Plus size={14}/> Plugin hinzufügen
+                <div style={{display: "flex", gap: 8}}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={handleUploadPlugin}
+                        disabled={uploading}
+                    >
+                        <Upload size={14}/> {uploading ? "Installiert..." : "ZIP installieren"}
                     </button>
-                )}
+                    {inactivePlugins.length > 0 && (
+                        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
+                            <Plus size={14}/> Plugin hinzufügen
+                        </button>
+                    )}
+                </div>
             </div>
 
             {showAdd && inactivePlugins.length > 0 && (
@@ -674,6 +715,36 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
 }
 
 // --- Helpers ---
+
+// --- Radix Select wrapper ---
+
+function RadixSelect({value, onValueChange, options}: {
+    value: string;
+    onValueChange: (value: string) => void;
+    options: {value: string; label: string}[];
+}) {
+    return (
+        <Select.Root value={value} onValueChange={onValueChange}>
+            <Select.Trigger className="radix-select-trigger">
+                <Select.Value/>
+                <Select.Icon>
+                    <ChevronDownIcon size={14}/>
+                </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+                <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
+                    <Select.Viewport>
+                        {options.map((opt) => (
+                            <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
+                                <Select.ItemText>{opt.label}</Select.ItemText>
+                            </Select.Item>
+                        ))}
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
+    );
+}
 
 function isSectionOrder(key: string, value: unknown): boolean {
     // A dict where values are string arrays or null (like section_order with ebook/paperback/etc)

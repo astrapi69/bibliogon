@@ -1,4 +1,4 @@
-import {useState, useRef, useEffect} from "react";
+import {useState} from "react";
 import {Chapter, ChapterType} from "../api/client";
 import {
     Plus,
@@ -9,6 +9,25 @@ import {
     FileText,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import Tooltip from "./Tooltip";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {CSS} from "@dnd-kit/utilities";
 
 interface Props {
     bookTitle: string;
@@ -47,6 +66,118 @@ const TYPE_LABELS: Record<ChapterType, string> = {
     interlude: "Interludium",
 };
 
+// --- Sortable Chapter Item ---
+
+function SortableChapterItem({chapter, isActive, onSelect, onDelete}: {
+    chapter: Chapter;
+    isActive: boolean;
+    onSelect: (id: string) => void;
+    onDelete: (id: string) => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({id: chapter.id});
+
+    const style: React.CSSProperties = {
+        ...styles.item,
+        ...(isActive ? styles.itemActive : {}),
+        ...(isDragging ? styles.itemDragging : {}),
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} onClick={() => onSelect(chapter.id)}>
+            <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}}>
+                <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
+            </span>
+            <span style={styles.itemTitle}>
+                {chapter.chapter_type !== "chapter" && (
+                    <span style={styles.typeTag}>{TYPE_LABELS[chapter.chapter_type]}</span>
+                )}
+                {chapter.title}
+            </span>
+            <Tooltip content="Kapitel löschen" side="right">
+                <button
+                    style={styles.deleteBtn}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(chapter.id);
+                    }}
+                >
+                    <Trash2 size={12}/>
+                </button>
+            </Tooltip>
+        </div>
+    );
+}
+
+// --- Sortable Group ---
+
+function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onReorder}: {
+    chapters: Chapter[];
+    allChapters: Chapter[];
+    activeChapterId: string | null;
+    onSelect: (id: string) => void;
+    onDelete: (id: string) => void;
+    onReorder: (chapterIds: string[]) => void;
+}) {
+    const sensors = useSensors(
+        useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+    );
+
+    const groupIds = chapters.map((ch) => ch.id);
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const {active, over} = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = groupIds.indexOf(active.id as string);
+        const newIndex = groupIds.indexOf(over.id as string);
+        const newGroupOrder = arrayMove(groupIds, oldIndex, newIndex);
+
+        // Rebuild full chapter order preserving non-group chapters
+        const allIds = allChapters.map((ch) => ch.id);
+        const result: string[] = [];
+        let groupInserted = false;
+        for (const id of allIds) {
+            if (groupIds.includes(id)) {
+                if (!groupInserted) {
+                    result.push(...newGroupOrder);
+                    groupInserted = true;
+                }
+            } else {
+                result.push(id);
+            }
+        }
+        onReorder(result);
+    };
+
+    return (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
+                {chapters.map((ch) => (
+                    <SortableChapterItem
+                        key={ch.id}
+                        chapter={ch}
+                        isActive={ch.id === activeChapterId}
+                        onSelect={onSelect}
+                        onDelete={onDelete}
+                    />
+                ))}
+            </SortableContext>
+        </DndContext>
+    );
+}
+
+// --- Main Sidebar ---
+
 export default function ChapterSidebar({
                                            bookTitle,
                                            chapters,
@@ -66,138 +197,17 @@ export default function ChapterSidebar({
     );
     const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
 
-    const [showAddMenu, setShowAddMenu] = useState(false);
-    const addMenuRef = useRef<HTMLDivElement>(null);
-    const [dragId, setDragId] = useState<string | null>(null);
-
-    // Close menu on outside click
-    useEffect(() => {
-        if (!showAddMenu) return;
-        const handler = (e: MouseEvent) => {
-            if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
-                setShowAddMenu(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, [showAddMenu]);
-    const [dragOverId, setDragOverId] = useState<string | null>(null);
-    const dragCounter = useRef(0);
-
-    const handleDragStart = (e: React.DragEvent, id: string) => {
-        setDragId(id);
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", id);
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-    };
-
-    const handleDragEnter = (id: string) => {
-        dragCounter.current++;
-        setDragOverId(id);
-    };
-
-    const handleDragLeave = () => {
-        dragCounter.current--;
-        if (dragCounter.current === 0) {
-            setDragOverId(null);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent, targetId: string, group: Chapter[]) => {
-        e.preventDefault();
-        dragCounter.current = 0;
-        setDragOverId(null);
-        setDragId(null);
-
-        if (!dragId || dragId === targetId) return;
-
-        // Only reorder within the same group
-        const groupIds = group.map((ch) => ch.id);
-        if (!groupIds.includes(dragId) || !groupIds.includes(targetId)) return;
-
-        const newOrder = [...groupIds];
-        const fromIdx = newOrder.indexOf(dragId);
-        const toIdx = newOrder.indexOf(targetId);
-        newOrder.splice(fromIdx, 1);
-        newOrder.splice(toIdx, 0, dragId);
-
-        // Build full chapter ID list preserving non-group ordering
-        const allIds = chapters.map((ch) => ch.id);
-        const otherIds = allIds.filter((id) => !groupIds.includes(id));
-
-        // Rebuild: front-matter, then reordered group, then back-matter
-        // Actually just replace the group portion in the full list
-        const result: string[] = [];
-        let groupInserted = false;
-        for (const id of allIds) {
-            if (groupIds.includes(id)) {
-                if (!groupInserted) {
-                    result.push(...newOrder);
-                    groupInserted = true;
-                }
-            } else {
-                result.push(id);
-            }
-        }
-
-        onReorder(result);
-    };
-
-    const handleDragEnd = () => {
-        setDragId(null);
-        setDragOverId(null);
-        dragCounter.current = 0;
-    };
-
-    const renderChapterItem = (ch: Chapter, group: Chapter[]) => (
-        <div
-            key={ch.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, ch.id)}
-            onDragOver={handleDragOver}
-            onDragEnter={() => handleDragEnter(ch.id)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, ch.id, group)}
-            onDragEnd={handleDragEnd}
-            style={{
-                ...styles.item,
-                ...(ch.id === activeChapterId ? styles.itemActive : {}),
-                ...(ch.id === dragOverId ? styles.itemDragOver : {}),
-                ...(ch.id === dragId ? styles.itemDragging : {}),
-            }}
-            onClick={() => onSelect(ch.id)}
-        >
-            <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3, cursor: "grab"}}/>
-            <span style={styles.itemTitle}>
-                {ch.chapter_type !== "chapter" && (
-                    <span style={styles.typeTag}>{TYPE_LABELS[ch.chapter_type]}</span>
-                )}
-                {ch.title}
-            </span>
-            <button
-                style={styles.deleteBtn}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(ch.id);
-                }}
-                title="Kapitel löschen"
-            >
-                <Trash2 size={12}/>
-            </button>
-        </div>
-    );
+    const [addMenuOpen, setAddMenuOpen] = useState(false);
 
     return (
         <aside style={styles.sidebar}>
             {/* Header */}
             <div style={styles.header}>
-                <button style={styles.backBtn} onClick={onBack} title="Zurück">
-                    <ChevronLeft size={18}/>
-                </button>
+                <Tooltip content="Zurück zum Dashboard">
+                    <button style={styles.backBtn} onClick={onBack}>
+                        <ChevronLeft size={18}/>
+                    </button>
+                </Tooltip>
                 <h2 style={styles.bookTitle} title={bookTitle}>
                     {bookTitle}
                 </h2>
@@ -212,46 +222,44 @@ export default function ChapterSidebar({
 
             <div style={styles.list}>
                 {/* Add button with dropdown */}
-                <div ref={addMenuRef} style={{...styles.sectionHeader, position: "relative"}}>
+                <div style={styles.sectionHeader}>
                     <span style={styles.listLabel}>Inhalt</span>
-                    <button
-                        style={styles.addBtn}
-                        onClick={() => setShowAddMenu(!showAddMenu)}
-                        title="Hinzufügen"
-                    >
-                        <Plus size={14}/>
-                    </button>
-                    {showAddMenu && (
-                        <div style={styles.addMenu}>
-                            <div style={styles.addMenuGroup}>
-                                <span style={styles.addMenuLabel}>Front Matter</span>
-                                {FRONT_MATTER_TYPES.map((t) => (
-                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
-                                        {TYPE_LABELS[t]}
-                                    </button>
-                                ))}
-                            </div>
-                            <div style={styles.addMenuGroup}>
-                                <span style={styles.addMenuLabel}>Kapitel</span>
-                                <button style={styles.addMenuItem} onClick={() => { onAdd("chapter"); setShowAddMenu(false); }}>
-                                    Neues Kapitel
+                    <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
+                        <Tooltip content="Kapitel hinzufügen">
+                            <DropdownMenu.Trigger asChild>
+                                <button style={styles.addBtn}>
+                                    <Plus size={14}/>
                                 </button>
+                            </DropdownMenu.Trigger>
+                        </Tooltip>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content className="chapter-dropdown-content" align="end" sideOffset={4}>
+                                <DropdownMenu.Label className="chapter-dropdown-label">Front Matter</DropdownMenu.Label>
+                                {FRONT_MATTER_TYPES.map((t) => (
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
+                                        {TYPE_LABELS[t]}
+                                    </DropdownMenu.Item>
+                                ))}
+                                <DropdownMenu.Separator className="chapter-dropdown-separator"/>
+                                <DropdownMenu.Label className="chapter-dropdown-label">Kapitel</DropdownMenu.Label>
+                                <DropdownMenu.Item className="chapter-dropdown-item" onSelect={() => onAdd("chapter")}>
+                                    Neues Kapitel
+                                </DropdownMenu.Item>
                                 {STRUCTURE_TYPES.map((t) => (
-                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
-                                    </button>
+                                    </DropdownMenu.Item>
                                 ))}
-                            </div>
-                            <div style={styles.addMenuGroup}>
-                                <span style={styles.addMenuLabel}>Back Matter</span>
+                                <DropdownMenu.Separator className="chapter-dropdown-separator"/>
+                                <DropdownMenu.Label className="chapter-dropdown-label">Back Matter</DropdownMenu.Label>
                                 {BACK_MATTER_TYPES.map((t) => (
-                                    <button key={t} style={styles.addMenuItem} onClick={() => { onAdd(t); setShowAddMenu(false); }}>
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
-                                    </button>
+                                    </DropdownMenu.Item>
                                 ))}
-                            </div>
-                        </div>
-                    )}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
                 </div>
 
                 {/* Front Matter */}
@@ -260,7 +268,14 @@ export default function ChapterSidebar({
                         <div style={styles.sectionHeader}>
                             <span style={styles.listLabel}>Front Matter</span>
                         </div>
-                        {frontMatter.map((ch) => renderChapterItem(ch, frontMatter))}
+                        <SortableGroup
+                            chapters={frontMatter}
+                            allChapters={chapters}
+                            activeChapterId={activeChapterId}
+                            onSelect={onSelect}
+                            onDelete={onDelete}
+                            onReorder={onReorder}
+                        />
                     </>
                 )}
 
@@ -271,7 +286,14 @@ export default function ChapterSidebar({
                 {mainChapters.length === 0 && (
                     <p style={styles.empty}>Noch keine Kapitel</p>
                 )}
-                {mainChapters.map((ch) => renderChapterItem(ch, mainChapters))}
+                <SortableGroup
+                    chapters={mainChapters}
+                    allChapters={chapters}
+                    activeChapterId={activeChapterId}
+                    onSelect={onSelect}
+                    onDelete={onDelete}
+                    onReorder={onReorder}
+                />
 
                 {/* Back Matter */}
                 {backMatter.length > 0 && (
@@ -279,7 +301,14 @@ export default function ChapterSidebar({
                         <div style={styles.sectionHeader}>
                             <span style={styles.listLabel}>Back Matter</span>
                         </div>
-                        {backMatter.map((ch) => renderChapterItem(ch, backMatter))}
+                        <SortableGroup
+                            chapters={backMatter}
+                            allChapters={chapters}
+                            activeChapterId={activeChapterId}
+                            onSelect={onSelect}
+                            onDelete={onDelete}
+                            onReorder={onReorder}
+                        />
                     </>
                 )}
             </div>
@@ -292,14 +321,15 @@ export default function ChapterSidebar({
                 >
                     <FileText size={14}/> Metadaten
                 </button>
-                <button
-                    style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
-                    onClick={onExport}
-                    disabled={chapters.length === 0}
-                    title={chapters.length === 0 ? "Erstelle zuerst ein Kapitel" : "Buch exportieren"}
-                >
-                    <Download size={14}/> Exportieren...
-                </button>
+                <Tooltip content={chapters.length === 0 ? "Erstelle zuerst ein Kapitel" : "Buch exportieren"}>
+                    <button
+                        style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
+                        onClick={onExport}
+                        disabled={chapters.length === 0}
+                    >
+                        <Download size={14}/> Exportieren...
+                    </button>
+                </Tooltip>
             </div>
         </aside>
     );
@@ -349,12 +379,11 @@ const styles: Record<string, React.CSSProperties> = {
     item: {
         display: "flex", alignItems: "center", gap: 6, padding: "8px 8px",
         borderRadius: 6, cursor: "pointer", fontSize: "0.875rem",
-        transition: "background 150ms, border-color 150ms", marginBottom: 2,
-        borderTop: "2px solid transparent",
+        transition: "background 150ms", marginBottom: 2,
+        background: "transparent",
     },
     itemActive: { background: "rgba(255,255,255,0.1)", color: "#faf8f5" },
-    itemDragOver: { borderTop: "2px solid var(--accent, #7c6f5b)" },
-    itemDragging: { opacity: 0.4 },
+    itemDragging: { opacity: 0.5, background: "rgba(255,255,255,0.05)" },
     itemTitle: {
         flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
         display: "flex", alignItems: "center", gap: 4,
@@ -368,28 +397,6 @@ const styles: Record<string, React.CSSProperties> = {
         background: "none", border: "none", color: "rgba(255,255,255,0.2)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
         opacity: 0, transition: "opacity 150ms",
-    },
-    addMenu: {
-        position: "absolute" as const, top: "100%", right: 8, zIndex: 50,
-        background: "#2a2725", border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 8, padding: "6px 0", minWidth: 180,
-        boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-    },
-    addMenuGroup: {
-        padding: "4px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-    },
-    addMenuLabel: {
-        display: "block", padding: "4px 14px", fontSize: "0.625rem", fontWeight: 600,
-        textTransform: "uppercase" as const, letterSpacing: "0.08em",
-        color: "rgba(255,255,255,0.3)",
-    },
-    addMenuItem: {
-        display: "block", width: "100%", padding: "7px 14px", border: "none",
-        background: "transparent", color: "var(--text-sidebar)",
-        fontSize: "0.8125rem", fontFamily: "var(--font-body)",
-        cursor: "pointer", textAlign: "left" as const,
-        transition: "background 100ms",
     },
     exportSection: { padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" },
     exportBtn: {

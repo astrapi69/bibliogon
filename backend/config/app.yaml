@@ -5,26 +5,24 @@ app:
   default_language: de
   delete_permanently: false
   supported_languages:
-    - de
-    - en
-    - es
-    - fr
-    - el
-
+  - de
+  - en
+  - es
+  - fr
+  - el
 plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins
   enabled:
-    - export
-    - help
-    - getstarted
+  - export
+  - help
+  - getstarted
   disabled:
-    - grammar
-    - kinderbuch
-    - kdp
-
+  - grammar
+  - kinderbuch
+  - kdp
 ui:
   title: Bibliogon
   subtitle: Bücher schreiben und exportieren
   logo: assets/logo.svg
-  theme: warm-literary
+  theme: nord

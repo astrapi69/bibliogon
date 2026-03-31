@@ -219,3 +219,22 @@ faq:
     answer:
       de: "13 Kapiteltypen in 3 Gruppen: Front Matter (Vorwort, Geleitwort, Danksagung), Kapitel (reguläres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Über den Autor, Anhang, Literatur, Glossar, Impressum, Nächster Band). Alle wählbar über das '+'-Dropdown in der Sidebar oder die Buttons bei einem leeren Buch."
       en: "13 chapter types in 3 groups: Front Matter (Preface, Foreword, Acknowledgments), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, About the Author, Appendix, Bibliography, Glossary, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar or buttons for an empty book."
+  # --- Plugin-Installation ---
+  - question:
+      de: "Wie installiere ich ein Drittanbieter-Plugin?"
+      en: "How do I install a third-party plugin?"
+    answer:
+      de: "Gehe zu Einstellungen > Plugins und klicke 'ZIP installieren'. Wähle die Plugin-ZIP-Datei aus. Das Plugin wird automatisch extrahiert, registriert und aktiviert. Die ZIP-Datei muss eine plugin.yaml und ein Python-Paket mit plugin.py enthalten."
+      en: "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+  - question:
+      de: "Wie deinstalliere ich ein Plugin?"
+      en: "How do I uninstall a plugin?"
+    answer:
+      de: "Installierte Plugins koennen über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration geloescht."
+      en: "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+  - question:
+      de: "Koennen Plugins eigene UI-Komponenten mitbringen?"
+      en: "Can plugins provide their own UI components?"
+    answer:
+      de: "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs koennen Plugins Web Components als Custom Elements liefern."
+      en: "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."

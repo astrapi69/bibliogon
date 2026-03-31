@@ -1,3 +1,4 @@
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.hookspecs import BibliogonHookSpec
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
-from app.routers import assets, backup, books, chapters, licenses, settings
+from app.routers import assets, backup, books, chapters, licenses, plugin_install, settings
 
 from pluginforge import BasePlugin, PluginManager
 from pluginforge.config import load_i18n
@@ -58,11 +59,25 @@ manager.register_hookspecs(BibliogonHookSpec)
 # Configure routes with manager and licensing
 licenses.configure(manager, license_validator, license_store)
 settings.configure(BASE_DIR, manager)
+plugin_install.configure(BASE_DIR, manager)
+
+
+def _load_installed_plugins() -> None:
+    """Add installed plugin directories to sys.path before discovery."""
+    installed_dir = BASE_DIR / "plugins" / "installed"
+    if not installed_dir.exists():
+        return
+    for plugin_dir in installed_dir.iterdir():
+        if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
+            path_str = str(plugin_dir)
+            if path_str not in sys.path:
+                sys.path.insert(0, path_str)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)
     yield
@@ -90,6 +105,7 @@ app.include_router(assets.router, prefix="/api")
 app.include_router(backup.router, prefix="/api")
 app.include_router(licenses.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(plugin_install.router, prefix="/api")
 
 
 @app.get("/api/plugins/manifests")

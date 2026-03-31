@@ -283,6 +283,31 @@ export const api = {
             request<{title: string; author: string; language: string; description: string; chapters: {title: string; content: string}[]}>(`/get-started/sample-book?lang=${lang}`),
     },
 
+    pluginInstall: {
+        install: async (file: File): Promise<{plugin: string; version: string; status: string; message: string; error: string | null}> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/plugins/install`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new Error(err.detail || "Installation fehlgeschlagen");
+            }
+            return res.json();
+        },
+
+        uninstall: (name: string) =>
+            request<{plugin: string; status: string}>(`/plugins/install/${name}`, {method: "DELETE"}),
+
+        listInstalled: () =>
+            request<{name: string; display_name: string; description: string; version: string; license: string; active: boolean; path: string}[]>("/plugins/installed"),
+
+        manifests: () =>
+            request<Record<string, Record<string, unknown>>>("/plugins/manifests"),
+    },
+
     licenses: {
         list: () => request<Record<string, unknown>>("/licenses"),
 

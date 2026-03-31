@@ -76,6 +76,7 @@ bibliogon/
 │   │   │   ├── assets.py        # Asset Upload/Delete
 │   │   │   ├── backup.py        # Full-Data Backup, Restore, Project Import
 │   │   │   ├── licenses.py      # License Management (activate, list, deactivate)
+│   │   │   ├── plugin_install.py # Plugin ZIP Upload, Install, Uninstall
 │   │   │   └── settings.py      # Settings API (app.yaml + Plugin-Config lesen/schreiben)
 │   │   └── services/
 │   ├── config/
@@ -87,6 +88,7 @@ bibliogon/
 │   │   └── test_phase4.py       # ChapterType, Assets, Backup, Import Tests
 │   └── pyproject.toml
 ├── plugins/
+│   ├── installed/                       # Dynamisch installierte Plugins (via ZIP)
 │   ├── bibliogon-plugin-export/         # EPUB, PDF, ZIP Export (MIT)
 │   │   ├── bibliogon_export/
 │   │   │   ├── plugin.py                # ExportPlugin(BasePlugin)
@@ -136,10 +138,11 @@ bibliogon/
 │   │   │   ├── ThemeToggle.tsx  # Dark/Light Mode Button
 │   │   │   ├── ExportDialog.tsx  # Export-Modal (Format, Buchtyp, TOC-Tiefe)
 │   │   │   ├── BookMetadataEditor.tsx # Buch-Metadaten (ISBN, Keywords, Publisher)
-│   │   │   ├── AppDialog.tsx    # Custom Confirm/Prompt/Alert Dialoge
-│   │   │   ├── OrderedListEditor.tsx  # Sortierbare Listen (Section-Order)
+│   │   │   ├── AppDialog.tsx    # Custom Confirm/Prompt/Alert Dialoge (Radix Dialog)
+│   │   │   ├── OrderedListEditor.tsx  # Sortierbare Listen (@dnd-kit)
+│   │   │   ├── Tooltip.tsx      # Radix Tooltip Wrapper
 │   │   │   ├── BookCard.tsx     # Buch-Karte fuer Dashboard
-│   │   │   └── CreateBookModal.tsx
+│   │   │   └── CreateBookModal.tsx  # Neues Buch (Radix Dialog + Select)
 │   │   ├── pages/
 │   │   │   ├── Dashboard.tsx    # Buch-Liste, Backup/Import/Projekt-Import
 │   │   │   ├── BookEditor.tsx   # Editor-Layout mit Sidebar
@@ -216,13 +219,13 @@ Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt alles selbst zu bauen.
 | AppDialog (Confirm/Prompt) | Eigenbau div+overlay | Radix Dialog | Migriert |
 | Settings Tabs | Eigenbau button+state | Radix Tabs | Migriert |
 | Help Tabs | Eigenbau button+state | Radix Tabs | Migriert |
-| Kapiteltyp-Dropdown | Eigenbau div+click-away | Radix DropdownMenu | Geplant |
-| Theme/Sprache Select | HTML select | Radix Select | Geplant |
-| Kapitel DnD | HTML5 Drag API | @dnd-kit/sortable | Geplant |
-| OrderedListEditor | Eigenbau up/down Buttons | @dnd-kit/sortable | Geplant |
-| ExportDialog | Eigenbau div+overlay | Radix Dialog | Geplant |
-| CreateBookModal | Eigenbau div+overlay | Radix Dialog | Geplant |
-| Tooltips | title-Attribut | Radix Tooltip | Geplant |
+| Kapiteltyp-Dropdown | Eigenbau div+click-away | Radix DropdownMenu | Migriert |
+| Theme/Sprache Select | HTML select | Radix Select | Migriert |
+| Kapitel DnD | HTML5 Drag API | @dnd-kit/sortable | Migriert |
+| OrderedListEditor | Eigenbau up/down Buttons | @dnd-kit/sortable | Migriert |
+| ExportDialog | Eigenbau div+overlay | Radix Dialog | Migriert |
+| CreateBookModal | Eigenbau div+overlay | Radix Dialog | Migriert |
+| Tooltips | title-Attribut | Radix Tooltip | Migriert |
 
 ## PluginForge v0.5.0 API (Kurzreferenz)
 
@@ -249,6 +252,25 @@ manager.call_hook("hook_name")     # Hook aufrufen
 manager.get_text("key", "de")      # i18n String
 ```
 
+## Plugin-Installation (ZIP)
+
+Drittanbieter-Plugins koennen als ZIP ueber Settings > Plugins > "ZIP installieren" installiert werden.
+
+- Backend: `backend/app/routers/plugin_install.py`
+- Installationsverzeichnis: `plugins/installed/{plugin-name}/`
+- Beim Start werden installierte Plugins automatisch zum sys.path hinzugefuegt
+- ZIP muss enthalten: `plugin.yaml` + Python-Paket mit `plugin.py` (BasePlugin-Unterklasse)
+- Plugin-Namen: nur Kleinbuchstaben, Ziffern, Bindestriche (3-50 Zeichen)
+- Sicherheit: Path-Traversal-Pruefung, Plugin-Name-Validierung
+
+## Plugin UI-Strategie (Manifest-driven)
+
+Plugins deklarieren UI-Erweiterungen ueber `get_frontend_manifest()`. Das Frontend fragt `/api/plugins/manifests` ab.
+
+Vordefinierte UI-Slots: sidebar_actions, toolbar_buttons, editor_panels, settings_section, export_options.
+
+Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
+
 ## API-Endpunkte
 
 ### Kern
@@ -274,6 +296,9 @@ manager.get_text("key", "de")      # i18n String
 - POST /api/settings/plugins/{name}/enable
 - POST /api/settings/plugins/{name}/disable
 - GET /api/plugins/manifests
+- POST /api/plugins/install
+- DELETE /api/plugins/install/{name}
+- GET /api/plugins/installed
 - GET /api/plugins/health
 - GET /api/plugins/errors
 - GET /api/i18n/{lang}

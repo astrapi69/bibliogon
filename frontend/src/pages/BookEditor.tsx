@@ -220,8 +220,9 @@ export default function BookEditor() {
                 </div>
             )}
 
-            {showExport && bookId && (
+            {bookId && (
                 <ExportDialog
+                    open={showExport}
                     bookId={bookId}
                     bookTitle={book.title}
                     onClose={() => setShowExport(false)}

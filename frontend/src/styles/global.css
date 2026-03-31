@@ -373,6 +373,12 @@ body {
     animation: slideIn 150ms ease;
 }
 
+.dialog-content-wide {
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 .dialog-header {
     display: flex;
     align-items: center;
@@ -407,6 +413,116 @@ body {
 @keyframes slideIn {
     from { opacity: 0; transform: translate(-50%, -48%); }
     to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* --- Radix DropdownMenu (Chapter Sidebar) --- */
+.chapter-dropdown-content {
+    background: #2a2725;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    animation: fadeIn 100ms ease;
+}
+
+.chapter-dropdown-label {
+    display: block;
+    padding: 4px 14px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.chapter-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    border: none;
+    background: transparent;
+    color: #d6d3d1;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    text-align: left;
+    outline: none;
+}
+
+.chapter-dropdown-item[data-highlighted] {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.chapter-dropdown-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 0;
+}
+
+/* --- Radix Tooltip --- */
+.radix-tooltip-content {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    max-width: 220px;
+    z-index: 3000;
+    animation: fadeIn 100ms ease;
+    box-shadow: var(--shadow-md);
+}
+
+.radix-tooltip-arrow {
+    fill: var(--text-primary);
+}
+
+/* --- Radix Select --- */
+.radix-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 180px;
+    outline: none;
+}
+
+.radix-select-trigger:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.radix-select-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 2100;
+    min-width: var(--radix-select-trigger-width);
+    overflow: hidden;
+    animation: fadeIn 100ms ease;
+}
+
+.radix-select-item {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+}
+
+.radix-select-item[data-highlighted] {
+    background: var(--bg-hover);
+    color: var(--accent);
 }
 
 /* --- Radix Tabs --- */
