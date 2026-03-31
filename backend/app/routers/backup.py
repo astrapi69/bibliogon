@@ -312,6 +312,18 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         backpage_bio = _read_file_if_exists(config_dir / "cover-back-page-author-introduction.md")
         custom_css = _read_file_if_exists(config_dir / "styles.css")
 
+        # Read export-settings.yaml for section ordering
+        export_settings_path = config_dir / "export-settings.yaml"
+        section_order: list[str] = []
+        if export_settings_path.exists():
+            with open(export_settings_path, "r", encoding="utf-8") as f:
+                export_settings = yaml.safe_load(f) or {}
+            # Use ebook order as default (most common)
+            so = export_settings.get("section_order", {})
+            section_order = so.get("ebook", so.get("paperback", []))
+            if not isinstance(section_order, list):
+                section_order = []
+
         book = Book(
             title=metadata.get("title", project_root.name),
             subtitle=metadata.get("subtitle"),
@@ -340,43 +352,45 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         db.add(book)
         db.flush()  # get book.id
 
-        # Import front-matter first (position 0-99)
-        front_dir = project_root / "manuscript" / "front-matter"
-        front_count = 0
-        if front_dir.exists():
-            front_count = _import_special_chapters(db, book.id, front_dir, _FRONT_MATTER_MAP, base_position=0)
+        # Build file lookup maps
+        manuscript_dir = project_root / "manuscript"
+        front_dir = manuscript_dir / "front-matter"
+        chapters_dir = manuscript_dir / "chapters"
+        back_dir = manuscript_dir / "back-matter"
 
-        # Import chapters from manuscript/chapters/ (position 100+)
-        chapters_dir = project_root / "manuscript" / "chapters"
-        chapter_count = 0
-        if chapters_dir.exists():
-            for position, md_file in enumerate(sorted(chapters_dir.glob("*.md"))):
-                # Skip print variants
-                if md_file.stem.endswith("-print"):
-                    continue
-
-                content = md_file.read_text(encoding="utf-8")
-                title = _extract_title(content, md_file.stem)
-                body = _remove_first_heading(content)
-
-                # Detect chapter type from filename
-                chapter_type = _detect_chapter_type(md_file.stem)
-
-                chapter = Chapter(
-                    book_id=book.id,
-                    title=title,
-                    content=_md_to_html(body.strip()),
-                    position=100 + position,
-                    chapter_type=chapter_type.value,
+        # Import using section_order if available
+        total_count = 0
+        if section_order:
+            total_count = _import_with_section_order(
+                db, book.id, manuscript_dir, section_order,
+            )
+        else:
+            # Fallback: alphabetical import per directory
+            if front_dir.exists():
+                total_count += _import_special_chapters(
+                    db, book.id, front_dir, _FRONT_MATTER_MAP, base_position=0,
                 )
-                db.add(chapter)
-                chapter_count += 1
-
-        # Import back-matter (position 900+)
-        back_dir = project_root / "manuscript" / "back-matter"
-        back_count = 0
-        if back_dir.exists():
-            back_count = _import_special_chapters(db, book.id, back_dir, _BACK_MATTER_MAP, base_position=900)
+            if chapters_dir.exists():
+                pos = 100
+                for md_file in sorted(chapters_dir.glob("*.md")):
+                    if md_file.stem.endswith("-print"):
+                        continue
+                    content = md_file.read_text(encoding="utf-8")
+                    title = _extract_title(content, md_file.stem)
+                    body = _remove_first_heading(content)
+                    chapter_type = _detect_chapter_type(md_file.stem)
+                    chapter = Chapter(
+                        book_id=book.id, title=title,
+                        content=_md_to_html(body.strip()),
+                        position=pos, chapter_type=chapter_type.value,
+                    )
+                    db.add(chapter)
+                    pos += 1
+                    total_count += 1
+            if back_dir.exists():
+                total_count += _import_special_chapters(
+                    db, book.id, back_dir, _BACK_MATTER_MAP, base_position=900,
+                )
 
         db.commit()
         db.refresh(book)
@@ -384,7 +398,7 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         return {
             "book_id": book.id,
             "title": book.title,
-            "chapter_count": front_count + chapter_count + back_count,
+            "chapter_count": total_count,
         }
 
     finally:
@@ -396,13 +410,9 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
 _FRONT_MATTER_MAP = {
     "preface": ChapterType.PREFACE,
     "foreword": ChapterType.FOREWORD,
-    "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
-    "translators-note": ChapterType.PREFACE,  # Translator's note treated as preface
+    "translators-note": ChapterType.PREFACE,
     "toc": ChapterType.TABLE_OF_CONTENTS,
 }
-
-# Files to skip during import (print variants are handled separately)
-_SKIP_FILES: set[str] = set()
 
 _BACK_MATTER_MAP = {
     "about-the-author": ChapterType.ABOUT_AUTHOR,
@@ -413,9 +423,11 @@ _BACK_MATTER_MAP = {
     "imprint": ChapterType.IMPRINT,
     "next-in-series": ChapterType.NEXT_IN_SERIES,
     "other-publications": ChapterType.NEXT_IN_SERIES,
-    "next-in-series": ChapterType.NEXT_IN_SERIES,
     "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
 }
+
+# Combined map for all special sections (front + back matter)
+_ALL_SPECIAL_MAP = {**_FRONT_MATTER_MAP, **_BACK_MATTER_MAP}
 
 # Filename patterns for chapter type detection
 _CHAPTER_FILENAME_PATTERNS = {
@@ -460,6 +472,108 @@ def _find_project_root(extracted: Path) -> Path | None:
             if (child / "manuscript").is_dir() or (child / "config" / "metadata.yaml").exists():
                 return child
     return None
+
+
+def _import_with_section_order(
+    db: Session,
+    book_id: str,
+    manuscript_dir: Path,
+    section_order: list[str],
+) -> int:
+    """Import chapters following the section_order from export-settings.yaml.
+
+    Section order entries are like:
+        - front-matter/toc.md
+        - front-matter/translators-note.md
+        - front-matter/foreword.md
+        - front-matter/preface.md
+        - chapters                    (placeholder: all chapter files)
+        - back-matter/epilogue.md
+        - back-matter/about-the-author.md
+    """
+    count = 0
+    position = 0
+    imported_files: set[str] = set()
+
+    for entry in section_order:
+        entry = entry.strip()
+
+        if entry == "chapters":
+            # Import all chapter files in alphabetical order
+            chapters_dir = manuscript_dir / "chapters"
+            if chapters_dir.exists():
+                for md_file in sorted(chapters_dir.glob("*.md")):
+                    if md_file.stem.endswith("-print"):
+                        continue
+                    content = md_file.read_text(encoding="utf-8")
+                    title = _extract_title(content, md_file.stem)
+                    body = _remove_first_heading(content)
+                    chapter_type = _detect_chapter_type(md_file.stem)
+                    chapter = Chapter(
+                        book_id=book_id, title=title,
+                        content=_md_to_html(body.strip()),
+                        position=position, chapter_type=chapter_type.value,
+                    )
+                    db.add(chapter)
+                    position += 1
+                    count += 1
+        else:
+            # Specific file: front-matter/foreword.md or back-matter/epilogue.md
+            md_path = manuscript_dir / entry
+            if not md_path.exists() or md_path.stem.endswith("-print"):
+                continue
+
+            stem = md_path.stem.lower()
+            if stem in imported_files:
+                continue
+            imported_files.add(stem)
+
+            # Determine chapter type from filename
+            chapter_type = _ALL_SPECIAL_MAP.get(stem)
+            if not chapter_type:
+                chapter_type = ChapterType.CHAPTER
+
+            content = md_path.read_text(encoding="utf-8")
+            title = _extract_title(content, stem)
+            body = _remove_first_heading(content)
+
+            chapter = Chapter(
+                book_id=book_id, title=title,
+                content=_md_to_html(body.strip()),
+                position=position, chapter_type=chapter_type.value,
+            )
+            db.add(chapter)
+            position += 1
+            count += 1
+
+    # Import any remaining files not in section_order
+    for subdir, type_map in [
+        (manuscript_dir / "front-matter", _FRONT_MATTER_MAP),
+        (manuscript_dir / "back-matter", _BACK_MATTER_MAP),
+    ]:
+        if not subdir.exists():
+            continue
+        for md_file in sorted(subdir.glob("*.md")):
+            stem = md_file.stem.lower()
+            if stem.endswith("-print") or stem in imported_files:
+                continue
+            chapter_type = type_map.get(stem)
+            if not chapter_type:
+                continue
+            imported_files.add(stem)
+            content = md_file.read_text(encoding="utf-8")
+            title = _extract_title(content, stem)
+            body = _remove_first_heading(content)
+            chapter = Chapter(
+                book_id=book_id, title=title,
+                content=_md_to_html(body.strip()),
+                position=position, chapter_type=chapter_type.value,
+            )
+            db.add(chapter)
+            position += 1
+            count += 1
+
+    return count
 
 
 def _read_file_if_exists(path: Path) -> str | None:
@@ -548,7 +662,7 @@ def _import_special_chapters(
     for md_file in sorted(directory.glob("*.md")):
         stem = md_file.stem.lower()
         # Skip print variants and explicitly skipped files
-        if stem.endswith("-print") or stem in _SKIP_FILES:
+        if stem.endswith("-print"):
             continue
         chapter_type = type_map.get(stem)
         if not chapter_type:
