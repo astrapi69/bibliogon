@@ -8,6 +8,7 @@ interface Props {
     open: boolean;
     bookId: string;
     bookTitle: string;
+    hasManualToc: boolean;
     onClose: () => void;
 }
 
@@ -26,10 +27,11 @@ const BOOK_TYPES = [
     {id: "hardcover", label: "Hardcover"},
 ];
 
-export default function ExportDialog({open, bookId, bookTitle, onClose}: Props) {
+export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onClose}: Props) {
     const [format, setFormat] = useState("epub");
     const [bookType, setBookType] = useState("ebook");
     const [tocDepth, setTocDepth] = useState(2);
+    const [useManualToc, setUseManualToc] = useState(hasManualToc);
     const [showSectionOrder, setShowSectionOrder] = useState(false);
     const [sectionOrders, setSectionOrders] = useState<Record<string, string[] | null>>({});
     const [exporting, setExporting] = useState(false);
@@ -55,6 +57,7 @@ export default function ExportDialog({open, bookId, bookTitle, onClose}: Props) 
         const params = new URLSearchParams();
         if (bookType !== "ebook") params.set("book_type", bookType);
         if (tocDepth !== 2) params.set("toc_depth", String(tocDepth));
+        if (hasManualToc) params.set("use_manual_toc", String(useManualToc));
 
         const query = params.toString();
         const url = `/api/books/${bookId}/export/${format}${query ? `?${query}` : ""}`;
@@ -124,6 +127,25 @@ export default function ExportDialog({open, bookId, bookTitle, onClose}: Props) 
                                 <option value={2}>Tiefe 2 (# und ##)</option>
                                 <option value={3}>Tiefe 3 (# ## ###)</option>
                             </select>
+                        </div>
+                    )}
+
+                    {/* Manual TOC checkbox */}
+                    {format !== "project" && hasManualToc && (
+                        <div className="field" style={{marginTop: 8}}>
+                            <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem"}}>
+                                <input
+                                    type="checkbox"
+                                    checked={useManualToc}
+                                    onChange={(e) => setUseManualToc(e.target.checked)}
+                                />
+                                Manuelles Inhaltsverzeichnis verwenden
+                            </label>
+                            <span style={{fontSize: "0.75rem", color: "var(--text-muted)", marginLeft: 26, display: "block"}}>
+                                {useManualToc
+                                    ? "Das vorhandene Inhaltsverzeichnis wird verwendet (kein automatisch generiertes)."
+                                    : "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert)."}
+                            </span>
                         </div>
                     )}
 

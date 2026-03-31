@@ -17,13 +17,19 @@ class PandocError(Exception):
     pass
 
 
-def run_pandoc(project_dir: Path, fmt: str, config: dict[str, Any]) -> Path:
+def run_pandoc(
+    project_dir: Path,
+    fmt: str,
+    config: dict[str, Any],
+    use_manual_toc: bool = False,
+) -> Path:
     """Export a scaffolded project to EPUB, PDF, or other formats via manuscripta.
 
     Args:
         project_dir: Path to the manuscripta-compatible project directory.
         fmt: Output format ("epub", "pdf", "docx", "html", "markdown").
         config: Plugin settings dict (toc_depth, etc.)
+        use_manual_toc: If True, use the manual TOC chapter instead of auto-generating.
 
     Returns:
         Path to the generated output file.
@@ -44,6 +50,7 @@ def run_pandoc(project_dir: Path, fmt: str, config: dict[str, Any]) -> Path:
             section_order=section_order,
             book_type=book_type,
             toc_depth=toc_depth,
+            use_manual_toc=use_manual_toc,
         )
     except Exception as e:
         raise PandocError(f"Export failed: {e}")

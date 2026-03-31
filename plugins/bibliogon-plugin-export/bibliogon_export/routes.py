@@ -92,12 +92,13 @@ def export(
     fmt: str,
     book_type: str = "ebook",
     toc_depth: int = 0,
+    use_manual_toc: bool | None = None,
     db: Any = Depends(lambda: None),
 ):
     """Export a book via manuscripta.
 
     Supported formats: epub, pdf, docx, html, markdown, project (ZIP).
-    Query params: book_type (ebook/paperback/hardcover), toc_depth (0=default).
+    Query params: book_type, toc_depth, use_manual_toc (auto-detected if not set).
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(
@@ -133,6 +134,11 @@ def export(
         if toc_depth > 0:
             export_settings["toc_depth"] = toc_depth
 
+        # Auto-detect manual TOC if not explicitly set
+        has_manual_toc = any(ch.get("chapter_type") == "toc" for ch in chapters_data)
+        if use_manual_toc is None:
+            use_manual_toc = has_manual_toc
+
         # Scaffold manuscripta-compatible project structure with export settings
         project_dir = scaffold_project(
             book_data, chapters_data, tmp_dir, export_settings, assets_data,
@@ -159,7 +165,7 @@ def export(
             )
 
         # Export via manuscripta (reads export-settings.yaml from scaffolded project)
-        output_path = run_pandoc(project_dir, fmt, config)
+        output_path = run_pandoc(project_dir, fmt, config, use_manual_toc=use_manual_toc)
 
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
         ext_map = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}

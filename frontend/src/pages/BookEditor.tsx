@@ -244,6 +244,7 @@ export default function BookEditor() {
                     open={showExport}
                     bookId={bookId}
                     bookTitle={book.title}
+                    hasManualToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
                     onClose={() => setShowExport(false)}
                 />
             )}
