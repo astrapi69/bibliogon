@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {BookCreate} from "../api/client";
+import {useState, useEffect} from "react";
+import {api, BookCreate} from "../api/client";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown} from "lucide-react";
@@ -13,10 +13,28 @@ interface Props {
 export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
+    const [authorChoices, setAuthorChoices] = useState<string[]>([]);
     const [language, setLanguage] = useState("de");
     const [subtitle, setSubtitle] = useState("");
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
+
+    // Load author profile on open
+    useEffect(() => {
+        if (!open) return;
+        api.settings.getApp().then((config) => {
+            const authorConfig = (config.author || {}) as Record<string, unknown>;
+            const realName = (authorConfig.name as string) || "";
+            const penNames = Array.isArray(authorConfig.pen_names)
+                ? (authorConfig.pen_names as string[]).filter(Boolean)
+                : [];
+            const choices = realName ? [realName, ...penNames] : penNames;
+            setAuthorChoices(choices);
+            if (!author && realName) {
+                setAuthor(realName);
+            }
+        }).catch(() => {});
+    }, [open]);
 
     const handleSubmit = () => {
         if (!title.trim() || !author.trim()) return;
@@ -60,12 +78,32 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
 
                         <div className="field">
                             <label className="label">Autor *</label>
-                            <input
-                                className="input"
-                                value={author}
-                                onChange={(e) => setAuthor(e.target.value)}
-                                placeholder="Autorenname oder Pen Name"
-                            />
+                            {authorChoices.length > 0 ? (
+                                <Select.Root value={author} onValueChange={setAuthor}>
+                                    <Select.Trigger className="radix-select-trigger">
+                                        <Select.Value placeholder="Autor waehlen..."/>
+                                        <Select.Icon><ChevronDown size={14}/></Select.Icon>
+                                    </Select.Trigger>
+                                    <Select.Portal>
+                                        <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
+                                            <Select.Viewport>
+                                                {authorChoices.map((name) => (
+                                                    <Select.Item key={name} value={name} className="radix-select-item">
+                                                        <Select.ItemText>{name}</Select.ItemText>
+                                                    </Select.Item>
+                                                ))}
+                                            </Select.Viewport>
+                                        </Select.Content>
+                                    </Select.Portal>
+                                </Select.Root>
+                            ) : (
+                                <input
+                                    className="input"
+                                    value={author}
+                                    onChange={(e) => setAuthor(e.target.value)}
+                                    placeholder="Autorenname oder Pen Name"
+                                />
+                            )}
                         </div>
 
                         <div className="field">

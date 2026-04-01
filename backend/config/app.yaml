@@ -10,6 +10,9 @@ app:
   - es
   - fr
   - el
+author:
+  name: ''
+  pen_names: []
 plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins

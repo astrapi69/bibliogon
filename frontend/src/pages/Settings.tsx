@@ -75,6 +75,7 @@ export default function Settings() {
             <Tabs.Root defaultValue="app">
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="app" className="radix-tab-trigger">Allgemein</Tabs.Trigger>
+                    <Tabs.Trigger value="author" className="radix-tab-trigger">Autor</Tabs.Trigger>
                     <Tabs.Trigger value="plugins" className="radix-tab-trigger">Plugins</Tabs.Trigger>
                     <Tabs.Trigger value="licenses" className="radix-tab-trigger">Lizenzen</Tabs.Trigger>
                 </Tabs.List>
@@ -90,6 +91,23 @@ export default function Settings() {
                                 setAppConfig(updated);
                                 showMessage("Gespeichert");
                             } catch (err) {
+                                showMessage("Fehler beim Speichern", true);
+                            }
+                            setSaving(false);
+                        }}
+                        saving={saving}
+                    />
+                </Tabs.Content>
+                <Tabs.Content value="author">
+                    <AuthorSettings
+                        config={appConfig}
+                        onSave={async (data) => {
+                            setSaving(true);
+                            try {
+                                const updated = await api.settings.updateApp(data);
+                                setAppConfig(updated);
+                                showMessage("Autorenprofil gespeichert");
+                            } catch {
                                 showMessage("Fehler beim Speichern", true);
                             }
                             setSaving(false);
@@ -618,6 +636,109 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                     )}
                 </div>
             )}
+        </div>
+    );
+}
+
+// --- License Settings Tab ---
+
+// --- Author Settings Tab ---
+
+function AuthorSettings({config, onSave, saving}: {
+    config: Record<string, unknown>;
+    onSave: (data: Record<string, unknown>) => void;
+    saving: boolean;
+}) {
+    const author = (config.author || {}) as Record<string, unknown>;
+    const [name, setName] = useState((author.name as string) || "");
+    const [penNames, setPenNames] = useState<string[]>(
+        Array.isArray(author.pen_names) ? (author.pen_names as string[]) : []
+    );
+    const [newPenName, setNewPenName] = useState("");
+
+    useEffect(() => {
+        setName((author.name as string) || "");
+        setPenNames(Array.isArray(author.pen_names) ? (author.pen_names as string[]) : []);
+    }, [config]);
+
+    const addPenName = () => {
+        const trimmed = newPenName.trim();
+        if (!trimmed || penNames.includes(trimmed)) return;
+        setPenNames([...penNames, trimmed]);
+        setNewPenName("");
+    };
+
+    const removePenName = (index: number) => {
+        setPenNames(penNames.filter((_, i) => i !== index));
+    };
+
+    return (
+        <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>Autorenprofil</h2>
+            <div style={styles.card}>
+                <div className="field">
+                    <label className="label">Echter Name</label>
+                    <input
+                        className="input"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Dein vollstaendiger Name"
+                    />
+                </div>
+
+                <div className="field" style={{marginTop: 16}}>
+                    <label className="label">Pseudonyme (Pen Names)</label>
+                    <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
+                        Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen waehlen.
+                    </p>
+                    {penNames.length > 0 && (
+                        <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}>
+                            {penNames.map((pn, i) => (
+                                <div key={i} style={{
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    padding: "6px 10px", background: "var(--bg-secondary)",
+                                    borderRadius: "var(--radius-sm)",
+                                }}>
+                                    <span style={{flex: 1, fontSize: "0.875rem"}}>{pn}</span>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => removePenName(i)}
+                                        style={{padding: "2px 6px", color: "var(--danger)"}}
+                                    >
+                                        <X size={12}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div style={{display: "flex", gap: 8}}>
+                        <input
+                            className="input"
+                            value={newPenName}
+                            onChange={(e) => setNewPenName(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && addPenName()}
+                            placeholder="Neues Pseudonym hinzufuegen"
+                            style={{flex: 1}}
+                        />
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={addPenName}
+                            disabled={!newPenName.trim()}
+                        >
+                            <Plus size={14}/> Hinzufuegen
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    className="btn btn-primary"
+                    style={{marginTop: 16}}
+                    disabled={saving}
+                    onClick={() => onSave({author: {name, pen_names: penNames}})}
+                >
+                    <Save size={14}/> Speichern
+                </button>
+            </div>
         </div>
     );
 }

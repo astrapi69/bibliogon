@@ -41,6 +41,7 @@ def get_app_settings() -> dict[str, Any]:
 class AppSettingsUpdate(BaseModel):
     app: dict[str, Any] | None = None
     ui: dict[str, Any] | None = None
+    author: dict[str, Any] | None = None
     plugins: dict[str, Any] | None = None
 
 
@@ -54,6 +55,8 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
         current.setdefault("app", {}).update(body.app)
     if body.ui is not None:
         current.setdefault("ui", {}).update(body.ui)
+    if body.author is not None:
+        current.setdefault("author", {}).update(body.author)
     if body.plugins is not None:
         current.setdefault("plugins", {}).update(body.plugins)
 
