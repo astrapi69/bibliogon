@@ -98,3 +98,67 @@
 - Bei Unklarheiten: Nachfragen, nicht raten.
 - Wenn etwas gegen die Architektur verstoesst: Sagen, nicht stillschweigend umgehen.
 - Vorschlaege willkommen, aber als Vorschlag kennzeichnen.
+
+## Dokumentations-Protokoll
+
+Jede Session wird dokumentiert. Das ist Pflicht, nicht optional. Die Dokumentation dient als Retrospektive und als Wissensbasis fuer zukuenftige Sessions.
+
+### Chat-Journal (docs/chat-journal-session-{YYYY-MM-DD}.md)
+
+Jeder relevante Arbeitsschritt wird protokolliert. Format pro Eintrag:
+
+```markdown
+## {Nr}. {Kurztitel}
+
+- Original-Prompt: Was wurde gesagt/gefragt
+- Optimierter Prompt: Wie haette man es praeziser formulieren koennen
+- Ziel: Was sollte erreicht werden
+- Ergebnis: Was wurde tatsaechlich gemacht
+- Commit: {Hash} (wenn Code geaendert wurde)
+```
+
+Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/geaenderte Dateien, Hauptergebnisse).
+
+**Was ins Journal gehoert:**
+- Jede implementierte Aenderung (Feature, Fix, Refactoring)
+- Architektur-Entscheidungen und deren Begruendung
+- Probleme die aufgetreten sind und wie sie geloest wurden
+- Prompt-Optimierungen (Original vs. besser formuliert)
+
+**Was NICHT ins Journal gehoert:**
+- Smalltalk, Wiederholungen, Tippfehler-Korrekturen
+
+### Wann CLAUDE.md aktualisieren
+
+- Neues Plugin hinzugefuegt oder entfernt
+- Neue Dependency im Tech-Stack
+- Test-Zahlen haben sich wesentlich geaendert
+- Neue Befehle im Makefile
+- Verzeichnisstruktur hat sich geaendert
+- Neue API-Endpunkte
+- Phase abgeschlossen oder neue Phase begonnen
+- Version hochgezaehlt
+
+### Wann CONCEPT.md aktualisieren
+
+- Architektur-Entscheidung getroffen oder geaendert
+- Neues Plugin im Katalog (geplant oder implementiert)
+- Roadmap-Phase erledigt oder neue Phase definiert
+- Offene Frage beantwortet oder neue aufgetaucht
+- Geschaeftsmodell oder Lizenzierung geaendert
+- Tech-Stack-Aenderung (neue Library, Framework-Wechsel)
+- UI-Strategie geaendert (neue Slots, neue Bibliotheken)
+
+### Wann lessons-learned.md aktualisieren
+
+- Neuer Fallstrick entdeckt (Bug der durch falsches Pattern entstand)
+- Workaround fuer Library-Limitation gefunden
+- Import/Export-Edge-Case geloest
+- CSS/TipTap-Spezifitaetsproblem geloest
+
+### Ablauf am Session-Ende
+
+1. Chat-Journal-Eintrag fuer alle Aenderungen der Session schreiben.
+2. Pruefen ob CLAUDE.md, CONCEPT.md oder lessons-learned.md Updates brauchen.
+3. Alles committen: `docs: update chat journal and documentation`
+4. Bei groesseren Meilensteinen: Zusammenfassung mit Statistiken ins Journal.
