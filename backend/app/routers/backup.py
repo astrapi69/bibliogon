@@ -831,7 +831,14 @@ def _md_to_html(text: str) -> str:
         extensions=["tables", "fenced_code", "attr_list"],
         output_format="html",
     )
-    # <figure><img/><figcaption> is kept as-is - the Figure extension parses it natively
+    # Figure extension parses <figure> with figcaption natively.
+    # But <figure> WITHOUT figcaption causes double rendering (both <figure> and <img> match).
+    # Strip <figure> wrapper when there's no <figcaption>, keeping just <img>.
+    html = _re.sub(
+        r"<figure>\s*(<img[^>]*/>)\s*</figure>",
+        r"\1",
+        html,
+    )
     return html
 
 
