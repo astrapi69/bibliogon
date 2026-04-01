@@ -103,6 +103,13 @@ Vordefinierte UI-Slots:
 
 Fuer komplexe Plugin-UIs: Web Components als Custom Elements (kompiliertes JS-Bundle im Plugin-ZIP).
 
+### TipTap Editor
+
+- 15 offizielle Extensions + 1 Community (Figure/Figcaption).
+- 24 Toolbar-Buttons.
+- Vor Custom-Code IMMER pruefen ob eine offizielle TipTap-Extension existiert.
+- Siehe lessons-learned.md fuer bekannte TipTap-Fallstricke.
+
 ### Komponentenstruktur
 
 - Pages in frontend/src/pages/ (Dashboard, BookEditor, Settings, Help, GetStarted).

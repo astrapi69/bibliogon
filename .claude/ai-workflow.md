@@ -46,6 +46,8 @@
 - HTML als Speicherformat. TipTap JSON ist das interne Format.
 - Tailwind, styled-components, emotion oder andere CSS-Frameworks.
 - Andere Icon-Libraries als Lucide React.
+- Custom TipTap-Extensions bauen ohne vorher zu pruefen ob eine offizielle existiert.
+- Regex-basierte HTML-Konverter fuer verschachtelte Strukturen (HTMLParser nutzen).
 
 ## Implizite Annahmen (die Claude Code kennen muss)
 
@@ -80,10 +82,15 @@
 - Plugin-spezifische Strings in der Plugin-YAML (display_name, description).
 
 ### Aktueller Stand
-- Version: 0.7.0 (Phase 7 abgeschlossen).
+- Version: 0.7.0 (Phase 7 abgeschlossen, GitHub Release v0.7.0 existiert).
 - Naechste Phase: 8 (Audiobook-Plugin).
 - 130 Tests (23 export, 8 kinderbuch, 10 kdp, 7 grammar, 30 backend, 52 e2e).
+- 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
+- 24 Toolbar-Buttons im Editor.
+- Deployment: Docker Compose, Port 7880, install.sh One-Liner.
 - Offene Fragen: Frontend-Plugin-Loading (Module Federation vs. importmaps), Plugin-DB-Migrationen (Alembic-Strategie).
+- WICHTIG: Vor Custom-Code IMMER pruefen ob eine TipTap-Extension oder Library existiert.
+- WICHTIG: Siehe lessons-learned.md fuer bekannte Fallstricke (TipTap, Import, Export).
 
 ## Kommunikation
 

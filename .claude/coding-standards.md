@@ -15,6 +15,7 @@
 - Async bevorzugen wo FastAPI es unterstuetzt.
 - Import-Reihenfolge: stdlib, third-party, local (isort-kompatibel).
 - Pydantic v2 fuer Schemas. Field-Validatoren statt manuelle Checks.
+- HTML-Konvertierung: HTMLParser-basiert, KEIN Regex fuer verschachtelte Strukturen.
 
 ## TypeScript (Frontend)
 
@@ -79,6 +80,6 @@
 
 Neue Dependencies nur nach Rueckfrage einfuehren. Bestehender Stack:
 
-Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML
-Frontend: React 18, TypeScript, TipTap, Vite, Radix UI, @dnd-kit, Lucide, react-toastify
+Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML, markdown (MD->HTML)
+Frontend: React 18, TypeScript, TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
 Tooling: Poetry, npm, Docker, Make, Playwright
