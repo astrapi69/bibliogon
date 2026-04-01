@@ -259,7 +259,7 @@ function nodeToMarkdown(node: Record<string, unknown>): string {
         const code = (content || []).map((n) => (n.text as string) || "").join("");
         return "```" + lang + "\n" + code + "\n```";
     }
-    if (type === "figure") {
+    if (type === "imageFigure" || type === "figure") {
         const src = (attrs?.src as string) || "";
         const alt = (attrs?.alt as string) || "";
         const caption = content ? inlineToMarkdown(content) : "";
