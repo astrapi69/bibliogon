@@ -561,3 +561,109 @@ def test_figcaption_roundtrip_export():
     assert "My caption text" in md
 
     _cleanup(book_id)
+
+
+# --- Image without figcaption (no double rendering) ---
+
+
+def test_image_without_figcaption_no_figure_wrapper():
+    """Images without figcaption should be stored as bare <img> (no <figure> wrapper)."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Test" />\n'
+                '</figure>\n\n'
+                'Text after.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+
+    # Should have <img> but NOT <figure> wrapper (prevents double rendering)
+    assert "<img" in ch["content"]
+    assert "<figure>" not in ch["content"], \
+        "Images without figcaption should not have <figure> wrapper"
+
+    _cleanup(book_id)
+
+
+def test_image_with_figcaption_keeps_figure():
+    """Images with figcaption should keep <figure><figcaption> structure."""
+    buf = _create_project_zip(
+        chapters={
+            "01-chapter.md": (
+                '# Chapter 1\n\n'
+                '<figure>\n'
+                '  <img src="assets/figures/test.png" alt="Test" />\n'
+                '  <figcaption>A caption.</figcaption>\n'
+                '</figure>\n\n'
+                'Text after.\n'
+            ),
+        },
+        assets={"figures/test.png": b"fake-png"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    r = client.get(f"/api/books/{book_id}")
+    ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
+
+    # Should have both <figure> and <figcaption>
+    assert "<figure>" in ch["content"] or "<figcaption>" in ch["content"]
+    assert "A caption" in ch["content"]
+
+    _cleanup(book_id)
+
+
+# --- Backup/Restore with full metadata ---
+
+
+def test_backup_restore_preserves_metadata():
+    """Backup/restore should preserve all extended book metadata."""
+    buf = _create_project_zip(
+        metadata=(
+            "title: Metadata Test\n"
+            "author: Author\n"
+            "publisher: Test Publisher\n"
+            "publisher_city: Berlin\n"
+            "edition: '2'\n"
+            "asin:\n"
+            "  ebook: B0TEST\n"
+        ),
+        chapters={"01-ch.md": "# Ch 1\n\nText.\n"},
+    )
+    result = _import_zip(buf)
+    book_id = result["book_id"]
+
+    # Export backup
+    r = client.get("/api/backup/export")
+    assert r.status_code == 200
+
+    # Delete
+    client.delete(f"/api/books/{book_id}")
+    client.delete(f"/api/books/trash/{book_id}")
+
+    # Restore
+    from io import BytesIO
+    r2 = client.post(
+        "/api/backup/import",
+        files={"file": ("backup.bgb", BytesIO(r.content), "application/octet-stream")},
+    )
+    assert r2.status_code == 200
+
+    # Verify metadata survived
+    r3 = client.get(f"/api/books/{book_id}")
+    book = r3.json()
+    assert book["publisher"] == "Test Publisher"
+    assert book["publisher_city"] == "Berlin"
+    assert book["edition"] == "2"
+    assert book["asin_ebook"] == "B0TEST"
+
+    _cleanup(book_id)

@@ -390,14 +390,25 @@ function markdownToHtml(md: string): string {
             continue;
         }
 
-        // Image: ![alt](src)
-        const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        // Image: ![alt](src) - standalone on a line
+        // If next line is italic (*caption*), treat as figure+figcaption
+        const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
         if (imgMatch) {
-            htmlLines.push(`<img src="${imgMatch[2]}" alt="${imgMatch[1]}" />`);
+            const nextLine = i + 1 < lines.length ? lines[i + 1] : "";
+            const captionMatch = nextLine.match(/^\*([^*]+)\*\s*$/);
+            if (captionMatch) {
+                htmlLines.push(
+                    `<figure><img src="${imgMatch[2]}" alt="${imgMatch[1]}" />` +
+                    `<figcaption>${captionMatch[1]}</figcaption></figure>`
+                );
+                i++; // skip caption line
+            } else {
+                htmlLines.push(`<img src="${imgMatch[2]}" alt="${imgMatch[1]}" />`);
+            }
             continue;
         }
 
-        // Paragraph
+        // Paragraph (also handle inline images)
         htmlLines.push(`<p>${inlineMarkdown(line)}</p>`);
     }
 
@@ -409,6 +420,8 @@ function markdownToHtml(md: string): string {
 
 function inlineMarkdown(text: string): string {
     return text
+        // Images must be before links (both use [...](...)  syntax)
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
         .replace(/\*(.+?)\*/g, "<em>$1</em>")
         .replace(/~~(.+?)~~/g, "<s>$1</s>")
