@@ -12,6 +12,9 @@ venv/
 # Database
 *.db
 
+# Uploads (user assets)
+backend/uploads/
+
 # IDE
 .idea/
 .vscode/
