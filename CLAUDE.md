@@ -7,6 +7,18 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 **Konzept:** docs/CONCEPT.md
 **Version:** 0.7.0
 
+## Entwicklungsrichtlinien
+
+Detaillierte Regeln fuer Claude Code in `.claude/rules/`:
+
+- `architecture.md` - Schichtenmodell, Plugin-Struktur, UI-Strategie, Datenfluss
+- `coding-standards.md` - Benennung, Formatierung, Tests, Dependencies
+- `ai-workflow.md` - Reihenfolge bei Features/Plugins, Verbote, implizite Annahmen
+- `lessons-learned.md` - Bekannte Fallstricke (TipTap, Import, Export, Deployment)
+- `quality-checks.md` - Selbstpruefung, Teststrategie, Checklisten vor dem Commit
+
+Bei Widerspruch zwischen CLAUDE.md und Rules gelten die Rules.
+
 ## Architektur (Zwei-Schichten)
 
 1. **PluginForge** (externes PyPI-Paket, basiert auf pluggy)
