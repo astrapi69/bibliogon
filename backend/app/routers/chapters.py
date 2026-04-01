@@ -143,9 +143,12 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     for ch in chapters:
         if ch.chapter_type == "toc":
             continue
-        # Generate anchor from title (GitHub-style slugification)
+        # Generate anchor from title - both GitHub and Pandoc style
         slug = _slugify(ch.title)
         valid_anchors.add(slug)
+        # Pandoc removes apostrophes entirely instead of replacing with hyphen
+        slug_pandoc = _slugify(ch.title.replace("'", "").replace("\u2019", ""))
+        valid_anchors.add(slug_pandoc)
         # Also check for explicit anchors like {#my-anchor} in title
         explicit = re.search(r"\{#([\w-]+)\}", ch.title)
         if explicit:
@@ -171,14 +174,10 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
             # Markdown headings: ## Title
             if stripped.startswith("#"):
                 heading_text = re.sub(r"^#+\s*", "", stripped)
-                heading_slug = _slugify(heading_text)
-                if heading_slug:
-                    valid_anchors.add(heading_slug)
+                _add_slug_variants(heading_text, valid_anchors)
             # HTML headings: <h2>Title</h2> or <h3>Title</h3>
             for hmatch in re.finditer(r"<h[1-6][^>]*>([^<]+)</h[1-6]>", stripped):
-                heading_slug = _slugify(hmatch.group(1))
-                if heading_slug:
-                    valid_anchors.add(heading_slug)
+                _add_slug_variants(hmatch.group(1), valid_anchors)
         # Check content for explicit heading anchors {#my-anchor}
         for match in re.finditer(r"\{#([\w-]+)\}", ch.content):
             valid_anchors.add(match.group(1))
@@ -220,14 +219,34 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     }
 
 
+def _add_slug_variants(text: str, anchors: set[str]) -> None:
+    """Add both GitHub and Pandoc style slug variants."""
+    slug = _slugify(text)
+    if slug:
+        anchors.add(slug)
+    # Pandoc removes apostrophes entirely
+    cleaned = text.replace("'", "").replace("\u2019", "")
+    if cleaned != text:
+        slug2 = _slugify(cleaned)
+        if slug2:
+            anchors.add(slug2)
+
+
 def _slugify(text: str) -> str:
     """Convert text to a URL-friendly anchor slug (GitHub-style).
 
-    Handles Unicode by transliterating common special characters.
+    Handles Unicode, HTML entities, em-dashes, and apostrophes.
     """
+    import html
     import unicodedata
+    # Decode HTML entities: &amp; -> &, &#39; -> '
+    text = html.unescape(text)
     # Remove explicit anchor markers {#...}
     text = re.sub(r"\s*\{#[\w-]+\}", "", text)
+    # Replace em-dash and en-dash with hyphen
+    text = text.replace("\u2014", "-").replace("\u2013", "-")
+    # Replace apostrophes and quotes with hyphen (GitHub-style: We've -> we-ve)
+    text = re.sub(r"['\u2018\u2019\u201c\u201d]", "-", text)
     # Normalize Unicode (NFD), strip combining marks for transliteration
     text = unicodedata.normalize("NFD", text)
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")
@@ -235,5 +254,6 @@ def _slugify(text: str) -> str:
     slug = text.lower().strip()
     slug = re.sub(r"[^\w\s-]", "", slug)
     slug = re.sub(r"[\s_]+", "-", slug)
+    slug = re.sub(r"-{2,}", "-", slug)  # collapse multiple hyphens
     slug = slug.strip("-")
     return slug

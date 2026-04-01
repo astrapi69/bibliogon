@@ -38,7 +38,7 @@ def export_backup(db: Session = Depends(get_db)):
         book_dir = books_dir / book.id
         book_dir.mkdir(parents=True)
 
-        # Book metadata
+        # Book metadata (all fields)
         book_data = {
             "id": book.id,
             "title": book.title,
@@ -48,6 +48,22 @@ def export_backup(db: Session = Depends(get_db)):
             "series": book.series,
             "series_index": book.series_index,
             "description": book.description,
+            "edition": book.edition,
+            "publisher": book.publisher,
+            "publisher_city": book.publisher_city,
+            "publish_date": book.publish_date,
+            "isbn_ebook": book.isbn_ebook,
+            "isbn_paperback": book.isbn_paperback,
+            "isbn_hardcover": book.isbn_hardcover,
+            "asin_ebook": book.asin_ebook,
+            "asin_paperback": book.asin_paperback,
+            "asin_hardcover": book.asin_hardcover,
+            "keywords": book.keywords,
+            "html_description": book.html_description,
+            "backpage_description": book.backpage_description,
+            "backpage_author_bio": book.backpage_author_bio,
+            "cover_image": book.cover_image,
+            "custom_css": book.custom_css,
             "created_at": book.created_at.isoformat(),
             "updated_at": book.updated_at.isoformat(),
         }
@@ -72,15 +88,25 @@ def export_backup(db: Session = Depends(get_db)):
                 json.dumps(ch_data, ensure_ascii=False, indent=2), encoding="utf-8"
             )
 
-        # Copy assets if they exist on disk
+        # Copy assets with metadata
         assets = db.query(Asset).filter(Asset.book_id == book.id).all()
         if assets:
             assets_dir = book_dir / "assets"
             assets_dir.mkdir()
+            assets_meta = []
             for asset in assets:
+                assets_meta.append({
+                    "id": asset.id,
+                    "filename": asset.filename,
+                    "asset_type": asset.asset_type,
+                    "path": asset.path,
+                })
                 src = Path(asset.path)
                 if src.exists():
                     shutil.copy2(src, assets_dir / asset.filename)
+            (book_dir / "assets.json").write_text(
+                json.dumps(assets_meta, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
 
     # Manifest
     manifest = {
@@ -179,6 +205,22 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
                 series=book_data.get("series"),
                 series_index=book_data.get("series_index"),
                 description=book_data.get("description"),
+                edition=book_data.get("edition"),
+                publisher=book_data.get("publisher"),
+                publisher_city=book_data.get("publisher_city"),
+                publish_date=book_data.get("publish_date"),
+                isbn_ebook=book_data.get("isbn_ebook"),
+                isbn_paperback=book_data.get("isbn_paperback"),
+                isbn_hardcover=book_data.get("isbn_hardcover"),
+                asin_ebook=book_data.get("asin_ebook"),
+                asin_paperback=book_data.get("asin_paperback"),
+                asin_hardcover=book_data.get("asin_hardcover"),
+                keywords=book_data.get("keywords"),
+                html_description=book_data.get("html_description"),
+                backpage_description=book_data.get("backpage_description"),
+                backpage_author_bio=book_data.get("backpage_author_bio"),
+                cover_image=book_data.get("cover_image"),
+                custom_css=book_data.get("custom_css"),
             )
             db.add(book)
 
@@ -196,6 +238,29 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
                         chapter_type=ch_data.get("chapter_type", ChapterType.CHAPTER.value),
                     )
                     db.add(chapter)
+
+            # Restore assets
+            assets_json = book_dir / "assets.json"
+            assets_src_dir = book_dir / "assets"
+            if assets_json.exists():
+                from app.routers.assets import UPLOAD_DIR
+                assets_meta = json.loads(assets_json.read_text(encoding="utf-8"))
+                for meta in assets_meta:
+                    src_file = assets_src_dir / meta["filename"]
+                    # Restore file to uploads directory
+                    asset_type = meta.get("asset_type", "figure")
+                    dest_dir = UPLOAD_DIR / book_data["id"] / asset_type
+                    dest_dir.mkdir(parents=True, exist_ok=True)
+                    dest_path = dest_dir / meta["filename"]
+                    if src_file.exists():
+                        shutil.copy2(src_file, dest_path)
+                    asset = Asset(
+                        book_id=book_data["id"],
+                        filename=meta["filename"],
+                        asset_type=asset_type,
+                        path=str(dest_path),
+                    )
+                    db.add(asset)
 
             imported_count += 1
 
