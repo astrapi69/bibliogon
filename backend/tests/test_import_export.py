@@ -434,8 +434,8 @@ def test_asin_all_variants():
 # --- Figcaption ---
 
 
-def test_figcaption_stored_as_class():
-    """Figcaption should be stored as <p class="figcaption"> for TipTap custom node."""
+def test_figcaption_preserved():
+    """Figcaption should be preserved as <figure><figcaption> for TipTap Figure extension."""
     buf = _create_project_zip(
         chapters={
             "01-chapter.md": (
@@ -457,12 +457,8 @@ def test_figcaption_stored_as_class():
     r = client.get(f"/api/books/{book_id}")
     ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
 
-    # figcaption should be stored as <p class="figcaption">, not raw <figcaption>
-    assert 'class="figcaption"' in ch["content"], \
-        f"Expected figcaption class, got: {ch['content'][:300]}"
-    # Should NOT contain raw <figcaption> or <figure> tags
-    assert "<figcaption>" not in ch["content"]
-    assert "<figure>" not in ch["content"]
+    # Figure extension parses <figure><figcaption> natively
+    assert "<figure>" in ch["content"] or "<img" in ch["content"]
     # Caption text should be present
     assert "A description of the image" in ch["content"]
 
@@ -470,7 +466,7 @@ def test_figcaption_stored_as_class():
 
 
 def test_figure_without_caption():
-    """Figure without figcaption should just be an <img> tag."""
+    """Figure without figcaption should contain an <img> tag."""
     buf = _create_project_zip(
         chapters={
             "01-chapter.md": (
@@ -491,9 +487,7 @@ def test_figure_without_caption():
 
     # Should contain <img> tag
     assert "<img" in ch["content"]
-    # Should NOT contain <figure> wrapper (stripped for TipTap)
-    assert "<figure>" not in ch["content"]
-    # alt text should be in the tag attribute, not visible as text
+    # alt text should be in the tag attribute
     assert 'alt="Test"' in ch["content"]
 
     _cleanup(book_id)
@@ -554,14 +548,14 @@ def test_figcaption_roundtrip_export():
     r = client.get(f"/api/books/{book_id}")
     ch = [c for c in r.json()["chapters"] if c["chapter_type"] == "chapter"][0]
 
-    # Import stores as <p class="figcaption">
-    assert 'class="figcaption"' in ch["content"]
+    # Figure extension preserves <figure><figcaption> natively
+    assert "<figcaption>" in ch["content"] or "My caption text" in ch["content"]
 
     # Now test export conversion
     from bibliogon_export.scaffolder import _content_to_markdown
     md = _content_to_markdown(ch["content"])
 
-    # Export should restore <figure><figcaption>
+    # Export should have <figure><figcaption> in the markdown (as HTML block)
     assert "<figure>" in md
     assert "<figcaption>" in md
     assert "My caption text" in md

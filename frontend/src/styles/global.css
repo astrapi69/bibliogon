@@ -627,13 +627,72 @@ body {
     outline: 2px solid var(--accent);
 }
 
-/* Figcaption: custom TipTap node renders as <figcaption> element. */
-figcaption {
+/* Figcaption: Figure extension renders <figure><figcaption> natively. */
+.tiptap-editor figcaption {
     font-style: italic;
     font-size: calc(1em - 1px);
     color: var(--text-secondary);
     text-align: center;
-    margin: 0.25em 0 1em;
+    margin: 0.5em 2rem;
+    padding: 0.5rem 0;
+}
+
+/* Table styles */
+.tiptap-editor table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.tiptap-editor th,
+.tiptap-editor td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.tiptap-editor th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.tiptap-editor .selectedCell {
+    background: var(--accent-light);
+}
+
+/* Task list styles */
+.tiptap-editor ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.tiptap-editor ul[data-type="taskList"] li input[type="checkbox"] {
+    margin-top: 4px;
+    accent-color: var(--accent);
+}
+
+/* Highlight */
+.tiptap-editor mark {
+    background-color: #fef08a;
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+/* Text alignment */
+.tiptap-editor .has-text-align-center {
+    text-align: center;
+}
+.tiptap-editor .has-text-align-right {
+    text-align: right;
+}
+.tiptap-editor .has-text-align-justify {
+    text-align: justify;
 }
 
 .tiptap-editor blockquote {

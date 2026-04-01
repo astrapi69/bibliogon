@@ -246,34 +246,8 @@ def _content_to_markdown(content: Any) -> str:
         except (json.JSONDecodeError, TypeError):
             pass
         # If content is HTML, convert to markdown
+        # <figure><img/><figcaption> is preserved natively from import
         if content.strip().startswith("<"):
-            # Step 1: Restore figcaptions from <img/><p class="figcaption">caption</p>
-            content = re.sub(
-                r'(<img[^>]*/?>)\s*\n?\s*<p class="figcaption">(.*?)</p>',
-                r'<figure>\n  \1\n  <figcaption>\2</figcaption>\n</figure>',
-                content,
-                flags=re.DOTALL,
-            )
-            # Also handle legacy format <img/><p><em>caption</em></p>
-            content = re.sub(
-                r'(<img[^>]*/?>)\s*\n?\s*<p><em>(.*?)</em></p>',
-                r'<figure>\n  \1\n  <figcaption>\2</figcaption>\n</figure>',
-                content,
-                flags=re.DOTALL,
-            )
-            # Step 2: Wrap remaining standalone <img> (not inside <figure>)
-            def _wrap_img(m: re.Match) -> str:
-                full = m.group(0)
-                # Check if already inside a <figure>
-                start = m.start()
-                before = content[:start]
-                # Count open vs close figure tags
-                opens = before.count("<figure>")
-                closes = before.count("</figure>")
-                if opens > closes:
-                    return full  # already inside <figure>
-                return f'\n<figure>\n  {m.group(1)}\n</figure>\n'
-            content = re.sub(r'(<img[^>]*/?>)', _wrap_img, content)
             return _html_to_markdown(content)
         return content
 

@@ -766,21 +766,7 @@ def _md_to_html(text: str) -> str:
         extensions=["tables", "fenced_code", "attr_list"],
         output_format="html",
     )
-    # Transform <figure> blocks into TipTap-compatible HTML:
-    # <figure><img .../><figcaption>text</figcaption></figure>
-    # becomes: <img .../><p class="figcaption">text</p>
-    # <figure><img .../></figure> becomes just <img .../>
-    html = _re.sub(
-        r"<figure>\s*(<img[^>]*/>)\s*<figcaption>\s*(.*?)\s*</figcaption>\s*</figure>",
-        r'\1\n<p class="figcaption">\2</p>',
-        html,
-        flags=_re.DOTALL,
-    )
-    html = _re.sub(
-        r"<figure>\s*(<img[^>]*/>)\s*</figure>",
-        r"\1",
-        html,
-    )
+    # <figure><img/><figcaption> is kept as-is - the Figure extension parses it natively
     return html
 
 

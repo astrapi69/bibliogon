@@ -3,12 +3,14 @@ import {
     Bold,
     Italic,
     Strikethrough,
+    Underline as UnderlineIcon,
     Code,
     Heading1,
     Heading2,
     Heading3,
     List,
     ListOrdered,
+    ListChecks,
     Quote,
     Minus,
     Undo,
@@ -16,6 +18,14 @@ import {
     Code2,
     FileCode,
     FileText,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    AlignJustify,
+    Highlighter,
+    Subscript,
+    Superscript,
+    Table as TableIcon,
 } from "lucide-react";
 
 interface Props {
@@ -28,18 +38,26 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
     if (!editor) return null;
 
     const items = [
+        // Text formatting
         {
             icon: <Bold size={16}/>,
             action: () => editor.chain().focus().toggleBold().run(),
             active: editor.isActive("bold"),
-            title: "Fett",
+            title: "Fett (Ctrl+B)",
             hidden: markdownMode,
         },
         {
             icon: <Italic size={16}/>,
             action: () => editor.chain().focus().toggleItalic().run(),
             active: editor.isActive("italic"),
-            title: "Kursiv",
+            title: "Kursiv (Ctrl+I)",
+            hidden: markdownMode,
+        },
+        {
+            icon: <UnderlineIcon size={16}/>,
+            action: () => editor.chain().focus().toggleUnderline().run(),
+            active: editor.isActive("underline"),
+            title: "Unterstrichen (Ctrl+U)",
             hidden: markdownMode,
         },
         {
@@ -56,7 +74,30 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
             title: "Code",
             hidden: markdownMode,
         },
+        {
+            icon: <Highlighter size={16}/>,
+            action: () => editor.chain().focus().toggleHighlight().run(),
+            active: editor.isActive("highlight"),
+            title: "Hervorheben",
+            hidden: markdownMode,
+        },
+        {
+            icon: <Subscript size={16}/>,
+            action: () => editor.chain().focus().toggleSubscript().run(),
+            active: editor.isActive("subscript"),
+            title: "Tiefgestellt",
+            hidden: markdownMode,
+        },
+        {
+            icon: <Superscript size={16}/>,
+            action: () => editor.chain().focus().toggleSuperscript().run(),
+            active: editor.isActive("superscript"),
+            title: "Hochgestellt",
+            hidden: markdownMode,
+        },
         {type: "separator" as const, hidden: markdownMode},
+
+        // Headings
         {
             icon: <Heading1 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 1}).run(),
@@ -79,6 +120,39 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
+
+        // Alignment
+        {
+            icon: <AlignLeft size={16}/>,
+            action: () => editor.chain().focus().setTextAlign("left").run(),
+            active: editor.isActive({textAlign: "left"}),
+            title: "Linksbündig",
+            hidden: markdownMode,
+        },
+        {
+            icon: <AlignCenter size={16}/>,
+            action: () => editor.chain().focus().setTextAlign("center").run(),
+            active: editor.isActive({textAlign: "center"}),
+            title: "Zentriert",
+            hidden: markdownMode,
+        },
+        {
+            icon: <AlignRight size={16}/>,
+            action: () => editor.chain().focus().setTextAlign("right").run(),
+            active: editor.isActive({textAlign: "right"}),
+            title: "Rechtsbündig",
+            hidden: markdownMode,
+        },
+        {
+            icon: <AlignJustify size={16}/>,
+            action: () => editor.chain().focus().setTextAlign("justify").run(),
+            active: editor.isActive({textAlign: "justify"}),
+            title: "Blocksatz",
+            hidden: markdownMode,
+        },
+        {type: "separator" as const, hidden: markdownMode},
+
+        // Lists & blocks
         {
             icon: <List size={16}/>,
             action: () => editor.chain().focus().toggleBulletList().run(),
@@ -94,10 +168,24 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
             hidden: markdownMode,
         },
         {
+            icon: <ListChecks size={16}/>,
+            action: () => editor.chain().focus().toggleTaskList().run(),
+            active: editor.isActive("taskList"),
+            title: "Checkliste",
+            hidden: markdownMode,
+        },
+        {
             icon: <Quote size={16}/>,
             action: () => editor.chain().focus().toggleBlockquote().run(),
             active: editor.isActive("blockquote"),
             title: "Zitat",
+            hidden: markdownMode,
+        },
+        {
+            icon: <TableIcon size={16}/>,
+            action: () => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
+            active: editor.isActive("table"),
+            title: "Tabelle einfügen",
             hidden: markdownMode,
         },
         {
@@ -115,18 +203,20 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
+
+        // History
         {
             icon: <Undo size={16}/>,
             action: () => editor.chain().focus().undo().run(),
             active: false,
-            title: "Rückgängig",
+            title: "Rückgängig (Ctrl+Z)",
             hidden: markdownMode,
         },
         {
             icon: <Redo size={16}/>,
             action: () => editor.chain().focus().redo().run(),
             active: false,
-            title: "Wiederholen",
+            title: "Wiederholen (Ctrl+Y)",
             hidden: markdownMode,
         },
     ];

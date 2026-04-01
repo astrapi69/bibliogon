@@ -1,10 +1,24 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import {Figcaption} from "../extensions/figcaption";
+import CharacterCount from "@tiptap/extension-character-count";
+import TextAlign from "@tiptap/extension-text-align";
+import Underline from "@tiptap/extension-underline";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
+import Highlight from "@tiptap/extension-highlight";
+import Typography from "@tiptap/extension-typography";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Color from "@tiptap/extension-color";
+import TextStyle from "@tiptap/extension-text-style";
+import Figure from "@pentestpad/tiptap-extension-figure";
 import Toolbar from "./Toolbar";
 
 type SaveStatus = "idle" | "saving" | "saved";
@@ -19,14 +33,8 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-    const [wordCount, setWordCount] = useState(0);
     const [markdownMode, setMarkdownMode] = useState(false);
     const [markdownText, setMarkdownText] = useState("");
-
-    const updateWordCount = useCallback((text: string) => {
-        const words = text.trim().split(/\s+/).filter((w) => w.length > 0);
-        setWordCount(words.length);
-    }, []);
 
     const debouncedSave = useCallback(
         (json: string) => {
@@ -61,8 +69,7 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const editor = useEditor({
         extensions: [
             StarterKit,
-            Image.configure({
-                inline: false,
+            Figure.configure({
                 allowBase64: true,
             }),
             Link.configure({
@@ -71,7 +78,23 @@ export default function Editor({content, onSave, placeholder}: Props) {
                     class: "tiptap-link",
                 },
             }),
-            Figcaption,
+            TextAlign.configure({
+                types: ["heading", "paragraph"],
+            }),
+            Underline,
+            Subscript,
+            Superscript,
+            Highlight.configure({multicolor: true}),
+            Typography,
+            Table.configure({resizable: true}),
+            TableRow,
+            TableCell,
+            TableHeader,
+            TaskList,
+            TaskItem.configure({nested: true}),
+            CharacterCount,
+            TextStyle,
+            Color,
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
@@ -80,7 +103,6 @@ export default function Editor({content, onSave, placeholder}: Props) {
         onUpdate: ({editor}) => {
             const json = JSON.stringify(editor.getJSON());
             debouncedSave(json);
-            updateWordCount(editor.getText());
         },
         editorProps: {
             attributes: {
@@ -96,18 +118,10 @@ export default function Editor({content, onSave, placeholder}: Props) {
             if (content !== currentJson) {
                 editor.commands.setContent(parseContent(content));
                 lastSaved.current = content;
-                updateWordCount(editor.getText());
                 setMarkdownMode(false);
             }
         }
-    }, [content, editor, updateWordCount]);
-
-    // Initial word count
-    useEffect(() => {
-        if (editor) {
-            updateWordCount(editor.getText());
-        }
-    }, [editor, updateWordCount]);
+    }, [content, editor]);
 
     // Cleanup timer
     useEffect(() => {
@@ -129,7 +143,6 @@ export default function Editor({content, onSave, placeholder}: Props) {
             editor.commands.setContent(html);
             const json = JSON.stringify(editor.getJSON());
             debouncedSave(json);
-            updateWordCount(editor.getText());
             setMarkdownMode(false);
         }
     };
@@ -137,7 +150,6 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const handleMarkdownChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
         setMarkdownText(text);
-        updateWordCount(text);
 
         // Debounced save in markdown mode
         if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -170,7 +182,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
             {/* Status bar */}
             <div style={styles.statusBar}>
                 <span style={styles.wordCount}>
-                    {wordCount} {wordCount === 1 ? "Wort" : "Wörter"}
+                    {editor?.storage.characterCount?.words() ?? 0} Wörter
+                    {" / "}
+                    {editor?.storage.characterCount?.characters() ?? 0} Zeichen
                 </span>
                 {statusLabel && (
                     <span style={{
@@ -245,14 +259,20 @@ function nodeToMarkdown(node: Record<string, unknown>): string {
         const code = (content || []).map((n) => (n.text as string) || "").join("");
         return "```" + lang + "\n" + code + "\n```";
     }
+    if (type === "figure") {
+        const src = (attrs?.src as string) || "";
+        const alt = (attrs?.alt as string) || "";
+        const caption = content ? inlineToMarkdown(content) : "";
+        let md = `![${alt}](${src})`;
+        if (caption) {
+            md += `\n*${caption}*`;
+        }
+        return md;
+    }
     if (type === "image") {
         const src = (attrs?.src as string) || "";
         const alt = (attrs?.alt as string) || "";
         return `![${alt}](${src})`;
-    }
-    if (type === "figcaption") {
-        const text = inlineToMarkdown(content || []);
-        return `*${text}*`;
     }
     if (type === "horizontalRule") {
         return "---";
