@@ -3,8 +3,8 @@
 **Repository:** [github.com/astrapi69/bibliogon](https://github.com/astrapi69/bibliogon)
 **Verwandtes Projekt:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
 **PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
-**Version:** 0.6.0
-**Stand:** 2026-03-27
+**Version:** 0.7.0
+**Stand:** 2026-04-01
 
 ---
 
@@ -77,7 +77,7 @@ pluginforge = "^0.5.0"
 |------------|-------------|
 | PluginForge | Python 3.11+, pluggy, YAML, Entry Points, Alembic |
 | Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL, Pydantic v2 |
-| Frontend | React 18, TypeScript, TipTap, Vite, Radix UI, @dnd-kit, Lucide Icons |
+| Frontend | React 18, TypeScript, TipTap (15 Extensions), Vite, Radix UI, @dnd-kit, Lucide Icons |
 | Export-Plugin | manuscripta (PyPI), Pandoc, write-book-template Struktur |
 | Tooling | Poetry, npm, Docker, Make, Playwright (E2E) |
 
@@ -89,7 +89,16 @@ Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt das Rad neu zu erfinde
 |------------|-------|--------|
 | **Radix UI** | Unstyled accessible Primitives (Dialog, Tabs, Dropdown, Select, Tooltip) | MIT |
 | **@dnd-kit** | Drag-and-Drop (Kapitel-Sortierung, Listen-Reorder) | MIT |
-| **TipTap** | WYSIWYG/Markdown-Editor | MIT |
+| **TipTap** | WYSIWYG/Markdown-Editor (StarterKit + 15 Extensions) | MIT |
+| **@pentestpad/tiptap-extension-figure** | Figure + Figcaption (Bildunterschriften) | MIT |
+| **@tiptap/extension-table** | Tabellen (+ row, cell, header) | MIT |
+| **@tiptap/extension-text-align** | Textausrichtung (links, zentriert, rechts, Blocksatz) | MIT |
+| **@tiptap/extension-typography** | Smart Quotes, Gedankenstriche automatisch | MIT |
+| **@tiptap/extension-character-count** | Wort- und Zeichenzaehlung | MIT |
+| **@tiptap/extension-highlight** | Text hervorheben | MIT |
+| **@tiptap/extension-task-list** | Checklisten mit Checkboxen | MIT |
+| **@tiptap/extension-underline** | Unterstreichung | MIT |
+| **@tiptap/extension-sub/superscript** | Tief-/Hochgestellt (H2O, E=mc2) | MIT |
 | **Lucide React** | Icons | ISC |
 | **react-toastify** | Toast-Notifications | MIT |
 

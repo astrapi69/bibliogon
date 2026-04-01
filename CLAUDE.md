@@ -26,7 +26,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 
 - **PluginForge:** Python 3.11+, pluggy, PyYAML (PyPI: pluginforge ^0.5.0)
 - **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
-- **Frontend:** React 18, TypeScript, TipTap (JSON-Format), Vite, Lucide Icons, Radix UI, @dnd-kit
+- **Frontend:** React 18, TypeScript, TipTap (JSON-Format + 15 Extensions), Vite, Lucide Icons, Radix UI, @dnd-kit
 - **Export-Plugin:** manuscripta (PyPI ^0.6.0), Pandoc, write-book-template Struktur
 - **Tooling:** Poetry, npm, Docker, Make
 
@@ -233,7 +233,22 @@ Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt alles selbst zu bauen.
 | @dnd-kit/utilities | ^3.2 | DnD Hilfsfunktionen |
 | react-toastify | ^11.0 | Toast-Notifications (Info, Erfolg, Fehler) |
 | lucide-react | ^0.468 | Icons |
-| @tiptap/* | ^2.11 | WYSIWYG/Markdown Editor |
+| @tiptap/starter-kit | ^2.11 | WYSIWYG/Markdown Editor Basis |
+| @tiptap/extension-image | ^2.27 | Bilder |
+| @tiptap/extension-link | ^2.27 | Links |
+| @pentestpad/tiptap-extension-figure | ^1.1 | Figure + Figcaption (Bildunterschriften) |
+| @tiptap/extension-text-align | ^2.11 | Textausrichtung (links, zentriert, rechts, Blocksatz) |
+| @tiptap/extension-underline | ^2.11 | Unterstreichung |
+| @tiptap/extension-subscript | ^2.11 | Tiefgestellt (H2O) |
+| @tiptap/extension-superscript | ^2.11 | Hochgestellt (E=mc2) |
+| @tiptap/extension-highlight | ^2.11 | Text hervorheben |
+| @tiptap/extension-typography | ^2.11 | Smart Quotes, Gedankenstriche |
+| @tiptap/extension-table | ^2.11 | Tabellen (+ table-row, table-cell, table-header) |
+| @tiptap/extension-task-list | ^2.11 | Checklisten (+ task-item) |
+| @tiptap/extension-character-count | ^2.11 | Wort- und Zeichenzaehlung |
+| @tiptap/extension-color | ^2.11 | Textfarbe (+ text-style) |
+| @tiptap/extension-placeholder | ^2.11 | Platzhaltertext |
+| @tiptap/extension-code-block-lowlight | ^2.11 | Syntax-Highlighting in Codebloecken |
 
 ### Warum Radix UI
 
@@ -494,13 +509,13 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-110 Tests insgesamt:
+130 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
-- backend: 10 (api, phase4)
+- backend: 30 (api, phase4, import/export mit TOC, figcaption, assets, section-order)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).

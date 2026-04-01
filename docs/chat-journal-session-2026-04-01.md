@@ -255,7 +255,47 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 5. Vollstaendiger write-book-template Import (getestet mit 2 echten Buechern)
 6. EPUB-Export mit Bildern, manuellem TOC, Buchtyp-Suffix
 7. TOC-Link-Validierung
-8. Figure/Figcaption Custom TipTap Extension
+8. 15 offizielle TipTap-Extensions (ersetzt Custom-Code)
+9. Chat-Journal und Dokumentationsaktualisierung
+
+---
+
+## 26. Offizielle TipTap-Extensions statt Custom-Code
+
+- 🔹 **Original-Prompt:** "gibt es da keine extension von tiptap? oder welche tiptap extensions sind fuer uns sinnvoll? Nicht alles selber implementieren wenn andere schon das anbieten"
+- 🔸 **Optimierter Prompt:** "Recherchiere welche offiziellen und Community TipTap-Extensions fuer eine Buchautoren-Plattform sinnvoll sind. Kategorisiere nach: Ersetzt Custom-Code (Figure, CharacterCount), Wichtig fuer Autoren (TextAlign, Table, Sub/Superscript), Nice-to-have (Footnotes, Color). Zeige Paketnamen und v2-Kompatibilitaet."
+- 🎯 Bestehende Loesungen nutzen statt neu bauen
+- ✅ 17 Extensions identifiziert, 15 installiert
+
+---
+
+## 27. Extensions installieren und Custom-Code ersetzen
+
+- 🔹 **Original-Prompt:** "ja aber zuerst machen wir ein chat-journal... ersetze unseren Custom-Code mit den offiziellen Extensions"
+- 🔸 **Optimierter Prompt:** "Installiere alle identifizierten TipTap-Extensions (v2-kompatibel). Ersetze: 1) Custom figcaption.ts durch @pentestpad/tiptap-extension-figure. 2) Manuelle Wortzaehlung durch @tiptap/extension-character-count. Registriere alle neuen Extensions im Editor. Erweitere die Toolbar um Buttons fuer: Underline, Highlight, Sub/Superscript, TextAlign (4x), TaskList, Table. Vereinfache Import (figure nativ) und Export (kein p.figcaption Restore). Loesche Custom-Extension. Aktualisiere Tests."
+- 🎯 Editor-Modernisierung mit offiziellen Extensions
+- 💡 15 neue Extensions, 12 neue Toolbar-Buttons, Custom-Code entfernt
+- ✅ Commit e8473f8: 15 Extensions, Toolbar erweitert, Tests gruen (53 total)
+
+---
+
+## 28. Dokumentation aktualisieren
+
+- 🔹 **Original-Prompt:** "wir sollten das alles im CONCEPT.md, CLAUDE.md und dem chatjournal aktualisieren"
+- 🔸 **Optimierter Prompt:** "Aktualisiere CLAUDE.md (Paket-Tabelle mit allen 15 TipTap-Extensions, Test-Zahlen 130 total, Frontend Tech-Stack), CONCEPT.md (Version 0.7.0, Stand 2026-04-01, Tech-Stack-Tabelle, UI-Strategie-Tabelle mit TipTap-Extensions), Chat-Journal (Eintraege 26-28, Statistiken)."
+- 🎯 Alle Dokumentation auf aktuellem Stand
+- ✅ Alle drei Dateien aktualisiert
+
+---
+
+### Statistiken (aktualisiert)
+
+- **Commits:** 25+
+- **Tests:** 30 Backend + 23 Export-Plugin = 53 total (war 10 am Anfang)
+- **TipTap Extensions:** 15 offizielle + 1 Community (war 3: StarterKit, Placeholder, CodeBlock)
+- **Toolbar-Buttons:** 24 (war 12)
+- **Neue Dateien:** plugin_install.py, Tooltip.tsx, install.sh, start.sh, stop.sh, .env.example, test_import_export.py, chat-journal
+- **Geloeschte Dateien:** figcaption.ts (ersetzt durch @pentestpad/tiptap-extension-figure)
 
 ### Optimierungsvorschlaege fuer zukuenftige Prompts
 1. **Spezifisch sein:** Statt "geht nicht" -> "figcaption wird in Monospace statt Body-Font angezeigt"
