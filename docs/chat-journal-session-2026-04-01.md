@@ -288,14 +288,87 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
-### Statistiken (aktualisiert)
+## 29. Import/Restore und Auto-Migration
 
-- **Commits:** 25+
-- **Tests:** 30 Backend + 23 Export-Plugin = 53 total (war 10 am Anfang)
-- **TipTap Extensions:** 15 offizielle + 1 Community (war 3: StarterKit, Placeholder, CodeBlock)
+- 🔹 **Original-Prompt:** "Buch erstellen, import, restore funkt nicht: Command not found: uvicorn"
+- 🔸 **Optimierter Prompt:** "Backend startet nicht weil Poetry das virtualenv nicht findet. Pruefe poetry env und fuege `poetry env use python3.12` zum Makefile hinzu. Danach: Import/Restore scheitert weil die DB die neuen Spalten (asin_paperback, asin_hardcover) nicht hat. Implementiere eine Auto-Migration in init_db() die fehlende Spalten per ALTER TABLE hinzufuegt."
+- 🎯 App muss starten und Import/Restore funktionieren
+- ✅ Poetry-Fix im Makefile, Auto-Migration in database.py. Commits 5746552, a1846f3
+
+---
+
+## 30. Backup/Restore mit Assets und TOC-Slugifizierung
+
+- 🔹 **Original-Prompt:** (Fortsetzung der Integration-Tests)
+- 🔸 **Optimierter Prompt:** "Backup exportiert keine Asset-Dateien und keine erweiterten Metadaten (ISBN, Publisher). Beim Restore gehen Bilder und Metadaten verloren. Fixe: 1) Alle Buch-Felder im Backup. 2) Asset-Dateien + Metadaten (assets.json) im .bgb. 3) Restore kopiert Assets zurueck auf Disk. 4) TOC-Slugifizierung: Em-Dash/En-Dash zu Hyphen, Apostrophe beide Varianten, HTML-Entities dekodieren."
+- 🎯 Vollstaendiger Backup/Restore Roundtrip
+- ✅ 19/19 Assets nach Restore, alle Metadaten erhalten, 163 TOC-Links 1 broken. Commit c1eb504
+
+---
+
+## 31. Figure ohne Figcaption Doppel-Rendering
+
+- 🔹 **Original-Prompt:** "ich sehe das im vorwort das image doppelt angezeigt wird nur wenn caption gibt nicht"
+- 🔸 **Optimierter Prompt:** "Die @pentestpad/tiptap-extension-figure hat 3 parseHTML-Regeln die bei <figure><img/></figure> (ohne figcaption) sowohl figure als auch img separat matchen. Loesung: Bei Bildern ohne figcaption die figure-Wrapper im Import entfernen, nur nacktes <img> behalten."
+- 🎯 Kein doppeltes Bild im Editor
+- ✅ Commit 7045771
+
+---
+
+## 32. imageFigure Node-Name im Markdown-Toggle
+
+- 🔹 **Original-Prompt:** "wenn ich zwischen editor und markdown wechsle verschwindet das bild"
+- 🔸 **Optimierter Prompt:** "Bilder verschwinden beim WYSIWYG/Markdown-Toggle. Root Cause: Die Figure-Extension registriert den Node als 'imageFigure', nicht 'figure'. nodeToMarkdown prueft type==='figure' und ignoriert den Node. Fix: Beide Namen pruefen."
+- 🎯 Bilder ueberleben den Markdown-Toggle
+- ✅ Commit 2fb68a5
+
+---
+
+## 33. Aufklappbare Sidebar-Sektionen
+
+- 🔹 **Original-Prompt:** "was schoen waere das die front-matter, kapitel und backmatter auf und zuklappbar sind"
+- 🔸 **Optimierter Prompt:** "Mache die drei Sidebar-Sektionen (Front-Matter, Kapitel, Back-Matter) auf/zuklappbar mit ChevronDown/ChevronRight Icons. Default: alle aufgeklappt. Zeige Anzahl der Eintraege pro Sektion."
+- 🎯 Uebersichtlichere Sidebar bei vielen Kapiteln
+- ✅ Commit e3a0b0f
+
+---
+
+## 34. Interaktiver GetStarted-Wizard
+
+- 🔹 **Original-Prompt:** "getstarted gefaellt mir so nicht, das sollte interaktiv sein mit fragezeichen und aufklappbaren dialogen"
+- 🔸 **Optimierter Prompt:** "Ersetze die statische Checkliste durch einen interaktiven Step-by-Step Wizard: Ein Schritt im Fokus, nummerierte Kreise, aufklappbare 'Wie geht das?' Hilfe, Aktions-Buttons, Zurueck/Weiter Navigation, Celebration-Screen. Letzter Schritt: 'Fertig' statt 'Weiter'. Navigation fest am unteren Rand."
+- 🎯 Professionelles Onboarding-Erlebnis
+- ✅ Commits 2d719f2, 30d757f, 6f8dc92
+
+---
+
+## 35. Core-Plugin-Schutz und White-Label
+
+- 🔹 **Original-Prompt:** "plugins werden mit muelleimer versehen... es fehlt ein icon das diese aktiv und standard sind... alle plugins die noch nicht implementiert sind nicht anzeigen... App-Einstellungen Labels... auch die standard plugins entfernen koennen"
+- 🔸 **Optimierter Prompt:** "Vier Aenderungen: 1) Core-Plugins (export, help, getstarted) mit 'Standard' Badge, kein Muelleimer/Deaktivieren. 2) Nicht-implementierte Plugins (kdp, kinderbuch) aus UI entfernen. 3) Labels: Titel->App-Name, Untertitel->Beschreibung. 4) White-Label Wizard: aufklappbarer 'App anpassen' Bereich wo Core-Plugins per Checkbox deaktiviert werden koennen."
+- 🎯 Professionelle Plugin-Verwaltung + White-Label-Faehigkeit
+- ✅ Commits ddf3aa9, 6969feb, 122defa
+
+---
+
+## 36. Protokoll-Aktualisierung
+
+- 🔹 **Original-Prompt:** "erstelle oder aktualisiere alle protokoll dateien wie chatjournal, concept und claude.md"
+- 🔸 **Optimierter Prompt:** "Aktualisiere: CLAUDE.md (Test-Zahlen 133, ChapterType 14 mit toc), CONCEPT.md (Datenmodell v0.7.0 mit allen Feldern, Phase 7 als erledigt mit vollstaendiger Feature-Liste), Chat-Journal (Eintraege 29-36, aktualisierte Statistiken)."
+- 🎯 Dokumentation auf aktuellem Stand gemaess ai-workflow.md Protokoll
+- ✅ Alle Dateien aktualisiert
+
+---
+
+### Statistiken (Session-Ende)
+
+- **Commits:** 40+
+- **Tests:** 33 Backend + 23 Export-Plugin = 56 unit total, 52 E2E = 108 automatisiert (war 10 Backend am Anfang)
+- **TipTap Extensions:** 15 offizielle + 1 Community (war 3)
 - **Toolbar-Buttons:** 24 (war 12)
-- **Neue Dateien:** plugin_install.py, Tooltip.tsx, install.sh, start.sh, stop.sh, .env.example, test_import_export.py, chat-journal
-- **Geloeschte Dateien:** figcaption.ts (ersetzt durch @pentestpad/tiptap-extension-figure)
+- **ChapterTypes:** 14 (war 13, +toc)
+- **Neue Dateien:** plugin_install.py, Tooltip.tsx, install.sh, start.sh, stop.sh, .env.example, test_import_export.py, figcaption.ts (geloescht), chat-journal
+- **Hauptergebnisse:** Plugin-ZIP-Installation, 7 Radix-Migrationen, Deployment-Haertung, vollstaendiger Import/Export mit Assets, TOC-Validierung, 15 TipTap-Extensions, interaktiver GetStarted-Wizard, Autorenprofil mit Pseudonymen, White-Label-Konfiguration, Auto-DB-Migration
 
 ### Optimierungsvorschlaege fuer zukuenftige Prompts
 1. **Spezifisch sein:** Statt "geht nicht" -> "figcaption wird in Monospace statt Body-Font angezeigt"

@@ -394,7 +394,7 @@ Book (Design): cover_image, custom_css
 Chapter: id, book_id (FK), title, content (TipTap JSON), position, chapter_type (enum), created_at, updated_at
 Asset: id, book_id (FK), filename, asset_type (cover/figure/diagram/table), path, uploaded_at
 
-ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude
+ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude, toc
 
 ## Plugins
 
@@ -521,13 +521,13 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-130 Tests insgesamt:
+133 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
-- backend: 30 (api, phase4, import/export mit TOC, figcaption, assets, section-order)
+- backend: 33 (api, phase4, import/export mit TOC, figcaption, assets, section-order, backup/restore)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).

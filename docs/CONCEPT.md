@@ -348,7 +348,7 @@ migrations = ["alembic"]
 
 ### 4.1 Datenmodell
 
-**Aktuell (v0.1.0):**
+**Aktuell (v0.7.0):**
 
 ```
 Book
@@ -360,9 +360,37 @@ Book
   series: str?
   series_index: int?
   description: str?
+  # Publishing
+  edition: str?
+  publisher: str?
+  publisher_city: str?
+  publish_date: str?
+  isbn_ebook: str?
+  isbn_paperback: str?
+  isbn_hardcover: str?
+  asin_ebook: str?
+  asin_paperback: str?
+  asin_hardcover: str?
+  # Marketing
+  keywords: str? (JSON array)
+  html_description: str?
+  backpage_description: str?
+  backpage_author_bio: str?
+  # Design
+  cover_image: str?
+  custom_css: str?
+  # Timestamps
   created_at: datetime
   updated_at: datetime
+  deleted_at: datetime? (Soft-Delete)
   chapters: [Chapter]
+  assets: [Asset]
+
+ChapterType (enum, 14 Werte)
+  CHAPTER, PREFACE, FOREWORD, ACKNOWLEDGMENTS,
+  ABOUT_AUTHOR, APPENDIX, BIBLIOGRAPHY, GLOSSARY,
+  EPILOGUE, IMPRINT, NEXT_IN_SERIES, PART_INTRO,
+  INTERLUDE, TABLE_OF_CONTENTS
 
 Chapter
   id: str (UUID)
@@ -370,16 +398,9 @@ Chapter
   title: str
   content: str (TipTap JSON, siehe 4.3)
   position: int
+  chapter_type: ChapterType (default: CHAPTER)
   created_at: datetime
   updated_at: datetime
-```
-
-**Geplante Erweiterungen:**
-
-```
-ChapterType (enum)
-  CHAPTER, PREFACE, FOREWORD, ACKNOWLEDGMENTS,
-  ABOUT_AUTHOR, APPENDIX, BIBLIOGRAPHY, GLOSSARY
 
 Asset
   id: str
@@ -388,8 +409,12 @@ Asset
   asset_type: str (cover, figure, diagram, table)
   path: str
   uploaded_at: datetime
+```
 
-UserBackup
+**Fruehere Versionen:**
+
+```
+UserBackup (v0.4.0 - jetzt durch .bgb Backup ersetzt)
   id: str
   created_at: datetime
   format: str (zip)
@@ -827,21 +852,26 @@ Wenn sich Hooks aendern, wird eine neue Spec-Version erstellt (v2). Alte Plugins
 - Playwright E2E-Tests (39 Tests)
 - write-book-template Import kompatibel mit echten Projekten
 
-### Phase 7: Erweiterte Buch-Metadaten und Publishing (v0.7.0)
+### Phase 7: Erweiterte Buch-Metadaten und Publishing (v0.7.0) - erledigt
 
-Pro-Buch-Konfiguration (nicht nur globale Plugin-Settings):
-
-- Erweiterte Metadaten: ISBN (ebook/paperback/hardcover), ASIN, Publisher, Edition
-- Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung
+- Erweiterte Metadaten pro Buch: ISBN (ebook/paperback/hardcover), ASIN (alle 3), Publisher, Edition
+- Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung, Autor-Bio
 - Keywords pro Buch (7 SEO-optimierte Keywords fuer KDP)
 - Cover-Image und Custom CSS-Styles pro Buch
-- "Config von anderem Buch übernehmen" Wizard
-- Erweiterte Kapiteltypen: Epilog, Impressum, Nächstes-in-der-Reihe, Part-Intros
-- Print-Varianten pro Kapitel (-print Suffix)
-- GetStarted als interaktiver Assistent/Wizard (geplant):
-  Schritt-für-Schritt-Führung durch die erste Bucherstellung mit
-  kontextbezogenen Hinweisen, automatischer Beispielbuch-Generierung
-  und interaktiver Feature-Tour statt nur statischer Checkliste
+- "Config von anderem Buch uebernehmen" Wizard
+- Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros, Interludien, TOC
+- Buch-Metadaten-Editor im BookEditor (5 Sektionen: Allgemein, Verlag, ISBN, Marketing, Design)
+- Vollstaendiger write-book-template Import (Kapiteltyp-Erkennung, Section-Order, Assets, Bilder)
+- EPUB-Export mit Bildern, manuellem TOC, Buchtyp-Suffix
+- TOC-Link-Validierung (Anker-Links gegen Kapitel und Unterueberschriften)
+- Backup/Restore mit Assets und allen Metadaten
+- Autorenprofil mit Pseudonym-Verwaltung
+- GetStarted als interaktiver Step-by-Step Wizard
+- White-Label Konfiguration (App umbenennen, Standard-Plugins deaktivieren)
+- 15 offizielle TipTap-Extensions + 1 Community (Figure/Figcaption)
+- Aufklappbare Sidebar-Sektionen (Front-Matter, Kapitel, Back-Matter)
+- Auto-Migration fuer DB-Schema (fehlende Spalten automatisch hinzugefuegt)
+- Playwright E2E-Tests erweitert auf 52, Backend-Tests auf 33
 
 ### Phase 8: Audiobook-Plugin (v0.8.0, Premium)
 
