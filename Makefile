@@ -58,32 +58,32 @@ test: test-plugins test-backend ## Run ALL tests (plugins + backend)
 	@echo ""
 	@echo "=== All tests complete ==="
 
-test-backend: ## Run backend tests (10 tests)
+test-backend: ## Run backend tests
 	@echo ""
 	@echo "=== Backend Tests ==="
-	cd backend && poetry run pytest tests/ -v
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch ## Run all plugin tests (48 tests)
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch ## Run all plugin tests
 
-test-plugin-export: ## Run export plugin tests (23 tests)
+test-plugin-export: ## Run export plugin tests
 	@echo ""
 	@echo "=== Export Plugin Tests ==="
-	cd plugins/bibliogon-plugin-export && poetry run pytest tests/ -v
+	cd plugins/bibliogon-plugin-export && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugin-grammar: ## Run grammar plugin tests (7 tests)
+test-plugin-grammar: ## Run grammar plugin tests
 	@echo ""
 	@echo "=== Grammar Plugin Tests ==="
-	cd plugins/bibliogon-plugin-grammar && poetry run pytest tests/ -v
+	cd plugins/bibliogon-plugin-grammar && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugin-kdp: ## Run KDP plugin tests (10 tests)
+test-plugin-kdp: ## Run KDP plugin tests
 	@echo ""
 	@echo "=== KDP Plugin Tests ==="
-	cd plugins/bibliogon-plugin-kdp && poetry run pytest tests/ -v
+	cd plugins/bibliogon-plugin-kdp && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugin-kinderbuch: ## Run kinderbuch plugin tests (8 tests)
+test-plugin-kinderbuch: ## Run kinderbuch plugin tests
 	@echo ""
 	@echo "=== Kinderbuch Plugin Tests ==="
-	cd plugins/bibliogon-plugin-kinderbuch && poetry run pytest tests/ -v
+	cd plugins/bibliogon-plugin-kinderbuch && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- E2E Tests ---
 
