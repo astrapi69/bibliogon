@@ -167,6 +167,12 @@ ui:
     or_sample: "Ou: Creer un livre d'exemple"
     back: "Retour"
     next: "Suivant"
+  languages:
+    de: "Deutsch"
+    en: "English"
+    es: "Espanol"
+    fr: "Francais"
+    el: "Ellinika"
   common:
     cancel: "Annuler"
     create: "Creer"
