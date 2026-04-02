@@ -9,9 +9,11 @@ import {toast} from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
+import {useI18n} from "../hooks/useI18n";
 
 export default function Settings() {
     const navigate = useNavigate();
+    const {t} = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
     const [licenses, setLicenses] = useState<Record<string, unknown>>({});
@@ -61,7 +63,7 @@ export default function Settings() {
                         <button style={styles.backBtn} onClick={() => navigate("/")}>
                             <ChevronLeft size={18}/>
                         </button>
-                        <h1 style={styles.title}>Einstellungen</h1>
+                        <h1 style={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
                     <div style={{display: "flex", alignItems: "center", gap: 8}}>
                         <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
@@ -74,10 +76,10 @@ export default function Settings() {
 
             <Tabs.Root defaultValue="app">
                 <Tabs.List className="radix-tabs-list">
-                    <Tabs.Trigger value="app" className="radix-tab-trigger">Allgemein</Tabs.Trigger>
-                    <Tabs.Trigger value="author" className="radix-tab-trigger">Autor</Tabs.Trigger>
-                    <Tabs.Trigger value="plugins" className="radix-tab-trigger">Plugins</Tabs.Trigger>
-                    <Tabs.Trigger value="licenses" className="radix-tab-trigger">Lizenzen</Tabs.Trigger>
+                    <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
+                    <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
+                    <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
+                    <Tabs.Trigger value="licenses" className="radix-tab-trigger">{t("ui.settings.tab_licenses", "Lizenzen")}</Tabs.Trigger>
                 </Tabs.List>
 
             <main style={styles.main}>
@@ -89,9 +91,9 @@ export default function Settings() {
                             try {
                                 const updated = await api.settings.updateApp(data);
                                 setAppConfig(updated);
-                                showMessage("Gespeichert");
+                                showMessage(t("ui.settings.saved", "Gespeichert"));
                             } catch (err) {
-                                showMessage("Fehler beim Speichern", true);
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
                             }
                             setSaving(false);
                         }}
@@ -106,9 +108,9 @@ export default function Settings() {
                             try {
                                 const updated = await api.settings.updateApp(data);
                                 setAppConfig(updated);
-                                showMessage("Autorenprofil gespeichert");
+                                showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
                             } catch {
-                                showMessage("Fehler beim Speichern", true);
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
                             }
                             setSaving(false);
                         }}
@@ -124,9 +126,9 @@ export default function Settings() {
                             try {
                                 const updated = await api.settings.updatePlugin(name, settings);
                                 setPluginConfigs((prev) => ({...prev, [name]: updated as Record<string, unknown>}));
-                                showMessage(`${name} gespeichert`);
+                                showMessage(`${name} ${t("ui.settings.saved", "gespeichert")}`);
                             } catch (err) {
-                                showMessage("Fehler beim Speichern", true);
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
                             }
                         }}
                         onTogglePlugin={async (name, enable) => {
@@ -138,9 +140,9 @@ export default function Settings() {
                                 }
                                 const app = await api.settings.getApp();
                                 setAppConfig(app);
-                                showMessage(`${name} ${enable ? "aktiviert" : "deaktiviert"}`);
+                                showMessage(`${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`);
                             } catch (err) {
-                                showMessage("Fehler", true);
+                                showMessage(t("ui.common.error", "Fehler"), true);
                             }
                         }}
                         onAddPlugin={async (data) => {
@@ -150,7 +152,7 @@ export default function Settings() {
                                 setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
                                 showMessage(`${data.name} hinzugefuegt`);
                             } catch (err) {
-                                showMessage(`Fehler: ${err}`, true);
+                                showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
                             }
                         }}
                         onRemovePlugin={async (name) => {
@@ -162,9 +164,9 @@ export default function Settings() {
                                 ]);
                                 setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
                                 setAppConfig(app);
-                                showMessage(`${name} entfernt`);
+                                showMessage(`${name} ${t("ui.common.remove", "entfernt")}`);
                             } catch (err) {
-                                showMessage(`Fehler: ${err}`, true);
+                                showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
                             }
                         }}
                     />
@@ -177,9 +179,9 @@ export default function Settings() {
                                 await api.licenses.activate(pluginName, key);
                                 const lics = await api.licenses.list();
                                 setLicenses(lics);
-                                showMessage("Lizenz aktiviert");
+                                showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
                             } catch (err) {
-                                showMessage(`Lizenzfehler: ${err}`);
+                                showMessage(`${t("ui.settings.license_error", "Lizenzfehler")}: ${err}`);
                             }
                         }}
                         onDeactivate={async (pluginName) => {
@@ -187,9 +189,9 @@ export default function Settings() {
                                 await api.licenses.deactivate(pluginName);
                                 const lics = await api.licenses.list();
                                 setLicenses(lics);
-                                showMessage("Lizenz entfernt");
+                                showMessage(t("ui.settings.license_removed", "Lizenz entfernt"));
                             } catch (err) {
-                                showMessage("Fehler", true);
+                                showMessage(t("ui.common.error", "Fehler"), true);
                             }
                         }}
                     />
@@ -207,6 +209,7 @@ function AppSettings({config, onSave, saving}: {
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
 }) {
+    const {t} = useI18n();
     const app = (config.app || {}) as Record<string, unknown>;
     const ui = (config.ui || {}) as Record<string, unknown>;
     const pluginsConfig = (config.plugins || {}) as Record<string, unknown>;
@@ -235,32 +238,32 @@ function AppSettings({config, onSave, saving}: {
 
     return (
         <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>App-Einstellungen</h2>
+            <h2 style={styles.sectionTitle}>{t("ui.settings.app_settings", "App-Einstellungen")}</h2>
             <div style={styles.card}>
                 <div className="field">
-                    <label className="label">Sprache</label>
+                    <label className="label">{t("ui.settings.language", "Sprache")}</label>
                     <RadixSelect
                         value={lang}
                         onValueChange={setLang}
                         options={[
-                            {value: "de", label: "Deutsch"},
-                            {value: "en", label: "English"},
-                            {value: "es", label: "Espanol"},
-                            {value: "fr", label: "Francais"},
-                            {value: "el", label: "Ellinika"},
+                            {value: "de", label: t("ui.languages.de", "Deutsch")},
+                            {value: "en", label: t("ui.languages.en", "English")},
+                            {value: "es", label: t("ui.languages.es", "Espanol")},
+                            {value: "fr", label: t("ui.languages.fr", "Francais")},
+                            {value: "el", label: t("ui.languages.el", "Ellinika")},
                         ]}
                     />
                 </div>
                 <div className="field">
-                    <label className="label">App-Name</label>
+                    <label className="label">{t("ui.settings.app_name", "App-Name")}</label>
                     <input className="input" value={uiTitle} onChange={(e) => setUiTitle(e.target.value)}/>
                 </div>
                 <div className="field">
-                    <label className="label">Beschreibung</label>
+                    <label className="label">{t("ui.settings.description", "Beschreibung")}</label>
                     <input className="input" value={uiSubtitle} onChange={(e) => setUiSubtitle(e.target.value)}/>
                 </div>
                 <div className="field">
-                    <label className="label">Theme</label>
+                    <label className="label">{t("ui.settings.theme", "Theme")}</label>
                     <RadixSelect
                         value={theme}
                         onValueChange={(val) => {
@@ -294,7 +297,7 @@ function AppSettings({config, onSave, saving}: {
                         });
                     }}
                 >
-                    <Save size={14}/> Speichern
+                    <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
             </div>
 
@@ -306,21 +309,20 @@ function AppSettings({config, onSave, saving}: {
                     style={{gap: 6}}
                 >
                     <Wrench size={14}/>
-                    {showAdvanced ? "Erweitert ausblenden" : "Erweitert: App anpassen"}
+                    {showAdvanced ? t("ui.settings.white_label_hide", "Erweitert ausblenden") : t("ui.settings.white_label", "Erweitert: App anpassen")}
                 </button>
 
                 {showAdvanced && (
                     <div style={{...styles.card, marginTop: 12, borderLeft: "3px solid var(--accent)"}}>
                         <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 4}}>
-                            White-Label Konfiguration
+                            {t("ui.settings.white_label_title", "White-Label Konfiguration")}
                         </h3>
                         <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 16}}>
-                            Passe Bibliogon als eigene App an. Aendere den Namen, entferne Standard-Plugins
-                            und erstelle deine eigene Autoren-Plattform.
+                            {t("ui.settings.white_label_desc", "Passe Bibliogon als eigene App an. Aendere den Namen, entferne Standard-Plugins und erstelle deine eigene Autoren-Plattform.")}
                         </p>
 
                         <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8}}>
-                            Standard-Plugins
+                            {t("ui.settings.core_plugins", "Standard-Plugins")}
                         </h4>
                         {[
                             {id: "export", label: "Buch-Export", desc: "EPUB, PDF, Word, Projektstruktur"},
@@ -346,7 +348,7 @@ function AppSettings({config, onSave, saving}: {
                             </label>
                         ))}
                         <p style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 12}}>
-                            Aenderungen werden beim naechsten "Speichern" uebernommen. Neustart erforderlich.
+                            {t("ui.settings.restart_hint", "Aenderungen werden beim naechsten \"Speichern\" uebernommen. Neustart erforderlich.")}
                         </p>
                     </div>
                 )}
@@ -366,6 +368,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onRemovePlugin: (name: string) => void;
     onReload: () => void;
 }) {
+    const {t} = useI18n();
     const [showAdd, setShowAdd] = useState(false);
     const [uploading, setUploading] = useState(false);
     const pluginDialog = useDialog();
@@ -386,7 +389,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 toast.success(result.message);
                 onReload();
             } catch (err) {
-                toast.error(`Installation fehlgeschlagen: ${err}`);
+                toast.error(`${t("ui.common.error", "Fehler")}: ${err}`);
             }
             setUploading(false);
         };
@@ -433,18 +436,18 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     return (
         <div style={styles.section}>
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                <h2 style={styles.sectionTitle}>Plugin-Einstellungen</h2>
+                <h2 style={styles.sectionTitle}>{t("ui.settings.plugin_settings", "Plugin-Einstellungen")}</h2>
                 <div style={{display: "flex", gap: 8}}>
                     <button
                         className="btn btn-ghost btn-sm"
                         onClick={handleUploadPlugin}
                         disabled={uploading}
                     >
-                        <Upload size={14}/> {uploading ? "Installiert..." : "ZIP installieren"}
+                        <Upload size={14}/> {uploading ? t("ui.settings.installing", "Installiert...") : t("ui.settings.install_zip", "ZIP installieren")}
                     </button>
                     {inactivePlugins.length > 0 && (
                         <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
-                            <Plus size={14}/> Plugin hinzufügen
+                            <Plus size={14}/> {t("ui.settings.add_plugin", "Plugin hinzufuegen")}
                         </button>
                     )}
                 </div>
@@ -452,9 +455,9 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
             {showAdd && inactivePlugins.length > 0 && (
                 <div style={styles.card}>
-                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Verfügbare Plugins</h3>
+                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.available_plugins", "Verfuegbare Plugins")}</h3>
                     <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
-                        Diese Plugins sind installiert aber noch nicht aktiviert:
+                        {t("ui.settings.available_plugins_hint", "Diese Plugins sind installiert aber noch nicht aktiviert:")}
                     </p>
                     {inactivePlugins.map(([name, config]) => {
                         const meta = (config.plugin || {}) as Record<string, unknown>;
@@ -473,7 +476,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                         <span style={{
                                             ...styles.badge, marginLeft: 8,
                                             background: "rgba(168,85,247,0.12)", color: "#7c3aed",
-                                        }}>Premium</span>
+                                        }}>{t("ui.settings.premium", "Premium")}</span>
                                     )}
                                     {description && (
                                         <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginTop: 2}}>{description}</p>
@@ -483,14 +486,14 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                     onTogglePlugin(name, true);
                                     setShowAdd(false);
                                 }}>
-                                    <Check size={12}/> Aktivieren
+                                    <Check size={12}/> {t("ui.settings.activate", "Aktivieren")}
                                 </button>
                             </div>
                         );
                     })}
                     <div style={{marginTop: 12}}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setShowAdd(false)}>
-                            Schließen
+                            {t("ui.common.close", "Schliessen")}
                         </button>
                     </div>
                 </div>
@@ -517,7 +520,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
                         onRemove={async () => {
-                            if (await pluginDialog.confirm("Plugin entfernen", `"${displayName}" wirklich entfernen? Die Konfiguration wird geloescht.`, "danger")) {
+                            if (await pluginDialog.confirm(t("ui.settings.remove_plugin", "Plugin entfernen"), `"${displayName}" ${t("ui.settings.remove_confirm", "wirklich entfernen? Die Konfiguration wird geloescht.")}`, "danger")) {
                                 onRemovePlugin(name);
                             }
                         }}
@@ -525,7 +528,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 );
             })}
             {Object.entries(configs).filter(([name]) => enabled.has(name) && !disabled.has(name)).length === 0 && (
-                <p style={{color: "var(--text-muted)"}}>Keine aktiven Plugins. Klicke "Plugin hinzufügen" um verfügbare Plugins zu aktivieren.</p>
+                <p style={{color: "var(--text-muted)"}}>{t("ui.settings.no_active_plugins", "Keine aktiven Plugins. Klicke \"Plugin hinzufuegen\" um verfuegbare Plugins zu aktivieren.")}</p>
             )}
         </div>
     );
@@ -545,6 +548,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
 }) {
+    const {t} = useI18n();
     const isCore = CORE_PLUGINS.has(name);
     const [localSettings, setLocalSettings] = useState(settings);
     const [expanded, setExpanded] = useState(false);
@@ -593,14 +597,14 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                             background: isPremium ? "rgba(168,85,247,0.12)" : "var(--accent-light)",
                             color: isPremium ? "#7c3aed" : "var(--accent)",
                         }}>
-                            {isPremium ? "Premium" : "Kostenlos"}
+                            {isPremium ? t("ui.settings.premium", "Premium") : t("ui.settings.free", "Kostenlos")}
                         </span>
                         <span style={{
                             ...styles.badge,
                             background: enabled ? "rgba(34,197,94,0.12)" : "rgba(168,162,158,0.12)",
                             color: enabled ? "#16a34a" : "var(--text-muted)",
                         }}>
-                            {enabled ? "Aktiv" : "Inaktiv"}
+                            {enabled ? t("ui.settings.active", "Aktiv") : t("ui.settings.inactive", "Inaktiv")}
                         </span>
                         {isCore && (
                             <span style={{
@@ -608,7 +612,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                                 background: "rgba(59,130,246,0.12)",
                                 color: "#2563eb",
                             }}>
-                                Standard
+                                {t("ui.settings.standard", "Standard")}
                             </span>
                         )}
                     </div>
@@ -617,7 +621,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                 <div style={{display: "flex", alignItems: "center", gap: 6, flexShrink: 0}}>
                     {hasSettings && (
                         <button className="btn btn-ghost btn-sm" onClick={() => setExpanded(!expanded)}>
-                            {expanded ? "Zuklappen" : "Einstellungen"}
+                            {expanded ? t("ui.settings.collapse", "Zuklappen") : t("ui.settings.expand_settings", "Einstellungen")}
                         </button>
                     )}
                     {!isCore && (
@@ -632,7 +636,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                         <button
                             className="btn btn-sm btn-danger"
                             onClick={onRemove}
-                            title="Plugin entfernen"
+                            title={t("ui.settings.remove_plugin", "Plugin entfernen")}
                             style={{padding: "4px 6px"}}
                         >
                             <Trash2 size={12}/>
@@ -647,7 +651,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                     {scalarSettings.length > 0 && (
                         <>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
-                                Einstellungen
+                                {t("ui.settings.expand_settings", "Einstellungen")}
                             </h4>
                             <div style={styles.settingsGrid}>
                                 {scalarSettings.map(([key, value]) => (
@@ -665,7 +669,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                                 ))}
                             </div>
                             <button className="btn btn-primary btn-sm mt-1" onClick={() => onSave(localSettings)}>
-                                <Save size={12}/> Speichern
+                                <Save size={12}/> {t("ui.common.save", "Speichern")}
                             </button>
                         </>
                     )}
@@ -720,7 +724,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                                 </div>
                             ))}
                             <button className="btn btn-primary btn-sm" onClick={() => onSave(localSettings)}>
-                                <Save size={12}/> Reihenfolge speichern
+                                <Save size={12}/> {t("ui.common.save", "Speichern")}
                             </button>
                         </div>
                     )}
@@ -754,6 +758,7 @@ function AuthorSettings({config, onSave, saving}: {
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
 }) {
+    const {t} = useI18n();
     const author = (config.author || {}) as Record<string, unknown>;
     const [name, setName] = useState((author.name as string) || "");
     const [penNames, setPenNames] = useState<string[]>(
@@ -779,22 +784,22 @@ function AuthorSettings({config, onSave, saving}: {
 
     return (
         <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Autorenprofil</h2>
+            <h2 style={styles.sectionTitle}>{t("ui.settings.author_profile", "Autorenprofil")}</h2>
             <div style={styles.card}>
                 <div className="field">
-                    <label className="label">Echter Name</label>
+                    <label className="label">{t("ui.settings.real_name", "Echter Name")}</label>
                     <input
                         className="input"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Dein vollstaendiger Name"
+                        placeholder={t("ui.settings.real_name_placeholder", "Dein vollstaendiger Name")}
                     />
                 </div>
 
                 <div className="field" style={{marginTop: 16}}>
-                    <label className="label">Pseudonyme (Pen Names)</label>
+                    <label className="label">{t("ui.settings.pen_names", "Pseudonyme (Pen Names)")}</label>
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
-                        Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen waehlen.
+                        {t("ui.settings.pen_names_hint", "Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen waehlen.")}
                     </p>
                     {penNames.length > 0 && (
                         <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}>
@@ -822,7 +827,7 @@ function AuthorSettings({config, onSave, saving}: {
                             value={newPenName}
                             onChange={(e) => setNewPenName(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && addPenName()}
-                            placeholder="Neues Pseudonym hinzufuegen"
+                            placeholder={t("ui.settings.add_pen_name_placeholder", "Neues Pseudonym hinzufuegen")}
                             style={{flex: 1}}
                         />
                         <button
@@ -830,7 +835,7 @@ function AuthorSettings({config, onSave, saving}: {
                             onClick={addPenName}
                             disabled={!newPenName.trim()}
                         >
-                            <Plus size={14}/> Hinzufuegen
+                            <Plus size={14}/> {t("ui.settings.add_pen_name", "Hinzufuegen")}
                         </button>
                     </div>
                 </div>
@@ -841,7 +846,7 @@ function AuthorSettings({config, onSave, saving}: {
                     disabled={saving}
                     onClick={() => onSave({author: {name, pen_names: penNames}})}
                 >
-                    <Save size={14}/> Speichern
+                    <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
             </div>
         </div>
@@ -855,27 +860,28 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
     onActivate: (pluginName: string, key: string) => void;
     onDeactivate: (pluginName: string) => void;
 }) {
+    const {t} = useI18n();
     const [pluginName, setPluginName] = useState("");
     const [licenseKey, setLicenseKey] = useState("");
 
     return (
         <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Lizenzen</h2>
+            <h2 style={styles.sectionTitle}>{t("ui.settings.licenses", "Lizenzen")}</h2>
 
             {/* Activate new license */}
             <div style={styles.card}>
-                <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Lizenz aktivieren</h3>
+                <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.activate_license", "Lizenz aktivieren")}</h3>
                 <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
                     <input
                         className="input"
-                        placeholder="Plugin-Name (z.B. kinderbuch)"
+                        placeholder={t("ui.settings.plugin_name_placeholder", "Plugin-Name (z.B. kinderbuch)")}
                         value={pluginName}
                         onChange={(e) => setPluginName(e.target.value)}
                         style={{flex: "1 1 200px"}}
                     />
                     <input
                         className="input"
-                        placeholder="Lizenzschluessel"
+                        placeholder={t("ui.settings.license_key_placeholder", "Lizenzschluessel")}
                         value={licenseKey}
                         onChange={(e) => setLicenseKey(e.target.value)}
                         style={{flex: "2 1 300px"}}
@@ -889,7 +895,7 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
                             setLicenseKey("");
                         }}
                     >
-                        <Key size={14}/> Aktivieren
+                        <Key size={14}/> {t("ui.settings.activate", "Aktivieren")}
                     </button>
                 </div>
             </div>
@@ -897,7 +903,7 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
             {/* Active licenses */}
             {Object.keys(licenses).length > 0 && (
                 <div style={styles.card}>
-                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>Aktive Lizenzen</h3>
+                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.active_licenses", "Aktive Lizenzen")}</h3>
                     {Object.entries(licenses).map(([name, info]) => {
                         const lic = info as Record<string, unknown>;
                         const valid = lic.status === "valid";
@@ -911,11 +917,11 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
                                         background: valid ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
                                         color: valid ? "#16a34a" : "#dc2626",
                                     }}>
-                                        {valid ? "Gueltig" : "Ungueltig"}
+                                        {valid ? t("ui.settings.valid", "Gueltig") : t("ui.settings.invalid", "Ungueltig")}
                                     </span>
                                     {typeof lic.expires === "string" && (
                                         <span style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginLeft: 8}}>
-                                            {lic.expires === "lifetime" ? "Unbegrenzt" : `bis ${lic.expires}`}
+                                            {lic.expires === "lifetime" ? t("ui.settings.lifetime", "Unbegrenzt") : `${t("ui.settings.until", "bis")} ${lic.expires}`}
                                         </span>
                                     )}
                                     {typeof lic.error === "string" && (
@@ -925,7 +931,7 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
                                     )}
                                 </div>
                                 <button className="btn btn-danger btn-sm" onClick={() => onDeactivate(name)}>
-                                    Entfernen
+                                    {t("ui.common.remove", "Entfernen")}
                                 </button>
                             </div>
                         );
@@ -934,7 +940,7 @@ function LicenseSettings({licenses, onActivate, onDeactivate}: {
             )}
 
             {Object.keys(licenses).length === 0 && (
-                <p style={{color: "var(--text-muted)", marginTop: 12}}>Keine Lizenzen aktiviert.</p>
+                <p style={{color: "var(--text-muted)", marginTop: 12}}>{t("ui.settings.no_licenses", "Keine Lizenzen aktiviert.")}</p>
             )}
         </div>
     );
