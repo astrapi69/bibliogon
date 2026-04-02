@@ -442,6 +442,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     );
 }
 
+const CORE_PLUGINS = new Set(["export", "help", "getstarted"]);
+
 function PluginCard({name, displayName, description, version, license, enabled, settings, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
@@ -454,6 +456,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
 }) {
+    const isCore = CORE_PLUGINS.has(name);
     const [localSettings, setLocalSettings] = useState(settings);
     const [expanded, setExpanded] = useState(false);
 
@@ -510,6 +513,15 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                         }}>
                             {enabled ? "Aktiv" : "Inaktiv"}
                         </span>
+                        {isCore && (
+                            <span style={{
+                                ...styles.badge,
+                                background: "rgba(59,130,246,0.12)",
+                                color: "#2563eb",
+                            }}>
+                                Standard
+                            </span>
+                        )}
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
                 </div>
@@ -519,20 +531,24 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                             {expanded ? "Zuklappen" : "Einstellungen"}
                         </button>
                     )}
-                    <button
-                        className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
-                        onClick={() => onToggle(!enabled)}
-                    >
-                        {enabled ? <><X size={12}/> Aus</> : <><Check size={12}/> An</>}
-                    </button>
-                    <button
-                        className="btn btn-sm btn-danger"
-                        onClick={onRemove}
-                        title="Plugin entfernen"
-                        style={{padding: "4px 6px"}}
-                    >
-                        <Trash2 size={12}/>
-                    </button>
+                    {!isCore && (
+                        <button
+                            className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
+                            onClick={() => onToggle(!enabled)}
+                        >
+                            {enabled ? <><X size={12}/> Aus</> : <><Check size={12}/> An</>}
+                        </button>
+                    )}
+                    {!isCore && (
+                        <button
+                            className="btn btn-sm btn-danger"
+                            onClick={onRemove}
+                            title="Plugin entfernen"
+                            style={{padding: "4px 6px"}}
+                        >
+                            <Trash2 size={12}/>
+                        </button>
+                    )}
                 </div>
             </div>
 
