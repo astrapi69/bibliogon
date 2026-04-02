@@ -303,13 +303,24 @@ export default function GetStarted() {
                             >
                                 <ArrowLeft size={14}/> Zurueck
                             </button>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                disabled={currentStep === steps.length - 1}
-                                onClick={() => { setCurrentStep(currentStep + 1); setExpandedHelp(false); }}
-                            >
-                                Weiter <ArrowRight size={14}/>
-                            </button>
+                            {currentStep < steps.length - 1 ? (
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => { setCurrentStep(currentStep + 1); setExpandedHelp(false); }}
+                                >
+                                    Weiter <ArrowRight size={14}/>
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => {
+                                        markComplete(step.id);
+                                        navigate("/");
+                                    }}
+                                >
+                                    <Check size={14}/> Fertig - zum Dashboard
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
