@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
+import {useI18n} from "../hooks/useI18n";
 import ThemeToggle from "../components/ThemeToggle";
 import {toast} from "react-toastify";
 import {
@@ -19,16 +20,6 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     "archive": <Archive size={32}/>,
 };
 
-const ACTION_MAP: Record<string, {label: string; path: string}> = {
-    "create-book": {label: "Zum Dashboard", path: "/"},
-    "add-chapters": {label: "Buch oeffnen", path: "/"},
-    "write-content": {label: "Editor oeffnen", path: "/"},
-    "organize": {label: "Buch oeffnen", path: "/"},
-    "export": {label: "Buch oeffnen", path: "/"},
-    "settings": {label: "Einstellungen oeffnen", path: "/settings"},
-    "backup": {label: "Zum Dashboard", path: "/"},
-};
-
 interface GuideStep {
     id: string;
     title: string;
@@ -38,6 +29,7 @@ interface GuideStep {
 
 export default function GetStarted() {
     const navigate = useNavigate();
+    const {t} = useI18n();
     const [steps, setSteps] = useState<GuideStep[]>([]);
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
@@ -46,6 +38,16 @@ export default function GetStarted() {
     });
     const [expandedHelp, setExpandedHelp] = useState(false);
     const [creating, setCreating] = useState(false);
+
+    const ACTION_MAP: Record<string, {label: string; path: string}> = {
+        "create-book": {label: t("ui.get_started.to_dashboard", "Zum Dashboard"), path: "/"},
+        "add-chapters": {label: t("ui.get_started.open_book", "Buch oeffnen"), path: "/"},
+        "write-content": {label: t("ui.get_started.open_editor", "Editor oeffnen"), path: "/"},
+        "organize": {label: t("ui.get_started.open_book", "Buch oeffnen"), path: "/"},
+        "export": {label: t("ui.get_started.open_book", "Buch oeffnen"), path: "/"},
+        "settings": {label: t("ui.get_started.open_settings", "Einstellungen oeffnen"), path: "/settings"},
+        "backup": {label: t("ui.get_started.to_dashboard", "Zum Dashboard"), path: "/"},
+    };
 
     useEffect(() => {
         api.getStarted.guide("de").then((data) => {
@@ -80,10 +82,10 @@ export default function GetStarted() {
             for (const ch of sample.chapters) {
                 await api.chapters.create(book.id, {title: ch.title, content: ch.content});
             }
-            toast.success("Beispielbuch erstellt!");
+            toast.success(t("ui.get_started.sample_book_created", "Beispielbuch erstellt!"));
             navigate(`/book/${book.id}`);
         } catch (err) {
-            toast.error(`Fehler: ${err}`);
+            toast.error(`${t("ui.common.error", "Fehler")}: ${err}`);
         }
         setCreating(false);
     };
@@ -102,7 +104,7 @@ export default function GetStarted() {
                             <ChevronLeft size={18}/>
                         </button>
                         <Rocket size={22} style={{color: "var(--accent)"}}/>
-                        <h1 style={styles.title}>Erste Schritte</h1>
+                        <h1 style={styles.title}>{t("ui.get_started.title", "Erste Schritte")}</h1>
                     </div>
                     <div style={{display: "flex", alignItems: "center", gap: 8}}>
                         <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
@@ -120,7 +122,12 @@ export default function GetStarted() {
                         <div style={{...styles.progressFill, width: `${progress}%`}}/>
                     </div>
                     <span style={styles.progressText}>
-                        {allDone ? "Fertig!" : `Schritt ${currentStep + 1} von ${steps.length}`}
+                        {allDone
+                            ? t("ui.get_started.done", "Fertig!")
+                            : t("ui.get_started.progress", "Schritt {current} von {total}")
+                                .replace("{current}", String(currentStep + 1))
+                                .replace("{total}", String(steps.length))
+                        }
                     </span>
                 </div>
 
@@ -146,21 +153,21 @@ export default function GetStarted() {
                     <div style={styles.doneCard}>
                         <PartyPopper size={40} style={{color: "var(--accent)"}}/>
                         <h2 style={{fontSize: "1.25rem", fontWeight: 600, marginTop: 12}}>
-                            Glueckwunsch!
+                            {t("ui.get_started.congratulations", "Glueckwunsch!")}
                         </h2>
                         <p style={{color: "var(--text-secondary)", marginTop: 8}}>
-                            Du kennst jetzt alle wichtigen Funktionen von Bibliogon.
+                            {t("ui.get_started.all_done", "Du kennst jetzt alle wichtigen Funktionen von Bibliogon.")}
                         </p>
                         <div style={{display: "flex", gap: 12, marginTop: 16}}>
                             <button className="btn btn-primary" onClick={() => navigate("/")}>
-                                Zum Dashboard
+                                {t("ui.get_started.to_dashboard", "Zum Dashboard")}
                             </button>
                             <button className="btn btn-ghost" onClick={() => {
                                 localStorage.removeItem("bibliogon-onboarding");
                                 setCompletedSteps(new Set());
                                 setCurrentStep(0);
                             }}>
-                                Nochmal starten
+                                {t("ui.get_started.restart", "Nochmal starten")}
                             </button>
                         </div>
                     </div>
@@ -188,7 +195,7 @@ export default function GetStarted() {
                             onClick={() => setExpandedHelp(!expandedHelp)}
                         >
                             <HelpCircle size={16}/>
-                            {expandedHelp ? "Hilfe ausblenden" : "Wie geht das?"}
+                            {expandedHelp ? t("ui.get_started.hide_help", "Hilfe ausblenden") : t("ui.get_started.how_to", "Wie geht das?")}
                             {expandedHelp ? <ChevronLeft size={14} style={{transform: "rotate(-90deg)"}}/> : <ChevronRight size={14} style={{transform: "rotate(90deg)"}}/>}
                         </button>
 
@@ -196,60 +203,60 @@ export default function GetStarted() {
                             <div style={styles.helpContent}>
                                 {step.id === "create-book" && (
                                     <ol style={styles.helpList}>
-                                        <li>Gehe zum Dashboard (Startseite)</li>
-                                        <li>Klicke den Button "Neues Buch"</li>
-                                        <li>Gib Titel und Autor ein (Pseudonym wird aus den Einstellungen geladen)</li>
-                                        <li>Waehle die Sprache und klicke "Erstellen"</li>
+                                        <li>{t("ui.get_started.help_create_1", "Gehe zum Dashboard (Startseite)")}</li>
+                                        <li>{t("ui.get_started.help_create_2", "Klicke den Button \"Neues Buch\"")}</li>
+                                        <li>{t("ui.get_started.help_create_3", "Gib Titel und Autor ein (Pseudonym wird aus den Einstellungen geladen)")}</li>
+                                        <li>{t("ui.get_started.help_create_4", "Waehle die Sprache und klicke \"Erstellen\"")}</li>
                                     </ol>
                                 )}
                                 {step.id === "add-chapters" && (
                                     <ol style={styles.helpList}>
-                                        <li>Oeffne ein Buch im Dashboard</li>
-                                        <li>Klicke das "+" neben "Inhalt" in der linken Sidebar</li>
-                                        <li>Waehle den Kapiteltyp: Kapitel, Vorwort, Epilog, etc.</li>
-                                        <li>Das neue Kapitel erscheint in der Sidebar</li>
+                                        <li>{t("ui.get_started.help_chapters_1", "Oeffne ein Buch im Dashboard")}</li>
+                                        <li>{t("ui.get_started.help_chapters_2", "Klicke das \"+\" neben \"Inhalt\" in der linken Sidebar")}</li>
+                                        <li>{t("ui.get_started.help_chapters_3", "Waehle den Kapiteltyp: Kapitel, Vorwort, Epilog, etc.")}</li>
+                                        <li>{t("ui.get_started.help_chapters_4", "Das neue Kapitel erscheint in der Sidebar")}</li>
                                     </ol>
                                 )}
                                 {step.id === "write-content" && (
                                     <ol style={styles.helpList}>
-                                        <li>Klicke auf ein Kapitel in der Sidebar</li>
-                                        <li>Der WYSIWYG-Editor oeffnet sich rechts</li>
-                                        <li>Nutze die Toolbar fuer Formatierung (Fett, Kursiv, Ueberschriften, etc.)</li>
-                                        <li>Wechsle mit dem "Markdown" Button oben rechts in den Markdown-Modus</li>
-                                        <li>Aenderungen werden automatisch gespeichert</li>
+                                        <li>{t("ui.get_started.help_write_1", "Klicke auf ein Kapitel in der Sidebar")}</li>
+                                        <li>{t("ui.get_started.help_write_2", "Der WYSIWYG-Editor oeffnet sich rechts")}</li>
+                                        <li>{t("ui.get_started.help_write_3", "Nutze die Toolbar fuer Formatierung (Fett, Kursiv, Ueberschriften, etc.)")}</li>
+                                        <li>{t("ui.get_started.help_write_4", "Wechsle mit dem \"Markdown\" Button oben rechts in den Markdown-Modus")}</li>
+                                        <li>{t("ui.get_started.help_write_5", "Aenderungen werden automatisch gespeichert")}</li>
                                     </ol>
                                 )}
                                 {step.id === "organize" && (
                                     <ol style={styles.helpList}>
-                                        <li>Greife das Griffsymbol links neben einem Kapitel</li>
-                                        <li>Ziehe es an die gewuenschte Position</li>
-                                        <li>Front Matter, Kapitel und Back Matter sind getrennte Bereiche</li>
-                                        <li>Die Bereiche lassen sich auf- und zuklappen</li>
+                                        <li>{t("ui.get_started.help_organize_1", "Greife das Griffsymbol links neben einem Kapitel")}</li>
+                                        <li>{t("ui.get_started.help_organize_2", "Ziehe es an die gewuenschte Position")}</li>
+                                        <li>{t("ui.get_started.help_organize_3", "Front Matter, Kapitel und Back Matter sind getrennte Bereiche")}</li>
+                                        <li>{t("ui.get_started.help_organize_4", "Die Bereiche lassen sich auf- und zuklappen")}</li>
                                     </ol>
                                 )}
                                 {step.id === "export" && (
                                     <ol style={styles.helpList}>
-                                        <li>Klicke "Exportieren..." unten in der Sidebar</li>
-                                        <li>Waehle das Format: EPUB, PDF, Word, HTML oder Markdown</li>
-                                        <li>Waehle den Buchtyp: E-Book, Taschenbuch oder Hardcover</li>
-                                        <li>Bei vorhandenem Inhaltsverzeichnis: Checkbox "Manuelles TOC verwenden"</li>
-                                        <li>Klicke "Exportieren" - die Datei wird heruntergeladen</li>
+                                        <li>{t("ui.get_started.help_export_1", "Klicke \"Exportieren...\" unten in der Sidebar")}</li>
+                                        <li>{t("ui.get_started.help_export_2", "Waehle das Format: EPUB, PDF, Word, HTML oder Markdown")}</li>
+                                        <li>{t("ui.get_started.help_export_3", "Waehle den Buchtyp: E-Book, Taschenbuch oder Hardcover")}</li>
+                                        <li>{t("ui.get_started.help_export_4", "Bei vorhandenem Inhaltsverzeichnis: Checkbox \"Manuelles TOC verwenden\"")}</li>
+                                        <li>{t("ui.get_started.help_export_5", "Klicke \"Exportieren\" - die Datei wird heruntergeladen")}</li>
                                     </ol>
                                 )}
                                 {step.id === "settings" && (
                                     <ol style={styles.helpList}>
-                                        <li>Oeffne die Einstellungen ueber das Zahnrad-Icon</li>
-                                        <li>Tab "Allgemein": Sprache, Theme, Titel</li>
-                                        <li>Tab "Autor": Dein Name und Pseudonyme eintragen</li>
-                                        <li>Tab "Plugins": Plugins aktivieren, konfigurieren oder per ZIP installieren</li>
+                                        <li>{t("ui.get_started.help_settings_1", "Oeffne die Einstellungen ueber das Zahnrad-Icon")}</li>
+                                        <li>{t("ui.get_started.help_settings_2", "Tab \"Allgemein\": Sprache, Theme, Titel")}</li>
+                                        <li>{t("ui.get_started.help_settings_3", "Tab \"Autor\": Dein Name und Pseudonyme eintragen")}</li>
+                                        <li>{t("ui.get_started.help_settings_4", "Tab \"Plugins\": Plugins aktivieren, konfigurieren oder per ZIP installieren")}</li>
                                     </ol>
                                 )}
                                 {step.id === "backup" && (
                                     <ol style={styles.helpList}>
-                                        <li>Im Dashboard: "Backup" Button erstellt eine .bgb-Datei</li>
-                                        <li>Die Datei enthaelt alle Buecher, Kapitel und Bilder</li>
-                                        <li>"Restore" stellt ein Backup wieder her</li>
-                                        <li>Externe Projekte (.zip, .bgp) koennen ueber "Import" geladen werden</li>
+                                        <li>{t("ui.get_started.help_backup_1", "Im Dashboard: \"Backup\" Button erstellt eine .bgb-Datei")}</li>
+                                        <li>{t("ui.get_started.help_backup_2", "Die Datei enthaelt alle Buecher, Kapitel und Bilder")}</li>
+                                        <li>{t("ui.get_started.help_backup_3", "\"Restore\" stellt ein Backup wieder her")}</li>
+                                        <li>{t("ui.get_started.help_backup_4", "Externe Projekte (.zip, .bgp) koennen ueber \"Import\" geladen werden")}</li>
                                     </ol>
                                 )}
                             </div>
@@ -264,7 +271,7 @@ export default function GetStarted() {
                                     disabled={creating}
                                 >
                                     <BookPlus size={16}/>
-                                    {creating ? "Erstellt..." : "Oder: Beispielbuch erstellen"}
+                                    {creating ? t("ui.get_started.creating", "Erstellt...") : t("ui.get_started.or_sample", "Oder: Beispielbuch erstellen")}
                                 </button>
                             )}
                             {ACTION_MAP[step.id] && (
@@ -289,7 +296,7 @@ export default function GetStarted() {
                                         }
                                     }}
                                 >
-                                    <Check size={16}/> Als erledigt markieren
+                                    <Check size={16}/> {t("ui.get_started.mark_complete", "Als erledigt markieren")}
                                 </button>
                             )}
                         </div>
@@ -304,14 +311,14 @@ export default function GetStarted() {
                                 disabled={currentStep === 0}
                                 onClick={() => { setCurrentStep(currentStep - 1); setExpandedHelp(false); }}
                             >
-                                <ArrowLeft size={14}/> Zurueck
+                                <ArrowLeft size={14}/> {t("ui.get_started.back", "Zurueck")}
                             </button>
                             {currentStep < steps.length - 1 ? (
                                 <button
                                     className="btn btn-ghost btn-sm"
                                     onClick={() => { setCurrentStep(currentStep + 1); setExpandedHelp(false); }}
                                 >
-                                    Weiter <ArrowRight size={14}/>
+                                    {t("ui.get_started.next", "Weiter")} <ArrowRight size={14}/>
                                 </button>
                             ) : (
                                 <button
@@ -321,7 +328,7 @@ export default function GetStarted() {
                                         navigate("/");
                                     }}
                                 >
-                                    <Check size={14}/> Fertig - zum Dashboard
+                                    <Check size={14}/> {t("ui.get_started.finish", "Fertig - zum Dashboard")}
                                 </button>
                             )}
                         </div>
