@@ -5,6 +5,8 @@ import {
     Trash2,
     GripVertical,
     ChevronLeft,
+    ChevronDown,
+    ChevronRight,
     Download,
     FileText,
     ListChecks,
@@ -204,6 +206,11 @@ export default function ChapterSidebar({
     const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
 
     const [addMenuOpen, setAddMenuOpen] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+    const toggleSection = (key: string) => {
+        setCollapsedSections((prev) => ({...prev, [key]: !prev[key]}));
+    };
 
     return (
         <aside style={styles.sidebar}>
@@ -228,7 +235,7 @@ export default function ChapterSidebar({
 
             <div style={styles.list}>
                 {/* Add button with dropdown */}
-                <div style={styles.sectionHeader}>
+                <div style={{...styles.sectionHeader, justifyContent: "space-between"}}>
                     <span style={styles.listLabel}>Inhalt</span>
                     <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                         <Tooltip content="Kapitel hinzufügen">
@@ -272,10 +279,40 @@ export default function ChapterSidebar({
                 {frontMatter.length > 0 && (
                     <>
                         <div style={styles.sectionHeader}>
+                            <button style={styles.collapseBtn} onClick={() => toggleSection("front")}>
+                                {collapsedSections.front ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
+                            </button>
                             <span style={styles.listLabel}>Front Matter</span>
+                            <span style={styles.sectionCount}>{frontMatter.length}</span>
                         </div>
+                        {!collapsedSections.front && (
+                            <SortableGroup
+                                chapters={frontMatter}
+                                allChapters={chapters}
+                                activeChapterId={activeChapterId}
+                                onSelect={onSelect}
+                                onDelete={onDelete}
+                                onReorder={onReorder}
+                            />
+                        )}
+                    </>
+                )}
+
+                {/* Main Chapters */}
+                <div style={styles.sectionHeader}>
+                    <button style={styles.collapseBtn} onClick={() => toggleSection("chapters")}>
+                        {collapsedSections.chapters ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
+                    </button>
+                    <span style={styles.listLabel}>Kapitel</span>
+                    <span style={styles.sectionCount}>{mainChapters.length}</span>
+                </div>
+                {!collapsedSections.chapters && (
+                    <>
+                        {mainChapters.length === 0 && (
+                            <p style={styles.empty}>Noch keine Kapitel</p>
+                        )}
                         <SortableGroup
-                            chapters={frontMatter}
+                            chapters={mainChapters}
                             allChapters={chapters}
                             activeChapterId={activeChapterId}
                             onSelect={onSelect}
@@ -285,36 +322,26 @@ export default function ChapterSidebar({
                     </>
                 )}
 
-                {/* Main Chapters */}
-                <div style={styles.sectionHeader}>
-                    <span style={styles.listLabel}>Kapitel</span>
-                </div>
-                {mainChapters.length === 0 && (
-                    <p style={styles.empty}>Noch keine Kapitel</p>
-                )}
-                <SortableGroup
-                    chapters={mainChapters}
-                    allChapters={chapters}
-                    activeChapterId={activeChapterId}
-                    onSelect={onSelect}
-                    onDelete={onDelete}
-                    onReorder={onReorder}
-                />
-
                 {/* Back Matter */}
                 {backMatter.length > 0 && (
                     <>
                         <div style={styles.sectionHeader}>
+                            <button style={styles.collapseBtn} onClick={() => toggleSection("back")}>
+                                {collapsedSections.back ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
+                            </button>
                             <span style={styles.listLabel}>Back Matter</span>
+                            <span style={styles.sectionCount}>{backMatter.length}</span>
                         </div>
-                        <SortableGroup
-                            chapters={backMatter}
-                            allChapters={chapters}
-                            activeChapterId={activeChapterId}
-                            onSelect={onSelect}
-                            onDelete={onDelete}
-                            onReorder={onReorder}
-                        />
+                        {!collapsedSections.back && (
+                            <SortableGroup
+                                chapters={backMatter}
+                                allChapters={chapters}
+                                activeChapterId={activeChapterId}
+                                onSelect={onSelect}
+                                onDelete={onDelete}
+                                onReorder={onReorder}
+                            />
+                        )}
                     </>
                 )}
             </div>
@@ -376,7 +403,16 @@ const styles: Record<string, React.CSSProperties> = {
         color: "#faf8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     sectionHeader: {
-        padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "16px 16px 8px", display: "flex", alignItems: "center", gap: 4,
+    },
+    collapseBtn: {
+        background: "none", border: "none", color: "rgba(255,255,255,0.35)",
+        cursor: "pointer", padding: 2, borderRadius: 3, display: "flex", alignItems: "center",
+        flexShrink: 0,
+    },
+    sectionCount: {
+        fontSize: "0.625rem", color: "rgba(255,255,255,0.25)",
+        marginLeft: "auto",
     },
     listLabel: {
         fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase" as const,
