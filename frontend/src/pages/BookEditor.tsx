@@ -8,12 +8,14 @@ import BookMetadataEditor from "../components/BookMetadataEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
 import {useI18n} from "../hooks/useI18n";
+import {Menu} from "lucide-react";
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const dialog = useDialog();
     const {t} = useI18n();
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const TYPE_LABELS: Record<ChapterType, string> = {
         chapter: t("ui.chapter_types.chapter", "Kapitel"),
         preface: t("ui.chapter_types.preface", "Vorwort"),
@@ -156,11 +158,22 @@ export default function BookEditor() {
 
     return (
         <div style={styles.layout}>
+            {/* Mobile sidebar toggle */}
+            {!sidebarOpen && (
+                <button
+                    className="show-mobile-only btn-icon"
+                    style={{position: "fixed", top: 12, left: 12, zIndex: 100, background: "var(--bg-card)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)"}}
+                    onClick={() => setSidebarOpen(true)}
+                >
+                    <Menu size={20}/>
+                </button>
+            )}
+            <div className={sidebarOpen ? "sidebar-wrapper sidebar-open" : "sidebar-wrapper sidebar-closed"}>
             <ChapterSidebar
                 bookTitle={book.title}
                 chapters={book.chapters}
                 activeChapterId={showMetadata ? null : activeChapterId}
-                onSelect={(id) => { setActiveChapterId(id); setShowMetadata(false); }}
+                onSelect={(id) => { setActiveChapterId(id); setShowMetadata(false); setSidebarOpen(false); }}
                 onAdd={handleAddChapter}
                 onDelete={handleDeleteChapter}
                 onBack={() => navigate("/")}
@@ -186,6 +199,7 @@ export default function BookEditor() {
                     }
                 }}
             />
+            </div>
 
             {showMetadata ? (
                 <BookMetadataEditor

@@ -6,7 +6,9 @@ import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
+    Menu,
 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
@@ -120,47 +122,83 @@ export default function Dashboard() {
                         <h1 style={styles.logoText}>Bibliogon</h1>
                     </div>
                     <div style={styles.headerActions}>
+                        {/* Always visible */}
                         <ThemeToggle/>
-                        <button className="btn-icon" onClick={() => navigate("/get-started")} title="Erste Schritte">
-                            <Rocket size={18}/>
-                        </button>
-                        <button className="btn-icon" onClick={() => navigate("/help")} title="Hilfe">
-                            <HelpCircle size={18}/>
-                        </button>
-                        <button className="btn-icon" onClick={() => navigate("/settings")} title="Einstellungen">
-                            <Settings size={18}/>
-                        </button>
-                        <button
-                            className="btn-icon"
-                            onClick={() => setShowTrash(!showTrash)}
-                            title="Papierkorb"
-                            style={showTrash ? {color: "var(--accent)"} : undefined}
-                        >
-                            <Trash2 size={18}/>
-                            {trash.length > 0 && (
-                                <span style={styles.trashBadge}>{trash.length}</span>
-                            )}
-                        </button>
-
-                        <div style={styles.headerSeparator}/>
-
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={handleBackupExport}
-                            title={books.length === 0 ? "Keine Bücher zum Sichern" : "Backup exportieren"}
-                            disabled={books.length === 0}
-                        >
-                            <Download size={14}/> Backup
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => backupInputRef.current?.click()} title="Backup importieren">
-                            <Upload size={14}/> Restore
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => projectInputRef.current?.click()} title="Projekt importieren">
-                            <FolderUp size={14}/> Import
-                        </button>
                         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                            <Plus size={16}/> {t("ui.dashboard.new_book", "Neues Buch")}
+                            <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
                         </button>
+
+                        {/* Desktop: inline buttons */}
+                        <div className="hide-mobile" style={{display: "flex", alignItems: "center", gap: 6}}>
+                            <div style={styles.headerSeparator}/>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={handleBackupExport}
+                                disabled={books.length === 0}
+                            >
+                                <Download size={14}/> Backup
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => backupInputRef.current?.click()}>
+                                <Upload size={14}/> Restore
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => projectInputRef.current?.click()}>
+                                <FolderUp size={14}/> Import
+                            </button>
+                            <div style={styles.headerSeparator}/>
+                            <button className="btn-icon" onClick={() => navigate("/get-started")} title="Erste Schritte">
+                                <Rocket size={18}/>
+                            </button>
+                            <button className="btn-icon" onClick={() => navigate("/help")} title="Hilfe">
+                                <HelpCircle size={18}/>
+                            </button>
+                            <button className="btn-icon" onClick={() => navigate("/settings")} title="Einstellungen">
+                                <Settings size={18}/>
+                            </button>
+                            <button
+                                className="btn-icon"
+                                onClick={() => setShowTrash(!showTrash)}
+                                style={showTrash ? {color: "var(--accent)"} : undefined}
+                            >
+                                <Trash2 size={18}/>
+                                {trash.length > 0 && <span style={styles.trashBadge}>{trash.length}</span>}
+                            </button>
+                        </div>
+
+                        {/* Mobile: hamburger menu */}
+                        <DropdownMenu.Root>
+                            <DropdownMenu.Trigger asChild>
+                                <button className="btn-icon show-mobile-only">
+                                    <Menu size={20}/>
+                                </button>
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content className="hamburger-menu-content" align="end" sideOffset={4}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
+                                        <Download size={16}/> Backup
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => backupInputRef.current?.click()}>
+                                        <Upload size={16}/> Restore
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => projectInputRef.current?.click()}>
+                                        <FolderUp size={16}/> Import
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator"/>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/get-started")}>
+                                        <Rocket size={16}/> Erste Schritte
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/help")}>
+                                        <HelpCircle size={16}/> Hilfe
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/settings")}>
+                                        <Settings size={16}/> Einstellungen
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator"/>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setShowTrash(!showTrash)}>
+                                        <Trash2 size={16}/> Papierkorb {trash.length > 0 && `(${trash.length})`}
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
 
                         <input ref={backupInputRef} type="file" accept=".bgb" style={{display: "none"}} onChange={handleBackupImport}/>
                         <input ref={projectInputRef} type="file" accept=".bgp,.zip" style={{display: "none"}} onChange={handleProjectImport}/>
