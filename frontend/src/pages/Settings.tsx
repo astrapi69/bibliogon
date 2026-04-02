@@ -337,9 +337,22 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         setShowAdd(false);
     };
 
-    // Inactive plugins that can be activated
+    // Inactive plugins: only show plugins that are NOT active core plugins
+    // and NOT unimplemented premium plugins (no entry point loaded)
+    const [loadedPlugins, setLoadedPlugins] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        api.settings.discoveredPlugins().then((discovered) => {
+            setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
+        }).catch(() => {});
+    }, [configs]);
+
     const inactivePlugins = Object.entries(configs)
-        .filter(([name]) => !enabled.has(name) || disabled.has(name));
+        .filter(([name]) => {
+            // Not currently enabled
+            if (enabled.has(name) && !disabled.has(name)) return false;
+            // Only show if actually loaded (has entry point) or is a ZIP-installed plugin
+            return loadedPlugins.has(name) || name.startsWith("installed-");
+        });
 
     return (
         <div style={styles.section}>

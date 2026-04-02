@@ -11,8 +11,10 @@ app:
   - fr
   - el
 author:
-  name: ''
-  pen_names: []
+  name: Asterios Raptis
+  pen_names:
+  - Draven Quantum
+  - Stelio Moon
 plugins:
   entry_point_group: bibliogon.plugins
   config_dir: config/plugins
@@ -20,10 +22,7 @@ plugins:
   - export
   - help
   - getstarted
-  disabled:
-  - grammar
-  - kinderbuch
-  - kdp
+  disabled: []
 ui:
   title: Bibliogon
   subtitle: Bücher schreiben und exportieren
