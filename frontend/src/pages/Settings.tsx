@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
@@ -209,17 +209,28 @@ function AppSettings({config, onSave, saving}: {
 }) {
     const app = (config.app || {}) as Record<string, unknown>;
     const ui = (config.ui || {}) as Record<string, unknown>;
+    const pluginsConfig = (config.plugins || {}) as Record<string, unknown>;
+    const enabledPlugins = (pluginsConfig.enabled as string[]) || [];
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
     const [uiSubtitle, setUiSubtitle] = useState((ui.subtitle as string) || "");
     const [theme, setTheme] = useState((ui.theme as string) || "warm-literary");
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
+        export: true, help: true, getstarted: true,
+    });
 
     useEffect(() => {
         setLang((app.default_language as string) || "de");
         setUiTitle((ui.title as string) || "Bibliogon");
         setUiSubtitle((ui.subtitle as string) || "");
         setTheme((ui.theme as string) || "warm-literary");
+        setCorePlugins({
+            export: enabledPlugins.includes("export"),
+            help: enabledPlugins.includes("help"),
+            getstarted: enabledPlugins.includes("getstarted"),
+        });
     }, [config]);
 
     return (
@@ -227,7 +238,7 @@ function AppSettings({config, onSave, saving}: {
             <h2 style={styles.sectionTitle}>App-Einstellungen</h2>
             <div style={styles.card}>
                 <div className="field">
-                    <label className="label">Standard-Sprache</label>
+                    <label className="label">Sprache</label>
                     <RadixSelect
                         value={lang}
                         onValueChange={setLang}
@@ -241,11 +252,11 @@ function AppSettings({config, onSave, saving}: {
                     />
                 </div>
                 <div className="field">
-                    <label className="label">Titel</label>
+                    <label className="label">App-Name</label>
                     <input className="input" value={uiTitle} onChange={(e) => setUiTitle(e.target.value)}/>
                 </div>
                 <div className="field">
-                    <label className="label">Untertitel</label>
+                    <label className="label">Beschreibung</label>
                     <input className="input" value={uiSubtitle} onChange={(e) => setUiSubtitle(e.target.value)}/>
                 </div>
                 <div className="field">
@@ -267,13 +278,78 @@ function AppSettings({config, onSave, saving}: {
                 <button
                     className="btn btn-primary"
                     disabled={saving}
-                    onClick={() => onSave({
-                        app: {default_language: lang},
-                        ui: {title: uiTitle, subtitle: uiSubtitle, theme},
-                    })}
+                    onClick={() => {
+                        const enabled = Object.entries(corePlugins)
+                            .filter(([, v]) => v).map(([k]) => k);
+                        // Add non-core plugins that were already enabled
+                        for (const p of enabledPlugins) {
+                            if (!["export", "help", "getstarted"].includes(p) && !enabled.includes(p)) {
+                                enabled.push(p);
+                            }
+                        }
+                        onSave({
+                            app: {default_language: lang},
+                            ui: {title: uiTitle, subtitle: uiSubtitle, theme},
+                            plugins: {enabled},
+                        });
+                    }}
                 >
                     <Save size={14}/> Speichern
                 </button>
+            </div>
+
+            {/* Advanced: White-Label */}
+            <div style={{marginTop: 16}}>
+                <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    style={{gap: 6}}
+                >
+                    <Wrench size={14}/>
+                    {showAdvanced ? "Erweitert ausblenden" : "Erweitert: App anpassen"}
+                </button>
+
+                {showAdvanced && (
+                    <div style={{...styles.card, marginTop: 12, borderLeft: "3px solid var(--accent)"}}>
+                        <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 4}}>
+                            White-Label Konfiguration
+                        </h3>
+                        <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 16}}>
+                            Passe Bibliogon als eigene App an. Aendere den Namen, entferne Standard-Plugins
+                            und erstelle deine eigene Autoren-Plattform.
+                        </p>
+
+                        <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8}}>
+                            Standard-Plugins
+                        </h4>
+                        {[
+                            {id: "export", label: "Buch-Export", desc: "EPUB, PDF, Word, Projektstruktur"},
+                            {id: "help", label: "Hilfe", desc: "FAQ, Tastenkuerzel, About"},
+                            {id: "getstarted", label: "Erste Schritte", desc: "Onboarding-Wizard, Beispielbuch"},
+                        ].map((plugin) => (
+                            <label key={plugin.id} style={{
+                                display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+                                borderBottom: "1px solid var(--border)", cursor: "pointer", fontSize: "0.875rem",
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    checked={corePlugins[plugin.id] ?? true}
+                                    onChange={(e) => setCorePlugins((prev) => ({...prev, [plugin.id]: e.target.checked}))}
+                                    style={{accentColor: "var(--accent)"}}
+                                />
+                                <div>
+                                    <strong>{plugin.label}</strong>
+                                    <span style={{color: "var(--text-muted)", marginLeft: 8, fontSize: "0.75rem"}}>
+                                        {plugin.desc}
+                                    </span>
+                                </div>
+                            </label>
+                        ))}
+                        <p style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 12}}>
+                            Aenderungen werden beim naechsten "Speichern" uebernommen. Neustart erforderlich.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );
