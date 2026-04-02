@@ -167,6 +167,12 @@ ui:
     or_sample: "Or: Create sample book"
     back: "Back"
     next: "Next"
+  languages:
+    de: "Deutsch"
+    en: "English"
+    es: "Espanol"
+    fr: "Francais"
+    el: "Ellinika"
   common:
     cancel: "Cancel"
     create: "Create"

@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {Download, ChevronDown, ChevronUp} from "lucide-react";
 import {api} from "../api/client";
+import {useI18n} from "../hooks/useI18n";
 import OrderedListEditor from "./OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -12,22 +13,37 @@ interface Props {
     onClose: () => void;
 }
 
-const FORMATS = [
-    {id: "epub", label: "EPUB", description: "E-Book Format"},
-    {id: "pdf", label: "PDF", description: "Druckfertig"},
-    {id: "docx", label: "Word", description: "Fuer Lektorate"},
-    {id: "html", label: "HTML", description: "Web-Version"},
-    {id: "markdown", label: "Markdown", description: "Rohtext"},
-    {id: "project", label: "Projekt (ZIP)", description: "Manuscripta-Projektstruktur"},
+interface FormatDef {
+    id: string;
+    labelKey: string;
+    labelFallback: string;
+    descKey: string;
+    descFallback: string;
+}
+
+const FORMATS: FormatDef[] = [
+    {id: "epub", labelKey: "ui.formats.epub", labelFallback: "EPUB", descKey: "ui.formats.epub_desc", descFallback: "E-Book Format"},
+    {id: "pdf", labelKey: "ui.formats.pdf", labelFallback: "PDF", descKey: "ui.formats.pdf_desc", descFallback: "Druckfertig"},
+    {id: "docx", labelKey: "ui.formats.docx", labelFallback: "Word", descKey: "ui.formats.docx_desc", descFallback: "Fuer Lektorate"},
+    {id: "html", labelKey: "ui.formats.html", labelFallback: "HTML", descKey: "ui.formats.html_desc", descFallback: "Web-Version"},
+    {id: "markdown", labelKey: "ui.formats.markdown", labelFallback: "Markdown", descKey: "ui.formats.markdown_desc", descFallback: "Rohtext"},
+    {id: "project", labelKey: "ui.formats.project", labelFallback: "Projekt (ZIP)", descKey: "ui.formats.project_desc", descFallback: "Manuscripta-Projektstruktur"},
 ];
 
-const BOOK_TYPES = [
-    {id: "ebook", label: "E-Book"},
-    {id: "paperback", label: "Taschenbuch"},
-    {id: "hardcover", label: "Hardcover"},
+interface BookTypeDef {
+    id: string;
+    labelKey: string;
+    labelFallback: string;
+}
+
+const BOOK_TYPES: BookTypeDef[] = [
+    {id: "ebook", labelKey: "ui.export_dialog.ebook", labelFallback: "E-Book"},
+    {id: "paperback", labelKey: "ui.export_dialog.paperback", labelFallback: "Taschenbuch"},
+    {id: "hardcover", labelKey: "ui.export_dialog.hardcover", labelFallback: "Hardcover"},
 ];
 
 export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onClose}: Props) {
+    const {t} = useI18n();
     const [format, setFormat] = useState("epub");
     const [bookType, setBookType] = useState("ebook");
     const [tocDepth, setTocDepth] = useState(2);
@@ -51,6 +67,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     }, [open]);
 
     const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
+    const selectedFormatLabel = FORMATS.find((f) => f.id === format);
 
     const handleExport = () => {
         setExporting(true);
@@ -76,12 +93,12 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 <Dialog.Content className="dialog-content dialog-content-wide">
                     {/* Header */}
                     <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">Export: {bookTitle}</Dialog.Title>
+                        <Dialog.Title className="dialog-title">{t("ui.export_dialog.title", "Export")}: {bookTitle}</Dialog.Title>
                     </div>
 
                     {/* Format selection */}
                     <div style={{marginBottom: 20}}>
-                        <label className="label">Format</label>
+                        <label className="label">{t("ui.export_dialog.format", "Format")}</label>
                         <div style={styles.formatGrid}>
                             {FORMATS.map((f) => (
                                 <button
@@ -92,8 +109,8 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                     }}
                                     onClick={() => setFormat(f.id)}
                                 >
-                                    <strong>{f.label}</strong>
-                                    <span style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>{f.description}</span>
+                                    <strong>{t(f.labelKey, f.labelFallback)}</strong>
+                                    <span style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>{t(f.descKey, f.descFallback)}</span>
                                 </button>
                             ))}
                         </div>
@@ -102,7 +119,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     {/* Book type */}
                     {format !== "project" && format !== "markdown" && (
                         <div style={{marginBottom: 16}}>
-                            <label className="label">Buchtyp</label>
+                            <label className="label">{t("ui.export_dialog.book_type", "Buchtyp")}</label>
                             <div style={{display: "flex", gap: 8}}>
                                 {BOOK_TYPES.map((bt) => (
                                     <button
@@ -110,7 +127,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                         className={`btn btn-sm ${bookType === bt.id ? "btn-primary" : "btn-secondary"}`}
                                         onClick={() => setBookType(bt.id)}
                                     >
-                                        {bt.label}
+                                        {t(bt.labelKey, bt.labelFallback)}
                                     </button>
                                 ))}
                             </div>
@@ -120,12 +137,12 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     {/* TOC depth */}
                     {format !== "project" && (
                         <div className="field">
-                            <label className="label">Inhaltsverzeichnis-Tiefe</label>
+                            <label className="label">{t("ui.export_dialog.toc_depth", "Inhaltsverzeichnis-Tiefe")}</label>
                             <select className="input" value={tocDepth} onChange={(e) => setTocDepth(Number(e.target.value))}
                                 style={{width: "auto"}}>
-                                <option value={1}>Tiefe 1 (nur #)</option>
-                                <option value={2}>Tiefe 2 (# und ##)</option>
-                                <option value={3}>Tiefe 3 (# ## ###)</option>
+                                <option value={1}>{t("ui.export_dialog.toc_depth_1", "Tiefe 1 (nur #)")}</option>
+                                <option value={2}>{t("ui.export_dialog.toc_depth_2", "Tiefe 2 (# und ##)")}</option>
+                                <option value={3}>{t("ui.export_dialog.toc_depth_3", "Tiefe 3 (# ## ###)")}</option>
                             </select>
                         </div>
                     )}
@@ -139,12 +156,12 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                     checked={useManualToc}
                                     onChange={(e) => setUseManualToc(e.target.checked)}
                                 />
-                                Manuelles Inhaltsverzeichnis verwenden
+                                {t("ui.export_dialog.use_manual_toc", "Manuelles Inhaltsverzeichnis verwenden")}
                             </label>
                             <span style={{fontSize: "0.75rem", color: "var(--text-muted)", marginLeft: 26, display: "block"}}>
                                 {useManualToc
-                                    ? "Das vorhandene Inhaltsverzeichnis wird verwendet (kein automatisch generiertes)."
-                                    : "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert)."}
+                                    ? t("ui.export_dialog.manual_toc_hint", "Das vorhandene Inhaltsverzeichnis wird verwendet (kein automatisch generiertes).")
+                                    : t("ui.export_dialog.auto_toc_hint", "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert).")}
                             </span>
                         </div>
                     )}
@@ -158,7 +175,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                 style={{padding: "4px 0", gap: 4}}
                             >
                                 {showSectionOrder ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                                Kapitelreihenfolge anpassen ({bookType})
+                                {t("ui.export_dialog.section_order", "Kapitelreihenfolge anpassen")} ({bookType})
                             </button>
                             {showSectionOrder && (
                                 <div style={{marginTop: 8}}>
@@ -176,14 +193,16 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
 
                     {/* Export button */}
                     <div className="dialog-footer">
-                        <button className="btn btn-ghost" onClick={onClose}>Abbrechen</button>
+                        <button className="btn btn-ghost" onClick={onClose}>{t("ui.common.cancel", "Abbrechen")}</button>
                         <button
                             className="btn btn-primary"
                             onClick={handleExport}
                             disabled={exporting}
                         >
                             <Download size={16}/>
-                            {exporting ? "Exportiert..." : `Als ${FORMATS.find((f) => f.id === format)?.label} exportieren`}
+                            {exporting
+                                ? t("ui.export_dialog.exporting", "Exportiert...")
+                                : t("ui.export_dialog.export_as", "Als {format} exportieren").replace("{format}", selectedFormatLabel ? t(selectedFormatLabel.labelKey, selectedFormatLabel.labelFallback) : "")}
                         </button>
                     </div>
                 </Dialog.Content>

@@ -167,6 +167,12 @@ ui:
     or_sample: "Oder: Beispielbuch erstellen"
     back: "Zurück"
     next: "Weiter"
+  languages:
+    de: "Deutsch"
+    en: "English"
+    es: "Espanol"
+    fr: "Francais"
+    el: "Ellinika"
   common:
     cancel: "Abbrechen"
     create: "Erstellen"

@@ -1,5 +1,6 @@
 import {useState, useEffect} from "react";
 import {api, BookCreate} from "../api/client";
+import {useI18n} from "../hooks/useI18n";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown} from "lucide-react";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function CreateBookModal({open, onClose, onCreate}: Props) {
+    const {t} = useI18n();
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [authorChoices, setAuthorChoices] = useState<string[]>([]);
@@ -61,27 +63,27 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                 <Dialog.Overlay className="dialog-overlay"/>
                 <Dialog.Content className="dialog-content dialog-content-wide">
                     <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">Neues Buch</Dialog.Title>
+                        <Dialog.Title className="dialog-title">{t("ui.create_book.title", "Neues Buch")}</Dialog.Title>
                     </div>
 
                     <div style={styles.body}>
                         <div className="field">
-                            <label className="label">Titel *</label>
+                            <label className="label">{t("ui.create_book.book_title", "Titel")} *</label>
                             <input
                                 className="input"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Der Titel deines Buches"
+                                placeholder={t("ui.create_book.book_title_placeholder", "Der Titel deines Buches")}
                                 autoFocus
                             />
                         </div>
 
                         <div className="field">
-                            <label className="label">Autor *</label>
+                            <label className="label">{t("ui.create_book.author", "Autor")} *</label>
                             {authorChoices.length > 0 ? (
                                 <Select.Root value={author} onValueChange={setAuthor}>
                                     <Select.Trigger className="radix-select-trigger">
-                                        <Select.Value placeholder="Autor waehlen..."/>
+                                        <Select.Value placeholder={t("ui.create_book.author_select", "Autor waehlen...")}/>
                                         <Select.Icon><ChevronDown size={14}/></Select.Icon>
                                     </Select.Trigger>
                                     <Select.Portal>
@@ -101,24 +103,24 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                                     className="input"
                                     value={author}
                                     onChange={(e) => setAuthor(e.target.value)}
-                                    placeholder="Autorenname oder Pen Name"
+                                    placeholder={t("ui.create_book.author_placeholder", "Autorenname oder Pen Name")}
                                 />
                             )}
                         </div>
 
                         <div className="field">
-                            <label className="label">Untertitel</label>
+                            <label className="label">{t("ui.create_book.subtitle", "Untertitel")}</label>
                             <input
                                 className="input"
                                 value={subtitle}
                                 onChange={(e) => setSubtitle(e.target.value)}
-                                placeholder="Optional"
+                                placeholder={t("ui.create_book.subtitle_placeholder", "Optional")}
                             />
                         </div>
 
                         <div style={styles.row}>
                             <div className="field" style={{flex: 1}}>
-                                <label className="label">Sprache</label>
+                                <label className="label">{t("ui.create_book.language", "Sprache")}</label>
                                 <Select.Root value={language} onValueChange={setLanguage}>
                                     <Select.Trigger className="radix-select-trigger">
                                         <Select.Value/>
@@ -128,11 +130,11 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                                         <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
                                             <Select.Viewport>
                                                 {[
-                                                    {value: "de", label: "Deutsch"},
-                                                    {value: "en", label: "English"},
-                                                    {value: "es", label: "Espanol"},
-                                                    {value: "fr", label: "Francais"},
-                                                    {value: "el", label: "Ellinika"},
+                                                    {value: "de", label: t("ui.languages.de", "Deutsch")},
+                                                    {value: "en", label: t("ui.languages.en", "English")},
+                                                    {value: "es", label: t("ui.languages.es", "Espanol")},
+                                                    {value: "fr", label: t("ui.languages.fr", "Francais")},
+                                                    {value: "el", label: t("ui.languages.el", "Ellinika")},
                                                 ].map((opt) => (
                                                     <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
                                                         <Select.ItemText>{opt.label}</Select.ItemText>
@@ -147,23 +149,23 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
 
                         <div style={styles.row}>
                             <div className="field" style={{flex: 2}}>
-                                <label className="label">Reihe</label>
+                                <label className="label">{t("ui.create_book.series", "Reihe")}</label>
                                 <input
                                     className="input"
                                     value={series}
                                     onChange={(e) => setSeries(e.target.value)}
-                                    placeholder="z.B. Das unsterbliche Muster"
+                                    placeholder={t("ui.create_book.series_placeholder", "z.B. Das unsterbliche Muster")}
                                 />
                             </div>
                             <div className="field" style={{flex: 1}}>
-                                <label className="label">Band</label>
+                                <label className="label">{t("ui.create_book.volume", "Band")}</label>
                                 <input
                                     className="input"
                                     type="number"
                                     min="1"
                                     value={seriesIndex}
                                     onChange={(e) => setSeriesIndex(e.target.value)}
-                                    placeholder="Nr."
+                                    placeholder={t("ui.create_book.volume_placeholder", "Nr.")}
                                 />
                             </div>
                         </div>
@@ -171,14 +173,14 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
 
                     <div className="dialog-footer">
                         <button className="btn btn-ghost" onClick={onClose}>
-                            Abbrechen
+                            {t("ui.common.cancel", "Abbrechen")}
                         </button>
                         <button
                             className="btn btn-primary"
                             onClick={handleSubmit}
                             disabled={!title.trim() || !author.trim()}
                         >
-                            Erstellen
+                            {t("ui.common.create", "Erstellen")}
                         </button>
                     </div>
                 </Dialog.Content>

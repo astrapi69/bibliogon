@@ -10,9 +10,11 @@ import {
 import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
+import {useI18n} from "../hooks/useI18n";
 
 export default function Dashboard() {
     const dialog = useDialog();
+    const {t} = useI18n();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
@@ -157,7 +159,7 @@ export default function Dashboard() {
                             <FolderUp size={14}/> Import
                         </button>
                         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                            <Plus size={16}/> Neues Buch
+                            <Plus size={16}/> {t("ui.dashboard.new_book", "Neues Buch")}
                         </button>
 
                         <input ref={backupInputRef} type="file" accept=".bgb" style={{display: "none"}} onChange={handleBackupImport}/>
@@ -236,7 +238,7 @@ export default function Dashboard() {
                 ) : (
                     <>
                         <div style={styles.mainHeader}>
-                            <h2 style={styles.mainTitle}>Meine Bücher</h2>
+                            <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
                             <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Bücher"}</span>
                         </div>
                         <div style={styles.grid}>
