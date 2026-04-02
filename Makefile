@@ -54,9 +54,14 @@ install-plugins:
 
 # --- Test ---
 
-test: test-plugins test-backend ## Run ALL tests (plugins + backend)
+test: test-plugins test-backend test-frontend ## Run ALL tests (plugins + backend + frontend)
 	@echo ""
 	@echo "=== All tests complete ==="
+
+test-frontend: ## Run frontend unit tests (Vitest)
+	@echo ""
+	@echo "=== Frontend Tests ==="
+	cd frontend && npx vitest run
 
 test-backend: ## Run backend tests
 	@echo ""
