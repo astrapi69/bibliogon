@@ -294,6 +294,9 @@ export default function GetStarted() {
                             )}
                         </div>
 
+                        {/* Spacer pushes navigation to bottom */}
+                        <div style={styles.stepSpacer}/>
+
                         {/* Navigation */}
                         <div style={styles.navigation}>
                             <button
@@ -375,6 +378,8 @@ const styles: Record<string, React.CSSProperties> = {
     stepCard: {
         background: "var(--bg-card)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)", padding: 24,
+        display: "flex", flexDirection: "column",
+        minHeight: 380,
     },
     stepHeader: {
         display: "flex", alignItems: "flex-start", gap: 20,
@@ -408,8 +413,11 @@ const styles: Record<string, React.CSSProperties> = {
         display: "flex", alignItems: "center", gap: 12, marginTop: 20,
         flexWrap: "wrap",
     },
+    stepSpacer: {
+        flex: 1,
+    },
     navigation: {
-        display: "flex", justifyContent: "space-between", marginTop: 16,
+        display: "flex", justifyContent: "space-between", marginTop: "auto",
         paddingTop: 16, borderTop: "1px solid var(--border)",
     },
 };
