@@ -20,6 +20,7 @@ import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
 import Toolbar from "./Toolbar";
+import {useI18n} from "../hooks/useI18n";
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -33,6 +34,7 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+    const {t} = useI18n();
     const [markdownMode, setMarkdownMode] = useState(false);
     const [markdownText, setMarkdownText] = useState("");
 
@@ -169,7 +171,7 @@ export default function Editor({content, onSave, placeholder}: Props) {
         }, 800);
     };
 
-    const statusLabel = saveStatus === "saving" ? "Speichert..." : saveStatus === "saved" ? "Gespeichert" : "";
+    const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
     return (
         <div style={styles.wrapper}>
@@ -182,9 +184,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
             {/* Status bar */}
             <div style={styles.statusBar}>
                 <span style={styles.wordCount}>
-                    {editor?.storage.characterCount?.words() ?? 0} Wörter
+                    {editor?.storage.characterCount?.words() ?? 0} {t("ui.editor.words", "Wörter")}
                     {" / "}
-                    {editor?.storage.characterCount?.characters() ?? 0} Zeichen
+                    {editor?.storage.characterCount?.characters() ?? 0} {t("ui.editor.characters", "Zeichen")}
                 </span>
                 {statusLabel && (
                     <span style={{

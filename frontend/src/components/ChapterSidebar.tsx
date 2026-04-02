@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {Chapter, ChapterType} from "../api/client";
+import {useI18n} from "../hooks/useI18n";
 import {
     Plus,
     Trash2,
@@ -55,30 +56,17 @@ const BACK_MATTER_TYPES: ChapterType[] = [
 ];
 const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
 
-const TYPE_LABELS: Record<ChapterType, string> = {
-    chapter: "Kapitel",
-    preface: "Vorwort",
-    foreword: "Geleitwort",
-    acknowledgments: "Danksagung",
-    about_author: "Über den Autor",
-    appendix: "Anhang",
-    bibliography: "Literatur",
-    glossary: "Glossar",
-    epilogue: "Epilog",
-    imprint: "Impressum",
-    next_in_series: "Nächster Band",
-    part_intro: "Teil-Einleitung",
-    interlude: "Interludium",
-    toc: "Inhaltsverzeichnis",
-};
+// TYPE_LABELS are now loaded from i18n inside the component via useI18n
 
 // --- Sortable Chapter Item ---
 
-function SortableChapterItem({chapter, isActive, onSelect, onDelete}: {
+function SortableChapterItem({chapter, isActive, onSelect, onDelete, typeLabels, deleteLabel}: {
     chapter: Chapter;
     isActive: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
+    typeLabels: Record<ChapterType, string>;
+    deleteLabel: string;
 }) {
     const {
         attributes,
@@ -104,11 +92,11 @@ function SortableChapterItem({chapter, isActive, onSelect, onDelete}: {
             </span>
             <span style={styles.itemTitle}>
                 {chapter.chapter_type !== "chapter" && (
-                    <span style={styles.typeTag}>{TYPE_LABELS[chapter.chapter_type]}</span>
+                    <span style={styles.typeTag}>{typeLabels[chapter.chapter_type]}</span>
                 )}
                 {chapter.title}
             </span>
-            <Tooltip content="Kapitel löschen" side="right">
+            <Tooltip content={deleteLabel} side="right">
                 <button
                     style={styles.deleteBtn}
                     onClick={(e) => {
@@ -125,13 +113,15 @@ function SortableChapterItem({chapter, isActive, onSelect, onDelete}: {
 
 // --- Sortable Group ---
 
-function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onReorder}: {
+function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onReorder, typeLabels, deleteLabel}: {
     chapters: Chapter[];
     allChapters: Chapter[];
     activeChapterId: string | null;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
     onReorder: (chapterIds: string[]) => void;
+    typeLabels: Record<ChapterType, string>;
+    deleteLabel: string;
 }) {
     const sensors = useSensors(
         useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
@@ -175,6 +165,8 @@ function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDele
                         isActive={ch.id === activeChapterId}
                         onSelect={onSelect}
                         onDelete={onDelete}
+                        typeLabels={typeLabels}
+                        deleteLabel={deleteLabel}
                     />
                 ))}
             </SortableContext>
@@ -205,6 +197,24 @@ export default function ChapterSidebar({
     );
     const backMatter = chapters.filter((ch) => BACK_MATTER_TYPES.includes(ch.chapter_type));
 
+    const {t} = useI18n();
+    const TYPE_LABELS: Record<ChapterType, string> = {
+        chapter: t("ui.chapter_types.chapter", "Kapitel"),
+        preface: t("ui.chapter_types.preface", "Vorwort"),
+        foreword: t("ui.chapter_types.foreword", "Geleitwort"),
+        acknowledgments: t("ui.chapter_types.acknowledgments", "Danksagung"),
+        about_author: t("ui.chapter_types.about_author", "Über den Autor"),
+        appendix: t("ui.chapter_types.appendix", "Anhang"),
+        bibliography: t("ui.chapter_types.bibliography", "Literatur"),
+        glossary: t("ui.chapter_types.glossary", "Glossar"),
+        epilogue: t("ui.chapter_types.epilogue", "Epilog"),
+        imprint: t("ui.chapter_types.imprint", "Impressum"),
+        next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
+        part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
+        interlude: t("ui.chapter_types.interlude", "Interludium"),
+        toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
+    };
+
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
@@ -216,7 +226,7 @@ export default function ChapterSidebar({
         <aside style={styles.sidebar}>
             {/* Header */}
             <div style={styles.header}>
-                <Tooltip content="Zurück zum Dashboard">
+                <Tooltip content={t("ui.sidebar.back_to_dashboard", "Zurück zum Dashboard")}>
                     <button style={styles.backBtn} onClick={onBack}>
                         <ChevronLeft size={18}/>
                     </button>
@@ -230,15 +240,15 @@ export default function ChapterSidebar({
             </div>
 
             <div style={styles.manuscriptHeader}>
-                <span style={styles.manuscriptTitle}>Manuskript</span>
+                <span style={styles.manuscriptTitle}>{t("ui.sidebar.manuscript", "Manuskript")}</span>
             </div>
 
             <div style={styles.list}>
                 {/* Add button with dropdown */}
                 <div style={{...styles.sectionHeader, justifyContent: "space-between"}}>
-                    <span style={styles.listLabel}>Inhalt</span>
+                    <span style={styles.listLabel}>{t("ui.sidebar.content", "Inhalt")}</span>
                     <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
-                        <Tooltip content="Kapitel hinzufügen">
+                        <Tooltip content={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}>
                             <DropdownMenu.Trigger asChild>
                                 <button style={styles.addBtn}>
                                     <Plus size={14}/>
@@ -247,16 +257,16 @@ export default function ChapterSidebar({
                         </Tooltip>
                         <DropdownMenu.Portal>
                             <DropdownMenu.Content className="chapter-dropdown-content" align="end" sideOffset={4}>
-                                <DropdownMenu.Label className="chapter-dropdown-label">Front Matter</DropdownMenu.Label>
+                                <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.front_matter", "Front Matter")}</DropdownMenu.Label>
                                 {FRONT_MATTER_TYPES.map((t) => (
                                     <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
                                     </DropdownMenu.Item>
                                 ))}
                                 <DropdownMenu.Separator className="chapter-dropdown-separator"/>
-                                <DropdownMenu.Label className="chapter-dropdown-label">Kapitel</DropdownMenu.Label>
+                                <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.chapters", "Kapitel")}</DropdownMenu.Label>
                                 <DropdownMenu.Item className="chapter-dropdown-item" onSelect={() => onAdd("chapter")}>
-                                    Neues Kapitel
+                                    {t("ui.editor.new_chapter", "Neues Kapitel")}
                                 </DropdownMenu.Item>
                                 {STRUCTURE_TYPES.map((t) => (
                                     <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
@@ -264,7 +274,7 @@ export default function ChapterSidebar({
                                     </DropdownMenu.Item>
                                 ))}
                                 <DropdownMenu.Separator className="chapter-dropdown-separator"/>
-                                <DropdownMenu.Label className="chapter-dropdown-label">Back Matter</DropdownMenu.Label>
+                                <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.back_matter", "Back Matter")}</DropdownMenu.Label>
                                 {BACK_MATTER_TYPES.map((t) => (
                                     <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
@@ -282,7 +292,7 @@ export default function ChapterSidebar({
                             <button style={styles.collapseBtn} onClick={() => toggleSection("front")}>
                                 {collapsedSections.front ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
-                            <span style={styles.listLabel}>Front Matter</span>
+                            <span style={styles.listLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
                             <span style={styles.sectionCount}>{frontMatter.length}</span>
                         </div>
                         {!collapsedSections.front && (
@@ -293,6 +303,8 @@ export default function ChapterSidebar({
                                 onSelect={onSelect}
                                 onDelete={onDelete}
                                 onReorder={onReorder}
+                                typeLabels={TYPE_LABELS}
+                                deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                             />
                         )}
                     </>
@@ -303,13 +315,13 @@ export default function ChapterSidebar({
                     <button style={styles.collapseBtn} onClick={() => toggleSection("chapters")}>
                         {collapsedSections.chapters ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                     </button>
-                    <span style={styles.listLabel}>Kapitel</span>
+                    <span style={styles.listLabel}>{t("ui.sidebar.chapters", "Kapitel")}</span>
                     <span style={styles.sectionCount}>{mainChapters.length}</span>
                 </div>
                 {!collapsedSections.chapters && (
                     <>
                         {mainChapters.length === 0 && (
-                            <p style={styles.empty}>Noch keine Kapitel</p>
+                            <p style={styles.empty}>{t("ui.sidebar.no_chapters", "Noch keine Kapitel")}</p>
                         )}
                         <SortableGroup
                             chapters={mainChapters}
@@ -318,6 +330,8 @@ export default function ChapterSidebar({
                             onSelect={onSelect}
                             onDelete={onDelete}
                             onReorder={onReorder}
+                            typeLabels={TYPE_LABELS}
+                            deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                         />
                     </>
                 )}
@@ -329,7 +343,7 @@ export default function ChapterSidebar({
                             <button style={styles.collapseBtn} onClick={() => toggleSection("back")}>
                                 {collapsedSections.back ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
-                            <span style={styles.listLabel}>Back Matter</span>
+                            <span style={styles.listLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
                             <span style={styles.sectionCount}>{backMatter.length}</span>
                         </div>
                         {!collapsedSections.back && (
@@ -340,6 +354,8 @@ export default function ChapterSidebar({
                                 onSelect={onSelect}
                                 onDelete={onDelete}
                                 onReorder={onReorder}
+                                typeLabels={TYPE_LABELS}
+                                deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                             />
                         )}
                     </>
@@ -352,23 +368,23 @@ export default function ChapterSidebar({
                     style={{...styles.exportBtn, ...(showMetadata ? styles.exportBtnActive : {}), marginBottom: 6}}
                     onClick={onMetadata}
                 >
-                    <FileText size={14}/> Metadaten
+                    <FileText size={14}/> {t("ui.sidebar.metadata", "Metadaten")}
                 </button>
                 {hasToc && onValidateToc && (
                     <button
                         style={{...styles.exportBtn, marginBottom: 6}}
                         onClick={onValidateToc}
                     >
-                        <ListChecks size={14}/> TOC prüfen
+                        <ListChecks size={14}/> {t("ui.sidebar.toc_validate", "TOC prüfen")}
                     </button>
                 )}
-                <Tooltip content={chapters.length === 0 ? "Erstelle zuerst ein Kapitel" : "Buch exportieren"}>
+                <Tooltip content={chapters.length === 0 ? t("ui.sidebar.export_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.export_book", "Buch exportieren")}>
                     <button
                         style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
                         onClick={onExport}
                         disabled={chapters.length === 0}
                     >
-                        <Download size={14}/> Exportieren...
+                        <Download size={14}/> {t("ui.sidebar.export", "Exportieren...")}
                     </button>
                 </Tooltip>
             </div>

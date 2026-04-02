@@ -7,28 +7,29 @@ import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import {useDialog} from "../components/AppDialog";
 import {toast} from "react-toastify";
-
-const TYPE_LABELS: Record<ChapterType, string> = {
-    chapter: "Kapitel",
-    preface: "Vorwort",
-    foreword: "Geleitwort",
-    acknowledgments: "Danksagung",
-    about_author: "Über den Autor",
-    appendix: "Anhang",
-    bibliography: "Literatur",
-    glossary: "Glossar",
-    epilogue: "Epilog",
-    imprint: "Impressum",
-    next_in_series: "Nächster Band",
-    part_intro: "Teil-Einleitung",
-    interlude: "Interludium",
-    toc: "Inhaltsverzeichnis",
-};
+import {useI18n} from "../hooks/useI18n";
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const dialog = useDialog();
+    const {t} = useI18n();
+    const TYPE_LABELS: Record<ChapterType, string> = {
+        chapter: t("ui.chapter_types.chapter", "Kapitel"),
+        preface: t("ui.chapter_types.preface", "Vorwort"),
+        foreword: t("ui.chapter_types.foreword", "Geleitwort"),
+        acknowledgments: t("ui.chapter_types.acknowledgments", "Danksagung"),
+        about_author: t("ui.chapter_types.about_author", "Über den Autor"),
+        appendix: t("ui.chapter_types.appendix", "Anhang"),
+        bibliography: t("ui.chapter_types.bibliography", "Literatur"),
+        glossary: t("ui.chapter_types.glossary", "Glossar"),
+        epilogue: t("ui.chapter_types.epilogue", "Epilog"),
+        imprint: t("ui.chapter_types.imprint", "Impressum"),
+        next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
+        part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
+        interlude: t("ui.chapter_types.interlude", "Interludium"),
+        toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
+    };
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
