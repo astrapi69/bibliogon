@@ -360,15 +360,64 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
-### Statistiken (Session-Ende)
+## 37. make test fixen und offene Punkte abarbeiten
 
-- **Commits:** 40+
-- **Tests:** 33 Backend + 23 Export-Plugin = 56 unit total, 52 E2E = 108 automatisiert (war 10 Backend am Anfang)
-- **TipTap Extensions:** 15 offizielle + 1 Community (war 3)
-- **Toolbar-Buttons:** 24 (war 12)
-- **ChapterTypes:** 14 (war 13, +toc)
-- **Neue Dateien:** plugin_install.py, Tooltip.tsx, install.sh, start.sh, stop.sh, .env.example, test_import_export.py, figcaption.ts (geloescht), chat-journal
-- **Hauptergebnisse:** Plugin-ZIP-Installation, 7 Radix-Migrationen, Deployment-Haertung, vollstaendiger Import/Export mit Assets, TOC-Validierung, 15 TipTap-Extensions, interaktiver GetStarted-Wizard, Autorenprofil mit Pseudonymen, White-Label-Konfiguration, Auto-DB-Migration
+- 🔹 **Original-Prompt:** "was steht als naechstes in unserer Liste?"
+- 🔸 **Optimierter Prompt:** "Arbeite die offenen Punkte ab: 1) make test fixen (Poetry virtualenv in allen Makefile-Targets). 2) i18n-Strings in YAML verschieben. 3) Vitest einrichten. 4) Export-Roundtrip testen."
+- 🎯 Technische Schulden abbauen
+- ✅ Commit a6df0ec: Makefile-Fix fuer alle Targets
+
+---
+
+## 38. i18n-Infrastruktur: 127 Strings in 5 Sprachen
+
+- 🔹 **Original-Prompt:** (Fortsetzung offene Punkte)
+- 🔸 **Optimierter Prompt:** "Erstelle einen useI18n Hook mit t('ui.key') Zugriff und Fallback. Erweitere alle 5 i18n-YAMLs (DE, EN, ES, FR, EL) von 20 auf 177 Strings in 12 Kategorien: dashboard, editor, sidebar, chapter_types, export_dialog, formats, create_book, settings, get_started, languages, common."
+- 🎯 Alle UI-Strings internationalisierbar
+- 💡 127 hardcoded Strings identifiziert, ES/FR/EL parallel via Agents uebersetzt
+- ✅ Commit 31e45ae: useI18n Hook + 5 YAMLs mit 177 Strings
+
+---
+
+## 39. Frontend-Komponenten auf useI18n migrieren
+
+- 🔹 **Original-Prompt:** "ja weiter"
+- 🔸 **Optimierter Prompt:** "Migriere alle Frontend-Komponenten zum useI18n Hook: ChapterSidebar (TYPE_LABELS, Section-Headers, Tooltips), Editor (Speicherstatus, Wortzaehler), BookEditor (TYPE_LABELS), ExportDialog (Format-Labels, Buchtypen, TOC-Optionen), CreateBookModal (Formular-Labels, Sprachoptionen), Dashboard (Seitentitel, Buttons). Props-Threading fuer Subkomponenten (SortableGroup, SortableChapterItem)."
+- 🎯 Kein hardcoded Deutsch mehr in den Hauptkomponenten
+- 💡 ExportDialog und CreateBookModal parallel via Agents migriert
+- ✅ Commits 0ecd4af, 985ec9f: 6 Komponenten migriert
+
+---
+
+## 40. Vitest einrichten
+
+- 🔹 **Original-Prompt:** (Fortsetzung offene Punkte)
+- 🔸 **Optimierter Prompt:** "Richte Vitest fuer Frontend Unit Tests ein: happy-dom statt jsdom (Node 18 kompatibel), vite.config.ts erweitern, useI18n t() Funktion als ersten Test. Makefile: test-frontend Target, make test inkludiert Frontend."
+- 🎯 Frontend Unit Tests moeglich
+- 💡 jsdom 29 braucht Node 22+, Wechsel zu happy-dom
+- ✅ Commit 1d0e095: 6 Frontend-Tests, make test-frontend
+
+---
+
+## 41. Export-Roundtrip verifiziert
+
+- 🔹 **Original-Prompt:** (Fortsetzung offene Punkte)
+- 🔸 **Optimierter Prompt:** "Teste den vollstaendigen Roundtrip: Import (eternity-ebook.zip) -> Scaffold (28 Kapitel, 19 Assets) -> EPUB-Export. Verifiziere: verschachtelte TOC-Links erhalten, keine doppelten H1, Bilder im EPUB, korrekte Dateistruktur."
+- 🎯 Sicherstellen dass Import-Editor-Export fehlerfrei funktioniert
+- ✅ 8.2 MB EPUB, 31 XHTML-Seiten, 15 Bilder, 149 verschachtelte TOC-Links
+
+---
+
+### Statistiken (Session-Ende, aktualisiert)
+
+- **Commits:** 50+
+- **Tests:** 33 Backend + 23 Export + 8 Kinderbuch + 10 KDP + 7 Grammar + 6 Vitest = 87 unit, 52 E2E = 139 automatisiert (war 10 am Anfang)
+- **i18n:** 177 Strings in 5 Sprachen, useI18n Hook in 6 Komponenten
+- **TipTap Extensions:** 15 offizielle + 1 Community
+- **Toolbar-Buttons:** 24
+- **ChapterTypes:** 14
+- **Neue Dateien:** useI18n.ts, useI18n.test.ts, setup.ts, 5 erweiterte i18n-YAMLs
+- **Hauptergebnisse (Session gesamt):** Plugin-ZIP-Installation, 7 Radix-Migrationen, Deployment-Haertung, vollstaendiger Import/Export mit Assets, TOC-Validierung, 15 TipTap-Extensions, interaktiver GetStarted-Wizard, Autorenprofil mit Pseudonymen, White-Label-Konfiguration, Auto-DB-Migration, i18n mit 5 Sprachen, Vitest Frontend-Tests, Export-Roundtrip verifiziert
 
 ### Optimierungsvorschlaege fuer zukuenftige Prompts
 1. **Spezifisch sein:** Statt "geht nicht" -> "figcaption wird in Monospace statt Body-Font angezeigt"

@@ -521,13 +521,14 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-133 Tests insgesamt:
+139 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
 - backend: 33 (api, phase4, import/export mit TOC, figcaption, assets, section-order, backup/restore)
+- frontend (Vitest): 6 (useI18n)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).
