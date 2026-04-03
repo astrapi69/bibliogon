@@ -570,6 +570,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 60. U-06: Wortanzahl-Ziel pro Kapitel
+
+- 🔹 **Original-Prompt:** "Setze U-06 um."
+- 🔸 **Optimierter Prompt:** "Im Status-Bar des Editors: klickbares '+ Ziel' Button oeffnet Eingabefeld fuer Wortziel. Progress-Bar zeigt Fortschritt (gruen wenn erreicht). Ziel in localStorage pro chapterId. Neue Props: chapterId auf Editor. i18n: goal, set_goal."
+- 🎯 Autoren koennen Schreibziele pro Kapitel setzen und Fortschritt sehen
+- ✅ Goal-Button, Inline-Input, Progress-Bar, localStorage-Persistenz
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

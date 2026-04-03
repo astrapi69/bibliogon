@@ -45,6 +45,8 @@ ui:
     replace: "Ersetzen..."
     replace_one: "Ersetzen"
     replace_all: "Alle"
+    goal: "Ziel"
+    set_goal: "Wortziel setzen"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
   sidebar:

@@ -221,6 +221,7 @@ export default function BookEditor() {
                     content={activeChapter.content}
                     onSave={handleSaveContent}
                     bookId={bookId}
+                    chapterId={activeChapter.id}
                     placeholder={`Schreibe "${activeChapter.title}"...`}
                 />
             ) : (

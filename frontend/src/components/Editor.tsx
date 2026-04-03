@@ -33,15 +33,22 @@ interface Props {
     onSave: (json: string) => void;
     placeholder?: string;
     bookId?: string;
+    chapterId?: string;
 }
 
-export default function Editor({content, onSave, placeholder, bookId}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const {t} = useI18n();
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
+    const [wordGoal, setWordGoal] = useState<number | null>(() => {
+        if (!chapterId) return null;
+        const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
+        return stored ? parseInt(stored, 10) : null;
+    });
+    const [editingGoal, setEditingGoal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [replaceTerm, setReplaceTerm] = useState("");
     const [markdownText, setMarkdownText] = useState("");
@@ -289,7 +296,52 @@ export default function Editor({content, onSave, placeholder, bookId}: Props) {
                     {editor?.storage.characterCount?.words() ?? 0} {t("ui.editor.words", "Wörter")}
                     {" / "}
                     {editor?.storage.characterCount?.characters() ?? 0} {t("ui.editor.characters", "Zeichen")}
+                    {/* Word goal */}
+                    {chapterId && !editingGoal && (
+                        <button
+                            style={styles.goalBtn}
+                            onClick={() => setEditingGoal(true)}
+                            title={t("ui.editor.set_goal", "Wortziel setzen")}
+                        >
+                            {wordGoal ? `${t("ui.editor.goal", "Ziel")}: ${wordGoal}` : `+ ${t("ui.editor.goal", "Ziel")}`}
+                        </button>
+                    )}
+                    {editingGoal && (
+                        <input
+                            style={styles.goalInput}
+                            type="number"
+                            min="0"
+                            placeholder="z.B. 2000"
+                            defaultValue={wordGoal ?? ""}
+                            autoFocus
+                            onBlur={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (val > 0) {
+                                    setWordGoal(val);
+                                    localStorage.setItem(`bibliogon-word-goal-${chapterId}`, String(val));
+                                } else {
+                                    setWordGoal(null);
+                                    localStorage.removeItem(`bibliogon-word-goal-${chapterId}`);
+                                }
+                                setEditingGoal(false);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setEditingGoal(false);
+                            }}
+                        />
+                    )}
                 </span>
+                {/* Progress bar for word goal */}
+                {wordGoal && wordGoal > 0 && (
+                    <div style={styles.goalProgress}>
+                        <div style={{
+                            ...styles.goalProgressFill,
+                            width: `${Math.min(100, ((editor?.storage.characterCount?.words() ?? 0) / wordGoal) * 100)}%`,
+                            background: (editor?.storage.characterCount?.words() ?? 0) >= wordGoal ? "#16a34a" : "var(--accent)",
+                        }}/>
+                    </div>
+                )}
                 {statusLabel && (
                     <span style={{
                         ...styles.saveStatus,
@@ -570,6 +622,41 @@ const styles: Record<string, React.CSSProperties> = {
     },
     wordCount: {
         color: "var(--text-muted)",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+    },
+    goalBtn: {
+        background: "none",
+        border: "1px dashed var(--border)",
+        borderRadius: 3,
+        padding: "1px 6px",
+        fontSize: "0.6875rem",
+        color: "var(--text-muted)",
+        cursor: "pointer",
+        fontFamily: "var(--font-body)",
+    },
+    goalInput: {
+        width: 70,
+        padding: "1px 4px",
+        border: "1px solid var(--accent)",
+        borderRadius: 3,
+        fontSize: "0.6875rem",
+        background: "var(--bg-card)",
+        color: "var(--text-primary)",
+        outline: "none",
+    },
+    goalProgress: {
+        width: 80,
+        height: 4,
+        background: "var(--bg-secondary)",
+        borderRadius: 2,
+        overflow: "hidden",
+    },
+    goalProgressFill: {
+        height: "100%",
+        borderRadius: 2,
+        transition: "width 300ms ease",
     },
     saveStatus: {
         fontSize: "0.75rem",

@@ -26,7 +26,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
 - [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
-- [ ] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
+- [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [ ] T-04: Bild-Resize per Drag
 ---
@@ -52,7 +52,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [ ] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
 - [ ] U-05: Editor: Suchen und Ersetzen im Kapitel
-- [ ] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
+- [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
