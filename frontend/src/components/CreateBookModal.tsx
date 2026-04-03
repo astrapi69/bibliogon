@@ -149,40 +149,34 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                             </div>
                             <div className="field" style={{flex: 1}}>
                                 <label className="label">{t("ui.create_book.genre", "Genre")}</label>
-                                <Select.Root value={genre} onValueChange={setGenre}>
-                                    <Select.Trigger className="radix-select-trigger">
-                                        <Select.Value placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen...")}/>
-                                        <Select.Icon><ChevronDown size={14}/></Select.Icon>
-                                    </Select.Trigger>
-                                    <Select.Portal>
-                                        <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
-                                            <Select.Viewport>
-                                                {[
-                                                    {value: "novel", label: t("ui.genres.novel", "Roman")},
-                                                    {value: "non_fiction", label: t("ui.genres.non_fiction", "Sachbuch")},
-                                                    {value: "technical", label: t("ui.genres.technical", "Fachbuch")},
-                                                    {value: "children", label: t("ui.genres.children", "Kinderbuch")},
-                                                    {value: "biography", label: t("ui.genres.biography", "Biografie")},
-                                                    {value: "poetry", label: t("ui.genres.poetry", "Lyrik")},
-                                                    {value: "short_stories", label: t("ui.genres.short_stories", "Kurzgeschichten")},
-                                                    {value: "academic", label: t("ui.genres.academic", "Wissenschaftlich")},
-                                                    {value: "textbook", label: t("ui.genres.textbook", "Lehrbuch")},
-                                                    {value: "self_help", label: t("ui.genres.self_help", "Ratgeber")},
-                                                    {value: "fantasy", label: t("ui.genres.fantasy", "Fantasy")},
-                                                    {value: "thriller", label: t("ui.genres.thriller", "Thriller")},
-                                                    {value: "romance", label: t("ui.genres.romance", "Liebesroman")},
-                                                    {value: "cookbook", label: t("ui.genres.cookbook", "Kochbuch")},
-                                                    {value: "travel", label: t("ui.genres.travel", "Reisefuehrer")},
-                                                    {value: "other", label: t("ui.genres.other", "Sonstiges")},
-                                                ].map((opt) => (
-                                                    <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
-                                                        <Select.ItemText>{opt.label}</Select.ItemText>
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Viewport>
-                                        </Select.Content>
-                                    </Select.Portal>
-                                </Select.Root>
+                                <input
+                                    className="input"
+                                    list="genre-suggestions"
+                                    value={genre}
+                                    onChange={(e) => setGenre(e.target.value)}
+                                    placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen oder eingeben...")}
+                                />
+                                <datalist id="genre-suggestions">
+                                    {[
+                                        t("ui.genres.novel", "Roman"),
+                                        t("ui.genres.non_fiction", "Sachbuch"),
+                                        t("ui.genres.technical", "Fachbuch"),
+                                        t("ui.genres.children", "Kinderbuch"),
+                                        t("ui.genres.biography", "Biografie"),
+                                        t("ui.genres.poetry", "Lyrik"),
+                                        t("ui.genres.short_stories", "Kurzgeschichten"),
+                                        t("ui.genres.academic", "Wissenschaftlich"),
+                                        t("ui.genres.textbook", "Lehrbuch"),
+                                        t("ui.genres.self_help", "Ratgeber"),
+                                        t("ui.genres.fantasy", "Fantasy"),
+                                        t("ui.genres.thriller", "Thriller"),
+                                        t("ui.genres.romance", "Liebesroman"),
+                                        t("ui.genres.cookbook", "Kochbuch"),
+                                        t("ui.genres.travel", "Reisefuehrer"),
+                                    ].map((g) => (
+                                        <option key={g} value={g}/>
+                                    ))}
+                                </datalist>
                             </div>
                         </div>
 
