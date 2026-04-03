@@ -12,34 +12,14 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
-- [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
-- [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
-- [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
-- [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
-- [x] T-01: Fussnoten (tiptap-footnotes)
-- [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
-- [x] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
-- [x] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
-- [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
-- [x] X-04: Export: Custom CSS pro Kapiteltyp
-- [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
-- [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
-- [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
-- [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
-- [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
-- [x] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
-- [x] T-04: Bild-Resize per Drag
-- [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
-- [x] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
-- [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
-- [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
-- [x] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
-- [x] P-10: Filler-Woerter, Passiv, Satzlaenge
-- [x] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
-- [ ] T-06: Lesezeit-Schaetzung pro Kapitel
 - [ ] Q-06: CI-Pipeline (GitHub Actions)
-- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
+- [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
+- [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
+- [ ] I-01: Sprachumschaltung live ohne Reload
 - [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
+- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 
 ## UI/UX
@@ -61,8 +41,8 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [x] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
-- [ ] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
-- [ ] U-05: Editor: Suchen und Ersetzen im Kapitel
+- [x] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
+- [x] U-05: Editor: Suchen und Ersetzen im Kapitel
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
@@ -100,7 +80,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 - [x] T-04: Bild-Resize per Drag
 - [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
-- [ ] T-06: Lesezeit-Schaetzung pro Kapitel
+- [x] T-06: Lesezeit-Schaetzung pro Kapitel
 - [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 
 ## Backend

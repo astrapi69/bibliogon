@@ -1,6 +1,6 @@
 app:
   name: Bibliogon
-  version: 0.7.0
+  version: 0.9.0
   description: Open-source book authoring platform
   default_language: de
   delete_permanently: false

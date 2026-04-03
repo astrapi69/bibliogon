@@ -5,7 +5,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 **Repository:** https://github.com/astrapi69/bibliogon
 **PluginForge:** https://github.com/astrapi69/pluginforge (PyPI: pluginforge ^0.5.0)
 **Konzept:** docs/CONCEPT.md
-**Version:** 0.7.0
+**Version:** 0.9.0
 
 ## Entwicklungsrichtlinien
 
@@ -491,19 +491,19 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - Buch-Metadaten-Editor im BookEditor (5 Sektionen: Allgemein, Verlag, ISBN, Marketing, Design)
 - Playwright E2E-Tests erweitert auf 52 Tests
 
+### Phase 8: Manuskript-Qualitaet, Editor, Export (v0.9.0) - erledigt
+
+- plugin-manuscript-tools (MIT): Style-Checks (Filler-Woerter DE+EN, Passiv, Satzlaenge), Sanitization (typografische Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis), Lesbarkeits-Metriken (Flesch Reading Ease, Flesch-Kincaid Grade, Wiener Sachtextformel, Lesezeit)
+- TipTap-Erweiterungen: Fussnoten, Suchen/Ersetzen, Bild-Resize per Drag, Bild-DnD-Upload
+- Export: Batch-Export (EPUB+PDF+DOCX), Kapiteltyp-spezifisches CSS, Custom CSS, epubcheck-Validierung
+- Import: Plain-Markdown-ZIP ohne Projektstruktur, tiptap_to_md erweitert (Table, TaskList, Figure)
+- UI: Dashboard-Sortierung, Cover-Thumbnails, Wortanzahl-Ziel pro Kapitel, Keyword-Tag-Editor
+- Infrastruktur: Multi-Stage Docker Build, Frontend-Chunk-Splitting, Roundtrip-Tests
+- 212 Tests (38 backend, 101 plugin, 21 vitest, 52 e2e)
+
 ## Naechste Schritte
 
-### Phase 8 - Audiobook-Plugin (v0.8.0, Premium)
-
-- plugin-audiobook: TTS-basierte Audiobook-Generierung (Premium, Proprietary)
-- TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- Voice-Settings pro Buch (Stimme, Sprache, Skip-Sektionen)
-- MP3-Generierung pro Kapitel
-- Merge zu einer Audiobook-Datei (via ffmpeg)
-- Audiobook Section-Order (eigene Reihenfolge in export-settings.yaml)
-- Vorhoer-Funktion im Editor
-
-### Phase 9 - Uebersetzungs-Plugin (v0.9.0, Premium)
+### Phase 9 - Uebersetzungs-Plugin (v0.10.0, Premium)
 
 - plugin-translation: Automatische Buchuebersetzung (Premium, Proprietary)
 - DeepL-Integration (API-Key pro Benutzer)
@@ -512,15 +512,15 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 - Uebersetzung als neues Buch anlegen (mit Referenz zum Original)
 - Unterstuetzte Sprachpaare: DE-EN, EN-DE, EN-ES, DE-ES, EN-FR, etc.
 
-### Phase 10 - Manuskript-Qualitaet Plugin (v0.10.0)
+### Phase 10 - Audiobook-Plugin (v0.11.0, Premium)
 
-- plugin-manuscript-tools: Schreibqualitaet und Formatierung (MIT)
-- Style-Checks: Filler-Woerter, Passiv-Konstruktionen, Satzlaenge
-- Sanitization: Formatierungsfehler automatisch bereinigen
-- Anfuehrungszeichen-Korrektur (deutsch, englisch, franzoesisch)
-- Bold/Italic Formatierungsfehler reparieren
-- Wort-Metriken pro Kapitel und Gesamtbuch (Lesbarkeit, Lesezeit)
-- Markdown-Linting und Codespell-Integration
+- plugin-audiobook: TTS-basierte Audiobook-Generierung (Premium, Proprietary)
+- TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- Voice-Settings pro Buch (Stimme, Sprache, Skip-Sektionen)
+- MP3-Generierung pro Kapitel
+- Merge zu einer Audiobook-Datei (via ffmpeg)
+- Audiobook Section-Order (eigene Reihenfolge in export-settings.yaml)
+- Vorhoer-Funktion im Editor
 
 ### Phase 11 - Multi-User und SaaS (v1.0.0)
 

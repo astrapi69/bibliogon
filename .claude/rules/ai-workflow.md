@@ -62,8 +62,8 @@ Zusaetzlich fuer die KI:
 ## Aktueller Stand
 
 Siehe architecture.md fuer Architektur-Details. Zusaetzlich beachten:
-- Version: 0.7.0 (Phase 7 abgeschlossen, GitHub Release v0.7.0 existiert).
-- Naechste Phase: 8 (Audiobook-Plugin).
+- Version: 0.9.0 (Phase 8 abgeschlossen, GitHub Release v0.9.0 existiert).
+- Naechste Phase: 9 (Uebersetzungs-Plugin).
 - 212 Tests (38 backend, 101 plugin, 21 vitest, 52 e2e).
 - 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
 - 24 Toolbar-Buttons im Editor.
