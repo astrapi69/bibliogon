@@ -489,6 +489,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 51. U-03: Bild-Upload per Drag-and-Drop
+
+- 🔹 **Original-Prompt:** "Setze U-03 um."
+- 🔸 **Optimierter Prompt:** "Implementiere Bild-Upload per DnD und Paste in den TipTap Editor. Nutze editorProps.handleDrop und handlePaste. Upload via api.assets.upload(), dann editor.setImage() mit API-URL. bookId als neue Editor Prop. editorRef fuer async Callbacks."
+- 🎯 Autoren koennen Bilder direkt in den Editor ziehen oder einfuegen
+- ✅ DnD + Paste, Asset-Upload, automatische URL-Einfuegung
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

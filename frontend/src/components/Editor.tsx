@@ -23,6 +23,8 @@ import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
+import {api} from "../api/client";
+import {toast} from "react-toastify";
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -30,9 +32,10 @@ interface Props {
     content: string;
     onSave: (json: string) => void;
     placeholder?: string;
+    bookId?: string;
 }
 
-export default function Editor({content, onSave, placeholder}: Props) {
+export default function Editor({content, onSave, placeholder, bookId}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -71,6 +74,19 @@ export default function Editor({content, onSave, placeholder}: Props) {
             // Not JSON, treat as HTML for backward compatibility
         }
         return raw;
+    };
+
+    const editorRef = useRef<TiptapEditor | null>(null);
+
+    const uploadAndInsertImage = async (file: File) => {
+        if (!bookId) return;
+        try {
+            const asset = await api.assets.upload(bookId, file, "figure");
+            const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
+            editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
+        } catch (err) {
+            toast.error(`Upload failed: ${err}`);
+        }
     };
 
     const editor = useEditor({
@@ -122,8 +138,34 @@ export default function Editor({content, onSave, placeholder}: Props) {
             attributes: {
                 class: "tiptap-editor",
             },
+            handleDrop: (_view, event, _slice, moved) => {
+                if (moved || !event.dataTransfer?.files?.length || !bookId) return false;
+                const file = event.dataTransfer.files[0];
+                if (!file.type.startsWith("image/")) return false;
+                event.preventDefault();
+                uploadAndInsertImage(file);
+                return true;
+            },
+            handlePaste: (_view, event) => {
+                const items = event.clipboardData?.items;
+                if (!items || !bookId) return false;
+                for (const item of Array.from(items)) {
+                    if (item.type.startsWith("image/")) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            event.preventDefault();
+                            uploadAndInsertImage(file);
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
         },
     });
+
+    // Keep ref in sync for async callbacks (image upload)
+    useEffect(() => { editorRef.current = editor; }, [editor]);
 
     // Update content when switching chapters
     useEffect(() => {
