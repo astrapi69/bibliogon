@@ -66,7 +66,7 @@ export default function Settings() {
                         <h1 style={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
                     <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                        <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
+                        <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
                             <Home size={18}/>
                         </button>
                         <ThemeToggle/>
@@ -325,9 +325,9 @@ function AppSettings({config, onSave, saving}: {
                             {t("ui.settings.core_plugins", "Standard-Plugins")}
                         </h4>
                         {[
-                            {id: "export", label: "Buch-Export", desc: "EPUB, PDF, Word, Projektstruktur"},
-                            {id: "help", label: "Hilfe", desc: "FAQ, Tastenkuerzel, About"},
-                            {id: "getstarted", label: "Erste Schritte", desc: "Onboarding-Wizard, Beispielbuch"},
+                            {id: "export", label: t("ui.settings.plugin_export", "Buch-Export"), desc: t("ui.settings.plugin_export_desc", "EPUB, PDF, Word, Projektstruktur")},
+                            {id: "help", label: t("ui.settings.plugin_help", "Hilfe"), desc: t("ui.settings.plugin_help_desc", "FAQ, Tastenkuerzel, About")},
+                            {id: "getstarted", label: t("ui.settings.plugin_getstarted", "Erste Schritte"), desc: t("ui.settings.plugin_getstarted_desc", "Onboarding-Wizard, Beispielbuch")},
                         ].map((plugin) => (
                             <label key={plugin.id} style={{
                                 display: "flex", alignItems: "center", gap: 10, padding: "8px 0",

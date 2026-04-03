@@ -417,6 +417,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 43. i18n: Restliche hardcoded Strings migrieren
+
+- 🔹 **Original-Prompt:** "Setze den naechsten Punkt i18n um in der Liste/Tabelle."
+- 🔸 **Optimierter Prompt:** "Finde und migriere alle verbleibenden hardcoded deutschen Strings in Settings.tsx (Plugin-Beschreibungen im White-Label Bereich) und Dashboard.tsx (Confirm-Dialoge fuer Papierkorb leeren und endgueltig loeschen). Fuege fehlende i18n-Keys in DE und EN YAML hinzu."
+- 🎯 Null hardcoded Strings in allen Hauptkomponenten
+- ✅ 8 Strings migriert: 3 Plugin-Labels + 3 Plugin-Beschreibungen + 2 Dialog-Texte
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

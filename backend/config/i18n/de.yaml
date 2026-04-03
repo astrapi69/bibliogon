@@ -9,6 +9,10 @@ ui:
     import: "Importieren"
     trash: "Papierkorb"
     search_placeholder: "Suche nach Titel, Autor, Genre oder Sprache..."
+    delete_permanent_title: "Endgueltig loeschen"
+    delete_permanent_warning: "Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden."
+    empty_trash_title: "Papierkorb leeren"
+    empty_trash_warning: "Alle Buecher im Papierkorb werden unwiderruflich geloescht."
   editor:
     new_chapter: "Neues Kapitel"
     confirm_delete_chapter: "Kapitel wirklich löschen?"
@@ -178,6 +182,12 @@ ui:
     white_label_desc: "Passe Bibliogon als eigene App an. Ändere den Namen, entferne Standard-Plugins und erstelle deine eigene Autoren-Plattform."
     core_plugins: "Standard-Plugins"
     restart_hint: "Änderungen werden beim nächsten \"Speichern\" übernommen. Neustart erforderlich."
+    plugin_export: "Buch-Export"
+    plugin_export_desc: "EPUB, PDF, Word, Projektstruktur"
+    plugin_help: "Hilfe"
+    plugin_help_desc: "FAQ, Tastenkuerzel, About"
+    plugin_getstarted: "Erste Schritte"
+    plugin_getstarted_desc: "Onboarding-Wizard, Beispielbuch"
   get_started:
     title: "Erste Schritte"
     progress: "Schritt {current} von {total}"

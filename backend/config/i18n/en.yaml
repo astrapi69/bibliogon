@@ -9,6 +9,10 @@ ui:
     import: "Import"
     trash: "Trash"
     search_placeholder: "Search by title, author, genre or language..."
+    delete_permanent_title: "Delete permanently"
+    delete_permanent_warning: "Permanently delete this book? This cannot be undone."
+    empty_trash_title: "Empty trash"
+    empty_trash_warning: "All books in the trash will be permanently deleted."
   editor:
     new_chapter: "New Chapter"
     confirm_delete_chapter: "Really delete this chapter?"
@@ -178,6 +182,12 @@ ui:
     white_label_desc: "Customize Bibliogon as your own app. Change the name, remove standard plugins and create your own authoring platform."
     core_plugins: "Standard Plugins"
     restart_hint: "Changes apply after saving. Restart required."
+    plugin_export: "Book Export"
+    plugin_export_desc: "EPUB, PDF, Word, project structure"
+    plugin_help: "Help"
+    plugin_help_desc: "FAQ, shortcuts, about"
+    plugin_getstarted: "Get Started"
+    plugin_getstarted_desc: "Onboarding wizard, sample book"
   get_started:
     title: "Get Started"
     progress: "Step {current} of {total}"

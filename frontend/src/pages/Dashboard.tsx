@@ -84,13 +84,13 @@ export default function Dashboard() {
     };
 
     const handlePermanentDelete = async (id: string) => {
-        if (!await dialog.confirm("Endgültig löschen", "Buch endgültig löschen? Dies kann nicht rückgängig gemacht werden.", "danger")) return;
+        if (!await dialog.confirm(t("ui.dashboard.delete_permanent_title", "Endgueltig loeschen"), t("ui.dashboard.delete_permanent_warning", "Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden."), "danger")) return;
         await api.books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
     };
 
     const handleEmptyTrash = async () => {
-        if (!await dialog.confirm("Papierkorb leeren", `Alle ${trash.length} Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.`, "danger")) return;
+        if (!await dialog.confirm(t("ui.dashboard.empty_trash_title", "Papierkorb leeren"), t("ui.dashboard.empty_trash_warning", "Alle Buecher im Papierkorb werden unwiderruflich geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden."), "danger")) return;
         await api.books.emptyTrash();
         setTrash([]);
     };

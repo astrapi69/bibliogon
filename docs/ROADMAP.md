@@ -35,7 +35,7 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 
 - [x] useI18n Hook mit 216 Strings in 5 Sprachen
 - [x] Alle Hauptkomponenten migriert (Sidebar, Editor, Settings, GetStarted, Export, Dashboard)
-- [ ] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
+- [x] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
 - [ ] Sprachumschaltung live ohne Reload
 - [ ] Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 
