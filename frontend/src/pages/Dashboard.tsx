@@ -250,12 +250,12 @@ export default function Dashboard() {
                                             <strong>{book.title}</strong>
                                             <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>{book.author}</p>
                                         </div>
-                                        <div style={{display: "flex", gap: 6}}>
+                                        <div style={{display: "flex", gap: 6, flexShrink: 0}}>
                                             <button className="btn btn-primary btn-sm" onClick={() => handleRestore(book.id)}>
                                                 <RotateCcw size={12}/> Wiederherstellen
                                             </button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handlePermanentDelete(book.id)}>
-                                                <Trash size={12}/> Endgültig
+                                                <Trash size={12}/> Endgueltig loeschen
                                             </button>
                                         </div>
                                     </div>
@@ -362,7 +362,8 @@ const styles: Record<string, React.CSSProperties> = {
     },
     trashCard: {
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 16, padding: 16, background: "var(--bg-card)",
+        flexWrap: "wrap" as const,
+        gap: 12, padding: 16, background: "var(--bg-card)",
         border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
     },
 };
