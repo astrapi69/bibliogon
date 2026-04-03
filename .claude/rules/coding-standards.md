@@ -45,6 +45,9 @@
 - Nur Standard-UTF-8-Zeichen.
 - Keine Emojis im Code oder in Kommentaren.
 - Einrueckung: 4 Spaces (Python), 2 Spaces (TypeScript/CSS).
+- Automatische Formatierung: ruff (Python), Prettier (TypeScript). Siehe code-hygiene.md.
+- Automatisches Linting: ruff (Python), ESLint (TypeScript). Siehe code-hygiene.md.
+- Pre-Commit Hooks erzwingen Formatierung und Linting vor jedem Commit.
 
 ## Git
 
@@ -57,10 +60,13 @@
 
 - Backend: pytest. Plugin-Tests in plugins/{name}/tests/.
 - E2E: Playwright (aktuell 52 Tests).
+- Mutation Testing: mutmut (Nightly/manuell, fuer Kernmodule und kritische Logik).
 - Neue Endpunkte: Mindestens ein Happy-Path Test.
 - Bugfixes: Failing Test ZUERST, dann Fix.
 - Mocking: Externe Services (LanguageTool, Pandoc) mocken, keine echten Calls in Tests.
 - `make test` muss gruen bleiben nach jeder Aenderung.
+- Ueberlebende Mutanten in kritischem Code: Tests ergaenzen. In trivialem Code: Ignorieren.
+- Siehe quality-checks.md fuer vollstaendige Teststrategie und mutmut-Konfiguration.
 
 ## Sicherheit
 
@@ -82,4 +88,6 @@ Neue Dependencies nur nach Rueckfrage einfuehren. Bestehender Stack:
 
 Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML, markdown (MD->HTML)
 Frontend: React 18, TypeScript, TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
-Tooling: Poetry, npm, Docker, Make, Playwright
+Testing: pytest, Playwright, mutmut (Mutation Testing)
+Linting/Formatierung: ruff (Python), ESLint + Prettier (TypeScript), pre-commit
+Tooling: Poetry, npm, Docker, Make

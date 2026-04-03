@@ -51,12 +51,14 @@ Vor dem Commit diese Checkliste durchgehen:
 ### Testpyramide
 
 ```
-        /  E2E  \           Playwright (52 Tests)
-       / -------- \         Wenige, kritische User-Flows
-      /Integration \        pytest + laufende App (noch aufzubauen)
-     / ------------ \       API-Endpunkte mit echtem DB-Zustand
-    /   Unit Tests   \      pytest + Vitest (78+ Tests)
-   / ---------------- \    Geschaeftslogik isoliert
+      /    E2E     \        Playwright (52 Tests)
+     / ------------ \       Wenige, kritische User-Flows
+    / Integration    \      pytest + TestClient (30 Tests)
+   / ---------------- \    API-Endpunkte mit echtem DB-Zustand
+  /    Unit Tests      \    pytest + Vitest (78+ Tests)
+ / -------------------- \  Geschaeftslogik isoliert
+/   Mutation Testing      \ mutmut (Nightly/manuell)
+ --------------------------  Prueft ob Tests echte Fehler finden
 ```
 
 ### Unit Tests (Backend - pytest)
@@ -221,6 +223,89 @@ test('export book as EPUB with manual TOC', async ({ page }) => {
 })
 ```
 
+### Mutation Testing (Backend - mutmut)
+
+**Zweck:** Prueft ob die Tests echte Fehler finden wuerden. mutmut veraendert den Quellcode (Mutanten) und prueft ob mindestens ein Test fehlschlaegt. Ueberlebende Mutanten zeigen Luecken in der Testqualitaet.
+
+**Status:** Einzurichten. Dev-Dependency via Poetry.
+
+**Setup:**
+```bash
+cd backend
+poetry add --group dev mutmut
+```
+
+**pyproject.toml Konfiguration:**
+```toml
+[tool.mutmut]
+paths_to_mutate = "app/"
+tests_dir = "tests/"
+runner = "python -m pytest"
+dict_synonyms = "Struct,NamedStruct"
+```
+
+**Fuer Plugins separat:**
+```toml
+# plugins/bibliogon-plugin-export/pyproject.toml
+[tool.mutmut]
+paths_to_mutate = "bibliogon_export/"
+tests_dir = "tests/"
+runner = "python -m pytest"
+```
+
+**Ausfuehrung:**
+```bash
+# Backend komplett (dauert lange, Nightly oder manuell)
+cd backend && poetry run mutmut run
+
+# Nur ein bestimmtes Modul (schneller, gezielt)
+cd backend && poetry run mutmut run --paths-to-mutate app/services/
+
+# Nur ein Plugin
+cd plugins/bibliogon-plugin-export && poetry run mutmut run
+
+# Ergebnisse anzeigen
+poetry run mutmut results
+
+# Ueberlebende Mutanten im Detail
+poetry run mutmut show <id>
+
+# HTML-Report
+poetry run mutmut html
+```
+
+**Wann ausfuehren:**
+- Nach groesseren Refactorings (pruefen ob Tests noch greifen).
+- Bevor eine Phase als abgeschlossen gilt.
+- Nightly in der CI-Pipeline (spaeter).
+- Wenn Coverage hoch ist aber Vertrauen in Testqualitaet niedrig.
+
+**Wie mit Ergebnissen umgehen:**
+- Ueberlebende Mutanten in kritischem Code (Services, Konvertierungen): Tests ergaenzen.
+- Ueberlebende Mutanten in trivialem Code (Logging, Formatierung): Ignorieren, kein Test-Bloat.
+- Mutation Score als Richtwert: >= 60% fuer Kernmodule (app/services/, Plugin-Logik), kein hartes Gate.
+- `mutmut results` in die Session-Zusammenfassung aufnehmen wenn ausgefuehrt.
+
+**Kritische Module zuerst testen:**
+1. `plugins/bibliogon-plugin-export/bibliogon_export/tiptap_to_md.py` - Konvertierungslogik
+2. `plugins/bibliogon-plugin-export/bibliogon_export/scaffolder.py` - Projektstruktur
+3. `backend/app/services/` - Kern-Geschaeftslogik
+4. `backend/app/licensing.py` - Sicherheitskritisch
+
+**Referenz-Prompt fuer Claude Code:**
+```
+Ich moechte mutmut (Mutation Testing) in dieses Projekt integrieren.
+
+Schritte:
+1. Analysiere die vorhandene pyproject.toml und die bestehende Teststruktur
+2. Fuege mutmut als dev-Dependency via Poetry hinzu
+3. Konfiguriere mutmut in der pyproject.toml (paths_to_mutate, tests_dir, runner)
+4. Fuehre einen ersten mutmut run durch und zeige mir die Ergebnisse
+5. Falls Tests fehlen oder Mutanten ueberleben, schlage konkrete Verbesserungen vor
+
+Wichtig: Nutze Poetry fuer alles, keine pip-Aufrufe.
+```
+
 ---
 
 ## Automatisierung (noch aufzubauen)
@@ -231,6 +316,20 @@ test('export book as EPUB with manual TOC', async ({ page }) => {
 # Type-Check Frontend
 check-types:
 	cd frontend && npx tsc --noEmit
+
+# Mutation Testing (Nightly/manuell)
+mutmut-backend:
+	cd backend && poetry run mutmut run
+
+mutmut-export:
+	cd plugins/bibliogon-plugin-export && poetry run mutmut run
+
+mutmut-results:
+	cd backend && poetry run mutmut results
+
+mutmut-html:
+	cd backend && poetry run mutmut html
+	@echo "Report: backend/html/index.html"
 
 # Alle Checks zusammen (vor Push)
 check-all: test check-types
@@ -255,14 +354,19 @@ test-all: test test-frontend
 5. make dev-bg             # App starten
 6. npx playwright test     # E2E
 7. make dev-down           # App stoppen
+
+Nightly (separat, dauert laenger):
+8. make mutmut-backend     # Mutation Testing Backend
+9. make mutmut-export      # Mutation Testing Export-Plugin
 ```
 
 ---
 
 ## Prioritaet fuer naechste Verbesserungen
 
-1. **Vitest einrichten** - Frontend Unit Tests fuer api/client.ts und Hooks
-2. **make check-all** - Ein Befehl fuer alles vor dem Push
-3. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
-4. **mypy einrichten** - Type-Checking fuer Python Backend
-5. **CI-Pipeline** - GitHub Actions mit allen Checks
+1. **mutmut einrichten** - Mutation Testing fuer Backend und Export-Plugin
+2. **Vitest einrichten** - Frontend Unit Tests fuer api/client.ts und Hooks
+3. **make check-all** - Ein Befehl fuer alles vor dem Push
+4. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
+5. **mypy einrichten** - Type-Checking fuer Python Backend
+6. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut
