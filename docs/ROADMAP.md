@@ -31,10 +31,16 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-04: Bild-Resize per Drag
 - [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
-- [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
+- [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
 - [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
----
+- [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
+- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
+- [ ] T-06: Lesezeit-Schaetzung pro Kapitel
+- [ ] Q-06: CI-Pipeline (GitHub Actions)
+- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
+- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 
 ## UI/UX
 
@@ -111,13 +117,13 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## Tests
 
-- [x] 33 Backend-Tests (pytest)
+- [x] 38 Backend-Tests (pytest)
 - [x] 48 Plugin-Tests (pytest)
 - [x] 21 Frontend-Tests (Vitest)
 - [x] 52 E2E-Tests (Playwright)
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
-- [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
+- [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] Q-04: API-Client Unit Tests (Vitest)
 - [ ] Q-05: mypy Type-Checking fuer Python Backend
 - [ ] Q-06: CI-Pipeline (GitHub Actions)
