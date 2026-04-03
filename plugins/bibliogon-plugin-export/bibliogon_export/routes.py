@@ -87,6 +87,17 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
     return book_data, chapters_data, assets_data
 
 
+@router.get("/batch")
+def export_batch_route(
+    book_id: str,
+    book_type: str = "ebook",
+    use_manual_toc: bool | None = None,
+    db: Any = Depends(lambda: None),
+):
+    """Export a book in all main formats (EPUB, PDF, DOCX) as a single ZIP."""
+    return _export_batch(book_id, book_type, use_manual_toc)
+
+
 @router.get("/{fmt}")
 def export(
     book_id: str,
@@ -190,6 +201,88 @@ def export(
             path=str(output_path),
             media_type=media_type,
             filename=f"{base_name}{ext}",
+        )
+    except PandocError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+BATCH_FORMATS = ["epub", "pdf", "docx"]
+
+
+def _export_batch(
+    book_id: str,
+    book_type: str = "ebook",
+    use_manual_toc: bool | None = None,
+):
+    if _get_db is None:
+        raise HTTPException(status_code=500, detail="Export plugin not configured")
+
+    db_gen = _get_db()
+    db_session = next(db_gen)
+    try:
+        book_data, chapters_data, assets_data = _get_book_data(book_id, db_session)
+    finally:
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_batch_"))
+
+    try:
+        import yaml
+        config_path = Path("config/plugins/export.yaml")
+        config: dict[str, Any] = {}
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        export_settings = config.get("settings", {})
+        has_manual_toc = any(ch.get("chapter_type") == "toc" for ch in chapters_data)
+        if use_manual_toc is None:
+            use_manual_toc = has_manual_toc
+
+        project_dir = scaffold_project(
+            book_data, chapters_data, tmp_dir, export_settings, assets_data,
+        )
+
+        slug = project_dir.name
+        cover_path = book_data.get("cover_image")
+        if not cover_path:
+            for ext in ("png", "jpg", "jpeg"):
+                candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
+                if candidate.exists():
+                    cover_path = str(candidate)
+                    break
+
+        # Export each format
+        output_files: list[Path] = []
+        errors: list[str] = []
+        for fmt in BATCH_FORMATS:
+            try:
+                output_path = run_pandoc(
+                    project_dir, fmt, config,
+                    use_manual_toc=use_manual_toc,
+                    cover_path=cover_path,
+                )
+                output_files.append(output_path)
+            except PandocError as e:
+                errors.append(f"{fmt}: {e}")
+
+        if not output_files:
+            raise HTTPException(status_code=500, detail=f"All exports failed: {'; '.join(errors)}")
+
+        # Bundle into ZIP
+        import zipfile
+        zip_path = tmp_dir / f"{slug}-batch.zip"
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for f in output_files:
+                zf.write(f, f.name)
+
+        return FileResponse(
+            path=str(zip_path),
+            media_type="application/zip",
+            filename=f"{slug}-batch.zip",
         )
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))

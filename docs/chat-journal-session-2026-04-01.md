@@ -498,6 +498,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 52. X-05: Batch-Export alle Formate
+
+- 🔹 **Original-Prompt:** "Setze X-05 um."
+- 🔸 **Optimierter Prompt:** "Neuer GET /api/books/{id}/export/batch Endpoint: Exportiert EPUB+PDF+DOCX, buendelt als ZIP. Route VOR /{fmt} registrieren. ExportDialog: 'Alle Formate (ZIP)' Button neben dem normalen Export-Button. i18n Key export_all."
+- 🎯 Ein-Klick-Export aller gaengigen Formate
+- ✅ Batch-Endpoint, ZIP-Buendelung, ExportDialog Button
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

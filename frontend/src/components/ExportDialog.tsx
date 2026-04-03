@@ -191,9 +191,25 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                         </div>
                     )}
 
-                    {/* Export button */}
+                    {/* Export buttons */}
                     <div className="dialog-footer">
                         <button className="btn btn-ghost" onClick={onClose}>{t("ui.common.cancel", "Abbrechen")}</button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => {
+                                setExporting(true);
+                                const params = new URLSearchParams();
+                                if (bookType !== "ebook") params.set("book_type", bookType);
+                                if (hasManualToc) params.set("use_manual_toc", String(useManualToc));
+                                const query = params.toString();
+                                window.open(`/api/books/${bookId}/export/batch${query ? `?${query}` : ""}`, "_blank");
+                                setTimeout(() => { setExporting(false); onClose(); }, 1500);
+                            }}
+                            disabled={exporting}
+                        >
+                            <Download size={16}/>
+                            {t("ui.export_dialog.export_all", "Alle Formate (ZIP)")}
+                        </button>
                         <button
                             className="btn btn-primary"
                             onClick={handleExport}

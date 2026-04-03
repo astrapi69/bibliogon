@@ -100,6 +100,7 @@ ui:
     auto_toc_hint: "A table of contents will be auto-generated (existing one ignored)."
     section_order: "Adjust chapter order"
     exporting: "Exporting..."
+    export_all: "All Formats (ZIP)"
     export_as: "Export as {format}"
   formats:
     epub: "EPUB"

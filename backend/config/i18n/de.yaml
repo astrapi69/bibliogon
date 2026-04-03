@@ -100,6 +100,7 @@ ui:
     auto_toc_hint: "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert)."
     section_order: "Kapitelreihenfolge anpassen"
     exporting: "Exportiert..."
+    export_all: "Alle Formate (ZIP)"
     export_as: "Als {format} exportieren"
   formats:
     epub: "EPUB"
