@@ -48,6 +48,13 @@ ui:
     part_intro: "Εισαγωγή μέρους"
     interlude: "Ιντερλούδιο"
     toc: "Πίνακας περιεχομένων"
+    dedication: "Αφιέρωση"
+    prologue: "Πρόλογος"
+    introduction: "Εισαγωγή"
+    afterword: "Επίλογος συγγραφέα"
+    index: "Ευρετήριο"
+    epigraph: "Επίγραμμα"
+    endnotes: "Σημειώσεις τέλους"
   export_dialog:
     title: "Εξαγωγή"
     format: "Μορφή"

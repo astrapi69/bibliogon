@@ -496,22 +496,29 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
 # --- Helpers ---
 
 _FRONT_MATTER_MAP = {
+    "toc": ChapterType.TABLE_OF_CONTENTS,
+    "dedication": ChapterType.DEDICATION,
+    "epigraph": ChapterType.EPIGRAPH,
     "preface": ChapterType.PREFACE,
     "foreword": ChapterType.FOREWORD,
+    "prologue": ChapterType.PROLOGUE,
+    "introduction": ChapterType.INTRODUCTION,
     "translators-note": ChapterType.PREFACE,
-    "toc": ChapterType.TABLE_OF_CONTENTS,
 }
 
 _BACK_MATTER_MAP = {
+    "epilogue": ChapterType.EPILOGUE,
+    "afterword": ChapterType.AFTERWORD,
     "about-the-author": ChapterType.ABOUT_AUTHOR,
+    "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
     "appendix": ChapterType.APPENDIX,
     "bibliography": ChapterType.BIBLIOGRAPHY,
+    "endnotes": ChapterType.ENDNOTES,
     "glossary": ChapterType.GLOSSARY,
-    "epilogue": ChapterType.EPILOGUE,
+    "index": ChapterType.INDEX,
     "imprint": ChapterType.IMPRINT,
     "next-in-series": ChapterType.NEXT_IN_SERIES,
     "other-publications": ChapterType.NEXT_IN_SERIES,
-    "acknowledgments": ChapterType.ACKNOWLEDGMENTS,
 }
 
 # Combined map for all special sections (front + back matter)

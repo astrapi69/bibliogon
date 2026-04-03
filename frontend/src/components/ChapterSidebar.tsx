@@ -49,10 +49,12 @@ interface Props {
     hasToc: boolean;
 }
 
-const FRONT_MATTER_TYPES: ChapterType[] = ["toc", "preface", "foreword"];
+const FRONT_MATTER_TYPES: ChapterType[] = [
+    "toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction",
+];
 const BACK_MATTER_TYPES: ChapterType[] = [
-    "epilogue", "about_author", "appendix", "bibliography",
-    "glossary", "imprint", "next_in_series", "acknowledgments",
+    "epilogue", "afterword", "about_author", "acknowledgments", "appendix",
+    "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series",
 ];
 const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
 
@@ -211,6 +213,13 @@ export default function ChapterSidebar({
         imprint: t("ui.chapter_types.imprint", "Impressum"),
         next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
         part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
+        dedication: t("ui.chapter_types.dedication", "Widmung"),
+        prologue: t("ui.chapter_types.prologue", "Prolog"),
+        introduction: t("ui.chapter_types.introduction", "Einleitung"),
+        afterword: t("ui.chapter_types.afterword", "Nachwort"),
+        index: t("ui.chapter_types.index", "Stichwortverzeichnis"),
+        epigraph: t("ui.chapter_types.epigraph", "Motto"),
+        endnotes: t("ui.chapter_types.endnotes", "Endnoten"),
         interlude: t("ui.chapter_types.interlude", "Interludium"),
         toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
     };

@@ -14,7 +14,14 @@ export type ChapterType =
     | "next_in_series"
     | "part_intro"
     | "interlude"
-    | "toc";
+    | "toc"
+    | "dedication"
+    | "prologue"
+    | "introduction"
+    | "afterword"
+    | "index"
+    | "epigraph"
+    | "endnotes";
 
 export interface Book {
     id: string;

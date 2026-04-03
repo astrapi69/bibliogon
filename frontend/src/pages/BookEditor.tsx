@@ -31,6 +31,13 @@ export default function BookEditor() {
         part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
         interlude: t("ui.chapter_types.interlude", "Interludium"),
         toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
+        dedication: t("ui.chapter_types.dedication", "Widmung"),
+        prologue: t("ui.chapter_types.prologue", "Prolog"),
+        introduction: t("ui.chapter_types.introduction", "Einleitung"),
+        afterword: t("ui.chapter_types.afterword", "Nachwort"),
+        index: t("ui.chapter_types.index", "Stichwortverzeichnis"),
+        epigraph: t("ui.chapter_types.epigraph", "Motto"),
+        endnotes: t("ui.chapter_types.endnotes", "Endnoten"),
     };
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);

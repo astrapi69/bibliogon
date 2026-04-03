@@ -48,6 +48,13 @@ ui:
     part_intro: "Part Introduction"
     interlude: "Interlude"
     toc: "Table of Contents"
+    dedication: "Dedication"
+    prologue: "Prologue"
+    introduction: "Introduction"
+    afterword: "Afterword"
+    index: "Index"
+    epigraph: "Epigraph"
+    endnotes: "Endnotes"
   export_dialog:
     title: "Export"
     format: "Format"

@@ -48,6 +48,13 @@ ui:
     part_intro: "Introduccion de parte"
     interlude: "Interludio"
     toc: "Indice"
+    dedication: "Dedicatoria"
+    prologue: "Prologo"
+    introduction: "Introduccion"
+    afterword: "Epílogo del autor"
+    index: "Indice"
+    epigraph: "Epigrafe"
+    endnotes: "Notas finales"
   export_dialog:
     title: "Exportar"
     format: "Formato"

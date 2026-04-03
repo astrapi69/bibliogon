@@ -73,8 +73,8 @@ faq:
       de: "Welche Kapiteltypen gibt es?"
       en: "What chapter types are available?"
     answer:
-      de: "Es gibt 8 Kapiteltypen, gruppiert in drei Bereiche: Front Matter (Vorwort, Geleitwort, Danksagung), reguläre Kapitel, und Back Matter (Über den Autor, Anhang, Literatur, Glossar). Du kannst den Typ beim Erstellen über das '+'-Dropdown in der Sidebar wählen. Bei einem leeren Buch werden alle Typen direkt als Buttons angezeigt."
-      en: "There are 8 chapter types, grouped into three areas: Front Matter (Preface, Foreword, Acknowledgments), regular Chapters, and Back Matter (About the Author, Appendix, Bibliography, Glossary). You can choose the type via the '+' dropdown in the sidebar. For an empty book, all types are shown as direct buttons."
+      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Ueber den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Naechster Band). Alle waehlbar ueber das '+'-Dropdown in der Sidebar."
+      en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
   - question:
       de: "Wie ordne ich Kapitel um?"
       en: "How do I reorder chapters?"
@@ -217,8 +217,8 @@ faq:
       de: "Welche Kapiteltypen gibt es jetzt?"
       en: "What chapter types are available now?"
     answer:
-      de: "13 Kapiteltypen in 3 Gruppen: Front Matter (Vorwort, Geleitwort, Danksagung), Kapitel (reguläres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Über den Autor, Anhang, Literatur, Glossar, Impressum, Nächster Band). Alle wählbar über das '+'-Dropdown in der Sidebar oder die Buttons bei einem leeren Buch."
-      en: "13 chapter types in 3 groups: Front Matter (Preface, Foreword, Acknowledgments), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, About the Author, Appendix, Bibliography, Glossary, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar or buttons for an empty book."
+      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Ueber den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Naechster Band). Alle waehlbar ueber das '+'-Dropdown in der Sidebar."
+      en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
   # --- Plugin-Installation ---
   - question:
       de: "Wie installiere ich ein Drittanbieter-Plugin?"

@@ -22,6 +22,13 @@ class ChapterType(str, Enum):
     PART_INTRO = "part_intro"
     INTERLUDE = "interlude"
     TABLE_OF_CONTENTS = "toc"
+    DEDICATION = "dedication"
+    PROLOGUE = "prologue"
+    INTRODUCTION = "introduction"
+    AFTERWORD = "afterword"
+    INDEX = "index"
+    EPIGRAPH = "epigraph"
+    ENDNOTES = "endnotes"
 
 
 # --- Book schemas ---

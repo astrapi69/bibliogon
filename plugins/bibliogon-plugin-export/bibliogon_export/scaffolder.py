@@ -116,19 +116,26 @@ def scaffold_project(
 
 # Chapter type to filename mapping for front/back matter
 _FRONT_MATTER_TYPES: dict[str, str] = {
+    "dedication": "dedication",
+    "epigraph": "epigraph",
     "preface": "preface",
     "foreword": "foreword",
+    "prologue": "prologue",
+    "introduction": "introduction",
 }
 
 _BACK_MATTER_TYPES: dict[str, str] = {
+    "epilogue": "epilogue",
+    "afterword": "afterword",
     "about_author": "about-the-author",
+    "acknowledgments": "acknowledgments",
     "appendix": "appendix",
     "bibliography": "bibliography",
+    "endnotes": "endnotes",
     "glossary": "glossary",
-    "epilogue": "epilogue",
+    "index": "index",
     "imprint": "imprint",
     "next_in_series": "next-in-series",
-    "acknowledgments": "acknowledgments",
 }
 
 

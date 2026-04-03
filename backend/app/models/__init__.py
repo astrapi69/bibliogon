@@ -31,6 +31,13 @@ class ChapterType(str, enum.Enum):
     PART_INTRO = "part_intro"
     INTERLUDE = "interlude"
     TABLE_OF_CONTENTS = "toc"
+    DEDICATION = "dedication"
+    PROLOGUE = "prologue"
+    INTRODUCTION = "introduction"
+    AFTERWORD = "afterword"
+    INDEX = "index"
+    EPIGRAPH = "epigraph"
+    ENDNOTES = "endnotes"
 
 
 class Book(Base):
