@@ -100,6 +100,7 @@ ui:
     volume: "Band"
     volume_placeholder: "Nr."
     is_series: "Teil einer Serie"
+    more_details: "Weitere Details"
     genre: "Genre"
     genre_placeholder: "Genre wählen..."
   genres:

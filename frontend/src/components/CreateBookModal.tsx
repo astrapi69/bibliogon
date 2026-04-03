@@ -3,7 +3,7 @@ import {api, BookCreate} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
-import {ChevronDown} from "lucide-react";
+import {ChevronDown, ChevronRight} from "lucide-react";
 
 interface Props {
     open: boolean;
@@ -16,9 +16,11 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [authorChoices, setAuthorChoices] = useState<string[]>([]);
-    const [language, setLanguage] = useState("de");
     const [genre, setGenre] = useState("");
+    // Optional fields (hidden by default)
+    const [showDetails, setShowDetails] = useState(false);
     const [subtitle, setSubtitle] = useState("");
+    const [language, setLanguage] = useState("de");
     const [isSeries, setIsSeries] = useState(false);
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
@@ -54,10 +56,13 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
         // Reset form
         setTitle("");
         setAuthor("");
+        setGenre("");
         setLanguage("de");
         setSubtitle("");
+        setIsSeries(false);
         setSeries("");
         setSeriesIndex("");
+        setShowDetails(false);
     };
 
     return (
@@ -70,6 +75,7 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                     </div>
 
                     <div style={styles.body}>
+                        {/* === Stage 1: Required fields === */}
                         <div className="field">
                             <label className="label">{t("ui.create_book.book_title", "Titel")} *</label>
                             <input
@@ -112,111 +118,125 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                         </div>
 
                         <div className="field">
-                            <label className="label">{t("ui.create_book.subtitle", "Untertitel")}</label>
+                            <label className="label">{t("ui.create_book.genre", "Genre")}</label>
                             <input
                                 className="input"
-                                value={subtitle}
-                                onChange={(e) => setSubtitle(e.target.value)}
-                                placeholder={t("ui.create_book.subtitle_placeholder", "Optional")}
+                                list="genre-suggestions"
+                                value={genre}
+                                onChange={(e) => setGenre(e.target.value)}
+                                placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen oder eingeben...")}
                             />
+                            <datalist id="genre-suggestions">
+                                {[
+                                    t("ui.genres.novel", "Roman"),
+                                    t("ui.genres.non_fiction", "Sachbuch"),
+                                    t("ui.genres.technical", "Fachbuch"),
+                                    t("ui.genres.children", "Kinderbuch"),
+                                    t("ui.genres.biography", "Biografie"),
+                                    t("ui.genres.poetry", "Lyrik"),
+                                    t("ui.genres.short_stories", "Kurzgeschichten"),
+                                    t("ui.genres.academic", "Wissenschaftlich"),
+                                    t("ui.genres.textbook", "Lehrbuch"),
+                                    t("ui.genres.self_help", "Ratgeber"),
+                                    t("ui.genres.fantasy", "Fantasy"),
+                                    t("ui.genres.thriller", "Thriller"),
+                                    t("ui.genres.romance", "Liebesroman"),
+                                    t("ui.genres.cookbook", "Kochbuch"),
+                                    t("ui.genres.travel", "Reisefuehrer"),
+                                ].map((g) => (
+                                    <option key={g} value={g}/>
+                                ))}
+                            </datalist>
                         </div>
 
-                        <div style={styles.row}>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.create_book.language", "Sprache")}</label>
-                                <Select.Root value={language} onValueChange={setLanguage}>
-                                    <Select.Trigger className="radix-select-trigger">
-                                        <Select.Value/>
-                                        <Select.Icon><ChevronDown size={14}/></Select.Icon>
-                                    </Select.Trigger>
-                                    <Select.Portal>
-                                        <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
-                                            <Select.Viewport>
-                                                {[
-                                                    {value: "de", label: t("ui.languages.de", "Deutsch")},
-                                                    {value: "en", label: t("ui.languages.en", "English")},
-                                                    {value: "es", label: t("ui.languages.es", "Espanol")},
-                                                    {value: "fr", label: t("ui.languages.fr", "Francais")},
-                                                    {value: "el", label: t("ui.languages.el", "Ellinika")},
-                                                ].map((opt) => (
-                                                    <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
-                                                        <Select.ItemText>{opt.label}</Select.ItemText>
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Viewport>
-                                        </Select.Content>
-                                    </Select.Portal>
-                                </Select.Root>
-                            </div>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.create_book.genre", "Genre")}</label>
-                                <input
-                                    className="input"
-                                    list="genre-suggestions"
-                                    value={genre}
-                                    onChange={(e) => setGenre(e.target.value)}
-                                    placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen oder eingeben...")}
-                                />
-                                <datalist id="genre-suggestions">
-                                    {[
-                                        t("ui.genres.novel", "Roman"),
-                                        t("ui.genres.non_fiction", "Sachbuch"),
-                                        t("ui.genres.technical", "Fachbuch"),
-                                        t("ui.genres.children", "Kinderbuch"),
-                                        t("ui.genres.biography", "Biografie"),
-                                        t("ui.genres.poetry", "Lyrik"),
-                                        t("ui.genres.short_stories", "Kurzgeschichten"),
-                                        t("ui.genres.academic", "Wissenschaftlich"),
-                                        t("ui.genres.textbook", "Lehrbuch"),
-                                        t("ui.genres.self_help", "Ratgeber"),
-                                        t("ui.genres.fantasy", "Fantasy"),
-                                        t("ui.genres.thriller", "Thriller"),
-                                        t("ui.genres.romance", "Liebesroman"),
-                                        t("ui.genres.cookbook", "Kochbuch"),
-                                        t("ui.genres.travel", "Reisefuehrer"),
-                                    ].map((g) => (
-                                        <option key={g} value={g}/>
-                                    ))}
-                                </datalist>
-                            </div>
-                        </div>
+                        {/* === Stage 2: Optional fields (expandable) === */}
+                        <button
+                            style={styles.detailsToggle}
+                            onClick={() => setShowDetails(!showDetails)}
+                        >
+                            {showDetails
+                                ? <ChevronDown size={14}/>
+                                : <ChevronRight size={14}/>
+                            }
+                            {t("ui.create_book.more_details", "Weitere Details")}
+                        </button>
 
-                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem", marginTop: 4}}>
-                            <input
-                                type="checkbox"
-                                checked={isSeries}
-                                onChange={(e) => {
-                                    setIsSeries(e.target.checked);
-                                    if (!e.target.checked) { setSeries(""); setSeriesIndex(""); }
-                                }}
-                                style={{accentColor: "var(--accent)"}}
-                            />
-                            {t("ui.create_book.is_series", "Teil einer Serie")}
-                        </label>
-
-                        {isSeries && (
-                            <div style={styles.row}>
-                                <div className="field" style={{flex: 2}}>
-                                    <label className="label">{t("ui.create_book.series", "Reihe")}</label>
+                        {showDetails && (
+                            <div style={styles.detailsSection}>
+                                <div className="field">
+                                    <label className="label">{t("ui.create_book.subtitle", "Untertitel")}</label>
                                     <input
                                         className="input"
-                                        value={series}
-                                        onChange={(e) => setSeries(e.target.value)}
-                                        placeholder={t("ui.create_book.series_placeholder", "z.B. Das unsterbliche Muster")}
-                                        autoFocus
+                                        value={subtitle}
+                                        onChange={(e) => setSubtitle(e.target.value)}
+                                        placeholder={t("ui.create_book.subtitle_placeholder", "Optional")}
                                     />
                                 </div>
-                                <div className="field" style={{flex: 1}}>
-                                    <label className="label">{t("ui.create_book.volume", "Band")}</label>
+
+                                <div className="field">
+                                    <label className="label">{t("ui.create_book.language", "Sprache")}</label>
+                                    <Select.Root value={language} onValueChange={setLanguage}>
+                                        <Select.Trigger className="radix-select-trigger">
+                                            <Select.Value/>
+                                            <Select.Icon><ChevronDown size={14}/></Select.Icon>
+                                        </Select.Trigger>
+                                        <Select.Portal>
+                                            <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
+                                                <Select.Viewport>
+                                                    {[
+                                                        {value: "de", label: t("ui.languages.de", "Deutsch")},
+                                                        {value: "en", label: t("ui.languages.en", "English")},
+                                                        {value: "es", label: t("ui.languages.es", "Espanol")},
+                                                        {value: "fr", label: t("ui.languages.fr", "Francais")},
+                                                        {value: "el", label: t("ui.languages.el", "Ellinika")},
+                                                    ].map((opt) => (
+                                                        <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
+                                                            <Select.ItemText>{opt.label}</Select.ItemText>
+                                                        </Select.Item>
+                                                    ))}
+                                                </Select.Viewport>
+                                            </Select.Content>
+                                        </Select.Portal>
+                                    </Select.Root>
+                                </div>
+
+                                <label style={styles.checkboxLabel}>
                                     <input
-                                        className="input"
-                                        type="number"
-                                        min="1"
-                                        value={seriesIndex}
-                                        onChange={(e) => setSeriesIndex(e.target.value)}
-                                        placeholder={t("ui.create_book.volume_placeholder", "Nr.")}
+                                        type="checkbox"
+                                        checked={isSeries}
+                                        onChange={(e) => {
+                                            setIsSeries(e.target.checked);
+                                            if (!e.target.checked) { setSeries(""); setSeriesIndex(""); }
+                                        }}
+                                        style={{accentColor: "var(--accent)"}}
                                     />
-                                </div>
+                                    {t("ui.create_book.is_series", "Teil einer Serie")}
+                                </label>
+
+                                {isSeries && (
+                                    <div style={styles.row}>
+                                        <div className="field" style={{flex: 2}}>
+                                            <label className="label">{t("ui.create_book.series", "Reihe")}</label>
+                                            <input
+                                                className="input"
+                                                value={series}
+                                                onChange={(e) => setSeries(e.target.value)}
+                                                placeholder={t("ui.create_book.series_placeholder", "z.B. Das unsterbliche Muster")}
+                                            />
+                                        </div>
+                                        <div className="field" style={{flex: 1}}>
+                                            <label className="label">{t("ui.create_book.volume", "Band")}</label>
+                                            <input
+                                                className="input"
+                                                type="number"
+                                                min="1"
+                                                value={seriesIndex}
+                                                onChange={(e) => setSeriesIndex(e.target.value)}
+                                                placeholder={t("ui.create_book.volume_placeholder", "Nr.")}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -246,5 +266,31 @@ const styles: Record<string, React.CSSProperties> = {
     row: {
         display: "flex",
         gap: 12,
+    },
+    detailsToggle: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: "var(--text-muted)",
+        fontSize: "0.8125rem",
+        fontWeight: 500,
+        fontFamily: "var(--font-body)",
+        padding: "8px 0 4px",
+    },
+    detailsSection: {
+        paddingTop: 8,
+        borderTop: "1px solid var(--border)",
+        marginTop: 4,
+    },
+    checkboxLabel: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+        fontSize: "0.875rem",
+        marginTop: 8,
     },
 };

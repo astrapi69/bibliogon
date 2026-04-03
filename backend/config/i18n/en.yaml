@@ -100,6 +100,7 @@ ui:
     volume: "Volume"
     volume_placeholder: "No."
     is_series: "Part of a Series"
+    more_details: "More Details"
     genre: "Genre"
     genre_placeholder: "Choose genre..."
   genres:

@@ -116,6 +116,15 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements (kompiliertes JS-Bu
 - Shared Components in frontend/src/components/.
 - API-Aufrufe NUR ueber frontend/src/api/client.ts, nie fetch() direkt in Komponenten.
 
+### UX-Patterns fuer Formulare
+
+- **Modal mit Stufen** fuer Erstellungs-Dialoge: Stufe 1 zeigt Pflichtfelder (2-3), Stufe 2 ist aufklappbar ("Weitere Details") fuer optionale Felder.
+- **Grund:** Modals bleiben kompakt fuer Quick-Creation, optionale Felder ueberladen nicht.
+- **Beispiel:** CreateBookModal - Stufe 1: Titel, Autor, Genre. Stufe 2: Untertitel, Sprache, Serie.
+- **Eingabefelder mit Vorschlaegen:** `<input>` + `<datalist>` fuer Freitext mit Dropdown-Vorschlaegen (z.B. Genre). Kein hartes Select wenn eigene Werte moeglich sein sollen.
+- **Bedingte Felder:** Checkbox-Toggle fuer optionale Gruppen (z.B. "Teil einer Serie" -> Reihe + Band). Werte werden beim Deaktivieren zurueckgesetzt.
+- **Keine eigene Seite** fuer einfache Erstellungs-Workflows. Modal reicht bis ~8 Felder.
+
 ### State Management
 
 - Aktuell: React State + Props. Kein globales State-Management.
