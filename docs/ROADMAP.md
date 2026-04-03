@@ -45,7 +45,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-05: Editor: Suchen und Ersetzen im Kapitel
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
-- [ ] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
+- [x] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 
 ## i18n
