@@ -9,6 +9,9 @@ ui:
     import: "Εισαγωγή"
     trash: "Κάδος"
     search_placeholder: "Αναζήτηση κατά τίτλο, συγγραφέα, είδος ή γλώσσα..."
+    sort_date: "Ημερομηνία"
+    sort_title: "Τίτλος"
+    sort_author: "Συγγραφέας"
   editor:
     new_chapter: "Νέο κεφάλαιο"
     confirm_delete_chapter: "Θέλετε σίγουρα να διαγράψετε αυτό το κεφάλαιο;"

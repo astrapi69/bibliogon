@@ -435,6 +435,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 45. U-01: Dashboard Sortierung
+
+- 🔹 **Original-Prompt:** "ja" (weitermachen)
+- 🔸 **Optimierter Prompt:** "Setze U-01 um: Dashboard Sortierung nach Datum, Titel, Autor. Drei Toggle-Buttons in der Suchleiste, Default: Datum (neueste zuerst). Client-side Sort mit localeCompare. Suchleiste ab 2 Buechern sichtbar."
+- 🎯 Schnelles Finden und Sortieren bei wachsender Bibliothek
+- ✅ 3 Sort-Buttons (Datum/Titel/Autor), i18n in 5 Sprachen
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

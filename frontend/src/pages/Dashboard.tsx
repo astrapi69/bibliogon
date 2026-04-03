@@ -6,7 +6,7 @@ import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search,
+    Menu, Search, ArrowUpDown,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import ThemeToggle from "../components/ThemeToggle";
@@ -22,6 +22,7 @@ export default function Dashboard() {
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [sortBy, setSortBy] = useState<"date" | "title" | "author">("date");
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
     const backupInputRef = useRef<HTMLInputElement>(null);
@@ -292,7 +293,7 @@ export default function Dashboard() {
                             <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
                             <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Bücher"}</span>
                         </div>
-                        {books.length > 3 && (
+                        {books.length > 1 && (
                             <div style={styles.searchBar}>
                                 <Search size={16} style={{color: "var(--text-muted)", flexShrink: 0}}/>
                                 <input
@@ -302,10 +303,32 @@ export default function Dashboard() {
                                     placeholder={t("ui.dashboard.search_placeholder", "Suche nach Titel, Autor, Genre oder Sprache...")}
                                     style={{border: "none", background: "transparent", flex: 1, padding: "4px 0"}}
                                 />
+                                <div style={{display: "flex", gap: 2, flexShrink: 0, borderLeft: "1px solid var(--border)", paddingLeft: 8}}>
+                                    {(["date", "title", "author"] as const).map((field) => (
+                                        <button
+                                            key={field}
+                                            className="btn btn-ghost btn-sm"
+                                            style={{
+                                                padding: "2px 8px",
+                                                fontSize: "0.6875rem",
+                                                ...(sortBy === field ? {background: "var(--accent-light)", color: "var(--accent)"} : {}),
+                                            }}
+                                            onClick={() => setSortBy(field)}
+                                        >
+                                            {field === "date" ? t("ui.dashboard.sort_date", "Datum")
+                                                : field === "title" ? t("ui.dashboard.sort_title", "Titel")
+                                                : t("ui.dashboard.sort_author", "Autor")}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                         <div style={styles.grid}>
-                            {books.filter((book) => {
+                            {[...books].sort((a, b) => {
+                                if (sortBy === "title") return a.title.localeCompare(b.title);
+                                if (sortBy === "author") return a.author.localeCompare(b.author);
+                                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+                            }).filter((book) => {
                                 if (!searchQuery.trim()) return true;
                                 const q = searchQuery.toLowerCase();
                                 return (

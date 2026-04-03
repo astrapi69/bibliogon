@@ -12,7 +12,7 @@ Prompt-Referenz: `Setze U-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
-- [ ] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
+- [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
@@ -36,7 +36,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Settings: Autor-Tab mit Pseudonym-Verwaltung
 - [x] Core-Plugins: "Standard" Badge, kein Loeschen/Deaktivieren
 - [x] Dashboard: Buch-Suche/Filter (nach Titel, Autor, Genre, Sprache)
-- [ ] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
+- [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [ ] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
