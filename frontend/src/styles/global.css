@@ -695,6 +695,27 @@ body {
     text-align: justify;
 }
 
+/* Footnotes */
+.tiptap-editor .footnotes {
+    border-top: 1px solid var(--border);
+    margin-top: 2em;
+    padding-top: 1em;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.tiptap-editor .footnote-reference {
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.75em;
+    vertical-align: super;
+    font-weight: 600;
+}
+
+.tiptap-editor .footnote {
+    margin-bottom: 0.5em;
+}
+
 .tiptap-editor blockquote {
     border-left: 3px solid var(--accent);
     padding-left: 1rem;

@@ -45,7 +45,8 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.28.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "tiptap-footnotes": "^3.0.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

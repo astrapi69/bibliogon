@@ -26,6 +26,7 @@ import {
     Subscript,
     Superscript,
     Table as TableIcon,
+    FootprintsIcon,
 } from "lucide-react";
 
 interface Props {
@@ -186,6 +187,13 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
             action: () => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
             active: editor.isActive("table"),
             title: "Tabelle einfügen",
+            hidden: markdownMode,
+        },
+        {
+            icon: <FootprintsIcon size={16}/>,
+            action: () => editor.chain().focus().addFootnote().run(),
+            active: false,
+            title: "Fussnote",
             hidden: markdownMode,
         },
         {

@@ -16,7 +16,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
-- [ ] T-01: Fussnoten (@buttondown/tiptap-footnotes)
+- [x] T-01: Fussnoten (tiptap-footnotes)
 - [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
 - [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [ ] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
@@ -79,7 +79,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] 15 offizielle Extensions + Figure/Figcaption
 - [x] 24 Toolbar-Buttons
 - [x] Markdown-Toggle mit Bild-Erhalt
-- [ ] T-01: Fussnoten (@buttondown/tiptap-footnotes)
+- [x] T-01: Fussnoten (tiptap-footnotes)
 - [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 - [ ] T-04: Bild-Resize per Drag

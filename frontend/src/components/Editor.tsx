@@ -19,6 +19,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
+import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 
@@ -97,6 +98,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
             CharacterCount,
             TextStyle,
             Color,
+            Footnotes,
+            FootnoteReference,
+            Footnote,
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),

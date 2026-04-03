@@ -471,6 +471,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 49. T-01: Fussnoten Extension
+
+- 🔹 **Original-Prompt:** "Setze T-01 um."
+- 🔸 **Optimierter Prompt:** "Installiere tiptap-footnotes (3 Nodes: Footnotes Container, FootnoteReference Inline-Marker, Footnote Einzeleintrag). Registriere im Editor. Toolbar-Button mit FootprintsIcon. CSS fuer Fussnoten-Bereich (border-top, smaller font, accent-colored reference numbers)."
+- 🎯 Autoren koennen Fussnoten im Editor einfuegen
+- ✅ tiptap-footnotes@3.0.1, Toolbar-Button, CSS Styles
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
