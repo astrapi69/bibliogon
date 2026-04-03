@@ -28,7 +28,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [x] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
-- [ ] T-04: Bild-Resize per Drag
+- [x] T-04: Bild-Resize per Drag
 - [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
@@ -92,7 +92,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-01: Fussnoten (tiptap-footnotes)
 - [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
-- [ ] T-04: Bild-Resize per Drag
+- [x] T-04: Bild-Resize per Drag
 - [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [ ] T-06: Lesezeit-Schaetzung pro Kapitel
 - [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)

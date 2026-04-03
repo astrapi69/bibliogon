@@ -695,6 +695,39 @@ body {
     text-align: justify;
 }
 
+/* Figure extension: resize handles and alignment controls */
+.tiptap-editor [class*="wrapper-element"] {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.tiptap-editor [class*="dot-element"] {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    background: var(--bg-card);
+    z-index: 10;
+}
+
+.tiptap-editor [class*="image-alignment-container"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.tiptap-editor [class*="caption-controls-element"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
 /* Search & Replace highlights */
 .tiptap-editor .search-result {
     background-color: rgba(251, 191, 36, 0.4);

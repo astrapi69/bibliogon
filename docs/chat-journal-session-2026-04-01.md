@@ -588,6 +588,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 62. T-04: Bild-Resize per Drag
+
+- 🔹 **Original-Prompt:** "Setze T-04 um."
+- 🔸 **Optimierter Prompt:** "Pruefen ob @pentestpad/tiptap-extension-figure bereits Resize-Handles hat. Ergebnis: Ja - eingebaute Resize-Dots an 4 Ecken, Alignment-Buttons, Caption-Toggle. Nur CSS-Anpassung noetig fuer Theme-Kompatibilitaet."
+- 🎯 Bilder im Editor per Drag resizebar
+- ✅ Bereits eingebaut in Figure-Extension. CSS fuer Resize-Dots, Alignment, Caption-Controls an Theme angepasst.
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
