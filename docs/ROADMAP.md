@@ -15,7 +15,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
-- [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
+- [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [ ] T-01: Fussnoten (@buttondown/tiptap-footnotes)
 - [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
 - [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
@@ -141,7 +141,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 ## Technische Schulden
 
 - [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
-- [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
+- [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [ ] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
 - [ ] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren

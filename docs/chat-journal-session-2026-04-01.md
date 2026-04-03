@@ -462,6 +462,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 48. S-02: BookCard Genre-Badge i18n
+
+- 🔹 **Original-Prompt:** "Setze S-02 um."
+- 🔸 **Optimierter Prompt:** "Genre wird als uebersetzter Text gespeichert (z.B. 'Roman'), muss aber als Key ('novel') gespeichert werden damit BookCard es sprachunabhaengig uebersetzen kann. Fix: CreateBookModal mappt eingegebenen Text zurueck auf Key. BookCard nutzt t('ui.genres.{key}', fallback) fuer die Anzeige."
+- 🎯 Genre-Badge zeigt korrekte Uebersetzung in jeder Sprache
+- ✅ Key-basierte Speicherung, Reverse-Lookup im Modal, t() in BookCard
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {Book} from "../api/client";
+import {useI18n} from "../hooks/useI18n";
 import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function BookCard({book, onClick, onDelete, onDeletePermanent}: Props) {
+    const {t} = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const updated = new Date(book.updated_at).toLocaleDateString("de-DE", {
         day: "numeric",
@@ -38,7 +40,11 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                 <h3 style={styles.title}>{book.title}</h3>
                 {book.subtitle && <p style={styles.subtitle}>{book.subtitle}</p>}
                 <p style={styles.author}>{book.author}</p>
-                {book.genre && <span style={styles.genre}>{book.genre}</span>}
+                {book.genre && (
+                    <span style={styles.genre}>
+                        {t(`ui.genres.${book.genre}`, book.genre)}
+                    </span>
+                )}
                 {book.series && (
                     <p style={styles.series}>
                         {book.series}

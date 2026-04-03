@@ -14,6 +14,12 @@ interface Props {
 
 export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const {t} = useI18n();
+    const GENRE_KEYS = [
+        "novel", "non_fiction", "technical", "children", "biography", "poetry",
+        "short_stories", "academic", "textbook", "self_help", "fantasy",
+        "thriller", "romance", "cookbook", "travel",
+    ];
+
     // Stage 1: Required
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
@@ -46,11 +52,20 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
 
     const handleSubmit = () => {
         if (!title.trim() || !author.trim()) return;
+        // Map translated genre back to key (e.g. "Roman" -> "novel")
+        let genreValue = genre.trim();
+        if (genreValue) {
+            const matchedKey = GENRE_KEYS.find(
+                (k) => t(`ui.genres.${k}`, k).toLowerCase() === genreValue.toLowerCase()
+            );
+            if (matchedKey) genreValue = matchedKey;
+        }
+
         onCreate({
             title: title.trim(),
             author: author.trim(),
             language,
-            genre: genre.trim() || undefined,
+            genre: genreValue || undefined,
             subtitle: subtitle.trim() || undefined,
             series: series.trim() || undefined,
             series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
