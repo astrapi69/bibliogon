@@ -111,6 +111,11 @@ def scaffold_project(
         f"# About the Author\n\n{book.get('author', '')}\n",
     )
 
+    # Write chapter-type CSS if no custom CSS exists
+    styles_path = project_dir / "config" / "styles.css"
+    if not styles_path.exists():
+        styles_path.write_text(_DEFAULT_CHAPTER_TYPE_CSS, encoding="utf-8")
+
     return project_dir
 
 
@@ -139,12 +144,81 @@ _BACK_MATTER_TYPES: dict[str, str] = {
 }
 
 
+_DEFAULT_CHAPTER_TYPE_CSS = """\
+/* Chapter type specific styles for EPUB/PDF export */
+
+.dedication {
+    text-align: center;
+    margin-top: 30%;
+    font-style: italic;
+}
+
+.dedication h1 {
+    font-size: 1.2em;
+    font-weight: normal;
+    font-style: italic;
+}
+
+.epigraph {
+    text-align: right;
+    margin-top: 20%;
+    margin-left: 30%;
+    font-style: italic;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.epigraph h1 {
+    display: none;
+}
+
+.imprint {
+    font-size: 0.85em;
+    line-height: 1.6;
+}
+
+.imprint h1 {
+    font-size: 1.1em;
+}
+
+.prologue h1,
+.epilogue h1,
+.afterword h1 {
+    font-style: italic;
+}
+
+figcaption {
+    text-align: center;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 0.5em;
+}
+"""
+
+
+# Chapter type specific formatting wrappers for Pandoc/EPUB
+_CHAPTER_TYPE_WRAPPERS: dict[str, tuple[str, str]] = {
+    "dedication": ('<div class="dedication">\n\n', "\n\n</div>"),
+    "epigraph": ('<div class="epigraph">\n\n', "\n\n</div>"),
+    "imprint": ('<div class="imprint">\n\n', "\n\n</div>"),
+    "prologue": ('<div class="prologue">\n\n', "\n\n</div>"),
+    "epilogue": ('<div class="epilogue">\n\n', "\n\n</div>"),
+    "afterword": ('<div class="afterword">\n\n', "\n\n</div>"),
+}
+
+
 def _write_special_chapter(target_dir: Path, filename: str, chapter: dict[str, Any]) -> None:
     """Write a front-matter or back-matter chapter as Markdown file."""
     title = chapter.get("title", "Untitled")
     content = chapter.get("content", "")
+    ch_type = chapter.get("chapter_type", "chapter")
     md_body = _content_to_markdown(content)
     md = _prepend_title(title, md_body)
+    # Wrap with chapter-type-specific div for Pandoc CSS targeting
+    wrapper = _CHAPTER_TYPE_WRAPPERS.get(ch_type)
+    if wrapper:
+        md = wrapper[0] + md + wrapper[1]
     filepath = target_dir / f"{filename}.md"
     filepath.write_text(md, encoding="utf-8")
 

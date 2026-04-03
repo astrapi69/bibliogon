@@ -507,6 +507,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 53. X-03: Kapiteltyp-spezifische Formatierung im Export
+
+- 🔹 **Original-Prompt:** "Setze X-03 um."
+- 🔸 **Optimierter Prompt:** "Wickle Kapitel im Export mit `<div class='chapter-type'>` Wrapper fuer Pandoc CSS-Targeting. Definiere Standard-CSS: Widmung zentriert (margin-top 30%), Motto rechtsbuendig kursiv, Impressum kleiner, Prolog/Epilog/Nachwort H1 kursiv. CSS wird als styles.css ins Projekt geschrieben wenn kein Custom-CSS existiert."
+- 🎯 Kapiteltypen sehen im EPUB/PDF professionell formatiert aus
+- ✅ 6 Wrapper-Typen, Standard-CSS mit 7 Regeln, Fallback-Styles
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
