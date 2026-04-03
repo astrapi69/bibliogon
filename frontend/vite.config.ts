@@ -40,6 +40,7 @@ export default defineConfig({
                         'tiptap-footnotes',
                     ],
                     'vendor-ui': [
+                        '@radix-ui/react-context-menu',
                         '@radix-ui/react-dialog',
                         '@radix-ui/react-dropdown-menu',
                         '@radix-ui/react-select',

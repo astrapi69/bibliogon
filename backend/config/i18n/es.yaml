@@ -43,6 +43,7 @@ ui:
     characters: "Caracteres"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
+    rename_failed: "Error al renombrar"
   sidebar:
     manuscript: "Manuscrito"
     content: "Contenido"
@@ -52,6 +53,7 @@ ui:
     no_chapters: "Aun no hay capitulos"
     add_chapter: "Agregar capitulo"
     delete_chapter: "Eliminar capitulo"
+    rename_chapter: "Renombrar"
     back_to_dashboard: "Volver al panel"
     metadata: "Metadatos"
     export: "Exportar..."

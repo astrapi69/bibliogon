@@ -49,6 +49,7 @@ ui:
     set_goal: "Wortziel setzen"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
+    rename_failed: "Umbenennen fehlgeschlagen"
   sidebar:
     manuscript: "Manuskript"
     content: "Inhalt"
@@ -58,6 +59,7 @@ ui:
     no_chapters: "Noch keine Kapitel"
     add_chapter: "Kapitel hinzufügen"
     delete_chapter: "Kapitel löschen"
+    rename_chapter: "Umbenennen"
     back_to_dashboard: "Zurück zum Dashboard"
     metadata: "Metadaten"
     export: "Exportieren..."

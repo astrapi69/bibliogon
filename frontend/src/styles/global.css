@@ -438,7 +438,8 @@ body {
 }
 
 .chapter-dropdown-item {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     padding: 7px 14px;
     border: none;
@@ -452,6 +453,14 @@ body {
 
 .chapter-dropdown-item[data-highlighted] {
     background: rgba(255, 255, 255, 0.08);
+}
+
+.chapter-dropdown-item-danger {
+    color: #ef4444;
+}
+
+.chapter-dropdown-item-danger[data-highlighted] {
+    background: rgba(239, 68, 68, 0.12);
 }
 
 .chapter-dropdown-separator {

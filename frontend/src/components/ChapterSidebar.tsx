@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useState, useRef, useEffect} from "react";
 import {Chapter, ChapterType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {
@@ -11,9 +11,11 @@ import {
     Download,
     FileText,
     ListChecks,
+    Pencil,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as ContextMenu from "@radix-ui/react-context-menu";
 import Tooltip from "./Tooltip";
 import {
     DndContext,
@@ -40,6 +42,7 @@ interface Props {
     onSelect: (id: string) => void;
     onAdd: (chapterType?: ChapterType) => void;
     onDelete: (id: string) => void;
+    onRename: (id: string, newTitle: string) => void;
     onBack: () => void;
     onExport: () => void;
     onReorder: (chapterIds: string[]) => void;
@@ -62,14 +65,35 @@ const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
 
 // --- Sortable Chapter Item ---
 
-function SortableChapterItem({chapter, isActive, onSelect, onDelete, typeLabels, deleteLabel}: {
+function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, typeLabels, deleteLabel, renameLabel}: {
     chapter: Chapter;
     isActive: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
+    onRename: (id: string, newTitle: string) => void;
     typeLabels: Record<ChapterType, string>;
     deleteLabel: string;
+    renameLabel: string;
 }) {
+    const [editing, setEditing] = useState(false);
+    const [editValue, setEditValue] = useState(chapter.title);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [editing]);
+
+    const commitRename = () => {
+        const trimmed = editValue.trim();
+        if (trimmed && trimmed !== chapter.title) {
+            onRename(chapter.id, trimmed);
+        }
+        setEditing(false);
+    };
+
     const {
         attributes,
         listeners,
@@ -87,43 +111,91 @@ function SortableChapterItem({chapter, isActive, onSelect, onDelete, typeLabels,
         transition,
     };
 
-    return (
-        <div ref={setNodeRef} style={style} onClick={() => onSelect(chapter.id)}>
+    const itemContent = (
+        <div ref={setNodeRef} style={style} onClick={() => !editing && onSelect(chapter.id)}>
             <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}}>
                 <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
             </span>
-            <span style={styles.itemTitle}>
-                {chapter.chapter_type !== "chapter" && (
-                    <span style={styles.typeTag}>{typeLabels[chapter.chapter_type]}</span>
-                )}
-                {chapter.title}
-            </span>
-            <Tooltip content={deleteLabel} side="right">
-                <button
-                    style={styles.deleteBtn}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(chapter.id);
+            {editing ? (
+                <input
+                    ref={inputRef}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={commitRename}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename();
+                        if (e.key === "Escape") {
+                            setEditValue(chapter.title);
+                            setEditing(false);
+                        }
                     }}
-                >
-                    <Trash2 size={12}/>
-                </button>
-            </Tooltip>
+                    onClick={(e) => e.stopPropagation()}
+                    style={styles.renameInput}
+                />
+            ) : (
+                <span style={styles.itemTitle} onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setEditValue(chapter.title);
+                    setEditing(true);
+                }}>
+                    {chapter.chapter_type !== "chapter" && (
+                        <span style={styles.typeTag}>{typeLabels[chapter.chapter_type]}</span>
+                    )}
+                    {chapter.title}
+                </span>
+            )}
+            {!editing && (
+                <Tooltip content={deleteLabel} side="right">
+                    <button
+                        style={styles.deleteBtn}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(chapter.id);
+                        }}
+                    >
+                        <Trash2 size={12}/>
+                    </button>
+                </Tooltip>
+            )}
         </div>
+    );
+
+    return (
+        <ContextMenu.Root>
+            <ContextMenu.Trigger asChild>
+                {itemContent}
+            </ContextMenu.Trigger>
+            <ContextMenu.Portal>
+                <ContextMenu.Content className="chapter-dropdown-content">
+                    <ContextMenu.Item className="chapter-dropdown-item" onSelect={() => {
+                        setEditValue(chapter.title);
+                        setEditing(true);
+                    }}>
+                        <Pencil size={12} style={{marginRight: 6}}/> {renameLabel}
+                    </ContextMenu.Item>
+                    <ContextMenu.Separator className="chapter-dropdown-separator"/>
+                    <ContextMenu.Item className="chapter-dropdown-item chapter-dropdown-item-danger" onSelect={() => onDelete(chapter.id)}>
+                        <Trash2 size={12} style={{marginRight: 6}}/> {deleteLabel}
+                    </ContextMenu.Item>
+                </ContextMenu.Content>
+            </ContextMenu.Portal>
+        </ContextMenu.Root>
     );
 }
 
 // --- Sortable Group ---
 
-function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onReorder, typeLabels, deleteLabel}: {
+function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onRename, onReorder, typeLabels, deleteLabel, renameLabel}: {
     chapters: Chapter[];
     allChapters: Chapter[];
     activeChapterId: string | null;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
+    onRename: (id: string, newTitle: string) => void;
     onReorder: (chapterIds: string[]) => void;
     typeLabels: Record<ChapterType, string>;
     deleteLabel: string;
+    renameLabel: string;
 }) {
     const sensors = useSensors(
         useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
@@ -167,8 +239,10 @@ function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDele
                         isActive={ch.id === activeChapterId}
                         onSelect={onSelect}
                         onDelete={onDelete}
+                        onRename={onRename}
                         typeLabels={typeLabels}
                         deleteLabel={deleteLabel}
+                        renameLabel={renameLabel}
                     />
                 ))}
             </SortableContext>
@@ -185,6 +259,7 @@ export default function ChapterSidebar({
                                            onSelect,
                                            onAdd,
                                            onDelete,
+                                           onRename,
                                            onBack,
                                            onExport,
                                            onReorder,
@@ -311,9 +386,11 @@ export default function ChapterSidebar({
                                 activeChapterId={activeChapterId}
                                 onSelect={onSelect}
                                 onDelete={onDelete}
+                                onRename={onRename}
                                 onReorder={onReorder}
                                 typeLabels={TYPE_LABELS}
                                 deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
+                                renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
                             />
                         )}
                     </>
@@ -338,9 +415,11 @@ export default function ChapterSidebar({
                             activeChapterId={activeChapterId}
                             onSelect={onSelect}
                             onDelete={onDelete}
+                            onRename={onRename}
                             onReorder={onReorder}
                             typeLabels={TYPE_LABELS}
                             deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
+                            renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
                         />
                     </>
                 )}
@@ -362,9 +441,11 @@ export default function ChapterSidebar({
                                 activeChapterId={activeChapterId}
                                 onSelect={onSelect}
                                 onDelete={onDelete}
+                                onRename={onRename}
                                 onReorder={onReorder}
                                 typeLabels={TYPE_LABELS}
                                 deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
+                                renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
                             />
                         )}
                     </>
@@ -472,6 +553,11 @@ const styles: Record<string, React.CSSProperties> = {
         background: "none", border: "none", color: "rgba(255,255,255,0.2)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
         opacity: 0, transition: "opacity 150ms",
+    },
+    renameInput: {
+        flex: 1, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
+        color: "#faf8f5", fontSize: "0.875rem", padding: "2px 6px", borderRadius: 4,
+        outline: "none", fontFamily: "var(--font-body)",
     },
     exportSection: { padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" },
     exportBtn: {

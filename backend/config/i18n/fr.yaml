@@ -43,6 +43,7 @@ ui:
     characters: "Caracteres"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
+    rename_failed: "Echec du renommage"
   sidebar:
     manuscript: "Manuscrit"
     content: "Contenu"
@@ -52,6 +53,7 @@ ui:
     no_chapters: "Pas encore de chapitres"
     add_chapter: "Ajouter un chapitre"
     delete_chapter: "Supprimer le chapitre"
+    rename_chapter: "Renommer"
     back_to_dashboard: "Retour au tableau de bord"
     metadata: "Metadonnees"
     export: "Exporter..."

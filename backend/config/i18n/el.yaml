@@ -43,6 +43,7 @@ ui:
     characters: "Χαρακτήρες"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
+    rename_failed: "Αποτυχία μετονομασίας"
   sidebar:
     manuscript: "Χειρόγραφο"
     content: "Περιεχόμενο"
@@ -52,6 +53,7 @@ ui:
     no_chapters: "Δεν υπάρχουν κεφάλαια ακόμα"
     add_chapter: "Προσθήκη κεφαλαίου"
     delete_chapter: "Διαγραφή κεφαλαίου"
+    rename_chapter: "Μετονομασία"
     back_to_dashboard: "Πίσω στον πίνακα"
     metadata: "Μεταδεδομένα"
     export: "Εξαγωγή..."

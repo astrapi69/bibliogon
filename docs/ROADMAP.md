@@ -15,7 +15,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [ ] Q-06: CI-Pipeline (GitHub Actions)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 - [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
-- [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
+- [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] I-01: Sprachumschaltung live ohne Reload
 - [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
@@ -44,7 +44,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
 - [x] U-05: Editor: Suchen und Ersetzen im Kapitel
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
-- [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
+- [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 

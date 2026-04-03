@@ -96,6 +96,22 @@ export default function BookEditor() {
         setActiveChapterId(chapter.id);
     };
 
+    const handleRenameChapter = async (chapterId: string, newTitle: string) => {
+        if (!bookId) return;
+        try {
+            const updated = await api.chapters.update(bookId, chapterId, {title: newTitle});
+            setBook((prev) => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    chapters: prev.chapters.map((c) => c.id === updated.id ? {...c, title: updated.title} : c),
+                };
+            });
+        } catch {
+            toast.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"));
+        }
+    };
+
     const handleDeleteChapter = async (chapterId: string) => {
         if (!bookId) return;
         if (!await dialog.confirm("Kapitel loeschen", "Kapitel wirklich loeschen?", "danger")) return;
@@ -183,6 +199,7 @@ export default function BookEditor() {
                 onSelect={(id) => { setActiveChapterId(id); setShowMetadata(false); setSidebarOpen(false); }}
                 onAdd={handleAddChapter}
                 onDelete={handleDeleteChapter}
+                onRename={handleRenameChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
                 onMetadata={() => setShowMetadata(true)}
