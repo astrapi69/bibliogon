@@ -231,29 +231,28 @@ export default function BookEditor() {
                     <div style={styles.chapterTypeGrid}>
                         <div style={styles.typeGroup}>
                             <span style={styles.typeGroupLabel}>Front Matter</span>
-                            {(["preface", "foreword", "acknowledgments"] as ChapterType[]).map((t) => (
-                                <button key={t} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(t)}>
-                                    {TYPE_LABELS[t]}
+                            {(["toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction"] as ChapterType[]).map((ct) => (
+                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                    {TYPE_LABELS[ct]}
                                 </button>
                             ))}
                         </div>
                         <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>Kapitel</span>
+                            <span style={styles.typeGroupLabel}>{t("ui.chapter_types.chapter", "Kapitel")}</span>
                             <button className="btn btn-primary" onClick={() => handleAddChapter("chapter")}>
-                                Neues Kapitel
+                                {t("ui.editor.new_chapter", "Neues Kapitel")}
                             </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleAddChapter("part_intro")}>
-                                {TYPE_LABELS.part_intro}
-                            </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleAddChapter("interlude")}>
-                                {TYPE_LABELS.interlude}
-                            </button>
+                            {(["part_intro", "interlude"] as ChapterType[]).map((ct) => (
+                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                    {TYPE_LABELS[ct]}
+                                </button>
+                            ))}
                         </div>
                         <div style={styles.typeGroup}>
                             <span style={styles.typeGroupLabel}>Back Matter</span>
-                            {(["epilogue", "about_author", "appendix", "bibliography", "glossary", "imprint", "next_in_series"] as ChapterType[]).map((t) => (
-                                <button key={t} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(t)}>
-                                    {TYPE_LABELS[t]}
+                            {(["epilogue", "afterword", "about_author", "acknowledgments", "appendix", "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series"] as ChapterType[]).map((ct) => (
+                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                    {TYPE_LABELS[ct]}
                                 </button>
                             ))}
                         </div>
