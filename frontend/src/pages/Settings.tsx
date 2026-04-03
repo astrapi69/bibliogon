@@ -629,7 +629,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                             className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
                             onClick={() => onToggle(!enabled)}
                         >
-                            {enabled ? <><X size={12}/> Aus</> : <><Check size={12}/> An</>}
+                            {enabled ? <><X size={12}/> {t("ui.settings.off", "Aus")}</> : <><Check size={12}/> {t("ui.settings.on", "An")}</>}
                         </button>
                     )}
                     {!isCore && (
@@ -678,7 +678,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                     {orderedListSettings.length > 0 && (
                         <div style={{marginTop: scalarSettings.length > 0 ? 16 : 0}}>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
-                                Reihenfolge und Listen
+                                {t("ui.settings.ordered_lists", "Reihenfolge und Listen")}
                             </h4>
                             {orderedListSettings.map(([key, value]) => (
                                 <div key={key} style={{marginBottom: 16}}>
@@ -733,7 +733,7 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                     {complexSettings.length > 0 && (
                         <div style={{marginTop: (scalarSettings.length > 0 || orderedListSettings.length > 0) ? 16 : 0}}>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
-                                Konfiguration (nur lesen)
+                                {t("ui.settings.read_only", "Konfiguration (nur lesen)")}
                             </h4>
                             {complexSettings.map(([key, value]) => (
                                 <div key={key} style={{marginBottom: 12}}>

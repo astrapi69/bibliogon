@@ -543,6 +543,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 57. S-03: Letzte hardcoded Strings in Settings
+
+- 🔹 **Original-Prompt:** "Setze S-03 um."
+- 🔸 **Optimierter Prompt:** "Finde und migriere die letzten 4 hardcoded Strings in Settings.tsx: 'Aus'/'An' Toggle, 'Reihenfolge und Listen', 'Konfiguration (nur lesen)'. Theme-Namen sind Eigennamen und bleiben."
+- 🎯 Settings-Seite komplett i18n-migriert
+- ✅ 4 Strings migriert, i18n Keys off/on/ordered_lists/read_only in DE/EN
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
