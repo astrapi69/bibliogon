@@ -286,12 +286,20 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
             detail="Das ist eine Backup-Datei (.bgb). Fuer Backup-Restore nutze den 'Restore'-Button. "
                    "Fuer Projekt-Import wird eine .bgp- oder .zip-Datei erwartet.",
         )
-    valid_ext = file.filename.endswith(".bgp") or file.filename.endswith(".zip")
+    valid_ext = (
+        file.filename.endswith(".bgp")
+        or file.filename.endswith(".zip")
+        or file.filename.endswith(".md")
+    )
     if not valid_ext:
         raise HTTPException(
             status_code=400,
-            detail="Datei muss eine .bgp-Datei (Bibliogon Projekt) oder .zip-Datei (write-book-template) sein",
+            detail="Datei muss eine .bgp/.zip-Datei (Projekt) oder .md-Datei (Markdown) sein",
         )
+
+    # Single Markdown file import
+    if file.filename.endswith(".md"):
+        return _import_single_markdown(file, db)
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_import_"))
 
@@ -316,11 +324,8 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)):
         # Find the project root (contains config/metadata.yaml or manuscript/)
         project_root = _find_project_root(extracted)
         if not project_root:
-            raise HTTPException(
-                status_code=400,
-                detail="Ungueltiges Projektformat: kein metadata.yaml oder manuscript/ gefunden. "
-                       "Erwartet wird ein write-book-template Projekt.",
-            )
+            # Fallback: try plain Markdown import (ZIP with .md files, no project structure)
+            return _import_plain_markdown_zip(extracted, db, tmp_dir)
 
         # Read metadata
         metadata_path = project_root / "config" / "metadata.yaml"
@@ -531,6 +536,74 @@ _CHAPTER_FILENAME_PATTERNS = {
     "interludium": ChapterType.INTERLUDE,
     "interlude": ChapterType.INTERLUDE,
 }
+
+
+def _import_single_markdown(file: UploadFile, db: Session) -> dict[str, Any]:
+    """Import a single Markdown file as a new book with one chapter."""
+    content = file.file.read().decode("utf-8")
+    filename = file.filename or "untitled.md"
+    title = _extract_title(content, filename.replace(".md", ""))
+
+    book = Book(title=title, author="Unknown", language="de")
+    db.add(book)
+    db.flush()
+
+    chapter = Chapter(
+        book_id=book.id,
+        title=title,
+        content=_md_to_html(content),
+        position=0,
+        chapter_type=ChapterType.CHAPTER.value,
+    )
+    db.add(chapter)
+    db.commit()
+    db.refresh(book)
+
+    return {"book_id": book.id, "title": book.title, "chapter_count": 1}
+
+
+def _import_plain_markdown_zip(extracted: Path, db: Session, tmp_dir: Path) -> dict[str, Any]:
+    """Import a ZIP containing plain Markdown files (no write-book-template structure).
+
+    Each .md file becomes a chapter. The ZIP name or first file becomes the book title.
+    """
+    # Collect all .md files recursively
+    md_files = sorted(extracted.rglob("*.md"))
+    if not md_files:
+        raise HTTPException(
+            status_code=400,
+            detail="Keine Markdown-Dateien im ZIP gefunden. "
+                   "Erwartet wird ein write-book-template Projekt oder eine Sammlung von .md Dateien.",
+        )
+
+    # Derive book title from first file or directory name
+    first_title = _extract_title(md_files[0].read_text(encoding="utf-8"), md_files[0].stem)
+    book_title = first_title if len(md_files) == 1 else extracted.name
+    # Clean up extracted dir name
+    if book_title == "extracted":
+        book_title = md_files[0].stem.replace("-", " ").title()
+
+    book = Book(title=book_title, author="Unknown", language="de")
+    db.add(book)
+    db.flush()
+
+    for position, md_file in enumerate(md_files):
+        content = md_file.read_text(encoding="utf-8")
+        title = _extract_title(content, md_file.stem)
+        chapter = Chapter(
+            book_id=book.id,
+            title=title,
+            content=_md_to_html(content),
+            position=position,
+            chapter_type=ChapterType.CHAPTER.value,
+        )
+        db.add(chapter)
+
+    db.commit()
+    db.refresh(book)
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    return {"book_id": book.id, "title": book.title, "chapter_count": len(md_files)}
 
 
 def _find_manifest(extracted: Path) -> Path | None:

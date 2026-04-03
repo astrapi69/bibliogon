@@ -27,8 +27,13 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
-- [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
+- [x] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [ ] T-04: Bild-Resize per Drag
+- [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
+- [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
+- [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
+- [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
+- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 ---
 
 ## UI/UX
@@ -74,7 +79,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Backup/Restore mit Assets und allen Metadaten
 - [x] PDF-Export: Cover-Bild als erste Seite
 - [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
-- [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
+- [x] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
 - [x] X-04: Export: Custom CSS pro Kapiteltyp
 - [x] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)

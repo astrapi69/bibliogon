@@ -579,6 +579,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 61. X-02: Import von Markdown-Dateien ohne Projektstruktur
+
+- 🔹 **Original-Prompt:** "Setze X-02 um."
+- 🔸 **Optimierter Prompt:** "Erweitere import-project Endpoint: 1) Einzelne .md Datei direkt als Buch+Kapitel importieren. 2) ZIP ohne write-book-template Struktur: Alle .md Dateien rekursiv als Kapitel importieren. Fallback wenn _find_project_root fehlschlaegt."
+- 🎯 Autoren koennen beliebige Markdown-Dateien importieren
+- ✅ Einzelne .md, ZIP mit .md Dateien, Titel aus H1 oder Dateiname
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
