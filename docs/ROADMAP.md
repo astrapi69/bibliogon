@@ -29,7 +29,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [x] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [x] T-04: Bild-Resize per Drag
-- [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
+- [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
@@ -154,6 +154,6 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
 - [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
-- [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
+- [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
