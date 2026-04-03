@@ -8,6 +8,13 @@ Bei der ersten Nachricht einer Session:
 3. make test laufen lassen (Baseline sicherstellen).
 Erst danach mit der Aufgabe beginnen.
 
+## Interpretation von "weiter" / "naechster Punkt"
+
+Wenn der Nutzer "weiter", "naechster Punkt", "mach weiter" oder aehnliches sagt:
+1. docs/ROADMAP.md lesen, Sektion "Naechste Schritte".
+2. Ersten offenen Punkt (unchecked Checkbox) nennen.
+3. Auf Bestaetigung warten, NICHT sofort umsetzen.
+
 ## Reihenfolge bei neuen Features
 
 1. Pruefen ob Feature in ein Plugin gehoert oder zum Kern.
