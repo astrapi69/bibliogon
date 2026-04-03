@@ -24,7 +24,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] X-04: Export: Custom CSS pro Kapiteltyp
 - [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 - [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
-- [ ] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
+- [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [ ] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
@@ -148,7 +148,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
-- [ ] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
+- [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image

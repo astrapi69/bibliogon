@@ -552,6 +552,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 58. S-04: tiptap_to_md.py um Table, TaskList und neue Marks erweitern
+
+- 🔹 **Original-Prompt:** "Setze S-04 um."
+- 🔸 **Optimierter Prompt:** "Erweitere tiptap_to_md.py um: Table (GFM Markdown Tabellen mit Header-Separator), TaskList (Checkboxen), imageFigure (mit Caption), underline/subscript/superscript/highlight (als HTML-Tags). Schreibe 7 Tests: task_list, table, underline, subscript, superscript, highlight, image_figure."
+- 🎯 Export unterstuetzt alle installierten TipTap-Extensions
+- ✅ 7 neue Konvertierungen + 7 neue Tests (30 Export-Tests total, 109 gesamt)
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

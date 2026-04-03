@@ -54,20 +54,31 @@ def _convert_node(node: dict[str, Any]) -> str | None:
         code = _extract_text(node.get("content", []))
         return f"```{lang}\n{code}\n```"
 
+    if node_type == "taskList":
+        return _convert_task_list(node)
+
+    if node_type == "table":
+        return _convert_table(node)
+
     if node_type == "horizontalRule":
         return "---"
 
     if node_type == "hardBreak":
         return "  \n"
 
-    if node_type == "image":
+    if node_type in ("image", "imageFigure", "figure"):
         attrs = node.get("attrs", {})
         src = attrs.get("src", "")
         alt = attrs.get("alt", "")
         title = attrs.get("title", "")
+        caption = _convert_inline(node.get("content", []))
         if title:
-            return f'![{alt}]({src} "{title}")'
-        return f"![{alt}]({src})"
+            md = f'![{alt}]({src} "{title}")'
+        else:
+            md = f"![{alt}]({src})"
+        if caption:
+            md += f"\n*{caption}*"
+        return md
 
     # Fallback: extract text
     content = node.get("content")
@@ -107,7 +118,7 @@ def _convert_inline(content: list[dict[str, Any]]) -> str:
 
 
 def _apply_marks(text: str, marks: list[dict[str, Any]]) -> str:
-    """Apply TipTap marks (bold, italic, code, link) to text."""
+    """Apply TipTap marks (bold, italic, code, link, etc.) to text."""
     for mark in marks:
         mark_type = mark.get("type", "")
         if mark_type == "bold":
@@ -121,7 +132,74 @@ def _apply_marks(text: str, marks: list[dict[str, Any]]) -> str:
         elif mark_type == "link":
             href = mark.get("attrs", {}).get("href", "")
             text = f"[{text}]({href})"
+        elif mark_type == "underline":
+            text = f"<u>{text}</u>"
+        elif mark_type == "subscript":
+            text = f"<sub>{text}</sub>"
+        elif mark_type == "superscript":
+            text = f"<sup>{text}</sup>"
+        elif mark_type == "highlight":
+            text = f"<mark>{text}</mark>"
     return text
+
+
+def _convert_task_list(node: dict[str, Any]) -> str:
+    """Convert a task list to Markdown checkboxes."""
+    items: list[str] = []
+    for item in node.get("content", []):
+        if item.get("type") != "taskItem":
+            continue
+        checked = item.get("attrs", {}).get("checked", False)
+        checkbox = "[x]" if checked else "[ ]"
+        text = _convert_nodes(item.get("content", []))
+        items.append(f"- {checkbox} {text}")
+    return "\n".join(items)
+
+
+def _convert_table(node: dict[str, Any]) -> str:
+    """Convert a table to Markdown (GFM) table format."""
+    rows = node.get("content", [])
+    if not rows:
+        return ""
+
+    md_rows: list[list[str]] = []
+    is_header_row = True
+
+    for row in rows:
+        if row.get("type") != "tableRow":
+            continue
+        cells: list[str] = []
+        for cell in row.get("content", []):
+            cell_type = cell.get("type", "")
+            if cell_type not in ("tableCell", "tableHeader"):
+                continue
+            text = _convert_nodes(cell.get("content", []))
+            # Flatten multiline content to single line for table
+            text = text.replace("\n", " ").strip()
+            cells.append(text)
+            if cell_type == "tableHeader":
+                is_header_row = True
+        md_rows.append(cells)
+
+    if not md_rows:
+        return ""
+
+    # Determine column count
+    col_count = max(len(r) for r in md_rows)
+
+    # Pad rows to equal length
+    for row in md_rows:
+        while len(row) < col_count:
+            row.append("")
+
+    # Build markdown table
+    lines: list[str] = []
+    lines.append("| " + " | ".join(md_rows[0]) + " |")
+    lines.append("| " + " | ".join("---" for _ in range(col_count)) + " |")
+    for row in md_rows[1:]:
+        lines.append("| " + " | ".join(row) + " |")
+
+    return "\n".join(lines)
 
 
 def _extract_text(content: list[dict[str, Any]]) -> str:

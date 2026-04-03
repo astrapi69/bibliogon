@@ -243,3 +243,101 @@ class TestTiptapToMarkdown:
             ],
         }
         assert tiptap_to_markdown(doc) == "~~deleted~~"
+
+    def test_task_list(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "taskList",
+                    "content": [
+                        {"type": "taskItem", "attrs": {"checked": True},
+                         "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Done"}]}]},
+                        {"type": "taskItem", "attrs": {"checked": False},
+                         "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Todo"}]}]},
+                    ],
+                }
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert "- [x] Done" in result
+        assert "- [ ] Todo" in result
+
+    def test_table(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "table",
+                    "content": [
+                        {"type": "tableRow", "content": [
+                            {"type": "tableHeader", "content": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "Name"}]}]},
+                            {"type": "tableHeader", "content": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "Value"}]}]},
+                        ]},
+                        {"type": "tableRow", "content": [
+                            {"type": "tableCell", "content": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "A"}]}]},
+                            {"type": "tableCell", "content": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "1"}]}]},
+                        ]},
+                    ],
+                }
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert "| Name | Value |" in result
+        assert "| --- | --- |" in result
+        assert "| A | 1 |" in result
+
+    def test_underline(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "underlined", "marks": [{"type": "underline"}]},
+            ]}],
+        }
+        assert tiptap_to_markdown(doc) == "<u>underlined</u>"
+
+    def test_subscript(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "H"},
+                {"type": "text", "text": "2", "marks": [{"type": "subscript"}]},
+                {"type": "text", "text": "O"},
+            ]}],
+        }
+        assert tiptap_to_markdown(doc) == "H<sub>2</sub>O"
+
+    def test_superscript(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "E=mc"},
+                {"type": "text", "text": "2", "marks": [{"type": "superscript"}]},
+            ]}],
+        }
+        assert tiptap_to_markdown(doc) == "E=mc<sup>2</sup>"
+
+    def test_highlight(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "important", "marks": [{"type": "highlight"}]},
+            ]}],
+        }
+        assert tiptap_to_markdown(doc) == "<mark>important</mark>"
+
+    def test_image_figure(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [
+                {"type": "imageFigure", "attrs": {"src": "img.png", "alt": "Photo"},
+                 "content": [{"type": "text", "text": "A caption"}]},
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert "![Photo](img.png)" in result
+        assert "*A caption*" in result
