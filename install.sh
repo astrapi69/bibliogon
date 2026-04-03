@@ -36,40 +36,40 @@ echo ""
 
 # --- Check Docker ---
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Fehler: Docker ist nicht installiert.${NC}"
+    echo -e "${RED}Error: Docker is not installed.${NC}"
     echo ""
-    echo "Bitte installiere Docker:"
+    echo "Please install Docker:"
     echo "  https://docs.docker.com/get-docker/"
     echo ""
-    echo "Danach erneut ausfuehren:"
+    echo "Then run again:"
     echo "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash"
     exit 1
 fi
 
 if ! docker info &> /dev/null 2>&1; then
-    echo -e "${RED}Fehler: Docker laeuft nicht.${NC}"
-    echo "Bitte starte Docker und versuche es erneut."
+    echo -e "${RED}Error: Docker is not running.${NC}"
+    echo "Please start Docker and try again."
     exit 1
 fi
 
 if ! docker compose version &> /dev/null 2>&1; then
-    echo -e "${RED}Fehler: Docker Compose ist nicht verfuegbar.${NC}"
-    echo "Bitte installiere Docker Compose: https://docs.docker.com/compose/install/"
+    echo -e "${RED}Error: Docker Compose is not available.${NC}"
+    echo "Please install Docker Compose: https://docs.docker.com/compose/install/"
     exit 1
 fi
 
-echo -e "${GREEN}Docker und Docker Compose gefunden.${NC}"
+echo -e "${GREEN}Docker and Docker Compose found.${NC}"
 
 # --- Download ---
 if [ -d "$INSTALL_DIR/.git" ]; then
-    echo -e "${YELLOW}Bibliogon ist bereits installiert in ${INSTALL_DIR}${NC}"
-    echo "Aktualisiere..."
+    echo -e "${YELLOW}Bibliogon is already installed in ${INSTALL_DIR}${NC}"
+    echo "Updating..."
     cd "$INSTALL_DIR"
     git fetch origin
     git checkout "$VERSION" 2>/dev/null || git checkout main
     git pull origin main 2>/dev/null || true
 else
-    echo -e "${BLUE}Lade Bibliogon ${VERSION} herunter...${NC}"
+    echo -e "${BLUE}Downloading Bibliogon ${VERSION}...${NC}"
 
     # Try git clone first (preferred)
     if command -v git &> /dev/null; then
@@ -77,7 +77,7 @@ else
         git clone --depth 1 "https://github.com/${REPO}.git" "$INSTALL_DIR"
     else
         # Fallback: download tarball
-        echo "Git nicht gefunden, lade Archiv herunter..."
+        echo "Git not found, downloading archive..."
         mkdir -p "$INSTALL_DIR"
         TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
         if command -v curl &> /dev/null; then
@@ -90,7 +90,7 @@ else
                 wget -qO- "https://github.com/${REPO}/archive/refs/heads/main.tar.gz" | tar xz --strip-components=1 -C "$INSTALL_DIR"
             }
         else
-            echo -e "${RED}Fehler: Weder git, curl noch wget gefunden.${NC}"
+            echo -e "${RED}Error: Neither git, curl, nor wget found.${NC}"
             exit 1
         fi
     fi
@@ -100,7 +100,7 @@ cd "$INSTALL_DIR"
 
 # --- Create .env if missing ---
 if [ ! -f .env ]; then
-    echo -e "${YELLOW}Erstelle Konfiguration...${NC}"
+    echo -e "${YELLOW}Creating configuration...${NC}"
     cp .env.example .env
 
     # Generate random secret key
@@ -115,7 +115,7 @@ if [ ! -f .env ]; then
         sed -i "s/change-me-to-a-random-secret/$SECRET/" .env
     fi
 
-    echo -e "${GREEN}Konfiguration erstellt.${NC}"
+    echo -e "${GREEN}Configuration created.${NC}"
 fi
 
 # --- Read port from .env ---
@@ -124,21 +124,21 @@ PORT=${PORT:-7880}
 
 # --- Build and start ---
 echo ""
-echo -e "${BLUE}Baue und starte Bibliogon (das kann beim ersten Mal einige Minuten dauern)...${NC}"
+echo -e "${BLUE}Building and starting Bibliogon (this may take a few minutes the first time)...${NC}"
 echo ""
 
 docker compose -f docker-compose.prod.yml up --build -d
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Bibliogon laeuft!${NC}"
+echo -e "${GREEN}  Bibliogon is running!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "  Oeffne: ${BLUE}http://localhost:${PORT}${NC}"
+echo -e "  Open: ${BLUE}http://localhost:${PORT}${NC}"
 echo ""
-echo -e "  Installiert in: ${INSTALL_DIR}"
+echo -e "  Installed in: ${INSTALL_DIR}"
 echo ""
-echo -e "  Stoppen:        ${YELLOW}cd ${INSTALL_DIR} && ./stop.sh${NC}"
-echo -e "  Starten:        ${YELLOW}cd ${INSTALL_DIR} && ./start.sh${NC}"
-echo -e "  Deinstallieren: ${YELLOW}cd ${INSTALL_DIR} && ./stop.sh && cd ~ && rm -rf ${INSTALL_DIR}${NC}"
+echo -e "  Stop:      ${YELLOW}cd ${INSTALL_DIR} && ./stop.sh${NC}"
+echo -e "  Start:     ${YELLOW}cd ${INSTALL_DIR} && ./start.sh${NC}"
+echo -e "  Uninstall: ${YELLOW}cd ${INSTALL_DIR} && ./stop.sh && cd ~ && rm -rf ${INSTALL_DIR}${NC}"
 echo ""

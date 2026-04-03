@@ -28,22 +28,22 @@ echo ""
 
 # --- Check Docker ---
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Fehler: Docker ist nicht installiert.${NC}"
-    echo "Bitte installiere Docker: https://docs.docker.com/get-docker/"
+    echo -e "${RED}Error: Docker is not installed.${NC}"
+    echo "Please install Docker: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
 if ! docker info &> /dev/null 2>&1; then
-    echo -e "${RED}Fehler: Docker laeuft nicht.${NC}"
-    echo "Bitte starte Docker und versuche es erneut."
+    echo -e "${RED}Error: Docker is not running.${NC}"
+    echo "Please start Docker and try again."
     exit 1
 fi
 
-echo -e "${GREEN}Docker gefunden.${NC}"
+echo -e "${GREEN}Docker found.${NC}"
 
 # --- Create .env if missing ---
 if [ ! -f .env ]; then
-    echo -e "${YELLOW}Keine .env Datei gefunden. Erstelle aus .env.example...${NC}"
+    echo -e "${YELLOW}No .env file found. Creating from .env.example...${NC}"
     cp .env.example .env
 
     # Generate random secret key
@@ -58,7 +58,7 @@ if [ ! -f .env ]; then
         sed -i "s/change-me-to-a-random-secret/$SECRET/" .env
     fi
 
-    echo -e "${GREEN}.env erstellt mit generiertem Secret Key.${NC}"
+    echo -e "${GREEN}.env created with generated secret key.${NC}"
 fi
 
 # --- Read port from .env ---
@@ -67,18 +67,18 @@ PORT=${PORT:-7880}
 
 # --- Build and start ---
 echo ""
-echo -e "${BLUE}Starte Bibliogon...${NC}"
+echo -e "${BLUE}Starting Bibliogon...${NC}"
 echo ""
 
 docker compose -f docker-compose.prod.yml up --build -d
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Bibliogon laeuft!${NC}"
+echo -e "${GREEN}  Bibliogon is running!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "  Oeffne im Browser: ${BLUE}http://localhost:${PORT}${NC}"
+echo -e "  Open in browser: ${BLUE}http://localhost:${PORT}${NC}"
 echo ""
-echo -e "  Stoppen:  ${YELLOW}./stop.sh${NC}  oder  ${YELLOW}docker compose -f docker-compose.prod.yml down${NC}"
-echo -e "  Logs:     ${YELLOW}docker compose -f docker-compose.prod.yml logs -f${NC}"
+echo -e "  Stop:  ${YELLOW}./stop.sh${NC}  or  ${YELLOW}docker compose -f docker-compose.prod.yml down${NC}"
+echo -e "  Logs:  ${YELLOW}docker compose -f docker-compose.prod.yml logs -f${NC}"
 echo ""

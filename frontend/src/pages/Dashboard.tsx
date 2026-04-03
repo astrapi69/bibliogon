@@ -58,10 +58,26 @@ export default function Dashboard() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!await dialog.confirm("Buch löschen", "Buch in den Papierkorb verschieben?")) return;
+        if (!await dialog.confirm(
+            t("ui.dashboard.delete_title", "Buch loeschen"),
+            t("ui.dashboard.delete_trash_message", "Buch in den Papierkorb verschieben?"),
+        )) return;
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         loadTrash();
+        toast.info(t("ui.dashboard.moved_to_trash", "In den Papierkorb verschoben"));
+    };
+
+    const handleDeletePermanent = async (id: string) => {
+        if (!await dialog.confirm(
+            t("ui.dashboard.delete_permanent_title", "Endgueltig loeschen"),
+            t("ui.dashboard.delete_permanent_warning", "Das Buch wird unwiderruflich geloescht. Diese Aktion kann NICHT rueckgaengig gemacht werden. Nur fuer erfahrene Benutzer."),
+            "danger",
+        )) return;
+        await api.books.delete(id);
+        try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
+        setBooks((prev) => prev.filter((b) => b.id !== id));
+        toast.success(t("ui.dashboard.deleted_permanently", "Buch endgueltig geloescht"));
     };
 
     const handleRestore = async (id: string) => {
@@ -286,6 +302,7 @@ export default function Dashboard() {
                                     book={book}
                                     onClick={() => navigate(`/book/${book.id}`)}
                                     onDelete={() => handleDelete(book.id)}
+                                    onDeletePermanent={() => handleDeletePermanent(book.id)}
                                 />
                             ))}
                         </div>

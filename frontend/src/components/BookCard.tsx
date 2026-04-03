@@ -1,13 +1,15 @@
 import {Book} from "../api/client";
-import {Trash2, Clock} from "lucide-react";
+import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 interface Props {
     book: Book;
     onClick: () => void;
     onDelete: () => void;
+    onDeletePermanent?: () => void;
 }
 
-export default function BookCard({book, onClick, onDelete}: Props) {
+export default function BookCard({book, onClick, onDelete, onDeletePermanent}: Props) {
     const updated = new Date(book.updated_at).toLocaleDateString("de-DE", {
         day: "numeric",
         month: "short",
@@ -21,6 +23,7 @@ export default function BookCard({book, onClick, onDelete}: Props) {
                 <h3 style={styles.title}>{book.title}</h3>
                 {book.subtitle && <p style={styles.subtitle}>{book.subtitle}</p>}
                 <p style={styles.author}>{book.author}</p>
+                {book.genre && <span style={styles.genre}>{book.genre}</span>}
                 {book.series && (
                     <p style={styles.series}>
                         {book.series}
@@ -28,21 +31,44 @@ export default function BookCard({book, onClick, onDelete}: Props) {
                     </p>
                 )}
                 <div style={styles.footer}>
-          <span style={styles.date}>
-            <Clock size={12}/>
-              {updated}
-          </span>
+                    <span style={styles.date}>
+                        <Clock size={12}/>
+                        {updated}
+                    </span>
                     <span style={styles.lang}>{book.language.toUpperCase()}</span>
-                    <button
-                        className="btn-icon"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete();
-                        }}
-                        title="Buch loeschen"
-                    >
-                        <Trash2 size={14} color="var(--danger)"/>
-                    </button>
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                className="btn-icon"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{marginLeft: "auto"}}
+                            >
+                                <MoreVertical size={16}/>
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content className="hamburger-menu-content" align="end" sideOffset={4}>
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    onSelect={(e) => { e.preventDefault(); onDelete(); }}
+                                >
+                                    <Trash2 size={14}/> In den Papierkorb
+                                </DropdownMenu.Item>
+                                {onDeletePermanent && (
+                                    <>
+                                        <DropdownMenu.Separator className="hamburger-menu-separator"/>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={(e) => { e.preventDefault(); onDeletePermanent(); }}
+                                            style={{color: "var(--danger)"}}
+                                        >
+                                            <AlertTriangle size={14}/> Endgueltig loeschen
+                                        </DropdownMenu.Item>
+                                    </>
+                                )}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
                 </div>
             </div>
         </div>
@@ -86,7 +112,18 @@ const styles: Record<string, React.CSSProperties> = {
     author: {
         color: "var(--text-muted)",
         fontSize: "0.875rem",
+        marginBottom: 4,
+    },
+    genre: {
+        display: "inline-block",
+        fontSize: "0.6875rem",
+        fontWeight: 600,
+        background: "var(--accent-light)",
+        color: "var(--accent)",
+        padding: "2px 8px",
+        borderRadius: 4,
         marginBottom: 8,
+        alignSelf: "flex-start",
     },
     series: {
         fontSize: "0.8125rem",

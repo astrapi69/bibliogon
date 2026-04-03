@@ -6,24 +6,19 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 ## Features
 
-- WYSIWYG and Markdown editor (TipTap with 15 extensions, 24 toolbar buttons)
-- 21 chapter types (Preface, Foreword, Prologue, Dedication, Epilogue, Afterword, ...)
-- 16 book genres (Novel, Non-Fiction, Technical, Biography, Poetry, ...)
-- Drag-and-drop chapter ordering with collapsible sections
+- WYSIWYG and Markdown editor (TipTap)
+- 13 chapter types (Preface, Foreword, Epilogue, Appendix, ...)
+- Drag-and-drop chapter ordering
 - EPUB, PDF, Word, HTML, Markdown export via [manuscripta](https://github.com/astrapi69/manuscripta)
-- Full-data backup and restore (.bgb) with images, project import (.bgp, .zip)
+- Full-data backup and restore (.bgb), project import (.bgp, .zip)
 - Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
-- Author profile with pen name management
-- TOC chapter type with link validation
 - Copy config between books (publisher, author bio, styles)
 - Plugin system with ZIP installation for third-party plugins
 - Offline license validation for premium plugins (HMAC-SHA256)
-- White-label configuration (rename app, toggle core plugins)
 - 3 themes (Warm Literary, Cool Modern, Nord) x Light/Dark
-- Responsive layout with hamburger menu on mobile
-- i18n: German, English, Spanish, French, Greek (216 strings)
-- Interactive Get Started wizard with step-by-step help
+- i18n: German, English, Spanish, French, Greek
 - In-app help with FAQ and keyboard shortcuts
+- Get Started guide with sample book
 
 ## Install and Run
 
@@ -107,10 +102,10 @@ Environment variables (set in `.env`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BIBLIOGON_PORT` | 7880 | Port for the web app |
+| `BIBLIOGON_PORT` | 8080 | Port for the web app |
 | `BIBLIOGON_DEBUG` | false | Debug mode (enables test endpoints, API docs) |
 | `BIBLIOGON_SECRET_KEY` | (generated) | Secret for license validation |
-| `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Allowed CORS origins |
+| `BIBLIOGON_CORS_ORIGINS` | localhost:8080 | Allowed CORS origins |
 | `BIBLIOGON_DB_PATH` | /app/data/bibliogon.db | SQLite database path |
 
 ## Related Projects
