@@ -2,6 +2,21 @@
 
 Offene Punkte, geplante Features und technische Schulden.
 Checkboxen: `[ ]` = offen, `[x]` = erledigt.
+IDs: U=UI/UX, I=i18n, X=Import/Export, T=TipTap, B=Backend, Q=Tests, P=Plugin, S=Schulden.
+
+Prompt-Referenz: `Setze U-01 um.` reicht als Anweisung.
+
+---
+
+## Naechste Schritte (priorisiert)
+
+Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
+
+- [ ] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
+- [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
+- [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
+- [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
+- [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 
 ---
 
@@ -21,23 +36,23 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] Settings: Autor-Tab mit Pseudonym-Verwaltung
 - [x] Core-Plugins: "Standard" Badge, kein Loeschen/Deaktivieren
 - [x] Dashboard: Buch-Suche/Filter (nach Titel, Autor, Genre, Sprache)
-- [ ] Dashboard: Sortierung (nach Datum, Titel, Autor)
-- [ ] Dashboard: Buch-Cover als Thumbnail auf der BookCard
-- [ ] Editor: Bild-Upload per Drag-and-Drop in den Editor
-- [ ] Editor: Fussnoten-Support (tiptap-footnotes Extension)
-- [ ] Editor: Suchen und Ersetzen im Kapitel
-- [ ] Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
-- [ ] Sidebar: Kapitel per Rechtsklick umbenennen
-- [ ] Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
-- [ ] Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
+- [ ] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
+- [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
+- [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
+- [ ] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
+- [ ] U-05: Editor: Suchen und Ersetzen im Kapitel
+- [ ] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
+- [ ] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
+- [ ] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
+- [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 
 ## i18n
 
 - [x] useI18n Hook mit 216 Strings in 5 Sprachen
 - [x] Alle Hauptkomponenten migriert (Sidebar, Editor, Settings, GetStarted, Export, Dashboard)
 - [x] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
-- [ ] Sprachumschaltung live ohne Reload
-- [ ] Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
+- [ ] I-01: Sprachumschaltung live ohne Reload
+- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 
 ## Import/Export
 
@@ -47,24 +62,24 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] EPUB-Export mit Bildern und manuellem TOC
 - [x] Backup/Restore mit Assets und allen Metadaten
 - [x] PDF-Export: Cover-Bild als erste Seite
-- [ ] EPUB: epubcheck-Validierung nach Export (automatisch)
-- [ ] Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
-- [ ] Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
-- [ ] Export: Custom CSS pro Kapiteltyp
-- [ ] Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
+- [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
+- [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
+- [ ] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
+- [ ] X-04: Export: Custom CSS pro Kapiteltyp
+- [ ] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
 
 ## Editor (TipTap)
 
 - [x] 15 offizielle Extensions + Figure/Figcaption
 - [x] 24 Toolbar-Buttons
 - [x] Markdown-Toggle mit Bild-Erhalt
-- [ ] Fussnoten (@buttondown/tiptap-footnotes)
-- [ ] Suchen und Ersetzen (tiptap-search-n-replace)
-- [ ] Office-Paste (tiptap-extension-office-paste)
-- [ ] Bild-Resize per Drag
-- [ ] Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
-- [ ] Lesezeit-Schaetzung pro Kapitel
-- [ ] Focus-Mode (nur aktueller Absatz hervorgehoben)
+- [ ] T-01: Fussnoten (@buttondown/tiptap-footnotes)
+- [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
+- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
+- [ ] T-04: Bild-Resize per Drag
+- [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
+- [ ] T-06: Lesezeit-Schaetzung pro Kapitel
+- [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 
 ## Backend
 
@@ -72,11 +87,11 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] Plugin-ZIP-Installation mit dynamischem Laden
 - [x] Umgebungsvariablen (CORS, DEBUG, SECRET, DB_PATH)
 - [x] Non-Root Docker, Health-Checks
-- [ ] Alembic-Migrationen statt Auto-Migration (robuster)
-- [ ] Structured Logging (JSON-Format fuer Produktion)
-- [ ] Rate Limiting auf API-Endpunkte
-- [ ] API-Versionierung (v1/v2 Prefix)
-- [ ] Asynchrone Export-Jobs (lange Exports blockieren nicht)
+- [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
+- [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
+- [ ] B-03: Rate Limiting auf API-Endpunkte
+- [ ] B-04: API-Versionierung (v1/v2 Prefix)
+- [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
 
 ## Tests
 
@@ -84,45 +99,45 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] 48 Plugin-Tests (pytest)
 - [x] 21 Frontend-Tests (Vitest)
 - [x] 52 E2E-Tests (Playwright)
-- [ ] E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
-- [ ] Mutation Testing mit mutmut einrichten
-- [ ] Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
-- [ ] API-Client Unit Tests (Vitest)
-- [ ] mypy Type-Checking fuer Python Backend
-- [ ] CI-Pipeline (GitHub Actions)
+- [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
+- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
+- [ ] Q-04: API-Client Unit Tests (Vitest)
+- [ ] Q-05: mypy Type-Checking fuer Python Backend
+- [ ] Q-06: CI-Pipeline (GitHub Actions)
 
 ## Plugins (Roadmap)
 
 ### Phase 8: Audiobook-Plugin (v0.9.0, Premium)
-- [ ] plugin-audiobook: TTS-basierte Audiobook-Generierung
-- [ ] TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- [ ] Voice-Settings pro Buch
-- [ ] MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
-- [ ] Vorhoer-Funktion im Editor
+- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
+- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- [ ] P-03: Voice-Settings pro Buch
+- [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
+- [ ] P-05: Vorhoer-Funktion im Editor
 
 ### Phase 9: Uebersetzungs-Plugin (v0.10.0, Premium)
-- [ ] plugin-translation: DeepL/LLM Uebersetzung
-- [ ] LMStudio fuer lokale LLM-Uebersetzung
-- [ ] Kapitelweise Uebersetzung als neues Buch
+- [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
+- [ ] P-07: LMStudio fuer lokale LLM-Uebersetzung
+- [ ] P-08: Kapitelweise Uebersetzung als neues Buch
 
 ### Phase 10: Manuskript-Qualitaet (v0.11.0)
-- [ ] plugin-manuscript-tools: Style-Checks, Sanitization
-- [ ] Filler-Woerter, Passiv, Satzlaenge
-- [ ] Lesbarkeits-Metriken (Flesch-Kincaid)
+- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
+- [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
+- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 
 ### Phase 11: Multi-User und SaaS (v1.0.0)
-- [ ] Benutzerregistrierung und Authentifizierung
-- [ ] PostgreSQL statt SQLite
-- [ ] Pen-Name-Verwaltung pro User (nicht global)
-- [ ] Plugin-Marketplace
-- [ ] Stripe-Integration
+- [ ] P-12: Benutzerregistrierung und Authentifizierung
+- [ ] P-13: PostgreSQL statt SQLite
+- [ ] P-14: Pen-Name-Verwaltung pro User (nicht global)
+- [ ] P-15: Plugin-Marketplace
+- [ ] P-16: Stripe-Integration
 
 ## Technische Schulden
 
-- [ ] Hardcoded Strings in Dashboard (einige Dialog-Texte)
-- [ ] BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
-- [ ] Settings-Seite: ~10 verbleibende hardcoded Strings
-- [ ] Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
-- [ ] Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
-- [ ] package.json: Chunk-Size Warning beim Build (>500KB)
-- [ ] Docker: Multi-Stage Build fuer kleineres Backend-Image
+- [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
+- [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
+- [ ] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
+- [ ] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
+- [ ] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren
+- [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
+- [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image

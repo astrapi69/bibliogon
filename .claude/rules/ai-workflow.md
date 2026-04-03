@@ -1,16 +1,23 @@
 # KI-Arbeitsweise
 
+## Session-Start
+
+Bei der ersten Nachricht einer Session:
+1. docs/ROADMAP.md lesen (aktueller Stand, offene Punkte).
+2. Letzte Aenderungen pruefen: git log --oneline -10
+3. make test laufen lassen (Baseline sicherstellen).
+Erst danach mit der Aufgabe beginnen.
+
 ## Reihenfolge bei neuen Features
 
-1. CLAUDE.md und docs/CONCEPT.md lesen (Projektkontext verstehen).
-2. Pruefen ob Feature in ein Plugin gehoert oder zum Kern.
-3. Bestehende Patterns anschauen (z.B. wie plugin-export aufgebaut ist).
-4. Schema/Model zuerst (Pydantic Schema oder TypeScript Interface).
-5. Backend-Logik (Service-Modul, dann Route).
-6. Frontend (API Client erweitern, dann UI).
-7. Tests schreiben.
-8. i18n-Strings in allen 5 Sprachen ergaenzen (DE, EN, ES, FR, EL).
-9. Conventional Commit.
+1. Pruefen ob Feature in ein Plugin gehoert oder zum Kern.
+2. Bestehende Patterns anschauen (z.B. wie plugin-export aufgebaut ist).
+3. Schema/Model zuerst (Pydantic Schema oder TypeScript Interface).
+4. Backend-Logik (Service-Modul, dann Route).
+5. Frontend (API Client erweitern, dann UI).
+6. Tests schreiben.
+7. i18n-Strings in allen 5 Sprachen ergaenzen (DE, EN, ES, FR, EL).
+8. Conventional Commit.
 
 ## Reihenfolge bei neuen Plugins
 
@@ -31,64 +38,29 @@
 3. Tests anpassen oder erweitern.
 4. Sicherstellen dass `make test` gruen bleibt.
 
-## Nicht erlaubt
+## Nicht erlaubt (KI-spezifisch)
 
+Fuer Code-Verbote (fetch, console.log, Tailwind, etc.) siehe coding-standards.md und architecture.md.
+
+Zusaetzlich fuer die KI:
 - Neue Dependencies einfuehren ohne Rueckfrage.
 - Architektur-Entscheidungen aendern (z.B. SQLAlchemy ersetzen, TipTap ersetzen).
 - PluginForge-Code in Bibliogon aendern (separates Repo!).
 - Plugin-Struktur aendern (BasePlugin, Hook-Specs) ohne Rueckfrage.
 - Code generieren der "fuer spaeter" ist. Nur was jetzt gebraucht wird.
-- console.log im Production-Code. Toast-Notifications fuer User-Feedback.
-- Direkte DB-Queries in Routern. Immer ueber Service/Model-Layer.
-- fetch() direkt in React-Komponenten. Immer ueber api/client.ts.
-- Browser-native Dialoge (alert, confirm, prompt). AppDialog (Radix) nutzen.
-- CSS ohne Variables. Alles muss mit den 3 Themes (6 Varianten) funktionieren.
-- HTML als Speicherformat. TipTap JSON ist das interne Format.
-- Tailwind, styled-components, emotion oder andere CSS-Frameworks.
-- Andere Icon-Libraries als Lucide React.
+- Bestehende Tests loeschen, auskommentieren oder abschwaechen um `make test` gruen zu bekommen.
 - Custom TipTap-Extensions bauen ohne vorher zu pruefen ob eine offizielle existiert.
-- Regex-basierte HTML-Konverter fuer verschachtelte Strukturen (HTMLParser nutzen).
+- Im autonomen Modus bei Unklarheiten weiterraten. Lieber abbrechen und Unsicherheit dokumentieren.
 
-## Implizite Annahmen (die Claude Code kennen muss)
+## Aktueller Stand
 
-### Architektur
-- Jeder Export ist ein Plugin. Kein Export-Code im Kern.
-- PluginForge ist ein EXTERNES PyPI-Paket. Aenderungen dort = separates Repo.
-- manuscripta ist ein EXTERNES PyPI-Paket. Export-Plugin nutzt es, aendert es nicht.
-- write-book-template ist die Ziel-Verzeichnisstruktur fuer Exports.
-
-### Plugins
-- Proprietary Plugins (kinderbuch, kdp, grammar) brauchen Lizenzpruefung via pre_activate.
-- MIT Plugins (export, help, getstarted) sind frei, keine Lizenzpruefung.
-- Plugin-UI wird ueber Manifest-driven UI-Slots realisiert, nicht durch direkte Imports.
-- Plugins kommunizieren ueber Hook-Specs, nicht ueber direkte Imports zwischen Plugins.
-- Plugin-Abhaengigkeiten: deklarativ (depends_on), topologisch sortiert von PluginForge.
-
-### Frontend
-- Dark Mode existiert (3 Themes x Light/Dark = 6 Varianten).
-- Neue UI-Elemente MUESSEN mit CSS Variables arbeiten.
-- TipTap speichert als JSON. Markdown ist nur ein Anzeige-/Eingabemodus.
-- Radix UI fuer accessible Primitives. Kein eigenes Dialog/Dropdown/Tooltip bauen.
-- @dnd-kit fuer alle Drag-and-Drop Interaktionen.
-
-### Daten
-- ChapterType ist ein Enum mit 13 Werten (chapter, preface, foreword, ..., interlude).
-- Eigene Dateiformate: .bgb (Backup), .bgp (Projekt).
-- Assets (Cover, Bilder) werden ueber /api/assets/ verwaltet, nicht inline in TipTap-JSON.
-
-### i18n
-- 5 Sprachen: DE, EN, ES, FR, EL.
-- Alle User-sichtbaren Strings in YAML (backend/config/i18n/), nicht hardcoded.
-- Plugin-spezifische Strings in der Plugin-YAML (display_name, description).
-
-### Aktueller Stand
+Siehe architecture.md fuer Architektur-Details. Zusaetzlich beachten:
 - Version: 0.7.0 (Phase 7 abgeschlossen, GitHub Release v0.7.0 existiert).
 - Naechste Phase: 8 (Audiobook-Plugin).
-- 130 Tests (23 export, 8 kinderbuch, 10 kdp, 7 grammar, 30 backend, 52 e2e).
+- 154 Tests (33 backend, 48 plugin, 21 vitest, 52 e2e).
 - 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
 - 24 Toolbar-Buttons im Editor.
 - Deployment: Docker Compose, Port 7880, install.sh One-Liner.
-- Offene Fragen: Frontend-Plugin-Loading (Module Federation vs. importmaps), Plugin-DB-Migrationen (Alembic-Strategie).
 - WICHTIG: Vor Custom-Code IMMER pruefen ob eine TipTap-Extension oder Library existiert.
 - WICHTIG: Siehe lessons-learned.md fuer bekannte Fallstricke (TipTap, Import, Export).
 
@@ -108,7 +80,7 @@ Jede Session wird dokumentiert. Das ist Pflicht, nicht optional. Die Dokumentati
 Jeder relevante Arbeitsschritt wird protokolliert. Format pro Eintrag:
 
 ```markdown
-## {Nr}. {Kurztitel}
+## {Nr}. {Kurztitel} ({HH:MM})
 
 - Original-Prompt: Was wurde gesagt/gefragt
 - Optimierter Prompt: Wie haette man es praeziser formulieren koennen
@@ -130,7 +102,7 @@ Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/gea
 
 ### Wann CLAUDE.md aktualisieren
 
-- Neues Plugin hinzugefuegt oder entfernt
+- Neues Plugin hinzugefuegt, entfernt oder aktiviert/deaktiviert in app.yaml
 - Neue Dependency im Tech-Stack
 - Test-Zahlen haben sich wesentlich geaendert
 - Neue Befehle im Makefile
@@ -143,7 +115,6 @@ Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/gea
 
 - Architektur-Entscheidung getroffen oder geaendert
 - Neues Plugin im Katalog (geplant oder implementiert)
-- Roadmap-Phase erledigt oder neue Phase definiert
 - Offene Frage beantwortet oder neue aufgetaucht
 - Geschaeftsmodell oder Lizenzierung geaendert
 - Tech-Stack-Aenderung (neue Library, Framework-Wechsel)

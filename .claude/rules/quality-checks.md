@@ -9,12 +9,13 @@
 make test
 
 # Einzeln wenn gezielt:
-make test-backend           # pytest Backend (30 Tests)
+make test-backend           # pytest Backend (33 Tests)
 make test-plugins           # Alle Plugin-Tests (48 Tests)
 make test-plugin-export     # Nur Export (23 Tests)
 make test-plugin-grammar    # Nur Grammar (7 Tests)
 make test-plugin-kdp        # Nur KDP (10 Tests)
 make test-plugin-kinderbuch # Nur Kinderbuch (8 Tests)
+make test-frontend          # Vitest (21 Tests)
 
 # E2E (braucht laufende App)
 make dev                    # App starten
@@ -53,11 +54,11 @@ Vor dem Commit diese Checkliste durchgehen:
 ```
       /    E2E     \        Playwright (52 Tests)
      / ------------ \       Wenige, kritische User-Flows
-    / Integration    \      pytest + TestClient (30 Tests)
+    / Integration    \      pytest + TestClient (33 Tests)
    / ---------------- \    API-Endpunkte mit echtem DB-Zustand
-  /    Unit Tests      \    pytest + Vitest (78+ Tests)
+  /    Unit Tests      \    pytest + Vitest (69+ Tests)
  / -------------------- \  Geschaeftslogik isoliert
-/   Mutation Testing      \ mutmut (Nightly/manuell)
+/   Mutation Testing      \ mutmut (Nightly/manuell, noch einzurichten)
  --------------------------  Prueft ob Tests echte Fehler finden
 ```
 
@@ -102,29 +103,18 @@ def test_image_roundtrip():
 
 ### Unit Tests (Frontend - Vitest)
 
-**Status:** Noch nicht eingerichtet. Empfohlenes Setup:
-
-```bash
-cd frontend
-npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
-```
-
-```typescript
-// vite.config.ts ergaenzen:
-/// <reference types="vitest" />
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: './src/test/setup.ts',
-  },
-})
-```
+**Status:** Eingerichtet, 21 Tests aktiv (happy-dom, Node 18 kompatibel).
 
 **Was testen:** API Client Funktionen, Utility-Funktionen, komplexe Hooks.
 **Was NICHT testen:** Einfache Komponenten die nur rendern (das decken E2E-Tests ab).
 
-**Wo:** Neben der Datei: `api/client.test.ts`, `hooks/useTheme.test.ts`
+**Wo:** Neben der Datei: `api/client.test.ts`, `hooks/useI18n.test.ts`
+
+**Ausfuehrung:**
+```bash
+make test-frontend          # Alle Frontend-Tests
+cd frontend && npx vitest   # Watch-Mode
+```
 
 **Beispiel:**
 ```typescript
@@ -335,10 +325,6 @@ mutmut-html:
 check-all: test check-types
 	@echo "Alle Checks bestanden."
 
-# Frontend Unit Tests (wenn Vitest eingerichtet)
-test-frontend:
-	cd frontend && npx vitest run
-
 # Alles zusammen
 test-all: test test-frontend
 	@echo "Alle Tests bestanden."
@@ -350,7 +336,7 @@ test-all: test test-frontend
 1. make check-types        # TypeScript Compiler
 2. make test-backend       # pytest Backend
 3. make test-plugins       # pytest Plugins
-4. make test-frontend      # Vitest (wenn eingerichtet)
+4. make test-frontend      # Vitest
 5. make dev-bg             # App starten
 6. npx playwright test     # E2E
 7. make dev-down           # App stoppen
@@ -365,8 +351,7 @@ Nightly (separat, dauert laenger):
 ## Prioritaet fuer naechste Verbesserungen
 
 1. **mutmut einrichten** - Mutation Testing fuer Backend und Export-Plugin
-2. **Vitest einrichten** - Frontend Unit Tests fuer api/client.ts und Hooks
-3. **make check-all** - Ein Befehl fuer alles vor dem Push
-4. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
-5. **mypy einrichten** - Type-Checking fuer Python Backend
-6. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut
+2. **make check-all** - Ein Befehl fuer alles vor dem Push
+3. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
+4. **mypy einrichten** - Type-Checking fuer Python Backend
+5. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut
