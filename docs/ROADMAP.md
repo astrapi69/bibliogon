@@ -114,22 +114,22 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## Plugins (Roadmap)
 
-### Phase 8: Audiobook-Plugin (v0.9.0, Premium)
-- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
-- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- [ ] P-03: Voice-Settings pro Buch
-- [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
-- [ ] P-05: Vorhoer-Funktion im Editor
+### Phase 8: Manuskript-Qualitaet (v0.9.0)
+- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
+- [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
+- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 
 ### Phase 9: Uebersetzungs-Plugin (v0.10.0, Premium)
 - [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
 - [ ] P-07: LMStudio fuer lokale LLM-Uebersetzung
 - [ ] P-08: Kapitelweise Uebersetzung als neues Buch
-
-### Phase 10: Manuskript-Qualitaet (v0.11.0)
-- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
-- [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
-- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
+  
+### Phase 10: Audiobook-Plugin (v0.11.0, Premium)
+- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
+- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- [ ] P-03: Voice-Settings pro Buch
+- [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
+- [ ] P-05: Vorhoer-Funktion im Editor
 
 ### Phase 11: Multi-User und SaaS (v1.0.0)
 - [ ] P-12: Benutzerregistrierung und Authentifizierung
