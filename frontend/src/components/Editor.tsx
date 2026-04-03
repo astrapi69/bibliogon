@@ -20,6 +20,7 @@ import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
 import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
+import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 
@@ -37,6 +38,9 @@ export default function Editor({content, onSave, placeholder}: Props) {
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const {t} = useI18n();
     const [markdownMode, setMarkdownMode] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [replaceTerm, setReplaceTerm] = useState("");
     const [markdownText, setMarkdownText] = useState("");
 
     const debouncedSave = useCallback(
@@ -101,6 +105,10 @@ export default function Editor({content, onSave, placeholder}: Props) {
             Footnotes,
             FootnoteReference,
             Footnote,
+            SearchAndReplace.configure({
+                searchResultClass: "search-result",
+                disableRegex: true,
+            }),
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
@@ -183,7 +191,55 @@ export default function Editor({content, onSave, placeholder}: Props) {
                 editor={editor}
                 markdownMode={markdownMode}
                 onToggleMarkdown={handleToggleMarkdown}
+                onToggleSearch={() => setShowSearch(!showSearch)}
             />
+
+            {/* Search & Replace bar */}
+            {showSearch && !markdownMode && editor && (
+                <div style={styles.searchBar}>
+                    <input
+                        style={styles.searchInput}
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            editor.commands.setSearchTerm(e.target.value);
+                        }}
+                        placeholder={t("ui.editor.search", "Suchen...")}
+                        autoFocus
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") editor.commands.nextSearchResult();
+                            if (e.key === "Escape") setShowSearch(false);
+                        }}
+                    />
+                    <input
+                        style={styles.searchInput}
+                        value={replaceTerm}
+                        onChange={(e) => {
+                            setReplaceTerm(e.target.value);
+                            editor.commands.setReplaceTerm(e.target.value);
+                        }}
+                        placeholder={t("ui.editor.replace", "Ersetzen...")}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") setShowSearch(false);
+                        }}
+                    />
+                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.previousSearchResult()}>
+                        &lt;
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.nextSearchResult()}>
+                        &gt;
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.replace()}>
+                        {t("ui.editor.replace_one", "Ersetzen")}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.replaceAll()}>
+                        {t("ui.editor.replace_all", "Alle")}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowSearch(false); setSearchTerm(""); setReplaceTerm(""); editor.commands.setSearchTerm(""); }}>
+                        &times;
+                    </button>
+                </div>
+            )}
 
             {/* Status bar */}
             <div style={styles.statusBar}>
@@ -442,6 +498,24 @@ const styles: Record<string, React.CSSProperties> = {
         flexDirection: "column",
         height: "100vh",
         overflow: "hidden",
+    },
+    searchBar: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 16px",
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-secondary)",
+    },
+    searchInput: {
+        padding: "4px 8px",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-sm)",
+        fontSize: "0.8125rem",
+        background: "var(--bg-card)",
+        color: "var(--text-primary)",
+        outline: "none",
+        width: 160,
     },
     statusBar: {
         display: "flex",

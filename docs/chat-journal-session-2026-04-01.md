@@ -480,6 +480,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 50. T-02: Suchen und Ersetzen
+
+- 🔹 **Original-Prompt:** "Setze T-02 um."
+- 🔸 **Optimierter Prompt:** "Installiere @sereneinserenade/tiptap-search-and-replace. Registriere als Extension. Suchleiste mit 2 Inputs (Suchen/Ersetzen), Prev/Next/Replace/ReplaceAll Buttons. Search-Icon in Toolbar. CSS fuer gelbe Highlights. i18n Keys."
+- 🎯 Suchen und Ersetzen im Editor
+- ✅ Extension installiert, Toolbar-Button, Suchleiste, Highlight-CSS
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

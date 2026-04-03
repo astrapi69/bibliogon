@@ -27,15 +27,17 @@ import {
     Superscript,
     Table as TableIcon,
     FootprintsIcon,
+    Search,
 } from "lucide-react";
 
 interface Props {
     editor: Editor | null;
     markdownMode: boolean;
     onToggleMarkdown: () => void;
+    onToggleSearch?: () => void;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -259,6 +261,17 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown}: Props)
 
             {/* Spacer */}
             <div style={{flex: 1}}/>
+
+            {/* Search toggle */}
+            {onToggleSearch && !markdownMode && (
+                <button
+                    onClick={onToggleSearch}
+                    title="Suchen & Ersetzen (Ctrl+H)"
+                    style={styles.button}
+                >
+                    <Search size={16}/>
+                </button>
+            )}
 
             {/* Markdown toggle */}
             <button

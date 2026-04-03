@@ -17,7 +17,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [x] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [x] T-01: Fussnoten (tiptap-footnotes)
-- [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
+- [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
 - [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [ ] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
 - [ ] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
@@ -80,7 +80,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] 24 Toolbar-Buttons
 - [x] Markdown-Toggle mit Bild-Erhalt
 - [x] T-01: Fussnoten (tiptap-footnotes)
-- [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
+- [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 - [ ] T-04: Bild-Resize per Drag
 - [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)

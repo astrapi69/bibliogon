@@ -41,6 +41,10 @@ ui:
     saved: "Gespeichert"
     words: "Wörter"
     characters: "Zeichen"
+    search: "Suchen..."
+    replace: "Ersetzen..."
+    replace_one: "Ersetzen"
+    replace_all: "Alle"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
   sidebar:
