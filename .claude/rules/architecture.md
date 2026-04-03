@@ -118,9 +118,10 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements (kompiliertes JS-Bu
 
 ### UX-Patterns fuer Formulare
 
-- **Modal mit Stufen** fuer Erstellungs-Dialoge: Stufe 1 zeigt Pflichtfelder (2-3), Stufe 2 ist aufklappbar ("Weitere Details") fuer optionale Felder.
+- **Modal mit Stufen** fuer Erstellungs-Dialoge: Stufe 1 zeigt nur Pflichtfelder, Stufe 2 ist aufklappbar (Radix Collapsible, "Weitere Details") fuer optionale Felder.
 - **Grund:** Modals bleiben kompakt fuer Quick-Creation, optionale Felder ueberladen nicht.
-- **Beispiel:** CreateBookModal - Stufe 1: Titel, Autor, Genre. Stufe 2: Untertitel, Sprache, Serie.
+- **Beispiel:** CreateBookModal - Stufe 1: Titel, Autor (nur Pflicht). Stufe 2: Genre, Untertitel, Sprache, Serie.
+- **Aufklappbar:** Radix Collapsible (@radix-ui/react-collapsible) fuer aufklappbare Sektionen in Modals. Zugeklappt beim Oeffnen.
 - **Eingabefelder mit Vorschlaegen:** `<input>` + `<datalist>` fuer Freitext mit Dropdown-Vorschlaegen (z.B. Genre). Kein hartes Select wenn eigene Werte moeglich sein sollen.
 - **Bedingte Felder:** Checkbox-Toggle fuer optionale Gruppen (z.B. "Teil einer Serie" -> Reihe + Band). Werte werden beim Deaktivieren zurueckgesetzt.
 - **Keine eigene Seite** fuer einfache Erstellungs-Workflows. Modal reicht bis ~8 Felder.
