@@ -2,6 +2,7 @@ import {useState, useEffect} from "react";
 import {Book} from "../api/client";
 import {Save, Copy, ChevronLeft} from "lucide-react";
 import {toast} from "react-toastify";
+import KeywordInput from "./KeywordInput";
 
 interface Props {
     book: Book;
@@ -29,7 +30,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             asin_ebook: book.asin_ebook || "",
             asin_paperback: book.asin_paperback || "",
             asin_hardcover: book.asin_hardcover || "",
-            keywords: book.keywords ? tryParseKeywords(book.keywords) : "",
+            keywords: book.keywords ? tryParseKeywords(book.keywords) : "[]",
             html_description: book.html_description || "",
             backpage_description: book.backpage_description || "",
             backpage_author_bio: book.backpage_author_bio || "",
@@ -46,9 +47,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             const data: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(form)) {
                 if (key === "keywords" && value) {
-                    data[key] = JSON.stringify(
-                        (value as string).split(",").map((k) => k.trim()).filter(Boolean)
-                    );
+                    // Keywords are already stored as JSON string from KeywordInput
+                    data[key] = value;
                 } else {
                     data[key] = value || null;
                 }
@@ -149,8 +149,20 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
 
                 {/* Marketing */}
                 <Section title="Marketing und Amazon">
-                    <Field label="Keywords (kommagetrennt, max. 7)" value={form.keywords} onChange={(v) => set("keywords", v)}
-                        placeholder="z.B. philosophy, AI, consciousness, eternity"/>
+                    <div className="field">
+                        <label className="label">Keywords (max. 7)</label>
+                        <KeywordInput
+                            keywords={(() => {
+                                try {
+                                    const parsed = JSON.parse(form.keywords || "[]");
+                                    return Array.isArray(parsed) ? parsed : [];
+                                } catch {
+                                    return form.keywords ? String(form.keywords).split(",").map((s) => s.trim()).filter(Boolean) : [];
+                                }
+                            })()}
+                            onChange={(kws) => set("keywords", JSON.stringify(kws))}
+                        />
+                    </div>
                     <Field label="Buch-Beschreibung (HTML für Amazon)" value={form.html_description}
                         onChange={(v) => set("html_description", v)} multiline/>
                     <Field label="Rückseitenbeschreibung" value={form.backpage_description}

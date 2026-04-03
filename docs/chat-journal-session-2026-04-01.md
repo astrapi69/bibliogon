@@ -525,6 +525,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 55. Keywords als editierbare Tag-Liste
+
+- 🔹 **Original-Prompt:** "Keywords im Buch-Metadaten-Editor als editierbare Tag-Liste umbauen."
+- 🔸 **Optimierter Prompt:** (Ausfuehrliche Spec mit 7 Punkten vom User)
+- 🎯 Professionelle Keyword-Eingabe mit Chips, DnD-Sortierung, 7er-Limit
+- ✅ KeywordInput.tsx Komponente, @dnd-kit Sortierung, Duplikat-Pruefung, i18n 5 Sprachen
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

@@ -260,6 +260,10 @@ ui:
     es: "Espanol"
     fr: "Francais"
     el: "Ellinika"
+  keywords:
+    placeholder: "Saisir un mot-cle..."
+    counter: "Mots-cles"
+    duplicate: "Mot-cle deja present"
   common:
     cancel: "Annuler"
     create: "Creer"

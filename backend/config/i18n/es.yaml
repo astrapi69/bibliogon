@@ -260,6 +260,10 @@ ui:
     es: "Espanol"
     fr: "Francais"
     el: "Ellinika"
+  keywords:
+    placeholder: "Ingresar palabra clave..."
+    counter: "Palabras clave"
+    duplicate: "Palabra clave ya existe"
   common:
     cancel: "Cancelar"
     create: "Crear"

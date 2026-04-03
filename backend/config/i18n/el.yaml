@@ -260,6 +260,10 @@ ui:
     es: "Espanol"
     fr: "Francais"
     el: "Ellinika"
+  keywords:
+    placeholder: "Εισάγετε λέξη-κλειδί..."
+    counter: "Λέξεις-κλειδιά"
+    duplicate: "Η λέξη-κλειδί υπάρχει ήδη"
   common:
     cancel: "Ακύρωση"
     create: "Δημιουργία"
