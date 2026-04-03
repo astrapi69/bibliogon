@@ -21,7 +21,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [x] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
 - [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
-- [ ] X-04: Export: Custom CSS pro Kapiteltyp
+- [x] X-04: Export: Custom CSS pro Kapiteltyp
 - [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 
 ---
@@ -71,7 +71,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 - [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
-- [ ] X-04: Export: Custom CSS pro Kapiteltyp
+- [x] X-04: Export: Custom CSS pro Kapiteltyp
 - [x] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
 
 ## Editor (TipTap)

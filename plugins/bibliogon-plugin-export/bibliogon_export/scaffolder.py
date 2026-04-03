@@ -111,10 +111,13 @@ def scaffold_project(
         f"# About the Author\n\n{book.get('author', '')}\n",
     )
 
-    # Write chapter-type CSS if no custom CSS exists
+    # Write styles.css: default chapter-type styles + book's custom CSS
     styles_path = project_dir / "config" / "styles.css"
-    if not styles_path.exists():
-        styles_path.write_text(_DEFAULT_CHAPTER_TYPE_CSS, encoding="utf-8")
+    css_parts = [_DEFAULT_CHAPTER_TYPE_CSS]
+    custom_css = book.get("custom_css")
+    if custom_css:
+        css_parts.append(f"\n/* Custom CSS from book settings */\n{custom_css}\n")
+    styles_path.write_text("\n".join(css_parts), encoding="utf-8")
 
     return project_dir
 

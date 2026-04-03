@@ -516,6 +516,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 54. X-04: Custom CSS pro Buch im Export
+
+- 🔹 **Original-Prompt:** "Setze X-04 um."
+- 🔸 **Optimierter Prompt:** "Der Scaffolder soll book.custom_css an die styles.css anhaengen (nach den Standard-Kapiteltyp-Styles). Fuege custom_css zu book_data in der Export-Route hinzu. Autoren koennen per BookMetadataEditor CSS pro Buch definieren das im Export wirkt."
+- 🎯 Autoren-spezifische Styles wirken im exportierten EPUB/PDF
+- ✅ custom_css in book_data, angehaengt an styles.css im Scaffolder
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

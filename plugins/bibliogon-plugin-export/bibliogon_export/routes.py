@@ -58,6 +58,7 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
         "series_index": book.series_index,
         "description": book.description,
         "cover_image": book.cover_image,
+        "custom_css": book.custom_css,
     }
 
     chapters_data = []
