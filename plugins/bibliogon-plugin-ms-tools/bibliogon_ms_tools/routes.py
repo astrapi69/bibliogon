@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from .readability import analyze_readability
 from .sanitizer import sanitize
 from .style_checker import check_style
 
@@ -59,13 +60,28 @@ async def sanitize_text(req: SanitizeRequest) -> dict:
     )
 
 
+class ReadabilityRequest(BaseModel):
+    """Request body for readability analysis."""
+
+    text: str = Field(..., min_length=1, description="Text to analyze")
+    language: str = Field(default="de", pattern="^[a-z]{2}$")
+
+
+@router.post("/readability")
+async def readability_check(req: ReadabilityRequest) -> dict:
+    """Analyze text readability: Flesch Reading Ease, Flesch-Kincaid Grade, reading time."""
+    return analyze_readability(text=req.text, language=req.language)
+
+
 @router.get("/languages")
 async def supported_languages() -> dict:
-    """Return supported languages for style checks and sanitization."""
+    """Return supported languages for style checks, sanitization, and readability."""
+    from .readability import VOWEL_GROUPS
     from .sanitizer import QUOTE_STYLES
     from .style_checker import FILLER_WORDS
 
     return {
         "style_check": list(FILLER_WORDS.keys()),
         "sanitize": list(QUOTE_STYLES.keys()),
+        "readability": list(VOWEL_GROUPS.keys()),
     }

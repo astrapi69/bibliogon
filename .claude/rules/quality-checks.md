@@ -10,7 +10,7 @@ make test
 
 # Einzeln wenn gezielt:
 make test-backend           # pytest Backend (38 Tests)
-make test-plugins           # Alle Plugin-Tests (79 Tests)
+make test-plugins           # Alle Plugin-Tests (101 Tests)
 make test-plugin-export     # Nur Export (23 Tests)
 make test-plugin-grammar    # Nur Grammar (7 Tests)
 make test-plugin-kdp        # Nur KDP (10 Tests)

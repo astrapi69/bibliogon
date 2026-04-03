@@ -35,7 +35,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
 - [x] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 - [x] P-10: Filler-Woerter, Passiv, Satzlaenge
-- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
+- [x] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 - [ ] T-06: Lesezeit-Schaetzung pro Kapitel
 - [ ] Q-06: CI-Pipeline (GitHub Actions)
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
@@ -133,7 +133,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 ### Phase 8: Manuskript-Qualitaet (v0.9.0)
 - [x] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 - [x] P-10: Filler-Woerter, Passiv, Satzlaenge
-- [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
+- [x] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 
 ### Phase 9: Uebersetzungs-Plugin (v0.10.0, Premium)
 - [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung

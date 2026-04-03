@@ -395,6 +395,7 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
 - GET /api/get-started/sample-book
 - POST /api/ms-tools/check
 - POST /api/ms-tools/sanitize
+- POST /api/ms-tools/readability
 - GET /api/ms-tools/languages
 
 ## Datenmodell
@@ -533,13 +534,13 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-169 Tests insgesamt:
+191 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
-- plugin-ms-tools: 31 (style_checker, sanitizer)
+- plugin-ms-tools: 53 (style_checker, sanitizer, readability)
 - backend: 38 (api, phase4, import/export, roundtrip mit TOC, figcaption, assets, section-order)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 

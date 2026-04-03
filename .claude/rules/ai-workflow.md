@@ -64,7 +64,7 @@ Zusaetzlich fuer die KI:
 Siehe architecture.md fuer Architektur-Details. Zusaetzlich beachten:
 - Version: 0.7.0 (Phase 7 abgeschlossen, GitHub Release v0.7.0 existiert).
 - Naechste Phase: 8 (Audiobook-Plugin).
-- 190 Tests (38 backend, 79 plugin, 21 vitest, 52 e2e).
+- 212 Tests (38 backend, 101 plugin, 21 vitest, 52 e2e).
 - 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
 - 24 Toolbar-Buttons im Editor.
 - Deployment: Docker Compose, Port 7880, install.sh One-Liner.
