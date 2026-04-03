@@ -19,6 +19,7 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const [language, setLanguage] = useState("de");
     const [genre, setGenre] = useState("");
     const [subtitle, setSubtitle] = useState("");
+    const [isSeries, setIsSeries] = useState(false);
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
 
@@ -180,28 +181,44 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                             </div>
                         </div>
 
-                        <div style={styles.row}>
-                            <div className="field" style={{flex: 2}}>
-                                <label className="label">{t("ui.create_book.series", "Reihe")}</label>
-                                <input
-                                    className="input"
-                                    value={series}
-                                    onChange={(e) => setSeries(e.target.value)}
-                                    placeholder={t("ui.create_book.series_placeholder", "z.B. Das unsterbliche Muster")}
-                                />
+                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem", marginTop: 4}}>
+                            <input
+                                type="checkbox"
+                                checked={isSeries}
+                                onChange={(e) => {
+                                    setIsSeries(e.target.checked);
+                                    if (!e.target.checked) { setSeries(""); setSeriesIndex(""); }
+                                }}
+                                style={{accentColor: "var(--accent)"}}
+                            />
+                            {t("ui.create_book.is_series", "Teil einer Serie")}
+                        </label>
+
+                        {isSeries && (
+                            <div style={styles.row}>
+                                <div className="field" style={{flex: 2}}>
+                                    <label className="label">{t("ui.create_book.series", "Reihe")}</label>
+                                    <input
+                                        className="input"
+                                        value={series}
+                                        onChange={(e) => setSeries(e.target.value)}
+                                        placeholder={t("ui.create_book.series_placeholder", "z.B. Das unsterbliche Muster")}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="field" style={{flex: 1}}>
+                                    <label className="label">{t("ui.create_book.volume", "Band")}</label>
+                                    <input
+                                        className="input"
+                                        type="number"
+                                        min="1"
+                                        value={seriesIndex}
+                                        onChange={(e) => setSeriesIndex(e.target.value)}
+                                        placeholder={t("ui.create_book.volume_placeholder", "Nr.")}
+                                    />
+                                </div>
                             </div>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.create_book.volume", "Band")}</label>
-                                <input
-                                    className="input"
-                                    type="number"
-                                    min="1"
-                                    value={seriesIndex}
-                                    onChange={(e) => setSeriesIndex(e.target.value)}
-                                    placeholder={t("ui.create_book.volume_placeholder", "Nr.")}
-                                />
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="dialog-footer">

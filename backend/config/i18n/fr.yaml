@@ -99,6 +99,7 @@ ui:
     series_placeholder: "p. ex. Le motif immortel"
     volume: "Volume"
     volume_placeholder: "No."
+    is_series: "Partie d'une serie"
     genre: "Genre"
     genre_placeholder: "Choisir le genre..."
   genres:

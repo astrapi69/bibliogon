@@ -99,6 +99,7 @@ ui:
     series_placeholder: "z.B. Das unsterbliche Muster"
     volume: "Band"
     volume_placeholder: "Nr."
+    is_series: "Teil einer Serie"
     genre: "Genre"
     genre_placeholder: "Genre wählen..."
   genres:

@@ -99,6 +99,7 @@ ui:
     series_placeholder: "e.g. The Immortal Pattern"
     volume: "Volume"
     volume_placeholder: "No."
+    is_series: "Part of a Series"
     genre: "Genre"
     genre_placeholder: "Choose genre..."
   genres:

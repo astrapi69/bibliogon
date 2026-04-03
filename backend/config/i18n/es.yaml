@@ -99,6 +99,7 @@ ui:
     series_placeholder: "p. ej. El patron inmortal"
     volume: "Volumen"
     volume_placeholder: "No."
+    is_series: "Parte de una serie"
     genre: "Genre"
     genre_placeholder: "Elegir genero..."
   genres:
