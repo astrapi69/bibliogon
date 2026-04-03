@@ -29,6 +29,7 @@ export interface Book {
     subtitle: string | null;
     author: string;
     language: string;
+    genre: string | null;
     series: string | null;
     series_index: number | null;
     description: string | null;
@@ -72,6 +73,7 @@ export interface BookCreate {
     subtitle?: string;
     author: string;
     language?: string;
+    genre?: string;
     series?: string;
     series_index?: number;
     description?: string;

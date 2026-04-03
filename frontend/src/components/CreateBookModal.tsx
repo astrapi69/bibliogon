@@ -17,6 +17,7 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const [author, setAuthor] = useState("");
     const [authorChoices, setAuthorChoices] = useState<string[]>([]);
     const [language, setLanguage] = useState("de");
+    const [genre, setGenre] = useState("");
     const [subtitle, setSubtitle] = useState("");
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
@@ -44,6 +45,7 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
             title: title.trim(),
             author: author.trim(),
             language,
+            genre: genre.trim() || undefined,
             subtitle: subtitle.trim() || undefined,
             series: series.trim() || undefined,
             series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
@@ -135,6 +137,43 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                                                     {value: "es", label: t("ui.languages.es", "Espanol")},
                                                     {value: "fr", label: t("ui.languages.fr", "Francais")},
                                                     {value: "el", label: t("ui.languages.el", "Ellinika")},
+                                                ].map((opt) => (
+                                                    <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
+                                                        <Select.ItemText>{opt.label}</Select.ItemText>
+                                                    </Select.Item>
+                                                ))}
+                                            </Select.Viewport>
+                                        </Select.Content>
+                                    </Select.Portal>
+                                </Select.Root>
+                            </div>
+                            <div className="field" style={{flex: 1}}>
+                                <label className="label">{t("ui.create_book.genre", "Genre")}</label>
+                                <Select.Root value={genre} onValueChange={setGenre}>
+                                    <Select.Trigger className="radix-select-trigger">
+                                        <Select.Value placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen...")}/>
+                                        <Select.Icon><ChevronDown size={14}/></Select.Icon>
+                                    </Select.Trigger>
+                                    <Select.Portal>
+                                        <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
+                                            <Select.Viewport>
+                                                {[
+                                                    {value: "novel", label: t("ui.genres.novel", "Roman")},
+                                                    {value: "non_fiction", label: t("ui.genres.non_fiction", "Sachbuch")},
+                                                    {value: "technical", label: t("ui.genres.technical", "Fachbuch")},
+                                                    {value: "children", label: t("ui.genres.children", "Kinderbuch")},
+                                                    {value: "biography", label: t("ui.genres.biography", "Biografie")},
+                                                    {value: "poetry", label: t("ui.genres.poetry", "Lyrik")},
+                                                    {value: "short_stories", label: t("ui.genres.short_stories", "Kurzgeschichten")},
+                                                    {value: "academic", label: t("ui.genres.academic", "Wissenschaftlich")},
+                                                    {value: "textbook", label: t("ui.genres.textbook", "Lehrbuch")},
+                                                    {value: "self_help", label: t("ui.genres.self_help", "Ratgeber")},
+                                                    {value: "fantasy", label: t("ui.genres.fantasy", "Fantasy")},
+                                                    {value: "thriller", label: t("ui.genres.thriller", "Thriller")},
+                                                    {value: "romance", label: t("ui.genres.romance", "Liebesroman")},
+                                                    {value: "cookbook", label: t("ui.genres.cookbook", "Kochbuch")},
+                                                    {value: "travel", label: t("ui.genres.travel", "Reisefuehrer")},
+                                                    {value: "other", label: t("ui.genres.other", "Sonstiges")},
                                                 ].map((opt) => (
                                                     <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
                                                         <Select.ItemText>{opt.label}</Select.ItemText>

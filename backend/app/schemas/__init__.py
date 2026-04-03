@@ -39,6 +39,7 @@ class BookCreate(BaseModel):
     subtitle: str | None = None
     author: str
     language: str = "de"
+    genre: str | None = None
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
@@ -49,6 +50,7 @@ class BookUpdate(BaseModel):
     subtitle: str | None = None
     author: str | None = None
     language: str | None = None
+    genre: str | None = None
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
@@ -79,6 +81,7 @@ class BookOut(BaseModel):
     subtitle: str | None
     author: str
     language: str
+    genre: str | None = None
     series: str | None
     series_index: int | None
     description: str | None

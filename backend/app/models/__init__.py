@@ -51,6 +51,7 @@ class Book(Base):
     series: Mapped[str | None] = mapped_column(String(300), nullable=True)
     series_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    genre: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Publishing metadata
     edition: Mapped[str | None] = mapped_column(String(100), nullable=True)
