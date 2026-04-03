@@ -444,6 +444,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 46. U-02: Buch-Cover als Thumbnail auf BookCard
+
+- 🔹 **Original-Prompt:** "Setze U-02 um."
+- 🔸 **Optimierter Prompt:** "Zeige das Cover-Bild als Thumbnail oben auf der BookCard. Pfad aus book.cover_image extrahieren, ueber /api/books/{id}/assets/file/{filename} laden. Fallback: 4px Accent-Stripe wenn kein Cover. onError: Bild verstecken."
+- 🎯 Visuelle Unterscheidung der Buecher im Dashboard
+- ✅ Cover-Thumbnail (140px Hoehe, object-fit cover), graceful Fallback
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

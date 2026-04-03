@@ -13,7 +13,7 @@ Prompt-Referenz: `Setze U-01 um.` reicht als Anweisung.
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 - [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
-- [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
+- [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
@@ -37,7 +37,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Core-Plugins: "Standard" Badge, kein Loeschen/Deaktivieren
 - [x] Dashboard: Buch-Suche/Filter (nach Titel, Autor, Genre, Sprache)
 - [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
-- [ ] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
+- [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
 - [ ] U-04: Editor: Fussnoten-Support (tiptap-footnotes Extension)
 - [ ] U-05: Editor: Suchen und Ersetzen im Kapitel

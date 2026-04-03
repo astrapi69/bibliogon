@@ -18,9 +18,22 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
         year: "numeric",
     });
 
+    // Extract cover filename from path (e.g. "uploads/abc/cover/cover.png" -> "cover.png")
+    const coverFilename = book.cover_image ? book.cover_image.split("/").pop() : null;
+    const coverUrl = coverFilename ? `/api/books/${book.id}/assets/file/${coverFilename}` : null;
+
     return (
         <div style={styles.card} onClick={() => { if (!menuOpen) onClick(); }}>
-            <div style={styles.accent}/>
+            {coverUrl ? (
+                <img
+                    src={coverUrl}
+                    alt=""
+                    style={styles.coverImage}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+            ) : (
+                <div style={styles.accent}/>
+            )}
             <div style={styles.content}>
                 <h3 style={styles.title}>{book.title}</h3>
                 {book.subtitle && <p style={styles.subtitle}>{book.subtitle}</p>}
@@ -88,6 +101,12 @@ const styles: Record<string, React.CSSProperties> = {
         transition: "all 180ms ease",
         display: "flex",
         flexDirection: "column",
+    },
+    coverImage: {
+        width: "100%",
+        height: 140,
+        objectFit: "cover" as const,
+        borderBottom: "1px solid var(--border)",
     },
     accent: {
         height: 4,
