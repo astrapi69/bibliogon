@@ -1,3 +1,4 @@
+import {useState} from "react";
 import {Book} from "../api/client";
 import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function BookCard({book, onClick, onDelete, onDeletePermanent}: Props) {
+    const [menuOpen, setMenuOpen] = useState(false);
     const updated = new Date(book.updated_at).toLocaleDateString("de-DE", {
         day: "numeric",
         month: "short",
@@ -17,7 +19,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
     });
 
     return (
-        <div style={styles.card} onClick={onClick}>
+        <div style={styles.card} onClick={() => { if (!menuOpen) onClick(); }}>
             <div style={styles.accent}/>
             <div style={styles.content}>
                 <h3 style={styles.title}>{book.title}</h3>
@@ -36,7 +38,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                         {updated}
                     </span>
                     <span style={styles.lang}>{book.language.toUpperCase()}</span>
-                    <DropdownMenu.Root>
+                    <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                         <DropdownMenu.Trigger asChild>
                             <button
                                 className="btn-icon"
