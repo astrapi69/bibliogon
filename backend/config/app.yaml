@@ -22,6 +22,7 @@ plugins:
   - export
   - help
   - getstarted
+  - ms-tools
   disabled: []
 ui:
   title: Bibliogon

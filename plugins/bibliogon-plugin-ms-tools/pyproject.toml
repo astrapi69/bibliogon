@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "bibliogon-plugin-ms-tools"
+version = "1.0.0"
+description = "Manuscript quality tools: style checks, sanitization, readability metrics."
+authors = ["Asterios Raptis"]
+license = "MIT"
+package-mode = true
+packages = [{include = "bibliogon_ms_tools"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.115.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+ms-tools = "bibliogon_ms_tools.plugin:MsToolsPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

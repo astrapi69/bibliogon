@@ -293,6 +293,24 @@ type = "directory"
 url = "../plugins/bibliogon-plugin-help"
 
 [[package]]
+name = "bibliogon-plugin-ms-tools"
+version = "1.0.0"
+description = "Manuscript quality tools: style checks, sanitization, readability metrics."
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastapi = "^0.115.0"
+pluginforge = "^0.5.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-ms-tools"
+
+[[package]]
 name = "certifi"
 version = "2026.2.25"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -2818,4 +2836,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "6aa1ede31ae4f31f7684949e99cd31b1a259e259228dfa1764fcd88ed30a4598"
+content-hash = "0e67d2ae4c224f1f4064772d2d1cbd355ff01f3a1b6d11163384e6a3cd938a57"

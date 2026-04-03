@@ -12,6 +12,7 @@ COPY backend/pyproject.toml backend/poetry.lock* ./backend/
 COPY plugins/bibliogon-plugin-export/ ./plugins/bibliogon-plugin-export/
 COPY plugins/bibliogon-plugin-help/ ./plugins/bibliogon-plugin-help/
 COPY plugins/bibliogon-plugin-getstarted/ ./plugins/bibliogon-plugin-getstarted/
+COPY plugins/bibliogon-plugin-ms-tools/ ./plugins/bibliogon-plugin-ms-tools/
 
 WORKDIR /build/backend
 
@@ -23,7 +24,8 @@ RUN poetry config virtualenvs.create false && \
 RUN pip install --no-cache-dir --force-reinstall --no-deps \
     ../plugins/bibliogon-plugin-export \
     ../plugins/bibliogon-plugin-help \
-    ../plugins/bibliogon-plugin-getstarted
+    ../plugins/bibliogon-plugin-getstarted \
+    ../plugins/bibliogon-plugin-ms-tools
 
 # Remove .pth files left by Poetry's editable installs
 RUN rm -f /usr/local/lib/python3.11/site-packages/bibliogon_plugin_*.pth

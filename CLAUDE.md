@@ -60,6 +60,7 @@ make test-plugin-export   # Nur Export-Plugin
 make test-plugin-grammar  # Nur Grammar-Plugin
 make test-plugin-kdp      # Nur KDP-Plugin
 make test-plugin-kinderbuch # Nur Kinderbuch-Plugin
+make test-plugin-ms-tools # Nur Manuscript-Tools-Plugin
 
 # Produktion
 cp .env.example .env      # Konfiguration anpassen (BIBLIOGON_SECRET_KEY setzen!)
@@ -135,12 +136,19 @@ bibliogon/
 │   │   │   ├── content.py              # Shortcuts, FAQ, About aus YAML
 │   │   │   └── routes.py               # /api/help/shortcuts, /faq, /about
 │   │   └── tests/
-│   └── bibliogon-plugin-getstarted/     # Onboarding (MIT)
-│       ├── bibliogon_getstarted/
-│       │   ├── plugin.py               # GetStartedPlugin
-│       │   ├── guide.py                # Schritt-fuer-Schritt Anleitung + Beispielbuch
-│       │   └── routes.py               # /api/get-started/guide, /sample-book
-│       └── tests/
+│   ├── bibliogon-plugin-getstarted/     # Onboarding (MIT)
+│   │   ├── bibliogon_getstarted/
+│   │   │   ├── plugin.py               # GetStartedPlugin
+│   │   │   ├── guide.py                # Schritt-fuer-Schritt Anleitung + Beispielbuch
+│   │   │   └── routes.py               # /api/get-started/guide, /sample-book
+│   │   └── tests/
+│   └── bibliogon-plugin-ms-tools/       # Manuskript-Werkzeuge (MIT)
+│       ├── bibliogon_ms_tools/
+│       │   ├── plugin.py               # MsToolsPlugin
+│       │   ├── style_checker.py        # Filler-Woerter, Passiv, Satzlaenge (DE+EN)
+│       │   ├── sanitizer.py            # Anfuehrungszeichen, Whitespace, Dashes
+│       │   └── routes.py               # /api/ms-tools/check, /sanitize, /languages
+│       └── tests/                       # 31 Tests
 ├── frontend/
 │   ├── src/
 │   │   ├── api/client.ts        # Typed API Client (Books, Chapters, Assets, Backup, Licenses, Settings)
@@ -385,6 +393,9 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
 - GET /api/help/about
 - GET /api/get-started/guide
 - GET /api/get-started/sample-book
+- POST /api/ms-tools/check
+- POST /api/ms-tools/sanitize
+- GET /api/ms-tools/languages
 
 ## Datenmodell
 
@@ -409,7 +420,7 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 | plugin-getstarted  | MIT         | -             | Onboarding, Beispielbuch            |
 | plugin-audiobook   | Proprietary | plugin-export | TTS Audiobook-Generierung (geplant) |
 | plugin-translation | Proprietary | -             | DeepL/LLM Uebersetzung (geplant)    |
-| plugin-ms-tools    | MIT         | -             | Manuskript-Qualitaet (geplant)      |
+| plugin-ms-tools    | MIT         | -             | Stil-Checks, Sanitization, Metriken |
 
 ## Erledigte Phasen
 
@@ -522,12 +533,13 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-138 Tests insgesamt:
+169 Tests insgesamt:
 
 - plugin-export: 23 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
+- plugin-ms-tools: 31 (style_checker, sanitizer)
 - backend: 38 (api, phase4, import/export, roundtrip mit TOC, figcaption, assets, section-order)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 

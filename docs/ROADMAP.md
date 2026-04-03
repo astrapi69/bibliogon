@@ -33,7 +33,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
-- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
+- [x] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 - [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
 - [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 - [ ] T-06: Lesezeit-Schaetzung pro Kapitel
@@ -131,7 +131,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 ## Plugins (Roadmap)
 
 ### Phase 8: Manuskript-Qualitaet (v0.9.0)
-- [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
+- [x] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 - [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
 - [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 

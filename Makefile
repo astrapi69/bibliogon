@@ -1,7 +1,7 @@
 .PHONY: dev dev-bg dev-down dev-backend dev-frontend \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
-       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -68,7 +68,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -89,6 +89,11 @@ test-plugin-kinderbuch: ## Run kinderbuch plugin tests
 	@echo ""
 	@echo "=== Kinderbuch Plugin Tests ==="
 	cd plugins/bibliogon-plugin-kinderbuch && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-ms-tools: ## Run manuscript tools plugin tests
+	@echo ""
+	@echo "=== Manuscript Tools Plugin Tests ==="
+	cd plugins/bibliogon-plugin-ms-tools && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- E2E Tests ---
 

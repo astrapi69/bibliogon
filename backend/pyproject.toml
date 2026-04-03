@@ -17,6 +17,7 @@ pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
 bibliogon-plugin-export = {path = "../plugins/bibliogon-plugin-export", develop = true}
 bibliogon-plugin-help = {path = "../plugins/bibliogon-plugin-help", develop = true}
 bibliogon-plugin-getstarted = {path = "../plugins/bibliogon-plugin-getstarted", develop = true}
+bibliogon-plugin-ms-tools = {path = "../plugins/bibliogon-plugin-ms-tools", develop = true}
 markdown = "^3.10.2"
 
 [tool.poetry.group.dev.dependencies]
