@@ -426,6 +426,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 44. PDF-Export: Cover-Bild als erste Seite
+
+- 🔹 **Original-Prompt:** "Setze den naechsten Punkt Import/Export um in der Liste/Tabelle."
+- 🔸 **Optimierter Prompt:** "Durchreiche das Cover-Bild (book.cover_image) an manuscripta's compile_book(cover_path=...). Finde Cover automatisch: 1) aus book_data.cover_image, 2) aus scaffolded assets/covers/cover.png|jpg. Erweitere run_pandoc um cover_path Parameter. Fuege cover_image zu book_data in der Export-Route hinzu."
+- 🎯 EPUB und PDF haben Cover als erste Seite
+- ✅ cover_path an manuscripta durchgereicht, auto-detection aus Assets
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

@@ -57,6 +57,7 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
         "series": book.series,
         "series_index": book.series_index,
         "description": book.description,
+        "cover_image": book.cover_image,
     }
 
     chapters_data = []
@@ -164,8 +165,22 @@ def export(
                 filename=f"{base_name}.bgp",
             )
 
+        # Find cover image path
+        cover_path = book_data.get("cover_image")
+        if not cover_path:
+            # Try to find cover in scaffolded assets
+            for ext in ("png", "jpg", "jpeg"):
+                candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
+                if candidate.exists():
+                    cover_path = str(candidate)
+                    break
+
         # Export via manuscripta (reads export-settings.yaml from scaffolded project)
-        output_path = run_pandoc(project_dir, fmt, config, use_manual_toc=use_manual_toc)
+        output_path = run_pandoc(
+            project_dir, fmt, config,
+            use_manual_toc=use_manual_toc,
+            cover_path=cover_path,
+        )
 
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
         ext_map = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}

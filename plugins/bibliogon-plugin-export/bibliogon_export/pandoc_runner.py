@@ -22,6 +22,7 @@ def run_pandoc(
     fmt: str,
     config: dict[str, Any],
     use_manual_toc: bool = False,
+    cover_path: str | None = None,
 ) -> Path:
     """Export a scaffolded project to EPUB, PDF, or other formats via manuscripta.
 
@@ -75,10 +76,27 @@ def run_pandoc(
         else:
             _mbook.OUTPUT_FILE = output_file
 
+        # Resolve cover path relative to project directory
+        resolved_cover = None
+        if cover_path:
+            cp = Path(cover_path)
+            if cp.is_absolute() and cp.exists():
+                resolved_cover = str(cp)
+            elif (project_dir / cover_path).exists():
+                resolved_cover = str(project_dir / cover_path)
+            # Also check assets/covers/
+            if not resolved_cover:
+                for ext in ("png", "jpg", "jpeg"):
+                    candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
+                    if candidate.exists():
+                        resolved_cover = str(candidate)
+                        break
+
         compile_book(
             format=fmt,
             section_order=section_order,
             book_type=book_type,
+            cover_path=resolved_cover,
             toc_depth=toc_depth,
             use_manual_toc=use_manual_toc,
         )

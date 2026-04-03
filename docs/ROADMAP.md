@@ -46,7 +46,7 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] Asset-Import mit Pfad-Rewriting
 - [x] EPUB-Export mit Bildern und manuellem TOC
 - [x] Backup/Restore mit Assets und allen Metadaten
-- [ ] PDF-Export: Cover-Bild als erste Seite
+- [x] PDF-Export: Cover-Bild als erste Seite
 - [ ] EPUB: epubcheck-Validierung nach Export (automatisch)
 - [ ] Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [ ] Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
