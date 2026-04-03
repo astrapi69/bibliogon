@@ -25,7 +25,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 - [x] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
 - [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
-- [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
+- [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [ ] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [ ] T-04: Bild-Resize per Drag
@@ -110,7 +110,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] 48 Plugin-Tests (pytest)
 - [x] 21 Frontend-Tests (Vitest)
 - [x] 52 E2E-Tests (Playwright)
-- [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
+- [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
 - [ ] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] Q-04: API-Client Unit Tests (Vitest)

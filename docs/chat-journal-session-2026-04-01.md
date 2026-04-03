@@ -561,6 +561,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 59. Q-01: E2E-Tests fuer Radix-Selektoren aktualisieren
+
+- 🔹 **Original-Prompt:** "Setze Q-01 um."
+- 🔸 **Optimierter Prompt:** "Aktualisiere alle 6 E2E Test-Dateien: Dashboard (DropdownMenu statt title-Buttons, kein Confirm fuer Papierkorb), BookEditor (Radix DropdownMenu fuer Kapitel-Add, Tooltip statt title), Navigation (direkte URL statt title-Button, Wizard statt Checkliste), Export (i18n-aware Selektoren, Batch-Button), Metadata (KeywordInput statt Textfeld), Settings (bereits aktualisiert)."
+- 🎯 E2E-Tests kompatibel mit Radix UI und neuen Features
+- ✅ 6 Test-Dateien aktualisiert, i18n-aware Regex-Selektoren
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+
