@@ -105,10 +105,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.import(file);
-            toast.success(`${result.imported_books} Buch/Bücher importiert.`);
+            toast.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
             loadBooks();
         } catch (err) {
-            toast.error(`Import fehlgeschlagen: ${err}`);
+            toast.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
         }
         e.target.value = "";
     };
@@ -118,10 +118,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.importProject(file);
-            toast.success(`"${result.title}" mit ${result.chapter_count} Kapiteln importiert.`);
+            toast.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
             loadBooks();
         } catch (err) {
-            toast.error(`Import fehlgeschlagen: ${err}`);
+            toast.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
         }
         e.target.value = "";
     };
@@ -150,22 +150,22 @@ export default function Dashboard() {
                                 onClick={handleBackupExport}
                                 disabled={books.length === 0}
                             >
-                                <Download size={14}/> Backup
+                                <Download size={14}/> {t("ui.dashboard.backup", "Backup")}
                             </button>
                             <button className="btn btn-secondary btn-sm" onClick={() => backupInputRef.current?.click()}>
-                                <Upload size={14}/> Restore
+                                <Upload size={14}/> {t("ui.dashboard.restore", "Restore")}
                             </button>
                             <button className="btn btn-secondary btn-sm" onClick={() => projectInputRef.current?.click()}>
-                                <FolderUp size={14}/> Import
+                                <FolderUp size={14}/> {t("ui.dashboard.import", "Import")}
                             </button>
                             <div style={styles.headerSeparator}/>
-                            <button className="btn-icon" onClick={() => navigate("/get-started")} title="Erste Schritte">
+                            <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
                                 <Rocket size={18}/>
                             </button>
-                            <button className="btn-icon" onClick={() => navigate("/help")} title="Hilfe">
+                            <button className="btn-icon" onClick={() => navigate("/help")} title={t("ui.dashboard.help", "Hilfe")}>
                                 <HelpCircle size={18}/>
                             </button>
-                            <button className="btn-icon" onClick={() => navigate("/settings")} title="Einstellungen">
+                            <button className="btn-icon" onClick={() => navigate("/settings")} title={t("ui.settings.title", "Einstellungen")}>
                                 <Settings size={18}/>
                             </button>
                             <button
@@ -188,27 +188,27 @@ export default function Dashboard() {
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content className="hamburger-menu-content" align="end" sideOffset={4}>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
-                                        <Download size={16}/> Backup
+                                        <Download size={16}/> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => backupInputRef.current?.click()}>
-                                        <Upload size={16}/> Restore
+                                        <Upload size={16}/> {t("ui.dashboard.restore", "Restore")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => projectInputRef.current?.click()}>
-                                        <FolderUp size={16}/> Import
+                                        <FolderUp size={16}/> {t("ui.dashboard.import", "Import")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/get-started")}>
-                                        <Rocket size={16}/> Erste Schritte
+                                        <Rocket size={16}/> {t("ui.get_started.title", "Erste Schritte")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/help")}>
-                                        <HelpCircle size={16}/> Hilfe
+                                        <HelpCircle size={16}/> {t("ui.dashboard.help", "Hilfe")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/settings")}>
-                                        <Settings size={16}/> Einstellungen
+                                        <Settings size={16}/> {t("ui.settings.title", "Einstellungen")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setShowTrash(!showTrash)}>
-                                        <Trash2 size={16}/> Papierkorb {trash.length > 0 && `(${trash.length})`}
+                                        <Trash2 size={16}/> {t("ui.dashboard.trash", "Papierkorb")} {trash.length > 0 && `(${trash.length})`}
                                     </DropdownMenu.Item>
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
@@ -226,23 +226,23 @@ export default function Dashboard() {
                     /* Trash view */
                     <>
                         <div style={styles.mainHeader}>
-                            <button className="btn-icon" onClick={() => setShowTrash(false)} title="Zurück">
+                            <button className="btn-icon" onClick={() => setShowTrash(false)} title={t("ui.dashboard.back", "Zurück")}>
                                 <ChevronLeft size={18}/>
                             </button>
                             <Trash2 size={20} style={{color: "var(--text-muted)"}}/>
-                            <h2 style={styles.mainTitle}>Papierkorb</h2>
-                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? "Buch" : "Bücher"}</span>
+                            <h2 style={styles.mainTitle}>{t("ui.dashboard.trash", "Papierkorb")}</h2>
+                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                             <div style={{flex: 1}}/>
                             {trash.length > 0 && (
                                 <button className="btn btn-danger btn-sm" onClick={handleEmptyTrash}>
-                                    <Trash size={14}/> Papierkorb leeren
+                                    <Trash size={14}/> {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
                                 </button>
                             )}
                         </div>
                         {trash.length === 0 ? (
                             <div style={styles.emptyState}>
                                 <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
-                                <p style={styles.emptyTitle}>Papierkorb ist leer</p>
+                                <p style={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
                             </div>
                         ) : (
                             <div style={styles.grid}>
@@ -254,10 +254,10 @@ export default function Dashboard() {
                                         </div>
                                         <div style={{display: "flex", gap: 6, flexShrink: 0}}>
                                             <button className="btn btn-primary btn-sm" onClick={() => handleRestore(book.id)}>
-                                                <RotateCcw size={12}/> Wiederherstellen
+                                                <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
                                             </button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handlePermanentDelete(book.id)}>
-                                                <Trash size={12}/> Endgueltig loeschen
+                                                <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgueltig loeschen")}
                                             </button>
                                         </div>
                                     </div>
@@ -266,24 +266,23 @@ export default function Dashboard() {
                         )}
                     </>
                 ) : loading ? (
-                    <p style={styles.empty}>Laden...</p>
+                    <p style={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
                 ) : books.length === 0 ? (
                     <div style={styles.emptyState}>
                         <BookOpen size={56} strokeWidth={1} color="var(--text-muted)"/>
-                        <p style={styles.emptyTitle}>Willkommen bei Bibliogon</p>
+                        <p style={styles.emptyTitle}>{t("ui.dashboard.welcome", "Willkommen bei Bibliogon")}</p>
                         <p style={styles.emptyText}>
-                            Erstelle dein erstes Buch, importiere ein bestehendes Projekt,
-                            oder schaue dir die Erste-Schritte-Anleitung an.
+                            {t("ui.dashboard.welcome_text", "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an.")}
                         </p>
                         <div style={{display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap", justifyContent: "center"}}>
                             <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                                <Plus size={16}/> Buch erstellen
+                                <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
                             </button>
                             <button className="btn btn-secondary" onClick={() => projectInputRef.current?.click()}>
-                                <FolderUp size={16}/> Projekt importieren
+                                <FolderUp size={16}/> {t("ui.dashboard.import_project", "Projekt importieren")}
                             </button>
                             <button className="btn btn-secondary" onClick={() => navigate("/get-started")}>
-                                <Rocket size={16}/> Erste Schritte
+                                <Rocket size={16}/> {t("ui.get_started.title", "Erste Schritte")}
                             </button>
                         </div>
                     </div>
@@ -291,7 +290,7 @@ export default function Dashboard() {
                     <>
                         <div style={styles.mainHeader}>
                             <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
-                            <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Bücher"}</span>
+                            <span style={styles.bookCount}>{books.length} {books.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                         </div>
                         {books.length > 1 && (
                             <div style={styles.searchBar}>

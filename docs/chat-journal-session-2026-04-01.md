@@ -453,6 +453,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 47. S-01: Hardcoded Strings in Dashboard
+
+- 🔹 **Original-Prompt:** "Setze S-01 um."
+- 🔸 **Optimierter Prompt:** "Migriere alle verbleibenden hardcoded deutschen Strings in Dashboard.tsx zu t(): Toast-Messages (backup/import), Button-Labels (Backup/Restore/Import), Title-Attribute, Hamburger-Menu Items, Trash-View komplett, Empty-State, Book-Count. Fuege 18 neue i18n-Keys in alle 5 Sprachen hinzu."
+- 🎯 Null hardcoded Strings im Dashboard
+- ✅ 18 neue Keys, Dashboard komplett i18n-migriert
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

@@ -4,7 +4,7 @@ Offene Punkte, geplante Features und technische Schulden.
 Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 IDs: U=UI/UX, I=i18n, X=Import/Export, T=TipTap, B=Backend, Q=Tests, P=Plugin, S=Schulden.
 
-Prompt-Referenz: `Setze U-01 um.` reicht als Anweisung.
+Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 ---
 
@@ -14,9 +14,15 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 - [x] U-01: Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [x] U-02: Dashboard: Buch-Cover als Thumbnail auf der BookCard
-- [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
+- [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
-- [ ] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
+- [ ] T-01: Fussnoten (@buttondown/tiptap-footnotes)
+- [ ] T-02: Suchen und Ersetzen (tiptap-search-n-replace)
+- [ ] U-03: Editor: Bild-Upload per Drag-and-Drop in den Editor
+- [ ] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
+- [ ] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
+- [ ] X-04: Export: Custom CSS pro Kapiteltyp
+- [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 
 ---
 
@@ -134,7 +140,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## Technische Schulden
 
-- [ ] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
+- [x] S-01: Hardcoded Strings in Dashboard (einige Dialog-Texte)
 - [ ] S-02: BookCard: Genre-Badge i18n (zeigt aktuell den Key statt uebersetzten Namen)
 - [ ] S-03: Settings-Seite: ~10 verbleibende hardcoded Strings
 - [ ] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
