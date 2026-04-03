@@ -408,6 +408,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 42. Dashboard: Buch-Suche/Filter
+
+- 🔹 **Original-Prompt:** "Setze den naechsten Punkt UI/UX um in der Liste/Tabelle."
+- 🔸 **Optimierter Prompt:** "Implementiere Buch-Suche/Filter im Dashboard: Suchfeld ueber dem Grid, Client-seitiges Filtern nach Titel, Autor, Genre, Sprache, Serie, Untertitel. Suchfeld nur sichtbar ab 4 Buechern. i18n Placeholder in 5 Sprachen. ROADMAP.md Punkt als erledigt markieren."
+- 🎯 Schnelles Finden von Buechern bei wachsender Bibliothek
+- ✅ Commit: Suchfeld mit Search-Icon, Client-side Filter, i18n
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

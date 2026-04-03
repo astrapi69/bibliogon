@@ -8,6 +8,7 @@ ui:
     restore: "Restaurar"
     import: "Importar"
     trash: "Papelera"
+    search_placeholder: "Buscar por titulo, autor, genero o idioma..."
   editor:
     new_chapter: "Nuevo capitulo"
     confirm_delete_chapter: "Seguro que quieres eliminar este capitulo?"

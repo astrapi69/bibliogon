@@ -20,7 +20,7 @@ Checkboxen: `[ ]` = offen, `[x]` = erledigt.
 - [x] Settings: White-Label Konfiguration (App umbenennen, Core-Plugins togglen)
 - [x] Settings: Autor-Tab mit Pseudonym-Verwaltung
 - [x] Core-Plugins: "Standard" Badge, kein Loeschen/Deaktivieren
-- [ ] Dashboard: Buch-Suche/Filter (nach Titel, Autor, Genre, Sprache)
+- [x] Dashboard: Buch-Suche/Filter (nach Titel, Autor, Genre, Sprache)
 - [ ] Dashboard: Sortierung (nach Datum, Titel, Autor)
 - [ ] Dashboard: Buch-Cover als Thumbnail auf der BookCard
 - [ ] Editor: Bild-Upload per Drag-and-Drop in den Editor

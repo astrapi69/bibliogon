@@ -6,7 +6,7 @@ import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu,
+    Menu, Search,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import ThemeToggle from "../components/ThemeToggle";
@@ -21,6 +21,7 @@ export default function Dashboard() {
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
     const backupInputRef = useRef<HTMLInputElement>(null);
@@ -291,8 +292,31 @@ export default function Dashboard() {
                             <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
                             <span style={styles.bookCount}>{books.length} {books.length === 1 ? "Buch" : "Bücher"}</span>
                         </div>
+                        {books.length > 3 && (
+                            <div style={styles.searchBar}>
+                                <Search size={16} style={{color: "var(--text-muted)", flexShrink: 0}}/>
+                                <input
+                                    className="input"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder={t("ui.dashboard.search_placeholder", "Suche nach Titel, Autor, Genre oder Sprache...")}
+                                    style={{border: "none", background: "transparent", flex: 1, padding: "4px 0"}}
+                                />
+                            </div>
+                        )}
                         <div style={styles.grid}>
-                            {books.map((book) => (
+                            {books.filter((book) => {
+                                if (!searchQuery.trim()) return true;
+                                const q = searchQuery.toLowerCase();
+                                return (
+                                    book.title.toLowerCase().includes(q) ||
+                                    book.author.toLowerCase().includes(q) ||
+                                    (book.genre || "").toLowerCase().includes(q) ||
+                                    book.language.toLowerCase().includes(q) ||
+                                    (book.series || "").toLowerCase().includes(q) ||
+                                    (book.subtitle || "").toLowerCase().includes(q)
+                                );
+                            }).map((book) => (
                                 <BookCard
                                     key={book.id}
                                     book={book}
@@ -346,6 +370,12 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)",
     },
     bookCount: {fontSize: "0.875rem", color: "var(--text-muted)"},
+    searchBar: {
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "8px 12px", marginBottom: 16,
+        background: "var(--bg-card)", border: "1px solid var(--border)",
+        borderRadius: "var(--radius-md)",
+    },
     grid: {
         display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20,
     },

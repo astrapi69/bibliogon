@@ -8,6 +8,7 @@ ui:
     restore: "Restore"
     import: "Import"
     trash: "Trash"
+    search_placeholder: "Search by title, author, genre or language..."
   editor:
     new_chapter: "New Chapter"
     confirm_delete_chapter: "Really delete this chapter?"
