@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Claude Code
+.claude
+
+# Documentation
+docs/
+*.md
+!backend/README.md
+
+# Frontend (built separately)
+frontend/node_modules
+frontend/dist
+frontend/.env
+
+# Backend dev artifacts
+backend/__pycache__
+backend/.pytest_cache
+backend/tests
+backend/*.db
+backend/htmlcov
+
+# Plugin dev artifacts
+plugins/**/tests
+plugins/**/__pycache__
+plugins/**/.pytest_cache
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# E2E tests
+e2e/
+playwright-report/
+test-results/

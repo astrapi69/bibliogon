@@ -32,7 +32,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
-- [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
+- [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
 - [ ] P-09: plugin-manuscript-tools: Style-Checks, Sanitization
 - [ ] P-10: Filler-Woerter, Passiv, Satzlaenge
 - [ ] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
@@ -162,4 +162,4 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-04: Export-Plugin: tiptap_to_md.py unterstuetzt nicht alle neuen Extensions (Table, TaskList)
 - [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [ ] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
-- [ ] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
+- [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
