@@ -58,10 +58,6 @@ export default function Dashboard() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!await dialog.confirm(
-            t("ui.dashboard.delete_title", "Buch loeschen"),
-            t("ui.dashboard.delete_trash_message", "Buch in den Papierkorb verschieben?"),
-        )) return;
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         loadTrash();
