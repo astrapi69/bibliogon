@@ -534,6 +534,15 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 56. X-01: epubcheck-Validierung nach EPUB-Export
+
+- 🔹 **Original-Prompt:** "Setze X-01 um."
+- 🔸 **Optimierter Prompt:** "Nach EPUB-Export epubcheck automatisch ausfuehren (non-blocking). Ergebnis als JSON neben dem EPUB speichern. Neuer GET /api/books/{id}/export/validate-epub Endpoint der exportiert + validiert und JSON zurueckgibt. Graceful: kein Fehler wenn epubcheck nicht installiert."
+- 🎯 Automatische EPUB-Qualitaetssicherung
+- ✅ epubcheck in run_pandoc, JSON-Results, validate-epub Endpoint
+
+---
+
 ### Statistiken (Session-Ende, aktualisiert)
 
 - **Commits:** 50+

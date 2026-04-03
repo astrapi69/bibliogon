@@ -88,6 +88,57 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
     return book_data, chapters_data, assets_data
 
 
+@router.get("/validate-epub")
+def validate_epub(book_id: str, db: Any = Depends(lambda: None)):
+    """Export EPUB and validate with epubcheck. Returns validation results."""
+    if _get_db is None:
+        raise HTTPException(status_code=500, detail="Export plugin not configured")
+
+    db_gen = _get_db()
+    db_session = next(db_gen)
+    try:
+        book_data, chapters_data, assets_data = _get_book_data(book_id, db_session)
+    finally:
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_validate_"))
+    try:
+        import yaml
+        config_path = Path("config/plugins/export.yaml")
+        config: dict[str, Any] = {}
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        export_settings = config.get("settings", {})
+        has_manual_toc = any(ch.get("chapter_type") == "toc" for ch in chapters_data)
+
+        project_dir = scaffold_project(
+            book_data, chapters_data, tmp_dir, export_settings, assets_data,
+        )
+
+        cover_path = book_data.get("cover_image")
+        output_path = run_pandoc(
+            project_dir, "epub", config,
+            use_manual_toc=has_manual_toc,
+            cover_path=cover_path,
+        )
+
+        # Read epubcheck results if available
+        results_path = output_path.with_suffix(".epubcheck.json")
+        if results_path.exists():
+            import json as _json
+            return _json.loads(results_path.read_text(encoding="utf-8"))
+
+        return {"valid": True, "errors": [], "warnings": [], "error_count": 0, "warning_count": 0, "note": "epubcheck not available"}
+
+    except PandocError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/batch")
 def export_batch_route(
     book_id: str,

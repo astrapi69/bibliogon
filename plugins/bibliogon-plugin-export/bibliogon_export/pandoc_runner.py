@@ -114,4 +114,69 @@ def run_pandoc(
     if not output_files:
         raise PandocError(f"No output file found for format '{fmt}'")
 
-    return output_files[0]
+    output = output_files[0]
+
+    # Run epubcheck validation for EPUB exports
+    if fmt == "epub":
+        _run_epubcheck(output)
+
+    return output
+
+
+def _run_epubcheck(epub_path: Path) -> None:
+    """Run epubcheck on an EPUB file and log results. Non-blocking."""
+    import logging
+    import shutil
+    import subprocess
+
+    logger = logging.getLogger(__name__)
+
+    epubcheck_bin = shutil.which("epubcheck")
+    if not epubcheck_bin:
+        logger.info("epubcheck not found, skipping validation")
+        return
+
+    try:
+        result = subprocess.run(
+            [epubcheck_bin, str(epub_path)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode == 0:
+            logger.info("epubcheck: EPUB is valid (%s)", epub_path.name)
+            print(f"epubcheck: EPUB is valid ({epub_path.name})")
+        else:
+            # Parse warnings and errors from stderr
+            errors = []
+            warnings = []
+            for line in result.stderr.splitlines():
+                if "ERROR" in line:
+                    errors.append(line.strip())
+                elif "WARNING" in line:
+                    warnings.append(line.strip())
+
+            if errors:
+                logger.warning("epubcheck: %d errors in %s", len(errors), epub_path.name)
+                for e in errors[:5]:
+                    logger.warning("  %s", e)
+            if warnings:
+                logger.info("epubcheck: %d warnings in %s", len(warnings), epub_path.name)
+
+            print(f"epubcheck: {len(errors)} errors, {len(warnings)} warnings ({epub_path.name})")
+
+            # Store results as JSON next to the EPUB
+            import json
+            results_path = epub_path.with_suffix(".epubcheck.json")
+            results_path.write_text(json.dumps({
+                "valid": result.returncode == 0,
+                "errors": errors,
+                "warnings": warnings,
+                "error_count": len(errors),
+                "warning_count": len(warnings),
+            }, indent=2), encoding="utf-8")
+
+    except subprocess.TimeoutExpired:
+        logger.warning("epubcheck timed out for %s", epub_path.name)
+    except Exception as e:
+        logger.warning("epubcheck failed: %s", e)

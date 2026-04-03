@@ -22,7 +22,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] X-05: Batch-Export: Alle Formate auf einmal (EPUB + PDF + DOCX)
 - [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
 - [x] X-04: Export: Custom CSS pro Kapiteltyp
-- [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
+- [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 
 ---
 
@@ -68,7 +68,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] EPUB-Export mit Bildern und manuellem TOC
 - [x] Backup/Restore mit Assets und allen Metadaten
 - [x] PDF-Export: Cover-Bild als erste Seite
-- [ ] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
+- [x] X-01: EPUB: epubcheck-Validierung nach Export (automatisch)
 - [ ] X-02: Import: Erkennung von Markdown-Dateien ohne write-book-template Struktur
 - [x] X-03: Export: Kapiteltyp-spezifische Formatierung (Widmung zentriert, Motto kursiv)
 - [x] X-04: Export: Custom CSS pro Kapiteltyp
