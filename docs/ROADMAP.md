@@ -31,9 +31,14 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
 - [x] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
 - [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- [ ] P-03: Voice-Settings pro Buch
+- [x] P-03: Voice-Settings pro Buch
 - [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [ ] P-05: Vorhoer-Funktion im Editor
+- [ ] B-03: Rate Limiting auf API-Endpunkte
+- [ ] B-04: API-Versionierung (v1/v2 Prefix)
+- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
+- [ ] P-12: Benutzerregistrierung und Authentifizierung
+- [ ] P-13: PostgreSQL statt SQLite
 
 
 ## UI/UX
@@ -137,7 +142,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 ### Phase 10: Audiobook-Plugin (v0.11.0, Premium)
 - [x] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
 - [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- [ ] P-03: Voice-Settings pro Buch
+- [x] P-03: Voice-Settings pro Buch
 - [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [ ] P-05: Vorhoer-Funktion im Editor
 

@@ -77,15 +77,18 @@ async def generate(req: GenerateRequest) -> dict[str, Any]:
     finally:
         db.close()
 
-    language = req.language or book.language or "de"
+    # Use book's TTS settings as defaults, request params override
+    engine_id = req.engine or getattr(book, "tts_engine", None) or "edge-tts"
+    voice = req.voice or getattr(book, "tts_voice", None) or ""
+    language = req.language or getattr(book, "tts_language", None) or book.language or "de"
     output_dir = Path(tempfile.mkdtemp(prefix="bibliogon_audiobook_"))
 
     result = await generate_audiobook(
         book_title=book.title,
         chapters=chapters_data,
         output_dir=output_dir,
-        engine_id=req.engine,
-        voice=req.voice,
+        engine_id=engine_id,
+        voice=voice,
         language=language,
         skip_types=set(req.skip_types),
     )

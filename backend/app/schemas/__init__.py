@@ -71,6 +71,10 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # Audiobook / TTS settings
+    tts_engine: str | None = None
+    tts_voice: str | None = None
+    tts_language: str | None = None
 
 
 class BookOut(BaseModel):
@@ -101,6 +105,9 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    tts_engine: str | None = None
+    tts_voice: str | None = None
+    tts_language: str | None = None
     created_at: datetime
     updated_at: datetime
 

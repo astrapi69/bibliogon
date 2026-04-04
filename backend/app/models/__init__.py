@@ -71,6 +71,11 @@ class Book(Base):
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Audiobook / TTS settings per book
+    tts_engine: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    tts_voice: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    tts_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
