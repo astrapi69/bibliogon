@@ -11,7 +11,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 
 export default function Dashboard() {
@@ -63,7 +63,7 @@ export default function Dashboard() {
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         loadTrash();
-        toast.info(t("ui.dashboard.moved_to_trash", "In den Papierkorb verschoben"));
+        notify.info(t("ui.dashboard.moved_to_trash", "In den Papierkorb verschoben"));
     };
 
     const handleDeletePermanent = async (id: string) => {
@@ -75,7 +75,7 @@ export default function Dashboard() {
         await api.books.delete(id);
         try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
         setBooks((prev) => prev.filter((b) => b.id !== id));
-        toast.success(t("ui.dashboard.deleted_permanently", "Buch endgueltig geloescht"));
+        notify.success(t("ui.dashboard.deleted_permanently", "Buch endgueltig geloescht"));
     };
 
     const handleRestore = async (id: string) => {
@@ -105,10 +105,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.import(file);
-            toast.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
+            notify.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
             loadBooks();
         } catch (err) {
-            toast.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
+            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
         }
         e.target.value = "";
     };
@@ -118,10 +118,10 @@ export default function Dashboard() {
         if (!file) return;
         try {
             const result = await api.backup.importProject(file);
-            toast.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
+            notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
             loadBooks();
         } catch (err) {
-            toast.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
+            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
         }
         e.target.value = "";
     };

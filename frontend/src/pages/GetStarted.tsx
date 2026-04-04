@@ -3,7 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import ThemeToggle from "../components/ThemeToggle";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import {
     ChevronLeft, ChevronRight, BookPlus, FilePlus, PenTool, GripVertical,
     Download, Settings, Archive, Rocket, Check, Home, HelpCircle,
@@ -82,10 +82,10 @@ export default function GetStarted() {
             for (const ch of sample.chapters) {
                 await api.chapters.create(book.id, {title: ch.title, content: ch.content});
             }
-            toast.success(t("ui.get_started.sample_book_created", "Beispielbuch erstellt!"));
+            notify.success(t("ui.get_started.sample_book_created", "Beispielbuch erstellt!"));
             navigate(`/book/${book.id}`);
         } catch (err) {
-            toast.error(`${t("ui.common.error", "Fehler")}: ${err}`);
+            notify.error(`${t("ui.common.error", "Fehler")}: ${err}`);
         }
         setCreating(false);
     };

@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {X, GripVertical} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import {
     DndContext,
     closestCenter,
@@ -65,7 +65,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
         if (!keyword) return;
         if (keywords.length >= MAX_KEYWORDS) return;
         if (keywords.some((k) => k.toLowerCase() === keyword.toLowerCase())) {
-            toast.info(t("ui.keywords.duplicate", "Keyword bereits vorhanden"));
+            notify.info(t("ui.keywords.duplicate", "Keyword bereits vorhanden"));
             return;
         }
         onChange([...keywords, keyword]);

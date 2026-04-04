@@ -6,7 +6,7 @@ import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import {useDialog} from "../components/AppDialog";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {Menu} from "lucide-react";
 
@@ -108,7 +108,7 @@ export default function BookEditor() {
                 };
             });
         } catch {
-            toast.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"));
+            notify.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"));
         }
     };
 
@@ -211,15 +211,15 @@ export default function BookEditor() {
                     try {
                         const result = await api.chapters.validateToc(bookId);
                         if (!result.toc_found) {
-                            toast.info("Kein Inhaltsverzeichnis gefunden.");
+                            notify.info("Kein Inhaltsverzeichnis gefunden.");
                         } else if (result.valid) {
-                            toast.success(`TOC gültig: ${result.total_links} Links geprüft, alle korrekt.`);
+                            notify.success(`TOC gültig: ${result.total_links} Links geprüft, alle korrekt.`);
                         } else {
                             const broken = result.broken.map((b) => b.text).join(", ");
-                            toast.error(`${result.broken_count} ungültige Links: ${broken}`);
+                            notify.error(`${result.broken_count} ungültige Links: ${broken}`);
                         }
                     } catch {
-                        toast.error("Fehler bei der TOC-Validierung.");
+                        notify.error("Fehler bei der TOC-Validierung.");
                     }
                 }}
             />

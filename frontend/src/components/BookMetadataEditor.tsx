@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import {Book} from "../api/client";
 import {Save, Copy, ChevronLeft} from "lucide-react";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import KeywordInput from "./KeywordInput";
 
 interface Props {
@@ -54,9 +54,9 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 }
             }
             await onSave(data);
-            toast.success("Metadaten gespeichert");
+            notify.success("Metadaten gespeichert");
         } catch {
-            toast.error("Fehler beim Speichern");
+            notify.error("Fehler beim Speichern");
         }
         setSaving(false);
     };
@@ -71,7 +71,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             cover_image: prev.cover_image || "",  // Keep own cover
         }));
         setShowCopyDialog(false);
-        toast.success(`Verlag und Autoren-Info von "${sourceBook.title}" übernommen`);
+        notify.success(`Verlag und Autoren-Info von "${sourceBook.title}" übernommen`);
     };
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);

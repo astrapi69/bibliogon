@@ -5,7 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
@@ -51,9 +51,9 @@ export default function Settings() {
 
     const showMessage = (msg: string, isError = false) => {
         if (isError) {
-            toast.error(msg);
+            notify.error(msg);
         } else {
-            toast.success(msg);
+            notify.success(msg);
         }
     };
 
@@ -445,10 +445,10 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
             setUploading(true);
             try {
                 const result = await api.pluginInstall.install(file);
-                toast.success(result.message);
+                notify.success(result.message);
                 onReload();
             } catch (err) {
-                toast.error(`${t("ui.common.error", "Fehler")}: ${err}`);
+                notify.error(`${t("ui.common.error", "Fehler")}: ${err}`);
             }
             setUploading(false);
         };

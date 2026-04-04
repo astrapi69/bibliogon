@@ -26,7 +26,7 @@ import Focus from "@tiptap/extension-focus";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api} from "../api/client";
-import {toast} from "react-toastify";
+import {notify} from "../utils/notify";
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -99,7 +99,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
             editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
         } catch (err) {
-            toast.error(`Upload failed: ${err}`);
+            notify.error(`Upload failed: ${err}`);
         }
     };
 
@@ -262,17 +262,17 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: "Grammar check failed"}));
-                toast.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+                notify.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
                 setSpellcheckResults([]);
             } else {
                 const data = await res.json();
                 setSpellcheckResults(data.matches || []);
                 if ((data.matches || []).length === 0) {
-                    toast.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
+                    notify.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
                 }
             }
         } catch {
-            toast.error(t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+            notify.error(t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
             setSpellcheckResults([]);
         }
         setSpellcheckLoading(false);
@@ -287,7 +287,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             let text = from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
             if (text.length > 2000) text = text.slice(0, 2000);
             if (!text.trim()) {
-                toast.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
+                notify.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
                 setPreviewLoading(false);
                 return;
             }
@@ -299,7 +299,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: "Preview failed"}));
-                toast.error(err.detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+                notify.error(err.detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
                 setPreviewLoading(false);
                 return;
             }
@@ -311,7 +311,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             audio.onended = () => URL.revokeObjectURL(url);
             audio.play();
         } catch {
-            toast.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+            notify.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
         }
         setPreviewLoading(false);
     };
