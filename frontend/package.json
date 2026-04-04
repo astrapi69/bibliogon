@@ -13,7 +13,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@intevation/tiptap-extension-office-paste": "^0.1.2",
-    "@pentestpad/tiptap-extension-figure": "^1.1.0",
+    "@pentestpad/tiptap-extension-figure": "1.0.12",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -50,7 +50,7 @@
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.28.0",
     "react-toastify": "^11.0.5",
-    "tiptap-footnotes": "^3.0.1"
+    "tiptap-footnotes": "2.0.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
