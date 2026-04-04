@@ -141,11 +141,107 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 18. Q-05: mypy Type-Checking
+
+- Original-Prompt: "Setze Q-05 um"
+- Ergebnis: mypy 1.20 + pydantic/sqlalchemy Plugins, types-PyYAML/Markdown Stubs, 9 Fehler gefixt, Makefile check-types Target
+- Commit: 83c90f7
+
+---
+
+## 19. T-05: Spellcheck-Integration
+
+- Original-Prompt: "Setze T-05 um"
+- Ergebnis: Toolbar-Button triggert POST /api/grammar/check, Ergebnis-Panel mit Issues/Suggestions, i18n 5 Sprachen
+- Commit: 11ffaad
+
+---
+
+## 20. B-02: Structured Logging
+
+- Original-Prompt: "Setze B-02 um"
+- Ergebnis: JsonFormatter fuer Produktion, human-readable fuer Dev, Lifecycle-Logs in main.py
+- Commit: 51a52a6
+
+---
+
+## 21. P-06/P-07: Translation Plugin
+
+- Original-Prompt: "Setze P-06 um" + "Setze P-07 um" (LMStudio bereits in P-06)
+- Ergebnis: bibliogon-plugin-translation mit DeepL + LMStudio Client, 17 Tests, 5 API-Endpunkte
+- Commit: 22f5069
+
+---
+
+## 22. P-08: Kapitelweise Buchuebersetzung
+
+- Original-Prompt: "Setze P-08 um"
+- Ergebnis: POST /translate-book, TipTap JSON Text-Extraktion + Rebuild mit Formatierungs-Erhalt, 18 neue Tests
+- Commit: 93e6144
+
+---
+
+## 23. B-05: Asynchrone Export-Jobs
+
+- Original-Prompt: "Setze B-05 um"
+- Ergebnis: JobStore (in-memory), POST /async/{fmt} + GET /jobs/{id} + /download, 9 Tests
+- Commit: 67f922a
+
+---
+
+## 24. P-01/P-02: Audiobook Plugin
+
+- Original-Prompt: "Setze P-01 um"
+- Ergebnis: bibliogon-plugin-audiobook mit Edge TTS, TTS Engine Abstraction, 24 Tests, 3 API-Endpunkte
+- Commit: 2fe7dfe
+
+---
+
+## 25. P-03: Voice Settings pro Buch
+
+- Original-Prompt: "Setze P-03 um"
+- Ergebnis: tts_engine/tts_voice/tts_language Felder auf Book Model, Alembic Migration, Frontend Interface
+- Commit: 14b64b0
+
+---
+
+## 26. P-04: MP3 Merge zu Audiobook
+
+- Original-Prompt: "Setze P-04 um"
+- Ergebnis: merge_mp3_files via ffmpeg concat, is_ffmpeg_available, merge=true Default, 8 neue Tests
+- Commit: 9aa4248
+
+---
+
+## 27. P-05: Vorhoer-Funktion
+
+- Original-Prompt: "Setze P-05 um"
+- Ergebnis: POST /api/audiobook/preview, Toolbar Headphones-Button, Audio.play() im Browser, i18n 5 Sprachen
+- Commit: 31790d3
+
+---
+
+## 28. L-01: Freemium-Lizenzsystem
+
+- Original-Prompt: Detaillierte Spezifikation fuer license_tier (core/premium), Trial-Keys, Settings UI, Tests, Docs
+- Optimierter Prompt: "Erweitere das Lizenzsystem um ein license_tier Attribut auf BasePlugin: core (keine Lizenz) vs premium (Lizenzschluessel). Trial-Key fuer alle Premium-Plugins. Settings UI mit Premium Badge. 13 Tests."
+- Ziel: Freemium-Modell fuer Bibliogon-Plugins
+- Ergebnis:
+  - license_tier auf allen 9 Plugins (4 core, 5 premium)
+  - _check_license nutzt tier statt YAML-License-Feld, Wildcard-Fallback
+  - Trial-Key: plugin="*", make generate-trial-key, 30 Tage
+  - Settings UI: "Lizenz erforderlich" Badge, "Lizenz eingeben" Button
+  - 13 Tests (core bypass, premium block/activate, expired, trial)
+  - Docs: CONCEPT.md Tier-Tabellen, CLAUDE.md Tier-Spalte, lessons-learned
+- Commit: 1b68560
+
+---
+
 ## Session-Zusammenfassung
 
-- Commits: 17 (davon 2 aus vorheriger Session fortgesetzt)
-- Tests: 196 (38 backend, 108 plugin, 50 vitest, 52 e2e)
-- Neue Dateien: 15+ (Plugin, Migrations, CI, Tests)
-- Neue Dependencies: alembic, mutmut, @radix-ui/react-context-menu, @tiptap/extension-focus, @intevation/tiptap-extension-office-paste
+- Commits: 28
+- Tests: 285 (60 backend, 125 plugin, 50 vitest, 52 e2e)
+- Neue Plugins: translation (35 Tests), audiobook (32 Tests)
+- Neue Dependencies: alembic, mutmut, mypy, edge-tts, httpx (translation), @radix-ui/react-context-menu, @tiptap/extension-focus, @intevation/tiptap-extension-office-paste
 - Release: v0.9.0 erstellt und deployed
-- Hauptergebnisse: Manuscript-Tools-Plugin komplett (P-09/10/11), Release v0.9.0, 10 ROADMAP-Items erledigt nach Release (U-07, U-08, Q-06, T-03, T-07, I-01, B-01, Q-02, U-09, Q-04)
+- Hauptergebnisse: Release v0.9.0, 2 neue Premium-Plugins (Translation, Audiobook), Freemium-Lizenzsystem, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs
