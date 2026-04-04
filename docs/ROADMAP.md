@@ -27,7 +27,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
 - [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
-- [ ] P-08: Kapitelweise Uebersetzung als neues Buch
+- [x] P-08: Kapitelweise Uebersetzung als neues Buch
 - [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
 - [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
 - [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
@@ -132,7 +132,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 ### Phase 9: Uebersetzungs-Plugin (v0.10.0, Premium)
 - [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
 - [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
-- [ ] P-08: Kapitelweise Uebersetzung als neues Buch
+- [x] P-08: Kapitelweise Uebersetzung als neues Buch
   
 ### Phase 10: Audiobook-Plugin (v0.11.0, Premium)
 - [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
