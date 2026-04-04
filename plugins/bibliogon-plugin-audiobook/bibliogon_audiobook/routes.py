@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from .generator import generate_audiobook
+from .generator import generate_audiobook, is_ffmpeg_available
 from .tts_engine import ENGINES, get_engine
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ class GenerateRequest(BaseModel):
     skip_types: list[str] = Field(
         default=["toc", "imprint", "index", "bibliography", "endnotes"],
     )
+    merge: bool = Field(default=True, description="Merge chapter MP3s into single audiobook file (requires ffmpeg)")
 
 
 @router.post("/generate")
@@ -91,6 +92,7 @@ async def generate(req: GenerateRequest) -> dict[str, Any]:
         voice=voice,
         language=language,
         skip_types=set(req.skip_types),
+        merge=req.merge,
     )
 
     # Bundle into ZIP for download
@@ -121,3 +123,13 @@ async def list_voices(engine: str = "edge-tts", language: str | None = None) -> 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return await tts.list_voices(language)
+
+
+@router.get("/status")
+async def audiobook_status() -> dict[str, Any]:
+    """Check audiobook system status (ffmpeg availability, engines)."""
+    return {
+        "ffmpeg_available": is_ffmpeg_available(),
+        "engines": [eid for eid in ENGINES],
+        "merge_supported": is_ffmpeg_available(),
+    }

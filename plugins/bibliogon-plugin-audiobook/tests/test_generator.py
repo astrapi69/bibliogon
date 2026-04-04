@@ -12,6 +12,8 @@ from bibliogon_audiobook.generator import (
     extract_plain_text,
     generate_audiobook,
     generate_chapter_audio,
+    merge_mp3_files,
+    is_ffmpeg_available,
     _slugify,
 )
 
@@ -212,3 +214,95 @@ async def test_generate_audiobook_empty_chapters():
             )
             assert result["generated_count"] == 0
             assert result["error_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_returns_merged_file_key():
+    """Verify merged_file key is present in result."""
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_get.return_value = mock_engine
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=[], output_dir=Path(tmp),
+            )
+            assert "merged_file" in result
+            assert result["merged_file"] is None  # no files to merge
+
+
+# --- merge_mp3_files ---
+
+
+def test_merge_no_files():
+    with pytest.raises(ValueError, match="No input files"):
+        merge_mp3_files([], Path("/tmp/out.mp3"))
+
+
+def test_merge_single_file():
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "input.mp3"
+        src.write_bytes(b"fake mp3 data")
+        out = Path(tmp) / "output.mp3"
+        result = merge_mp3_files([src], out)
+        assert result.exists()
+        assert result.read_bytes() == b"fake mp3 data"
+
+
+def test_merge_creates_concat_list():
+    """Test that merge with multiple files calls ffmpeg (mocked)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        f1 = Path(tmp) / "001.mp3"
+        f2 = Path(tmp) / "002.mp3"
+        f1.write_bytes(b"data1")
+        f2.write_bytes(b"data2")
+        out = Path(tmp) / "merged.mp3"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            merge_mp3_files([f1, f2], out)
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "ffmpeg" in call_args
+            assert "-f" in call_args
+            assert "concat" in call_args
+
+
+def test_merge_ffmpeg_not_found():
+    with tempfile.TemporaryDirectory() as tmp:
+        f1 = Path(tmp) / "001.mp3"
+        f2 = Path(tmp) / "002.mp3"
+        f1.write_bytes(b"data1")
+        f2.write_bytes(b"data2")
+        out = Path(tmp) / "merged.mp3"
+
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            with pytest.raises(RuntimeError, match="ffmpeg not found"):
+                merge_mp3_files([f1, f2], out)
+
+
+def test_merge_ffmpeg_fails():
+    with tempfile.TemporaryDirectory() as tmp:
+        f1 = Path(tmp) / "001.mp3"
+        f2 = Path(tmp) / "002.mp3"
+        f1.write_bytes(b"data1")
+        f2.write_bytes(b"data2")
+        out = Path(tmp) / "merged.mp3"
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stderr="error output")
+            with pytest.raises(RuntimeError, match="ffmpeg failed"):
+                merge_mp3_files([f1, f2], out)
+
+
+# --- is_ffmpeg_available ---
+
+
+def test_is_ffmpeg_available_true():
+    with patch("subprocess.run"):
+        assert is_ffmpeg_available() is True
+
+
+def test_is_ffmpeg_available_false():
+    with patch("subprocess.run", side_effect=FileNotFoundError):
+        assert is_ffmpeg_available() is False
