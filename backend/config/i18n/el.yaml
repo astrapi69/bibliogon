@@ -44,6 +44,12 @@ ui:
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
     rename_failed: "Αποτυχία μετονομασίας"
+    spellcheck: "Ορθογραφικός έλεγχος"
+    spellcheck_ok: "Δεν βρέθηκαν σφάλματα"
+    spellcheck_error: "Αποτυχία ελέγχου"
+    checking: "Έλεγχος..."
+    issues: "προβλήματα"
+    suggestions: "Προτάσεις"
   sidebar:
     manuscript: "Χειρόγραφο"
     content: "Περιεχόμενο"

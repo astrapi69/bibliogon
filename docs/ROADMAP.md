@@ -23,7 +23,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
 - [x] Q-04: API-Client Unit Tests (Vitest)
 - [x] Q-05: mypy Type-Checking fuer Python Backend
-- [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
+- [x] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
 
@@ -85,7 +85,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
 - [x] T-04: Bild-Resize per Drag
-- [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
+- [x] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [x] T-06: Lesezeit-Schaetzung pro Kapitel
 - [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 

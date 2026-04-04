@@ -44,6 +44,12 @@ ui:
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
     rename_failed: "Echec du renommage"
+    spellcheck: "Correcteur orthographique"
+    spellcheck_ok: "Aucune erreur trouvee"
+    spellcheck_error: "Echec de la verification"
+    checking: "Verification..."
+    issues: "problemes"
+    suggestions: "Suggestions"
   sidebar:
     manuscript: "Manuscrit"
     content: "Contenu"

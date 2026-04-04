@@ -29,6 +29,7 @@ import {
     FootprintsIcon,
     Search,
     Focus,
+    SpellCheck,
 } from "lucide-react";
 
 interface Props {
@@ -38,9 +39,11 @@ interface Props {
     onToggleSearch?: () => void;
     focusMode?: boolean;
     onToggleFocus?: () => void;
+    spellcheckActive?: boolean;
+    onToggleSpellcheck?: () => void;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -287,6 +290,20 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     }}
                 >
                     <Focus size={16}/>
+                </button>
+            )}
+
+            {/* Spellcheck toggle */}
+            {onToggleSpellcheck && !markdownMode && (
+                <button
+                    onClick={onToggleSpellcheck}
+                    title="Spellcheck (LanguageTool)"
+                    style={{
+                        ...styles.button,
+                        ...(spellcheckActive ? styles.buttonActive : {}),
+                    }}
+                >
+                    <SpellCheck size={16}/>
                 </button>
             )}
 

@@ -50,6 +50,12 @@ ui:
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
     rename_failed: "Rename failed"
+    spellcheck: "Spellcheck"
+    spellcheck_ok: "No issues found"
+    spellcheck_error: "Spellcheck failed"
+    checking: "Checking..."
+    issues: "issues"
+    suggestions: "Suggestions"
   sidebar:
     manuscript: "Manuscript"
     content: "Content"

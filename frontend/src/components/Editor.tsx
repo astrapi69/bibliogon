@@ -46,6 +46,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
+    const [showSpellcheck, setShowSpellcheck] = useState(false);
+    const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
+    const [spellcheckLoading, setSpellcheckLoading] = useState(false);
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
         const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
@@ -240,6 +243,40 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
         }, 800);
     };
 
+    const handleToggleSpellcheck = async () => {
+        if (showSpellcheck) {
+            setShowSpellcheck(false);
+            setSpellcheckResults([]);
+            return;
+        }
+        if (!editor) return;
+        setShowSpellcheck(true);
+        setSpellcheckLoading(true);
+        try {
+            const text = editor.getText();
+            const res = await fetch("/api/grammar/check", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({text}),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "Grammar check failed"}));
+                toast.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+                setSpellcheckResults([]);
+            } else {
+                const data = await res.json();
+                setSpellcheckResults(data.matches || []);
+                if ((data.matches || []).length === 0) {
+                    toast.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
+                }
+            }
+        } catch {
+            toast.error(t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+            setSpellcheckResults([]);
+        }
+        setSpellcheckLoading(false);
+    };
+
     const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
     return (
@@ -251,6 +288,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 onToggleSearch={() => setShowSearch(!showSearch)}
                 focusMode={focusMode}
                 onToggleFocus={() => setFocusMode(!focusMode)}
+                spellcheckActive={showSpellcheck}
+                onToggleSpellcheck={handleToggleSpellcheck}
             />
 
             {/* Search & Replace bar */}
@@ -297,6 +336,37 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                     <button className="btn btn-ghost btn-sm" onClick={() => { setShowSearch(false); setSearchTerm(""); setReplaceTerm(""); editor.commands.setSearchTerm(""); }}>
                         &times;
                     </button>
+                </div>
+            )}
+
+            {/* Spellcheck results panel */}
+            {showSpellcheck && !markdownMode && (
+                <div style={styles.spellcheckPanel}>
+                    <div style={styles.spellcheckHeader}>
+                        <strong>{t("ui.editor.spellcheck", "Rechtschreibpruefung")}</strong>
+                        {spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{t("ui.editor.checking", "Pruefe...")}</span>}
+                        {!spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{spellcheckResults.length} {t("ui.editor.issues", "Probleme")}</span>}
+                        <button className="btn btn-ghost btn-sm" style={{marginLeft: "auto"}} onClick={handleToggleSpellcheck}>&times;</button>
+                    </div>
+                    {spellcheckResults.length > 0 && (
+                        <div style={styles.spellcheckList}>
+                            {spellcheckResults.map((issue, i) => (
+                                <div key={i} style={styles.spellcheckItem}>
+                                    <div style={{fontSize: "0.8125rem", color: "var(--text-primary)"}}>
+                                        {issue.message}
+                                    </div>
+                                    {issue.replacements.length > 0 && (
+                                        <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 2}}>
+                                            {t("ui.editor.suggestions", "Vorschlaege")}: {issue.replacements.join(", ")}
+                                        </div>
+                                    )}
+                                    <div style={{fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: 2}}>
+                                        {issue.rule_id}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -620,6 +690,29 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)",
         outline: "none",
         width: 160,
+    },
+    spellcheckPanel: {
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-secondary)",
+        maxHeight: 200,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column" as const,
+    },
+    spellcheckHeader: {
+        display: "flex",
+        alignItems: "center",
+        padding: "6px 16px",
+        fontSize: "0.8125rem",
+        borderBottom: "1px solid var(--border)",
+    },
+    spellcheckList: {
+        overflowY: "auto" as const,
+        flex: 1,
+    },
+    spellcheckItem: {
+        padding: "6px 16px",
+        borderBottom: "1px solid var(--border)",
     },
     statusBar: {
         display: "flex",
