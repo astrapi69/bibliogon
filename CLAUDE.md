@@ -414,14 +414,14 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 | Plugin             | Lizenz      | Tier    | Abhaengigkeit | Beschreibung                        |
 | ------------------ | ----------- | ------- | ------------- | ----------------------------------- |
 | plugin-export      | MIT         | core    | -             | EPUB, PDF, write-book-template ZIP  |
-| plugin-kinderbuch  | Proprietary | premium | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
-| plugin-kdp         | Proprietary | premium | plugin-export | KDP-Metadaten, Cover-Validierung    |
-| plugin-grammar     | Proprietary | premium | -             | LanguageTool Grammatikpruefung      |
 | plugin-help        | MIT         | core    | -             | In-App Hilfe, Shortcuts, FAQ        |
 | plugin-getstarted  | MIT         | core    | -             | Onboarding, Beispielbuch            |
+| plugin-ms-tools    | MIT         | core    | -             | Stil-Checks, Sanitization, Metriken |
 | plugin-audiobook   | Proprietary | premium | plugin-export | TTS Audiobook-Generierung           |
 | plugin-translation | Proprietary | premium | -             | DeepL/LLM Uebersetzung             |
-| plugin-ms-tools    | MIT         | core    | -             | Stil-Checks, Sanitization, Metriken |
+| plugin-grammar     | Proprietary | premium | -             | LanguageTool Grammatikpruefung      |
+| plugin-kinderbuch  | Proprietary | premium | plugin-export | Bild-pro-Seite Layout (geplant)     |
+| plugin-kdp         | Proprietary | premium | plugin-export | KDP-Metadaten (geplant)             |
 
 Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) oder `"premium"` (HMAC-SHA256 Lizenzschluessel). Trial-Keys (plugin=`"*"`) schalten alle Premium-Plugins fuer 30 Tage frei: `make generate-trial-key`.
 

@@ -95,7 +95,10 @@ def list_plugin_configs() -> dict[str, Any]:
 
 @router.get("/plugins/discovered")
 def list_discovered_plugins() -> list[dict[str, Any]]:
-    """List all plugins that have configs, with status."""
+    """List all plugins that have configs AND are registered (entry point or ZIP-installed).
+
+    Plugins with YAML config but no entry point (not implemented) are excluded.
+    """
     if not _manager:
         return []
 
@@ -106,10 +109,39 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     disabled = set(plugins_cfg.get("disabled", []) or [])
     active = _active_plugin_names()
 
+    # Get plugins that are actually registered (have entry points)
+    try:
+        available = set(_manager.list_available_plugins())
+    except Exception:
+        available = set()
+    # Also include active plugins (in case list_available_plugins misses some)
+    available |= active
+
+    # Check installed plugins directory (ZIP-installed)
+    installed_dir = _base_dir / "plugins" / "installed"
+    if installed_dir.exists():
+        for d in installed_dir.iterdir():
+            if d.is_dir() and (d / "plugin.yaml").exists():
+                available.add(d.name)
+
+    # Check bundled plugin directories (plugins/bibliogon-plugin-*)
+    bundled_dir = _base_dir.parent / "plugins"
+    if bundled_dir.exists():
+        for d in bundled_dir.iterdir():
+            if d.is_dir() and d.name.startswith("bibliogon-plugin-"):
+                plugin_name = d.name.replace("bibliogon-plugin-", "")
+                # Only include if it has a plugin.py (actually implemented)
+                pkg_dir = d / f"bibliogon_{plugin_name.replace('-', '_')}"
+                if (pkg_dir / "plugin.py").exists():
+                    available.add(plugin_name)
+
     result = []
     if plugins_dir.exists():
         for yaml_file in sorted(plugins_dir.glob("*.yaml")):
             name = yaml_file.stem
+            # Only show plugins that are actually registered/available
+            if name not in available:
+                continue
             # Read license tier from plugin config
             license_tier = "core"
             try:

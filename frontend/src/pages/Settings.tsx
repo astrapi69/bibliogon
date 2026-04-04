@@ -585,7 +585,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     );
 }
 
-const CORE_PLUGINS = new Set(["export", "help", "getstarted"]);
+const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
 function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove}: {
     name: string;
