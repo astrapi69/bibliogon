@@ -463,8 +463,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         .filter(([name]) => {
             // Not currently enabled
             if (enabled.has(name) && !disabled.has(name)) return false;
-            // Only show if actually loaded (has entry point) or is a ZIP-installed plugin
-            return loadedPlugins.has(name) || name.startsWith("installed-");
+            // Show if loaded, ZIP-installed, or has license info (premium plugins with YAML config)
+            return loadedPlugins.has(name) || name.startsWith("installed-") || name in pluginLicenseInfo;
         });
 
     return (
@@ -512,16 +512,32 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                             background: "rgba(168,85,247,0.12)", color: "#7c3aed",
                                         }}>{t("ui.settings.premium", "Premium")}</span>
                                     )}
+                                    {isPremium && !(pluginLicenseInfo[name]?.hasLicense) && (
+                                        <span style={{
+                                            ...styles.badge, marginLeft: 4,
+                                            background: "rgba(239,68,68,0.12)", color: "#ef4444",
+                                        }}>{t("ui.settings.license_required", "Lizenz erforderlich")}</span>
+                                    )}
                                     {description && (
                                         <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginTop: 2}}>{description}</p>
                                     )}
                                 </div>
-                                <button className="btn btn-primary btn-sm" onClick={() => {
-                                    onTogglePlugin(name, true);
-                                    setShowAdd(false);
-                                }}>
-                                    <Check size={12}/> {t("ui.settings.activate", "Aktivieren")}
-                                </button>
+                                {isPremium && !(pluginLicenseInfo[name]?.hasLicense) ? (
+                                    <button
+                                        className="btn btn-sm"
+                                        style={{background: "rgba(168,85,247,0.15)", color: "#7c3aed", border: "1px solid rgba(168,85,247,0.3)"}}
+                                        onClick={() => { setShowAdd(false); window.location.hash = "#licenses"; }}
+                                    >
+                                        <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
+                                    </button>
+                                ) : (
+                                    <button className="btn btn-primary btn-sm" onClick={() => {
+                                        onTogglePlugin(name, true);
+                                        setShowAdd(false);
+                                    }}>
+                                        <Check size={12}/> {t("ui.settings.activate", "Aktivieren")}
+                                    </button>
+                                )}
                             </div>
                         );
                     })}
