@@ -277,6 +277,17 @@ ui:
     help_backup_2: "Le fichier contient tous les livres, chapitres et images"
     help_backup_3: "\"Restaurer\" restaure une sauvegarde"
     help_backup_4: "Les projets externes (.zip, .bgp) peuvent etre charges via \"Importer\""
+  audiobook:
+    engine: "Moteur de synthese"
+    language: "Langue"
+    default_voice: "Voix par defaut"
+    merge: "Fusionner les chapitres"
+    merge_yes: "Oui (fusionner tous les chapitres)"
+    merge_no: "Non (MP3 separe par chapitre)"
+    voices_loading: "Chargement des voix..."
+    preview: "Apercu"
+    engine_unavailable: "Moteur non disponible"
+    settings_saved: "Parametres enregistres"
   languages:
     de: "Deutsch"
     en: "English"

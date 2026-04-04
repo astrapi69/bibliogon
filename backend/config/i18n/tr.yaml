@@ -294,6 +294,17 @@ ui:
         help_backup_2: "Dosya tum kitaplari, bolumleri ve resimleri icerir"
         help_backup_3: "\"Geri yukle\" bir yedegi geri yukler"
         help_backup_4: "Harici projeler (.zip, .bgp) \"Iceri aktar\" ile yuklenebilir"
+    audiobook:
+        engine: "Sentez motoru"
+        language: "Dil"
+        default_voice: "Varsayilan ses"
+        merge: "Bolumleri birlestir"
+        merge_yes: "Evet (tum bolumleri birlestir)"
+        merge_no: "Hayir (bolum basina ayri MP3)"
+        voices_loading: "Sesler yukleniyor..."
+        preview: "Onizleme"
+        engine_unavailable: "Motor kullanilamiyor"
+        settings_saved: "Ayarlar kaydedildi"
     languages:
         de: "Deutsch"
         en: "English"

@@ -294,6 +294,17 @@ ui:
     help_backup_2: "Die Datei enthält alle Bücher, Kapitel und Bilder"
     help_backup_3: "\"Restore\" stellt ein Backup wieder her"
     help_backup_4: "Externe Projekte (.zip, .bgp) können über \"Import\" geladen werden"
+  audiobook:
+    engine: "Sprachsynthese-Engine"
+    language: "Sprache"
+    default_voice: "Standardstimme"
+    merge: "Kapitel zusammenfuegen"
+    merge_yes: "Ja (alle Kapitel zusammenfuegen)"
+    merge_no: "Nein (einzelne MP3 pro Kapitel)"
+    voices_loading: "Stimmen werden geladen..."
+    preview: "Vorhoeren"
+    engine_unavailable: "Engine nicht verfuegbar"
+    settings_saved: "Einstellungen gespeichert"
   languages:
     de: "Deutsch"
     en: "English"

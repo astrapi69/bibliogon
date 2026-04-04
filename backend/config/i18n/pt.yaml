@@ -294,6 +294,17 @@ ui:
         help_backup_2: "O arquivo contem todos os livros, capitulos e imagens"
         help_backup_3: "\"Restaurar\" restaura um backup"
         help_backup_4: "Projetos externos (.zip, .bgp) podem ser carregados via \"Importar\""
+    audiobook:
+        engine: "Motor de sintese"
+        language: "Idioma"
+        default_voice: "Voz padrao"
+        merge: "Mesclar capitulos"
+        merge_yes: "Sim (mesclar todos os capitulos)"
+        merge_no: "Nao (MP3 separado por capitulo)"
+        voices_loading: "Carregando vozes..."
+        preview: "Pre-visualizar"
+        engine_unavailable: "Motor indisponivel"
+        settings_saved: "Configuracoes salvas"
     languages:
         de: "Deutsch"
         en: "English"

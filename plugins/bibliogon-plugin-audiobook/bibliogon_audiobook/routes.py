@@ -116,9 +116,31 @@ async def list_engines() -> list[dict[str, str]]:
     ]
 
 
+@router.get("/languages")
+async def list_languages(engine: str = "edge-tts") -> list[dict[str, str]]:
+    """List available languages for a TTS engine."""
+    # Hardcoded language lists per engine (Edge TTS has the most)
+    edge_langs = [
+        {"id": "de", "name": "Deutsch", "locale": "de-DE"},
+        {"id": "en", "name": "English", "locale": "en-US"},
+        {"id": "es", "name": "Espanol", "locale": "es-ES"},
+        {"id": "fr", "name": "Francais", "locale": "fr-FR"},
+        {"id": "el", "name": "Ellinika", "locale": "el-GR"},
+        {"id": "it", "name": "Italiano", "locale": "it-IT"},
+        {"id": "nl", "name": "Nederlands", "locale": "nl-NL"},
+        {"id": "pt", "name": "Portugues", "locale": "pt-BR"},
+        {"id": "ru", "name": "Russky", "locale": "ru-RU"},
+        {"id": "ja", "name": "Nihongo", "locale": "ja-JP"},
+        {"id": "zh", "name": "Zhongwen", "locale": "zh-CN"},
+        {"id": "tr", "name": "Turkce", "locale": "tr-TR"},
+    ]
+    # All engines support the same base languages for now
+    return edge_langs
+
+
 @router.get("/voices")
 async def list_voices(engine: str = "edge-tts", language: str | None = None) -> list[dict[str, str]]:
-    """List available voices for a TTS engine."""
+    """List available voices for a TTS engine, optionally filtered by language."""
     try:
         tts = get_engine(engine)
     except ValueError as e:

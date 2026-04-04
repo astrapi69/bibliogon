@@ -294,6 +294,17 @@ ui:
     help_backup_2: "The file contains all books, chapters and images"
     help_backup_3: "\"Restore\" restores a backup"
     help_backup_4: "External projects (.zip, .bgp) can be loaded via \"Import\""
+  audiobook:
+    engine: "TTS Engine"
+    language: "Language"
+    default_voice: "Default Voice"
+    merge: "Merge Chapters"
+    merge_yes: "Yes (merge all chapters)"
+    merge_no: "No (separate MP3 per chapter)"
+    voices_loading: "Loading voices..."
+    preview: "Preview"
+    engine_unavailable: "Engine unavailable"
+    settings_saved: "Settings saved"
   languages:
     de: "Deutsch"
     en: "English"

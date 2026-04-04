@@ -294,6 +294,17 @@ ui:
         help_backup_2: "ファイルにはすべての本、章、画像が含まれます"
         help_backup_3: "\"復元\"でバックアップを復元"
         help_backup_4: "外部プロジェクト(.zip, .bgp)は\"インポート\"で読み込めます"
+    audiobook:
+        engine: "音声合成エンジン"
+        language: "言語"
+        default_voice: "デフォルト音声"
+        merge: "チャプターを結合"
+        merge_yes: "はい（全チャプターを結合）"
+        merge_no: "いいえ（チャプターごとに個別MP3）"
+        voices_loading: "音声を読み込み中..."
+        preview: "プレビュー"
+        engine_unavailable: "エンジンが利用できません"
+        settings_saved: "設定を保存しました"
     languages:
         de: "Deutsch"
         en: "English"
