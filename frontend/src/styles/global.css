@@ -178,6 +178,7 @@
     --danger-hover: #d08770;
 }
 
+/* Dark mode button adjustments */
 [data-theme="dark"] .btn-danger:hover {
     background: rgba(239, 68, 68, 0.15);
 }
@@ -190,6 +191,16 @@
 
 [data-theme="dark"] .btn-secondary:hover {
     background: var(--border);
+}
+
+[data-theme="dark"] .btn-premium {
+    background: rgba(168, 85, 247, 0.18);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.35);
+}
+
+[data-theme="dark"] .btn-premium:hover {
+    background: rgba(168, 85, 247, 0.28);
 }
 
 *,
@@ -245,7 +256,7 @@ body {
 
 .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--text-inverse);
 }
 
 .btn-primary:hover {
@@ -279,7 +290,24 @@ body {
 }
 
 .btn-danger:hover {
-    background: #fef2f2;
+    background: rgba(220, 38, 38, 0.08);
+}
+
+.btn-premium {
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.btn-premium:hover {
+    background: rgba(168, 85, 247, 0.2);
+}
+
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .btn-sm {

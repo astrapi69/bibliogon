@@ -524,8 +524,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 </div>
                                 {isPremium && !(pluginLicenseInfo[name]?.hasLicense) ? (
                                     <button
-                                        className="btn btn-sm"
-                                        style={{background: "rgba(168,85,247,0.15)", color: "#7c3aed", border: "1px solid rgba(168,85,247,0.3)"}}
+                                        className="btn btn-sm btn-premium"
                                         onClick={() => { setShowAdd(false); window.location.hash = "#licenses"; }}
                                     >
                                         <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
