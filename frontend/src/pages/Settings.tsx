@@ -257,6 +257,9 @@ function AppSettings({config, onSave, saving}: {
                             {value: "es", label: t("ui.languages.es", "Espanol")},
                             {value: "fr", label: t("ui.languages.fr", "Francais")},
                             {value: "el", label: t("ui.languages.el", "Ellinika")},
+                            {value: "pt", label: t("ui.languages.pt", "Portugues")},
+                            {value: "tr", label: t("ui.languages.tr", "Turkce")},
+                            {value: "ja", label: t("ui.languages.ja", "Nihongo")},
                         ]}
                     />
                 </div>

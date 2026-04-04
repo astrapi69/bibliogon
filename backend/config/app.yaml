@@ -11,6 +11,9 @@ app:
   - es
   - fr
   - el
+  - pt
+  - tr
+  - ja
 author:
   name: Asterios Raptis
   pen_names:

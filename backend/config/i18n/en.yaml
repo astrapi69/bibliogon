@@ -292,6 +292,9 @@ ui:
     es: "Espanol"
     fr: "Francais"
     el: "Ellinika"
+    pt: "Portugues"
+    tr: "Turkce"
+    ja: "Nihongo"
   keywords:
     placeholder: "Enter keyword..."
     counter: "Keywords"

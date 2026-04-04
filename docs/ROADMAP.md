@@ -35,7 +35,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [x] P-05: Vorhoer-Funktion im Editor
 - [x] L-01: Freemium-Lizenzsystem (license_tier core/premium, Trial-Keys, Settings UI)
-- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
+- [x] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
 - [ ] P-12: Benutzerregistrierung und Authentifizierung
@@ -74,7 +74,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Alle Hauptkomponenten migriert (Sidebar, Editor, Settings, GetStarted, Export, Dashboard)
 - [x] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
 - [x] I-01: Sprachumschaltung live ohne Reload
-- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
+- [x] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 
 ## Import/Export
 
