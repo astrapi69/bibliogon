@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "bibliogon-plugin-audiobook"
+version = "1.0.0"
+description = "Audiobook generation plugin for Bibliogon: TTS-based chapter-by-chapter audio."
+authors = ["Asterios Raptis"]
+license = "Proprietary"
+package-mode = true
+packages = [{include = "bibliogon_audiobook"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.115.0"
+edge-tts = "^7.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.24.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+audiobook = "bibliogon_audiobook.plugin:AudiobookPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

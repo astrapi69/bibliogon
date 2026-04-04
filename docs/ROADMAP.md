@@ -29,8 +29,8 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
 - [x] P-08: Kapitelweise Uebersetzung als neues Buch
 - [x] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
-- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
-- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- [x] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
+- [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - [ ] P-03: Voice-Settings pro Buch
 - [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [ ] P-05: Vorhoer-Funktion im Editor
@@ -135,8 +135,8 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-08: Kapitelweise Uebersetzung als neues Buch
   
 ### Phase 10: Audiobook-Plugin (v0.11.0, Premium)
-- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
-- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- [x] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
+- [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - [ ] P-03: Voice-Settings pro Buch
 - [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [ ] P-05: Vorhoer-Funktion im Editor

@@ -1,0 +1,29 @@
+plugin:
+  name: "audiobook"
+  display_name:
+    de: "Audiobook"
+    en: "Audiobook"
+    es: "Audiolibro"
+    fr: "Livre audio"
+    el: "Ηχητικό βιβλίο"
+  description:
+    de: "TTS-basierte Audiobook-Generierung aus Buchkapiteln"
+    en: "TTS-based audiobook generation from book chapters"
+    es: "Generacion de audiolibros basada en TTS a partir de capitulos de libros"
+    fr: "Generation de livres audio basee sur TTS a partir de chapitres de livres"
+    el: "Δημιουργία ηχητικών βιβλίων με TTS από κεφάλαια βιβλίων"
+  version: "1.0.0"
+  license: "Proprietary"
+  depends_on:
+    - export
+  api_version: "1"
+
+settings:
+  engine: "edge-tts"
+  default_voice: ""
+  skip_types:
+    - toc
+    - imprint
+    - index
+    - bibliography
+    - endnotes

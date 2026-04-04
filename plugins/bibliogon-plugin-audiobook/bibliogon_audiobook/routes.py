@@ -1,0 +1,120 @@
+"""API routes for the audiobook plugin."""
+
+import json
+import logging
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from .generator import generate_audiobook
+from .tts_engine import ENGINES, get_engine
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/audiobook", tags=["audiobook"])
+
+_config: dict = {}
+
+
+def set_config(config: dict) -> None:
+    """Set plugin config from plugin activation."""
+    global _config
+    _config = config
+
+
+class GenerateRequest(BaseModel):
+    """Request to generate audiobook for a book."""
+
+    book_id: str = Field(..., min_length=1)
+    engine: str = Field(default="edge-tts")
+    voice: str = Field(default="")
+    language: str | None = Field(default=None, description="Override book language")
+    skip_types: list[str] = Field(
+        default=["toc", "imprint", "index", "bibliography", "endnotes"],
+    )
+
+
+@router.post("/generate")
+async def generate(req: GenerateRequest) -> dict[str, Any]:
+    """Generate audiobook MP3 files for all chapters of a book.
+
+    Returns chapter-by-chapter generation results with file list.
+    """
+    try:
+        from app.database import SessionLocal
+        from app.models import Book, Chapter
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Database not available")
+
+    db = SessionLocal()
+    try:
+        book = db.query(Book).filter(Book.id == req.book_id, Book.deleted_at.is_(None)).first()
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+
+        chapters = (
+            db.query(Chapter)
+            .filter(Chapter.book_id == req.book_id)
+            .order_by(Chapter.position)
+            .all()
+        )
+        if not chapters:
+            raise HTTPException(status_code=400, detail="Book has no chapters")
+
+        chapters_data = [
+            {
+                "title": ch.title,
+                "content": ch.content,
+                "position": ch.position,
+                "chapter_type": ch.chapter_type,
+            }
+            for ch in chapters
+        ]
+    finally:
+        db.close()
+
+    language = req.language or book.language or "de"
+    output_dir = Path(tempfile.mkdtemp(prefix="bibliogon_audiobook_"))
+
+    result = await generate_audiobook(
+        book_title=book.title,
+        chapters=chapters_data,
+        output_dir=output_dir,
+        engine_id=req.engine,
+        voice=req.voice,
+        language=language,
+        skip_types=set(req.skip_types),
+    )
+
+    # Bundle into ZIP for download
+    if result["generated_count"] > 0:
+        import re
+        slug = re.sub(r"[^a-z0-9\-]", "-", book.title.lower().strip())[:50]
+        zip_path = shutil.make_archive(str(output_dir / f"{slug}-audiobook"), "zip", str(output_dir))
+        result["download_path"] = zip_path
+        result["download_filename"] = f"{slug}-audiobook.zip"
+
+    return result
+
+
+@router.get("/engines")
+async def list_engines() -> list[dict[str, str]]:
+    """List available TTS engines."""
+    return [
+        {"id": eid, "name": get_engine(eid).engine_name}
+        for eid in ENGINES
+    ]
+
+
+@router.get("/voices")
+async def list_voices(engine: str = "edge-tts", language: str | None = None) -> list[dict[str, str]]:
+    """List available voices for a TTS engine."""
+    try:
+        tts = get_engine(engine)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return await tts.list_voices(language)
