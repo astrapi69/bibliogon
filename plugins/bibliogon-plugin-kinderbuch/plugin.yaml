@@ -1,12 +1,11 @@
-name: kinderbuch
-version: "1.0.0"
-license_tier: premium
-depends_on:
-  - export
-min_app_version: "0.9.0"
-entry_point: bibliogon_kinderbuch.plugin:KinderbuchPlugin
-
 plugin:
+  name: kinderbuch
+  version: "1.0.0"
+  license_tier: premium
+  depends_on:
+    - export
+  min_app_version: "0.9.0"
+  entry_point: bibliogon_kinderbuch.plugin:KinderbuchPlugin
   display_name:
     de: "Kinderbuch"
     en: "Children's Book"
