@@ -134,6 +134,88 @@ def export_backup(db: Session = Depends(get_db)):
     )
 
 
+@router.post("/smart-import")
+def smart_import(file: UploadFile, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Unified import: auto-detects file format and routes to the correct handler.
+
+    Supported formats:
+    - .bgb -> Backup Restore
+    - .bgp -> Project Import
+    - .zip with metadata.yaml -> write-book-template Import
+    - .zip with .md files -> Markdown collection Import
+    - .md -> Single chapter (creates new book)
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    filename = file.filename.lower()
+
+    # 1. .bgb -> Backup Restore
+    if filename.endswith(".bgb"):
+        result = import_backup(file, db)
+        return {"type": "backup", "result": result}
+
+    # 2. .bgp -> Project Import
+    if filename.endswith(".bgp"):
+        result = import_project(file, db)
+        return {"type": "project", "result": result}
+
+    # 3. .md -> Single markdown file
+    if filename.endswith(".md"):
+        result = _import_single_markdown(file, db)
+        return {"type": "chapter", "result": result}
+
+    # 4. .zip -> Analyze contents
+    if filename.endswith(".zip"):
+        tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_smart_import_"))
+        try:
+            zip_path = tmp_dir / "upload.zip"
+            with open(zip_path, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+
+            try:
+                with zipfile.ZipFile(zip_path, "r") as zf:
+                    names = zf.namelist()
+            except zipfile.BadZipFile:
+                raise HTTPException(status_code=400, detail="Corrupted ZIP file")
+
+            def _reopen(name: str) -> UploadFile:
+                """Create a fresh UploadFile from the saved zip for delegation."""
+                fh = open(zip_path, "rb")
+                return UploadFile(file=fh, filename=name)
+
+            # Check for bgb structure (manifest.json with bibliogon-backup format)
+            if any("manifest.json" in n for n in names):
+                result = import_backup(_reopen("backup.bgb"), db)
+                return {"type": "backup", "result": result}
+
+            # Check for write-book-template (metadata.yaml)
+            has_metadata = any(n.endswith("metadata.yaml") for n in names)
+            if has_metadata:
+                result = import_project(_reopen("project.bgp"), db)
+                return {"type": "template", "result": result}
+
+            # Check for loose .md files (markdown collection)
+            md_files = [n for n in names if n.endswith(".md") and not n.startswith("__")]
+            if md_files:
+                with zipfile.ZipFile(zip_path, "r") as zf:
+                    zf.extractall(tmp_dir / "extracted")
+                result = _import_plain_markdown_zip(tmp_dir / "extracted", db, tmp_dir)
+                return {"type": "markdown", "result": result}
+
+            raise HTTPException(
+                status_code=400,
+                detail="ZIP contains no recognized content. Expected: metadata.yaml (write-book-template), .md files, or bibliogon backup.",
+            )
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    raise HTTPException(
+        status_code=400,
+        detail=f"Unsupported file format: '{filename}'. Supported: .zip, .md, .bgb, .bgp",
+    )
+
+
 @router.post("/import")
 def import_backup(file: UploadFile, db: Session = Depends(get_db)):
     """Import a full backup (.bgb file), restoring all books and chapters."""

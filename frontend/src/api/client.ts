@@ -224,6 +224,20 @@ export const api = {
     backup: {
         exportUrl: () => `${BASE}/backup/export`,
 
+        smartImport: async (file: File): Promise<{type: string; result: Record<string, unknown>}> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/backup/smart-import`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new Error(err.detail || "Import failed");
+            }
+            return res.json();
+        },
+
         import: async (file: File): Promise<{imported_books: number}> => {
             const formData = new FormData();
             formData.append("file", file);

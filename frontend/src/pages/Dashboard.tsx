@@ -25,8 +25,7 @@ export default function Dashboard() {
     const [sortBy, setSortBy] = useState<"date" | "title" | "author">("date");
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
-    const backupInputRef = useRef<HTMLInputElement>(null);
-    const projectInputRef = useRef<HTMLInputElement>(null);
+    const importInputRef = useRef<HTMLInputElement>(null);
 
     const loadBooks = async () => {
         try {
@@ -100,25 +99,20 @@ export default function Dashboard() {
         window.open(api.backup.exportUrl(), "_blank");
     };
 
-    const handleBackupImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSmartImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-            const result = await api.backup.import(file);
-            notify.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
-            loadBooks();
-        } catch (err) {
-            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
-        }
-        e.target.value = "";
-    };
-
-    const handleProjectImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            const result = await api.backup.importProject(file);
-            notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
+            const {type, result} = await api.backup.smartImport(file);
+            if (type === "backup") {
+                notify.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
+            } else if (type === "project" || type === "template") {
+                notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
+            } else if (type === "markdown") {
+                notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
+            } else if (type === "chapter") {
+                notify.success(`${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
+            }
             loadBooks();
         } catch (err) {
             notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
@@ -152,11 +146,8 @@ export default function Dashboard() {
                             >
                                 <Download size={14}/> {t("ui.dashboard.backup", "Backup")}
                             </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => backupInputRef.current?.click()}>
-                                <Upload size={14}/> {t("ui.dashboard.restore", "Restore")}
-                            </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => projectInputRef.current?.click()}>
-                                <FolderUp size={14}/> {t("ui.dashboard.import", "Import")}
+                            <button className="btn btn-secondary btn-sm" onClick={() => importInputRef.current?.click()}>
+                                <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
                             </button>
                             <div style={styles.headerSeparator}/>
                             <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
@@ -190,11 +181,8 @@ export default function Dashboard() {
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
                                         <Download size={16}/> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => backupInputRef.current?.click()}>
-                                        <Upload size={16}/> {t("ui.dashboard.restore", "Restore")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => projectInputRef.current?.click()}>
-                                        <FolderUp size={16}/> {t("ui.dashboard.import", "Import")}
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => importInputRef.current?.click()}>
+                                        <Upload size={16}/> {t("ui.dashboard.import", "Importieren")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/get-started")}>
@@ -214,8 +202,7 @@ export default function Dashboard() {
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
 
-                        <input ref={backupInputRef} type="file" accept=".bgb" style={{display: "none"}} onChange={handleBackupImport}/>
-                        <input ref={projectInputRef} type="file" accept=".bgp,.zip" style={{display: "none"}} onChange={handleProjectImport}/>
+                        <input ref={importInputRef} type="file" accept=".bgb,.bgp,.zip,.md" style={{display: "none"}} onChange={handleSmartImport}/>
                     </div>
                 </div>
             </header>
@@ -278,7 +265,7 @@ export default function Dashboard() {
                             <button className="btn btn-primary" onClick={() => setShowModal(true)}>
                                 <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
                             </button>
-                            <button className="btn btn-secondary" onClick={() => projectInputRef.current?.click()}>
+                            <button className="btn btn-secondary" onClick={() => importInputRef.current?.click()}>
                                 <FolderUp size={16}/> {t("ui.dashboard.import_project", "Projekt importieren")}
                             </button>
                             <button className="btn btn-secondary" onClick={() => navigate("/get-started")}>
