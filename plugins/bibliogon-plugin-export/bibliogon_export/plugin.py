@@ -23,9 +23,9 @@ class ExportPlugin(BasePlugin):
             pass
 
     def get_routes(self) -> list[Any]:
-        """Return the export router."""
-        from .routes import router
-        return [router]
+        """Return the export routers (main + async job polling)."""
+        from .routes import router, jobs_router
+        return [router, jobs_router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         """Return export-related UI manifest."""

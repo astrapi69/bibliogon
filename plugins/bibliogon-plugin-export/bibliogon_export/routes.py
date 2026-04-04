@@ -1,6 +1,7 @@
 """FastAPI routes for the export plugin."""
 
 import json
+import logging
 import shutil
 import tempfile
 from pathlib import Path
@@ -11,6 +12,8 @@ from fastapi.responses import FileResponse
 
 from .pandoc_runner import PandocError, run_pandoc
 from .scaffolder import scaffold_project
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books/{book_id}/export", tags=["export"])
 
@@ -338,3 +341,141 @@ def _export_batch(
         )
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Async Export ---
+
+
+@router.post("/async/{fmt}")
+async def export_async(
+    book_id: str,
+    fmt: str,
+    book_type: str = "ebook",
+    use_manual_toc: bool | None = None,
+) -> dict[str, str]:
+    """Start an export job in the background. Returns a job_id to poll.
+
+    Use GET /api/export/jobs/{job_id} to check status and download.
+    """
+    if fmt not in SUPPORTED_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}",
+        )
+
+    try:
+        from app.job_store import job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+
+    async def _run_export() -> dict[str, Any]:
+        if _get_db is None:
+            raise RuntimeError("Export plugin not configured")
+
+        db_gen = _get_db()
+        db_session = next(db_gen)
+        try:
+            book_data, chapters_data, assets_data = _get_book_data(book_id, db_session)
+        finally:
+            try:
+                next(db_gen)
+            except StopIteration:
+                pass
+
+        tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_async_"))
+
+        import yaml
+        config_path = Path("config/plugins/export.yaml")
+        config: dict[str, Any] = {}
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        export_settings = config.get("settings", {})
+        has_manual_toc = any(ch.get("chapter_type") == "toc" for ch in chapters_data)
+        manual_toc = use_manual_toc if use_manual_toc is not None else has_manual_toc
+
+        project_dir = scaffold_project(
+            book_data, chapters_data, tmp_dir, export_settings, assets_data,
+        )
+
+        slug = project_dir.name
+        type_suffix = export_settings.get("type_suffix_in_filename", True)
+        base_name = f"{slug}-{book_type}" if type_suffix else slug
+
+        if fmt == "project":
+            zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
+            bgp_path = zip_path.replace(".zip", ".bgp")
+            Path(zip_path).rename(bgp_path)
+            return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
+
+        cover_path = book_data.get("cover_image")
+        if not cover_path:
+            for ext in ("png", "jpg", "jpeg"):
+                candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
+                if candidate.exists():
+                    cover_path = str(candidate)
+                    break
+
+        output_path = run_pandoc(
+            project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover_path,
+        )
+
+        media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
+        ext_map = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}
+        ext = ext_map.get(fmt, output_path.suffix or f".{fmt}")
+        return {"path": str(output_path), "filename": f"{base_name}{ext}", "media_type": media_type}
+
+    job_id = job_store.submit(_run_export)
+    logger.info("Export job %s started: book=%s fmt=%s", job_id, book_id, fmt)
+    return {"job_id": job_id, "status": "pending"}
+
+
+# Separate router for job polling (not under /books/{book_id})
+jobs_router = APIRouter(prefix="/export/jobs", tags=["export-jobs"])
+
+
+@jobs_router.get("/{job_id}")
+def get_job_status(job_id: str) -> dict[str, Any]:
+    """Check status of an async export job."""
+    try:
+        from app.job_store import job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    result: dict[str, Any] = {"job_id": job.id, "status": job.status.value}
+    if job.error:
+        result["error"] = job.error
+    if job.status.value == "completed" and job.result.get("filename"):
+        result["filename"] = job.result["filename"]
+        result["download_url"] = f"/api/export/jobs/{job_id}/download"
+    return result
+
+
+@jobs_router.get("/{job_id}/download")
+def download_job_result(job_id: str) -> FileResponse:
+    """Download the result of a completed export job."""
+    try:
+        from app.job_store import job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status.value != "completed":
+        raise HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
+
+    path = job.result.get("path")
+    if not path or not Path(path).exists():
+        raise HTTPException(status_code=410, detail="Export file no longer available")
+
+    return FileResponse(
+        path=path,
+        media_type=job.result.get("media_type", "application/octet-stream"),
+        filename=job.result.get("filename", "export"),
+    )

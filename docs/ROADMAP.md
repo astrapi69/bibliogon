@@ -28,7 +28,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
 - [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
 - [x] P-08: Kapitelweise Uebersetzung als neues Buch
-- [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
+- [x] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
 - [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
 - [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - [ ] P-03: Voice-Settings pro Buch
@@ -107,7 +107,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
-- [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
+- [x] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
 
 ## Tests
 
