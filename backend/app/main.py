@@ -143,6 +143,9 @@ app.include_router(licenses.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 app.include_router(plugin_install.router, prefix="/api")
 
+from app.ai.routes import router as ai_router
+app.include_router(ai_router, prefix="/api")
+
 
 @app.get("/api/plugins/manifests")
 def get_plugin_manifests() -> dict[str, Any]:

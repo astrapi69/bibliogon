@@ -28,6 +28,7 @@ mutmut = "^3.5.0"
 mypy = "^1.20.0"
 types-pyyaml = "^6.0.12.20250915"
 types-markdown = "^3.10.2.20260211"
+pytest-asyncio = "^1.3.0"
 
 [tool.mypy]
 python_version = "3.12"
