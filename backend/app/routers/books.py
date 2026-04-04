@@ -28,18 +28,21 @@ def _is_permanent_delete() -> bool:
         return False
 
 
-def _get_trash_auto_delete_days() -> int:
-    """Get the number of days after which trashed books are auto-deleted. 0 = disabled."""
+def _get_trash_auto_delete_config() -> tuple[bool, int]:
+    """Get trash auto-delete settings: (enabled, days)."""
     from pathlib import Path
     config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
     if not config_path.exists():
-        return 30
+        return False, 30
     try:
         with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        return int(config.get("app", {}).get("trash_auto_delete_days", 30))
+        app = config.get("app", {})
+        enabled = bool(app.get("trash_auto_delete_enabled", False))
+        days = int(app.get("trash_auto_delete_days", 30))
+        return enabled, days
     except Exception:
-        return 30
+        return False, 30
 
 
 def cleanup_expired_trash() -> int:
@@ -47,8 +50,8 @@ def cleanup_expired_trash() -> int:
 
     Returns the number of deleted books.
     """
-    days = _get_trash_auto_delete_days()
-    if days <= 0:
+    enabled, days = _get_trash_auto_delete_config()
+    if not enabled or days <= 0:
         return 0
 
     from app.database import SessionLocal
@@ -61,6 +64,10 @@ def cleanup_expired_trash() -> int:
         ).all()
         count = len(expired)
         for book in expired:
+            logger.info(
+                "Auto-deleting book: id=%s title=%s deleted_at=%s",
+                book.id, book.title, book.deleted_at,
+            )
             db.delete(book)
         if count > 0:
             db.commit()

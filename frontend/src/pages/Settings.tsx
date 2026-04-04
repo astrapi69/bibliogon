@@ -234,7 +234,8 @@ function AppSettings({config, onSave, saving}: {
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
     const [uiSubtitle, setUiSubtitle] = useState((ui.subtitle as string) || "");
     const [theme, setTheme] = useState((ui.theme as string) || "warm-literary");
-    const [trashDays, setTrashDays] = useState(Number(app.trash_auto_delete_days ?? 30));
+    const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
+    const [trashDays, setTrashDays] = useState(String(Number(app.trash_auto_delete_days ?? 30)));
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
         export: true, help: true, getstarted: true,
@@ -245,7 +246,8 @@ function AppSettings({config, onSave, saving}: {
         setUiTitle((ui.title as string) || "Bibliogon");
         setUiSubtitle((ui.subtitle as string) || "");
         setTheme((ui.theme as string) || "warm-literary");
-        setTrashDays(Number(app.trash_auto_delete_days ?? 30));
+        setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
+        setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
         setCorePlugins({
             export: enabledPlugins.includes("export"),
             help: enabledPlugins.includes("help"),
@@ -299,19 +301,37 @@ function AppSettings({config, onSave, saving}: {
                     />
                 </div>
                 <div className="field">
-                    <label className="label">{t("ui.settings.trash_auto_delete", "Papierkorb auto-loeschen nach (Tage)")}</label>
-                    <input
-                        className="input"
-                        type="number"
-                        min={0}
-                        max={365}
-                        value={trashDays}
-                        onChange={(e) => setTrashDays(Number(e.target.value))}
-                    />
-                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                        {trashDays === 0
-                            ? t("ui.settings.trash_disabled", "Deaktiviert (manuell loeschen)")
-                            : t("ui.settings.trash_info", "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht").replace("{days}", String(trashDays))}
+                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
+                        <input
+                            type="checkbox"
+                            checked={trashEnabled}
+                            onChange={(e) => setTrashEnabled(e.target.checked)}
+                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
+                        />
+                        <span className="label" style={{margin: 0}}>{t("ui.settings.trash_checkbox", "Geloeschte Buecher automatisch entfernen")}</span>
+                    </label>
+                    {trashEnabled && (
+                        <div style={{marginTop: 8, marginLeft: 24}}>
+                            <label className="label">{t("ui.settings.trash_delete_after", "Endgueltig loeschen nach")}</label>
+                            <RadixSelect
+                                value={trashDays}
+                                onValueChange={setTrashDays}
+                                options={[
+                                    {value: "7", label: t("ui.settings.trash_days_7", "7 Tage")},
+                                    {value: "14", label: t("ui.settings.trash_days_14", "14 Tage")},
+                                    {value: "30", label: t("ui.settings.trash_days_30", "30 Tage")},
+                                    {value: "60", label: t("ui.settings.trash_days_60", "60 Tage")},
+                                    {value: "90", label: t("ui.settings.trash_days_90", "90 Tage")},
+                                    {value: "180", label: t("ui.settings.trash_days_180", "180 Tage")},
+                                    {value: "365", label: t("ui.settings.trash_days_365", "365 Tage")},
+                                ]}
+                            />
+                        </div>
+                    )}
+                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                        {trashEnabled
+                            ? t("ui.settings.trash_info", "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht").replace("{days}", trashDays)
+                            : t("ui.settings.trash_disabled", "Deaktiviert (manuell loeschen)")}
                     </small>
                 </div>
                 <button
@@ -327,7 +347,7 @@ function AppSettings({config, onSave, saving}: {
                             }
                         }
                         onSave({
-                            app: {default_language: lang, trash_auto_delete_days: trashDays},
+                            app: {default_language: lang, trash_auto_delete_enabled: trashEnabled, trash_auto_delete_days: Number(trashDays)},
                             ui: {title: uiTitle, subtitle: uiSubtitle, theme},
                             plugins: {enabled},
                         });
