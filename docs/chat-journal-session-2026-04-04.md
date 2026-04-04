@@ -348,11 +348,66 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 43. CI-Pipeline Fix: TipTap Peer Dependencies
+
+- Original-Prompt: "CI-Pipeline Fix: @pentestpad/tiptap-extension-figure verlangt @tiptap/core ^3.19"
+- Ergebnis: figure 1.0.12 und footnotes 2.0.4 gepinnt (letzte v2-kompatible Versionen), 0 invalid peer deps
+- Commit: b43dcc4
+
+---
+
+## 44. Backup/Restore: TTS-Felder ergaenzt
+
+- Original-Prompt: "Restore und Import sind kaputt"
+- Ergebnis: tts_engine/tts_voice/tts_language in Export und Import ergaenzt, Tests gruen
+- Commit: ec4eb75
+
+---
+
+## 45. Error-Toast mit Issue-Link
+
+- Original-Prompt: "Fehler-Toast mit Issue-Button"
+- Ergebnis: notify.error() zeigt "Issue melden" Link mit vorausgefuelltem GitHub Issue (Titel, Body, Label)
+- Commit: bbae527
+
+---
+
+## 46. Settings: App-Name in Erweitert verschoben
+
+- Original-Prompt: "App-Name und Beschreibung in erweiterten Bereich verschieben"
+- Ergebnis: Hauptbereich zeigt nur Sprache/Theme/Trash, App-Name/Beschreibung unter "Erweitert: App anpassen"
+- Commit: 40fcf97
+
+---
+
+## 47. Audiobook: Alle 4 TTS-Engines im Dropdown
+
+- Original-Prompt: "Alle Engines muessen als Optionen verfuegbar sein"
+- Ergebnis: Edge TTS, Google TTS, pyttsx3, ElevenLabs im Dropdown, Voice-Label umbenannt
+- Commit: 40108b6
+
+---
+
+## 48. Lessons-Learned: TipTap Peer-Dep-Pinning
+
+- Ergebnis: Dokumentation in lessons-learned.md fuer Community-Extensions Pinning
+- Commit: d7b9c68
+
+---
+
+## 49. Smart Import mit Auto-Erkennung
+
+- Original-Prompt: "Import-System ueberarbeiten: Automatische Format-Erkennung"
+- Ergebnis: POST /api/backup/smart-import erkennt .bgb/.bgp/.zip/.md automatisch, ein "Importieren" Button statt drei separate, 5 neue Tests
+- Commit: 9c4ae1f
+
+---
+
 ## Session-Zusammenfassung
 
-- Commits: 43
-- Tests: 298 (73 backend, 125 plugin, 50 vitest, 52 e2e)
+- Commits: 51
+- Tests: 303 (78 backend, 125 plugin, 50 vitest, 52 e2e)
 - Neue Plugins: translation (35 Tests), audiobook (32 Tests), kinderbuch (8 Tests, ZIP-Distribution)
 - Neue Dependencies: alembic, mutmut, mypy, edge-tts, httpx (translation), @radix-ui/react-context-menu, @tiptap/extension-focus, @intevation/tiptap-extension-office-paste
 - Release: v0.9.0 + v0.10.0 erstellt und deployed
-- Hauptergebnisse: Release v0.9.0 + v0.10.0, 3 Plugins (Translation, Audiobook, Kinderbuch), Freemium-Lizenzsystem mit Autor-Bindung, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs, 8 Sprachen, kaskadierte Audiobook-Settings, Toast-Zentralisierung, Dark-Mode Audit
+- Hauptergebnisse: Release v0.9.0 + v0.10.0, 3 Plugins (Translation, Audiobook, Kinderbuch), Freemium-Lizenzsystem, CI Fix, Smart Import, Error-Toast mit Issue-Link, kaskadierte Audiobook-Settings

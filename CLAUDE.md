@@ -361,6 +361,7 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
 - GET/POST /api/books/{id}/assets
 - DELETE /api/books/{id}/assets/{aid}
 - GET /api/backup/export
+- POST /api/backup/smart-import
 - POST /api/backup/import
 - POST /api/backup/import-project
 - GET/POST/DELETE /api/licenses
@@ -512,7 +513,7 @@ Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) 
 - Import: Plain-Markdown-ZIP ohne Projektstruktur, tiptap_to_md erweitert (Table, TaskList, Figure)
 - UI: Dashboard-Sortierung, Cover-Thumbnails, Wortanzahl-Ziel pro Kapitel, Keyword-Tag-Editor
 - Infrastruktur: Multi-Stage Docker Build, Frontend-Chunk-Splitting, Roundtrip-Tests
-- 298 Tests (73 backend, 125 plugin, 50 vitest, 52 e2e)
+- 303 Tests (78 backend, 125 plugin, 50 vitest, 52 e2e)
 
 ### Phase 9: Uebersetzung, Audiobook, Infrastruktur (v0.10.0) - erledigt
 
@@ -522,7 +523,7 @@ Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) 
 - Infrastruktur: Alembic-Migrationen, GitHub Actions CI, mypy, mutmut, Structured Logging, Async Export Jobs
 - Editor: Focus Mode, Office Paste, Spellcheck Panel, Kapitel-Rename (Rechtsklick/Doppelklick), Audio Preview
 - i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), Live-Sprachumschaltung
-- 298 Tests (73 backend, 125 plugin, 50 vitest, 52 e2e)
+- 303 Tests (78 backend, 125 plugin, 50 vitest, 52 e2e)
 
 ## Naechste Schritte
 
@@ -538,7 +539,7 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-298 Tests insgesamt:
+303 Tests insgesamt:
 
 - plugin-export: 30 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
@@ -547,7 +548,7 @@ Details: docs/CONCEPT.md
 - plugin-ms-tools: 53 (style_checker, sanitizer, readability)
 - plugin-translation: 35 (deepl_client, lmstudio_client, book_translator)
 - plugin-audiobook: 32 (generator, tts_engine, merge)
-- backend: 73 (api, phase4, import/export, roundtrip, job_store, license_tiers, plugin_discovery)
+- backend: 78 (api, phase4, import/export, roundtrip, job_store, license_tiers, plugin_discovery, smart_import)
 - vitest: 50 (api client, i18n, markdown helpers)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
