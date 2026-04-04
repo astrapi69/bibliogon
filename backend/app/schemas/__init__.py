@@ -71,6 +71,8 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # AI-assisted content flag
+    ai_assisted: bool | None = None
     # Audiobook / TTS settings
     tts_engine: str | None = None
     tts_voice: str | None = None
@@ -105,6 +107,7 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    ai_assisted: bool = False
     tts_engine: str | None = None
     tts_voice: str | None = None
     tts_language: str | None = None

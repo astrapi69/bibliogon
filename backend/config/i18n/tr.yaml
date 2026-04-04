@@ -127,6 +127,8 @@ ui:
         exporting: "Disa aktariliyor..."
         export_all: "Tum formatlar (ZIP)"
         export_as: "{format} olarak disa aktar"
+        ai_assisted: "AI destekli icerigi isaretleyin"
+        ai_assisted_hint: "Bazi platformlar (orn. Amazon KDP) AI destekli icerigin aciklanmasini gerektirir."
     formats:
         epub: "EPUB"
         epub_desc: "E-Kitap formati"

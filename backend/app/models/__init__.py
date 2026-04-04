@@ -71,6 +71,9 @@ class Book(Base):
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # AI-assisted content flag (for KDP/export metadata)
+    ai_assisted: Mapped[bool] = mapped_column(default=False)
+
     # Audiobook / TTS settings per book
     tts_engine: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tts_voice: Mapped[str | None] = mapped_column(String(200), nullable=True)

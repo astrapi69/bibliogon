@@ -127,6 +127,8 @@ ui:
         exporting: "Exportando..."
         export_all: "Todos os formatos (ZIP)"
         export_as: "Exportar como {format}"
+        ai_assisted: "Marcar conteudo assistido por IA"
+        ai_assisted_hint: "Algumas plataformas (ex. Amazon KDP) exigem a divulgacao de conteudo assistido por IA."
     formats:
         epub: "EPUB"
         epub_desc: "Formato de livro eletronico"

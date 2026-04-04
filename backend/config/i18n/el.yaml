@@ -120,6 +120,8 @@ ui:
     section_order: "Προσαρμογή σειράς κεφαλαίων"
     exporting: "Εξαγωγή..."
     export_as: "Εξαγωγή ως {format}"
+    ai_assisted: "Σήμανση περιεχομένου με βοήθεια AI"
+    ai_assisted_hint: "Ορισμένες πλατφόρμες (π.χ. Amazon KDP) απαιτούν τη γνωστοποίηση περιεχομένου με βοήθεια AI."
   formats:
     epub: "EPUB"
     epub_desc: "Μορφή ηλεκτρονικού βιβλίου"

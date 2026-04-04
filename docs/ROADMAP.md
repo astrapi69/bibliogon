@@ -17,7 +17,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
 - [x] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
       nicht inline im Text. Autor uebernimmt explizit per Klick.
-- [ ] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
+- [x] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
 - [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen

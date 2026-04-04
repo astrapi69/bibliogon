@@ -241,6 +241,8 @@ def _write_metadata(path: Path, book: dict[str, Any]) -> None:
         metadata["series_index"] = book["series_index"]
     if book.get("description"):
         metadata["description"] = book["description"]
+    if book.get("ai_assisted"):
+        metadata["ai-assisted"] = True
 
     with open(path, "w", encoding="utf-8") as f:
         # Pandoc expects YAML document markers (---) in metadata files

@@ -48,6 +48,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const [bookType, setBookType] = useState("ebook");
     const [tocDepth, setTocDepth] = useState(2);
     const [useManualToc, setUseManualToc] = useState(hasManualToc);
+    const [aiAssisted, setAiAssisted] = useState(false);
     const [showSectionOrder, setShowSectionOrder] = useState(false);
     const [sectionOrders, setSectionOrders] = useState<Record<string, string[] | null>>({});
     const [exporting, setExporting] = useState(false);
@@ -165,6 +166,22 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                             </span>
                         </div>
                     )}
+
+                    {/* AI-assisted content flag */}
+                    <div style={{marginTop: 12}}>
+                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem"}}>
+                            <input
+                                type="checkbox"
+                                checked={aiAssisted}
+                                onChange={(e) => setAiAssisted(e.target.checked)}
+                                style={{width: 16, height: 16, accentColor: "var(--accent)"}}
+                            />
+                            {t("ui.export_dialog.ai_assisted", "AI-assistierte Inhalte kennzeichnen")}
+                        </label>
+                        <span style={{fontSize: "0.75rem", color: "var(--text-muted)", marginLeft: 26, display: "block"}}>
+                            {t("ui.export_dialog.ai_assisted_hint", "Einige Plattformen (z.B. Amazon KDP) verlangen die Offenlegung von KI-assistierten Inhalten.")}
+                        </span>
+                    </div>
 
                     {/* Section order (collapsible) */}
                     {format !== "project" && currentOrder.length > 0 && (

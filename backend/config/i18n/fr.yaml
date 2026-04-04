@@ -120,6 +120,8 @@ ui:
     section_order: "Ajuster l'ordre des chapitres"
     exporting: "Exportation..."
     export_as: "Exporter en {format}"
+    ai_assisted: "Marquer le contenu assiste par IA"
+    ai_assisted_hint: "Certaines plateformes (ex. Amazon KDP) exigent la divulgation du contenu assiste par IA."
   formats:
     epub: "EPUB"
     epub_desc: "Format livre numerique"
