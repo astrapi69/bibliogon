@@ -833,10 +833,9 @@ Feature-Details und offene Punkte siehe docs/ROADMAP.md (mit IDs fuer Prompt-Ref
 | 5: Erste Premium-Plugins (kinderbuch, kdp) | v0.5.0 | erledigt |
 | 6: Editor-Erweiterungen, i18n, Themes | v0.6.0 | erledigt |
 | 7: Erweiterte Metadaten, Publishing | v0.7.0 | erledigt |
-| 8: Manuskript-Qualitaet, Editor, Export | v0.9.0 | erledigt (aktuell) |
-| 9: Uebersetzungs-Plugin (Premium) | v0.10.0 | naechste Phase |
-| 10: Audiobook-Plugin (Premium) | v0.11.0 | geplant |
-| 11: Multi-User und SaaS | v1.0.0 | geplant |
+| 8: Manuskript-Qualitaet, Editor, Export | v0.9.0 | erledigt |
+| 9: Uebersetzung, Audiobook, Infrastruktur | v0.10.0 | erledigt (aktuell) |
+| 10: Multi-User und SaaS | v1.0.0 | naechste Phase |
 
 ---
 

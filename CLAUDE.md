@@ -5,7 +5,7 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 **Repository:** https://github.com/astrapi69/bibliogon
 **PluginForge:** https://github.com/astrapi69/pluginforge (PyPI: pluginforge ^0.5.0)
 **Konzept:** docs/CONCEPT.md
-**Version:** 0.9.0
+**Version:** 0.10.0
 
 ## Entwicklungsrichtlinien
 
@@ -501,30 +501,21 @@ Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) 
 - Import: Plain-Markdown-ZIP ohne Projektstruktur, tiptap_to_md erweitert (Table, TaskList, Figure)
 - UI: Dashboard-Sortierung, Cover-Thumbnails, Wortanzahl-Ziel pro Kapitel, Keyword-Tag-Editor
 - Infrastruktur: Multi-Stage Docker Build, Frontend-Chunk-Splitting, Roundtrip-Tests
-- 212 Tests (38 backend, 101 plugin, 21 vitest, 52 e2e)
+- 285 Tests (60 backend, 125 plugin, 50 vitest, 52 e2e)
+
+### Phase 9: Uebersetzung, Audiobook, Infrastruktur (v0.10.0) - erledigt
+
+- plugin-translation (Premium): DeepL + LMStudio Client, kapitelweise Buchuebersetzung als neues Buch
+- plugin-audiobook (Premium): Edge TTS, TTS Engine Abstraction, MP3 pro Kapitel, ffmpeg Merge, Vorhoer-Funktion
+- Freemium-Lizenzsystem: license_tier (core/premium), Trial-Keys (Wildcard), Settings UI mit Premium-Badges
+- Infrastruktur: Alembic-Migrationen, GitHub Actions CI, mypy, mutmut, Structured Logging, Async Export Jobs
+- Editor: Focus Mode, Office Paste, Spellcheck Panel, Kapitel-Rename (Rechtsklick/Doppelklick), Audio Preview
+- i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), Live-Sprachumschaltung
+- 285 Tests (60 backend, 125 plugin, 50 vitest, 52 e2e)
 
 ## Naechste Schritte
 
-### Phase 9 - Uebersetzungs-Plugin (v0.10.0, Premium)
-
-- plugin-translation: Automatische Buchuebersetzung (Premium, Proprietary)
-- DeepL-Integration (API-Key pro Benutzer)
-- LMStudio-Integration (lokale LLM-Uebersetzung, kostenlos)
-- Kapitelweise Uebersetzung mit Fortschrittsanzeige
-- Uebersetzung als neues Buch anlegen (mit Referenz zum Original)
-- Unterstuetzte Sprachpaare: DE-EN, EN-DE, EN-ES, DE-ES, EN-FR, etc.
-
-### Phase 10 - Audiobook-Plugin (v0.11.0, Premium)
-
-- plugin-audiobook: TTS-basierte Audiobook-Generierung (Premium, Proprietary)
-- TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- Voice-Settings pro Buch (Stimme, Sprache, Skip-Sektionen)
-- MP3-Generierung pro Kapitel
-- Merge zu einer Audiobook-Datei (via ffmpeg)
-- Audiobook Section-Order (eigene Reihenfolge in export-settings.yaml)
-- Vorhoer-Funktion im Editor
-
-### Phase 11 - Multi-User und SaaS (v1.0.0)
+### Phase 10 - Multi-User und SaaS (v1.0.0)
 
 - Benutzerregistrierung und Authentifizierung
 - PostgreSQL statt SQLite
@@ -536,14 +527,17 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-191 Tests insgesamt:
+285 Tests insgesamt:
 
-- plugin-export: 23 (tiptap_to_md, scaffolder)
+- plugin-export: 30 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
 - plugin-kdp: 10 (cover_validator, metadata)
 - plugin-grammar: 7 (languagetool)
 - plugin-ms-tools: 53 (style_checker, sanitizer, readability)
-- backend: 38 (api, phase4, import/export, roundtrip mit TOC, figcaption, assets, section-order)
+- plugin-translation: 35 (deepl_client, lmstudio_client, book_translator)
+- plugin-audiobook: 32 (generator, tts_engine, merge)
+- backend: 60 (api, phase4, import/export, roundtrip, job_store, license_tiers)
+- vitest: 50 (api client, i18n, markdown helpers)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
 PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).

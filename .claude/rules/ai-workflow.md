@@ -62,9 +62,9 @@ Zusaetzlich fuer die KI:
 ## Aktueller Stand
 
 Siehe architecture.md fuer Architektur-Details. Zusaetzlich beachten:
-- Version: 0.9.0 (Phase 8 abgeschlossen, GitHub Release v0.9.0 existiert).
-- Naechste Phase: 9 (Uebersetzungs-Plugin).
-- 212 Tests (38 backend, 101 plugin, 21 vitest, 52 e2e).
+- Version: 0.10.0 (Phase 9 abgeschlossen, GitHub Release v0.10.0 existiert).
+- Naechste Phase: 10 (Multi-User und SaaS).
+- 285 Tests (60 backend, 125 plugin, 50 vitest, 52 e2e).
 - 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
 - 24 Toolbar-Buttons im Editor.
 - Deployment: Docker Compose, Port 7880, install.sh One-Liner.

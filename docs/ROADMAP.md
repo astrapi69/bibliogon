@@ -12,32 +12,11 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
-- [x] Q-06: CI-Pipeline (GitHub Actions)
-- [x] T-03: Office-Paste (tiptap-extension-office-paste)
-- [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
-- [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
-- [x] I-01: Sprachumschaltung live ohne Reload
-- [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
-- [x] Q-02: Mutation Testing mit mutmut einrichten
-- [x] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
-- [x] T-03: Office-Paste (tiptap-extension-office-paste)
-- [x] Q-04: API-Client Unit Tests (Vitest)
-- [x] Q-05: mypy Type-Checking fuer Python Backend
-- [x] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
-- [x] B-02: Structured Logging (JSON-Format fuer Produktion)
-- [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
-- [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
-- [x] P-08: Kapitelweise Uebersetzung als neues Buch
-- [x] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
-- [x] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
-- [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
-- [x] P-03: Voice-Settings pro Buch
-- [x] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
-- [x] P-05: Vorhoer-Funktion im Editor
-- [x] L-01: Freemium-Lizenzsystem (license_tier core/premium, Trial-Keys, Settings UI)
-- [x] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
+- [ ] P-14: Pen-Name-Verwaltung pro User (nicht global)
+- [ ] P-15: Plugin-Marketplace
+- [ ] P-16: Stripe-Integration
 - [ ] P-12: Benutzerregistrierung und Authentifizierung
 - [ ] P-13: PostgreSQL statt SQLite
 
