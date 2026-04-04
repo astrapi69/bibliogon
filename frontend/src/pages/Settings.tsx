@@ -13,6 +13,7 @@ import {useI18n} from "../hooks/useI18n";
 
 export default function Settings() {
     const navigate = useNavigate();
+    const {setLang: setGlobalLang} = useI18n();
     const {t} = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
@@ -91,6 +92,9 @@ export default function Settings() {
                             try {
                                 const updated = await api.settings.updateApp(data);
                                 setAppConfig(updated);
+                                // Live language switch without reload
+                                const newLang = (data.app as Record<string, unknown>)?.default_language as string;
+                                if (newLang) setGlobalLang(newLang);
                                 showMessage(t("ui.settings.saved", "Gespeichert"));
                             } catch (err) {
                                 showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);

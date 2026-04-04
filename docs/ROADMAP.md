@@ -16,7 +16,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
 - [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
-- [ ] I-01: Sprachumschaltung live ohne Reload
+- [x] I-01: Sprachumschaltung live ohne Reload
 - [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
@@ -53,7 +53,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] useI18n Hook mit 216 Strings in 5 Sprachen
 - [x] Alle Hauptkomponenten migriert (Sidebar, Editor, Settings, GetStarted, Export, Dashboard)
 - [x] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
-- [ ] I-01: Sprachumschaltung live ohne Reload
+- [x] I-01: Sprachumschaltung live ohne Reload
 - [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 
 ## Import/Export

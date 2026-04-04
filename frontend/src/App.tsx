@@ -5,6 +5,7 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
 import {useTheme} from "./hooks/useTheme";
+import {I18nProvider} from "./hooks/useI18n";
 import {DialogProvider} from "./components/AppDialog";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,6 +15,7 @@ export default function App() {
     useTheme();
 
     return (
+        <I18nProvider>
         <DialogProvider>
             <Routes>
                 <Route path="/" element={<Dashboard/>}/>
@@ -32,5 +34,6 @@ export default function App() {
                 theme="colored"
             />
         </DialogProvider>
+        </I18nProvider>
     );
 }
