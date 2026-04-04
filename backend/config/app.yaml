@@ -1,11 +1,14 @@
+ai:
+  api_key: ''
+  base_url: http://localhost:11434/v1
+  max_tokens: 2048
+  model: ''
+  temperature: 0.7
 app:
-  name: Bibliogon
-  version: 0.10.0
-  description: Open-source book authoring platform
   default_language: en
   delete_permanently: false
-  trash_auto_delete_enabled: true
-  trash_auto_delete_days: 90
+  description: Open-source book authoring platform
+  name: Bibliogon
   supported_languages:
   - de
   - en
@@ -15,30 +18,29 @@ app:
   - pt
   - tr
   - ja
+  trash_auto_delete_days: 90
+  trash_auto_delete_enabled: true
+  version: 0.10.0
 author:
   name: Asterios Raptis
   pen_names:
   - Draven Quantum
   - Stelio Moon
 plugins:
-  entry_point_group: bibliogon.plugins
   config_dir: config/plugins
+  disabled: []
   enabled:
   - export
   - help
   - getstarted
   - ms-tools
-  - kinderbuch
   - audiobook
-  disabled: []
-ai:
-  base_url: "http://localhost:11434/v1"
-  model: ""
-  temperature: 0.7
-  max_tokens: 2048
-  api_key: ""
+  - kdp
+  - translation
+  - kinderbuch
+  entry_point_group: bibliogon.plugins
 ui:
-  title: Bibliogon
-  subtitle: Bücher schreiben und exportieren
   logo: assets/logo.svg
+  subtitle: Bücher schreiben und exportieren
   theme: nord
+  title: Bibliogon
