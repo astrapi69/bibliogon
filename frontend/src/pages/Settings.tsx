@@ -173,6 +173,17 @@ export default function Settings() {
                                 showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
                             }
                         }}
+                        onActivateLicense={async (pluginName, key) => {
+                            try {
+                                await api.licenses.activate(pluginName, key);
+                                const lics = await api.licenses.list();
+                                setLicenses(lics);
+                                showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
+                                loadData();
+                            } catch (err) {
+                                showMessage(`${t("ui.settings.license_error", "Lizenzfehler")}: ${err}`, true);
+                            }
+                        }}
                     />
                 </Tabs.Content>
                 <Tabs.Content value="licenses">
@@ -384,7 +395,7 @@ function AppSettings({config, onSave, saving}: {
 
 // --- Plugin Settings Tab ---
 
-function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload}: {
+function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload, onActivateLicense}: {
     configs: Record<string, Record<string, unknown>>;
     appConfig: Record<string, unknown>;
     onSavePlugin: (name: string, settings: Record<string, unknown>) => void;
@@ -392,11 +403,23 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onAddPlugin: (data: {name: string; display_name?: string; description?: string}) => void;
     onRemovePlugin: (name: string) => void;
     onReload: () => void;
+    onActivateLicense: (pluginName: string, key: string) => Promise<void>;
 }) {
     const {t} = useI18n();
     const [showAdd, setShowAdd] = useState(false);
     const [uploading, setUploading] = useState(false);
     const pluginDialog = useDialog();
+    const handleLicensePrompt = async (pluginName: string, displayName: string) => {
+        const key = await pluginDialog.prompt(
+            `${t("ui.settings.activate_license", "Lizenz aktivieren")} - ${displayName}`,
+            t("ui.settings.license_key_placeholder", "Lizenzschluessel"),
+            `BIBLIOGON-${pluginName.toUpperCase()}-v1-...`,
+        );
+        if (key && key.trim()) {
+            await onActivateLicense(pluginName, key.trim());
+        }
+    };
+
     const [newName, setNewName] = useState("");
     const [newDisplayName, setNewDisplayName] = useState("");
     const [newDescription, setNewDescription] = useState("");
@@ -525,7 +548,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 {isPremium && !(pluginLicenseInfo[name]?.hasLicense) ? (
                                     <button
                                         className="btn btn-sm btn-premium"
-                                        onClick={() => { setShowAdd(false); window.location.hash = "#licenses"; }}
+                                        onClick={() => { setShowAdd(false); handleLicensePrompt(name, displayName); }}
                                     >
                                         <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
                                     </button>
@@ -574,6 +597,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 onRemovePlugin(name);
                             }
                         }}
+                        onActivateLicense={() => handleLicensePrompt(name, displayName)}
                     />
                 );
             })}
@@ -586,7 +610,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
-function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove}: {
+function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove, onActivateLicense}: {
     name: string;
     displayName: string;
     description: string;
@@ -598,6 +622,7 @@ function PluginCard({name, displayName, description, version, license, hasLicens
     onSave: (settings: Record<string, unknown>) => void;
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
+    onActivateLicense?: () => void;
 }) {
     const {t} = useI18n();
     const isCore = CORE_PLUGINS.has(name);
@@ -686,12 +711,8 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                     )}
                     {!isCore && isPremium && !hasLicense ? (
                         <button
-                            className="btn btn-sm"
-                            style={{background: "rgba(168,85,247,0.15)", color: "#7c3aed", border: "1px solid rgba(168,85,247,0.3)"}}
-                            onClick={() => {
-                                // Navigate to license tab
-                                window.location.hash = "#licenses";
-                            }}
+                            className="btn btn-sm btn-premium"
+                            onClick={() => onActivateLicense?.()}
                         >
                             <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
                         </button>
