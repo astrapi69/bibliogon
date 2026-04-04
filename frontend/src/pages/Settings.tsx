@@ -621,6 +621,115 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
+// --- Audiobook custom settings panel with cascading dropdowns ---
+
+function AudiobookSettingsPanel({settings, onSave}: {
+    settings: Record<string, unknown>;
+    onSave: (s: Record<string, unknown>) => void;
+}) {
+    const {t} = useI18n();
+    const [engine, setEngine] = useState(String(settings.engine || "edge-tts"));
+    const [language, setLanguage] = useState(String(settings.language || "de"));
+    const [voice, setVoice] = useState(String(settings.default_voice || ""));
+    const [merge, setMerge] = useState(String(settings.merge ?? "true"));
+    const [voices, setVoices] = useState<{id: string; name: string; language: string; gender: string}[]>([]);
+    const [loadingVoices, setLoadingVoices] = useState(false);
+
+    // Load voices when engine or language changes
+    useEffect(() => {
+        setLoadingVoices(true);
+        fetch(`/api/audiobook/voices?engine=${engine}&language=${language}`)
+            .then((r) => r.ok ? r.json() : [])
+            .then((data) => {
+                setVoices(data);
+                // Auto-select first voice if current not in list
+                if (data.length > 0 && !data.some((v: {id: string}) => v.id === voice)) {
+                    setVoice(data[0].id);
+                }
+            })
+            .catch(() => setVoices([]))
+            .finally(() => setLoadingVoices(false));
+    }, [engine, language]);
+
+    const handleSave = () => {
+        onSave({
+            ...settings,
+            engine,
+            language,
+            default_voice: voice,
+            merge: merge === "true",
+        });
+    };
+
+    const engineOptions = [
+        {value: "edge-tts", label: "Microsoft Edge TTS"},
+    ];
+
+    const languageOptions = [
+        {value: "de", label: "Deutsch (de-DE)"},
+        {value: "en", label: "English (en-US)"},
+        {value: "es", label: "Espanol (es-ES)"},
+        {value: "fr", label: "Francais (fr-FR)"},
+        {value: "el", label: "Ellinika (el-GR)"},
+        {value: "it", label: "Italiano (it-IT)"},
+        {value: "nl", label: "Nederlands (nl-NL)"},
+        {value: "pt", label: "Portugues (pt-BR)"},
+        {value: "ru", label: "Russky (ru-RU)"},
+        {value: "ja", label: "Nihongo (ja-JP)"},
+        {value: "zh", label: "Zhongwen (zh-CN)"},
+        {value: "tr", label: "Turkce (tr-TR)"},
+    ];
+
+    const voiceOptions = voices.map((v) => ({
+        value: v.id,
+        label: `${v.name || v.id}${v.gender ? ` (${v.gender})` : ""}`,
+    }));
+
+    const mergeOptions = [
+        {value: "true", label: t("ui.audiobook.merge_yes", "Ja (alle Kapitel zusammenfuegen)")},
+        {value: "false", label: t("ui.audiobook.merge_no", "Nein (einzelne MP3 pro Kapitel)")},
+    ];
+
+    return (
+        <>
+            <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
+                {t("ui.settings.expand_settings", "Einstellungen")}
+            </h4>
+            <div style={styles.settingsGrid}>
+                <div className="field">
+                    <label className="label">{t("ui.audiobook.engine", "Sprachsynthese-Engine")}</label>
+                    <RadixSelect value={engine} onValueChange={(v) => { setEngine(v); setVoice(""); }} options={engineOptions} />
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.audiobook.language", "Sprache")}</label>
+                    <RadixSelect value={language} onValueChange={(v) => { setLanguage(v); setVoice(""); }} options={languageOptions} />
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.audiobook.default_voice", "Standardstimme")}</label>
+                    {loadingVoices ? (
+                        <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                            {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}
+                        </div>
+                    ) : voiceOptions.length > 0 ? (
+                        <RadixSelect value={voice} onValueChange={setVoice} options={voiceOptions} />
+                    ) : (
+                        <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                            {t("ui.audiobook.engine_unavailable", "Engine nicht verfuegbar")}
+                        </div>
+                    )}
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
+                    <RadixSelect value={merge} onValueChange={setMerge} options={mergeOptions} />
+                </div>
+            </div>
+            <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
+                <Save size={12}/> {t("ui.common.save", "Speichern")}
+            </button>
+        </>
+    );
+}
+
 function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove, onActivateLicense}: {
     name: string;
     displayName: string;
@@ -750,26 +859,34 @@ function PluginCard({name, displayName, description, version, license, hasLicens
 
             {expanded && hasSettings && (
                 <div style={{marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)"}}>
-                    {/* Editable scalar settings */}
-                    {scalarSettings.length > 0 && (
+                    {/* Custom audiobook settings with cascading dropdowns */}
+                    {name === "audiobook" && scalarSettings.length > 0 ? (
+                        <AudiobookSettingsPanel
+                            settings={localSettings}
+                            onSave={onSave}
+                        />
+                    ) : scalarSettings.length > 0 && (
                         <>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                                 {t("ui.settings.expand_settings", "Einstellungen")}
                             </h4>
                             <div style={styles.settingsGrid}>
-                                {scalarSettings.map(([key, value]) => (
-                                    <div key={key} className="field">
-                                        <label className="label">{key}</label>
-                                        <input
-                                            className="input"
-                                            value={String(value)}
-                                            onChange={(e) => {
-                                                const v = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value);
-                                                updateSetting(key, v as string | number);
-                                            }}
-                                        />
-                                    </div>
-                                ))}
+                                {scalarSettings.map(([key, value]) => {
+                                    const label = t(`ui.audiobook.${key}`, key);
+                                    return (
+                                        <div key={key} className="field">
+                                            <label className="label">{label}</label>
+                                            <input
+                                                className="input"
+                                                value={String(value)}
+                                                onChange={(e) => {
+                                                    const v = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value);
+                                                    updateSetting(key, v as string | number);
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                             <button className="btn btn-primary btn-sm mt-1" onClick={() => onSave(localSettings)}>
                                 <Save size={12}/> {t("ui.common.save", "Speichern")}
