@@ -4,6 +4,7 @@
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
+       generate-trial-key \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -150,6 +151,14 @@ test-e2e: ## Run Playwright e2e tests (starts servers automatically)
 
 test-e2e-ui: ## Run e2e tests with Playwright UI
 	cd e2e && npx playwright test --ui
+
+# --- License ---
+
+generate-trial-key: ## Generate a 30-day trial key for all premium plugins
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
+		"from app.licensing import LicenseValidator, create_trial_key; \
+		v = LicenseValidator('pluginforge-default-key'); \
+		print(create_trial_key(v, 30))"
 
 # --- Production (Docker) ---
 

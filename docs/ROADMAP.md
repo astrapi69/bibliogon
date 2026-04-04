@@ -34,9 +34,10 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-03: Voice-Settings pro Buch
 - [x] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
 - [x] P-05: Vorhoer-Funktion im Editor
+- [x] L-01: Freemium-Lizenzsystem (license_tier core/premium, Trial-Keys, Settings UI)
+- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
-- [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
 - [ ] P-12: Benutzerregistrierung und Authentifizierung
 - [ ] P-13: PostgreSQL statt SQLite
 

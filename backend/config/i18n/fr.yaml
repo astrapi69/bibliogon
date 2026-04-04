@@ -215,6 +215,8 @@ ui:
     trash_auto_delete: "Suppression automatique de la corbeille apres (jours)"
     trash_disabled: "Desactive (supprimer manuellement)"
     trash_info: "Les livres dans la corbeille seront automatiquement supprimes apres {days} jours"
+    license_required: "Licence requise"
+    enter_license: "Entrer la licence"
   get_started:
     title: "Premiers pas"
     progress: "Etape {current} sur {total}"

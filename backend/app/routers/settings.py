@@ -11,12 +11,16 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 _base_dir: Path = Path(".")
 _manager: Any = None
+_license_store: Any = None
+_license_validator: Any = None
 
 
-def configure(base_dir: Path, manager: Any) -> None:
-    global _base_dir, _manager
+def configure(base_dir: Path, manager: Any, license_store: Any = None, license_validator: Any = None) -> None:
+    global _base_dir, _manager, _license_store, _license_validator
     _base_dir = base_dir
     _manager = manager
+    _license_store = license_store
+    _license_validator = license_validator
 
 
 def _active_plugin_names() -> set[str]:
@@ -106,11 +110,41 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     if plugins_dir.exists():
         for yaml_file in sorted(plugins_dir.glob("*.yaml")):
             name = yaml_file.stem
+            # Read license tier from plugin config
+            license_tier = "core"
+            try:
+                with open(yaml_file, encoding="utf-8") as f:
+                    cfg = yaml.safe_load(f) or {}
+                plugin_meta = cfg.get("plugin", {})
+                license_type = plugin_meta.get("license", "MIT")
+                if license_type not in ("MIT", "free", "Free"):
+                    license_tier = "premium"
+            except Exception:
+                pass
+            # Check if plugin has a valid license
+            has_license = license_tier == "core"
+            if license_tier == "premium" and _license_store:
+                key = _license_store.get(name) or _license_store.get("*")
+                if key and _license_validator:
+                    try:
+                        _license_validator.validate_license(key, name)
+                        has_license = True
+                    except Exception:
+                        # Try wildcard
+                        wildcard = _license_store.get("*")
+                        if wildcard:
+                            try:
+                                _license_validator.validate_license(wildcard, "*")
+                                has_license = True
+                            except Exception:
+                                pass
             result.append({
                 "name": name,
                 "has_config": True,
                 "enabled": name in enabled and name not in disabled,
                 "loaded": name in active,
+                "license_tier": license_tier,
+                "has_license": has_license,
             })
 
     return result

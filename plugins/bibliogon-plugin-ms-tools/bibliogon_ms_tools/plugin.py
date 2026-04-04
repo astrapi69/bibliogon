@@ -9,6 +9,7 @@ class MsToolsPlugin(BasePlugin):
     name = "ms-tools"
     version = "1.0.0"
     api_version = "1"
+    license_tier = "core"
 
     def activate(self) -> None:
         """Initialize plugin with config."""

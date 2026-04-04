@@ -441,9 +441,18 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     // Inactive plugins: only show plugins that are NOT active core plugins
     // and NOT unimplemented premium plugins (no entry point loaded)
     const [loadedPlugins, setLoadedPlugins] = useState<Set<string>>(new Set());
+    const [pluginLicenseInfo, setPluginLicenseInfo] = useState<Record<string, {tier: string; hasLicense: boolean}>>({});
     useEffect(() => {
         api.settings.discoveredPlugins().then((discovered) => {
             setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
+            const info: Record<string, {tier: string; hasLicense: boolean}> = {};
+            for (const p of discovered) {
+                info[p.name] = {
+                    tier: (p as Record<string, unknown>).license_tier as string || "core",
+                    hasLicense: (p as Record<string, unknown>).has_license as boolean ?? true,
+                };
+            }
+            setPluginLicenseInfo(info);
         }).catch(() => {});
     }, [configs]);
 
@@ -537,6 +546,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         description={description}
                         version={(pluginMeta.version as string) || ""}
                         license={(pluginMeta.license as string) || "MIT"}
+                        hasLicense={pluginLicenseInfo[name]?.hasLicense ?? true}
                         enabled={true}
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
@@ -558,12 +568,13 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted"]);
 
-function PluginCard({name, displayName, description, version, license, enabled, settings, onSave, onToggle, onRemove}: {
+function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
     description: string;
     version: string;
     license: string;
+    hasLicense: boolean;
     enabled: boolean;
     settings: Record<string, unknown>;
     onSave: (settings: Record<string, unknown>) => void;
@@ -637,6 +648,15 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                                 {t("ui.settings.standard", "Standard")}
                             </span>
                         )}
+                        {isPremium && !hasLicense && (
+                            <span style={{
+                                ...styles.badge,
+                                background: "rgba(239,68,68,0.12)",
+                                color: "#ef4444",
+                            }}>
+                                {t("ui.settings.license_required", "Lizenz erforderlich")}
+                            </span>
+                        )}
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
                 </div>
@@ -646,7 +666,18 @@ function PluginCard({name, displayName, description, version, license, enabled, 
                             {expanded ? t("ui.settings.collapse", "Zuklappen") : t("ui.settings.expand_settings", "Einstellungen")}
                         </button>
                     )}
-                    {!isCore && (
+                    {!isCore && isPremium && !hasLicense ? (
+                        <button
+                            className="btn btn-sm"
+                            style={{background: "rgba(168,85,247,0.15)", color: "#7c3aed", border: "1px solid rgba(168,85,247,0.3)"}}
+                            onClick={() => {
+                                // Navigate to license tab
+                                window.location.hash = "#licenses";
+                            }}
+                        >
+                            <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
+                        </button>
+                    ) : !isCore && (
                         <button
                             className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
                             onClick={() => onToggle(!enabled)}

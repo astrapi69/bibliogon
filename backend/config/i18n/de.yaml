@@ -232,6 +232,8 @@ ui:
     trash_auto_delete: "Papierkorb auto-loeschen nach (Tage)"
     trash_disabled: "Deaktiviert (manuell loeschen)"
     trash_info: "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht"
+    license_required: "Lizenz erforderlich"
+    enter_license: "Lizenz eingeben"
   get_started:
     title: "Erste Schritte"
     progress: "Schritt {current} von {total}"

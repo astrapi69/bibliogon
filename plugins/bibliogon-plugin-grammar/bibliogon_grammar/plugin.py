@@ -11,6 +11,7 @@ class GrammarPlugin(BasePlugin):
     name = "grammar"
     version = "1.0.0"
     api_version = "1"
+    license_tier = "premium"
 
     _client: LanguageToolClient | None = None
 

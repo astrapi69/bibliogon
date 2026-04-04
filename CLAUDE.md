@@ -411,17 +411,19 @@ ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix
 
 ## Plugins
 
-| Plugin             | Lizenz      | Abhaengigkeit | Beschreibung                        |
-| ------------------ | ----------- | ------------- | ----------------------------------- |
-| plugin-export      | MIT         | -             | EPUB, PDF, write-book-template ZIP  |
-| plugin-kinderbuch  | Proprietary | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
-| plugin-kdp         | Proprietary | plugin-export | KDP-Metadaten, Cover-Validierung    |
-| plugin-grammar     | Proprietary | -             | LanguageTool Grammatikpruefung      |
-| plugin-help        | MIT         | -             | In-App Hilfe, Shortcuts, FAQ        |
-| plugin-getstarted  | MIT         | -             | Onboarding, Beispielbuch            |
-| plugin-audiobook   | Proprietary | plugin-export | TTS Audiobook-Generierung (geplant) |
-| plugin-translation | Proprietary | -             | DeepL/LLM Uebersetzung (geplant)    |
-| plugin-ms-tools    | MIT         | -             | Stil-Checks, Sanitization, Metriken |
+| Plugin             | Lizenz      | Tier    | Abhaengigkeit | Beschreibung                        |
+| ------------------ | ----------- | ------- | ------------- | ----------------------------------- |
+| plugin-export      | MIT         | core    | -             | EPUB, PDF, write-book-template ZIP  |
+| plugin-kinderbuch  | Proprietary | premium | plugin-export | Bild-pro-Seite Layout, 4 Templates  |
+| plugin-kdp         | Proprietary | premium | plugin-export | KDP-Metadaten, Cover-Validierung    |
+| plugin-grammar     | Proprietary | premium | -             | LanguageTool Grammatikpruefung      |
+| plugin-help        | MIT         | core    | -             | In-App Hilfe, Shortcuts, FAQ        |
+| plugin-getstarted  | MIT         | core    | -             | Onboarding, Beispielbuch            |
+| plugin-audiobook   | Proprietary | premium | plugin-export | TTS Audiobook-Generierung           |
+| plugin-translation | Proprietary | premium | -             | DeepL/LLM Uebersetzung             |
+| plugin-ms-tools    | MIT         | core    | -             | Stil-Checks, Sanitization, Metriken |
+
+Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) oder `"premium"` (HMAC-SHA256 Lizenzschluessel). Trial-Keys (plugin=`"*"`) schalten alle Premium-Plugins fuer 30 Tage frei: `make generate-trial-key`.
 
 ## Erledigte Phasen
 

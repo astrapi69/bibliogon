@@ -93,6 +93,22 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - BIBLIOGON_SECRET_KEY wird von start.sh automatisch generiert wenn nicht gesetzt.
 - Non-Root User im Dockerfile.
 
+## Lizenzierung
+
+### license_tier Attribut
+- PluginForge's BasePlugin ist ein externes PyPI-Paket - NICHT modifizieren. Stattdessen `license_tier` als Klassen-Attribut direkt auf den Plugin-Klassen setzen.
+- `_check_license` in main.py liest `getattr(plugin, "license_tier", "core")` - Default ist "core" (abwaertskompatibel).
+
+### Trial Keys
+- Trial-Keys nutzen `plugin="*"` als Wildcard im Payload. `LicensePayload.matches_plugin()` muss `"*"` explizit als Match-All behandeln.
+- Trial-Keys werden unter Key `"*"` in `licenses.json` gespeichert, nicht unter dem Plugin-Namen.
+- Ablaufdatum: Immer `date.today()` (UTC) nutzen, nicht `datetime.now()`. `date.fromisoformat()` erwartet "YYYY-MM-DD" Format.
+- `_check_license` muss sowohl per-Plugin-Key als auch Wildcard-Key pruefen (Fallback-Kette).
+
+### Settings UI
+- `discoveredPlugins` API liefert `license_tier` und `has_license` pro Plugin. Die Werte werden aus der Plugin-YAML (license-Feld) und dem LicenseStore/Validator abgeleitet.
+- Premium-Plugins ohne Lizenz: "Lizenz eingeben" Button statt Toggle. Kein Enable/Disable moeglich.
+
 ## Allgemeine Patterns
 
 - Vor Custom-Implementierungen: Pruefen ob eine Library/Extension das schon loest.

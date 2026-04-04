@@ -215,6 +215,8 @@ ui:
     trash_auto_delete: "Αυτόματη διαγραφή κάδου μετά από (ημέρες)"
     trash_disabled: "Απενεργοποιημένο (χειροκίνητη διαγραφή)"
     trash_info: "Τα βιβλία στον κάδο θα διαγραφούν αυτόματα μετά από {days} ημέρες"
+    license_required: "Απαιτείται άδεια"
+    enter_license: "Εισαγωγή άδειας"
   get_started:
     title: "Ξεκινήστε"
     progress: "Βήμα {current} από {total}"

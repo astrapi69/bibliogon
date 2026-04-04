@@ -215,6 +215,8 @@ ui:
     trash_auto_delete: "Auto-eliminar papelera despues de (dias)"
     trash_disabled: "Desactivado (eliminar manualmente)"
     trash_info: "Los libros en la papelera se eliminaran automaticamente despues de {days} dias"
+    license_required: "Licencia requerida"
+    enter_license: "Introducir licencia"
   get_started:
     title: "Primeros pasos"
     progress: "Paso {current} de {total}"

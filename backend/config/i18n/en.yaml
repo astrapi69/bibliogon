@@ -232,6 +232,8 @@ ui:
     trash_auto_delete: "Auto-delete trash after (days)"
     trash_disabled: "Disabled (delete manually)"
     trash_info: "Books in trash will be automatically deleted after {days} days"
+    license_required: "License required"
+    enter_license: "Enter license"
   get_started:
     title: "Get Started"
     progress: "Step {current} of {total}"

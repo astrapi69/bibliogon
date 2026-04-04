@@ -662,6 +662,37 @@ Der Schluessel enthaelt (Base64-kodiert + signiert):
 
 Validierung passiert lokal. Kein Lizenzserver noetig, kein Internet erforderlich. Lizenzen werden in `config/licenses.json` gespeichert und ueber die Settings-UI verwaltet.
 
+#### License Tiers
+
+Jedes Plugin hat ein `license_tier` Klassen-Attribut:
+
+| Tier | Beschreibung | Lizenzpruefung |
+|------|-------------|----------------|
+| `core` | Kostenlos, funktioniert immer | Keine |
+| `premium` | Braucht gueltigen Lizenzschluessel | HMAC-SHA256 |
+
+| Plugin | Tier |
+|--------|------|
+| export | core |
+| help | core |
+| getstarted | core |
+| ms-tools | core |
+| grammar | premium |
+| kinderbuch | premium |
+| kdp | premium |
+| audiobook | premium |
+| translation | premium |
+
+#### Trial Keys
+
+Trial-Keys schalten alle Premium-Plugins fuer eine begrenzte Zeit frei:
+
+- Plugin-Name im Payload ist `"*"` (Wildcard, matcht alle Plugins)
+- Standard-Laufzeit: 30 Tage
+- Generierung: `make generate-trial-key`
+- Speicherung: `licenses.json` unter Key `"*"`
+- Format: `BIBLIOGON-*-v1-<base64 payload>.<base64 signature>`
+
 ---
 
 ## 5.4 Plugin-Installation (ZIP)

@@ -65,6 +65,9 @@ class LicensePayload:
         return date.today() > expiry
 
     def matches_plugin(self, plugin_name: str) -> bool:
+        # Wildcard "*" matches all plugins (used for trial keys)
+        if self.plugin == "*":
+            return True
         return self.plugin.lower() == plugin_name.lower()
 
     def matches_machine(self) -> bool:
@@ -223,3 +226,14 @@ class LicenseStore:
             json.dumps(self._licenses, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+
+def create_trial_key(validator: LicenseValidator, days: int = 30) -> str:
+    """Create a trial license key that unlocks all premium plugins.
+
+    The key uses plugin="*" (wildcard) and expires after the given days.
+    """
+    from datetime import timedelta
+    expires = (date.today() + timedelta(days=days)).isoformat()
+    payload = LicensePayload(plugin="*", version="1", expires=expires)
+    return validator.create_license(payload)

@@ -44,19 +44,38 @@ license_store = LicenseStore(BASE_DIR / _license_file)
 
 
 def _check_license(plugin: BasePlugin, plugin_config: dict[str, Any]) -> bool:
-    """Pre-activate callback: check premium plugin licenses."""
-    license_type = plugin_config.get("plugin", {}).get("license", "MIT")
-    if license_type.upper() == "MIT" or license_type.lower() == "free":
+    """Pre-activate callback: check premium plugin licenses.
+
+    Core plugins (license_tier="core") always pass.
+    Premium plugins (license_tier="premium") need a valid license key.
+    Trial keys with plugin="*" unlock all premium plugins.
+    """
+    tier = getattr(plugin, "license_tier", "core")
+    if tier == "core":
         return True
 
     key = license_store.get(plugin.name)
+    # Also check for a wildcard trial key
     if not key:
+        key = license_store.get("*")
+    if not key:
+        logger.info("Premium plugin '%s' blocked: no license key", plugin.name)
         return False
 
     try:
-        license_validator.validate_license(key, plugin.name)
+        # Trial keys use plugin="*", validate against "*" or plugin name
+        payload = license_validator.validate_license(key, plugin.name)
         return True
     except LicenseError:
+        # Try wildcard key validation if the per-plugin key failed
+        wildcard_key = license_store.get("*")
+        if wildcard_key and wildcard_key != key:
+            try:
+                license_validator.validate_license(wildcard_key, "*")
+                return True
+            except LicenseError:
+                pass
+        logger.info("Premium plugin '%s' blocked: invalid/expired license", plugin.name)
         return False
 
 
@@ -69,7 +88,7 @@ manager.register_hookspecs(BibliogonHookSpec)
 
 # Configure routes with manager and licensing
 licenses.configure(manager, license_validator, license_store)
-settings.configure(BASE_DIR, manager)
+settings.configure(BASE_DIR, manager, license_store=license_store, license_validator=license_validator)
 plugin_install.configure(BASE_DIR, manager)
 
 
