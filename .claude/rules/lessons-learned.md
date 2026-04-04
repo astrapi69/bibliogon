@@ -18,6 +18,12 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Aktuell 15 offizielle + 1 Community Extension installiert (siehe CLAUDE.md).
 - Vor Custom-Code IMMER pruefen ob eine offizielle TipTap-Extension existiert.
 
+### Peer Dependencies
+- Community Extensions (@pentestpad/tiptap-extension-figure, tiptap-footnotes) koennen unbemerkt auf @tiptap/core v3 upgraden. Immer mit --save-exact pinnen.
+- @pentestpad/tiptap-extension-figure: Pin auf 1.0.12 (letzte v2-kompatible), 1.1.0 erfordert @tiptap/core ^3.19.
+- tiptap-footnotes: Pin auf 2.0.4 (letzte v2-kompatible), 3.0.x erfordert @tiptap/core ^3.0.
+- npm ci in CI schlaegt fehl bei Peer-Dep-Konflikten. NICHT --legacy-peer-deps als Loesung verwenden.
+
 ### CSS
 - TipTap rendert innerhalb von .ProseMirror. CSS-Selektoren muessen das beruecksichtigen.
 - Spezifitaet: `.ProseMirror p.classname` statt `.tiptap-editor classname`.
