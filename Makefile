@@ -3,6 +3,7 @@
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
+       check-types check-types-backend check-types-frontend \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -117,6 +118,20 @@ mutmut-results: ## Show mutation testing results
 	@echo "=== Backend ===" && cd backend && poetry run mutmut results 2>/dev/null || true
 	@echo "=== Export ===" && cd plugins/bibliogon-plugin-export && poetry run mutmut results 2>/dev/null || true
 	@echo "=== MS-Tools ===" && cd plugins/bibliogon-plugin-ms-tools && poetry run mutmut results 2>/dev/null || true
+
+# --- Type Checking ---
+
+check-types: check-types-backend check-types-frontend ## Run all type checks
+
+check-types-backend: ## Run mypy on backend
+	@echo ""
+	@echo "=== mypy Backend ==="
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run mypy app/
+
+check-types-frontend: ## Run tsc --noEmit on frontend
+	@echo ""
+	@echo "=== TypeScript Frontend ==="
+	cd frontend && npx tsc --noEmit
 
 # --- E2E Tests ---
 

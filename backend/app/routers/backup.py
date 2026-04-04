@@ -697,9 +697,7 @@ def _import_with_section_order(
             imported_files.add(stem)
 
             # Determine chapter type from filename
-            chapter_type = _ALL_SPECIAL_MAP.get(stem)
-            if not chapter_type:
-                chapter_type = ChapterType.CHAPTER
+            chapter_type = _ALL_SPECIAL_MAP.get(stem, ChapterType.CHAPTER)
 
             content = md_path.read_text(encoding="utf-8")
             title = _extract_title(content, stem)
@@ -725,9 +723,10 @@ def _import_with_section_order(
             stem = md_file.stem.lower()
             if stem.endswith("-print") or stem in imported_files:
                 continue
-            chapter_type = type_map.get(stem)
-            if not chapter_type:
+            chapter_type_or_none = type_map.get(stem)
+            if not chapter_type_or_none:
                 continue
+            chapter_type = chapter_type_or_none
             imported_files.add(stem)
             content = md_file.read_text(encoding="utf-8")
             title = _extract_title(content, stem)
@@ -764,13 +763,13 @@ def _rewrite_image_paths(db: Session, book_id: str) -> None:
         if "<img" not in ch.content:
             continue
 
-        def replace_src(match: re.Match) -> str:
-            src = match.group(1)
+        def replace_src(match: re.Match[str]) -> str:
+            src: str = match.group(1)
             # Extract just the filename from any path
             filename = src.rsplit("/", 1)[-1] if "/" in src else src
             if filename in known_filenames:
                 return f'src="{api_base}/{filename}"'
-            return match.group(0)
+            return str(match.group(0))
 
         new_content = re.sub(r'src="([^"]+)"', replace_src, ch.content)
         if new_content != ch.content:

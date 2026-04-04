@@ -16,11 +16,12 @@ class BibliogonHookSpec:
     """Hook specifications for the Bibliogon application."""
 
     @hookspec
-    def export_formats(self) -> list[dict[str, Any]]:
+    def export_formats(self) -> list[dict[str, Any]]:  # type: ignore[empty-body]
         """Return list of supported export formats.
 
         Each format dict should have: id, label, extension, media_type.
         """
+        ...
 
     @hookspec(firstresult=True)
     def export_execute(self, book: dict[str, Any], fmt: str, options: dict[str, Any]) -> Path | None:
@@ -34,6 +35,7 @@ class BibliogonHookSpec:
         Returns:
             Path to the generated output file.
         """
+        ...
 
     @hookspec
     def chapter_pre_save(self, content: str, chapter_id: str) -> str | None:
@@ -46,3 +48,4 @@ class BibliogonHookSpec:
         Returns:
             Transformed content, or None to keep original.
         """
+        ...

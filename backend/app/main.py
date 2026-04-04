@@ -131,17 +131,17 @@ def get_plugin_manifests() -> dict[str, Any]:
 
 @app.get("/api/plugins/health")
 def get_plugin_health() -> dict[str, Any]:
-    return manager.health_check()
+    return dict(manager.health_check())
 
 
 @app.get("/api/plugins/errors")
 def get_plugin_errors() -> dict[str, str]:
-    return manager.get_load_errors()
+    return dict(manager.get_load_errors())
 
 
 @app.get("/api/i18n/{lang}")
 def get_i18n(lang: str) -> dict[str, Any]:
-    return load_i18n(BASE_DIR / "config", lang)
+    return dict(load_i18n(BASE_DIR / "config", lang))
 
 
 @app.get("/api/health")

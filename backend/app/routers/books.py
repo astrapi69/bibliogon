@@ -23,7 +23,7 @@ def _is_permanent_delete() -> bool:
     try:
         with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        return config.get("app", {}).get("delete_permanently", False)
+        return bool(config.get("app", {}).get("delete_permanently", False))
     except Exception:
         return False
 

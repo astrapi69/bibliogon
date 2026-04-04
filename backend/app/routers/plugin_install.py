@@ -260,7 +260,7 @@ def uninstall_plugin(plugin_name: str) -> dict[str, str]:
 @router.get("/installed")
 def list_installed_plugins() -> list[dict[str, Any]]:
     """List all plugins installed via ZIP upload."""
-    result = []
+    result: list[dict[str, Any]] = []
     if not _installed_dir.exists():
         return result
 
