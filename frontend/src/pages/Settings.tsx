@@ -664,6 +664,9 @@ function AudiobookSettingsPanel({settings, onSave}: {
 
     const engineOptions = [
         {value: "edge-tts", label: "Microsoft Edge TTS"},
+        {value: "google-tts", label: "Google TTS"},
+        {value: "pyttsx3", label: "pyttsx3 (Offline)"},
+        {value: "elevenlabs", label: "ElevenLabs"},
     ];
 
     const languageOptions = [
@@ -706,7 +709,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
                     <RadixSelect value={language} onValueChange={(v) => { setLanguage(v); setVoice(""); }} options={languageOptions} />
                 </div>
                 <div className="field">
-                    <label className="label">{t("ui.audiobook.default_voice", "Standardstimme")}</label>
+                    <label className="label">{t("ui.audiobook.default_voice", "Stimme")}</label>
                     {loadingVoices ? (
                         <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
                             {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}
