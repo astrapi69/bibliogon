@@ -12,7 +12,7 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
-- [ ] K-01: KDP-Plugin fertig implementieren und deployen
+- [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [ ] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
 - [ ] A-02: AI-Metadata-Flag im EPUB-Export (ai-assisted)
@@ -151,7 +151,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
 
 ## KDP Publishing Workflow
-- [ ] K-01: KDP-Plugin fertig implementieren und deployen
+- [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [ ] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert

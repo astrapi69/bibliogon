@@ -1,0 +1,43 @@
+plugin:
+  name: kdp
+  license_tier: premium
+  display_name:
+    de: "Amazon KDP"
+    en: "Amazon KDP"
+    es: "Amazon KDP"
+    fr: "Amazon KDP"
+    el: "Amazon KDP"
+  description:
+    de: "KDP-Metadaten, Cover-Validierung und Publishing-Workflow"
+    en: "KDP metadata, cover validation, and publishing workflow"
+    es: "Metadatos KDP, validacion de portada y flujo de publicacion"
+    fr: "Metadonnees KDP, validation de couverture et flux de publication"
+    el: "Μεταδεδομένα KDP, επικύρωση εξωφύλλου και ροή δημοσίευσης"
+  version: "1.0.0"
+  license: "Proprietary"
+  depends_on:
+    - export
+  api_version: "1"
+
+settings:
+  cover:
+    min_width: 625
+    min_height: 1000
+    max_width: 10000
+    max_height: 10000
+    min_dpi: 300
+    aspect_ratio_min: 1.5
+    aspect_ratio_max: 1.8
+    max_file_size_mb: 50
+    allowed_formats:
+      - jpg
+      - jpeg
+      - tiff
+      - png
+  manuscript:
+    min_pages: 24
+    max_pages: 828
+    supported_formats:
+      - epub
+      - pdf
+      - docx

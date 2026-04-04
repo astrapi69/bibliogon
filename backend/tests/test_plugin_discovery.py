@@ -18,21 +18,14 @@ def test_discovered_plugins_returns_core_plugins():
     assert "ms-tools" in names
 
 
-def test_discovered_plugins_excludes_unimplemented():
-    """Plugins without YAML config (kdp) should NOT appear."""
-    resp = client.get("/api/settings/plugins/discovered")
-    assert resp.status_code == 200
-    names = {p["name"] for p in resp.json()}
-    assert "kdp" not in names
-
-
 def test_discovered_plugins_includes_premium():
-    """Premium plugins (audiobook, translation, kinderbuch) should appear."""
+    """Premium plugins (audiobook, translation, kinderbuch, kdp) should appear."""
     resp = client.get("/api/settings/plugins/discovered")
     assert resp.status_code == 200
     names = {p["name"] for p in resp.json()}
     assert "audiobook" in names
     assert "kinderbuch" in names
+    assert "kdp" in names
 
 
 def test_core_plugins_have_core_tier():
@@ -55,9 +48,9 @@ def test_ms_tools_is_core_not_premium():
     assert ms_tools["has_license"] is True
 
 
-def test_plugin_configs_excludes_unimplemented():
-    """GET /settings/plugins should not return kdp config (no YAML)."""
+def test_plugin_configs_includes_kdp():
+    """GET /settings/plugins should return kdp config."""
     resp = client.get("/api/settings/plugins")
     assert resp.status_code == 200
     names = set(resp.json().keys())
-    assert "kdp" not in names
+    assert "kdp" in names
