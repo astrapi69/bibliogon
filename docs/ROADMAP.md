@@ -21,6 +21,12 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-02: Mutation Testing mit mutmut einrichten
 - [x] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
+- [x] Q-04: API-Client Unit Tests (Vitest)
+- [ ] Q-05: mypy Type-Checking fuer Python Backend
+- [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
+- [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
+- [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
+
 
 ## UI/UX
 
@@ -104,7 +110,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [x] Q-02: Mutation Testing mit mutmut einrichten
 - [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
-- [ ] Q-04: API-Client Unit Tests (Vitest)
+- [x] Q-04: API-Client Unit Tests (Vitest)
 - [ ] Q-05: mypy Type-Checking fuer Python Backend
 - [x] Q-06: CI-Pipeline (GitHub Actions)
 
