@@ -14,9 +14,15 @@ fastapi = "^0.115.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
+mutmut = "^3.5.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 ms-tools = "bibliogon_ms_tools.plugin:MsToolsPlugin"
+
+[tool.mutmut]
+paths_to_mutate = ["bibliogon_ms_tools/"]
+tests_dir = ["tests/"]
+do_not_mutate = ["bibliogon_ms_tools/plugin.py", "bibliogon_ms_tools/routes.py"]
 
 [build-system]
 requires = ["poetry-core"]

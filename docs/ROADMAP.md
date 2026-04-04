@@ -18,7 +18,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [x] I-01: Sprachumschaltung live ohne Reload
 - [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
-- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [x] Q-02: Mutation Testing mit mutmut einrichten
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
 
@@ -102,7 +102,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] 21 Frontend-Tests (Vitest)
 - [x] 52 E2E-Tests (Playwright)
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
-- [ ] Q-02: Mutation Testing mit mutmut einrichten
+- [x] Q-02: Mutation Testing mit mutmut einrichten
 - [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] Q-04: API-Client Unit Tests (Vitest)
 - [ ] Q-05: mypy Type-Checking fuer Python Backend

@@ -2,6 +2,7 @@
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools \
+       mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -94,6 +95,28 @@ test-plugin-ms-tools: ## Run manuscript tools plugin tests
 	@echo ""
 	@echo "=== Manuscript Tools Plugin Tests ==="
 	cd plugins/bibliogon-plugin-ms-tools && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+# --- Mutation Testing ---
+
+mutmut-backend: ## Run mutation testing on backend
+	@echo ""
+	@echo "=== Mutation Testing: Backend ==="
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run mutmut run
+
+mutmut-export: ## Run mutation testing on export plugin
+	@echo ""
+	@echo "=== Mutation Testing: Export Plugin ==="
+	cd plugins/bibliogon-plugin-export && poetry env use python3.12 -q 2>/dev/null; poetry run mutmut run
+
+mutmut-ms-tools: ## Run mutation testing on ms-tools plugin
+	@echo ""
+	@echo "=== Mutation Testing: MS-Tools Plugin ==="
+	cd plugins/bibliogon-plugin-ms-tools && poetry env use python3.12 -q 2>/dev/null; poetry run mutmut run
+
+mutmut-results: ## Show mutation testing results
+	@echo "=== Backend ===" && cd backend && poetry run mutmut results 2>/dev/null || true
+	@echo "=== Export ===" && cd plugins/bibliogon-plugin-export && poetry run mutmut results 2>/dev/null || true
+	@echo "=== MS-Tools ===" && cd plugins/bibliogon-plugin-ms-tools && poetry run mutmut results 2>/dev/null || true
 
 # --- E2E Tests ---
 

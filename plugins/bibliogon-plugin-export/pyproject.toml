@@ -16,9 +16,15 @@ pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
+mutmut = "^3.5.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 export = "bibliogon_export.plugin:ExportPlugin"
+
+[tool.mutmut]
+paths_to_mutate = ["bibliogon_export/"]
+tests_dir = ["tests/"]
+do_not_mutate = ["bibliogon_export/plugin.py", "bibliogon_export/routes.py"]
 
 [build-system]
 requires = ["poetry-core"]

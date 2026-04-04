@@ -6,6 +6,10 @@ dist/
 .venv/
 venv/
 
+# Mutation testing
+mutants/
+mutmut-stats.json
+
 # Environment
 .env
 
