@@ -279,14 +279,6 @@ function AppSettings({config, onSave, saving}: {
                     />
                 </div>
                 <div className="field">
-                    <label className="label">{t("ui.settings.app_name", "App-Name")}</label>
-                    <input className="input" value={uiTitle} onChange={(e) => setUiTitle(e.target.value)}/>
-                </div>
-                <div className="field">
-                    <label className="label">{t("ui.settings.description", "Beschreibung")}</label>
-                    <input className="input" value={uiSubtitle} onChange={(e) => setUiSubtitle(e.target.value)}/>
-                </div>
-                <div className="field">
                     <label className="label">{t("ui.settings.theme", "Theme")}</label>
                     <RadixSelect
                         value={theme}
@@ -378,6 +370,15 @@ function AppSettings({config, onSave, saving}: {
                         <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 16}}>
                             {t("ui.settings.white_label_desc", "Passe Bibliogon als eigene App an. Aendere den Namen, entferne Standard-Plugins und erstelle deine eigene Autoren-Plattform.")}
                         </p>
+
+                        <div className="field" style={{marginBottom: 12}}>
+                            <label className="label">{t("ui.settings.app_name", "App-Name")}</label>
+                            <input className="input" value={uiTitle} onChange={(e) => setUiTitle(e.target.value)}/>
+                        </div>
+                        <div className="field" style={{marginBottom: 16}}>
+                            <label className="label">{t("ui.settings.description", "Beschreibung")}</label>
+                            <input className="input" value={uiSubtitle} onChange={(e) => setUiSubtitle(e.target.value)}/>
+                        </div>
 
                         <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8}}>
                             {t("ui.settings.core_plugins", "Standard-Plugins")}
