@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from .cover_validator import CoverValidationResult, generate_kdp_metadata, validate_cover
+from .metadata_checker import check_metadata_completeness
 
 router = APIRouter(prefix="/kdp", tags=["kdp"])
 
@@ -90,3 +91,30 @@ def list_categories() -> list[str]:
         "Science Fiction & Fantasy",
         "Self-Help",
     ]
+
+
+class CheckMetadataRequest(BaseModel):
+    title: str = ""
+    subtitle: str | None = None
+    author: str = ""
+    description: str | None = None
+    html_description: str | None = None
+    language: str = ""
+    keywords: str | None = None
+    cover_image: str | None = None
+    isbn_ebook: str | None = None
+    isbn_paperback: str | None = None
+    publisher: str | None = None
+    backpage_description: str | None = None
+    chapters: list[dict] = []
+
+
+@router.post("/check-metadata")
+def check_metadata(request: CheckMetadataRequest) -> dict[str, Any]:
+    """Check if book metadata is complete for KDP publishing.
+
+    Returns completeness status with errors (blocks publishing)
+    and warnings (recommended improvements).
+    """
+    result = check_metadata_completeness(request.model_dump())
+    return result.to_dict()
