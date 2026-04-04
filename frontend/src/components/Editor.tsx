@@ -21,6 +21,7 @@ import TextStyle from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
 import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
+import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api} from "../api/client";
@@ -135,6 +136,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             Placeholder.configure({
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
+            OfficePaste,
         ],
         content: parseContent(content),
         onUpdate: ({editor}) => {

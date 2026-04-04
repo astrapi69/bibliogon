@@ -13,14 +13,14 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 - [x] Q-06: CI-Pipeline (GitHub Actions)
-- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
+- [x] T-03: Office-Paste (tiptap-extension-office-paste)
 - [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] I-01: Sprachumschaltung live ohne Reload
 - [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
-- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
+- [x] T-03: Office-Paste (tiptap-extension-office-paste)
 
 ## UI/UX
 
@@ -77,7 +77,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Markdown-Toggle mit Bild-Erhalt
 - [x] T-01: Fussnoten (tiptap-footnotes)
 - [x] T-02: Suchen und Ersetzen (@sereneinserenade/tiptap-search-and-replace)
-- [ ] T-03: Office-Paste (tiptap-extension-office-paste)
+- [x] T-03: Office-Paste (tiptap-extension-office-paste)
 - [x] T-04: Bild-Resize per Drag
 - [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [x] T-06: Lesezeit-Schaetzung pro Kapitel
