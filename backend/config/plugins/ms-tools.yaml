@@ -1,24 +1,22 @@
 plugin:
-  name: "ms-tools"
+  name: ms-tools
   display_name:
-    de: "Manuskript-Werkzeuge"
-    en: "Manuscript Tools"
-    es: "Herramientas de Manuscrito"
-    fr: "Outils de Manuscrit"
-    el: "Εργαλεία Χειρογράφου"
+    de: Manuskript-Werkzeuge
+    en: Manuscript Tools
+    es: Herramientas de Manuscrito
+    fr: Outils de Manuscrit
+    el: Εργαλεία Χειρογράφου
   description:
-    de: "Stilprüfung, Textbereinigung und Qualitätsanalyse für Manuskripte"
-    en: "Style checking, text sanitization, and quality analysis for manuscripts"
-    es: "Verificación de estilo, limpieza de texto y análisis de calidad para manuscritos"
-    fr: "Vérification de style, nettoyage de texte et analyse de qualité pour manuscrits"
-    el: "Έλεγχος στυλ, εκκαθάριση κειμένου και ανάλυση ποιότητας για χειρόγραφα"
-  version: "1.0.0"
-  license: "MIT"
+    de: Stilprüfung, Textbereinigung und Qualitätsanalyse für Manuskripte
+    en: Style checking, text sanitization, and quality analysis for manuscripts
+    es: Verificación de estilo, limpieza de texto y análisis de calidad para manuscritos
+    fr: Vérification de style, nettoyage de texte et analyse de qualité pour manuscrits
+    el: Έλεγχος στυλ, εκκαθάριση κειμένου και ανάλυση ποιότητας για χειρόγραφα
+  version: 1.0.0
+  license: MIT
   depends_on: []
-  api_version: "1"
-
+  api_version: '1'
 settings:
   max_sentence_length: 30
   languages:
-    - de
-    - en
+  - de

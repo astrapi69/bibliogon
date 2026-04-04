@@ -2,7 +2,7 @@ app:
   name: Bibliogon
   version: 0.10.0
   description: Open-source book authoring platform
-  default_language: de
+  default_language: en
   delete_permanently: false
   trash_auto_delete_enabled: true
   trash_auto_delete_days: 90
@@ -29,6 +29,7 @@ plugins:
   - getstarted
   - ms-tools
   - kinderbuch
+  - audiobook
   disabled: []
 ui:
   title: Bibliogon

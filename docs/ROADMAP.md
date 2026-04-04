@@ -142,3 +142,17 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [x] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
+
+## KDP Publishing Workflow
+- [ ] K-01: KDP-Plugin fertig implementieren und deployen
+- [ ] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
+- [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
+- [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
+
+## AI-Assistenz (spaeter, aufbauend auf Translation-Plugin)
+- [ ] A-01: Generische LLM-Plugin-Schnittstelle (Ollama/LMStudio)
+- [ ] A-02: AI-Metadata-Flag im EPUB-Export (ai-assisted)
+
+## Versionierung (leichtgewichtig, kein Git)
+- [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
+- [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
