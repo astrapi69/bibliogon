@@ -583,7 +583,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
             )}
 
             {Object.entries(configs)
-                .filter(([name]) => enabled.has(name) && !disabled.has(name))
+                .filter(([name]) => (enabled.has(name) && !disabled.has(name)) || (name in pluginLicenseInfo))
                 .map(([name, config]) => {
                 const pluginMeta = (config.plugin || {}) as Record<string, unknown>;
                 const settings = (config.settings || {}) as Record<string, unknown>;
@@ -599,7 +599,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         version={(pluginMeta.version as string) || ""}
                         license={(pluginMeta.license as string) || "MIT"}
                         hasLicense={pluginLicenseInfo[name]?.hasLicense ?? true}
-                        enabled={true}
+                        enabled={enabled.has(name) && !disabled.has(name)}
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}

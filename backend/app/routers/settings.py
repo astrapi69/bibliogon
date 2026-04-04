@@ -148,9 +148,14 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
                 with open(yaml_file, encoding="utf-8") as f:
                     cfg = yaml.safe_load(f) or {}
                 plugin_meta = cfg.get("plugin", {})
-                license_type = plugin_meta.get("license", "MIT")
-                if license_type not in ("MIT", "free", "Free"):
-                    license_tier = "premium"
+                # Check explicit license_tier first, then infer from license field
+                explicit_tier = plugin_meta.get("license_tier", "")
+                if explicit_tier in ("core", "premium"):
+                    license_tier = explicit_tier
+                else:
+                    license_type = plugin_meta.get("license", "MIT")
+                    if license_type not in ("MIT", "free", "Free"):
+                        license_tier = "premium"
             except Exception:
                 pass
             # Check if plugin has a valid license
