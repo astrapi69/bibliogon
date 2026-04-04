@@ -65,6 +65,48 @@ class TestValidateCover:
         assert len(format_errors) == 0
 
 
+class TestColorValidation:
+
+    def test_cmyk_mode_rejected(self, tmp_path: Path) -> None:
+        """CMYK mode should be rejected for ebook covers."""
+        try:
+            from PIL import Image
+            img = Image.new("CMYK", (1000, 1600))
+            cover = tmp_path / "cmyk_cover.jpg"
+            img.save(cover)
+            result = validate_cover(cover, DEFAULT_REQUIREMENTS)
+            assert any("Color mode" in e for e in result.errors)
+        except ImportError:
+            pass  # Skip if Pillow not installed
+
+    def test_rgb_mode_accepted(self, tmp_path: Path) -> None:
+        """RGB mode should be accepted."""
+        try:
+            from PIL import Image
+            img = Image.new("RGB", (1000, 1600))
+            cover = tmp_path / "rgb_cover.png"
+            img.save(cover)
+            result = validate_cover(cover, DEFAULT_REQUIREMENTS)
+            color_errors = [e for e in result.errors if "Color mode" in e]
+            assert len(color_errors) == 0
+            assert result.info.get("color_mode") == "RGB"
+        except ImportError:
+            pass
+
+    def test_no_icc_profile_warns(self, tmp_path: Path) -> None:
+        """Missing ICC profile should produce a warning."""
+        try:
+            from PIL import Image
+            img = Image.new("RGB", (1000, 1600))
+            cover = tmp_path / "no_profile.png"
+            img.save(cover)
+            result = validate_cover(cover, DEFAULT_REQUIREMENTS)
+            assert any("ICC" in w or "color profile" in w.lower() for w in result.warnings)
+            assert result.info.get("has_icc_profile") is False
+        except ImportError:
+            pass
+
+
 class TestGenerateKdpMetadata:
 
     def test_basic_metadata(self) -> None:

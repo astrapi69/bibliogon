@@ -13,9 +13,9 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
-- [ ] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
+- [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
-- [ ] A-02: AI-Metadata-Flag im EPUB-Export (ai-assisted)
+- [ ] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
 - [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
@@ -152,13 +152,28 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## KDP Publishing Workflow
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
-- [ ] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
+- [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
 
 ## AI-Assistenz (spaeter, aufbauend auf Translation-Plugin)
 - [ ] A-01: Generische LLM-Plugin-Schnittstelle (Ollama/LMStudio)
-- [ ] A-02: AI-Metadata-Flag im EPUB-Export (ai-assisted)
+- [ ] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
+UX:
+- Checkbox im Export-Dialog: "AI-assistierte Inhalte kennzeichnen"
+- Default: deaktiviert
+- Info-Text unter der Checkbox (dezent, kleinere Schrift):
+  "Einige Plattformen (z.B. Amazon KDP) verlangen die Offenlegung 
+  von KI-generierten oder KI-assistierten Inhalten. Diese Option 
+  fuegt einen entsprechenden Metadaten-Eintrag in den Export ein."
+- Kein Zwang, kein Warning-Toast, keine moralische Belehrung.
+  Der Autor weiss selbst was er tut.
+Technisch:
+- Wenn aktiviert: <meta name="ai-assisted" content="true"> im 
+  EPUB/HTML-Export, dc:description Ergaenzung im OPF
+- Wenn deaktiviert: Kein Eintrag, keine Spur davon im Export
+- Setting wird pro Buch gespeichert (manche Buecher nutzen AI, 
+  andere nicht)
 
 ## Versionierung (leichtgewichtig, kein Git)
 - [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups

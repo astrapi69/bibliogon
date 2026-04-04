@@ -34,6 +34,10 @@ settings:
       - jpeg
       - tiff
       - png
+    allowed_color_modes:
+      - RGB
+      - RGBA
+    recommended_profile: sRGB
   manuscript:
     min_pages: 24
     max_pages: 828

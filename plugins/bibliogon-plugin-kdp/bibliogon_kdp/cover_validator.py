@@ -110,6 +110,43 @@ def validate_cover(
                     f"DPI {actual_dpi} is below recommended minimum {min_dpi}"
                 )
 
+            # Check color mode (KDP requires RGB for ebook, CMYK for print)
+            color_mode = img.mode
+            result.info["color_mode"] = color_mode
+            allowed_modes = requirements.get("allowed_color_modes", ["RGB", "RGBA"])
+            if color_mode not in allowed_modes:
+                result.errors.append(
+                    f"Color mode '{color_mode}' not supported. "
+                    f"KDP requires: {', '.join(allowed_modes)}"
+                )
+
+            # Check color profile (ICC)
+            icc_profile = img.info.get("icc_profile")
+            if icc_profile:
+                result.info["has_icc_profile"] = True
+                # Try to identify the profile name
+                try:
+                    from io import BytesIO
+                    from PIL.ImageCms import ImageCmsProfile
+                    profile = ImageCmsProfile(BytesIO(icc_profile))
+                    profile_name = profile.profile.profile_description
+                    result.info["icc_profile_name"] = profile_name
+                    # KDP recommends sRGB
+                    recommended = requirements.get("recommended_profile", "sRGB")
+                    if recommended.lower() not in profile_name.lower():
+                        result.warnings.append(
+                            f"Color profile '{profile_name}' detected. "
+                            f"KDP recommends '{recommended}' for best results."
+                        )
+                except Exception:
+                    result.info["icc_profile_name"] = "unknown"
+            else:
+                result.info["has_icc_profile"] = False
+                result.warnings.append(
+                    "No ICC color profile embedded. "
+                    "KDP recommends sRGB for consistent color display."
+                )
+
     except ImportError:
         result.warnings.append("Pillow not installed, skipping dimension checks")
     except Exception as e:
