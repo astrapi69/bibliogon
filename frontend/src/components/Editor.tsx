@@ -50,6 +50,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
     const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [showAiPanel, setShowAiPanel] = useState(false);
+    const [aiSuggestion, setAiSuggestion] = useState("");
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom">("improve");
+    const [aiCustomPrompt, setAiCustomPrompt] = useState("");
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
         const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
@@ -316,6 +321,59 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
         setPreviewLoading(false);
     };
 
+    const handleAiSuggest = async () => {
+        if (!editor) return;
+        const {from, to} = editor.state.selection;
+        const selectedText = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
+        if (!selectedText.trim()) {
+            notify.info(t("ui.editor.ai_select_text", "Markiere zuerst einen Text fuer AI-Vorschlaege"));
+            return;
+        }
+        setShowAiPanel(true);
+        setAiLoading(true);
+        setAiSuggestion("");
+
+        const systemPrompts: Record<string, string> = {
+            improve: "You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.",
+            shorten: "You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.",
+            expand: "You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.",
+            custom: aiCustomPrompt || "Improve this text.",
+        };
+
+        try {
+            const res = await fetch("/api/ai/generate", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    prompt: selectedText,
+                    system: systemPrompts[aiPromptType],
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "AI request failed"}));
+                notify.error(err.detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
+                setAiSuggestion("");
+            } else {
+                const data = await res.json();
+                setAiSuggestion(data.content || "");
+            }
+        } catch {
+            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+        }
+        setAiLoading(false);
+    };
+
+    const handleAiApply = () => {
+        if (!editor || !aiSuggestion) return;
+        const {from, to} = editor.state.selection;
+        if (from !== to) {
+            editor.chain().focus().deleteRange({from, to}).insertContentAt(from, aiSuggestion).run();
+            notify.success(t("ui.editor.ai_applied", "AI-Vorschlag uebernommen"));
+        }
+        setShowAiPanel(false);
+        setAiSuggestion("");
+    };
+
     const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
     return (
@@ -331,7 +389,67 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 onToggleSpellcheck={handleToggleSpellcheck}
                 onPreviewAudio={handlePreviewAudio}
                 previewLoading={previewLoading}
+                aiPanelActive={showAiPanel}
+                onToggleAi={() => setShowAiPanel(!showAiPanel)}
             />
+
+            {/* AI Assistant Panel */}
+            {showAiPanel && !markdownMode && (
+                <div style={styles.aiPanel}>
+                    <div style={styles.aiHeader}>
+                        <strong>{t("ui.editor.ai_assistant", "AI-Assistent")}</strong>
+                        <div style={{display: "flex", gap: 4, marginLeft: "auto"}}>
+                            {(["improve", "shorten", "expand", "custom"] as const).map((type) => (
+                                <button
+                                    key={type}
+                                    className={`btn btn-sm ${aiPromptType === type ? "btn-primary" : "btn-ghost"}`}
+                                    onClick={() => setAiPromptType(type)}
+                                    style={{padding: "2px 8px", fontSize: "0.75rem"}}
+                                >
+                                    {type === "improve" ? t("ui.editor.ai_improve", "Verbessern")
+                                        : type === "shorten" ? t("ui.editor.ai_shorten", "Kuerzen")
+                                        : type === "expand" ? t("ui.editor.ai_expand", "Erweitern")
+                                        : t("ui.editor.ai_custom", "Eigener Prompt")}
+                                </button>
+                            ))}
+                        </div>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setShowAiPanel(false)}>&times;</button>
+                    </div>
+                    {aiPromptType === "custom" && (
+                        <input
+                            className="input"
+                            style={{margin: "6px 16px", width: "calc(100% - 32px)", fontSize: "0.8125rem"}}
+                            placeholder={t("ui.editor.ai_custom_placeholder", "z.B. Mache den Ton formeller...")}
+                            value={aiCustomPrompt}
+                            onChange={(e) => setAiCustomPrompt(e.target.value)}
+                        />
+                    )}
+                    <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={handleAiSuggest}
+                            disabled={aiLoading}
+                        >
+                            {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_suggest", "Vorschlag generieren")}
+                        </button>
+                    </div>
+                    {aiSuggestion && (
+                        <div style={styles.aiSuggestion}>
+                            <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)"}}>
+                                {aiSuggestion}
+                            </div>
+                            <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                                <button className="btn btn-primary btn-sm" onClick={handleAiApply}>
+                                    {t("ui.editor.ai_apply", "Uebernehmen")}
+                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setAiSuggestion("")}>
+                                    {t("ui.editor.ai_discard", "Verwerfen")}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Search & Replace bar */}
             {showSearch && !markdownMode && editor && (
@@ -754,6 +872,30 @@ const styles: Record<string, React.CSSProperties> = {
     spellcheckItem: {
         padding: "6px 16px",
         borderBottom: "1px solid var(--border)",
+    },
+    aiPanel: {
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-secondary)",
+        maxHeight: 300,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column" as const,
+    },
+    aiHeader: {
+        display: "flex",
+        alignItems: "center",
+        padding: "6px 16px",
+        fontSize: "0.8125rem",
+        borderBottom: "1px solid var(--border)",
+        gap: 8,
+        flexWrap: "wrap" as const,
+    },
+    aiSuggestion: {
+        padding: "8px 16px",
+        borderTop: "1px solid var(--border)",
+        background: "var(--bg-card)",
+        overflowY: "auto" as const,
+        maxHeight: 180,
     },
     statusBar: {
         display: "flex",

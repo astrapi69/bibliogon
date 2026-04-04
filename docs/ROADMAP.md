@@ -15,8 +15,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [x] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
-- [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
-- [ ] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
+- [x] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
       nicht inline im Text. Autor uebernimmt explizit per Klick.
 - [ ] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
 - [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
@@ -178,7 +177,7 @@ Technisch:
 - Setting wird pro Buch gespeichert (manche Buecher nutzen AI, 
   andere nicht)
 
-- [ ] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
+- [x] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
       nicht inline im Text. Autor uebernimmt explizit per Klick.
 
 ## Versionierung (leichtgewichtig, kein Git)

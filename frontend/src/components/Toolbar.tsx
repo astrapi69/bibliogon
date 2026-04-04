@@ -31,6 +31,7 @@ import {
     Focus,
     SpellCheck,
     Headphones,
+    Sparkles,
 } from "lucide-react";
 
 interface Props {
@@ -44,9 +45,11 @@ interface Props {
     onToggleSpellcheck?: () => void;
     onPreviewAudio?: () => void;
     previewLoading?: boolean;
+    aiPanelActive?: boolean;
+    onToggleAi?: () => void;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, aiPanelActive, onToggleAi}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -322,6 +325,20 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     }}
                 >
                     <Headphones size={16}/>
+                </button>
+            )}
+
+            {/* AI assistant */}
+            {onToggleAi && !markdownMode && (
+                <button
+                    onClick={onToggleAi}
+                    title="AI Assistant"
+                    style={{
+                        ...styles.button,
+                        ...(aiPanelActive ? styles.buttonActive : {}),
+                    }}
+                >
+                    <Sparkles size={16}/>
                 </button>
             )}
 
