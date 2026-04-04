@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "bibliogon-plugin-translation"
+version = "1.0.0"
+description = "Translation plugin for Bibliogon: DeepL and local LLM (LMStudio) integration."
+authors = ["Asterios Raptis"]
+license = "Proprietary"
+package-mode = true
+packages = [{include = "bibliogon_translation"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.115.0"
+httpx = "^0.27.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.24.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+translation = "bibliogon_translation.plugin:TranslationPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

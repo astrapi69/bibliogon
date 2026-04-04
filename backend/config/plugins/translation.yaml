@@ -1,0 +1,26 @@
+plugin:
+  name: "translation"
+  display_name:
+    de: "Uebersetzung"
+    en: "Translation"
+    es: "Traduccion"
+    fr: "Traduction"
+    el: "Μετάφραση"
+  description:
+    de: "Automatische Buchuebersetzung via DeepL oder lokales LLM (LMStudio)"
+    en: "Automatic book translation via DeepL or local LLM (LMStudio)"
+    es: "Traduccion automatica de libros via DeepL o LLM local (LMStudio)"
+    fr: "Traduction automatique de livres via DeepL ou LLM local (LMStudio)"
+    el: "Αυτόματη μετάφραση βιβλίων μέσω DeepL ή τοπικού LLM (LMStudio)"
+  version: "1.0.0"
+  license: "Proprietary"
+  depends_on: []
+  api_version: "1"
+
+settings:
+  provider: deepl
+  deepl_api_key: ""
+  deepl_free_api: true
+  lmstudio_url: "http://localhost:1234/v1"
+  lmstudio_model: "default"
+  lmstudio_temperature: 0.3

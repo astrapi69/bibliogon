@@ -25,7 +25,15 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-05: mypy Type-Checking fuer Python Backend
 - [x] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [x] B-02: Structured Logging (JSON-Format fuer Produktion)
-- [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
+- [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
+- [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
+- [ ] P-08: Kapitelweise Uebersetzung als neues Buch
+- [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)
+- [ ] P-01: plugin-audiobook: TTS-basierte Audiobook-Generierung
+- [ ] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
+- [ ] P-03: Voice-Settings pro Buch
+- [ ] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
+- [ ] P-05: Vorhoer-Funktion im Editor
 
 
 ## UI/UX
@@ -122,8 +130,8 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-11: Lesbarkeits-Metriken (Flesch-Kincaid)
 
 ### Phase 9: Uebersetzungs-Plugin (v0.10.0, Premium)
-- [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
-- [ ] P-07: LMStudio fuer lokale LLM-Uebersetzung
+- [x] P-06: plugin-translation: DeepL/LLM Uebersetzung
+- [x] P-07: LMStudio fuer lokale LLM-Uebersetzung
 - [ ] P-08: Kapitelweise Uebersetzung als neues Buch
   
 ### Phase 10: Audiobook-Plugin (v0.11.0, Premium)
