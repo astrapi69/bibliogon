@@ -277,11 +277,82 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 34. Lizenz-Button verdrahten
+
+- Original-Prompt: "Bug: Klick auf Lizenz eingeben passiert nichts"
+- Ergebnis: window.location.hash durch AppDialog.prompt ersetzt, onActivateLicense Prop durch PluginSettings/PluginCard gereicht
+- Commit: 2030e4b
+
+---
+
+## 35. U-09: Papierkorb Redesign mit Checkbox + Select
+
+- Original-Prompt: "Feature U-09: Papierkorb Auto-Loeschen mit konfigurierbarer Aufbewahrungsfrist"
+- Ergebnis: trash_auto_delete_enabled Flag, Checkbox + Radix Select (7/14/30/60/90/180/365 Tage), 10 neue i18n-Keys in 8 Sprachen
+- Commit: 61e6a78
+
+---
+
+## 36. Lizenz-Workflow: Autor-Bindung statt Geraete-Lock
+
+- Original-Prompt: "Lizenz-Workflow ueberarbeiten: Dialog ersetzen durch Tab-Navigation + Key-Generierung"
+- Ergebnis: machine_id durch author_name ersetzt, Tab-Navigation statt Modal, 3 Makefile-Targets (trial/plugin/all), 20 Tests, validate_license gibt (payload, warning) Tuple zurueck
+- Commit: 6104fe0
+
+---
+
+## 37. Plugin-Aktivierung nach Lizenz
+
+- Original-Prompt: "Bug: Plugin wird nach Lizenz-Eingabe nicht angezeigt"
+- Ergebnis: POST /licenses fuegt Plugin zu enabled-Liste hinzu, ruft discover_plugins() auf. Audiobook YAML um language/merge erweitert
+- Commit: 3ec3338
+
+---
+
+## 38. Kinderbuch-Plugin komplett
+
+- Original-Prompt: "Erstelle das Kinderbuch-Plugin komplett"
+- Ergebnis: plugin.yaml Manifest, templates/kinderbuch.css, Makefile mit build-zip, README.md. ZIP: 6KB
+- Commits: 89d8df6, 0bcfabd
+
+---
+
+## 39. Toast-Notifications zentralisiert
+
+- Original-Prompt: "Toast-Notification Anzeigedauer anpassen"
+- Ergebnis: utils/notify.ts Wrapper (error 15s, warning 12s, info 10s, success 5s), 28 Aufrufe in 7 Dateien migriert
+- Commit: 86cf22a
+
+---
+
+## 40. Plugin-Sichtbarkeit in Settings
+
+- Original-Prompt: "Bug: Audiobook-Plugin wird nicht angezeigt + Kinderbuch als core anzeigen"
+- Ergebnis: Haupt-Plugin-Liste zeigt alle discovered Plugins, Tier-Detection liest license_tier Feld, Tests aktualisiert
+- Commit: 8cceecb
+
+---
+
+## 41. Audiobook-Settings mit kaskadierten Dropdowns
+
+- Original-Prompt: "Audiobook-Plugin Settings: Textfelder durch Dropdowns ersetzen + i18n Labels"
+- Ergebnis: AudiobookSettingsPanel mit 4 Radix Select (Engine, Language, Voice, Merge), GET /languages Endpoint, 11 i18n-Keys in 8 Sprachen, Voice laedt dynamisch
+- Commits: 4abab63, 19162dc
+
+---
+
+## 42. Kinderbuch + Trash Aenderungen (User-Edits)
+
+- Ergebnis: User hat Kinderbuch Plugin YAML und Trash-Settings in app.yaml angepasst, zusammen committed
+- Commit: ed07212
+
+---
+
 ## Session-Zusammenfassung
 
-- Commits: 33
-- Tests: 290 (65 backend, 125 plugin, 50 vitest, 52 e2e)
-- Neue Plugins: translation (35 Tests), audiobook (32 Tests)
+- Commits: 43
+- Tests: 298 (73 backend, 125 plugin, 50 vitest, 52 e2e)
+- Neue Plugins: translation (35 Tests), audiobook (32 Tests), kinderbuch (8 Tests, ZIP-Distribution)
 - Neue Dependencies: alembic, mutmut, mypy, edge-tts, httpx (translation), @radix-ui/react-context-menu, @tiptap/extension-focus, @intevation/tiptap-extension-office-paste
 - Release: v0.9.0 + v0.10.0 erstellt und deployed
-- Hauptergebnisse: Release v0.9.0 + v0.10.0, 2 neue Premium-Plugins (Translation, Audiobook), Freemium-Lizenzsystem, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs, 8 Sprachen, Dark-Mode Button Audit
+- Hauptergebnisse: Release v0.9.0 + v0.10.0, 3 Plugins (Translation, Audiobook, Kinderbuch), Freemium-Lizenzsystem mit Autor-Bindung, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs, 8 Sprachen, kaskadierte Audiobook-Settings, Toast-Zentralisierung, Dark-Mode Audit

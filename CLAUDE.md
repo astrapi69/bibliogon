@@ -397,6 +397,17 @@ Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
 - POST /api/ms-tools/sanitize
 - POST /api/ms-tools/readability
 - GET /api/ms-tools/languages
+- POST /api/audiobook/generate
+- GET /api/audiobook/engines
+- GET /api/audiobook/languages
+- GET /api/audiobook/voices
+- GET /api/audiobook/status
+- POST /api/audiobook/preview
+- POST /api/translation/translate
+- POST /api/translation/translate-book
+- GET /api/translation/languages
+- GET /api/translation/providers
+- GET /api/translation/health
 
 ## Datenmodell
 
@@ -501,7 +512,7 @@ Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) 
 - Import: Plain-Markdown-ZIP ohne Projektstruktur, tiptap_to_md erweitert (Table, TaskList, Figure)
 - UI: Dashboard-Sortierung, Cover-Thumbnails, Wortanzahl-Ziel pro Kapitel, Keyword-Tag-Editor
 - Infrastruktur: Multi-Stage Docker Build, Frontend-Chunk-Splitting, Roundtrip-Tests
-- 290 Tests (65 backend, 125 plugin, 50 vitest, 52 e2e)
+- 298 Tests (73 backend, 125 plugin, 50 vitest, 52 e2e)
 
 ### Phase 9: Uebersetzung, Audiobook, Infrastruktur (v0.10.0) - erledigt
 
@@ -511,7 +522,7 @@ Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) 
 - Infrastruktur: Alembic-Migrationen, GitHub Actions CI, mypy, mutmut, Structured Logging, Async Export Jobs
 - Editor: Focus Mode, Office Paste, Spellcheck Panel, Kapitel-Rename (Rechtsklick/Doppelklick), Audio Preview
 - i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), Live-Sprachumschaltung
-- 290 Tests (65 backend, 125 plugin, 50 vitest, 52 e2e)
+- 298 Tests (73 backend, 125 plugin, 50 vitest, 52 e2e)
 
 ## Naechste Schritte
 
@@ -527,7 +538,7 @@ Details: docs/CONCEPT.md
 
 ## Tests
 
-290 Tests insgesamt:
+298 Tests insgesamt:
 
 - plugin-export: 30 (tiptap_to_md, scaffolder)
 - plugin-kinderbuch: 8 (page_layout)
@@ -536,7 +547,7 @@ Details: docs/CONCEPT.md
 - plugin-ms-tools: 53 (style_checker, sanitizer, readability)
 - plugin-translation: 35 (deepl_client, lmstudio_client, book_translator)
 - plugin-audiobook: 32 (generator, tts_engine, merge)
-- backend: 65 (api, phase4, import/export, roundtrip, job_store, license_tiers, plugin_discovery)
+- backend: 73 (api, phase4, import/export, roundtrip, job_store, license_tiers, plugin_discovery)
 - vitest: 50 (api client, i18n, markdown helpers)
 - e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
 
