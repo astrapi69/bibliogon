@@ -90,12 +90,40 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
 
     _store.set(body.plugin_name, body.license_key)
 
+    # Enable the plugin in app.yaml and try to activate it
+    plugin_enabled = False
+    if _manager:
+        try:
+            # Add to enabled list in config
+            app_config = _manager.get_app_config()
+            plugins_cfg = app_config.get("plugins", {})
+            enabled_list = list(plugins_cfg.get("enabled", []) or [])
+            if body.plugin_name not in enabled_list:
+                enabled_list.append(body.plugin_name)
+                # Write back to config
+                config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
+                if config_path.exists():
+                    with open(config_path, encoding="utf-8") as f:
+                        full_config = yaml.safe_load(f) or {}
+                    full_config.setdefault("plugins", {})["enabled"] = enabled_list
+                    with open(config_path, "w", encoding="utf-8") as f:
+                        yaml.dump(full_config, f, default_flow_style=False, allow_unicode=True)
+                    _manager.reload_config()
+            # Try to discover and activate the plugin
+            _manager.discover_plugins()
+            plugin_enabled = body.plugin_name in {
+                p.name for p in _manager.get_active_plugins()
+            }
+        except Exception:
+            pass  # Plugin activation is best-effort
+
     return {
         "plugin": body.plugin_name,
         "status": "activated",
         "expires": payload.expires,
         "author": payload.author,
         "warning": warning,
+        "plugin_enabled": plugin_enabled,
     }
 
 

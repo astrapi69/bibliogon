@@ -20,7 +20,9 @@ plugin:
 
 settings:
   engine: "edge-tts"
+  language: "de"
   default_voice: ""
+  merge: true
   skip_types:
     - toc
     - imprint
