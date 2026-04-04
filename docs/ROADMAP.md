@@ -12,7 +12,7 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
-- [ ] Q-06: CI-Pipeline (GitHub Actions)
+- [x] Q-06: CI-Pipeline (GitHub Actions)
 - [ ] T-03: Office-Paste (tiptap-extension-office-paste)
 - [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
@@ -106,7 +106,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-03: Roundtrip-Tests: Import -> Editor -> Export -> epubcheck
 - [ ] Q-04: API-Client Unit Tests (Vitest)
 - [ ] Q-05: mypy Type-Checking fuer Python Backend
-- [ ] Q-06: CI-Pipeline (GitHub Actions)
+- [x] Q-06: CI-Pipeline (GitHub Actions)
 
 ## Plugins (Roadmap)
 
