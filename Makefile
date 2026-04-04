@@ -154,11 +154,40 @@ test-e2e-ui: ## Run e2e tests with Playwright UI
 
 # --- License ---
 
-generate-trial-key: ## Generate a 30-day trial key for all premium plugins
+generate-trial-key: ## Generate 30-day trial key. Usage: make generate-trial-key AUTHOR="Name"
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
-		"from app.licensing import LicenseValidator, create_trial_key; \
-		v = LicenseValidator('pluginforge-default-key'); \
-		print(create_trial_key(v, 30))"
+		"from app.licensing import *; \
+		v = LicenseValidator(get_license_secret()); \
+		key = create_trial_key(v, author='$(AUTHOR)', days=30); \
+		print('Trial Key:', key); \
+		print('Author:', '$(AUTHOR)' or '(any)'); \
+		from datetime import date, timedelta; \
+		print('Expires:', (date.today() + timedelta(days=30)).isoformat())"
+
+generate-license-key: ## Generate plugin key. Usage: make generate-license-key PLUGIN=audiobook AUTHOR="Name" DAYS=365
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
+		"from app.licensing import *; \
+		v = LicenseValidator(get_license_secret()); \
+		key = create_plugin_key(v, '$(PLUGIN)', '$(AUTHOR)', int('$(DAYS)' or '365')); \
+		print('Key:', key); \
+		print('Plugin:', '$(PLUGIN)'); \
+		print('Author:', '$(AUTHOR)'); \
+		from datetime import date, timedelta; \
+		print('Expires:', (date.today() + timedelta(days=int('$(DAYS)' or '365'))).isoformat())"
+
+generate-license-key-all: ## Generate key for all plugins. Usage: make generate-license-key-all AUTHOR="Name" DAYS=365
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
+		"from app.licensing import *; \
+		v = LicenseValidator(get_license_secret()); \
+		from datetime import date, timedelta; \
+		days = int('$(DAYS)' or '365'); \
+		expires = (date.today() + timedelta(days=days)).isoformat(); \
+		p = LicensePayload(plugin='*', version='1', expires=expires, author='$(AUTHOR)'); \
+		key = v.create_license(p); \
+		print('Key:', key); \
+		print('Plugins: ALL'); \
+		print('Author:', '$(AUTHOR)'); \
+		print('Expires:', expires)"
 
 # --- Production (Docker) ---
 

@@ -162,7 +162,6 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
                         _license_validator.validate_license(key, name)
                         has_license = True
                     except Exception:
-                        # Try wildcard
                         wildcard = _license_store.get("*")
                         if wildcard:
                             try:

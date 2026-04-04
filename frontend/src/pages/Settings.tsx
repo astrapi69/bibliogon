@@ -20,6 +20,8 @@ export default function Settings() {
     const [licenses, setLicenses] = useState<Record<string, unknown>>({});
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
+    const [activeTab, setActiveTab] = useState("app");
+    const [preselectedPlugin, setPreselectedPlugin] = useState("");
 
     useEffect(() => {
         loadData();
@@ -75,7 +77,7 @@ export default function Settings() {
                 </div>
             </header>
 
-            <Tabs.Root defaultValue="app">
+            <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
@@ -173,28 +175,28 @@ export default function Settings() {
                                 showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
                             }
                         }}
-                        onActivateLicense={async (pluginName, key) => {
-                            try {
-                                await api.licenses.activate(pluginName, key);
-                                const lics = await api.licenses.list();
-                                setLicenses(lics);
-                                showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
-                                loadData();
-                            } catch (err) {
-                                showMessage(`${t("ui.settings.license_error", "Lizenzfehler")}: ${err}`, true);
-                            }
+                        onActivateLicense={async (pluginName) => {
+                            setPreselectedPlugin(pluginName);
+                            setActiveTab("licenses");
                         }}
                     />
                 </Tabs.Content>
                 <Tabs.Content value="licenses">
                     <LicenseSettings
                         licenses={licenses}
+                        preselectedPlugin={preselectedPlugin}
                         onActivate={async (pluginName, key) => {
                             try {
-                                await api.licenses.activate(pluginName, key);
+                                const result = await api.licenses.activate(pluginName, key);
                                 const lics = await api.licenses.list();
                                 setLicenses(lics);
-                                showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
+                                if (result.warning) {
+                                    showMessage(`${t("ui.settings.license_activated", "Lizenz aktiviert")} - ${result.warning}`);
+                                } else {
+                                    showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
+                                }
+                                setPreselectedPlugin("");
+                                loadData();
                             } catch (err) {
                                 showMessage(`${t("ui.settings.license_error", "Lizenzfehler")}: ${err}`);
                             }
@@ -423,23 +425,12 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onAddPlugin: (data: {name: string; display_name?: string; description?: string}) => void;
     onRemovePlugin: (name: string) => void;
     onReload: () => void;
-    onActivateLicense: (pluginName: string, key: string) => Promise<void>;
+    onActivateLicense: (pluginName: string) => void;
 }) {
     const {t} = useI18n();
     const [showAdd, setShowAdd] = useState(false);
     const [uploading, setUploading] = useState(false);
     const pluginDialog = useDialog();
-    const handleLicensePrompt = async (pluginName: string, displayName: string) => {
-        const key = await pluginDialog.prompt(
-            `${t("ui.settings.activate_license", "Lizenz aktivieren")} - ${displayName}`,
-            t("ui.settings.license_key_placeholder", "Lizenzschluessel"),
-            `BIBLIOGON-${pluginName.toUpperCase()}-v1-...`,
-        );
-        if (key && key.trim()) {
-            await onActivateLicense(pluginName, key.trim());
-        }
-    };
-
     const [newName, setNewName] = useState("");
     const [newDisplayName, setNewDisplayName] = useState("");
     const [newDescription, setNewDescription] = useState("");
@@ -568,7 +559,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 {isPremium && !(pluginLicenseInfo[name]?.hasLicense) ? (
                                     <button
                                         className="btn btn-sm btn-premium"
-                                        onClick={() => { setShowAdd(false); handleLicensePrompt(name, displayName); }}
+                                        onClick={() => { setShowAdd(false); onActivateLicense(name); }}
                                     >
                                         <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
                                     </button>
@@ -617,7 +608,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 onRemovePlugin(name);
                             }
                         }}
-                        onActivateLicense={() => handleLicensePrompt(name, displayName)}
+                        onActivateLicense={() => onActivateLicense(name)}
                     />
                 );
             })}
@@ -967,14 +958,20 @@ function AuthorSettings({config, onSave, saving}: {
 
 // --- License Settings Tab ---
 
-function LicenseSettings({licenses, onActivate, onDeactivate}: {
+function LicenseSettings({licenses, preselectedPlugin, onActivate, onDeactivate}: {
     licenses: Record<string, unknown>;
+    preselectedPlugin?: string;
     onActivate: (pluginName: string, key: string) => void;
     onDeactivate: (pluginName: string) => void;
 }) {
     const {t} = useI18n();
-    const [pluginName, setPluginName] = useState("");
+    const [pluginName, setPluginName] = useState(preselectedPlugin || "");
     const [licenseKey, setLicenseKey] = useState("");
+
+    // Sync preselected plugin from parent
+    useEffect(() => {
+        if (preselectedPlugin) setPluginName(preselectedPlugin);
+    }, [preselectedPlugin]);
 
     return (
         <div style={styles.section}>

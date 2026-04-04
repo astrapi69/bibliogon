@@ -55,7 +55,6 @@ def _check_license(plugin: BasePlugin, plugin_config: dict[str, Any]) -> bool:
         return True
 
     key = license_store.get(plugin.name)
-    # Also check for a wildcard trial key
     if not key:
         key = license_store.get("*")
     if not key:
@@ -63,11 +62,9 @@ def _check_license(plugin: BasePlugin, plugin_config: dict[str, Any]) -> bool:
         return False
 
     try:
-        # Trial keys use plugin="*", validate against "*" or plugin name
-        payload = license_validator.validate_license(key, plugin.name)
+        _payload, _warning = license_validator.validate_license(key, plugin.name)
         return True
     except LicenseError:
-        # Try wildcard key validation if the per-plugin key failed
         wildcard_key = license_store.get("*")
         if wildcard_key and wildcard_key != key:
             try:
