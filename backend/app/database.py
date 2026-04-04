@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # DB path: configurable via BIBLIOGON_DB_PATH env var, defaults to backend/bibliogon.db
@@ -27,30 +27,33 @@ def get_db():
 
 
 def init_db():
-    import app.models  # noqa: F401 - ensure models are registered with Base.metadata
-    Base.metadata.create_all(bind=engine)
-    _auto_migrate()
+    """Initialize database using Alembic migrations.
 
-
-def _auto_migrate():
-    """Add missing columns to existing tables (simple forward-only migration).
-
-    SQLAlchemy's create_all only creates new tables but does not add
-    columns to existing ones. This function compares the model definitions
-    with the actual database schema and adds any missing columns.
+    For new databases, creates all tables and stamps the alembic version.
+    For existing databases, runs any pending migrations.
     """
+    import app.models  # noqa: F401 - ensure models are registered
+
+    from alembic import command
+    from alembic.config import Config
+
+    alembic_cfg = Config(str(_BACKEND_DIR / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_BACKEND_DIR / "migrations"))
+    alembic_cfg.set_main_option("sqlalchemy.url", DATABASE_URL)
+
+    # Check if this is a fresh database (no tables exist)
+    from sqlalchemy import inspect
     inspector = inspect(engine)
-    with engine.begin() as conn:
-        for table in Base.metadata.sorted_tables:
-            if not inspector.has_table(table.name):
-                continue
-            existing = {col["name"] for col in inspector.get_columns(table.name)}
-            for column in table.columns:
-                if column.name not in existing:
-                    col_type = column.type.compile(engine.dialect)
-                    nullable = "NULL" if column.nullable else "NOT NULL"
-                    default = ""
-                    if column.default is not None:
-                        default = f" DEFAULT {column.default.arg!r}"
-                    sql = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {col_type} {nullable}{default}"
-                    conn.execute(text(sql))
+    has_tables = inspector.has_table("books")
+    has_alembic = inspector.has_table("alembic_version")
+
+    if not has_tables:
+        # Fresh database: create all tables and stamp as current
+        Base.metadata.create_all(bind=engine)
+        command.stamp(alembic_cfg, "head")
+    elif not has_alembic:
+        # Existing database without alembic: stamp as current (assumes schema is up to date)
+        command.stamp(alembic_cfg, "head")
+    else:
+        # Existing database with alembic: run pending migrations
+        command.upgrade(alembic_cfg, "head")

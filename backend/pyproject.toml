@@ -19,6 +19,7 @@ bibliogon-plugin-help = {path = "../plugins/bibliogon-plugin-help", develop = tr
 bibliogon-plugin-getstarted = {path = "../plugins/bibliogon-plugin-getstarted", develop = true}
 bibliogon-plugin-ms-tools = {path = "../plugins/bibliogon-plugin-ms-tools", develop = true}
 markdown = "^3.10.2"
+alembic = "^1.18.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

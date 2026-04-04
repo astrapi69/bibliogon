@@ -17,7 +17,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [x] I-01: Sprachumschaltung live ohne Reload
-- [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
+- [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [ ] Q-02: Mutation Testing mit mutmut einrichten
 - [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
@@ -89,7 +89,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Plugin-ZIP-Installation mit dynamischem Laden
 - [x] Umgebungsvariablen (CORS, DEBUG, SECRET, DB_PATH)
 - [x] Non-Root Docker, Health-Checks
-- [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
+- [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
