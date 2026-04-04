@@ -4,8 +4,8 @@ app:
   description: Open-source book authoring platform
   default_language: de
   delete_permanently: false
-  trash_auto_delete_enabled: false
-  trash_auto_delete_days: 30
+  trash_auto_delete_enabled: true
+  trash_auto_delete_days: 90
   supported_languages:
   - de
   - en
@@ -28,6 +28,7 @@ plugins:
   - help
   - getstarted
   - ms-tools
+  - kinderbuch
   disabled: []
 ui:
   title: Bibliogon

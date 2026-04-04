@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "bibliogon-plugin-kinderbuch"
+version = "1.0.0"
+description = "Children's book plugin for Bibliogon - picture-per-page layout and special templates"
+authors = ["astrapi69"]
+license = "Proprietary"
+readme = "README.md"
+packages = [{include = "bibliogon_kinderbuch"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.115.0"
+pyyaml = "^6.0"
+pillow = "^11.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+kinderbuch = "bibliogon_kinderbuch.plugin:KinderbuchPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

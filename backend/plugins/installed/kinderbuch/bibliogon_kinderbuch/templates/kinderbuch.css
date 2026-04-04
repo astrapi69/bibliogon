@@ -1,0 +1,95 @@
+/* Kinderbuch-specific CSS for EPUB/PDF export */
+
+.kb-page {
+    page-break-after: always;
+    padding: 40px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.kb-image {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.kb-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.kb-text {
+    font-family: "Comic Sans MS", "Chalkboard", cursive, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Layout: Bild oben, Text unten (70/30) */
+.kb-page[data-layout="image-top-text-bottom"] .kb-image {
+    height: 65%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kb-page[data-layout="image-top-text-bottom"] .kb-text {
+    height: 30%;
+    padding-top: 16px;
+}
+
+/* Layout: Bild links, Text rechts (50/50) */
+.kb-page[data-layout="image-left-text-right"] {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.kb-page[data-layout="image-left-text-right"] .kb-image {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.kb-page[data-layout="image-left-text-right"] .kb-text {
+    flex: 1;
+    padding-top: 8px;
+}
+
+/* Layout: Vollbild mit Text-Overlay */
+.kb-page[data-layout="image-full-text-overlay"] {
+    position: relative;
+    padding: 0;
+}
+
+.kb-page[data-layout="image-full-text-overlay"] .kb-image {
+    margin: 0;
+}
+
+.kb-page[data-layout="image-full-text-overlay"] .kb-image img {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.kb-page[data-layout="image-full-text-overlay"] .kb-text {
+    position: absolute;
+    bottom: 32px;
+    left: 32px;
+    right: 32px;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 20px 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Text-only layout */
+.kb-page[data-layout="text-only"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kb-page[data-layout="text-only"] .kb-text {
+    max-width: 600px;
+    text-align: center;
+}
