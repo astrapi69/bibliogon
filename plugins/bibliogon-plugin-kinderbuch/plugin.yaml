@@ -1,0 +1,21 @@
+name: kinderbuch
+version: "1.0.0"
+license_tier: premium
+depends_on:
+  - export
+min_app_version: "0.9.0"
+entry_point: bibliogon_kinderbuch.plugin:KinderbuchPlugin
+
+plugin:
+  display_name:
+    de: "Kinderbuch"
+    en: "Children's Book"
+    es: "Libro infantil"
+    fr: "Livre pour enfants"
+    el: "Παιδικό βιβλίο"
+  description:
+    de: "Bild-pro-Seite Layouts fuer Kinderbilderbuecher mit 4 Vorlagen"
+    en: "Image-per-page layouts for children's picture books with 4 templates"
+    es: "Diseños de imagen por pagina para libros infantiles con 4 plantillas"
+    fr: "Mises en page image par page pour livres d'images avec 4 modeles"
+    el: "Διατάξεις εικόνας ανά σελίδα για παιδικά βιβλία με 4 πρότυπα"
