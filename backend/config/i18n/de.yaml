@@ -221,6 +221,9 @@ ui:
     plugin_help_desc: "FAQ, Tastenkuerzel, About"
     plugin_getstarted: "Erste Schritte"
     plugin_getstarted_desc: "Onboarding-Wizard, Beispielbuch"
+    trash_auto_delete: "Papierkorb auto-loeschen nach (Tage)"
+    trash_disabled: "Deaktiviert (manuell loeschen)"
+    trash_info: "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht"
   get_started:
     title: "Erste Schritte"
     progress: "Schritt {current} von {total}"

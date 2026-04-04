@@ -223,6 +223,7 @@ function AppSettings({config, onSave, saving}: {
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
     const [uiSubtitle, setUiSubtitle] = useState((ui.subtitle as string) || "");
     const [theme, setTheme] = useState((ui.theme as string) || "warm-literary");
+    const [trashDays, setTrashDays] = useState(Number(app.trash_auto_delete_days ?? 30));
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
         export: true, help: true, getstarted: true,
@@ -233,6 +234,7 @@ function AppSettings({config, onSave, saving}: {
         setUiTitle((ui.title as string) || "Bibliogon");
         setUiSubtitle((ui.subtitle as string) || "");
         setTheme((ui.theme as string) || "warm-literary");
+        setTrashDays(Number(app.trash_auto_delete_days ?? 30));
         setCorePlugins({
             export: enabledPlugins.includes("export"),
             help: enabledPlugins.includes("help"),
@@ -282,6 +284,22 @@ function AppSettings({config, onSave, saving}: {
                         ]}
                     />
                 </div>
+                <div className="field">
+                    <label className="label">{t("ui.settings.trash_auto_delete", "Papierkorb auto-loeschen nach (Tage)")}</label>
+                    <input
+                        className="input"
+                        type="number"
+                        min={0}
+                        max={365}
+                        value={trashDays}
+                        onChange={(e) => setTrashDays(Number(e.target.value))}
+                    />
+                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                        {trashDays === 0
+                            ? t("ui.settings.trash_disabled", "Deaktiviert (manuell loeschen)")
+                            : t("ui.settings.trash_info", "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht").replace("{days}", String(trashDays))}
+                    </small>
+                </div>
                 <button
                     className="btn btn-primary"
                     disabled={saving}
@@ -295,7 +313,7 @@ function AppSettings({config, onSave, saving}: {
                             }
                         }
                         onSave({
-                            app: {default_language: lang},
+                            app: {default_language: lang, trash_auto_delete_days: trashDays},
                             ui: {title: uiTitle, subtitle: uiSubtitle, theme},
                             plugins: {enabled},
                         });

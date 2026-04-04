@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import logging
+from datetime import datetime, timedelta, timezone
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,6 +8,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import Book
 from app.schemas import BookCreate, BookDetail, BookOut, BookUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -23,6 +26,48 @@ def _is_permanent_delete() -> bool:
         return config.get("app", {}).get("delete_permanently", False)
     except Exception:
         return False
+
+
+def _get_trash_auto_delete_days() -> int:
+    """Get the number of days after which trashed books are auto-deleted. 0 = disabled."""
+    from pathlib import Path
+    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
+    if not config_path.exists():
+        return 30
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        return int(config.get("app", {}).get("trash_auto_delete_days", 30))
+    except Exception:
+        return 30
+
+
+def cleanup_expired_trash() -> int:
+    """Permanently delete books that have been in the trash longer than the configured days.
+
+    Returns the number of deleted books.
+    """
+    days = _get_trash_auto_delete_days()
+    if days <= 0:
+        return 0
+
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        expired = db.query(Book).filter(
+            Book.deleted_at.is_not(None),
+            Book.deleted_at < cutoff,
+        ).all()
+        count = len(expired)
+        for book in expired:
+            db.delete(book)
+        if count > 0:
+            db.commit()
+            logger.info("Auto-deleted %d expired trash items (older than %d days)", count, days)
+        return count
+    finally:
+        db.close()
 
 
 @router.get("", response_model=list[BookOut])

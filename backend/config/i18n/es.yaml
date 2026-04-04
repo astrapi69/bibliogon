@@ -204,6 +204,9 @@ ui:
     white_label_desc: "Personaliza Bibliogon como tu propia aplicacion. Cambia el nombre, elimina plugins estandar y crea tu propia plataforma de escritura."
     core_plugins: "Plugins estandar"
     restart_hint: "Los cambios se aplican despues de guardar. Se requiere reinicio."
+    trash_auto_delete: "Auto-eliminar papelera despues de (dias)"
+    trash_disabled: "Desactivado (eliminar manualmente)"
+    trash_info: "Los libros en la papelera se eliminaran automaticamente despues de {days} dias"
   get_started:
     title: "Primeros pasos"
     progress: "Paso {current} de {total}"

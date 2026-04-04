@@ -19,7 +19,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] I-01: Sprachumschaltung live ohne Reload
 - [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
 - [x] Q-02: Mutation Testing mit mutmut einrichten
-- [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
+- [x] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
 
 ## UI/UX
@@ -46,7 +46,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] U-06: Editor: Wortanzahl-Ziel pro Kapitel (Progress-Bar)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [x] U-08: Dark Mode: Sidebar-Theme unabhaengig vom Haupt-Theme
-- [ ] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
+- [x] U-09: Papierkorb: Auto-Loeschen nach X Tagen (konfigurierbar)
 
 ## i18n
 

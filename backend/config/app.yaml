@@ -4,6 +4,7 @@ app:
   description: Open-source book authoring platform
   default_language: de
   delete_permanently: false
+  trash_auto_delete_days: 30
   supported_languages:
   - de
   - en

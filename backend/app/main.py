@@ -83,6 +83,9 @@ def _load_installed_plugins() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Auto-delete expired trash items on startup
+    from app.routers.books import cleanup_expired_trash
+    cleanup_expired_trash()
     _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)

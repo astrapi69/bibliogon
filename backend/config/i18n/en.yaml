@@ -221,6 +221,9 @@ ui:
     plugin_help_desc: "FAQ, shortcuts, about"
     plugin_getstarted: "Get Started"
     plugin_getstarted_desc: "Onboarding wizard, sample book"
+    trash_auto_delete: "Auto-delete trash after (days)"
+    trash_disabled: "Disabled (delete manually)"
+    trash_info: "Books in trash will be automatically deleted after {days} days"
   get_started:
     title: "Get Started"
     progress: "Step {current} of {total}"
