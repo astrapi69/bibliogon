@@ -50,6 +50,8 @@ ui:
     checking: "Έλεγχος..."
     issues: "προβλήματα"
     suggestions: "Προτάσεις"
+    preview_no_text: "Δεν υπάρχει κείμενο για ανάγνωση"
+    preview_error: "Αποτυχία προεπισκόπησης"
   sidebar:
     manuscript: "Χειρόγραφο"
     content: "Περιεχόμενο"

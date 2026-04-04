@@ -56,6 +56,8 @@ ui:
     checking: "Checking..."
     issues: "issues"
     suggestions: "Suggestions"
+    preview_no_text: "No text to read aloud"
+    preview_error: "Preview failed"
   sidebar:
     manuscript: "Manuscript"
     content: "Content"

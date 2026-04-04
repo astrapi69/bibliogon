@@ -33,7 +33,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - [x] P-03: Voice-Settings pro Buch
 - [x] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
-- [ ] P-05: Vorhoer-Funktion im Editor
+- [x] P-05: Vorhoer-Funktion im Editor
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
 - [ ] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
@@ -144,7 +144,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] P-02: TTS-Engine Auswahl: Edge TTS, Google TTS, pyttsx3, ElevenLabs
 - [x] P-03: Voice-Settings pro Buch
 - [x] P-04: MP3 pro Kapitel, Merge zu Audiobook (ffmpeg)
-- [ ] P-05: Vorhoer-Funktion im Editor
+- [x] P-05: Vorhoer-Funktion im Editor
 
 ### Phase 11: Multi-User und SaaS (v1.0.0)
 - [ ] P-12: Benutzerregistrierung und Authentifizierung

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .generator import generate_audiobook, is_ffmpeg_available
@@ -133,3 +134,51 @@ async def audiobook_status() -> dict[str, Any]:
         "engines": [eid for eid in ENGINES],
         "merge_supported": is_ffmpeg_available(),
     }
+
+
+# Max preview text length (characters) to avoid long TTS calls
+MAX_PREVIEW_LENGTH = 2000
+
+
+class PreviewRequest(BaseModel):
+    """Request to preview (listen to) a text snippet via TTS."""
+
+    text: str = Field(..., min_length=1, max_length=MAX_PREVIEW_LENGTH)
+    engine: str = Field(default="edge-tts")
+    voice: str = Field(default="")
+    language: str = Field(default="de")
+
+
+@router.post("/preview")
+async def preview_audio(req: PreviewRequest) -> FileResponse:
+    """Generate a short audio preview for a text snippet.
+
+    Returns an MP3 file that can be played directly in the browser.
+    Limited to 2000 characters to keep response times short.
+    """
+    try:
+        tts = get_engine(req.engine)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_preview_"))
+    output_path = tmp_dir / "preview.mp3"
+
+    try:
+        await tts.synthesize(
+            text=req.text,
+            output_path=output_path,
+            voice=req.voice,
+            language=req.language,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TTS preview failed: {e}")
+
+    if not output_path.exists():
+        raise HTTPException(status_code=500, detail="Preview audio file was not generated")
+
+    return FileResponse(
+        path=str(output_path),
+        media_type="audio/mpeg",
+        filename="preview.mp3",
+    )

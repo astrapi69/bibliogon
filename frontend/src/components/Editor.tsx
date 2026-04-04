@@ -49,6 +49,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
     const [showSpellcheck, setShowSpellcheck] = useState(false);
     const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
         const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
@@ -277,6 +278,44 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
         setSpellcheckLoading(false);
     };
 
+    const handlePreviewAudio = async () => {
+        if (!editor) return;
+        setPreviewLoading(true);
+        try {
+            // Use selected text or first 2000 chars of chapter
+            const {from, to} = editor.state.selection;
+            let text = from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
+            if (text.length > 2000) text = text.slice(0, 2000);
+            if (!text.trim()) {
+                toast.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
+                setPreviewLoading(false);
+                return;
+            }
+
+            const res = await fetch("/api/audiobook/preview", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({text}),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "Preview failed"}));
+                toast.error(err.detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+                setPreviewLoading(false);
+                return;
+            }
+
+            // Play the returned MP3
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onended = () => URL.revokeObjectURL(url);
+            audio.play();
+        } catch {
+            toast.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+        }
+        setPreviewLoading(false);
+    };
+
     const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
     return (
@@ -290,6 +329,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 onToggleFocus={() => setFocusMode(!focusMode)}
                 spellcheckActive={showSpellcheck}
                 onToggleSpellcheck={handleToggleSpellcheck}
+                onPreviewAudio={handlePreviewAudio}
+                previewLoading={previewLoading}
             />
 
             {/* Search & Replace bar */}

@@ -50,6 +50,8 @@ ui:
     checking: "Verification..."
     issues: "problemes"
     suggestions: "Suggestions"
+    preview_no_text: "Pas de texte a lire"
+    preview_error: "Echec de la lecture"
   sidebar:
     manuscript: "Manuscrit"
     content: "Contenu"

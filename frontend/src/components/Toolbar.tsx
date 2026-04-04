@@ -30,6 +30,7 @@ import {
     Search,
     Focus,
     SpellCheck,
+    Headphones,
 } from "lucide-react";
 
 interface Props {
@@ -41,9 +42,11 @@ interface Props {
     onToggleFocus?: () => void;
     spellcheckActive?: boolean;
     onToggleSpellcheck?: () => void;
+    onPreviewAudio?: () => void;
+    previewLoading?: boolean;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -304,6 +307,21 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     }}
                 >
                     <SpellCheck size={16}/>
+                </button>
+            )}
+
+            {/* Audio preview */}
+            {onPreviewAudio && !markdownMode && (
+                <button
+                    onClick={onPreviewAudio}
+                    disabled={previewLoading}
+                    title="Listen (TTS Preview)"
+                    style={{
+                        ...styles.button,
+                        ...(previewLoading ? {opacity: 0.5, cursor: "wait"} : {}),
+                    }}
+                >
+                    <Headphones size={16}/>
                 </button>
             )}
 
