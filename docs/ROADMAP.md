@@ -14,7 +14,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 - [x] Q-06: CI-Pipeline (GitHub Actions)
 - [x] T-03: Office-Paste (tiptap-extension-office-paste)
-- [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
+- [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 - [x] U-07: Sidebar: Kapitel per Rechtsklick umbenennen
 - [ ] I-01: Sprachumschaltung live ohne Reload
 - [ ] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
@@ -81,7 +81,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] T-04: Bild-Resize per Drag
 - [ ] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
 - [x] T-06: Lesezeit-Schaetzung pro Kapitel
-- [ ] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
+- [x] T-07: Focus-Mode (nur aktueller Absatz hervorgehoben)
 
 ## Backend
 

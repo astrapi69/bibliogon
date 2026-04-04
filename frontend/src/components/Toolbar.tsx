@@ -28,6 +28,7 @@ import {
     Table as TableIcon,
     FootprintsIcon,
     Search,
+    Focus,
 } from "lucide-react";
 
 interface Props {
@@ -35,9 +36,11 @@ interface Props {
     markdownMode: boolean;
     onToggleMarkdown: () => void;
     onToggleSearch?: () => void;
+    focusMode?: boolean;
+    onToggleFocus?: () => void;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -270,6 +273,20 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     style={styles.button}
                 >
                     <Search size={16}/>
+                </button>
+            )}
+
+            {/* Focus mode toggle */}
+            {onToggleFocus && !markdownMode && (
+                <button
+                    onClick={onToggleFocus}
+                    title="Focus Mode"
+                    style={{
+                        ...styles.button,
+                        ...(focusMode ? styles.buttonActive : {}),
+                    }}
+                >
+                    <Focus size={16}/>
                 </button>
             )}
 

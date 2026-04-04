@@ -581,6 +581,16 @@ body {
     outline: none;
 }
 
+/* Focus mode: dim non-focused nodes */
+.focus-mode .tiptap-editor > * {
+    opacity: 0.3;
+    transition: opacity 200ms ease;
+}
+
+.focus-mode .tiptap-editor > .has-focus {
+    opacity: 1;
+}
+
 .tiptap-editor h1 {
     font-family: var(--font-display);
     font-size: 2rem;

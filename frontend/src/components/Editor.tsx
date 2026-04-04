@@ -22,6 +22,7 @@ import Figure from "@pentestpad/tiptap-extension-figure";
 import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
+import Focus from "@tiptap/extension-focus";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api} from "../api/client";
@@ -44,6 +45,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
     const {t} = useI18n();
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
+    const [focusMode, setFocusMode] = useState(false);
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
         const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
@@ -137,6 +139,10 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 placeholder: placeholder || "Beginne zu schreiben...",
             }),
             OfficePaste,
+            Focus.configure({
+                className: "has-focus",
+                mode: "deepest",
+            }),
         ],
         content: parseContent(content),
         onUpdate: ({editor}) => {
@@ -243,6 +249,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 markdownMode={markdownMode}
                 onToggleMarkdown={handleToggleMarkdown}
                 onToggleSearch={() => setShowSearch(!showSearch)}
+                focusMode={focusMode}
+                onToggleFocus={() => setFocusMode(!focusMode)}
             />
 
             {/* Search & Replace bar */}
@@ -355,7 +363,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             </div>
 
             <div style={styles.editorArea}>
-                <div style={styles.editorContainer}>
+                <div style={styles.editorContainer} className={focusMode ? "focus-mode" : ""}>
                     {markdownMode ? (
                         <textarea
                             style={styles.markdownEditor}
