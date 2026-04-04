@@ -24,7 +24,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Q-04: API-Client Unit Tests (Vitest)
 - [x] Q-05: mypy Type-Checking fuer Python Backend
 - [x] T-05: Spellcheck-Integration (LanguageTool, wenn Grammar-Plugin aktiv)
-- [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
+- [x] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [ ] P-06: plugin-translation: DeepL/LLM Uebersetzung
 
 
@@ -96,7 +96,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Umgebungsvariablen (CORS, DEBUG, SECRET, DB_PATH)
 - [x] Non-Root Docker, Health-Checks
 - [x] B-01: Alembic-Migrationen statt Auto-Migration (robuster)
-- [ ] B-02: Structured Logging (JSON-Format fuer Produktion)
+- [x] B-02: Structured Logging (JSON-Format fuer Produktion)
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
 - [ ] B-05: Asynchrone Export-Jobs (lange Exports blockieren nicht)

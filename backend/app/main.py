@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -8,6 +9,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
+from app.logging_config import setup_logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
 from app.hookspecs import BibliogonHookSpec
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import assets, backup, books, chapters, licenses, plugin_install, settings
@@ -82,6 +87,7 @@ def _load_installed_plugins() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting Bibliogon (debug=%s)", DEBUG)
     init_db()
     # Auto-delete expired trash items on startup
     from app.routers.books import cleanup_expired_trash
@@ -89,7 +95,10 @@ async def lifespan(app: FastAPI):
     _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)
+    active = [p.name for p in manager.get_active_plugins()]
+    logger.info("Plugins loaded: %s", ", ".join(active) if active else "none")
     yield
+    logger.info("Shutting down Bibliogon")
     manager.deactivate_all()
 
 
