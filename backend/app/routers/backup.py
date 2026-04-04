@@ -64,6 +64,9 @@ def export_backup(db: Session = Depends(get_db)):
             "backpage_author_bio": book.backpage_author_bio,
             "cover_image": book.cover_image,
             "custom_css": book.custom_css,
+            "tts_engine": book.tts_engine,
+            "tts_voice": book.tts_voice,
+            "tts_language": book.tts_language,
             "created_at": book.created_at.isoformat(),
             "updated_at": book.updated_at.isoformat(),
         }
@@ -221,6 +224,9 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
                 backpage_author_bio=book_data.get("backpage_author_bio"),
                 cover_image=book_data.get("cover_image"),
                 custom_css=book_data.get("custom_css"),
+                tts_engine=book_data.get("tts_engine"),
+                tts_voice=book_data.get("tts_voice"),
+                tts_language=book_data.get("tts_language"),
             )
             db.add(book)
 
