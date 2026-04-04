@@ -237,11 +237,51 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 29. I-02: 3 neue Sprachen (PT, TR, JA)
+
+- Original-Prompt: "Setze I-02 um"
+- Ergebnis: pt.yaml, tr.yaml, ja.yaml mit je 307 Strings, alle 8 Sprachdateien aktualisiert, Settings Sprachauswahl + app.yaml erweitert
+- Commit: 45d82a8
+
+---
+
+## 30. Release v0.10.0
+
+- Original-Prompt: "Release v0.10.0 vorbereiten und deployen" (11 Schritte)
+- Ergebnis: Version in 5 Dateien gebumpt, ROADMAP/CLAUDE.md/CONCEPT.md aktualisiert, Phase 9 als erledigt
+- Commit: e32fbd1
+
+---
+
+## 31. Bugfix: Premium-Plugins in Settings nicht sichtbar
+
+- Original-Prompt: "Bug: Premium-Plugins werden in Settings > Plugins nicht angezeigt"
+- Ergebnis: inactivePlugins Filter erweitert (pluginLicenseInfo statt nur loadedPlugins), "Lizenz eingeben" Button fuer unlizenzierte Premium-Plugins
+- Commit: 9005b98
+
+---
+
+## 32. Korrektur: ms-tools ist core, kdp/kinderbuch nicht anzeigen
+
+- Original-Prompt: "manuscript-tools ist KEIN Premium-Plugin. kdp und kinderbuch sind noch NICHT implementiert."
+- Ergebnis: CORE_PLUGINS Set erweitert um ms-tools, kdp.yaml/kinderbuch.yaml entfernt, discoveredPlugins filtert nach Entry Points + bundled dirs, 5 neue Tests
+- Commit: edef6b6
+
+---
+
+## 33. Dark-Mode Button Audit
+
+- Original-Prompt: "Dark-Mode Audit: Button-Lesbarkeit in der gesamten Anwendung pruefen und fixen"
+- Ergebnis: btn-primary nutzt var(--text-inverse), btn-danger hover rgba-Overlay, neue btn-premium Klasse mit Dark-Mode-Variante, btn:disabled Styles, Settings.tsx auf btn-premium umgestellt
+- Commit: 7aeab8a
+
+---
+
 ## Session-Zusammenfassung
 
-- Commits: 28
-- Tests: 285 (60 backend, 125 plugin, 50 vitest, 52 e2e)
+- Commits: 33
+- Tests: 290 (65 backend, 125 plugin, 50 vitest, 52 e2e)
 - Neue Plugins: translation (35 Tests), audiobook (32 Tests)
 - Neue Dependencies: alembic, mutmut, mypy, edge-tts, httpx (translation), @radix-ui/react-context-menu, @tiptap/extension-focus, @intevation/tiptap-extension-office-paste
-- Release: v0.9.0 erstellt und deployed
-- Hauptergebnisse: Release v0.9.0, 2 neue Premium-Plugins (Translation, Audiobook), Freemium-Lizenzsystem, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs
+- Release: v0.9.0 + v0.10.0 erstellt und deployed
+- Hauptergebnisse: Release v0.9.0 + v0.10.0, 2 neue Premium-Plugins (Translation, Audiobook), Freemium-Lizenzsystem, CI Pipeline, Alembic, mypy, mutmut, Structured Logging, Async Jobs, 8 Sprachen, Dark-Mode Button Audit

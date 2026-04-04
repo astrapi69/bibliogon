@@ -9,8 +9,8 @@
 make test
 
 # Einzeln wenn gezielt:
-make test-backend           # pytest Backend (38 Tests)
-make test-plugins           # Alle Plugin-Tests (101 Tests)
+make test-backend           # pytest Backend (65 Tests)
+make test-plugins           # Alle Plugin-Tests (125 Tests)
 make test-plugin-export     # Nur Export (23 Tests)
 make test-plugin-grammar    # Nur Grammar (7 Tests)
 make test-plugin-kdp        # Nur KDP (10 Tests)
@@ -54,7 +54,7 @@ Vor dem Commit diese Checkliste durchgehen:
 ```
       /    E2E     \        Playwright (52 Tests)
      / ------------ \       Wenige, kritische User-Flows
-    / Integration    \      pytest + TestClient (38 Tests)
+    / Integration    \      pytest + TestClient (65 Tests)
    / ---------------- \    API-Endpunkte mit echtem DB-Zustand
   /    Unit Tests      \    pytest + Vitest (69+ Tests)
  / -------------------- \  Geschaeftslogik isoliert
