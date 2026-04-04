@@ -156,9 +156,9 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [ ] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
 
-## AI-Assistenz (spaeter, aufbauend auf Translation-Plugin)
-- [ ] A-01: Generische LLM-Plugin-Schnittstelle (Ollama/LMStudio)
-- [ ] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
+### AI-Assistenz (aufbauend auf Translation-Plugin)
+- [ ] A-01: Generisches AI-Plugin (Ollama/LMStudio-Anbindung)
+- [ ] A-02: Optionales AI-Metadata-Flag im Export (deaktiviert per Default)
 UX:
 - Checkbox im Export-Dialog: "AI-assistierte Inhalte kennzeichnen"
 - Default: deaktiviert
@@ -174,6 +174,9 @@ Technisch:
 - Wenn deaktiviert: Kein Eintrag, keine Spur davon im Export
 - Setting wird pro Buch gespeichert (manche Buecher nutzen AI, 
   andere nicht)
+
+- [ ] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
+      nicht inline im Text. Autor uebernimmt explizit per Klick.
 
 ## Versionierung (leichtgewichtig, kein Git)
 - [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
