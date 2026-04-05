@@ -95,10 +95,7 @@ def list_plugin_configs() -> dict[str, Any]:
 
 @router.get("/plugins/discovered")
 def list_discovered_plugins() -> list[dict[str, Any]]:
-    """List all plugins that have configs AND are registered (entry point or ZIP-installed).
-
-    Plugins with YAML config but no entry point (not implemented) are excluded.
-    """
+    """List plugins with configs that are registered (entry point, ZIP, or bundled)."""
     if not _manager:
         return []
 
@@ -108,82 +105,86 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     enabled = set(plugins_cfg.get("enabled", []) or [])
     disabled = set(plugins_cfg.get("disabled", []) or [])
     active = _active_plugin_names()
+    available = _collect_available_plugins(active)
 
-    # Get plugins that are actually registered (have entry points)
+    result = []
+    if plugins_dir.exists():
+        for yaml_file in sorted(plugins_dir.glob("*.yaml")):
+            name = yaml_file.stem
+            if name not in available:
+                continue
+            tier = _read_license_tier(yaml_file)
+            has_license = _check_plugin_license(name, tier)
+            result.append({
+                "name": name, "has_config": True,
+                "enabled": name in enabled and name not in disabled,
+                "loaded": name in active,
+                "license_tier": tier, "has_license": has_license,
+            })
+    return result
+
+
+def _collect_available_plugins(active: set[str]) -> set[str]:
+    """Collect all available plugin names from entry points, ZIP installs, and bundled dirs."""
     try:
         available = set(_manager.list_available_plugins())
     except Exception:
         available = set()
-    # Also include active plugins (in case list_available_plugins misses some)
     available |= active
 
-    # Check installed plugins directory (ZIP-installed)
     installed_dir = _base_dir / "plugins" / "installed"
     if installed_dir.exists():
         for d in installed_dir.iterdir():
             if d.is_dir() and (d / "plugin.yaml").exists():
                 available.add(d.name)
 
-    # Check bundled plugin directories (plugins/bibliogon-plugin-*)
     bundled_dir = _base_dir.parent / "plugins"
     if bundled_dir.exists():
         for d in bundled_dir.iterdir():
             if d.is_dir() and d.name.startswith("bibliogon-plugin-"):
                 plugin_name = d.name.replace("bibliogon-plugin-", "")
-                # Only include if it has a plugin.py (actually implemented)
                 pkg_dir = d / f"bibliogon_{plugin_name.replace('-', '_')}"
                 if (pkg_dir / "plugin.py").exists():
                     available.add(plugin_name)
+    return available
 
-    result = []
-    if plugins_dir.exists():
-        for yaml_file in sorted(plugins_dir.glob("*.yaml")):
-            name = yaml_file.stem
-            # Only show plugins that are actually registered/available
-            if name not in available:
-                continue
-            # Read license tier from plugin config
-            license_tier = "core"
+
+def _read_license_tier(yaml_path: Path) -> str:
+    """Read license tier from a plugin YAML config file."""
+    try:
+        with open(yaml_path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+        meta = cfg.get("plugin", {})
+        explicit = meta.get("license_tier", "")
+        if explicit in ("core", "premium"):
+            return explicit
+        license_type = meta.get("license", "MIT")
+        return "premium" if license_type not in ("MIT", "free", "Free") else "core"
+    except Exception:
+        return "core"
+
+
+def _check_plugin_license(name: str, tier: str) -> bool:
+    """Check if a plugin has a valid license (core always True)."""
+    if tier == "core":
+        return True
+    if not _license_store or not _license_validator:
+        return False
+    key = _license_store.get(name) or _license_store.get("*")
+    if not key:
+        return False
+    try:
+        _license_validator.validate_license(key, name)
+        return True
+    except Exception:
+        wildcard = _license_store.get("*")
+        if wildcard:
             try:
-                with open(yaml_file, encoding="utf-8") as f:
-                    cfg = yaml.safe_load(f) or {}
-                plugin_meta = cfg.get("plugin", {})
-                # Check explicit license_tier first, then infer from license field
-                explicit_tier = plugin_meta.get("license_tier", "")
-                if explicit_tier in ("core", "premium"):
-                    license_tier = explicit_tier
-                else:
-                    license_type = plugin_meta.get("license", "MIT")
-                    if license_type not in ("MIT", "free", "Free"):
-                        license_tier = "premium"
+                _license_validator.validate_license(wildcard, "*")
+                return True
             except Exception:
                 pass
-            # Check if plugin has a valid license
-            has_license = license_tier == "core"
-            if license_tier == "premium" and _license_store:
-                key = _license_store.get(name) or _license_store.get("*")
-                if key and _license_validator:
-                    try:
-                        _license_validator.validate_license(key, name)
-                        has_license = True
-                    except Exception:
-                        wildcard = _license_store.get("*")
-                        if wildcard:
-                            try:
-                                _license_validator.validate_license(wildcard, "*")
-                                has_license = True
-                            except Exception:
-                                pass
-            result.append({
-                "name": name,
-                "has_config": True,
-                "enabled": name in enabled and name not in disabled,
-                "loaded": name in active,
-                "license_tier": license_tier,
-                "has_license": has_license,
-            })
-
-    return result
+    return False
 
 
 class PluginCreate(BaseModel):
