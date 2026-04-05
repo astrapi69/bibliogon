@@ -1,5 +1,158 @@
 [
   {
+    "timestamp": "2026-04-05T09:48:26.607544+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:26.587608+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 1507,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:26.447694+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:26.426223+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 2224,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:25.897689+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:25.877412+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 2,
+    "file_size_bytes": 1914,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:24.764213+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:48:24.743406+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 1562,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:13.659318+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:13.640344+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 1505,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:13.503911+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:13.483694+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 2221,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:12.997337+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:12.977371+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 2,
+    "file_size_bytes": 1909,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:11.853572+00:00",
+    "action": "restore",
+    "book_count": 1,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "backup.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:30:11.833118+00:00",
+    "action": "backup",
+    "book_count": 1,
+    "chapter_count": 1,
+    "file_size_bytes": 1557,
+    "filename": "bibliogon-backup-2026-04-05.bgb",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-04-05T09:28:45.543484+00:00",
+    "action": "restore",
+    "book_count": 3,
+    "chapter_count": 0,
+    "file_size_bytes": 0,
+    "filename": "bibliogon-backup-2026-04-03.bgb",
+    "details": ""
+  },
+  {
     "timestamp": "2026-04-05T09:26:29.384750+00:00",
     "action": "restore",
     "book_count": 1,

@@ -122,3 +122,18 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Bei Import-Problemen: Pruefen ob das Quellformat (Markdown) korrekt zu HTML konvertiert wird.
 - Bei Export-Problemen: Pruefen ob HTML korrekt zurueck zu Markdown konvertiert wird.
 - Roundtrip testen: Import -> Editor -> Export -> epubcheck.
+
+## Code-Struktur
+
+### God Method vermeiden
+- Route-Handler die laenger als 50 Zeilen sind, muessen zerlegt werden.
+- Typisches Symptom: if/elif-Kaskaden fuer verschiedene Formate/Typen in einem Handler.
+- Loesung: ExportContext-Dataclass + eine Funktion pro Format-Gruppe + testbare Hilfsfunktionen.
+- Jede extrahierte Funktion muss ohne den gesamten Request-Kontext testbar sein.
+- Siehe coding-standards.md "Funktionsdesign" fuer das korrekte Pattern.
+
+### Testbarkeit als Design-Kriterium
+- Wenn eine Funktion schwer zu testen ist (viel Mocking noetig), ist das ein Signal fuer schlechtes Design.
+- Service-Funktionen duerfen keine FastAPI-Abhaengigkeiten haben (kein Request, kein Response, kein Depends).
+- Hilfsfunktionen (validate_format, build_filename, detect_manual_toc) muessen mit einfachen Parametern aufrufbar sein.
+- Datenklassen (dataclass, TypedDict) statt loser Dicts fuer Kontext zwischen Funktionen.

@@ -56,17 +56,57 @@
 - Ein Commit pro logische Aenderung, nicht alles in einen.
 - Branch-Benennung: feature/{name}, fix/{name}, chore/{name}
 
+## Funktionsdesign
+
+- Eine Funktion, eine Verantwortung. Maximal 30-40 Zeilen pro Funktion.
+- Funktionen ueber 50 Zeilen sind ein Refactoring-Signal.
+- routes.py enthaelt NUR Routing-Logik: Eingabe validieren, Service aufrufen, Response zurueckgeben.
+- Geschaeftslogik gehoert in Service-Module oder Hilfsfunktionen, NICHT in Route-Handler.
+- Verschiedene Code-Pfade (if/elif-Kaskaden fuer Formate, Typen, etc.) in eigene Funktionen extrahieren.
+- Gemeinsam genutzte Daten zwischen Funktionen: Dataclass oder TypedDict, NICHT lose Dicts durchreichen.
+- Jede extrahierte Funktion muss einzeln testbar sein, ohne den gesamten Kontext aufzubauen.
+
+**Anti-Pattern (God Method):**
+```python
+# FALSCH: 150+ Zeilen, 8 Verantwortlichkeiten
+@router.get("/{fmt}")
+def export(book_id, fmt, ...):
+    # DB laden, Config laden, TOC erkennen, scaffolden,
+    # Dateinamen bauen, ZIP/Audiobook/Pandoc, Cover suchen, ...
+```
+
+**Richtig (Zerlegt):**
+```python
+# routes.py - NUR Routing
+@router.get("/{fmt}")
+def export(book_id, fmt, ...):
+    validate_format(fmt)
+    context = build_export_context(book_id, fmt, book_type, ...)
+    return EXPORTERS[fmt](context)
+
+# exporters.py - Eine Funktion pro Format-Gruppe
+def export_project(ctx: ExportContext) -> FileResponse: ...
+def export_audiobook(ctx: ExportContext) -> FileResponse: ...
+def export_document(ctx: ExportContext) -> FileResponse: ...
+
+# helpers.py - Einzeln testbar
+def validate_format(fmt: str) -> None: ...
+def detect_manual_toc(chapters: list[dict]) -> bool: ...
+def build_filename(slug: str, book_type: str, suffix: bool) -> str: ...
+def find_cover_image(project_dir: Path) -> str | None: ...
+```
+
 ## Tests
 
 - Backend: pytest. Plugin-Tests in plugins/{name}/tests/.
 - E2E: Playwright (aktuell 52 Tests).
-- Mutation Testing: mutmut (Nightly/manuell, fuer Kernmodule und kritische Logik).
+- Mutation Testing: mutmut fuer Python, Stryker Mutator fuer TypeScript.
 - Neue Endpunkte: Mindestens ein Happy-Path Test.
 - Bugfixes: Failing Test ZUERST, dann Fix.
 - Mocking: Externe Services (LanguageTool, Pandoc) mocken, keine echten Calls in Tests.
 - `make test` muss gruen bleiben nach jeder Aenderung.
 - Ueberlebende Mutanten in kritischem Code: Tests ergaenzen. In trivialem Code: Ignorieren.
-- Siehe quality-checks.md fuer vollstaendige Teststrategie und mutmut-Konfiguration.
+- Siehe quality-checks.md fuer vollstaendige Teststrategie, mutmut- und Stryker-Konfiguration.
 
 ## Sicherheit
 
@@ -88,6 +128,6 @@ Neue Dependencies nur nach Rueckfrage einfuehren. Bestehender Stack:
 
 Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML, markdown (MD->HTML)
 Frontend: React 18, TypeScript, TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
-Testing: pytest, Playwright, mutmut (Mutation Testing)
+Testing: pytest, Playwright, Vitest, mutmut (Python Mutation Testing), Stryker Mutator (TypeScript Mutation Testing)
 Linting/Formatierung: ruff (Python), ESLint + Prettier (TypeScript), pre-commit
 Tooling: Poetry, npm, Docker, Make

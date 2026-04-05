@@ -58,7 +58,7 @@ Vor dem Commit diese Checkliste durchgehen:
    / ---------------- \    API-Endpunkte mit echtem DB-Zustand
   /    Unit Tests      \    pytest + Vitest (69+ Tests)
  / -------------------- \  Geschaeftslogik isoliert
-/   Mutation Testing      \ mutmut (Nightly/manuell, noch einzurichten)
+/   Mutation Testing      \ mutmut (Python) + Stryker (TypeScript)
  --------------------------  Prueft ob Tests echte Fehler finden
 ```
 
@@ -296,6 +296,74 @@ Schritte:
 Wichtig: Nutze Poetry fuer alles, keine pip-Aufrufe.
 ```
 
+### Mutation Testing (Frontend - Stryker Mutator)
+
+**Zweck:** Dasselbe Prinzip wie mutmut, aber fuer TypeScript/React. Stryker Mutator ist das Aequivalent fuer das JS/TS-Oekosystem.
+
+**Status:** Einzurichten (Vitest laeuft bereits, Stryker kann darauf aufbauen).
+
+**Setup:**
+```bash
+cd frontend
+npm install -D @stryker-mutator/core @stryker-mutator/vitest-runner @stryker-mutator/typescript-checker
+```
+
+**stryker.config.json:**
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-core.json",
+  "testRunner": "vitest",
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "mutate": [
+    "src/api/**/*.ts",
+    "src/hooks/**/*.ts",
+    "src/components/**/*.tsx",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/test/**"
+  ],
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  }
+}
+```
+
+**Ausfuehrung:**
+```bash
+# Komplett (dauert lange, Nightly oder manuell)
+cd frontend && npx stryker run
+
+# Nur ein bestimmtes Verzeichnis
+cd frontend && npx stryker run --mutate "src/api/**/*.ts"
+
+# Nur ein bestimmtes File
+cd frontend && npx stryker run --mutate "src/api/client.ts"
+```
+
+**Kritische Frontend-Module zuerst testen:**
+1. `src/api/client.ts` - Alle API-Aufrufe, Error-Handling
+2. `src/hooks/useI18n.ts` - i18n-Logik
+3. `src/hooks/useTheme.ts` - Theme-Logik
+4. Utility-Funktionen
+
+**Referenz-Prompt fuer Claude Code:**
+```
+Ich moechte Stryker Mutator (Mutation Testing) im Frontend integrieren.
+
+Schritte:
+1. Vitest laeuft bereits. Installiere @stryker-mutator/core, @stryker-mutator/vitest-runner, @stryker-mutator/typescript-checker
+2. Erstelle stryker.config.json (mutate: src/api/, src/hooks/, src/components/, checkers: typescript, testRunner: vitest)
+3. Fuehre einen ersten stryker run durch auf src/api/client.ts und zeige die Ergebnisse
+4. Falls Mutanten ueberleben, schlage konkrete Tests vor
+```
+
 ---
 
 ## Automatisierung (noch aufzubauen)
@@ -307,7 +375,7 @@ Wichtig: Nutze Poetry fuer alles, keine pip-Aufrufe.
 check-types:
 	cd frontend && npx tsc --noEmit
 
-# Mutation Testing (Nightly/manuell)
+# Mutation Testing Backend (Nightly/manuell)
 mutmut-backend:
 	cd backend && poetry run mutmut run
 
@@ -320,6 +388,13 @@ mutmut-results:
 mutmut-html:
 	cd backend && poetry run mutmut html
 	@echo "Report: backend/html/index.html"
+
+# Mutation Testing Frontend (Nightly/manuell)
+stryker:
+	cd frontend && npx stryker run
+
+stryker-api:
+	cd frontend && npx stryker run --mutate "src/api/**/*.ts"
 
 # Alle Checks zusammen (vor Push)
 check-all: test check-types
@@ -342,8 +417,9 @@ test-all: test test-frontend
 7. make dev-down           # App stoppen
 
 Nightly (separat, dauert laenger):
-8. make mutmut-backend     # Mutation Testing Backend
-9. make mutmut-export      # Mutation Testing Export-Plugin
+8. make mutmut-backend     # Mutation Testing Backend (Python)
+9. make mutmut-export      # Mutation Testing Export-Plugin (Python)
+10. make stryker           # Mutation Testing Frontend (TypeScript)
 ```
 
 ---
@@ -351,7 +427,8 @@ Nightly (separat, dauert laenger):
 ## Prioritaet fuer naechste Verbesserungen
 
 1. **mutmut einrichten** - Mutation Testing fuer Backend und Export-Plugin
-2. **make check-all** - Ein Befehl fuer alles vor dem Push
-3. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
-4. **mypy einrichten** - Type-Checking fuer Python Backend
-5. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut
+2. **Stryker einrichten** - Mutation Testing fuer Frontend (Vitest laeuft bereits)
+3. **make check-all** - Ein Befehl fuer alles vor dem Push
+4. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
+5. **mypy einrichten** - Type-Checking fuer Python Backend
+6. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut/Stryker
