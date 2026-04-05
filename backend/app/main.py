@@ -156,6 +156,27 @@ from app.ai.routes import router as ai_router
 app.include_router(ai_router, prefix="/api")
 
 
+# Global exception handler: log all unhandled errors with stacktrace
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Log all unhandled exceptions with full stacktrace."""
+    import traceback
+    logger.error(
+        "Unhandled error: %s %s -> %s",
+        request.method, request.url.path, str(exc),
+        exc_info=True,
+    )
+    detail: dict[str, Any] = {"detail": str(exc)}
+    if DEBUG:
+        detail["stacktrace"] = traceback.format_exc()
+        detail["endpoint"] = request.url.path
+        detail["method"] = request.method
+    return JSONResponse(status_code=500, content=detail)
+
+
 @app.get("/api/plugins/manifests")
 def get_plugin_manifests() -> dict[str, Any]:
     result: dict[str, Any] = {}
