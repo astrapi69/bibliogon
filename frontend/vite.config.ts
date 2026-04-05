@@ -1,9 +1,42 @@
 /// <reference types="vitest" />
 import {defineConfig} from "vite";
 import react from "@vitejs/plugin-react";
+import {VitePWA} from "vite-plugin-pwa";
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: "autoUpdate",
+            includeAssets: ["icon-192.svg", "icon-512.svg"],
+            manifest: {
+                name: "Bibliogon",
+                short_name: "Bibliogon",
+                description: "Open-source book authoring platform",
+                theme_color: "#b45309",
+                background_color: "#faf8f5",
+                display: "standalone",
+                orientation: "any",
+                start_url: "/",
+                scope: "/",
+                icons: [
+                    {src: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml"},
+                    {src: "/icon-512.svg", sizes: "512x512", type: "image/svg+xml"},
+                ],
+            },
+            workbox: {
+                // Precache static assets, skip API calls
+                globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+                navigateFallback: "/index.html",
+                runtimeCaching: [
+                    {
+                        urlPattern: /^\/api\//,
+                        handler: "NetworkOnly",
+                    },
+                ],
+            },
+        }),
+    ],
     test: {
         environment: "happy-dom",
         globals: true,

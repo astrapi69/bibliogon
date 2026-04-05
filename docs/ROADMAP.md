@@ -12,6 +12,7 @@ Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
 Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
+- [x] W-01: PWA-Support (manifest.json, Service Worker, Offline-Cache, installierbar)
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [x] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
