@@ -319,6 +319,7 @@ ui:
     engine: "Sprachsynthese-Engine"
     language: "Sprache"
     default_voice: "Standardstimme"
+    voice: "Stimme"
     merge: "Kapitel zusammenfuegen"
     merge_yes: "Ja (alle Kapitel zusammenfuegen)"
     merge_no: "Nein (einzelne MP3 pro Kapitel)"

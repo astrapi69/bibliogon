@@ -319,6 +319,7 @@ ui:
         engine: "Sentez motoru"
         language: "Dil"
         default_voice: "Varsayilan ses"
+        voice: "Ses"
         merge: "Bolumleri birlestir"
         merge_yes: "Evet (tum bolumleri birlestir)"
         merge_no: "Hayir (bolum basina ayri MP3)"

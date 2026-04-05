@@ -302,6 +302,7 @@ ui:
     engine: "Motor de sintesis"
     language: "Idioma"
     default_voice: "Voz predeterminada"
+    voice: "Voz"
     merge: "Unir capitulos"
     merge_yes: "Si (unir todos los capitulos)"
     merge_no: "No (MP3 separado por capitulo)"

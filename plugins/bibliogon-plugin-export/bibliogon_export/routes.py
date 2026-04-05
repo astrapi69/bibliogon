@@ -183,6 +183,20 @@ def _export_project(base_name: str, tmp_dir: Path, project_dir: Path) -> FileRes
     return FileResponse(path=bgp_path, media_type="application/octet-stream", filename=f"{base_name}.bgp")
 
 
+def _read_audiobook_merge_setting() -> bool:
+    """Read merge setting from audiobook plugin config. Default: True."""
+    import yaml
+    config_path = Path("config/plugins/audiobook.yaml")
+    if config_path.exists():
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            return bool(cfg.get("settings", {}).get("merge", True))
+        except Exception:
+            pass
+    return True
+
+
 def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]], base_name: str) -> FileResponse:
     """Export as audiobook MP3 via TTS."""
     try:
@@ -195,6 +209,7 @@ def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]],
     voice = book_data.get("tts_voice") or ""
     language = book_data.get("tts_language") or book_data.get("language", "de")
     rate = book_data.get("tts_speed") or ""
+    merge = _read_audiobook_merge_setting()
     audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
 
     loop = asyncio.new_event_loop()
@@ -202,7 +217,7 @@ def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]],
         result = loop.run_until_complete(generate_audiobook(
             book_title=book_data.get("title", "audiobook"),
             chapters=chapters, output_dir=audio_dir,
-            engine_id=engine_id, voice=voice, language=language, rate=rate, merge=True,
+            engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge,
         ))
     finally:
         loop.close()
@@ -343,10 +358,11 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
             language = book_data.get("tts_language") or book_data.get("language", "de")
             rate = book_data.get("tts_speed") or ""
             audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
+            merge = _read_audiobook_merge_setting()
             result = await generate_audiobook(
                 book_title=book_data.get("title", "audiobook"),
                 chapters=chapters, output_dir=audio_dir,
-                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=True,
+                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge,
             )
             if result.get("merged_file"):
                 merged = audio_dir / result["merged_file"]

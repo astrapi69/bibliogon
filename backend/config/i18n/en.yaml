@@ -319,6 +319,7 @@ ui:
     engine: "TTS Engine"
     language: "Language"
     default_voice: "Default Voice"
+    voice: "Voice"
     merge: "Merge Chapters"
     merge_yes: "Yes (merge all chapters)"
     merge_no: "No (separate MP3 per chapter)"

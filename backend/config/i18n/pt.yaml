@@ -319,6 +319,7 @@ ui:
         engine: "Motor de sintese"
         language: "Idioma"
         default_voice: "Voz padrao"
+        voice: "Voz"
         merge: "Mesclar capitulos"
         merge_yes: "Sim (mesclar todos os capitulos)"
         merge_no: "Nao (MP3 separado por capitulo)"

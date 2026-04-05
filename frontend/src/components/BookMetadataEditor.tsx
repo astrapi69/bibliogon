@@ -274,8 +274,22 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
 
     useEffect(() => {
         setLoadingVoices(true);
+        // Try the audiobook voices API; if plugin not active, use empty fallback
         fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
-            .then((r) => r.ok ? r.json() : [])
+            .then((r) => {
+                if (r.ok) return r.json();
+                // API not available (plugin not active) - provide hardcoded defaults for edge-tts
+                if (currentEngine === "edge-tts") {
+                    const defaults: Record<string, {id: string; name: string; gender: string}[]> = {
+                        de: [{id: "de-DE-KatjaNeural", name: "Katja", gender: "Female"}, {id: "de-DE-ConradNeural", name: "Conrad", gender: "Male"}],
+                        en: [{id: "en-US-JennyNeural", name: "Jenny", gender: "Female"}, {id: "en-US-GuyNeural", name: "Guy", gender: "Male"}],
+                        es: [{id: "es-ES-ElviraNeural", name: "Elvira", gender: "Female"}, {id: "es-ES-AlvaroNeural", name: "Alvaro", gender: "Male"}],
+                        fr: [{id: "fr-FR-DeniseNeural", name: "Denise", gender: "Female"}, {id: "fr-FR-HenriNeural", name: "Henri", gender: "Male"}],
+                    };
+                    return defaults[bookLanguage.toLowerCase()] || defaults["en"] || [];
+                }
+                return [];
+            })
             .then((data) => {
                 setVoices(data);
                 if (data.length > 0 && !data.some((v: {id: string}) => v.id === voice)) {
@@ -305,7 +319,7 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
                 </select>
             </div>
             <div className="field">
-                <label className="label">{t("ui.audiobook.default_voice", "Stimme")}</label>
+                <label className="label">{t("ui.audiobook.voice", "Stimme")}</label>
                 {loadingVoices ? (
                     <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
                         {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}

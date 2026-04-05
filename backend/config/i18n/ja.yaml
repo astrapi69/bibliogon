@@ -319,6 +319,7 @@ ui:
         engine: "音声合成エンジン"
         language: "言語"
         default_voice: "デフォルト音声"
+        voice: "声"
         merge: "チャプターを結合"
         merge_yes: "はい（全チャプターを結合）"
         merge_no: "いいえ（チャプターごとに個別MP3）"
