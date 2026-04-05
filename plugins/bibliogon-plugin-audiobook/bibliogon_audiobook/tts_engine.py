@@ -16,7 +16,7 @@ class TTSEngine(ABC):
     """Abstract base class for TTS engines."""
 
     @abstractmethod
-    async def synthesize(self, text: str, output_path: Path, voice: str, language: str) -> Path:
+    async def synthesize(self, text: str, output_path: Path, voice: str, language: str, rate: str = "") -> Path:
         """Synthesize text to an audio file.
 
         Args:
@@ -24,6 +24,7 @@ class TTSEngine(ABC):
             output_path: Path for the output MP3 file.
             voice: Voice identifier (engine-specific).
             language: Language code (e.g. "de", "en").
+            rate: Speed multiplier (e.g. "1.0", "1.25", "0.75").
 
         Returns:
             Path to the generated audio file.
@@ -66,16 +67,18 @@ class EdgeTTSEngine(TTSEngine):
     def engine_name(self) -> str:
         return "Microsoft Edge TTS"
 
-    async def synthesize(self, text: str, output_path: Path, voice: str, language: str) -> Path:
+    async def synthesize(self, text: str, output_path: Path, voice: str, language: str, rate: str = "") -> Path:
         """Generate MP3 via Edge TTS."""
         import edge_tts
 
         if not voice:
             voice = _default_voice_for_language(language)
 
-        communicate = edge_tts.Communicate(text, voice)
+        # Convert speed multiplier to Edge TTS rate format (e.g. "1.25" -> "+25%")
+        edge_rate = _speed_to_edge_rate(rate) if rate else "+0%"
+        communicate = edge_tts.Communicate(text, voice, rate=edge_rate)
         await communicate.save(str(output_path))
-        logger.info("Edge TTS: generated %s (%d chars)", output_path.name, len(text))
+        logger.info("Edge TTS: generated %s (%d chars, rate=%s)", output_path.name, len(text), edge_rate)
         return output_path
 
     async def list_voices(self, language: str | None = None) -> list[dict[str, str]]:
@@ -111,6 +114,16 @@ _DEFAULT_VOICES = {
     "ja": "ja-JP-KeitaNeural",
     "zh": "zh-CN-YunxiNeural",
 }
+
+
+def _speed_to_edge_rate(speed: str) -> str:
+    """Convert speed multiplier (e.g. '1.25') to Edge TTS rate format ('+25%')."""
+    try:
+        val = float(speed)
+        pct = int((val - 1.0) * 100)
+        return f"{pct:+d}%"
+    except (ValueError, TypeError):
+        return "+0%"
 
 
 def _default_voice_for_language(language: str) -> str:

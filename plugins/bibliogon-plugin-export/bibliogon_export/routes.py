@@ -66,6 +66,7 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
         "tts_engine": getattr(book, "tts_engine", None),
         "tts_voice": getattr(book, "tts_voice", None),
         "tts_language": getattr(book, "tts_language", None),
+        "tts_speed": getattr(book, "tts_speed", None),
     }
 
     chapters_data = []
@@ -236,17 +237,24 @@ def export(
             )
 
         if fmt == "audiobook":
-            # Delegate to audiobook plugin via import (not via hook for simplicity)
+            # Audiobook export: try to import the generator dynamically
             try:
                 from bibliogon_audiobook.generator import generate_audiobook
-                import asyncio
-                import re as _re_ab
+            except ImportError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Audiobook plugin not installed. Install it via Settings > Plugins.",
+                )
 
-                engine_id = book_data.get("tts_engine") or "edge-tts"
-                voice = book_data.get("tts_voice") or ""
-                language = book_data.get("tts_language") or book_data.get("language", "de")
-                audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
+            import asyncio
 
+            engine_id = book_data.get("tts_engine") or "edge-tts"
+            voice = book_data.get("tts_voice") or ""
+            language = book_data.get("tts_language") or book_data.get("language", "de")
+            rate = book_data.get("tts_speed") or ""
+            audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
+
+            try:
                 loop = asyncio.new_event_loop()
                 try:
                     result = loop.run_until_complete(generate_audiobook(
@@ -256,28 +264,39 @@ def export(
                         engine_id=engine_id,
                         voice=voice,
                         language=language,
+                        rate=rate,
                         merge=True,
                     ))
                 finally:
                     loop.close()
 
+                # Return merged MP3 or ZIP of chapter files
                 if result.get("merged_file"):
                     merged = audio_dir / result["merged_file"]
+                    if merged.exists():
+                        return FileResponse(
+                            path=str(merged),
+                            media_type="audio/mpeg",
+                            filename=f"{base_name}.mp3",
+                        )
+
+                # Bundle chapter MP3s into ZIP
+                generated = result.get("generated_files", [])
+                if generated:
+                    zip_path = shutil.make_archive(
+                        str(audio_dir / "audiobook"), "zip", str(audio_dir)
+                    )
                     return FileResponse(
-                        path=str(merged),
-                        media_type="audio/mpeg",
-                        filename=f"{base_name}.mp3",
+                        path=zip_path,
+                        media_type="application/zip",
+                        filename=f"{base_name}-audiobook.zip",
                     )
 
-                # No merge - bundle as ZIP
-                zip_path = shutil.make_archive(str(audio_dir / "audiobook"), "zip", str(audio_dir))
-                return FileResponse(
-                    path=zip_path,
-                    media_type="application/zip",
-                    filename=f"{base_name}-audiobook.zip",
-                )
-            except ImportError:
-                raise HTTPException(status_code=400, detail="Audiobook plugin not installed")
+                errors = result.get("errors", [])
+                detail = "; ".join(e.get("error", "") for e in errors) if errors else "No audio generated"
+                raise HTTPException(status_code=500, detail=f"Audiobook export failed: {detail}")
+            except HTTPException:
+                raise
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Audiobook export failed: {e}")
 

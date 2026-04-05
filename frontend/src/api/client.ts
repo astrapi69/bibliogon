@@ -53,6 +53,7 @@ export interface Book {
     tts_engine: string | null;
     tts_voice: string | null;
     tts_language: string | null;
+    tts_speed: string | null;
     created_at: string;
     updated_at: string;
 }

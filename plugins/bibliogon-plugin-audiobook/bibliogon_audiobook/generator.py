@@ -62,6 +62,7 @@ async def generate_chapter_audio(
     engine: TTSEngine,
     voice: str = "",
     language: str = "de",
+    rate: str = "",
     include_title: bool = True,
 ) -> Path | None:
     """Generate MP3 for a single chapter.
@@ -92,7 +93,7 @@ async def generate_chapter_audio(
     filename = f"{chapter_index:03d}-{_slugify(title)}.mp3"
     output_path = output_dir / filename
 
-    await engine.synthesize(full_text, output_path, voice=voice, language=language)
+    await engine.synthesize(full_text, output_path, voice=voice, language=language, rate=rate)
     return output_path
 
 
@@ -103,6 +104,7 @@ async def generate_audiobook(
     engine_id: str = "edge-tts",
     voice: str = "",
     language: str = "de",
+    rate: str = "",
     skip_types: set[str] | None = None,
     merge: bool = False,
 ) -> dict:
@@ -148,6 +150,7 @@ async def generate_audiobook(
                 engine=engine,
                 voice=voice,
                 language=language,
+                rate=rate,
             )
             if result:
                 generated.append(result.name)

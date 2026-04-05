@@ -90,15 +90,24 @@ plugin_install.configure(BASE_DIR, manager)
 
 
 def _load_installed_plugins() -> None:
-    """Add installed plugin directories to sys.path before discovery."""
+    """Add installed and bundled plugin directories to sys.path before discovery."""
+    # ZIP-installed plugins
     installed_dir = BASE_DIR / "plugins" / "installed"
-    if not installed_dir.exists():
-        return
-    for plugin_dir in installed_dir.iterdir():
-        if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
-            path_str = str(plugin_dir)
-            if path_str not in sys.path:
-                sys.path.insert(0, path_str)
+    if installed_dir.exists():
+        for plugin_dir in installed_dir.iterdir():
+            if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
+                path_str = str(plugin_dir)
+                if path_str not in sys.path:
+                    sys.path.insert(0, path_str)
+
+    # Bundled plugins (e.g. plugins/bibliogon-plugin-audiobook/)
+    bundled_dir = BASE_DIR.parent / "plugins"
+    if bundled_dir.exists():
+        for plugin_dir in bundled_dir.iterdir():
+            if plugin_dir.is_dir() and plugin_dir.name.startswith("bibliogon-plugin-"):
+                path_str = str(plugin_dir)
+                if path_str not in sys.path:
+                    sys.path.insert(0, path_str)
 
 
 @asynccontextmanager

@@ -78,6 +78,7 @@ class Book(Base):
     tts_engine: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tts_voice: Mapped[str | None] = mapped_column(String(200), nullable=True)
     tts_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    tts_speed: Mapped[str | None] = mapped_column(String(10), nullable=True)  # e.g. "1.0", "0.75", "1.25"
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(

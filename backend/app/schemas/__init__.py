@@ -77,6 +77,7 @@ class BookUpdate(BaseModel):
     tts_engine: str | None = None
     tts_voice: str | None = None
     tts_language: str | None = None
+    tts_speed: str | None = None
 
 
 class BookOut(BaseModel):
@@ -111,6 +112,7 @@ class BookOut(BaseModel):
     tts_engine: str | None = None
     tts_voice: str | None = None
     tts_language: str | None = None
+    tts_speed: str | None = None
     created_at: datetime
     updated_at: datetime
 

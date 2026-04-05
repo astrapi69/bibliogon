@@ -71,6 +71,7 @@ def export_backup(db: Session = Depends(get_db)):
             "tts_engine": book.tts_engine,
             "tts_voice": book.tts_voice,
             "tts_language": book.tts_language,
+            "tts_speed": book.tts_speed,
             "created_at": book.created_at.isoformat(),
             "updated_at": book.updated_at.isoformat(),
         }
@@ -328,6 +329,7 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
                 tts_engine=book_data.get("tts_engine"),
                 tts_voice=book_data.get("tts_voice"),
                 tts_language=book_data.get("tts_language"),
+                tts_speed=book_data.get("tts_speed"),
             )
             db.add(book)
 

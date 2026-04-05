@@ -40,6 +40,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             custom_css: book.custom_css || "",
             tts_engine: book.tts_engine || "",
             tts_voice: book.tts_voice || "",
+            tts_speed: book.tts_speed || "1.0",
         });
     }, [book]);
 
@@ -188,8 +189,10 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                         bookLanguage={book.language}
                         engine={form.tts_engine || ""}
                         voice={form.tts_voice || ""}
-                        onEngineChange={(v) => { set("tts_engine", v); set("tts_voice", ""); }}
-                        onVoiceChange={(v) => set("tts_voice", v)}
+                        speed={form.tts_speed || "1.0"}
+                        onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
+                        onVoiceChange={(v: string) => set("tts_voice", v)}
+                        onSpeedChange={(v: string) => set("tts_speed", v)}
                     />
                 </Section>
             </div>
@@ -255,12 +258,14 @@ function tryParseKeywords(raw: string): string {
 
 // --- Styles ---
 
-function AudiobookBookConfig({bookLanguage, engine, voice, onEngineChange, onVoiceChange}: {
+function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange, onVoiceChange, onSpeedChange}: {
     bookLanguage: string;
     engine: string;
     voice: string;
+    speed: string;
     onEngineChange: (v: string) => void;
     onVoiceChange: (v: string) => void;
+    onSpeedChange: (v: string) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
@@ -316,6 +321,16 @@ function AudiobookBookConfig({bookLanguage, engine, voice, onEngineChange, onVoi
                         {t("ui.audiobook.engine_unavailable", "Engine nicht verfuegbar")}
                     </div>
                 )}
+            </div>
+            <div className="field">
+                <label className="label">{t("ui.audiobook.speed", "Geschwindigkeit")}</label>
+                <select className="input" value={speed} onChange={(e) => onSpeedChange(e.target.value)}>
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1.0">1.0x (Normal)</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                </select>
             </div>
         </>
     );
