@@ -243,7 +243,7 @@ export const api = {
             );
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new Error(err.detail || "Upload failed");
+                throw new ApiError(res.status, err.detail || "Upload failed", `${BASE}/books/assets`, "POST", err.stacktrace || "");
             }
             return res.json();
         },
@@ -267,7 +267,7 @@ export const api = {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new Error(err.detail || "Import failed");
+                throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/smart-import`, "POST", err.stacktrace || "");
             }
             return res.json();
         },
@@ -281,7 +281,7 @@ export const api = {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new Error(err.detail || "Import failed");
+                throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/import`, "POST", err.stacktrace || "");
             }
             return res.json();
         },
@@ -295,7 +295,7 @@ export const api = {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new Error(err.detail || "Import failed");
+                throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/import-project`, "POST", err.stacktrace || "");
             }
             return res.json();
         },
@@ -367,7 +367,7 @@ export const api = {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new Error(err.detail || "Installation fehlgeschlagen");
+                throw new ApiError(res.status, err.detail || "Installation fehlgeschlagen", `${BASE}/plugins/install`, "POST", err.stacktrace || "");
             }
             return res.json();
         },
