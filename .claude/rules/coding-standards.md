@@ -132,6 +132,15 @@ def find_cover_image(project_dir: Path) -> str | None: ...
 - Code den du anfasst hinterlaesst du sauberer als du ihn vorgefunden hast. Kleine Verbesserungen bei jeder Aenderung.
 - Gilt auch fuer Claude Code: Wenn du eine Funktion aenderst und sie gegen Regeln verstoesst, repariere den Verstoss mit.
 
+## Error Reporting
+
+- Kein except ohne logger.error(). Keine Exception verschlucken.
+- HTTPException.detail muss den Fehlergrund enthalten, nicht nur den Funktionsnamen.
+- Im Debug-Mode: Stacktrace in der Response mitliefern (globaler Exception Handler).
+- Im Frontend: ApiError-Objekt an notify.error() durchreichen, nicht nur String.
+- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN.
+- Alle fetch-Aufrufe im Frontend muessen bei Fehler ApiError werfen, nicht Error.
+
 ## Tests
 
 - Backend: pytest. Plugin-Tests in plugins/{name}/tests/.
