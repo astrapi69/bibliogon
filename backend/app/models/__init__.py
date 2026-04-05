@@ -133,3 +133,20 @@ class Asset(Base):
 
     def __repr__(self) -> str:
         return f"<Asset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
+
+
+class AudioVoice(Base):
+    """Cached TTS voice from an engine (e.g. Edge TTS, Google TTS)."""
+
+    __tablename__ = "audio_voices"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    engine: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    language: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    voice_id: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    gender: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    def __repr__(self) -> str:
+        return f"<AudioVoice {self.voice_id!r} engine={self.engine} lang={self.language}>"

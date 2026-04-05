@@ -189,6 +189,13 @@ generate-license-key-all: ## Generate key for all plugins. Usage: make generate-
 		print('Author:', '$(AUTHOR)'); \
 		print('Expires:', expires)"
 
+seed-voices: ## Sync Edge TTS voices into the database
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
+		"from app.database import SessionLocal, init_db; init_db(); \
+		from app.voice_store import sync_edge_tts_voices; \
+		db = SessionLocal(); count = sync_edge_tts_voices(db); db.close(); \
+		print(f'{count} voices synced')"
+
 # --- Production (Docker) ---
 
 prod: ## Start production via Docker Compose

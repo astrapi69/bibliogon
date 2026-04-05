@@ -276,15 +276,19 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
     useEffect(() => {
         setLoadingVoices(true);
         // Try the audiobook voices API; if plugin not active, use empty fallback
-        fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
+        // Try core voices API first (always available), then plugin API, then hardcoded fallback
+        fetch(`/api/voices?engine=${currentEngine}&language=${bookLanguage}`)
             .then((r) => {
                 if (r.ok) return r.json();
-                // API not available (plugin not active) - use comprehensive fallback
-                if (currentEngine === "edge-tts") {
-                    const lang = bookLanguage.toLowerCase().split("-")[0];
-                    return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
-                }
-                return [];
+                // Core API failed, try audiobook plugin API
+                return fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
+                    .then((r2) => r2.ok ? r2.json() : null);
+            })
+            .then((data) => {
+                if (data && data.length > 0) return data;
+                // Both APIs failed, use hardcoded fallback
+                const lang = bookLanguage.toLowerCase().split("-")[0];
+                return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
             })
             .then((data) => {
                 setVoices(data);

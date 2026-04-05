@@ -117,6 +117,15 @@ async def lifespan(app: FastAPI):
     # Auto-delete expired trash items on startup
     from app.routers.books import cleanup_expired_trash
     cleanup_expired_trash()
+    # Seed voices if table is empty
+    from app.voice_store import sync_edge_tts_voices, voice_count
+    from app.database import SessionLocal
+    _vs_db = SessionLocal()
+    try:
+        if voice_count(_vs_db) == 0:
+            sync_edge_tts_voices(_vs_db)
+    finally:
+        _vs_db.close()
     _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)
@@ -175,6 +184,31 @@ async def global_exception_handler(request: Request, exc: Exception):
         detail["endpoint"] = request.url.path
         detail["method"] = request.method
     return JSONResponse(status_code=500, content=detail)
+
+
+@app.get("/api/voices")
+def list_voices(engine: str = "edge-tts", language: str | None = None):
+    """List TTS voices from the database (always available, no plugin needed)."""
+    from app.voice_store import get_voices
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        return get_voices(db, engine, language)
+    finally:
+        db.close()
+
+
+@app.post("/api/voices/sync")
+def sync_voices():
+    """Re-sync Edge TTS voices from the API into the database."""
+    from app.voice_store import sync_edge_tts_voices
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        count = sync_edge_tts_voices(db)
+        return {"synced": count, "engine": "edge-tts"}
+    finally:
+        db.close()
 
 
 @app.get("/api/plugins/manifests")

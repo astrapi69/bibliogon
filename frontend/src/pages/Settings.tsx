@@ -640,14 +640,16 @@ function AudiobookSettingsPanel({settings, onSave}: {
     // Load voices when engine or language changes
     useEffect(() => {
         setLoadingVoices(true);
-        fetch(`/api/audiobook/voices?engine=${engine}&language=${language}`)
+        fetch(`/api/voices?engine=${engine}&language=${language}`)
             .then((r) => {
                 if (r.ok) return r.json();
-                if (engine === "edge-tts") {
-                    const lang = language.toLowerCase().split("-")[0];
-                    return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
-                }
-                return [];
+                return fetch(`/api/audiobook/voices?engine=${engine}&language=${language}`)
+                    .then((r2) => r2.ok ? r2.json() : null);
+            })
+            .then((data) => {
+                if (data && data.length > 0) return data;
+                const lang = language.toLowerCase().split("-")[0];
+                return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
             })
             .then((data) => {
                 setVoices(data);
