@@ -38,6 +38,9 @@
 - Events/Hooks: snake_case (chapter_pre_save, export_execute).
 - Kein I-Prefix fuer Interfaces. `Book` statt `IBook`.
 - Dateiformate: .bgb (Backup), .bgp (Projekt). Nicht .zip.
+- Keine generischen Namen: data, info, result, temp, item, obj, val, tmp, x sind verboten.
+  Stattdessen: book_data, plugin_info, export_result, chapter_item.
+  Ausnahme: Loop-Variablen (i, j) und Lambdas.
 
 ## Formatierung
 
@@ -56,15 +59,37 @@
 - Ein Commit pro logische Aenderung, nicht alles in einen.
 - Branch-Benennung: feature/{name}, fix/{name}, chore/{name}
 
-## Funktionsdesign
+## Funktionsdesign und Kohaesion
 
-- Eine Funktion, eine Verantwortung. Maximal 30-40 Zeilen pro Funktion.
-- Funktionen ueber 50 Zeilen sind ein Refactoring-Signal.
+### Grundregeln
+
+- Jede Funktion hat genau eine Verantwortung.
+- Max 40 Zeilen pro Funktion. Ueber 50 ist ein sofortiges Refactoring-Signal.
+- Funktionen die mehrere Dinge tun (parsen UND speichern, validieren UND transformieren) in separate Funktionen zerlegen.
+- Erkennungszeichen fuer niedrige Kohaesion: Kommentare wie "# Step 1", "# Step 2", "# Now do X" innerhalb einer Funktion. Jeder Step ist eine eigene Funktion.
+
+### Abstraktionsebenen nicht mischen
+
+- Eine Funktion operiert auf EINER Abstraktionsebene.
+- FALSCH: db.query() und string-Formatierung in derselben Funktion.
+- RICHTIG: High-Level-Funktion ruft Low-Level-Hilfsfunktionen auf.
+
+### Route-Handler
+
 - routes.py enthaelt NUR Routing-Logik: Eingabe validieren, Service aufrufen, Response zurueckgeben.
 - Geschaeftslogik gehoert in Service-Module oder Hilfsfunktionen, NICHT in Route-Handler.
 - Verschiedene Code-Pfade (if/elif-Kaskaden fuer Formate, Typen, etc.) in eigene Funktionen extrahieren.
-- Gemeinsam genutzte Daten zwischen Funktionen: Dataclass oder TypedDict, NICHT lose Dicts durchreichen.
+
+### Daten zwischen Funktionen
+
+- Gemeinsam genutzte Daten: Dataclass oder TypedDict, NICHT lose Dicts durchreichen.
 - Jede extrahierte Funktion muss einzeln testbar sein, ohne den gesamten Kontext aufzubauen.
+
+### Crash Early
+
+- Ungueltige Eingaben am Anfang der Funktion abfangen, nicht tief verschachtelt.
+- Pydantic Validierung fuer API-Input.
+- Guard Clauses statt tief verschachtelter if/else.
 
 **Anti-Pattern (God Method):**
 ```python
@@ -96,17 +121,29 @@ def build_filename(slug: str, book_type: str, suffix: bool) -> str: ...
 def find_cover_image(project_dir: Path) -> str | None: ...
 ```
 
+## DRY - Don't Repeat Yourself
+
+- Gleiche Logik an zwei Stellen: In eine gemeinsame Funktion extrahieren.
+- Gleiche Konstanten an zwei Stellen: In eine zentrale Datei.
+- Drei Duplicates: Sofort refactoren, nicht spaeter.
+
+## Boy Scout Rule
+
+- Code den du anfasst hinterlaesst du sauberer als du ihn vorgefunden hast. Kleine Verbesserungen bei jeder Aenderung.
+- Gilt auch fuer Claude Code: Wenn du eine Funktion aenderst und sie gegen Regeln verstoesst, repariere den Verstoss mit.
+
 ## Tests
 
 - Backend: pytest. Plugin-Tests in plugins/{name}/tests/.
-- E2E: Playwright (aktuell 52 Tests).
-- Mutation Testing: mutmut fuer Python, Stryker Mutator fuer TypeScript.
+- Frontend: Vitest (happy-dom).
+- E2E: Playwright.
+- Mutation Testing: mutmut (Python).
 - Neue Endpunkte: Mindestens ein Happy-Path Test.
 - Bugfixes: Failing Test ZUERST, dann Fix.
 - Mocking: Externe Services (LanguageTool, Pandoc) mocken, keine echten Calls in Tests.
 - `make test` muss gruen bleiben nach jeder Aenderung.
 - Ueberlebende Mutanten in kritischem Code: Tests ergaenzen. In trivialem Code: Ignorieren.
-- Siehe quality-checks.md fuer vollstaendige Teststrategie, mutmut- und Stryker-Konfiguration.
+- Siehe quality-checks.md fuer vollstaendige Teststrategie und mutmut-Konfiguration.
 
 ## Sicherheit
 
@@ -128,6 +165,6 @@ Neue Dependencies nur nach Rueckfrage einfuehren. Bestehender Stack:
 
 Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML, markdown (MD->HTML)
 Frontend: React 18, TypeScript, TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
-Testing: pytest, Playwright, Vitest, mutmut (Python Mutation Testing), Stryker Mutator (TypeScript Mutation Testing)
+Testing: pytest, Playwright, Vitest, mutmut (Python Mutation Testing)
 Linting/Formatierung: ruff (Python), ESLint + Prettier (TypeScript), pre-commit
 Tooling: Poetry, npm, Docker, Make
