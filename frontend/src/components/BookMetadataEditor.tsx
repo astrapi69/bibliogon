@@ -5,6 +5,7 @@ import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
 import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
+import * as Tabs from "@radix-ui/react-tabs";
 
 interface Props {
     book: Book;
@@ -52,17 +53,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
         try {
             const data: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(form)) {
-                if (key === "keywords" && value) {
-                    // Keywords are already stored as JSON string from KeywordInput
-                    data[key] = value;
-                } else {
-                    data[key] = value || null;
-                }
+                data[key] = key === "keywords" && value ? value : (value || null);
             }
             await onSave(data);
-            notify.success("Metadaten gespeichert");
-        } catch {
-            notify.error("Fehler beim Speichern");
+            notify.success(t("ui.common.save", "Metadaten gespeichert"));
+        } catch (err) {
+            notify.error(t("ui.common.error", "Fehler beim Speichern"), err);
         }
         setSaving(false);
     };
@@ -74,40 +70,39 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             publisher_city: sourceBook.publisher_city || prev.publisher_city || "",
             backpage_author_bio: sourceBook.backpage_author_bio || prev.backpage_author_bio || "",
             custom_css: sourceBook.custom_css || prev.custom_css || "",
-            cover_image: prev.cover_image || "",  // Keep own cover
         }));
         setShowCopyDialog(false);
-        notify.success(`Verlag und Autoren-Info von "${sourceBook.title}" übernommen`);
+        notify.success(`Verlag und Autoren-Info von "${sourceBook.title}" uebernommen`);
     };
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
 
     return (
         <div style={styles.container}>
+            {/* Header */}
             <div style={styles.header}>
                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                    <button className="btn-icon" onClick={onBack} title="Zurück zum Editor">
+                    <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurueck")}>
                         <ChevronLeft size={18}/>
                     </button>
-                    <h2 style={styles.title}>Buch-Metadaten</h2>
+                    <h2 style={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>
                 </div>
                 <div style={{display: "flex", gap: 8}}>
                     {otherBooks.length > 0 && (
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowCopyDialog(!showCopyDialog)}>
-                            <Copy size={14}/> Von Buch übernehmen
+                            <Copy size={14}/> {t("ui.metadata.copy_from", "Von Buch uebernehmen")}
                         </button>
                     )}
                     <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
-                        <Save size={14}/> {saving ? "Speichert..." : "Speichern"}
+                        <Save size={14}/> {saving ? t("ui.editor.saving", "Speichert...") : t("ui.common.save", "Speichern")}
                     </button>
                 </div>
             </div>
 
-            {/* Copy from dialog */}
             {showCopyDialog && (
                 <div style={styles.copyDialog}>
                     <p style={{fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: 8}}>
-                        Uebernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:
+                        {t("ui.metadata.copy_hint", "Uebernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:")}
                     </p>
                     {otherBooks.map((b) => (
                         <button key={b.id} className="btn btn-ghost btn-sm" onClick={() => handleCopyFrom(b)}
@@ -118,99 +113,107 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 </div>
             )}
 
-            <div style={styles.grid}>
-                {/* Basis */}
-                <Section title="Allgemein">
-                    <Field label="Untertitel" value={form.subtitle} onChange={(v) => set("subtitle", v)}/>
-                    <Field label="Beschreibung" value={form.description} onChange={(v) => set("description", v)} multiline/>
-                    <Row>
-                        <Field label="Edition" value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
-                        <Field label="Datum" value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
-                    </Row>
-                </Section>
+            {/* Tabs */}
+            <Tabs.Root defaultValue="general" style={{maxWidth: 800}}>
+                <Tabs.List className="radix-tab-list" style={{marginBottom: 16, overflowX: "auto", whiteSpace: "nowrap"}}>
+                    <Tabs.Trigger value="general" className="radix-tab-trigger">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
+                    <Tabs.Trigger value="publisher" className="radix-tab-trigger">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
+                    <Tabs.Trigger value="isbn" className="radix-tab-trigger">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
+                    <Tabs.Trigger value="marketing" className="radix-tab-trigger">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
+                    <Tabs.Trigger value="design" className="radix-tab-trigger">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
+                    <Tabs.Trigger value="audiobook" className="radix-tab-trigger">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
+                </Tabs.List>
 
-                {/* Verlag */}
-                <Section title="Verlag">
-                    <Row>
-                        <Field label="Verlag" value={form.publisher} onChange={(v) => set("publisher", v)} placeholder="z.B. Conscious Path Publishing"/>
-                        <Field label="Stadt" value={form.publisher_city} onChange={(v) => set("publisher_city", v)} placeholder="z.B. Ludwigsburg"/>
-                    </Row>
-                </Section>
+                <Tabs.Content value="general">
+                    <div style={styles.tabContent}>
+                        <Field label={t("ui.metadata.subtitle", "Untertitel")} value={form.subtitle} onChange={(v) => set("subtitle", v)}/>
+                        <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline/>
+                        <Row>
+                            <Field label={t("ui.metadata.edition", "Edition")} value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
+                            <Field label={t("ui.metadata.publish_date", "Datum")} value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
+                        </Row>
+                    </div>
+                </Tabs.Content>
 
-                {/* ISBN / ASIN */}
-                <Section title="ISBN und ASIN">
-                    <Row>
-                        <Field label="ISBN E-Book" value={form.isbn_ebook} onChange={(v) => set("isbn_ebook", v)} placeholder="z.B. 9798253911952"/>
-                        <Field label="ISBN Taschenbuch" value={form.isbn_paperback} onChange={(v) => set("isbn_paperback", v)}/>
-                    </Row>
-                    <Row>
-                        <Field label="ISBN Hardcover" value={form.isbn_hardcover} onChange={(v) => set("isbn_hardcover", v)}/>
-                        <Field label="ASIN E-Book" value={form.asin_ebook} onChange={(v) => set("asin_ebook", v)} placeholder="z.B. B0GV3XBGVB"/>
-                    </Row>
-                    <Row>
-                        <Field label="ASIN Taschenbuch" value={form.asin_paperback} onChange={(v) => set("asin_paperback", v)}/>
-                        <Field label="ASIN Hardcover" value={form.asin_hardcover} onChange={(v) => set("asin_hardcover", v)}/>
-                    </Row>
-                </Section>
+                <Tabs.Content value="publisher">
+                    <div style={styles.tabContent}>
+                        <Row>
+                            <Field label={t("ui.metadata.publisher", "Verlag")} value={form.publisher} onChange={(v) => set("publisher", v)} placeholder="z.B. Conscious Path Publishing"/>
+                            <Field label={t("ui.metadata.publisher_city", "Stadt")} value={form.publisher_city} onChange={(v) => set("publisher_city", v)} placeholder="z.B. Ludwigsburg"/>
+                        </Row>
+                    </div>
+                </Tabs.Content>
 
-                {/* Marketing */}
-                <Section title="Marketing und Amazon">
-                    <div className="field">
-                        <label className="label">Keywords (max. 7)</label>
-                        <KeywordInput
-                            keywords={(() => {
-                                try {
-                                    const parsed = JSON.parse(form.keywords || "[]");
-                                    return Array.isArray(parsed) ? parsed : [];
-                                } catch {
-                                    return form.keywords ? String(form.keywords).split(",").map((s) => s.trim()).filter(Boolean) : [];
-                                }
-                            })()}
-                            onChange={(kws) => set("keywords", JSON.stringify(kws))}
+                <Tabs.Content value="isbn">
+                    <div style={styles.tabContent}>
+                        <Row>
+                            <Field label="ISBN E-Book" value={form.isbn_ebook} onChange={(v) => set("isbn_ebook", v)} placeholder="z.B. 9798253911952"/>
+                            <Field label="ISBN Taschenbuch" value={form.isbn_paperback} onChange={(v) => set("isbn_paperback", v)}/>
+                        </Row>
+                        <Row>
+                            <Field label="ISBN Hardcover" value={form.isbn_hardcover} onChange={(v) => set("isbn_hardcover", v)}/>
+                            <Field label="ASIN E-Book" value={form.asin_ebook} onChange={(v) => set("asin_ebook", v)} placeholder="z.B. B0GV3XBGVB"/>
+                        </Row>
+                        <Row>
+                            <Field label="ASIN Taschenbuch" value={form.asin_paperback} onChange={(v) => set("asin_paperback", v)}/>
+                            <Field label="ASIN Hardcover" value={form.asin_hardcover} onChange={(v) => set("asin_hardcover", v)}/>
+                        </Row>
+                    </div>
+                </Tabs.Content>
+
+                <Tabs.Content value="marketing">
+                    <div style={styles.tabContent}>
+                        <div className="field">
+                            <label className="label">{t("ui.metadata.keywords", "Keywords (max. 7)")}</label>
+                            <KeywordInput
+                                keywords={(() => {
+                                    try {
+                                        const parsed = JSON.parse(form.keywords || "[]");
+                                        return Array.isArray(parsed) ? parsed : [];
+                                    } catch {
+                                        return form.keywords ? String(form.keywords).split(",").map((s) => s.trim()).filter(Boolean) : [];
+                                    }
+                                })()}
+                                onChange={(kws) => set("keywords", JSON.stringify(kws))}
+                            />
+                        </div>
+                        <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
+                            onChange={(v) => set("html_description", v)} multiline/>
+                        <Field label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")} value={form.backpage_description}
+                            onChange={(v) => set("backpage_description", v)} multiline/>
+                        <Field label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")} value={form.backpage_author_bio}
+                            onChange={(v) => set("backpage_author_bio", v)} multiline/>
+                    </div>
+                </Tabs.Content>
+
+                <Tabs.Content value="design">
+                    <div style={styles.tabContent}>
+                        <Field label={t("ui.metadata.cover_image", "Cover-Bild Pfad")} value={form.cover_image} onChange={(v) => set("cover_image", v)}
+                            placeholder="z.B. assets/covers/cover.jpg"/>
+                        <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
+                            multiline mono/>
+                    </div>
+                </Tabs.Content>
+
+                <Tabs.Content value="audiobook">
+                    <div style={styles.tabContent}>
+                        <AudiobookBookConfig
+                            bookLanguage={book.language}
+                            engine={form.tts_engine || ""}
+                            voice={form.tts_voice || ""}
+                            speed={form.tts_speed || "1.0"}
+                            onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
+                            onVoiceChange={(v: string) => set("tts_voice", v)}
+                            onSpeedChange={(v: string) => set("tts_speed", v)}
                         />
                     </div>
-                    <Field label="Buch-Beschreibung (HTML für Amazon)" value={form.html_description}
-                        onChange={(v) => set("html_description", v)} multiline/>
-                    <Field label="Rückseitenbeschreibung" value={form.backpage_description}
-                        onChange={(v) => set("backpage_description", v)} multiline/>
-                    <Field label="Autoren-Kurzbiographie (Rückseite)" value={form.backpage_author_bio}
-                        onChange={(v) => set("backpage_author_bio", v)} multiline/>
-                </Section>
-
-                {/* Design */}
-                <Section title="Design">
-                    <Field label="Cover-Bild Pfad" value={form.cover_image} onChange={(v) => set("cover_image", v)}
-                        placeholder="z.B. assets/covers/cover.jpg"/>
-                    <Field label="Custom CSS (EPUB-Styles)" value={form.custom_css} onChange={(v) => set("custom_css", v)}
-                        multiline mono/>
-                </Section>
-
-                <Section title="Audiobook">
-                    <AudiobookBookConfig
-                        bookLanguage={book.language}
-                        engine={form.tts_engine || ""}
-                        voice={form.tts_voice || ""}
-                        speed={form.tts_speed || "1.0"}
-                        onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
-                        onVoiceChange={(v: string) => set("tts_voice", v)}
-                        onSpeedChange={(v: string) => set("tts_speed", v)}
-                    />
-                </Section>
-            </div>
+                </Tabs.Content>
+            </Tabs.Root>
         </div>
     );
 }
 
 // --- Sub-components ---
-
-function Section({title, children}: {title: string; children: React.ReactNode}) {
-    return (
-        <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>{title}</h3>
-            {children}
-        </div>
-    );
-}
 
 function Row({children}: {children: React.ReactNode}) {
     return <div style={styles.row}>{children}</div>;
@@ -229,21 +232,11 @@ function Field({label, value, onChange, placeholder, multiline, mono}: {
         <div className="field" style={{flex: 1}}>
             <label className="label">{label}</label>
             {multiline ? (
-                <textarea
-                    className="input"
-                    style={{...inputStyle, minHeight: 80, resize: "vertical"}}
-                    value={value || ""}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder={placeholder}
-                />
+                <textarea className="input" style={{...inputStyle, minHeight: 80, resize: "vertical"}}
+                    value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
             ) : (
-                <input
-                    className="input"
-                    style={inputStyle}
-                    value={value || ""}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder={placeholder}
-                />
+                <input className="input" style={inputStyle}
+                    value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
             )}
         </div>
     );
@@ -257,16 +250,9 @@ function tryParseKeywords(raw: string): string {
     return raw;
 }
 
-// --- Styles ---
-
 function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange, onVoiceChange, onSpeedChange}: {
-    bookLanguage: string;
-    engine: string;
-    voice: string;
-    speed: string;
-    onEngineChange: (v: string) => void;
-    onVoiceChange: (v: string) => void;
-    onSpeedChange: (v: string) => void;
+    bookLanguage: string; engine: string; voice: string; speed: string;
+    onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void; onSpeedChange: (v: string) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
@@ -275,18 +261,14 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
 
     useEffect(() => {
         setLoadingVoices(true);
-        // Try the audiobook voices API; if plugin not active, use empty fallback
-        // Try core voices API first (always available), then plugin API, then hardcoded fallback
         fetch(`/api/voices?engine=${currentEngine}&language=${bookLanguage}`)
             .then((r) => {
                 if (r.ok) return r.json();
-                // Core API failed, try audiobook plugin API
                 return fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
                     .then((r2) => r2.ok ? r2.json() : null);
             })
             .then((data) => {
                 if (data && data.length > 0) return data;
-                // Both APIs failed, use hardcoded fallback
                 const lang = bookLanguage.toLowerCase().split("-")[0];
                 return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
             })
@@ -362,16 +344,10 @@ const styles: Record<string, React.CSSProperties> = {
     title: {
         fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600,
     },
-    grid: {
-        maxWidth: 800, display: "flex", flexDirection: "column", gap: 24,
-    },
-    section: {
+    tabContent: {
         background: "var(--bg-card)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-md)", padding: 20,
-    },
-    sectionTitle: {
-        fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12,
-        color: "var(--text-primary)",
+        display: "flex", flexDirection: "column", gap: 12,
     },
     row: {
         display: "flex", gap: 12,
