@@ -4,6 +4,7 @@ import {Save, Copy, ChevronLeft} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
+import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
 
 interface Props {
     book: Book;
@@ -278,15 +279,10 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
         fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
             .then((r) => {
                 if (r.ok) return r.json();
-                // API not available (plugin not active) - provide hardcoded defaults for edge-tts
+                // API not available (plugin not active) - use comprehensive fallback
                 if (currentEngine === "edge-tts") {
-                    const defaults: Record<string, {id: string; name: string; gender: string}[]> = {
-                        de: [{id: "de-DE-KatjaNeural", name: "Katja", gender: "Female"}, {id: "de-DE-ConradNeural", name: "Conrad", gender: "Male"}],
-                        en: [{id: "en-US-JennyNeural", name: "Jenny", gender: "Female"}, {id: "en-US-GuyNeural", name: "Guy", gender: "Male"}],
-                        es: [{id: "es-ES-ElviraNeural", name: "Elvira", gender: "Female"}, {id: "es-ES-AlvaroNeural", name: "Alvaro", gender: "Male"}],
-                        fr: [{id: "fr-FR-DeniseNeural", name: "Denise", gender: "Female"}, {id: "fr-FR-HenriNeural", name: "Henri", gender: "Male"}],
-                    };
-                    return defaults[bookLanguage.toLowerCase()] || defaults["en"] || [];
+                    const lang = bookLanguage.toLowerCase().split("-")[0];
+                    return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
                 }
                 return [];
             })

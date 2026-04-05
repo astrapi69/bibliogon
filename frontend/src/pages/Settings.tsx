@@ -10,6 +10,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
+import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -640,7 +641,14 @@ function AudiobookSettingsPanel({settings, onSave}: {
     useEffect(() => {
         setLoadingVoices(true);
         fetch(`/api/audiobook/voices?engine=${engine}&language=${language}`)
-            .then((r) => r.ok ? r.json() : [])
+            .then((r) => {
+                if (r.ok) return r.json();
+                if (engine === "edge-tts") {
+                    const lang = language.toLowerCase().split("-")[0];
+                    return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
+                }
+                return [];
+            })
             .then((data) => {
                 setVoices(data);
                 // Auto-select first voice if current not in list
