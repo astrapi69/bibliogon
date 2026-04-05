@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from .changelog import add_entry, export_changelog_markdown, get_changelog
 from .cover_validator import CoverValidationResult, generate_kdp_metadata, validate_cover
 from .metadata_checker import check_metadata_completeness
 
@@ -118,3 +119,36 @@ def check_metadata(request: CheckMetadataRequest) -> dict[str, Any]:
     """
     result = check_metadata_completeness(request.model_dump())
     return result.to_dict()
+
+
+class ChangelogEntry(BaseModel):
+    book_id: str
+    version: str
+    format: str = "epub"
+    book_type: str = "ebook"
+    notes: str = ""
+
+
+@router.post("/changelog")
+def add_changelog_entry(entry: ChangelogEntry) -> dict[str, str]:
+    """Record a publication event in the book's changelog."""
+    return add_entry(
+        book_id=entry.book_id,
+        version=entry.version,
+        format=entry.format,
+        book_type=entry.book_type,
+        notes=entry.notes,
+    )
+
+
+@router.get("/changelog/{book_id}")
+def get_book_changelog(book_id: str) -> list[dict[str, str]]:
+    """Get the publication changelog for a book."""
+    return get_changelog(book_id)
+
+
+@router.get("/changelog/{book_id}/export")
+def export_book_changelog(book_id: str, title: str = "") -> dict[str, str]:
+    """Export the changelog as Markdown text."""
+    md = export_changelog_markdown(book_id, title)
+    return {"markdown": md, "book_id": book_id}

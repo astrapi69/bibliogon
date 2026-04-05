@@ -19,7 +19,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
       nicht inline im Text. Autor uebernimmt explizit per Klick.
 - [x] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
 - [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
-- [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
+- [x] K-04: Changelog-Export: Welche Version wurde wann publiziert
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
 - [ ] B-03: Rate Limiting auf API-Endpunkte
 - [ ] B-04: API-Versionierung (v1/v2 Prefix)
@@ -156,7 +156,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
 - [x] K-03: Metadaten-Completeness-Check vor Export (Pflichtfelder pruefen)
-- [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
+- [x] K-04: Changelog-Export: Welche Version wurde wann publiziert
 
 ### AI-Assistenz (aufbauend auf Translation-Plugin)
 - [x] A-01: Generisches AI-Plugin (Ollama/LMStudio-Anbindung)
