@@ -21,7 +21,7 @@ router = APIRouter(prefix="/books/{book_id}/export", tags=["export"])
 _get_db = None
 _book_model = None
 
-SUPPORTED_FORMATS = {"epub", "pdf", "docx", "html", "markdown", "project"}
+SUPPORTED_FORMATS = {"epub", "pdf", "docx", "html", "markdown", "project", "audiobook"}
 
 MEDIA_TYPES = {
     "epub": "application/epub+zip",
@@ -63,6 +63,9 @@ def _get_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str
         "cover_image": book.cover_image,
         "custom_css": book.custom_css,
         "ai_assisted": getattr(book, "ai_assisted", False),
+        "tts_engine": getattr(book, "tts_engine", None),
+        "tts_voice": getattr(book, "tts_voice", None),
+        "tts_language": getattr(book, "tts_language", None),
     }
 
     chapters_data = []

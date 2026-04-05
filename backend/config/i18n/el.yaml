@@ -137,6 +137,8 @@ ui:
     markdown_desc: "Απλό κείμενο"
     project: "Έργο (ZIP)"
     project_desc: "Δομή έργου Manuscripta"
+    audiobook: "Ηχητικό βιβλίο (MP3)"
+    audiobook_desc: "Ηχητικό βιβλίο TTS"
   create_book:
     title: "Νέο βιβλίο"
     book_title: "Τίτλος"

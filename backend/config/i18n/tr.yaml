@@ -144,6 +144,8 @@ ui:
         markdown_desc: "Duz metin"
         project: "Proje (ZIP)"
         project_desc: "Manuscripta proje yapisi"
+        audiobook: "Sesli kitap (MP3)"
+        audiobook_desc: "TTS ile olusturulan sesli kitap"
     create_book:
         title: "Yeni kitap"
         book_title: "Baslik"

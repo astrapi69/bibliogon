@@ -137,6 +137,8 @@ ui:
     markdown_desc: "Texto plano"
     project: "Proyecto (ZIP)"
     project_desc: "Estructura de proyecto Manuscripta"
+    audiobook: "Audiolibro (MP3)"
+    audiobook_desc: "Audiolibro generado por TTS"
   create_book:
     title: "Nuevo libro"
     book_title: "Titulo"

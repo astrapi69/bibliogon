@@ -144,6 +144,8 @@ ui:
         markdown_desc: "プレーンテキスト"
         project: "プロジェクト (ZIP)"
         project_desc: "Manuscriptaプロジェクト構造"
+        audiobook: "オーディオブック (MP3)"
+        audiobook_desc: "TTS生成オーディオブック"
     create_book:
         title: "新しい本"
         book_title: "タイトル"

@@ -28,6 +28,7 @@ const FORMATS: FormatDef[] = [
     {id: "html", labelKey: "ui.formats.html", labelFallback: "HTML", descKey: "ui.formats.html_desc", descFallback: "Web-Version"},
     {id: "markdown", labelKey: "ui.formats.markdown", labelFallback: "Markdown", descKey: "ui.formats.markdown_desc", descFallback: "Rohtext"},
     {id: "project", labelKey: "ui.formats.project", labelFallback: "Projekt (ZIP)", descKey: "ui.formats.project_desc", descFallback: "Manuscripta-Projektstruktur"},
+    {id: "audiobook", labelKey: "ui.formats.audiobook", labelFallback: "Audiobook (MP3)", descKey: "ui.formats.audiobook_desc", descFallback: "TTS-generiertes Hoerbuch"},
 ];
 
 interface BookTypeDef {

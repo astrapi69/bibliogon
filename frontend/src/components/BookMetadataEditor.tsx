@@ -2,6 +2,7 @@ import {useState, useEffect} from "react";
 import {Book} from "../api/client";
 import {Save, Copy, ChevronLeft} from "lucide-react";
 import {notify} from "../utils/notify";
+import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Props) {
+    const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -36,6 +38,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             backpage_author_bio: book.backpage_author_bio || "",
             cover_image: book.cover_image || "",
             custom_css: book.custom_css || "",
+            tts_engine: book.tts_engine || "",
+            tts_voice: book.tts_voice || "",
         });
     }, [book]);
 
@@ -177,6 +181,17 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                         placeholder="z.B. assets/covers/cover.jpg"/>
                     <Field label="Custom CSS (EPUB-Styles)" value={form.custom_css} onChange={(v) => set("custom_css", v)}
                         multiline mono/>
+                </Section>
+
+                <Section title="Audiobook">
+                    <div className="field">
+                        <label className="label" style={{color: "var(--text-muted)"}}>{t("ui.audiobook.language", "Sprache")}: {book.language.toUpperCase()}</label>
+                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>{t("ui.editor.ai_select_text", "Die Sprache wird aus den Buch-Einstellungen uebernommen.")}</small>
+                    </div>
+                    <Field label={t("ui.audiobook.engine", "Engine")} value={form.tts_engine} onChange={(v) => { set("tts_engine", v); set("tts_voice", ""); }}
+                        placeholder="edge-tts"/>
+                    <Field label={t("ui.audiobook.default_voice", "Stimme")} value={form.tts_voice} onChange={(v) => set("tts_voice", v)}
+                        placeholder={t("ui.audiobook.voices_loading", "Auto")}/>
                 </Section>
             </div>
         </div>

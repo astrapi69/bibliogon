@@ -144,6 +144,8 @@ ui:
     markdown_desc: "Rohtext"
     project: "Projekt (ZIP)"
     project_desc: "Manuscripta-Projektstruktur"
+    audiobook: "Audiobook (MP3)"
+    audiobook_desc: "TTS-generiertes Hoerbuch"
   create_book:
     title: "Neues Buch"
     book_title: "Titel"
