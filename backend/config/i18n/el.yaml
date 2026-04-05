@@ -307,6 +307,7 @@ ui:
     preview: "Προεπισκόπηση"
     engine_unavailable: "Μηχανή μη διαθέσιμη"
     settings_saved: "Ρυθμίσεις αποθηκεύτηκαν"
+    language_from_book: "Προέρχεται από τις ρυθμίσεις του βιβλίου."
   languages:
     de: "Deutsch"
     en: "English"

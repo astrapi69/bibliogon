@@ -307,6 +307,7 @@ ui:
     preview: "Apercu"
     engine_unavailable: "Moteur non disponible"
     settings_saved: "Parametres enregistres"
+    language_from_book: "Derive des parametres du livre."
   languages:
     de: "Deutsch"
     en: "English"

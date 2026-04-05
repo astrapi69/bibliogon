@@ -324,6 +324,7 @@ ui:
         preview: "プレビュー"
         engine_unavailable: "エンジンが利用できません"
         settings_saved: "設定を保存しました"
+        language_from_book: "書籍の設定から取得されます。"
     languages:
         de: "Deutsch"
         en: "English"

@@ -184,14 +184,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 </Section>
 
                 <Section title="Audiobook">
-                    <div className="field">
-                        <label className="label" style={{color: "var(--text-muted)"}}>{t("ui.audiobook.language", "Sprache")}: {book.language.toUpperCase()}</label>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>{t("ui.editor.ai_select_text", "Die Sprache wird aus den Buch-Einstellungen uebernommen.")}</small>
-                    </div>
-                    <Field label={t("ui.audiobook.engine", "Engine")} value={form.tts_engine} onChange={(v) => { set("tts_engine", v); set("tts_voice", ""); }}
-                        placeholder="edge-tts"/>
-                    <Field label={t("ui.audiobook.default_voice", "Stimme")} value={form.tts_voice} onChange={(v) => set("tts_voice", v)}
-                        placeholder={t("ui.audiobook.voices_loading", "Auto")}/>
+                    <AudiobookBookConfig
+                        bookLanguage={book.language}
+                        engine={form.tts_engine || ""}
+                        voice={form.tts_voice || ""}
+                        onEngineChange={(v) => { set("tts_engine", v); set("tts_voice", ""); }}
+                        onVoiceChange={(v) => set("tts_voice", v)}
+                    />
                 </Section>
             </div>
         </div>
@@ -255,6 +254,72 @@ function tryParseKeywords(raw: string): string {
 }
 
 // --- Styles ---
+
+function AudiobookBookConfig({bookLanguage, engine, voice, onEngineChange, onVoiceChange}: {
+    bookLanguage: string;
+    engine: string;
+    voice: string;
+    onEngineChange: (v: string) => void;
+    onVoiceChange: (v: string) => void;
+}) {
+    const {t} = useI18n();
+    const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
+    const [loadingVoices, setLoadingVoices] = useState(false);
+    const currentEngine = engine || "edge-tts";
+
+    useEffect(() => {
+        setLoadingVoices(true);
+        fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
+            .then((r) => r.ok ? r.json() : [])
+            .then((data) => {
+                setVoices(data);
+                if (data.length > 0 && !data.some((v: {id: string}) => v.id === voice)) {
+                    onVoiceChange(data[0].id);
+                }
+            })
+            .catch(() => setVoices([]))
+            .finally(() => setLoadingVoices(false));
+    }, [currentEngine, bookLanguage]);
+
+    return (
+        <>
+            <div className="field">
+                <label className="label">{t("ui.audiobook.language", "Sprache")}</label>
+                <input className="input" value={bookLanguage.toUpperCase()} disabled style={{opacity: 0.6}}/>
+                <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                    {t("ui.audiobook.language_from_book", "Wird aus den Buch-Einstellungen uebernommen.")}
+                </small>
+            </div>
+            <div className="field">
+                <label className="label">{t("ui.audiobook.engine", "Engine")}</label>
+                <select className="input" value={currentEngine} onChange={(e) => onEngineChange(e.target.value)}>
+                    <option value="edge-tts">Microsoft Edge TTS</option>
+                    <option value="google-tts">Google TTS</option>
+                    <option value="pyttsx3">pyttsx3 (Offline)</option>
+                    <option value="elevenlabs">ElevenLabs</option>
+                </select>
+            </div>
+            <div className="field">
+                <label className="label">{t("ui.audiobook.default_voice", "Stimme")}</label>
+                {loadingVoices ? (
+                    <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                        {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}
+                    </div>
+                ) : voices.length > 0 ? (
+                    <select className="input" value={voice} onChange={(e) => onVoiceChange(e.target.value)}>
+                        {voices.map((v) => (
+                            <option key={v.id} value={v.id}>{v.name || v.id}{v.gender ? ` (${v.gender})` : ""}</option>
+                        ))}
+                    </select>
+                ) : (
+                    <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                        {t("ui.audiobook.engine_unavailable", "Engine nicht verfuegbar")}
+                    </div>
+                )}
+            </div>
+        </>
+    );
+}
 
 const styles: Record<string, React.CSSProperties> = {
     container: {

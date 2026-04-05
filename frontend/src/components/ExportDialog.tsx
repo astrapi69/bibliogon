@@ -118,8 +118,8 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                         </div>
                     </div>
 
-                    {/* Book type */}
-                    {format !== "project" && format !== "markdown" && (
+                    {/* Book type (not for project, markdown, audiobook) */}
+                    {format !== "project" && format !== "markdown" && format !== "audiobook" && (
                         <div style={{marginBottom: 16}}>
                             <label className="label">{t("ui.export_dialog.book_type", "Buchtyp")}</label>
                             <div style={{display: "flex", gap: 8}}>
@@ -136,8 +136,8 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                         </div>
                     )}
 
-                    {/* TOC depth */}
-                    {format !== "project" && (
+                    {/* TOC depth (not for project, audiobook) */}
+                    {format !== "project" && format !== "audiobook" && (
                         <div className="field">
                             <label className="label">{t("ui.export_dialog.toc_depth", "Inhaltsverzeichnis-Tiefe")}</label>
                             <select className="input" value={tocDepth} onChange={(e) => setTocDepth(Number(e.target.value))}
@@ -149,8 +149,8 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                         </div>
                     )}
 
-                    {/* Manual TOC checkbox */}
-                    {format !== "project" && hasManualToc && (
+                    {/* Manual TOC checkbox (not for project, audiobook) */}
+                    {format !== "project" && format !== "audiobook" && hasManualToc && (
                         <div className="field" style={{marginTop: 8}}>
                             <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem"}}>
                                 <input
@@ -184,8 +184,8 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                         </span>
                     </div>
 
-                    {/* Section order (collapsible) */}
-                    {format !== "project" && currentOrder.length > 0 && (
+                    {/* Section order (collapsible, not for audiobook) */}
+                    {format !== "project" && format !== "audiobook" && currentOrder.length > 0 && (
                         <div style={{marginTop: 12}}>
                             <button
                                 className="btn btn-ghost btn-sm"

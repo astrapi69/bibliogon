@@ -324,6 +324,7 @@ ui:
     preview: "Preview"
     engine_unavailable: "Engine unavailable"
     settings_saved: "Settings saved"
+    language_from_book: "Derived from book settings."
   languages:
     de: "Deutsch"
     en: "English"

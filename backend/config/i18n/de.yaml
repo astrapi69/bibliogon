@@ -324,6 +324,7 @@ ui:
     preview: "Vorhoeren"
     engine_unavailable: "Engine nicht verfuegbar"
     settings_saved: "Einstellungen gespeichert"
+    language_from_book: "Wird aus den Buch-Einstellungen uebernommen."
   languages:
     de: "Deutsch"
     en: "English"

@@ -235,6 +235,52 @@ def export(
                 filename=f"{base_name}.bgp",
             )
 
+        if fmt == "audiobook":
+            # Delegate to audiobook plugin via import (not via hook for simplicity)
+            try:
+                from bibliogon_audiobook.generator import generate_audiobook
+                import asyncio
+                import re as _re_ab
+
+                engine_id = book_data.get("tts_engine") or "edge-tts"
+                voice = book_data.get("tts_voice") or ""
+                language = book_data.get("tts_language") or book_data.get("language", "de")
+                audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
+
+                loop = asyncio.new_event_loop()
+                try:
+                    result = loop.run_until_complete(generate_audiobook(
+                        book_title=book_data.get("title", "audiobook"),
+                        chapters=chapters_data,
+                        output_dir=audio_dir,
+                        engine_id=engine_id,
+                        voice=voice,
+                        language=language,
+                        merge=True,
+                    ))
+                finally:
+                    loop.close()
+
+                if result.get("merged_file"):
+                    merged = audio_dir / result["merged_file"]
+                    return FileResponse(
+                        path=str(merged),
+                        media_type="audio/mpeg",
+                        filename=f"{base_name}.mp3",
+                    )
+
+                # No merge - bundle as ZIP
+                zip_path = shutil.make_archive(str(audio_dir / "audiobook"), "zip", str(audio_dir))
+                return FileResponse(
+                    path=zip_path,
+                    media_type="application/zip",
+                    filename=f"{base_name}-audiobook.zip",
+                )
+            except ImportError:
+                raise HTTPException(status_code=400, detail="Audiobook plugin not installed")
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Audiobook export failed: {e}")
+
         # Find cover image path
         cover_path = book_data.get("cover_image")
         if not cover_path:
