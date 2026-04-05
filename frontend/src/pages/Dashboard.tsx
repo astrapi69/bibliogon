@@ -6,7 +6,7 @@ import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, ArrowUpDown,
+    Menu, Search, ArrowUpDown, History, ChevronDown, ChevronUp,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import ThemeToggle from "../components/ThemeToggle";
@@ -20,6 +20,8 @@ export default function Dashboard() {
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [backupHistory, setBackupHistory] = useState<{timestamp: string; action: string; book_count: number; filename: string}[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"date" | "title" | "author">("date");
@@ -51,6 +53,12 @@ export default function Dashboard() {
         loadBooks();
         loadTrash();
     }, []);
+
+    useEffect(() => {
+        if (showHistory) {
+            api.backup.history(20).then(setBackupHistory).catch(() => {});
+        }
+    }, [showHistory]);
 
     const handleCreate = async (data: BookCreate) => {
         const book = await api.books.create(data);
@@ -337,6 +345,56 @@ export default function Dashboard() {
                         </div>
                     </>
                 )}
+                {/* Version History */}
+                <div style={{marginTop: 32}}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setShowHistory(!showHistory)}
+                        style={{gap: 6}}
+                    >
+                        {showHistory ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                        <History size={14}/> {t("ui.dashboard.version_history", "Versionsgeschichte")}
+                        {backupHistory.length > 0 && ` (${backupHistory.length})`}
+                    </button>
+                    {showHistory && (
+                        <div style={{marginTop: 8}}>
+                            {backupHistory.length === 0 ? (
+                                <p style={{color: "var(--text-muted)", fontSize: "0.875rem", padding: "8px 0"}}>
+                                    {t("ui.dashboard.no_history", "Noch keine Backups erstellt.")}
+                                </p>
+                            ) : (
+                                <div style={{display: "flex", flexDirection: "column", gap: 4}}>
+                                    {backupHistory.map((entry, i) => (
+                                        <div key={i} style={{
+                                            display: "flex", alignItems: "center", gap: 12,
+                                            padding: "8px 12px", borderRadius: "var(--radius-sm)",
+                                            background: "var(--bg-card)", border: "1px solid var(--border)",
+                                            fontSize: "0.8125rem",
+                                        }}>
+                                            <span style={{
+                                                padding: "2px 6px", borderRadius: 3, fontSize: "0.6875rem",
+                                                fontWeight: 600, textTransform: "uppercase",
+                                                background: entry.action === "backup" ? "var(--accent-light)" : "rgba(34,197,94,0.12)",
+                                                color: entry.action === "backup" ? "var(--accent)" : "#16a34a",
+                                            }}>
+                                                {entry.action}
+                                            </span>
+                                            <span style={{color: "var(--text-secondary)"}}>
+                                                {new Date(entry.timestamp).toLocaleString()}
+                                            </span>
+                                            <span>{entry.book_count} {t("ui.dashboard.book_plural", "Buecher")}</span>
+                                            {entry.filename && (
+                                                <span style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                                    {entry.filename}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </main>
 
             <CreateBookModal

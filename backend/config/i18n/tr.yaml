@@ -33,6 +33,8 @@ ui:
         import_project: "Proje iceri aktar"
         moved_to_trash: "Cop kutusuna tasindi"
         deleted_permanently: "Kitap kalici olarak silindi"
+        version_history: "Surum gecmisi"
+        no_history: "Henuz yedekleme olusturulmadi."
     editor:
         new_chapter: "Yeni bolum"
         confirm_delete_chapter: "Bu bolumu silmek istediginizden emin misiniz?"

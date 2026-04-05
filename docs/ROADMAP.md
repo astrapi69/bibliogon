@@ -18,7 +18,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] A-03: Klare UI-Trennung: AI-Vorschlaege in eigenem Panel, 
       nicht inline im Text. Autor uebernimmt explizit per Klick.
 - [x] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
-- [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
+- [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [ ] K-04: Changelog-Export: Welche Version wurde wann publiziert
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
 - [ ] B-03: Rate Limiting auf API-Endpunkte
@@ -181,5 +181,5 @@ Technisch:
       nicht inline im Text. Autor uebernimmt explizit per Klick.
 
 ## Versionierung (leichtgewichtig, kein Git)
-- [ ] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
+- [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen

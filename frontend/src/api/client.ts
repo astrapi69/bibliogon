@@ -225,6 +225,9 @@ export const api = {
     backup: {
         exportUrl: () => `${BASE}/backup/export`,
 
+        history: (limit = 50) =>
+            request<{timestamp: string; action: string; book_count: number; chapter_count: number; file_size_bytes: number; filename: string; details: string}[]>(`/backup/history?limit=${limit}`),
+
         smartImport: async (file: File): Promise<{type: string; result: Record<string, unknown>}> => {
             const formData = new FormData();
             formData.append("file", file);

@@ -33,6 +33,8 @@ ui:
     import_project: "Importer un projet"
     moved_to_trash: "Deplace dans la corbeille"
     deleted_permanently: "Livre definitivement supprime"
+    version_history: "Historique des versions"
+    no_history: "Aucune sauvegarde creee."
   editor:
     new_chapter: "Nouveau chapitre"
     confirm_delete_chapter: "Voulez-vous vraiment supprimer ce chapitre?"

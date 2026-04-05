@@ -33,6 +33,8 @@ ui:
     import_project: "Import project"
     moved_to_trash: "Moved to trash"
     deleted_permanently: "Book permanently deleted"
+    version_history: "Version History"
+    no_history: "No backups created yet."
   editor:
     new_chapter: "New Chapter"
     confirm_delete_chapter: "Really delete this chapter?"

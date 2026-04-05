@@ -33,6 +33,8 @@ ui:
     import_project: "Εισαγωγή έργου"
     moved_to_trash: "Μεταφέρθηκε στον κάδο"
     deleted_permanently: "Το βιβλίο διαγράφηκε οριστικά"
+    version_history: "Ιστορικό εκδόσεων"
+    no_history: "Δεν έχουν δημιουργηθεί αντίγραφα ασφαλείας."
   editor:
     new_chapter: "Νέο κεφάλαιο"
     confirm_delete_chapter: "Θέλετε σίγουρα να διαγράψετε αυτό το κεφάλαιο;"

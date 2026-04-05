@@ -33,6 +33,8 @@ ui:
         import_project: "プロジェクトをインポート"
         moved_to_trash: "ゴミ箱に移動しました"
         deleted_permanently: "本を完全に削除しました"
+        version_history: "バージョン履歴"
+        no_history: "まだバックアップが作成されていません。"
     editor:
         new_chapter: "新しい章"
         confirm_delete_chapter: "この章を本当に削除しますか?"

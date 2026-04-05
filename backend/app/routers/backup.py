@@ -16,8 +16,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
+from app.backup_history import BackupHistory
 from app.database import get_db
 from app.models import Asset, Book, Chapter, ChapterType
+
+_history = BackupHistory()
 
 router = APIRouter(prefix="/backup", tags=["backup"])
 
@@ -128,11 +131,25 @@ def export_backup(db: Session = Depends(get_db)):
     bgb_path = zip_path.replace(".zip", ".bgb")
     Path(zip_path).rename(bgb_path)
 
+    _history.add(
+        action="backup",
+        book_count=len(books),
+        chapter_count=sum(len(b.chapters) for b in books),
+        file_size_bytes=Path(bgb_path).stat().st_size,
+        filename=f"{backup_dir.name}.bgb",
+    )
+
     return FileResponse(
         path=bgb_path,
         media_type="application/octet-stream",
         filename=f"{backup_dir.name}.bgb",
     )
+
+
+@router.get("/history")
+def get_backup_history(limit: int = 50) -> list[dict[str, Any]]:
+    """Return chronological list of backup/restore/import events."""
+    return _history.list(limit)
 
 
 @router.post("/smart-import")
@@ -355,6 +372,11 @@ def import_backup(file: UploadFile, db: Session = Depends(get_db)):
             imported_count += 1
 
         db.commit()
+        _history.add(
+            action="restore",
+            book_count=imported_count,
+            filename=file.filename or "backup.bgb",
+        )
         return {"imported_books": imported_count}
 
     finally:
