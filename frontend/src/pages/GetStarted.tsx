@@ -85,7 +85,7 @@ export default function GetStarted() {
             notify.success(t("ui.get_started.sample_book_created", "Beispielbuch erstellt!"));
             navigate(`/book/${book.id}`);
         } catch (err) {
-            notify.error(`${t("ui.common.error", "Fehler")}: ${err}`);
+            notify.error(`${t("ui.common.error", "Fehler")}: ${err}`, err);
         }
         setCreating(false);
     };

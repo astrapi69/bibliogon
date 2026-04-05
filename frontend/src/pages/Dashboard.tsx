@@ -123,7 +123,7 @@ export default function Dashboard() {
             }
             loadBooks();
         } catch (err) {
-            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`);
+            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`, err);
         }
         e.target.value = "";
     };

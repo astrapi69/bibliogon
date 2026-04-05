@@ -449,7 +449,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 notify.success(result.message);
                 onReload();
             } catch (err) {
-                notify.error(`${t("ui.common.error", "Fehler")}: ${err}`);
+                notify.error(`${t("ui.common.error", "Fehler")}: ${err}`, err);
             }
             setUploading(false);
         };

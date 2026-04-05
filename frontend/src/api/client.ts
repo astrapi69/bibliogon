@@ -99,6 +99,28 @@ export interface Asset {
     uploaded_at: string;
 }
 
+// --- ApiError with context ---
+
+export class ApiError extends Error {
+    status: number;
+    detail: string;
+    endpoint: string;
+    method: string;
+    stacktrace: string;
+    timestamp: string;
+
+    constructor(status: number, detail: string, endpoint: string, method: string, stacktrace = "") {
+        super(detail);
+        this.name = "ApiError";
+        this.status = status;
+        this.detail = detail;
+        this.endpoint = endpoint;
+        this.method = method;
+        this.stacktrace = stacktrace;
+        this.timestamp = new Date().toISOString();
+    }
+}
+
 // --- Fetch helper ---
 
 const BASE = "/api";
@@ -107,13 +129,20 @@ async function request<T>(
     path: string,
     options?: RequestInit
 ): Promise<T> {
+    const method = options?.method || "GET";
     const res = await fetch(`${BASE}${path}`, {
         headers: {"Content-Type": "application/json"},
         ...options,
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({detail: res.statusText}));
-        throw new Error(err.detail || "Request failed");
+        throw new ApiError(
+            res.status,
+            err.detail || "Request failed",
+            `${BASE}${path}`,
+            method,
+            err.stacktrace || "",
+        );
     }
     if (res.status === 204) return undefined as T;
     return res.json();
