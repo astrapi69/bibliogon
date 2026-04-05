@@ -331,6 +331,32 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
             Path(zip_path).rename(bgp_path)
             return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
 
+        if fmt == "audiobook":
+            # Run audiobook export in the async job
+            try:
+                from bibliogon_audiobook.generator import generate_audiobook
+            except ImportError:
+                raise RuntimeError("Audiobook plugin not installed.")
+            import asyncio
+            engine_id = book_data.get("tts_engine") or "edge-tts"
+            voice = book_data.get("tts_voice") or ""
+            language = book_data.get("tts_language") or book_data.get("language", "de")
+            rate = book_data.get("tts_speed") or ""
+            audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
+            result = await generate_audiobook(
+                book_title=book_data.get("title", "audiobook"),
+                chapters=chapters, output_dir=audio_dir,
+                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=True,
+            )
+            if result.get("merged_file"):
+                merged = audio_dir / result["merged_file"]
+                if merged.exists():
+                    return {"path": str(merged), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
+            if result.get("generated_files"):
+                zip_path = shutil.make_archive(str(audio_dir / "audiobook"), "zip", str(audio_dir))
+                return {"path": zip_path, "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
+            raise RuntimeError("Audiobook generation produced no files")
+
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
         media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")

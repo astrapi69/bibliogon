@@ -124,6 +124,8 @@ ui:
     export_as: "Εξαγωγή ως {format}"
     ai_assisted: "Σήμανση περιεχομένου με βοήθεια AI"
     ai_assisted_hint: "Ορισμένες πλατφόρμες (π.χ. Amazon KDP) απαιτούν τη γνωστοποίηση περιεχομένου με βοήθεια AI."
+    audiobook_generating: "Δημιουργία ηχητικού βιβλίου..."
+    audiobook_done: "Ηχητικό βιβλίο έτοιμο!"
   formats:
     epub: "EPUB"
     epub_desc: "Μορφή ηλεκτρονικού βιβλίου"

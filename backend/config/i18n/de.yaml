@@ -131,6 +131,8 @@ ui:
     export_as: "Als {format} exportieren"
     ai_assisted: "AI-assistierte Inhalte kennzeichnen"
     ai_assisted_hint: "Einige Plattformen (z.B. Amazon KDP) verlangen die Offenlegung von KI-assistierten Inhalten."
+    audiobook_generating: "Audiobook wird generiert..."
+    audiobook_done: "Audiobook fertig! Download startet..."
   formats:
     epub: "EPUB"
     epub_desc: "E-Book Format"

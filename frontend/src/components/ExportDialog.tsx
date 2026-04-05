@@ -1,7 +1,8 @@
-import {useEffect, useState} from "react";
-import {Download, ChevronDown, ChevronUp} from "lucide-react";
+import {useEffect, useState, useRef} from "react";
+import {Download, ChevronDown, ChevronUp, Loader, CheckCircle, XCircle} from "lucide-react";
 import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
+import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -71,8 +72,23 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
     const selectedFormatLabel = FORMATS.find((f) => f.id === format);
 
+    const [audioJobId, setAudioJobId] = useState<string | null>(null);
+    const [audioStatus, setAudioStatus] = useState<string>("");
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Clean up polling on unmount
+    useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+
     const handleExport = () => {
         setExporting(true);
+
+        if (format === "audiobook") {
+            // Use async job + polling for audiobook
+            _startAudiobookExport();
+            return;
+        }
+
+        // All other formats: direct download via new tab
         const params = new URLSearchParams();
         if (bookType !== "ebook") params.set("book_type", bookType);
         if (tocDepth !== 2) params.set("toc_depth", String(tocDepth));
@@ -82,10 +98,49 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         const url = `/api/books/${bookId}/export/${format}${query ? `?${query}` : ""}`;
         window.open(url, "_blank");
 
-        setTimeout(() => {
+        setTimeout(() => { setExporting(false); onClose(); }, 1000);
+    };
+
+    const _startAudiobookExport = async () => {
+        setAudioStatus(t("ui.export_dialog.audiobook_generating", "Audiobook wird generiert..."));
+        try {
+            const res = await fetch(`/api/books/${bookId}/export/async/audiobook`, {method: "POST"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "Start failed"}));
+                notify.error(err.detail || "Audiobook export failed");
+                setExporting(false);
+                return;
+            }
+            const {job_id} = await res.json();
+            setAudioJobId(job_id);
+
+            // Poll every 2 seconds
+            pollRef.current = setInterval(async () => {
+                try {
+                    const r = await fetch(`/api/export/jobs/${job_id}`);
+                    if (!r.ok) return;
+                    const job = await r.json();
+                    if (job.status === "running") {
+                        setAudioStatus(t("ui.export_dialog.audiobook_generating", "Audiobook wird generiert..."));
+                    } else if (job.status === "completed") {
+                        if (pollRef.current) clearInterval(pollRef.current);
+                        setAudioStatus(t("ui.export_dialog.audiobook_done", "Audiobook fertig!"));
+                        // Trigger download
+                        if (job.download_url) {
+                            window.open(job.download_url, "_blank");
+                        }
+                        setTimeout(() => { setExporting(false); setAudioJobId(null); setAudioStatus(""); onClose(); }, 2000);
+                    } else if (job.status === "failed") {
+                        if (pollRef.current) clearInterval(pollRef.current);
+                        notify.error(job.error || "Audiobook export failed");
+                        setExporting(false); setAudioJobId(null); setAudioStatus("");
+                    }
+                } catch { /* ignore poll errors */ }
+            }, 2000);
+        } catch (err) {
+            notify.error(`Audiobook export failed: ${err}`, err);
             setExporting(false);
-            onClose();
-        }, 1000);
+        }
     };
 
     return (
@@ -233,12 +288,21 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                             onClick={handleExport}
                             disabled={exporting}
                         >
-                            <Download size={16}/>
+                            {exporting && format === "audiobook" ? <Loader size={16} style={{animation: "spin 1s linear infinite"}}/> : <Download size={16}/>}
                             {exporting
                                 ? t("ui.export_dialog.exporting", "Exportiert...")
                                 : t("ui.export_dialog.export_as", "Als {format} exportieren").replace("{format}", selectedFormatLabel ? t(selectedFormatLabel.labelKey, selectedFormatLabel.labelFallback) : "")}
                         </button>
                     </div>
+                    {/* Audiobook progress */}
+                    {audioStatus && (
+                        <div style={{marginTop: 12, padding: "10px 14px", background: "var(--bg-secondary)", borderRadius: "var(--radius-sm)", fontSize: "0.8125rem", display: "flex", alignItems: "center", gap: 8}}>
+                            {audioStatus.includes("fertig") || audioStatus.includes("done")
+                                ? <CheckCircle size={16} style={{color: "#16a34a"}}/>
+                                : <Loader size={16} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}}/>}
+                            <span>{audioStatus}</span>
+                        </div>
+                    )}
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

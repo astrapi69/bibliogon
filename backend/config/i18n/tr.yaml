@@ -131,6 +131,8 @@ ui:
         export_as: "{format} olarak disa aktar"
         ai_assisted: "AI destekli icerigi isaretleyin"
         ai_assisted_hint: "Bazi platformlar (orn. Amazon KDP) AI destekli icerigin aciklanmasini gerektirir."
+        audiobook_generating: "Sesli kitap olusturuluyor..."
+        audiobook_done: "Sesli kitap hazir! Indirme basliyor..."
     formats:
         epub: "EPUB"
         epub_desc: "E-Kitap formati"

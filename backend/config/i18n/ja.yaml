@@ -131,6 +131,8 @@ ui:
         export_as: "{format}としてエクスポート"
         ai_assisted: "AI支援コンテンツをマーク"
         ai_assisted_hint: "一部のプラットフォーム（例：Amazon KDP）ではAI支援コンテンツの開示が必要です。"
+        audiobook_generating: "オーディオブック生成中..."
+        audiobook_done: "オーディオブック完成！ダウンロード開始..."
     formats:
         epub: "EPUB"
         epub_desc: "電子書籍フォーマット"
