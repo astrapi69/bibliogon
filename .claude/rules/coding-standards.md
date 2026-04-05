@@ -134,11 +134,17 @@ def find_cover_image(project_dir: Path) -> str | None: ...
 
 ## Error Reporting
 
+Fehlerdetails muessen so praezise sein, dass ein GitHub Issue daraus direkt actionable ist, ohne Rueckfragen.
+
+Kette: BibliogonError -> API Response (detail + traceback) -> ApiError -> Toast mit "Issue melden" -> GitHub Issue
+
 - Kein except ohne logger.error(). Keine Exception verschlucken.
-- HTTPException.detail muss den Fehlergrund enthalten, nicht nur den Funktionsnamen.
-- Im Debug-Mode: Stacktrace in der Response mitliefern (globaler Exception Handler).
-- Im Frontend: ApiError-Objekt an notify.error() durchreichen, nicht nur String.
-- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN.
+- Exception-Detail muss den Fehlergrund enthalten, nicht nur den Funktionsnamen.
+- Services: str(e) in BibliogonError-Subklassen aufnehmen (NICHT HTTPException, siehe code-hygiene.md).
+- Im Debug-Mode: Stacktrace in der Response mitliefern (globaler Exception Handler in main.py). Wird vom "Issue melden" Button als Issue-Body verwendet.
+- Im Frontend: ApiError-Objekt an toast.error() durchreichen, nicht nur String.
+- "Issue melden" Button im Toast: Oeffnet GitHub Issue mit Titel (Error-Detail), Body (Stacktrace, Browser, App-Version).
+- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN. Sie machen GitHub Issues wertlos.
 - Alle fetch-Aufrufe im Frontend muessen bei Fehler ApiError werfen, nicht Error.
 
 ## Tests

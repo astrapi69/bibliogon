@@ -155,6 +155,19 @@ UI (React) -> API Client -> FastAPI Router -> Service/Plugin -> SQLAlchemy -> SQ
 
 Unidirektional. Keine direkte DB-Zugriffe aus Routern. Kein Frontend-Code im Backend.
 
+## Error-Handling
+
+```
+Frontend       ApiError (status + detail) -> Toast fuer User
+API Client     HTTP-Fehler -> ApiError umwandeln
+Router         Duenn, faengt nichts. Globaler Exception Handler mappt.
+Service        Wirft BibliogonError-Subklassen (NotFoundError, ExportError, ...)
+Plugin         Wirft PluginError(plugin_name, message)
+Extern         ExternalServiceError(service, message) fuer Pandoc/TTS/LanguageTool
+```
+
+Services werfen KEINE HTTPException, Router fangen NICHTS. Der globale Exception Handler in main.py mappt BibliogonError-Subklassen zu HTTP-Status-Codes. Details siehe code-hygiene.md "Error-Handling Architektur".
+
 ## Offline/Local-first
 
 - SQLite als Default (keine externe DB noetig).

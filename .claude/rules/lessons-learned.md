@@ -115,16 +115,6 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - `discoveredPlugins` API liefert `license_tier` und `has_license` pro Plugin. Die Werte werden aus der Plugin-YAML (license-Feld) und dem LicenseStore/Validator abgeleitet.
 - Premium-Plugins ohne Lizenz: "Lizenz eingeben" Button statt Toggle. Kein Enable/Disable moeglich.
 
-## Fehler-Reporting
-
-- JEDER except-Block MUSS logger.error() mit exc_info=True aufrufen.
-- JEDER except-Block MUSS str(e) in die HTTPException aufnehmen.
-- JEDER Frontend catch-Block MUSS notify.error() mit dem ApiError-Objekt aufrufen, NICHT nur mit einem String.
-- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN.
-- File-Upload-Funktionen (fetch statt request()) muessen bei Fehler ApiError werfen, nicht Error.
-- Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
-- Im Debug-Mode liefert der Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).
-
 ## Allgemeine Patterns
 
 - Vor Custom-Implementierungen: Pruefen ob eine Library/Extension das schon loest.
@@ -147,3 +137,20 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Service-Funktionen duerfen keine FastAPI-Abhaengigkeiten haben (kein Request, kein Response, kein Depends).
 - Hilfsfunktionen (validate_format, build_filename, detect_manual_toc) muessen mit einfachen Parametern aufrufbar sein.
 - Datenklassen (dataclass, TypedDict) statt loser Dicts fuer Kontext zwischen Funktionen.
+
+### Error-Handling Fehler die wir gemacht haben
+- HTTPException direkt in Services geworfen. Macht Services nicht testbar ohne FastAPI-Kontext. Loesung: Eigene Exception-Hierarchie (BibliogonError).
+- Nackte `except Exception: pass` in Plugin-Code. Fehler verschwinden spurlos. Loesung: Spezifische Exceptions fangen, mindestens loggen.
+- Externe Tool-Fehler (Pandoc subprocess.CalledProcessError) ungewrappt nach oben durchgereicht. User sieht kryptische Fehlermeldung. Loesung: ExternalServiceError mit klarem Service-Namen.
+- Frontend: API-Calls ohne catch. User klickt "Exportieren" und nichts passiert. Loesung: Immer try/catch mit Toast-Feedback und finally fuer Loading-State.
+
+### Fehler-Reporting Regeln
+- Fehlerdetails muessen ein GitHub Issue direkt actionable machen, ohne Rueckfragen.
+- Kette: BibliogonError (detail + str(e)) -> API Response (detail + traceback im Debug-Mode) -> Frontend ApiError -> Toast mit "Issue melden" Button -> GitHub Issue (Titel, Stacktrace, Browser, App-Version).
+- JEDER except-Block MUSS logger.error() mit exc_info=True aufrufen.
+- JEDER except-Block MUSS str(e) in die BibliogonError-Subklasse aufnehmen (NICHT HTTPException).
+- JEDER Frontend catch-Block MUSS toast.error() mit dem ApiError-Objekt aufrufen, NICHT nur mit einem String.
+- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN. Sie machen GitHub Issues wertlos.
+- File-Upload-Funktionen (fetch statt request()) muessen bei Fehler ApiError werfen, nicht Error.
+- Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
+- Im Debug-Mode liefert die Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).

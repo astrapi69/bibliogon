@@ -154,78 +154,260 @@ Falls etwas fehlschlaegt: Commit wird abgelehnt, Fehler werden angezeigt.
 
 ---
 
-## Error-Handling Patterns
+## Error-Handling Architektur
 
-Konsistentes Error-Handling macht Code lesbar und debuggbar, fuer Menschen und KI gleichermassen.
+### Prinzip: Fehler an der richtigen Schicht behandeln
 
-### Backend (FastAPI)
-
-```python
-# RICHTIG: HTTPException mit klarem Status und Detail
-from fastapi import HTTPException
-
-async def get_book(book_id: str):
-    book = db.query(Book).filter(Book.id == book_id).first()
-    if not book:
-        raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-    return book
-
-# RICHTIG: Validierung via Pydantic, nicht manuell
-class BookCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=500)
-    author: str = Field(..., min_length=1)
-    language: str = Field(default="de", pattern="^[a-z]{2}$")
-
-# FALSCH: Generische Exception fangen und verschlucken
-try:
-    result = do_something()
-except Exception:
-    pass  # NIEMALS
+```
+Frontend       Zeigt dem User was schiefging (Toast). Faengt ApiError.
+    |
+API Client     Wandelt HTTP-Fehler in ApiError um. Einziger Ort fuer fetch().
+    |
+Router         Faengt nichts. Globaler Exception Handler mappt automatisch.
+    |
+Service        Wirft fachliche Exceptions (ExportError, ValidationError). Keine HTTP-Konzepte.
+    |
+Plugin         Wirft PluginError. Wird vom Exception Handler gefangen.
+    |
+Extern         Pandoc, LanguageTool, edge-TTS. Wird im Service gewrappt.
 ```
 
-**Regeln:**
-- HTTP 400: Ungueltige Eingabe (Pydantic validiert automatisch -> 422).
-- HTTP 404: Ressource nicht gefunden.
-- HTTP 409: Konflikt (z.B. doppelter Name).
-- HTTP 500: Nur fuer unerwartete Fehler. Niemals absichtlich werfen.
-- Keine nackten `except Exception`. Spezifische Exceptions fangen.
-- Service-Funktionen werfen ValueError/KeyError, Router fangen und mappen zu HTTPException.
+Jede Schicht faengt nur das, was sie selbst behandeln kann. Alles andere wird nach oben durchgereicht.
 
-### Frontend (React)
+### Backend: Exception-Hierarchie
+
+```python
+# backend/app/exceptions.py
+
+class BibliogonError(Exception):
+    """Basis fuer alle Bibliogon-Fehler."""
+    def __init__(self, message: str, detail: str | None = None):
+        self.message = message
+        self.detail = detail or message
+        super().__init__(self.message)
+
+class NotFoundError(BibliogonError):
+    """Ressource nicht gefunden (-> HTTP 404)."""
+    pass
+
+class ValidationError(BibliogonError):
+    """Fachliche Validierung fehlgeschlagen (-> HTTP 400)."""
+    pass
+
+class ConflictError(BibliogonError):
+    """Ressource existiert bereits (-> HTTP 409)."""
+    pass
+
+class ExportError(BibliogonError):
+    """Export fehlgeschlagen: Pandoc, Scaffolding, Konvertierung (-> HTTP 500)."""
+    pass
+
+class PluginError(BibliogonError):
+    """Plugin konnte nicht laden, aktivieren oder ausfuehren (-> HTTP 500)."""
+    def __init__(self, plugin_name: str, message: str):
+        self.plugin_name = plugin_name
+        super().__init__(f"Plugin '{plugin_name}': {message}")
+
+class ExternalServiceError(BibliogonError):
+    """Externer Service nicht erreichbar (-> HTTP 502)."""
+    def __init__(self, service: str, message: str):
+        self.service = service
+        super().__init__(f"{service}: {message}")
+```
+
+### Backend: Globaler Exception Handler
+
+```python
+# backend/app/main.py - einmal registrieren
+
+ERROR_STATUS_MAP = {
+    NotFoundError: 404,
+    ValidationError: 400,
+    ConflictError: 409,
+    ExportError: 500,
+    PluginError: 500,
+    ExternalServiceError: 502,
+}
+
+@app.exception_handler(BibliogonError)
+async def bibliogon_error_handler(request, exc: BibliogonError):
+    status = ERROR_STATUS_MAP.get(type(exc), 500)
+    logger.error(exc.message, exc_info=exc if status >= 500 else None)
+    content = {"detail": exc.detail}
+    if settings.debug and status >= 500:
+        import traceback
+        content["traceback"] = traceback.format_exception(exc)
+    return JSONResponse(status_code=status, content=content)
+```
+
+### Backend: Wer wirft was
+
+**Services** werfen fachliche Exceptions, KEINE HTTPException:
+
+```python
+# RICHTIG
+def get_book(book_id: str, db: Session) -> Book:
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if not book:
+        raise NotFoundError(f"Book {book_id} not found")
+    return book
+
+def export_book(book_id: str, fmt: str, ...) -> Path:
+    if fmt not in SUPPORTED_FORMATS:
+        raise ValidationError(f"Unsupported format: {fmt}")
+    try:
+        return run_pandoc(project_dir, fmt, config)
+    except subprocess.CalledProcessError as e:
+        raise ExportError(f"Pandoc failed: {e.stderr}")
+
+# FALSCH: HTTPException in Service
+def get_book(book_id: str, db: Session) -> Book:
+    ...
+    raise HTTPException(status_code=404, ...)  # NICHT in Services
+```
+
+**Router** sind duenn, der Exception Handler uebernimmt:
+
+```python
+# RICHTIG
+@router.get("/{book_id}")
+def get_book_endpoint(book_id: str, db: Session = Depends(get_db)):
+    return book_service.get_book(book_id, db)
+    # NotFoundError -> Exception Handler -> 404 automatisch
+```
+
+**Plugins** werfen PluginError:
+
+```python
+class AudiobookPlugin(BasePlugin):
+    def generate(self, book_data, chapters):
+        try:
+            result = edge_tts.synthesize(...)
+        except ConnectionError as e:
+            raise ExternalServiceError("edge-TTS", str(e))
+        if not result.files:
+            raise PluginError(self.name, "No audio generated")
+```
+
+**Externe Tools** werden gewrappt:
+
+```python
+def check_grammar(text: str, lang: str) -> list[dict]:
+    try:
+        response = httpx.post(LANGUAGETOOL_URL, ...)
+        response.raise_for_status()
+        return response.json()["matches"]
+    except httpx.ConnectError:
+        raise ExternalServiceError("LanguageTool", "Service not reachable")
+    except httpx.HTTPStatusError as e:
+        raise ExternalServiceError("LanguageTool", f"HTTP {e.response.status_code}")
+```
+
+### Backend: Regeln
+
+- Services werfen BibliogonError-Subklassen, KEINE HTTPException.
+- Router fangen NICHTS. Der globale Exception Handler uebernimmt.
+- Keine nackten `except Exception`. Spezifische Exceptions fangen.
+- Externe Fehler immer wrappen in ExternalServiceError.
+- Plugin-Fehler immer als PluginError mit plugin_name.
+- HTTP 422 kommt automatisch von Pydantic.
+- Logging: 4xx als WARNING, 5xx als ERROR mit Traceback.
+
+### Frontend: ApiError-Klasse
 
 ```typescript
-// RICHTIG: API-Fehler zentral im Client behandeln
+// api/errors.ts
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public detail: string,
+    public traceback?: string[],  // Nur im Debug-Mode vom Backend geliefert
+  ) {
+    super(detail)
+    this.name = 'ApiError'
+  }
+
+  get isNotFound(): boolean { return this.status === 404 }
+  get isValidation(): boolean { return this.status === 400 || this.status === 422 }
+  get isServerError(): boolean { return this.status >= 500 }
+
+  /** Generiert GitHub Issue URL mit allen Fehlerdetails. */
+  toGitHubIssueUrl(repo: string, appVersion: string): string {
+    const title = encodeURIComponent(`[Bug] ${this.detail}`)
+    const body = encodeURIComponent([
+      `**Error:** ${this.detail}`,
+      `**Status:** ${this.status}`,
+      `**Version:** ${appVersion}`,
+      `**Browser:** ${navigator.userAgent}`,
+      this.traceback ? `\n**Stacktrace:**\n\`\`\`\n${this.traceback.join('')}\`\`\`` : '',
+    ].filter(Boolean).join('\n'))
+    return `https://github.com/${repo}/issues/new?title=${title}&body=${body}`
+  }
+}
+```
+
+### Frontend: Zentraler API Client
+
+```typescript
 // api/client.ts
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options)
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
-    throw new ApiError(response.status, error.detail)
+    const body = await response.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new ApiError(response.status, body.detail, body.traceback)
   }
   return response.json()
 }
+```
 
-// RICHTIG: In Komponenten mit Toast-Feedback
-try {
-  await createBook(data)
-  toast.success(t('book_created'))
-} catch (error) {
-  if (error instanceof ApiError) {
-    toast.error(error.detail)
-  } else {
-    toast.error(t('unexpected_error'))
+### Frontend: Fehler in Komponenten
+
+```typescript
+// RICHTIG: Spezifisch + i18n + Loading + Issue-Button bei 5xx
+async function handleExport() {
+  setLoading(true)
+  try {
+    await exportBook(bookId, format)
+    toast.success(t('export_success'))
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.isNotFound) {
+        toast.error(t('book_not_found'))
+      } else if (error.isServerError) {
+        // Toast mit "Issue melden" Link fuer GitHub
+        const issueUrl = error.toGitHubIssueUrl('astrapi69/bibliogon', APP_VERSION)
+        toast.error(`${error.detail} | ${t('report_issue')}: ${issueUrl}`)
+      } else {
+        toast.error(error.detail)
+      }
+    } else {
+      toast.error(t('unexpected_error'))
+    }
+  } finally {
+    setLoading(false)
   }
 }
 
 // FALSCH: Fehler ignorieren
-await createBook(data)  // Kein catch, User sieht nichts bei Fehler
+await exportBook(bookId, format)  // Kein catch
+
+// FALSCH: Generisch ohne Kontext
+catch (error) {
+  toast.error('Something went wrong')  // Nicht hilfreich, nicht i18n
+}
 ```
 
-**Regeln:**
-- API-Fehler immer dem User zeigen (Toast).
-- Kein `console.log` fuer Fehlermeldungen. Toast oder Logger-Service.
-- ApiError-Klasse mit status und detail (im api/client.ts definieren).
+### Frontend: Regeln
+
+- API-Fehler IMMER dem User zeigen (Toast), nie verschlucken.
+- Kein console.log fuer User-Feedback. Nur Toast (react-toastify).
 - Loading-States setzen waehrend API-Calls (kein "totes" UI).
+- ApiError-Klasse fuer alle API-Fehler, nicht generische Error.
+- Fehlermeldungen ueber i18n, keine hardcodierten Strings.
+- finally-Block fuer Loading-State Reset.
+- Toast bei Server-Fehlern (5xx) mit "Issue melden" Button der GitHub Issue oeffnet.
+- GitHub Issue enthaelt: Error-Detail als Titel, Stacktrace (aus Debug-Response), Browser-Info, App-Version.
+- Generische Fehlermeldungen ("Export failed") sind verboten, sie machen Issues wertlos.
 
 ---
 

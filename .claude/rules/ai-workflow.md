@@ -57,6 +57,7 @@ Zusaetzlich fuer die KI:
 - Code generieren der "fuer spaeter" ist. Nur was jetzt gebraucht wird.
 - Bestehende Tests loeschen, auskommentieren oder abschwaechen um `make test` gruen zu bekommen.
 - Custom TipTap-Extensions bauen ohne vorher zu pruefen ob eine offizielle existiert.
+- HTTPException in Service-Funktionen werfen. Services nutzen BibliogonError-Subklassen (siehe code-hygiene.md).
 - Im autonomen Modus bei Unklarheiten weiterraten. Lieber abbrechen und Unsicherheit dokumentieren.
 
 ## Aktueller Stand
