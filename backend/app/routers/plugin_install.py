@@ -51,92 +51,80 @@ def _validate_zip_paths(zf: zipfile.ZipFile) -> None:
 
 @router.post("/install")
 async def install_plugin(file: UploadFile) -> dict[str, Any]:
-    """Install a plugin from a ZIP file.
-
-    Expected ZIP structure:
-        plugin-name/
-        ├── plugin.yaml       (required: plugin config)
-        ├── package_name/     (required: Python package with plugin.py)
-        │   ├── __init__.py
-        │   └── plugin.py
-        └── requirements.txt  (optional)
-    """
+    """Install a plugin from a ZIP file."""
     if not file.filename or not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Nur ZIP-Dateien erlaubt.")
 
-    # Read into memory and validate
     content = await file.read()
     try:
         zf = zipfile.ZipFile(file=__import__("io").BytesIO(content))
     except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="Ungültige ZIP-Datei.")
+        raise HTTPException(status_code=400, detail="Ungueltige ZIP-Datei.")
 
+    plugin_name, package_name, plugin_config = _validate_plugin_zip(zf)
+    install_path = _extract_plugin(zf, plugin_name)
+    registered, error_msg = _register_plugin(plugin_name, package_name, plugin_config)
+    _enable_plugin_in_config(plugin_name)
+
+    return {
+        "plugin": plugin_name,
+        "version": plugin_config.get("plugin", {}).get("version", "unknown"),
+        "package": package_name, "installed_path": str(install_path),
+        "registered": registered, "error": error_msg or None,
+        "status": "installed" if registered else "installed_pending_restart",
+        "message": (
+            f"Plugin '{plugin_name}' installiert und aktiviert." if registered
+            else f"Plugin '{plugin_name}' installiert. Neustart erforderlich."
+            + (f" Fehler: {error_msg}" if error_msg else "")
+        ),
+    }
+
+
+def _validate_plugin_zip(zf: zipfile.ZipFile) -> tuple[str, str, dict]:
+    """Validate ZIP structure and return (plugin_name, package_name, config)."""
     _validate_zip_paths(zf)
 
-    # Find the plugin root directory (first directory in ZIP)
     top_dirs = {n.split("/")[0] for n in zf.namelist() if "/" in n}
     if len(top_dirs) != 1:
-        raise HTTPException(
-            status_code=400,
-            detail="ZIP muss genau ein Verzeichnis enthalten (den Plugin-Ordner).",
-        )
-    plugin_dir_name = top_dirs.pop()
+        raise HTTPException(status_code=400, detail="ZIP muss genau ein Verzeichnis enthalten.")
+    plugin_dir = top_dirs.pop()
 
-    # Find and validate plugin.yaml
-    yaml_path = f"{plugin_dir_name}/plugin.yaml"
+    yaml_path = f"{plugin_dir}/plugin.yaml"
     if yaml_path not in zf.namelist():
-        raise HTTPException(
-            status_code=400,
-            detail=f"plugin.yaml fehlt im ZIP (erwartet: {yaml_path}).",
-        )
+        raise HTTPException(status_code=400, detail=f"plugin.yaml fehlt (erwartet: {yaml_path}).")
 
     try:
-        plugin_config = yaml.safe_load(zf.read(yaml_path))
+        config = yaml.safe_load(zf.read(yaml_path))
     except Exception:
-        raise HTTPException(status_code=400, detail="plugin.yaml ist ungültig.")
+        raise HTTPException(status_code=400, detail="plugin.yaml ist ungueltig.")
 
-    plugin_meta = plugin_config.get("plugin", {})
-    plugin_name = plugin_meta.get("name", "")
+    plugin_name = config.get("plugin", {}).get("name", "")
     _validate_plugin_name(plugin_name)
 
-    # Find the Python package (directory with __init__.py)
-    python_packages = []
-    for name in zf.namelist():
-        parts = name.split("/")
-        if len(parts) == 3 and parts[2] == "__init__.py" and parts[0] == plugin_dir_name:
-            python_packages.append(parts[1])
+    packages = [
+        n.split("/")[1] for n in zf.namelist()
+        if n.count("/") == 2 and n.endswith("__init__.py") and n.startswith(plugin_dir + "/")
+    ]
+    if not packages:
+        raise HTTPException(status_code=400, detail="Kein Python-Paket gefunden.")
 
-    if not python_packages:
-        raise HTTPException(
-            status_code=400,
-            detail="Kein Python-Paket gefunden (Verzeichnis mit __init__.py fehlt).",
-        )
+    package_name = packages[0]
+    if f"{plugin_dir}/{package_name}/plugin.py" not in zf.namelist():
+        raise HTTPException(status_code=400, detail=f"plugin.py fehlt im Paket '{package_name}'.")
 
-    # Check if plugin.py exists in the package
-    package_name = python_packages[0]
-    plugin_module_path = f"{plugin_dir_name}/{package_name}/plugin.py"
-    if plugin_module_path not in zf.namelist():
-        raise HTTPException(
-            status_code=400,
-            detail=f"plugin.py fehlt im Paket '{package_name}'.",
-        )
+    return plugin_name, package_name, config
 
-    # Check for entry_point in plugin.yaml
-    entry_point = plugin_meta.get("entry_point", "")
-    if not entry_point:
-        # Auto-detect: package_name.plugin:*Plugin
-        entry_point = f"{package_name}.plugin"
 
-    # Extract to installed directory
+def _extract_plugin(zf: zipfile.ZipFile, plugin_name: str) -> Path:
+    """Extract plugin ZIP to installed directory and copy config."""
     install_path = _installed_dir / plugin_name
     if install_path.exists():
         shutil.rmtree(install_path)
-
     install_path.mkdir(parents=True, exist_ok=True)
+
     for info in zf.infolist():
         if info.is_dir():
             continue
-        # Strip the top-level directory from the path
         rel_path = "/".join(info.filename.split("/")[1:])
         if not rel_path:
             continue
@@ -144,73 +132,48 @@ async def install_plugin(file: UploadFile) -> dict[str, Any]:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(zf.read(info.filename))
 
-    # Copy plugin.yaml to config/plugins/
     config_dest = _base_dir / "config" / "plugins" / f"{plugin_name}.yaml"
     shutil.copy2(install_path / "plugin.yaml", config_dest)
 
-    # Add to sys.path so Python can import the package
     install_str = str(install_path)
     if install_str not in sys.path:
         sys.path.insert(0, install_str)
+    return install_path
 
-    # Register the plugin dynamically
-    registered = False
-    error_msg = ""
-    if _manager:
-        try:
-            # Import the plugin module
-            module = importlib.import_module(f"{package_name}.plugin")
 
-            # Find the plugin class (subclass of BasePlugin)
-            from pluginforge import BasePlugin
-            plugin_class = None
-            for attr_name in dir(module):
-                attr = getattr(module, attr_name)
-                if (
-                    isinstance(attr, type)
-                    and issubclass(attr, BasePlugin)
-                    and attr is not BasePlugin
-                ):
-                    plugin_class = attr
-                    break
+def _register_plugin(plugin_name: str, package_name: str, plugin_config: dict) -> tuple[bool, str]:
+    """Try to dynamically register the plugin. Returns (registered, error_msg)."""
+    if not _manager:
+        return False, "Plugin manager not available"
+    try:
+        module = importlib.import_module(f"{package_name}.plugin")
+        from pluginforge import BasePlugin
+        plugin_class = next(
+            (getattr(module, a) for a in dir(module)
+             if isinstance(getattr(module, a), type) and issubclass(getattr(module, a), BasePlugin) and getattr(module, a) is not BasePlugin),
+            None,
+        )
+        if not plugin_class:
+            return False, f"Keine BasePlugin-Unterklasse in {package_name}.plugin gefunden."
+        _manager.register_plugin(plugin_class(), plugin_config)
+        return True, ""
+    except Exception as e:
+        return False, str(e)
 
-            if not plugin_class:
-                error_msg = f"Keine BasePlugin-Unterklasse in {package_name}.plugin gefunden."
-            else:
-                # Register with pluggy
-                plugin_instance = plugin_class()
-                _manager.register_plugin(plugin_instance, plugin_config)
-                registered = True
-        except Exception as e:
-            error_msg = str(e)
 
-    # Add to enabled list in app.yaml
+def _enable_plugin_in_config(plugin_name: str) -> None:
+    """Add plugin to enabled list in app.yaml."""
     app_yaml_path = _base_dir / "config" / "app.yaml"
-    if app_yaml_path.exists():
-        app_config = _read_yaml(app_yaml_path)
-        enabled = app_config.setdefault("plugins", {}).setdefault("enabled", [])
-        disabled = app_config["plugins"].setdefault("disabled", [])
-        if plugin_name not in enabled:
-            enabled.append(plugin_name)
-        if plugin_name in disabled:
-            disabled.remove(plugin_name)
-        _write_yaml(app_yaml_path, app_config)
-
-    return {
-        "plugin": plugin_name,
-        "version": plugin_meta.get("version", "unknown"),
-        "package": package_name,
-        "installed_path": str(install_path),
-        "registered": registered,
-        "error": error_msg or None,
-        "status": "installed" if registered else "installed_pending_restart",
-        "message": (
-            f"Plugin '{plugin_name}' installiert und aktiviert."
-            if registered
-            else f"Plugin '{plugin_name}' installiert. Neustart erforderlich für Aktivierung."
-            + (f" Fehler: {error_msg}" if error_msg else "")
-        ),
-    }
+    if not app_yaml_path.exists():
+        return
+    app_config = _read_yaml(app_yaml_path)
+    enabled = app_config.setdefault("plugins", {}).setdefault("enabled", [])
+    disabled = app_config["plugins"].setdefault("disabled", [])
+    if plugin_name not in enabled:
+        enabled.append(plugin_name)
+    if plugin_name in disabled:
+        disabled.remove(plugin_name)
+    _write_yaml(app_yaml_path, app_config)
 
 
 @router.delete("/install/{plugin_name}")
