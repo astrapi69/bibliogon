@@ -1,13 +1,18 @@
 import {useEffect, useMemo, useRef, useState} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import {AlertCircle, CheckCircle, Download, Loader, X} from "lucide-react";
+import {AlertCircle, CheckCircle, Download, Loader, Minimize2, X} from "lucide-react";
 
+import {ApiError, api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
+import {notify} from "../utils/notify";
 
 interface Props {
     jobId: string;
     bookTitle: string;
+    /** Closes the dialog and clears the active job from context. */
     onClose: () => void;
+    /** Hides the dialog but keeps the job tracked (badge takes over). */
+    onMinimize: () => void;
 }
 
 type EventType =
@@ -28,17 +33,25 @@ interface SseEvent {
     data: Record<string, unknown>;
 }
 
-type Phase = "connecting" | "running" | "completed" | "failed";
+type Phase = "connecting" | "running" | "completed" | "failed" | "cancelled";
+
+interface ChapterFile {
+    filename: string;
+    url: string;
+}
 
 /**
  * Live progress modal for audiobook exports.
  *
- * Subscribes to ``GET /api/export/jobs/{job_id}/stream`` via the
- * browser-native ``EventSource`` API. The modal cannot be dismissed
- * until the job reaches a terminal state - audiobook generation can
- * take minutes and a stray escape press should not orphan the job.
+ * The dialog cannot be dismissed by clicking outside or pressing Escape -
+ * audiobook generation can take minutes and a stray escape press should
+ * not orphan the job. The user picks one of three explicit exits:
+ *
+ *   - Minimize: hand off to the badge, keep the job running
+ *   - Cancel:   call DELETE /api/export/jobs/{id} and close
+ *   - Close:    only available after the job reaches a terminal state
  */
-export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) {
+export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimize}: Props) {
     const {t} = useI18n();
     const [events, setEvents] = useState<SseEvent[]>([]);
     const [phase, setPhase] = useState<Phase>("connecting");
@@ -46,7 +59,9 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
     const [current, setCurrent] = useState<number>(0);
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
     const [downloadFilename, setDownloadFilename] = useState<string | null>(null);
+    const [chapterFiles, setChapterFiles] = useState<ChapterFile[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [cancelling, setCancelling] = useState(false);
     const eventSourceRef = useRef<EventSource | null>(null);
 
     useEffect(() => {
@@ -74,16 +89,26 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
                 case "chapter_error":
                     if (typeof ev.data.index === "number") setCurrent(ev.data.index);
                     break;
-                case "ready":
-                    setDownloadUrl(String(ev.data.download_url || ""));
+                case "ready": {
+                    setDownloadUrl(api.exportJobs.downloadUrl(jobId));
                     setDownloadFilename(String(ev.data.filename || ""));
+                    const files = Array.isArray(ev.data.chapter_files)
+                        ? (ev.data.chapter_files as string[])
+                        : [];
+                    setChapterFiles(files.map((fn) => ({
+                        filename: fn,
+                        url: api.exportJobs.chapterFileUrl(jobId, fn),
+                    })));
                     break;
+                }
                 case "stream_end": {
                     const status = String(ev.data.status || "");
                     const err = ev.data.error;
                     if (status === "failed") {
                         setPhase("failed");
                         if (typeof err === "string") setErrorMessage(err);
+                    } else if (status === "cancelled") {
+                        setPhase("cancelled");
                     } else {
                         setPhase("completed");
                     }
@@ -94,8 +119,6 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
         };
 
         es.onerror = () => {
-            // EventSource auto-reconnects in browsers; only treat it as a
-            // hard failure if we never reached the running phase.
             setPhase((p) => (p === "connecting" ? "failed" : p));
         };
 
@@ -105,7 +128,30 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
         };
     }, [jobId]);
 
-    const closable = phase === "completed" || phase === "failed";
+    const handleCancel = async () => {
+        setCancelling(true);
+        try {
+            await api.exportJobs.cancel(jobId);
+            notify.info(t("ui.audio_progress.cancelled_toast", "Export abgebrochen"));
+            onClose();
+        } catch (err) {
+            // 409 means it already finished - treat as success
+            if (err instanceof ApiError && err.status === 409) {
+                onClose();
+                return;
+            }
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            notify.error(
+                t("ui.audio_progress.cancel_failed", "Abbruch fehlgeschlagen") + ": " + detail,
+                err,
+            );
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    const closable = phase === "completed" || phase === "failed" || phase === "cancelled";
+    const cancellable = phase === "running" || phase === "connecting";
     const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
 
     const recentEvents = useMemo(
@@ -119,15 +165,9 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
                 <Dialog.Overlay className="dialog-overlay" />
                 <Dialog.Content
                     className="dialog-content dialog-content-wide"
-                    onPointerDownOutside={(e) => {
-                        if (!closable) e.preventDefault();
-                    }}
-                    onEscapeKeyDown={(e) => {
-                        if (!closable) e.preventDefault();
-                    }}
-                    onInteractOutside={(e) => {
-                        if (!closable) e.preventDefault();
-                    }}
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => e.preventDefault()}
                 >
                     <div className="dialog-header" style={{display: "flex", alignItems: "center", gap: 10}}>
                         <PhaseIcon phase={phase} />
@@ -146,29 +186,57 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
                                 .replace("{total}", String(total))
                             : t("ui.audio_progress.starting", "Starte Generierung..."))}
                         {phase === "completed" && t("ui.audio_progress.completed", "Audiobook fertig")}
+                        {phase === "cancelled" && t("ui.audio_progress.cancelled", "Export abgebrochen")}
                         {phase === "failed" && (errorMessage || t("ui.audio_progress.failed", "Generierung fehlgeschlagen"))}
                     </div>
 
                     <EventLog events={recentEvents} />
 
-                    <div style={{display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16}}>
+                    {chapterFiles.length > 0 && phase === "completed" && (
+                        <ChapterFileList files={chapterFiles} />
+                    )}
+
+                    <div style={{display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16, flexWrap: "wrap"}}>
                         {downloadUrl && phase === "completed" && (
                             <a
                                 className="btn btn-primary"
                                 href={downloadUrl}
                                 download={downloadFilename || true}
                             >
-                                <Download size={16} /> {t("ui.audio_progress.download", "Herunterladen")}
+                                <Download size={16} /> {t("ui.audio_progress.download_zip", "ZIP herunterladen")}
                             </a>
                         )}
-                        <button
-                            className="btn btn-secondary"
-                            onClick={onClose}
-                            disabled={!closable}
-                            title={closable ? "" : t("ui.audio_progress.wait_until_done", "Bitte warten bis die Generierung abgeschlossen ist")}
-                        >
-                            <X size={14} /> {t("ui.common.close", "Schliessen")}
-                        </button>
+                        {cancellable && (
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={onMinimize}
+                                title={t("ui.audio_progress.minimize_hint", "Im Hintergrund weiterlaufen lassen")}
+                            >
+                                <Minimize2 size={14} /> {t("ui.audio_progress.minimize", "Im Hintergrund fortsetzen")}
+                            </button>
+                        )}
+                        {cancellable && (
+                            <button
+                                type="button"
+                                className="btn btn-danger"
+                                onClick={handleCancel}
+                                disabled={cancelling}
+                            >
+                                <X size={14} /> {cancelling
+                                    ? t("ui.audio_progress.cancelling", "Wird abgebrochen...")
+                                    : t("ui.audio_progress.cancel", "Abbrechen")}
+                            </button>
+                        )}
+                        {closable && (
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={onClose}
+                            >
+                                <X size={14} /> {t("ui.common.close", "Schliessen")}
+                            </button>
+                        )}
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
@@ -179,12 +247,14 @@ export default function AudioExportProgress({jobId, bookTitle, onClose}: Props) 
 function PhaseIcon({phase}: {phase: Phase}) {
     if (phase === "completed") return <CheckCircle size={20} style={{color: "#16a34a"}} />;
     if (phase === "failed") return <AlertCircle size={20} style={{color: "#ef4444"}} />;
+    if (phase === "cancelled") return <X size={20} style={{color: "var(--text-muted)"}} />;
     return <Loader size={20} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}} />;
 }
 
 function ProgressBar({percent, phase}: {percent: number; phase: Phase}) {
     const fill =
         phase === "failed" ? "#ef4444" :
+        phase === "cancelled" ? "var(--text-muted)" :
         phase === "completed" ? "#16a34a" :
         "var(--accent)";
     return (
@@ -231,6 +301,33 @@ function EventLog({events}: {events: SseEvent[]}) {
                 </div>
             ))}
         </div>
+    );
+}
+
+function ChapterFileList({files}: {files: ChapterFile[]}) {
+    const {t} = useI18n();
+    return (
+        <details style={{marginTop: 16}}>
+            <summary style={{cursor: "pointer", fontSize: "0.875rem", color: "var(--text-secondary)"}}>
+                {t("ui.audio_progress.individual_files", "Einzelne Kapitel")} ({files.length})
+            </summary>
+            <ul style={{
+                listStyle: "none",
+                padding: "8px 0 0 0",
+                margin: 0,
+                maxHeight: 200,
+                overflowY: "auto",
+            }}>
+                {files.map((f) => (
+                    <li key={f.filename} style={{padding: "3px 0", fontSize: "0.8125rem"}}>
+                        <a href={f.url} download={f.filename} style={{color: "var(--accent)"}}>
+                            <Download size={12} style={{verticalAlign: "middle", marginRight: 4}} />
+                            {f.filename}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </details>
     );
 }
 

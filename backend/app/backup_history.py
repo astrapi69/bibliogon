@@ -65,11 +65,16 @@ class BackupHistory:
         self._save()
 
     def _load(self) -> None:
-        if self.path.exists():
-            try:
-                self._entries = json.loads(self.path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                self._entries = []
+        if not self.path.exists():
+            return
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            self._entries = []
+            return
+        # Defensive: an older or hand-edited file may contain a dict (e.g.
+        # {}) which would crash add()/insert later. Coerce to a list.
+        self._entries = data if isinstance(data, list) else []
 
     def _save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

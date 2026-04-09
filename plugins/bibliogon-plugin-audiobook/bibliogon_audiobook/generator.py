@@ -9,8 +9,71 @@ from .tts_engine import TTSEngine, get_engine
 
 logger = logging.getLogger(__name__)
 
-# Chapter types to skip in audiobook generation
+# Chapter types to skip in audiobook generation by default
 SKIP_TYPES = {"toc", "imprint", "index", "bibliography", "endnotes"}
+
+
+def _normalize_skip_set(skip_types: set[str] | list[str] | None) -> set[str]:
+    """Coerce the user-supplied skip list (or default) into a lowercased set."""
+    raw = SKIP_TYPES if skip_types is None else skip_types
+    return {str(s).strip().lower() for s in raw if str(s).strip()}
+
+
+def _should_skip(ch_type: str, ch_title: str, skip_set: set[str]) -> bool:
+    """A chapter is skipped if its type OR its lowercased title is in the set.
+
+    Title-matching lets the user add free-form names like "Glossar" or
+    "Danksagung" to the skip list in the audiobook plugin settings, even
+    if those chapters are typed as plain ``chapter`` in the database.
+    """
+    if (ch_type or "").lower() in skip_set:
+        return True
+    return (ch_title or "").lower() in skip_set
+
+
+# Per-language word for "Chapter" (used by the optional spoken intro).
+_CHAPTER_WORD: dict[str, str] = {
+    "de": "Kapitel",
+    "en": "Chapter",
+    "es": "Capitulo",
+    "fr": "Chapitre",
+    "el": "Κεφάλαιο",
+    "pt": "Capitulo",
+    "tr": "Bolum",
+    "ja": "チャプター",
+    "it": "Capitolo",
+    "nl": "Hoofdstuk",
+    "ru": "Глава",
+    "zh": "章",
+}
+
+# Ordinal forms for the first ten chapter intros, where TTS sounds best
+# with words instead of digits ("Erstes Kapitel" beats "Kapitel 1").
+_CHAPTER_ORDINALS: dict[str, list[str]] = {
+    "de": [
+        "Erstes Kapitel", "Zweites Kapitel", "Drittes Kapitel", "Viertes Kapitel",
+        "Fuenftes Kapitel", "Sechstes Kapitel", "Siebtes Kapitel", "Achtes Kapitel",
+        "Neuntes Kapitel", "Zehntes Kapitel",
+    ],
+    "en": [
+        "First chapter", "Second chapter", "Third chapter", "Fourth chapter",
+        "Fifth chapter", "Sixth chapter", "Seventh chapter", "Eighth chapter",
+        "Ninth chapter", "Tenth chapter",
+    ],
+}
+
+
+def _build_chapter_intro(index: int, language: str) -> str:
+    """Return the spoken intro for chapter ``index`` in ``language``.
+
+    Uses ordinal words for chapters 1-10 in supported languages
+    ("Erstes Kapitel"), falls back to "<word> <number>" everywhere else.
+    """
+    lang = (language or "en").lower().split("-")[0]
+    if 1 <= index <= 10 and lang in _CHAPTER_ORDINALS:
+        return _CHAPTER_ORDINALS[lang][index - 1]
+    word = _CHAPTER_WORD.get(lang, "Chapter")
+    return f"{word} {index}"
 
 # Valid merge modes
 MERGE_MODES = ("separate", "merged", "both")
@@ -100,19 +163,24 @@ async def generate_chapter_audio(
     voice: str = "",
     language: str = "de",
     rate: str = "",
-    include_title: bool = True,
+    filename_title: str | None = None,
 ) -> Path | None:
     """Generate MP3 for a single chapter.
 
     Args:
-        title: Chapter title.
+        title: Optional spoken intro to prepend to the audio (e.g.
+            "Erstes Kapitel"). Pass an empty string to get just the
+            chapter body without any spoken header - that is the
+            default behaviour for audiobook exports.
         content: TipTap JSON content.
         output_dir: Directory for output files.
         chapter_index: Chapter number for filename ordering.
         engine: TTS engine to use.
         voice: Voice identifier.
         language: Language code.
-        include_title: Whether to prepend the title to the audio.
+        filename_title: Title used for the on-disk filename slug. Falls
+            back to ``title`` when not provided. Lets the caller decouple
+            "name on disk" from "what the TTS reads aloud".
 
     Returns:
         Path to generated MP3, or None if chapter was skipped.
@@ -121,13 +189,11 @@ async def generate_chapter_audio(
     if not plain_text.strip():
         return None
 
-    # Prepend title for spoken chapter header
-    if include_title and title:
-        full_text = f"{title}.\n\n{plain_text}"
-    else:
-        full_text = plain_text
+    # Only prepend spoken intro when the caller explicitly asked for one.
+    full_text = f"{title}.\n\n{plain_text}" if title else plain_text
 
-    filename = f"{chapter_index:03d}-{_slugify(title)}.mp3"
+    slug_source = filename_title if filename_title is not None else title
+    filename = f"{chapter_index:03d}-{_slugify(slug_source)}.mp3"
     output_path = output_dir / filename
 
     await engine.synthesize(full_text, output_path, voice=voice, language=language, rate=rate)
@@ -148,6 +214,7 @@ async def generate_audiobook(
     skip_types: set[str] | None = None,
     merge: object = "merged",
     progress_callback: ProgressCallback = None,
+    read_chapter_number: bool = False,
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
@@ -158,14 +225,20 @@ async def generate_audiobook(
         engine_id: TTS engine to use.
         voice: Voice identifier (engine-specific).
         language: Language code.
-        skip_types: Chapter types to skip (default: toc, imprint, index,
-            bibliography, endnotes).
+        skip_types: Chapter types OR titles to skip. Matched against the
+            chapter_type AND the lowercased title (so "Glossar" matches a
+            chapter named "Glossar" even if its type is just "chapter").
+            Default: toc, imprint, index, bibliography, endnotes.
         progress_callback: Optional async ``(event_type, payload)`` callback.
             Called for ``start``, ``chapter_start``, ``chapter_done``,
             ``chapter_skipped``, ``chapter_error``, ``merge_start``,
             ``merge_done``, ``merge_error`` and ``done``. Used by the SSE
             export endpoint to push live progress; safe to omit (e.g. unit
             tests, ad-hoc CLI usage).
+        read_chapter_number: If False (default), the chapter title is NOT
+            prepended to the spoken audio. If True, an intro like
+            "Erstes Kapitel" / "First chapter" / "Kapitel 12" is spoken
+            using the configured language.
 
     Returns:
         Dict with generated files, skipped chapters, and errors.
@@ -173,7 +246,7 @@ async def generate_audiobook(
     merge_mode = normalize_merge_mode(merge)
     output_dir.mkdir(parents=True, exist_ok=True)
     engine = get_engine(engine_id)
-    types_to_skip = skip_types if skip_types is not None else SKIP_TYPES
+    skip_set = _normalize_skip_set(skip_types)
 
     generated: list[str] = []
     skipped: list[str] = []
@@ -201,7 +274,7 @@ async def generate_audiobook(
         ch_type = ch.get("chapter_type", "chapter")
         ch_title = ch.get("title", f"Chapter {i}")
 
-        if ch_type in types_to_skip:
+        if _should_skip(ch_type, ch_title, skip_set):
             skipped.append(ch_title)
             logger.info("Skipping %s (%s)", ch_title, ch_type)
             await emit("chapter_skipped", index=i, title=ch_title, reason=ch_type)
@@ -209,8 +282,11 @@ async def generate_audiobook(
 
         await emit("chapter_start", index=i, title=ch_title)
         try:
+            spoken_intro = (
+                _build_chapter_intro(i, language) if read_chapter_number else ""
+            )
             result = await generate_chapter_audio(
-                title=ch_title,
+                title=spoken_intro,
                 content=ch.get("content", ""),
                 output_dir=output_dir,
                 chapter_index=i,
@@ -218,6 +294,9 @@ async def generate_audiobook(
                 voice=voice,
                 language=language,
                 rate=rate,
+                # The audio file's filename still uses the real chapter
+                # title; only the spoken intro is controlled here.
+                filename_title=ch_title,
             )
             if result:
                 generated.append(result.name)

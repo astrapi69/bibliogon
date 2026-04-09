@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 
 from .pandoc_runner import PandocError, run_pandoc
@@ -238,6 +238,26 @@ def _resolve_audiobook_merge_mode(book_data: dict[str, Any]) -> str:
     return _read_audiobook_merge_setting()
 
 
+def _read_audiobook_settings() -> dict[str, Any]:
+    """Read the audiobook plugin's full settings dict from disk.
+
+    Used to forward user-defined ``skip_types`` and other generator
+    options into ``_run_audiobook_job``. Returns an empty dict if the
+    config file is missing or unreadable.
+    """
+    import yaml
+    config_path = Path("config/plugins/audiobook.yaml")
+    if not config_path.exists():
+        return {}
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+    settings = cfg.get("settings") or {}
+    return settings if isinstance(settings, dict) else {}
+
+
 # NOTE: the previous synchronous _export_audiobook helper was removed
 # deliberately - audiobook generation can take minutes and must always
 # go through the async job + SSE stream. The sync GET /export/audiobook
@@ -404,6 +424,16 @@ async def _run_audiobook_job(
     audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
     merge_mode = _resolve_audiobook_merge_mode(book_data)
 
+    # Forward user-configured generator options from audiobook.yaml.
+    plugin_settings = _read_audiobook_settings()
+    skip_types_raw = plugin_settings.get("skip_types")
+    skip_types: set[str] | None
+    if isinstance(skip_types_raw, list):
+        skip_types = {str(s) for s in skip_types_raw}
+    else:
+        skip_types = None  # generator falls back to its built-in default
+    read_chapter_number = bool(plugin_settings.get("read_chapter_number", False))
+
     async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
         job_store.publish_event(job_id, event_type, payload)
 
@@ -412,6 +442,7 @@ async def _run_audiobook_job(
         chapters=chapters, output_dir=audio_dir,
         engine_id=engine_id, voice=voice, language=language, rate=rate,
         merge=merge_mode, progress_callback=progress_cb,
+        skip_types=skip_types, read_chapter_number=read_chapter_number,
     )
     output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
     if output is None:
@@ -422,12 +453,18 @@ async def _run_audiobook_job(
     else:
         download = {"path": str(output), "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
 
+    # Stash the per-chapter MP3 directory + filenames so the modal can
+    # render individual download links via /api/export/jobs/{id}/files/{name}.
+    download["audio_dir"] = str(audio_dir)
+    download["chapter_files"] = list(result.get("generated_files") or [])
+
     # Final "ready" event so SSE clients can render the download button
     # before the synthetic stream_end fires from JobStore.update().
     job_store.publish_event(job_id, "ready", {
         "filename": download["filename"],
         "media_type": download["media_type"],
         "download_url": f"/api/export/jobs/{job_id}/download",
+        "chapter_files": download["chapter_files"],
     })
     return download
 
@@ -463,6 +500,12 @@ def get_job_status(job_id: str) -> dict[str, Any]:
     if job.status.value == "completed" and job.result.get("filename"):
         result["filename"] = job.result["filename"]
         result["download_url"] = f"/api/export/jobs/{job_id}/download"
+        chapter_files = job.result.get("chapter_files") or []
+        if chapter_files:
+            result["chapter_files"] = [
+                {"filename": fn, "url": f"/api/export/jobs/{job_id}/files/{fn}"}
+                for fn in chapter_files
+            ]
     return result
 
 
@@ -497,6 +540,58 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@jobs_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_job(job_id: str) -> None:
+    """Cancel a running export job.
+
+    Idempotent: returns 204 if the job exists and was running, 404 if
+    the job is unknown, 409 if it has already finished. The cancellation
+    flips the job status to CANCELLED, the SSE stream sees ``stream_end``
+    and the client disconnects cleanly.
+    """
+    try:
+        from app.job_store import JobStatus, job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED):
+        raise HTTPException(status_code=409, detail=f"Job is already {job.status.value}")
+    job_store.cancel(job_id)
+
+
+@jobs_router.get("/{job_id}/files/{filename}")
+def download_job_chapter_file(job_id: str, filename: str) -> FileResponse:
+    """Serve an individual generated chapter file from a finished audiobook job.
+
+    Lets the frontend offer per-chapter download links in the progress
+    modal alongside the bundled ZIP/MP3. Only files that the job's
+    generator actually produced are served (no path traversal: the
+    requested filename must literally match an entry in
+    ``job.result.chapter_files``).
+    """
+    try:
+        from app.job_store import job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status.value != "completed":
+        raise HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
+    chapter_files = job.result.get("chapter_files") or []
+    if filename not in chapter_files:
+        raise HTTPException(status_code=404, detail="Chapter file not in this job")
+    audio_dir = job.result.get("audio_dir")
+    if not audio_dir:
+        raise HTTPException(status_code=410, detail="Job has no audio directory")
+    file_path = Path(audio_dir) / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=410, detail="Chapter file no longer available")
+    return FileResponse(path=str(file_path), media_type="audio/mpeg", filename=filename)
 
 
 @jobs_router.get("/{job_id}/download")

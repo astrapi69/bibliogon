@@ -297,6 +297,33 @@ export const api = {
             request<CoverLimits>(`/books/${bookId}/cover/limits`),
     },
 
+    exportJobs: {
+        /** POST /api/books/{id}/export/async/audiobook -> {job_id, status} */
+        startAudiobook: async (bookId: string): Promise<{job_id: string; status: string}> => {
+            const res = await fetch(`${BASE}/books/${bookId}/export/async/audiobook`, {method: "POST"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Audiobook export failed",
+                    `${BASE}/books/${bookId}/export/async/audiobook`,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.json();
+        },
+        /** DELETE /api/export/jobs/{id} -> 204 on success, 409 if already done */
+        cancel: (jobId: string) =>
+            request<void>(`/export/jobs/${jobId}`, {method: "DELETE"}),
+        /** Per-chapter MP3 download URL (no API call, just the URL string) */
+        chapterFileUrl: (jobId: string, filename: string) =>
+            `${BASE}/export/jobs/${jobId}/files/${encodeURIComponent(filename)}`,
+        /** Bundled audiobook download URL */
+        downloadUrl: (jobId: string) =>
+            `${BASE}/export/jobs/${jobId}/download`,
+    },
+
     backup: {
         exportUrl: () => `${BASE}/backup/export`,
 

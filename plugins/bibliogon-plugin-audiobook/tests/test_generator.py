@@ -17,6 +17,9 @@ from bibliogon_audiobook.generator import (
     merge_mp3_files,
     is_ffmpeg_available,
     normalize_merge_mode,
+    _build_chapter_intro,
+    _normalize_skip_set,
+    _should_skip,
     _slugify,
 )
 
@@ -386,6 +389,189 @@ async def test_generate_audiobook_progress_callback_failure_does_not_kill_export
                 progress_callback=bad_cb,
             )
             assert result["generated_count"] == 0  # finished cleanly
+
+
+# --- Skip-list helpers ---
+
+
+def test_normalize_skip_set_lowercases_and_dedupes():
+    assert _normalize_skip_set(["TOC", "  Imprint  ", "TOC"]) == {"toc", "imprint"}
+
+
+def test_normalize_skip_set_none_uses_default():
+    assert _normalize_skip_set(None) == {s.lower() for s in SKIP_TYPES}
+
+
+def test_should_skip_matches_chapter_type():
+    assert _should_skip("toc", "Inhaltsverzeichnis", {"toc"}) is True
+
+
+def test_should_skip_matches_title_when_type_is_chapter():
+    """User adds 'Glossar' to skip list - chapter typed 'chapter' is still skipped."""
+    assert _should_skip("chapter", "Glossar", {"glossar"}) is True
+
+
+def test_should_skip_is_case_insensitive_on_input_side():
+    """The skip_set is expected pre-normalized; the input chapter is folded."""
+    assert _should_skip("CHAPTER", "Danksagung", {"danksagung"}) is True
+    assert _should_skip("TOC", "X", {"toc"}) is True
+
+
+def test_should_skip_returns_false_for_normal_chapter():
+    assert _should_skip("chapter", "Kapitel 1", {"toc", "imprint"}) is False
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_skips_by_title():
+    """skip_types matches against title when the type doesn't match."""
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(return_value=Path("/tmp/x.mp3"))
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "Kapitel 1", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hi."}]}],
+            }), "chapter_type": "chapter", "position": 1},
+            {"title": "Glossar", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hi."}]}],
+            }), "chapter_type": "chapter", "position": 2},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                skip_types={"glossar"},
+            )
+            assert "Glossar" in result["skipped"]
+            assert "Kapitel 1" not in result["skipped"]
+
+
+# --- Chapter intro (read_chapter_number) ---
+
+
+def test_build_chapter_intro_german_ordinals():
+    assert _build_chapter_intro(1, "de") == "Erstes Kapitel"
+    assert _build_chapter_intro(10, "de") == "Zehntes Kapitel"
+
+
+def test_build_chapter_intro_english_ordinals():
+    assert _build_chapter_intro(1, "en") == "First chapter"
+    assert _build_chapter_intro(3, "en") == "Third chapter"
+
+
+def test_build_chapter_intro_falls_back_above_ten():
+    assert _build_chapter_intro(11, "de") == "Kapitel 11"
+    assert _build_chapter_intro(12, "en") == "Chapter 12"
+
+
+def test_build_chapter_intro_unknown_language_uses_english_word():
+    """Languages without an ordinal map still get the localized word fallback."""
+    assert _build_chapter_intro(5, "es") == "Capitulo 5"
+    assert _build_chapter_intro(5, "ja") == "チャプター 5"
+    # Unknown language code -> English fallback
+    assert _build_chapter_intro(5, "xx") == "Chapter 5"
+
+
+def test_build_chapter_intro_normalizes_locale_form():
+    """en-US should be treated as en."""
+    assert _build_chapter_intro(2, "en-US") == "Second chapter"
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_does_not_prepend_title_by_default():
+    """Default: chapter title is NOT spoken (regression for the 'Kapitel X' bug)."""
+    captured_text: list[str] = []
+
+    async def fake_synth(text, output_path, voice="", language="de", rate=""):
+        captured_text.append(text)
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_bytes(b"x")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        engine = AsyncMock()
+        engine.synthesize = fake_synth
+        mock_get.return_value = engine
+
+        chapters = [{
+            "title": "Vorwort",
+            "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Body text."}]}],
+            }),
+            "chapter_type": "chapter",
+            "position": 0,
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+            )
+
+    assert len(captured_text) == 1
+    spoken = captured_text[0]
+    # The spoken text must NOT start with the chapter title
+    assert not spoken.startswith("Vorwort")
+    assert "Body text." in spoken
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_with_read_chapter_number_prepends_intro():
+    """When read_chapter_number=True an ordinal intro is spoken."""
+    captured_text: list[str] = []
+
+    async def fake_synth(text, output_path, voice="", language="de", rate=""):
+        captured_text.append(text)
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_bytes(b"x")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        engine = AsyncMock()
+        engine.synthesize = fake_synth
+        mock_get.return_value = engine
+
+        chapters = [{
+            "title": "Vorwort",
+            "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Body."}]}],
+            }),
+            "chapter_type": "chapter",
+            "position": 0,
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                language="de", read_chapter_number=True,
+            )
+
+    assert captured_text[0].startswith("Erstes Kapitel")
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_filename_uses_real_title_not_intro():
+    """Even with read_chapter_number=True, the file slug is the chapter title."""
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        engine = AsyncMock()
+        engine.synthesize = AsyncMock(return_value=Path("/tmp/x.mp3"))
+        mock_get.return_value = engine
+
+        chapters = [{
+            "title": "Vorwort",
+            "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "X."}]}],
+            }),
+            "chapter_type": "chapter",
+            "position": 0,
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                language="de", read_chapter_number=True,
+            )
+            # The on-disk filename uses the actual title slug
+            assert any("vorwort" in name for name in result["generated_files"])
 
 
 @pytest.mark.asyncio

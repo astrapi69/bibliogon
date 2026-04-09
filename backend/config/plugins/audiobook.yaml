@@ -28,3 +28,7 @@ settings:
   - index
   - bibliography
   - endnotes
+  # When true, the TTS speaks an ordinal intro ("Erstes Kapitel") before
+  # each chapter. Default off because most users do not want any spoken
+  # header at all - the chapter title is no longer auto-prepended.
+  read_chapter_number: false

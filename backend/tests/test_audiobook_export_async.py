@@ -66,11 +66,12 @@ def _cleanup(client: TestClient, book_id: str) -> None:
 
 async def _wait_for_job_async(job_id: str, timeout: float = 5.0) -> None:
     deadline = asyncio.get_event_loop().time() + timeout
+    terminal = (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED)
     while True:
         job = job_store.get(job_id)
         if job is None:
             return
-        if job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
+        if job.status in terminal:
             return
         if asyncio.get_event_loop().time() > deadline:
             raise TimeoutError(f"Job {job_id} did not finish in {timeout}s")
@@ -211,3 +212,161 @@ def test_sse_stream_yields_events_then_stream_end(client):
 def test_sse_stream_unknown_job_returns_404(client):
     r = client.get("/api/export/jobs/does-not-exist/stream")
     assert r.status_code == 404
+
+
+# --- Cancel ---
+
+
+def test_cancel_running_job_returns_204(client):
+    """A long-running job can be cancelled mid-export."""
+    book_id = _create_book_with_chapters(client, 5)
+    try:
+        # Slow synth so we have time to cancel between the POST and the wait.
+        async def slow_synth(text, output_path, voice="", language="de", rate=""):
+            await asyncio.sleep(0.5)
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_path).write_bytes(b"x")
+
+        engine = AsyncMock()
+        engine.synthesize = slow_synth
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=engine):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            # Give the job a beat to actually start
+            asyncio.new_event_loop().run_until_complete(asyncio.sleep(0.05))
+
+            r = client.delete(f"/api/export/jobs/{job_id}")
+            assert r.status_code == 204
+
+            # Eventually settles in CANCELLED state
+            _wait_for_job(job_id, timeout=3.0)
+            job = job_store.get(job_id)
+            assert job is not None
+            assert job.status == JobStatus.CANCELLED
+            # The synthetic stream_end event was emitted with status=cancelled
+            stream_end = next(e for e in job.events if e["type"] == "stream_end")
+            assert stream_end["data"]["status"] == "cancelled"
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_cancel_already_completed_job_returns_409(client):
+    """You cannot cancel a finished job."""
+    book_id = _create_book_with_chapters(client, 1)
+    try:
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            _wait_for_job(job_id)
+            r = client.delete(f"/api/export/jobs/{job_id}")
+            assert r.status_code == 409
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_cancel_unknown_job_returns_404(client):
+    r = client.delete("/api/export/jobs/does-not-exist")
+    assert r.status_code == 404
+
+
+# --- Per-chapter download ---
+
+
+def test_per_chapter_download_serves_individual_files(client):
+    """Each generated chapter MP3 is downloadable via /jobs/{id}/files/{name}."""
+    book_id = _create_book_with_chapters(client, 2)
+    try:
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            _wait_for_job(job_id)
+
+            # Status now lists the chapter_files with their per-file URLs
+            status = client.get(f"/api/export/jobs/{job_id}").json()
+            assert "chapter_files" in status
+            assert len(status["chapter_files"]) == 2
+            for cf in status["chapter_files"]:
+                assert cf["filename"].endswith(".mp3")
+                assert cf["url"].startswith(f"/api/export/jobs/{job_id}/files/")
+
+            # Each individual file is actually downloadable
+            for cf in status["chapter_files"]:
+                r = client.get(cf["url"])
+                assert r.status_code == 200
+                assert r.headers["content-type"] == "audio/mpeg"
+                assert r.content  # non-empty body
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_per_chapter_download_rejects_unknown_filename(client):
+    """Path-traversal guard: only files in the job's chapter_files list."""
+    book_id = _create_book_with_chapters(client, 1)
+    try:
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            _wait_for_job(job_id)
+
+            r = client.get(f"/api/export/jobs/{job_id}/files/etc-passwd.mp3")
+            assert r.status_code == 404
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_per_chapter_download_404_for_unknown_job(client):
+    r = client.get("/api/export/jobs/missing/files/anything.mp3")
+    assert r.status_code == 404
+
+
+# --- Skip list integration ---
+
+
+def test_async_audiobook_respects_skip_types_from_config(client, tmp_path, monkeypatch):
+    """The yaml config's skip_types must actually skip matching chapters."""
+    # Point the export route at a temporary audiobook.yaml so we control skip_types
+    cfg_dir = tmp_path / "config" / "plugins"
+    cfg_dir.mkdir(parents=True)
+    (cfg_dir / "audiobook.yaml").write_text(
+        "settings:\n"
+        "  skip_types:\n"
+        "    - toc\n"
+        "    - imprint\n"
+        "    - Glossar\n"  # title-based skip
+        "  read_chapter_number: false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    book_id = _create_book_with_chapters(client, 0)
+    try:
+        # Add chapters: one normal, one type=toc, one with title 'Glossar'
+        for ch in [
+            {"title": "Kapitel 1", "chapter_type": "chapter"},
+            {"title": "Inhaltsverzeichnis", "chapter_type": "toc"},
+            {"title": "Glossar", "chapter_type": "chapter"},
+        ]:
+            client.post(
+                f"/api/books/{book_id}/chapters",
+                json={
+                    "title": ch["title"],
+                    "content": json.dumps({
+                        "type": "doc",
+                        "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Body."}]}],
+                    }),
+                    "chapter_type": ch["chapter_type"],
+                },
+            )
+
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            _wait_for_job(job_id)
+            job = job_store.get(job_id)
+            assert job is not None
+            assert job.status == JobStatus.COMPLETED
+
+            # Only "Kapitel 1" should have been generated; toc and Glossar skipped
+            event_types = [(e["type"], e["data"]) for e in job.events]
+            done_titles = [d.get("title") for t, d in event_types if t == "chapter_done"]
+            skipped_titles = [d.get("title") for t, d in event_types if t == "chapter_skipped"]
+            assert done_titles == ["Kapitel 1"]
+            assert "Inhaltsverzeichnis" in skipped_titles
+            assert "Glossar" in skipped_titles
+    finally:
+        _cleanup(client, book_id)

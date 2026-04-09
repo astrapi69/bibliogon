@@ -526,4 +526,138 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 10. Audiobook-Export: Skip-Liste, kein Title-Prefix, Cancel/Minimize, Per-Chapter-Downloads (15:00)
+
+- Original-Prompt: Vier Aenderungen am Audiobook-Export. (1) Skip-Liste
+  aus den Settings wird beim Export ignoriert. (2) "Kapitel X:" Prefix
+  vor dem Body raus. (3) Abbrechen-Button + Im-Hintergrund-fortsetzen
+  Button im Progress-Dialog. (4) ZIP-Download und Liste der einzelnen
+  Kapitel mit per-Kapitel-Download-Links bei separate-Mode.
+- Optimierter Prompt: Identisch klar, jede der vier Aenderungen war mit
+  Sub-Spec versehen.
+- Ziel: Audiobook-Export-UX vom Setup bis zum Download komplett auf
+  User-Niveau bringen.
+- Diagnose:
+  - **#1 Skip-Liste**: `_run_audiobook_job` rief `generate_audiobook` ohne
+    `skip_types`-Argument auf, also fiel der Generator auf das hardcoded
+    `SKIP_TYPES`-Set zurueck und der `audiobook.yaml`-Wert wurde komplett
+    ignoriert. Plus: die Skip-Logik konnte nur Chapter-Types matchen,
+    nicht Titles.
+  - **#2 Title-Prefix**: `generate_chapter_audio` hatte
+    `if include_title and title: full_text = f"{title}.\n\n{plain_text}"`,
+    die Loop liess das auf Default `True` und hat dann jedes Mal den
+    Chapter-Titel vor den Body geklatscht - "Kapitel 1: Vorwort. Vorwort
+    body..." beim Hoeren.
+  - **#3 Cancel/Minimize**: Modal hatte gar keine Buttons dafuer; das
+    `Job` Dataclass im job_store hatte keine `asyncio.Task`-Referenz also
+    war Cancel auch backend-seitig nicht moeglich. Modal war
+    architektonisch in `ExportDialog` lokalisiert -> Minimize unmoeglich
+    weil der Dialog beim Schliessen den State verlor.
+  - **#4 ZIP fuer separate**: Eigentlich schon implementiert in
+    `bundle_audiobook_output` - "separate" produziert bereits einen
+    ZIP. Was wirklich fehlte: Liste der einzelnen Kapitel mit Download-
+    Links im Modal.
+- Ergebnis:
+  - **#1 Skip-Liste komplett verkabelt**:
+    - Generator: neue Helfer `_normalize_skip_set()`, `_should_skip()`
+      die sowohl Chapter-Type ALS AUCH Chapter-Title (case-insensitive)
+      gegen das Skip-Set matchen - User kann jetzt "Glossar" als Titel
+      in `skip_types` eintragen und es wird gefiltert auch wenn der
+      Chapter-Type `chapter` ist.
+    - Export-Route: neuer `_read_audiobook_settings()` Helfer liest die
+      ganze Settings-Section aus `config/plugins/audiobook.yaml` und
+      `_run_audiobook_job` reicht `skip_types` und `read_chapter_number`
+      jetzt durch.
+    - Tests: `test_async_audiobook_respects_skip_types_from_config`
+      mit yaml-tmp_path schreibt eine Test-Config mit `skip_types: [toc,
+      imprint, Glossar]` und verifiziert dass nur "Kapitel 1" generiert
+      wird, "Inhaltsverzeichnis" (type=toc) und "Glossar" (title-match)
+      uebersprungen werden. Plus 6 Unit-Tests fuer
+      `_normalize_skip_set`/`_should_skip`/skip-by-title.
+  - **#2 Title-Prefix entfernt**:
+    - `generate_chapter_audio` API geaendert: `include_title` raus,
+      neuer `filename_title`-Parameter trennt "Slug fuer Dateiname" von
+      "gesprochener Intro-Text". Default: leerer Intro-String -> kein
+      Prefix mehr.
+    - Optionales Setting `read_chapter_number: bool` (Default false) in
+      `audiobook.yaml` und `generate_audiobook`-Signature. Wenn aktiv,
+      neuer `_build_chapter_intro(index, language)` Helfer mit
+      Per-Sprache-Wort-Map (`_CHAPTER_WORD` fuer 12 Sprachen) und
+      Ordinal-Map (`_CHAPTER_ORDINALS`) fuer DE/EN 1-10 ("Erstes
+      Kapitel" / "First chapter"). Ueber 10 oder andere Sprachen ->
+      `f"{Kapitel|Chapter|...} {N}"`.
+    - Dateinamen bleiben der echte Chapter-Title-Slug auch wenn die
+      gesprochene Intro abweicht (User bekommt `001-vorwort.mp3` und
+      hoert "Erstes Kapitel" davor).
+    - Tests: `test_generate_audiobook_does_not_prepend_title_by_default`
+      capturet den Synth-Aufruf und verifiziert das gesprochene Text
+      NICHT mit "Vorwort" anfaengt. Plus 6 Tests fuer Chapter-Intro
+      Ordinals/Fallbacks/Locale-Form-Normalisierung.
+  - **#3 Cancel + Minimize**:
+    - `JobStore`: neuer `JobStatus.CANCELLED`, neuer `TERMINAL_STATUSES`-
+      Tupel den `update()`/`subscribe()` jetzt nutzen, neue Methode
+      `cancel(job_id)` die zuerst den Status flippt (damit Subscriber
+      die Cancellation sehen) und dann `task.cancel()` aufruft.
+      `submit()` speichert die `asyncio.Task` jetzt auf `job._task`
+      damit `cancel()` ueberhaupt was zum Cancellen hat. `_wrap()`
+      faengt `CancelledError` separat von normalen Exceptions ab und
+      rerraised quietly.
+    - Neuer DELETE-Endpoint `DELETE /api/export/jobs/{id}`: 204 wenn
+      cancellable, 404 wenn unbekannt, 409 wenn schon terminal.
+    - Frontend-Architektur umgebaut: `AudiobookJobContext` an der
+      App-Wurzel mit `start/clear/minimize/expand` Actions. Neuer
+      `AudioExportGate` rendert entweder das Modal (wenn `modalOpen`)
+      oder einen kleinen pulsierenden Badge unten links (wenn
+      minimiert). Klick auf den Badge -> `expand()` -> Modal kommt
+      wieder. Klick auf X im Modal -> `clear()` -> Job aus Context.
+    - `AudioExportProgress` bekommt drei Buttons je nach Phase:
+      - Wenn cancellable: "Im Hintergrund fortsetzen" + "Abbrechen"
+      - Wenn terminal: Download-Button (bei completed) + "Schliessen"
+    - Cancel-Button ruft `api.exportJobs.cancel(jobId)` und behandelt
+      409 als Erfolg (race: Job wurde im selben Moment fertig).
+    - Modal-Guards: `onPointerDownOutside`/`onEscapeKeyDown`/
+      `onInteractOutside` immer geblockt (statt vorher: nur wenn
+      nicht-terminal). User MUSS einen der drei Buttons drucken.
+    - `ExportDialog` ruft jetzt `audiobookJob.start(job_id, bookTitle)`
+      via Context und schliesst sich selbst sofort - der Gate
+      uebernimmt.
+    - Tests: `test_cancel_running_job_returns_204` mit Slow-Synth (TTS
+      mit `await asyncio.sleep(0.5)` damit wir Zeit haben zu canceln),
+      verifiziert Job-Status `CANCELLED` und `stream_end` Event mit
+      `status: cancelled`. Plus `test_cancel_already_completed_job_returns_409`
+      und `test_cancel_unknown_job_returns_404`.
+  - **#4 Per-Chapter-Downloads**:
+    - `_run_audiobook_job` stasht `audio_dir` und `chapter_files` ins
+      `result`-Dict des Jobs. Das `ready`-Event enthaelt jetzt
+      `chapter_files: [...]` damit der SSE-Client die Liste sofort hat.
+    - Neuer Endpoint `GET /api/export/jobs/{id}/files/{filename}` der
+      einzelne MP3s aus dem Job-Audio-Verzeichnis liefert. Path-
+      Traversal-Schutz: Filename muss exakt in
+      `job.result.chapter_files` Liste stehen, sonst 404. Plus 410
+      wenn `audio_dir` nicht mehr existiert (TTL).
+    - Polling-Endpoint `GET /api/export/jobs/{id}` enthaelt jetzt auch
+      `chapter_files: [{filename, url}, ...]`.
+    - Frontend Modal: neue `<ChapterFileList>`-Komponente in einem
+      `<details>`-Block (zugeklappt by default) mit allen MP3s als
+      Download-Links. Erscheint nur wenn der Job completed UND
+      `chapter_files` nicht leer.
+    - Tests: `test_per_chapter_download_serves_individual_files`
+      verifiziert dass jeder Eintrag aus `chapter_files` tatsaechlich
+      `audio/mpeg` zurueckliefert. `test_per_chapter_download_rejects_unknown_filename`
+      ist der Path-Traversal-Guard.
+  - **Bonus**: Pre-existing Bug in `backup_history.py` `_load()` -
+    eine korrupte `backup_history.json` mit `{}` statt `[]` als Inhalt
+    crashte den ganzen Backup-Endpoint mit `'dict' object has no
+    attribute 'insert'`. Defensiver Fix: `_load()` coerced jetzt jeden
+    Non-List-Payload zu `[]`.
+  - **i18n**: 11 neue `ui.audio_progress` Keys in allen 8 Sprachen
+    (`cancel`, `cancelling`, `cancelled`, `cancelled_toast`,
+    `cancel_failed`, `minimize`, `minimize_hint`, `download_zip`,
+    `individual_files`, `expand_hint`, `badge_label`), validiert.
+  - **Test-Bilanz**: Backend 109 -> 116 (+7), Audiobook 44 -> 59 (+15),
+    Total 344 -> 372. `make test` durchgehend gruen, `tsc --noEmit` clean.
+- Commit: (folgt)
+
+---
+
 ---

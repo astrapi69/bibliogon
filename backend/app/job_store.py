@@ -34,6 +34,11 @@ class JobStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+# Statuses that mean "do not process further", used by subscribe() and update().
+TERMINAL_STATUSES = (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED)
 
 
 @dataclass
@@ -48,6 +53,9 @@ class Job:
     progress: dict[str, Any] = field(default_factory=dict)
     events: list[dict[str, Any]] = field(default_factory=list)
     _subscribers: list[asyncio.Event] = field(default_factory=list, repr=False)
+    # Reference to the asyncio Task running the worker so cancel() can
+    # actually stop it. None for jobs created without submit().
+    _task: "asyncio.Task[Any] | None" = field(default=None, repr=False)
 
 
 JobRunner = Callable[[str], Awaitable[dict[str, Any]]]
@@ -93,7 +101,7 @@ class JobStore:
             job.result = result
         if error:
             job.error = error
-        if status in (JobStatus.COMPLETED, JobStatus.FAILED):
+        if status in TERMINAL_STATUSES:
             job.completed_at = time.time()
             job.events.append({
                 "type": "stream_end",
@@ -111,6 +119,9 @@ class JobStore:
 
         ``func`` MUST accept ``job_id`` as its first positional argument
         so it can publish progress events with ``publish_event(job_id, ...)``.
+
+        The asyncio.Task is stored on the Job so ``cancel(job_id)`` can
+        actually interrupt a long-running export.
         """
         job = self.create()
         job_id = job.id
@@ -121,12 +132,38 @@ class JobStore:
                 result = await func(job_id, *args, **kwargs)
                 self.update(job_id, JobStatus.COMPLETED, result=result)
                 logger.info("Job %s completed", job_id)
+            except asyncio.CancelledError:
+                # cancel() already moved the job into CANCELLED state and
+                # appended stream_end - just stop quietly. Re-raise so the
+                # task itself is marked cancelled.
+                logger.info("Job %s cancelled", job_id)
+                raise
             except Exception as e:
                 self.update(job_id, JobStatus.FAILED, error=str(e))
                 logger.exception("Job %s failed", job_id)
 
-        asyncio.create_task(_wrap())
+        job._task = asyncio.create_task(_wrap())
         return job_id
+
+    def cancel(self, job_id: str) -> bool:
+        """Cancel a running job and wake its subscribers.
+
+        Returns True if a job was actually cancelled (i.e. it existed and
+        was not already in a terminal state). The cancellation is
+        cooperative - the asyncio.Task is cancelled and ``update()`` flips
+        the status to CANCELLED so the SSE stream emits ``stream_end``.
+        """
+        job = self._jobs.get(job_id)
+        if job is None:
+            return False
+        if job.status in TERMINAL_STATUSES:
+            return False
+        # Flip status FIRST so subscribers see "cancelled" before the
+        # task's CancelledError propagates.
+        self.update(job_id, JobStatus.CANCELLED, error="Cancelled by user")
+        if job._task is not None and not job._task.done():
+            job._task.cancel()
+        return True
 
     # --- Event streaming ---
 
@@ -170,7 +207,7 @@ class JobStore:
                         return
                 # Backstop: status went terminal but no stream_end was emitted
                 # (should not happen in practice; defensive only).
-                if job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
+                if job.status in TERMINAL_STATUSES:
                     return
                 await notify.wait()
                 notify.clear()

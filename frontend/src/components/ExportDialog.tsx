@@ -1,10 +1,10 @@
 import {useEffect, useState} from "react";
 import {Download, ChevronDown, ChevronUp, XCircle} from "lucide-react";
-import {api} from "../api/client";
+import {ApiError, api} from "../api/client";
+import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
-import AudioExportProgress from "./AudioExportProgress";
 import * as Dialog from "@radix-ui/react-dialog";
 
 interface Props {
@@ -73,11 +73,10 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
     const selectedFormatLabel = FORMATS.find((f) => f.id === format);
 
-    // When set, render the AudioExportProgress modal which subscribes to
-    // /api/export/jobs/{job_id}/stream and shows live per-chapter progress.
-    // The old polling-only path was replaced because it never surfaced
-    // chapter-level progress and it gave the impression nothing was happening.
-    const [audioJobId, setAudioJobId] = useState<string | null>(null);
+    // The audiobook export hands off to a global context so the progress
+    // modal lives at the App root - that lets the user minimize it,
+    // navigate freely, and pop it back open from a corner badge.
+    const audiobookJob = useAudiobookJob();
 
     const handleExport = () => {
         setExporting(true);
@@ -102,38 +101,17 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
 
     const _startAudiobookExport = async () => {
         try {
-            const res = await fetch(`/api/books/${bookId}/export/async/audiobook`, {method: "POST"});
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "Start failed"}));
-                notify.error(err.detail || "Audiobook export failed");
-                setExporting(false);
-                return;
-            }
-            const {job_id} = await res.json();
-            // Hand off to the progress modal. The export dialog itself
-            // closes so the user can see the modal cleanly.
-            setAudioJobId(job_id);
+            const {job_id} = await api.exportJobs.startAudiobook(bookId);
+            audiobookJob.start(job_id, bookTitle);
             onClose();
         } catch (err) {
-            notify.error(`Audiobook export failed: ${err}`, err);
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            notify.error(`Audiobook export failed: ${detail}`, err);
             setExporting(false);
         }
     };
 
-    const closeProgressModal = () => {
-        setAudioJobId(null);
-        setExporting(false);
-    };
-
     return (
-        <>
-            {audioJobId && (
-                <AudioExportProgress
-                    jobId={audioJobId}
-                    bookTitle={bookTitle}
-                    onClose={closeProgressModal}
-                />
-            )}
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay"/>
@@ -287,7 +265,6 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
-        </>
     );
 }
 
