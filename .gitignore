@@ -46,3 +46,7 @@ build/
 
 # Config files
 /backend/config/backup_history.json
+
+# prompt files
+/docs/todo-prompts.md
+/docs/chat-journal-session-*.md
