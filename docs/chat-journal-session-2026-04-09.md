@@ -771,6 +771,6 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Diagnose-Detour: erste Implementation legte die Endpoints in den Audiobook-Plugin-Router; Tests scheiterten mit 404 weil das Plugin premium ist und ohne Lizenz nicht geladen wird. Loesung: Endpoints in Backend-Core verschoben.
   - Frontend: `ApiError.detailBody` fuer strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` faengt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schliessen ein "Dateien sind unter Metadaten > Audiobook verfuegbar"-Toast.
   - i18n: vollstaendige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurueck (User wollte explizit nur DE+EN).
-- Commit: (siehe finalen Hash unten)
+- Commit: 263715e
 
 ---
