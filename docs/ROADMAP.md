@@ -152,6 +152,19 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] S-05: Playwright E2E: Einige Tests brauchen Anpassung fuer Radix-Selektoren (erledigt in Q-01)
 - [x] S-06: package.json: Chunk-Size Warning beim Build (>500KB)
 - [x] S-07: Docker: Multi-Stage Build fuer kleineres Backend-Image
+- [x] S-08: backend/app/routers/backup.py auf Service-Module aufteilen.
+      Stand: 1070 Zeilen, mehrere god methods (`import_project` 263 LOC,
+      `import_backup` 123, `_import_with_section_order` 101,
+      `export_backup` 86, `smart_import` 82). Der 04-05 Refactor hatte nur
+      die Buch-Serialisierung extrahiert; Folge-Features (V-01, smart-import,
+      X-02 plain-Markdown) haben wieder god methods direkt in den Router
+      gelegt. Plan: `app/services/backup/` mit `serializer.py`,
+      `backup_export.py`, `backup_import.py`, `project_import.py`,
+      `markdown_import.py`, `format_detection.py`. Router enthaelt nur noch
+      duenne Endpunkte die delegieren.
+- [ ] S-09: plugins/bibliogon-plugin-export/.../scaffolder.py: god methods
+      `scaffold_project` (197) und `_html_to_markdown` (123) zerlegen.
+      Wurde im 04-05 Refactor nicht angefasst.
 
 ## KDP Publishing Workflow
 - [x] K-01: KDP-Plugin fertig implementieren und deployen

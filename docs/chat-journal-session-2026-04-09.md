@@ -75,3 +75,62 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Commit: 1c6288d
 
 ---
+
+## 3. S-08: backup.py auf Service-Module aufteilen (11:15)
+
+- Original-Prompt: User wollte wissen wie weit die Refactoring-Phase ist;
+  Analyse zeigte: keine formelle Phase, der 04-05 Cleanup-Pass war
+  ad-hoc, und `backup.py` ist seitdem auf 1070 Zeilen mit mehreren god
+  methods (import_project 263, import_backup 123, _import_with_section_order
+  101, export_backup 86, smart_import 82) gewachsen. User entschied:
+  Roadmap-Eintrag plus direkte Umsetzung.
+- Optimierter Prompt: "Lege S-08 (backup.py refactor) in der Roadmap an
+  und setze ihn direkt um: app/services/backup/-Paket mit serializer,
+  markdown_utils, asset_utils, archive_utils, backup_export, backup_import,
+  project_import, markdown_import, smart_import. Router enthaelt nur noch
+  duenne Endpoints die delegieren. Maximalfunktionsgroesse <50 Zeilen,
+  jede Funktion einzeln testbar."
+- Ziel: God methods aus dem Backup-Router eliminieren, Geschaeftslogik
+  in testbare Service-Module ziehen, Router auf Routing-Layer reduzieren.
+- Ergebnis:
+  - Neuer Eintrag S-08 in docs/ROADMAP.md unter "Technische Schulden",
+    plus S-09 (scaffolder.py) als naechster Kandidat.
+  - Neues Paket `backend/app/services/backup/` mit 9 Modulen:
+    - `__init__.py` (39 LOC) - re-exportiert Public API
+    - `serializer.py` (66) - Book ORM <-> dict round-trip
+    - `markdown_utils.py` (156) - md_to_html, extract_title,
+      detect_chapter_type, FRONT/BACK_MATTER_MAP, import_special_chapters
+    - `asset_utils.py` (99) - import_assets, rewrite_image_paths,
+      _classify_asset_type Helfer
+    - `archive_utils.py` (40) - find_manifest, find_books_dir,
+      find_project_root
+    - `backup_export.py` (116) - .bgb-Build, in `_write_book_dir`,
+      `_write_chapters`, `_write_assets`, `_write_manifest`,
+      `_build_bgb_archive` zerlegt
+    - `backup_import.py` (172) - .bgb-Restore, in `_validate_bgb_filename`,
+      `_extract_bgb`, `_validate_backup_manifest`, `_require_books_dir`,
+      `_restore_book_from_dir`, `_restore_chapters`, `_restore_assets`
+      zerlegt
+    - `project_import.py` (477) - write-book-template Import, mit
+      typed `ProjectMetadata` Dataclass, `_parse_series`, `_parse_isbn`,
+      `_parse_asin`, `_parse_keywords`, `_normalize_language`;
+      Section-Order Loop ueber `_SectionOrderState` Dataclass statt
+      loser Variablen
+    - `markdown_import.py` (84) - `import_single_markdown`,
+      `import_plain_markdown_zip`, `_derive_book_title`
+    - `smart_import.py` (97) - `smart_import_file` Dispatcher mit
+      _dispatch_zip Helper
+  - `backend/app/routers/backup.py`: 1070 -> 60 Zeilen, nur noch 5
+    Endpoints die jeweils 1-3 Zeilen Service-Aufruf enthalten.
+  - Toter Code entfernt: `_remove_first_heading` (definiert aber
+    nirgends aufgerufen).
+  - Laengste Funktion danach: `import_with_section_order` (38 LOC),
+    `_import_project_root` (22 LOC Body) - alle unter dem 50-Zeilen-Limit.
+  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+    (87 backend, 135 plugin, 50 vitest), weil alle Tests via HTTP-Endpoint
+    laufen und die Endpoint-API unveraendert ist.
+- Commit: (folgt)
+
+---
+
+---
