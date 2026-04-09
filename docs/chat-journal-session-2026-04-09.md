@@ -179,7 +179,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Tests: `make test` komplett gruen ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest); Test-Imports von
     `scaffold_project` und `_content_to_markdown` weiterhin gueltig.
-- Commit: (folgt)
+- Commit: 809f377
 
 ---
 
