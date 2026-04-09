@@ -79,6 +79,8 @@ class Book(Base):
     tts_voice: Mapped[str | None] = mapped_column(String(200), nullable=True)
     tts_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
     tts_speed: Mapped[str | None] = mapped_column(String(10), nullable=True)  # e.g. "1.0", "0.75", "1.25"
+    # Audiobook merge mode: "separate", "merged", "both" (None -> use plugin default)
+    audiobook_merge: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(

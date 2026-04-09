@@ -21,7 +21,7 @@ settings:
   engine: edge-tts
   language: de
   default_voice: ''
-  merge: true
+  merge: merged
   skip_types:
   - toc
   - imprint

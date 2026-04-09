@@ -37,7 +37,10 @@ class GenerateRequest(BaseModel):
     skip_types: list[str] = Field(
         default=["toc", "imprint", "index", "bibliography", "endnotes"],
     )
-    merge: bool = Field(default=True, description="Merge chapter MP3s into single audiobook file (requires ffmpeg)")
+    merge: str = Field(
+        default="merged",
+        description="Merge mode: 'separate' (one MP3 per chapter), 'merged' (single MP3), or 'both'",
+    )
 
 
 @router.post("/generate")

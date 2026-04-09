@@ -183,24 +183,44 @@ def _export_project(base_name: str, tmp_dir: Path, project_dir: Path) -> FileRes
     return FileResponse(path=bgp_path, media_type="application/octet-stream", filename=f"{base_name}.bgp")
 
 
-def _read_audiobook_merge_setting() -> bool:
-    """Read merge setting from audiobook plugin config. Default: True."""
+def _read_audiobook_merge_setting() -> str:
+    """Read merge setting from audiobook plugin config. Default: 'merged'.
+
+    Accepts legacy boolean values (True -> 'merged', False -> 'separate').
+    """
     import yaml
+    try:
+        from bibliogon_audiobook.generator import normalize_merge_mode
+    except ImportError:
+        normalize_merge_mode = lambda v: "merged" if v in (True, None) else ("separate" if v is False else v)  # noqa: E731
+
     config_path = Path("config/plugins/audiobook.yaml")
     if config_path.exists():
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 cfg = yaml.safe_load(f) or {}
-            return bool(cfg.get("settings", {}).get("merge", True))
+            return normalize_merge_mode(cfg.get("settings", {}).get("merge"))
         except Exception:
             pass
-    return True
+    return "merged"
+
+
+def _resolve_audiobook_merge_mode(book_data: dict[str, Any]) -> str:
+    """Per-book override beats plugin config; both feed normalize_merge_mode."""
+    try:
+        from bibliogon_audiobook.generator import normalize_merge_mode
+    except ImportError:
+        return _read_audiobook_merge_setting()
+    book_value = book_data.get("audiobook_merge")
+    if book_value:
+        return normalize_merge_mode(book_value)
+    return _read_audiobook_merge_setting()
 
 
 def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]], base_name: str) -> FileResponse:
     """Export as audiobook MP3 via TTS."""
     try:
-        from bibliogon_audiobook.generator import generate_audiobook
+        from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
     except ImportError:
         raise HTTPException(status_code=400, detail="Audiobook plugin not installed.")
 
@@ -209,7 +229,7 @@ def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]],
     voice = book_data.get("tts_voice") or ""
     language = book_data.get("tts_language") or book_data.get("language", "de")
     rate = book_data.get("tts_speed") or ""
-    merge = _read_audiobook_merge_setting()
+    merge_mode = _resolve_audiobook_merge_mode(book_data)
     audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
 
     loop = asyncio.new_event_loop()
@@ -217,23 +237,20 @@ def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]],
         result = loop.run_until_complete(generate_audiobook(
             book_title=book_data.get("title", "audiobook"),
             chapters=chapters, output_dir=audio_dir,
-            engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge,
+            engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge_mode,
         ))
     finally:
         loop.close()
 
-    if result.get("merged_file"):
-        merged = audio_dir / result["merged_file"]
-        if merged.exists():
-            return FileResponse(path=str(merged), media_type="audio/mpeg", filename=f"{base_name}.mp3")
+    output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
+    if output is None:
+        errors = result.get("errors", [])
+        detail = "; ".join(e.get("error", "") for e in errors) if errors else "No audio generated"
+        raise HTTPException(status_code=500, detail=f"Audiobook export failed: {detail}")
 
-    if result.get("generated_files"):
-        zip_path = shutil.make_archive(str(audio_dir / "audiobook"), "zip", str(audio_dir))
-        return FileResponse(path=zip_path, media_type="application/zip", filename=f"{base_name}-audiobook.zip")
-
-    errors = result.get("errors", [])
-    detail = "; ".join(e.get("error", "") for e in errors) if errors else "No audio generated"
-    raise HTTPException(status_code=500, detail=f"Audiobook export failed: {detail}")
+    if output.suffix == ".mp3":
+        return FileResponse(path=str(output), media_type="audio/mpeg", filename=f"{base_name}.mp3")
+    return FileResponse(path=str(output), media_type="application/zip", filename=f"{base_name}-audiobook.zip")
 
 
 def _export_document(
@@ -349,29 +366,26 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
         if fmt == "audiobook":
             # Run audiobook export in the async job
             try:
-                from bibliogon_audiobook.generator import generate_audiobook
+                from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
             except ImportError:
                 raise RuntimeError("Audiobook plugin not installed.")
-            import asyncio
             engine_id = book_data.get("tts_engine") or "edge-tts"
             voice = book_data.get("tts_voice") or ""
             language = book_data.get("tts_language") or book_data.get("language", "de")
             rate = book_data.get("tts_speed") or ""
             audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
-            merge = _read_audiobook_merge_setting()
+            merge_mode = _resolve_audiobook_merge_mode(book_data)
             result = await generate_audiobook(
                 book_title=book_data.get("title", "audiobook"),
                 chapters=chapters, output_dir=audio_dir,
-                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge,
+                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge_mode,
             )
-            if result.get("merged_file"):
-                merged = audio_dir / result["merged_file"]
-                if merged.exists():
-                    return {"path": str(merged), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
-            if result.get("generated_files"):
-                zip_path = shutil.make_archive(str(audio_dir / "audiobook"), "zip", str(audio_dir))
-                return {"path": zip_path, "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
-            raise RuntimeError("Audiobook generation produced no files")
+            output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
+            if output is None:
+                raise RuntimeError("Audiobook generation produced no files")
+            if output.suffix == ".mp3":
+                return {"path": str(output), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
+            return {"path": str(output), "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
 
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)

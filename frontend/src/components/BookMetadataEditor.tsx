@@ -43,6 +43,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             tts_engine: book.tts_engine || "",
             tts_voice: book.tts_voice || "",
             tts_speed: book.tts_speed || "1.0",
+            audiobook_merge: book.audiobook_merge || "merged",
         });
     }, [book]);
 
@@ -202,9 +203,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             engine={form.tts_engine || ""}
                             voice={form.tts_voice || ""}
                             speed={form.tts_speed || "1.0"}
+                            merge={form.audiobook_merge || "merged"}
                             onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
                             onVoiceChange={(v: string) => set("tts_voice", v)}
                             onSpeedChange={(v: string) => set("tts_speed", v)}
+                            onMergeChange={(v: string) => set("audiobook_merge", v)}
                         />
                     </div>
                 </Tabs.Content>
@@ -250,9 +253,10 @@ function tryParseKeywords(raw: string): string {
     return raw;
 }
 
-function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange, onVoiceChange, onSpeedChange}: {
-    bookLanguage: string; engine: string; voice: string; speed: string;
-    onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void; onSpeedChange: (v: string) => void;
+function AudiobookBookConfig({bookLanguage, engine, voice, speed, merge, onEngineChange, onVoiceChange, onSpeedChange, onMergeChange}: {
+    bookLanguage: string; engine: string; voice: string; speed: string; merge: string;
+    onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void;
+    onSpeedChange: (v: string) => void; onMergeChange: (v: string) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
@@ -326,6 +330,14 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, onEngineChange
                     <option value="1.0">1.0x (Normal)</option>
                     <option value="1.25">1.25x</option>
                     <option value="1.5">1.5x</option>
+                </select>
+            </div>
+            <div className="field">
+                <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
+                <select className="input" value={merge} onChange={(e) => onMergeChange(e.target.value)}>
+                    <option value="separate">{t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")}</option>
+                    <option value="merged">{t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfuegen")}</option>
+                    <option value="both">{t("ui.audiobook.merge_both", "Beides")}</option>
                 </select>
             </div>
         </>

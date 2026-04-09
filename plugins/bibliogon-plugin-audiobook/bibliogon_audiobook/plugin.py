@@ -1,7 +1,6 @@
 """Audiobook Plugin - TTS-based audiobook generation."""
 
 import asyncio
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -77,18 +76,18 @@ class AudiobookPlugin(BasePlugin):
         if fmt != "audiobook":
             return None
 
-        from .generator import generate_audiobook
+        from .generator import bundle_audiobook_output, generate_audiobook, normalize_merge_mode
 
         chapters = options.get("chapters", [])
         if not chapters:
             return None
 
-        # Use book-specific TTS settings with fallback to plugin config
+        # Book-level merge override falls back to plugin config (default: "merged")
         settings = (self.config or {}).get("settings", {})
         engine_id = book.get("tts_engine") or settings.get("engine", "edge-tts")
         voice = book.get("tts_voice") or settings.get("default_voice", "")
         language = book.get("tts_language") or book.get("language", "de")
-        merge = settings.get("merge", True)
+        merge_mode = normalize_merge_mode(book.get("audiobook_merge") or settings.get("merge"))
 
         output_dir = Path(tempfile.mkdtemp(prefix="bibliogon_audiobook_export_"))
 
@@ -102,17 +101,9 @@ class AudiobookPlugin(BasePlugin):
                 engine_id=engine_id,
                 voice=voice,
                 language=language,
-                merge=merge,
+                merge=merge_mode,
             ))
         finally:
             loop.close()
 
-        # Return merged file or ZIP of chapters
-        if result.get("merged_file"):
-            return output_dir / result["merged_file"]
-
-        # Bundle chapter MP3s into ZIP
-        import re
-        slug = re.sub(r"[^a-z0-9\-]", "-", book.get("title", "audiobook").lower())[:50]
-        zip_path = shutil.make_archive(str(output_dir / f"{slug}-audiobook"), "zip", str(output_dir))
-        return Path(zip_path)
+        return bundle_audiobook_output(result, output_dir, book.get("title", "audiobook"))

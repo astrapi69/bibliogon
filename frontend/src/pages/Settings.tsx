@@ -623,6 +623,15 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
+// Normalize legacy boolean merge values to canonical enum strings.
+// Migration: true -> "merged", false -> "separate".
+function normalizeMergeMode(value: unknown): "separate" | "merged" | "both" {
+    if (value === true) return "merged";
+    if (value === false) return "separate";
+    if (value === "separate" || value === "merged" || value === "both") return value;
+    return "merged";
+}
+
 // --- Audiobook custom settings panel with cascading dropdowns ---
 
 function AudiobookSettingsPanel({settings, onSave}: {
@@ -633,7 +642,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
     const [engine, setEngine] = useState(String(settings.engine || "edge-tts"));
     const [language, setLanguage] = useState(String(settings.language || "de"));
     const [voice, setVoice] = useState(String(settings.default_voice || ""));
-    const [merge, setMerge] = useState(String(settings.merge ?? "true"));
+    const [merge, setMerge] = useState<string>(normalizeMergeMode(settings.merge));
     const [voices, setVoices] = useState<{id: string; name: string; language: string; gender: string}[]>([]);
     const [loadingVoices, setLoadingVoices] = useState(false);
 
@@ -668,7 +677,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
             engine,
             language,
             default_voice: voice,
-            merge: merge === "true",
+            merge,
         });
     };
 
@@ -700,8 +709,9 @@ function AudiobookSettingsPanel({settings, onSave}: {
     }));
 
     const mergeOptions = [
-        {value: "true", label: t("ui.audiobook.merge_yes", "Ja (alle Kapitel zusammenfuegen)")},
-        {value: "false", label: t("ui.audiobook.merge_no", "Nein (einzelne MP3 pro Kapitel)")},
+        {value: "separate", label: t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")},
+        {value: "merged", label: t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfuegen")},
+        {value: "both", label: t("ui.audiobook.merge_both", "Beides")},
     ];
 
     return (

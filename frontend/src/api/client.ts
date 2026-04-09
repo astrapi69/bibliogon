@@ -54,6 +54,7 @@ export interface Book {
     tts_voice: string | null;
     tts_language: string | null;
     tts_speed: string | null;
+    audiobook_merge: string | null;
     created_at: string;
     updated_at: string;
 }

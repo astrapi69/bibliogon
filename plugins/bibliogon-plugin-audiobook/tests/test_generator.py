@@ -8,12 +8,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bibliogon_audiobook.generator import (
+    MERGE_MODES,
     SKIP_TYPES,
+    bundle_audiobook_output,
     extract_plain_text,
     generate_audiobook,
     generate_chapter_audio,
     merge_mp3_files,
     is_ffmpeg_available,
+    normalize_merge_mode,
     _slugify,
 )
 
@@ -229,6 +232,128 @@ async def test_generate_audiobook_returns_merged_file_key():
             )
             assert "merged_file" in result
             assert result["merged_file"] is None  # no files to merge
+            assert result["merge_mode"] == "merged"  # default
+
+
+# --- normalize_merge_mode (legacy bool migration) ---
+
+
+def test_normalize_merge_mode_legacy_true():
+    """True (legacy boolean) maps to 'merged'."""
+    assert normalize_merge_mode(True) == "merged"
+
+
+def test_normalize_merge_mode_legacy_false():
+    """False (legacy boolean) maps to 'separate'."""
+    assert normalize_merge_mode(False) == "separate"
+
+
+def test_normalize_merge_mode_passthrough():
+    for mode in MERGE_MODES:
+        assert normalize_merge_mode(mode) == mode
+
+
+def test_normalize_merge_mode_unknown_defaults_to_merged():
+    assert normalize_merge_mode(None) == "merged"
+    assert normalize_merge_mode("nonsense") == "merged"
+    assert normalize_merge_mode(42) == "merged"
+
+
+# --- bundle_audiobook_output (3-mode export) ---
+
+
+def _make_chapter_files(tmp: Path, names: list[str]) -> None:
+    for name in names:
+        (tmp / name).write_bytes(b"fake mp3")
+
+
+def test_bundle_separate_zips_only_chapters():
+    import zipfile
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        _make_chapter_files(d, ["001-a.mp3", "002-b.mp3"])
+        # Pretend a merged file also exists on disk; it must NOT be included.
+        (d / "test-audiobook.mp3").write_bytes(b"merged")
+        result = {
+            "merge_mode": "separate",
+            "generated_files": ["001-a.mp3", "002-b.mp3"],
+            "merged_file": None,
+        }
+        out = bundle_audiobook_output(result, d, "Test")
+        assert out is not None and out.suffix == ".zip"
+        with zipfile.ZipFile(out) as zf:
+            names = zf.namelist()
+        assert "001-a.mp3" in names
+        assert "002-b.mp3" in names
+        assert "test-audiobook.mp3" not in names
+
+
+def test_bundle_merged_returns_single_mp3():
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        _make_chapter_files(d, ["001-a.mp3", "002-b.mp3"])
+        merged = d / "test-audiobook.mp3"
+        merged.write_bytes(b"merged")
+        result = {
+            "merge_mode": "merged",
+            "generated_files": ["001-a.mp3", "002-b.mp3"],
+            "merged_file": "test-audiobook.mp3",
+        }
+        out = bundle_audiobook_output(result, d, "Test")
+        assert out == merged
+        assert out.suffix == ".mp3"
+
+
+def test_bundle_both_zips_chapters_and_merged():
+    import zipfile
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        _make_chapter_files(d, ["001-a.mp3", "002-b.mp3"])
+        (d / "test-audiobook.mp3").write_bytes(b"merged")
+        result = {
+            "merge_mode": "both",
+            "generated_files": ["001-a.mp3", "002-b.mp3"],
+            "merged_file": "test-audiobook.mp3",
+        }
+        out = bundle_audiobook_output(result, d, "Test")
+        assert out is not None and out.suffix == ".zip"
+        with zipfile.ZipFile(out) as zf:
+            names = zf.namelist()
+        assert "001-a.mp3" in names
+        assert "002-b.mp3" in names
+        assert "test-audiobook.mp3" in names
+
+
+def test_bundle_returns_none_when_nothing_generated():
+    with tempfile.TemporaryDirectory() as tmp:
+        result = {"merge_mode": "merged", "generated_files": [], "merged_file": None}
+        assert bundle_audiobook_output(result, Path(tmp), "Test") is None
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_accepts_legacy_bool_true():
+    """Backwards compatibility: legacy True must be treated as 'merged'."""
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_get.return_value = mock_engine
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=[], output_dir=Path(tmp), merge=True,
+            )
+            assert result["merge_mode"] == "merged"
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_accepts_legacy_bool_false():
+    """Backwards compatibility: legacy False must be treated as 'separate'."""
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_get.return_value = mock_engine
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=[], output_dir=Path(tmp), merge=False,
+            )
+            assert result["merge_mode"] == "separate"
 
 
 # --- merge_mp3_files ---

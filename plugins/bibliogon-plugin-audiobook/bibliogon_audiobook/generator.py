@@ -11,6 +11,28 @@ logger = logging.getLogger(__name__)
 # Chapter types to skip in audiobook generation
 SKIP_TYPES = {"toc", "imprint", "index", "bibliography", "endnotes"}
 
+# Valid merge modes
+MERGE_MODES = ("separate", "merged", "both")
+
+
+def normalize_merge_mode(value: object) -> str:
+    """Normalize a merge value to one of the canonical modes.
+
+    Migration semantics for legacy boolean configs:
+    - True  -> "merged"
+    - False -> "separate"
+
+    Strings already in MERGE_MODES pass through. Anything else
+    falls back to the default "merged".
+    """
+    if value is True:
+        return "merged"
+    if value is False:
+        return "separate"
+    if isinstance(value, str) and value in MERGE_MODES:
+        return value
+    return "merged"
+
 
 def extract_plain_text(content: str) -> str:
     """Extract plain text from TipTap JSON content for TTS.
@@ -106,7 +128,7 @@ async def generate_audiobook(
     language: str = "de",
     rate: str = "",
     skip_types: set[str] | None = None,
-    merge: bool = False,
+    merge: object = "merged",
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
@@ -122,6 +144,7 @@ async def generate_audiobook(
     Returns:
         Dict with generated files, skipped chapters, and errors.
     """
+    merge_mode = normalize_merge_mode(merge)
     output_dir.mkdir(parents=True, exist_ok=True)
     engine = get_engine(engine_id)
     types_to_skip = skip_types if skip_types is not None else SKIP_TYPES
@@ -165,9 +188,9 @@ async def generate_audiobook(
         book_title, len(generated), len(skipped), len(errors),
     )
 
-    # Merge chapter MP3s into single audiobook file
+    # Merge chapter MP3s into single audiobook file (for "merged" or "both" modes)
     merged_file: str | None = None
-    if merge and len(generated) > 1:
+    if merge_mode in ("merged", "both") and len(generated) > 1:
         try:
             slug = _slugify(book_title)
             merged_path = output_dir / f"{slug}-audiobook.mp3"
@@ -186,6 +209,7 @@ async def generate_audiobook(
         "engine": engine_id,
         "voice": voice or "default",
         "language": language,
+        "merge_mode": merge_mode,
         "generated_files": generated,
         "generated_count": len(generated),
         "merged_file": merged_file,
@@ -194,6 +218,65 @@ async def generate_audiobook(
         "errors": errors,
         "error_count": len(errors),
     }
+
+
+def bundle_audiobook_output(result: dict, output_dir: Path, book_title: str) -> Path | None:
+    """Bundle generator output into a final file based on the merge mode.
+
+    - "separate": ZIP containing only the chapter MP3s.
+    - "merged": single merged MP3 file.
+    - "both": ZIP containing chapter MP3s plus the merged MP3.
+
+    Returns None if nothing was generated.
+    """
+    import shutil
+    import zipfile
+
+    mode = result.get("merge_mode", "merged")
+    generated = result.get("generated_files", [])
+    merged_name = result.get("merged_file")
+    slug = _slugify(book_title) or "audiobook"
+
+    if mode == "merged" and merged_name:
+        merged_path = output_dir / merged_name
+        if merged_path.exists():
+            return merged_path
+
+    if not generated and not merged_name:
+        return None
+
+    zip_base = output_dir / f"{slug}-audiobook"
+    if mode == "separate":
+        zip_path = zip_base.with_suffix(".zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for fname in generated:
+                fpath = output_dir / fname
+                if fpath.exists():
+                    zf.write(fpath, fname)
+        return zip_path
+
+    if mode == "both":
+        zip_path = zip_base.with_suffix(".zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for fname in generated:
+                fpath = output_dir / fname
+                if fpath.exists():
+                    zf.write(fpath, fname)
+            if merged_name:
+                merged_path = output_dir / merged_name
+                if merged_path.exists():
+                    zf.write(merged_path, merged_name)
+        return zip_path
+
+    # Fallback for "merged" without a merged file (e.g. single chapter): return that file
+    if generated:
+        single = output_dir / generated[0]
+        if single.exists():
+            return single
+
+    # Last resort: zip whatever exists
+    zip_path = shutil.make_archive(str(zip_base), "zip", str(output_dir))
+    return Path(zip_path)
 
 
 def merge_mp3_files(input_files: list[Path], output_path: Path) -> Path:
