@@ -110,14 +110,54 @@ Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/gea
 
 ### Wann CLAUDE.md aktualisieren
 
-- Neues Plugin hinzugefuegt, entfernt oder aktiviert/deaktiviert in app.yaml
+CLAUDE.md wird bei JEDEM Prompt geladen. Sie muss schlank bleiben (Ziel: unter 8000 Zeichen, ca. 2000 Tokens). Nur Inhalte die IMMER relevant sind:
+
+- Projektbeschreibung, Repository, Version, Verweis auf ROADMAP/CHANGELOG/API
+- Verweis auf .claude/rules/ mit Kurzbeschreibung
+- Tech-Stack Stichworte (keine Versionsnummern der Pakete)
+- Architektur-Zusammenfassung in 2-3 Saetzen
+- Makefile-Targets
+- Session-Start-Checkliste
+- Datenmodell in Kurzform
+- Plugin-Tabelle (Name, Tier, Dependency, Kurzbeschreibung)
+- Verzeichnisstruktur nur Top-Level
+- Kern-Konventionen (max 10 Bullets)
+- Test-Zahlen Gesamt
+
+Aktualisieren bei:
+- Neues Plugin hinzugefuegt, entfernt oder Tier geaendert
 - Neue Dependency im Tech-Stack
 - Test-Zahlen haben sich wesentlich geaendert
 - Neue Befehle im Makefile
-- Verzeichnisstruktur hat sich geaendert
-- Neue API-Endpunkte
-- Phase abgeschlossen oder neue Phase begonnen
+- Datenmodell geaendert (neue Felder, neue ChapterTypes)
 - Version hochgezaehlt
+
+NICHT in CLAUDE.md:
+- Voller Verzeichnisbaum bis zur Datei-Ebene (-> wird redundant zur File-Exploration)
+- Komplette Pakettabellen mit Versionsnummern (-> package.json/pyproject.toml)
+- Alle API-Endpunkte einzeln (-> docs/API.md)
+- Erledigte Phasen-Details (-> docs/CHANGELOG.md)
+- Ausfuehrliche Deployment-Anleitung (-> README.md)
+- Migration-Status Tabellen (-> historisch, gehoert ins CHANGELOG)
+
+### Wann docs/CHANGELOG.md aktualisieren
+
+- SOFORT wenn eine Phase abgeschlossen wird. Nicht in CLAUDE.md sammeln.
+- Neuer Eintrag OBEN mit Phasen-Nummer, Version, Beschreibung.
+- Format: Bulletpoint-Liste der Hauptaenderungen, gleich strukturiert wie bestehende Eintraege.
+- Nach Eintrag: CLAUDE.md-Version auf neue Version setzen, Test-Zahlen aktualisieren.
+
+### Wann docs/API.md aktualisieren
+
+- Neuer Endpunkt hinzugefuegt
+- Endpunkt entfernt oder umbenannt
+- Query-Parameter geaendert
+
+### Wann docs/ROADMAP.md aktualisieren
+
+- Neue offene Aufgabe
+- Aufgabe abgeschlossen (Checkbox)
+- Phase geplant oder priorisiert
 
 ### Wann CONCEPT.md aktualisieren
 
@@ -138,6 +178,7 @@ Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/gea
 ### Ablauf am Session-Ende
 
 1. Chat-Journal-Eintrag fuer alle Aenderungen der Session schreiben.
-2. Pruefen ob CLAUDE.md, CONCEPT.md oder lessons-learned.md Updates brauchen.
-3. Alles committen: `docs: update chat journal and documentation`
-4. Bei groesseren Meilensteinen: Zusammenfassung mit Statistiken ins Journal.
+2. Bei Phasen-Abschluss: docs/CHANGELOG.md ergaenzen, CLAUDE.md Version hochzaehlen.
+3. Pruefen ob CLAUDE.md, CONCEPT.md, ROADMAP.md, API.md oder lessons-learned.md Updates brauchen.
+4. Alles committen: `docs: update chat journal and documentation`
+5. Bei groesseren Meilensteinen: Zusammenfassung mit Statistiken ins Journal.
