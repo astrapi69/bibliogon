@@ -351,7 +351,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     `book.cover_image`, idempotent Delete, Limits-Endpoint.
     Backend 87 -> 98 Tests, alles gruen, `tsc --noEmit` clean,
     i18n YAMLs validiert (alle 8 Sprachen haben alle 12 cover keys).
-- Commit: (folgt)
+- Commit: da864b0
 
 ---
 
