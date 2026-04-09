@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from .pandoc_runner import PandocError, run_pandoc
 from .scaffolder import scaffold_project
@@ -238,40 +238,10 @@ def _resolve_audiobook_merge_mode(book_data: dict[str, Any]) -> str:
     return _read_audiobook_merge_setting()
 
 
-def _export_audiobook(book_data: dict[str, Any], chapters: list[dict[str, Any]], base_name: str) -> FileResponse:
-    """Export as audiobook MP3 via TTS."""
-    try:
-        from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
-    except ImportError:
-        raise HTTPException(status_code=400, detail="Audiobook plugin not installed.")
-
-    import asyncio
-    engine_id = book_data.get("tts_engine") or "edge-tts"
-    voice = book_data.get("tts_voice") or ""
-    language = book_data.get("tts_language") or book_data.get("language", "de")
-    rate = book_data.get("tts_speed") or ""
-    merge_mode = _resolve_audiobook_merge_mode(book_data)
-    audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_"))
-
-    loop = asyncio.new_event_loop()
-    try:
-        result = loop.run_until_complete(generate_audiobook(
-            book_title=book_data.get("title", "audiobook"),
-            chapters=chapters, output_dir=audio_dir,
-            engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge_mode,
-        ))
-    finally:
-        loop.close()
-
-    output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
-    if output is None:
-        errors = result.get("errors", [])
-        detail = "; ".join(e.get("error", "") for e in errors) if errors else "No audio generated"
-        raise HTTPException(status_code=500, detail=f"Audiobook export failed: {detail}")
-
-    if output.suffix == ".mp3":
-        return FileResponse(path=str(output), media_type="audio/mpeg", filename=f"{base_name}.mp3")
-    return FileResponse(path=str(output), media_type="application/zip", filename=f"{base_name}-audiobook.zip")
+# NOTE: the previous synchronous _export_audiobook helper was removed
+# deliberately - audiobook generation can take minutes and must always
+# go through the async job + SSE stream. The sync GET /export/audiobook
+# route now responds with HTTP 410 to make accidental sync use loud.
 
 
 def _export_document(
@@ -348,7 +318,17 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
         if fmt == "project":
             return _export_project(base_name, tmp_dir, project_dir)
         if fmt == "audiobook":
-            return _export_audiobook(book_data, chapters, _audiobook_base_name(book_data, base_name))
+            # Audiobook export is always async with progress streaming.
+            # Synchronously returning an MP3 here would block the request
+            # for minutes and silently regress the progress UX. The client
+            # MUST use POST /export/async/audiobook + the SSE stream.
+            raise HTTPException(
+                status_code=410,
+                detail=(
+                    "Audiobook export is async only. POST /api/books/{id}/export/async/audiobook"
+                    " and stream progress from /api/export/jobs/{job_id}/stream."
+                ),
+            )
         cover = _find_cover(book_data, project_dir)
         return _export_document(fmt, base_name, project_dir, config, manual_toc, cover)
     except PandocError as e:
@@ -372,7 +352,7 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
     except ImportError:
         raise HTTPException(status_code=500, detail="Job store not available")
 
-    async def _run() -> dict[str, Any]:
+    async def _run(job_id: str) -> dict[str, Any]:
         book_data, chapters, assets = _load_book(book_id)
         tmp_dir, project_dir, config, settings = _scaffold_and_prepare(book_data, chapters, assets)
         base_name = _build_filename(project_dir.name, book_type, settings)
@@ -385,29 +365,7 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
             return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
 
         if fmt == "audiobook":
-            # Run audiobook export in the async job
-            try:
-                from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
-            except ImportError:
-                raise RuntimeError("Audiobook plugin not installed.")
-            base_name = _audiobook_base_name(book_data, base_name)
-            engine_id = book_data.get("tts_engine") or "edge-tts"
-            voice = book_data.get("tts_voice") or ""
-            language = book_data.get("tts_language") or book_data.get("language", "de")
-            rate = book_data.get("tts_speed") or ""
-            audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
-            merge_mode = _resolve_audiobook_merge_mode(book_data)
-            result = await generate_audiobook(
-                book_title=book_data.get("title", "audiobook"),
-                chapters=chapters, output_dir=audio_dir,
-                engine_id=engine_id, voice=voice, language=language, rate=rate, merge=merge_mode,
-            )
-            output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
-            if output is None:
-                raise RuntimeError("Audiobook generation produced no files")
-            if output.suffix == ".mp3":
-                return {"path": str(output), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
-            return {"path": str(output), "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
+            return await _run_audiobook_job(job_id, book_data, chapters, base_name)
 
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
@@ -420,6 +378,60 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
     return {"job_id": job_id, "status": "pending"}
 
 
+async def _run_audiobook_job(
+    job_id: str,
+    book_data: dict[str, Any],
+    chapters: list[dict[str, Any]],
+    default_base_name: str,
+) -> dict[str, Any]:
+    """Audiobook job worker that streams progress events to the job store.
+
+    The progress callback closure publishes every event the generator
+    emits (start, chapter_start, chapter_done, ...) to the job, which
+    the SSE endpoint then fans out to subscribers.
+    """
+    try:
+        from app.job_store import job_store
+        from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
+    except ImportError:
+        raise RuntimeError("Audiobook plugin not installed.")
+
+    base_name = _audiobook_base_name(book_data, default_base_name)
+    engine_id = book_data.get("tts_engine") or "edge-tts"
+    voice = book_data.get("tts_voice") or ""
+    language = book_data.get("tts_language") or book_data.get("language", "de")
+    rate = book_data.get("tts_speed") or ""
+    audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
+    merge_mode = _resolve_audiobook_merge_mode(book_data)
+
+    async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
+        job_store.publish_event(job_id, event_type, payload)
+
+    result = await generate_audiobook(
+        book_title=book_data.get("title", "audiobook"),
+        chapters=chapters, output_dir=audio_dir,
+        engine_id=engine_id, voice=voice, language=language, rate=rate,
+        merge=merge_mode, progress_callback=progress_cb,
+    )
+    output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
+    if output is None:
+        raise RuntimeError("Audiobook generation produced no files")
+
+    if output.suffix == ".mp3":
+        download = {"path": str(output), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
+    else:
+        download = {"path": str(output), "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
+
+    # Final "ready" event so SSE clients can render the download button
+    # before the synthetic stream_end fires from JobStore.update().
+    job_store.publish_event(job_id, "ready", {
+        "filename": download["filename"],
+        "media_type": download["media_type"],
+        "download_url": f"/api/export/jobs/{job_id}/download",
+    })
+    return download
+
+
 # --- Job polling router ---
 
 jobs_router = APIRouter(prefix="/export/jobs", tags=["export-jobs"])
@@ -427,7 +439,12 @@ jobs_router = APIRouter(prefix="/export/jobs", tags=["export-jobs"])
 
 @jobs_router.get("/{job_id}")
 def get_job_status(job_id: str) -> dict[str, Any]:
-    """Check status of an async export job."""
+    """Snapshot of an async export job: status + progress + recent events.
+
+    The SSE endpoint at ``/{job_id}/stream`` is the canonical way to follow
+    a long-running job. This polling endpoint stays around as a fallback
+    and for clients that just want a one-shot status check.
+    """
     try:
         from app.job_store import job_store
     except ImportError:
@@ -435,13 +452,51 @@ def get_job_status(job_id: str) -> dict[str, Any]:
     job = job_store.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    result: dict[str, Any] = {"job_id": job.id, "status": job.status.value}
+    result: dict[str, Any] = {
+        "job_id": job.id,
+        "status": job.status.value,
+        "progress": dict(job.progress),
+        "events": list(job.events[-20:]),  # last 20 keeps responses small
+    }
     if job.error:
         result["error"] = job.error
     if job.status.value == "completed" and job.result.get("filename"):
         result["filename"] = job.result["filename"]
         result["download_url"] = f"/api/export/jobs/{job_id}/download"
     return result
+
+
+@jobs_router.get("/{job_id}/stream")
+async def stream_job_events(job_id: str) -> StreamingResponse:
+    """Server-Sent Events stream of every event a job emits.
+
+    Replays the full event log on connect (so a late subscriber sees the
+    same picture as one that connected at the start), then forwards new
+    events as they arrive. Closes when the job's synthetic ``stream_end``
+    event is seen. The frontend uses the browser-native ``EventSource``
+    API, no extra dependency required.
+    """
+    try:
+        from app.job_store import job_store
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Job store not available")
+    if job_store.get(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_generator() -> Any:
+        async for event in job_store.subscribe(job_id):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # Tell reverse proxies (nginx) to not buffer this response
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @jobs_router.get("/{job_id}/download")

@@ -355,4 +355,126 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 8. Audiobook-Export: SSE-Progress-Stream + Modal (13:00)
+
+- Original-Prompt: "Wiederkehrender Bug: Audiobook-Export zeigt immer noch
+  keinen Fortschritt. Das wurde bereits spezifiziert (SSE oder Polling
+  mit Progress-Modal) aber offensichtlich nicht umgesetzt. Diesmal NICHTS
+  aendern bevor Diagnose steht." Mit detaillierten Specs fuer einen
+  AudioExportProgress-Modal mit SSE-Stream und Regression-Tests.
+- Optimierter Prompt: User-Spec war ausreichend; Diagnose-First-Workflow
+  war explizit gefordert.
+- Ziel: Audiobook-Export zeigt live per-Kapitel Fortschritt im Modal,
+  alte Sync-Route ist verriegelt, Regression-Test deckt das Verhalten ab.
+- Diagnose: Frontend hatte schon Polling auf `GET /api/export/jobs/{id}`,
+  aber das Backend lieferte nur binaren `running`/`completed`-Status.
+  `Job` hatte kein progress-Feld, der Generator emittierte nichts
+  zwischendurch (nur logger.info), und das Inline-Status-Pille im
+  ExportDialog zeigte 5 Minuten lang denselben Spinner. Die alte
+  sync-Route `GET /export/audiobook` war noch da als Fussangel.
+  User waehlte Variante A (SSE).
+- Ergebnis:
+  - **JobStore erweitert** (`backend/app/job_store.py`):
+    - `Job` bekommt `progress: dict`, `events: list[dict]` (Append-only
+      Log fuer Replay) und `_subscribers: list[asyncio.Event]` (per
+      Subscriber ein eigener notify-Event).
+    - Neue Methoden `publish_event(job_id, event_type, data)` und
+      async `subscribe(job_id)` Generator. Subscribe replays alle
+      bestehenden Events first, awaited dann auf neue, und exitet
+      sauber wenn das synthetische `stream_end` Event auftaucht.
+    - `update()` haengt `stream_end` automatisch an wenn der Status
+      auf COMPLETED/FAILED flippt -> Subscriber wachen auf, drainen
+      und beenden die Schleife ohne race.
+    - `submit()` API-Bruch: `func` muss jetzt `job_id` als ersten Arg
+      annehmen damit es publish_event aufrufen kann. Bestehende
+      job_store Tests entsprechend angepasst (2 Funktionen).
+    - `_fold_progress()` mirrored bekannte Event-Typen in den
+      `progress`-Dict (`total_chapters`, `current_chapter`,
+      `current_title`, `errors`) damit auch Polling-Clients ohne SSE
+      einen sinnvollen Snapshot bekommen.
+  - **`generate_audiobook` mit progress_callback**
+    (`plugins/.../audiobook/generator.py`):
+    - Optionaler `progress_callback: Callable[[str, dict], Awaitable[None]]`
+      Parameter (default None -> keine Verhaltensaenderung fuer
+      bestehende Tests).
+    - Lokale `emit()` Helper-Coroutine wrapped jeden Callback-Aufruf
+      in `try/except` und loggt nur - ein broken Subscriber darf NIE
+      eine Stunde TTS-Arbeit zerstoeren.
+    - Events: `start` (mit total + book_title + merge_mode),
+      `chapter_start`, `chapter_done`, `chapter_skipped`, `chapter_error`,
+      `merge_start`, `merge_done`, `merge_error`, `done`.
+  - **Bonus-Bugfix in `extract_plain_text`**: pre-existing Latentes
+    Problem - die Funktion erwartete einen String, aber das Export-Plugin
+    parst chapter content via `_serialize_chapters` zu einem dict bevor
+    er in den audiobook-Pfad gelangt. Ergebnis: `'dict' object has no
+    attribute 'strip'` beim ersten echten audiobook export. Mein eigener
+    HTTP-Test deckte das auf - Fix akzeptiert beides (str und dict).
+  - **Backend-Routen** (`plugins/.../export/routes.py`):
+    - Sync `GET /api/books/{id}/export/audiobook` -> HTTP 410 mit Hinweis
+      auf den async-Pfad. `_export_audiobook` Helper komplett geloescht
+      damit es keine Versuchung mehr gibt ihn aufzurufen.
+    - `_run` in `export_async` nimmt jetzt `job_id` als ersten Arg.
+      Audiobook-Branch in eigenen Helper `_run_audiobook_job(job_id, ...)`
+      ausgezogen. Der Helper baut den `progress_cb` Closure
+      (`job_store.publish_event(job_id, ...)`) und gibt nach Abschluss
+      ein synthetisches `ready`-Event mit `download_url` raus, BEVOR
+      das `JobStore.update()` Job-Status auf COMPLETED setzt - so
+      sehen SSE-Subscriber den Download-Button bevor `stream_end` feuert.
+    - Neuer SSE-Endpoint
+      `GET /api/export/jobs/{job_id}/stream` als `StreamingResponse`
+      mit `media_type="text/event-stream"`, `Cache-Control: no-cache`,
+      `X-Accel-Buffering: no`. Liest aus `job_store.subscribe()` und
+      yieldet `data: {json}\n\n` Frames.
+    - Bestehender `GET /api/export/jobs/{id}` bekommt zusaetzlich
+      `progress` und `events: [...]` (letzte 20) als Polling-Fallback.
+  - **Frontend `AudioExportProgress.tsx`** (210 LOC):
+    - Radix Dialog mit `modal=true` und `onPointerDownOutside` /
+      `onEscapeKeyDown` / `onInteractOutside` blockiert solange Phase
+      nicht terminal ist. User kann den Dialog NICHT versehentlich
+      wegklicken waehrend ein 10-Minuten-TTS-Job laeuft.
+    - Browser-natives `EventSource` (kein neues Package). State-Maschine:
+      `connecting -> running -> completed | failed`.
+    - Progress-Bar (Prozent = `current / total * 100`),
+      Phase-spezifischer Statustext, scrollbarer Live-Event-Log mit
+      letzten 12 Events und farbcodierten Icons.
+    - Download-Button erscheint sobald `ready`-Event empfangen wurde,
+      Schliessen-Button erst wenn Phase terminal.
+  - **`ExportDialog.tsx`**: alte Polling-Logik (`pollRef`, `audioStatus`,
+    Inline-Pille) komplett raus. Bei Audiobook-Klick wird der async-Job
+    gestartet, `audioJobId` gesetzt, der Export-Dialog geschlossen, und
+    der Progress-Modal uebernimmt. Cleanup-Callback setzt `audioJobId`
+    zurueck und gibt `exporting` frei.
+  - **i18n**: Neuer `ui.audio_progress` Block mit 19 Keys in allen 8
+    Sprachen (DE/EN/ES/FR/EL/PT/TR/JA), per Python-Skript validiert.
+  - **Tests** - Regression-Guards in `backend/tests/test_audiobook_export_async.py`:
+    - `test_sync_audiobook_route_returns_410` - der explizit gewuenschte
+      Guard. Wenn jemand den sync-Pfad wieder anschaltet wird das
+      sofort sichtbar.
+    - `test_async_audiobook_returns_job_id_not_file` - POST liefert
+      `{job_id, status}`, NICHT eine MP3.
+    - `test_async_audiobook_job_emits_progress_events` - nach Job-Abschluss
+      hat das Event-Log `start`, `chapter_start*2`, `chapter_done*2`,
+      `done`, `ready`, `stream_end`. Progress-Dict hat
+      `total_chapters=2`, `current_chapter=2`.
+    - `test_polling_endpoint_exposes_progress_and_events` - GET-Endpoint
+      enthaelt jetzt das `progress`-Dict und letzte Events.
+    - `test_sse_stream_yields_events_then_stream_end` - echter
+      SSE-Stream via `client.stream()`, parst `data:`-Frames, verifiziert
+      die Event-Reihenfolge endet mit `stream_end`.
+    - `test_sse_stream_unknown_job_returns_404`.
+    - Die HTTP-Tests nutzen `with TestClient(app) as c:` Fixture damit
+      FastAPIs lifespan feuert und der Plugin-Manager die
+      Audiobook-/Export-Routen tatsaechlich mounted (sonst 404 statt 410).
+      TTS-Engine wird via `patch("bibliogon_audiobook.generator.get_engine", ...)`
+      gemockt - kein echter Edge-TTS-Call in Tests.
+  - Plus 5 neue `JobStore`-Unit-Tests fuer publish_event/subscribe/cleanup.
+  - **lessons-learned.md**: Neuer Abschnitt "Audiobook-Export ist
+    asynchron mit SSE-Progress" mit den ganzen Reihenfolge-/Race-/
+    Test-Fallstricken als Praevention.
+  - Test-Bilanz: Backend 98 -> 109 (+11), Audiobook 42 -> 44 (+2),
+    Total 331 -> 344. `make test` durchgehend gruen. `tsc --noEmit` clean.
+- Commit: (folgt)
+
+---
+
 ---

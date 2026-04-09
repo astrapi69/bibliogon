@@ -2,6 +2,7 @@
 
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from .tts_engine import TTSEngine, get_engine
@@ -34,18 +35,32 @@ def normalize_merge_mode(value: object) -> str:
     return "merged"
 
 
-def extract_plain_text(content: str) -> str:
-    """Extract plain text from TipTap JSON content for TTS.
+def extract_plain_text(content: object) -> str:
+    """Extract plain text from TipTap content for TTS.
 
-    Strips all formatting, returns clean readable text.
+    Accepts either a stringified TipTap-JSON document (the editor's
+    storage form) or an already-parsed ``dict`` (the export plugin's
+    ``_serialize_chapters`` pre-parses chapter content for the
+    scaffolder, so the audiobook export receives dicts in that flow).
+    Plain text strings are passed through unchanged.
     """
-    if not content or not content.strip():
+    if not content:
         return ""
 
-    try:
-        doc = json.loads(content)
-    except (json.JSONDecodeError, TypeError):
-        return content
+    if isinstance(content, dict):
+        doc = content
+    elif isinstance(content, str):
+        if not content.strip():
+            return ""
+        try:
+            doc = json.loads(content)
+        except (json.JSONDecodeError, TypeError):
+            return content
+    else:
+        return ""
+
+    if not isinstance(doc, dict):
+        return ""
 
     texts: list[str] = []
     _walk_nodes(doc, texts)
@@ -119,6 +134,9 @@ async def generate_chapter_audio(
     return output_path
 
 
+ProgressCallback = Callable[[str, dict], Awaitable[None]] | None
+
+
 async def generate_audiobook(
     book_title: str,
     chapters: list[dict],
@@ -129,17 +147,25 @@ async def generate_audiobook(
     rate: str = "",
     skip_types: set[str] | None = None,
     merge: object = "merged",
+    progress_callback: ProgressCallback = None,
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
     Args:
-        book_title: Book title (for logging).
+        book_title: Book title (for logging and the ``start`` event).
         chapters: List of chapter dicts with title, content, chapter_type, position.
         output_dir: Directory for output MP3 files.
         engine_id: TTS engine to use.
         voice: Voice identifier (engine-specific).
         language: Language code.
-        skip_types: Chapter types to skip (default: toc, imprint, index, bibliography, endnotes).
+        skip_types: Chapter types to skip (default: toc, imprint, index,
+            bibliography, endnotes).
+        progress_callback: Optional async ``(event_type, payload)`` callback.
+            Called for ``start``, ``chapter_start``, ``chapter_done``,
+            ``chapter_skipped``, ``chapter_error``, ``merge_start``,
+            ``merge_done``, ``merge_error`` and ``done``. Used by the SSE
+            export endpoint to push live progress; safe to omit (e.g. unit
+            tests, ad-hoc CLI usage).
 
     Returns:
         Dict with generated files, skipped chapters, and errors.
@@ -155,6 +181,22 @@ async def generate_audiobook(
 
     sorted_chapters = sorted(chapters, key=lambda c: c.get("position", 0))
 
+    async def emit(event_type: str, **payload: object) -> None:
+        if progress_callback is None:
+            return
+        try:
+            await progress_callback(event_type, payload)
+        except Exception as e:
+            # Never let a broken subscriber kill the export.
+            logger.warning("progress_callback raised on %s: %s", event_type, e)
+
+    await emit(
+        "start",
+        book_title=book_title,
+        total=len(sorted_chapters),
+        merge_mode=merge_mode,
+    )
+
     for i, ch in enumerate(sorted_chapters, start=1):
         ch_type = ch.get("chapter_type", "chapter")
         ch_title = ch.get("title", f"Chapter {i}")
@@ -162,8 +204,10 @@ async def generate_audiobook(
         if ch_type in types_to_skip:
             skipped.append(ch_title)
             logger.info("Skipping %s (%s)", ch_title, ch_type)
+            await emit("chapter_skipped", index=i, title=ch_title, reason=ch_type)
             continue
 
+        await emit("chapter_start", index=i, title=ch_title)
         try:
             result = await generate_chapter_audio(
                 title=ch_title,
@@ -177,11 +221,14 @@ async def generate_audiobook(
             )
             if result:
                 generated.append(result.name)
+                await emit("chapter_done", index=i, title=ch_title, filename=result.name)
             else:
                 skipped.append(ch_title)
+                await emit("chapter_skipped", index=i, title=ch_title, reason="empty")
         except Exception as e:
             errors.append({"chapter": ch_title, "error": str(e)})
             logger.error("Failed to generate audio for %s: %s", ch_title, e)
+            await emit("chapter_error", index=i, title=ch_title, error=str(e))
 
     logger.info(
         "Audiobook '%s': %d generated, %d skipped, %d errors",
@@ -191,6 +238,7 @@ async def generate_audiobook(
     # Merge chapter MP3s into single audiobook file (for "merged" or "both" modes)
     merged_file: str | None = None
     if merge_mode in ("merged", "both") and len(generated) > 1:
+        await emit("merge_start", count=len(generated))
         try:
             slug = _slugify(book_title)
             merged_path = output_dir / f"{slug}-audiobook.mp3"
@@ -200,9 +248,18 @@ async def generate_audiobook(
             )
             merged_file = merged_path.name
             logger.info("Merged %d files into %s", len(generated), merged_file)
+            await emit("merge_done", filename=merged_file)
         except Exception as e:
             errors.append({"chapter": "_merge", "error": str(e)})
             logger.error("Failed to merge audiobook: %s", e)
+            await emit("merge_error", error=str(e))
+
+    await emit(
+        "done",
+        generated=len(generated),
+        skipped=len(skipped),
+        errors=len(errors),
+    )
 
     return {
         "book_title": book_title,

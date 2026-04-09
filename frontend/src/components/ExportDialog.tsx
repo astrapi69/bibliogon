@@ -1,9 +1,10 @@
-import {useEffect, useState, useRef} from "react";
-import {Download, ChevronDown, ChevronUp, Loader, CheckCircle, XCircle} from "lucide-react";
+import {useEffect, useState} from "react";
+import {Download, ChevronDown, ChevronUp, XCircle} from "lucide-react";
 import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
+import AudioExportProgress from "./AudioExportProgress";
 import * as Dialog from "@radix-ui/react-dialog";
 
 interface Props {
@@ -72,18 +73,16 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
     const selectedFormatLabel = FORMATS.find((f) => f.id === format);
 
+    // When set, render the AudioExportProgress modal which subscribes to
+    // /api/export/jobs/{job_id}/stream and shows live per-chapter progress.
+    // The old polling-only path was replaced because it never surfaced
+    // chapter-level progress and it gave the impression nothing was happening.
     const [audioJobId, setAudioJobId] = useState<string | null>(null);
-    const [audioStatus, setAudioStatus] = useState<string>("");
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    // Clean up polling on unmount
-    useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
     const handleExport = () => {
         setExporting(true);
 
         if (format === "audiobook") {
-            // Use async job + polling for audiobook
             _startAudiobookExport();
             return;
         }
@@ -102,7 +101,6 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     };
 
     const _startAudiobookExport = async () => {
-        setAudioStatus(t("ui.export_dialog.audiobook_generating", "Audiobook wird generiert..."));
         try {
             const res = await fetch(`/api/books/${bookId}/export/async/audiobook`, {method: "POST"});
             if (!res.ok) {
@@ -112,38 +110,30 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 return;
             }
             const {job_id} = await res.json();
+            // Hand off to the progress modal. The export dialog itself
+            // closes so the user can see the modal cleanly.
             setAudioJobId(job_id);
-
-            // Poll every 2 seconds
-            pollRef.current = setInterval(async () => {
-                try {
-                    const r = await fetch(`/api/export/jobs/${job_id}`);
-                    if (!r.ok) return;
-                    const job = await r.json();
-                    if (job.status === "running") {
-                        setAudioStatus(t("ui.export_dialog.audiobook_generating", "Audiobook wird generiert..."));
-                    } else if (job.status === "completed") {
-                        if (pollRef.current) clearInterval(pollRef.current);
-                        setAudioStatus(t("ui.export_dialog.audiobook_done", "Audiobook fertig!"));
-                        // Trigger download
-                        if (job.download_url) {
-                            window.open(job.download_url, "_blank");
-                        }
-                        setTimeout(() => { setExporting(false); setAudioJobId(null); setAudioStatus(""); onClose(); }, 2000);
-                    } else if (job.status === "failed") {
-                        if (pollRef.current) clearInterval(pollRef.current);
-                        notify.error(job.error || "Audiobook export failed");
-                        setExporting(false); setAudioJobId(null); setAudioStatus("");
-                    }
-                } catch { /* ignore poll errors */ }
-            }, 2000);
+            onClose();
         } catch (err) {
             notify.error(`Audiobook export failed: ${err}`, err);
             setExporting(false);
         }
     };
 
+    const closeProgressModal = () => {
+        setAudioJobId(null);
+        setExporting(false);
+    };
+
     return (
+        <>
+            {audioJobId && (
+                <AudioExportProgress
+                    jobId={audioJobId}
+                    bookTitle={bookTitle}
+                    onClose={closeProgressModal}
+                />
+            )}
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay"/>
@@ -288,24 +278,16 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                             onClick={handleExport}
                             disabled={exporting}
                         >
-                            {exporting && format === "audiobook" ? <Loader size={16} style={{animation: "spin 1s linear infinite"}}/> : <Download size={16}/>}
+                            <Download size={16}/>
                             {exporting
                                 ? t("ui.export_dialog.exporting", "Exportiert...")
                                 : t("ui.export_dialog.export_as", "Als {format} exportieren").replace("{format}", selectedFormatLabel ? t(selectedFormatLabel.labelKey, selectedFormatLabel.labelFallback) : "")}
                         </button>
                     </div>
-                    {/* Audiobook progress */}
-                    {audioStatus && (
-                        <div style={{marginTop: 12, padding: "10px 14px", background: "var(--bg-secondary)", borderRadius: "var(--radius-sm)", fontSize: "0.8125rem", display: "flex", alignItems: "center", gap: 8}}>
-                            {audioStatus.includes("fertig") || audioStatus.includes("done")
-                                ? <CheckCircle size={16} style={{color: "#16a34a"}}/>
-                                : <Loader size={16} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}}/>}
-                            <span>{audioStatus}</span>
-                        </div>
-                    )}
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+        </>
     );
 }
 

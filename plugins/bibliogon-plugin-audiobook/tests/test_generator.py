@@ -331,6 +331,64 @@ def test_bundle_returns_none_when_nothing_generated():
 
 
 @pytest.mark.asyncio
+async def test_generate_audiobook_emits_progress_events():
+    """progress_callback must receive start, chapter_*, and done events."""
+    events: list[tuple[str, dict]] = []
+
+    async def cb(event_type: str, payload: dict) -> None:
+        events.append((event_type, payload))
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(return_value=Path("/tmp/x.mp3"))
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "TOC", "content": "x", "chapter_type": "toc", "position": 0},
+            {"title": "Ch 1", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hi."}]}],
+            }), "chapter_type": "chapter", "position": 1},
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            await generate_audiobook(
+                book_title="Test",
+                chapters=chapters,
+                output_dir=Path(tmp),
+                progress_callback=cb,
+            )
+
+    types = [e[0] for e in events]
+    assert types[0] == "start"
+    assert "chapter_skipped" in types  # the toc
+    assert "chapter_start" in types
+    assert "chapter_done" in types
+    assert types[-1] == "done"
+    # start payload knows the total
+    assert events[0][1]["total"] == 2
+    assert events[0][1]["book_title"] == "Test"
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_progress_callback_failure_does_not_kill_export():
+    """A broken subscriber must not abort the generator."""
+    async def bad_cb(event_type: str, payload: dict) -> None:
+        raise RuntimeError("subscriber blew up")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_get.return_value = AsyncMock()
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test",
+                chapters=[],
+                output_dir=Path(tmp),
+                progress_callback=bad_cb,
+            )
+            assert result["generated_count"] == 0  # finished cleanly
+
+
+@pytest.mark.asyncio
 async def test_generate_audiobook_accepts_legacy_bool_true():
     """Backwards compatibility: legacy True must be treated as 'merged'."""
     with patch("bibliogon_audiobook.generator.get_engine") as mock_get:

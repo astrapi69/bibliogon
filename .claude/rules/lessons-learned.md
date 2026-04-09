@@ -84,6 +84,16 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Audiobook-Export ist asynchron mit SSE-Progress
+
+- Der Endpoint `POST /api/books/{id}/export/audiobook` darf NIE synchron eine MP3 zurueckgeben. Audiobook-Generierung dauert Minuten; jeder synchrone Pfad blockiert den Request-Thread und liefert dem User nichts Sichtbares.
+- Pflicht-Form: Client schickt `POST /api/books/{id}/export/async/audiobook`, bekommt `{job_id}` zurueck, abonniert anschliessend `GET /api/export/jobs/{job_id}/stream` (Server-Sent Events).
+- Die alte sync-Route `GET /api/books/{id}/export/audiobook` antwortet jetzt absichtlich mit HTTP 410 + Hinweis auf den async-Pfad. Regression-Test `test_sync_audiobook_route_returns_410` schlaegt Alarm wenn jemand den Endpoint wieder anschaltet.
+- Progress-Events die der Generator emittiert: `start`, `chapter_start`, `chapter_done`, `chapter_skipped`, `chapter_error`, `merge_start`, `merge_done`, `merge_error`, `done`. Der Routen-Wrapper fuegt `ready` (mit `download_url`) und `JobStore.update()` haengt das synthetische `stream_end` an, damit SSE-Subscriber sauber rausfliegen.
+- Frontend nutzt browser-natives `EventSource` (kein Package noetig). Modal ist `modal=true` und nicht via Escape/Click-Outside schliessbar bis der Job einen Terminal-Status hat - sonst orphaned der User Jobs durch versehentliches Klicken.
+- Generator-Callbacks duerfen niemals den Export killen: `progress_callback`-Aufrufe sind in `try/except` gewickelt und loggen nur. Ein broken Subscriber darf NICHT eine Stunde TTS-Arbeit zerstoeren.
+- Tests muessen durch `with TestClient(app) as c:` laufen, sonst feuert FastAPIs lifespan nicht und der Plugin-Manager mounted die Audiobook-/Export-Routen ueberhaupt nicht (404 statt 410). TTS-Engine immer mocken via `patch("bibliogon_audiobook.generator.get_engine", ...)`.
+
 ## Async im FastAPI-Lifespan
 
 - Im `async def lifespan(app)` Handler laeuft bereits der uvicorn-Event-Loop. `asyncio.new_event_loop()` + `loop.run_until_complete(...)` ist dort verboten und crasht mit "Cannot run the event loop while another loop is running".
