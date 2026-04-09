@@ -129,7 +129,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Tests: `make test` komplett gruen ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest), weil alle Tests via HTTP-Endpoint
     laufen und die Endpoint-API unveraendert ist.
-- Commit: (folgt)
+- Commit: f598a83
 
 ---
 
