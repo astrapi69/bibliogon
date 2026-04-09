@@ -789,7 +789,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - i18n: 9 neue Strings (event_generating, popover_title, popover_chapter_count, popover_current, popover_open, badge_done, badge_failed, completion_toast, completed_hint) in allen 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA).
   - Tests: 1 neuer pytest-Test (`duration_seconds` im `chapter_done`-Payload), 8 neue Vitest-Tests (formatChapterPrefix Padding, eventLabel format, Regression "Kapitel X:" darf nirgends auftauchen).
   - Tests-Status: Backend 129, audiobook plugin 80, frontend Vitest 58 (vorher 50), gesamt 414.
-- Commit: (siehe finalen Hash unten)
+- Commit: ba52fd7
 
 ---
 
