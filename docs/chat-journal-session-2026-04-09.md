@@ -224,7 +224,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Tests: `make test` komplett gruen ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest). Translation-Plugin 35,
     Export-Plugin 30, alle HTTP-Tests fuer chapters.py weiterhin gueltig.
-- Commit: (folgt)
+- Commit: abd1fd3
 
 ---
 
