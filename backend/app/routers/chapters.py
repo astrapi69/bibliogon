@@ -118,6 +118,22 @@ def reorder_chapters(
     )
 
 
+# Common alternative anchors for special chapter types (write-book-template
+# convention). Used by _collect_chapter_anchors below.
+_TYPE_ANCHORS: dict[str, list[str]] = {
+    "about_author": ["about-the-author"],
+    "next_in_series": ["next-in-series", "next-in-the-series", "other-publications"],
+    "bibliography": ["bibliography", "further-reading"],
+    "acknowledgments": ["acknowledgments"],
+    "glossary": ["glossary", "glossary-of-key-terms", "glossary-of-key-concepts"],
+    "epilogue": ["epilogue"],
+    "imprint": ["imprint"],
+    "toc": ["table-of-contents", "toc"],
+    "preface": ["preface", "introduction"],
+    "foreword": ["foreword"],
+}
+
+
 @router.post("/validate-toc")
 def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Validate TOC links against actual chapter titles.
@@ -133,80 +149,15 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
         .all()
     )
 
-    # Find TOC chapters
     toc_chapters = [c for c in chapters if c.chapter_type == "toc"]
     if not toc_chapters:
-        return {"valid": True, "toc_found": False, "links": [], "broken": [], "message": "Kein Inhaltsverzeichnis gefunden."}
-
-    # Build set of valid anchors from all non-TOC chapters
-    valid_anchors: set[str] = set()
-    for ch in chapters:
-        if ch.chapter_type == "toc":
-            continue
-        # Generate anchor from title - both GitHub and Pandoc style
-        slug = _slugify(ch.title)
-        valid_anchors.add(slug)
-        # Pandoc removes apostrophes entirely instead of replacing with hyphen
-        slug_pandoc = _slugify(ch.title.replace("'", "").replace("\u2019", ""))
-        valid_anchors.add(slug_pandoc)
-        # Also check for explicit anchors like {#my-anchor} in title
-        explicit = re.search(r"\{#([\w-]+)\}", ch.title)
-        if explicit:
-            valid_anchors.add(explicit.group(1))
-        # Add common alternative anchors for special chapter types
-        _TYPE_ANCHORS = {
-            "about_author": ["about-the-author"],
-            "next_in_series": ["next-in-series", "next-in-the-series", "other-publications"],
-            "bibliography": ["bibliography", "further-reading"],
-            "acknowledgments": ["acknowledgments"],
-            "glossary": ["glossary", "glossary-of-key-terms", "glossary-of-key-concepts"],
-            "epilogue": ["epilogue"],
-            "imprint": ["imprint"],
-            "toc": ["table-of-contents", "toc"],
-            "preface": ["preface", "introduction"],
-            "foreword": ["foreword"],
+        return {
+            "valid": True, "toc_found": False, "links": [], "broken": [],
+            "message": "Kein Inhaltsverzeichnis gefunden.",
         }
-        for alt in _TYPE_ANCHORS.get(ch.chapter_type, []):
-            valid_anchors.add(alt)
-        # Extract anchors from all headings in content
-        for line in ch.content.split("\n"):
-            stripped = line.strip()
-            # Markdown headings: ## Title
-            if stripped.startswith("#"):
-                heading_text = re.sub(r"^#+\s*", "", stripped)
-                _add_slug_variants(heading_text, valid_anchors)
-            # HTML headings: <h2>Title</h2> or <h3>Title</h3>
-            for hmatch in re.finditer(r"<h[1-6][^>]*>([^<]+)</h[1-6]>", stripped):
-                _add_slug_variants(hmatch.group(1), valid_anchors)
-        # Check content for explicit heading anchors {#my-anchor}
-        for match in re.finditer(r"\{#([\w-]+)\}", ch.content):
-            valid_anchors.add(match.group(1))
-        # Check HTML id attributes: <h2 id="my-anchor">
-        for match in re.finditer(r'id="([\w-]+)"', ch.content):
-            valid_anchors.add(match.group(1))
 
-    # Extract all links from TOC chapters
-    all_links: list[dict[str, str]] = []
-    broken: list[dict[str, str]] = []
-
-    for toc_ch in toc_chapters:
-        content = toc_ch.content
-        # Match markdown links: [text](#anchor)
-        for match in re.finditer(r"\[([^\]]+)\]\(#([\w-]+)\)", content):
-            text = match.group(1)
-            anchor = match.group(2)
-            link_info = {"text": text, "anchor": anchor, "toc_chapter_id": toc_ch.id}
-            all_links.append(link_info)
-            if anchor not in valid_anchors:
-                broken.append(link_info)
-        # Match HTML links: <a href="#anchor">text</a>
-        for match in re.finditer(r'<a\s+href="#([\w-]+)"[^>]*>([^<]+)</a>', content):
-            anchor = match.group(1)
-            text = match.group(2)
-            link_info = {"text": text, "anchor": anchor, "toc_chapter_id": toc_ch.id}
-            all_links.append(link_info)
-            if anchor not in valid_anchors:
-                broken.append(link_info)
+    valid_anchors = _collect_valid_anchors(chapters)
+    all_links, broken = _check_toc_links(toc_chapters, valid_anchors)
 
     return {
         "valid": len(broken) == 0,
@@ -217,6 +168,81 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
         "broken": broken,
         "valid_anchors": sorted(valid_anchors),
     }
+
+
+# --- validate_toc step helpers ---
+
+
+def _collect_valid_anchors(chapters: list[Chapter]) -> set[str]:
+    """Build the set of all anchors a TOC link is allowed to point at."""
+    anchors: set[str] = set()
+    for ch in chapters:
+        if ch.chapter_type == "toc":
+            continue
+        _collect_chapter_anchors(ch, anchors)
+    return anchors
+
+
+def _collect_chapter_anchors(ch: Chapter, anchors: set[str]) -> None:
+    """Add every anchor that one chapter contributes (title, headings, ids)."""
+    _add_title_anchors(ch.title, anchors)
+    for alt in _TYPE_ANCHORS.get(ch.chapter_type, []):
+        anchors.add(alt)
+    _add_heading_anchors(ch.content, anchors)
+    _add_explicit_id_anchors(ch.content, anchors)
+
+
+def _add_title_anchors(title: str, anchors: set[str]) -> None:
+    """Anchors derived from the chapter title (GitHub + Pandoc slug + explicit)."""
+    anchors.add(_slugify(title))
+    # Pandoc removes apostrophes entirely instead of replacing with hyphen
+    anchors.add(_slugify(title.replace("'", "").replace("\u2019", "")))
+    explicit = re.search(r"\{#([\w-]+)\}", title)
+    if explicit:
+        anchors.add(explicit.group(1))
+
+
+def _add_heading_anchors(content: str, anchors: set[str]) -> None:
+    """Anchors derived from markdown ``# ...`` and HTML ``<h*>`` headings."""
+    for line in content.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            heading_text = re.sub(r"^#+\s*", "", stripped)
+            _add_slug_variants(heading_text, anchors)
+        for hmatch in re.finditer(r"<h[1-6][^>]*>([^<]+)</h[1-6]>", stripped):
+            _add_slug_variants(hmatch.group(1), anchors)
+
+
+def _add_explicit_id_anchors(content: str, anchors: set[str]) -> None:
+    """Anchors from ``{#my-anchor}`` markers and HTML ``id="..."`` attributes."""
+    for match in re.finditer(r"\{#([\w-]+)\}", content):
+        anchors.add(match.group(1))
+    for match in re.finditer(r'id="([\w-]+)"', content):
+        anchors.add(match.group(1))
+
+
+def _check_toc_links(
+    toc_chapters: list[Chapter],
+    valid_anchors: set[str],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """Extract every link from each TOC chapter; return ``(all, broken)``."""
+    all_links: list[dict[str, str]] = []
+    broken: list[dict[str, str]] = []
+    for toc_ch in toc_chapters:
+        for link in _iter_toc_links(toc_ch):
+            all_links.append(link)
+            if link["anchor"] not in valid_anchors:
+                broken.append(link)
+    return all_links, broken
+
+
+def _iter_toc_links(toc_ch: Chapter):
+    """Yield ``{text, anchor, toc_chapter_id}`` for every link in one TOC chapter."""
+    content = toc_ch.content
+    for match in re.finditer(r"\[([^\]]+)\]\(#([\w-]+)\)", content):
+        yield {"text": match.group(1), "anchor": match.group(2), "toc_chapter_id": toc_ch.id}
+    for match in re.finditer(r'<a\s+href="#([\w-]+)"[^>]*>([^<]+)</a>', content):
+        yield {"text": match.group(2), "anchor": match.group(1), "toc_chapter_id": toc_ch.id}
 
 
 def _add_slug_variants(text: str, anchors: set[str]) -> None:

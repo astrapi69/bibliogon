@@ -166,95 +166,17 @@ async def translate_book(req: TranslateBookRequest) -> dict[str, Any]:
     """Translate all chapters of a book and create a new translated book.
 
     Creates a copy of the book with translated chapter content.
-    The new book references the original via description field.
+    The new book references the original via the description field.
     """
+    db = _open_db_session_or_500()
     try:
-        from app.database import SessionLocal
-        from app.models import Book, Chapter
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Database not available in this context")
+        book, chapters = _load_book_with_chapters(db, req.book_id)
+        deepl_client, lmstudio_client = _build_translation_clients(req.provider)
 
-    db = SessionLocal()
-    try:
-        book = db.query(Book).filter(Book.id == req.book_id, Book.deleted_at.is_(None)).first()
-        if not book:
-            raise HTTPException(status_code=404, detail="Book not found")
-
-        chapters = (
-            db.query(Chapter)
-            .filter(Chapter.book_id == req.book_id)
-            .order_by(Chapter.position)
-            .all()
+        new_book = _create_translated_book(db, book, req)
+        translated_count, errors = await _translate_chapters_into(
+            db, new_book.id, chapters, req, deepl_client, lmstudio_client,
         )
-
-        if not chapters:
-            raise HTTPException(status_code=400, detail="Book has no chapters to translate")
-
-        # Set up translation client
-        deepl_client = None
-        lmstudio_client = None
-        if req.provider == "deepl":
-            deepl_client = _get_deepl_client()
-        else:
-            lmstudio_client = _get_lmstudio_client()
-
-        # Create new book (copy metadata, update language)
-        lang_code = req.target_lang.split("-")[0].lower()
-        suffix = req.title_suffix or f"({req.target_lang.upper()})"
-        new_book = Book(
-            title=f"{book.title} {suffix}".strip(),
-            subtitle=book.subtitle,
-            author=book.author,
-            language=lang_code,
-            genre=book.genre,
-            series=book.series,
-            series_index=book.series_index,
-            description=f"Translated from: {book.title} (ID: {book.id})",
-        )
-        db.add(new_book)
-        db.flush()
-
-        # Translate chapters one by one
-        translated_count = 0
-        errors: list[dict[str, str]] = []
-
-        for ch in chapters:
-            plain_text = extract_plain_text_from_tiptap(ch.content)
-
-            try:
-                translated_text = await translate_chapter_content(
-                    text=plain_text,
-                    target_lang=req.target_lang,
-                    source_lang=req.source_lang,
-                    provider=req.provider,
-                    deepl_client=deepl_client,
-                    lmstudio_client=lmstudio_client,
-                )
-                translated_title = await translate_chapter_content(
-                    text=ch.title,
-                    target_lang=req.target_lang,
-                    source_lang=req.source_lang,
-                    provider=req.provider,
-                    deepl_client=deepl_client,
-                    lmstudio_client=lmstudio_client,
-                )
-            except Exception as e:
-                errors.append({"chapter": ch.title, "error": str(e)})
-                translated_text = plain_text
-                translated_title = ch.title
-
-            new_content = rebuild_tiptap_with_translation(ch.content, translated_text)
-
-            new_chapter = Chapter(
-                book_id=new_book.id,
-                title=translated_title,
-                content=new_content,
-                position=ch.position,
-                chapter_type=ch.chapter_type,
-            )
-            db.add(new_chapter)
-            translated_count += 1
-
         db.commit()
 
         return {
@@ -268,3 +190,130 @@ async def translate_book(req: TranslateBookRequest) -> dict[str, Any]:
         }
     finally:
         db.close()
+
+
+# --- translate_book step helpers ---
+
+
+def _open_db_session_or_500():
+    """Open a SessionLocal; raises 500 if running outside the app context."""
+    try:
+        from app.database import SessionLocal
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Database not available in this context")
+    return SessionLocal()
+
+
+def _load_book_with_chapters(db, book_id: str):
+    """Fetch the book and its non-empty chapter list, or raise 404/400."""
+    from app.models import Book, Chapter
+
+    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    chapters = (
+        db.query(Chapter)
+        .filter(Chapter.book_id == book_id)
+        .order_by(Chapter.position)
+        .all()
+    )
+    if not chapters:
+        raise HTTPException(status_code=400, detail="Book has no chapters to translate")
+    return book, chapters
+
+
+def _build_translation_clients(provider: str):
+    """Return ``(deepl_client, lmstudio_client)`` with exactly one populated."""
+    if provider == "deepl":
+        return _get_deepl_client(), None
+    return None, _get_lmstudio_client()
+
+
+def _create_translated_book(db, book, req: TranslateBookRequest):
+    """Create the destination Book row (copy metadata, switch language)."""
+    from app.models import Book
+
+    lang_code = req.target_lang.split("-")[0].lower()
+    suffix = req.title_suffix or f"({req.target_lang.upper()})"
+    new_book = Book(
+        title=f"{book.title} {suffix}".strip(),
+        subtitle=book.subtitle,
+        author=book.author,
+        language=lang_code,
+        genre=book.genre,
+        series=book.series,
+        series_index=book.series_index,
+        description=f"Translated from: {book.title} (ID: {book.id})",
+    )
+    db.add(new_book)
+    db.flush()
+    return new_book
+
+
+async def _translate_chapters_into(
+    db,
+    new_book_id: str,
+    src_chapters,
+    req: TranslateBookRequest,
+    deepl_client,
+    lmstudio_client,
+) -> tuple[int, list[dict[str, str]]]:
+    """Translate every src chapter and persist it under ``new_book_id``."""
+    from app.models import Chapter
+
+    translated_count = 0
+    errors: list[dict[str, str]] = []
+
+    for ch in src_chapters:
+        translated_title, translated_text, error = await _translate_one_chapter(
+            ch, req, deepl_client, lmstudio_client,
+        )
+        if error:
+            errors.append(error)
+
+        db.add(Chapter(
+            book_id=new_book_id,
+            title=translated_title,
+            content=rebuild_tiptap_with_translation(ch.content, translated_text),
+            position=ch.position,
+            chapter_type=ch.chapter_type,
+        ))
+        translated_count += 1
+
+    return translated_count, errors
+
+
+async def _translate_one_chapter(
+    ch,
+    req: TranslateBookRequest,
+    deepl_client,
+    lmstudio_client,
+) -> tuple[str, str, dict[str, str] | None]:
+    """Translate one chapter's title and body.
+
+    Returns ``(title, body, error_dict_or_None)``. On translation failure
+    the original title/body are returned alongside an error entry so the
+    caller can append it to the per-book errors list.
+    """
+    plain_text = extract_plain_text_from_tiptap(ch.content)
+    try:
+        translated_text = await translate_chapter_content(
+            text=plain_text,
+            target_lang=req.target_lang,
+            source_lang=req.source_lang,
+            provider=req.provider,
+            deepl_client=deepl_client,
+            lmstudio_client=lmstudio_client,
+        )
+        translated_title = await translate_chapter_content(
+            text=ch.title,
+            target_lang=req.target_lang,
+            source_lang=req.source_lang,
+            provider=req.provider,
+            deepl_client=deepl_client,
+            lmstudio_client=lmstudio_client,
+        )
+        return translated_title, translated_text, None
+    except Exception as e:
+        return ch.title, plain_text, {"chapter": ch.title, "error": str(e)}

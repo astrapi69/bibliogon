@@ -183,4 +183,49 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 5. S-10/S-11/S-12: Drei weitere god methods zerlegt (11:50)
+
+- Original-Prompt: "ja mach mehr" - User wollte die Refactoring-Welle
+  fortsetzen.
+- Optimierter Prompt: "Identifiziere die naechsten echten god methods im
+  Codebase (`translate_book` ~106 LOC, `run_pandoc` ~84 LOC, `validate_toc`
+  ~98 LOC) und zerlege sie nach demselben Muster wie S-08/S-09: kleine
+  Step-Helfer, jede Funktion einzeln testbar, max ~40 LOC."
+- Ziel: Die letzten drei groesseren god methods im Backend und in den
+  Plugins entfernen, ohne Verhalten oder API zu aendern.
+- Ergebnis:
+  - S-10 `translate_book` in
+    `plugins/bibliogon-plugin-translation/bibliogon_translation/routes.py`:
+    von ~106 LOC Body auf 22 LOC geschrumpft. Neue Helfer:
+    `_open_db_session_or_500`, `_load_book_with_chapters`,
+    `_build_translation_clients`, `_create_translated_book`,
+    `_translate_chapters_into`, `_translate_one_chapter`. Jede Funktion
+    macht genau eine Sache. Try/Except pro Kapitel ist jetzt im
+    `_translate_one_chapter`-Helfer und gibt ein Fehler-Dict zurueck
+    statt mitten in einer Loop zu mutieren.
+  - S-11 `run_pandoc` in
+    `plugins/bibliogon-plugin-export/bibliogon_export/pandoc_runner.py`:
+    von ~84 LOC Body auf ~30 LOC geschrumpft. Neue Helfer:
+    `_read_export_settings`, `_resolve_section_order` (filtert
+    nicht-existierende .md-Dateien), `_set_manuscripta_output_file`
+    (mutiert manuscripta's Modul-Global), `_resolve_cover_path` (mit
+    Absolute-Path/relativ/assets/covers Fallback-Kette),
+    `_find_output_file`. `_OUTPUT_EXTENSIONS` als Modul-Konstante
+    rausgezogen.
+  - S-12 `validate_toc` in `backend/app/routers/chapters.py`:
+    von ~98 LOC Body auf 28 LOC geschrumpft. Neue Helfer:
+    `_collect_valid_anchors`, `_collect_chapter_anchors`,
+    `_add_title_anchors` (GitHub + Pandoc Slug + explicit
+    Marker), `_add_heading_anchors` (Markdown `##` und HTML `<h*>`),
+    `_add_explicit_id_anchors` (`{#anchor}` und `id="..."`),
+    `_check_toc_links` plus `_iter_toc_links` Generator. Die
+    `_TYPE_ANCHORS`-Map aus dem Funktionskoerper als Modul-Konstante
+    rausgezogen - sie wurde vorher bei jedem Aufruf neu allokiert.
+  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+    (87 backend, 135 plugin, 50 vitest). Translation-Plugin 35,
+    Export-Plugin 30, alle HTTP-Tests fuer chapters.py weiterhin gueltig.
+- Commit: (folgt)
+
+---
+
 ---

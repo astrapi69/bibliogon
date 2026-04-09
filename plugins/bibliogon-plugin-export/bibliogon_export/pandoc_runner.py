@@ -17,6 +17,9 @@ class PandocError(Exception):
     pass
 
 
+_OUTPUT_EXTENSIONS = {"epub": "epub", "pdf": "pdf", "docx": "docx", "html": "html", "markdown": "md"}
+
+
 def run_pandoc(
     project_dir: Path,
     fmt: str,
@@ -24,80 +27,37 @@ def run_pandoc(
     use_manual_toc: bool = False,
     cover_path: str | None = None,
 ) -> Path:
-    """Export a scaffolded project to EPUB, PDF, or other formats via manuscripta.
+    """Export a scaffolded project to EPUB/PDF/DOCX/HTML/Markdown via manuscripta.
 
     Args:
         project_dir: Path to the manuscripta-compatible project directory.
         fmt: Output format ("epub", "pdf", "docx", "html", "markdown").
-        config: Plugin settings dict (toc_depth, etc.)
-        use_manual_toc: If True, use the manual TOC chapter instead of auto-generating.
+        config: Plugin settings dict (toc_depth, type_suffix_in_filename, ...).
+        use_manual_toc: If True, use the manual TOC chapter instead of
+            auto-generating one.
+        cover_path: Optional explicit cover path; ``None`` falls back to
+            ``assets/covers/cover.{png,jpg,jpeg}``.
 
     Returns:
         Path to the generated output file.
     """
     settings = config.get("settings", {})
-    toc_depth = settings.get("toc_depth", 2)
+    book_type = BookType.EBOOK
 
-    # manuscripta expects to run from the project directory
     original_cwd = os.getcwd()
     try:
         os.chdir(str(project_dir))
-
-        # Read section_order and output_file from scaffolded export-settings.yaml
-        import yaml
-        export_settings_path = project_dir / "config" / "export-settings.yaml"
-        export_cfg: dict = {}
-        if export_settings_path.exists():
-            with open(export_settings_path, "r", encoding="utf-8") as f:
-                export_cfg = yaml.safe_load(f) or {}
-
-        book_type = BookType.EBOOK
-        so = export_cfg.get("section_order", {})
-        section_order = so.get("ebook", None) or pick_section_order(book_type, fmt)
-
-        # Filter out missing files from section_order (e.g. appendix.md if not in project)
-        filtered_order = []
-        for entry in section_order:
-            if entry == "chapters":
-                filtered_order.append(entry)
-            else:
-                entry_path = Path("manuscript") / entry
-                if entry_path.exists():
-                    filtered_order.append(entry)
-        section_order = filtered_order
-
-        # Set manuscripta's global OUTPUT_FILE (normally set by CLI)
-        import manuscripta.export.book as _mbook
-        export_defaults = export_cfg.get("export_defaults", {})
-        output_file = export_defaults.get("output_file", project_dir.name)
-        type_suffix = settings.get("type_suffix_in_filename", True)
-        if type_suffix:
-            _mbook.OUTPUT_FILE = f"{output_file}_{book_type.value}"
-        else:
-            _mbook.OUTPUT_FILE = output_file
-
-        # Resolve cover path relative to project directory
-        resolved_cover = None
-        if cover_path:
-            cp = Path(cover_path)
-            if cp.is_absolute() and cp.exists():
-                resolved_cover = str(cp)
-            elif (project_dir / cover_path).exists():
-                resolved_cover = str(project_dir / cover_path)
-            # Also check assets/covers/
-            if not resolved_cover:
-                for ext in ("png", "jpg", "jpeg"):
-                    candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
-                    if candidate.exists():
-                        resolved_cover = str(candidate)
-                        break
+        export_cfg = _read_export_settings(project_dir)
+        section_order = _resolve_section_order(export_cfg, book_type, fmt)
+        _set_manuscripta_output_file(export_cfg, settings, book_type, project_dir.name)
+        resolved_cover = _resolve_cover_path(project_dir, cover_path)
 
         compile_book(
             format=fmt,
             section_order=section_order,
             book_type=book_type,
             cover_path=resolved_cover,
-            toc_depth=toc_depth,
+            toc_depth=settings.get("toc_depth", 2),
             use_manual_toc=use_manual_toc,
         )
     except Exception as e:
@@ -105,22 +65,81 @@ def run_pandoc(
     finally:
         os.chdir(original_cwd)
 
-    # Find the output file
-    output_dir = project_dir / "output"
-    ext_map = {"epub": "epub", "pdf": "pdf", "docx": "docx", "html": "html", "markdown": "md"}
-    ext = ext_map.get(fmt, fmt)
-
-    output_files = list(output_dir.glob(f"*.{ext}"))
-    if not output_files:
-        raise PandocError(f"No output file found for format '{fmt}'")
-
-    output = output_files[0]
-
-    # Run epubcheck validation for EPUB exports
+    output = _find_output_file(project_dir, fmt)
     if fmt == "epub":
         _run_epubcheck(output)
-
     return output
+
+
+# --- run_pandoc step helpers ---
+
+
+def _read_export_settings(project_dir: Path) -> dict[str, Any]:
+    """Load ``config/export-settings.yaml`` from the scaffolded project."""
+    import yaml
+    path = project_dir / "config" / "export-settings.yaml"
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _resolve_section_order(
+    export_cfg: dict[str, Any],
+    book_type: BookType,
+    fmt: str,
+) -> list[str]:
+    """Pick a section order and drop entries whose .md file doesn't exist."""
+    so = export_cfg.get("section_order", {})
+    section_order = so.get("ebook", None) or pick_section_order(book_type, fmt)
+    filtered: list[str] = []
+    for entry in section_order:
+        if entry == "chapters":
+            filtered.append(entry)
+            continue
+        if (Path("manuscript") / entry).exists():
+            filtered.append(entry)
+    return filtered
+
+
+def _set_manuscripta_output_file(
+    export_cfg: dict[str, Any],
+    settings: dict[str, Any],
+    book_type: BookType,
+    fallback_name: str,
+) -> None:
+    """Mutate manuscripta's module-global OUTPUT_FILE (normally set by its CLI)."""
+    import manuscripta.export.book as _mbook
+    export_defaults = export_cfg.get("export_defaults", {})
+    output_file = export_defaults.get("output_file", fallback_name)
+    if settings.get("type_suffix_in_filename", True):
+        _mbook.OUTPUT_FILE = f"{output_file}_{book_type.value}"
+    else:
+        _mbook.OUTPUT_FILE = output_file
+
+
+def _resolve_cover_path(project_dir: Path, cover_path: str | None) -> str | None:
+    """Resolve an explicit cover path, then fall back to ``assets/covers/cover.*``."""
+    if cover_path:
+        cp = Path(cover_path)
+        if cp.is_absolute() and cp.exists():
+            return str(cp)
+        if (project_dir / cover_path).exists():
+            return str(project_dir / cover_path)
+    for ext in ("png", "jpg", "jpeg"):
+        candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
+        if candidate.exists():
+            return str(candidate)
+    return None
+
+
+def _find_output_file(project_dir: Path, fmt: str) -> Path:
+    """Locate the file manuscripta wrote in ``output/``."""
+    ext = _OUTPUT_EXTENSIONS.get(fmt, fmt)
+    output_files = list((project_dir / "output").glob(f"*.{ext}"))
+    if not output_files:
+        raise PandocError(f"No output file found for format '{fmt}'")
+    return output_files[0]
 
 
 def _run_epubcheck(epub_path: Path) -> None:

@@ -167,6 +167,22 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
       `scaffold_project` in 6 Step-Helfer aufgeteilt; HTMLParser in eigenes
       `html_to_markdown.py`-Modul ausgezogen mit per-Tag Open/Close-Handlern
       via Dispatch-Tabellen.
+- [x] S-10: plugins/bibliogon-plugin-translation/.../routes.py: god method
+      `translate_book` (~106 LOC) in 5 Step-Helfer aufgeteilt:
+      `_open_db_session_or_500`, `_load_book_with_chapters`,
+      `_build_translation_clients`, `_create_translated_book`,
+      `_translate_chapters_into` plus per-Kapitel `_translate_one_chapter`.
+- [x] S-11: plugins/bibliogon-plugin-export/.../pandoc_runner.py: god method
+      `run_pandoc` (~84 LOC) in 5 Step-Helfer aufgeteilt:
+      `_read_export_settings`, `_resolve_section_order`,
+      `_set_manuscripta_output_file`, `_resolve_cover_path`,
+      `_find_output_file`. Body von ~84 auf ~25 LOC geschrumpft.
+- [x] S-12: backend/app/routers/chapters.py: god method `validate_toc`
+      (~98 LOC) in 6 Step-Helfer aufgeteilt: `_collect_valid_anchors`,
+      `_collect_chapter_anchors`, `_add_title_anchors`,
+      `_add_heading_anchors`, `_add_explicit_id_anchors`, `_check_toc_links`
+      mit `_iter_toc_links` Generator. `_TYPE_ANCHORS` als Modul-Konstante
+      aus dem Funktionskoerper rausgezogen.
 
 ## KDP Publishing Workflow
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
