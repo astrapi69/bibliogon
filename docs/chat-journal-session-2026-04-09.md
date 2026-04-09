@@ -46,6 +46,6 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Tests: 10 neue Tests im Audiobook-Plugin (normalize_merge_mode bool->enum
     Migration, alle drei Bundle-Modi, Generator-Roundtrip mit legacy bools).
     audiobook 32 -> 42 Tests, alles gruen.
-- Commit: (folgt)
+- Commit: 6236fbd
 
 ---

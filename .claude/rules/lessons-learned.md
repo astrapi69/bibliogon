@@ -84,6 +84,13 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Config-Migration (Bool -> Enum)
+
+- Wenn ein Boolean-Setting zu einem Enum mit mehr Optionen erweitert wird (z.B. audiobook `merge: true|false` -> `merge: separate|merged|both`): IMMER eine `normalize_*`-Funktion einfuehren die alte Bool-Werte stillschweigend uebersetzt (True -> "merged", False -> "separate") und unbekannte/None-Werte auf den Default mappt.
+- Begruendung: User-Configs in YAML, Backups (.bgb) und DB-Spalten enthalten weiterhin alte Bool-Werte. Eine harte Schema-Validierung wuerde bestehende Installationen brechen. Der Default im Pydantic-Schema wird vom Typ-System nicht auf Migration geprueft.
+- Praxis: Die Normalisierung MUSS sowohl im Backend (Generator/Service-Layer) als auch im Frontend (State-Init aus Settings) passieren, damit beide Seiten dieselben Migrationsregeln teilen. Sonst zeigen alte Configs im UI den falschen Default.
+- Tests: Pro Bool-Wert ein expliziter Migrationstest plus Passthrough fuer alle Enum-Werte plus Default fuer None/Unknown.
+
 ## HTML-zu-Markdown Konvertierung
 
 - KEIN Regex-basierter Konverter fuer verschachtelte HTML-Strukturen.
