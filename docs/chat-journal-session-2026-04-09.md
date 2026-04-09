@@ -522,7 +522,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - Test-Bilanz unveraendert (rein UI-Aenderung, kein neuer Test
     sinnvoll - die Lengths-Check-Logik ist trivial). `make test`
     durchgehend gruen, `tsc --noEmit` clean.
-- Commit: (folgt)
+- Commit: 26d8d15
 
 ---
 
