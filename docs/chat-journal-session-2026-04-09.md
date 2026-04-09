@@ -656,7 +656,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     `individual_files`, `expand_hint`, `badge_label`), validiert.
   - **Test-Bilanz**: Backend 109 -> 116 (+7), Audiobook 44 -> 59 (+15),
     Total 344 -> 372. `make test` durchgehend gruen, `tsc --noEmit` clean.
-- Commit: (folgt)
+- Commit: 037a33f
 
 ---
 
