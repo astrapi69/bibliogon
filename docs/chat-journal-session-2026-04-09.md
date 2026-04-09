@@ -806,7 +806,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - i18n: `no_voices_for_combo` in DE und EN.
   - Tests: 8 neue Backend-Tests in `test_voice_store.py` (Engine-Isolation, exact vs prefix, case-insensitive, unbekannte Engine/Sprache, English-leakt-nicht-in-de-Regression). 5 neue Vitest-Tests in `client.test.ts` fuer den Helper inklusive expliziter Regression "kein hardcoded Edge-Fallback mehr".
   - Tests-Status: Backend 137, audiobook plugin 80, frontend Vitest 63, gesamt 422.
-- Commit: (siehe finalen Hash unten)
+- Commit: 4af6bac
 
 ---
 
