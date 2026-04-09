@@ -337,3 +337,36 @@ describe("api.audiobook.listVoices", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 });
+
+// --- formatVoiceLabel ---
+
+import {formatVoiceLabel} from "./client";
+
+describe("formatVoiceLabel", () => {
+    it("includes language and gender when both are present", () => {
+        expect(formatVoiceLabel({
+            id: "de-DE-KatjaNeural", name: "Katja",
+            language: "de-DE", gender: "Female",
+        })).toBe("Katja (de-DE, Female)");
+    });
+
+    it("only language when gender is missing", () => {
+        expect(formatVoiceLabel({
+            id: "x", name: "Voice", language: "en-GB",
+        })).toBe("Voice (en-GB)");
+    });
+
+    it("only gender when language is missing (multilingual engines)", () => {
+        expect(formatVoiceLabel({
+            id: "rachel", name: "Rachel", gender: "Female",
+        })).toBe("Rachel (Female)");
+    });
+
+    it("bare name when no metadata at all", () => {
+        expect(formatVoiceLabel({id: "x", name: "Voice"})).toBe("Voice");
+    });
+
+    it("falls back to the id when name is missing", () => {
+        expect(formatVoiceLabel({id: "voice-id-only", name: ""})).toBe("voice-id-only");
+    });
+});

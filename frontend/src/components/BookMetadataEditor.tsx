@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import {api, ApiError, AudiobookVoice, Book, BookAudiobook} from "../api/client";
+import {api, ApiError, AudiobookVoice, Book, BookAudiobook, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -374,7 +374,7 @@ function AudiobookBookConfig({
                 ) : voices.length > 0 ? (
                     <select className="input" value={voice} onChange={(e) => onVoiceChange(e.target.value)}>
                         {voices.map((v) => (
-                            <option key={v.id} value={v.id}>{v.name || v.id}{v.gender ? ` (${v.gender})` : ""}</option>
+                            <option key={v.id} value={v.id}>{formatVoiceLabel(v)}</option>
                         ))}
                     </select>
                 ) : (

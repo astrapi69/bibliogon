@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {api, AudiobookVoice} from "../api/client";
+import {api, AudiobookVoice, formatVoiceLabel} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
@@ -712,7 +712,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
 
     const voiceOptions = voices.map((v) => ({
         value: v.id,
-        label: `${v.name || v.id}${v.gender ? ` (${v.gender})` : ""}`,
+        label: formatVoiceLabel(v),
     }));
 
     const mergeOptions = [

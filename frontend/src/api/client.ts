@@ -126,6 +126,22 @@ export interface AudiobookVoice {
     gender?: string;
 }
 
+/** Render a voice as "Katja (de-DE, Female)".
+ *
+ *  Both pieces in the parens are optional - the language is missing
+ *  for multilingual engines (ElevenLabs), the gender is missing when
+ *  the upstream API does not report it. We squeeze whatever IS present
+ *  into a single comma-separated paren so the dropdown stays visually
+ *  consistent.
+ */
+export function formatVoiceLabel(v: AudiobookVoice): string {
+    const base = v.name || v.id;
+    const meta: string[] = [];
+    if (v.language) meta.push(v.language);
+    if (v.gender) meta.push(v.gender);
+    return meta.length > 0 ? `${base} (${meta.join(", ")})` : base;
+}
+
 export interface AudiobookChapterFile {
     filename: string;
     size_bytes: number;
