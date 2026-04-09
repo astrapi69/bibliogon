@@ -473,7 +473,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     Test-Fallstricken als Praevention.
   - Test-Bilanz: Backend 98 -> 109 (+11), Audiobook 42 -> 44 (+2),
     Total 331 -> 344. `make test` durchgehend gruen. `tsc --noEmit` clean.
-- Commit: (folgt)
+- Commit: 235968e
 
 ---
 
