@@ -102,6 +102,21 @@ export interface Asset {
     uploaded_at: string;
 }
 
+export interface CoverUploadResponse {
+    cover_image: string;
+    filename: string;
+    width: number;
+    height: number;
+    aspect_ratio: number;
+    size_bytes: number;
+}
+
+export interface CoverLimits {
+    allowed_extensions: string[];
+    max_bytes: number;
+    max_mb: number;
+}
+
 // --- ApiError with context ---
 
 export class ApiError extends Error {
@@ -252,6 +267,34 @@ export const api = {
 
         delete: (bookId: string, assetId: string) =>
             request<void>(`/books/${bookId}/assets/${assetId}`, {method: "DELETE"}),
+    },
+
+    covers: {
+        upload: async (bookId: string, file: File): Promise<CoverUploadResponse> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/books/${bookId}/cover`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Cover upload failed",
+                    `${BASE}/books/${bookId}/cover`,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.json();
+        },
+
+        delete: (bookId: string) =>
+            request<void>(`/books/${bookId}/cover`, {method: "DELETE"}),
+
+        limits: (bookId: string) =>
+            request<CoverLimits>(`/books/${bookId}/cover/limits`),
     },
 
     backup: {

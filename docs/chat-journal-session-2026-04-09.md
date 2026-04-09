@@ -285,4 +285,74 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 7. Cover-Bild Upload mit Vorschau im BookEditor (12:30)
+
+- Original-Prompt: "Cover-Bild Upload im BookEditor > Metadaten > Design.
+  Aktuell ist Cover-Image vermutlich ein Textfeld fuer einen Pfad oder URL.
+  Umbauen zu einem echten Upload mit Vorschau." Plus detaillierte Specs:
+  Drag&Drop, .jpg/.jpeg/.png/.webp, 10 MB max, Pillow-Validierung,
+  Thumbnail max 300px hoch mit X-Button, KDP-Aspect-Warnung, native
+  HTML5 (kein neues Package), i18n in 8 Sprachen, Tests.
+- Optimierter Prompt: Identisch klar - alle Constraints und Edge-Cases
+  waren bereits genannt.
+- Ziel: Echtes Cover-Upload-Widget mit Backend-Validierung,
+  Vorschau-Thumbnail, KDP-Hinweis und Replacement-Logik.
+- Ergebnis:
+  - Backend Service `backend/app/services/covers.py` mit
+    `upload_cover(db, book_id, file)` und `delete_cover(db, book_id)`.
+    Validierung: Extension-Whitelist (.jpg/.jpeg/.png/.webp), 10 MB Cap
+    via Chunked-Read (faellt fast bei 1 GB Upload), Pillow `verify()`
+    plus Format-Re-Check, Empty-File-Check. Replacement: alter Cover-
+    Asset wird per `_delete_existing_covers` von Disk und DB entfernt
+    bevor der neue geschrieben wird, damit nie zwei Cover gleichzeitig
+    existieren. Stable Filename `cover-{book_id}.{ext}` so dass die
+    served URL nach Replacement unveraendert bleibt. `book.cover_image`
+    wird server-side direkt gesetzt (kein Save-Klick im Frontend
+    noetig). Returns Dimensionen + Aspect-Ratio fuer den KDP-Hinweis.
+  - Backend Router `backend/app/routers/covers.py`:
+    - `POST /api/books/{book_id}/cover` -> upload + replace
+    - `DELETE /api/books/{book_id}/cover` -> remove
+    - `GET /api/books/{book_id}/cover/limits` -> Frontend kann die
+      gleichen Caps anzeigen die das Backend erzwingt
+  - Pillow `^11.0.0` als Backend-Dependency hinzugefuegt (war vorher
+    nur im KDP-Plugin).
+  - Frontend `frontend/src/components/CoverUpload.tsx` mit nativer
+    HTML5 Drag&Drop (kein react-dropzone, nicht installiert):
+    - Drop-Zone + "Datei waehlen" Button
+    - Empty-State mit Lucide `Image` Icon und Drop-Hint
+    - Vorschau via `/api/books/{id}/assets/file/{filename}` (existing
+      Asset-Serving Endpoint), max 300px hoch, X-Button oben rechts
+    - `onLoad`-Handler liest `naturalWidth`/`naturalHeight` aus dem
+      `<img>`, zeigt Dimensionen unter der Vorschau und blendet einen
+      gelben KDP-Hinweis ein wenn Aspect-Ratio (height/width) ausserhalb
+      `1.6 +/- 0.05` liegt. Bereitet K-02 Cover-Validierung vor.
+    - Loading-State, Toast-Erfolg/-Fehler ueber das bestehende
+      `notify`-Modul mit ApiError-Forwarding fuer die Issue-Reporting-
+      Kette.
+  - `BookMetadataEditor.tsx`: Plain `<Field>` im Design-Tab durch
+    `<CoverUpload>` ersetzt. Save-Click wird nicht mehr gebraucht weil
+    Upload server-side persistiert; `set("cover_image", ...)` haelt
+    den lokalen Form-State im Sync.
+  - `frontend/src/api/client.ts`: Neue `api.covers.upload/delete/limits`
+    Methoden plus `CoverUploadResponse` und `CoverLimits` Interfaces.
+    Upload nutzt FormData wie der bestehende Asset-Upload.
+  - i18n: Neuer `ui.cover` Block mit 12 Keys (`choose_file`, `uploading`,
+    `upload_success`, `upload_failed`, `remove`, `remove_success`,
+    `remove_failed`, `error_format`, `help`, `drop_hint`, `drop_here`,
+    `kdp_warning` mit `{w}`/`{h}` Platzhaltern) in allen 8 Sprachen.
+    Bestehender `ui.metadata.cover_image` Text ueberall von "Cover-Bild
+    Pfad" auf "Cover" umgestellt.
+  - Tests: Neuer `backend/tests/test_covers.py` mit 11 Tests:
+    PNG-Upload mit echten Pillow-Bytes (1600x2560) und JPEG, Reject
+    von unbekannter Extension, Reject von korrupter PNG (richtiges
+    Suffix aber kein PNG-Magic), Reject von >10 MB Datei mit 413,
+    Reject von leerer Datei, 404 fuer fehlendes Buch, Cover-Replacement
+    (zwei Uploads -> nur ein Asset bleibt), Delete clears
+    `book.cover_image`, idempotent Delete, Limits-Endpoint.
+    Backend 87 -> 98 Tests, alles gruen, `tsc --noEmit` clean,
+    i18n YAMLs validiert (alle 8 Sprachen haben alle 12 cover keys).
+- Commit: (folgt)
+
+---
+
 ---

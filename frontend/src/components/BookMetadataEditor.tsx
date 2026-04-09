@@ -4,6 +4,7 @@ import {Save, Copy, ChevronLeft} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
+import CoverUpload from "./CoverUpload";
 import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
 import * as Tabs from "@radix-ui/react-tabs";
 
@@ -190,8 +191,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
 
                 <Tabs.Content value="design">
                     <div style={styles.tabContent}>
-                        <Field label={t("ui.metadata.cover_image", "Cover-Bild Pfad")} value={form.cover_image} onChange={(v) => set("cover_image", v)}
-                            placeholder="z.B. assets/covers/cover.jpg"/>
+                        <CoverUpload
+                            bookId={book.id}
+                            coverImage={form.cover_image ?? null}
+                            onChange={(newPath) => set("cover_image", newPath ?? "")}
+                        />
                         <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
                             multiline mono/>
                     </div>
