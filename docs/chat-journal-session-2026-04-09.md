@@ -133,4 +133,54 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 4. S-09: scaffolder.py god methods zerlegen (11:35)
+
+- Original-Prompt: "weitermachen" - direkt im Anschluss an S-08, naechster
+  Refactor-Kandidat war S-09 (scaffolder.py mit `scaffold_project` 197 LOC
+  und `_html_to_markdown` 123 LOC).
+- Optimierter Prompt: "Setze S-09 um. `scaffold_project` in fokussierte
+  Step-Helfer aufteilen, der verschachtelte HTMLParser von
+  `_html_to_markdown` in ein eigenes Modul `html_to_markdown.py` ausziehen
+  mit per-Tag Open/Close-Handlern via Dispatch-Tabellen statt grosser
+  if/elif-Kaskaden."
+- Ziel: Beide god methods in scaffolder.py eliminieren, ohne die externe
+  API zu brechen (`scaffold_project` und `_content_to_markdown` werden von
+  Tests und routes.py importiert).
+- Ergebnis:
+  - Neues Modul
+    `plugins/bibliogon-plugin-export/bibliogon_export/html_to_markdown.py`
+    (204 LOC) mit:
+    - `html_to_markdown(html: str) -> str` als duenner Wrapper.
+    - `_HtmlToMdParser(HTMLParser)` Klasse mit kleinen
+      `handle_starttag`/`handle_endtag`/`handle_data`-Methoden, die per
+      `_START_HANDLERS` / `_END_HANDLERS` Dispatch-Tabellen je Tag in
+      eigene Modul-Funktionen delegieren (`_open_list`, `_open_li`,
+      `_open_a`, `_open_figure`, `_open_figcaption`, `_open_img`,
+      `_open_br`, `_open_hr`, `_close_list`, `_close_li`, `_close_a`,
+      `_close_figure`, `_close_figcaption`, `_close_p`).
+    - `Callable`-Type-Aliases `_StartHandler` / `_EndHandler`.
+  - `scaffolder.py`: 519 -> 439 LOC. `scaffold_project` Body von
+    ~106 LOC auf 17 LOC geschrumpft, in 6 Step-Helfer aufgeteilt:
+    - `_create_project_skeleton(project_dir)` - mkdir-only
+    - `_ensure_output_file(export_settings, slug)` - Default-Slug setzen
+    - `_rewrite_chapter_image_paths(chapters, asset_path_map)` - in-place
+    - `_write_partitioned_chapters(manuscript_dir, chapters)` - Dispatch
+      auf front/back/chapters Dirs, returns has_toc
+    - `_write_placeholders(project_dir, book, has_toc)` - TOC und
+      about-the-author Placeholder
+    - `_write_styles_css(path, custom_css)` - Default + Custom CSS
+  - Inline `_html_to_markdown` mit verschachteltem `_MD(HTMLParser)`
+    Klasse komplett entfernt; `_content_to_markdown` ruft jetzt
+    `html_to_markdown` aus dem neuen Modul auf.
+  - Laengste Funktion danach: `scaffold_project` 17 LOC Body,
+    `_write_partitioned_chapters` 16 LOC, `_write_metadata` 18 LOC,
+    `html_to_markdown` 5 LOC. Alle Parser-Handler in
+    `_HtmlToMdParser` unter 15 LOC.
+  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+    (87 backend, 135 plugin, 50 vitest); Test-Imports von
+    `scaffold_project` und `_content_to_markdown` weiterhin gueltig.
+- Commit: (folgt)
+
+---
+
 ---

@@ -11,7 +11,11 @@ from typing import Any
 
 import yaml
 
+from .html_to_markdown import html_to_markdown
 from .tiptap_to_md import tiptap_to_markdown
+
+
+# --- Top-level entry point ---
 
 
 def scaffold_project(
@@ -21,25 +25,49 @@ def scaffold_project(
     export_settings: dict[str, Any] | None = None,
     assets: list[dict[str, Any]] | None = None,
 ) -> Path:
-    """Create manuscripta-compatible project structure for a book.
+    """Create a manuscripta-compatible project structure for a book.
 
-    Creates the standard directory layout that manuscripta expects,
-    writes metadata.yaml, export-settings.yaml, and converts all
-    chapters from TipTap-JSON to Markdown.
+    Creates the standard directory layout, writes ``metadata.yaml`` and
+    ``export-settings.yaml``, and converts all chapters from TipTap-JSON
+    to Markdown into the right front/back/chapter directory.
 
     Args:
-        book: Book metadata dict (title, subtitle, author, language, etc.)
-        chapters: List of chapter dicts (title, content as TipTap JSON, position).
-        output_dir: Base directory to create project in.
+        book: Book metadata dict (title, subtitle, author, language, ...).
+        chapters: List of chapter dicts (title, content, position, type).
+        output_dir: Parent directory; the project is created underneath as
+            a slugified subdir.
+        export_settings: Optional plugin export settings (passed through to
+            manuscripta's ``export-settings.yaml`` 1:1).
+        assets: Optional list of asset dicts to copy into the project.
 
     Returns:
         Path to the created project directory.
     """
     slug = _slugify(book["title"])
-    project_dir = output_dir / slug
+    project_dir = _create_project_skeleton(output_dir / slug)
 
-    # Create manuscripta directory structure
-    dirs = [
+    asset_path_map = _copy_assets(project_dir, assets or [], book.get("id", ""))
+    _rewrite_chapter_image_paths(chapters, asset_path_map)
+
+    _write_metadata(project_dir / "config" / "metadata.yaml", book)
+    _write_export_settings(
+        project_dir / "config" / "export-settings.yaml",
+        _ensure_output_file(export_settings, slug),
+    )
+
+    has_toc = _write_partitioned_chapters(project_dir / "manuscript", chapters)
+    _write_placeholders(project_dir, book, has_toc)
+    _write_styles_css(project_dir / "config" / "styles.css", book.get("custom_css"))
+
+    return project_dir
+
+
+# --- scaffold_project step helpers ---
+
+
+def _create_project_skeleton(project_dir: Path) -> Path:
+    """Create the manuscripta directory layout under ``project_dir``."""
+    dirs = (
         "manuscript/chapters",
         "manuscript/front-matter",
         "manuscript/back-matter",
@@ -49,58 +77,67 @@ def scaffold_project(
         "assets/figures/infographics",
         "config",
         "output",
-    ]
+    )
     for d in dirs:
         (project_dir / d).mkdir(parents=True, exist_ok=True)
+    return project_dir
 
-    # Copy assets and build path mapping
-    asset_path_map = _copy_assets(project_dir, assets or [], book.get("id", ""))
 
-    # Write config/metadata.yaml (manuscripta format)
-    _write_metadata(project_dir / "config" / "metadata.yaml", book)
-
-    # Ensure export_defaults has output_file set to the book slug
-    if export_settings is None:
-        export_settings = {}
-    defaults = export_settings.setdefault("export_defaults", {})
+def _ensure_output_file(
+    export_settings: dict[str, Any] | None,
+    slug: str,
+) -> dict[str, Any]:
+    """Return a settings dict with ``export_defaults.output_file`` set."""
+    settings = dict(export_settings) if export_settings else {}
+    defaults = settings.setdefault("export_defaults", {})
     if not defaults.get("output_file"):
         defaults["output_file"] = slug
+    return settings
 
-    # Write config/export-settings.yaml (manuscripta format) from plugin config
-    _write_export_settings(project_dir / "config" / "export-settings.yaml", export_settings)
 
-    # Write chapters to correct directories based on chapter_type
-    # Rewrite image paths in all chapter content before writing
+def _rewrite_chapter_image_paths(
+    chapters: list[dict[str, Any]],
+    asset_path_map: dict[str, str],
+) -> None:
+    """In-place rewrite ``/api/books/.../assets/file/...`` -> relative paths."""
     for chapter in chapters:
         content = chapter.get("content", "")
-        if isinstance(content, str) and "/api/books/" in content and "/assets/file/" in content:
-            chapter["content"] = _rewrite_image_paths_for_export(content, asset_path_map)
+        if not isinstance(content, str):
+            continue
+        if "/api/books/" not in content or "/assets/file/" not in content:
+            continue
+        chapter["content"] = _rewrite_image_paths_for_export(content, asset_path_map)
+
+
+def _write_partitioned_chapters(
+    manuscript_dir: Path,
+    chapters: list[dict[str, Any]],
+) -> bool:
+    """Dispatch each chapter into front-matter, back-matter or chapters/.
+
+    Returns ``True`` if at least one chapter of type ``toc`` was written.
+    """
+    front_dir = manuscript_dir / "front-matter"
+    back_dir = manuscript_dir / "back-matter"
+    chapters_dir = manuscript_dir / "chapters"
 
     has_toc = False
     for chapter in chapters:
         ch_type = chapter.get("chapter_type", "chapter")
         if ch_type == "toc":
             has_toc = True
-            _write_special_chapter(
-                project_dir / "manuscript" / "front-matter",
-                "toc", chapter,
-            )
+            _write_special_chapter(front_dir, "toc", chapter)
         elif ch_type in _FRONT_MATTER_TYPES:
-            filename = _FRONT_MATTER_TYPES[ch_type]
-            _write_special_chapter(
-                project_dir / "manuscript" / "front-matter",
-                filename, chapter,
-            )
+            _write_special_chapter(front_dir, _FRONT_MATTER_TYPES[ch_type], chapter)
         elif ch_type in _BACK_MATTER_TYPES:
-            filename = _BACK_MATTER_TYPES[ch_type]
-            _write_special_chapter(
-                project_dir / "manuscript" / "back-matter",
-                filename, chapter,
-            )
+            _write_special_chapter(back_dir, _BACK_MATTER_TYPES[ch_type], chapter)
         else:
-            _write_chapter(project_dir / "manuscript" / "chapters", chapter)
+            _write_chapter(chapters_dir, chapter)
+    return has_toc
 
-    # Write placeholder TOC only if no TOC chapter exists
+
+def _write_placeholders(project_dir: Path, book: dict[str, Any], has_toc: bool) -> None:
+    """Write the default TOC and about-the-author placeholders if missing."""
     if not has_toc:
         _write_placeholder(
             project_dir / "manuscript" / "front-matter" / "toc.md",
@@ -111,15 +148,13 @@ def scaffold_project(
         f"# About the Author\n\n{book.get('author', '')}\n",
     )
 
-    # Write styles.css: default chapter-type styles + book's custom CSS
-    styles_path = project_dir / "config" / "styles.css"
+
+def _write_styles_css(path: Path, custom_css: str | None) -> None:
+    """Write default chapter-type CSS plus the book's custom CSS append."""
     css_parts = [_DEFAULT_CHAPTER_TYPE_CSS]
-    custom_css = book.get("custom_css")
     if custom_css:
         css_parts.append(f"\n/* Custom CSS from book settings */\n{custom_css}\n")
-    styles_path.write_text("\n".join(css_parts), encoding="utf-8")
-
-    return project_dir
+    path.write_text("\n".join(css_parts), encoding="utf-8")
 
 
 # Chapter type to filename mapping for front/back matter
@@ -334,125 +369,10 @@ def _content_to_markdown(content: Any) -> str:
         # If content is HTML, convert to markdown
         # <figure><img/><figcaption> is preserved natively from import
         if content.strip().startswith("<"):
-            return _html_to_markdown(content)
+            return html_to_markdown(content)
         return content
 
     return str(content)
-
-
-def _html_to_markdown(html: str) -> str:
-    """Convert HTML back to Markdown for export using an element-based parser."""
-    from html.parser import HTMLParser
-
-    class _MD(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.out: list[str] = []
-            self.list_depth = 0
-            self.li_text: list[str] = []  # text content of current <li>
-            self.li_flushed = False  # whether current <li> text was already written
-            self.tag_stack: list[str] = []
-
-        def _buf(self) -> list[str]:
-            """Return current write buffer: li_text if inside <li>, else out."""
-            return self.li_text if "li" in self.tag_stack else self.out
-
-        def _flush_li(self):
-            """Flush the current <li> text before nested list starts."""
-            if self.li_flushed or not self.li_text:
-                return
-            indent = "  " * max(0, self.list_depth - 1)
-            text = "".join(self.li_text).strip()
-            if text:
-                self.out.append(f"{indent}- {text}\n")
-            self.li_text = []
-            self.li_flushed = True
-
-        def handle_starttag(self, tag, attrs):
-            self.tag_stack.append(tag)
-            a = dict(attrs)
-            if tag in ("ul", "ol"):
-                # Flush parent <li> before starting nested list
-                if self.list_depth > 0:
-                    self._flush_li()
-                self.list_depth += 1
-            elif tag == "li":
-                self.li_text = []
-                self.li_flushed = False
-            elif tag == "a":
-                self._buf().append("[")
-                self._href = a.get("href", "")
-            elif tag == "figure":
-                self._in_figure = True
-                self._figure_buf: list[str] = []
-            elif tag == "figcaption":
-                self._in_figcaption = True
-                self._figcaption_buf: list[str] = []
-            elif tag == "img":
-                src = a.get("src", "")
-                alt = a.get("alt", "")
-                img_html = f'  <img src="{src}" alt="{alt}" />'
-                if getattr(self, "_in_figure", False):
-                    self._figure_buf.append(img_html)
-                else:
-                    self._buf().append(f'\n<figure>\n{img_html}\n</figure>\n')
-            elif tag == "br":
-                self._buf().append("  \n")
-            elif tag == "hr":
-                self.out.append("\n***\n")
-            elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
-                self.out.append(f"\n{'#' * int(tag[1])} ")
-
-        def handle_endtag(self, tag):
-            if self.tag_stack and self.tag_stack[-1] == tag:
-                self.tag_stack.pop()
-            if tag in ("ul", "ol"):
-                self.list_depth -= 1
-            elif tag == "li":
-                if not self.li_flushed:
-                    self._flush_li()
-                self.li_text = []
-                self.li_flushed = False
-            elif tag == "a":
-                href = getattr(self, "_href", "")
-                self._buf().append(f"]({href})")
-            elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
-                self.out.append("\n")
-            elif tag == "figure":
-                fig = "\n<figure>\n" + "\n".join(getattr(self, "_figure_buf", [])) + "\n</figure>\n"
-                self.out.append(fig)
-                self._in_figure = False
-            elif tag == "figcaption":
-                caption = "".join(getattr(self, "_figcaption_buf", [])).strip()
-                if getattr(self, "_in_figure", False):
-                    self._figure_buf.append(f"  <figcaption>\n    {caption}\n  </figcaption>")
-                self._in_figcaption = False
-            elif tag == "p":
-                if "li" not in self.tag_stack:
-                    self.out.append("\n")
-
-        def handle_data(self, data):
-            if getattr(self, "_in_figcaption", False):
-                self._figcaption_buf.append(data)
-                return
-            buf = self._buf()
-            if "strong" in self.tag_stack:
-                buf.append(f"**{data}**")
-            elif "em" in self.tag_stack:
-                buf.append(f"*{data}*")
-            elif "blockquote" in self.tag_stack and "p" in self.tag_stack:
-                buf.append(f"> {data}")
-            elif "code" in self.tag_stack:
-                buf.append(f"`{data}`")
-            else:
-                buf.append(data)
-
-    parser = _MD()
-    parser.feed(html)
-    text = "".join(parser.out)
-    # Clean up extra blank lines
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip()
 
 
 _ASSET_TYPE_TO_DIR = {

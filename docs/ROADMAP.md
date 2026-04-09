@@ -162,9 +162,11 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
       `backup_export.py`, `backup_import.py`, `project_import.py`,
       `markdown_import.py`, `format_detection.py`. Router enthaelt nur noch
       duenne Endpunkte die delegieren.
-- [ ] S-09: plugins/bibliogon-plugin-export/.../scaffolder.py: god methods
-      `scaffold_project` (197) und `_html_to_markdown` (123) zerlegen.
-      Wurde im 04-05 Refactor nicht angefasst.
+- [x] S-09: plugins/bibliogon-plugin-export/.../scaffolder.py: god methods
+      `scaffold_project` (197) und `_html_to_markdown` (123) zerlegt.
+      `scaffold_project` in 6 Step-Helfer aufgeteilt; HTMLParser in eigenes
+      `html_to_markdown.py`-Modul ausgezogen mit per-Tag Open/Close-Handlern
+      via Dispatch-Tabellen.
 
 ## KDP Publishing Workflow
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
