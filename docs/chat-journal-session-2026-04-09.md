@@ -281,7 +281,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     VOR der Extension-Pruefung, also wurde `.mp3` zu `mp3` und der
     `.mp3`-Suffix-Strip griff nicht mehr. Fix: Extension-Strip vor
     `strip(". ")`. Export-Plugin 30 -> 37 Tests, alles gruen.
-- Commit: (folgt)
+- Commit: 1a6039d
 
 ---
 
