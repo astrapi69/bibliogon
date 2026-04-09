@@ -49,3 +49,29 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Commit: 6236fbd
 
 ---
+
+## 2. Bugfix: voice_store nested event loop crash beim Startup (11:05)
+
+- Original-Prompt: User zeigt Startup-Log mit
+  `RuntimeWarning: coroutine 'list_voices' was never awaited` und
+  `ERROR: Cannot run the event loop while another loop is running`
+  nach `alembic upgrade` auf den neuen Migration-Head a1b2c3d4e5f6.
+- Optimierter Prompt: "voice_store sync_edge_tts_voices crasht beim
+  Startup wenn die audio_voices-Tabelle leer ist - bitte fixen."
+- Ziel: Edge-TTS Voice-Seeding darf den FastAPI-Lifespan-Handler nicht
+  mehr crashen.
+- Ursache: `sync_edge_tts_voices` baute mit `asyncio.new_event_loop()`
+  einen verschachtelten Loop auf, der vom uvicorn-Loop des
+  `async def lifespan`-Handlers blockiert wurde. Vorbestehender Bug,
+  nur sichtbar geworden weil die Tabelle bei mir leer ist und der
+  Seed-Branch zum ersten Mal feuerte.
+- Ergebnis:
+  - `sync_edge_tts_voices` ist jetzt `async` und nutzt direkt
+    `await edge_tts.list_voices()` statt eigenen Loop.
+  - `lifespan` und `POST /api/voices/sync` awaiten die Funktion.
+  - `make seed-voices` ruft sie ueber `asyncio.run(...)` auf
+    (CLI-Kontext, kein laufender Loop).
+  - `make test` weiterhin gruen (87 backend, 135 plugin, 50 vitest).
+- Commit: (folgt)
+
+---

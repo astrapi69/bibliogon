@@ -28,24 +28,25 @@ def get_voices(db: Session, engine: str, language: str | None = None) -> list[di
     ]
 
 
-def sync_edge_tts_voices(db: Session) -> int:
+async def sync_edge_tts_voices(db: Session) -> int:
     """Fetch all Edge TTS voices and sync into DB.
 
     New voices are added, existing voices are updated, removed voices are deleted.
     Returns number of voices synced.
+
+    Async because edge_tts.list_voices() is a coroutine and this function
+    is called from inside FastAPI's running event loop (lifespan handler).
+    Creating a nested loop with asyncio.new_event_loop() is forbidden in
+    that context.
     """
     try:
-        import asyncio
         import edge_tts
-
-        loop = asyncio.new_event_loop()
-        try:
-            voices = loop.run_until_complete(edge_tts.list_voices())
-        finally:
-            loop.close()
     except ImportError:
         logger.warning("edge-tts not installed, skipping voice sync")
         return 0
+
+    try:
+        voices = await edge_tts.list_voices()
     except Exception as e:
         logger.error("Failed to fetch Edge TTS voices: %s", e)
         return 0

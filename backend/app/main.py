@@ -123,7 +123,7 @@ async def lifespan(app: FastAPI):
     _vs_db = SessionLocal()
     try:
         if voice_count(_vs_db) == 0:
-            sync_edge_tts_voices(_vs_db)
+            await sync_edge_tts_voices(_vs_db)
     finally:
         _vs_db.close()
     _load_installed_plugins()
@@ -199,13 +199,13 @@ def list_voices(engine: str = "edge-tts", language: str | None = None):
 
 
 @app.post("/api/voices/sync")
-def sync_voices():
+async def sync_voices():
     """Re-sync Edge TTS voices from the API into the database."""
     from app.voice_store import sync_edge_tts_voices
     from app.database import SessionLocal
     db = SessionLocal()
     try:
-        count = sync_edge_tts_voices(db)
+        count = await sync_edge_tts_voices(db)
         return {"synced": count, "engine": "edge-tts"}
     finally:
         db.close()
