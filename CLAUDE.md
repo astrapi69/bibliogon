@@ -1,561 +1,127 @@
 # Bibliogon
 
-Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Der gesamte Export ist selbst ein Plugin. Offline-faehig, i18n-ready, local-first, mit Dark Mode.
+Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Offline-faehig, i18n-ready, local-first, Freemium-Modell.
 
-**Repository:** https://github.com/astrapi69/bibliogon
-**PluginForge:** https://github.com/astrapi69/pluginforge (PyPI: pluginforge ^0.5.0)
-**Konzept:** docs/CONCEPT.md
-**Version:** 0.10.0
+- **Repository:** https://github.com/astrapi69/bibliogon
+- **Version:** 0.10.0 (Phase 9 abgeschlossen, Naechste: Phase 10 Multi-User/SaaS)
+- **Konzept:** docs/CONCEPT.md
+- **API-Referenz:** docs/API.md (alle Endpunkte)
+- **Verlauf:** docs/CHANGELOG.md (erledigte Phasen), docs/ROADMAP.md (offene Punkte)
 
 ## Entwicklungsrichtlinien
 
-Detaillierte Regeln fuer Claude Code in `.claude/rules/`:
+Detaillierte Regeln liegen in `.claude/rules/`. Claude Code liest sie bei Bedarf selbststaendig.
 
+**Immer relevant** (bei jedem Feature/Fix lesen):
 - `architecture.md` - Schichtenmodell, Plugin-Struktur, UI-Strategie, Datenfluss
-- `coding-standards.md` - Benennung, Formatierung, Tests, Dependencies
-- `ai-workflow.md` - Reihenfolge bei Features/Plugins, Verbote, implizite Annahmen
+- `coding-standards.md` - Benennung, Funktionsdesign, Tests, Dependencies
+
+**On-Demand** (bei spezifischen Aufgaben lesen):
+- `code-hygiene.md` - Linting, Pre-Commit, Error-Handling Architektur, API-Konventionen
 - `lessons-learned.md` - Bekannte Fallstricke (TipTap, Import, Export, Deployment)
-- `quality-checks.md` - Selbstpruefung, Teststrategie, Checklisten vor dem Commit
-- `code-hygiene.md` - Linting, Formatierung, Pre-Commit Hooks, Error-Handling, API-Konventionen
+- `quality-checks.md` - Teststrategie, mutmut/Stryker, Checklisten vor dem Commit
+- `ai-workflow.md` - Reihenfolge bei Features/Plugins, Verbote, Doku-Protokoll
 
 Bei Widerspruch zwischen CLAUDE.md und Rules gelten die Rules.
 
-## Architektur (Zwei-Schichten)
-
-1. **PluginForge** (externes PyPI-Paket, basiert auf pluggy)
-   - PluginManager: wraps pluggy + YAML-Config + Lifecycle + Dependency Resolution
-   - FastAPI-Router-Integration (Plugins liefern eigene Router)
-   - pre_activate Callback (z.B. fuer Lizenzpruefung)
-   - Health Checks, Hot Reload, Plugin Introspection
-   - i18n ueber YAML (config/i18n/{lang}.yaml)
-   - Anwendungsunabhaengig, jeder kann es nutzen
-
-2. **Bibliogon App** (dieses Repo)
-   - Schlanker Kern: UI, Editor, Book/Chapter CRUD, Backup/Restore
-   - Offline-Lizenzierung (HMAC-SHA256, LicenseStore) - bibliogon-spezifisch
-   - Alles Weitere via Plugins: Export, Kinderbuch, KDP, Grammar, Help, Get Started
-
 ## Tech Stack
 
-- **PluginForge:** Python 3.11+, pluggy, PyYAML (PyPI: pluginforge ^0.5.0)
-- **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
-- **Frontend:** React 18, TypeScript, TipTap (JSON-Format + 15 Extensions), Vite, Lucide Icons, Radix UI, @dnd-kit
-- **Export-Plugin:** manuscripta (PyPI ^0.6.0), Pandoc, write-book-template Struktur
-- **Tooling:** Poetry, npm, Docker, Make
+- **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.0, SQLite, Pydantic v2, Poetry
+- **Frontend:** React 18, TypeScript (strict), TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
+- **Plugins:** pluginforge ^0.5.0 (PyPI), Entry Points, YAML-Config
+- **Export:** manuscripta ^0.6.0 (PyPI), Pandoc, write-book-template Struktur
+- **Testing:** pytest, Vitest, Playwright, mutmut, Stryker
+- **Tooling:** Poetry, npm, Docker, Make, ruff, ESLint, Prettier, pre-commit
+
+## Architektur (Kurz)
+
+4 Schichten: Frontend -> Backend -> PluginForge -> Plugins. Details in `.claude/rules/architecture.md`.
+
+Schlanker Kern (UI, Editor, CRUD, Backup). Alles weitere via Plugins. Freemium: `license_tier = "core"` (MIT) oder `"premium"` (HMAC-signierte Keys, offline validierbar).
 
 ## Befehle
 
 ```bash
-# Entwicklung
-make install              # Alle Abhaengigkeiten (Poetry, npm, Plugins)
-make dev                  # Backend (8000) + Frontend (5173) parallel, Strg+C stoppt beide
-make dev-bg               # Hintergrund-Modus
-make dev-down             # Hintergrund stoppen
-
-# Tests
-make test                 # ALLE Tests (alle Plugins + Backend)
-make test-backend         # Nur Backend-Tests
-make test-plugins         # Alle 4 Plugin-Tests
-make test-plugin-export   # Nur Export-Plugin
-make test-plugin-grammar  # Nur Grammar-Plugin
-make test-plugin-kdp      # Nur KDP-Plugin
-make test-plugin-kinderbuch # Nur Kinderbuch-Plugin
-make test-plugin-ms-tools # Nur Manuscript-Tools-Plugin
-
-# Produktion
-cp .env.example .env      # Konfiguration anpassen (BIBLIOGON_SECRET_KEY setzen!)
-make prod                 # Docker Compose build + start (Port 7880)
+make install              # Poetry + npm + Plugins
+make dev                  # Backend (8000) + Frontend (5173) parallel
+make dev-bg / dev-down    # Hintergrund-Modus
+make test                 # Alle Tests (Backend + Plugins + Frontend)
+make test-backend         # Nur Backend
+make test-plugins         # Alle Plugin-Tests
+make test-frontend        # Vitest
+make prod                 # Docker Compose (Port 7880)
 make prod-down            # Docker stoppen
-make prod-logs            # Docker Logs verfolgen
-
-# Sonstiges
-make clean                # Build-Artefakte und Caches entfernen
-make help                 # Alle Targets anzeigen
+make generate-trial-key   # 30-Tage Trial-Key fuer alle Premium-Plugins
+make clean                # Build-Artefakte entfernen
+make help                 # Alle Targets
 ```
 
-## Verzeichnisstruktur
+Plugin-spezifisch: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,audiobook,translation}`
 
-```
-bibliogon/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI Entry, PluginManager Init, pre_activate License Check
-│   │   ├── database.py          # SQLAlchemy + SQLite
-│   │   ├── hookspecs.py         # pluggy Hook-Specs (export_formats, export_execute, chapter_pre_save)
-│   │   ├── licensing.py         # LicenseValidator, LicensePayload, LicenseStore (bibliogon-spezifisch)
-│   │   ├── models/              # Book, Chapter (mit ChapterType), Asset
-│   │   ├── schemas/             # Pydantic Request/Response (ChapterType Enum, AssetOut)
-│   │   ├── routers/
-│   │   │   ├── books.py         # Book CRUD
-│   │   │   ├── chapters.py      # Chapter CRUD + Reorder
-│   │   │   ├── assets.py        # Asset Upload/Delete
-│   │   │   ├── backup.py        # Full-Data Backup, Restore, Project Import
-│   │   │   ├── licenses.py      # License Management (activate, list, deactivate)
-│   │   │   ├── plugin_install.py # Plugin ZIP Upload, Install, Uninstall
-│   │   │   └── settings.py      # Settings API (app.yaml + Plugin-Config lesen/schreiben)
-│   │   └── services/
-│   ├── config/
-│   │   ├── app.yaml             # App-Konfiguration
-│   │   ├── plugins/             # Plugin-YAML-Dateien (export, kdp, kinderbuch, grammar, help, getstarted)
-│   │   └── i18n/                # de.yaml, en.yaml, es.yaml, fr.yaml, el.yaml
-│   ├── tests/
-│   │   ├── test_api.py          # CRUD Smoke Tests
-│   │   └── test_phase4.py       # ChapterType, Assets, Backup, Import Tests
-│   └── pyproject.toml
-├── plugins/
-│   ├── installed/                       # Dynamisch installierte Plugins (via ZIP)
-│   ├── bibliogon-plugin-export/         # EPUB, PDF, ZIP Export (MIT)
-│   │   ├── bibliogon_export/
-│   │   │   ├── plugin.py                # ExportPlugin(BasePlugin)
-│   │   │   ├── tiptap_to_md.py          # TipTap-JSON -> Markdown
-│   │   │   ├── scaffolder.py            # write-book-template Struktur
-│   │   │   ├── pandoc_runner.py         # Wrapper um manuscripta compile_book()
-│   │   │   └── routes.py               # /api/books/{id}/export/{fmt} (epub,pdf,docx,html,markdown,project)
-│   │   └── tests/                       # 23 Tests
-│   ├── bibliogon-plugin-kinderbuch/     # Kinderbuch-Layout (Proprietary, depends_on: export)
-│   │   ├── bibliogon_kinderbuch/
-│   │   │   ├── plugin.py               # KinderbuchPlugin
-│   │   │   ├── page_layout.py          # Bild-pro-Seite Layout Engine (4 Templates)
-│   │   │   └── routes.py               # /api/kinderbuch/templates, /preview
-│   │   └── tests/                       # 8 Tests
-│   ├── bibliogon-plugin-kdp/           # Amazon KDP (Proprietary, depends_on: export)
-│   │   ├── bibliogon_kdp/
-│   │   │   ├── plugin.py               # KdpPlugin
-│   │   │   ├── cover_validator.py      # Cover-Validierung + Metadaten-Generator
-│   │   │   └── routes.py               # /api/kdp/metadata, /validate-cover
-│   │   └── tests/                       # 10 Tests
-│   ├── bibliogon-plugin-grammar/        # LanguageTool (Proprietary)
-│   │   ├── bibliogon_grammar/
-│   │   │   ├── plugin.py               # GrammarPlugin (mit health check)
-│   │   │   ├── languagetool.py         # Async LanguageTool API Client
-│   │   │   └── routes.py               # /api/grammar/check, /languages
-│   │   └── tests/                       # 7 Tests
-│   ├── bibliogon-plugin-help/           # In-App Hilfe (MIT)
-│   │   ├── bibliogon_help/
-│   │   │   ├── plugin.py               # HelpPlugin
-│   │   │   ├── content.py              # Shortcuts, FAQ, About aus YAML
-│   │   │   └── routes.py               # /api/help/shortcuts, /faq, /about
-│   │   └── tests/
-│   ├── bibliogon-plugin-getstarted/     # Onboarding (MIT)
-│   │   ├── bibliogon_getstarted/
-│   │   │   ├── plugin.py               # GetStartedPlugin
-│   │   │   ├── guide.py                # Schritt-fuer-Schritt Anleitung + Beispielbuch
-│   │   │   └── routes.py               # /api/get-started/guide, /sample-book
-│   │   └── tests/
-│   └── bibliogon-plugin-ms-tools/       # Manuskript-Werkzeuge (MIT)
-│       ├── bibliogon_ms_tools/
-│       │   ├── plugin.py               # MsToolsPlugin
-│       │   ├── style_checker.py        # Filler-Woerter, Passiv, Satzlaenge (DE+EN)
-│       │   ├── sanitizer.py            # Anfuehrungszeichen, Whitespace, Dashes
-│       │   └── routes.py               # /api/ms-tools/check, /sanitize, /languages
-│       └── tests/                       # 31 Tests
-├── frontend/
-│   ├── src/
-│   │   ├── api/client.ts        # Typed API Client (Books, Chapters, Assets, Backup, Licenses, Settings)
-│   │   ├── hooks/useTheme.ts    # Dark/Light Theme Hook mit localStorage
-│   │   ├── components/
-│   │   │   ├── Editor.tsx       # TipTap WYSIWYG + Markdown-Modus, Autosave, Wortzaehler
-│   │   │   ├── Toolbar.tsx      # Formatting Toolbar + Markdown Toggle
-│   │   │   ├── ChapterSidebar.tsx # Kapitel-Sidebar mit Drag-and-Drop, Sektionen
-│   │   │   ├── ThemeToggle.tsx  # Dark/Light Mode Button
-│   │   │   ├── ExportDialog.tsx  # Export-Modal (Format, Buchtyp, TOC-Tiefe)
-│   │   │   ├── BookMetadataEditor.tsx # Buch-Metadaten (ISBN, Keywords, Publisher)
-│   │   │   ├── AppDialog.tsx    # Custom Confirm/Prompt/Alert Dialoge (Radix Dialog)
-│   │   │   ├── OrderedListEditor.tsx  # Sortierbare Listen (@dnd-kit)
-│   │   │   ├── Tooltip.tsx      # Radix Tooltip Wrapper
-│   │   │   ├── BookCard.tsx     # Buch-Karte fuer Dashboard
-│   │   │   └── CreateBookModal.tsx  # Neues Buch (Radix Dialog + Select)
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx    # Buch-Liste, Backup/Import/Projekt-Import
-│   │   │   ├── BookEditor.tsx   # Editor-Layout mit Sidebar
-│   │   │   ├── Settings.tsx     # Einstellungen (App, Plugins, Lizenzen)
-│   │   │   ├── Help.tsx         # Hilfe (Shortcuts, FAQ, About)
-│   │   │   └── GetStarted.tsx   # Erste Schritte mit Fortschrittsanzeige
-│   │   └── styles/global.css    # CSS Variables, Light + Dark Theme
-│   ├── package.json
-│   └── vite.config.ts
-├── docs/CONCEPT.md
-├── Makefile
-├── docker-compose.yml, docker-compose.prod.yml
-└── README.md
-```
+## Session-Start (Claude Code)
 
-## Deployment
+1. `git log --oneline -10` - Letzte Aenderungen
+2. `docs/ROADMAP.md` lesen - Aktueller Stand
+3. `make test` - Baseline gruen
 
-### Umgebungsvariablen
+## Datenmodell (Kurz)
 
-| Variable | Default | Beschreibung |
-| -------- | ------- | ------------ |
-| BIBLIOGON_PORT | 7880 | Port fuer die App (nur docker-compose) |
-| BIBLIOGON_DEBUG | true | Debug-Modus (false in Produktion) |
-| BIBLIOGON_CORS_ORIGINS | localhost:5173,localhost:3000 | Erlaubte CORS-Origins (kommagetrennt) |
-| BIBLIOGON_SECRET_KEY | (leer) | Secret fuer Lizenz-Validierung |
-| BIBLIOGON_DB_PATH | backend/bibliogon.db | Pfad zur SQLite-Datenbank |
-| DATABASE_URL | sqlite:///... | Volle DB-URL (ueberschreibt DB_PATH) |
+- **Book:** id, title, subtitle, author, language, series, series_index, description, Publishing (ISBN/ASIN/Publisher/Edition), Marketing (keywords, html_description, backpage), Design (cover_image, custom_css)
+- **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type
+- **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
 
-### Debug-Modus (BIBLIOGON_DEBUG)
-
-- `true` (Default): `/api/test/reset` aktiv, API-Docs unter `/api/docs`
-- `false` (Produktion): Test-Endpoint deaktiviert, keine API-Docs
-
-### Produktion starten
-
-```bash
-cp .env.example .env          # Konfiguration anpassen
-# BIBLIOGON_SECRET_KEY setzen!
-# BIBLIOGON_DEBUG=false ist bereits gesetzt
-make prod                     # Docker build + start auf Port 7880
-```
-
-### Docker-Architektur (Produktion)
-
-- **Frontend**: nginx (Port 80 im Container, BIBLIOGON_PORT extern)
-  - Statische Dateien aus Vite-Build
-  - Proxy `/api/*` an Backend
-- **Backend**: uvicorn (Port 8000, 2 Workers, nicht exponiert)
-  - Non-root User `bibliogon`
-  - Health-Check via `/api/health`
-- **Volume**: `bibliogon-data` fuer SQLite-DB unter `/app/data/`
-
-## Konventionen
-
-- Python mit Typehints, TypeScript ohne `any`
-- Keine Em-Dashes (--), stattdessen Bindestriche (-) oder Kommata
-- Commit Messages: Englisch, konventionell (feat/fix/refactor/docs)
-- Konfigurierbare Werte in YAML, nicht hartcodiert
-- i18n: Alle UI-Strings in config/i18n/{lang}.yaml
-- Internes Speicherformat: TipTap JSON (nicht HTML)
-- SQLAlchemy 2.0 Mapped Columns, Pydantic v2 mit ConfigDict(from_attributes=True)
-- CSS Theming via Custom Properties, Dark Mode via [data-theme="dark"]
-- Plugins sind eigenstaendige Pakete unter plugins/
-- Jedes Plugin hat eigene Tests unter tests/
-- Plugin-Abhaengigkeiten als Klassen-Attribut: `depends_on = ["export"]`
-- Lizenzierung ist bibliogon-spezifisch (app/licensing.py), nicht Teil von PluginForge
-- Export nutzt manuscripta (PyPI) - Plugin-Config in export.yaml ist 1:1 manuscripta export-settings.yaml Format
-- Settings-UI: Skalare Werte (string, number) editierbar, Listen/Dicts read-only anzeigen
-- Export-Workflow: Sidebar "Exportieren" Button oeffnet Dialog mit Format/Buchtyp/TOC-Tiefe Auswahl
-
-## UI-Komponentenstrategie
-
-Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt alles selbst zu bauen.
-
-### Installierte Pakete
-
-| Paket | Version | Zweck |
-| ----- | ------- | ----- |
-| @radix-ui/react-dialog | ^1.1 | Modals (AppDialog, ExportDialog, CreateBookModal) |
-| @radix-ui/react-tabs | ^1.1 | Tab-Navigation (Settings, Help) |
-| @radix-ui/react-dropdown-menu | ^2.1 | Dropdown-Menus (Kapiteltyp-Auswahl) |
-| @radix-ui/react-select | ^2.1 | Select-Felder (Theme, Sprache, TOC-Tiefe) |
-| @radix-ui/react-tooltip | ^1.1 | Tooltips (statt title-Attribut) |
-| @radix-ui/react-toggle | ^1.1 | Toggle-Buttons (ThemeToggle) |
-| @dnd-kit/core | ^6.1 | Drag-and-Drop Grundlage |
-| @dnd-kit/sortable | ^8.0 | Sortierbare Listen (Kapitel, Section-Order) |
-| @dnd-kit/utilities | ^3.2 | DnD Hilfsfunktionen |
-| react-toastify | ^11.0 | Toast-Notifications (Info, Erfolg, Fehler) |
-| lucide-react | ^0.468 | Icons |
-| @tiptap/starter-kit | ^2.11 | WYSIWYG/Markdown Editor Basis |
-| @tiptap/extension-image | ^2.27 | Bilder |
-| @tiptap/extension-link | ^2.27 | Links |
-| @pentestpad/tiptap-extension-figure | ^1.1 | Figure + Figcaption (Bildunterschriften) |
-| @tiptap/extension-text-align | ^2.11 | Textausrichtung (links, zentriert, rechts, Blocksatz) |
-| @tiptap/extension-underline | ^2.11 | Unterstreichung |
-| @tiptap/extension-subscript | ^2.11 | Tiefgestellt (H2O) |
-| @tiptap/extension-superscript | ^2.11 | Hochgestellt (E=mc2) |
-| @tiptap/extension-highlight | ^2.11 | Text hervorheben |
-| @tiptap/extension-typography | ^2.11 | Smart Quotes, Gedankenstriche |
-| @tiptap/extension-table | ^2.11 | Tabellen (+ table-row, table-cell, table-header) |
-| @tiptap/extension-task-list | ^2.11 | Checklisten (+ task-item) |
-| @tiptap/extension-character-count | ^2.11 | Wort- und Zeichenzaehlung |
-| @tiptap/extension-color | ^2.11 | Textfarbe (+ text-style) |
-| @tiptap/extension-placeholder | ^2.11 | Platzhaltertext |
-| @tiptap/extension-code-block-lowlight | ^2.11 | Syntax-Highlighting in Codebloecken |
-
-### Warum Radix UI
-
-- Unstyled: Passt zu unserem CSS-Variables-Theming (3 Themes x Light/Dark)
-- Accessible: ARIA-Attribute, Fokus-Management, Keyboard-Navigation out-of-the-box
-- MIT-Lizenz, kein Vendor-Lock
-- Einzeln installierbar (nur was wir brauchen)
-- Kein Tailwind noetig
-
-### Abgelehnte Alternativen
-
-- shadcn/ui (braucht Tailwind - grosse Migration)
-- MUI (zu opinionated, eigenes Theme-System kollidiert)
-- Ant Design (zu schwer, 500KB+)
-- Mantine/Chakra (eigenes Theme-System wuerde CSS-Vars ersetzen)
-
-### Migration-Status
-
-| Komponente | Vorher | Jetzt | Status |
-| ---------- | ------ | ----- | ------ |
-| AppDialog (Confirm/Prompt) | Eigenbau div+overlay | Radix Dialog | Migriert |
-| Settings Tabs | Eigenbau button+state | Radix Tabs | Migriert |
-| Help Tabs | Eigenbau button+state | Radix Tabs | Migriert |
-| Kapiteltyp-Dropdown | Eigenbau div+click-away | Radix DropdownMenu | Migriert |
-| Theme/Sprache Select | HTML select | Radix Select | Migriert |
-| Kapitel DnD | HTML5 Drag API | @dnd-kit/sortable | Migriert |
-| OrderedListEditor | Eigenbau up/down Buttons | @dnd-kit/sortable | Migriert |
-| ExportDialog | Eigenbau div+overlay | Radix Dialog | Migriert |
-| CreateBookModal | Eigenbau div+overlay | Radix Dialog | Migriert |
-| Tooltips | title-Attribut | Radix Tooltip | Migriert |
-
-## PluginForge v0.5.0 API (Kurzreferenz)
-
-```python
-# Manager erstellen mit pre_activate Callback fuer Lizenzpruefung
-manager = PluginManager(
-    config_path="config/app.yaml",
-    pre_activate=license_check_callback,
-    api_version="1",
-)
-manager.register_hookspecs(MyHookSpec)
-manager.discover_plugins()
-manager.mount_routes(fastapi_app)  # prefix default "/api"
-
-# Laufzeit
-manager.get_active_plugins()       # Liste aktiver Plugins
-manager.get_plugin("export")       # Plugin-Instanz nach Name
-manager.deactivate_plugin("name")  # Deaktivieren + Hook-Unregister
-manager.reload_plugin("name")      # Hot Reload
-manager.reload_config()            # Config von Disk neu laden
-manager.health_check()             # Health aller Plugins
-manager.get_load_errors()          # Fehler beim Laden
-manager.call_hook("hook_name")     # Hook aufrufen
-manager.get_text("key", "de")      # i18n String
-```
-
-## Plugin-Installation (ZIP)
-
-Drittanbieter-Plugins koennen als ZIP ueber Settings > Plugins > "ZIP installieren" installiert werden.
-
-- Backend: `backend/app/routers/plugin_install.py`
-- Installationsverzeichnis: `plugins/installed/{plugin-name}/`
-- Beim Start werden installierte Plugins automatisch zum sys.path hinzugefuegt
-- ZIP muss enthalten: `plugin.yaml` + Python-Paket mit `plugin.py` (BasePlugin-Unterklasse)
-- Plugin-Namen: nur Kleinbuchstaben, Ziffern, Bindestriche (3-50 Zeichen)
-- Sicherheit: Path-Traversal-Pruefung, Plugin-Name-Validierung
-
-## Plugin UI-Strategie (Manifest-driven)
-
-Plugins deklarieren UI-Erweiterungen ueber `get_frontend_manifest()`. Das Frontend fragt `/api/plugins/manifests` ab.
-
-Vordefinierte UI-Slots: sidebar_actions, toolbar_buttons, editor_panels, settings_section, export_options.
-
-Fuer komplexe Plugin-UIs: Web Components als Custom Elements im Plugin-ZIP.
-
-## API-Endpunkte
-
-### Kern
-
-- GET/POST /api/books
-- GET/PATCH/DELETE /api/books/{id}
-- GET /api/books/trash/list
-- POST /api/books/trash/{id}/restore
-- DELETE /api/books/trash/{id}
-- DELETE /api/books/trash/empty
-- GET/POST /api/books/{id}/chapters
-- GET/PATCH/DELETE /api/books/{id}/chapters/{cid}
-- PUT /api/books/{id}/chapters/reorder
-- GET/POST /api/books/{id}/assets
-- DELETE /api/books/{id}/assets/{aid}
-- GET /api/backup/export
-- POST /api/backup/smart-import
-- POST /api/backup/import
-- POST /api/backup/import-project
-- GET/POST/DELETE /api/licenses
-- GET/PATCH /api/settings/app
-- GET /api/settings/plugins
-- GET/PATCH /api/settings/plugins/{name}
-- POST /api/settings/plugins/{name}/enable
-- POST /api/settings/plugins/{name}/disable
-- GET /api/plugins/manifests
-- POST /api/plugins/install
-- DELETE /api/plugins/install/{name}
-- GET /api/plugins/installed
-- GET /api/plugins/health
-- GET /api/plugins/errors
-- GET /api/i18n/{lang}
-- GET /api/health
-
-### Plugin-Routen (via PluginForge)
-
-- GET /api/books/{id}/export/{epub|pdf|project}
-- GET /api/kinderbuch/templates
-- POST /api/kinderbuch/preview
-- POST /api/kdp/metadata
-- POST /api/kdp/validate-cover
-- GET /api/kdp/categories
-- POST /api/grammar/check
-- GET /api/grammar/languages
-- GET /api/help/shortcuts
-- GET /api/help/faq
-- GET /api/help/about
-- GET /api/get-started/guide
-- GET /api/get-started/sample-book
-- POST /api/ms-tools/check
-- POST /api/ms-tools/sanitize
-- POST /api/ms-tools/readability
-- GET /api/ms-tools/languages
-- POST /api/audiobook/generate
-- GET /api/audiobook/engines
-- GET /api/audiobook/languages
-- GET /api/audiobook/voices
-- GET /api/audiobook/status
-- POST /api/audiobook/preview
-- POST /api/translation/translate
-- POST /api/translation/translate-book
-- GET /api/translation/languages
-- GET /api/translation/providers
-- GET /api/translation/health
-
-## Datenmodell
-
-Book: id, title, subtitle, author, language, series, series_index, description, created_at, updated_at, deleted_at
-Book (Publishing): edition, publisher, publisher_city, publish_date, isbn_ebook, isbn_paperback, isbn_hardcover, asin_ebook
-Book (Marketing): keywords (JSON), html_description, backpage_description, backpage_author_bio
-Book (Design): cover_image, custom_css
-Chapter: id, book_id (FK), title, content (TipTap JSON), position, chapter_type (enum), created_at, updated_at
-Asset: id, book_id (FK), filename, asset_type (cover/figure/diagram/table), path, uploaded_at
-
-ChapterType: chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude
+**ChapterType:** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude, toc
 
 ## Plugins
 
-| Plugin             | Lizenz      | Tier    | Abhaengigkeit | Beschreibung                        |
-| ------------------ | ----------- | ------- | ------------- | ----------------------------------- |
-| plugin-export      | MIT         | core    | -             | EPUB, PDF, write-book-template ZIP  |
-| plugin-help        | MIT         | core    | -             | In-App Hilfe, Shortcuts, FAQ        |
-| plugin-getstarted  | MIT         | core    | -             | Onboarding, Beispielbuch            |
-| plugin-ms-tools    | MIT         | core    | -             | Stil-Checks, Sanitization, Metriken |
-| plugin-audiobook   | Proprietary | premium | plugin-export | TTS Audiobook-Generierung           |
-| plugin-translation | Proprietary | premium | -             | DeepL/LLM Uebersetzung             |
-| plugin-grammar     | Proprietary | premium | -             | LanguageTool Grammatikpruefung      |
-| plugin-kinderbuch  | Proprietary | premium | plugin-export | Bild-pro-Seite Layout (geplant)     |
-| plugin-kdp         | Proprietary | premium | plugin-export | KDP-Metadaten (geplant)             |
+| Plugin             | Tier    | Abhaengigkeit | Beschreibung                        |
+| ------------------ | ------- | ------------- | ----------------------------------- |
+| plugin-export      | core    | -             | EPUB, PDF, write-book-template ZIP  |
+| plugin-help        | core    | -             | In-App Hilfe, Shortcuts, FAQ        |
+| plugin-getstarted  | core    | -             | Onboarding, Beispielbuch            |
+| plugin-ms-tools    | core    | -             | Stil-Checks, Sanitization, Metriken |
+| plugin-audiobook   | premium | export        | TTS Audiobook-Generierung           |
+| plugin-translation | premium | -             | DeepL/LMStudio Uebersetzung         |
+| plugin-grammar     | premium | -             | LanguageTool Grammatikpruefung      |
+| plugin-kinderbuch  | premium | export        | Bild-pro-Seite Layout (geplant)     |
+| plugin-kdp         | premium | export        | KDP-Metadaten (geplant)             |
 
-Plugins haben ein `license_tier` Klassen-Attribut: `"core"` (kein Lizenz-Check) oder `"premium"` (HMAC-SHA256 Lizenzschluessel). Trial-Keys (plugin=`"*"`) schalten alle Premium-Plugins fuer 30 Tage frei: `make generate-trial-key`.
+## Verzeichnisstruktur (Kurz)
 
-## Erledigte Phasen
+```
+bibliogon/
+├── backend/app/           # FastAPI Kern (main, database, hookspecs, licensing, models, routers, services)
+├── backend/config/        # app.yaml, plugins/, i18n/ (8 Sprachen)
+├── backend/tests/         # Backend Tests
+├── plugins/               # Plugin-Pakete (bibliogon-plugin-{name})
+│   └── installed/         # Dynamisch via ZIP installierte Plugins
+├── frontend/src/
+│   ├── api/client.ts      # Typed API Client
+│   ├── components/        # Editor, Toolbar, ChapterSidebar, Dialoge
+│   ├── pages/             # Dashboard, BookEditor, Settings, Help, GetStarted
+│   └── styles/global.css  # CSS Variables, 3 Themes x Light/Dark
+├── docs/                  # CONCEPT.md, ROADMAP.md, CHANGELOG.md
+└── Makefile, docker-compose.yml, docker-compose.prod.yml
+```
 
-### Phase 1: MVP (v0.1.0) - erledigt
+## Kern-Konventionen
 
-- Book/Chapter CRUD, TipTap Editor, Pandoc Export, Docker
+- TipTap JSON als internes Speicherformat (NICHT HTML, NICHT Markdown)
+- i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), alle UI-Strings in config/i18n/{lang}.yaml
+- Python: Typehints, snake_case, Pydantic v2, SQLAlchemy 2.0 Mapped Columns
+- TypeScript: strict mode, kein `any`, Radix UI fuer Primitives
+- CSS: Custom Properties, Dark Mode via [data-theme="dark"]
+- Plugins: eigenstaendige Pakete unter plugins/, depends_on als Klassen-Attribut, license_tier (core/premium)
+- Export: manuscripta (PyPI), Plugin-Config in export.yaml ist 1:1 manuscripta Format
+- Commits: Englisch, konventionell (feat/fix/refactor/docs)
 
-### Phase 2: PluginForge (v0.2.0) - erledigt
+## Tests (303 total)
 
-- PluginManager auf pluggy, YAML-Config, Lifecycle, FastAPI-Integration
-- Entry Point Discovery, Hook-Specs
-
-### Phase 3: Export als Plugin (v0.3.0) - erledigt
-
-- bibliogon-plugin-export (TipTap-JSON -> Markdown, Scaffolder, Pandoc)
-- Alter Export-Code entfernt, Editor auf TipTap-JSON umgestellt
-
-### Phase 4: Import, Backup, Kapiteltypen (v0.4.0) - erledigt
-
-- ChapterType Enum, Asset Upload, Full-Data Backup/Restore
-- write-book-template ZIP Import
-
-### Phase 5: Premium-Plugins und Lizenzierung (v0.5.0) - erledigt
-
-- Offline-Lizenzierung (HMAC-SHA256, LicenseStore)
-- plugin-kinderbuch, plugin-kdp
-
-### Phase 6: Editor-Erweiterungen (v0.6.0) - erledigt
-
-- WYSIWYG/Markdown Umschaltung
-- Drag-and-Drop Kapitel-Sortierung
-- Autosave-Indikator, Wortzaehler
-- plugin-grammar (LanguageTool)
-- i18n: ES, FR, EL hinzugefuegt (5 Sprachen total)
-- Dark Mode
-- Settings-Seite (/settings) mit App-, Plugin- und Lizenz-Konfiguration
-- Settings API zum Lesen/Schreiben von YAML-Configs ueber die UI
-- PluginForge als PyPI-Paket ausgelagert (pluginforge ^0.5.0)
-- Lizenzierung in Backend verschoben (app/licensing.py)
-- pre_activate Callback fuer Lizenzpruefung
-- plugin-help und plugin-getstarted als Standard-Plugins
-- Export-Plugin auf manuscripta umgestellt (kein eigener Pandoc-Aufruf mehr)
-- Export-Dialog mit Format/Buchtyp/TOC-Tiefe/Section-Order Auswahl vor dem Export
-- Settings: Skalare Werte editierbar, Listen sortierbar (OrderedListEditor), Dicts read-only
-- Papierkorb (Soft-Delete) mit Wiederherstellen und endgueltigem Loeschen
-- Kapiteltyp-Dropdown im Sidebar und aufgeklappte Auswahl bei leerem Buch
-- Eigene Dateiformate: .bgb (Backup), .bgp (Projekt) - verhindert Verwechslungen
-- Custom Dialog-System (AppDialog) statt nativer Browser-Dialoge
-- Toast-Notifications (react-toastify) fuer Info/Erfolg/Fehler
-- Drei Themes: Warm Literary, Cool Modern, Nord (jeweils Light + Dark)
-- Klickbares Logo + Home-Button auf allen Seiten
-- Buttons deaktiviert wenn Aktion nicht moeglich
-- Markdown-zu-HTML Konvertierung beim WYSIWYG-Wechsel
-- Playwright E2E-Tests (39 Tests)
-- Umfassende Hilfe (23 FAQ, 12 Shortcuts, bilingual DE/EN)
-- write-book-template Import kompatibel mit echten Projekten (series dict, lang normalisierung, print-Varianten)
-
-### Phase 7: Erweiterte Buch-Metadaten (v0.7.0) - erledigt
-
-- Erweiterte Metadaten pro Buch: ISBN (ebook/paperback/hardcover), ASIN, Publisher, Edition, Datum
-- Buch-Beschreibung als HTML (fuer Amazon), Rueckseitenbeschreibung, Autor-Kurzbiographie
-- Keywords pro Buch (7 SEO-optimierte Keywords fuer KDP)
-- Cover-Image Zuordnung pro Buch
-- Custom CSS-Styles pro Buch (EPUB-Styles)
-- "Config von anderem Buch uebernehmen" Wizard/Dialog
-- Erweiterte Kapiteltypen: Epilog, Impressum, Naechstes-in-der-Reihe, Part-Intros, Interludien
-- Buch-Metadaten-Editor im BookEditor (5 Sektionen: Allgemein, Verlag, ISBN, Marketing, Design)
-- Playwright E2E-Tests erweitert auf 52 Tests
-
-### Phase 8: Manuskript-Qualitaet, Editor, Export (v0.9.0) - erledigt
-
-- plugin-manuscript-tools (MIT): Style-Checks (Filler-Woerter DE+EN, Passiv, Satzlaenge), Sanitization (typografische Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis), Lesbarkeits-Metriken (Flesch Reading Ease, Flesch-Kincaid Grade, Wiener Sachtextformel, Lesezeit)
-- TipTap-Erweiterungen: Fussnoten, Suchen/Ersetzen, Bild-Resize per Drag, Bild-DnD-Upload
-- Export: Batch-Export (EPUB+PDF+DOCX), Kapiteltyp-spezifisches CSS, Custom CSS, epubcheck-Validierung
-- Import: Plain-Markdown-ZIP ohne Projektstruktur, tiptap_to_md erweitert (Table, TaskList, Figure)
-- UI: Dashboard-Sortierung, Cover-Thumbnails, Wortanzahl-Ziel pro Kapitel, Keyword-Tag-Editor
-- Infrastruktur: Multi-Stage Docker Build, Frontend-Chunk-Splitting, Roundtrip-Tests
-- 303 Tests (78 backend, 125 plugin, 50 vitest, 52 e2e)
-
-### Phase 9: Uebersetzung, Audiobook, Infrastruktur (v0.10.0) - erledigt
-
-- plugin-translation (Premium): DeepL + LMStudio Client, kapitelweise Buchuebersetzung als neues Buch
-- plugin-audiobook (Premium): Edge TTS, TTS Engine Abstraction, MP3 pro Kapitel, ffmpeg Merge, Vorhoer-Funktion
-- Freemium-Lizenzsystem: license_tier (core/premium), Trial-Keys (Wildcard), Settings UI mit Premium-Badges
-- Infrastruktur: Alembic-Migrationen, GitHub Actions CI, mypy, mutmut, Structured Logging, Async Export Jobs
-- Editor: Focus Mode, Office Paste, Spellcheck Panel, Kapitel-Rename (Rechtsklick/Doppelklick), Audio Preview
-- i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), Live-Sprachumschaltung
-- 303 Tests (78 backend, 125 plugin, 50 vitest, 52 e2e)
-
-## Naechste Schritte
-
-### Phase 10 - Multi-User und SaaS (v1.0.0)
-
-- Benutzerregistrierung und Authentifizierung
-- PostgreSQL statt SQLite
-- Pen-Name-Verwaltung
-- Plugin-Marketplace
-- Abrechnungsintegration (Stripe)
-
-Details: docs/CONCEPT.md
-
-## Tests
-
-303 Tests insgesamt:
-
-- plugin-export: 30 (tiptap_to_md, scaffolder)
-- plugin-kinderbuch: 8 (page_layout)
-- plugin-kdp: 10 (cover_validator, metadata)
-- plugin-grammar: 7 (languagetool)
-- plugin-ms-tools: 53 (style_checker, sanitizer, readability)
-- plugin-translation: 35 (deepl_client, lmstudio_client, book_translator)
-- plugin-audiobook: 32 (generator, tts_engine, merge)
-- backend: 78 (api, phase4, import/export, roundtrip, job_store, license_tiers, plugin_discovery, smart_import)
-- vitest: 50 (api client, i18n, markdown helpers)
-- e2e (Playwright): 52 (dashboard, editor, metadata, export, settings, navigation)
-
-PluginForge-Tests laufen separat im eigenen Repo (https://github.com/astrapi69/pluginforge).
+- Backend: 78 | Plugins: 125 | Vitest: 50 | Playwright E2E: 52
+- Plugin-Details: export 30, ms-tools 53, translation 35, audiobook 32, kdp 10, kinderbuch 8, grammar 7
 
 ## Verwandte Projekte
 
-- [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin-Framework (PyPI: pluginforge)
-- [manuscripta](https://github.com/astrapi69/manuscripta) - Buch-Export-Pipeline (PyPI: manuscripta) - wird vom Export-Plugin genutzt
-- [write-book-template](https://github.com/astrapi69/write-book-template) - Ziel-Verzeichnisstruktur fuer den Export
+- [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin-Framework (PyPI)
+- [manuscripta](https://github.com/astrapi69/manuscripta) - Buch-Export-Pipeline (PyPI)
+- [write-book-template](https://github.com/astrapi69/write-book-template) - Ziel-Verzeichnisstruktur fuer Export
