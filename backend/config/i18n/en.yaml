@@ -406,6 +406,7 @@ ui:
     voices_loading: "Loading voices..."
     preview: "Preview"
     engine_unavailable: "Engine unavailable"
+    no_voices_for_combo: "No voices available for {engine} in {language}"
     settings_saved: "Settings saved"
     language_from_book: "Derived from book settings."
     api_keys: "API Keys"

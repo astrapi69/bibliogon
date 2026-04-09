@@ -1,11 +1,10 @@
 import {useState, useEffect} from "react";
-import {api, ApiError, Book, BookAudiobook} from "../api/client";
+import {api, ApiError, AudiobookVoice, Book, BookAudiobook} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
-import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
 import * as Tabs from "@radix-ui/react-tabs";
 
 interface Props {
@@ -320,31 +319,32 @@ function AudiobookBookConfig({
     onCustomFilenameChange: (v: string) => void;
 }) {
     const {t} = useI18n();
-    const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
+    const [voices, setVoices] = useState<AudiobookVoice[]>([]);
     const [loadingVoices, setLoadingVoices] = useState(false);
     const currentEngine = engine || "edge-tts";
 
     useEffect(() => {
+        let cancelled = false;
         setLoadingVoices(true);
-        fetch(`/api/voices?engine=${currentEngine}&language=${bookLanguage}`)
-            .then((r) => {
-                if (r.ok) return r.json();
-                return fetch(`/api/audiobook/voices?engine=${currentEngine}&language=${bookLanguage}`)
-                    .then((r2) => r2.ok ? r2.json() : null);
-            })
+        api.audiobook
+            .listVoices(currentEngine, bookLanguage)
             .then((data) => {
-                if (data && data.length > 0) return data;
-                const lang = bookLanguage.toLowerCase().split("-")[0];
-                return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
-            })
-            .then((data) => {
+                if (cancelled) return;
                 setVoices(data);
-                if (data.length > 0 && !data.some((v: {id: string}) => v.id === voice)) {
+                if (data.length > 0 && !data.some((v) => v.id === voice)) {
                     onVoiceChange(data[0].id);
                 }
             })
-            .catch(() => setVoices([]))
-            .finally(() => setLoadingVoices(false));
+            .catch(() => {
+                if (!cancelled) setVoices([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingVoices(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentEngine, bookLanguage]);
 
     return (
@@ -379,7 +379,9 @@ function AudiobookBookConfig({
                     </select>
                 ) : (
                     <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
-                        {t("ui.audiobook.engine_unavailable", "Engine nicht verfuegbar")}
+                        {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen fuer {engine} in {language} verfuegbar")
+                            .replace("{engine}", currentEngine)
+                            .replace("{language}", bookLanguage.toUpperCase())}
                     </div>
                 )}
             </div>

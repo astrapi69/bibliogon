@@ -117,6 +117,15 @@ export interface CoverLimits {
     max_mb: number;
 }
 
+export interface AudiobookVoice {
+    id: string;
+    name: string;
+    /** Locale string from the engine, e.g. "de-DE". May be empty for
+     *  multilingual engines like ElevenLabs. */
+    language?: string;
+    gender?: string;
+}
+
 export interface AudiobookChapterFile {
     filename: string;
     size_bytes: number;
@@ -407,6 +416,52 @@ export const api = {
         /** DELETE /api/audiobook/config/elevenlabs */
         deleteElevenLabsKey: () =>
             request<void>("/audiobook/config/elevenlabs", {method: "DELETE"}),
+
+        /** Fetch voices for a specific engine + language combination.
+         *
+         *  Tries the core ``/api/voices`` cache first; falls back to the
+         *  audiobook plugin's live ``/api/audiobook/voices`` endpoint if
+         *  the cache is empty (e.g. for non-Edge engines that have no
+         *  seeded rows in ``audio_voices``). Returns ``[]`` for any
+         *  unknown engine or empty language - the dropdown then shows a
+         *  clear "no voices for this engine/language" empty state and
+         *  the user knows to switch engines instead of staring at a
+         *  silently misfilled dropdown of voices that do not actually
+         *  belong to the selected engine.
+         *
+         *  Critically, there is NO hardcoded Edge-TTS fallback list any
+         *  more. The previous implementation showed Edge German voices
+         *  whenever ``/api/voices`` returned empty - which the user
+         *  experienced as the dropdown leaking voices for engines they
+         *  did not pick.
+         */
+        listVoices: async (
+            engine: string,
+            language: string,
+        ): Promise<AudiobookVoice[]> => {
+            if (!engine || !language) return [];
+            const params = new URLSearchParams({engine, language});
+
+            // 1) Core cache
+            try {
+                const cached = await request<AudiobookVoice[]>(`/voices?${params}`);
+                if (cached && cached.length > 0) return cached;
+            } catch {
+                // Core endpoint may be missing in odd test setups - fall
+                // through to the plugin endpoint instead of giving up.
+            }
+
+            // 2) Live plugin endpoint (only meaningful for the engines
+            //    the audiobook plugin actually knows how to query).
+            try {
+                const live = await request<AudiobookVoice[]>(
+                    `/audiobook/voices?${params}`,
+                );
+                return Array.isArray(live) ? live : [];
+            } catch {
+                return [];
+            }
+        },
     },
 
     bookAudiobook: {

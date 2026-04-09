@@ -16,11 +16,36 @@ logger = logging.getLogger(__name__)
 
 
 def get_voices(db: Session, engine: str, language: str | None = None) -> list[dict[str, str]]:
-    """Get cached voices from DB, filtered by engine and optional language."""
+    """Get cached voices from DB, filtered by engine and optional language.
+
+    Language matching is two-mode by design:
+
+    - ``"de-DE"`` (region present): exact case-insensitive match. The
+      caller has explicitly asked for German-Germany only and would not
+      want German-Austria sneaking in.
+    - ``"de"`` (bare language code): prefix match against the stored
+      ``Locale``. Returns ``de-DE``, ``de-AT``, ``de-CH``, ...
+
+    Bibliogon's Book.language field stores bare codes today, so the
+    prefix branch is the common path. The exact branch exists so that
+    plugin authors and tests that pass full locales get the strict
+    behaviour they reasonably expect.
+    """
     query = db.query(AudioVoice).filter(AudioVoice.engine == engine)
     if language:
-        lang_prefix = language.lower().split("-")[0]
-        query = query.filter(AudioVoice.language.like(f"{lang_prefix}%"))
+        normalized = language.strip().lower()
+        if "-" in normalized:
+            # Stored locales use hyphenated form ("de-DE"); ilike for
+            # case insensitivity ("de-de" still matches "de-DE").
+            query = query.filter(AudioVoice.language.ilike(normalized))
+        else:
+            # Bare code: prefix match. The trailing "-%" requires a
+            # region separator so that "en" does not also match a
+            # language called "english" if one ever shows up.
+            query = query.filter(
+                (AudioVoice.language.ilike(normalized))
+                | (AudioVoice.language.ilike(f"{normalized}-%"))
+            )
     voices = query.order_by(AudioVoice.language, AudioVoice.display_name).all()
     return [
         {"id": v.voice_id, "name": v.display_name, "language": v.language, "gender": v.gender}

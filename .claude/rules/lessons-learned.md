@@ -84,6 +84,14 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Stimmen-Dropdown: KEIN engine-agnostischer Fallback
+
+- Frueher fielen `BookMetadataEditor` und `Settings` auf eine hardcoded `EDGE_TTS_VOICES`-Liste zurueck wenn `/api/voices?engine=X&language=Y` ein leeres Array lieferte. Effekt: User waehlt Google TTS / pyttsx3 / ElevenLabs, der Backend-Cache hat keine Voices fuer diese Engines (nur Edge wird ueber `sync_edge_tts_voices` geseedet) -> Frontend dumpt 16 Edge-DE-Voices in das Dropdown obwohl die Engine sie gar nicht abspielen kann. Bug-Report war "Dropdown zeigt ALLE Stimmen statt nur die passenden".
+- Loesung: Ein gemeinsamer Helper `api.audiobook.listVoices(engine, language)` versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin-Endpoint), dann gibt er `[]` zurueck. KEINE hardcoded Liste mehr. Beide UI-Stellen rendern bei `voices.length === 0` einen klaren Empty-State "Keine Stimmen fuer {engine} in {language} verfuegbar" statt etwas zu fingieren.
+- `frontend/src/data/edge-tts-voices.ts` wurde komplett geloescht. Wenn ein User wirklich Edge-DE-Voices sehen will, ist Edge die einzige Engine die der Backend-Cache seedet und das Dropdown wird durch den normalen Pfad gefuellt.
+- Backend `voice_store.get_voices` matcht jetzt zweistufig: enthaelt das `language` einen Bindestrich (`"de-DE"`), ist es ein exakter case-insensitiver Match. Bare Code (`"de"`) ist Prefix-Match (`de-DE`, `de-AT`, `de-CH`). Vorher hat er den Region-Suffix immer abgeschnitten, sodass `"de-DE"` und `"de"` dasselbe Ergebnis lieferten - das war zwar fuer Bibliogons aktuelles Datenmodell egal (Book.language ist ein bare Code), aber die strikte Variante schliesst Plugin-Tests und kuenftige Caller mit ein.
+- Tests: `backend/tests/test_voice_store.py` (8 Tests) deckt jeden Pfad ab (Engine-Isolation, Bare vs Region, Case-Insensitivitaet, unbekannte Engine, unbekannte Sprache, Engine-Leak-Regression). `frontend/src/api/client.test.ts` haelt fest dass die Helper-Funktion bei `[]` aus beiden Endpoints **kein** hardcoded Edge-Fallback mehr liefert - das ist die Regression-Versicherung gegen das urspruengliche Symptom.
+
 ## Audiobook Progress-Dialog: SSE-Listener gehoert in den Context, nicht in die Komponente
 
 - Frueher lebte der `EventSource` im `AudioExportProgress`-Modal. Sobald der User minimierte oder einen Re-Render triggerte, wurde der Listener neu aufgebaut und Events gingen verloren - oder noch schlimmer, der Job war nach `clear()` weg, weil das Modal die einzige Stelle mit Live-State war.

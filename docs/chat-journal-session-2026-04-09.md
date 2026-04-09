@@ -793,4 +793,23 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 4. Bug: Stimmen-Dropdown leakt Voices fremder Engines
+
+- Original-Prompt: "Dropdown zeigt ALLE Stimmen statt nur die passenden". User wollte Diagnose-Schritte und Fix-Vorschlag durchgespielt haben.
+- Optimierter Prompt: derselbe Inhalt aber mit ausdruecklichem Fokus auf den engineabhaengigen Fallback im Frontend (was sich als Wurzel herausstellte).
+- Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurueck - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhaengig davon welche Engine der User gewaehlt hatte. Wer Google TTS oder ElevenLabs auswaehlte, sah trotzdem die Edge-DE-Voices.
+- Fix:
+  - Neuer Helper `api.audiobook.listVoices(engine, language)` im API-Client. Versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin), gibt sonst `[]` zurueck. KEIN engine-agnostischer Fallback mehr.
+  - Beide Komponenten rufen den Helper auf und rendern bei leerem Ergebnis einen Empty-State `"Keine Stimmen fuer {engine} in {language} verfuegbar"` statt fingierte Voices anzuzeigen.
+  - `frontend/src/data/edge-tts-voices.ts` komplett geloescht (kein Consumer mehr).
+  - Backend `get_voices` zweistufig: `de-DE` -> exakter case-insensitiver Match, `de` -> Prefix-Match (`de-DE`/`de-AT`/`de-CH`). Spec-konform, vorher hat es den Region-Suffix immer weggeschnitten.
+  - i18n: `no_voices_for_combo` in DE und EN.
+  - Tests: 8 neue Backend-Tests in `test_voice_store.py` (Engine-Isolation, exact vs prefix, case-insensitive, unbekannte Engine/Sprache, English-leakt-nicht-in-de-Regression). 5 neue Vitest-Tests in `client.test.ts` fuer den Helper inklusive expliziter Regression "kein hardcoded Edge-Fallback mehr".
+  - Tests-Status: Backend 137, audiobook plugin 80, frontend Vitest 63, gesamt 422.
+- Commit: (siehe finalen Hash unten)
+
+---
+
+---
+
 ---

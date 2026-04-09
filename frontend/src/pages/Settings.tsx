@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {api} from "../api/client";
+import {api, AudiobookVoice} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
@@ -10,7 +10,6 @@ import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
-import {EDGE_TTS_VOICES} from "../data/edge-tts-voices";
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -646,32 +645,36 @@ function AudiobookSettingsPanel({settings, onSave}: {
     const [skipTypes, setSkipTypes] = useState<string[]>(
         Array.isArray(settings.skip_types) ? (settings.skip_types as string[]) : [],
     );
-    const [voices, setVoices] = useState<{id: string; name: string; language: string; gender: string}[]>([]);
+    const [voices, setVoices] = useState<AudiobookVoice[]>([]);
     const [loadingVoices, setLoadingVoices] = useState(false);
 
-    // Load voices when engine or language changes
+    // Load voices when engine or language changes. Goes through the
+    // shared api.audiobook.listVoices helper so the empty state is the
+    // same as the one rendered by BookMetadataEditor and there is no
+    // engine-agnostic Edge fallback that would silently leak Edge
+    // voices into a Google/ElevenLabs dropdown.
     useEffect(() => {
+        let cancelled = false;
         setLoadingVoices(true);
-        fetch(`/api/voices?engine=${engine}&language=${language}`)
-            .then((r) => {
-                if (r.ok) return r.json();
-                return fetch(`/api/audiobook/voices?engine=${engine}&language=${language}`)
-                    .then((r2) => r2.ok ? r2.json() : null);
-            })
+        api.audiobook
+            .listVoices(engine, language)
             .then((data) => {
-                if (data && data.length > 0) return data;
-                const lang = language.toLowerCase().split("-")[0];
-                return EDGE_TTS_VOICES[lang] || EDGE_TTS_VOICES["en"] || [];
-            })
-            .then((data) => {
+                if (cancelled) return;
                 setVoices(data);
-                // Auto-select first voice if current not in list
-                if (data.length > 0 && !data.some((v: {id: string}) => v.id === voice)) {
+                if (data.length > 0 && !data.some((v) => v.id === voice)) {
                     setVoice(data[0].id);
                 }
             })
-            .catch(() => setVoices([]))
-            .finally(() => setLoadingVoices(false));
+            .catch(() => {
+                if (!cancelled) setVoices([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingVoices(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [engine, language]);
 
     const handleSave = () => {
@@ -742,7 +745,9 @@ function AudiobookSettingsPanel({settings, onSave}: {
                         <RadixSelect value={voice} onValueChange={setVoice} options={voiceOptions} />
                     ) : (
                         <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
-                            {t("ui.audiobook.engine_unavailable", "Engine nicht verfuegbar")}
+                            {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen fuer {engine} in {language} verfuegbar")
+                                .replace("{engine}", engine)
+                                .replace("{language}", language.toUpperCase())}
                         </div>
                     )}
                 </div>

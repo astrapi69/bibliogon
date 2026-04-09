@@ -282,3 +282,58 @@ describe("api.licenses", () => {
         }));
     });
 });
+
+// --- Audiobook voices ---
+
+describe("api.audiobook.listVoices", () => {
+    it("returns the cached voices when /api/voices has matches", async () => {
+        mockFetch.mockReturnValueOnce(jsonResponse([
+            {id: "de-DE-KatjaNeural", name: "Katja", language: "de-DE", gender: "Female"},
+        ]));
+        const voices = await api.audiobook.listVoices("edge-tts", "de");
+        expect(voices).toHaveLength(1);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/voices?engine=edge-tts&language=de",
+            expect.any(Object),
+        );
+    });
+
+    it("falls back to /api/audiobook/voices when the cache is empty", async () => {
+        mockFetch
+            .mockReturnValueOnce(jsonResponse([]))
+            .mockReturnValueOnce(jsonResponse([{id: "Rachel", name: "Rachel"}]));
+        const voices = await api.audiobook.listVoices("elevenlabs", "en");
+        expect(voices).toHaveLength(1);
+        expect(mockFetch).toHaveBeenNthCalledWith(
+            2,
+            "/api/audiobook/voices?engine=elevenlabs&language=en",
+            expect.any(Object),
+        );
+    });
+
+    it("returns [] - NOT a hardcoded Edge fallback - when both endpoints are empty", async () => {
+        // Regression for the bug where /api/voices?engine=google-tts&language=de
+        // returned [], the frontend then dumped EDGE_TTS_VOICES["de"] into the
+        // dropdown so the user saw 16 Edge voices for an engine they did not pick.
+        mockFetch
+            .mockReturnValueOnce(jsonResponse([]))
+            .mockReturnValueOnce(jsonResponse([]));
+        const voices = await api.audiobook.listVoices("google-tts", "de");
+        expect(voices).toEqual([]);
+    });
+
+    it("returns [] when both endpoints error", async () => {
+        mockFetch
+            .mockReturnValueOnce(errorResponse(500, "boom"))
+            .mockReturnValueOnce(errorResponse(500, "boom"));
+        const voices = await api.audiobook.listVoices("edge-tts", "de");
+        expect(voices).toEqual([]);
+    });
+
+    it("returns [] without making any request when engine or language is empty", async () => {
+        const voices = await api.audiobook.listVoices("edge-tts", "");
+        expect(voices).toEqual([]);
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+});
