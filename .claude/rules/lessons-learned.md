@@ -84,6 +84,13 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Async im FastAPI-Lifespan
+
+- Im `async def lifespan(app)` Handler laeuft bereits der uvicorn-Event-Loop. `asyncio.new_event_loop()` + `loop.run_until_complete(...)` ist dort verboten und crasht mit "Cannot run the event loop while another loop is running".
+- Wenn eine Hilfsfunktion wie `sync_edge_tts_voices` waehrend des Startups eine Coroutine ausfuehren muss: Funktion `async` machen und im Lifespan `await`-en, NICHT eigenen Loop bauen.
+- Symptome wenn falsch gemacht: `RuntimeWarning: coroutine '...' was never awaited` plus das Loop-Conflict-ERROR im Startup-Log.
+- Andere Aufrufer derselben Funktion (CLI-Targets im Makefile, sync FastAPI-Endpoints) muessen mitziehen: `asyncio.run(...)` im CLI, `async def` + `await` in Endpoints.
+
 ## Config-Migration (Bool -> Enum)
 
 - Wenn ein Boolean-Setting zu einem Enum mit mehr Optionen erweitert wird (z.B. audiobook `merge: true|false` -> `merge: separate|merged|both`): IMMER eine `normalize_*`-Funktion einfuehren die alte Bool-Werte stillschweigend uebersetzt (True -> "merged", False -> "separate") und unbekannte/None-Werte auf den Default mappt.

@@ -72,6 +72,6 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - `make seed-voices` ruft sie ueber `asyncio.run(...)` auf
     (CLI-Kontext, kein laufender Loop).
   - `make test` weiterhin gruen (87 backend, 135 plugin, 50 vitest).
-- Commit: (folgt)
+- Commit: 1c6288d
 
 ---
