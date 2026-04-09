@@ -29,6 +29,7 @@ def serialize_book_for_backup(book: Book) -> dict[str, Any]:
         "tts_engine": book.tts_engine, "tts_voice": book.tts_voice,
         "tts_language": book.tts_language, "tts_speed": book.tts_speed,
         "audiobook_merge": book.audiobook_merge,
+        "audiobook_filename": book.audiobook_filename,
         "created_at": book.created_at.isoformat(),
         "updated_at": book.updated_at.isoformat(),
     }
@@ -63,4 +64,5 @@ def restore_book_from_data(book_data: dict[str, Any]) -> Book:
         tts_language=book_data.get("tts_language"),
         tts_speed=book_data.get("tts_speed"),
         audiobook_merge=book_data.get("audiobook_merge"),
+        audiobook_filename=book_data.get("audiobook_filename"),
     )

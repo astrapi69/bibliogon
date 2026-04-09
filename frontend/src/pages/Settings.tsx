@@ -643,6 +643,9 @@ function AudiobookSettingsPanel({settings, onSave}: {
     const [language, setLanguage] = useState(String(settings.language || "de"));
     const [voice, setVoice] = useState(String(settings.default_voice || ""));
     const [merge, setMerge] = useState<string>(normalizeMergeMode(settings.merge));
+    const [skipTypes, setSkipTypes] = useState<string[]>(
+        Array.isArray(settings.skip_types) ? (settings.skip_types as string[]) : [],
+    );
     const [voices, setVoices] = useState<{id: string; name: string; language: string; gender: string}[]>([]);
     const [loadingVoices, setLoadingVoices] = useState(false);
 
@@ -678,6 +681,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
             language,
             default_voice: voice,
             merge,
+            skip_types: skipTypes,
         });
     };
 
@@ -746,6 +750,14 @@ function AudiobookSettingsPanel({settings, onSave}: {
                     <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
                     <RadixSelect value={merge} onValueChange={setMerge} options={mergeOptions} />
                 </div>
+            </div>
+            <div style={{marginTop: 16}}>
+                <OrderedListEditor
+                    label={t("ui.audiobook.skip_types", "Ueberspringe Kapitel-Typen")}
+                    items={skipTypes}
+                    onChange={setSkipTypes}
+                    addPlaceholder="z.B. toc, imprint, index"
+                />
             </div>
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
                 <Save size={12}/> {t("ui.common.save", "Speichern")}
@@ -918,8 +930,10 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                         </>
                     )}
 
-                    {/* Editable ordered lists (section_order, skip files) */}
-                    {orderedListSettings.length > 0 && (
+                    {/* Editable ordered lists (section_order, skip files).
+                        Audiobook handles its lists inside AudiobookSettingsPanel
+                        to avoid showing two save buttons for one config. */}
+                    {name !== "audiobook" && orderedListSettings.length > 0 && (
                         <div style={{marginTop: scalarSettings.length > 0 ? 16 : 0}}>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                                 {t("ui.settings.ordered_lists", "Reihenfolge und Listen")}

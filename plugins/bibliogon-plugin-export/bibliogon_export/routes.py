@@ -140,6 +140,27 @@ def _build_filename(slug: str, book_type: str, export_settings: dict[str, Any]) 
     return f"{slug}-{book_type}" if type_suffix else slug
 
 
+def _audiobook_base_name(book_data: dict[str, Any], default_base_name: str) -> str:
+    """Return the user-provided audiobook filename if set, else the default.
+
+    The custom name comes from ``Book.audiobook_filename`` (set per book in
+    the metadata editor). It is sanitized to a safe filesystem stem so the
+    final ``.mp3`` / ``.zip`` filename is always usable.
+    """
+    custom = (book_data.get("audiobook_filename") or "").strip()
+    if not custom:
+        return default_base_name
+    # Sanitize path separators (no traversal) but keep dots for the
+    # extension-stripping pass below.
+    cleaned = custom.replace("/", "_").replace("\\", "_")
+    for ext in (".mp3", ".zip", ".m4a", ".m4b"):
+        if cleaned.lower().endswith(ext):
+            cleaned = cleaned[: -len(ext)]
+            break
+    cleaned = cleaned.strip(". ")
+    return cleaned or default_base_name
+
+
 def _detect_manual_toc(chapters: list[dict[str, Any]]) -> bool:
     """Check if any chapter is a manual TOC."""
     return any(ch.get("chapter_type") == "toc" for ch in chapters)
@@ -327,7 +348,7 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
         if fmt == "project":
             return _export_project(base_name, tmp_dir, project_dir)
         if fmt == "audiobook":
-            return _export_audiobook(book_data, chapters, base_name)
+            return _export_audiobook(book_data, chapters, _audiobook_base_name(book_data, base_name))
         cover = _find_cover(book_data, project_dir)
         return _export_document(fmt, base_name, project_dir, config, manual_toc, cover)
     except PandocError as e:
@@ -369,6 +390,7 @@ async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_man
                 from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
             except ImportError:
                 raise RuntimeError("Audiobook plugin not installed.")
+            base_name = _audiobook_base_name(book_data, base_name)
             engine_id = book_data.get("tts_engine") or "edge-tts"
             voice = book_data.get("tts_voice") or ""
             language = book_data.get("tts_language") or book_data.get("language", "de")

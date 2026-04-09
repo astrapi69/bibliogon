@@ -81,6 +81,8 @@ class Book(Base):
     tts_speed: Mapped[str | None] = mapped_column(String(10), nullable=True)  # e.g. "1.0", "0.75", "1.25"
     # Audiobook merge mode: "separate", "merged", "both" (None -> use plugin default)
     audiobook_merge: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Custom audiobook output filename (without extension). None -> derive from book title.
+    audiobook_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(

@@ -228,4 +228,61 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 6. Audiobook UX: Dual-Save-Bug + Custom Filename Feld (12:00)
+
+- Original-Prompt: "im audiobook plugin in den allgemeinen einstellungen
+  gibt es zwei speichern button, die Frage ist das so gewollt? Und in den
+  Bucheinstellungen für audiobook sollte eine checkbox sein für einen
+  benutzerdefinierten Namen für das hörbuch. Daneben ein Textfeld mit
+  den default Namen, der deaktiviert ist und sobald die checkbox den
+  hacken hat kann der anwender den Namen ändern"
+- Optimierter Prompt: "Bug: Settings > Plugins > Audiobook hat zwei
+  Speichern-Buttons - klaeren ob beabsichtigt und falls nicht, fixen.
+  Feature: Im BookMetadataEditor Audiobook-Tab Checkbox 'Eigener Dateiname'
+  und Textfeld mit slug-basiertem Default; Textfeld disabled bis die
+  Checkbox gesetzt wird; leerer Wert -> Backend speichert null und nutzt
+  Default."
+- Ziel: (a) Dual-Save-Buttons-Bug fixen. (b) Pro-Buch Override fuer den
+  Audiobook-Dateinamen.
+- Ergebnis (Bug):
+  - Ursache: `PluginCard` rendert Plugin-Settings in 3 Bloecken (Scalars,
+    OrderedLists, Complex). Audiobook-Scalars laufen durch
+    `AudiobookSettingsPanel` mit eigenem Save, aber der OrderedList-Block
+    feuerte danach trotzdem fuer `skip_types` -> zweiter Save-Button.
+  - Fix: `skip_types` als `OrderedListEditor` in `AudiobookSettingsPanel`
+    integriert, einziger Save sendet jetzt alles inkl. `skip_types`.
+    OrderedList-Block in `PluginCard` ueberspringt
+    `name === "audiobook"`.
+- Ergebnis (Feature):
+  - Backend: Neue Spalte `Book.audiobook_filename` (String 255, nullable)
+    plus Migration `b2c3d4e5f6a7_add_audiobook_filename_to_books.py`.
+    `BookUpdate`/`BookOut`-Schemas und backup serializer ergaenzt.
+  - Export-Plugin Helfer `_audiobook_base_name(book_data, default)` in
+    `routes.py`: nutzt die User-Eingabe wenn gesetzt, sanitiert Pfad-
+    Separatoren, strippt user-supplied `.mp3`/`.zip`/`.m4a`/`.m4b`
+    Endungen, faellt auf den Default zurueck wenn Resultat leer.
+    Wird vom sync `_export_audiobook` und vom async-Job aufgerufen,
+    aber nur fuer `fmt == "audiobook"` - andere Exporte unangetastet.
+  - Frontend: `Book.audiobook_filename` in `client.ts`. Neue
+    `CustomFilenameField`-Komponente in `BookMetadataEditor.tsx` mit
+    Checkbox + Textfield + slug-basiertem Default-Placeholder.
+    Lokaler `slugifyForFilename` Helfer spiegelt das Backend
+    `scaffolder._slugify` Verhalten (Umlaute, ss, etc.) damit der
+    angezeigte Default mit dem tatsaechlichen Export-Namen
+    uebereinstimmt. Empty string wird im Save zu `null`.
+  - i18n: Drei neue Keys (`ui.audiobook.skip_types`,
+    `ui.audiobook.custom_filename`, `ui.audiobook.custom_filename_hint`)
+    in allen 8 Sprachen.
+  - Tests: Neuer `tests/test_audiobook_filename.py` im Export-Plugin
+    mit 7 Tests (default-fallback, None/empty, custom, extension-strip,
+    Pfad-Sanitization, pure-extension-collapse). Beim ersten Lauf
+    schlug `test_pure_extension_collapses_to_default` fehl - mein
+    eigener Test deckte einen Off-by-Order-Bug auf: `.strip(". ")` lief
+    VOR der Extension-Pruefung, also wurde `.mp3` zu `mp3` und der
+    `.mp3`-Suffix-Strip griff nicht mehr. Fix: Extension-Strip vor
+    `strip(". ")`. Export-Plugin 30 -> 37 Tests, alles gruen.
+- Commit: (folgt)
+
+---
+
 ---

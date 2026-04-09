@@ -44,6 +44,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             tts_voice: book.tts_voice || "",
             tts_speed: book.tts_speed || "1.0",
             audiobook_merge: book.audiobook_merge || "merged",
+            audiobook_filename: book.audiobook_filename || "",
         });
     }, [book]);
 
@@ -200,14 +201,17 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                     <div style={styles.tabContent}>
                         <AudiobookBookConfig
                             bookLanguage={book.language}
+                            bookTitle={book.title}
                             engine={form.tts_engine || ""}
                             voice={form.tts_voice || ""}
                             speed={form.tts_speed || "1.0"}
                             merge={form.audiobook_merge || "merged"}
+                            customFilename={form.audiobook_filename || ""}
                             onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
                             onVoiceChange={(v: string) => set("tts_voice", v)}
                             onSpeedChange={(v: string) => set("tts_speed", v)}
                             onMergeChange={(v: string) => set("audiobook_merge", v)}
+                            onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
                         />
                     </div>
                 </Tabs.Content>
@@ -253,10 +257,25 @@ function tryParseKeywords(raw: string): string {
     return raw;
 }
 
-function AudiobookBookConfig({bookLanguage, engine, voice, speed, merge, onEngineChange, onVoiceChange, onSpeedChange, onMergeChange}: {
-    bookLanguage: string; engine: string; voice: string; speed: string; merge: string;
+function slugifyForFilename(text: string): string {
+    // Mirrors backend scaffolder._slugify so the displayed default
+    // matches what the export pipeline would actually produce.
+    let s = text.toLowerCase().trim();
+    s = s.replace(/[äÄ]/g, "ae").replace(/[öÖ]/g, "oe").replace(/[üÜ]/g, "ue").replace(/[ß]/g, "ss");
+    s = s.replace(/[^\w\s-]/g, "");
+    s = s.replace(/[\s_]+/g, "-").replace(/-+/g, "-");
+    return s.replace(/^-+|-+$/g, "");
+}
+
+function AudiobookBookConfig({
+    bookLanguage, bookTitle, engine, voice, speed, merge, customFilename,
+    onEngineChange, onVoiceChange, onSpeedChange, onMergeChange, onCustomFilenameChange,
+}: {
+    bookLanguage: string; bookTitle: string; engine: string; voice: string;
+    speed: string; merge: string; customFilename: string;
     onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void;
     onSpeedChange: (v: string) => void; onMergeChange: (v: string) => void;
+    onCustomFilenameChange: (v: string) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<{id: string; name: string; gender: string}[]>([]);
@@ -340,7 +359,56 @@ function AudiobookBookConfig({bookLanguage, engine, voice, speed, merge, onEngin
                     <option value="both">{t("ui.audiobook.merge_both", "Beides")}</option>
                 </select>
             </div>
+            <CustomFilenameField
+                bookTitle={bookTitle}
+                value={customFilename}
+                onChange={onCustomFilenameChange}
+            />
         </>
+    );
+}
+
+function CustomFilenameField({bookTitle, value, onChange}: {
+    bookTitle: string;
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    const {t} = useI18n();
+    const defaultName = `${slugifyForFilename(bookTitle) || "audiobook"}-ebook`;
+    const enabled = value.length > 0;
+
+    const toggle = (checked: boolean) => {
+        // Pre-populate with the default when enabling so the user has
+        // something concrete to edit. Clear back to "" when disabling so
+        // the backend stores null and falls back to its own default.
+        onChange(checked ? defaultName : "");
+    };
+
+    return (
+        <div className="field">
+            <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={(e) => toggle(e.target.checked)}
+                />
+                {t("ui.audiobook.custom_filename", "Eigener Dateiname")}
+            </label>
+            <input
+                className="input"
+                value={enabled ? value : defaultName}
+                disabled={!enabled}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={defaultName}
+                style={enabled ? undefined : {opacity: 0.6}}
+            />
+            <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                {t(
+                    "ui.audiobook.custom_filename_hint",
+                    "Ohne Dateiendung. Leer lassen, um den Standardnamen zu verwenden.",
+                )}
+            </small>
+        </div>
     );
 }
 
