@@ -751,7 +751,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     - Audiobook-Plugin 59 -> 74 Tests, Total 372 -> 387.
   - `make test` durchgehend gruen, kein Crash-Risiko mehr beim
     Engine-Wechsel.
-- Commit: (folgt)
+- Commit: 8080e00
 
 ---
 
