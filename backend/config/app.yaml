@@ -42,5 +42,5 @@ plugins:
 ui:
   logo: assets/logo.svg
   subtitle: Bücher schreiben und exportieren
-  theme: nord
+  theme: cool-modern
   title: Bibliogon
