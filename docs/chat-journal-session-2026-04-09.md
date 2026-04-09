@@ -477,4 +477,53 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 9. BookMetadataEditor UX: feste Tab-Hoehe + groessere Textareas (14:30)
+
+- Original-Prompt: Zwei UX-Probleme. (1) Tab-Hoehe springt beim Wechsel
+  weil jeder Tab unterschiedlich viel Inhalt hat - feste min-height
+  600px via CSS-Variable `--metadata-tab-min-height`. (2) Textareas im
+  Marketing-Tab zu klein - min-height 200, rows=8, resize:vertical,
+  Editor-Schriftart, plus Character-Counter unter jedem Feld
+  (4000 / 600 / 2000) der rot wird wenn ueberschritten, ohne harte
+  Begrenzung im Input.
+- Optimierter Prompt: User-Specs waren ausreichend, alle Constraints
+  und Werte waren explizit benannt.
+- Ziel: Keine Layout-Spruenge mehr beim Tab-Wechsel; vernuenftige
+  Schreibflaeche fuer Marketing-Texte mit Sichtbar-Feedback bei
+  Plattform-Limits.
+- Ergebnis:
+  - **CSS Variable** in `frontend/src/styles/global.css`:
+    `--metadata-tab-min-height: 600px` im `:root` Block (themeable,
+    aenderbar pro Theme falls je gewuenscht).
+  - **`tabContent`-Style** in `BookMetadataEditor.tsx` bekommt
+    `minHeight: "var(--metadata-tab-min-height, 600px)"`. Kein
+    `maxHeight` -> bei mehr Inhalt waechst der Bereich, springt aber
+    nicht mehr beim Wechseln.
+  - **`Field`-Komponente erweitert**:
+    - Neuer optionaler `maxChars: number` Prop fuer den Counter.
+    - Multiline-Textareas nutzen jetzt einen neuen `multilineInput`-
+      Style: `minHeight: 200`, `rows={8}` als HTML-Fallback,
+      `resize: "vertical"`, `padding: 12`, `lineHeight: 1.5`,
+      `fontFamily: "var(--font-body)"`, `maxWidth: "100%"`, plus
+      themeable `background`/`color`/`border` ueber CSS Variables.
+    - `mono` weiter als Override fuer das CSS-Feld (Custom-CSS-Editor
+      bleibt monospace).
+    - Counter-Render: separate `<CharCounter>`-Komponente unter der
+      Textarea, rechts ausgerichtet, `var(--text-muted)` normalerweise,
+      `var(--danger)` + bold wenn `count > max`. Keine harte
+      Eingabe-Begrenzung - der User darf mehr tippen, der Counter
+      ist nur ein Hinweis.
+  - **Marketing-Tab Fields**: drei `maxChars` Werte verkabelt -
+    HTML-Beschreibung 4000 (Amazon KDP Limit), Rueckseite 600,
+    Autor-Bio 2000.
+  - **i18n**: Neuer Key `ui.metadata.characters` in allen 8 Sprachen
+    (DE: "Zeichen", EN: "characters", ES/FR/PT: "caracteres",
+    EL: "χαρακτήρες", TR: "karakter", JA: "文字"), validiert.
+  - Test-Bilanz unveraendert (rein UI-Aenderung, kein neuer Test
+    sinnvoll - die Lengths-Check-Logik ist trivial). `make test`
+    durchgehend gruen, `tsc --noEmit` clean.
+- Commit: (folgt)
+
+---
+
 ---

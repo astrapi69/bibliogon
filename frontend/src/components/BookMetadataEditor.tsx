@@ -181,11 +181,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             />
                         </div>
                         <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
-                            onChange={(v) => set("html_description", v)} multiline/>
+                            onChange={(v) => set("html_description", v)} multiline maxChars={4000}/>
                         <Field label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")} value={form.backpage_description}
-                            onChange={(v) => set("backpage_description", v)} multiline/>
+                            onChange={(v) => set("backpage_description", v)} multiline maxChars={600}/>
                         <Field label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")} value={form.backpage_author_bio}
-                            onChange={(v) => set("backpage_author_bio", v)} multiline/>
+                            onChange={(v) => set("backpage_author_bio", v)} multiline maxChars={2000}/>
                     </div>
                 </Tabs.Content>
 
@@ -230,26 +230,63 @@ function Row({children}: {children: React.ReactNode}) {
     return <div style={styles.row}>{children}</div>;
 }
 
-function Field({label, value, onChange, placeholder, multiline, mono}: {
+function Field({label, value, onChange, placeholder, multiline, mono, maxChars}: {
     label: string;
     value: string | null | undefined;
     onChange: (v: string) => void;
     placeholder?: string;
     multiline?: boolean;
     mono?: boolean;
+    /** Soft limit for the character counter. No hard input cap - the
+     *  counter just turns red when exceeded so the user is warned but
+     *  can still over-type if a platform allows more. */
+    maxChars?: number;
 }) {
+    const {t} = useI18n();
     const inputStyle = mono ? {...styles.input, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"} : styles.input;
+    const text = value || "";
     return (
         <div className="field" style={{flex: 1}}>
             <label className="label">{label}</label>
             {multiline ? (
-                <textarea className="input" style={{...inputStyle, minHeight: 80, resize: "vertical"}}
-                    value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
+                <textarea
+                    className="input"
+                    style={{...inputStyle, ...styles.multilineInput, ...(mono ? {fontFamily: "var(--font-mono)"} : {})}}
+                    rows={8}
+                    value={text}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                />
             ) : (
                 <input className="input" style={inputStyle}
-                    value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
+                    value={text} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
+            )}
+            {maxChars !== undefined && multiline && (
+                <CharCounter
+                    count={text.length}
+                    max={maxChars}
+                    label={t("ui.metadata.characters", "Zeichen")}
+                />
             )}
         </div>
+    );
+}
+
+function CharCounter({count, max, label}: {count: number; max: number; label: string}) {
+    const over = count > max;
+    return (
+        <small
+            style={{
+                display: "block",
+                marginTop: 4,
+                fontSize: "0.75rem",
+                color: over ? "var(--danger)" : "var(--text-muted)",
+                fontWeight: over ? 600 : 400,
+                textAlign: "right",
+            }}
+        >
+            {count} / {max} {label}
+        </small>
     );
 }
 
@@ -432,11 +469,29 @@ const styles: Record<string, React.CSSProperties> = {
         background: "var(--bg-card)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-md)", padding: 20,
         display: "flex", flexDirection: "column", gap: 12,
+        // Locks the tab area to a uniform height so switching between
+        // tabs with very different content (general vs marketing) does
+        // not make the page jump.
+        minHeight: "var(--metadata-tab-min-height, 600px)",
     },
     row: {
         display: "flex", gap: 12,
     },
     input: {},
+    multilineInput: {
+        // Bigger writing area for descriptions; the user can drag the
+        // resize handle vertically to grow it further.
+        minHeight: 200,
+        maxWidth: "100%",
+        resize: "vertical",
+        padding: 12,
+        lineHeight: 1.5,
+        fontFamily: "var(--font-body)",
+        background: "var(--bg-card)",
+        color: "var(--text-primary)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-sm)",
+    },
     copyDialog: {
         background: "var(--bg-card)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-md)", padding: 16, marginBottom: 16,

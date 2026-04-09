@@ -316,6 +316,7 @@ ui:
     backpage_description: "Περιγραφή οπισθόφυλλου"
     author_bio: "Βιογραφικό συγγραφέα"
     cover_image: "Εξώφυλλο"
+    characters: "χαρακτήρες"
     custom_css: "Προσαρμοσμένο CSS"
     copy_from: "Αντιγραφή από βιβλίο"
     copy_hint: "Αντιγράφει εκδότη, βιογραφικό και CSS:"

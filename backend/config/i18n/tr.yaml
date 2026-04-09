@@ -333,6 +333,7 @@ ui:
         backpage_description: "Arka kapak"
         author_bio: "Yazar biyografisi"
         cover_image: "Kapak"
+        characters: "karakter"
         custom_css: "Ozel CSS"
         copy_from: "Kitaptan kopyala"
         copy_hint: "Yayinevi, biyografi ve CSS kopyalar:"

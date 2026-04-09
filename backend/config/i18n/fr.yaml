@@ -316,6 +316,7 @@ ui:
     backpage_description: "Description quatrieme de couverture"
     author_bio: "Biographie de l'auteur"
     cover_image: "Couverture"
+    characters: "caracteres"
     custom_css: "CSS personnalise"
     copy_from: "Copier d'un livre"
     copy_hint: "Copie editeur, bio auteur et CSS d'un autre livre:"

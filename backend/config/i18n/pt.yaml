@@ -333,6 +333,7 @@ ui:
         backpage_description: "Descricao contracapa"
         author_bio: "Biografia do autor"
         cover_image: "Capa"
+        characters: "caracteres"
         custom_css: "CSS personalizado"
         copy_from: "Copiar de livro"
         copy_hint: "Copia editora, biografia e CSS:"

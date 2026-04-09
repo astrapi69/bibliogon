@@ -333,6 +333,7 @@ ui:
     backpage_description: "Rueckseitenbeschreibung"
     author_bio: "Autoren-Kurzbiographie"
     cover_image: "Cover"
+    characters: "Zeichen"
     custom_css: "Custom CSS (EPUB-Styles)"
     copy_from: "Von Buch uebernehmen"
     copy_hint: "Uebernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:"

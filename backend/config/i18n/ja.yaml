@@ -333,6 +333,7 @@ ui:
         backpage_description: "裏表紙の説明"
         author_bio: "著者略歴"
         cover_image: "表紙"
+        characters: "文字"
         custom_css: "カスタムCSS"
         copy_from: "書籍からコピー"
         copy_hint: "出版社、略歴、CSSをコピー："

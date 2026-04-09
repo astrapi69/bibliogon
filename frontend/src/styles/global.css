@@ -37,6 +37,11 @@
     --font-mono: "JetBrains Mono", monospace;
 
     --transition: 180ms ease;
+
+    /* Stops the BookMetadataEditor tab content from jumping around when
+       switching between tabs that have very different amounts of content
+       (the marketing tab is the tallest, everything else snaps up to it). */
+    --metadata-tab-min-height: 600px;
 }
 
 /* --- Cool Modern Theme (Light) --- */

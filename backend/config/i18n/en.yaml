@@ -333,6 +333,7 @@ ui:
     backpage_description: "Back Cover Description"
     author_bio: "Author Bio"
     cover_image: "Cover"
+    characters: "characters"
     custom_css: "Custom CSS (EPUB Styles)"
     copy_from: "Copy from Book"
     copy_hint: "Copies publisher, author bio and CSS from another book:"
