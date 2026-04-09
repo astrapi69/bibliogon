@@ -774,3 +774,23 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Commit: 263715e
 
 ---
+
+## 3. Audiobook Progress: Prefix-Format und Hintergrund-Fortschritt
+
+- Original-Prompt: User listete vier Dinge: (1) Log-Format umbauen von "Kapitel 1: Vorwort" zu "01 | Vorwort", (2) Hintergrund-Fortschritt nach Minimierung als Badge mit Popover, (3) globaler Store fuer den Job, (4) Tests in 8 Sprachen.
+- Optimierter Prompt: derselbe Inhalt, mit ausdruecklichem Hinweis "die Nummer ist reine Anzeige-Logik, TTS-Engine bekommt weiterhin nur den Titel".
+- Ziel: kein Datenverlust beim Minimieren, sauberes Format ohne 'Kapitel:' Verwirrung, F5-Recovery.
+- Ergebnis:
+  - Backend: `generate_audiobook` misst `time.monotonic()` zwischen `chapter_start` und `chapter_done`, schickt das Ergebnis als `duration_seconds` (auf 0.1 gerundet) im `chapter_done`-Event mit. Test in `test_generator.py` haelt das Feld fest.
+  - `AudiobookJobContext` komplett umgebaut: SSE-Listener lebt jetzt im Provider, nicht mehr in der Modal-Komponente. Phase, Events, current/total/currentTitle, downloadUrl, chapterFiles - alles im Context. `start(jobId, bookId, bookTitle)` ruft `openStream(jobId)` auf, `clear()` schliesst es. localStorage-Persistenz unter `bibliogon.audiobook_job` plus Reload-Recovery via `useEffect` beim Mount.
+  - `AudioExportProgress` ist jetzt ein reiner Render der Context-State. Eigener `EventSource` weg. Format-Helper `formatChapterPrefix(index, total)` baut "01" oder "003"; `eventLabel` rendert "01 | Vorwort generiert..." statt "Kapitel 1: Vorwort". `chapter_done` zeigt die Dauer mit "(12.3s)".
+  - `AudioExportGate` rebuild: kein nackter Loader-Button mehr, sondern ein klickbarer Badge der bei laufendem Job ein Popover oeffnet (Progress-Bar, Kapitel-Counter, "Aktuell: 03 | Titel", "Dialog oeffnen", "Abbrechen"). Bei Erfolg wechselt der Badge auf gruen, ein Toast erscheint und nach 10s loescht ein Timer den Job. Klick auf den fertigen Badge navigiert zu `/book/{id}?view=metadata`.
+  - `BookEditor` liest `?view=metadata` aus `useSearchParams` und synchronisiert mit `_setShowMetadata`, sodass das Badge dort tief verlinken kann.
+  - i18n: 9 neue Strings (event_generating, popover_title, popover_chapter_count, popover_current, popover_open, badge_done, badge_failed, completion_toast, completed_hint) in allen 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA).
+  - Tests: 1 neuer pytest-Test (`duration_seconds` im `chapter_done`-Payload), 8 neue Vitest-Tests (formatChapterPrefix Padding, eventLabel format, Regression "Kapitel X:" darf nirgends auftauchen).
+  - Tests-Status: Backend 129, audiobook plugin 80, frontend Vitest 58 (vorher 50), gesamt 414.
+- Commit: (siehe finalen Hash unten)
+
+---
+
+---

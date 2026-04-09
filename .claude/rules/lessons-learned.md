@@ -84,6 +84,15 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Audiobook Progress-Dialog: SSE-Listener gehoert in den Context, nicht in die Komponente
+
+- Frueher lebte der `EventSource` im `AudioExportProgress`-Modal. Sobald der User minimierte oder einen Re-Render triggerte, wurde der Listener neu aufgebaut und Events gingen verloren - oder noch schlimmer, der Job war nach `clear()` weg, weil das Modal die einzige Stelle mit Live-State war.
+- Loesung: Der gesamte SSE-Lifecycle (open/onmessage/close) lebt jetzt im `AudiobookJobProvider`. Die Phase, der Event-Log, current/total/currentTitle, downloadUrl/chapterFiles - alles liegt im Context. Das Modal und das Badge sind reine Konsumenten und tauschen sich nicht gegenseitig aus.
+- Reload-Recovery: jobId+bookId+bookTitle werden in `localStorage` (`bibliogon.audiobook_job`) gespiegelt. Beim Mount des Providers prueft `useEffect`, ob ein persisted Job existiert, und reaktiviert die SSE-Verbindung. Das Badge taucht nach F5 wieder auf, das Modal bleibt minimiert (kein Pop-up ins Gesicht).
+- Persisted-Eintrag wird beim `stream_end`-Event geloescht. Sonst meldet sich nach Reload ein Job zurueck der bereits beendet ist.
+- Wichtige Konvention: Nummern als reine Anzeige-Logik. `formatChapterPrefix(index, total)` baut "01 | Vorwort" / "003 | Vorwort" - die TTS-Engine bekommt weiterhin NUR den nackten Chapter-Title, keine Nummer, keinen Pipe. SSE-Event traegt `{type, index, title, duration_seconds}` als getrennte Felder, das Frontend formatiert. Ein Test in `tests/test_generator.py` haelt fest dass `chapter_done` ein `duration_seconds`-Feld mitliefert, ein Vitest-Test in `AudioExportProgress.test.ts` haelt fest dass das Frontend NIE "Kapitel X:" rendert.
+- BookEditor liest jetzt `?view=metadata` aus `useSearchParams`, damit das Badge nach Abschluss `navigate("/book/{id}?view=metadata")` aufrufen kann und der Tab direkt offen ist. `setShowMetadata` wurde in `_setShowMetadata` gewrappt das Query-Param und State synchron haelt.
+
 ## Generierte Audiobook-Dateien muessen persistent gespeichert werden
 
 - Vor v0.10.x lebten exportierte Audiobook-MP3s ausschliesslich in einem Temp-Dir des Job-Workers. Sobald der User den Progress-Dialog geschlossen hatte, war die einzige Kopie weg - bei ElevenLabs (kostenpflichtig) ist das echter Daten- und Geldverlust.

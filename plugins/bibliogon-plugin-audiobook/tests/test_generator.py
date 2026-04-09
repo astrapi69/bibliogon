@@ -371,6 +371,16 @@ async def test_generate_audiobook_emits_progress_events():
     # start payload knows the total
     assert events[0][1]["total"] == 2
     assert events[0][1]["book_title"] == "Test"
+    # chapter_done events carry a duration_seconds float so the
+    # progress UI can show "01 | Vorwort fertig (12s)" - the field
+    # was added in the prefix-format refactor and the frontend now
+    # depends on it.
+    done_events = [e for e in events if e[0] == "chapter_done"]
+    assert done_events, "expected at least one chapter_done event"
+    for _t, payload in done_events:
+        assert "duration_seconds" in payload
+        assert isinstance(payload["duration_seconds"], (int, float))
+        assert payload["duration_seconds"] >= 0
 
 
 @pytest.mark.asyncio

@@ -1,143 +1,55 @@
-import {useEffect, useMemo, useRef, useState} from "react";
+import {useMemo, useState} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {AlertCircle, CheckCircle, Download, Loader, Minimize2, X} from "lucide-react";
 
 import {ApiError, api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
-
-interface Props {
-    jobId: string;
-    bookTitle: string;
-    /** Closes the dialog and clears the active job from context. */
-    onClose: () => void;
-    /** Hides the dialog but keeps the job tracked (badge takes over). */
-    onMinimize: () => void;
-}
-
-type EventType =
-    | "start"
-    | "chapter_start"
-    | "chapter_done"
-    | "chapter_skipped"
-    | "chapter_error"
-    | "merge_start"
-    | "merge_done"
-    | "merge_error"
-    | "ready"
-    | "done"
-    | "stream_end";
-
-interface SseEvent {
-    type: EventType;
-    data: Record<string, unknown>;
-}
-
-type Phase = "connecting" | "running" | "completed" | "failed" | "cancelled";
-
-interface ChapterFile {
-    filename: string;
-    url: string;
-}
+import {
+    AudiobookEvent,
+    AudiobookEventType,
+    AudiobookPhase,
+    formatChapterPrefix,
+    useAudiobookJob,
+} from "../contexts/AudiobookJobContext";
 
 /**
  * Live progress modal for audiobook exports.
  *
- * The dialog cannot be dismissed by clicking outside or pressing Escape -
- * audiobook generation can take minutes and a stray escape press should
- * not orphan the job. The user picks one of three explicit exits:
+ * The dialog cannot be dismissed by clicking outside or pressing
+ * Escape - audiobook generation can take minutes and a stray escape
+ * press should not orphan the job. Three explicit exits:
  *
- *   - Minimize: hand off to the badge, keep the job running
- *   - Cancel:   call DELETE /api/export/jobs/{id} and close
+ *   - Minimize: hand off to the badge in the App shell, keep running
+ *   - Cancel:   call DELETE /api/export/jobs/{id}
  *   - Close:    only available after the job reaches a terminal state
+ *
+ * The SSE listener lives in AudiobookJobContext, NOT here. This
+ * component is a pure render of the context state, so the badge in
+ * the App shell sees the same data and the modal can be opened and
+ * closed any number of times without dropping a single event.
  */
-export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimize}: Props) {
+export default function AudioExportProgress() {
     const {t} = useI18n();
-    const [events, setEvents] = useState<SseEvent[]>([]);
-    const [phase, setPhase] = useState<Phase>("connecting");
-    const [total, setTotal] = useState<number>(0);
-    const [current, setCurrent] = useState<number>(0);
-    const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-    const [downloadFilename, setDownloadFilename] = useState<string | null>(null);
-    const [chapterFiles, setChapterFiles] = useState<ChapterFile[]>([]);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const {
+        jobId, bookTitle, phase, total, current, events, errorMessage,
+        downloadUrl, downloadFilename, chapterFiles,
+        clear, minimize,
+    } = useAudiobookJob();
     const [cancelling, setCancelling] = useState(false);
-    const eventSourceRef = useRef<EventSource | null>(null);
 
-    useEffect(() => {
-        const es = new EventSource(`/api/export/jobs/${jobId}/stream`);
-        eventSourceRef.current = es;
-
-        es.onopen = () => setPhase((p) => (p === "connecting" ? "running" : p));
-
-        es.onmessage = (e) => {
-            let ev: SseEvent;
-            try {
-                ev = JSON.parse(e.data) as SseEvent;
-            } catch {
-                return;
-            }
-            setEvents((prev) => [...prev, ev]);
-
-            switch (ev.type) {
-                case "start":
-                    setTotal(Number(ev.data.total) || 0);
-                    setPhase("running");
-                    break;
-                case "chapter_done":
-                case "chapter_skipped":
-                case "chapter_error":
-                    if (typeof ev.data.index === "number") setCurrent(ev.data.index);
-                    break;
-                case "ready": {
-                    setDownloadUrl(api.exportJobs.downloadUrl(jobId));
-                    setDownloadFilename(String(ev.data.filename || ""));
-                    const files = Array.isArray(ev.data.chapter_files)
-                        ? (ev.data.chapter_files as string[])
-                        : [];
-                    setChapterFiles(files.map((fn) => ({
-                        filename: fn,
-                        url: api.exportJobs.chapterFileUrl(jobId, fn),
-                    })));
-                    break;
-                }
-                case "stream_end": {
-                    const status = String(ev.data.status || "");
-                    const err = ev.data.error;
-                    if (status === "failed") {
-                        setPhase("failed");
-                        if (typeof err === "string") setErrorMessage(err);
-                    } else if (status === "cancelled") {
-                        setPhase("cancelled");
-                    } else {
-                        setPhase("completed");
-                    }
-                    es.close();
-                    break;
-                }
-            }
-        };
-
-        es.onerror = () => {
-            setPhase((p) => (p === "connecting" ? "failed" : p));
-        };
-
-        return () => {
-            es.close();
-            eventSourceRef.current = null;
-        };
-    }, [jobId]);
+    if (!jobId) return null;
 
     const handleCancel = async () => {
         setCancelling(true);
         try {
             await api.exportJobs.cancel(jobId);
             notify.info(t("ui.audio_progress.cancelled_toast", "Export abgebrochen"));
-            onClose();
+            clear();
         } catch (err) {
             // 409 means it already finished - treat as success
             if (err instanceof ApiError && err.status === 409) {
-                onClose();
+                clear();
                 return;
             }
             const detail = err instanceof ApiError ? err.detail : String(err);
@@ -190,7 +102,7 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
                         {phase === "failed" && (errorMessage || t("ui.audio_progress.failed", "Generierung fehlgeschlagen"))}
                     </div>
 
-                    <EventLog events={recentEvents} />
+                    <EventLog events={recentEvents} total={total} />
 
                     {chapterFiles.length > 0 && phase === "completed" && (
                         <ChapterFileList files={chapterFiles} />
@@ -210,7 +122,7 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
                             <button
                                 type="button"
                                 className="btn btn-secondary"
-                                onClick={onMinimize}
+                                onClick={minimize}
                                 title={t("ui.audio_progress.minimize_hint", "Im Hintergrund weiterlaufen lassen")}
                             >
                                 <Minimize2 size={14} /> {t("ui.audio_progress.minimize", "Im Hintergrund fortsetzen")}
@@ -233,10 +145,6 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
                                 type="button"
                                 className="btn btn-secondary"
                                 onClick={() => {
-                                    // After a successful run, remind the user
-                                    // that the files are still reachable from
-                                    // the metadata tab even if they close the
-                                    // download buttons here.
                                     if (phase === "completed") {
                                         notify.info(
                                             t(
@@ -245,7 +153,7 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
                                             ),
                                         );
                                     }
-                                    onClose();
+                                    clear();
                                 }}
                             >
                                 <X size={14} /> {t("ui.common.close", "Schliessen")}
@@ -258,14 +166,14 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
     );
 }
 
-function PhaseIcon({phase}: {phase: Phase}) {
+function PhaseIcon({phase}: {phase: AudiobookPhase}) {
     if (phase === "completed") return <CheckCircle size={20} style={{color: "#16a34a"}} />;
     if (phase === "failed") return <AlertCircle size={20} style={{color: "#ef4444"}} />;
     if (phase === "cancelled") return <X size={20} style={{color: "var(--text-muted)"}} />;
     return <Loader size={20} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}} />;
 }
 
-function ProgressBar({percent, phase}: {percent: number; phase: Phase}) {
+function ProgressBar({percent, phase}: {percent: number; phase: AudiobookPhase}) {
     const fill =
         phase === "failed" ? "#ef4444" :
         phase === "cancelled" ? "var(--text-muted)" :
@@ -294,7 +202,7 @@ function ProgressBar({percent, phase}: {percent: number; phase: Phase}) {
     );
 }
 
-function EventLog({events}: {events: SseEvent[]}) {
+function EventLog({events, total}: {events: AudiobookEvent[]; total: number}) {
     const {t} = useI18n();
     if (events.length === 0) return null;
     return (
@@ -311,14 +219,14 @@ function EventLog({events}: {events: SseEvent[]}) {
         }}>
             {events.map((ev, i) => (
                 <div key={i} style={{padding: "2px 0", color: eventColor(ev.type)}}>
-                    {eventLabel(ev, t)}
+                    {eventLabel(ev, total, t)}
                 </div>
             ))}
         </div>
     );
 }
 
-function ChapterFileList({files}: {files: ChapterFile[]}) {
+function ChapterFileList({files}: {files: {filename: string; url: string}[]}) {
     const {t} = useI18n();
     return (
         <details style={{marginTop: 16}}>
@@ -345,28 +253,42 @@ function ChapterFileList({files}: {files: ChapterFile[]}) {
     );
 }
 
-function eventColor(type: EventType): string {
+function eventColor(type: AudiobookEventType): string {
     if (type === "chapter_done" || type === "merge_done" || type === "done") return "var(--text-secondary)";
     if (type === "chapter_error" || type === "merge_error") return "#ef4444";
     if (type === "chapter_skipped") return "var(--text-muted)";
     return "var(--text-primary)";
 }
 
-function eventLabel(ev: SseEvent, t: (key: string, fb: string) => string): string {
+/** Render a single SSE event as a single log line.
+ *
+ *  Format change in 0.10.x: chapter lines now use the "01 | Vorwort"
+ *  prefix style instead of "Kapitel 1: Vorwort". The number is purely
+ *  a display label - the TTS engine still receives only the bare
+ *  chapter title.
+ */
+export function eventLabel(
+    ev: AudiobookEvent,
+    total: number,
+    t: (key: string, fb: string) => string,
+): string {
     const d = ev.data;
     const title = typeof d.title === "string" ? d.title : "";
-    const idx = typeof d.index === "number" ? d.index : "";
+    const idx = typeof d.index === "number" ? d.index : 0;
+    const prefix = idx > 0 ? `${formatChapterPrefix(idx, total)} | ${title}` : title;
     switch (ev.type) {
         case "start":
             return `${t("ui.audio_progress.event_start", "Start")} (${d.total} ${t("ui.audio_progress.chapters", "Kapitel")})`;
         case "chapter_start":
-            return `${t("ui.audio_progress.event_chapter", "Kapitel")} ${idx}: ${title}`;
-        case "chapter_done":
-            return `  -> ${t("ui.audio_progress.event_done", "fertig")}`;
+            return `${prefix} ${t("ui.audio_progress.event_generating", "generiert...")}`;
+        case "chapter_done": {
+            const dur = typeof d.duration_seconds === "number" ? ` (${d.duration_seconds}s)` : "";
+            return `${prefix} ${t("ui.audio_progress.event_done", "fertig")}${dur}`;
+        }
         case "chapter_skipped":
-            return `  -> ${t("ui.audio_progress.event_skipped", "uebersprungen")} (${d.reason || ""})`;
+            return `${prefix} ${t("ui.audio_progress.event_skipped", "uebersprungen")} (${d.reason || ""})`;
         case "chapter_error":
-            return `  -> ${t("ui.audio_progress.event_error", "Fehler")}: ${d.error || ""}`;
+            return `${prefix} ${t("ui.audio_progress.event_error", "Fehler")}: ${d.error || ""}`;
         case "merge_start":
             return t("ui.audio_progress.event_merge_start", "Kapitel werden zusammengefuegt...");
         case "merge_done":

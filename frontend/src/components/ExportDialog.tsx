@@ -102,7 +102,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const _startAudiobookExport = async (confirmOverwrite: boolean = false) => {
         try {
             const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite);
-            audiobookJob.start(job_id, bookTitle);
+            audiobookJob.start(job_id, bookId, bookTitle);
             onClose();
         } catch (err) {
             // 409 with audiobook_exists -> ask the user before overwriting.

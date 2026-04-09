@@ -115,9 +115,9 @@ bibliogon/
 - Export: manuscripta (PyPI), Plugin-Config in export.yaml ist 1:1 manuscripta Format
 - Commits: Englisch, konventionell (feat/fix/refactor/docs)
 
-## Tests (406 total)
+## Tests (414 total)
 
-- Backend: 129 | Plugins: 180 | Vitest: 50 | Playwright E2E: 52
+- Backend: 129 | Plugins: 180 | Vitest: 58 | Playwright E2E: 52
 - Plugin-Details: export 37, ms-tools 53, translation 35, audiobook 80, kdp 10, kinderbuch 8, grammar 7
 
 ## Verwandte Projekte

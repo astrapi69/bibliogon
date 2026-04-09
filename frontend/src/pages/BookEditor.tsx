@@ -1,5 +1,5 @@
 import {useEffect, useState, useCallback} from "react";
-import {useParams, useNavigate} from "react-router-dom";
+import {useParams, useNavigate, useSearchParams} from "react-router-dom";
 import {api, BookDetail, Chapter, ChapterType} from "../api/client";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
@@ -42,7 +42,27 @@ export default function BookEditor() {
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
-    const [showMetadata, setShowMetadata] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
+
+    // Keep ``?view=metadata`` in sync so the audiobook badge can deep-link
+    // here after a completed export and so a browser back/forward retains
+    // the user's view choice.
+    useEffect(() => {
+        const wantsMetadata = searchParams.get("view") === "metadata";
+        if (wantsMetadata !== showMetadata) {
+            setShowMetadata(wantsMetadata);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
+
+    const _setShowMetadata = (next: boolean) => {
+        setShowMetadata(next);
+        const params = new URLSearchParams(searchParams);
+        if (next) params.set("view", "metadata");
+        else params.delete("view");
+        setSearchParams(params, {replace: true});
+    };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -196,13 +216,13 @@ export default function BookEditor() {
                 bookTitle={book.title}
                 chapters={book.chapters}
                 activeChapterId={showMetadata ? null : activeChapterId}
-                onSelect={(id) => { setActiveChapterId(id); setShowMetadata(false); setSidebarOpen(false); }}
+                onSelect={(id) => { setActiveChapterId(id); _setShowMetadata(false); setSidebarOpen(false); }}
                 onAdd={handleAddChapter}
                 onDelete={handleDeleteChapter}
                 onRename={handleRenameChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
-                onMetadata={() => setShowMetadata(true)}
+                onMetadata={() => _setShowMetadata(true)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -229,7 +249,7 @@ export default function BookEditor() {
                 <BookMetadataEditor
                     book={book}
                     onSave={handleSaveMetadata}
-                    onBack={() => setShowMetadata(false)}
+                    onBack={() => _setShowMetadata(false)}
                     allBooks={allBooks}
                 />
             ) : activeChapter ? (

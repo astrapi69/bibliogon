@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -281,6 +282,7 @@ async def generate_audiobook(
             continue
 
         await emit("chapter_start", index=i, title=ch_title)
+        chapter_started_at = time.monotonic()
         try:
             spoken_intro = (
                 _build_chapter_intro(i, language) if read_chapter_number else ""
@@ -300,7 +302,15 @@ async def generate_audiobook(
             )
             if result:
                 generated.append(result.name)
-                await emit("chapter_done", index=i, title=ch_title, filename=result.name)
+                # round() not int() so very fast chapters do not collapse
+                # to 0 - the frontend prefers showing 1s over showing
+                # nothing at all.
+                duration = round(time.monotonic() - chapter_started_at, 1)
+                await emit(
+                    "chapter_done",
+                    index=i, title=ch_title, filename=result.name,
+                    duration_seconds=duration,
+                )
             else:
                 skipped.append(ch_title)
                 await emit("chapter_skipped", index=i, title=ch_title, reason="empty")
