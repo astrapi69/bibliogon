@@ -46,4 +46,3 @@ build/
 
 # Config files
 /backend/config/backup_history.json
-/backend/config/backup_history.json
