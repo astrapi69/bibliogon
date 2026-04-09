@@ -23,8 +23,15 @@ class AudiobookPlugin(BasePlugin):
     def activate(self) -> None:
         """Initialize plugin with config."""
         from .routes import router, set_config
+        from .tts_engine import set_elevenlabs_api_key
 
-        set_config(self.config or {})
+        cfg = self.config or {}
+        set_config(cfg)
+        # Push the configured ElevenLabs key (if any) into the engine so
+        # ``ElevenLabsEngine.synthesize`` does not need to re-read YAML on
+        # every call. Empty string clears the override.
+        elevenlabs_cfg = cfg.get("elevenlabs") or {}
+        set_elevenlabs_api_key(elevenlabs_cfg.get("api_key", ""))
         self._router = router
 
     def deactivate(self) -> None:

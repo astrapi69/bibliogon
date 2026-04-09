@@ -15,7 +15,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 from app.hookspecs import BibliogonHookSpec
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
-from app.routers import assets, backup, books, chapters, covers, licenses, plugin_install, settings
+from app.routers import assets, audiobook, backup, books, chapters, covers, licenses, plugin_install, settings
 
 from pluginforge import BasePlugin, PluginManager
 from pluginforge.config import load_i18n
@@ -156,6 +156,7 @@ app.add_middleware(
 app.include_router(books.router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
+app.include_router(audiobook.router, prefix="/api")
 app.include_router(covers.router, prefix="/api")
 app.include_router(backup.router, prefix="/api")
 app.include_router(licenses.router, prefix="/api")

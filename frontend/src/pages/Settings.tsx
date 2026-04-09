@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
@@ -762,7 +762,155 @@ function AudiobookSettingsPanel({settings, onSave}: {
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
                 <Save size={12}/> {t("ui.common.save", "Speichern")}
             </button>
+
+            <ElevenLabsKeyPanel/>
         </>
+    );
+}
+
+function ElevenLabsKeyPanel() {
+    const {t} = useI18n();
+    const [configured, setConfigured] = useState<boolean | null>(null);
+    const [keyInput, setKeyInput] = useState("");
+    const [showKey, setShowKey] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        api.audiobook
+            .getElevenLabsConfig()
+            .then((r) => setConfigured(r.configured))
+            .catch(() => setConfigured(false));
+    }, []);
+
+    const handleSave = async () => {
+        if (!keyInput.trim()) return;
+        setBusy(true);
+        try {
+            const r = await api.audiobook.setElevenLabsKey(keyInput.trim());
+            setConfigured(true);
+            setKeyInput("");
+            const tier = r.tier ? ` (${r.tier})` : "";
+            notify.success(
+                t("ui.audiobook.elevenlabs_saved", "ElevenLabs-Schluessel gespeichert") + tier,
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.audiobook.elevenlabs_save_failed", "ElevenLabs-Schluessel konnte nicht gespeichert werden"),
+                err,
+            );
+        }
+        setBusy(false);
+    };
+
+    const handleTest = async () => {
+        if (!keyInput.trim()) {
+            notify.error(t("ui.audiobook.elevenlabs_empty", "Bitte API-Key eingeben"));
+            return;
+        }
+        setBusy(true);
+        try {
+            const r = await api.audiobook.setElevenLabsKey(keyInput.trim());
+            notify.success(
+                t("ui.audiobook.elevenlabs_test_ok", "API-Key gueltig") +
+                    (r.tier ? ` (${r.tier})` : ""),
+            );
+            setConfigured(true);
+            setKeyInput("");
+        } catch (err) {
+            notify.error(t("ui.audiobook.elevenlabs_test_failed", "API-Key ungueltig"), err);
+        }
+        setBusy(false);
+    };
+
+    const handleRemove = async () => {
+        setBusy(true);
+        try {
+            await api.audiobook.deleteElevenLabsKey();
+            setConfigured(false);
+            notify.success(t("ui.audiobook.elevenlabs_removed", "ElevenLabs-Schluessel entfernt"));
+        } catch (err) {
+            notify.error(
+                t("ui.audiobook.elevenlabs_remove_failed", "Schluessel konnte nicht entfernt werden"),
+                err,
+            );
+        }
+        setBusy(false);
+    };
+
+    return (
+        <div style={{
+            marginTop: 24, paddingTop: 16,
+            borderTop: "1px solid var(--border)",
+        }}>
+            <h4 style={{
+                fontSize: "0.8125rem", fontWeight: 600,
+                color: "var(--text-muted)", marginBottom: 8,
+            }}>
+                {t("ui.audiobook.api_keys", "API-Keys")}
+            </h4>
+            <div className="field">
+                <label className="label">
+                    {t("ui.audiobook.elevenlabs_key", "ElevenLabs API-Key")}
+                </label>
+                <div style={{display: "flex", gap: 8, alignItems: "center"}}>
+                    <input
+                        className="input"
+                        type={showKey ? "text" : "password"}
+                        value={keyInput}
+                        placeholder={configured ? "********** (gespeichert)" : "sk_..."}
+                        onChange={(e) => setKeyInput(e.target.value)}
+                        style={{flex: 1}}
+                        disabled={busy}
+                    />
+                    <button
+                        type="button"
+                        className="btn-icon"
+                        title={showKey ? "Ausblenden" : "Anzeigen"}
+                        onClick={() => setShowKey((v) => !v)}
+                    >
+                        {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                    </button>
+                </div>
+                <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                    {t(
+                        "ui.audiobook.elevenlabs_hint",
+                        "Nur noetig fuer ElevenLabs Engine. Kostenloses Konto auf elevenlabs.io, API-Key im Profil generieren.",
+                    )}
+                </small>
+                {configured === true && (
+                    <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 4}}>
+                        {t("ui.audiobook.elevenlabs_configured", "Schluessel hinterlegt.")}
+                    </div>
+                )}
+            </div>
+            <div style={{display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap"}}>
+                <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleTest}
+                    disabled={busy || !keyInput.trim()}
+                >
+                    {t("ui.audiobook.elevenlabs_test", "Testen")}
+                </button>
+                <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleSave}
+                    disabled={busy || !keyInput.trim()}
+                >
+                    <Save size={12}/> {t("ui.common.save", "Speichern")}
+                </button>
+                {configured && (
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={handleRemove}
+                        disabled={busy}
+                        style={{color: "var(--danger, #c0392b)"}}
+                    >
+                        <Trash2 size={12}/>{" "}
+                        {t("ui.audiobook.elevenlabs_remove", "Entfernen")}
+                    </button>
+                )}
+            </div>
+        </div>
     );
 }
 

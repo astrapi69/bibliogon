@@ -755,4 +755,22 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 2. ElevenLabs API-Key UI + persistente Audiobook-Ablage
+
+- Original-Prompt: User beschrieb zwei Probleme: (1) ElevenLabs API-Key nur via .env setzbar, (2) generierte Audiobook-Dateien gehen verloren wenn der User den Export-Dialog schliesst. Gewuenscht waren Settings-UI mit Test-Button + persistente Ablage + Metadaten-Tab Sektion mit Downloads + Backup-Integration + Regeneration-Warnung + i18n.
+- Optimierter Prompt: derselbe Inhalt, aber Architektur-Entscheidungen vorab geklaert (Storage-Pfad: `uploads/{book_id}/audiobook/`, API-Key in `audiobook.yaml` plain, i18n nur DE+EN, Confirm-Dialog plus Plugin-Setting `overwrite_existing` wobei der Frontend-Confirm trotzdem zusaetzlich kommt).
+- Ziel: Datenverlust nach Audiobook-Export verhindern, ElevenLabs ohne .env-Editing nutzbar machen.
+- Ergebnis:
+  - Backend: neues Modul `bibliogon_audiobook/audiobook_storage.py` (persist/load/delete + Path-Traversal-Schutz). `tts_engine.set_elevenlabs_api_key()` als process-weite Override mit Env-Var-Fallback. Plugin-`activate()` schiebt den YAML-Key in die Engine.
+  - Neuer Backend-Core-Router `backend/app/routers/audiobook.py` mit Endpoints `GET/POST/DELETE /api/audiobook/config/elevenlabs` und `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}`, `/zip`. WICHTIG: liegen im Core, nicht im premium-Plugin, damit User mit abgelaufener Lizenz ihre bereits generierten Dateien noch downloaden koennen.
+  - `_run_audiobook_job` ruft `audiobook_storage.persist_audiobook()` nach erfolgreichem `bundle_audiobook_output`, in `try/except` damit Job nicht kippt wenn Persist fehlschlaegt.
+  - `export_async` checkt `has_audiobook(book_id)` und antwortet mit 409 + `{code: "audiobook_exists", existing: {...}}` ausser `confirm_overwrite=true` oder Plugin-Setting `overwrite_existing` ist on.
+  - `audiobook.yaml`: `elevenlabs.api_key` plus `settings.overwrite_existing: false`.
+  - Backup: `GET /api/backup/export?include_audiobook=true` bundelt `uploads/{id}/audiobook/`.
+  - Tests: 6 neue Storage-Unit-Tests im Plugin, 13 neue Integration-Tests im Backend (Persistenz, Endpoints, ElevenLabs config mit gefaktem httpx, Backup, Regeneration warning).
+  - Diagnose-Detour: erste Implementation legte die Endpoints in den Audiobook-Plugin-Router; Tests scheiterten mit 404 weil das Plugin premium ist und ohne Lizenz nicht geladen wird. Loesung: Endpoints in Backend-Core verschoben.
+  - Frontend: `ApiError.detailBody` fuer strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` faengt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schliessen ein "Dateien sind unter Metadaten > Audiobook verfuegbar"-Toast.
+  - i18n: vollstaendige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurueck (User wollte explizit nur DE+EN).
+- Commit: (siehe finalen Hash unten)
+
 ---

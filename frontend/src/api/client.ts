@@ -117,6 +117,45 @@ export interface CoverLimits {
     max_mb: number;
 }
 
+export interface AudiobookChapterFile {
+    filename: string;
+    size_bytes: number;
+    url: string;
+}
+
+export interface AudiobookMergedFile {
+    filename: string;
+    size_bytes: number;
+    url: string;
+}
+
+export interface BookAudiobook {
+    exists: boolean;
+    book_id: string;
+    created_at?: string;
+    engine?: string;
+    voice?: string;
+    language?: string;
+    speed?: string;
+    merge_mode?: string;
+    chapters?: AudiobookChapterFile[];
+    merged?: AudiobookMergedFile | null;
+    zip_url?: string;
+}
+
+export interface AudiobookExistsError {
+    code: "audiobook_exists";
+    message: string;
+    existing: {
+        created_at?: string;
+        engine?: string;
+        voice?: string;
+        language?: string;
+        speed?: string;
+        merge_mode?: string;
+    };
+}
+
 // --- ApiError with context ---
 
 export class ApiError extends Error {
@@ -126,8 +165,18 @@ export class ApiError extends Error {
     method: string;
     stacktrace: string;
     timestamp: string;
+    /** Structured error body when the backend returned a dict in `detail`.
+     *  Used by the audiobook overwrite warning (409 audiobook_exists). */
+    detailBody?: Record<string, unknown>;
 
-    constructor(status: number, detail: string, endpoint: string, method: string, stacktrace = "") {
+    constructor(
+        status: number,
+        detail: string,
+        endpoint: string,
+        method: string,
+        stacktrace = "",
+        detailBody?: Record<string, unknown>,
+    ) {
         super(detail);
         this.name = "ApiError";
         this.status = status;
@@ -136,6 +185,7 @@ export class ApiError extends Error {
         this.method = method;
         this.stacktrace = stacktrace;
         this.timestamp = new Date().toISOString();
+        this.detailBody = detailBody;
     }
 }
 
@@ -298,17 +348,30 @@ export const api = {
     },
 
     exportJobs: {
-        /** POST /api/books/{id}/export/async/audiobook -> {job_id, status} */
-        startAudiobook: async (bookId: string): Promise<{job_id: string; status: string}> => {
-            const res = await fetch(`${BASE}/books/${bookId}/export/async/audiobook`, {method: "POST"});
+        /** POST /api/books/{id}/export/async/audiobook -> {job_id, status}
+         *
+         * When ``confirmOverwrite`` is false (default) and the book already
+         * has a persisted audiobook on disk, the backend returns 409 with
+         * an ``audiobook_exists`` payload that the caller must surface as
+         * a confirm dialog before retrying with confirmOverwrite=true.
+         */
+        startAudiobook: async (
+            bookId: string,
+            confirmOverwrite: boolean = false,
+        ): Promise<{job_id: string; status: string}> => {
+            const url = `${BASE}/books/${bookId}/export/async/audiobook${
+                confirmOverwrite ? "?confirm_overwrite=true" : ""
+            }`;
+            const res = await fetch(url, {method: "POST"});
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
                 throw new ApiError(
                     res.status,
-                    err.detail || "Audiobook export failed",
-                    `${BASE}/books/${bookId}/export/async/audiobook`,
+                    typeof err.detail === "string" ? err.detail : (err.detail?.message || "Audiobook export failed"),
+                    url,
                     "POST",
                     err.stacktrace || "",
+                    typeof err.detail === "object" ? err.detail : undefined,
                 );
             }
             return res.json();
@@ -324,8 +387,47 @@ export const api = {
             `${BASE}/export/jobs/${jobId}/download`,
     },
 
+    audiobook: {
+        /** GET /api/audiobook/config/elevenlabs -> {configured} */
+        getElevenLabsConfig: () =>
+            request<{configured: boolean}>("/audiobook/config/elevenlabs"),
+
+        /** POST /api/audiobook/config/elevenlabs -> verifies and persists */
+        setElevenLabsKey: (apiKey: string) =>
+            request<{
+                configured: boolean;
+                tier?: string;
+                character_count?: number;
+                character_limit?: number;
+            }>("/audiobook/config/elevenlabs", {
+                method: "POST",
+                body: JSON.stringify({api_key: apiKey}),
+            }),
+
+        /** DELETE /api/audiobook/config/elevenlabs */
+        deleteElevenLabsKey: () =>
+            request<void>("/audiobook/config/elevenlabs", {method: "DELETE"}),
+    },
+
+    bookAudiobook: {
+        /** GET /api/books/{id}/audiobook -> persisted audiobook metadata */
+        get: (bookId: string) =>
+            request<BookAudiobook>(`/books/${bookId}/audiobook`),
+
+        /** DELETE /api/books/{id}/audiobook -> remove persisted files */
+        delete: (bookId: string) =>
+            request<void>(`/books/${bookId}/audiobook`, {method: "DELETE"}),
+
+        /** Direct download URLs (no API call) */
+        mergedUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/merged`,
+        zipUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/zip`,
+        chapterUrl: (bookId: string, filename: string) =>
+            `${BASE}/books/${bookId}/audiobook/chapters/${encodeURIComponent(filename)}`,
+    },
+
     backup: {
-        exportUrl: () => `${BASE}/backup/export`,
+        exportUrl: (includeAudiobook: boolean = false) =>
+            `${BASE}/backup/export${includeAudiobook ? "?include_audiobook=true" : ""}`,
 
         history: (limit = 50) =>
             request<{timestamp: string; action: string; book_count: number; chapter_count: number; file_size_bytes: number; filename: string; details: string}[]>(`/backup/history?limit=${limit}`),

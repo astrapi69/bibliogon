@@ -26,9 +26,17 @@ _history = BackupHistory()
 
 
 @router.get("/export")
-def export_backup(db: Session = Depends(get_db)) -> FileResponse:
-    """Export a full backup of all books, chapters and assets as a .bgb ZIP."""
-    bgb_path, filename = export_backup_archive(db)
+def export_backup(
+    include_audiobook: bool = False,
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """Export a full backup of all books, chapters and assets as a .bgb ZIP.
+
+    ``include_audiobook=true`` also bundles the persisted audiobook MP3s
+    under each book. Off by default because audiobook files can be very
+    large.
+    """
+    bgb_path, filename = export_backup_archive(db, include_audiobook=include_audiobook)
     return FileResponse(
         path=str(bgb_path),
         media_type="application/octet-stream",

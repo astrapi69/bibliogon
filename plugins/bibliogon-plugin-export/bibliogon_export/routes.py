@@ -363,14 +363,54 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
 
 
 @router.post("/async/{fmt}")
-async def export_async(book_id: str, fmt: str, book_type: str = "ebook", use_manual_toc: bool | None = None) -> dict[str, str]:
-    """Start an export job in the background."""
+async def export_async(
+    book_id: str,
+    fmt: str,
+    book_type: str = "ebook",
+    use_manual_toc: bool | None = None,
+    confirm_overwrite: bool = False,
+) -> dict[str, Any]:
+    """Start an export job in the background.
+
+    For ``fmt=audiobook``, refuses to start if a persisted audiobook
+    already exists for the book unless ``confirm_overwrite=true``. The
+    409 response carries the existing metadata so the frontend can show
+    the regeneration warning dialog with concrete details (engine, voice,
+    creation date) before letting the user click "Trotzdem neu erstellen".
+    The ``overwrite_existing`` plugin setting is honoured: when true,
+    the warning is logged but the export proceeds without confirmation.
+    """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'.")
     try:
         from app.job_store import job_store
     except ImportError:
         raise HTTPException(status_code=500, detail="Job store not available")
+
+    if fmt == "audiobook" and not confirm_overwrite:
+        try:
+            from bibliogon_audiobook import audiobook_storage
+        except ImportError:
+            audiobook_storage = None  # type: ignore[assignment]
+        if audiobook_storage is not None and audiobook_storage.has_audiobook(book_id):
+            settings_dict = _read_audiobook_settings()
+            if not settings_dict.get("overwrite_existing", False):
+                existing = audiobook_storage.load_metadata(book_id) or {}
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "audiobook_exists",
+                        "message": "An audiobook already exists for this book.",
+                        "existing": {
+                            "created_at": existing.get("created_at"),
+                            "engine": existing.get("engine"),
+                            "voice": existing.get("voice"),
+                            "language": existing.get("language"),
+                            "speed": existing.get("speed"),
+                            "merge_mode": existing.get("merge_mode"),
+                        },
+                    },
+                )
 
     async def _run(job_id: str) -> dict[str, Any]:
         book_data, chapters, assets = _load_book(book_id)
@@ -412,6 +452,7 @@ async def _run_audiobook_job(
     """
     try:
         from app.job_store import job_store
+        from bibliogon_audiobook import audiobook_storage
         from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
     except ImportError:
         raise RuntimeError("Audiobook plugin not installed.")
@@ -447,6 +488,33 @@ async def _run_audiobook_job(
     output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
     if output is None:
         raise RuntimeError("Audiobook generation produced no files")
+
+    # Persist the generated MP3s under uploads/{book_id}/audiobook/ so the
+    # user can download them again later from the metadata tab. Failures
+    # here MUST NOT lose the in-progress download (the temp ZIP/MP3 still
+    # exists), so we log and continue rather than raising.
+    book_id = book_data.get("id")
+    if book_id:
+        try:
+            audiobook_storage.persist_audiobook(
+                book_id=book_id,
+                source_dir=audio_dir,
+                generated_files=list(result.get("generated_files") or []),
+                merged_file=result.get("merged_file"),
+                metadata={
+                    "engine": engine_id,
+                    "voice": voice or "default",
+                    "language": language,
+                    "speed": rate or "1.0",
+                    "merge_mode": merge_mode,
+                    "book_title": book_data.get("title"),
+                },
+            )
+        except Exception as persist_error:  # noqa: BLE001
+            logger.error(
+                "Failed to persist audiobook for book %s: %s",
+                book_id, persist_error, exc_info=True,
+            )
 
     if output.suffix == ".mp3":
         download = {"path": str(output), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}

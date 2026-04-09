@@ -32,3 +32,12 @@ settings:
   # each chapter. Default off because most users do not want any spoken
   # header at all - the chapter title is no longer auto-prepended.
   read_chapter_number: false
+  # When true, an existing audiobook for the same book is overwritten on
+  # regeneration without further questions. Default false: the API still
+  # warns the frontend so it can ask the user to confirm.
+  overwrite_existing: false
+elevenlabs:
+  # ElevenLabs API key. Stored in plain text on disk - keep this file out
+  # of version control. The Settings UI lets the user paste, test and
+  # delete the key without editing this file by hand.
+  api_key: ''

@@ -84,6 +84,24 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Generierte Audiobook-Dateien muessen persistent gespeichert werden
+
+- Vor v0.10.x lebten exportierte Audiobook-MP3s ausschliesslich in einem Temp-Dir des Job-Workers. Sobald der User den Progress-Dialog geschlossen hatte, war die einzige Kopie weg - bei ElevenLabs (kostenpflichtig) ist das echter Daten- und Geldverlust.
+- Loesung: nach erfolgreichem `_run_audiobook_job` werden alle generierten Dateien nach `uploads/{book_id}/audiobook/` kopiert (chapters/ + audiobook.mp3 + metadata.json). Die Endpoints `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}` und `/zip` exposen sie wieder zum Download.
+- Wichtig: das Persistieren passiert im `try/except` und darf einen erfolgreichen Job NIE abbrechen. Lieber loggen, Datei ist im Temp-Dir noch downloadbar.
+- Die Persistenz-Endpoints leben im Backend-Core (`backend/app/routers/audiobook.py`), NICHT im premium-lizenzierten Audiobook-Plugin. Sonst kann ein User mit abgelaufener Lizenz seine bereits generierten Dateien nicht mehr abrufen.
+- Regeneration warnt vor Ueberschreibung: `POST /api/books/{id}/export/async/audiobook` antwortet mit HTTP 409 + `{code: "audiobook_exists", existing: {engine, voice, created_at, ...}}`, sobald `audiobook_storage.has_audiobook(book_id)` true ist. Frontend zeigt einen Confirm-Dialog mit den existierenden Metadaten und ruft denselben Endpoint mit `?confirm_overwrite=true` erneut auf.
+- Plugin-Setting `audiobook.settings.overwrite_existing: true` ueberspringt die 409 - User-Wunsch: "es gibt auch ne konfig fuer die ueberschreibung aber trotzdem warnung", deshalb bleibt der Frontend-Confirm trotzdem als zweite Sicherheit.
+- Backup: `GET /api/backup/export?include_audiobook=true` bundelt die persistenten Audiobook-Verzeichnisse mit ein. Default ist false, weil MP3-Backups schnell auf 100+MB pro Buch wachsen.
+
+## ElevenLabs API-Key gehoert NICHT in .env
+
+- Der ElevenLabs-API-Key wurde frueher nur ueber `ELEVENLABS_API_KEY` env var gelesen. Das ist fuer User undurchsichtig: keine UI, kein Test-Knopf, keine Fehlermeldung wenn der Key fehlt.
+- Loesung: `audiobook.yaml` hat jetzt einen `elevenlabs.api_key` Block, gefuettert ueber `POST /api/audiobook/config/elevenlabs` (verifiziert vor dem Speichern gegen `GET https://api.elevenlabs.io/v1/user`). `tts_engine.set_elevenlabs_api_key()` bekommt den Key beim Plugin-Activate und bei jedem POST.
+- Env-Var bleibt als Fallback - bestehende Installationen mit `.env` brechen nicht.
+- Der Key wird in GET-Responses NIE im Klartext zurueckgegeben. Frontend zeigt nur `{configured: bool}` und bietet "Schluessel hinterlegt"-Indikator + Loeschen-Button.
+- Die Endpoints liegen wie die Persistenz-Endpoints im Backend-Core, weil das Audiobook-Plugin premium ist und User trotzdem ihren Key konfigurieren koennen sollen wenn die Lizenz aus anderen Gruenden gerade nicht aktiv ist.
+
 ## Audiobook-Export ist asynchron mit SSE-Progress
 
 - Der Endpoint `POST /api/books/{id}/export/audiobook` darf NIE synchron eine MP3 zurueckgeben. Audiobook-Generierung dauert Minuten; jeder synchrone Pfad blockiert den Request-Thread und liefert dem User nichts Sichtbares.

@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
-import {Book} from "../api/client";
-import {Save, Copy, ChevronLeft} from "lucide-react";
+import {api, ApiError, Book, BookAudiobook} from "../api/client";
+import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import KeywordInput from "./KeywordInput";
@@ -217,6 +217,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             onMergeChange={(v: string) => set("audiobook_merge", v)}
                             onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
                         />
+                        <AudiobookDownloads bookId={book.id}/>
                     </div>
                 </Tabs.Content>
             </Tabs.Root>
@@ -452,6 +453,199 @@ function CustomFilenameField({bookTitle, value, onChange}: {
         </div>
     );
 }
+
+function AudiobookDownloads({bookId}: {bookId: string}) {
+    const {t} = useI18n();
+    const [data, setData] = useState<BookAudiobook | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    const load = async () => {
+        try {
+            const result = await api.bookAudiobook.get(bookId);
+            setData(result);
+        } catch (err) {
+            // 404 etc -> render empty state instead of crashing
+            if (!(err instanceof ApiError) || err.status !== 404) {
+                console.error("Failed to load audiobook metadata:", err);
+            }
+            setData({exists: false, book_id: bookId});
+        }
+    };
+
+    useEffect(() => {
+        load();
+    }, [bookId]);
+
+    const handleDelete = async () => {
+        if (!confirm(t("ui.audiobook.delete_confirm", "Audiobook wirklich loeschen? Die Dateien sind danach weg."))) {
+            return;
+        }
+        setBusy(true);
+        try {
+            await api.bookAudiobook.delete(bookId);
+            notify.success(t("ui.audiobook.deleted", "Audiobook geloescht"));
+            await load();
+        } catch (err) {
+            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+        }
+        setBusy(false);
+    };
+
+    const formatBytes = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    };
+
+    if (!data) {
+        return (
+            <div style={audiobookStyles.section}>
+                <h4 style={audiobookStyles.header}>
+                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
+                </h4>
+                <div style={audiobookStyles.muted}>
+                    {t("ui.common.loading", "Laden...")}
+                </div>
+            </div>
+        );
+    }
+
+    if (!data.exists) {
+        return (
+            <div style={audiobookStyles.section}>
+                <h4 style={audiobookStyles.header}>
+                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
+                </h4>
+                <div style={audiobookStyles.muted}>
+                    {t(
+                        "ui.audiobook.downloads_empty",
+                        "Noch kein Audiobook generiert. Nutze den Export-Dialog um eines zu erstellen.",
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={audiobookStyles.section}>
+            <h4 style={audiobookStyles.header}>
+                {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
+            </h4>
+            <div style={audiobookStyles.metaLine}>
+                {data.created_at && (
+                    <span>
+                        {t("ui.audiobook.created_at", "Erstellt am")}:{" "}
+                        {new Date(data.created_at).toLocaleString()}
+                    </span>
+                )}
+                {data.engine && (
+                    <span style={{marginLeft: 12}}>
+                        {t("ui.audiobook.engine", "Engine")}: {data.engine}
+                    </span>
+                )}
+                {data.voice && (
+                    <span style={{marginLeft: 12}}>
+                        {t("ui.audiobook.voice", "Stimme")}: {data.voice}
+                    </span>
+                )}
+                {data.speed && (
+                    <span style={{marginLeft: 12}}>{data.speed}x</span>
+                )}
+            </div>
+
+            <div style={{display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap"}}>
+                {data.merged && (
+                    <a
+                        className="btn btn-primary btn-sm"
+                        href={api.bookAudiobook.mergedUrl(bookId)}
+                        download
+                    >
+                        <Download size={12}/>{" "}
+                        {t("ui.audiobook.download_merged", "Gemergtes Audiobook")}{" "}
+                        ({formatBytes(data.merged.size_bytes)})
+                    </a>
+                )}
+                {data.chapters && data.chapters.length > 0 && (
+                    <a
+                        className="btn btn-secondary btn-sm"
+                        href={api.bookAudiobook.zipUrl(bookId)}
+                        download
+                    >
+                        <Package size={12}/>{" "}
+                        {t("ui.audiobook.download_zip", "ZIP mit einzelnen Kapiteln")}
+                    </a>
+                )}
+                <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleDelete}
+                    disabled={busy}
+                    style={{color: "var(--danger, #c0392b)"}}
+                >
+                    <Trash2 size={12}/>{" "}
+                    {t("ui.audiobook.delete", "Audiobook loeschen")}
+                </button>
+            </div>
+
+            {data.chapters && data.chapters.length > 0 && (
+                <div style={{marginTop: 16}}>
+                    <h5 style={audiobookStyles.subHeader}>
+                        {t("ui.audiobook.individual_chapters", "Einzelne Kapitel")}
+                    </h5>
+                    <ul style={audiobookStyles.chapterList}>
+                        {data.chapters.map((ch) => (
+                            <li key={ch.filename} style={audiobookStyles.chapterItem}>
+                                <span style={{flex: 1}}>{ch.filename}</span>
+                                <span style={audiobookStyles.muted}>
+                                    {formatBytes(ch.size_bytes)}
+                                </span>
+                                <a
+                                    href={ch.url}
+                                    download
+                                    className="btn-icon"
+                                    title={t("ui.audiobook.download", "Download")}
+                                >
+                                    <Download size={12}/>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
+
+const audiobookStyles: Record<string, React.CSSProperties> = {
+    section: {
+        marginTop: 24, paddingTop: 16,
+        borderTop: "1px solid var(--border)",
+    },
+    header: {
+        fontSize: "0.8125rem", fontWeight: 600,
+        color: "var(--text-muted)", marginBottom: 8,
+    },
+    subHeader: {
+        fontSize: "0.75rem", fontWeight: 600,
+        color: "var(--text-muted)", marginBottom: 6,
+    },
+    metaLine: {
+        fontSize: "0.75rem", color: "var(--text-secondary)",
+    },
+    muted: {
+        fontSize: "0.75rem", color: "var(--text-muted)",
+    },
+    chapterList: {
+        listStyle: "none", padding: 0, margin: 0,
+        display: "flex", flexDirection: "column", gap: 4,
+    },
+    chapterItem: {
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "4px 8px",
+        background: "var(--bg-primary)",
+        borderRadius: "var(--radius-sm)",
+        fontSize: "0.8125rem",
+    },
+};
 
 const styles: Record<string, React.CSSProperties> = {
     container: {

@@ -11,6 +11,27 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Process-wide override for the ElevenLabs API key, populated from the
+# plugin's YAML config at activation time. Falls back to the environment
+# variable so users who already wired ELEVENLABS_API_KEY into .env keep
+# working without touching the new Settings UI.
+_ELEVENLABS_API_KEY: str = ""
+
+
+def set_elevenlabs_api_key(key: str | None) -> None:
+    """Inject the ElevenLabs API key from the plugin config.
+
+    Empty / None clears the override and lets the env var take over.
+    """
+    global _ELEVENLABS_API_KEY
+    _ELEVENLABS_API_KEY = (key or "").strip()
+
+
+def get_elevenlabs_api_key() -> str:
+    """Return the configured key, falling back to ``ELEVENLABS_API_KEY``."""
+    import os
+    return _ELEVENLABS_API_KEY or os.environ.get("ELEVENLABS_API_KEY") or ""
+
 
 class TTSEngine(ABC):
     """Abstract base class for TTS engines."""
@@ -294,15 +315,15 @@ class ElevenLabsEngine(TTSEngine):
         self, text: str, output_path: Path, voice: str = "", language: str = "de", rate: str = "",
     ) -> Path:
         import asyncio
-        import os
 
         # API key check before import: it is the most common misconfig
         # and gives a clearer error than ImportError when the user just
-        # forgot to set the env var.
-        api_key = os.environ.get("ELEVENLABS_API_KEY") or ""
+        # forgot to configure it.
+        api_key = get_elevenlabs_api_key()
         if not api_key:
             raise RuntimeError(
-                "ElevenLabs requires the ELEVENLABS_API_KEY environment variable."
+                "ElevenLabs requires an API key. Configure it under "
+                "Settings > Plugins > Audiobook or set ELEVENLABS_API_KEY."
             )
 
         try:
@@ -322,9 +343,8 @@ class ElevenLabsEngine(TTSEngine):
     async def list_voices(self, language: str | None = None) -> list[dict[str, str]]:
         """Query ElevenLabs API live; returns [] if no API key is configured."""
         import asyncio
-        import os
 
-        api_key = os.environ.get("ELEVENLABS_API_KEY") or ""
+        api_key = get_elevenlabs_api_key()
         if not api_key:
             return []
 

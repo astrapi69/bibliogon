@@ -99,12 +99,41 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         setTimeout(() => { setExporting(false); onClose(); }, 1000);
     };
 
-    const _startAudiobookExport = async () => {
+    const _startAudiobookExport = async (confirmOverwrite: boolean = false) => {
         try {
-            const {job_id} = await api.exportJobs.startAudiobook(bookId);
+            const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite);
             audiobookJob.start(job_id, bookTitle);
             onClose();
         } catch (err) {
+            // 409 with audiobook_exists -> ask the user before overwriting.
+            // The backend embeds the existing engine/voice/created_at so the
+            // dialog has concrete details, not a vague "are you sure?".
+            if (
+                err instanceof ApiError &&
+                err.status === 409 &&
+                err.detailBody &&
+                (err.detailBody as {code?: string}).code === "audiobook_exists"
+            ) {
+                const existing = (err.detailBody as {existing?: Record<string, string>}).existing || {};
+                const created = existing.created_at
+                    ? new Date(existing.created_at).toLocaleString()
+                    : "?";
+                const engine = existing.engine || "?";
+                const voice = existing.voice || "?";
+                const message = t(
+                    "ui.audiobook.regen_warning",
+                    "Ein Audiobook fuer dieses Buch wurde bereits erstellt.\nEngine: {engine} | Stimme: {voice} | {created}\n\nBei einem neuen Export werden die bestehenden Dateien ueberschrieben.\n\nTrotzdem neu erstellen?",
+                )
+                    .replace("{engine}", engine)
+                    .replace("{voice}", voice)
+                    .replace("{created}", created);
+                if (confirm(message)) {
+                    await _startAudiobookExport(true);
+                    return;
+                }
+                setExporting(false);
+                return;
+            }
             const detail = err instanceof ApiError ? err.detail : String(err);
             notify.error(`Audiobook export failed: ${detail}`, err);
             setExporting(false);

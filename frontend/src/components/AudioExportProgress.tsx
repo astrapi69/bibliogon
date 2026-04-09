@@ -232,7 +232,21 @@ export default function AudioExportProgress({jobId, bookTitle, onClose, onMinimi
                             <button
                                 type="button"
                                 className="btn btn-secondary"
-                                onClick={onClose}
+                                onClick={() => {
+                                    // After a successful run, remind the user
+                                    // that the files are still reachable from
+                                    // the metadata tab even if they close the
+                                    // download buttons here.
+                                    if (phase === "completed") {
+                                        notify.info(
+                                            t(
+                                                "ui.audio_progress.saved_hint",
+                                                "Audiobook erfolgreich generiert. Die Dateien sind jetzt unter Metadaten > Audiobook verfuegbar.",
+                                            ),
+                                        );
+                                    }
+                                    onClose();
+                                }}
                             >
                                 <X size={14} /> {t("ui.common.close", "Schliessen")}
                             </button>

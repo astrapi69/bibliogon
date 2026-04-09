@@ -16,8 +16,15 @@ from app.services.backup.serializer import serialize_book_for_backup
 _history = BackupHistory()
 
 
-def export_backup_archive(db: Session) -> tuple[Path, str]:
+def export_backup_archive(db: Session, include_audiobook: bool = False) -> tuple[Path, str]:
     """Export all books, chapters and assets as a single .bgb archive.
+
+    Args:
+        db: SQLAlchemy session.
+        include_audiobook: When true, also bundle the persisted
+            ``uploads/{book_id}/audiobook/`` directories. Off by default
+            because audiobook MP3s blow up the backup size by hundreds
+            of megabytes; the user opts in via a checkbox in the UI.
 
     Returns the path to the .bgb file and the suggested download filename.
     """
@@ -28,9 +35,9 @@ def export_backup_archive(db: Session) -> tuple[Path, str]:
     books_dir = backup_dir / "books"
 
     for book in books:
-        _write_book_dir(db, book, books_dir / book.id)
+        _write_book_dir(db, book, books_dir / book.id, include_audiobook=include_audiobook)
 
-    _write_manifest(backup_dir, len(books))
+    _write_manifest(backup_dir, len(books), include_audiobook=include_audiobook)
     bgb_path = _build_bgb_archive(backup_dir)
 
     _history.add(
@@ -47,12 +54,30 @@ def export_backup_archive(db: Session) -> tuple[Path, str]:
 # --- Step helpers ---
 
 
-def _write_book_dir(db: Session, book: Book, book_dir: Path) -> None:
-    """Write one book.json + chapters/ + (optional) assets/ to ``book_dir``."""
+def _write_book_dir(
+    db: Session, book: Book, book_dir: Path, include_audiobook: bool = False,
+) -> None:
+    """Write one book.json + chapters/ + (optional) assets/audiobook/ to ``book_dir``."""
     book_dir.mkdir(parents=True)
     _write_json(book_dir / "book.json", serialize_book_for_backup(book))
     _write_chapters(book_dir / "chapters", book.chapters)
     _write_assets(db, book.id, book_dir)
+    if include_audiobook:
+        _write_audiobook(book.id, book_dir)
+
+
+def _write_audiobook(book_id: str, book_dir: Path) -> None:
+    """Copy ``uploads/{book_id}/audiobook/`` into the backup if present.
+
+    Walked manually rather than ``shutil.copytree`` so we can skip the
+    metadata.json (it gets re-created on restore from the surviving
+    layout) and silently ignore an absent directory.
+    """
+    source = Path("uploads") / book_id / "audiobook"
+    if not source.exists():
+        return
+    target = book_dir / "audiobook"
+    shutil.copytree(source, target)
 
 
 def _write_chapters(chapters_dir: Path, chapters: list[Chapter]) -> None:
@@ -95,12 +120,13 @@ def _write_assets(db: Session, book_id: str, book_dir: Path) -> None:
     _write_json(book_dir / "assets.json", assets_meta)
 
 
-def _write_manifest(backup_dir: Path, book_count: int) -> None:
+def _write_manifest(backup_dir: Path, book_count: int, include_audiobook: bool = False) -> None:
     _write_json(backup_dir / "manifest.json", {
         "format": "bibliogon-backup",
         "version": "1.0",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "book_count": book_count,
+        "includes_audiobook": include_audiobook,
     })
 
 
