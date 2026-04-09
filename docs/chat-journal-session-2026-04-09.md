@@ -660,4 +660,99 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
+## 11. Audiobook Engines: Wrap manuscripta-Adapter statt selbst implementieren (16:00)
+
+- Original-Prompt: User zeigt Backend-Crash beim Audiobook-Export:
+  `ValueError: Unknown TTS engine: elevenlabs. Available: edge-tts`.
+  Frontend-Dropdowns bieten 4 Engines (`edge-tts`, `google-tts`,
+  `pyttsx3`, `elevenlabs`), Backend hat nur eine. User sagt: "in der
+  lib manuscripta gibt es schon die engine klassen, bitte die nehmen,
+  wir brauchen nicht das rad neu erfinden".
+- Optimierter Prompt: "Wrap die vier manuscripta TTS-Adapter
+  (`EdgeTTSAdapter`, `GoogleTTSAdapter`, `Pyttsx3Adapter`,
+  `ElevenLabsAdapter` aus `manuscripta.audiobook.tts.*`) als
+  bibliogon `TTSEngine`-Subklassen. Lazy imports mit klaren Fehlern
+  wenn die Lib fehlt. Plus: `get_engine` darf bei unbekannten Engine-
+  IDs nicht crashen sondern muss auf `edge-tts` zurueckfallen
+  (Legacy-Buecher mit alten `tts_engine`-Werten)."
+- Diagnose:
+  - `tts_engine.py:ENGINES` registrierte nur `edge-tts` (1 von 4
+    versprochenen).
+  - manuscripta liefert `audiobook/tts/{base,edge_tts_adapter,
+    gtts_adapter,pyttsx3_adapter,elevenlabs_adapter}.py`. `TTSAdapter`
+    ABC ist sync mit `speak(text, output_path)`, ohne `list_voices`.
+    Bibliogons `TTSEngine` ist async mit `synthesize(text, output_path,
+    voice, language, rate)` und `list_voices(language)`.
+  - Mismatch: manuscripta-Adapter nehmen Config in `__init__`
+    (`lang`, `voice`, `rate`), bibliogon will per-call.
+  - `gtts`, `pyttsx3`, `elevenlabs` waren nicht im Backend-Env. Plus:
+    `manuscripta`'s ElevenLabs-Adapter nutzt das alte v0.x SDK
+    (`from elevenlabs import generate, save, set_api_key`), das im
+    1.x Rewrite entfernt wurde -> muss auf `^0.2.27` gepinnt werden.
+- Ergebnis:
+  - **Dependencies** in beide pyproject.toml (Backend env via
+    `poetry add`, plus `plugins/bibliogon-plugin-audiobook/pyproject.toml`
+    fuer Standalone-Installs):
+    - `manuscripta = "^0.6.0"` (war via export-plugin transitiv da)
+    - `gtts = "^2.5.0"`
+    - `pyttsx3 = "^2.90"`
+    - `elevenlabs = "^0.2.27"` (Pin-Kommentar im pyproject erklaert
+      warum: manuscripta nutzt das alte SDK)
+  - **Drei neue `TTSEngine`-Subklassen** in
+    `tts_engine.py`, jeweils thin wrapper um den jeweiligen
+    manuscripta-Adapter:
+    - `GoogleTTSEngine` (`engine_id="google-tts"`): synthesize ruft
+      `GoogleTTSAdapter(lang=...)` und `await asyncio.to_thread(
+      adapter.speak, text, output_path)` (sync `speak()` im Thread,
+      damit der Job-Loop nicht blockiert). list_voices liefert eine
+      einzelne Eintragung pro Sprache (gtts hat keine Voice-Vielfalt).
+    - `Pyttsx3Engine`: gleiches Pattern, plus `_speed_to_pyttsx3_rate`
+      Helper der den `1.0`/`1.5`/`0.5` Speed-Multiplikator auf wpm
+      umrechnet (180 wpm Default, clampe Minimum 80). list_voices
+      queried `pyttsx3.init().getProperty('voices')` live im Thread,
+      handled `bytes` Sprach-IDs sauber.
+    - `ElevenLabsEngine`: API-Key-Check kommt VOR dem Import (klarere
+      Fehlermeldung wenn der haeufigste Fall - vergessenes
+      `ELEVENLABS_API_KEY` env var - eintritt). list_voices ruft
+      `from elevenlabs import voices` live, gibt `[]` ohne Key.
+  - **Lazy imports + friendly errors**: Jede synthesize-Methode
+    wrapped den Adapter-Import in `try/except ImportError` und
+    delegiert an `_raise_missing_lib(engine, package, original)`
+    (Helper macht den `raise ... from original` da `from` nur in
+    `raise` funktioniert, nicht in `return`).
+  - **Defensives `get_engine`**: Statt `ValueError` bei unbekannter
+    Engine-ID -> jetzt **Warn-Log + Fallback auf `edge-tts`**. Damit
+    crasht ein Buch mit Legacy-Wert (z.B. `tts_engine="elevenlabs"`
+    aus einer Zeit wo das im Dropdown war aber nie funktionierte)
+    nicht mehr den Export-Job. Der Test
+    `test_get_engine_unknown_falls_back_to_edge` lockt das ein.
+  - **EdgeTTSEngine** komplett unangetastet - die hatte schon eine
+    funktionierende Implementation mit `list_voices()` ueber
+    `edge_tts.list_voices()` direkt (wofuer manuscripta keine
+    Entsprechung hat). Reusing manuscripta dort waere ein Downgrade.
+  - **Tests** (`tests/test_tts_engine.py`): 23 Tests insgesamt
+    (von 7 auf 23, +16):
+    - Registry-Check fuer alle vier Engines
+    - `get_engine` mit jedem registrierten Wert
+    - Engine-Identitaet (`engine_id`/`engine_name`) fuer alle drei
+      neuen
+    - Speed-Konversion fuer pyttsx3 (default, faster, slower,
+      clamping, garbage-input fallback)
+    - **Synthesize-Delegation Tests**: stub-en
+      `manuscripta.audiobook.tts.{gtts,pyttsx3,elevenlabs}_adapter`
+      via `sys.modules`-Injection mit Fake-Adapter-Klassen, rufen
+      `await engine.synthesize(...)` auf, verifizieren dass
+      Init-Args (lang, voice, rate, api_key) korrekt durchgereicht
+      wurden und `speak()` mit dem Text aufgerufen wurde
+    - ElevenLabs ohne API-Key -> RuntimeError
+    - ElevenLabs mit API-Key -> Adapter wird mit Key konstruiert
+    - list_voices Fallbacks (Google: 1 Eintrag, ElevenLabs: leer
+      ohne Key)
+    - Audiobook-Plugin 59 -> 74 Tests, Total 372 -> 387.
+  - `make test` durchgehend gruen, kein Crash-Risiko mehr beim
+    Engine-Wechsel.
+- Commit: (folgt)
+
+---
+
 ---

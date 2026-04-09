@@ -11,7 +11,17 @@ packages = [{include = "bibliogon_audiobook"}]
 python = "^3.11"
 pluginforge = "^0.5.0"
 fastapi = "^0.115.0"
+# manuscripta provides the actual TTS adapter classes (Edge, Google, pyttsx3,
+# ElevenLabs); we wrap them as bibliogon TTSEngine subclasses instead of
+# reimplementing them.
+manuscripta = "^0.6.0"
 edge-tts = "^7.0.0"
+gtts = "^2.5.0"
+pyttsx3 = "^2.90"
+# Pin to elevenlabs 0.2.x because manuscripta's adapter uses the legacy
+# `from elevenlabs import generate, save, set_api_key` import path that was
+# removed in the 1.x SDK rewrite.
+elevenlabs = "^0.2.27"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

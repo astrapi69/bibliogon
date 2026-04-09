@@ -21,6 +21,9 @@ bibliogon-plugin-ms-tools = {path = "../plugins/bibliogon-plugin-ms-tools", deve
 markdown = "^3.10.2"
 alembic = "^1.18.4"
 pillow = "^11.0.0"
+gtts = "^2.5.0"
+pyttsx3 = "^2.90"
+elevenlabs = "^0.2.27"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
