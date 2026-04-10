@@ -205,12 +205,12 @@ class GoogleTTSEngine(TTSEngine):
         import asyncio
 
         try:
-            from manuscripta.audiobook.tts.gtts_adapter import GoogleTTSAdapter
+            from manuscripta.audiobook.tts.google_translate_adapter import GoogleTranslateTTSAdapter
         except ImportError as e:
             _raise_missing_lib("Google TTS", "gtts", e)
 
         lang = (language or "de").lower().split("-")[0]
-        adapter = GoogleTTSAdapter(lang=lang)
+        adapter = GoogleTranslateTTSAdapter(lang=lang)
         await asyncio.to_thread(adapter.speak, text, output_path)
         logger.info("Google TTS: generated %s (%d chars, lang=%s)", output_path.name, len(text), lang)
         return output_path

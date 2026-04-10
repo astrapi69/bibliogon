@@ -111,9 +111,9 @@ async def test_google_tts_synthesize_delegates_to_manuscripta(monkeypatch, tmp_p
             captured["output_path"] = output_path
 
     import sys, types
-    fake_module = types.ModuleType("manuscripta.audiobook.tts.gtts_adapter")
-    fake_module.GoogleTTSAdapter = FakeAdapter
-    sys.modules["manuscripta.audiobook.tts.gtts_adapter"] = fake_module
+    fake_module = types.ModuleType("manuscripta.audiobook.tts.google_translate_adapter")
+    fake_module.GoogleTranslateTTSAdapter = FakeAdapter
+    sys.modules["manuscripta.audiobook.tts.google_translate_adapter"] = fake_module
 
     out = tmp_path / "out.mp3"
     engine = GoogleTTSEngine()

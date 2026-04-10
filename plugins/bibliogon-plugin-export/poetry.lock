@@ -1040,14 +1040,14 @@ htmlsoup = ["BeautifulSoup4"]
 
 [[package]]
 name = "manuscripta"
-version = "0.6.1"
+version = "0.7.0"
 description = "Book production pipeline for authors and self-publishers. Multi-format export (PDF, EPUB, DOCX, HTML, Markdown), audiobook generation, translation, and manuscript tooling."
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "manuscripta-0.6.1-py3-none-any.whl", hash = "sha256:799659a2de80bb6e5e28fafa4cdca386080ea9c212ba98a8141d22c14e39d256"},
-    {file = "manuscripta-0.6.1.tar.gz", hash = "sha256:d32a8c4d24d75176ccb41a4f01878e4d18dd1831d7fb40979dd815b23ae26362"},
+    {file = "manuscripta-0.7.0-py3-none-any.whl", hash = "sha256:804a3d91c33d73c7fe3d5c3991d451f12718dfec7eb51ffd3dddd4201b88b632"},
+    {file = "manuscripta-0.7.0.tar.gz", hash = "sha256:094aa47101aa0090c0eb02ed1edfb07e7454b79618dedd82a057a0637c7582da"},
 ]
 
 [package.dependencies]
@@ -1062,6 +1062,7 @@ python-dotenv = ">=1.1.0,<2.0.0"
 pyyaml = ">=6.0.2,<7.0.0"
 questionary = ">=2.1.1,<3.0.0"
 requests = ">=2.32.5,<3.0.0"
+tenacity = ">=8.2.3,<9.0.0"
 toml = ">=0.10.2,<0.11.0"
 
 [[package]]
@@ -2397,6 +2398,22 @@ files = [
 widechars = ["wcwidth"]
 
 [[package]]
+name = "tenacity"
+version = "8.5.0"
+description = "Retry code until it succeeds"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687"},
+    {file = "tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78"},
+]
+
+[package.extras]
+doc = ["reno", "sphinx"]
+test = ["pytest", "tornado (>=4.5)", "typeguard"]
+
+[[package]]
 name = "textual"
 version = "8.2.2"
 description = "Modern Text User Interface framework"
@@ -2661,4 +2678,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "aa2f2e224730395cc0105abfeb723b65b7abdd284865912c5b797fb1a22fa375"
+content-hash = "f620f8bf0ad1544226ab38fdc4ab9027cafab58b3d25d9757a6f4268b05aaa81"
