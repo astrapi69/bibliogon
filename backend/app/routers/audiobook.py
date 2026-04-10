@@ -334,6 +334,122 @@ def delete_google_credentials(db: Session = Depends(get_db)) -> None:
     _seeding_status.pop("google-cloud-tts", None)
 
 
+# --- Dry-run (test export with first paragraph + cost estimate) ---
+
+
+@router.post("/books/{book_id}/audiobook/dry-run")
+async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> FileResponse:
+    """Generate a short audio sample from the first paragraph of the
+    first non-skipped chapter. Returns the MP3 file plus cost-estimate
+    headers so the frontend can show a "Probe hoeren" player and an
+    estimated total cost before the user commits to a full export.
+
+    Custom headers on the response:
+
+    - ``X-Estimated-Cost-USD``: total cost for a full export (or "free")
+    - ``X-Estimated-Chapters``: number of chapters that would be generated
+    - ``X-Sample-Engine``: engine ID used for this sample
+    - ``X-Sample-Voice``: voice ID used for this sample
+    """
+    from app.models import Chapter
+
+    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    chapters = (
+        db.query(Chapter)
+        .filter(Chapter.book_id == book_id)
+        .order_by(Chapter.position)
+        .all()
+    )
+    if not chapters:
+        raise HTTPException(status_code=400, detail="Book has no chapters")
+
+    # Find the first non-skipped chapter with content
+    skip_types = {"toc", "imprint", "index", "bibliography", "endnotes"}
+    sample_text = ""
+    for ch in chapters:
+        if (ch.chapter_type or "").lower() in skip_types:
+            continue
+        try:
+            from bibliogon_audiobook.generator import extract_plain_text
+            full_text = extract_plain_text(ch.content)
+        except ImportError:
+            full_text = ch.content if isinstance(ch.content, str) else ""
+        if full_text.strip():
+            # Take only the first paragraph (up to 500 chars)
+            first_para = full_text.strip().split("\n\n")[0][:500]
+            sample_text = first_para
+            break
+
+    if not sample_text:
+        raise HTTPException(status_code=400, detail="No chapter with text content found")
+
+    engine_id = getattr(book, "tts_engine", None) or "edge-tts"
+    voice = getattr(book, "tts_voice", None) or ""
+    language = getattr(book, "tts_language", None) or book.language or "de"
+
+    # Generate sample audio
+    try:
+        from bibliogon_audiobook.tts_engine import get_engine
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Audiobook plugin not available")
+
+    import tempfile as _tmpmod
+    tmp_dir = Path(_tmpmod.mkdtemp(prefix="bibliogon_dryrun_"))
+    output_path = tmp_dir / "dry-run-sample.mp3"
+
+    try:
+        tts = get_engine(engine_id)
+        await tts.synthesize(
+            text=sample_text,
+            output_path=output_path,
+            voice=voice,
+            language=language,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Dry-run TTS failed: {e}")
+
+    if not output_path.exists():
+        raise HTTPException(status_code=500, detail="Sample audio was not generated")
+
+    # Estimate full export cost
+    cost_header = "free"
+    chapter_count = 0
+    try:
+        from bibliogon_audiobook.generator import extract_plain_text
+        from manuscripta.audiobook.tts import create_adapter
+        adapter = create_adapter(engine_id, lang=language, voice=voice or "default")
+        total_cost = 0.0
+        for ch in chapters:
+            if (ch.chapter_type or "").lower() in skip_types:
+                continue
+            pt = extract_plain_text(ch.content)
+            if not pt.strip():
+                continue
+            chapter_count += 1
+            c = adapter.estimate_cost(pt)
+            if c is not None:
+                total_cost += c
+        if total_cost > 0:
+            cost_header = f"{total_cost:.4f}"
+    except Exception:
+        pass
+
+    return FileResponse(
+        path=str(output_path),
+        media_type="audio/mpeg",
+        filename="dry-run-sample.mp3",
+        headers={
+            "X-Estimated-Cost-USD": cost_header,
+            "X-Estimated-Chapters": str(chapter_count),
+            "X-Sample-Engine": engine_id,
+            "X-Sample-Voice": voice or "default",
+        },
+    )
+
+
 # --- Per-book persistent audiobook downloads ---
 
 

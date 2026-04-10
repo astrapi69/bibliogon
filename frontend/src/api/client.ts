@@ -188,6 +188,17 @@ export interface BookAudiobook {
     zip_url?: string;
 }
 
+export interface DryRunResult {
+    /** Object URL for the generated sample MP3 (revoke when done). */
+    audioUrl: string;
+    /** "free" or a decimal USD amount like "2.3400". */
+    estimatedCostUsd: string;
+    /** Number of chapters that would be generated. */
+    estimatedChapters: number;
+    engine: string;
+    voice: string;
+}
+
 export interface AudiobookExistsError {
     code: "audiobook_exists";
     message: string;
@@ -538,6 +549,24 @@ export const api = {
         /** DELETE /api/books/{id}/audiobook -> remove persisted files */
         delete: (bookId: string) =>
             request<void>(`/books/${bookId}/audiobook`, {method: "DELETE"}),
+
+        /** Dry-run: generate a short sample from the first paragraph.
+         *  Returns a blob URL for playback + cost estimate from headers. */
+        dryRun: async (bookId: string): Promise<DryRunResult> => {
+            const res = await fetch(`${BASE}/books/${bookId}/audiobook/dry-run`, {method: "POST"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(res.status, err.detail || "Dry-run failed", `${BASE}/books/${bookId}/audiobook/dry-run`, "POST", err.stacktrace || "");
+            }
+            const blob = await res.blob();
+            return {
+                audioUrl: URL.createObjectURL(blob),
+                estimatedCostUsd: res.headers.get("X-Estimated-Cost-USD") || "free",
+                estimatedChapters: parseInt(res.headers.get("X-Estimated-Chapters") || "0", 10),
+                engine: res.headers.get("X-Sample-Engine") || "",
+                voice: res.headers.get("X-Sample-Voice") || "",
+            };
+        },
 
         /** Direct download URLs (no API call) */
         mergedUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/merged`,

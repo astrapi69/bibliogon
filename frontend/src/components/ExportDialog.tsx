@@ -1,6 +1,6 @@
-import {useEffect, useState} from "react";
-import {Download, ChevronDown, ChevronUp, XCircle} from "lucide-react";
-import {ApiError, api} from "../api/client";
+import {useEffect, useRef, useState} from "react";
+import {Download, ChevronDown, ChevronUp, Headphones, XCircle} from "lucide-react";
+import {ApiError, DryRunResult, api} from "../api/client";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
@@ -140,6 +140,32 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         }
     };
 
+    // --- Dry-run (test export with first paragraph) ---
+    const [dryRunLoading, setDryRunLoading] = useState(false);
+    const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const handleDryRun = async () => {
+        setDryRunLoading(true);
+        setDryRunResult(null);
+        try {
+            const result = await api.bookAudiobook.dryRun(bookId);
+            setDryRunResult(result);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            notify.error(t("ui.export_dialog.dry_run_failed", "Test-Export fehlgeschlagen") + ": " + detail, err);
+        }
+        setDryRunLoading(false);
+    };
+
+    // Clean up blob URL when dialog closes
+    useEffect(() => {
+        if (!open && dryRunResult?.audioUrl) {
+            URL.revokeObjectURL(dryRunResult.audioUrl);
+            setDryRunResult(null);
+        }
+    }, [open]);
+
     return (
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
             <Dialog.Portal>
@@ -257,6 +283,53 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                         addPlaceholder="z.B. back-matter/dedication.md"
                                     />
                                 </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Audiobook dry-run section */}
+                    {format === "audiobook" && (
+                        <div style={{
+                            marginTop: 16, padding: 12,
+                            background: "var(--bg-secondary)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-sm)",
+                        }}>
+                            <div style={{display: "flex", alignItems: "center", gap: 8, marginBottom: 8}}>
+                                <Headphones size={14}/>
+                                <strong style={{fontSize: "0.875rem"}}>
+                                    {t("ui.export_dialog.dry_run_title", "Test-Export")}
+                                </strong>
+                            </div>
+                            <p style={{fontSize: "0.75rem", color: "var(--text-muted)", margin: "0 0 8px 0"}}>
+                                {t("ui.export_dialog.dry_run_hint", "Generiert nur den ersten Absatz des ersten Kapitels. Prueft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.")}
+                            </p>
+                            {dryRunResult ? (
+                                <div style={{display: "flex", flexDirection: "column", gap: 8}}>
+                                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                                    <audio ref={audioRef} controls src={dryRunResult.audioUrl} style={{width: "100%", height: 36}}/>
+                                    <div style={{fontSize: "0.75rem", color: "var(--text-secondary)"}}>
+                                        {dryRunResult.estimatedChapters} {t("ui.audio_progress.chapters", "Kapitel")}
+                                        {" | "}
+                                        {t("ui.audio_progress.event_cost", "Kosten")}:{" "}
+                                        {dryRunResult.estimatedCostUsd === "free"
+                                            ? t("ui.export_dialog.free", "kostenlos")
+                                            : `~$${parseFloat(dryRunResult.estimatedCostUsd).toFixed(2)}`}
+                                        {" | "}
+                                        Engine: {dryRunResult.engine} | Voice: {dryRunResult.voice}
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={handleDryRun}
+                                    disabled={dryRunLoading}
+                                >
+                                    <Headphones size={12}/>
+                                    {dryRunLoading
+                                        ? t("ui.export_dialog.dry_run_loading", "Generiert Probe...")
+                                        : t("ui.export_dialog.dry_run_button", "Probe hoeren")}
+                                </button>
                             )}
                         </div>
                     )}
