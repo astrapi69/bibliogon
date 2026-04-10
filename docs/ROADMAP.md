@@ -215,7 +215,7 @@ Geplant:
 - [ ] M-15: Qualitaets-Tab in Buch-Metadaten (Kapitel-Tabelle mit Ausreisser-Markierung)
 - [ ] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
 - [x] M-17: Füllwort-Listen aus YAML laden (erweiterbar durch User)
-- [ ] M-18: Begriffe von Pruefung ausschliessen (Allowlist)
+- [x] M-18: Begriffe von Prüfung ausschließen (Allowlist)
 
 ## Sicherung (Git-Integration) - Phase 2
 

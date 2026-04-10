@@ -61,6 +61,42 @@ def _load_fillers(language: str) -> list[str]:
 # Public alias for backward compatibility (tests import this)
 FILLER_WORDS = _FALLBACK_FILLERS
 
+
+# ---------------------------------------------------------------------------
+# Allowlist: terms the user wants excluded from ALL checks
+# ---------------------------------------------------------------------------
+
+_ALLOWLIST_DIR = Path(__file__).resolve().parent.parent / "content" / "allowlist"
+_allowlist_cache: dict[str, set[str]] = {}
+
+
+def _load_allowlist(language: str) -> set[str]:
+    """Load the user's allowlist for a language from YAML."""
+    if language in _allowlist_cache:
+        return _allowlist_cache[language]
+
+    yaml_path = _ALLOWLIST_DIR / f"{language}.yaml"
+    if yaml_path.exists():
+        try:
+            data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                result = {str(w).lower() for w in data if w}
+                _allowlist_cache[language] = result
+                return result
+        except (yaml.YAMLError, OSError) as e:
+            logger.warning("Failed to load allowlist for %s: %s", language, e)
+
+    _allowlist_cache[language] = set()
+    return set()
+
+
+def _filter_allowlist(findings: list[dict], language: str) -> list[dict]:
+    """Remove findings whose word/phrase is in the user's allowlist."""
+    allowlist = _load_allowlist(language)
+    if not allowlist:
+        return findings
+    return [f for f in findings if f.get("word", "").lower() not in allowlist]
+
 # Passive voice indicators per language
 PASSIVE_PATTERNS: dict[str, list[re.Pattern]] = {
     "de": [
@@ -364,6 +400,9 @@ def check_style(
     findings.extend(check_word_repetitions(text, language, repetition_window))
     findings.extend(check_adverbs(text, language))
     findings.extend(check_redundant_phrases(text, language))
+
+    # Apply user allowlist: remove findings for explicitly excluded terms
+    findings = _filter_allowlist(findings, language)
 
     total_words = _word_count(text)
     total_sentences = len(_split_sentences(text))

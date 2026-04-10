@@ -241,3 +241,37 @@ def test_default_sentence_length_is_25():
     """The doc says 25, not 30."""
     from bibliogon_ms_tools.style_checker import DEFAULT_MAX_SENTENCE_LENGTH
     assert DEFAULT_MAX_SENTENCE_LENGTH == 25
+
+
+# --- Allowlist ---
+
+from bibliogon_ms_tools.style_checker import _filter_allowlist, _allowlist_cache
+
+
+def test_allowlist_filters_matching_findings():
+    _allowlist_cache["de"] = {"eigentlich", "quasi"}
+    findings = [
+        {"type": "filler_word", "word": "eigentlich"},
+        {"type": "filler_word", "word": "wirklich"},
+        {"type": "filler_word", "word": "quasi"},
+    ]
+    filtered = _filter_allowlist(findings, "de")
+    assert len(filtered) == 1
+    assert filtered[0]["word"] == "wirklich"
+    _allowlist_cache.clear()
+
+
+def test_allowlist_empty_returns_all():
+    _allowlist_cache["en"] = set()
+    findings = [{"type": "filler_word", "word": "actually"}]
+    filtered = _filter_allowlist(findings, "en")
+    assert len(filtered) == 1
+    _allowlist_cache.clear()
+
+
+def test_allowlist_case_insensitive():
+    _allowlist_cache["de"] = {"eigentlich"}
+    findings = [{"type": "filler_word", "word": "Eigentlich"}]
+    filtered = _filter_allowlist(findings, "de")
+    assert len(filtered) == 0
+    _allowlist_cache.clear()

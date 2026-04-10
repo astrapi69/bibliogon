@@ -1,0 +1,10 @@
+# Ausnahmeliste: Begriffe die von allen Stil-Checks ausgenommen werden.
+# Füge hier Wörter oder Phrasen hinzu die du bewusst verwendest und
+# bei denen du keine Warnung sehen möchtest.
+#
+# Beispiel:
+# - eigentlich
+# - im Grunde
+# - persoenliche Meinung
+
+[]

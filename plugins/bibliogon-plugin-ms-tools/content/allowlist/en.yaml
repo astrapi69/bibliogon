@@ -1,0 +1,9 @@
+# Allowlist: terms excluded from all style checks.
+# Add words or phrases you use intentionally and do not want
+# warnings for.
+#
+# Example:
+# - actually
+# - kind of
+
+[]
