@@ -162,6 +162,11 @@ def analyze_readability(text: str, language: str = "de") -> dict:
 
     avg_sentence_length = round(n_words / n_sentences, 1) if n_sentences > 0 else 0
     avg_syllables_per_word = round(n_syllables / n_words, 2) if n_words > 0 else 0
+    avg_word_length_chars = round(sum(len(w) for w in words) / n_words, 1) if n_words > 0 else 0
+    char_count_with_spaces = len(text)
+    char_count_without_spaces = len(text.replace(" ", "").replace("\n", "").replace("\t", ""))
+    paragraph_count = len([p for p in text.split("\n\n") if p.strip()])
+    estimated_pages = round(n_words / 250, 1)
 
     fre = flesch_reading_ease(text, language)
     fkg = flesch_kincaid_grade(text, language)
@@ -184,7 +189,12 @@ def analyze_readability(text: str, language: str = "de") -> dict:
         "word_count": n_words,
         "sentence_count": n_sentences,
         "syllable_count": n_syllables,
+        "char_count_with_spaces": char_count_with_spaces,
+        "char_count_without_spaces": char_count_without_spaces,
+        "paragraph_count": paragraph_count,
+        "estimated_pages": estimated_pages,
         "avg_sentence_length": avg_sentence_length,
+        "avg_word_length_chars": avg_word_length_chars,
         "avg_syllables_per_word": avg_syllables_per_word,
         "flesch_reading_ease": fre,
         "flesch_kincaid_grade": fkg,

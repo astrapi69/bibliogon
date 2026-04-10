@@ -180,3 +180,37 @@ def test_analyze_readability_word_count():
     result = analyze_readability(text, "de")
     assert result["word_count"] == 5
     assert result["sentence_count"] == 1
+
+
+# --- New metrics fields ---
+
+
+def test_analyze_includes_char_counts():
+    from bibliogon_ms_tools.readability import analyze_readability
+    text = "Dies ist ein Satz. Und noch einer."
+    result = analyze_readability(text, "de")
+    assert "char_count_with_spaces" in result
+    assert "char_count_without_spaces" in result
+    assert result["char_count_with_spaces"] > result["char_count_without_spaces"]
+
+
+def test_analyze_includes_paragraph_count():
+    from bibliogon_ms_tools.readability import analyze_readability
+    text = "Erster Absatz.\n\nZweiter Absatz.\n\nDritter Absatz."
+    result = analyze_readability(text, "de")
+    assert result["paragraph_count"] == 3
+
+
+def test_analyze_includes_avg_word_length_chars():
+    from bibliogon_ms_tools.readability import analyze_readability
+    text = "Das ist ein kurzer Satz."
+    result = analyze_readability(text, "de")
+    assert "avg_word_length_chars" in result
+    assert result["avg_word_length_chars"] > 0
+
+
+def test_analyze_includes_estimated_pages():
+    from bibliogon_ms_tools.readability import analyze_readability
+    text = " ".join(["Wort"] * 500)
+    result = analyze_readability(text, "de")
+    assert result["estimated_pages"] == 2.0  # 500 / 250

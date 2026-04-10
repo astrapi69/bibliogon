@@ -150,3 +150,80 @@ def test_sanitize_returns_original_and_sanitized():
     assert result["sanitized"] != text
     assert "original" in result
     assert "sanitized" in result
+
+
+# --- Invisible Characters ---
+
+from bibliogon_ms_tools.sanitizer import fix_invisible_chars, fix_html_artifacts
+
+
+def test_fix_nbsp():
+    text = "Hello\u00a0World"
+    fixed, count = fix_invisible_chars(text)
+    assert fixed == "Hello World"
+    assert count == 1
+
+
+def test_fix_zero_width_space():
+    text = "Hello\u200bWorld"
+    fixed, count = fix_invisible_chars(text)
+    assert fixed == "HelloWorld"
+    assert count == 1
+
+
+def test_fix_bom():
+    text = "\ufeffHello"
+    fixed, count = fix_invisible_chars(text)
+    assert fixed == "Hello"
+    assert count == 1
+
+
+def test_fix_soft_hyphen():
+    text = "Buch\u00adstabe"
+    fixed, count = fix_invisible_chars(text)
+    assert fixed == "Buchstabe"
+    assert count == 1
+
+
+def test_fix_multiple_invisible():
+    text = "\ufeffHello\u00a0\u200bWorld\u00ad"
+    fixed, count = fix_invisible_chars(text)
+    assert fixed == "Hello World"
+    assert count == 4
+
+
+# --- HTML Artifacts ---
+
+
+def test_fix_empty_span():
+    text = "Hello <span></span>World"
+    fixed, count = fix_html_artifacts(text)
+    assert "<span>" not in fixed
+    assert count >= 1
+
+
+def test_fix_style_attribute():
+    text = '<p style="color:red">Text</p>'
+    fixed, count = fix_html_artifacts(text)
+    assert 'style=' not in fixed
+
+
+def test_fix_word_namespace_tags():
+    text = "Hello <o:p></o:p> World"
+    fixed, count = fix_html_artifacts(text)
+    assert "<o:p>" not in fixed
+
+
+def test_fix_html_comments():
+    text = "Hello <!-- comment --> World"
+    fixed, count = fix_html_artifacts(text)
+    assert "<!--" not in fixed
+
+
+def test_sanitize_includes_new_fixes():
+    from bibliogon_ms_tools.sanitizer import sanitize
+    text = "Hello\u00a0World <span></span>"
+    result = sanitize(text, "en")
+    assert result["changed"]
+    assert "invisible_chars" in result["fixes"]
+    assert "html_artifacts" in result["fixes"]

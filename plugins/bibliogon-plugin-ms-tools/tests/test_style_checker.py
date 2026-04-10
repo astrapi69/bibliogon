@@ -135,3 +135,109 @@ def test_findings_have_required_fields():
         assert "message" in finding
         assert "de" in finding["message"]
         assert "en" in finding["message"]
+
+
+# --- Word Repetitions ---
+
+from bibliogon_ms_tools.style_checker import (
+    check_word_repetitions,
+    check_adverbs,
+    check_redundant_phrases,
+)
+
+
+def test_repetition_detected_within_window():
+    text = "Der Baum stand am Weg. Der Baum war gross."
+    findings = check_word_repetitions(text, "de", window=20)
+    words = [f["word"] for f in findings]
+    assert "baum" in words
+
+
+def test_repetition_not_detected_outside_window():
+    words = " ".join(["wort"] + ["filler"] * 60 + ["wort"])
+    findings = check_word_repetitions(words, "de", window=50)
+    assert not any(f["word"] == "wort" for f in findings)
+
+
+def test_repetition_ignores_stop_words():
+    text = "Der Mann ging. Der Mann kam."
+    findings = check_word_repetitions(text, "de", window=20)
+    words = [f["word"] for f in findings]
+    assert "der" not in words
+    assert "mann" in words
+
+
+def test_repetition_short_words_ignored():
+    text = "Es ist so. Es ist so."
+    findings = check_word_repetitions(text, "de", window=20)
+    # "es", "so" are < 3 chars or stop words
+    assert len(findings) == 0
+
+
+# --- Adverbs ---
+
+
+def test_adverb_german_lich():
+    text = "Er sprach freundlich und hoeflich."
+    findings = check_adverbs(text, "de")
+    words = [f["word"] for f in findings]
+    assert "freundlich" in words
+    assert "hoeflich" in words
+
+
+def test_adverb_english_ly():
+    text = "She quickly and carefully opened the door."
+    findings = check_adverbs(text, "en")
+    words = [f["word"] for f in findings]
+    assert "quickly" in words
+    assert "carefully" in words
+
+
+def test_adverb_ignores_short_words():
+    text = "The fly sat on the wall."
+    findings = check_adverbs(text, "en")
+    # "fly" ends in -ly but is too short (3 chars, suffix is 2)
+    assert not any(f["word"] == "fly" for f in findings)
+
+
+# --- Redundant Phrases ---
+
+
+def test_redundant_phrase_german():
+    text = "Das ist meine persoenliche Meinung zu dem Thema."
+    findings = check_redundant_phrases(text, "de")
+    assert len(findings) == 1
+    assert findings[0]["suggestion"] == "Meinung"
+
+
+def test_redundant_phrase_english():
+    text = "We need advance planning for future plans."
+    findings = check_redundant_phrases(text, "en")
+    phrases = [f["word"] for f in findings]
+    assert "advance planning" in phrases
+    assert "future plans" in phrases
+
+
+def test_no_false_positive_on_clean_text():
+    text = "Die Planung war erfolgreich abgeschlossen."
+    findings = check_redundant_phrases(text, "de")
+    assert len(findings) == 0
+
+
+# --- check_style integration ---
+
+
+def test_check_style_includes_new_checks():
+    text = "Er sprach freundlich. Die persoenliche Meinung war klar. Der Baum stand dort. Der Baum war gross."
+    result = check_style(text, "de")
+    assert "repetition_count" in result
+    assert "adverb_count" in result
+    assert "redundant_phrase_count" in result
+    assert "passive_ratio" in result
+    assert "adverb_ratio" in result
+
+
+def test_default_sentence_length_is_25():
+    """The doc says 25, not 30."""
+    from bibliogon_ms_tools.style_checker import DEFAULT_MAX_SENTENCE_LENGTH
+    assert DEFAULT_MAX_SENTENCE_LENGTH == 25

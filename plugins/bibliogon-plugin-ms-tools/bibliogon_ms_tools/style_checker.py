@@ -1,4 +1,5 @@
-"""Style checker: detects filler words, passive voice, and long sentences."""
+"""Style checker: detects filler words, passive voice, long sentences,
+word repetitions, adverbs, and redundant phrases."""
 
 import re
 
@@ -40,14 +41,78 @@ PASSIVE_PATTERNS: dict[str, list[re.Pattern]] = {
     ],
 }
 
+# Redundant phrases per language (conservative list)
+REDUNDANT_PHRASES: dict[str, list[tuple[str, str]]] = {
+    "de": [
+        ("persoenliche Meinung", "Meinung"),
+        ("zukuenftige Plaene", "Plaene"),
+        ("kurze Zusammenfassung", "Zusammenfassung"),
+        ("komplett fertig", "fertig"),
+        ("voellig ueberfluessig", "ueberfluessig"),
+        ("bereits schon", "bereits"),
+        ("nochmals wieder", "nochmals"),
+        ("gemeinsam zusammen", "gemeinsam"),
+        ("einzelne Details", "Details"),
+        ("neue Innovation", "Innovation"),
+        ("freies Geschenk", "Geschenk"),
+        ("aktuelle Gegenwart", "Gegenwart"),
+        ("runde Form", "Form"),
+        ("weiter fortsetzen", "fortsetzen"),
+        ("vorher planen", "planen"),
+    ],
+    "en": [
+        ("personal opinion", "opinion"),
+        ("future plans", "plans"),
+        ("brief summary", "summary"),
+        ("completely finished", "finished"),
+        ("absolutely essential", "essential"),
+        ("advance planning", "planning"),
+        ("added bonus", "bonus"),
+        ("end result", "result"),
+        ("free gift", "gift"),
+        ("past history", "history"),
+        ("new innovation", "innovation"),
+        ("completely eliminate", "eliminate"),
+        ("each and every", "each"),
+        ("basic fundamentals", "fundamentals"),
+        ("close proximity", "proximity"),
+    ],
+}
+
+# Adverb suffixes per language
+ADVERB_SUFFIXES: dict[str, list[str]] = {
+    "de": ["lich", "weise", "falls", "lings", "waerts"],
+    "en": ["ly"],
+    "es": ["mente"],
+    "fr": ["ment"],
+}
+
+# Stop words excluded from repetition detection
+STOP_WORDS: dict[str, set[str]] = {
+    "de": {
+        "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer",
+        "einem", "einen", "und", "oder", "aber", "ist", "sind", "war",
+        "hat", "haben", "wird", "werden", "nicht", "sich", "mit", "auf",
+        "fuer", "von", "zu", "an", "in", "aus", "bei", "nach", "vor",
+        "um", "als", "wie", "wenn", "dass", "es", "er", "sie", "ich",
+        "du", "wir", "ihr", "man", "so", "da", "noch", "schon", "auch",
+    },
+    "en": {
+        "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
+        "has", "have", "had", "will", "would", "not", "with", "for", "of",
+        "to", "at", "in", "on", "from", "by", "as", "if", "that", "it",
+        "he", "she", "we", "they", "you", "i", "this", "be", "do", "so",
+    },
+}
+
 # Default thresholds
-DEFAULT_MAX_SENTENCE_LENGTH = 30  # words
+DEFAULT_MAX_SENTENCE_LENGTH = 25  # words (was 30, doc says 25)
 DEFAULT_MAX_FILLER_RATIO = 0.05  # 5% of total words
+DEFAULT_REPETITION_WINDOW = 50  # words
 
 
 def _split_sentences(text: str) -> list[str]:
     """Split text into sentences."""
-    # Split on sentence-ending punctuation followed by whitespace or end
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     return [s.strip() for s in sentences if s.strip()]
 
@@ -57,11 +122,13 @@ def _word_count(text: str) -> int:
     return len(text.split())
 
 
-def check_filler_words(text: str, language: str = "de") -> list[dict]:
-    """Find filler words in text.
+def _split_words(text: str) -> list[str]:
+    """Split text into individual words."""
+    return re.findall(r"\b\w+\b", text)
 
-    Returns list of findings with word, position, and suggestion.
-    """
+
+def check_filler_words(text: str, language: str = "de") -> list[dict]:
+    """Find filler words in text."""
     fillers = FILLER_WORDS.get(language, FILLER_WORDS.get("en", []))
     findings: list[dict] = []
 
@@ -85,10 +152,7 @@ def check_filler_words(text: str, language: str = "de") -> list[dict]:
 
 
 def check_passive_voice(text: str, language: str = "de") -> list[dict]:
-    """Detect passive voice constructions.
-
-    Returns list of findings with matched text and position.
-    """
+    """Detect passive voice constructions."""
     patterns = PASSIVE_PATTERNS.get(language, PASSIVE_PATTERNS.get("en", []))
     findings: list[dict] = []
 
@@ -112,17 +176,13 @@ def check_passive_voice(text: str, language: str = "de") -> list[dict]:
 def check_sentence_length(
     text: str, max_words: int = DEFAULT_MAX_SENTENCE_LENGTH
 ) -> list[dict]:
-    """Find sentences that exceed the word limit.
-
-    Returns list of findings with sentence text and word count.
-    """
+    """Find sentences that exceed the word limit."""
     sentences = _split_sentences(text)
     findings: list[dict] = []
 
     offset = 0
     for sentence in sentences:
         wc = _word_count(sentence)
-        # Find actual position in text
         idx = text.find(sentence, offset)
         if idx == -1:
             idx = offset
@@ -147,30 +207,140 @@ def check_sentence_length(
     return findings
 
 
+def check_word_repetitions(
+    text: str, language: str = "de", window: int = DEFAULT_REPETITION_WINDOW,
+) -> list[dict]:
+    """Find words that repeat within a sliding window.
+
+    Stop words (der, die, das, and, the, ...) are excluded.
+    """
+    words = _split_words(text)
+    stop = STOP_WORDS.get(language, STOP_WORDS.get("en", set()))
+    findings: list[dict] = []
+    seen: dict[str, int] = {}  # word -> last position in words list
+
+    for i, raw_word in enumerate(words):
+        word = raw_word.lower()
+        if len(word) < 3 or word in stop:
+            continue
+        if word in seen and (i - seen[word]) <= window:
+            # Find offset in original text for the second occurrence
+            offset = 0
+            for j in range(i):
+                offset = text.find(words[j], offset) + len(words[j])
+            actual_offset = text.find(raw_word, offset)
+            if actual_offset == -1:
+                actual_offset = offset
+
+            findings.append({
+                "type": "word_repetition",
+                "word": word,
+                "offset": actual_offset,
+                "length": len(word),
+                "distance": i - seen[word],
+                "severity": "info",
+                "message": {
+                    "de": f"Wortwiederholung '{word}' (Abstand: {i - seen[word]} Woerter).",
+                    "en": f"Word repetition '{word}' ({i - seen[word]} words apart).",
+                },
+            })
+        seen[word] = i
+
+    return findings
+
+
+def check_adverbs(text: str, language: str = "de") -> list[dict]:
+    """Detect adverbs by suffix (-ly, -lich, -ment, -mente).
+
+    Helps identify weak verb+adverb combinations that could be
+    replaced by a stronger verb.
+    """
+    suffixes = ADVERB_SUFFIXES.get(language, ADVERB_SUFFIXES.get("en", ["ly"]))
+    findings: list[dict] = []
+
+    for match in re.finditer(r"\b(\w+)\b", text):
+        word = match.group(1)
+        if len(word) < 4:
+            continue
+        word_lower = word.lower()
+        for suffix in suffixes:
+            if word_lower.endswith(suffix) and len(word_lower) > len(suffix) + 1:
+                findings.append({
+                    "type": "adverb",
+                    "word": word,
+                    "offset": match.start(),
+                    "length": len(word),
+                    "severity": "info",
+                    "message": {
+                        "de": f"Adverb '{word}' - staerkeres Verb statt Adverb+schwaches Verb?",
+                        "en": f"Adverb '{word}' - consider a stronger verb instead.",
+                    },
+                })
+                break
+
+    return findings
+
+
+def check_redundant_phrases(text: str, language: str = "de") -> list[dict]:
+    """Detect redundant phrases that can be shortened."""
+    phrases = REDUNDANT_PHRASES.get(language, REDUNDANT_PHRASES.get("en", []))
+    findings: list[dict] = []
+
+    for phrase, suggestion in phrases:
+        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b", re.I)
+        for match in pattern.finditer(text):
+            findings.append({
+                "type": "redundant_phrase",
+                "word": phrase,
+                "offset": match.start(),
+                "length": len(phrase),
+                "suggestion": suggestion,
+                "severity": "info",
+                "message": {
+                    "de": f"Redundant: '{phrase}' - '{suggestion}' reicht.",
+                    "en": f"Redundant: '{phrase}' - '{suggestion}' is sufficient.",
+                },
+            })
+
+    return findings
+
+
 def check_style(
     text: str,
     language: str = "de",
     max_sentence_length: int = DEFAULT_MAX_SENTENCE_LENGTH,
+    repetition_window: int = DEFAULT_REPETITION_WINDOW,
 ) -> dict:
     """Run all style checks on text.
 
     Returns summary with findings grouped by type.
     """
-    findings = []
+    findings: list[dict] = []
     findings.extend(check_filler_words(text, language))
     findings.extend(check_passive_voice(text, language))
     findings.extend(check_sentence_length(text, max_sentence_length))
+    findings.extend(check_word_repetitions(text, language, repetition_window))
+    findings.extend(check_adverbs(text, language))
+    findings.extend(check_redundant_phrases(text, language))
 
     total_words = _word_count(text)
+    total_sentences = len(_split_sentences(text))
     filler_count = sum(1 for f in findings if f["type"] == "filler_word")
+    passive_count = sum(1 for f in findings if f["type"] == "passive_voice")
+    adverb_count = sum(1 for f in findings if f["type"] == "adverb")
 
     return {
         "total_words": total_words,
-        "total_sentences": len(_split_sentences(text)),
+        "total_sentences": total_sentences,
         "finding_count": len(findings),
         "filler_count": filler_count,
-        "passive_count": sum(1 for f in findings if f["type"] == "passive_voice"),
+        "passive_count": passive_count,
         "long_sentence_count": sum(1 for f in findings if f["type"] == "long_sentence"),
+        "repetition_count": sum(1 for f in findings if f["type"] == "word_repetition"),
+        "adverb_count": adverb_count,
+        "redundant_phrase_count": sum(1 for f in findings if f["type"] == "redundant_phrase"),
         "filler_ratio": round(filler_count / total_words, 4) if total_words > 0 else 0,
+        "passive_ratio": round(passive_count / total_sentences, 4) if total_sentences > 0 else 0,
+        "adverb_ratio": round(adverb_count / total_words, 4) if total_words > 0 else 0,
         "findings": findings,
     }
