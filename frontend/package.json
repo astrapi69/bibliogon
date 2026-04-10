@@ -49,8 +49,12 @@
     "lucide-react": "^0.468.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
     "react-toastify": "^11.0.5",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "tiptap-footnotes": "2.0.4"
   },
   "devDependencies": {

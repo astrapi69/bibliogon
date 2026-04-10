@@ -393,6 +393,13 @@ ui:
     dry_run_loading: "Generating sample..."
     dry_run_failed: "Test export failed"
     free: "free"
+  help:
+    title: "Help"
+    open: "Open help"
+    open_online: "Open online"
+    search_placeholder: "Search..."
+    results: "Results"
+    not_found: "Page not found"
     popover_title: "Audiobook Export"
     popover_chapter_count: "{current} of {total} chapters"
     popover_current: "Current"

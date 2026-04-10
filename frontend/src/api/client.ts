@@ -199,6 +199,27 @@ export interface DryRunResult {
     voice: string;
 }
 
+export interface HelpNavItem {
+    title: string;
+    slug: string;
+    icon: string;
+    children?: HelpNavItem[];
+}
+
+export interface HelpPage {
+    slug: string;
+    locale: string;
+    content: string;
+    last_modified: number;
+}
+
+export interface HelpSearchResult {
+    slug: string;
+    title: string;
+    snippet: string;
+    score: number;
+}
+
 export interface AudiobookExistsError {
     code: "audiobook_exists";
     message: string;
@@ -664,6 +685,7 @@ export const api = {
     },
 
     help: {
+        // Legacy endpoints (kept for backward compat)
         shortcuts: (lang: string = "de") =>
             request<{keys: string; action: string}[]>(`/help/shortcuts?lang=${lang}`),
 
@@ -671,6 +693,16 @@ export const api = {
             request<{question: string; answer: string}[]>(`/help/faq?lang=${lang}`),
 
         about: () => request<Record<string, string>>("/help/about"),
+
+        // New docs-based endpoints
+        navigation: (locale: string = "de") =>
+            request<HelpNavItem[]>(`/help/navigation/${locale}`),
+
+        page: (locale: string, slug: string) =>
+            request<HelpPage>(`/help/page/${locale}/${slug}`),
+
+        search: (locale: string, query: string) =>
+            request<{results: HelpSearchResult[]}>(`/help/search/${locale}?q=${encodeURIComponent(query)}`),
     },
 
     getStarted: {

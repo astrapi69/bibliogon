@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {Download, ChevronDown, ChevronUp, Headphones, XCircle} from "lucide-react";
 import {ApiError, DryRunResult, api} from "../api/client";
+import HelpLink from "./help/HelpLink";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
@@ -173,7 +174,10 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 <Dialog.Content className="dialog-content dialog-content-wide">
                     {/* Header */}
                     <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">{t("ui.export_dialog.title", "Export")}: {bookTitle}</Dialog.Title>
+                        <Dialog.Title className="dialog-title" style={{display: "flex", alignItems: "center", gap: 6}}>
+                            {t("ui.export_dialog.title", "Export")}: {bookTitle}
+                            <HelpLink slug={format === "audiobook" ? "export/audiobook" : `export/${format === "project" ? "epub" : format}`}/>
+                        </Dialog.Title>
                     </div>
 
                     {/* Format selection */}

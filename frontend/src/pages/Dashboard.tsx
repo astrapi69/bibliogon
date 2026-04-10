@@ -13,9 +13,11 @@ import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useHelp} from "../contexts/HelpContext";
 
 export default function Dashboard() {
     const dialog = useDialog();
+    const {openHelp} = useHelp();
     const {t} = useI18n();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
@@ -161,7 +163,7 @@ export default function Dashboard() {
                             <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
                                 <Rocket size={18}/>
                             </button>
-                            <button className="btn-icon" onClick={() => navigate("/help")} title={t("ui.dashboard.help", "Hilfe")}>
+                            <button className="btn-icon" onClick={() => openHelp()} title={t("ui.dashboard.help", "Hilfe")}>
                                 <HelpCircle size={18}/>
                             </button>
                             <button className="btn-icon" onClick={() => navigate("/settings")} title={t("ui.settings.title", "Einstellungen")}>
@@ -196,7 +198,7 @@ export default function Dashboard() {
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/get-started")}>
                                         <Rocket size={16}/> {t("ui.get_started.title", "Erste Schritte")}
                                     </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/help")}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => openHelp()}>
                                         <HelpCircle size={16}/> {t("ui.dashboard.help", "Hilfe")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => navigate("/settings")}>
