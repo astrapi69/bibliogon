@@ -229,7 +229,7 @@ function EventLog({events, total}: {events: AudiobookEvent[]; total: number}) {
 function ChapterFileList({files}: {files: {filename: string; url: string}[]}) {
     const {t} = useI18n();
     return (
-        <details style={{marginTop: 16}}>
+        <details open style={{marginTop: 16}}>
             <summary style={{cursor: "pointer", fontSize: "0.875rem", color: "var(--text-secondary)"}}>
                 {t("ui.audio_progress.individual_files", "Einzelne Kapitel")} ({files.length})
             </summary>
