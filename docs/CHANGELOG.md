@@ -2,7 +2,63 @@
 
 Erledigte Phasen und deren Inhalt. Aktueller Stand in CLAUDE.md, offene Punkte in ROADMAP.md.
 
-## Phase 9: Uebersetzung, Audiobook, Infrastruktur (v0.10.0)
+## [0.11.0] - 2026-04-10
+
+### Added
+- Google Cloud TTS Engine mit Service Account Authentifizierung, Quality-Detection (standard/wavenet/neural2/studio/journey) und Voice-Seeding (audiobook)
+- Verschlüsselte Credential-Speicherung via Fernet/AES für Google SA JSON und ElevenLabs API-Key (credential_store)
+- Content-Hash-Cache: unveränderte Kapitel werden beim Re-Export nicht neu generiert, spart TTS-Kosten (audiobook)
+- Kostenschätzung und Ersparnisse-Tracking im Progress-Dialog nach Export-Abschluss (audiobook)
+- Dry-Run Modus: Probe hören + Kosten-Preview vor dem echten Export (audiobook)
+- Quality-Filter-Toggle im Voice-Dropdown für Google Cloud TTS Stimmen (audiobook)
+- Persistente Audiobook-Ablage unter uploads/{book_id}/audiobook/ mit Download-Endpoints (audiobook)
+- TTS-Preview-Cache und Preview-Persistenz mit Kapitel-Kontext im Metadata-Tab (audiobook)
+- Inline Audio-Player für TTS-Preview im Editor mit Play/Pause/Volume/Close (editor)
+- ElevenLabs API-Key UI in Settings mit Verify/Test/Remove (audiobook)
+- Help-System: Single-Source-of-Truth Dokumentation mit In-App HelpPanel (react-markdown, Suche, Navigation, Breadcrumb, kontext-sensitive HelpLinks) und MkDocs Material Site auf GitHub Pages (help)
+- 26 Markdown-Dokumentationsseiten (12 DE + 12 EN + 2 ms-tools) in docs/help/ (help)
+- MkDocs Setup mit Material Theme, i18n, git-revision-dates und GitHub Actions Auto-Deploy (docs)
+- Manuscript-Tools: Wortwiederholungs-Erkennung, Redundante Phrasen (15 DE + 15 EN), Adverb-Erkennung, Unsichtbare Zeichen entfernen, HTML/Word-Artefakte entfernen, Sanitization-Vorschau (Diff), CSV/JSON Metriken-Export (ms-tools)
+- Plugin-Status-Endpoint GET /api/editor/plugin-status mit Health-Checks und 30s Cache (editor)
+- Disabled Buttons mit Tooltips für unavailable Plugins (Grammar, AI, Audiobook) im Editor (editor)
+- Audiobook Progress: "01 | Vorwort" Prefix-Format statt "Kapitel 1:", SSE-Listener im Context statt Modal, localStorage-Persistenz, F5-Recovery, Hintergrund-Badge mit Popover (audiobook)
+- Regeneration-Warnung vor Überschreibung bestehender Audiobooks mit Confirm-Dialog (audiobook)
+- Backup mit optionalem include_audiobook Parameter (backup)
+- Toolbar i18n: 32 Button-Labels in 8 Sprachen extrahiert (editor)
+- Audiobook Tab in Metadaten mit Sub-Tabs "Downloads" und "Previews" (metadata)
+
+### Fixed
+- Voice-Dropdown leakt keine Edge-TTS-Stimmen mehr in andere Engines (audiobook)
+- LanguageTool: Texte werden in 900-Zeichen-Chunks aufgeteilt um 413 Payload Too Large zu vermeiden (grammar)
+- Grammar-Plugin: Config wird korrekt an Routes weitergereicht (grammar)
+- Plugin-Loading: AttributeError auf _settings vor activate() behoben für KDP, Kinderbuch und Grammar (plugins)
+- Grammar-Plugin zu enabled-Liste in app.yaml hinzugefügt (config)
+- Error-Toast: Overflow behoben, "Issue melden" Button sichtbar und klickbar, closeOnClick deaktiviert (ui)
+- Browser-confirm() durch AppDialog für Audiobook-Löschen ersetzt (ui)
+- LLM-Port von 11434 (Ollama) auf 1234 (LMStudio) als Default geändert (ai)
+- Fehlermeldung bei nicht erreichbarem KI-Server jetzt auf Deutsch mit Handlungsempfehlung (ai)
+- MkDocs i18n: docs_structure: folder, index.md pro Locale, Nav-Generator mit Homepage (docs)
+- Diverse Doku-Fixes in MkDocs Config (5 Iterationen bis CI grün) (docs)
+
+### Changed
+- manuscripta ^0.7.0: alle TTS-Engines delegieren an manuscripta-Adapter statt eigener Implementierung (audiobook)
+- Direkte Dependencies auf edge-tts, gtts, pyttsx3, elevenlabs entfernt (audiobook)
+- GoogleTTSAdapter umbenannt von gtts_adapter zu google_translate_adapter (manuscripta 0.7.0 Compat) (audiobook)
+- AudioVoice DB-Model: neue quality-Spalte + Alembic-Migration (models)
+- voice_store.get_voices: zweistufiges Language-Matching (exact bei Region, Prefix bei bare Code) (voice_store)
+- formatVoiceLabel() zeigt jetzt Sprache + Quality im Dropdown (ui)
+- Hardcoded EDGE_TTS_VOICES Fallback-Liste entfernt, edge-tts-voices.ts gelöscht (frontend)
+- Deutsche i18n-Strings und Docs nutzen jetzt echte Umlaute (ä ö ü ß) statt ASCII-Ersatz (i18n)
+- Default-Satzlänge-Schwellwert für MS-Tools von 30 auf 25 Wörter geändert (ms-tools)
+- Passiv-Quote als Prozent statt Count im Style-Check-Output (ms-tools)
+
+### Security
+- Google Service Account JSON wird Fernet-verschlüsselt gespeichert, nie im Klartext (credential_store)
+- ElevenLabs API-Key wird bei vorhandenem BIBLIOGON_CREDENTIALS_SECRET ebenfalls verschlüsselt (credential_store)
+- Secure Delete: Credentials werden vor dem Löschen mit Null-Bytes überschrieben (credential_store)
+- Path-Traversal-Schutz auf allen neuen File-Download-Endpoints (audiobook, help)
+
+## Phase 9: Übersetzung, Audiobook, Infrastruktur (v0.10.0)
 
 - plugin-translation (Premium): DeepL + LMStudio Client, kapitelweise Buchuebersetzung als neues Buch
 - plugin-audiobook (Premium): Edge TTS, TTS Engine Abstraction, MP3 pro Kapitel, ffmpeg Merge, Vorhoer-Funktion
