@@ -1,0 +1,86 @@
+languages:
+  - code: de
+    name: Deutsch
+    default: true
+  - code: en
+    name: English
+
+navigation:
+  - title:
+      de: Erste Schritte
+      en: Getting Started
+    slug: getting-started
+    icon: rocket
+
+  - title:
+      de: Editor
+      en: Editor
+    slug: editor
+    icon: edit
+    children:
+      - title:
+          de: Uebersicht
+          en: Overview
+        slug: editor/uebersicht
+      - title:
+          de: Formatierung
+          en: Formatting
+        slug: editor/formatierung
+
+  - title:
+      de: Export
+      en: Export
+    slug: export
+    icon: download
+    children:
+      - title:
+          de: EPUB
+          en: EPUB
+        slug: export/epub
+      - title:
+          de: PDF
+          en: PDF
+        slug: export/pdf
+      - title:
+          de: Audiobook
+          en: Audiobook
+        slug: export/audiobook
+
+  - title:
+      de: Plugins
+      en: Plugins
+    slug: plugins
+    icon: puzzle
+    children:
+      - title:
+          de: Uebersicht
+          en: Overview
+        slug: plugins/uebersicht
+      - title:
+          de: Lizenzen
+          en: Licenses
+        slug: plugins/lizenzen
+
+  - title:
+      de: Tastenkuerzel
+      en: Keyboard Shortcuts
+    slug: shortcuts
+    icon: keyboard
+
+  - title:
+      de: FAQ
+      en: FAQ
+    slug: faq
+    icon: help-circle
+
+  - title:
+      de: Glossar
+      en: Glossary
+    slug: glossary
+    icon: book-open
+
+  - title:
+      de: Fehlerbehebung
+      en: Troubleshooting
+    slug: troubleshooting
+    icon: alert-triangle
