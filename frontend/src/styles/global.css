@@ -965,3 +965,20 @@ body {
     background: var(--border);
     margin: 4px 0;
 }
+
+/* --- Toast overflow protection ---
+ * react-toastify renders inside a fixed-width container. Long error
+ * messages (SQL queries, stacktraces) must wrap instead of blowing
+ * out the container. These rules are defense-in-depth on top of the
+ * inline styles in notify.ts ErrorContent.
+ */
+.Toastify__toast-body {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.Toastify__toast {
+    max-width: 420px;
+}
