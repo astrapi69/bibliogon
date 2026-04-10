@@ -3,6 +3,7 @@ import {api, ApiError, AudiobookVoice, Book, BookAudiobook, formatVoiceLabel} fr
 import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useDialog} from "./AppDialog";
 import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
 import * as Tabs from "@radix-ui/react-tabs";
@@ -471,6 +472,7 @@ function CustomFilenameField({bookTitle, value, onChange}: {
 
 function AudiobookDownloads({bookId}: {bookId: string}) {
     const {t} = useI18n();
+    const dialog = useDialog();
     const [data, setData] = useState<BookAudiobook | null>(null);
     const [busy, setBusy] = useState(false);
 
@@ -492,9 +494,12 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
     }, [bookId]);
 
     const handleDelete = async () => {
-        if (!confirm(t("ui.audiobook.delete_confirm", "Audiobook wirklich loeschen? Die Dateien sind danach weg."))) {
-            return;
-        }
+        const confirmed = await dialog.confirm(
+            t("ui.audiobook.delete", "Audiobook loeschen"),
+            t("ui.audiobook.delete_confirm", "Audiobook wirklich loeschen? Die Dateien sind danach weg."),
+            "danger",
+        );
+        if (!confirmed) return;
         setBusy(true);
         try {
             await api.bookAudiobook.delete(bookId);
