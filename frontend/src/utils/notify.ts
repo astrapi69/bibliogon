@@ -15,70 +15,9 @@ import React from 'react'
 import {toast} from 'react-toastify'
 import {ApiError} from '../api/client'
 
-const ISSUES_URL = 'https://github.com/astrapi69/bibliogon/issues/new'
-const APP_VERSION = '0.11.0'
-const MAX_URL_LENGTH = 4000
 // Truncate the visible error message so the toast stays readable.
-// The full detail is still embedded in the GitHub issue URL body.
+// The full detail is still embedded in the ErrorReportDialog body.
 const MAX_DISPLAY_LENGTH = 200
-
-function buildIssueUrl(message: string, apiError?: ApiError): string {
-  const title = `Bug: ${message.slice(0, 80)}`
-
-  const sections: string[] = []
-
-  // Error description
-  sections.push(`## Fehlerbeschreibung\n${message}`)
-
-  // Context (if ApiError)
-  if (apiError) {
-    const ctx = [
-      `- Seite: ${window.location.pathname}`,
-      `- Aktion: ${apiError.method} ${apiError.endpoint}`,
-      `- Zeitpunkt: ${apiError.timestamp}`,
-    ]
-    sections.push(`## Kontext\n${ctx.join('\n')}`)
-
-    // Technical details
-    const tech = [
-      `- HTTP Status: ${apiError.status}`,
-      `- API Endpoint: ${apiError.method} ${apiError.endpoint}`,
-    ]
-    if (apiError.stacktrace) {
-      const st = apiError.stacktrace.slice(0, 800)
-      tech.push(`- Backend Stacktrace:\n\`\`\`\n${st}\n\`\`\``)
-    }
-    sections.push(`## Technische Details\n${tech.join('\n')}`)
-  }
-
-  // Environment
-  const env = [
-    `- App Version: ${APP_VERSION}`,
-    `- Browser: ${navigator.userAgent.split(' ').slice(-3).join(' ')}`,
-    `- OS: ${navigator.platform}`,
-    `- Route: ${window.location.pathname}`,
-  ]
-  sections.push(`## Umgebung\n${env.join('\n')}`)
-
-  // Reproduction steps
-  if (apiError) {
-    sections.push(
-      `## Reproduktion\n` +
-      `1. Seite "${window.location.pathname}" geoeffnet\n` +
-      `2. Aktion "${apiError.method} ${apiError.endpoint}" ausgefuehrt\n` +
-      `3. Fehler "${message.slice(0, 100)}" erhalten`
-    )
-  } else {
-    sections.push(`## Reproduktion\n1.\n2.\n3.`)
-  }
-
-  const body = sections.join('\n\n')
-
-  // Truncate if too long for URL
-  const encodedBody = encodeURIComponent(body.slice(0, MAX_URL_LENGTH))
-  const encodedTitle = encodeURIComponent(title)
-  return `${ISSUES_URL}?title=${encodedTitle}&body=${encodedBody}&labels=bug`
-}
 
 /** Truncate a message for display while preserving the beginning (most
  *  useful part). Appended "..." signals that the full text lives in the
@@ -117,12 +56,16 @@ function ErrorContent({message, apiError}: {message: string; apiError?: ApiError
       truncateForDisplay(message),
     ),
     React.createElement(
-      'a',
+      'button',
       {
-        href: buildIssueUrl(message, apiError),
-        target: '_blank',
-        rel: 'noopener noreferrer',
-        onClick: (e: React.MouseEvent) => e.stopPropagation(),
+        type: 'button',
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation()
+          // Dispatch a custom event that ErrorReportDialog listens for
+          window.dispatchEvent(new CustomEvent('bibliogon:open-error-report', {
+            detail: {message, apiError},
+          }))
+        },
         style: {
           display: 'inline-flex',
           alignItems: 'center',
@@ -137,9 +80,6 @@ function ErrorContent({message, apiError}: {message: string; apiError?: ApiError
           textDecoration: 'none',
           cursor: 'pointer',
           alignSelf: 'flex-start',
-          // Ensure the button is always clickable even when the toast
-          // auto-closes — stopPropagation above prevents closeOnClick
-          // from swallowing the click.
         },
       },
       'Issue melden',

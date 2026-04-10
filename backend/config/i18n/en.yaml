@@ -393,6 +393,17 @@ ui:
     dry_run_loading: "Generating sample..."
     dry_run_failed: "Test export failed"
     free: "free"
+  error_report:
+    title: "Create Issue Report"
+    intro: "Bibliogon detected an error and can prepare a bug report for the developer."
+    include_error: "Error message and stacktrace"
+    include_env: "Environment information (version, browser, OS)"
+    include_history: "Action history"
+    view: "View"
+    privacy: "No book content, no passwords, no license keys are ever sent."
+    show_preview: "Show preview"
+    hide_preview: "Hide preview"
+    submit: "Create issue on GitHub"
   toolbar:
     bold: "Bold"
     italic: "Italic"

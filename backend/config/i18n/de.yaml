@@ -393,6 +393,17 @@ ui:
     dry_run_loading: "Generiert Probe..."
     dry_run_failed: "Test-Export fehlgeschlagen"
     free: "kostenlos"
+  error_report:
+    title: "Issue-Report erstellen"
+    intro: "Bibliogon hat einen Fehler erkannt und kann einen Bug-Report für den Entwickler vorbereiten."
+    include_error: "Fehlermeldung und Stacktrace"
+    include_env: "Umgebungsinformationen (Version, Browser, OS)"
+    include_history: "Aktions-Historie"
+    view: "Ansehen"
+    privacy: "Keine Buch-Inhalte, keine Passwörter, keine Lizenz-Keys werden jemals gesendet."
+    show_preview: "Vorschau anzeigen"
+    hide_preview: "Vorschau ausblenden"
+    submit: "Issue auf GitHub erstellen"
   toolbar:
     bold: "Fett"
     italic: "Kursiv"
