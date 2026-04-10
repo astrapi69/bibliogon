@@ -172,6 +172,8 @@ class PreviewRequest(BaseModel):
     engine: str = Field(default="edge-tts")
     voice: str = Field(default="")
     language: str = Field(default="de")
+    book_id: str = Field(default="", description="Book ID to persist preview for")
+    chapter_title: str = Field(default="", description="Chapter title for the filename")
 
 
 import hashlib
@@ -240,8 +242,46 @@ async def preview_audio(req: PreviewRequest) -> FileResponse:
     except OSError as e:
         logger.warning("Failed to cache preview: %s", e)
 
+    # Persist under the book's audiobook/previews/ directory so the
+    # user can find it again in the metadata Audiobook tab.
+    if req.book_id:
+        _persist_preview(output_path, req.book_id, req.chapter_title, req.text)
+
     return FileResponse(
         path=str(output_path),
         media_type="audio/mpeg",
         filename="preview.mp3",
     )
+
+
+def _slugify_preview(text: str) -> str:
+    """Build a short filesystem-safe slug from text."""
+    import re
+    slug = text.lower().strip()[:40]
+    slug = re.sub(r"[^a-z0-9\-]", "-", slug)
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug or "preview"
+
+
+def _persist_preview(mp3_path: Path, book_id: str, chapter_title: str, text: str) -> None:
+    """Copy the preview MP3 into uploads/{book_id}/audiobook/previews/.
+
+    Filename format: {chapter-slug}-preview-{short-text-slug}.mp3
+    so the user can tell which chapter and passage the preview is from.
+    """
+    previews_dir = Path("uploads") / book_id / "audiobook" / "previews"
+    previews_dir.mkdir(parents=True, exist_ok=True)
+
+    chapter_slug = _slugify_preview(chapter_title) if chapter_title else "untitled"
+    text_slug = _slugify_preview(text[:30])
+    filename = f"{chapter_slug}-preview-{text_slug}.mp3"
+
+    target = previews_dir / filename
+    # Don't overwrite if it already exists (same chapter + text = same file)
+    if target.exists():
+        return
+    try:
+        shutil.copy2(mp3_path, target)
+        logger.info("Persisted preview: %s", target)
+    except OSError as e:
+        logger.warning("Failed to persist preview: %s", e)

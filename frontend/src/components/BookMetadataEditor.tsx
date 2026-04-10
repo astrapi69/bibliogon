@@ -474,18 +474,25 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
     const {t} = useI18n();
     const dialog = useDialog();
     const [data, setData] = useState<BookAudiobook | null>(null);
+    const [previews, setPreviews] = useState<{filename: string; size_bytes: number; url: string}[]>([]);
     const [busy, setBusy] = useState(false);
+    const [subTab, setSubTab] = useState<"downloads" | "previews">("downloads");
 
     const load = async () => {
         try {
             const result = await api.bookAudiobook.get(bookId);
             setData(result);
         } catch (err) {
-            // 404 etc -> render empty state instead of crashing
             if (!(err instanceof ApiError) || err.status !== 404) {
                 console.error("Failed to load audiobook metadata:", err);
             }
             setData({exists: false, book_id: bookId});
+        }
+        try {
+            const p = await api.bookAudiobook.listPreviews(bookId);
+            setPreviews(p);
+        } catch {
+            setPreviews([]);
         }
     };
 
@@ -511,125 +518,161 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
         setBusy(false);
     };
 
+    const handleDeletePreview = async (filename: string) => {
+        setBusy(true);
+        try {
+            await api.bookAudiobook.deletePreview(bookId, filename);
+            setPreviews((prev) => prev.filter((p) => p.filename !== filename));
+        } catch (err) {
+            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+        }
+        setBusy(false);
+    };
+
+    const handleDeleteAllPreviews = async () => {
+        const confirmed = await dialog.confirm(
+            t("ui.audiobook.delete_previews", "Alle Previews loeschen"),
+            t("ui.audiobook.delete_previews_confirm", "Alle Vorhoer-Dateien loeschen?"),
+            "danger",
+        );
+        if (!confirmed) return;
+        setBusy(true);
+        try {
+            await api.bookAudiobook.deleteAllPreviews(bookId);
+            setPreviews([]);
+        } catch (err) {
+            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+        }
+        setBusy(false);
+    };
+
     const formatBytes = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     };
 
+    const hasDownloads = data?.exists;
+    const hasPreviews = previews.length > 0;
+
     if (!data) {
         return (
             <div style={audiobookStyles.section}>
-                <h4 style={audiobookStyles.header}>
-                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
-                </h4>
-                <div style={audiobookStyles.muted}>
-                    {t("ui.common.loading", "Laden...")}
-                </div>
-            </div>
-        );
-    }
-
-    if (!data.exists) {
-        return (
-            <div style={audiobookStyles.section}>
-                <h4 style={audiobookStyles.header}>
-                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
-                </h4>
-                <div style={audiobookStyles.muted}>
-                    {t(
-                        "ui.audiobook.downloads_empty",
-                        "Noch kein Audiobook generiert. Nutze den Export-Dialog um eines zu erstellen.",
-                    )}
-                </div>
+                <div style={audiobookStyles.muted}>{t("ui.common.loading", "Laden...")}</div>
             </div>
         );
     }
 
     return (
         <div style={audiobookStyles.section}>
-            <h4 style={audiobookStyles.header}>
-                {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
-            </h4>
-            <div style={audiobookStyles.metaLine}>
-                {data.created_at && (
-                    <span>
-                        {t("ui.audiobook.created_at", "Erstellt am")}:{" "}
-                        {new Date(data.created_at).toLocaleString()}
-                    </span>
-                )}
-                {data.engine && (
-                    <span style={{marginLeft: 12}}>
-                        {t("ui.audiobook.engine", "Engine")}: {data.engine}
-                    </span>
-                )}
-                {data.voice && (
-                    <span style={{marginLeft: 12}}>
-                        {t("ui.audiobook.voice", "Stimme")}: {data.voice}
-                    </span>
-                )}
-                {data.speed && (
-                    <span style={{marginLeft: 12}}>{data.speed}x</span>
-                )}
-            </div>
-
-            <div style={{display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap"}}>
-                {data.merged && (
-                    <a
-                        className="btn btn-primary btn-sm"
-                        href={api.bookAudiobook.mergedUrl(bookId)}
-                        download
-                    >
-                        <Download size={12}/>{" "}
-                        {t("ui.audiobook.download_merged", "Gemergtes Audiobook")}{" "}
-                        ({formatBytes(data.merged.size_bytes)})
-                    </a>
-                )}
-                {data.chapters && data.chapters.length > 0 && (
-                    <a
-                        className="btn btn-secondary btn-sm"
-                        href={api.bookAudiobook.zipUrl(bookId)}
-                        download
-                    >
-                        <Package size={12}/>{" "}
-                        {t("ui.audiobook.download_zip", "ZIP mit einzelnen Kapiteln")}
-                    </a>
-                )}
+            {/* Sub-tab selector */}
+            <div style={{display: "flex", gap: 0, marginBottom: 12, borderBottom: "1px solid var(--border)"}}>
                 <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={handleDelete}
-                    disabled={busy}
-                    style={{color: "var(--danger, #c0392b)"}}
+                    onClick={() => setSubTab("downloads")}
+                    style={{
+                        padding: "6px 14px", border: "none", cursor: "pointer",
+                        background: "none", fontSize: "0.8125rem", fontWeight: 500,
+                        color: subTab === "downloads" ? "var(--accent)" : "var(--text-muted)",
+                        borderBottom: subTab === "downloads" ? "2px solid var(--accent)" : "2px solid transparent",
+                        fontFamily: "var(--font-body)",
+                    }}
                 >
-                    <Trash2 size={12}/>{" "}
-                    {t("ui.audiobook.delete", "Audiobook loeschen")}
+                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
+                    {hasDownloads && data.chapters && ` (${data.chapters.length})`}
+                </button>
+                <button
+                    onClick={() => setSubTab("previews")}
+                    style={{
+                        padding: "6px 14px", border: "none", cursor: "pointer",
+                        background: "none", fontSize: "0.8125rem", fontWeight: 500,
+                        color: subTab === "previews" ? "var(--accent)" : "var(--text-muted)",
+                        borderBottom: subTab === "previews" ? "2px solid var(--accent)" : "2px solid transparent",
+                        fontFamily: "var(--font-body)",
+                    }}
+                >
+                    Previews{hasPreviews && ` (${previews.length})`}
                 </button>
             </div>
 
-            {data.chapters && data.chapters.length > 0 && (
-                <div style={{marginTop: 16}}>
-                    <h5 style={audiobookStyles.subHeader}>
-                        {t("ui.audiobook.individual_chapters", "Einzelne Kapitel")}
-                    </h5>
-                    <ul style={audiobookStyles.chapterList}>
-                        {data.chapters.map((ch) => (
-                            <li key={ch.filename} style={audiobookStyles.chapterItem}>
-                                <span style={{flex: 1}}>{ch.filename}</span>
-                                <span style={audiobookStyles.muted}>
-                                    {formatBytes(ch.size_bytes)}
-                                </span>
-                                <a
-                                    href={ch.url}
-                                    download
-                                    className="btn-icon"
-                                    title={t("ui.audiobook.download", "Download")}
-                                >
-                                    <Download size={12}/>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            {/* Downloads sub-tab */}
+            {subTab === "downloads" && (
+                <>
+                    {!hasDownloads ? (
+                        <div style={audiobookStyles.muted}>
+                            {t("ui.audiobook.downloads_empty", "Noch kein Audiobook generiert. Nutze den Export-Dialog um eines zu erstellen.")}
+                        </div>
+                    ) : (
+                        <>
+                            <div style={audiobookStyles.metaLine}>
+                                {data.created_at && <span>{t("ui.audiobook.created_at", "Erstellt am")}: {new Date(data.created_at).toLocaleString()}</span>}
+                                {data.engine && <span style={{marginLeft: 12}}>Engine: {data.engine}</span>}
+                                {data.voice && <span style={{marginLeft: 12}}>{t("ui.audiobook.voice", "Stimme")}: {data.voice}</span>}
+                                {data.speed && <span style={{marginLeft: 12}}>{data.speed}x</span>}
+                            </div>
+                            <div style={{display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap"}}>
+                                {data.merged && (
+                                    <a className="btn btn-primary btn-sm" href={api.bookAudiobook.mergedUrl(bookId)} download>
+                                        <Download size={12}/> {t("ui.audiobook.download_merged", "Gemergtes Audiobook")} ({formatBytes(data.merged.size_bytes)})
+                                    </a>
+                                )}
+                                {data.chapters && data.chapters.length > 0 && (
+                                    <a className="btn btn-secondary btn-sm" href={api.bookAudiobook.zipUrl(bookId)} download>
+                                        <Package size={12}/> {t("ui.audiobook.download_zip", "ZIP")}
+                                    </a>
+                                )}
+                                <button className="btn btn-ghost btn-sm" onClick={handleDelete} disabled={busy} style={{color: "var(--danger, #c0392b)"}}>
+                                    <Trash2 size={12}/> {t("ui.audiobook.delete", "Audiobook loeschen")}
+                                </button>
+                            </div>
+                            {data.chapters && data.chapters.length > 0 && (
+                                <ul style={{...audiobookStyles.chapterList, marginTop: 12}}>
+                                    {data.chapters.map((ch) => (
+                                        <li key={ch.filename} style={audiobookStyles.chapterItem}>
+                                            <span style={{flex: 1, fontSize: "0.75rem"}}>{ch.filename}</span>
+                                            <span style={audiobookStyles.muted}>{formatBytes(ch.size_bytes)}</span>
+                                            <a href={ch.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* Previews sub-tab */}
+            {subTab === "previews" && (
+                <>
+                    {!hasPreviews ? (
+                        <div style={audiobookStyles.muted}>
+                            {t("ui.audiobook.previews_empty", "Keine Previews vorhanden. Nutze den Vorhoeren-Button im Editor um eine Vorschau zu erstellen.")}
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{display: "flex", justifyContent: "flex-end", marginBottom: 8}}>
+                                <button className="btn btn-ghost btn-sm" onClick={handleDeleteAllPreviews} disabled={busy} style={{color: "var(--danger, #c0392b)", fontSize: "0.75rem"}}>
+                                    <Trash2 size={10}/> {t("ui.audiobook.delete_all_previews", "Alle loeschen")}
+                                </button>
+                            </div>
+                            <ul style={audiobookStyles.chapterList}>
+                                {previews.map((p) => (
+                                    <li key={p.filename} style={{...audiobookStyles.chapterItem, flexDirection: "column", alignItems: "stretch", gap: 4}}>
+                                        <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                            <span style={{flex: 1, fontSize: "0.75rem", wordBreak: "break-all"}}>{p.filename}</span>
+                                            <span style={audiobookStyles.muted}>{formatBytes(p.size_bytes)}</span>
+                                            <a href={p.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                            <button className="btn-icon" onClick={() => handleDeletePreview(p.filename)} disabled={busy} title={t("ui.common.delete", "Loeschen")} style={{color: "var(--danger, #c0392b)"}}>
+                                                <Trash2 size={12}/>
+                                            </button>
+                                        </div>
+                                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                                        <audio controls src={p.url} style={{width: "100%", height: 28}} preload="none"/>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </>
             )}
         </div>
     );

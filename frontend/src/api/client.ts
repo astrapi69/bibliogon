@@ -589,6 +589,18 @@ export const api = {
             };
         },
 
+        /** List persisted preview MP3s for a book */
+        listPreviews: (bookId: string) =>
+            request<AudiobookChapterFile[]>(`/books/${bookId}/audiobook/previews`),
+
+        /** Delete a single preview file */
+        deletePreview: (bookId: string, filename: string) =>
+            request<void>(`/books/${bookId}/audiobook/previews/${encodeURIComponent(filename)}`, {method: "DELETE"}),
+
+        /** Delete all previews for a book */
+        deleteAllPreviews: (bookId: string) =>
+            request<void>(`/books/${bookId}/audiobook/previews`, {method: "DELETE"}),
+
         /** Direct download URLs (no API call) */
         mergedUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/merged`,
         zipUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/zip`,

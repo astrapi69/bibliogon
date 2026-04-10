@@ -557,6 +557,7 @@ def get_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict[str,
         "chapters": chapter_entries,
         "merged": merged_entry,
         "zip_url": f"/api/books/{book_id}/audiobook/zip",
+        "previews_url": f"/api/books/{book_id}/audiobook/previews",
     }
 
 
@@ -621,3 +622,74 @@ def download_book_audiobook_zip(book_id: str, db: Session = Depends(get_db)) -> 
         media_type="application/zip",
         filename=f"{book_id}-audiobook.zip",
     )
+
+
+# --- Per-book preview files ---
+
+PREVIEWS_DIRNAME = "previews"
+
+
+def _previews_dir(book_id: str) -> Path:
+    return Path("uploads") / book_id / "audiobook" / PREVIEWS_DIRNAME
+
+
+@router.get("/books/{book_id}/audiobook/previews")
+def list_book_previews(book_id: str, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+    """List all persisted preview MP3s for a book."""
+    _verify_book_exists(book_id, db)
+    previews = _previews_dir(book_id)
+    if not previews.exists():
+        return []
+    result = []
+    for f in sorted(previews.iterdir()):
+        if f.suffix == ".mp3":
+            result.append({
+                "filename": f.name,
+                "size_bytes": f.stat().st_size,
+                "url": f"/api/books/{book_id}/audiobook/previews/{f.name}",
+            })
+    return result
+
+
+@router.get("/books/{book_id}/audiobook/previews/{filename}")
+def download_book_preview(
+    book_id: str, filename: str, db: Session = Depends(get_db),
+) -> FileResponse:
+    """Download a single preview MP3."""
+    _verify_book_exists(book_id, db)
+    previews = _previews_dir(book_id)
+    candidate = (previews / filename).resolve()
+    try:
+        candidate.relative_to(previews.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not candidate.exists():
+        raise HTTPException(status_code=404, detail="Preview not found")
+    return FileResponse(path=str(candidate), media_type="audio/mpeg", filename=filename)
+
+
+@router.delete("/books/{book_id}/audiobook/previews/{filename}", status_code=204)
+def delete_book_preview(
+    book_id: str, filename: str, db: Session = Depends(get_db),
+) -> None:
+    """Delete a single preview MP3."""
+    _verify_book_exists(book_id, db)
+    previews = _previews_dir(book_id)
+    candidate = (previews / filename).resolve()
+    try:
+        candidate.relative_to(previews.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not candidate.exists():
+        raise HTTPException(status_code=404, detail="Preview not found")
+    candidate.unlink()
+
+
+@router.delete("/books/{book_id}/audiobook/previews", status_code=204)
+def delete_all_book_previews(book_id: str, db: Session = Depends(get_db)) -> None:
+    """Delete all preview MP3s for a book."""
+    _verify_book_exists(book_id, db)
+    previews = _previews_dir(book_id)
+    if previews.exists():
+        import shutil as _shutil
+        _shutil.rmtree(previews)

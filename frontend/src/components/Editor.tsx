@@ -36,9 +36,10 @@ interface Props {
     placeholder?: string;
     bookId?: string;
     chapterId?: string;
+    chapterTitle?: string;
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -301,7 +302,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
             const res = await fetch("/api/audiobook/preview", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({text}),
+                body: JSON.stringify({
+                    text,
+                    book_id: bookId || "",
+                    chapter_title: chapterTitle || "",
+                }),
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: "Preview failed"}));
