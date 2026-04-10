@@ -57,6 +57,10 @@ navigation:
           en: Overview
         slug: plugins/uebersicht
       - title:
+          de: Manuskript-Tools
+          en: Manuscript Tools
+        slug: plugins/ms-tools
+      - title:
           de: Lizenzen
           en: Licenses
         slug: plugins/lizenzen
