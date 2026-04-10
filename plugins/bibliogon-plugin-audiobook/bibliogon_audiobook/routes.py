@@ -213,6 +213,10 @@ async def preview_audio(req: PreviewRequest) -> FileResponse:
 
     if cached_path.exists():
         logger.info("Preview cache hit: %s", cache_key[:12])
+        # Persist even on cache hit — the first generation may have
+        # happened without a book_id (e.g. from a different context).
+        if req.book_id:
+            _persist_preview(cached_path, req.book_id, req.chapter_title, req.text)
         return FileResponse(
             path=str(cached_path),
             media_type="audio/mpeg",
