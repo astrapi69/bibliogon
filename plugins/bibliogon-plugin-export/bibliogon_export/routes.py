@@ -478,12 +478,23 @@ async def _run_audiobook_job(
     async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
         job_store.publish_event(job_id, event_type, payload)
 
+    # Point the generator at the persistent audiobook directory so it
+    # can skip chapters whose content + engine + voice + speed have not
+    # changed since the last export (content-hash cache).
+    book_id = book_data.get("id")
+    cache_dir: Path | None = None
+    if book_id:
+        candidate = audiobook_storage.audiobook_dir(book_id) / "chapters"
+        if candidate.exists():
+            cache_dir = candidate
+
     result = await generate_audiobook(
         book_title=book_data.get("title", "audiobook"),
         chapters=chapters, output_dir=audio_dir,
         engine_id=engine_id, voice=voice, language=language, rate=rate,
         merge=merge_mode, progress_callback=progress_cb,
         skip_types=skip_types, read_chapter_number=read_chapter_number,
+        cache_dir=cache_dir,
     )
     output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
     if output is None:

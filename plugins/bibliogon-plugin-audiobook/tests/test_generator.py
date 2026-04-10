@@ -10,6 +10,8 @@ import pytest
 from bibliogon_audiobook.generator import (
     MERGE_MODES,
     SKIP_TYPES,
+    _content_hash,
+    _write_cache_meta,
     bundle_audiobook_output,
     extract_plain_text,
     generate_audiobook,
@@ -17,6 +19,7 @@ from bibliogon_audiobook.generator import (
     merge_mp3_files,
     is_ffmpeg_available,
     normalize_merge_mode,
+    should_regenerate,
     _build_chapter_intro,
     _normalize_skip_set,
     _should_skip,
@@ -685,3 +688,117 @@ def test_is_ffmpeg_available_true():
 def test_is_ffmpeg_available_false():
     with patch("subprocess.run", side_effect=FileNotFoundError):
         assert is_ffmpeg_available() is False
+
+
+# --- Content-hash cache ---
+
+
+def test_should_regenerate_true_when_no_cached_file(tmp_path):
+    assert should_regenerate("hello", tmp_path / "missing.mp3", "edge-tts", "v", "1.0") is True
+
+
+def test_should_regenerate_true_when_no_sidecar(tmp_path):
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    assert should_regenerate("hello", mp3, "edge-tts", "v", "1.0") is True
+
+
+def test_should_regenerate_false_on_full_match(tmp_path):
+    text = "Hello world"
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v1", "1.0")
+    assert should_regenerate(text, mp3, "edge-tts", "v1", "1.0") is False
+
+
+def test_should_regenerate_true_on_content_change(tmp_path):
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash("old text"), "edge-tts", "v1", "1.0")
+    assert should_regenerate("new text", mp3, "edge-tts", "v1", "1.0") is True
+
+
+def test_should_regenerate_true_on_voice_change(tmp_path):
+    text = "same"
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "old-voice", "1.0")
+    assert should_regenerate(text, mp3, "edge-tts", "new-voice", "1.0") is True
+
+
+def test_should_regenerate_true_on_engine_change(tmp_path):
+    text = "same"
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v", "1.0")
+    assert should_regenerate(text, mp3, "elevenlabs", "v", "1.0") is True
+
+
+def test_should_regenerate_true_on_speed_change(tmp_path):
+    text = "same"
+    mp3 = tmp_path / "ch.mp3"
+    mp3.write_bytes(b"fake")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v", "1.0")
+    assert should_regenerate(text, mp3, "edge-tts", "v", "1.5") is True
+
+
+@pytest.mark.asyncio
+async def test_generate_audiobook_reuses_cached_chapters(tmp_path):
+    """When cache_dir has a matching chapter, TTS is NOT called for it."""
+    # Set up a cache directory with one pre-generated chapter
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    cached_mp3 = cache_dir / "001-chapter-1.mp3"
+    cached_mp3.write_bytes(b"cached audio bytes")
+
+    chapter_content = json.dumps({
+        "type": "doc",
+        "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello."}]}],
+    })
+    plain = extract_plain_text(chapter_content)
+    _write_cache_meta(
+        cached_mp3.with_suffix(".meta.json"),
+        _content_hash(plain), "edge-tts", "", "1.0",
+    )
+
+    events: list[tuple[str, dict]] = []
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    output_dir = tmp_path / "output"
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(return_value=Path("/tmp/x.mp3"))
+        mock_get.return_value = mock_engine
+
+        result = await generate_audiobook(
+            book_title="Test",
+            chapters=[{
+                "title": "Chapter 1",
+                "content": chapter_content,
+                "chapter_type": "chapter",
+                "position": 1,
+            }],
+            output_dir=output_dir,
+            engine_id="edge-tts",
+            voice="",
+            rate="1.0",
+            progress_callback=cb,
+            cache_dir=cache_dir,
+        )
+
+    # The TTS engine must NOT have been called (cache hit)
+    mock_engine.synthesize.assert_not_called()
+
+    # The chapter was reused, not generated
+    assert result["reused_count"] == 1
+    assert result["generated_count"] == 1  # reused files are in generated_files too
+    assert "Chapter 1" in result["reused"]
+
+    # The output dir has the file (copied from cache)
+    assert (output_dir / "001-chapter-1.mp3").exists()
+
+    # A "chapter_reused" event was emitted
+    event_types = [e[0] for e in events]
+    assert "chapter_reused" in event_types
+    assert "chapter_start" not in event_types  # no start event for reused

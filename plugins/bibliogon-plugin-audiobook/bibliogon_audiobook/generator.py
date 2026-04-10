@@ -1,7 +1,9 @@
 """Audiobook generator: converts book chapters to MP3 files."""
 
+import hashlib
 import json
 import logging
+import shutil
 import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -204,6 +206,64 @@ async def generate_chapter_audio(
 ProgressCallback = Callable[[str, dict], Awaitable[None]] | None
 
 
+# ---------------------------------------------------------------------------
+# Content-hash cache
+# ---------------------------------------------------------------------------
+
+def _content_hash(plain_text: str) -> str:
+    """SHA-256 of the plain text that goes to the TTS engine."""
+    return hashlib.sha256(plain_text.encode("utf-8")).hexdigest()
+
+
+def _read_cache_meta(meta_path: Path) -> dict | None:
+    """Read a sidecar .meta.json, returning None on any failure."""
+    if not meta_path.exists():
+        return None
+    try:
+        return json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _write_cache_meta(
+    meta_path: Path, content_hash: str,
+    engine: str, voice: str, speed: str,
+) -> None:
+    """Write the sidecar .meta.json next to the generated MP3."""
+    meta_path.write_text(json.dumps({
+        "content_hash": content_hash,
+        "engine": engine,
+        "voice": voice,
+        "speed": speed,
+    }, indent=2), encoding="utf-8")
+
+
+def should_regenerate(
+    plain_text: str,
+    cached_mp3: Path,
+    engine: str,
+    voice: str,
+    speed: str,
+) -> bool:
+    """Check whether a chapter needs re-generation.
+
+    A cache hit requires ALL of: file exists, sidecar exists, and the
+    content hash plus engine/voice/speed all match. Any mismatch ->
+    regenerate.
+    """
+    if not cached_mp3.exists():
+        return True
+    meta = _read_cache_meta(cached_mp3.with_suffix(".meta.json"))
+    if meta is None:
+        return True
+    return (
+        meta.get("content_hash") != _content_hash(plain_text)
+        or meta.get("engine") != engine
+        or meta.get("voice") != voice
+        or meta.get("speed") != speed
+    )
+
+
 async def generate_audiobook(
     book_title: str,
     chapters: list[dict],
@@ -216,6 +276,7 @@ async def generate_audiobook(
     merge: object = "merged",
     progress_callback: ProgressCallback = None,
     read_chapter_number: bool = False,
+    cache_dir: Path | None = None,
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
@@ -232,25 +293,31 @@ async def generate_audiobook(
             Default: toc, imprint, index, bibliography, endnotes.
         progress_callback: Optional async ``(event_type, payload)`` callback.
             Called for ``start``, ``chapter_start``, ``chapter_done``,
-            ``chapter_skipped``, ``chapter_error``, ``merge_start``,
-            ``merge_done``, ``merge_error`` and ``done``. Used by the SSE
-            export endpoint to push live progress; safe to omit (e.g. unit
-            tests, ad-hoc CLI usage).
+            ``chapter_skipped``, ``chapter_reused``, ``chapter_error``,
+            ``merge_start``, ``merge_done``, ``merge_error`` and ``done``.
         read_chapter_number: If False (default), the chapter title is NOT
             prepended to the spoken audio. If True, an intro like
             "Erstes Kapitel" / "First chapter" / "Kapitel 12" is spoken
             using the configured language.
+        cache_dir: Optional path to a directory containing previously
+            generated chapter MP3s + sidecar ``.meta.json`` files.
+            When present, chapters whose content hash + engine + voice +
+            speed match the cached version are copied from here instead
+            of being re-generated via TTS. Saves money for paid engines
+            (Google Cloud, ElevenLabs) and time for all of them.
 
     Returns:
-        Dict with generated files, skipped chapters, and errors.
+        Dict with generated files, skipped chapters, reused chapters and errors.
     """
     merge_mode = normalize_merge_mode(merge)
     output_dir.mkdir(parents=True, exist_ok=True)
     engine = get_engine(engine_id)
     skip_set = _normalize_skip_set(skip_types)
+    speed_str = rate or "1.0"
 
     generated: list[str] = []
     skipped: list[str] = []
+    reused: list[str] = []
     errors: list[dict[str, str]] = []
 
     sorted_chapters = sorted(chapters, key=lambda c: c.get("position", 0))
@@ -281,6 +348,31 @@ async def generate_audiobook(
             await emit("chapter_skipped", index=i, title=ch_title, reason=ch_type)
             continue
 
+        # Extract plain text once — used by both the cache check and TTS.
+        raw_content = ch.get("content", "")
+        plain_text = extract_plain_text(raw_content)
+
+        # --- Content-hash cache check ---
+        # Build the expected on-disk filename so we can look it up in the
+        # cache directory (the persistent uploads/{book_id}/audiobook/chapters/).
+        expected_filename = f"{i:03d}-{_slugify(ch_title)}.mp3"
+        if cache_dir and not should_regenerate(
+            plain_text, cache_dir / expected_filename, engine_id, voice, speed_str,
+        ):
+            # Cache hit: copy the existing MP3 + sidecar into the temp
+            # output dir so the rest of the pipeline (merge, bundle,
+            # persist) sees the file as if we had just generated it.
+            cached_mp3 = cache_dir / expected_filename
+            dest_mp3 = output_dir / expected_filename
+            shutil.copy2(cached_mp3, dest_mp3)
+            cached_meta = cached_mp3.with_suffix(".meta.json")
+            if cached_meta.exists():
+                shutil.copy2(cached_meta, dest_mp3.with_suffix(".meta.json"))
+            generated.append(expected_filename)
+            reused.append(ch_title)
+            await emit("chapter_reused", index=i, title=ch_title, filename=expected_filename)
+            continue
+
         await emit("chapter_start", index=i, title=ch_title)
         chapter_started_at = time.monotonic()
         try:
@@ -289,23 +381,23 @@ async def generate_audiobook(
             )
             result = await generate_chapter_audio(
                 title=spoken_intro,
-                content=ch.get("content", ""),
+                content=raw_content,
                 output_dir=output_dir,
                 chapter_index=i,
                 engine=engine,
                 voice=voice,
                 language=language,
                 rate=rate,
-                # The audio file's filename still uses the real chapter
-                # title; only the spoken intro is controlled here.
                 filename_title=ch_title,
             )
             if result:
                 generated.append(result.name)
-                # round() not int() so very fast chapters do not collapse
-                # to 0 - the frontend prefers showing 1s over showing
-                # nothing at all.
                 duration = round(time.monotonic() - chapter_started_at, 1)
+                # Write the sidecar so the NEXT export can reuse this file.
+                _write_cache_meta(
+                    result.with_suffix(".meta.json"),
+                    _content_hash(plain_text), engine_id, voice, speed_str,
+                )
                 await emit(
                     "chapter_done",
                     index=i, title=ch_title, filename=result.name,
@@ -320,8 +412,8 @@ async def generate_audiobook(
             await emit("chapter_error", index=i, title=ch_title, error=str(e))
 
     logger.info(
-        "Audiobook '%s': %d generated, %d skipped, %d errors",
-        book_title, len(generated), len(skipped), len(errors),
+        "Audiobook '%s': %d generated (%d reused), %d skipped, %d errors",
+        book_title, len(generated), len(reused), len(skipped), len(errors),
     )
 
     # Merge chapter MP3s into single audiobook file (for "merged" or "both" modes)
@@ -346,6 +438,7 @@ async def generate_audiobook(
     await emit(
         "done",
         generated=len(generated),
+        reused=len(reused),
         skipped=len(skipped),
         errors=len(errors),
     )
@@ -358,6 +451,8 @@ async def generate_audiobook(
         "merge_mode": merge_mode,
         "generated_files": generated,
         "generated_count": len(generated),
+        "reused": reused,
+        "reused_count": len(reused),
         "merged_file": merged_file,
         "skipped": skipped,
         "skipped_count": len(skipped),

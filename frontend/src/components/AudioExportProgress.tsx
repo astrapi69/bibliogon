@@ -255,6 +255,7 @@ function ChapterFileList({files}: {files: {filename: string; url: string}[]}) {
 
 function eventColor(type: AudiobookEventType): string {
     if (type === "chapter_done" || type === "merge_done" || type === "done") return "var(--text-secondary)";
+    if (type === "chapter_reused") return "#16a34a";
     if (type === "chapter_error" || type === "merge_error") return "#ef4444";
     if (type === "chapter_skipped") return "var(--text-muted)";
     return "var(--text-primary)";
@@ -285,6 +286,8 @@ export function eventLabel(
             const dur = typeof d.duration_seconds === "number" ? ` (${d.duration_seconds}s)` : "";
             return `${prefix} ${t("ui.audio_progress.event_done", "fertig")}${dur}`;
         }
+        case "chapter_reused":
+            return `${prefix} ${t("ui.audio_progress.event_reused", "wiederverwendet (Cache)")}`;
         case "chapter_skipped":
             return `${prefix} ${t("ui.audio_progress.event_skipped", "uebersprungen")} (${d.reason || ""})`;
         case "chapter_error":

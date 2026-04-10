@@ -23,6 +23,7 @@ export type AudiobookEventType =
     | "start"
     | "chapter_start"
     | "chapter_done"
+    | "chapter_reused"
     | "chapter_skipped"
     | "chapter_error"
     | "merge_start"
@@ -173,6 +174,7 @@ export function AudiobookJobProvider({children}: {children: ReactNode}) {
                     if (typeof ev.data.index === "number") setCurrent(ev.data.index);
                     break;
                 case "chapter_done":
+                case "chapter_reused":
                 case "chapter_skipped":
                 case "chapter_error":
                     if (typeof ev.data.index === "number") setCurrent(ev.data.index);

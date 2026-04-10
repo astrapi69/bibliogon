@@ -106,8 +106,8 @@ def test_async_audiobook_export_persists_files(client, tmp_path, monkeypatch):
         # so the merge step fails gracefully and the merged file is
         # absent in test runs. The chapter persistence is what matters.
 
-        chapters = sorted((target / "chapters").iterdir())
-        assert len(chapters) == 2
+        chapter_mp3s = sorted(f for f in (target / "chapters").iterdir() if f.suffix == ".mp3")
+        assert len(chapter_mp3s) == 2
     finally:
         _cleanup(client, book_id)
 

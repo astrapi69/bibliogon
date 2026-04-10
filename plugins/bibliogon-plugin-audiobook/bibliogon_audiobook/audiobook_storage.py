@@ -98,6 +98,11 @@ def persist_audiobook(
             continue
         dst = chapters_dir / filename
         shutil.copy2(src, dst)
+        # Copy the content-hash sidecar so the next export can reuse
+        # this chapter without re-generating it via TTS.
+        src_meta = src.with_suffix(".meta.json")
+        if src_meta.exists():
+            shutil.copy2(src_meta, dst.with_suffix(".meta.json"))
         chapter_records.append({
             "filename": filename,
             "size_bytes": dst.stat().st_size,

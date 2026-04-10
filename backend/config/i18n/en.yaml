@@ -383,6 +383,7 @@ ui:
     badge_label: "Audiobook running"
     saved_hint: "Audiobook generated successfully. Files are now available under Metadata > Audiobook."
     event_generating: "generating..."
+    event_reused: "reused (cached)"
     popover_title: "Audiobook Export"
     popover_chapter_count: "{current} of {total} chapters"
     popover_current: "Current"
