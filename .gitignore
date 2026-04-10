@@ -13,6 +13,9 @@ mutmut-stats.json
 # Environment
 .env
 
+# Encrypted credentials (service account keys etc.)
+backend/config/plugins/audiobook/google-credentials.enc
+
 # Database
 *.db
 

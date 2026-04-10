@@ -19,6 +19,7 @@ fastapi = "^0.115.0"
 # no longer pins them directly - only edge-tts is a hard transitive dep
 # of manuscripta; the rest are genuinely optional.
 manuscripta = "^0.7.0"
+cryptography = "^46.0.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
