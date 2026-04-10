@@ -108,7 +108,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
             editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
         } catch (err) {
-            notify.error(`Upload failed: ${err}`, err);
+            notify.error(t("ui.editor.upload_failed", "Upload fehlgeschlagen"), err);
         }
     };
 

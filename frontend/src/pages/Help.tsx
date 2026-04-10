@@ -3,19 +3,21 @@ import {useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Keyboard, HelpCircle, Info, Home} from "lucide-react";
+import {useI18n} from "../hooks/useI18n";
 import * as Tabs from "@radix-ui/react-tabs";
 
 export default function Help() {
     const navigate = useNavigate();
+    const {t, lang} = useI18n();
     const [shortcuts, setShortcuts] = useState<{keys: string; action: string}[]>([]);
     const [faq, setFaq] = useState<{question: string; answer: string}[]>([]);
     const [about, setAbout] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        api.help.shortcuts("de").then(setShortcuts).catch(() => {});
-        api.help.faq("de").then(setFaq).catch(() => {});
+        api.help.shortcuts(lang).then(setShortcuts).catch(() => {});
+        api.help.faq(lang).then(setFaq).catch(() => {});
         api.help.about().then(setAbout).catch(() => {});
-    }, []);
+    }, [lang]);
 
     return (
         <div style={styles.container}>
@@ -25,10 +27,10 @@ export default function Help() {
                         <button style={styles.backBtn} onClick={() => navigate("/")}>
                             <ChevronLeft size={18}/>
                         </button>
-                        <h1 style={styles.title}>Hilfe</h1>
+                        <h1 style={styles.title}>{t("ui.help.title", "Hilfe")}</h1>
                     </div>
                     <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                        <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
+                        <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
                             <Home size={18}/>
                         </button>
                         <ThemeToggle/>
@@ -39,26 +41,26 @@ export default function Help() {
             <Tabs.Root defaultValue="shortcuts">
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="shortcuts" className="radix-tab-trigger">
-                        <Keyboard size={14}/> Tastenkürzel
+                        <Keyboard size={14}/> {t("ui.help.shortcuts_tab", "Tastenkürzel")}
                     </Tabs.Trigger>
                     <Tabs.Trigger value="faq" className="radix-tab-trigger">
                         <HelpCircle size={14}/> FAQ
                     </Tabs.Trigger>
                     <Tabs.Trigger value="about" className="radix-tab-trigger">
-                        <Info size={14}/> Über
+                        <Info size={14}/> {t("ui.help.about_tab", "Über")}
                     </Tabs.Trigger>
                 </Tabs.List>
 
             <main style={styles.main}>
                 <Tabs.Content value="shortcuts">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Tastenkürzel</h2>
+                        <h2 style={styles.sectionTitle}>{t("ui.help.shortcuts_tab", "Tastenkürzel")}</h2>
                         <div style={styles.card}>
                             <table style={styles.table}>
                                 <thead>
                                     <tr>
-                                        <th style={styles.th}>Taste</th>
-                                        <th style={styles.th}>Aktion</th>
+                                        <th style={styles.th}>{t("ui.help.key_column", "Taste")}</th>
+                                        <th style={styles.th}>{t("ui.help.action_column", "Aktion")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -78,7 +80,7 @@ export default function Help() {
 
                 <Tabs.Content value="faq">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Häufig gestellte Fragen</h2>
+                        <h2 style={styles.sectionTitle}>{t("ui.help.faq_title", "Häufig gestellte Fragen")}</h2>
                         {faq.map((item, i) => (
                             <div key={i} style={styles.card}>
                                 <h3 style={styles.faqQuestion}>{item.question}</h3>
@@ -90,12 +92,12 @@ export default function Help() {
 
                 <Tabs.Content value="about">
                     <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Über Bibliogon</h2>
+                        <h2 style={styles.sectionTitle}>{t("ui.help.about_title", "Über Bibliogon")}</h2>
                         <div style={styles.card}>
                             <p><strong>{about.name}</strong></p>
                             <p style={{color: "var(--text-muted)", marginTop: 8}}>{about.description}</p>
                             <p style={{marginTop: 12}}>
-                                Lizenz: <strong>{about.license}</strong>
+                                {t("ui.help.license", "Lizenz")}: <strong>{about.license}</strong>
                             </p>
                             <p style={{marginTop: 4}}>
                                 Website: <a href={about.website} target="_blank" rel="noreferrer"

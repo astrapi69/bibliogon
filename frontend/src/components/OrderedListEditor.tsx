@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {useI18n} from "../hooks/useI18n";
 import {GripVertical, X, Plus} from "lucide-react";
 import {
     DndContext,
@@ -31,6 +32,7 @@ function SortableItem({id, item, index, onRemove}: {
     index: number;
     onRemove: (index: number) => void;
 }) {
+    const {t} = useI18n();
     const {
         attributes,
         listeners,
@@ -56,7 +58,7 @@ function SortableItem({id, item, index, onRemove}: {
             <button
                 style={{...itemStyles.iconBtn, color: "var(--danger)"}}
                 onClick={() => onRemove(index)}
-                title="Entfernen"
+                title={t("ui.common.remove", "Entfernen")}
             >
                 <X size={12}/>
             </button>
@@ -65,6 +67,7 @@ function SortableItem({id, item, index, onRemove}: {
 }
 
 export default function OrderedListEditor({items, onChange, label, addPlaceholder}: Props) {
+    const {t} = useI18n();
     const [newItem, setNewItem] = useState("");
 
     const sensors = useSensors(
@@ -120,7 +123,7 @@ export default function OrderedListEditor({items, onChange, label, addPlaceholde
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && add()}
-                    placeholder={addPlaceholder || "Neuen Eintrag hinzufügen..."}
+                    placeholder={addPlaceholder || t("ui.common.add_entry", "Neuen Eintrag hinzufügen...")}
                 />
                 <button style={itemStyles.addBtn} onClick={add} disabled={!newItem.trim()}>
                     <Plus size={12}/>

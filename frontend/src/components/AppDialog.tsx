@@ -1,4 +1,5 @@
 import {useState, useCallback, createContext, useContext} from "react";
+import {useI18n} from "../hooks/useI18n";
 import * as Dialog from "@radix-ui/react-dialog";
 import {X, AlertTriangle, CheckCircle, Info} from "lucide-react";
 
@@ -41,6 +42,7 @@ export function useDialog(): DialogContextValue {
 // --- Provider ---
 
 export function DialogProvider({children}: {children: React.ReactNode}) {
+    const {t} = useI18n();
     const [dialog, setDialog] = useState<DialogState | null>(null);
     const [inputValue, setInputValue] = useState("");
 
@@ -131,7 +133,7 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
                                 <div className="dialog-footer">
                                     {dialog.type !== "alert" && (
                                         <button className="btn btn-ghost" onClick={handleCancel}>
-                                            {dialog.cancelLabel || "Abbrechen"}
+                                            {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
                                         </button>
                                     )}
                                     <button
@@ -140,7 +142,7 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
                                         disabled={dialog.type === "prompt" && !inputValue.trim()}
                                         autoFocus={dialog.type !== "prompt"}
                                     >
-                                        {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : "Bestaetigen")}
+                                        {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : t("ui.common.confirm", "Bestätigen"))}
                                     </button>
                                 </div>
                             </>

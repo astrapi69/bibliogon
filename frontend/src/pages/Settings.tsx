@@ -876,7 +876,7 @@ function ElevenLabsKeyPanel() {
                         className="input"
                         type={showKey ? "text" : "password"}
                         value={keyInput}
-                        placeholder={configured ? "********** (gespeichert)" : "sk_..."}
+                        placeholder={configured ? t("ui.audiobook.elevenlabs_stored", "********** (gespeichert)") : "sk_..."}
                         onChange={(e) => setKeyInput(e.target.value)}
                         style={{flex: 1}}
                         disabled={busy}
@@ -884,7 +884,7 @@ function ElevenLabsKeyPanel() {
                     <button
                         type="button"
                         className="btn-icon"
-                        title={showKey ? "Ausblenden" : "Anzeigen"}
+                        title={showKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}
                         onClick={() => setShowKey((v) => !v)}
                     >
                         {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}

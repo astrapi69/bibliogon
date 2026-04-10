@@ -73,7 +73,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                                     className="hamburger-menu-item"
                                     onSelect={(e) => { e.preventDefault(); onDelete(); }}
                                 >
-                                    <Trash2 size={14}/> In den Papierkorb
+                                    <Trash2 size={14}/> {t("ui.dashboard.move_to_trash", "In den Papierkorb")}
                                 </DropdownMenu.Item>
                                 {onDeletePermanent && (
                                     <>
@@ -83,7 +83,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                                             onSelect={(e) => { e.preventDefault(); onDeletePermanent(); }}
                                             style={{color: "var(--danger)"}}
                                         >
-                                            <AlertTriangle size={14}/> Endgueltig loeschen
+                                            <AlertTriangle size={14}/> {t("ui.dashboard.delete_permanent", "Endgültig löschen")}
                                         </DropdownMenu.Item>
                                     </>
                                 )}

@@ -75,7 +75,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             custom_css: sourceBook.custom_css || prev.custom_css || "",
         }));
         setShowCopyDialog(false);
-        notify.success(`Verlag und Autoren-Info von "${sourceBook.title}" uebernommen`);
+        notify.success(t("ui.metadata.copy_success", "Verlag und Autoren-Info übernommen"));
     };
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);

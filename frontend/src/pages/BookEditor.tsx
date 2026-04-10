@@ -134,7 +134,7 @@ export default function BookEditor() {
 
     const handleDeleteChapter = async (chapterId: string) => {
         if (!bookId) return;
-        if (!await dialog.confirm("Kapitel loeschen", "Kapitel wirklich loeschen?", "danger")) return;
+        if (!await dialog.confirm(t("ui.editor.delete_chapter_title", "Kapitel löschen"), t("ui.editor.delete_chapter_confirm", "Kapitel wirklich löschen?"), "danger")) return;
         await api.chapters.delete(bookId, chapterId);
         setBook((prev) => {
             if (!prev) return prev;
@@ -231,15 +231,15 @@ export default function BookEditor() {
                     try {
                         const result = await api.chapters.validateToc(bookId);
                         if (!result.toc_found) {
-                            notify.info("Kein Inhaltsverzeichnis gefunden.");
+                            notify.info(t("ui.editor.toc_not_found", "Kein Inhaltsverzeichnis gefunden."));
                         } else if (result.valid) {
-                            notify.success(`TOC gültig: ${result.total_links} Links geprüft, alle korrekt.`);
+                            notify.success(t("ui.editor.toc_valid", "TOC gültig: alle Links korrekt."));
                         } else {
                             const broken = result.broken.map((b) => b.text).join(", ");
-                            notify.error(`${result.broken_count} ungültige Links: ${broken}`);
+                            notify.error(t("ui.editor.toc_invalid", "Ungültige Links") + `: ${broken}`);
                         }
                     } catch {
-                        notify.error("Fehler bei der TOC-Validierung.");
+                        notify.error(t("ui.editor.toc_error", "Fehler bei der TOC-Validierung."));
                     }
                 }}
             />

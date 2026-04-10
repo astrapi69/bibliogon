@@ -136,7 +136,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 return;
             }
             const detail = err instanceof ApiError ? err.detail : String(err);
-            notify.error(`Audiobook export failed: ${detail}`, err);
+            notify.error(t("ui.export_dialog.audiobook_failed", "Audiobook-Export fehlgeschlagen") + ": " + detail, err);
             setExporting(false);
         }
     };
