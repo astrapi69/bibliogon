@@ -1,5 +1,7 @@
 """Tests for TTS engine module."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from bibliogon_audiobook.tts_engine import (
@@ -96,100 +98,72 @@ def test_speed_to_pyttsx3_rate_garbage_falls_back_to_default():
 
 
 @pytest.mark.asyncio
-async def test_google_tts_synthesize_delegates_to_manuscripta(monkeypatch, tmp_path):
-    """GoogleTTSEngine.synthesize must instantiate the manuscripta adapter
-    with the per-call language and call its speak() method exactly once.
+async def test_google_tts_synthesize_delegates_to_manuscripta(tmp_path):
+    """GoogleTTSEngine.synthesize must call create_adapter('google-translate')
+    with the collapsed language and delegate to adapter.synthesize().
     """
-    captured: dict = {}
-
-    class FakeAdapter:
-        def __init__(self, lang: str = "en"):
-            captured["lang"] = lang
-
-        def speak(self, text, output_path):
-            captured["text"] = text
-            captured["output_path"] = output_path
-
-    import sys, types
-    fake_module = types.ModuleType("manuscripta.audiobook.tts.google_translate_adapter")
-    fake_module.GoogleTranslateTTSAdapter = FakeAdapter
-    sys.modules["manuscripta.audiobook.tts.google_translate_adapter"] = fake_module
-
-    out = tmp_path / "out.mp3"
-    engine = GoogleTTSEngine()
-    result = await engine.synthesize("Hallo Welt", out, language="de-DE")
+    mock_adapter = MagicMock()
+    with patch("manuscripta.audiobook.tts.create_adapter", return_value=mock_adapter) as mock_create:
+        out = tmp_path / "out.mp3"
+        engine = GoogleTTSEngine()
+        result = await engine.synthesize("Hallo Welt", out, language="de-DE")
 
     assert result == out
-    assert captured["lang"] == "de"  # locale collapsed to bare lang code
-    assert captured["text"] == "Hallo Welt"
+    mock_create.assert_called_once_with("google-translate", lang="de")
+    mock_adapter.synthesize.assert_called_once_with("Hallo Welt", out)
 
 
 @pytest.mark.asyncio
-async def test_pyttsx3_synthesize_delegates_to_manuscripta(monkeypatch, tmp_path):
-    captured: dict = {}
+async def test_pyttsx3_synthesize_delegates_to_manuscripta(tmp_path):
+    mock_adapter = MagicMock()
+    with patch("manuscripta.audiobook.tts.create_adapter", return_value=mock_adapter) as mock_create:
+        engine = Pyttsx3Engine()
+        await engine.synthesize("Test", tmp_path / "x.mp3", voice="german", rate="1.5")
 
-    class FakeAdapter:
-        def __init__(self, voice=None, rate: int = 180):
-            captured["voice"] = voice
-            captured["rate"] = rate
-
-        def speak(self, text, output_path):
-            captured["text"] = text
-
-    import sys, types
-    fake_module = types.ModuleType("manuscripta.audiobook.tts.pyttsx3_adapter")
-    fake_module.Pyttsx3Adapter = FakeAdapter
-    sys.modules["manuscripta.audiobook.tts.pyttsx3_adapter"] = fake_module
-
-    engine = Pyttsx3Engine()
-    await engine.synthesize("Test", tmp_path / "x.mp3", voice="german", rate="1.5")
-
-    assert captured["voice"] == "german"
-    assert captured["rate"] == 270  # 1.5 * 180
+    mock_create.assert_called_once_with("pyttsx3", voice="german", rate=270)
+    mock_adapter.synthesize.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_elevenlabs_synthesize_requires_api_key(monkeypatch, tmp_path):
     """ElevenLabs engine refuses to run without ELEVENLABS_API_KEY."""
     monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    from bibliogon_audiobook.tts_engine import set_elevenlabs_api_key
+    set_elevenlabs_api_key("")
     engine = ElevenLabsEngine()
-    with pytest.raises(RuntimeError, match="ELEVENLABS_API_KEY"):
+    with pytest.raises(RuntimeError, match="API key"):
         await engine.synthesize("text", tmp_path / "x.mp3")
 
 
 @pytest.mark.asyncio
 async def test_elevenlabs_synthesize_delegates_when_key_present(monkeypatch, tmp_path):
-    captured: dict = {}
-
-    class FakeAdapter:
-        def __init__(self, api_key: str, voice="Rachel", model="eleven_multilingual_v2", lang="en"):
-            captured["api_key"] = api_key
-            captured["voice"] = voice
-            captured["lang"] = lang
-
-        def speak(self, text, output_path):
-            captured["text"] = text
-
-    import sys, types
-    fake_module = types.ModuleType("manuscripta.audiobook.tts.elevenlabs_adapter")
-    fake_module.ElevenLabsAdapter = FakeAdapter
-    sys.modules["manuscripta.audiobook.tts.elevenlabs_adapter"] = fake_module
-
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key-123")
-    engine = ElevenLabsEngine()
-    await engine.synthesize("text", tmp_path / "x.mp3", voice="Bella", language="en-US")
+    from bibliogon_audiobook.tts_engine import set_elevenlabs_api_key
+    set_elevenlabs_api_key("test-key-123")
 
-    assert captured["api_key"] == "test-key-123"
-    assert captured["voice"] == "Bella"
-    assert captured["lang"] == "en"
+    mock_adapter = MagicMock()
+    with patch("manuscripta.audiobook.tts.create_adapter", return_value=mock_adapter) as mock_create:
+        engine = ElevenLabsEngine()
+        await engine.synthesize("text", tmp_path / "x.mp3", voice="Bella", language="en-US")
+
+    mock_create.assert_called_once_with(
+        "elevenlabs", api_key="test-key-123", voice="Bella", lang="en",
+    )
+    mock_adapter.synthesize.assert_called_once()
 
 
 # --- list_voices fallbacks ---
 
 
 @pytest.mark.asyncio
-async def test_google_list_voices_returns_one_per_language():
-    voices = await GoogleTTSEngine().list_voices(language="de")
+async def test_google_list_voices_returns_voices():
+    """GoogleTTSEngine.list_voices delegates to the manuscripta adapter."""
+    from manuscripta.audiobook.tts import VoiceInfo
+    fake_voices = [VoiceInfo(engine="gtts", voice_id="de", display_name="Google TTS (de)", language="de", gender="unknown")]
+    mock_adapter = MagicMock()
+    mock_adapter.list_voices.return_value = fake_voices
+    with patch("manuscripta.audiobook.tts.create_adapter", return_value=mock_adapter):
+        voices = await GoogleTTSEngine().list_voices(language="de")
     assert len(voices) == 1
     assert voices[0]["language"] == "de"
 
@@ -197,6 +171,8 @@ async def test_google_list_voices_returns_one_per_language():
 @pytest.mark.asyncio
 async def test_elevenlabs_list_voices_empty_without_api_key(monkeypatch):
     monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    from bibliogon_audiobook.tts_engine import set_elevenlabs_api_key
+    set_elevenlabs_api_key("")
     voices = await ElevenLabsEngine().list_voices()
     assert voices == []
 
