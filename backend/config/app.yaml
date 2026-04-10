@@ -1,6 +1,6 @@
 ai:
   api_key: ''
-  base_url: http://localhost:11434/v1
+  base_url: http://localhost:1234/v1
   max_tokens: 2048
   model: ''
   temperature: 0.7

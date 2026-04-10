@@ -32,7 +32,7 @@ def _get_client() -> LLMClient:
     """Create an LLM client from config."""
     cfg = _get_ai_config()
     return LLMClient(
-        base_url=cfg.get("base_url", "http://localhost:11434/v1"),
+        base_url=cfg.get("base_url", "http://localhost:1234/v1"),
         model=cfg.get("model", ""),
         temperature=cfg.get("temperature", 0.7),
         max_tokens=cfg.get("max_tokens", 2048),

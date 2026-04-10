@@ -28,7 +28,7 @@ class LLMClient:
 
     def __init__(
         self,
-        base_url: str = "http://localhost:11434/v1",
+        base_url: str = "http://localhost:1234/v1",
         model: str = "",
         temperature: float = 0.7,
         max_tokens: int = 2048,
@@ -81,8 +81,9 @@ class LLMClient:
                 )
             except httpx.ConnectError:
                 raise LLMError(
-                    f"Cannot connect to LLM server at {self.base_url}. "
-                    "Is Ollama or LMStudio running?"
+                    f"KI-Server nicht erreichbar ({self.base_url}). "
+                    "Starte LMStudio oder Ollama, oder deaktiviere die KI-Funktion "
+                    "in Einstellungen > App > AI."
                 )
 
             if not response.is_success:

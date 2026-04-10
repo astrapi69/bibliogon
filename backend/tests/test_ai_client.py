@@ -10,7 +10,7 @@ from app.ai.llm_client import LLMClient, LLMError
 
 @pytest.fixture
 def client():
-    return LLMClient(base_url="http://localhost:11434/v1", model="test-model")
+    return LLMClient(base_url="http://localhost:1234/v1", model="test-model")
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_chat_connection_error(client):
         mock_http.__aexit__ = AsyncMock(return_value=False)
         mock_class.return_value = mock_http
 
-        with pytest.raises(LLMError, match="Cannot connect"):
+        with pytest.raises(LLMError, match="nicht erreichbar"):
             await client.chat([{"role": "user", "content": "Hi"}])
 
 
@@ -156,7 +156,7 @@ async def test_health_offline(client):
 
 def test_client_defaults():
     c = LLMClient()
-    assert "11434" in c.base_url
+    assert "1234" in c.base_url
     assert c.temperature == 0.7
     assert c.max_tokens == 2048
 
