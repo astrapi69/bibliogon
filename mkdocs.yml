@@ -35,13 +35,13 @@ plugins:
 - i18n:
     default_language: de
     languages:
-      de:
-        name: Deutsch
-        default: true
-        site_name: Bibliogon
-      en:
-        name: English
-        site_name: Bibliogon
+    - locale: de
+      name: Deutsch
+      default: true
+      build: true
+    - locale: en
+      name: English
+      build: true
 - git-revision-date-localized:
     enable_creation_date: true
 markdown_extensions:
