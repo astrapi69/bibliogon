@@ -214,7 +214,7 @@ Geplant:
 - [ ] M-14: Inline-Markierungen im TipTap-Editor (TipTap-Extension)
 - [ ] M-15: Qualitaets-Tab in Buch-Metadaten (Kapitel-Tabelle mit Ausreisser-Markierung)
 - [ ] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
-- [ ] M-17: Fuellwort-Listen aus YAML laden (erweiterbar durch User)
+- [x] M-17: Füllwort-Listen aus YAML laden (erweiterbar durch User)
 - [ ] M-18: Begriffe von Pruefung ausschliessen (Allowlist)
 
 ## Sicherung (Git-Integration) - Phase 2

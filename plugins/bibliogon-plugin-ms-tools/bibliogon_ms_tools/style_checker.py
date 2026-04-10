@@ -1,16 +1,26 @@
 """Style checker: detects filler words, passive voice, long sentences,
 word repetitions, adverbs, and redundant phrases."""
 
+import logging
 import re
+from pathlib import Path
 
-# Filler words per language
-FILLER_WORDS: dict[str, list[str]] = {
+import yaml
+
+logger = logging.getLogger(__name__)
+
+# Directory containing per-language YAML filler word lists.
+# Users can edit these files to add/remove words.
+_FILLERS_DIR = Path(__file__).resolve().parent.parent / "content" / "fillers"
+
+# Hardcoded fallback (used when YAML files are missing or unreadable)
+_FALLBACK_FILLERS: dict[str, list[str]] = {
     "de": [
-        "eigentlich", "sozusagen", "quasi", "irgendwie", "gewissermassen",
-        "grundsaetzlich", "im Grunde", "im Prinzip", "halt", "eben",
+        "eigentlich", "sozusagen", "quasi", "irgendwie", "gewissermaßen",
+        "grundsätzlich", "im Grunde", "im Prinzip", "halt", "eben",
         "einfach", "wirklich", "ziemlich", "relativ", "durchaus",
-        "natuerlich", "selbstverstaendlich", "offensichtlich", "offenbar",
-        "ja", "nun", "also", "jedenfalls", "uebrigens", "bekanntlich",
+        "natürlich", "selbstverständlich", "offensichtlich", "offenbar",
+        "ja", "nun", "also", "jedenfalls", "übrigens", "bekanntlich",
         "naja", "tja", "sicherlich", "gewiss", "freilich",
     ],
     "en": [
@@ -22,6 +32,34 @@ FILLER_WORDS: dict[str, list[str]] = {
         "as a matter of fact", "to be honest", "needless to say",
     ],
 }
+
+# Cache: loaded once per process, cleared on reload
+_filler_cache: dict[str, list[str]] = {}
+
+
+def _load_fillers(language: str) -> list[str]:
+    """Load filler words for a language from YAML, with fallback."""
+    if language in _filler_cache:
+        return _filler_cache[language]
+
+    yaml_path = _FILLERS_DIR / f"{language}.yaml"
+    if yaml_path.exists():
+        try:
+            data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                _filler_cache[language] = [str(w) for w in data if w]
+                return _filler_cache[language]
+        except (yaml.YAMLError, OSError) as e:
+            logger.warning("Failed to load filler list for %s: %s", language, e)
+
+    # Fallback to hardcoded
+    fallback = _FALLBACK_FILLERS.get(language, _FALLBACK_FILLERS.get("en", []))
+    _filler_cache[language] = fallback
+    return fallback
+
+
+# Public alias for backward compatibility (tests import this)
+FILLER_WORDS = _FALLBACK_FILLERS
 
 # Passive voice indicators per language
 PASSIVE_PATTERNS: dict[str, list[re.Pattern]] = {
@@ -128,8 +166,12 @@ def _split_words(text: str) -> list[str]:
 
 
 def check_filler_words(text: str, language: str = "de") -> list[dict]:
-    """Find filler words in text."""
-    fillers = FILLER_WORDS.get(language, FILLER_WORDS.get("en", []))
+    """Find filler words in text.
+
+    Loads the word list from content/fillers/{language}.yaml if
+    available, falling back to the hardcoded list otherwise.
+    """
+    fillers = _load_fillers(language)
     findings: list[dict] = []
 
     text_lower = text.lower()
