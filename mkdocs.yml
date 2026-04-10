@@ -1,0 +1,78 @@
+site_name: Bibliogon
+site_description: Open-Source Book Authoring Platform
+site_url: https://astrapi69.github.io/bibliogon/
+repo_url: https://github.com/astrapi69/bibliogon
+repo_name: astrapi69/bibliogon
+docs_dir: docs/help
+theme:
+  name: material
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    primary: indigo
+    toggle:
+      icon: material/brightness-7
+      name: Switch to dark mode
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    primary: indigo
+    toggle:
+      icon: material/brightness-4
+      name: Switch to light mode
+  features:
+  - navigation.tabs
+  - navigation.sections
+  - navigation.expand
+  - navigation.top
+  - search.suggest
+  - search.highlight
+  - content.code.copy
+  - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+plugins:
+- search
+- i18n:
+    default_language: de
+    languages:
+      de:
+        name: Deutsch
+        default: true
+        site_name: Bibliogon
+      en:
+        name: English
+        site_name: Bibliogon
+- git-revision-date-localized:
+    enable_creation_date: true
+markdown_extensions:
+- admonition
+- pymdownx.details
+- pymdownx.superfences
+- pymdownx.tabbed:
+    alternate_style: true
+- pymdownx.highlight
+- pymdownx.inlinehilite
+- pymdownx.tasklist:
+    custom_checkbox: true
+- toc:
+    permalink: true
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/astrapi69/bibliogon
+nav:
+- Erste Schritte: de/getting-started.md
+- Editor:
+  - Uebersicht: de/editor/uebersicht.md
+  - Formatierung: de/editor/formatierung.md
+- Export:
+  - EPUB: de/export/epub.md
+  - PDF: de/export/pdf.md
+  - Audiobook: de/export/audiobook.md
+- Plugins:
+  - Uebersicht: de/plugins/uebersicht.md
+  - Lizenzen: de/plugins/lizenzen.md
+- Tastenkuerzel: de/shortcuts.md
+- FAQ: de/faq.md
+- Glossar: de/glossary.md
+- Fehlerbehebung: de/troubleshooting.md

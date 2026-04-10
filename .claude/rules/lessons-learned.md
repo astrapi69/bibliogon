@@ -84,6 +84,14 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Help-System: Single Source of Truth
+
+- Hilfe-Content lebt in `docs/help/`, nicht im Plugin-Code. Sowohl das In-App Help-Plugin als auch MkDocs lesen die gleichen Markdown-Dateien.
+- `docs/help/_meta.yaml` ist die Single Source of Truth fuer die Navigation. `scripts/generate_mkdocs_nav.py` konvertiert sie in das MkDocs-Format.
+- Markdown-Rendering im Frontend via `react-markdown` mit `remark-gfm` + `rehype-slug` + `rehype-autolink-headings`. Nie `dangerouslySetInnerHTML` fuer User-Content.
+- MkDocs-Dependencies leben in `docs/pyproject.toml` (eigenes Venv), nicht im Backend-Venv. `make docs-install` / `docs-build` / `docs-serve` im Root.
+- Kontext-sensitive Hilfe via `<HelpLink slug="export/epub"/>` - oeffnet das HelpPanel direkt auf der relevanten Seite.
+
 ## Config-Migration (Bool -> Enum)
 
 - Wenn ein Boolean-Setting zu einem Enum mit mehr Optionen erweitert wird (z.B. audiobook `merge: true|false` -> `merge: separate|merged|both`): IMMER eine `normalize_*`-Funktion einfuehren die alte Bool-Werte stillschweigend uebersetzt (True -> "merged", False -> "separate") und unbekannte/None-Werte auf den Default mappt.

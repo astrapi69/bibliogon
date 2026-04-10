@@ -5,6 +5,7 @@
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        generate-trial-key \
+       docs-install docs-build docs-serve \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -206,6 +207,19 @@ prod-down: ## Stop production
 
 prod-logs: ## Show production logs
 	docker compose -f docker-compose.prod.yml logs -f
+
+# --- Documentation (MkDocs) ---
+
+docs-install: ## Install MkDocs dependencies (separate venv in docs/)
+	cd docs && poetry install
+
+docs-build: ## Build static documentation site
+	cd docs && poetry run python ../scripts/generate_mkdocs_nav.py
+	cd docs && poetry run mkdocs build -f ../mkdocs.yml
+
+docs-serve: ## Serve documentation locally (hot-reload)
+	cd docs && poetry run python ../scripts/generate_mkdocs_nav.py
+	cd docs && poetry run mkdocs serve -f ../mkdocs.yml
 
 # --- Clean ---
 
