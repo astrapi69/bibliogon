@@ -115,9 +115,37 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Ende der Session: 430 Tests (Backend 153, Plugins 188, Vitest 68, E2E 52)
 - Neue Tests: +16 credential_store, +8 content-hash cache, +8 voice_store, diverse Test-Updates
 
+## 7. Tranche 2 Fortsetzung: Dry-Run, Quality-Filter, ElevenLabs-Verschluesselung, i18n
+
+### Commit 7: feat: dry-run mode with sample playback and cost preview (c0e5732)
+- POST /api/books/{id}/audiobook/dry-run generiert ersten Absatz des ersten Kapitels
+- Response-Header: X-Estimated-Cost-USD, X-Estimated-Chapters, X-Sample-Engine, X-Sample-Voice
+- ExportDialog: "Test-Export" Sektion mit Probe-hoeren-Button, inline Audio-Player, Kosten-Summary
+- api.bookAudiobook.dryRun() liefert DryRunResult mit Blob-URL
+
+### Commit 8: feat: quality filter toggle for Google Cloud TTS voices (0d378e3)
+- Checkbox "Nur hochwertige Stimmen (Neural2, Journey, Studio)" ueber dem Voice-Dropdown
+- Erscheint nur bei google-cloud-tts Engine, default on
+- In BookMetadataEditor und Settings
+
+### Commit 9: feat: encrypt ElevenLabs key with Fernet (cd5fa1c)
+- ElevenLabs-Key jetzt auch Fernet-verschluesselt wenn BIBLIOGON_CREDENTIALS_SECRET gesetzt
+- Legacy-YAML bleibt als Fallback fuer Installationen ohne Secret
+- save: encrypt + clear YAML. read: engine -> encrypted -> legacy. delete: both.
+
+### Commit 10: feat: complete i18n for all 8 languages (b19f3d0)
+- Alle neuen Strings (50+) in ES, FR, EL, PT, TR, JA nachgetragen
+- Ueber einen Hintergrund-Agenten parallel ausgefuehrt
+
+---
+
 ### Hauptergebnisse
 - Google Cloud TTS vollstaendig integriert (Engine, verschluesselte Credentials, UI, Voice-Seeding)
 - Content-Hash-Cache spart TTS-Kosten bei unveraenderten Kapiteln
 - Kostentransparenz im Progress-Dialog (Kosten + Ersparnisse)
+- Dry-Run: Probe hoeren + Kosten-Preview vor dem echten Export
+- Quality-Filter: 300+ Google-Stimmen auf die besten reduziert
+- ElevenLabs-Key verschluesselt (konsistent mit Google SA)
+- i18n komplett in allen 8 Sprachen
 - manuscripta 0.7.0 als TTS-Backend, eigene Engine-Implementierungen entfernt
 - Voice-Dropdown-Bug gefixt (kein engine-agnostischer Edge-Fallback mehr)
