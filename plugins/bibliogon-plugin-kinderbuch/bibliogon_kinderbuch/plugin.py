@@ -24,17 +24,17 @@ class KinderbuchPlugin(BasePlugin):
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         return {
             "editor_extensions": ["kinderbuch-page-layout"],
-            "templates": self._templates,
+            "templates": getattr(self, "_templates", []),
             "settings": {
-                "image_position": self._settings.get("image_position", "top"),
-                "default_font_size": self._settings.get("default_font_size", 24),
+                "image_position": getattr(self, "_settings", {}).get("image_position", "top"),
+                "default_font_size": getattr(self, "_settings", {}).get("default_font_size", 24),
             },
         }
 
     @property
     def templates(self) -> list[dict[str, Any]]:
-        return self._templates
+        return getattr(self, "_templates", [])
 
     @property
     def settings(self) -> dict[str, Any]:
-        return self._settings
+        return getattr(self, "_settings", {})

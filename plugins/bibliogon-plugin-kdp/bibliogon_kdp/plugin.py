@@ -20,7 +20,7 @@ class KdpPlugin(BasePlugin):
         return [router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
-        categories = self._settings.get("categories", [])
+        categories = getattr(self, "_settings", {}).get("categories", [])
         return {
             "sidebar_actions": [
                 {
@@ -39,8 +39,8 @@ class KdpPlugin(BasePlugin):
 
     @property
     def cover_requirements(self) -> dict[str, Any]:
-        return self._settings.get("cover", {})
+        return getattr(self, "_settings", {}).get("cover", {})
 
     @property
     def manuscript_requirements(self) -> dict[str, Any]:
-        return self._settings.get("manuscript", {})
+        return getattr(self, "_settings", {}).get("manuscript", {})
