@@ -519,6 +519,12 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
     };
 
     const handleDeletePreview = async (filename: string) => {
+        const confirmed = await dialog.confirm(
+            t("ui.audiobook.delete_file", "Datei löschen"),
+            t("ui.audiobook.delete_file_confirm", "Diese Datei wirklich löschen?"),
+            "danger",
+        );
+        if (!confirmed) return;
         setBusy(true);
         try {
             await api.bookAudiobook.deletePreview(bookId, filename);
@@ -625,12 +631,16 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
                                 </button>
                             </div>
                             {data.chapters && data.chapters.length > 0 && (
-                                <ul style={{...audiobookStyles.chapterList, marginTop: 12}}>
+                                <ul style={audiobookStyles.chapterList}>
                                     {data.chapters.map((ch) => (
-                                        <li key={ch.filename} style={audiobookStyles.chapterItem}>
-                                            <span style={{flex: 1, fontSize: "0.75rem"}}>{ch.filename}</span>
-                                            <span style={audiobookStyles.muted}>{formatBytes(ch.size_bytes)}</span>
-                                            <a href={ch.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                        <li key={ch.filename} style={{...audiobookStyles.chapterItem, flexDirection: "column", alignItems: "stretch", gap: 4}}>
+                                            <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                                <span style={{flex: 1, fontSize: "0.75rem"}}>{ch.filename}</span>
+                                                <span style={audiobookStyles.muted}>{formatBytes(ch.size_bytes)}</span>
+                                                <a href={ch.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                            </div>
+                                            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                                            <audio controls src={ch.url} style={{width: "100%", height: 28}} preload="none"/>
                                         </li>
                                     ))}
                                 </ul>

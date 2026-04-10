@@ -509,6 +509,8 @@ ui:
     delete_confirm: "Really delete the audiobook? The files will be gone afterwards."
     deleted: "Audiobook deleted"
     delete_failed: "Delete failed"
+    delete_file: "Delete file"
+    delete_file_confirm: "Really delete this file?"
     regen_warning: "An audiobook for this book already exists.\nEngine: {engine} | Voice: {voice} | {created}\n\nA new export will overwrite the existing files.\n\nRecreate anyway?"
   languages:
     de: "Deutsch"
