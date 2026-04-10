@@ -238,3 +238,16 @@ Geplant:
 - [ ] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
 - [ ] M-17: Fuellwort-Listen aus YAML laden (erweiterbar durch User)
 - [ ] M-18: Begriffe von Pruefung ausschliessen (Allowlist)
+
+## Sicherung (Git-Integration) - Phase 2
+
+- [ ] SI-01: "Remote-Stand uebernehmen" Button fuer externe 
+       Aenderungen. Erstellt automatischen Speicherpunkt vom 
+       aktuellen Stand, dann `git reset --hard origin/main`, 
+       dann Reload der geaenderten Kapitel in die Bibliogon-DB.
+- [ ] SI-02: Merge-Hilfe bei einfachen Konflikten (nur ein 
+       Kapitel geaendert, keine ueberlappenden Zeilen)
+- [ ] SI-03: SSH-Schluessel-Generierung aus der UI heraus 
+       (fuer User ohne bestehenden SSH-Key)
+- [ ] SI-04: Visueller Indikator in der Sidebar wenn Remote-Stand 
+       neuer ist als lokal (Warnung statt erst beim Push-Versuch)
