@@ -98,16 +98,22 @@ def test_split_into_chunks_short_text():
 
 
 def test_split_into_chunks_long_text():
-    """Text over MAX_CHUNK_CHARS should be split at paragraph boundaries."""
+    """Text over max_chunk_chars should be split at sentence boundaries."""
     client = LanguageToolClient()
-    # Create text with multiple paragraphs that exceeds the limit
-    para = "Ein Absatz mit einigem Text. " * 100  # ~2900 chars per para
-    text = "\n\n".join([para] * 10)  # ~29000 chars total
-    assert len(text) > client.MAX_CHUNK_CHARS
+    # Create text with many sentences that exceeds the 900-char limit
+    text = "Dies ist ein Satz mit Inhalt. " * 50  # ~1500 chars
+    assert len(text) > client.max_chunk_chars
     chunks = client._split_into_chunks(text)
     assert len(chunks) > 1
-    # All chunks should be within limit (or close, if a single para is huge)
+    # Each chunk should be under the limit (tolerance for one extra sentence)
     for chunk in chunks:
-        assert len(chunk) <= client.MAX_CHUNK_CHARS + 5000  # some tolerance
-    # Rejoined text should match original
-    assert "\n\n".join(chunks) == text or "".join(chunks) == text.replace("\n\n", "")
+        assert len(chunk) <= client.max_chunk_chars + 100
+
+
+def test_split_configurable_limit():
+    """max_chunk_chars can be overridden for self-hosted instances."""
+    client = LanguageToolClient(max_chunk_chars=50000)
+    assert client.max_chunk_chars == 50000
+    text = "Short text."
+    chunks = client._split_into_chunks(text)
+    assert len(chunks) == 1

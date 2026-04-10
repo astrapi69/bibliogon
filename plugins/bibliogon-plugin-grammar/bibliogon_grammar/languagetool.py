@@ -71,17 +71,21 @@ class LanguageToolClient:
         default_language: str = "auto",
         disabled_rules: list[str] | None = None,
         disabled_categories: list[str] | None = None,
+        max_chunk_chars: int | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.default_language = default_language
         self.disabled_rules = disabled_rules or []
         self.disabled_categories = disabled_categories or []
+        self.max_chunk_chars = max_chunk_chars or self.DEFAULT_MAX_CHUNK_CHARS
 
-    # The free LanguageTool API rejects payloads over ~20 KB.
-    # We split long texts into chunks at paragraph boundaries and
+    # The free LanguageTool public API has a very low payload limit
+    # (~1000 chars). Self-hosted instances and premium accounts allow
+    # much more, so the limit is configurable via the constructor.
+    # We split long texts into chunks at sentence boundaries and
     # merge the results, adjusting offsets so they point into the
     # original text.
-    MAX_CHUNK_CHARS = 18_000
+    DEFAULT_MAX_CHUNK_CHARS = 900
 
     async def check(self, text: str, language: str | None = None) -> CheckResult:
         """Check text for grammar and spelling issues.
@@ -96,7 +100,7 @@ class LanguageToolClient:
         Returns:
             CheckResult with all found issues.
         """
-        if len(text) <= self.MAX_CHUNK_CHARS:
+        if len(text) <= self.max_chunk_chars:
             return await self._check_single(text, language)
 
         # Split into chunks at paragraph boundaries
@@ -117,16 +121,24 @@ class LanguageToolClient:
         return CheckResult(matches=all_matches, language=detected_lang)
 
     def _split_into_chunks(self, text: str) -> list[str]:
-        """Split text into chunks at paragraph boundaries."""
-        paragraphs = text.split("\n\n")
+        """Split text into chunks at sentence boundaries.
+
+        Prefers splitting at sentence-ending punctuation (.!?) so each
+        chunk is a self-contained piece of text that LanguageTool can
+        analyse without context loss at the boundary.
+        """
+        import re
+        # Split into sentences first
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+
         chunks: list[str] = []
         current = ""
 
-        for para in paragraphs:
-            candidate = (current + "\n\n" + para) if current else para
-            if len(candidate) > self.MAX_CHUNK_CHARS and current:
+        for sentence in sentences:
+            candidate = (current + " " + sentence) if current else sentence
+            if len(candidate) > self.max_chunk_chars and current:
                 chunks.append(current)
-                current = para
+                current = sentence
             else:
                 current = candidate
 
