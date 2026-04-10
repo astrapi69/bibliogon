@@ -16,7 +16,7 @@ import {toast} from 'react-toastify'
 import {ApiError} from '../api/client'
 
 const ISSUES_URL = 'https://github.com/astrapi69/bibliogon/issues/new'
-const APP_VERSION = '0.10.0'
+const APP_VERSION = '0.11.0'
 const MAX_URL_LENGTH = 4000
 // Truncate the visible error message so the toast stays readable.
 // The full detail is still embedded in the GitHub issue URL body.

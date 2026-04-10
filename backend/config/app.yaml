@@ -20,7 +20,7 @@ app:
   - ja
   trash_auto_delete_days: 90
   trash_auto_delete_enabled: true
-  version: 0.10.0
+  version: 0.11.0
 author:
   name: Asterios Raptis
   pen_names:
