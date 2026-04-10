@@ -28,10 +28,8 @@ class GrammarPlugin(BasePlugin):
         self._client = None
 
     @property
-    def client(self) -> LanguageToolClient:
-        if self._client is None:
-            raise RuntimeError("GrammarPlugin is not activated")
-        return self._client
+    def client(self) -> LanguageToolClient | None:
+        return getattr(self, "_client", None)
 
     def get_routes(self) -> list[Any]:
         from .routes import router
@@ -50,6 +48,7 @@ class GrammarPlugin(BasePlugin):
         }
 
     def health(self) -> dict[str, Any]:
-        if self._client is None:
+        client = getattr(self, "_client", None)
+        if client is None:
             return {"status": "error", "error": "Not activated"}
-        return {"status": "ok", "url": self._client.base_url}
+        return {"status": "ok", "url": client.base_url}

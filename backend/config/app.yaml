@@ -38,6 +38,7 @@ plugins:
   - kdp
   - translation
   - kinderbuch
+  - grammar
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg
