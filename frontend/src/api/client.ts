@@ -117,6 +117,22 @@ export interface CoverLimits {
     max_mb: number;
 }
 
+export interface GoogleCloudTTSConfig {
+    configured: boolean;
+    project_id?: string;
+    client_email?: string;
+    seeding_done?: boolean;
+    seeding_error?: string | null;
+    voice_count?: number;
+}
+
+export interface GoogleCloudTTSUploadResponse {
+    configured: boolean;
+    project_id: string;
+    client_email: string;
+    seeding: boolean;
+}
+
 export interface AudiobookVoice {
     id: string;
     name: string;
@@ -124,6 +140,9 @@ export interface AudiobookVoice {
      *  multilingual engines like ElevenLabs. */
     language?: string;
     gender?: string;
+    /** Quality tier for engines that have multiple (e.g. Google Cloud:
+     *  standard, wavenet, neural2, studio, journey). */
+    quality?: string;
 }
 
 /** Render a voice as "Katja (de-DE, Female)".
@@ -139,6 +158,7 @@ export function formatVoiceLabel(v: AudiobookVoice): string {
     const meta: string[] = [];
     if (v.language) meta.push(v.language);
     if (v.gender) meta.push(v.gender);
+    if (v.quality && v.quality !== "standard") meta.push(v.quality);
     return meta.length > 0 ? `${base} (${meta.join(", ")})` : base;
 }
 
@@ -432,6 +452,36 @@ export const api = {
         /** DELETE /api/audiobook/config/elevenlabs */
         deleteElevenLabsKey: () =>
             request<void>("/audiobook/config/elevenlabs", {method: "DELETE"}),
+
+        /** Google Cloud TTS credentials (Service Account JSON upload) */
+        getGoogleCloudConfig: () =>
+            request<GoogleCloudTTSConfig>("/audiobook/config/google-cloud-tts"),
+
+        uploadGoogleCloudCredentials: async (file: File): Promise<GoogleCloudTTSUploadResponse> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(`${BASE}/audiobook/config/google-cloud-tts`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Upload failed",
+                    `${BASE}/audiobook/config/google-cloud-tts`,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.json();
+        },
+
+        testGoogleCloudCredentials: () =>
+            request<{valid: boolean; message: string}>("/audiobook/config/google-cloud-tts/test", {method: "POST"}),
+
+        deleteGoogleCloudCredentials: () =>
+            request<void>("/audiobook/config/google-cloud-tts", {method: "DELETE"}),
 
         /** Fetch voices for a specific engine + language combination.
          *

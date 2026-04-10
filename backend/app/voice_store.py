@@ -48,7 +48,11 @@ def get_voices(db: Session, engine: str, language: str | None = None) -> list[di
             )
     voices = query.order_by(AudioVoice.language, AudioVoice.display_name).all()
     return [
-        {"id": v.voice_id, "name": v.display_name, "language": v.language, "gender": v.gender}
+        {
+            "id": v.voice_id, "name": v.display_name,
+            "language": v.language, "gender": v.gender,
+            "quality": getattr(v, "quality", "standard"),
+        }
         for v in voices
     ]
 

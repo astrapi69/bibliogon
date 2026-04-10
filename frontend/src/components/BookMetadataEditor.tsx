@@ -360,7 +360,8 @@ function AudiobookBookConfig({
                 <label className="label">{t("ui.audiobook.engine", "Engine")}</label>
                 <select className="input" value={currentEngine} onChange={(e) => onEngineChange(e.target.value)}>
                     <option value="edge-tts">Microsoft Edge TTS</option>
-                    <option value="google-tts">Google TTS</option>
+                    <option value="google-tts">Google TTS (gTTS)</option>
+                    <option value="google-cloud-tts">Google Cloud TTS</option>
                     <option value="pyttsx3">pyttsx3 (Offline)</option>
                     <option value="elevenlabs">ElevenLabs</option>
                 </select>

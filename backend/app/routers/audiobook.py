@@ -22,13 +22,14 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models import Book
+from app import credential_store
+from app.database import SessionLocal, get_db
+from app.models import AudioVoice, Book
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +180,158 @@ def delete_elevenlabs_config() -> None:
     cfg.setdefault("elevenlabs", {})["api_key"] = ""
     _write_yaml_config(cfg)
     _push_key_to_engine("")
+
+
+# --- Google Cloud TTS credentials (encrypted, Service Account JSON) ---
+
+# In-memory seeding status so the frontend can poll until voices are loaded.
+_seeding_status: dict[str, Any] = {}
+
+
+def _push_google_creds_to_engine(path: str) -> None:
+    """Best-effort: push the credentials path into the live engine module."""
+    try:
+        from bibliogon_audiobook.tts_engine import set_google_cloud_credentials_path
+    except ImportError:
+        return
+    set_google_cloud_credentials_path(path)
+
+
+def _seed_google_voices_sync(credentials_path: Path) -> None:
+    """Background: load all Google Cloud TTS voices into the DB.
+
+    Runs in a thread via BackgroundTasks. Uses its own DB session so
+    the request that triggered it is not blocked.
+    """
+    _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
+    db = SessionLocal()
+    try:
+        from manuscripta.audiobook.tts import create_adapter
+        adapter = create_adapter(
+            "google-cloud-tts",
+            credentials_path=str(credentials_path),
+            voice_id="placeholder",
+            language="en-US",
+        )
+        voices = adapter.list_voices()
+
+        db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
+        for v in voices:
+            db.add(AudioVoice(
+                engine=v.engine,
+                language=v.language,
+                voice_id=v.voice_id,
+                display_name=v.display_name,
+                gender=v.gender,
+                quality=getattr(v, "quality", "standard"),
+            ))
+        db.commit()
+        _seeding_status["google-cloud-tts"] = {"done": True, "error": None, "count": len(voices)}
+        logger.info("Seeded %d Google Cloud TTS voices", len(voices))
+    except Exception as e:
+        db.rollback()
+        logger.error("Google Cloud TTS voice seeding failed: %s", e, exc_info=True)
+        _seeding_status["google-cloud-tts"] = {"done": True, "error": str(e), "count": 0}
+    finally:
+        db.close()
+        # Clean up the temp credentials file
+        if credentials_path.exists():
+            credentials_path.unlink(missing_ok=True)
+
+
+MAX_CREDENTIALS_SIZE = 16 * 1024  # 16 KB
+
+
+@router.post("/audiobook/config/google-cloud-tts")
+async def upload_google_credentials(
+    file: UploadFile,
+    background_tasks: BackgroundTasks,
+) -> dict[str, Any]:
+    """Upload a Google Cloud Service Account JSON.
+
+    The file is validated, encrypted via Fernet, and stored on disk.
+    Voice seeding starts as a background task and can be polled via
+    the GET endpoint.
+    """
+    if not file.filename or not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="Only .json files are accepted.")
+
+    raw = await file.read()
+    if len(raw) > MAX_CREDENTIALS_SIZE:
+        raise HTTPException(status_code=400, detail=f"File too large (max {MAX_CREDENTIALS_SIZE // 1024} KB).")
+
+    try:
+        credential_store.validate_service_account_json(raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    meta = credential_store.save_encrypted(raw)
+
+    # Push decrypted credentials into the engine for immediate use
+    tmp_path = credential_store.load_to_tempfile()
+    _push_google_creds_to_engine(str(tmp_path))
+
+    # Seed voices in the background (the temp file is cleaned up inside)
+    _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
+    background_tasks.add_task(_seed_google_voices_sync, tmp_path)
+
+    return {
+        "configured": True,
+        "project_id": meta.get("project_id", ""),
+        "client_email": meta.get("client_email", ""),
+        "seeding": True,
+    }
+
+
+@router.get("/audiobook/config/google-cloud-tts")
+def get_google_credentials_status() -> dict[str, Any]:
+    """Report whether Google Cloud TTS credentials are configured."""
+    if not credential_store.is_configured():
+        return {"configured": False}
+
+    meta = credential_store.get_metadata() or {}
+    seeding = _seeding_status.get("google-cloud-tts", {})
+    return {
+        "configured": True,
+        "project_id": meta.get("project_id", ""),
+        "client_email": meta.get("client_email", ""),
+        "seeding_done": seeding.get("done", True),
+        "seeding_error": seeding.get("error"),
+        "voice_count": seeding.get("count", 0),
+    }
+
+
+@router.post("/audiobook/config/google-cloud-tts/test")
+def test_google_credentials() -> dict[str, Any]:
+    """Validate credentials by calling list_voices with a limit."""
+    if not credential_store.is_configured():
+        raise HTTPException(status_code=400, detail="Google Cloud TTS credentials not configured.")
+
+    tmp_path = credential_store.load_to_tempfile()
+    try:
+        from manuscripta.audiobook.tts import create_adapter
+        adapter = create_adapter(
+            "google-cloud-tts",
+            credentials_path=str(tmp_path),
+            voice_id="en-US-Standard-A",
+            language="en-US",
+        )
+        ok, message = adapter.validate()
+        return {"valid": ok, "message": message}
+    except Exception as e:
+        return {"valid": False, "message": str(e)}
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+@router.delete("/audiobook/config/google-cloud-tts", status_code=204)
+def delete_google_credentials(db: Session = Depends(get_db)) -> None:
+    """Securely delete the stored credentials and all Google voices."""
+    credential_store.secure_delete()
+    _push_google_creds_to_engine("")
+    db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
+    db.commit()
+    _seeding_status.pop("google-cloud-tts", None)
 
 
 # --- Per-book persistent audiobook downloads ---

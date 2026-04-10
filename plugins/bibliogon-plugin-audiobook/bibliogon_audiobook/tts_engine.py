@@ -303,6 +303,98 @@ class ElevenLabsEngine(TTSEngine):
         return await asyncio.to_thread(_query)
 
 
+# Process-wide path to decrypted Google Cloud credentials temp file.
+# Populated when the backend uploads and validates a service account JSON;
+# the engine reads it lazily so the heavy google-cloud-texttospeech dep
+# is only imported when the user actually picks this engine.
+_GOOGLE_CLOUD_CREDENTIALS_PATH: str = ""
+
+
+def set_google_cloud_credentials_path(path: str | None) -> None:
+    """Inject the temp-file path of the decrypted Google SA JSON."""
+    global _GOOGLE_CLOUD_CREDENTIALS_PATH
+    _GOOGLE_CLOUD_CREDENTIALS_PATH = (path or "").strip()
+
+
+def get_google_cloud_credentials_path() -> str:
+    """Return the current credentials path, or empty string."""
+    return _GOOGLE_CLOUD_CREDENTIALS_PATH
+
+
+class GoogleCloudTTSEngine(TTSEngine):
+    """Google Cloud Text-to-Speech (premium, requires Service Account).
+
+    Delegates to ``manuscripta.audiobook.tts.GoogleCloudTTSAdapter``
+    which is lazily imported so the heavy ``google-cloud-texttospeech``
+    package is only needed when the user actually picks this engine.
+    """
+
+    @property
+    def engine_id(self) -> str:
+        return "google-cloud-tts"
+
+    @property
+    def engine_name(self) -> str:
+        return "Google Cloud TTS"
+
+    def _require_credentials(self) -> str:
+        creds = get_google_cloud_credentials_path()
+        if not creds:
+            raise RuntimeError(
+                "Google Cloud TTS requires a Service Account. "
+                "Upload it under Settings > Plugins > Audiobook."
+            )
+        return creds
+
+    async def synthesize(
+        self, text: str, output_path: Path, voice: str = "", language: str = "de", rate: str = "",
+    ) -> Path:
+        from manuscripta.audiobook.tts import create_adapter
+
+        creds = self._require_credentials()
+        lang = (language or "de").lower()
+        speed = 1.0
+        try:
+            speed = float(rate) if rate else 1.0
+        except (ValueError, TypeError):
+            pass
+        adapter = create_adapter(
+            "google-cloud-tts",
+            credentials_path=creds,
+            voice_id=voice or f"{lang}-Standard-A",
+            language=lang,
+            speed=speed,
+        )
+        await asyncio.to_thread(adapter.synthesize, text, output_path)
+        logger.info(
+            "Google Cloud TTS: generated %s (%d chars, voice=%s)",
+            output_path.name, len(text), voice,
+        )
+        return output_path
+
+    async def list_voices(self, language: str | None = None) -> list[dict[str, str]]:
+        creds = get_google_cloud_credentials_path()
+        if not creds:
+            return []
+
+        def _query() -> list[dict[str, str]]:
+            from manuscripta.audiobook.tts import create_adapter
+            try:
+                adapter = create_adapter(
+                    "google-cloud-tts",
+                    credentials_path=creds,
+                    voice_id="placeholder",
+                    language=language or "en-US",
+                )
+                voices = adapter.list_voices(language)
+                return [_voice_info_to_dict(v) for v in voices]
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Google Cloud TTS voice list failed: %s", e)
+                return []
+
+        return await asyncio.to_thread(_query)
+
+
 # ---------------------------------------------------------------------------
 # Registry and factory
 # ---------------------------------------------------------------------------
@@ -312,6 +404,7 @@ ENGINES: dict[str, type[TTSEngine]] = {
     "google-tts": GoogleTTSEngine,
     "pyttsx3": Pyttsx3Engine,
     "elevenlabs": ElevenLabsEngine,
+    "google-cloud-tts": GoogleCloudTTSEngine,
 }
 
 

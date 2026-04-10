@@ -150,6 +150,7 @@ class AudioVoice(Base):
     voice_id: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     gender: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    quality: Mapped[str] = mapped_column(String(30), nullable=False, default="standard")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     def __repr__(self) -> str:
