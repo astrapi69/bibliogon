@@ -45,11 +45,17 @@ interface Props {
     onToggleSpellcheck?: () => void;
     onPreviewAudio?: () => void;
     previewLoading?: boolean;
+    /** Reason why preview is disabled (plugin not active/licensed). */
+    previewDisabledReason?: string;
     aiPanelActive?: boolean;
     onToggleAi?: () => void;
+    /** Reason why AI button is disabled. */
+    aiDisabledReason?: string;
+    /** Reason why spellcheck is disabled. */
+    spellcheckDisabledReason?: string;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, aiPanelActive, onToggleAi}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason}: Props) {
     if (!editor) return null;
 
     const items = [
@@ -300,13 +306,15 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             )}
 
             {/* Spellcheck toggle */}
-            {onToggleSpellcheck && !markdownMode && (
+            {!markdownMode && (
                 <button
-                    onClick={onToggleSpellcheck}
-                    title="Spellcheck (LanguageTool)"
+                    onClick={onToggleSpellcheck || undefined}
+                    disabled={!onToggleSpellcheck || !!spellcheckDisabledReason}
+                    title={spellcheckDisabledReason || "Spellcheck (LanguageTool)"}
                     style={{
                         ...styles.button,
                         ...(spellcheckActive ? styles.buttonActive : {}),
+                        ...(!onToggleSpellcheck || spellcheckDisabledReason ? styles.buttonDisabled : {}),
                     }}
                 >
                     <SpellCheck size={16}/>
@@ -314,14 +322,15 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             )}
 
             {/* Audio preview */}
-            {onPreviewAudio && !markdownMode && (
+            {!markdownMode && (
                 <button
-                    onClick={onPreviewAudio}
-                    disabled={previewLoading}
-                    title="Listen (TTS Preview)"
+                    onClick={onPreviewAudio || undefined}
+                    disabled={!onPreviewAudio || previewLoading || !!previewDisabledReason}
+                    title={previewDisabledReason || "Listen (TTS Preview)"}
                     style={{
                         ...styles.button,
                         ...(previewLoading ? {opacity: 0.5, cursor: "wait"} : {}),
+                        ...(!onPreviewAudio || previewDisabledReason ? styles.buttonDisabled : {}),
                     }}
                 >
                     <Headphones size={16}/>
@@ -329,13 +338,15 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             )}
 
             {/* AI assistant */}
-            {onToggleAi && !markdownMode && (
+            {!markdownMode && (
                 <button
-                    onClick={onToggleAi}
-                    title="AI Assistant"
+                    onClick={onToggleAi || undefined}
+                    disabled={!onToggleAi || !!aiDisabledReason}
+                    title={aiDisabledReason || "AI Assistant"}
                     style={{
                         ...styles.button,
                         ...(aiPanelActive ? styles.buttonActive : {}),
+                        ...(!onToggleAi || aiDisabledReason ? styles.buttonDisabled : {}),
                     }}
                 >
                     <Sparkles size={16}/>
@@ -384,6 +395,10 @@ const styles: Record<string, React.CSSProperties> = {
     buttonActive: {
         background: "var(--accent-light)",
         color: "var(--accent)",
+    },
+    buttonDisabled: {
+        opacity: 0.35,
+        cursor: "not-allowed",
     },
     separator: {
         width: 1,

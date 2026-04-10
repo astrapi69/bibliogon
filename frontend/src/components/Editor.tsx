@@ -1,4 +1,5 @@
 import {useEffect, useRef, useCallback, useState} from "react";
+import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -52,6 +53,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
+    const {status: pluginStatus} = useEditorPluginStatus();
     const [showAiPanel, setShowAiPanel] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
@@ -391,11 +393,14 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 focusMode={focusMode}
                 onToggleFocus={() => setFocusMode(!focusMode)}
                 spellcheckActive={showSpellcheck}
-                onToggleSpellcheck={handleToggleSpellcheck}
-                onPreviewAudio={handlePreviewAudio}
+                onToggleSpellcheck={isPluginAvailable(pluginStatus, "grammar") ? handleToggleSpellcheck : undefined}
+                onPreviewAudio={isPluginAvailable(pluginStatus, "audiobook") ? handlePreviewAudio : undefined}
                 previewLoading={previewLoading}
+                previewDisabledReason={!isPluginAvailable(pluginStatus, "audiobook") ? pluginDisabledMessage(pluginStatus, "audiobook") : undefined}
                 aiPanelActive={showAiPanel}
-                onToggleAi={() => setShowAiPanel(!showAiPanel)}
+                onToggleAi={isPluginAvailable(pluginStatus, "ai") ? () => setShowAiPanel(!showAiPanel) : undefined}
+                aiDisabledReason={!isPluginAvailable(pluginStatus, "ai") ? pluginDisabledMessage(pluginStatus, "ai") : undefined}
+                spellcheckDisabledReason={!isPluginAvailable(pluginStatus, "grammar") ? pluginDisabledMessage(pluginStatus, "grammar") : undefined}
             />
 
             {/* TTS Preview Player */}

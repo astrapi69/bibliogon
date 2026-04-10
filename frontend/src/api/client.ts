@@ -696,6 +696,9 @@ export const api = {
             request<{plugin: string; status: string}>(`/settings/plugins/${name}/disable`, {method: "POST"}),
     },
 
+    editorPluginStatus: () =>
+        request<Record<string, {available: boolean; reason: string | null; message?: string}>>("/editor/plugin-status"),
+
     help: {
         // Legacy endpoints (kept for backward compat)
         shortcuts: (lang: string = "de") =>

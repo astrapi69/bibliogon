@@ -213,6 +213,138 @@ async def sync_voices():
         db.close()
 
 
+# --- Editor plugin status (cached, with reachability checks) ---
+
+import time as _time
+
+_plugin_status_cache: dict[str, Any] = {}
+_plugin_status_timestamp: float = 0
+_PLUGIN_STATUS_TTL = 30  # seconds
+
+
+@app.get("/api/editor/plugin-status")
+async def editor_plugin_status() -> dict[str, dict[str, Any]]:
+    """Return availability status for all editor-relevant plugins.
+
+    Checks: plugin active, license valid, external service reachable.
+    Results are cached for 30 seconds to avoid hammering external APIs.
+    """
+    global _plugin_status_cache, _plugin_status_timestamp
+
+    now = _time.time()
+    if _plugin_status_cache and (now - _plugin_status_timestamp) < _PLUGIN_STATUS_TTL:
+        return _plugin_status_cache
+
+    active_names = {p.name for p in manager.get_active_plugins()}
+
+    # Plugins the editor cares about
+    editor_plugins = {
+        "grammar": {
+            "label": "LanguageTool",
+            "needs_service": True,
+            "health_endpoint": "/api/grammar/languages",
+        },
+        "translation": {
+            "label": "Uebersetzung",
+            "needs_service": True,
+            "health_endpoint": "/api/translation/health",
+        },
+        "audiobook": {
+            "label": "Audiobook Vorhoeren",
+            "needs_service": False,
+        },
+        "ai": {
+            "label": "AI-Assistent",
+            "needs_service": True,
+            "health_endpoint": "/api/ai/health",
+        },
+    }
+
+    result: dict[str, dict[str, Any]] = {}
+    from fastapi.testclient import TestClient
+
+    for name, info in editor_plugins.items():
+        # Special case: AI is not a plugin but a core module
+        if name == "ai":
+            try:
+                from app.ai.llm_client import LLMClient
+                client = LLMClient(
+                    base_url=_app_config_raw.get("ai", {}).get("base_url", "http://localhost:1234/v1"),
+                )
+                health = await client.health()
+                if health.get("status") == "ok":
+                    result[name] = {"available": True, "reason": None}
+                else:
+                    result[name] = {
+                        "available": False,
+                        "reason": "service_not_reachable",
+                        "message": f"KI-Server nicht erreichbar ({client.base_url})",
+                    }
+            except Exception:
+                result[name] = {
+                    "available": False,
+                    "reason": "service_not_reachable",
+                    "message": "KI-Server nicht erreichbar",
+                }
+            continue
+
+        if name not in active_names:
+            # Check if plugin exists but is disabled vs missing entirely
+            tier = "unknown"
+            try:
+                # Try to find the plugin class to check license_tier
+                import importlib
+                mod = importlib.import_module(f"bibliogon_{name}.plugin")
+                plugin_cls = next(
+                    v for v in vars(mod).values()
+                    if isinstance(v, type) and hasattr(v, "license_tier")
+                )
+                tier = getattr(plugin_cls, "license_tier", "core")
+            except Exception:
+                pass
+
+            if tier == "premium":
+                result[name] = {
+                    "available": False,
+                    "reason": "license_missing",
+                    "message": f"{info['label']}-Plugin erfordert eine Lizenz",
+                }
+            else:
+                result[name] = {
+                    "available": False,
+                    "reason": "plugin_not_active",
+                    "message": f"{info['label']}-Plugin nicht aktiviert",
+                }
+            continue
+
+        # Plugin is active - check external service if needed
+        if info.get("needs_service"):
+            try:
+                plugin = next(p for p in manager.get_active_plugins() if p.name == name)
+                health = plugin.health()
+                if isinstance(health, dict) and health.get("status") == "ok":
+                    result[name] = {"available": True, "reason": None}
+                else:
+                    error_msg = health.get("error", "") if isinstance(health, dict) else ""
+                    result[name] = {
+                        "available": False,
+                        "reason": "service_not_reachable",
+                        "message": error_msg or f"{info['label']} nicht erreichbar",
+                    }
+            except Exception as e:
+                result[name] = {
+                    "available": False,
+                    "reason": "service_not_reachable",
+                    "message": str(e),
+                }
+        else:
+            result[name] = {"available": True, "reason": None}
+
+    _plugin_status_cache = result
+    _plugin_status_timestamp = now
+    return result
+
+
 @app.get("/api/plugins/manifests")
 def get_plugin_manifests() -> dict[str, Any]:
     result: dict[str, Any] = {}
