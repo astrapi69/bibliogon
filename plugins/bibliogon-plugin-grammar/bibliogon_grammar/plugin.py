@@ -16,6 +16,9 @@ class GrammarPlugin(BasePlugin):
     _client: LanguageToolClient | None = None
 
     def activate(self) -> None:
+        from .routes import set_config
+        set_config(self.config or {})
+
         settings = self.config.get("settings", {})
         self._client = LanguageToolClient(
             base_url=settings.get("languagetool_url", "https://api.languagetoolplus.com/v2"),
