@@ -77,8 +77,17 @@ class LanguageToolClient:
         self.disabled_rules = disabled_rules or []
         self.disabled_categories = disabled_categories or []
 
+    # The free LanguageTool API rejects payloads over ~20 KB.
+    # We split long texts into chunks at paragraph boundaries and
+    # merge the results, adjusting offsets so they point into the
+    # original text.
+    MAX_CHUNK_CHARS = 18_000
+
     async def check(self, text: str, language: str | None = None) -> CheckResult:
         """Check text for grammar and spelling issues.
+
+        Long texts are automatically split into chunks so the free
+        LanguageTool API does not return 413 Payload Too Large.
 
         Args:
             text: The text to check.
@@ -87,6 +96,47 @@ class LanguageToolClient:
         Returns:
             CheckResult with all found issues.
         """
+        if len(text) <= self.MAX_CHUNK_CHARS:
+            return await self._check_single(text, language)
+
+        # Split into chunks at paragraph boundaries
+        chunks = self._split_into_chunks(text)
+        all_matches: list[GrammarMatch] = []
+        detected_lang = language or self.default_language
+
+        offset = 0
+        for chunk in chunks:
+            result = await self._check_single(chunk, language)
+            detected_lang = result.language
+            for match in result.matches:
+                # Adjust offset to point into the original text
+                match.offset += offset
+                all_matches.append(match)
+            offset += len(chunk)
+
+        return CheckResult(matches=all_matches, language=detected_lang)
+
+    def _split_into_chunks(self, text: str) -> list[str]:
+        """Split text into chunks at paragraph boundaries."""
+        paragraphs = text.split("\n\n")
+        chunks: list[str] = []
+        current = ""
+
+        for para in paragraphs:
+            candidate = (current + "\n\n" + para) if current else para
+            if len(candidate) > self.MAX_CHUNK_CHARS and current:
+                chunks.append(current)
+                current = para
+            else:
+                current = candidate
+
+        if current:
+            chunks.append(current)
+
+        return chunks if chunks else [text]
+
+    async def _check_single(self, text: str, language: str | None = None) -> CheckResult:
+        """Send a single check request to the LanguageTool API."""
         lang = language or self.default_language
         data: dict[str, str] = {
             "text": text,

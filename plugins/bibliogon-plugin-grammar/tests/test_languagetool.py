@@ -1,6 +1,6 @@
 """Tests for LanguageTool client data structures."""
 
-from bibliogon_grammar.languagetool import CheckResult, GrammarMatch
+from bibliogon_grammar.languagetool import CheckResult, GrammarMatch, LanguageToolClient
 
 
 class TestGrammarMatch:
@@ -83,3 +83,31 @@ class TestCheckResult:
         assert d["language"] == "de"
         assert d["issue_count"] == 1
         assert len(d["matches"]) == 1
+
+
+# --- Chunking ---
+
+
+def test_split_into_chunks_short_text():
+    """Short text should not be split."""
+    client = LanguageToolClient()
+    text = "Dies ist ein kurzer Text."
+    chunks = client._split_into_chunks(text)
+    assert len(chunks) == 1
+    assert chunks[0] == text
+
+
+def test_split_into_chunks_long_text():
+    """Text over MAX_CHUNK_CHARS should be split at paragraph boundaries."""
+    client = LanguageToolClient()
+    # Create text with multiple paragraphs that exceeds the limit
+    para = "Ein Absatz mit einigem Text. " * 100  # ~2900 chars per para
+    text = "\n\n".join([para] * 10)  # ~29000 chars total
+    assert len(text) > client.MAX_CHUNK_CHARS
+    chunks = client._split_into_chunks(text)
+    assert len(chunks) > 1
+    # All chunks should be within limit (or close, if a single para is huge)
+    for chunk in chunks:
+        assert len(chunk) <= client.MAX_CHUNK_CHARS + 5000  # some tolerance
+    # Rejoined text should match original
+    assert "\n\n".join(chunks) == text or "".join(chunks) == text.replace("\n\n", "")
