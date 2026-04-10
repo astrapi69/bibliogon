@@ -1,4 +1,5 @@
 import {Editor} from "@tiptap/react";
+import {useI18n} from "../hooks/useI18n";
 import {
     Bold,
     Italic,
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason}: Props) {
+    const {t} = useI18n();
     if (!editor) return null;
 
     const items = [
@@ -64,56 +66,56 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Bold size={16}/>,
             action: () => editor.chain().focus().toggleBold().run(),
             active: editor.isActive("bold"),
-            title: "Fett (Ctrl+B)",
+            title: t("ui.toolbar.bold", "Fett") + " (Ctrl+B)",
             hidden: markdownMode,
         },
         {
             icon: <Italic size={16}/>,
             action: () => editor.chain().focus().toggleItalic().run(),
             active: editor.isActive("italic"),
-            title: "Kursiv (Ctrl+I)",
+            title: t("ui.toolbar.italic", "Kursiv") + " (Ctrl+I)",
             hidden: markdownMode,
         },
         {
             icon: <UnderlineIcon size={16}/>,
             action: () => editor.chain().focus().toggleUnderline().run(),
             active: editor.isActive("underline"),
-            title: "Unterstrichen (Ctrl+U)",
+            title: t("ui.toolbar.underline", "Unterstrichen") + " (Ctrl+U)",
             hidden: markdownMode,
         },
         {
             icon: <Strikethrough size={16}/>,
             action: () => editor.chain().focus().toggleStrike().run(),
             active: editor.isActive("strike"),
-            title: "Durchgestrichen",
+            title: t("ui.toolbar.strikethrough", "Durchgestrichen"),
             hidden: markdownMode,
         },
         {
             icon: <Code size={16}/>,
             action: () => editor.chain().focus().toggleCode().run(),
             active: editor.isActive("code"),
-            title: "Code",
+            title: t("ui.toolbar.inline_code", "Code"),
             hidden: markdownMode,
         },
         {
             icon: <Highlighter size={16}/>,
             action: () => editor.chain().focus().toggleHighlight().run(),
             active: editor.isActive("highlight"),
-            title: "Hervorheben",
+            title: t("ui.toolbar.highlight", "Hervorheben"),
             hidden: markdownMode,
         },
         {
             icon: <Subscript size={16}/>,
             action: () => editor.chain().focus().toggleSubscript().run(),
             active: editor.isActive("subscript"),
-            title: "Tiefgestellt",
+            title: t("ui.toolbar.subscript", "Tiefgestellt"),
             hidden: markdownMode,
         },
         {
             icon: <Superscript size={16}/>,
             action: () => editor.chain().focus().toggleSuperscript().run(),
             active: editor.isActive("superscript"),
-            title: "Hochgestellt",
+            title: t("ui.toolbar.superscript", "Hochgestellt"),
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -123,21 +125,21 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Heading1 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 1}).run(),
             active: editor.isActive("heading", {level: 1}),
-            title: "Überschrift 1",
+            title: t("ui.toolbar.heading1", "Ueberschrift 1"),
             hidden: markdownMode,
         },
         {
             icon: <Heading2 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 2}).run(),
             active: editor.isActive("heading", {level: 2}),
-            title: "Überschrift 2",
+            title: t("ui.toolbar.heading2", "Ueberschrift 2"),
             hidden: markdownMode,
         },
         {
             icon: <Heading3 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 3}).run(),
             active: editor.isActive("heading", {level: 3}),
-            title: "Überschrift 3",
+            title: t("ui.toolbar.heading3", "Ueberschrift 3"),
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -147,28 +149,28 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <AlignLeft size={16}/>,
             action: () => editor.chain().focus().setTextAlign("left").run(),
             active: editor.isActive({textAlign: "left"}),
-            title: "Linksbündig",
+            title: t("ui.toolbar.align_left", "Linksbuendig"),
             hidden: markdownMode,
         },
         {
             icon: <AlignCenter size={16}/>,
             action: () => editor.chain().focus().setTextAlign("center").run(),
             active: editor.isActive({textAlign: "center"}),
-            title: "Zentriert",
+            title: t("ui.toolbar.align_center", "Zentriert"),
             hidden: markdownMode,
         },
         {
             icon: <AlignRight size={16}/>,
             action: () => editor.chain().focus().setTextAlign("right").run(),
             active: editor.isActive({textAlign: "right"}),
-            title: "Rechtsbündig",
+            title: t("ui.toolbar.align_right", "Rechtsbuendig"),
             hidden: markdownMode,
         },
         {
             icon: <AlignJustify size={16}/>,
             action: () => editor.chain().focus().setTextAlign("justify").run(),
             active: editor.isActive({textAlign: "justify"}),
-            title: "Blocksatz",
+            title: t("ui.toolbar.align_justify", "Blocksatz"),
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -178,56 +180,56 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <List size={16}/>,
             action: () => editor.chain().focus().toggleBulletList().run(),
             active: editor.isActive("bulletList"),
-            title: "Aufzählung",
+            title: t("ui.toolbar.bullet_list", "Aufzaehlung"),
             hidden: markdownMode,
         },
         {
             icon: <ListOrdered size={16}/>,
             action: () => editor.chain().focus().toggleOrderedList().run(),
             active: editor.isActive("orderedList"),
-            title: "Nummerierung",
+            title: t("ui.toolbar.ordered_list", "Nummerierung"),
             hidden: markdownMode,
         },
         {
             icon: <ListChecks size={16}/>,
             action: () => editor.chain().focus().toggleTaskList().run(),
             active: editor.isActive("taskList"),
-            title: "Checkliste",
+            title: t("ui.toolbar.task_list", "Checkliste"),
             hidden: markdownMode,
         },
         {
             icon: <Quote size={16}/>,
             action: () => editor.chain().focus().toggleBlockquote().run(),
             active: editor.isActive("blockquote"),
-            title: "Zitat",
+            title: t("ui.toolbar.blockquote", "Zitat"),
             hidden: markdownMode,
         },
         {
             icon: <TableIcon size={16}/>,
             action: () => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
             active: editor.isActive("table"),
-            title: "Tabelle einfügen",
+            title: t("ui.toolbar.insert_table", "Tabelle einfuegen"),
             hidden: markdownMode,
         },
         {
             icon: <FootprintsIcon size={16}/>,
             action: () => editor.chain().focus().addFootnote().run(),
             active: false,
-            title: "Fussnote",
+            title: t("ui.toolbar.footnote", "Fussnote"),
             hidden: markdownMode,
         },
         {
             icon: <Code2 size={16}/>,
             action: () => editor.chain().focus().toggleCodeBlock().run(),
             active: editor.isActive("codeBlock"),
-            title: "Codeblock",
+            title: t("ui.toolbar.code_block", "Codeblock"),
             hidden: markdownMode,
         },
         {
             icon: <Minus size={16}/>,
             action: () => editor.chain().focus().setHorizontalRule().run(),
             active: false,
-            title: "Trennlinie",
+            title: t("ui.toolbar.horizontal_rule", "Trennlinie"),
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -237,14 +239,14 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Undo size={16}/>,
             action: () => editor.chain().focus().undo().run(),
             active: false,
-            title: "Rückgängig (Ctrl+Z)",
+            title: t("ui.toolbar.undo", "Rueckgaengig") + " (Ctrl+Z)",
             hidden: markdownMode,
         },
         {
             icon: <Redo size={16}/>,
             action: () => editor.chain().focus().redo().run(),
             active: false,
-            title: "Wiederholen (Ctrl+Y)",
+            title: t("ui.toolbar.redo", "Wiederholen") + " (Ctrl+Y)",
             hidden: markdownMode,
         },
     ];
@@ -284,7 +286,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             {onToggleSearch && !markdownMode && (
                 <button
                     onClick={onToggleSearch}
-                    title="Suchen & Ersetzen (Ctrl+H)"
+                    title={t("ui.toolbar.search", "Suchen & Ersetzen") + " (Ctrl+H)"}
                     style={styles.button}
                 >
                     <Search size={16}/>
@@ -295,7 +297,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             {onToggleFocus && !markdownMode && (
                 <button
                     onClick={onToggleFocus}
-                    title="Focus Mode"
+                    title={t("ui.toolbar.focus_mode", "Focus Mode")}
                     style={{
                         ...styles.button,
                         ...(focusMode ? styles.buttonActive : {}),
@@ -310,7 +312,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleSpellcheck || undefined}
                     disabled={!onToggleSpellcheck || !!spellcheckDisabledReason}
-                    title={spellcheckDisabledReason || "Spellcheck (LanguageTool)"}
+                    title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibpruefung (LanguageTool)")}
                     style={{
                         ...styles.button,
                         ...(spellcheckActive ? styles.buttonActive : {}),
@@ -326,7 +328,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onPreviewAudio || undefined}
                     disabled={!onPreviewAudio || previewLoading || !!previewDisabledReason}
-                    title={previewDisabledReason || "Listen (TTS Preview)"}
+                    title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhoeren (TTS)")}
                     style={{
                         ...styles.button,
                         ...(previewLoading ? {opacity: 0.5, cursor: "wait"} : {}),
@@ -342,7 +344,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleAi || undefined}
                     disabled={!onToggleAi || !!aiDisabledReason}
-                    title={aiDisabledReason || "AI Assistant"}
+                    title={aiDisabledReason || t("ui.toolbar.ai_assistant", "KI-Assistent")}
                     style={{
                         ...styles.button,
                         ...(aiPanelActive ? styles.buttonActive : {}),
@@ -356,7 +358,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             {/* Markdown toggle */}
             <button
                 onClick={onToggleMarkdown}
-                title={markdownMode ? "WYSIWYG-Modus" : "Markdown-Modus"}
+                title={markdownMode ? t("ui.toolbar.wysiwyg_mode", "WYSIWYG-Modus") : t("ui.toolbar.markdown_mode", "Markdown-Modus")}
                 style={{
                     ...styles.modeToggle,
                     ...(markdownMode ? styles.modeToggleActive : {}),
