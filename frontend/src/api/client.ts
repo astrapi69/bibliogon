@@ -275,10 +275,28 @@ async function request<T>(
     options?: RequestInit
 ): Promise<T> {
     const method = options?.method || "GET";
-    const res = await fetch(`${BASE}${path}`, {
-        headers: {"Content-Type": "application/json"},
-        ...options,
-    });
+    const startTime = performance.now();
+    const endpoint = `${BASE}${path}`.split("?")[0]; // strip query for recorder
+    let res: Response;
+    try {
+        res = await fetch(`${BASE}${path}`, {
+            headers: {"Content-Type": "application/json"},
+            ...options,
+        });
+    } catch (networkError) {
+        // Record network-level failures (ECONNREFUSED etc.)
+        try {
+            const {eventRecorder} = await import("../utils/eventRecorder");
+            eventRecorder.add({type: "api_error", timestamp: startTime, method, endpoint, message: String(networkError).substring(0, 200)});
+        } catch { /* recorder not available */ }
+        throw networkError;
+    }
+    const durationMs = Math.round(performance.now() - startTime);
+    // Record every API call (success and error)
+    try {
+        const {eventRecorder} = await import("../utils/eventRecorder");
+        eventRecorder.add({type: "api_call", timestamp: startTime, method, endpoint, status: res.status, durationMs});
+    } catch { /* recorder not available */ }
     if (!res.ok) {
         const err = await res.json().catch(() => ({detail: res.statusText}));
         throw new ApiError(

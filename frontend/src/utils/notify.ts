@@ -147,17 +147,25 @@ function ErrorContent({message, apiError}: {message: string; apiError?: ApiError
   )
 }
 
+function recordToast(level: string, message: string) {
+  try {
+    // Dynamic import to avoid circular dependencies
+    import('./eventRecorder').then(({eventRecorder}) => {
+      eventRecorder.add({type: 'toast', timestamp: performance.now(), level, message})
+    }).catch(() => {})
+  } catch { /* ignore */ }
+}
+
 export const notify = {
   error: (message: string, apiError?: unknown) => {
+    recordToast('error', message)
     const err = apiError instanceof ApiError ? apiError : undefined
     return toast.error(React.createElement(ErrorContent, {message, apiError: err}), {
       autoClose: 15000,
-      // Disable closeOnClick so clicking the "Issue melden" link does
-      // not dismiss the toast before the browser opens the new tab.
       closeOnClick: false,
     })
   },
-  warning: (message: string) => toast.warning(message, {autoClose: 12000}),
-  info: (message: string) => toast.info(message, {autoClose: 10000}),
-  success: (message: string) => toast.success(message, {autoClose: 5000}),
+  warning: (message: string) => { recordToast('warning', message); return toast.warning(message, {autoClose: 12000}) },
+  info: (message: string) => { recordToast('info', message); return toast.info(message, {autoClose: 10000}) },
+  success: (message: string) => { recordToast('success', message); return toast.success(message, {autoClose: 5000}) },
 }

@@ -11,6 +11,7 @@ import AudioExportGate from "./components/AudioExportGate";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
 import {HelpProvider} from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
+import EventRecorderSetup from "./components/EventRecorderSetup";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -30,6 +31,7 @@ export default function App() {
                 <Route path="/help" element={<Help/>}/>
                 <Route path="/get-started" element={<GetStarted/>}/>
             </Routes>
+            <EventRecorderSetup/>
             <AudioExportGate/>
             <HelpPanel/>
             <ToastContainer
