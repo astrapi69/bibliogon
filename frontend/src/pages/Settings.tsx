@@ -711,7 +711,13 @@ function AudiobookSettingsPanel({settings, onSave}: {
         {value: "tr", label: "Turkce (tr-TR)"},
     ];
 
-    const voiceOptions = voices.map((v) => ({
+    const [highQualityOnly, setHighQualityOnly] = useState(true);
+    const hasQualityTiers = engine === "google-cloud-tts";
+    const HIGH_QUALITY_TIERS = new Set(["neural2", "journey", "studio"]);
+    const filteredVoices = hasQualityTiers && highQualityOnly
+        ? voices.filter((v) => HIGH_QUALITY_TIERS.has(v.quality || ""))
+        : voices;
+    const voiceOptions = filteredVoices.map((v) => ({
         value: v.id,
         label: formatVoiceLabel(v),
     }));
@@ -738,6 +744,12 @@ function AudiobookSettingsPanel({settings, onSave}: {
                 </div>
                 <div className="field">
                     <label className="label">{t("ui.audiobook.default_voice", "Stimme")}</label>
+                    {hasQualityTiers && (
+                        <label style={{display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: 4, cursor: "pointer"}}>
+                            <input type="checkbox" checked={highQualityOnly} onChange={(e) => setHighQualityOnly(e.target.checked)}/>
+                            {t("ui.audiobook.high_quality_only", "Nur hochwertige Stimmen (Neural2, Journey, Studio)")}
+                        </label>
+                    )}
                     {loadingVoices ? (
                         <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
                             {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}

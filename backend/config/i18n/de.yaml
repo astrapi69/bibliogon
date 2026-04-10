@@ -417,6 +417,7 @@ ui:
     preview: "Vorhoeren"
     engine_unavailable: "Engine nicht verfuegbar"
     no_voices_for_combo: "Keine Stimmen fuer {engine} in {language} verfuegbar"
+    high_quality_only: "Nur hochwertige Stimmen (Neural2, Journey, Studio)"
     google_uploaded: "Google Cloud Credentials gespeichert. Stimmen werden geladen..."
     google_seeded: "Stimmen geladen"
     google_upload_failed: "Upload fehlgeschlagen"
