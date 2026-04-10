@@ -61,6 +61,7 @@ extra:
   - icon: fontawesome/brands/github
     link: https://github.com/astrapi69/bibliogon
 nav:
+- Home: de/index.md
 - Erste Schritte: de/getting-started.md
 - Editor:
   - Uebersicht: de/editor/uebersicht.md

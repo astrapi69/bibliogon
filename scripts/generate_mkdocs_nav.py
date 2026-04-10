@@ -57,7 +57,8 @@ def main() -> None:
             default_lang = lang_info["code"]
             break
 
-    nav = _build_nav(meta.get("navigation", []), default_lang)
+    nav = [{"Home": f"{default_lang}/index.md"}]
+    nav.extend(_build_nav(meta.get("navigation", []), default_lang))
 
     # Read existing mkdocs.yml
     if not MKDOCS_PATH.exists():
