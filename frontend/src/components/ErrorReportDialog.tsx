@@ -7,7 +7,9 @@ import {eventRecorder, formatEventLog} from "../utils/eventRecorder";
 import {useI18n} from "../hooks/useI18n";
 
 const ISSUES_URL = "https://github.com/astrapi69/bibliogon/issues/new";
-const MAX_URL_LENGTH = 7500;
+// GitHub rejects URLs over ~8192 chars. After encoding, special chars
+// (spaces, umlauts, markdown) expand 3x, so the raw body limit is ~2500.
+const MAX_ENCODED_URL = 7800;
 const APP_VERSION = "0.11.0";
 
 interface Props {
@@ -37,11 +39,15 @@ export default function ErrorReportDialog({open, onClose, errorMessage, apiError
 
     const handleSubmit = () => {
         const encodedTitle = encodeURIComponent(issueTitle);
-        // Truncate body if URL would be too long
+        // GitHub rejects URLs over ~8192 chars. encodeURIComponent
+        // expands umlauts/spaces/markdown 3x, so we must check the
+        // ENCODED length and trim the raw body until it fits.
         let body = issueBody;
-        const maxBodyChars = MAX_URL_LENGTH - ISSUES_URL.length - encodedTitle.length - 30;
-        if (body.length > maxBodyChars) {
-            body = body.substring(0, maxBodyChars) + "\n\n*(Bericht gekürzt wegen URL-Längenbegrenzung)*";
+        const baseLen = ISSUES_URL.length + "?title=".length + encodedTitle.length + "&body=".length + "&labels=bug".length;
+        while (baseLen + encodeURIComponent(body).length > MAX_ENCODED_URL && body.length > 200) {
+            // Drop the last 20% and add a truncation note
+            body = body.substring(0, Math.floor(body.length * 0.8));
+            body += "\n\n*(Bericht gekürzt wegen URL-Längenbegrenzung)*";
         }
         const url = `${ISSUES_URL}?title=${encodedTitle}&body=${encodeURIComponent(body)}&labels=bug`;
         window.open(url, "_blank");
