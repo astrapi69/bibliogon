@@ -300,8 +300,19 @@ export function eventLabel(
             return `${t("ui.audio_progress.event_merge_error", "Fehler beim Zusammenfuegen")}: ${d.error || ""}`;
         case "ready":
             return t("ui.audio_progress.event_ready", "Datei bereit zum Download");
-        case "done":
-            return t("ui.audio_progress.event_finished", "Generierung abgeschlossen");
+        case "done": {
+            const parts = [t("ui.audio_progress.event_finished", "Generierung abgeschlossen")];
+            if (typeof d.reused === "number" && d.reused > 0) {
+                parts.push(`${t("ui.audio_progress.event_reused_count", "Wiederverwendet")}: ${d.reused}`);
+            }
+            if (typeof d.cost_usd === "number" && d.cost_usd > 0) {
+                parts.push(`${t("ui.audio_progress.event_cost", "Kosten")}: ~$${d.cost_usd.toFixed(2)}`);
+            }
+            if (typeof d.saved_usd === "number" && d.saved_usd > 0) {
+                parts.push(`${t("ui.audio_progress.event_saved", "Gespart")}: ~$${d.saved_usd.toFixed(2)}`);
+            }
+            return parts.join(" | ");
+        }
         default:
             return ev.type;
     }

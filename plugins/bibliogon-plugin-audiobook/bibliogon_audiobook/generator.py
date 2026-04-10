@@ -435,12 +435,39 @@ async def generate_audiobook(
             logger.error("Failed to merge audiobook: %s", e)
             await emit("merge_error", error=str(e))
 
+    # Cost estimation: only meaningful for paid engines (Google Cloud,
+    # ElevenLabs). Free engines return None from estimate_cost().
+    total_cost: float = 0.0
+    reused_cost: float = 0.0
+    try:
+        from manuscripta.audiobook.tts import create_adapter as _create
+        _cost_adapter = _create(engine_id, lang=language, voice=voice or "default")
+        for ch in sorted_chapters:
+            ch_type = ch.get("chapter_type", "chapter")
+            ch_title = ch.get("title", "")
+            if _should_skip(ch_type, ch_title, skip_set):
+                continue
+            pt = extract_plain_text(ch.get("content", ""))
+            if not pt.strip():
+                continue
+            cost = _cost_adapter.estimate_cost(pt)
+            if cost is not None:
+                if ch_title in reused:
+                    reused_cost += cost
+                else:
+                    total_cost += cost
+    except Exception:  # noqa: BLE001
+        # Cost estimation is nice-to-have, never fatal.
+        pass
+
     await emit(
         "done",
         generated=len(generated),
         reused=len(reused),
         skipped=len(skipped),
         errors=len(errors),
+        cost_usd=round(total_cost, 4) if total_cost > 0 else None,
+        saved_usd=round(reused_cost, 4) if reused_cost > 0 else None,
     )
 
     return {
@@ -458,6 +485,8 @@ async def generate_audiobook(
         "skipped_count": len(skipped),
         "errors": errors,
         "error_count": len(errors),
+        "cost_usd": round(total_cost, 4) if total_cost > 0 else None,
+        "saved_usd": round(reused_cost, 4) if reused_cost > 0 else None,
     }
 
 
