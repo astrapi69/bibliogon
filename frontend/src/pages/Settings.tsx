@@ -268,13 +268,13 @@ function AppSettings({config, onSave, saving}: {
                         onValueChange={setLang}
                         options={[
                             {value: "de", label: t("ui.languages.de", "Deutsch")},
-                            {value: "en", label: t("ui.languages.en", "English")},
-                            {value: "es", label: t("ui.languages.es", "Espanol")},
-                            {value: "fr", label: t("ui.languages.fr", "Francais")},
-                            {value: "el", label: t("ui.languages.el", "Ellinika")},
-                            {value: "pt", label: t("ui.languages.pt", "Portugues")},
-                            {value: "tr", label: t("ui.languages.tr", "Turkce")},
-                            {value: "ja", label: t("ui.languages.ja", "Nihongo")},
+                            {value: "en", label: t("ui.languages.en", "Englisch")},
+                            {value: "es", label: t("ui.languages.es", "Spanisch")},
+                            {value: "fr", label: t("ui.languages.fr", "Französisch")},
+                            {value: "el", label: t("ui.languages.el", "Griechisch")},
+                            {value: "pt", label: t("ui.languages.pt", "Portugiesisch")},
+                            {value: "tr", label: t("ui.languages.tr", "Türkisch")},
+                            {value: "ja", label: t("ui.languages.ja", "Japanisch")},
                         ]}
                     />
                 </div>
@@ -697,18 +697,18 @@ function AudiobookSettingsPanel({settings, onSave}: {
     ];
 
     const languageOptions = [
-        {value: "de", label: "Deutsch (de-DE)"},
-        {value: "en", label: "English (en-US)"},
-        {value: "es", label: "Espanol (es-ES)"},
-        {value: "fr", label: "Francais (fr-FR)"},
-        {value: "el", label: "Ellinika (el-GR)"},
+        {value: "de", label: `${t("ui.languages.de", "Deutsch")} (de-DE)`},
+        {value: "en", label: `${t("ui.languages.en", "Englisch")} (en-US)`},
+        {value: "es", label: `${t("ui.languages.es", "Spanisch")} (es-ES)`},
+        {value: "fr", label: `${t("ui.languages.fr", "Französisch")} (fr-FR)`},
+        {value: "el", label: `${t("ui.languages.el", "Griechisch")} (el-GR)`},
         {value: "it", label: "Italiano (it-IT)"},
         {value: "nl", label: "Nederlands (nl-NL)"},
-        {value: "pt", label: "Portugues (pt-BR)"},
-        {value: "ru", label: "Russky (ru-RU)"},
-        {value: "ja", label: "Nihongo (ja-JP)"},
-        {value: "zh", label: "Zhongwen (zh-CN)"},
-        {value: "tr", label: "Turkce (tr-TR)"},
+        {value: "pt", label: `${t("ui.languages.pt", "Portugiesisch")} (pt-BR)`},
+        {value: "ru", label: "Russisch (ru-RU)"},
+        {value: "ja", label: `${t("ui.languages.ja", "Japanisch")} (ja-JP)`},
+        {value: "zh", label: "Chinesisch (zh-CN)"},
+        {value: "tr", label: `${t("ui.languages.tr", "Türkisch")} (tr-TR)`},
     ];
 
     const [highQualityOnly, setHighQualityOnly] = useState(true);
