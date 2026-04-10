@@ -619,6 +619,10 @@ export const api = {
         deleteAllPreviews: (bookId: string) =>
             request<void>(`/books/${bookId}/audiobook/previews`, {method: "DELETE"}),
 
+        /** Delete a single chapter MP3 from the persisted audiobook */
+        deleteChapter: (bookId: string, filename: string) =>
+            request<void>(`/books/${bookId}/audiobook/chapters/${encodeURIComponent(filename)}`, {method: "DELETE"}),
+
         /** Direct download URLs (no API call) */
         mergedUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/merged`,
         zipUrl: (bookId: string) => `${BASE}/books/${bookId}/audiobook/zip`,

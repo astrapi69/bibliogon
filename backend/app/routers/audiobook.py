@@ -582,6 +582,23 @@ def download_book_audiobook_merged(book_id: str, db: Session = Depends(get_db)) 
     return FileResponse(path=str(path), media_type="audio/mpeg", filename=path.name)
 
 
+@router.delete("/books/{book_id}/audiobook/chapters/{filename}", status_code=204)
+def delete_book_audiobook_chapter(
+    book_id: str, filename: str, db: Session = Depends(get_db),
+) -> None:
+    """Delete a single chapter MP3 from the persisted audiobook."""
+    _verify_book_exists(book_id, db)
+    storage = _storage()
+    path = storage.chapter_file_path(book_id, filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Chapter file not found")
+    path.unlink()
+    # Also delete the sidecar .meta.json if it exists
+    meta = path.with_suffix(".meta.json")
+    if meta.exists():
+        meta.unlink()
+
+
 @router.get("/books/{book_id}/audiobook/chapters/{filename}")
 def download_book_audiobook_chapter(
     book_id: str, filename: str, db: Session = Depends(get_db),

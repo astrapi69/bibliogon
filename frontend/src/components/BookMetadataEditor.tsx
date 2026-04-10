@@ -518,6 +518,23 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
         setBusy(false);
     };
 
+    const handleDeleteChapter = async (filename: string) => {
+        const confirmed = await dialog.confirm(
+            t("ui.audiobook.delete_file", "Datei löschen"),
+            t("ui.audiobook.delete_file_confirm", "Diese Datei wirklich löschen?"),
+            "danger",
+        );
+        if (!confirmed) return;
+        setBusy(true);
+        try {
+            await api.bookAudiobook.deleteChapter(bookId, filename);
+            await load();
+        } catch (err) {
+            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+        }
+        setBusy(false);
+    };
+
     const handleDeletePreview = async (filename: string) => {
         const confirmed = await dialog.confirm(
             t("ui.audiobook.delete_file", "Datei löschen"),
@@ -638,6 +655,9 @@ function AudiobookDownloads({bookId}: {bookId: string}) {
                                                 <span style={{flex: 1, fontSize: "0.75rem"}}>{ch.filename}</span>
                                                 <span style={audiobookStyles.muted}>{formatBytes(ch.size_bytes)}</span>
                                                 <a href={ch.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                                <button className="btn-icon" onClick={() => handleDeleteChapter(ch.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
+                                                    <Trash2 size={12}/>
+                                                </button>
                                             </div>
                                             {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                                             <audio controls src={ch.url} style={{width: "100%", height: 28}} preload="none"/>
