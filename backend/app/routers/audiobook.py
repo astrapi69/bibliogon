@@ -90,15 +90,36 @@ def _push_key_to_engine(api_key: str) -> None:
     set_elevenlabs_api_key(api_key)
 
 
+ELEVENLABS_CRED_FILENAME = "elevenlabs-key.enc"
+
+
 def _get_engine_key() -> str:
-    """Read the live ElevenLabs key from the engine module if available."""
+    """Read the live ElevenLabs key, trying sources in order:
+
+    1. In-memory engine override (fastest, set by set_elevenlabs_api_key)
+    2. Encrypted credential file (if BIBLIOGON_CREDENTIALS_SECRET is set)
+    3. Legacy plain-text YAML (backward compat for installs that have not
+       migrated yet)
+    """
     try:
         from bibliogon_audiobook.tts_engine import get_elevenlabs_api_key
+        key = get_elevenlabs_api_key()
+        if key:
+            return key
     except ImportError:
-        # Fallback: read from YAML directly so the Settings UI still
-        # reflects the persisted state when the plugin is not loaded.
-        return ((_load_yaml_config().get("elevenlabs") or {}).get("api_key") or "").strip()
-    return get_elevenlabs_api_key()
+        pass
+
+    # Encrypted store
+    if credential_store.is_configured(ELEVENLABS_CRED_FILENAME):
+        try:
+            import json as _json
+            raw = credential_store.load_decrypted(ELEVENLABS_CRED_FILENAME)
+            return _json.loads(raw).get("api_key", "")
+        except Exception:
+            pass
+
+    # Legacy YAML fallback
+    return ((_load_yaml_config().get("elevenlabs") or {}).get("api_key") or "").strip()
 
 
 # --- ElevenLabs API key configuration ---
@@ -156,12 +177,32 @@ def get_elevenlabs_config() -> dict[str, Any]:
 
 @router.post("/audiobook/config/elevenlabs")
 def set_elevenlabs_config(req: ElevenLabsKeyRequest) -> dict[str, Any]:
-    """Verify, store, and activate an ElevenLabs API key."""
+    """Verify, store, and activate an ElevenLabs API key.
+
+    Storage strategy: encrypted via Fernet if BIBLIOGON_CREDENTIALS_SECRET
+    is set, plain-text YAML fallback otherwise. The encrypted path is
+    preferred for consistency with Google Cloud TTS credentials.
+    """
     user_info = _verify_elevenlabs_key(req.api_key)
 
-    cfg = _load_yaml_config()
-    cfg.setdefault("elevenlabs", {})["api_key"] = req.api_key
-    _write_yaml_config(cfg)
+    import json as _json
+    import os
+    if os.environ.get("BIBLIOGON_CREDENTIALS_SECRET"):
+        credential_store.save_encrypted(
+            _json.dumps({"api_key": req.api_key}).encode(),
+            filename=ELEVENLABS_CRED_FILENAME,
+        )
+        # Clear legacy YAML key so there is no stale plain-text copy.
+        cfg = _load_yaml_config()
+        if cfg.get("elevenlabs", {}).get("api_key"):
+            cfg["elevenlabs"]["api_key"] = ""
+            _write_yaml_config(cfg)
+    else:
+        # No encryption secret → legacy YAML storage
+        cfg = _load_yaml_config()
+        cfg.setdefault("elevenlabs", {})["api_key"] = req.api_key
+        _write_yaml_config(cfg)
+
     _push_key_to_engine(req.api_key)
 
     subscription = (user_info.get("subscription") or {}) if isinstance(user_info, dict) else {}
@@ -175,10 +216,14 @@ def set_elevenlabs_config(req: ElevenLabsKeyRequest) -> dict[str, Any]:
 
 @router.delete("/audiobook/config/elevenlabs", status_code=204)
 def delete_elevenlabs_config() -> None:
-    """Remove the configured ElevenLabs API key."""
+    """Remove the configured ElevenLabs API key from all storage locations."""
+    # Encrypted store
+    credential_store.secure_delete(ELEVENLABS_CRED_FILENAME)
+    # Legacy YAML
     cfg = _load_yaml_config()
-    cfg.setdefault("elevenlabs", {})["api_key"] = ""
-    _write_yaml_config(cfg)
+    if cfg.get("elevenlabs", {}).get("api_key"):
+        cfg["elevenlabs"]["api_key"] = ""
+        _write_yaml_config(cfg)
     _push_key_to_engine("")
 
 
