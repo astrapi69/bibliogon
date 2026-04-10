@@ -50,6 +50,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
     const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
     const [showAiPanel, setShowAiPanel] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
@@ -309,12 +310,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 return;
             }
 
-            // Play the returned MP3
+            // Store the blob URL so the inline player renders
             const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.onended = () => URL.revokeObjectURL(url);
-            audio.play();
+            // Revoke any previous preview URL to avoid memory leaks
+            if (previewAudioUrl) URL.revokeObjectURL(previewAudioUrl);
+            setPreviewAudioUrl(URL.createObjectURL(blob));
         } catch {
             notify.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
         }
@@ -392,6 +392,39 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId}
                 aiPanelActive={showAiPanel}
                 onToggleAi={() => setShowAiPanel(!showAiPanel)}
             />
+
+            {/* TTS Preview Player */}
+            {previewAudioUrl && (
+                <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "6px 12px",
+                    background: "var(--bg-secondary)",
+                    borderBottom: "1px solid var(--border)",
+                }}>
+                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                    <audio
+                        controls
+                        autoPlay
+                        src={previewAudioUrl}
+                        onEnded={() => {
+                            URL.revokeObjectURL(previewAudioUrl);
+                            setPreviewAudioUrl(null);
+                        }}
+                        style={{height: 32, flex: 1, maxWidth: 400}}
+                    />
+                    <button
+                        className="btn-icon"
+                        onClick={() => {
+                            URL.revokeObjectURL(previewAudioUrl);
+                            setPreviewAudioUrl(null);
+                        }}
+                        title={t("ui.common.close", "Schliessen")}
+                        style={{padding: 4, fontSize: "1rem", lineHeight: 1}}
+                    >
+                        &#x2715;
+                    </button>
+                </div>
+            )}
 
             {/* AI Assistant Panel */}
             {showAiPanel && !markdownMode && (
