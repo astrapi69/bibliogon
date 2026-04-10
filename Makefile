@@ -10,9 +10,16 @@
 
 # --- Development ---
 
-dev: ## Start backend + frontend parallel (Strg+C stoppt beide)
+dev: ## Start backend + frontend (backend first, then frontend)
 	@echo "Starting Bibliogon..."
-	@make -j2 dev-backend dev-frontend
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000 &
+	@echo "Waiting for backend..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		curl -s http://localhost:8000/api/health > /dev/null 2>&1 && break; \
+		sleep 1; \
+	done
+	@echo "Backend ready. Starting frontend..."
+	@cd frontend && npm run dev
 
 dev-bg: ## Start in background (stop with: make dev-down)
 	@echo "Starting Bibliogon (background)..."

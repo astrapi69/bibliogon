@@ -97,27 +97,6 @@ export default defineConfig({
             "/api": {
                 target: "http://localhost:8000",
                 changeOrigin: true,
-                // Suppress noisy ECONNREFUSED errors during startup.
-                // Vite starts faster than uvicorn; the first few proxy
-                // attempts fail until the backend is ready. Without
-                // this handler every failed attempt prints a full
-                // stack trace to the terminal.
-                configure: (proxy) => {
-                    proxy.on("error", (err, _req, res) => {
-                        if ("code" in err && err.code === "ECONNREFUSED") {
-                            // Backend not ready yet — send a 503 so the
-                            // browser retries silently instead of showing
-                            // a network error.
-                            if (res && "writeHead" in res && !res.headersSent) {
-                                (res as import("http").ServerResponse).writeHead(503, {"Content-Type": "application/json"});
-                                (res as import("http").ServerResponse).end(JSON.stringify({detail: "Backend starting up..."}));
-                            }
-                            return;
-                        }
-                        // Log non-ECONNREFUSED errors normally
-                        console.error("[vite proxy]", err.message);
-                    });
-                },
             },
         },
     },
