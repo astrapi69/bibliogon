@@ -174,18 +174,50 @@ class PreviewRequest(BaseModel):
     language: str = Field(default="de")
 
 
+import hashlib
+
+# Persistent cache dir for preview MP3s so identical text+engine+voice
+# combinations do not trigger a redundant TTS call.
+PREVIEW_CACHE_DIR = Path("uploads/preview_cache")
+
+
+def _preview_cache_key(text: str, engine: str, voice: str, language: str) -> str:
+    """Deterministic hash over the four parameters that affect the audio."""
+    raw = f"{text}|{engine}|{voice}|{language}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
 @router.post("/preview")
 async def preview_audio(req: PreviewRequest) -> FileResponse:
     """Generate a short audio preview for a text snippet.
 
     Returns an MP3 file that can be played directly in the browser.
     Limited to 2000 characters to keep response times short.
+
+    Cached: if the same text+engine+voice+language combination was
+    previewed before, the existing MP3 is returned immediately
+    without calling the TTS engine again. Saves time and money
+    for paid engines.
     """
     try:
         tts = get_engine(req.engine)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    # Check cache first
+    cache_key = _preview_cache_key(req.text, req.engine, req.voice, req.language)
+    PREVIEW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cached_path = PREVIEW_CACHE_DIR / f"{cache_key}.mp3"
+
+    if cached_path.exists():
+        logger.info("Preview cache hit: %s", cache_key[:12])
+        return FileResponse(
+            path=str(cached_path),
+            media_type="audio/mpeg",
+            filename="preview.mp3",
+        )
+
+    # Cache miss: generate via TTS
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_preview_"))
     output_path = tmp_dir / "preview.mp3"
 
@@ -201,6 +233,12 @@ async def preview_audio(req: PreviewRequest) -> FileResponse:
 
     if not output_path.exists():
         raise HTTPException(status_code=500, detail="Preview audio file was not generated")
+
+    # Store in cache for next time
+    try:
+        shutil.copy2(output_path, cached_path)
+    except OSError as e:
+        logger.warning("Failed to cache preview: %s", e)
 
     return FileResponse(
         path=str(output_path),
