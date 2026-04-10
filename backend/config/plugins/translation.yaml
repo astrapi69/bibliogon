@@ -1,13 +1,13 @@
 plugin:
   name: "translation"
   display_name:
-    de: "Uebersetzung"
+    de: "Übersetzung"
     en: "Translation"
     es: "Traduccion"
     fr: "Traduction"
     el: "Μετάφραση"
   description:
-    de: "Automatische Buchuebersetzung via DeepL oder lokales LLM (LMStudio)"
+    de: "Automatische Buchübersetzung via DeepL oder lokales LLM (LMStudio)"
     en: "Automatic book translation via DeepL or local LLM (LMStudio)"
     es: "Traduccion automatica de libros via DeepL o LLM local (LMStudio)"
     fr: "Traduction automatique de livres via DeepL ou LLM local (LMStudio)"

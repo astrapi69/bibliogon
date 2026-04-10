@@ -73,7 +73,7 @@ faq:
       de: "Welche Kapiteltypen gibt es?"
       en: "What chapter types are available?"
     answer:
-      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Ueber den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Naechster Band). Alle waehlbar ueber das '+'-Dropdown in der Sidebar."
+      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band). Alle waehlbar über das '+'-Dropdown in der Sidebar."
       en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
   - question:
       de: "Wie ordne ich Kapitel um?"
@@ -127,7 +127,7 @@ faq:
       de: "Wie funktioniert das Backup?"
       en: "How does backup work?"
     answer:
-      de: "Klicke 'Backup' im Dashboard. Alle Bücher, Kapitel und Assets werden als .bgb-Datei (Bibliogon Backup) exportiert. Zum Wiederherstellen klicke 'Restore' und waehle die .bgb-Datei. Achtung: .bgb-Dateien können nur über 'Restore' importiert werden, nicht über 'Import'."
+      de: "Klicke 'Backup' im Dashboard. Alle Bücher, Kapitel und Assets werden als .bgb-Datei (Bibliogon Backup) exportiert. Zum Wiederherstellen klicke 'Restore' und wähle die .bgb-Datei. Achtung: .bgb-Dateien können nur über 'Restore' importiert werden, nicht über 'Import'."
       en: "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
   - question:
       de: "Was ist der Unterschied zwischen Backup, Import und Export?"
@@ -139,7 +139,7 @@ faq:
       de: "Kann ich ein bestehendes Projekt importieren?"
       en: "Can I import an existing project?"
     answer:
-      de: "Ja. Klicke 'Import' im Dashboard und waehle eine .bgp-Datei (aus Bibliogon-Export) oder eine .zip-Datei (write-book-template Projektstruktur). Das Buch wird mit allen Kapiteln und Metadaten importiert."
+      de: "Ja. Klicke 'Import' im Dashboard und wähle eine .bgp-Datei (aus Bibliogon-Export) oder eine .zip-Datei (write-book-template Projektstruktur). Das Buch wird mit allen Kapiteln und Metadaten importiert."
       en: "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
 
   # === Papierkorb ===
@@ -155,7 +155,7 @@ faq:
       de: "Wo finde ich die Einstellungen?"
       en: "Where do I find the settings?"
     answer:
-      de: "Klicke das Zahnrad-Icon im Dashboard. Die Einstellungen haben drei Bereiche: Allgemein (Sprache, Titel, Theme), Plugins (aktivieren/deaktivieren, Konfiguration), und Lizenzen (Premium-Plugin-Schluessel)."
+      de: "Klicke das Zahnrad-Icon im Dashboard. Die Einstellungen haben drei Bereiche: Allgemein (Sprache, Titel, Theme), Plugins (aktivieren/deaktivieren, Konfiguration), und Lizenzen (Premium-Plugin-Schlüssel)."
       en: "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
   - question:
       de: "Welche Themes gibt es?"
@@ -175,13 +175,13 @@ faq:
       de: "Wie aktiviere ich ein Premium-Plugin?"
       en: "How do I activate a premium plugin?"
     answer:
-      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen (z.B. 'grammar') und deinen Lizenzschluessel ein und klicke 'Aktivieren'. Danach aktiviere das Plugin unter Einstellungen > Plugins mit dem 'An'-Button."
+      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen (z.B. 'grammar') und deinen Lizenzschlüssel ein und klicke 'Aktivieren'. Danach aktiviere das Plugin unter Einstellungen > Plugins mit dem 'An'-Button."
       en: "Go to Settings > Licenses. Enter the plugin name (e.g. 'grammar') and your license key and click 'Activate'. Then enable the plugin under Settings > Plugins with the 'On' button."
   - question:
-      de: "Kann ich eigene Plugins hinzufuegen?"
+      de: "Kann ich eigene Plugins hinzufügen?"
       en: "Can I add custom plugins?"
     answer:
-      de: "Ja. Unter Einstellungen > Plugins klicke 'Plugin hinzufuegen'. Gib Name, Anzeigename und Beschreibung ein. Das Plugin braucht einen installierten Python-Entry-Point unter der Gruppe 'bibliogon.plugins'. Details zur Plugin-Entwicklung findest du im PluginForge-Wiki (github.com/astrapi69/pluginforge)."
+      de: "Ja. Unter Einstellungen > Plugins klicke 'Plugin hinzufügen'. Gib Name, Anzeigename und Beschreibung ein. Das Plugin braucht einen installierten Python-Entry-Point unter der Gruppe 'bibliogon.plugins'. Details zur Plugin-Entwicklung findest du im PluginForge-Wiki (github.com/astrapi69/pluginforge)."
       en: "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
 
   # === Erste Schritte ===
@@ -189,7 +189,7 @@ faq:
       de: "Wo finde ich eine Einfuehrung?"
       en: "Where can I find an introduction?"
     answer:
-      de: "Klicke das Raketen-Icon im Dashboard oder gehe zu 'Erste Schritte'. Dort findest du eine Schritt-fuer-Schritt-Anleitung mit Fortschrittsanzeige und kannst ein Beispielbuch erstellen um die Funktionen kennenzulernen."
+      de: "Klicke das Raketen-Icon im Dashboard oder gehe zu 'Erste Schritte'. Dort findest du eine Schritt-für-Schritt-Anleitung mit Fortschrittsanzeige und kannst ein Beispielbuch erstellen um die Funktionen kennenzulernen."
       en: "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
 
   # === Dateiformate ===
@@ -217,7 +217,7 @@ faq:
       de: "Welche Kapiteltypen gibt es jetzt?"
       en: "What chapter types are available now?"
     answer:
-      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Ueber den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Naechster Band). Alle waehlbar ueber das '+'-Dropdown in der Sidebar."
+      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band). Alle waehlbar über das '+'-Dropdown in der Sidebar."
       en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
   # --- Plugin-Installation ---
   - question:
@@ -230,7 +230,7 @@ faq:
       de: "Wie deinstalliere ich ein Plugin?"
       en: "How do I uninstall a plugin?"
     answer:
-      de: "Installierte Plugins koennen über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration geloescht."
+      de: "Installierte Plugins koennen über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration gelöscht."
       en: "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
   - question:
       de: "Koennen Plugins eigene UI-Komponenten mitbringen?"

@@ -2,11 +2,11 @@
 
 ## Grundlagen
 
-PDF eignet sich besonders fuer druckfertige Buchversionen (Paperback, Hardcover) und fuer die Vorschau des finalen Layouts. Bibliogon erzeugt PDF-Dateien ueber die gleiche Pipeline wie den EPUB-Export: TipTap-JSON wird zu Markdown konvertiert, in eine write-book-template-Projektstruktur eingebettet und von manuscripta mit Pandoc als Konverter zu PDF umgewandelt.
+PDF eignet sich besonders für druckfertige Buchversionen (Paperback, Hardcover) und für die Vorschau des finalen Layouts. Bibliogon erzeugt PDF-Dateien über die gleiche Pipeline wie den EPUB-Export: TipTap-JSON wird zu Markdown konvertiert, in eine write-book-template-Projektstruktur eingebettet und von manuscripta mit Pandoc als Konverter zu PDF umgewandelt.
 
 ## Pandoc als Voraussetzung
 
-Fuer den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates Kommandozeilenwerkzeug und muss auf dem System installiert sein, auf dem das Bibliogon-Backend laeuft. Ohne Pandoc schlaegt der PDF-Export mit einer entsprechenden Fehlermeldung fehl.
+Für den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates Kommandozeilenwerkzeug und muss auf dem System installiert sein, auf dem das Bibliogon-Backend laeuft. Ohne Pandoc schlaegt der PDF-Export mit einer entsprechenden Fehlermeldung fehl.
 
 **Installation:**
 
@@ -14,7 +14,7 @@ Fuer den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates K
 - **macOS (Homebrew):** `brew install pandoc`
 - **Windows:** Installer von [pandoc.org](https://pandoc.org/installing.html) herunterladen
 
-Zusaetzlich wird eine LaTeX-Distribution benoetigt, da Pandoc PDF-Dateien ueber LaTeX erzeugt. Empfohlen wird TeX Live (Linux/macOS) oder MiKTeX (Windows). Auf Debian/Ubuntu genuegt `sudo apt install texlive-full` fuer eine vollstaendige Installation.
+Zusaetzlich wird eine LaTeX-Distribution benötigt, da Pandoc PDF-Dateien über LaTeX erzeugt. Empfohlen wird TeX Live (Linux/macOS) oder MiKTeX (Windows). Auf Debian/Ubuntu genuegt `sudo apt install texlive-full` für eine vollstaendige Installation.
 
 Wenn du Docker verwendest (`make prod`), sind Pandoc und TeX Live bereits im Container enthalten.
 
@@ -29,9 +29,9 @@ Der PDF-Export unterstuetzt die gleichen Optionen wie der EPUB-Export:
 
 ## Weitere Formate
 
-Neben PDF exportiert Bibliogon auch in folgende Formate, die alle ueber Pandoc erzeugt werden:
+Neben PDF exportiert Bibliogon auch in folgende Formate, die alle über Pandoc erzeugt werden:
 
-- **DOCX** (Word): Fuer die Zusammenarbeit mit Lektoren oder Verlagen, die Word-Dokumente bevorzugen.
+- **DOCX** (Word): Für die Zusammenarbeit mit Lektoren oder Verlagen, die Word-Dokumente bevorzugen.
 - **HTML**: Eine einzelne HTML-Datei mit dem gesamten Buchinhalt.
 - **Markdown**: Der rohe Markdown-Text aller Kapitel in der konfigurierten Reihenfolge.
-- **Projektstruktur (ZIP)**: Eine ZIP-Datei im write-book-template-Format mit Markdown-Dateien, Metadaten und Assets. Dieses Format eignet sich fuer die Weiterverarbeitung mit eigenen Werkzeugen oder fuer die Versionskontrolle mit Git.
+- **Projektstruktur (ZIP)**: Eine ZIP-Datei im write-book-template-Format mit Markdown-Dateien, Metadaten und Assets. Dieses Format eignet sich für die Weiterverarbeitung mit eigenen Werkzeugen oder für die Versionskontrolle mit Git.
