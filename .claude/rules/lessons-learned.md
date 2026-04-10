@@ -84,6 +84,12 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
 - Setting type_suffix_in_filename (default: true).
 
+## Doku ist Spezifikation, nicht Wunschliste
+
+- Wenn ein Feature in der Hilfe steht, muss es im Code existieren. Feature-Audits nach jeder grossen Doku-Ergaenzung sind Pflicht.
+- Features die noch nicht implementiert sind aber in der Doku beschrieben werden, muessen mit `> Geplant fuer eine kommende Version` markiert werden. Nichts versprechen was nicht da ist.
+- Audit-Tabelle mit IST-Zustand erstellen, Gap-Analyse in A/B/C Kategorien, dann erst implementieren. Kein blindes Draufloscodieren.
+
 ## Help-System: Single Source of Truth
 
 - Hilfe-Content lebt in `docs/help/`, nicht im Plugin-Code. Sowohl das In-App Help-Plugin als auch MkDocs lesen die gleichen Markdown-Dateien.

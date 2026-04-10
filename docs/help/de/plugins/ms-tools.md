@@ -93,6 +93,8 @@ Wenn du dir unsicher bist, aktiviere zuerst die Vorschau-Funktion die zeigt was 
 
 ### Sanitization beim Import
 
+> Geplant fuer eine kommende Version. Siehe ROADMAP.md
+
 In den Plugin-Einstellungen kannst du aktivieren dass die Sanitization automatisch beim Import eines Buches oder Kapitels laeuft. Das ist empfehlenswert fuer Importe aus Word oder write-book-template.
 
 ---
@@ -138,6 +140,8 @@ Kurze Saetze (unter 10 Woerter) wirken abgehackt, lange Saetze (ueber 25 Woerter
 Lange Woerter (mehr als 7 Zeichen) sind oft Fachbegriffe oder Substantivierungen. Fuer Belletristik sind 4-5 Zeichen typisch, fuer Wissenschaft eher 6-7.
 
 ### Adjektivdichte und Adverbdichte
+
+> Adjektivdichte ist geplant fuer eine kommende Version (benoetigt POS-Tagging). Adverbdichte ist bereits verfuegbar ueber die Adverb-Erkennung in den Stil-Checks.
 
 Anteil von Adjektiven und Adverbien am Gesamttext. Ueber 15% ist ein Warnsignal. Guter Erzaehlstil traegt die Handlung mit Verben, nicht mit Beschreibungen.
 

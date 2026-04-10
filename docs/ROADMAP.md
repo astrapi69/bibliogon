@@ -215,3 +215,26 @@ Technisch:
 ## Versionierung (leichtgewichtig, kein Git)
 - [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
+## Manuskript-Tools (M)
+
+Abgeschlossen:
+- [x] M-01: Wortwiederholungs-Erkennung mit konfigurierbarem Fenster
+- [x] M-02: Redundante Phrasen Erkennung (DE + EN Listen)
+- [x] M-03: Adverb-Erkennung nach Suffix (-lich/-ly/-ment/-mente)
+- [x] M-04: Unsichtbare Unicode-Zeichen entfernen (NBSP, ZWSP, BOM, Soft Hyphen)
+- [x] M-05: HTML/Word-Artefakte entfernen (leere Tags, Style-Attribute, Namespace-Tags)
+- [x] M-06: Sanitization-Vorschau (Diff-Endpoint)
+- [x] M-07: Passiv-Quote als Prozent (war nur Count)
+- [x] M-08: Durchschnittliche Wortlaenge in Zeichen
+- [x] M-09: Zeichenzahl, Absatzzahl, geschaetzte Seitenzahl
+- [x] M-10: CSV/JSON-Export der Metriken pro Buch
+- [x] M-11: Default-Schwellwert 25 Woerter (war 30)
+
+Geplant:
+- [ ] M-12: Auto-Sanitization beim Import (Hook ins Import-System)
+- [ ] M-13: Adjektiv-Dichte via POS-Tagging (spaCy/NLTK Dependency)
+- [ ] M-14: Inline-Markierungen im TipTap-Editor (TipTap-Extension)
+- [ ] M-15: Qualitaets-Tab in Buch-Metadaten (Kapitel-Tabelle mit Ausreisser-Markierung)
+- [ ] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
+- [ ] M-17: Fuellwort-Listen aus YAML laden (erweiterbar durch User)
+- [ ] M-18: Begriffe von Pruefung ausschliessen (Allowlist)
