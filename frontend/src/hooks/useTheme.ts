@@ -1,5 +1,7 @@
 import {useEffect, useState} from "react";
 
+import {DEFAULT_PALETTE, isKnownPalette} from "../themes/palettes";
+
 type Theme = "light" | "dark";
 
 function getInitialTheme(): Theme {
@@ -10,7 +12,12 @@ function getInitialTheme(): Theme {
 }
 
 function getInitialAppTheme(): string {
-    return localStorage.getItem("bibliogon-app-theme") || "warm-literary";
+    // Guard against a stale localStorage value left over from a removed
+    // or renamed palette. Unknown values fall back to the default so
+    // the CSS always matches a real rule block.
+    const stored = localStorage.getItem("bibliogon-app-theme");
+    if (stored && isKnownPalette(stored)) return stored;
+    return DEFAULT_PALETTE;
 }
 
 export function useTheme() {
