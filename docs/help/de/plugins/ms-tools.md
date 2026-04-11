@@ -161,16 +161,22 @@ Anteil der Passiv-Saetze am Text. Für Belletristik sind 5-10% typisch, für Sac
 
 ## Konfiguration
 
-Alle Einstellungen unter `Einstellungen > Plugins > Manuskript-Tools`:
+Die Schwellwerte existieren auf zwei Ebenen:
 
-- **Satzlaenge-Schwellwert**: Ab wieviel Wörtern ein Satz als lang markiert wird. Default: 25.
-- **Wiederholungs-Fenster**: Innerhalb wieviel Wörtern eine Wiederholung erkannt wird. Default: 50.
-- **Lesegeschwindigkeit**: Basis für die Lesezeit-Schaetzung. Default: 200 Wörter/Minute.
-- **Füllwort-Liste**: Eigene Begriffe hinzufügen oder entfernen. Pro Sprache separat.
-- **Auto-Sanitization beim Import**: An/Aus.
-- **Aktive Checks**: Einzelne Stil-Checks deaktivieren falls du sie nicht brauchst.
+**Plugin-global** unter `Einstellungen > Plugins > Manuskript-Tools` (Defaults fuer alle Buecher):
 
-Die Einstellungen werden pro Buch gespeichert.
+- **Satzlaenge-Schwellwert**: Ab wieviel Woertern ein Satz als lang markiert wird. Default: 25.
+- **Auto-Sanitization beim Import**: Boolean, Default an. Saeubert Markdown-Importe von unsichtbaren Unicode-Zeichen, HTML-Artefakten und typografischen Anfuehrungszeichen.
+
+**Pro Buch** im BookEditor > Metadaten (ueberschreibt die globalen Defaults fuer dieses Buch):
+
+- **Satzlaenge-Schwellwert** (`ms_tools_max_sentence_length`)
+- **Wiederholungs-Fenster** (`ms_tools_repetition_window`)
+- **Max. Fuellwort-Anteil** (`ms_tools_max_filler_ratio`)
+
+Aufloesungs-Reihenfolge: Request > Buch > Plugin-global > Built-in-Default.
+
+Die **Fuellwort-Listen** und die **Allowlist** (Begriffe von der Pruefung ausgenommen) liegen als YAML-Dateien im Plugin-Paket unter `content/fillers/{lang}.yaml` und `content/allowlist/{lang}.yaml`. Sie koennen direkt dort editiert werden und werden beim App-Start geladen.
 
 ---
 

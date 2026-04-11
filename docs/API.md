@@ -1,112 +1,93 @@
-# API-Referenz
+# API-Referenz - High-Level-Ueberblick
 
-Alle Endpunkte der Bibliogon App. Wird bei API-Aenderungen oder neuen Endpunkten aktualisiert.
+Bibliogon exponiert zwei API-Schichten: einen Kern mit CRUD-Endpoints
+fuer Buecher, Kapitel, Assets und Systemfunktionen, und pro aktivem
+Plugin einen eigenen Router unter dessen Prefix.
 
-## Kern-API (backend/app/routers/)
+> **Quelle der Wahrheit:** Die exakte, aktuelle Endpoint-Liste inklusive
+> Request- und Response-Schemas liefert die FastAPI-OpenAPI-Dokumentation
+> im laufenden Backend:
+>
+> - Interaktiv: [http://localhost:8000/docs](http://localhost:8000/docs) (Swagger UI)
+> - JSON: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+>
+> Diese Datei hier ist nur ein High-Level-Ueberblick. Sie wird
+> absichtlich nicht pro Endpoint gepflegt (Maintenance-Schuld) und
+> wird nur bei groesseren strukturellen Aenderungen angefasst.
 
-### Books
+---
+
+## Kern-API
+
+Gruppen unter `backend/app/routers/` (Router-Prefix in Klammern):
+
+| Router              | Prefix            | Aufgabe                                              |
+| ------------------- | ----------------- | ---------------------------------------------------- |
+| `books`             | `/api/books`      | Buecher CRUD, Trash, per-Buch Audio/ms-tools Config  |
+| `chapters`          | `/api/books/{id}/chapters` | Kapitel CRUD und Reordering                 |
+| `assets`            | `/api/books/{id}/assets` | Asset-Upload, Serving, Cover-Upload            |
+| `audiobook`         | `/api`            | Audiobook-Persistenz, Engine-Config, Dry-Run          |
+| `covers`            | `/api`            | Cover-Validierung und -Download                       |
+| `backup`            | `/api/backup`     | `.bgb` Export/Restore, Smart-Import, `compare`        |
+| `licenses`          | `/api/licenses`   | Lizenz-Aktivierung und -Verwaltung                    |
+| `settings`          | `/api/settings`   | App-Settings, Plugin-Settings, Theme                  |
+| `plugin_install`    | `/api/plugins`    | Plugin-ZIP Installation, Discovery, Health            |
+
+Beispiele einzelner Endpoints (nicht erschoepfend):
+
 - `GET /api/books` - Liste aller Buecher
-- `POST /api/books` - Buch erstellen
-- `GET /api/books/{id}` - Buch abrufen
-- `PATCH /api/books/{id}` - Buch aktualisieren
-- `DELETE /api/books/{id}` - Buch loeschen (Soft-Delete)
+- `PATCH /api/books/{id}` - Buch-Metadaten inklusive TTS-Settings,
+  Audiobook-Overwrite-Flag, Audiobook-Skip-Chapter-Types und
+  ms-tools per-Buch Schwellwerten
+- `POST /api/books/{id}/chapters` - Kapitel anlegen
+- `GET /api/backup/export` - Full-Data-Backup als `.bgb`
+- `POST /api/backup/compare` - Zwei `.bgb`-Dateien vergleichen
+- `POST /api/books/{id}/export/async/{fmt}` - Async-Export-Job starten
+- `GET /api/export/jobs/{id}/stream` - Server-Sent Events Progress-Feed
+- `POST /api/books/{id}/audiobook/dry-run` - Probe-Sample + Kosten-Preview
 
-### Papierkorb
-- `GET /api/books/trash/list` - Geloeschte Buecher
-- `POST /api/books/trash/{id}/restore` - Wiederherstellen
-- `DELETE /api/books/trash/{id}` - Endgueltig loeschen
-- `DELETE /api/books/trash/empty` - Papierkorb leeren
+---
 
-### Chapters
-- `GET /api/books/{id}/chapters` - Kapitel-Liste
-- `POST /api/books/{id}/chapters` - Kapitel erstellen
-- `GET /api/books/{id}/chapters/{cid}` - Kapitel abrufen
-- `PATCH /api/books/{id}/chapters/{cid}` - Kapitel aktualisieren
-- `DELETE /api/books/{id}/chapters/{cid}` - Kapitel loeschen
-- `PUT /api/books/{id}/chapters/reorder` - Kapitel neu sortieren
+## Plugin-Router
 
-### Assets
-- `GET /api/books/{id}/assets` - Asset-Liste
-- `POST /api/books/{id}/assets` - Asset hochladen
-- `DELETE /api/books/{id}/assets/{aid}` - Asset loeschen
+Jedes aktive Plugin kann eigene Endpoints registrieren. Das Prefix ist
+immer der Plugin-Name:
 
-### Backup/Import
-- `GET /api/backup/export` - Full-Data Backup (.bgb)
-- `POST /api/backup/smart-import` - Intelligenter Import (.bgb, .bgp, .zip)
-- `POST /api/backup/import` - Backup Import
-- `POST /api/backup/import-project` - write-book-template Projekt Import
+| Plugin         | Prefix              | Zweck                                         |
+| -------------- | ------------------- | --------------------------------------------- |
+| export         | `/api/books/{id}/export` + `/api/export/jobs` | EPUB/PDF/DOCX/HTML/Markdown/Project, Async-Jobs mit SSE |
+| audiobook      | `/api/audiobook`    | Engine-Config (ElevenLabs, Google), Voices    |
+| ms-tools       | `/api/ms-tools`     | Style-Checks, Sanitize, Readability, Metrics  |
+| translation    | `/api/translation`  | DeepL + LMStudio, Buch- und Kapitel-Uebersetzung |
+| grammar        | `/api/grammar`      | LanguageTool Check, Sprachen-Liste             |
+| kdp            | `/api/kdp`          | KDP-Metadaten, Cover-Validierung, Changelog    |
+| kinderbuch     | `/api/kinderbuch`   | Bild-pro-Seite Layouts                         |
+| help           | `/api/help`         | Shortcuts, FAQ, In-App-Hilfe-Content           |
+| getstarted     | `/api/get-started`  | Onboarding-Guide, Sample-Book                  |
 
-### Lizenzen
-- `GET /api/licenses` - Lizenzen auflisten
-- `POST /api/licenses` - Lizenz aktivieren
-- `DELETE /api/licenses/{plugin}` - Lizenz deaktivieren
+Beispiele:
 
-### Settings
-- `GET /api/settings/app` - App-Settings
-- `PATCH /api/settings/app` - App-Settings aendern
-- `GET /api/settings/plugins` - Plugin-Settings
-- `GET /api/settings/plugins/{name}` - Plugin-Config
-- `PATCH /api/settings/plugins/{name}` - Plugin-Config aendern
-- `POST /api/settings/plugins/{name}/enable` - Plugin aktivieren
-- `POST /api/settings/plugins/{name}/disable` - Plugin deaktivieren
+- `POST /api/export/async/audiobook` - Audiobook-Generierung als
+  asynchroner Job starten (respektiert Book.audiobook_overwrite_existing
+  und Book.audiobook_skip_chapter_types)
+- `POST /api/ms-tools/check` - Style-Check mit per-Request Thresholds
+  oder per-Buch Overrides ueber `book_id`
+- `POST /api/audiobook/config/elevenlabs` - ElevenLabs-Key speichern
+  und gegen die API validieren
 
-### Plugin-System
-- `GET /api/plugins/manifests` - Frontend-Manifests aller Plugins
-- `POST /api/plugins/install` - Plugin ZIP installieren
-- `DELETE /api/plugins/install/{name}` - Plugin deinstallieren
-- `GET /api/plugins/installed` - Installierte Plugins
-- `GET /api/plugins/health` - Health-Check aller Plugins
-- `GET /api/plugins/errors` - Load-Errors
+---
 
-### System
-- `GET /api/i18n/{lang}` - i18n-Strings fuer Sprache
-- `GET /api/health` - App Health-Check
+## Error-Handling
 
-## Plugin-Routen
+Alle Endpoints nutzen die gemeinsame `BibliogonError`-Hierarchie. Der
+globale Exception-Handler in `backend/app/main.py` mappt auf HTTP-Codes:
 
-### Export (plugin-export)
-- `GET /api/books/{id}/export/{fmt}` - Export (epub, pdf, docx, html, markdown, project)
-  - Query: `book_type`, `toc_depth`, `use_manual_toc`
+- `NotFoundError` -> 404
+- `ValidationError` -> 400
+- `ConflictError` -> 409 (z.B. `audiobook_exists` Confirm)
+- `ExportError`, `PluginError` -> 500
+- `ExternalServiceError` -> 502 (Pandoc, LanguageTool, TTS-Backends)
 
-### Kinderbuch (plugin-kinderbuch)
-- `GET /api/kinderbuch/templates`
-- `POST /api/kinderbuch/preview`
-
-### KDP (plugin-kdp)
-- `POST /api/kdp/metadata`
-- `POST /api/kdp/validate-cover`
-- `GET /api/kdp/categories`
-
-### Grammar (plugin-grammar)
-- `POST /api/grammar/check`
-- `GET /api/grammar/languages`
-
-### Help (plugin-help)
-- `GET /api/help/shortcuts`
-- `GET /api/help/faq`
-- `GET /api/help/about`
-
-### Get Started (plugin-getstarted)
-- `GET /api/get-started/guide`
-- `GET /api/get-started/sample-book`
-
-### Manuscript Tools (plugin-ms-tools)
-- `POST /api/ms-tools/check` - Style-Checks
-- `POST /api/ms-tools/sanitize` - Sanitization
-- `POST /api/ms-tools/readability` - Lesbarkeits-Metriken
-- `GET /api/ms-tools/languages`
-
-### Audiobook (plugin-audiobook)
-- `POST /api/audiobook/generate` - Audiobook erstellen
-- `GET /api/audiobook/engines` - Verfuegbare TTS-Engines
-- `GET /api/audiobook/languages`
-- `GET /api/audiobook/voices`
-- `GET /api/audiobook/status` - Job-Status
-- `POST /api/audiobook/preview` - Vorhoer-Sample
-
-### Translation (plugin-translation)
-- `POST /api/translation/translate` - Text uebersetzen
-- `POST /api/translation/translate-book` - Buch uebersetzen
-- `GET /api/translation/languages`
-- `GET /api/translation/providers` - DeepL, LMStudio
-- `GET /api/translation/health`
+Im Debug-Mode (`BIBLIOGON_DEBUG=true`) liefert die Response zusaetzlich
+einen `traceback`-Eintrag, den das Frontend in den "Issue melden"-Button
+einbaut.

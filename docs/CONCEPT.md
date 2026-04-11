@@ -3,8 +3,8 @@
 **Repository:** [github.com/astrapi69/bibliogon](https://github.com/astrapi69/bibliogon)
 **Verwandtes Projekt:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
 **PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
-**Version:** 0.7.0
-**Stand:** 2026-04-01
+
+Dieses Dokument beschreibt die Architektur und das Konzept. Die aktuelle App-Version steht in `CLAUDE.md`, konkrete Aenderungen pro Release in `docs/CHANGELOG.md`.
 
 ---
 

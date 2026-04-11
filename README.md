@@ -9,7 +9,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 ## Features
 
 - WYSIWYG and Markdown editor (TipTap with 15 extensions, 24 toolbar buttons)
-- 21 chapter types (Preface, Foreword, Prologue, Dedication, Epilogue, Afterword, ...)
+- 26 chapter types (Preface, Foreword, Prologue, Dedication, Part, Epilogue, Afterword, Final Thoughts, Also by the Author, Excerpt, Call to Action, ...)
 - 16 book genres (Novel, Non-Fiction, Technical, Biography, Poetry, ...)
 - Drag-and-drop chapter ordering with collapsible sections
 - EPUB, PDF, Word, HTML, Markdown export via [manuscripta](https://github.com/astrapi69/manuscripta)

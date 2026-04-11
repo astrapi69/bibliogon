@@ -21,7 +21,6 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] A-02: Optionales AI-Metadata-Flag im EPUB/PDF-Export.
 - [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
 - [x] K-04: Changelog-Export: Welche Version wurde wann publiziert
-- [ ] P-13: PostgreSQL statt SQLite
 
 
 ## UI/UX
@@ -57,6 +56,21 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 - [x] Settings: Restliche Strings migrieren (einige Toast-Messages noch hardcoded)
 - [x] I-01: Sprachumschaltung live ohne Reload
 - [x] I-02: Fehlende Sprachen: Portugiesisch, Tuerkisch, Japanisch
+- [ ] I-03: i18n retroaktive Vervollstaendigung fuer ES, FR, EL, PT, TR, JA.
+      Nach dem v0.11 -> v0.12 Audit fehlen in diesen Sprachen ca. 100
+      Keys pro Sprache (alle aus Features die nach der ersten
+      Uebersetzung dazugekommen sind: TranslationSettingsPanel,
+      BackupCompareDialog, neue ChapterTypes, error_report, audiobook
+      overwrite/skip Sub-UI, help/backup Root-Sektionen). DE und EN sind
+      die einzigen Sprachen die voll aktuell sind; die kritischsten
+      v0.11->v0.12 Keys wurden in den sechs anderen Sprachen punktuell
+      nachgepflegt (siehe `feat(i18n)` Commits), aber die alten Luecken
+      brauchen idiomatische Uebersetzungen, idealerweise mit Muttersprachler-
+      Review. Bis dahin faellt der Frontend-`t()`-Helper auf den English
+      Fallback zurueck, also bleibt die UI funktional, nur unuebersetzt.
+      Fortschritts-Test: `_FULLY_MAINTAINED_LANGUAGES` in
+      `backend/tests/test_i18n_structure.py` — Liste erweitern sobald
+      eine Sprache auf Vollstaendigkeit ist.
 
 ## Import/Export
 
@@ -99,9 +113,8 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## Tests
 
-- [x] 38 Backend-Tests (pytest)
-- [x] 48 Plugin-Tests (pytest)
-- [x] 21 Frontend-Tests (Vitest)
+- [x] 228 Backend + Plugin-Tests (pytest, via `make test-backend` + `make test-plugins`)
+- [x] 90 Frontend-Tests (Vitest)
 - [x] 52 E2E-Tests (Playwright)
 - [x] Q-01: E2E-Tests aktualisieren fuer Radix-Selektoren und neue Features
 - [x] Q-02: Mutation Testing mit mutmut einrichten

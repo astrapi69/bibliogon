@@ -3,9 +3,9 @@
 Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Offline-faehig, i18n-ready, local-first, Freemium-Modell.
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.11.0 (Phase 10 features, Naechste: Multi-User/SaaS)
+- **Version:** 0.12.0 (per-Buch Audio-Konfiguration, V-02 Backup-Vergleich, Plugin-Settings Audit, 5 neue ChapterTypes. Naechste Phase: Multi-User/SaaS)
 - **Konzept:** docs/CONCEPT.md
-- **API-Referenz:** docs/API.md (alle Endpunkte)
+- **API-Referenz:** FastAPI OpenAPI unter `/docs` und `/openapi.json` (Quelle der Wahrheit). docs/API.md ist ein High-Level-Ueberblick.
 - **Verlauf:** docs/CHANGELOG.md (erledigte Phasen), docs/ROADMAP.md (offene Punkte)
 
 ## Entwicklungsrichtlinien
@@ -29,7 +29,7 @@ Bei Widerspruch zwischen CLAUDE.md und Rules gelten die Rules.
 - **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.0, SQLite, Pydantic v2, Poetry
 - **Frontend:** React 18, TypeScript (strict), TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
 - **Plugins:** pluginforge ^0.5.0 (PyPI), Entry Points, YAML-Config
-- **Export:** manuscripta ^0.6.0 (PyPI), Pandoc, write-book-template Struktur
+- **Export:** manuscripta ^0.7.0 (PyPI), Pandoc, write-book-template Struktur. Alle TTS-Engines delegieren an manuscripta-Adapter.
 - **Testing:** pytest, Vitest, Playwright, mutmut, Stryker
 - **Tooling:** Poetry, npm, Docker, Make, ruff, ESLint, Prettier, pre-commit
 
@@ -70,21 +70,23 @@ Plugin-spezifisch: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,aud
 - **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type
 - **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
 
-**ChapterType:** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part_intro, interlude, toc
+**ChapterType (26):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action. Marketing types (also_by_author, excerpt, call_to_action) sind im Audiobook-Export per Default in der Skip-Liste. Per-Buch-Override ueber Book.audiobook_skip_chapter_types.
 
 ## Plugins
 
-| Plugin             | Tier    | Abhaengigkeit | Beschreibung                        |
-| ------------------ | ------- | ------------- | ----------------------------------- |
-| plugin-export      | core    | -             | EPUB, PDF, write-book-template ZIP  |
-| plugin-help        | core    | -             | In-App Hilfe, Shortcuts, FAQ        |
-| plugin-getstarted  | core    | -             | Onboarding, Beispielbuch            |
-| plugin-ms-tools    | core    | -             | Stil-Checks, Sanitization, Metriken |
-| plugin-audiobook   | premium | export        | TTS Audiobook-Generierung           |
-| plugin-translation | premium | -             | DeepL/LMStudio Uebersetzung         |
-| plugin-grammar     | premium | -             | LanguageTool Grammatikpruefung      |
-| plugin-kinderbuch  | premium | export        | Bild-pro-Seite Layout (geplant)     |
-| plugin-kdp         | premium | export        | KDP-Metadaten (geplant)             |
+| Plugin             | Tier    | Abhaengigkeit | Beschreibung                                                |
+| ------------------ | ------- | ------------- | ----------------------------------------------------------- |
+| plugin-export      | core    | -             | EPUB, PDF, write-book-template ZIP, Async-Jobs mit SSE       |
+| plugin-help        | core    | -             | In-App Hilfe, Shortcuts, FAQ                                |
+| plugin-getstarted  | core    | -             | Onboarding, Beispielbuch                                    |
+| plugin-ms-tools    | core    | -             | Stil-Checks, Sanitization, Metriken, per-Buch Schwellwerte   |
+| plugin-audiobook   | premium | export        | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-Buch Config |
+| plugin-translation | premium | -             | DeepL/LMStudio Uebersetzung, Custom Settings-Panel            |
+| plugin-grammar     | premium | -             | LanguageTool (self-hosted + Premium-Auth Support)             |
+| plugin-kinderbuch  | premium | export        | Bild-pro-Seite Layout mit 4 Vorlagen                          |
+| plugin-kdp         | premium | export        | KDP-Metadaten, Cover-Validierung, Completeness-Check          |
+
+Plugin-Versionen sind unabhaengig von der App-Version. Ein Plugin wird nur gebumpt wenn sich am Plugin selbst etwas geaendert hat, nicht bei jedem App-Release.
 
 ## Verzeichnisstruktur (Kurz)
 
@@ -115,11 +117,12 @@ bibliogon/
 - Export: manuscripta (PyPI), Plugin-Config in export.yaml ist 1:1 manuscripta Format
 - Commits: Englisch, konventionell (feat/fix/refactor/docs)
 
-## Tests (432 total)
+## Tests
 
-- Backend: 153 | Plugins: 188 | Vitest: 68 | Playwright E2E: 52
-- Plugin-Details: export 37, ms-tools 53, translation 35, audiobook 88, kdp 10, kinderbuch 8, grammar 7
-- Note: Total counts include 16 credential_store + 8 voice_store + 8 content-hash cache tests
+- Backend + Plugins: 228 (via `make test-backend` + `make test-plugins`)
+- Frontend (Vitest): 90
+- E2E (Playwright): weiterhin 52 Tests unter `frontend/e2e/`, nicht im `make test` Default-Pfad
+- `make test` muss nach jeder Aenderung gruen sein
 
 ## Verwandte Projekte
 

@@ -168,6 +168,17 @@ Extern         ExternalServiceError(service, message) fuer Pandoc/TTS/LanguageTo
 
 Services werfen KEINE HTTPException, Router fangen NICHTS. Der globale Exception Handler in main.py mappt BibliogonError-Subklassen zu HTTP-Status-Codes. Details siehe code-hygiene.md "Error-Handling Architektur".
 
+## Plugin-Paket-Versionen
+
+Plugin-Versionen sind unabhaengig von der App-Version. Ein Plugin wird nur gebumpt wenn sich am Plugin selbst etwas geaendert hat, nicht bei jedem App-Release. Konkret:
+
+- Kein Zwangs-Bump aller `plugins/bibliogon-plugin-*/pyproject.toml` bei einem App-Release
+- Plugin-Versionen bleiben bei `1.0.0` bis es einen inhaltlichen Grund gibt sie zu erhoehen (neue Hook-Version, Breaking-Change in der Plugin-API, ...)
+- Der App-Version-Bump erfasst nur `backend/pyproject.toml`, `frontend/package.json` und optional `backend/app/__init__.py`
+- Plugin-Aenderungen werden im App-CHANGELOG vermerkt, aber der Plugin-Version-String bleibt unveraendert
+
+Grund: Plugins haben eigene Lebenszyklen, und Trial-Keys / Lizenz-Keys sind gegen Plugin-Name gebunden, nicht gegen Version. Ein Bump ohne Aenderung wuerde nur Rauschen erzeugen.
+
 ## Plugin-Settings Sichtbarkeit
 
 Jedes Plugin-Setting in `config/plugins/*.yaml` MUSS entweder:
