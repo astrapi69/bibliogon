@@ -472,10 +472,11 @@ function AudiobookBookConfig({
 const AUDIOBOOK_CHAPTER_TYPES: readonly string[] = [
     "toc", "dedication", "epigraph", "preface", "foreword",
     "prologue", "introduction",
-    "chapter", "part_intro", "interlude",
-    "epilogue", "afterword", "acknowledgments", "about_author",
+    "part", "part_intro", "chapter", "interlude",
+    "epilogue", "afterword", "final_thoughts",
+    "acknowledgments", "about_author",
     "appendix", "bibliography", "endnotes", "glossary", "index",
-    "imprint", "next_in_series",
+    "imprint", "also_by_author", "next_in_series", "excerpt", "call_to_action",
 ];
 
 

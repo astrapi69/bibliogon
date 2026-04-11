@@ -21,6 +21,7 @@ class ChapterType(str, Enum):
     EPILOGUE = "epilogue"
     IMPRINT = "imprint"
     NEXT_IN_SERIES = "next_in_series"
+    PART = "part"
     PART_INTRO = "part_intro"
     INTERLUDE = "interlude"
     TABLE_OF_CONTENTS = "toc"
@@ -28,9 +29,13 @@ class ChapterType(str, Enum):
     PROLOGUE = "prologue"
     INTRODUCTION = "introduction"
     AFTERWORD = "afterword"
+    FINAL_THOUGHTS = "final_thoughts"
     INDEX = "index"
     EPIGRAPH = "epigraph"
     ENDNOTES = "endnotes"
+    ALSO_BY_AUTHOR = "also_by_author"
+    EXCERPT = "excerpt"
+    CALL_TO_ACTION = "call_to_action"
 
 
 # --- Book schemas ---

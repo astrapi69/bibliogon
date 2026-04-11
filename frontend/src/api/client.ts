@@ -12,6 +12,7 @@ export type ChapterType =
     | "epilogue"
     | "imprint"
     | "next_in_series"
+    | "part"
     | "part_intro"
     | "interlude"
     | "toc"
@@ -19,9 +20,13 @@ export type ChapterType =
     | "prologue"
     | "introduction"
     | "afterword"
+    | "final_thoughts"
     | "index"
     | "epigraph"
-    | "endnotes";
+    | "endnotes"
+    | "also_by_author"
+    | "excerpt"
+    | "call_to_action";
 
 export interface Book {
     id: string;

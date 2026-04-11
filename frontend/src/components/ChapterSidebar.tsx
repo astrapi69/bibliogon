@@ -56,10 +56,11 @@ const FRONT_MATTER_TYPES: ChapterType[] = [
     "toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction",
 ];
 const BACK_MATTER_TYPES: ChapterType[] = [
-    "epilogue", "afterword", "about_author", "acknowledgments", "appendix",
-    "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series",
+    "epilogue", "afterword", "final_thoughts", "about_author", "acknowledgments",
+    "appendix", "bibliography", "endnotes", "glossary", "index", "imprint",
+    "also_by_author", "next_in_series", "excerpt", "call_to_action",
 ];
-const STRUCTURE_TYPES: ChapterType[] = ["part_intro", "interlude"];
+const STRUCTURE_TYPES: ChapterType[] = ["part", "part_intro", "interlude"];
 
 // TYPE_LABELS are now loaded from i18n inside the component via useI18n
 
@@ -287,16 +288,21 @@ export default function ChapterSidebar({
         epilogue: t("ui.chapter_types.epilogue", "Epilog"),
         imprint: t("ui.chapter_types.imprint", "Impressum"),
         next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
+        part: t("ui.chapter_types.part", "Teil"),
         part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
         dedication: t("ui.chapter_types.dedication", "Widmung"),
         prologue: t("ui.chapter_types.prologue", "Prolog"),
         introduction: t("ui.chapter_types.introduction", "Einleitung"),
         afterword: t("ui.chapter_types.afterword", "Nachwort"),
+        final_thoughts: t("ui.chapter_types.final_thoughts", "Schlussgedanken"),
         index: t("ui.chapter_types.index", "Stichwortverzeichnis"),
         epigraph: t("ui.chapter_types.epigraph", "Motto"),
         endnotes: t("ui.chapter_types.endnotes", "Endnoten"),
         interlude: t("ui.chapter_types.interlude", "Interludium"),
         toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
+        also_by_author: t("ui.chapter_types.also_by_author", "Weitere Bücher"),
+        excerpt: t("ui.chapter_types.excerpt", "Leseprobe"),
+        call_to_action: t("ui.chapter_types.call_to_action", "Aufruf zur Aktion"),
     };
 
     const [addMenuOpen, setAddMenuOpen] = useState(false);
