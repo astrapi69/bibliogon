@@ -242,6 +242,16 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
 - Im Debug-Mode liefert die Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).
 
+## Plugin-Settings: sichtbar oder INTERNAL, niemals heimlich
+
+Plugin-Settings sind entweder UI-sichtbar (User-relevant) oder als `# INTERNAL` markiert (nur YAML). Versteckte aktive Settings die User-Verhalten beeinflussen sind ein Bug, weil der User keine Moeglichkeit hat das Verhalten zu aendern ohne YAML-Editor und Repo-Zugriff.
+
+Tote Settings (in YAML aber nicht im Code gelesen) sind genauso schlimm: sie sind eine Luege gegenueber dem User. Beim Refactor eines Plugins immer pruefen ob alte YAML-Felder noch konsumiert werden, bevor sie stehen bleiben.
+
+Generic Plugin Settings Panel im Frontend: rendert Booleans als Checkbox, Numbers als Number-Input, Strings als Text-Input, Arrays als OrderedListEditor, Objekte als JSON-Textarea mit "Advanced"-Hinweis. Ein Boolean als Text-Input rendern (`value="true"`) ist ein UX-Bug weil der User nicht erkennt dass es ein Schalter ist.
+
+Konfigurations-Werte die zwischen Buechern variieren MUESSEN auf das Book-Modell, NICHT auf das Plugin-YAML. Plugin-YAML ist plugin-global und gilt fuer alle Buecher gleichzeitig - wer per-Buch-Granularitaet braucht baut eine Spalte (siehe Pattern bei `Book.audiobook_overwrite_existing`).
+
 ## Architektur-Entscheidungen pruefen vor Implementierung
 
 Aus dem V-02 Vorfall: Es gab eine fast-Implementierung eines 

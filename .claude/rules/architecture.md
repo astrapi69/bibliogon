@@ -168,6 +168,24 @@ Extern         ExternalServiceError(service, message) fuer Pandoc/TTS/LanguageTo
 
 Services werfen KEINE HTTPException, Router fangen NICHTS. Der globale Exception Handler in main.py mappt BibliogonError-Subklassen zu HTTP-Status-Codes. Details siehe code-hygiene.md "Error-Handling Architektur".
 
+## Plugin-Settings Sichtbarkeit
+
+Jedes Plugin-Setting in `config/plugins/*.yaml` MUSS entweder:
+
+1. In der Plugin-UI (Settings > Plugins > {Plugin-Name}) editierbar sein, ODER
+2. Mit einem `# INTERNAL` Kommentar markiert sein als Hinweis dass es nur ueber YAML editiert werden kann.
+
+Versteckte Settings die User-Verhalten beeinflussen ohne UI sind verboten. Ein Setting das per Default einen Wert hat und das Verhalten der App veraendert MUSS fuer den User sichtbar und veraenderbar sein.
+
+Ausnahmen sind nur erlaubt fuer:
+- Debug- und Entwicklungs-Settings (mit `# INTERNAL` markiert)
+- Performance-Tuning Parameter die nur Power-User aendern sollten (mit `# INTERNAL` markiert + Kommentar)
+- Initialisierungs-Werte oder Pipeline-Mappings die kein User-Konfigurationsziel haben (z.B. Pandoc Format-Mapping in `export.yaml`)
+
+Tote Settings (Felder in der YAML die im Code nicht gelesen werden) sind verboten. Beim Hinzufuegen eines neuen Settings IMMER pruefen dass der Code es liest, beim Entfernen einer Funktion IMMER das zugehoerige YAML-Feld mit-entfernen.
+
+Per-User vs per-Buch: Settings die zwischen Buechern variieren sollen gehoeren NICHT in `config/plugins/*.yaml` sondern als Spalte auf das Book-Modell (Beispiele: `Book.tts_engine`, `Book.audiobook_overwrite_existing`). Plugin-globale YAML-Settings sind nur fuer Werte die fuer ALLE Buecher gleich sein muessen.
+
 ## Offline/Local-first
 
 - SQLite als Default (keine externe DB noetig).
