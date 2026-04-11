@@ -116,6 +116,15 @@ def _write_partitioned_chapters(
     """Dispatch each chapter into front-matter, back-matter or chapters/.
 
     Returns ``True`` if at least one chapter of type ``toc`` was written.
+
+    Body-level types (``chapter``, ``part``, ``part_intro``, ``interlude``)
+    are explicitly written to ``chapters/`` to make the intent visible
+    rather than relying on the fall-through default branch. ``part`` is
+    a part-divider page (just the title rendered with the .part wrapper),
+    ``part_intro`` is the introductory text that follows it, and
+    ``interlude`` is a between-chapter body element. The chapter title
+    becomes the file's H1 in all three cases - the manuscripta order
+    file is what controls the actual sequence.
     """
     front_dir = manuscript_dir / "front-matter"
     back_dir = manuscript_dir / "back-matter"
@@ -131,7 +140,13 @@ def _write_partitioned_chapters(
             _write_special_chapter(front_dir, _FRONT_MATTER_TYPES[ch_type], chapter)
         elif ch_type in _BACK_MATTER_TYPES:
             _write_special_chapter(back_dir, _BACK_MATTER_TYPES[ch_type], chapter)
+        elif ch_type in _BODY_TYPES:
+            _write_chapter(chapters_dir, chapter)
         else:
+            # Unknown chapter_type - log via the file system by writing
+            # to chapters/ as a safe default. New types should be added
+            # to one of the explicit sets above instead of relying on
+            # this fall-through.
             _write_chapter(chapters_dir, chapter)
     return has_toc
 
@@ -170,6 +185,7 @@ _FRONT_MATTER_TYPES: dict[str, str] = {
 _BACK_MATTER_TYPES: dict[str, str] = {
     "epilogue": "epilogue",
     "afterword": "afterword",
+    "final_thoughts": "final-thoughts",
     "about_author": "about-the-author",
     "acknowledgments": "acknowledgments",
     "appendix": "appendix",
@@ -178,8 +194,22 @@ _BACK_MATTER_TYPES: dict[str, str] = {
     "glossary": "glossary",
     "index": "index",
     "imprint": "imprint",
+    "also_by_author": "also-by-author",
     "next_in_series": "next-in-series",
+    "excerpt": "excerpt",
+    "call_to_action": "call-to-action",
 }
+
+# Body-level types that legitimately belong in ``chapters/``. Listed
+# explicitly so the dispatcher can distinguish "intentionally a body
+# element" (these) from "unknown chapter type that fell through the
+# default branch" (anything else). ``part`` is a structural divider
+# whose own .part wrapper renders the title as a centred big heading,
+# ``part_intro`` is the optional intro text that follows it, and
+# ``interlude`` is a between-chapter body element.
+_BODY_TYPES: frozenset[str] = frozenset({
+    "chapter", "part", "part_intro", "interlude",
+})
 
 
 _DEFAULT_CHAPTER_TYPE_CSS = """\
@@ -221,8 +251,54 @@ _DEFAULT_CHAPTER_TYPE_CSS = """\
 
 .prologue h1,
 .epilogue h1,
-.afterword h1 {
+.afterword h1,
+.final-thoughts h1 {
     font-style: italic;
+}
+
+.part {
+    text-align: center;
+    page-break-before: always;
+    page-break-after: always;
+    margin-top: 35%;
+}
+
+.part h1 {
+    font-size: 2em;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+}
+
+.also-by-author,
+.next-in-series {
+    font-size: 0.95em;
+}
+
+.also-by-author h1,
+.next-in-series h1 {
+    font-size: 1.2em;
+    text-align: center;
+}
+
+.excerpt {
+    border-top: 1px solid #ccc;
+    padding-top: 1em;
+    margin-top: 2em;
+}
+
+.excerpt h1 {
+    font-size: 1.1em;
+    font-style: italic;
+}
+
+.call-to-action {
+    text-align: center;
+    margin-top: 2em;
+    font-style: italic;
+}
+
+.call-to-action h1 {
+    font-size: 1.1em;
 }
 
 figcaption {
@@ -243,6 +319,12 @@ _CHAPTER_TYPE_WRAPPERS: dict[str, tuple[str, str]] = {
     "prologue": ('<div class="prologue">\n\n', "\n\n</div>"),
     "epilogue": ('<div class="epilogue">\n\n', "\n\n</div>"),
     "afterword": ('<div class="afterword">\n\n', "\n\n</div>"),
+    "final_thoughts": ('<div class="final-thoughts">\n\n', "\n\n</div>"),
+    "part": ('<div class="part">\n\n', "\n\n</div>"),
+    "also_by_author": ('<div class="also-by-author">\n\n', "\n\n</div>"),
+    "next_in_series": ('<div class="next-in-series">\n\n', "\n\n</div>"),
+    "excerpt": ('<div class="excerpt">\n\n', "\n\n</div>"),
+    "call_to_action": ('<div class="call-to-action">\n\n', "\n\n</div>"),
 }
 
 
@@ -332,10 +414,17 @@ def _write_export_settings(path: Path, export_settings: dict[str, Any] | None = 
 
 
 def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
-    """Write a single chapter as Markdown file."""
+    """Write a single body-level chapter as Markdown file.
+
+    Body-level types (chapter, part, part_intro, interlude) all land
+    here. ``part`` gets the .part wrapper for centred-divider styling
+    so the title page renders correctly across EPUB / PDF / DOCX, the
+    other body types are written verbatim.
+    """
     position = chapter.get("position", 0)
     title = chapter.get("title", "Untitled")
     content = chapter.get("content", "")
+    ch_type = chapter.get("chapter_type", "chapter")
 
     filename = f"{position + 1:02d}-{_slugify(title)}.md"
     filepath = chapters_dir / filename
@@ -343,6 +432,9 @@ def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
     md_body = _content_to_markdown(content)
 
     md = _prepend_title(title, md_body)
+    wrapper = _CHAPTER_TYPE_WRAPPERS.get(ch_type)
+    if wrapper:
+        md = wrapper[0] + md + wrapper[1]
     filepath.write_text(md, encoding="utf-8")
 
 
