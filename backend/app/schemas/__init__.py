@@ -1,7 +1,9 @@
+import json
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 # --- Enums ---
@@ -81,6 +83,7 @@ class BookUpdate(BaseModel):
     audiobook_merge: str | None = None
     audiobook_filename: str | None = None
     audiobook_overwrite_existing: bool | None = None
+    audiobook_skip_chapter_types: list[str] | None = None
     # ms-tools per-book threshold overrides
     ms_tools_max_sentence_length: int | None = None
     ms_tools_repetition_window: int | None = None
@@ -123,11 +126,36 @@ class BookOut(BaseModel):
     audiobook_merge: str | None = None
     audiobook_filename: str | None = None
     audiobook_overwrite_existing: bool = False
+    audiobook_skip_chapter_types: list[str] = []
     ms_tools_max_sentence_length: int | None = None
     ms_tools_repetition_window: int | None = None
     ms_tools_max_filler_ratio: float | None = None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("audiobook_skip_chapter_types", mode="before")
+    @classmethod
+    def _decode_skip_chapter_types(cls, value: Any) -> list[str]:
+        """Decode the JSON-encoded Text column into a list for the API.
+
+        The DB stores ``Book.audiobook_skip_chapter_types`` as JSON text
+        (mirroring how ``keywords`` is stored). When Pydantic loads from
+        ORM the value comes in as a string and needs to be parsed before
+        the ``list[str]`` type check.
+        """
+        if value is None or value == "":
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+            if isinstance(parsed, list):
+                return [str(v) for v in parsed]
+            return []
+        return []
 
 
 class BookDetail(BookOut):

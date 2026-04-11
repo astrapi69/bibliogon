@@ -26,12 +26,12 @@ settings:
   # only as a local filter for the voice list.
   default_voice: ''
   merge: merged
-  skip_types:
-  - toc
-  - imprint
-  - index
-  - bibliography
-  - endnotes
+  # NOTE: the former plugin-global ``skip_types`` list moved to
+  # Book.audiobook_skip_chapter_types. Migration f6a7b8c9d0e1 seeded the
+  # per-book column from this YAML once on upgrade. Editing the skip
+  # list now happens per book in BookEditor > Metadata > Audiobook.
+  # When the column is empty/null the audiobook generator falls back to
+  # its built-in SKIP_TYPES default in generator.py.
   # When true, the TTS speaks an ordinal intro ("Erstes Kapitel") before
   # each chapter. Default off because most users do not want any spoken
   # header at all - the chapter title is no longer auto-prepended.

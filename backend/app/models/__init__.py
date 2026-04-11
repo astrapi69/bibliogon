@@ -87,6 +87,12 @@ class Book(Base):
     # skips the "audiobook already exists" confirm dialog. Replaces the
     # former plugin-global ``audiobook.settings.overwrite_existing`` flag.
     audiobook_overwrite_existing: Mapped[bool] = mapped_column(default=False)
+    # JSON-encoded list of chapter type strings to skip during audiobook
+    # generation, e.g. ``["toc", "imprint", "index"]``. Replaces the
+    # former plugin-global ``audiobook.settings.skip_types`` list. Empty
+    # string or NULL means "use the audiobook generator's built-in
+    # SKIP_TYPES fallback". Same Text-as-JSON pattern as ``keywords``.
+    audiobook_skip_chapter_types: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # ms-tools per-book threshold overrides. None -> fall back to plugin defaults.
     ms_tools_max_sentence_length: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -116,6 +117,11 @@ def update_book(book_id: str, payload: BookUpdate, db: Session = Depends(get_db)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     for key, value in payload.model_dump(exclude_unset=True).items():
+        # audiobook_skip_chapter_types is exposed as list[str] in the API
+        # but stored as a JSON-encoded Text column (same pattern as
+        # ``keywords``). Encode here so the rest of the loop stays generic.
+        if key == "audiobook_skip_chapter_types" and isinstance(value, list):
+            value = json.dumps(value)
         setattr(book, key, value)
     db.commit()
     db.refresh(book)
