@@ -12,8 +12,15 @@ from .tts_engine import TTSEngine, get_engine
 
 logger = logging.getLogger(__name__)
 
-# Chapter types to skip in audiobook generation by default
-SKIP_TYPES = {"toc", "imprint", "index", "bibliography", "endnotes"}
+# Chapter types to skip in audiobook generation by default. Marketing
+# back-matter (also_by_author, excerpt, call_to_action) is skipped so
+# the listener does not get a "buy my next book" pitch in the middle
+# of their audiobook download. Users can always override per book via
+# Book.audiobook_skip_chapter_types.
+SKIP_TYPES = {
+    "toc", "imprint", "index", "bibliography", "endnotes",
+    "also_by_author", "excerpt", "call_to_action",
+}
 
 
 def _normalize_skip_set(skip_types: set[str] | list[str] | None) -> set[str]:

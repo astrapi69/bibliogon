@@ -47,9 +47,12 @@ ELEVENLABS_USER_ENDPOINT = "https://api.elevenlabs.io/v1/user"
 # Mirror of the audiobook generator's built-in SKIP_TYPES default. Used
 # only as a fallback when ``Book.audiobook_skip_chapter_types`` is unset
 # or empty so the dry-run estimate stays sensible for legacy books that
-# never went through the per-book migration.
+# never went through the per-book migration. Marketing back-matter
+# (also_by_author, excerpt, call_to_action) is skipped here as well so
+# the dry-run cost estimate matches the real export.
 DEFAULT_AUDIOBOOK_SKIP_TYPES: set[str] = {
     "toc", "imprint", "index", "bibliography", "endnotes",
+    "also_by_author", "excerpt", "call_to_action",
 }
 
 
