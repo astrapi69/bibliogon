@@ -318,25 +318,20 @@ def test_per_chapter_download_404_for_unknown_job(client):
 # --- Skip list integration ---
 
 
-def test_async_audiobook_respects_skip_types_from_config(client, tmp_path, monkeypatch):
-    """The yaml config's skip_types must actually skip matching chapters."""
-    # Point the export route at a temporary audiobook.yaml so we control skip_types
-    cfg_dir = tmp_path / "config" / "plugins"
-    cfg_dir.mkdir(parents=True)
-    (cfg_dir / "audiobook.yaml").write_text(
-        "settings:\n"
-        "  skip_types:\n"
-        "    - toc\n"
-        "    - imprint\n"
-        "    - Glossar\n"  # title-based skip
-        "  read_chapter_number: false\n",
-        encoding="utf-8",
-    )
+def test_async_audiobook_respects_per_book_skip_list(client, tmp_path, monkeypatch):
+    """The per-book ``audiobook_skip_chapter_types`` list must skip matching chapters.
+
+    Replaces the former YAML-based test from before the chapter-skip-list
+    migration. The plugin-global ``audiobook.settings.skip_types`` field is
+    gone; the equivalent now lives on the Book row and supports both
+    chapter-type matches and title matches (the generator's _should_skip
+    logic accepts either).
+    """
     monkeypatch.chdir(tmp_path)
 
     book_id = _create_book_with_chapters(client, 0)
     try:
-        # Add chapters: one normal, one type=toc, one with title 'Glossar'
+        # Add chapters: one normal, one type=toc, one with title 'Glossar'.
         for ch in [
             {"title": "Kapitel 1", "chapter_type": "chapter"},
             {"title": "Inhaltsverzeichnis", "chapter_type": "toc"},
@@ -353,6 +348,13 @@ def test_async_audiobook_respects_skip_types_from_config(client, tmp_path, monke
                     "chapter_type": ch["chapter_type"],
                 },
             )
+
+        # Skip toc (by type) and Glossar (by title - lowercase match).
+        r_patch = client.patch(
+            f"/api/books/{book_id}",
+            json={"audiobook_skip_chapter_types": ["toc", "glossar"]},
+        )
+        assert r_patch.status_code == 200
 
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
             job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]

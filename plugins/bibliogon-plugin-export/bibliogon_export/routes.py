@@ -127,7 +127,32 @@ def _serialize_book(book: Any) -> dict[str, Any]:
         "audiobook_overwrite_existing": bool(
             getattr(book, "audiobook_overwrite_existing", False)
         ),
+        "audiobook_skip_chapter_types": _decode_skip_chapter_types(
+            getattr(book, "audiobook_skip_chapter_types", None)
+        ),
     }
+
+
+def _decode_skip_chapter_types(raw: Any) -> list[str]:
+    """Decode the JSON-encoded ``audiobook_skip_chapter_types`` Text column.
+
+    Returns an empty list when the column is unset, empty, or malformed
+    so the export pipeline can simply ``len(...)`` to decide whether to
+    apply a per-book filter or fall back to the generator's built-in
+    SKIP_TYPES default.
+    """
+    if raw is None or raw == "":
+        return []
+    if isinstance(raw, list):
+        return [str(v) for v in raw]
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+        if isinstance(parsed, list):
+            return [str(v) for v in parsed]
+    return []
 
 
 def _serialize_chapters(chapters: list) -> list[dict[str, Any]]:
@@ -487,14 +512,18 @@ async def _run_audiobook_job(
     audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
     merge_mode = _resolve_audiobook_merge_mode(book_data)
 
-    # Forward user-configured generator options from audiobook.yaml.
+    # Per-book skip list (replaces the former plugin-global
+    # ``audiobook.settings.skip_types``). An empty list means "use the
+    # generator's built-in SKIP_TYPES default" so existing books that
+    # haven't gone through the migration still behave the same.
+    book_skip_list = _decode_skip_chapter_types(
+        book_data.get("audiobook_skip_chapter_types")
+    )
+    skip_types: set[str] | None = (
+        {str(s) for s in book_skip_list} if book_skip_list else None
+    )
+
     plugin_settings = _read_audiobook_settings()
-    skip_types_raw = plugin_settings.get("skip_types")
-    skip_types: set[str] | None
-    if isinstance(skip_types_raw, list):
-        skip_types = {str(s) for s in skip_types_raw}
-    else:
-        skip_types = None  # generator falls back to its built-in default
     read_chapter_number = bool(plugin_settings.get("read_chapter_number", False))
 
     async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:

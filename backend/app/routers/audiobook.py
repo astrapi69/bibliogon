@@ -15,6 +15,7 @@ The actual TTS / generation code stays in the plugin and is gated by
 the license check on ``export_async`` and friends.
 """
 
+import json
 import logging
 import tempfile
 import zipfile
@@ -41,6 +42,40 @@ router = APIRouter(tags=["audiobook"])
 # the change persists across restarts.
 AUDIOBOOK_CONFIG_PATH = Path("config/plugins/audiobook.yaml")
 ELEVENLABS_USER_ENDPOINT = "https://api.elevenlabs.io/v1/user"
+
+
+# Mirror of the audiobook generator's built-in SKIP_TYPES default. Used
+# only as a fallback when ``Book.audiobook_skip_chapter_types`` is unset
+# or empty so the dry-run estimate stays sensible for legacy books that
+# never went through the per-book migration.
+DEFAULT_AUDIOBOOK_SKIP_TYPES: set[str] = {
+    "toc", "imprint", "index", "bibliography", "endnotes",
+}
+
+
+def _resolve_book_skip_types(book: Book) -> set[str]:
+    """Return the lowercased skip set for one book.
+
+    Decodes the JSON-encoded ``Book.audiobook_skip_chapter_types`` Text
+    column and falls back to ``DEFAULT_AUDIOBOOK_SKIP_TYPES`` when the
+    column is null, empty, or malformed. Always returns a set so the
+    callers can use ``in`` checks.
+    """
+    raw = getattr(book, "audiobook_skip_chapter_types", None)
+    if not raw:
+        return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
+    if isinstance(raw, list):
+        decoded = [str(v).strip().lower() for v in raw if str(v).strip()]
+        return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
+        if isinstance(parsed, list):
+            decoded = [str(v).strip().lower() for v in parsed if str(v).strip()]
+            return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
+    return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
 
 
 def _load_yaml_config() -> dict[str, Any]:
@@ -411,8 +446,13 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     if not chapters:
         raise HTTPException(status_code=400, detail="Book has no chapters")
 
-    # Find the first non-skipped chapter with content
-    skip_types = {"toc", "imprint", "index", "bibliography", "endnotes"}
+    # Find the first non-skipped chapter with content. The skip set comes
+    # from Book.audiobook_skip_chapter_types (the per-book column that
+    # replaced the former plugin-global ``audiobook.settings.skip_types``).
+    # Falls back to the audiobook generator's built-in SKIP_TYPES so the
+    # dry-run still does something sensible for books that have not been
+    # touched since the migration.
+    skip_types = _resolve_book_skip_types(book)
     sample_text = ""
     for ch in chapters:
         if (ch.chapter_type or "").lower() in skip_types:
