@@ -18,7 +18,9 @@ plugin:
 # See: https://github.com/astrapi69/manuscripta
 
 settings:
-  # Supported output formats and their Pandoc targets
+  # INTERNAL: Pandoc target mapping for each output format. Editing this
+  # at runtime would just break the export pipeline; it lives in YAML so
+  # the scaffolder can pass it through to manuscripta unchanged.
   formats:
     markdown: gfm       # GitHub-Flavored Markdown
     pdf: pdf
@@ -85,13 +87,19 @@ settings:
   # Append book type to export filename (e.g. my-book-ebook.epub)
   type_suffix_in_filename: true
 
-  # Export defaults (can be overridden via API parameters)
+  # INTERNAL: Defaults forwarded to manuscripta when no per-export option
+  # is supplied via API parameters. The book_type, cover and lang values
+  # are normally set per export from the ExportDialog and BookMetadata,
+  # not from this YAML.
   export_defaults:
     book_type: ebook
     # cover: assets/covers/cover.jpg
     # lang: de
 
 # --- UI format list (for frontend sidebar buttons) ---
+# INTERNAL: List of formats the export sidebar/dialog renders. Adding a
+# format here without a matching backend pipeline will produce a button
+# that returns a 400 on click. Edit only when adding a new format end-to-end.
 ui_formats:
   - id: "epub"
     label: {de: "EPUB", en: "EPUB"}
