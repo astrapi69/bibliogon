@@ -1,184 +1,184 @@
-# KI-Arbeitsweise
+# AI Workflow
 
-## Session-Start
+## Session start
 
-Bei der ersten Nachricht einer Session:
-1. docs/ROADMAP.md lesen (aktueller Stand, offene Punkte).
-2. Letzte Aenderungen pruefen: git log --oneline -10
-3. make test laufen lassen (Baseline sicherstellen).
-Erst danach mit der Aufgabe beginnen.
+On the first message of a session:
+1. Read docs/ROADMAP.md (current state, open items).
+2. Review recent changes: git log --oneline -10
+3. Run make test (establish a green baseline).
+Only then start on the task.
 
-## Interpretation von "weiter" / "naechster Punkt"
+## Interpreting "continue" / "next item"
 
-Wenn der Nutzer "weiter", "naechster Punkt", "mach weiter" oder aehnliches sagt:
-1. docs/ROADMAP.md lesen, Sektion "Naechste Schritte".
-2. Ersten offenen Punkt (unchecked Checkbox) nennen.
-3. Auf Bestaetigung warten, NICHT sofort umsetzen.
+When the user says "continue", "next item", "go on" or similar:
+1. Read docs/ROADMAP.md, section "Next steps".
+2. Name the first open item (unchecked checkbox).
+3. Wait for confirmation, do NOT start implementing immediately.
 
-## Reihenfolge bei neuen Features
+## Order for new features
 
-1. Pruefen ob Feature in ein Plugin gehoert oder zum Kern.
-2. Bestehende Patterns anschauen (z.B. wie plugin-export aufgebaut ist).
-3. Schema/Model zuerst (Pydantic Schema oder TypeScript Interface).
-4. Backend-Logik (Service-Modul, dann Route).
-5. Frontend (API Client erweitern, dann UI).
-6. Tests schreiben.
-7. i18n-Strings in allen 5 Sprachen ergaenzen (DE, EN, ES, FR, EL).
-8. Conventional Commit.
+1. Check whether the feature belongs in a plugin or in the core.
+2. Look at existing patterns (e.g. how plugin-export is structured).
+3. Schema/model first (Pydantic schema or TypeScript interface).
+4. Backend logic (service module, then route).
+5. Frontend (extend API client, then UI).
+6. Write tests.
+7. Add i18n strings in all 5 languages (DE, EN, ES, FR, EL).
+8. Conventional commit.
 
-## Reihenfolge bei neuen Plugins
+## Order for new plugins
 
-1. Plugin-Ordner anlegen: plugins/bibliogon-plugin-{name}/
-2. pyproject.toml mit Entry Point: [project.entry-points."bibliogon.plugins"]
-3. Plugin-Klasse: {Name}Plugin(BasePlugin) mit name, version, depends_on.
-4. YAML-Config: backend/config/plugins/{name}.yaml
-5. Hook-Implementierungen (wenn noetig, neue Hook-Specs in hookspecs.py).
-6. routes.py fuer API-Endpunkte.
-7. Frontend-Manifest via get_frontend_manifest() (UI-Slots).
+1. Create the plugin folder: plugins/bibliogon-plugin-{name}/
+2. pyproject.toml with entry point: [project.entry-points."bibliogon.plugins"]
+3. Plugin class: {Name}Plugin(BasePlugin) with name, version, depends_on.
+4. YAML config: backend/config/plugins/{name}.yaml
+5. Hook implementations (if needed, new hook specs in hookspecs.py).
+6. routes.py for API endpoints.
+7. Frontend manifest via get_frontend_manifest() (UI slots).
 8. Tests in plugins/{name}/tests/.
-9. Plugin in config/app.yaml unter enabled eintragen.
+9. Enable the plugin in config/app.yaml under `enabled`.
 
-## Reihenfolge bei Aenderungen
+## Order for changes
 
-1. Bestehende Tests lesen und verstehen.
-2. Aenderung implementieren.
-3. Tests anpassen oder erweitern.
-4. Sicherstellen dass `make test` gruen bleibt.
+1. Read and understand the existing tests.
+2. Implement the change.
+3. Adjust or extend the tests.
+4. Make sure `make test` stays green.
 
-## Nicht erlaubt (KI-spezifisch)
+## Not allowed (AI-specific)
 
-Fuer Code-Verbote (fetch, console.log, Tailwind, etc.) siehe coding-standards.md und architecture.md.
+For code-level prohibitions (fetch, console.log, Tailwind, etc.) see coding-standards.md and architecture.md.
 
-Zusaetzlich fuer die KI:
-- Neue Dependencies einfuehren ohne Rueckfrage.
-- Architektur-Entscheidungen aendern (z.B. SQLAlchemy ersetzen, TipTap ersetzen).
-- PluginForge-Code in Bibliogon aendern (separates Repo!).
-- Plugin-Struktur aendern (BasePlugin, Hook-Specs) ohne Rueckfrage.
-- Code generieren der "fuer spaeter" ist. Nur was jetzt gebraucht wird.
-- Bestehende Tests loeschen, auskommentieren oder abschwaechen um `make test` gruen zu bekommen.
-- Custom TipTap-Extensions bauen ohne vorher zu pruefen ob eine offizielle existiert.
-- HTTPException in Service-Funktionen werfen. Services nutzen BibliogonError-Subklassen (siehe code-hygiene.md).
-- Im autonomen Modus bei Unklarheiten weiterraten. Lieber abbrechen und Unsicherheit dokumentieren.
+Additionally for the AI:
+- Introduce new dependencies without asking first.
+- Change architectural decisions (e.g. replace SQLAlchemy, replace TipTap).
+- Change PluginForge code from inside Bibliogon (separate repo!).
+- Change the plugin structure (BasePlugin, hook specs) without asking.
+- Generate code "for later". Only what is needed now.
+- Delete, comment out or weaken existing tests to make `make test` green.
+- Build custom TipTap extensions without first checking whether an official one exists.
+- Throw HTTPException from service functions. Services use BibliogonError subclasses (see code-hygiene.md).
+- In autonomous mode, guess when something is unclear. Prefer to stop and document the uncertainty.
 
-## Aktueller Stand
+## Current state
 
-Siehe architecture.md fuer Architektur-Details. Zusaetzlich beachten:
-- Version: 0.10.0 (Phase 9 abgeschlossen, GitHub Release v0.10.0 existiert).
-- Naechste Phase: 10 (Multi-User und SaaS).
-- 303 Tests (78 backend, 125 plugin, 50 vitest, 52 e2e).
-- 15 offizielle TipTap-Extensions + 1 Community (@pentestpad/tiptap-extension-figure).
-- 24 Toolbar-Buttons im Editor.
-- Deployment: Docker Compose, Port 7880, install.sh One-Liner.
-- WICHTIG: Vor Custom-Code IMMER pruefen ob eine TipTap-Extension oder Library existiert.
-- WICHTIG: Siehe lessons-learned.md fuer bekannte Fallstricke (TipTap, Import, Export).
+See architecture.md for architectural details. Additionally note:
+- Version: 0.10.0 (Phase 9 complete, GitHub Release v0.10.0 exists).
+- Next phase: 10 (multi-user and SaaS).
+- 303 tests (78 backend, 125 plugin, 50 vitest, 52 e2e).
+- 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
+- 24 toolbar buttons in the editor.
+- Deployment: Docker Compose, port 7880, install.sh one-liner.
+- IMPORTANT: Before writing custom code, ALWAYS check whether a TipTap extension or library already exists.
+- IMPORTANT: See lessons-learned.md for known pitfalls (TipTap, import, export).
 
-## Kommunikation
+## Communication
 
-- Direkt, sachlich, keine Beschoenigungen.
-- Bei Unklarheiten: Nachfragen, nicht raten.
-- Wenn etwas gegen die Architektur verstoesst: Sagen, nicht stillschweigend umgehen.
-- Vorschlaege willkommen, aber als Vorschlag kennzeichnen.
+- Direct, factual, no sugar-coating.
+- If something is unclear: ask, do not guess.
+- If something violates the architecture: say so, do not silently work around it.
+- Suggestions are welcome, but mark them as suggestions.
 
-## Dokumentations-Protokoll
+## Documentation protocol
 
-Jede Session wird dokumentiert. Das ist Pflicht, nicht optional. Die Dokumentation dient als Retrospektive und als Wissensbasis fuer zukuenftige Sessions.
+Every session is documented. This is mandatory, not optional. The documentation serves as a retrospective and as a knowledge base for future sessions.
 
-### Chat-Journal (docs/chat-journal-session-{YYYY-MM-DD}.md)
+### Chat journal (docs/chat-journal-session-{YYYY-MM-DD}.md)
 
-Jeder relevante Arbeitsschritt wird protokolliert. Format pro Eintrag:
+Every relevant step of the work is recorded. Format per entry:
 
 ```markdown
-## {Nr}. {Kurztitel} ({HH:MM})
+## {No}. {Short title} ({HH:MM})
 
-- Original-Prompt: Was wurde gesagt/gefragt
-- Optimierter Prompt: Wie haette man es praeziser formulieren koennen
-- Ziel: Was sollte erreicht werden
-- Ergebnis: Was wurde tatsaechlich gemacht
-- Commit: {Hash} (wenn Code geaendert wurde)
+- Original prompt: what was said/asked
+- Optimized prompt: how it could have been phrased more precisely
+- Goal: what should be achieved
+- Result: what was actually done
+- Commit: {hash} (if code was changed)
 ```
 
-Am Ende jeder Session: Zusammenfassung mit Statistiken (Commits, Tests, neue/geaenderte Dateien, Hauptergebnisse).
+At the end of every session: a summary with statistics (commits, tests, new/changed files, main results).
 
-**Was ins Journal gehoert:**
-- Jede implementierte Aenderung (Feature, Fix, Refactoring)
-- Architektur-Entscheidungen und deren Begruendung
-- Probleme die aufgetreten sind und wie sie geloest wurden
-- Prompt-Optimierungen (Original vs. besser formuliert)
+**What belongs in the journal:**
+- Every implemented change (feature, fix, refactoring)
+- Architectural decisions and their rationale
+- Problems that came up and how they were solved
+- Prompt optimizations (original vs. better wording)
 
-**Was NICHT ins Journal gehoert:**
-- Smalltalk, Wiederholungen, Tippfehler-Korrekturen
+**What does NOT belong in the journal:**
+- Small talk, repetitions, typo fixes
 
-### Wann CLAUDE.md aktualisieren
+### When to update CLAUDE.md
 
-CLAUDE.md wird bei JEDEM Prompt geladen. Sie muss schlank bleiben (Ziel: unter 8000 Zeichen, ca. 2000 Tokens). Nur Inhalte die IMMER relevant sind:
+CLAUDE.md is loaded on EVERY prompt. It has to stay lean (target: under 8000 characters, ~2000 tokens). Only content that is ALWAYS relevant:
 
-- Projektbeschreibung, Repository, Version, Verweis auf ROADMAP/CHANGELOG/API
-- Verweis auf .claude/rules/ mit Kurzbeschreibung
-- Tech-Stack Stichworte (keine Versionsnummern der Pakete)
-- Architektur-Zusammenfassung in 2-3 Saetzen
-- Makefile-Targets
-- Session-Start-Checkliste
-- Datenmodell in Kurzform
-- Plugin-Tabelle (Name, Tier, Dependency, Kurzbeschreibung)
-- Verzeichnisstruktur nur Top-Level
-- Kern-Konventionen (max 10 Bullets)
-- Test-Zahlen Gesamt
+- Project description, repository, version, pointers to ROADMAP/CHANGELOG/API
+- Pointer to .claude/rules/ with short descriptions
+- Tech stack keywords (no package version numbers)
+- Architecture summary in 2-3 sentences
+- Makefile targets
+- Session-start checklist
+- Data model in short form
+- Plugin table (name, tier, dependency, short description)
+- Directory structure, top level only
+- Core conventions (max 10 bullets)
+- Overall test counts
 
-Aktualisieren bei:
-- Neues Plugin hinzugefuegt, entfernt oder Tier geaendert
-- Neue Dependency im Tech-Stack
-- Test-Zahlen haben sich wesentlich geaendert
-- Neue Befehle im Makefile
-- Datenmodell geaendert (neue Felder, neue ChapterTypes)
-- Version hochgezaehlt
+Update when:
+- A plugin is added, removed, or its tier changes
+- A new dependency joins the tech stack
+- Test counts have changed substantially
+- New Makefile targets
+- Data model changes (new fields, new ChapterTypes)
+- Version bumped
 
-NICHT in CLAUDE.md:
-- Voller Verzeichnisbaum bis zur Datei-Ebene (-> wird redundant zur File-Exploration)
-- Komplette Pakettabellen mit Versionsnummern (-> package.json/pyproject.toml)
-- Alle API-Endpunkte einzeln (-> docs/API.md)
-- Erledigte Phasen-Details (-> docs/CHANGELOG.md)
-- Ausfuehrliche Deployment-Anleitung (-> README.md)
-- Migration-Status Tabellen (-> historisch, gehoert ins CHANGELOG)
+NOT in CLAUDE.md:
+- Full directory tree down to the file level (-> becomes redundant with file exploration)
+- Complete package tables with version numbers (-> package.json/pyproject.toml)
+- Every API endpoint individually (-> docs/API.md)
+- Completed phase details (-> docs/CHANGELOG.md)
+- Detailed deployment instructions (-> README.md)
+- Migration status tables (-> historical, belongs in the CHANGELOG)
 
-### Wann docs/CHANGELOG.md aktualisieren
+### When to update docs/CHANGELOG.md
 
-- SOFORT wenn eine Phase abgeschlossen wird. Nicht in CLAUDE.md sammeln.
-- Neuer Eintrag OBEN mit Phasen-Nummer, Version, Beschreibung.
-- Format: Bulletpoint-Liste der Hauptaenderungen, gleich strukturiert wie bestehende Eintraege.
-- Nach Eintrag: CLAUDE.md-Version auf neue Version setzen, Test-Zahlen aktualisieren.
+- IMMEDIATELY when a phase is completed. Do not accumulate in CLAUDE.md.
+- New entry at the TOP with phase number, version, description.
+- Format: bullet-point list of the main changes, structured the same way as existing entries.
+- After the entry: set the CLAUDE.md version to the new version, update test counts.
 
-### Wann docs/API.md aktualisieren
+### When to update docs/API.md
 
-- Neuer Endpunkt hinzugefuegt
-- Endpunkt entfernt oder umbenannt
-- Query-Parameter geaendert
+- New endpoint added
+- Endpoint removed or renamed
+- Query parameters changed
 
-### Wann docs/ROADMAP.md aktualisieren
+### When to update docs/ROADMAP.md
 
-- Neue offene Aufgabe
-- Aufgabe abgeschlossen (Checkbox)
-- Phase geplant oder priorisiert
+- New open task
+- Task completed (checkbox)
+- Phase planned or prioritized
 
-### Wann CONCEPT.md aktualisieren
+### When to update CONCEPT.md
 
-- Architektur-Entscheidung getroffen oder geaendert
-- Neues Plugin im Katalog (geplant oder implementiert)
-- Offene Frage beantwortet oder neue aufgetaucht
-- Geschaeftsmodell oder Lizenzierung geaendert
-- Tech-Stack-Aenderung (neue Library, Framework-Wechsel)
-- UI-Strategie geaendert (neue Slots, neue Bibliotheken)
+- Architectural decision made or changed
+- New plugin in the catalog (planned or implemented)
+- Open question answered or new one raised
+- Business model or licensing changed
+- Tech stack change (new library, framework swap)
+- UI strategy changed (new slots, new libraries)
 
-### Wann lessons-learned.md aktualisieren
+### When to update lessons-learned.md
 
-- Neuer Fallstrick entdeckt (Bug der durch falsches Pattern entstand)
-- Workaround fuer Library-Limitation gefunden
-- Import/Export-Edge-Case geloest
-- CSS/TipTap-Spezifitaetsproblem geloest
+- New pitfall discovered (bug caused by a wrong pattern)
+- Workaround found for a library limitation
+- Import/export edge case solved
+- CSS/TipTap specificity problem solved
 
-### Ablauf am Session-Ende
+### End-of-session flow
 
-1. Chat-Journal-Eintrag fuer alle Aenderungen der Session schreiben.
-2. Bei Phasen-Abschluss: docs/CHANGELOG.md ergaenzen, CLAUDE.md Version hochzaehlen.
-3. Pruefen ob CLAUDE.md, CONCEPT.md, ROADMAP.md, API.md oder lessons-learned.md Updates brauchen.
-4. Alles committen: `docs: update chat journal and documentation`
-5. Bei groesseren Meilensteinen: Zusammenfassung mit Statistiken ins Journal.
+1. Write a chat-journal entry covering all changes from the session.
+2. At phase completion: extend docs/CHANGELOG.md, bump the CLAUDE.md version.
+3. Check whether CLAUDE.md, CONCEPT.md, ROADMAP.md, API.md or lessons-learned.md need updates.
+4. Commit everything: `docs: update chat journal and documentation`
+5. For larger milestones: add a summary with statistics to the journal.
