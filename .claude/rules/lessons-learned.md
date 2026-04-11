@@ -2,6 +2,13 @@
 
 Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wiederholt auftreten.
 
+## Alembic-Migration + frische Test-DB
+
+- Bei jeder neuen Alembic-Migration die auf `books` (oder eine andere Kerntabelle) per `ALTER TABLE` zugreift: Die Datei `backend/bibliogon.db` MUSS vor dem naechsten `make test` geloescht werden. Sonst kommt `sqlite3.OperationalError: duplicate column name: ...`.
+- Grund: `backend/tests/conftest.py` ruft `Base.metadata.create_all(engine)` vor jedem Test und legt die Tabellen mit dem NEUEN Schema an. Gleichzeitig persistiert `alembic_version` auf der alten Revision in der On-Disk-DB. Beim `TestClient(app)` triggert das Lifespan `init_db()`, der bei vorhandenen Tabellen + vorhandenem `alembic_version` einen `upgrade head` laeuft - was versucht die neue Spalte ein zweites Mal per ALTER TABLE hinzuzufuegen und crashed.
+- Fix dauerhaft: `rm backend/bibliogon.db` nach `git pull` mit neuer Migration, dann `make test`. `init_db()` sieht keine Tabellen, macht `create_all` + `stamp head`, und die naechsten Test-Runs laufen durch weil die alembic_version-Tabelle schon beim neuen Head steht.
+- Ideal waere ein echter In-Memory-Test-DB-Setup (z.B. via `BIBLIOGON_TEST=1` Env-Var) der `init_db()` im Test-Modus ueberspringt - existiert aber aktuell nicht.
+
 ## TipTap Editor
 
 ### Speicherformat

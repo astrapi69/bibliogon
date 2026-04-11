@@ -209,11 +209,11 @@ Abgeschlossen:
 - [x] M-11: Default-Schwellwert 25 Woerter (war 30)
 
 Geplant:
-- [ ] M-12: Auto-Sanitization beim Import (Hook ins Import-System)
+- [x] M-12: Auto-Sanitization beim Import (Hook ins Import-System)
 - [ ] M-13: Adjektiv-Dichte via POS-Tagging (spaCy/NLTK Dependency)
 - [ ] M-14: Inline-Markierungen im TipTap-Editor (TipTap-Extension)
 - [ ] M-15: Qualitaets-Tab in Buch-Metadaten (Kapitel-Tabelle mit Ausreisser-Markierung)
-- [ ] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
+- [x] M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
 - [x] M-17: Füllwort-Listen aus YAML laden (erweiterbar durch User)
 - [x] M-18: Begriffe von Prüfung ausschließen (Allowlist)
 
