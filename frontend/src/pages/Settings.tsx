@@ -631,6 +631,264 @@ function normalizeMergeMode(value: unknown): "separate" | "merged" | "both" {
     return "merged";
 }
 
+// --- Generic typed scalar field for the plugin settings card ---
+
+/** Render a single scalar plugin setting with the right input type:
+ *  boolean -> checkbox, number -> number input, string -> text input.
+ *  Replaces the previous "everything is a text input" path that turned
+ *  booleans into the literal strings "true"/"false".
+ */
+function ScalarSettingField({
+    settingKey,
+    value,
+    onChange,
+}: {
+    settingKey: string;
+    value: unknown;
+    onChange: (v: string | number | boolean) => void;
+}) {
+    const {t} = useI18n();
+    const label = t(`ui.audiobook.${settingKey}`, settingKey);
+
+    if (typeof value === "boolean") {
+        return (
+            <div className="field">
+                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={(e) => onChange(e.target.checked)}
+                    />
+                    {label}
+                </label>
+            </div>
+        );
+    }
+
+    if (typeof value === "number") {
+        return (
+            <div className="field">
+                <label className="label">{label}</label>
+                <input
+                    className="input"
+                    type="number"
+                    value={String(value)}
+                    onChange={(e) => {
+                        const parsed = Number(e.target.value);
+                        if (!Number.isNaN(parsed)) onChange(parsed);
+                    }}
+                />
+            </div>
+        );
+    }
+
+    // string fallback (also covers null/undefined coerced to empty)
+    return (
+        <div className="field">
+            <label className="label">{label}</label>
+            <input
+                className="input"
+                type="text"
+                value={value == null ? "" : String(value)}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        </div>
+    );
+}
+
+
+/** Editable JSON textarea for nested object settings. Validates on blur
+ *  and only commits when the JSON parses; otherwise the local edit is
+ *  kept and a warning is shown so the user does not silently lose work.
+ */
+function ComplexSettingField({
+    settingKey,
+    value,
+    onChange,
+}: {
+    settingKey: string;
+    value: unknown;
+    onChange: (v: unknown) => void;
+}) {
+    const {t} = useI18n();
+    const [text, setText] = useState(() => JSON.stringify(value, null, 2));
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setText(JSON.stringify(value, null, 2));
+        setError(null);
+    }, [value]);
+
+    const commit = () => {
+        try {
+            const parsed = JSON.parse(text);
+            setError(null);
+            onChange(parsed);
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    };
+
+    return (
+        <div style={{marginBottom: 12}}>
+            <label className="label">
+                {settingKey}{" "}
+                <span style={{fontWeight: 400, fontSize: "0.75rem", color: "var(--text-muted)"}}>
+                    ({t("ui.settings.advanced_hint", "JSON, nur fuer fortgeschrittene User")})
+                </span>
+            </label>
+            <textarea
+                className="input"
+                style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.8125rem",
+                    minHeight: 120,
+                    width: "100%",
+                }}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onBlur={commit}
+            />
+            {error && (
+                <small style={{color: "var(--danger, #ef4444)", fontSize: "0.75rem"}}>
+                    {t("ui.settings.invalid_json", "Ungueltiges JSON")}: {error}
+                </small>
+            )}
+        </div>
+    );
+}
+
+
+// --- Translation custom settings panel ---
+
+/** Custom panel for the translation plugin. Mostly exists to render
+ *  ``provider`` as a dropdown and ``deepl_api_key`` as a masked password
+ *  field with a show/hide toggle, instead of leaking the key into a
+ *  plain text input. The other four fields use the same typed inputs as
+ *  the generic panel.
+ */
+function TranslationSettingsPanel({settings, onSave}: {
+    settings: Record<string, unknown>;
+    onSave: (s: Record<string, unknown>) => void;
+}) {
+    const {t} = useI18n();
+    const [provider, setProvider] = useState<string>(String(settings.provider || "deepl"));
+    const [apiKey, setApiKey] = useState<string>(String(settings.deepl_api_key || ""));
+    const [showKey, setShowKey] = useState(false);
+    const [freeApi, setFreeApi] = useState<boolean>(
+        settings.deepl_free_api === undefined ? true : Boolean(settings.deepl_free_api),
+    );
+    const [lmstudioUrl, setLmstudioUrl] = useState<string>(
+        String(settings.lmstudio_url || "http://localhost:1234/v1"),
+    );
+    const [lmstudioModel, setLmstudioModel] = useState<string>(
+        String(settings.lmstudio_model || "default"),
+    );
+    const [lmstudioTemperature, setLmstudioTemperature] = useState<number>(
+        typeof settings.lmstudio_temperature === "number" ? settings.lmstudio_temperature : 0.3,
+    );
+
+    const handleSave = () => {
+        onSave({
+            ...settings,
+            provider,
+            deepl_api_key: apiKey,
+            deepl_free_api: freeApi,
+            lmstudio_url: lmstudioUrl,
+            lmstudio_model: lmstudioModel,
+            lmstudio_temperature: lmstudioTemperature,
+        });
+    };
+
+    const providerOptions = [
+        {value: "deepl", label: "DeepL"},
+        {value: "lmstudio", label: "LMStudio"},
+    ];
+
+    return (
+        <>
+            <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
+                {t("ui.settings.expand_settings", "Einstellungen")}
+            </h4>
+            <div style={styles.settingsGrid}>
+                <div className="field">
+                    <label className="label">{t("ui.translation.provider", "Anbieter")}</label>
+                    <RadixSelect value={provider} onValueChange={setProvider} options={providerOptions} />
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.translation.deepl_api_key", "DeepL API-Schluessel")}</label>
+                    <div style={{display: "flex", gap: 4}}>
+                        <input
+                            className="input"
+                            type={showKey ? "text" : "password"}
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder={t("ui.translation.deepl_api_key_placeholder", "Optional, leer = LMStudio")}
+                            style={{flex: 1}}
+                            autoComplete="off"
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setShowKey(!showKey)}
+                            title={showKey ? t("ui.common.hide", "Verbergen") : t("ui.common.show", "Anzeigen")}
+                        >
+                            {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                        </button>
+                    </div>
+                </div>
+                <div className="field">
+                    <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <input
+                            type="checkbox"
+                            checked={freeApi}
+                            onChange={(e) => setFreeApi(e.target.checked)}
+                        />
+                        {t("ui.translation.deepl_free_api", "DeepL Free-API verwenden")}
+                    </label>
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.translation.lmstudio_url", "LMStudio URL")}</label>
+                    <input
+                        className="input"
+                        type="text"
+                        value={lmstudioUrl}
+                        onChange={(e) => setLmstudioUrl(e.target.value)}
+                    />
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.translation.lmstudio_model", "LMStudio Modell")}</label>
+                    <input
+                        className="input"
+                        type="text"
+                        value={lmstudioModel}
+                        onChange={(e) => setLmstudioModel(e.target.value)}
+                    />
+                </div>
+                <div className="field">
+                    <label className="label">{t("ui.translation.lmstudio_temperature", "LMStudio Temperatur")}</label>
+                    <input
+                        className="input"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="2"
+                        value={lmstudioTemperature}
+                        onChange={(e) => {
+                            const v = Number(e.target.value);
+                            if (!Number.isNaN(v)) setLmstudioTemperature(v);
+                        }}
+                    />
+                </div>
+            </div>
+            <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
+                <Save size={12}/> {t("ui.common.save", "Speichern")}
+            </button>
+        </>
+    );
+}
+
+
 // --- Audiobook custom settings panel with cascading dropdowns ---
 
 function AudiobookSettingsPanel({settings, onSave}: {
@@ -639,11 +897,18 @@ function AudiobookSettingsPanel({settings, onSave}: {
 }) {
     const {t} = useI18n();
     const [engine, setEngine] = useState(String(settings.engine || "edge-tts"));
-    const [language, setLanguage] = useState(String(settings.language || "de"));
+    // Local-only language state. The plugin-global ``audiobook.language``
+    // setting was removed because the export pipeline always uses the
+    // book's own language; this picker stays here purely to filter the
+    // voice list and is not persisted to the YAML.
+    const [language, setLanguage] = useState("de");
     const [voice, setVoice] = useState(String(settings.default_voice || ""));
     const [merge, setMerge] = useState<string>(normalizeMergeMode(settings.merge));
     const [skipTypes, setSkipTypes] = useState<string[]>(
         Array.isArray(settings.skip_types) ? (settings.skip_types as string[]) : [],
+    );
+    const [readChapterNumber, setReadChapterNumber] = useState<boolean>(
+        Boolean(settings.read_chapter_number),
     );
     const [voices, setVoices] = useState<AudiobookVoice[]>([]);
     const [loadingVoices, setLoadingVoices] = useState(false);
@@ -678,13 +943,18 @@ function AudiobookSettingsPanel({settings, onSave}: {
     }, [engine, language]);
 
     const handleSave = () => {
+        // Drop ``language`` from the persisted dict; it was Category C in
+        // the plugin settings audit (UI-only voice filter, never read by
+        // the export pipeline).
+        const {language: _drop, ...rest} = settings as Record<string, unknown>;
+        void _drop;
         onSave({
-            ...settings,
+            ...rest,
             engine,
-            language,
             default_voice: voice,
             merge,
             skip_types: skipTypes,
+            read_chapter_number: readChapterNumber,
         });
     };
 
@@ -776,6 +1046,19 @@ function AudiobookSettingsPanel({settings, onSave}: {
                     onChange={setSkipTypes}
                     addPlaceholder="z.B. toc, imprint, index"
                 />
+            </div>
+            <div className="field" style={{marginTop: 16}}>
+                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <input
+                        type="checkbox"
+                        checked={readChapterNumber}
+                        onChange={(e) => setReadChapterNumber(e.target.checked)}
+                    />
+                    {t("ui.audiobook.read_chapter_number_label", "Kapitel-Nummer ansagen")}
+                </label>
+                <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 4}}>
+                    {t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Buecher keine gesprochenen Kapitelmarken wollen.")}
+                </small>
             </div>
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
                 <Save size={12}/> {t("ui.common.save", "Speichern")}
@@ -1118,7 +1401,7 @@ function PluginCard({name, displayName, description, version, license, hasLicens
         setLocalSettings(settings);
     }, [settings]);
 
-    const updateSetting = (key: string, value: string | number) => {
+    const updateSetting = (key: string, value: string | number | boolean) => {
         setLocalSettings((prev) => ({...prev, [key]: value}));
     };
 
@@ -1230,28 +1513,25 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                             settings={localSettings}
                             onSave={onSave}
                         />
+                    ) : name === "translation" && scalarSettings.length > 0 ? (
+                        <TranslationSettingsPanel
+                            settings={localSettings}
+                            onSave={onSave}
+                        />
                     ) : scalarSettings.length > 0 && (
                         <>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                                 {t("ui.settings.expand_settings", "Einstellungen")}
                             </h4>
                             <div style={styles.settingsGrid}>
-                                {scalarSettings.map(([key, value]) => {
-                                    const label = t(`ui.audiobook.${key}`, key);
-                                    return (
-                                        <div key={key} className="field">
-                                            <label className="label">{label}</label>
-                                            <input
-                                                className="input"
-                                                value={String(value)}
-                                                onChange={(e) => {
-                                                    const v = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value);
-                                                    updateSetting(key, v as string | number);
-                                                }}
-                                            />
-                                        </div>
-                                    );
-                                })}
+                                {scalarSettings.map(([key, value]) => (
+                                    <ScalarSettingField
+                                        key={key}
+                                        settingKey={key}
+                                        value={value}
+                                        onChange={(v) => updateSetting(key, v)}
+                                    />
+                                ))}
                             </div>
                             <button className="btn btn-primary btn-sm mt-1" onClick={() => onSave(localSettings)}>
                                 <Save size={12}/> {t("ui.common.save", "Speichern")}
@@ -1316,18 +1596,23 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                         </div>
                     )}
 
-                    {/* Read-only complex settings */}
+                    {/* Complex settings: editable JSON with "Advanced" hint */}
                     {complexSettings.length > 0 && (
                         <div style={{marginTop: (scalarSettings.length > 0 || orderedListSettings.length > 0) ? 16 : 0}}>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
-                                {t("ui.settings.read_only", "Konfiguration (nur lesen)")}
+                                {t("ui.settings.advanced", "Erweitert (JSON)")}
                             </h4>
                             {complexSettings.map(([key, value]) => (
-                                <div key={key} style={{marginBottom: 12}}>
-                                    <label className="label">{key}</label>
-                                    {renderReadOnlyValue(value)}
-                                </div>
+                                <ComplexSettingField
+                                    key={key}
+                                    settingKey={key}
+                                    value={value}
+                                    onChange={(v) => updateSetting(key, v as unknown as string)}
+                                />
                             ))}
+                            <button className="btn btn-primary btn-sm mt-1" onClick={() => onSave(localSettings)}>
+                                <Save size={12}/> {t("ui.common.save", "Speichern")}
+                            </button>
                         </div>
                     )}
                 </div>
