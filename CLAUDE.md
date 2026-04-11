@@ -21,6 +21,7 @@ Detailed rules live in `.claude/rules/`. Claude Code reads them on demand.
 - `lessons-learned.md` - known pitfalls (TipTap, import, export, deployment)
 - `quality-checks.md` - test strategy, mutmut/Stryker, pre-commit checklists
 - `ai-workflow.md` - order for features/plugins, prohibitions, docs protocol
+- `release-workflow.md` - release process (triggered by "release new version")
 
 On a conflict between CLAUDE.md and the rules, the rules win.
 
@@ -57,6 +58,8 @@ make help                 # all targets
 ```
 
 Plugin-specific: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,audiobook,translation}`
+
+E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--project=full` (complete regression).
 
 ## Session start (Claude Code)
 
@@ -102,6 +105,9 @@ bibliogon/
 │   ├── components/        # Editor, Toolbar, ChapterSidebar, dialogs
 │   ├── pages/             # Dashboard, BookEditor, Settings, Help, GetStarted
 │   └── styles/global.css  # CSS variables, 3 themes x light/dark
+├── frontend/e2e/
+│   ├── smoke/             # fast smoke tests (per feature)
+│   └── full/              # full regression suite (52 tests)
 ├── docs/                  # CONCEPT.md, ROADMAP.md, CHANGELOG.md
 └── Makefile, docker-compose.yml, docker-compose.prod.yml
 ```
@@ -116,6 +122,7 @@ bibliogon/
 - Plugins: standalone packages under plugins/, depends_on as a class attribute, license_tier (core/premium)
 - Export: manuscripta (PyPI), plugin config in export.yaml is 1:1 the manuscripta format
 - Commits: English, conventional (feat/fix/refactor/docs)
+- E2E: data-testid selectors only, no brittle CSS or XPath. Claude Code writes specs, Aster runs them.
 
 ## Tests
 

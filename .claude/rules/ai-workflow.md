@@ -6,7 +6,7 @@ On the first message of a session:
 1. Read docs/ROADMAP.md (current state, open items).
 2. Review recent changes: git log --oneline -10
 3. Run make test (establish a green baseline).
-Only then start on the task.
+   Only then start on the task.
 
 ## Interpreting "continue" / "next item"
 
@@ -22,9 +22,10 @@ When the user says "continue", "next item", "go on" or similar:
 3. Schema/model first (Pydantic schema or TypeScript interface).
 4. Backend logic (service module, then route).
 5. Frontend (extend API client, then UI).
-6. Write tests.
-7. Add i18n strings in all 5 languages (DE, EN, ES, FR, EL).
-8. Conventional commit.
+6. Write unit and integration tests (pytest, Vitest).
+7. Playwright smoke tests for UI features: for every new UI feature write at least one spec under `frontend/e2e/smoke/`. Must cover: happy path, relevant viewport sizes (600/800/1080 for layout-critical features), data-testid selectors (no brittle CSS selectors). Claude Code WRITES the specs, Aster RUNS them. No feature counts as done without a smoke test.
+8. Add i18n strings in all 8 languages (DE, EN, ES, FR, EL, PT, TR, JA).
+9. Conventional commit.
 
 ## Order for new plugins
 
@@ -63,9 +64,10 @@ Additionally for the AI:
 ## Current state
 
 See architecture.md for architectural details. Additionally note:
-- Version: 0.10.0 (Phase 9 complete, GitHub Release v0.10.0 exists).
-- Next phase: 10 (multi-user and SaaS).
-- 303 tests (78 backend, 125 plugin, 50 vitest, 52 e2e).
+- Version: 0.12.0 (per-book audio config, V-02 backup compare, plugin settings audit, 5 new ChapterTypes).
+- Next phase: multi-user and SaaS.
+- Tests: 228 backend+plugins, 90 Vitest, 52 Playwright E2E. `make test` covers backend+plugins+Vitest, E2E is separate.
+- 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
 - 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
 - 24 toolbar buttons in the editor.
 - Deployment: Docker Compose, port 7880, install.sh one-liner.
@@ -182,3 +184,4 @@ NOT in CLAUDE.md:
 3. Check whether CLAUDE.md, CONCEPT.md, ROADMAP.md, API.md or lessons-learned.md need updates.
 4. Commit everything: `docs: update chat journal and documentation`
 5. For larger milestones: add a summary with statistics to the journal.
+6. For a release: follow release-workflow.md step by step. Do not improvise the release process.

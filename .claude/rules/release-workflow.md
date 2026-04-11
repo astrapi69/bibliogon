@@ -139,9 +139,20 @@ chore(release): bump version to v0.X.0
 Full test suite:
 
 ```bash
-make test              # backend + all plugins
+# Backend + all plugins
+make test
+
+# Frontend unit tests + type check
 cd frontend && npx tsc --noEmit && npm run test
+
+# Smoke tests (fast Playwright suite)
+npx playwright test --project=smoke
+
+# Linting and type checking
 cd backend && ruff check . && mypy .
+
+# Pre-commit hooks on all files
+pre-commit run --all-files
 ```
 
 ALL must be green. On a red test:
@@ -262,8 +273,11 @@ as "done". Missing items block the release.
 - [ ] manuscripta and other Bibliogon deps at the current version
 - [ ] `make test` green
 - [ ] Frontend `tsc --noEmit` clean
+- [ ] `npm run test` (Vitest) green
+- [ ] `npx playwright test --project=smoke` green
 - [ ] `ruff check` clean
 - [ ] `mypy` clean (if active)
+- [ ] `pre-commit run --all-files` clean
 - [ ] Backend `poetry build` successful
 - [ ] Frontend `npm run build` successful
 - [ ] Docker build successful (if active)
