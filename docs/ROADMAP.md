@@ -192,7 +192,7 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
 
 ## Versionierung (leichtgewichtig, kein Git)
 - [x] V-01: Versionsgeschichte-Tab: Chronologische Liste aller Backups
-- [ ] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen
+- [x] V-02: Backup-Vergleich: Zwei Versionen nebeneinander anzeigen (Implementiert als Upload-Dialog: POST /api/backup/compare + Dashboard-Button "Backups vergleichen". Wird spaeter durch das Sicherungs-Feature mit automatischen Speicherpunkten ersetzt.)
 ## Manuskript-Tools (M)
 
 Abgeschlossen:
