@@ -49,3 +49,20 @@ class BibliogonHookSpec:
             Transformed content, or None to keep original.
         """
         ...
+
+    @hookspec
+    def content_pre_import(self, content: str, language: str) -> str | None:
+        """Transform markdown content during book/chapter import.
+
+        Runs on the raw markdown text before it is converted to HTML and
+        written to the database. Plugins can use this to sanitize, normalize,
+        or otherwise clean external content.
+
+        Args:
+            content: Raw markdown text read from the imported file.
+            language: ISO language code of the target book (e.g. "de", "en").
+
+        Returns:
+            Transformed markdown, or None to keep the original.
+        """
+        ...

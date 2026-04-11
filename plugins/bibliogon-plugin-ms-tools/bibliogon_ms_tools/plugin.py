@@ -1,6 +1,9 @@
 """Manuscript Tools Plugin - style checks, sanitization, readability metrics."""
 
+import pluggy
 from pluginforge import BasePlugin
+
+hookimpl = pluggy.HookimplMarker("bibliogon.plugins")
 
 
 class MsToolsPlugin(BasePlugin):
@@ -17,6 +20,26 @@ class MsToolsPlugin(BasePlugin):
 
         set_config(self.config or {})
         self._router = router
+
+    @hookimpl
+    def content_pre_import(self, content: str, language: str) -> str | None:
+        """Sanitize markdown content during import.
+
+        Returns None when the feature is disabled via config or no fixes
+        were applied, so the import pipeline keeps the original text.
+        """
+        settings = (self.config or {}).get("settings") or self.config or {}
+        if not settings.get("auto_sanitize_on_import", True):
+            return None
+        if not content:
+            return None
+
+        from .sanitizer import sanitize
+
+        result = sanitize(content, language=language or "de")
+        if not result.get("changed"):
+            return None
+        return result["sanitized"]
 
     def deactivate(self) -> None:
         """Clean up."""

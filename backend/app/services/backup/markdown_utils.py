@@ -1,5 +1,6 @@
 """Markdown helpers and chapter-type maps shared by all import paths."""
 
+import logging
 import re
 from pathlib import Path
 
@@ -7,6 +8,8 @@ import markdown as _md
 from sqlalchemy.orm import Session
 
 from app.models import Chapter, ChapterType
+
+logger = logging.getLogger(__name__)
 
 
 # --- Chapter type maps (filename stem -> ChapterType) ---
@@ -86,6 +89,32 @@ def read_file_if_exists(path: Path) -> str | None:
     return None
 
 
+def sanitize_import_markdown(content: str, language: str) -> str:
+    """Run the ``content_pre_import`` hook on raw markdown before conversion.
+
+    Plugins (notably ms-tools) can transform the text, e.g. to strip invisible
+    Unicode, normalize quotes/dashes, or fix Word/HTML artifacts. When no
+    plugin provides a replacement the original content is returned unchanged.
+    """
+    if not content:
+        return content
+    try:
+        from app.main import manager
+    except ImportError:
+        return content
+    try:
+        results = manager.call_hook(
+            "content_pre_import", content=content, language=language or "de"
+        )
+    except Exception:
+        logger.exception("content_pre_import hook failed")
+        return content
+    for result in results or []:
+        if isinstance(result, str):
+            return result
+    return content
+
+
 def md_to_html(text: str) -> str:
     """Convert markdown to HTML for the TipTap editor.
 
@@ -128,6 +157,7 @@ def import_special_chapters(
     directory: Path,
     type_map: dict[str, ChapterType],
     base_position: int = 900,
+    language: str = "de",
 ) -> int:
     """Import front-matter or back-matter files as typed chapters.
 
@@ -144,10 +174,11 @@ def import_special_chapters(
 
         content = md_file.read_text(encoding="utf-8")
         title = extract_title(content, stem)
+        sanitized = sanitize_import_markdown(content.strip(), language)
         chapter = Chapter(
             book_id=book_id,
             title=title,
-            content=md_to_html(content.strip()),
+            content=md_to_html(sanitized),
             position=base_position + count,
             chapter_type=chapter_type.value,
         )

@@ -8,7 +8,11 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.models import Book, Chapter, ChapterType
-from app.services.backup.markdown_utils import extract_title, md_to_html
+from app.services.backup.markdown_utils import (
+    extract_title,
+    md_to_html,
+    sanitize_import_markdown,
+)
 
 
 def import_single_markdown(file: UploadFile, db: Session) -> dict[str, Any]:
@@ -21,10 +25,11 @@ def import_single_markdown(file: UploadFile, db: Session) -> dict[str, Any]:
     db.add(book)
     db.flush()
 
+    sanitized = sanitize_import_markdown(content, book.language)
     db.add(Chapter(
         book_id=book.id,
         title=title,
-        content=md_to_html(content),
+        content=md_to_html(sanitized),
         position=0,
         chapter_type=ChapterType.CHAPTER.value,
     ))
@@ -59,10 +64,11 @@ def import_plain_markdown_zip(
 
     for position, md_file in enumerate(md_files):
         content = md_file.read_text(encoding="utf-8")
+        sanitized = sanitize_import_markdown(content, book.language)
         db.add(Chapter(
             book_id=book.id,
             title=extract_title(content, md_file.stem),
-            content=md_to_html(content),
+            content=md_to_html(sanitized),
             position=position,
             chapter_type=ChapterType.CHAPTER.value,
         ))

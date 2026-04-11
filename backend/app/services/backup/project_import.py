@@ -25,6 +25,7 @@ from app.services.backup.markdown_utils import (
     import_special_chapters,
     md_to_html,
     read_file_if_exists,
+    sanitize_import_markdown,
 )
 
 
@@ -104,7 +105,9 @@ def _import_project_root(db: Session, project_root: Path) -> dict[str, Any]:
     db.add(book)
     db.flush()
 
-    total_count = _import_chapters(db, book.id, project_root / "manuscript", section_order)
+    total_count = _import_chapters(
+        db, book.id, project_root / "manuscript", section_order, book.language
+    )
     asset_count = _import_project_assets(db, book.id, project_root / "assets")
     _maybe_set_cover_from_assets(db, book)
 
@@ -284,14 +287,20 @@ def _import_chapters(
     book_id: str,
     manuscript_dir: Path,
     section_order: list[str],
+    language: str = "de",
 ) -> int:
     """Pick the section-order or fallback layout based on what's available."""
     if section_order:
-        return import_with_section_order(db, book_id, manuscript_dir, section_order)
-    return _import_alphabetical_layout(db, book_id, manuscript_dir)
+        return import_with_section_order(db, book_id, manuscript_dir, section_order, language)
+    return _import_alphabetical_layout(db, book_id, manuscript_dir, language)
 
 
-def _import_alphabetical_layout(db: Session, book_id: str, manuscript_dir: Path) -> int:
+def _import_alphabetical_layout(
+    db: Session,
+    book_id: str,
+    manuscript_dir: Path,
+    language: str = "de",
+) -> int:
     """Fallback when no export-settings.yaml exists: scan front/chapters/back."""
     front_dir = manuscript_dir / "front-matter"
     chapters_dir = manuscript_dir / "chapters"
@@ -299,11 +308,17 @@ def _import_alphabetical_layout(db: Session, book_id: str, manuscript_dir: Path)
 
     total = 0
     if front_dir.exists():
-        total += import_special_chapters(db, book_id, front_dir, FRONT_MATTER_MAP, base_position=0)
+        total += import_special_chapters(
+            db, book_id, front_dir, FRONT_MATTER_MAP, base_position=0, language=language
+        )
     if chapters_dir.exists():
-        total += _import_main_chapters(db, book_id, chapters_dir, start_position=100)
+        total += _import_main_chapters(
+            db, book_id, chapters_dir, start_position=100, language=language
+        )
     if back_dir.exists():
-        total += import_special_chapters(db, book_id, back_dir, BACK_MATTER_MAP, base_position=900)
+        total += import_special_chapters(
+            db, book_id, back_dir, BACK_MATTER_MAP, base_position=900, language=language
+        )
     return total
 
 
@@ -312,6 +327,7 @@ def _import_main_chapters(
     book_id: str,
     chapters_dir: Path,
     start_position: int,
+    language: str = "de",
 ) -> int:
     """Import all .md files in ``chapters_dir`` (skips ``*-print.md`` variants)."""
     count = 0
@@ -319,7 +335,7 @@ def _import_main_chapters(
     for md_file in sorted(chapters_dir.glob("*.md")):
         if md_file.stem.endswith("-print"):
             continue
-        _add_chapter_from_file(db, book_id, md_file, position)
+        _add_chapter_from_file(db, book_id, md_file, position, language=language)
         position += 1
         count += 1
     return count
@@ -330,6 +346,7 @@ def import_with_section_order(
     book_id: str,
     manuscript_dir: Path,
     section_order: list[str],
+    language: str = "de",
 ) -> int:
     """Import chapters in the order specified by export-settings.yaml.
 
@@ -348,11 +365,15 @@ def import_with_section_order(
     for entry in section_order:
         entry = entry.strip()
         if entry == "chapters":
-            _import_chapter_placeholder(db, book_id, manuscript_dir / "chapters", state)
+            _import_chapter_placeholder(
+                db, book_id, manuscript_dir / "chapters", state, language
+            )
         else:
-            _import_section_order_file(db, book_id, manuscript_dir / entry, state)
+            _import_section_order_file(
+                db, book_id, manuscript_dir / entry, state, language
+            )
 
-    _import_remaining_special_files(db, book_id, manuscript_dir, state)
+    _import_remaining_special_files(db, book_id, manuscript_dir, state, language)
     return state.count
 
 
@@ -368,6 +389,7 @@ def _import_chapter_placeholder(
     book_id: str,
     chapters_dir: Path,
     state: _SectionOrderState,
+    language: str = "de",
 ) -> None:
     if not chapters_dir.exists():
         return
@@ -375,7 +397,7 @@ def _import_chapter_placeholder(
         if md_file.stem.endswith("-print"):
             continue
         chapter_type = detect_chapter_type(md_file.stem)
-        _add_chapter_from_file(db, book_id, md_file, state.position, chapter_type)
+        _add_chapter_from_file(db, book_id, md_file, state.position, chapter_type, language)
         state.position += 1
         state.count += 1
 
@@ -385,6 +407,7 @@ def _import_section_order_file(
     book_id: str,
     md_path: Path,
     state: _SectionOrderState,
+    language: str = "de",
 ) -> None:
     if not md_path.exists() or md_path.stem.endswith("-print"):
         return
@@ -394,7 +417,7 @@ def _import_section_order_file(
     state.imported_files.add(stem)
 
     chapter_type = ALL_SPECIAL_MAP.get(stem, ChapterType.CHAPTER)
-    _add_chapter_from_file(db, book_id, md_path, state.position, chapter_type)
+    _add_chapter_from_file(db, book_id, md_path, state.position, chapter_type, language)
     state.position += 1
     state.count += 1
 
@@ -404,6 +427,7 @@ def _import_remaining_special_files(
     book_id: str,
     manuscript_dir: Path,
     state: _SectionOrderState,
+    language: str = "de",
 ) -> None:
     """Catch typed front/back-matter files that the section_order missed."""
     for subdir, type_map in (
@@ -420,7 +444,7 @@ def _import_remaining_special_files(
             if not chapter_type:
                 continue
             state.imported_files.add(stem)
-            _add_chapter_from_file(db, book_id, md_file, state.position, chapter_type)
+            _add_chapter_from_file(db, book_id, md_file, state.position, chapter_type, language)
             state.position += 1
             state.count += 1
 
@@ -431,6 +455,7 @@ def _add_chapter_from_file(
     md_file: Path,
     position: int,
     chapter_type: ChapterType | None = None,
+    language: str = "de",
 ) -> None:
     """Read a markdown file and add it as a Chapter row.
 
@@ -440,10 +465,11 @@ def _add_chapter_from_file(
     content = md_file.read_text(encoding="utf-8")
     title = extract_title(content, md_file.stem)
     resolved_type = chapter_type or detect_chapter_type(md_file.stem)
+    sanitized = sanitize_import_markdown(content.strip(), language)
     db.add(Chapter(
         book_id=book_id,
         title=title,
-        content=md_to_html(content.strip()),
+        content=md_to_html(sanitized),
         position=position,
         chapter_type=resolved_type.value,
     ))

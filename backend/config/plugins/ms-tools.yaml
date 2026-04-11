@@ -20,3 +20,4 @@ settings:
   max_sentence_length: 30
   languages:
   - de
+  auto_sanitize_on_import: true
