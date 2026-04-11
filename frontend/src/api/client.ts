@@ -220,6 +220,54 @@ export interface HelpSearchResult {
     score: number;
 }
 
+export type BackupDiffLineType = "unchanged" | "added" | "removed";
+
+export interface BackupDiffLine {
+    type: BackupDiffLineType;
+    text: string;
+}
+
+export interface BackupChapterDiff {
+    chapter_id: string;
+    position: number;
+    change_type: "added" | "removed" | "changed";
+    title_a: string | null;
+    title_b: string | null;
+    chapter_type_a: string | null;
+    chapter_type_b: string | null;
+    title_changed: boolean;
+    type_changed: boolean;
+    lines: BackupDiffLine[];
+    has_changes: boolean;
+}
+
+export interface BackupMetadataChange {
+    field: string;
+    before: unknown;
+    after: unknown;
+}
+
+export interface BackupBookDiff {
+    book_id: string;
+    title_a: string | null;
+    title_b: string | null;
+    metadata_changes: BackupMetadataChange[];
+    chapter_count_a: number;
+    chapter_count_b: number;
+    chapters: BackupChapterDiff[];
+}
+
+export interface BackupCompareResult {
+    summary: {
+        books_in_both: number;
+        books_only_in_a: string[];
+        books_only_in_b: string[];
+        filename_a: string | null;
+        filename_b: string | null;
+    };
+    books: BackupBookDiff[];
+}
+
 export interface AudiobookExistsError {
     code: "audiobook_exists";
     message: string;
@@ -675,6 +723,21 @@ export const api = {
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
                 throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/import-project`, "POST", err.stacktrace || "");
+            }
+            return res.json();
+        },
+
+        compare: async (fileA: File, fileB: File): Promise<BackupCompareResult> => {
+            const formData = new FormData();
+            formData.append("file_a", fileA);
+            formData.append("file_b", fileB);
+            const res = await fetch(`${BASE}/backup/compare`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(res.status, err.detail || "Compare failed", `${BASE}/backup/compare`, "POST", err.stacktrace || "");
             }
             return res.json();
         },

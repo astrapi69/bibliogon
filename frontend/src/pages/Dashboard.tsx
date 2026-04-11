@@ -6,9 +6,10 @@ import BookCard from "../components/BookCard";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, ArrowUpDown, History, ChevronDown, ChevronUp,
+    Menu, Search, ArrowUpDown, History, ChevronDown, ChevronUp, GitCompare,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import BackupCompareDialog from "../components/BackupCompareDialog";
 import ThemeToggle from "../components/ThemeToggle";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
@@ -28,6 +29,7 @@ export default function Dashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"date" | "title" | "author">("date");
     const [showModal, setShowModal] = useState(false);
+    const [showCompareDialog, setShowCompareDialog] = useState(false);
     const navigate = useNavigate();
     const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -349,15 +351,25 @@ export default function Dashboard() {
                 )}
                 {/* Version History */}
                 <div style={{marginTop: 32}}>
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setShowHistory(!showHistory)}
-                        style={{gap: 6}}
-                    >
-                        {showHistory ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                        <History size={14}/> {t("ui.dashboard.version_history", "Versionsgeschichte")}
-                        {backupHistory.length > 0 && ` (${backupHistory.length})`}
-                    </button>
+                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setShowHistory(!showHistory)}
+                            style={{gap: 6}}
+                        >
+                            {showHistory ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                            <History size={14}/> {t("ui.dashboard.version_history", "Versionsgeschichte")}
+                            {backupHistory.length > 0 && ` (${backupHistory.length})`}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setShowCompareDialog(true)}
+                            style={{gap: 6}}
+                            title={t("ui.dashboard.compare_backups_tooltip", "Zwei .bgb-Dateien aus dem Dateisystem vergleichen")}
+                        >
+                            <GitCompare size={14}/> {t("ui.dashboard.compare_backups", "Backups vergleichen")}
+                        </button>
+                    </div>
                     {showHistory && (
                         <div style={{marginTop: 8}}>
                             {backupHistory.length === 0 ? (
@@ -403,6 +415,10 @@ export default function Dashboard() {
                 open={showModal}
                 onClose={() => setShowModal(false)}
                 onCreate={handleCreate}
+            />
+            <BackupCompareDialog
+                open={showCompareDialog}
+                onClose={() => setShowCompareDialog(false)}
             />
         </div>
     );
