@@ -19,7 +19,11 @@ plugin:
   api_version: '1'
 settings:
   engine: edge-tts
-  language: de
+  # NOTE: the former plugin-global ``language`` field was removed in the
+  # plugin-settings audit. The export pipeline always uses the book's own
+  # language (Book.tts_language with fallback to Book.language), so the
+  # YAML value was dead config. The Settings UI keeps a language picker
+  # only as a local filter for the voice list.
   default_voice: ''
   merge: merged
   skip_types:

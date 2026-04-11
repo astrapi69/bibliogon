@@ -18,6 +18,7 @@ plugin:
   api_version: '1'
 settings:
   max_sentence_length: 30
-  languages:
-  - de
+  # NOTE: the former ``languages`` list was removed in the plugin-settings
+  # audit. It was never read by code; supported languages are derived from
+  # the FILLER_WORDS / QUOTE_STYLES / VOWEL_GROUPS module-level constants.
   auto_sanitize_on_import: true
