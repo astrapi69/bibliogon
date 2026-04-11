@@ -57,6 +57,7 @@ export interface Book {
     audiobook_merge: string | null;
     audiobook_filename: string | null;
     audiobook_overwrite_existing: boolean;
+    audiobook_skip_chapter_types: string[];
     created_at: string;
     updated_at: string;
 }

@@ -904,9 +904,6 @@ function AudiobookSettingsPanel({settings, onSave}: {
     const [language, setLanguage] = useState("de");
     const [voice, setVoice] = useState(String(settings.default_voice || ""));
     const [merge, setMerge] = useState<string>(normalizeMergeMode(settings.merge));
-    const [skipTypes, setSkipTypes] = useState<string[]>(
-        Array.isArray(settings.skip_types) ? (settings.skip_types as string[]) : [],
-    );
     const [readChapterNumber, setReadChapterNumber] = useState<boolean>(
         Boolean(settings.read_chapter_number),
     );
@@ -945,15 +942,17 @@ function AudiobookSettingsPanel({settings, onSave}: {
     const handleSave = () => {
         // Drop ``language`` from the persisted dict; it was Category C in
         // the plugin settings audit (UI-only voice filter, never read by
-        // the export pipeline).
-        const {language: _drop, ...rest} = settings as Record<string, unknown>;
-        void _drop;
+        // the export pipeline). ``skip_types`` is dropped for the same
+        // reason: it became Book.audiobook_skip_chapter_types in the
+        // chapter-skip-list migration and the YAML key is gone.
+        const {language: _droplang, skip_types: _dropskip, ...rest} = settings as Record<string, unknown>;
+        void _droplang;
+        void _dropskip;
         onSave({
             ...rest,
             engine,
             default_voice: voice,
             merge,
-            skip_types: skipTypes,
             read_chapter_number: readChapterNumber,
         });
     };
@@ -1038,14 +1037,6 @@ function AudiobookSettingsPanel({settings, onSave}: {
                     <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
                     <RadixSelect value={merge} onValueChange={setMerge} options={mergeOptions} />
                 </div>
-            </div>
-            <div style={{marginTop: 16}}>
-                <OrderedListEditor
-                    label={t("ui.audiobook.skip_types", "Ueberspringe Kapitel-Typen")}
-                    items={skipTypes}
-                    onChange={setSkipTypes}
-                    addPlaceholder="z.B. toc, imprint, index"
-                />
             </div>
             <div className="field" style={{marginTop: 16}}>
                 <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>

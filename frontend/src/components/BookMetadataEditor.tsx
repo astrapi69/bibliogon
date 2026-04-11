@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import {api, ApiError, AudiobookVoice, Book, BookAudiobook, formatVoiceLabel} from "../api/client";
+import {api, ApiError, AudiobookVoice, Book, BookAudiobook, BookDetail, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -9,7 +9,7 @@ import CoverUpload from "./CoverUpload";
 import * as Tabs from "@radix-ui/react-tabs";
 
 interface Props {
-    book: Book;
+    book: BookDetail;
     onSave: (data: Record<string, unknown>) => Promise<void>;
     onBack: () => void;
     allBooks?: Book[];
@@ -19,6 +19,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
+    const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
 
@@ -49,6 +50,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             audiobook_filename: book.audiobook_filename || "",
         });
         setAudiobookOverwrite(Boolean(book.audiobook_overwrite_existing));
+        setAudiobookSkipTypes(
+            Array.isArray(book.audiobook_skip_chapter_types)
+                ? book.audiobook_skip_chapter_types
+                : [],
+        );
     }, [book]);
 
     const set = (key: string, value: string) => setForm((prev) => ({...prev, [key]: value}));
@@ -61,6 +67,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 data[key] = key === "keywords" && value ? value : (value || null);
             }
             data.audiobook_overwrite_existing = audiobookOverwrite;
+            data.audiobook_skip_chapter_types = audiobookSkipTypes;
             await onSave(data);
             notify.success(t("ui.common.save", "Metadaten gespeichert"));
         } catch (err) {
@@ -209,18 +216,21 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                         <AudiobookBookConfig
                             bookLanguage={book.language}
                             bookTitle={book.title}
+                            bookChapters={book.chapters || []}
                             engine={form.tts_engine || ""}
                             voice={form.tts_voice || ""}
                             speed={form.tts_speed || "1.0"}
                             merge={form.audiobook_merge || "merged"}
                             customFilename={form.audiobook_filename || ""}
                             overwriteExisting={audiobookOverwrite}
+                            skipChapterTypes={audiobookSkipTypes}
                             onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
                             onVoiceChange={(v: string) => set("tts_voice", v)}
                             onSpeedChange={(v: string) => set("tts_speed", v)}
                             onMergeChange={(v: string) => set("audiobook_merge", v)}
                             onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
                             onOverwriteExistingChange={setAudiobookOverwrite}
+                            onSkipChapterTypesChange={setAudiobookSkipTypes}
                         />
                         <AudiobookDownloads bookId={book.id}/>
                     </div>
@@ -315,16 +325,21 @@ function slugifyForFilename(text: string): string {
 }
 
 function AudiobookBookConfig({
-    bookLanguage, bookTitle, engine, voice, speed, merge, customFilename, overwriteExisting,
+    bookLanguage, bookTitle, bookChapters, engine, voice, speed, merge, customFilename,
+    overwriteExisting, skipChapterTypes,
     onEngineChange, onVoiceChange, onSpeedChange, onMergeChange, onCustomFilenameChange,
-    onOverwriteExistingChange,
+    onOverwriteExistingChange, onSkipChapterTypesChange,
 }: {
-    bookLanguage: string; bookTitle: string; engine: string; voice: string;
+    bookLanguage: string; bookTitle: string;
+    bookChapters: {chapter_type: string}[];
+    engine: string; voice: string;
     speed: string; merge: string; customFilename: string; overwriteExisting: boolean;
+    skipChapterTypes: string[];
     onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void;
     onSpeedChange: (v: string) => void; onMergeChange: (v: string) => void;
     onCustomFilenameChange: (v: string) => void;
     onOverwriteExistingChange: (v: boolean) => void;
+    onSkipChapterTypesChange: (v: string[]) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<AudiobookVoice[]>([]);
@@ -442,7 +457,104 @@ function AudiobookBookConfig({
                     {t("ui.audiobook.overwrite_description", "Wenn aktiviert, werden bei einem erneuten Export alle bereits generierten MP3-Dateien dieses Buchs überschrieben. Wenn deaktiviert, werden nur fehlende oder geänderte Kapitel neu generiert (Standard).")}
                 </small>
             </div>
+            <AudiobookSkipChapterTypes
+                bookChapters={bookChapters}
+                value={skipChapterTypes}
+                onChange={onSkipChapterTypesChange}
+            />
         </>
+    );
+}
+
+
+// Sorted by typical book layout (front matter -> body -> back matter).
+// The order also drives the visual order in the skip-list checkboxes.
+const AUDIOBOOK_CHAPTER_TYPES: readonly string[] = [
+    "toc", "dedication", "epigraph", "preface", "foreword",
+    "prologue", "introduction",
+    "chapter", "part_intro", "interlude",
+    "epilogue", "afterword", "acknowledgments", "about_author",
+    "appendix", "bibliography", "endnotes", "glossary", "index",
+    "imprint", "next_in_series",
+];
+
+
+function AudiobookSkipChapterTypes({bookChapters, value, onChange}: {
+    bookChapters: {chapter_type: string}[];
+    value: string[];
+    onChange: (v: string[]) => void;
+}) {
+    const {t} = useI18n();
+    const presentTypes = new Set(
+        (bookChapters || []).map((c) => (c.chapter_type || "").toLowerCase()).filter(Boolean),
+    );
+    const present = AUDIOBOOK_CHAPTER_TYPES.filter((k) => presentTypes.has(k));
+    const other = AUDIOBOOK_CHAPTER_TYPES.filter((k) => !presentTypes.has(k));
+
+    function toggle(key: string, checked: boolean) {
+        if (checked) {
+            if (value.includes(key)) return;
+            onChange([...value, key]);
+        } else {
+            onChange(value.filter((k) => k !== key));
+        }
+    }
+
+    const renderCheckbox = (key: string, muted: boolean) => {
+        const label = t(`ui.chapter_types.${key}`, key);
+        const checked = value.includes(key);
+        return (
+            <label
+                key={key}
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "4px 0",
+                    fontSize: "0.875rem",
+                    color: muted ? "var(--text-muted)" : undefined,
+                }}
+            >
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => toggle(key, e.target.checked)}
+                />
+                <span style={{fontWeight: muted ? 400 : 500}}>{label}</span>
+                <span style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>({key})</span>
+            </label>
+        );
+    };
+
+    return (
+        <div className="field" style={{marginTop: 16}}>
+            <label className="label">{t("ui.audiobook.skip_title", "Kapiteltypen überspringen")}</label>
+            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
+                {t("ui.audiobook.skip_description", "Folgende Kapiteltypen werden NICHT vertont")}
+            </small>
+
+            {present.length > 0 && (
+                <>
+                    <div style={{fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginTop: 4, marginBottom: 4}}>
+                        {t("ui.audiobook.skip_in_book", "Im Buch vorhanden")}
+                    </div>
+                    <div style={{display: "flex", flexDirection: "column", marginBottom: 8}}>
+                        {present.map((k) => renderCheckbox(k, false))}
+                    </div>
+                </>
+            )}
+
+            <div style={{fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginTop: 4, marginBottom: 4}}>
+                {t("ui.audiobook.skip_other", "Weitere Typen")}
+            </div>
+            <div style={{display: "flex", flexDirection: "column"}}>
+                {other.map((k) => renderCheckbox(k, true))}
+            </div>
+
+            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 8}}>
+                {t("ui.audiobook.skip_hint", "Aktivierte Typen werden beim Audiobook-Export übersprungen und nicht vertont.")}
+            </small>
+        </div>
     );
 }
 
