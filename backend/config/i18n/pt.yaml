@@ -370,7 +370,7 @@ ui:
         publish_date: "Data"
         publisher: "Editora"
         publisher_city: "Cidade"
-        keywords: "Palavras-chave (max. 7)"
+        keywords: "Palavras-chave"
         html_description: "Descricao (HTML)"
         backpage_description: "Descricao contracapa"
         author_bio: "Biografia do autor"
@@ -555,7 +555,13 @@ ui:
     keywords:
         placeholder: "Inserir palavra-chave..."
         counter: "Palavras-chave"
-        duplicate: "Palavra-chave ja existe"
+        duplicate: "Palavra-chave já existe"
+        too_long: "Palavra-chave deve ter no máximo {max} caracteres"
+        no_comma: "Palavra-chave não pode conter vírgula"
+        over_limit: "Amazon KDP recomenda no máximo 7 palavras-chave. Outras plataformas podem permitir mais."
+        removed: "Palavra-chave removida"
+        undo: "Desfazer"
+        hint: "Clique duplo para editar, arrastar e soltar para reordenar"
     common:
         cancel: "Cancelar"
         create: "Criar"

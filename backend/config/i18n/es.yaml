@@ -353,7 +353,7 @@ ui:
     publish_date: "Fecha"
     publisher: "Editorial"
     publisher_city: "Ciudad"
-    keywords: "Palabras clave (max. 7)"
+    keywords: "Palabras clave"
     html_description: "Descripcion (HTML para Amazon)"
     backpage_description: "Descripcion contraportada"
     author_bio: "Biografia del autor"
@@ -538,7 +538,13 @@ ui:
   keywords:
     placeholder: "Ingresar palabra clave..."
     counter: "Palabras clave"
-    duplicate: "Palabra clave ya existe"
+    duplicate: "La palabra clave ya existe"
+    too_long: "La palabra clave debe tener como máximo {max} caracteres"
+    no_comma: "La palabra clave no puede contener comas"
+    over_limit: "Amazon KDP recomienda un máximo de 7 palabras clave. Otras plataformas pueden permitir más."
+    removed: "Palabra clave eliminada"
+    undo: "Deshacer"
+    hint: "Doble clic para editar, arrastrar y soltar para reordenar"
   common:
     cancel: "Cancelar"
     create: "Crear"
