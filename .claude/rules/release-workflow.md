@@ -1,72 +1,72 @@
-# Release Workflow
+# Release workflow
 
-Permanenter Workflow fuer Bibliogon Releases. Diese Datei wird von
-Claude Code automatisch gelesen wenn ein Release ansteht.
+The permanent workflow for Bibliogon releases. Claude Code reads
+this file automatically when a release is due.
 
-Prompt-Trigger: "Release neue Version", "Neuer Release", "Deploy neue Version"
-
----
-
-## Grundprinzipien
-
-- Keine manuellen Schritte vergessen: die Checkliste am Ende ist Pflicht
-- Jeder Release ist ein logischer Abschnitt: nicht mitten in einem Feature releasen
-- Tests muessen gruen sein: rote Tests blockieren den Release, keine Ausnahmen
-- CHANGELOG ist fuer Menschen: keine rohen Commit-Messages kopieren, sinnvoll zusammenfassen
-- Version-Bump folgt SemVer: auch in der 0.x Phase
+Prompt triggers: "release new version", "new release", "deploy new version"
 
 ---
 
-## Schritt 1: Aktuellen Stand erfassen
+## Ground rules
 
-Vor jeder Aktion zeige den aktuellen Stand:
+- Do not skip manual steps: the checklist at the end is mandatory
+- Every release is a logical boundary: do not release in the middle of a feature
+- Tests must be green: red tests block the release, no exceptions
+- The CHANGELOG is for humans: do not paste raw commit messages, summarize meaningfully
+- Version bump follows SemVer, even in the 0.x phase
+
+---
+
+## Step 1: Capture the current state
+
+Before doing anything, show the current state:
 
 ```bash
-# Letztes Release-Tag
+# Latest release tag
 git tag --sort=-creatordate | head -5
 
-# Commits seit letztem Tag (Tag dynamisch ermitteln)
+# Commits since the last tag (tag determined dynamically)
 LAST_TAG=$(git describe --tags --abbrev=0)
 git log ${LAST_TAG}..HEAD --oneline --no-merges
 
-# Statistik
+# Statistics
 git diff ${LAST_TAG}..HEAD --stat | tail -1
 
-# Aktuelle Versionen
+# Current versions
 grep -H "version" backend/pyproject.toml frontend/package.json 2>/dev/null | head -5
 ```
 
-Zeig dem User die Zusammenfassung und warte auf Bestaetigung bevor
-der Release weitergeht.
+Show the user the summary and wait for confirmation before the
+release continues.
 
 ---
 
-## Schritt 2: Version-Bump nach SemVer
+## Step 2: Version bump per SemVer
 
-Analyse der Commits zur Entscheidung:
+Analyze the commits to decide:
 
-| Commit-Typ | Bump |
-|------------|------|
-| `BREAKING CHANGE` im Body oder `!` nach Typ | Major (v1.0.0) |
+| Commit type | Bump |
+|-------------|------|
+| `BREAKING CHANGE` in the body or `!` after the type | Major (v1.0.0) |
 | `feat:` | Minor (v0.X.0) |
-| `fix:`, `perf:`, `refactor:` ohne Breaking | Patch (v0.X.Y) |
-| Nur `docs:`, `chore:`, `test:` | Patch (v0.X.Y) |
+| `fix:`, `perf:`, `refactor:` without breaking changes | Patch (v0.X.Y) |
+| Only `docs:`, `chore:`, `test:` | Patch (v0.X.Y) |
 
-In der 0.x Phase ist ein Major-Bump selten. Breaking Changes fuehren
-meist zu einem Minor-Bump mit Breaking-Changes-Abschnitt im CHANGELOG.
+In the 0.x phase a major bump is rare. Breaking changes usually
+lead to a minor bump with a breaking-changes section in the CHANGELOG.
 
-Schlage die neue Version vor mit Begruendung. Warte auf User-OK oder
-Korrektur.
+Propose the new version with rationale. Wait for user OK or
+correction.
 
 ---
 
-## Schritt 3: CHANGELOG.md generieren
+## Step 3: Generate CHANGELOG.md
 
-Aus den Commits einen sauberen CHANGELOG-Eintrag bauen. Nicht roh
-kopieren, sondern gruppieren und zusammenfassen.
+Build a clean CHANGELOG entry from the commits. Do not paste raw,
+group and summarize.
 
-Gruppen in dieser Reihenfolge:
-- **Breaking Changes** (nur bei Bedarf, oben)
+Groups in this order:
+- **Breaking Changes** (only when needed, at the top)
 - **Added** (feat:)
 - **Changed** (refactor:, perf:)
 - **Deprecated**
@@ -74,29 +74,29 @@ Gruppen in dieser Reihenfolge:
 - **Fixed** (fix:)
 - **Security**
 
-Format-Regeln:
-- Vergangenheit oder Praesens, einheitlich im Eintrag
-- Scope aus Commit uebernehmen wenn sinnvoll (z.B. "Audiobook-Plugin: ...")
-- Mehrere Commits zum gleichen Feature zusammenfassen
-- Interne Refactorings ohne User-Impact weglassen oder knapp erwaehnen
+Format rules:
+- Past tense or present, consistent within the entry
+- Take the scope from the commit when it helps (e.g. "Audiobook plugin: ...")
+- Collapse multiple commits touching the same feature
+- Drop or briefly mention internal refactorings without user impact
 
-Beispiel-Struktur:
+Example structure:
 
 ```markdown
 ## [0.10.0] - 2026-04-XX
 
 ### Added
-- Feature-Beschreibung fuer User relevant
+- Feature description, user-relevant
 
 ### Fixed
-- Bug-Beschreibung so dass der User erkennt was besser ist
+- Bug description so the user can tell what improved
 
 ### Changed
-- Wichtige Aenderungen an bestehenden Features
+- Important changes to existing features
 ```
 
-Zusaetzlich eine extrahierte Datei `CHANGELOG-v0.X.0.md` mit nur
-dem neuen Eintrag fuer die GitHub Release Notes.
+Also produce a separate file `CHANGELOG-v0.X.0.md` containing only
+the new entry, for the GitHub release notes.
 
 Commit:
 ```
@@ -105,27 +105,27 @@ docs: changelog for v0.X.0
 
 ---
 
-## Schritt 4: Versionen bumpen
+## Step 4: Bump the versions
 
-Alle Stellen wo die Version steht aktualisieren. Typische Orte:
+Update every place the version lives. Typical locations:
 
 - `backend/pyproject.toml`
 - `frontend/package.json`
 - `plugins/*/pyproject.toml`
 - `backend/app/__init__.py` (`__version__`)
-- `docs/CONCEPT.md` (falls Version erwaehnt)
-- `README.md` (falls Version erwaehnt)
+- `docs/CONCEPT.md` (if the version is mentioned)
+- `README.md` (if the version is mentioned)
 
-Pruefen via grep:
+Check via grep:
 ```bash
 grep -rn "0\.9\.0" --include="*.toml" --include="*.json" --include="*.py" --include="*.md"
 ```
 
-(Alte Versionsnummer anpassen an den tatsaechlichen Vorgaenger.)
+(Adjust the old version number to the actual predecessor.)
 
-Wichtig: Dependency-Versionen von manuscripta, pluginforge und 
-anderen Bibliogon-eigenen Libraries pruefen. Wenn eine neue 
-manuscripta-Version rausgekommen ist, gleichzeitig updaten.
+Important: check the dependency versions of manuscripta, pluginforge
+and other Bibliogon-owned libraries. If a new manuscripta version
+shipped, update it at the same time.
 
 Commit:
 ```
@@ -134,24 +134,24 @@ chore(release): bump version to v0.X.0
 
 ---
 
-## Schritt 5: Tests
+## Step 5: Tests
 
-Vollstaendige Test-Suite:
+Full test suite:
 
 ```bash
-make test              # Backend + alle Plugins
+make test              # backend + all plugins
 cd frontend && npx tsc --noEmit && npm run test
 cd backend && ruff check . && mypy .
 ```
 
-ALLE muessen gruen sein. Bei rotem Test:
-1. Release abbrechen
-2. Problem analysieren und fixen
-3. Erst danach Release neu starten ab Schritt 1
+ALL must be green. On a red test:
+1. Abort the release
+2. Analyze and fix the problem
+3. Only then restart the release from step 1
 
 ---
 
-## Schritt 6: Build verifizieren
+## Step 6: Verify the build
 
 ```bash
 # Backend
@@ -160,15 +160,15 @@ cd backend && poetry build
 # Frontend
 cd frontend && npm run build
 
-# Docker (falls aktiv)
+# Docker (if active)
 docker build -t bibliogon:test .
 ```
 
-Bei Build-Fehler: Stoppen, melden, beheben, neu starten.
+On a build error: stop, report, fix, restart.
 
 ---
 
-## Schritt 7: Git-Tag und Push
+## Step 7: Git tag and push
 
 ```bash
 git tag -a v0.X.0 -m "Release v0.X.0"
@@ -178,28 +178,28 @@ git push origin v0.X.0
 
 ---
 
-## Schritt 8: GitHub Release erstellen
+## Step 8: Create the GitHub Release
 
-Mit gh CLI (bevorzugt):
+With the gh CLI (preferred):
 ```bash
 gh release create v0.X.0 \
   --title "Bibliogon v0.X.0" \
   --notes-file CHANGELOG-v0.X.0.md
 ```
 
-Falls gh CLI nicht verfuegbar: Anleitung fuer manuelle Erstellung
-auf GitHub ausgeben:
+If the gh CLI is not available: print instructions for manual
+creation on GitHub:
 - URL: https://github.com/astrapi69/bibliogon/releases/new
-- Tag: v0.X.0 auswaehlen
+- Tag: select v0.X.0
 - Title: Bibliogon v0.X.0
-- Notes: Inhalt aus CHANGELOG-v0.X.0.md einfuegen
-- "Publish release" klicken
+- Notes: paste the contents of CHANGELOG-v0.X.0.md
+- Click "Publish release"
 
 ---
 
-## Schritt 9: Docker Image taggen und pushen
+## Step 9: Tag and push the Docker image
 
-Falls Docker-Images publiziert werden:
+If Docker images are published:
 
 ```bash
 docker build -t bibliogon:v0.X.0 -t bibliogon:latest .
@@ -207,37 +207,35 @@ docker push bibliogon:v0.X.0
 docker push bibliogon:latest
 ```
 
-Falls nicht aktiv: diesen Schritt ueberspringen und im Release-Log 
-vermerken.
+If not active: skip this step and note it in the release log.
 
 ---
 
-## Schritt 10: Dokumentations-Site deployen
+## Step 10: Deploy the documentation site
 
-Wenn das Help-System mit MkDocs eingerichtet ist:
+When the help system with MkDocs is set up:
 
-- GitHub Action triggert sich automatisch auf Push auf main
-- Kein manueller Schritt
-- Verifizieren: https://astrapi69.github.io/bibliogon/ zeigt neue Inhalte
-- Action-Status pruefen: `gh run list --workflow=docs.yml --limit=1`
+- A GitHub Action triggers automatically on push to main
+- No manual step
+- Verify: https://astrapi69.github.io/bibliogon/ shows the new content
+- Check the action status: `gh run list --workflow=docs.yml --limit=1`
 
-Bei fehlgeschlagenem Deploy: Fehler aus den Action-Logs holen und
-fixen, aber Release ist trotzdem raus.
+On a failed deploy: pull the error from the action logs and fix it,
+but the release is still out.
 
 ---
 
-## Schritt 11: Post-Release Dokumentation
+## Step 11: Post-release documentation
 
-- `docs/chat-journal-session-{heute}.md`: 
-  Release-Eintrag mit Version, Datum, wichtigsten Aenderungen, 
-  Deploy-Zeitpunkt
-- `ROADMAP.md`: 
-  Alle Items die im Release enthalten sind als `[x]` markieren
-- `CLAUDE.md`: 
-  Bei neuen Endpoints oder Architektur-Aenderungen aktualisieren
-- `.claude/rules/lessons-learned.md`: 
-  Falls im Release-Prozess etwas auffaelliges war (neuer Fallstrick, 
-  Workflow-Verbesserung), dokumentieren
+- `docs/chat-journal-session-{today}.md`:
+  release entry with version, date, main changes, deploy time
+- `ROADMAP.md`:
+  mark every item included in the release as `[x]`
+- `CLAUDE.md`:
+  update on new endpoints or architectural changes
+- `.claude/rules/lessons-learned.md`:
+  if anything noteworthy happened during the release (new pitfall,
+  workflow improvement), document it
 
 Commit:
 ```
@@ -250,97 +248,96 @@ git push origin main
 
 ---
 
-## Abschluss-Checkliste
+## Final checklist
 
-Diese Checkliste MUSS vollstaendig abgehakt sein bevor der Release
-als "fertig" gilt. Fehlende Punkte blockieren den Release.
+This checklist MUST be fully checked off before the release counts
+as "done". Missing items block the release.
 
-- [ ] Commits seit letztem Tag reviewed
-- [ ] Versionsnummer nach SemVer bestimmt und vom User bestaetigt
-- [ ] CHANGELOG.md mit neuem Eintrag committet
-- [ ] CHANGELOG-v0.X.0.md fuer GitHub Release erstellt
-- [ ] Version in allen pyproject.toml und package.json aktualisiert
-- [ ] Version in __version__ und sonstigen Python-Modulen aktualisiert
-- [ ] manuscripta und andere Bibliogon-Deps auf aktueller Version
-- [ ] `make test` gruen
-- [ ] Frontend `tsc --noEmit` sauber
-- [ ] `ruff check` sauber
-- [ ] `mypy` sauber (falls aktiv)
-- [ ] Backend `poetry build` erfolgreich
-- [ ] Frontend `npm run build` erfolgreich
-- [ ] Docker Build erfolgreich (falls aktiv)
-- [ ] Git-Tag erstellt und gepusht
-- [ ] GitHub Release veroeffentlicht
-- [ ] Docker-Image gepusht (falls aktiv)
-- [ ] MkDocs-Site deployed und verifiziert
-- [ ] Chat-Journal Release-Eintrag
-- [ ] ROADMAP erledigte Items markiert
-- [ ] CLAUDE.md aktualisiert (falls noetig)
-- [ ] Post-Release Commit gepusht
+- [ ] Reviewed the commits since the last tag
+- [ ] Version number picked per SemVer and confirmed by the user
+- [ ] CHANGELOG.md with the new entry committed
+- [ ] CHANGELOG-v0.X.0.md created for the GitHub release
+- [ ] Version updated in all pyproject.toml and package.json
+- [ ] Version updated in __version__ and other Python modules
+- [ ] manuscripta and other Bibliogon deps at the current version
+- [ ] `make test` green
+- [ ] Frontend `tsc --noEmit` clean
+- [ ] `ruff check` clean
+- [ ] `mypy` clean (if active)
+- [ ] Backend `poetry build` successful
+- [ ] Frontend `npm run build` successful
+- [ ] Docker build successful (if active)
+- [ ] Git tag created and pushed
+- [ ] GitHub release published
+- [ ] Docker image pushed (if active)
+- [ ] MkDocs site deployed and verified
+- [ ] Chat journal release entry
+- [ ] ROADMAP done items marked
+- [ ] CLAUDE.md updated (if needed)
+- [ ] Post-release commit pushed
 
 ---
 
 ## Troubleshooting
 
-### Tests schlagen fehl unmittelbar vor Release
+### Tests fail right before the release
 
-Nicht aus dem Workflow ausbrechen. Release abbrechen, Test fixen, 
-neuer Commit, ab Schritt 1 neu starten. Kein Workaround wie 
-"Test deaktivieren fuer den Release".
+Do not break out of the workflow. Abort the release, fix the test,
+commit, restart from step 1. No workarounds like "disable the test
+for this release".
 
-### Build fehlerhaft wegen Dependencies
+### Build broken because of dependencies
 
-`poetry lock --no-update` und `npm install` in beiden Projekten, 
-dann neu bauen. Bei anhaltenden Fehlern: Release abbrechen, Problem 
-in eigenem Commit loesen.
+`poetry lock --no-update` and `npm install` in both projects, then
+rebuild. On persistent errors: abort the release, solve the problem
+in its own commit.
 
-### GitHub Action fuer Docs fehlgeschlagen
+### GitHub Action for the docs failed
 
-Release-Tag bleibt gueltig. Docs-Deploy ist ein separates Problem 
-das nach dem Release gefixt werden kann. Im Chat-Journal vermerken.
+The release tag stays valid. The docs deploy is a separate problem
+that can be fixed after the release. Note it in the chat journal.
 
-### Docker-Push scheitert
+### Docker push fails
 
-Login pruefen: `docker login`. Tag pruefen: `docker images | grep bibliogon`.
-Bei Registry-Problem: Release ist trotzdem gueltig, Push nachholen 
-wenn Registry wieder verfuegbar.
+Check the login: `docker login`. Check the tag: `docker images | grep bibliogon`.
+On a registry problem: the release is still valid; retry the push
+when the registry is available again.
 
-### Falsche Versionsnummer nach Tag-Push
+### Wrong version number after a tag push
 
 ```bash
 git tag -d v0.X.0
 git push origin :refs/tags/v0.X.0
 ```
 
-Dann neuen Tag mit korrekter Nummer. ACHTUNG: Nur wenn der Tag 
-noch nicht als GitHub Release veroeffentlicht ist und niemand 
-ihn schon gezogen hat.
+Then a new tag with the correct number. CAUTION: only if the tag
+has not yet been published as a GitHub release and nobody has
+already pulled it.
 
 ---
 
-## Versions-Konvention
+## Versioning convention
 
-Bibliogon folgt Semantic Versioning 2.0.0:
+Bibliogon follows Semantic Versioning 2.0.0:
 
-- **Major (X.0.0)**: Breaking Changes in der API oder grundlegende 
-  Architektur-Aenderungen. In der 0.x Phase selten.
-- **Minor (0.X.0)**: Neue Features, rueckwaertskompatibel. Auch kleine 
-  Breaking Changes sind in 0.x akzeptabel, muessen aber im CHANGELOG 
-  prominent markiert werden.
-- **Patch (0.X.Y)**: Bug-Fixes, rueckwaertskompatibel.
+- **Major (X.0.0)**: breaking changes in the API or fundamental
+  architectural changes. Rare in the 0.x phase.
+- **Minor (0.X.0)**: new features, backward-compatible. Small
+  breaking changes are acceptable in 0.x, but must be called out
+  prominently in the CHANGELOG.
+- **Patch (0.X.Y)**: bug fixes, backward-compatible.
 
-Pre-Release-Tags (`-alpha`, `-beta`, `-rc`) werden aktuell nicht 
-verwendet. Releases sind immer stabil.
+Pre-release tags (`-alpha`, `-beta`, `-rc`) are currently not used.
+Releases are always stable.
 
 ---
 
-## Hinweis fuer Claude Code
+## Note for Claude Code
 
-Dieser Workflow ist ein Leitfaden, kein starres Skript. Wenn der User
-explizit eine Abweichung wuenscht (z.B. "ueberspringe Docker diesmal"),
-das akzeptieren und im Chat-Journal dokumentieren WARUM abgewichen wurde.
+This workflow is a guide, not a rigid script. If the user explicitly
+asks for a deviation (e.g. "skip Docker this time"), accept it and
+document in the chat journal WHY it was deviated from.
 
-Aber: Checkliste-Items die Sicherheit betreffen (Tests gruen, Build 
-erfolgreich, korrekte Version) duerfen NIE uebersprungen werden, auch 
-nicht auf Anweisung. Lieber den Release verschieben als kaputte Software 
-releasen.
+But: checklist items that touch safety (tests green, build successful,
+correct version) must NEVER be skipped, not even on instruction.
+Better to postpone the release than to ship broken software.
