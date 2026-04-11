@@ -8,21 +8,21 @@ Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wie
 - **API-Referenz:** FastAPI OpenAPI unter `/docs` und `/openapi.json` (Quelle der Wahrheit). docs/API.md ist ein High-Level-Ueberblick.
 - **Verlauf:** docs/CHANGELOG.md (erledigte Phasen), docs/ROADMAP.md (offene Punkte)
 
-## Entwicklungsrichtlinien
+## Development guidelines
 
-Detaillierte Regeln liegen in `.claude/rules/`. Claude Code liest sie bei Bedarf selbststaendig.
+Detailed rules live in `.claude/rules/`. Claude Code reads them on demand.
 
-**Immer relevant** (bei jedem Feature/Fix lesen):
-- `architecture.md` - Schichtenmodell, Plugin-Struktur, UI-Strategie, Datenfluss
-- `coding-standards.md` - Benennung, Funktionsdesign, Tests, Dependencies
+**Always relevant** (read on every feature/fix):
+- `architecture.md` - layered architecture, plugin structure, UI strategy, data flow
+- `coding-standards.md` - naming, function design, tests, dependencies
 
-**On-Demand** (bei spezifischen Aufgaben lesen):
-- `code-hygiene.md` - Linting, Pre-Commit, Error-Handling Architektur, API-Konventionen
-- `lessons-learned.md` - Bekannte Fallstricke (TipTap, Import, Export, Deployment)
-- `quality-checks.md` - Teststrategie, mutmut/Stryker, Checklisten vor dem Commit
-- `ai-workflow.md` - Reihenfolge bei Features/Plugins, Verbote, Doku-Protokoll
+**On demand** (read for specific tasks):
+- `code-hygiene.md` - linting, pre-commit, error handling architecture, API conventions
+- `lessons-learned.md` - known pitfalls (TipTap, import, export, deployment)
+- `quality-checks.md` - test strategy, mutmut/Stryker, pre-commit checklists
+- `ai-workflow.md` - order for features/plugins, prohibitions, docs protocol
 
-Bei Widerspruch zwischen CLAUDE.md und Rules gelten die Rules.
+On a conflict between CLAUDE.md and the rules, the rules win.
 
 ## Tech Stack
 
