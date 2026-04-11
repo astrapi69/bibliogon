@@ -14,6 +14,7 @@ all business logic to the modules in this package:
 - ``smart_import``    Auto-detect and dispatch to the right importer.
 """
 
+from app.services.backup.backup_compare import compare_backups
 from app.services.backup.backup_export import export_backup_archive
 from app.services.backup.backup_import import import_backup_archive
 from app.services.backup.markdown_import import (
@@ -28,6 +29,7 @@ from app.services.backup.serializer import (
 from app.services.backup.smart_import import smart_import_file
 
 __all__ = [
+    "compare_backups",
     "export_backup_archive",
     "import_backup_archive",
     "import_plain_markdown_zip",

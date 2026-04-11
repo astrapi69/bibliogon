@@ -7,13 +7,14 @@ All business logic lives in that package - see its ``__init__`` for the map.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.backup_history import BackupHistory
 from app.database import get_db
 from app.services.backup import (
+    compare_backups,
     export_backup_archive,
     import_backup_archive,
     import_project_zip,
@@ -66,3 +67,17 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)) -> dict[str,
 def smart_import(file: UploadFile, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Auto-detect file format and route to the matching importer."""
     return smart_import_file(file, db)
+
+
+@router.post("/compare")
+def compare_backup_files(
+    file_a: UploadFile = File(..., description="Erstes Backup (.bgb)"),
+    file_b: UploadFile = File(..., description="Zweites Backup (.bgb)"),
+) -> dict[str, Any]:
+    """Compare two uploaded .bgb backup files in memory.
+
+    Stop-gap for ROADMAP V-02 until the Git-based Sicherung feature lands.
+    Neither file is persisted on the server. Both must contain at least one
+    common book id, otherwise the compare is rejected with HTTP 400.
+    """
+    return compare_backups(file_a, file_b)
