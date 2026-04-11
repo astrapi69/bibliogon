@@ -18,6 +18,7 @@ interface Props {
 export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Props) {
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
+    const [keywords, setKeywords] = useState<string[]>([]);
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -37,7 +38,6 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             asin_ebook: book.asin_ebook || "",
             asin_paperback: book.asin_paperback || "",
             asin_hardcover: book.asin_hardcover || "",
-            keywords: book.keywords ? tryParseKeywords(book.keywords) : "[]",
             html_description: book.html_description || "",
             backpage_description: book.backpage_description || "",
             backpage_author_bio: book.backpage_author_bio || "",
@@ -49,6 +49,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             audiobook_merge: book.audiobook_merge || "merged",
             audiobook_filename: book.audiobook_filename || "",
         });
+        setKeywords(Array.isArray(book.keywords) ? book.keywords : []);
         setAudiobookOverwrite(Boolean(book.audiobook_overwrite_existing));
         setAudiobookSkipTypes(
             Array.isArray(book.audiobook_skip_chapter_types)
@@ -64,8 +65,9 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
         try {
             const data: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(form)) {
-                data[key] = key === "keywords" && value ? value : (value || null);
+                data[key] = value || null;
             }
+            data.keywords = keywords;
             data.audiobook_overwrite_existing = audiobookOverwrite;
             data.audiobook_skip_chapter_types = audiobookSkipTypes;
             await onSave(data);
@@ -177,18 +179,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 <Tabs.Content value="marketing">
                     <div style={styles.tabContent}>
                         <div className="field">
-                            <label className="label">{t("ui.metadata.keywords", "Keywords (max. 7)")}</label>
-                            <KeywordInput
-                                keywords={(() => {
-                                    try {
-                                        const parsed = JSON.parse(form.keywords || "[]");
-                                        return Array.isArray(parsed) ? parsed : [];
-                                    } catch {
-                                        return form.keywords ? String(form.keywords).split(",").map((s) => s.trim()).filter(Boolean) : [];
-                                    }
-                                })()}
-                                onChange={(kws) => set("keywords", JSON.stringify(kws))}
-                            />
+                            <label className="label">{t("ui.metadata.keywords", "Schluesselwoerter")}</label>
+                            <KeywordInput keywords={keywords} onChange={setKeywords}/>
                         </div>
                         <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
                             onChange={(v) => set("html_description", v)} multiline maxChars={4000}/>
@@ -304,14 +296,6 @@ function CharCounter({count, max, label}: {count: number; max: number; label: st
             {count} / {max} {label}
         </small>
     );
-}
-
-function tryParseKeywords(raw: string): string {
-    try {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) return arr.join(", ");
-    } catch {/* ignore */}
-    return raw;
 }
 
 function slugifyForFilename(text: string): string {
