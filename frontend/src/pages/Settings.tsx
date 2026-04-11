@@ -287,6 +287,7 @@ function AppSettings({config, onSave, saving}: {
                             document.documentElement.setAttribute("data-app-theme", val);
                             localStorage.setItem("bibliogon-app-theme", val);
                         }}
+                        testId="palette-select"
                         options={[
                             {value: "warm-literary", label: "Warm Literary"},
                             {value: "cool-modern", label: "Cool Modern"},
@@ -1822,14 +1823,18 @@ function LicenseSettings({licenses, preselectedPlugin, onActivate, onDeactivate}
 
 // --- Radix Select wrapper ---
 
-function RadixSelect({value, onValueChange, options}: {
+function RadixSelect({value, onValueChange, options, testId}: {
     value: string;
     onValueChange: (value: string) => void;
     options: {value: string; label: string}[];
+    testId?: string;
 }) {
     return (
         <Select.Root value={value} onValueChange={onValueChange}>
-            <Select.Trigger className="radix-select-trigger">
+            <Select.Trigger
+                className="radix-select-trigger"
+                data-testid={testId ? `${testId}-trigger` : undefined}
+            >
                 <Select.Value/>
                 <Select.Icon>
                     <ChevronDownIcon size={14}/>
@@ -1839,7 +1844,12 @@ function RadixSelect({value, onValueChange, options}: {
                 <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
                     <Select.Viewport>
                         {options.map((opt) => (
-                            <Select.Item key={opt.value} value={opt.value} className="radix-select-item">
+                            <Select.Item
+                                key={opt.value}
+                                value={opt.value}
+                                className="radix-select-item"
+                                data-testid={testId ? `${testId}-item-${opt.value}` : undefined}
+                            >
                                 <Select.ItemText>{opt.label}</Select.ItemText>
                             </Select.Item>
                         ))}

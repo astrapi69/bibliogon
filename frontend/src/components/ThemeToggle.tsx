@@ -15,6 +15,7 @@ export default function ThemeToggle({variant}: Props) {
 
     return (
         <button
+            data-testid="theme-toggle"
             onClick={toggle}
             title={isDark ? "Light Mode" : "Dark Mode"}
             style={{
