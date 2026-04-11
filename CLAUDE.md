@@ -105,7 +105,7 @@ bibliogon/
 │   ├── components/        # Editor, Toolbar, ChapterSidebar, dialogs
 │   ├── pages/             # Dashboard, BookEditor, Settings, Help, GetStarted
 │   └── styles/global.css  # CSS variables, 3 themes x light/dark
-├── frontend/e2e/
+├── e2e/
 │   ├── smoke/             # fast smoke tests (per feature)
 │   └── full/              # full regression suite (52 tests)
 ├── docs/                  # CONCEPT.md, ROADMAP.md, CHANGELOG.md
@@ -128,7 +128,7 @@ bibliogon/
 
 - Backend + plugins: 228 (via `make test-backend` + `make test-plugins`)
 - Frontend (Vitest): 90
-- E2E (Playwright): 52 tests under `frontend/e2e/`, not on the `make test` default path
+- E2E (Playwright): 52 tests under `e2e/`, not on the `make test` default path
 - `make test` must stay green after every change
 
 ## Related projects
