@@ -25,7 +25,11 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
     const coverUrl = coverFilename ? `/api/books/${book.id}/assets/file/${coverFilename}` : null;
 
     return (
-        <div style={styles.card} onClick={() => { if (!menuOpen) onClick(); }}>
+        <div
+            style={styles.card}
+            data-testid={`book-card-${book.id}`}
+            onClick={() => { if (!menuOpen) onClick(); }}
+        >
             {coverUrl ? (
                 <img
                     src={coverUrl}
@@ -61,6 +65,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                         <DropdownMenu.Trigger asChild>
                             <button
                                 className="btn-icon"
+                                data-testid={`book-card-menu-${book.id}`}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{marginLeft: "auto"}}
                             >
@@ -71,6 +76,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                             <DropdownMenu.Content className="hamburger-menu-content" align="end" sideOffset={4}>
                                 <DropdownMenu.Item
                                     className="hamburger-menu-item"
+                                    data-testid={`book-card-menu-delete-${book.id}`}
                                     onSelect={(e) => { e.preventDefault(); onDelete(); }}
                                 >
                                     <Trash2 size={14}/> {t("ui.dashboard.move_to_trash", "In den Papierkorb")}
@@ -80,6 +86,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                                         <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
+                                            data-testid={`book-card-menu-delete-permanent-${book.id}`}
                                             onSelect={(e) => { e.preventDefault(); onDeletePermanent(); }}
                                             style={{color: "var(--danger)"}}
                                         >

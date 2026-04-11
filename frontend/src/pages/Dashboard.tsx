@@ -173,11 +173,16 @@ export default function Dashboard() {
                             </button>
                             <button
                                 className="btn-icon"
+                                data-testid="trash-toggle"
                                 onClick={() => setShowTrash(!showTrash)}
                                 style={showTrash ? {color: "var(--accent)"} : undefined}
                             >
                                 <Trash2 size={18}/>
-                                {trash.length > 0 && <span style={styles.trashBadge}>{trash.length}</span>}
+                                {trash.length > 0 && (
+                                    <span style={styles.trashBadge} data-testid="trash-badge">
+                                        {trash.length}
+                                    </span>
+                                )}
                             </button>
                         </div>
 
@@ -223,7 +228,7 @@ export default function Dashboard() {
             <main style={styles.main}>
                 {showTrash ? (
                     /* Trash view */
-                    <>
+                    <div data-testid="trash-view">
                         <div style={styles.mainHeader}>
                             <button className="btn-icon" onClick={() => setShowTrash(false)} title={t("ui.dashboard.back", "Zurück")}>
                                 <ChevronLeft size={18}/>
@@ -233,29 +238,45 @@ export default function Dashboard() {
                             <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                             <div style={{flex: 1}}/>
                             {trash.length > 0 && (
-                                <button className="btn btn-danger btn-sm" onClick={handleEmptyTrash}>
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    data-testid="trash-empty"
+                                    onClick={handleEmptyTrash}
+                                >
                                     <Trash size={14}/> {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
                                 </button>
                             )}
                         </div>
                         {trash.length === 0 ? (
-                            <div style={styles.emptyState}>
+                            <div style={styles.emptyState} data-testid="trash-empty-state">
                                 <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
                                 <p style={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
                             </div>
                         ) : (
                             <div style={styles.grid}>
                                 {trash.map((book) => (
-                                    <div key={book.id} style={styles.trashCard}>
+                                    <div
+                                        key={book.id}
+                                        style={styles.trashCard}
+                                        data-testid={`trash-card-${book.id}`}
+                                    >
                                         <div style={{flex: 1}}>
                                             <strong>{book.title}</strong>
                                             <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>{book.author}</p>
                                         </div>
                                         <div style={{display: "flex", gap: 6, flexShrink: 0}}>
-                                            <button className="btn btn-primary btn-sm" onClick={() => handleRestore(book.id)}>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                data-testid={`trash-restore-${book.id}`}
+                                                onClick={() => handleRestore(book.id)}
+                                            >
                                                 <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
                                             </button>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handlePermanentDelete(book.id)}>
+                                            <button
+                                                className="btn btn-danger btn-sm"
+                                                data-testid={`trash-delete-permanent-${book.id}`}
+                                                onClick={() => handlePermanentDelete(book.id)}
+                                            >
                                                 <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgueltig loeschen")}
                                             </button>
                                         </div>
@@ -263,7 +284,7 @@ export default function Dashboard() {
                                 ))}
                             </div>
                         )}
-                    </>
+                    </div>
                 ) : loading ? (
                     <p style={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
                 ) : books.length === 0 ? (
