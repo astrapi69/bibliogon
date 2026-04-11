@@ -1,122 +1,122 @@
-# Qualitaetspruefung und Teststrategie
+# Quality checks and test strategy
 
-## Schnell-Check nach jeder Aenderung
+## Quick check after every change
 
-### 1. Tests laufen lassen
+### 1. Run the tests
 
 ```bash
-# Alles auf einmal (MUSS gruen sein vor jedem Commit)
+# Everything at once (MUST be green before every commit)
 make test
 
-# Einzeln wenn gezielt:
-make test-backend           # pytest Backend (78 Tests)
-make test-plugins           # Alle Plugin-Tests (125 Tests)
-make test-plugin-export     # Nur Export (23 Tests)
-make test-plugin-grammar    # Nur Grammar (7 Tests)
-make test-plugin-kdp        # Nur KDP (10 Tests)
-make test-plugin-kinderbuch # Nur Kinderbuch (8 Tests)
-make test-frontend          # Vitest (21 Tests)
+# Individually when targeted:
+make test-backend           # pytest backend (78 tests)
+make test-plugins           # all plugin tests (125 tests)
+make test-plugin-export     # export only (23 tests)
+make test-plugin-grammar    # grammar only (7 tests)
+make test-plugin-kdp        # KDP only (10 tests)
+make test-plugin-kinderbuch # kinderbuch only (8 tests)
+make test-frontend          # Vitest (21 tests)
 
-# E2E (braucht laufende App)
-make dev                    # App starten
-npx playwright test         # 52 E2E-Tests
+# E2E (needs a running app)
+make dev                    # start the app
+npx playwright test         # 52 E2E tests
 ```
 
-### 2. Type-Check
+### 2. Type check
 
 ```bash
-# Frontend: TypeScript Compiler
+# Frontend: TypeScript compiler
 cd frontend && npx tsc --noEmit
 
-# Backend: mypy (optional, noch nicht eingerichtet)
+# Backend: mypy (optional, not set up yet)
 # cd backend && poetry run mypy app/
 ```
 
-### 3. Richtlinien manuell pruefen
+### 3. Manually check the rules
 
-Vor dem Commit diese Checkliste durchgehen:
+Go through this checklist before committing:
 
-- [ ] Kein `any` in TypeScript ohne Kommentar
-- [ ] Keine fetch()-Aufrufe ausserhalb von api/client.ts
-- [ ] Keine Browser-Dialoge (alert, confirm, prompt), AppDialog nutzen
-- [ ] Keine hardcodierten Strings in UI, i18n YAML nutzen
-- [ ] Neue UI-Elemente funktionieren in allen 6 Theme-Varianten (3 Themes x Light/Dark)
-- [ ] CSS nutzt Variables, keine festen Farben
-- [ ] Kein Em-Dash in Code oder Texten
-- [ ] Conventional Commit Message (feat:, fix:, refactor:, ...)
+- [ ] No `any` in TypeScript without a comment
+- [ ] No fetch() calls outside of api/client.ts
+- [ ] No browser dialogs (alert, confirm, prompt); use AppDialog
+- [ ] No hardcoded strings in the UI; use the i18n YAML
+- [ ] New UI elements work in all 6 theme variants (3 themes x light/dark)
+- [ ] CSS uses variables, no hardcoded colors
+- [ ] No em-dash in code or text
+- [ ] Conventional Commit message (feat:, fix:, refactor:, ...)
 
 ---
 
-## Teststrategie
+## Test strategy
 
-### Testpyramide
+### Test pyramid
 
 ```
-      /    E2E     \        Playwright (52 Tests)
-     / ------------ \       Wenige, kritische User-Flows
-    / Integration    \      pytest + TestClient (65 Tests)
-   / ---------------- \    API-Endpunkte mit echtem DB-Zustand
-  /    Unit Tests      \    pytest + Vitest (69+ Tests)
- / -------------------- \  Geschaeftslogik isoliert
+      /    E2E     \        Playwright (52 tests)
+     / ------------ \       Few, critical user flows
+    / Integration    \      pytest + TestClient (65 tests)
+   / ---------------- \    API endpoints with real DB state
+  /    Unit Tests      \    pytest + Vitest (69+ tests)
+ / -------------------- \  Business logic in isolation
 /   Mutation Testing      \ mutmut (Python) + Stryker (TypeScript)
- --------------------------  Prueft ob Tests echte Fehler finden
+ --------------------------  Verifies that tests actually catch bugs
 ```
 
-### Unit Tests (Backend - pytest)
+### Unit tests (Backend - pytest)
 
-**Was testen:** Service-Logik, Konvertierungen, Validierungen, Mappings.
-**Was NICHT testen:** FastAPI-Routing (das decken Integrationstests ab).
+**What to test:** service logic, conversions, validations, mappings.
+**What NOT to test:** FastAPI routing (integration tests cover that).
 
-**Wo:** `backend/tests/` und `plugins/{name}/tests/`
+**Where:** `backend/tests/` and `plugins/{name}/tests/`
 
-**Beispiel - neuer Service:**
+**Example - new service:**
 ```python
 # plugins/bibliogon-plugin-export/tests/test_tiptap_to_md.py
 
 def test_heading_conversion():
-    """H2 Node wird zu ## Markdown."""
+    """H2 node becomes ## in Markdown."""
     tiptap_json = {
         "type": "doc",
         "content": [
             {"type": "heading", "attrs": {"level": 2},
-             "content": [{"type": "text", "text": "Titel"}]}
+             "content": [{"type": "text", "text": "Title"}]}
         ]
     }
     result = tiptap_to_markdown(tiptap_json)
-    assert result.strip() == "## Titel"
+    assert result.strip() == "## Title"
 
 def test_image_roundtrip():
-    """Bild bleibt nach Import -> Export erhalten."""
-    md_input = "![Alt Text](assets/figures/bild.png)"
+    """Image survives import -> export."""
+    md_input = "![Alt Text](assets/figures/image.png)"
     html = markdown_to_html(md_input)
     tiptap_json = html_to_tiptap(html)
     md_output = tiptap_to_markdown(tiptap_json)
-    assert "bild.png" in md_output
+    assert "image.png" in md_output
 ```
 
-**Namenskonvention:** `test_{was_getestet_wird}.py`, Funktionen: `test_{szenario}()`
+**Naming convention:** `test_{what_is_tested}.py`, functions: `test_{scenario}()`
 
-**Wann neue Tests schreiben:**
-- Neuer Service oder neue Funktion: Mindestens Happy-Path + ein Fehlerfall.
-- Bugfix: Erst failing Test, dann Fix.
-- Import/Export-Logik: Roundtrip testen (Input -> Transformation -> Output -> Vergleich).
+**When to write new tests:**
+- New service or new function: at least a happy path + one error case.
+- Bug fix: failing test first, then fix.
+- Import/export logic: test roundtrips (input -> transformation -> output -> compare).
 
-### Unit Tests (Frontend - Vitest)
+### Unit tests (Frontend - Vitest)
 
-**Status:** Eingerichtet, 21 Tests aktiv (happy-dom, Node 18 kompatibel).
+**Status:** set up, 21 tests active (happy-dom, Node 18 compatible).
 
-**Was testen:** API Client Funktionen, Utility-Funktionen, komplexe Hooks.
-**Was NICHT testen:** Einfache Komponenten die nur rendern (das decken E2E-Tests ab).
+**What to test:** API client functions, utility functions, complex hooks.
+**What NOT to test:** simple components that just render (E2E tests cover that).
 
-**Wo:** Neben der Datei: `api/client.test.ts`, `hooks/useI18n.test.ts`
+**Where:** next to the file: `api/client.test.ts`, `hooks/useI18n.test.ts`
 
-**Ausfuehrung:**
+**How to run:**
 ```bash
-make test-frontend          # Alle Frontend-Tests
-cd frontend && npx vitest   # Watch-Mode
+make test-frontend          # all frontend tests
+cd frontend && npx vitest   # watch mode
 ```
 
-**Beispiel:**
+**Example:**
 ```typescript
 // src/api/client.test.ts
 import { describe, it, expect, vi } from 'vitest'
@@ -135,14 +135,14 @@ describe('API Client', () => {
 })
 ```
 
-### Integrationstests (Backend - pytest + TestClient)
+### Integration tests (Backend - pytest + TestClient)
 
-**Was testen:** API-Endpunkte mit echtem DB-Zustand, Plugin-Interaktion.
-**Unterschied zu Unit Tests:** Hier laeuft FastAPI mit TestClient und echter SQLite-DB (in-memory).
+**What to test:** API endpoints with real DB state, plugin interaction.
+**Difference from unit tests:** here FastAPI runs via TestClient with a real SQLite DB (in-memory).
 
-**Wo:** `backend/tests/test_api.py`, `backend/tests/test_phase4.py` (existieren bereits)
+**Where:** `backend/tests/test_api.py`, `backend/tests/test_phase4.py` (already exist)
 
-**Beispiel:**
+**Example:**
 ```python
 # backend/tests/test_api.py
 from fastapi.testclient import TestClient
@@ -151,46 +151,46 @@ from app.main import app
 client = TestClient(app)
 
 def test_create_and_export_book():
-    """Buch anlegen, Kapitel hinzufuegen, exportieren."""
-    # Buch erstellen
+    """Create a book, add a chapter, export it."""
+    # Create book
     resp = client.post("/api/books", json={"title": "Test", "author": "A"})
     assert resp.status_code == 200
     book_id = resp.json()["id"]
 
-    # Kapitel hinzufuegen
+    # Add chapter
     resp = client.post(f"/api/books/{book_id}/chapters",
-                       json={"title": "Kapitel 1", "content": "{}"})
+                       json={"title": "Chapter 1", "content": "{}"})
     assert resp.status_code == 200
 
-    # Export triggern
+    # Trigger export
     resp = client.get(f"/api/books/{book_id}/export/epub")
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/epub+zip"
 ```
 
-**Wann neue Integrationstests:**
-- Neuer API-Endpunkt: Happy-Path + Fehlerfall (404, 422).
-- Plugin-Installation: ZIP-Upload -> Plugin aktiv -> Endpunkt erreichbar.
-- Import: Echtes write-book-template Projekt -> alle Kapitel, Assets, Metadaten korrekt.
+**When to write new integration tests:**
+- New API endpoint: happy path + error case (404, 422).
+- Plugin installation: ZIP upload -> plugin active -> endpoint reachable.
+- Import: a real write-book-template project -> all chapters, assets, metadata correct.
 
-### E2E-Tests (Playwright)
+### E2E tests (Playwright)
 
-**Was testen:** Kritische User-Flows aus Autorenperspektive.
-**Wo:** `frontend/tests/` oder `e2e/` (52 Tests existieren)
+**What to test:** critical user flows from the author's perspective.
+**Where:** `frontend/tests/` or `e2e/` (52 tests exist)
 
-**Bestehende Abdeckung:**
-- Dashboard: Buch erstellen, loeschen, Backup/Import
-- Editor: Kapitel anlegen, editieren, sortieren, Metadaten
-- Export: Format waehlen, exportieren, Datei herunterladen
-- Settings: Plugins, Lizenzen, Sprache, Theme
-- Navigation: Alle Seiten erreichbar, Links funktionieren
+**Existing coverage:**
+- Dashboard: create, delete, backup/import a book
+- Editor: create, edit, sort chapters, metadata
+- Export: pick a format, export, download the file
+- Settings: plugins, licenses, language, theme
+- Navigation: every page reachable, links work
 
-**Wann neue E2E-Tests:**
-- Neues Plugin mit UI: Mindestens ein Flow (Plugin aktivieren -> Feature nutzen).
-- Neuer Dialog/Modal: Oeffnen, Formular ausfuellen, Absenden, Ergebnis pruefen.
-- Regression: Wenn ein Bug im UI gefunden wird, E2E-Test dafuer schreiben.
+**When to write new E2E tests:**
+- New plugin with UI: at least one flow (enable plugin -> use feature).
+- New dialog/modal: open, fill the form, submit, check the result.
+- Regression: when a UI bug is found, write an E2E test for it.
 
-**Beispiel:**
+**Example:**
 ```typescript
 // e2e/export.spec.ts
 import { test, expect } from '@playwright/test'
@@ -198,26 +198,26 @@ import { test, expect } from '@playwright/test'
 test('export book as EPUB with manual TOC', async ({ page }) => {
   await page.goto('/books/test-book-id')
 
-  // Export-Dialog oeffnen
+  // Open the export dialog
   await page.click('[data-testid="export-button"]')
   await expect(page.locator('.export-dialog')).toBeVisible()
 
-  // EPUB waehlen, manuelles TOC aktivieren
+  // Pick EPUB, enable manual TOC
   await page.click('[data-testid="format-epub"]')
   await page.check('[data-testid="use-manual-toc"]')
   await page.click('[data-testid="export-start"]')
 
-  // Download pruefen
+  // Verify the download
   const download = await page.waitForEvent('download')
   expect(download.suggestedFilename()).toContain('.epub')
 })
 ```
 
-### Mutation Testing (Backend - mutmut)
+### Mutation testing (Backend - mutmut)
 
-**Zweck:** Prueft ob die Tests echte Fehler finden wuerden. mutmut veraendert den Quellcode (Mutanten) und prueft ob mindestens ein Test fehlschlaegt. Ueberlebende Mutanten zeigen Luecken in der Testqualitaet.
+**Purpose:** checks whether the tests actually catch real bugs. mutmut changes the source code (mutants) and checks whether at least one test fails. Surviving mutants reveal gaps in test quality.
 
-**Status:** Einzurichten. Dev-Dependency via Poetry.
+**Status:** to be set up. Dev dependency via Poetry.
 
 **Setup:**
 ```bash
@@ -225,7 +225,7 @@ cd backend
 poetry add --group dev mutmut
 ```
 
-**pyproject.toml Konfiguration:**
+**pyproject.toml configuration:**
 ```toml
 [tool.mutmut]
 paths_to_mutate = "app/"
@@ -234,7 +234,7 @@ runner = "python -m pytest"
 dict_synonyms = "Struct,NamedStruct"
 ```
 
-**Fuer Plugins separat:**
+**For plugins separately:**
 ```toml
 # plugins/bibliogon-plugin-export/pyproject.toml
 [tool.mutmut]
@@ -243,64 +243,64 @@ tests_dir = "tests/"
 runner = "python -m pytest"
 ```
 
-**Ausfuehrung:**
+**How to run:**
 ```bash
-# Backend komplett (dauert lange, Nightly oder manuell)
+# Full backend (slow, nightly or manual)
 cd backend && poetry run mutmut run
 
-# Nur ein bestimmtes Modul (schneller, gezielt)
+# Just one module (faster, targeted)
 cd backend && poetry run mutmut run --paths-to-mutate app/services/
 
-# Nur ein Plugin
+# Just one plugin
 cd plugins/bibliogon-plugin-export && poetry run mutmut run
 
-# Ergebnisse anzeigen
+# Show results
 poetry run mutmut results
 
-# Ueberlebende Mutanten im Detail
+# Surviving mutants in detail
 poetry run mutmut show <id>
 
-# HTML-Report
+# HTML report
 poetry run mutmut html
 ```
 
-**Wann ausfuehren:**
-- Nach groesseren Refactorings (pruefen ob Tests noch greifen).
-- Bevor eine Phase als abgeschlossen gilt.
-- Nightly in der CI-Pipeline (spaeter).
-- Wenn Coverage hoch ist aber Vertrauen in Testqualitaet niedrig.
+**When to run:**
+- After bigger refactorings (check whether the tests still hold).
+- Before a phase is declared complete.
+- Nightly in the CI pipeline (later).
+- When coverage is high but confidence in test quality is low.
 
-**Wie mit Ergebnissen umgehen:**
-- Ueberlebende Mutanten in kritischem Code (Services, Konvertierungen): Tests ergaenzen.
-- Ueberlebende Mutanten in trivialem Code (Logging, Formatierung): Ignorieren, kein Test-Bloat.
-- Mutation Score als Richtwert: >= 60% fuer Kernmodule (app/services/, Plugin-Logik), kein hartes Gate.
-- `mutmut results` in die Session-Zusammenfassung aufnehmen wenn ausgefuehrt.
+**How to act on the results:**
+- Surviving mutants in critical code (services, conversions): add tests.
+- Surviving mutants in trivial code (logging, formatting): ignore, no test bloat.
+- Mutation score as a guideline: >= 60% for core modules (app/services/, plugin logic), no hard gate.
+- Include `mutmut results` in the session summary when it was run.
 
-**Kritische Module zuerst testen:**
-1. `plugins/bibliogon-plugin-export/bibliogon_export/tiptap_to_md.py` - Konvertierungslogik
-2. `plugins/bibliogon-plugin-export/bibliogon_export/scaffolder.py` - Projektstruktur
-3. `backend/app/services/` - Kern-Geschaeftslogik
-4. `backend/app/licensing.py` - Sicherheitskritisch
+**Test the critical modules first:**
+1. `plugins/bibliogon-plugin-export/bibliogon_export/tiptap_to_md.py` - conversion logic
+2. `plugins/bibliogon-plugin-export/bibliogon_export/scaffolder.py` - project structure
+3. `backend/app/services/` - core business logic
+4. `backend/app/licensing.py` - security-critical
 
-**Referenz-Prompt fuer Claude Code:**
+**Reference prompt for Claude Code:**
 ```
-Ich moechte mutmut (Mutation Testing) in dieses Projekt integrieren.
+I want to integrate mutmut (mutation testing) into this project.
 
-Schritte:
-1. Analysiere die vorhandene pyproject.toml und die bestehende Teststruktur
-2. Fuege mutmut als dev-Dependency via Poetry hinzu
-3. Konfiguriere mutmut in der pyproject.toml (paths_to_mutate, tests_dir, runner)
-4. Fuehre einen ersten mutmut run durch und zeige mir die Ergebnisse
-5. Falls Tests fehlen oder Mutanten ueberleben, schlage konkrete Verbesserungen vor
+Steps:
+1. Analyze the existing pyproject.toml and the current test structure
+2. Add mutmut as a dev dependency via Poetry
+3. Configure mutmut in pyproject.toml (paths_to_mutate, tests_dir, runner)
+4. Run a first mutmut run and show me the results
+5. If tests are missing or mutants survive, propose concrete improvements
 
-Wichtig: Nutze Poetry fuer alles, keine pip-Aufrufe.
+Important: use Poetry for everything, no pip calls.
 ```
 
-### Mutation Testing (Frontend - Stryker Mutator)
+### Mutation testing (Frontend - Stryker Mutator)
 
-**Zweck:** Dasselbe Prinzip wie mutmut, aber fuer TypeScript/React. Stryker Mutator ist das Aequivalent fuer das JS/TS-Oekosystem.
+**Purpose:** same principle as mutmut, but for TypeScript/React. Stryker Mutator is the equivalent for the JS/TS ecosystem.
 
-**Status:** Einzurichten (Vitest laeuft bereits, Stryker kann darauf aufbauen).
+**Status:** to be set up (Vitest is already running, Stryker can build on it).
 
 **Setup:**
 ```bash
@@ -335,47 +335,47 @@ npm install -D @stryker-mutator/core @stryker-mutator/vitest-runner @stryker-mut
 }
 ```
 
-**Ausfuehrung:**
+**How to run:**
 ```bash
-# Komplett (dauert lange, Nightly oder manuell)
+# Full run (slow, nightly or manual)
 cd frontend && npx stryker run
 
-# Nur ein bestimmtes Verzeichnis
+# Just one directory
 cd frontend && npx stryker run --mutate "src/api/**/*.ts"
 
-# Nur ein bestimmtes File
+# Just one file
 cd frontend && npx stryker run --mutate "src/api/client.ts"
 ```
 
-**Kritische Frontend-Module zuerst testen:**
-1. `src/api/client.ts` - Alle API-Aufrufe, Error-Handling
-2. `src/hooks/useI18n.ts` - i18n-Logik
-3. `src/hooks/useTheme.ts` - Theme-Logik
-4. Utility-Funktionen
+**Test the critical frontend modules first:**
+1. `src/api/client.ts` - all API calls, error handling
+2. `src/hooks/useI18n.ts` - i18n logic
+3. `src/hooks/useTheme.ts` - theme logic
+4. Utility functions
 
-**Referenz-Prompt fuer Claude Code:**
+**Reference prompt for Claude Code:**
 ```
-Ich moechte Stryker Mutator (Mutation Testing) im Frontend integrieren.
+I want to integrate Stryker Mutator (mutation testing) on the frontend.
 
-Schritte:
-1. Vitest laeuft bereits. Installiere @stryker-mutator/core, @stryker-mutator/vitest-runner, @stryker-mutator/typescript-checker
-2. Erstelle stryker.config.json (mutate: src/api/, src/hooks/, src/components/, checkers: typescript, testRunner: vitest)
-3. Fuehre einen ersten stryker run durch auf src/api/client.ts und zeige die Ergebnisse
-4. Falls Mutanten ueberleben, schlage konkrete Tests vor
+Steps:
+1. Vitest is already running. Install @stryker-mutator/core, @stryker-mutator/vitest-runner, @stryker-mutator/typescript-checker
+2. Create stryker.config.json (mutate: src/api/, src/hooks/, src/components/, checkers: typescript, testRunner: vitest)
+3. Run a first stryker run on src/api/client.ts and show the results
+4. If mutants survive, propose concrete tests
 ```
 
 ---
 
-## Automatisierung (noch aufzubauen)
+## Automation (still to build)
 
-### Empfohlene Makefile-Erweiterungen
+### Recommended Makefile extensions
 
 ```makefile
-# Type-Check Frontend
+# Frontend type check
 check-types:
 	cd frontend && npx tsc --noEmit
 
-# Mutation Testing Backend (Nightly/manuell)
+# Backend mutation testing (nightly/manual)
 mutmut-backend:
 	cd backend && poetry run mutmut run
 
@@ -389,46 +389,46 @@ mutmut-html:
 	cd backend && poetry run mutmut html
 	@echo "Report: backend/html/index.html"
 
-# Mutation Testing Frontend (Nightly/manuell)
+# Frontend mutation testing (nightly/manual)
 stryker:
 	cd frontend && npx stryker run
 
 stryker-api:
 	cd frontend && npx stryker run --mutate "src/api/**/*.ts"
 
-# Alle Checks zusammen (vor Push)
+# All checks together (before push)
 check-all: test check-types
-	@echo "Alle Checks bestanden."
+	@echo "All checks passed."
 
-# Alles zusammen
+# Everything together
 test-all: test test-frontend
-	@echo "Alle Tests bestanden."
+	@echo "All tests passed."
 ```
 
-### CI-Pipeline (spaeter, wenn GitHub Actions eingerichtet)
+### CI pipeline (later, when GitHub Actions is set up)
 
 ```
-1. make check-types        # TypeScript Compiler
-2. make test-backend       # pytest Backend
-3. make test-plugins       # pytest Plugins
+1. make check-types        # TypeScript compiler
+2. make test-backend       # pytest backend
+3. make test-plugins       # pytest plugins
 4. make test-frontend      # Vitest
-5. make dev-bg             # App starten
+5. make dev-bg             # start the app
 6. npx playwright test     # E2E
-7. make dev-down           # App stoppen
+7. make dev-down           # stop the app
 
-Nightly (separat, dauert laenger):
-8. make mutmut-backend     # Mutation Testing Backend (Python)
-9. make mutmut-export      # Mutation Testing Export-Plugin (Python)
-10. make stryker           # Mutation Testing Frontend (TypeScript)
+Nightly (separate, slower):
+8. make mutmut-backend     # mutation testing backend (Python)
+9. make mutmut-export      # mutation testing export plugin (Python)
+10. make stryker           # mutation testing frontend (TypeScript)
 ```
 
 ---
 
-## Prioritaet fuer naechste Verbesserungen
+## Priority for the next improvements
 
-1. **mutmut einrichten** - Mutation Testing fuer Backend und Export-Plugin
-2. **Stryker einrichten** - Mutation Testing fuer Frontend (Vitest laeuft bereits)
-3. **make check-all** - Ein Befehl fuer alles vor dem Push
-4. **Roundtrip-Tests** - Import -> Editor -> Export -> epubcheck fuer jedes Buchformat
-5. **mypy einrichten** - Type-Checking fuer Python Backend
-6. **CI-Pipeline** - GitHub Actions mit allen Checks + Nightly mutmut/Stryker
+1. **Set up mutmut** - mutation testing for backend and export plugin
+2. **Set up Stryker** - mutation testing for the frontend (Vitest is already running)
+3. **make check-all** - a single command for everything before push
+4. **Roundtrip tests** - import -> editor -> export -> epubcheck for every book format
+5. **Set up mypy** - type checking for the Python backend
+6. **CI pipeline** - GitHub Actions with all checks + nightly mutmut/Stryker
