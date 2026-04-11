@@ -251,16 +251,85 @@ def test_async_audiobook_blocks_regeneration_when_existing(client, tmp_path, mon
         _cleanup(client, book_id)
 
 
-def test_async_audiobook_overwrite_existing_setting_skips_warning(client, tmp_path, monkeypatch):
-    """``settings.overwrite_existing: true`` lets the second call go through silently."""
-    cfg_dir = tmp_path / "config" / "plugins"
-    cfg_dir.mkdir(parents=True)
-    (cfg_dir / "audiobook.yaml").write_text(
-        "settings:\n"
-        "  overwrite_existing: true\n"
-        "  read_chapter_number: false\n",
-        encoding="utf-8",
-    )
+def test_book_overwrite_flag_persists_via_patch(client, tmp_path, monkeypatch):
+    """PATCH sets the per-book overwrite flag and GET reports it back."""
+    monkeypatch.chdir(tmp_path)
+    book_id = _create_book_with_chapters(client, 1)
+    try:
+        initial = client.get(f"/api/books/{book_id}").json()
+        assert initial["audiobook_overwrite_existing"] is False
+
+        r = client.patch(
+            f"/api/books/{book_id}",
+            json={"audiobook_overwrite_existing": True},
+        )
+        assert r.status_code == 200
+        assert r.json()["audiobook_overwrite_existing"] is True
+
+        refetched = client.get(f"/api/books/{book_id}").json()
+        assert refetched["audiobook_overwrite_existing"] is True
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_book_overwrite_flag_disables_content_hash_cache(client, tmp_path, monkeypatch):
+    """When the flag is on, every chapter is regenerated even if the cache could hit.
+
+    Counts synthesize() calls across two back-to-back exports with the same
+    content, engine, voice and speed. Flag off: second run hits cache and
+    synthesizes 0 chapters. Flag on: second run regenerates all chapters.
+    """
+    monkeypatch.chdir(tmp_path)
+    book_id = _create_book_with_chapters(client, 2)
+    try:
+        call_count = {"n": 0}
+
+        async def counting_synth(text, output_path, voice="", language="de", rate=""):
+            call_count["n"] += 1
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_path).write_bytes(b"fake mp3 bytes")
+
+        engine = AsyncMock()
+        engine.synthesize = counting_synth
+
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=engine):
+            # First export: cold cache, all chapters synthesize.
+            _wait(
+                client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"],
+            )
+            first_run_calls = call_count["n"]
+            assert first_run_calls == 2
+
+            # Second export with flag OFF: cache hits, nothing re-synthesized.
+            call_count["n"] = 0
+            _wait(
+                client.post(
+                    f"/api/books/{book_id}/export/async/audiobook?confirm_overwrite=true",
+                ).json()["job_id"],
+            )
+            assert call_count["n"] == 0, "cache should have covered both chapters"
+
+            # Flip the per-book flag on; cache must be ignored now.
+            client.patch(
+                f"/api/books/{book_id}",
+                json={"audiobook_overwrite_existing": True},
+            )
+
+            call_count["n"] = 0
+            _wait(
+                client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"],
+            )
+            assert call_count["n"] == 2, "flag should force full regeneration"
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_async_audiobook_per_book_overwrite_flag_skips_warning(client, tmp_path, monkeypatch):
+    """``Book.audiobook_overwrite_existing = true`` lets the second call go through silently.
+
+    Replaces the former plugin-global ``audiobook.settings.overwrite_existing`` flag,
+    which has been removed in favor of the per-book column.
+    """
     monkeypatch.chdir(tmp_path)
     book_id = _create_book_with_chapters(client, 1)
     try:
@@ -268,7 +337,15 @@ def test_async_audiobook_overwrite_existing_setting_skips_warning(client, tmp_pa
             _wait(
                 client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"],
             )
-            # No confirm_overwrite param needed because the config setting is on
+            # Opt the book into always-overwrite mode via PATCH.
+            r_patch = client.patch(
+                f"/api/books/{book_id}",
+                json={"audiobook_overwrite_existing": True},
+            )
+            assert r_patch.status_code == 200
+            assert r_patch.json()["audiobook_overwrite_existing"] is True
+
+            # No confirm_overwrite param needed because the per-book flag is on.
             r = client.post(f"/api/books/{book_id}/export/async/audiobook")
             assert r.status_code == 200
             _wait(r.json()["job_id"])

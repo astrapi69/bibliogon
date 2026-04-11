@@ -69,6 +69,26 @@ def _load_book(book_id: str) -> tuple[dict[str, Any], list[dict[str, Any]], list
         _close_db(db_gen)
 
 
+def _load_book_overwrite_flag(book_id: str) -> bool:
+    """Read only the ``audiobook_overwrite_existing`` column for one book.
+
+    Used by the pre-flight 409 check so we do not pay the cost of loading
+    the full book + chapters just to decide whether to skip the warning.
+    Returns False when the column or the book is missing.
+    """
+    if _book_model is None:
+        return False
+    db_gen, db = _require_db()
+    try:
+        Book = _book_model
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if book is None:
+            return False
+        return bool(getattr(book, "audiobook_overwrite_existing", False))
+    finally:
+        _close_db(db_gen)
+
+
 def _query_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Query book data from DB and return as dicts."""
     from sqlalchemy.orm import joinedload
@@ -104,6 +124,9 @@ def _serialize_book(book: Any) -> dict[str, Any]:
         "tts_voice": getattr(book, "tts_voice", None),
         "tts_language": getattr(book, "tts_language", None),
         "tts_speed": getattr(book, "tts_speed", None),
+        "audiobook_overwrite_existing": bool(
+            getattr(book, "audiobook_overwrite_existing", False)
+        ),
     }
 
 
@@ -377,8 +400,8 @@ async def export_async(
     409 response carries the existing metadata so the frontend can show
     the regeneration warning dialog with concrete details (engine, voice,
     creation date) before letting the user click "Trotzdem neu erstellen".
-    The ``overwrite_existing`` plugin setting is honoured: when true,
-    the warning is logged but the export proceeds without confirmation.
+    The per-book ``Book.audiobook_overwrite_existing`` column is honoured:
+    when true, the warning is skipped and the export proceeds silently.
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'.")
@@ -393,8 +416,7 @@ async def export_async(
         except ImportError:
             audiobook_storage = None  # type: ignore[assignment]
         if audiobook_storage is not None and audiobook_storage.has_audiobook(book_id):
-            settings_dict = _read_audiobook_settings()
-            if not settings_dict.get("overwrite_existing", False):
+            if not _load_book_overwrite_flag(book_id):
                 existing = audiobook_storage.load_metadata(book_id) or {}
                 raise HTTPException(
                     status_code=409,
@@ -481,9 +503,15 @@ async def _run_audiobook_job(
     # Point the generator at the persistent audiobook directory so it
     # can skip chapters whose content + engine + voice + speed have not
     # changed since the last export (content-hash cache).
+    #
+    # When the per-book ``audiobook_overwrite_existing`` flag is true the
+    # cache is disabled entirely so every chapter is regenerated. This is
+    # the explicit "ignore the cache, redo the whole book" escape hatch
+    # the user toggles from the metadata editor.
     book_id = book_data.get("id")
+    overwrite_existing = bool(book_data.get("audiobook_overwrite_existing", False))
     cache_dir: Path | None = None
-    if book_id:
+    if book_id and not overwrite_existing:
         candidate = audiobook_storage.audiobook_dir(book_id) / "chapters"
         if candidate.exists():
             cache_dir = candidate
