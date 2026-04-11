@@ -56,6 +56,7 @@ export interface Book {
     tts_speed: string | null;
     audiobook_merge: string | null;
     audiobook_filename: string | null;
+    audiobook_overwrite_existing: boolean;
     created_at: string;
     updated_at: string;
 }

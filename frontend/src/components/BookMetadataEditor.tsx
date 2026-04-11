@@ -18,6 +18,7 @@ interface Props {
 export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Props) {
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
+    const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
 
@@ -47,6 +48,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             audiobook_merge: book.audiobook_merge || "merged",
             audiobook_filename: book.audiobook_filename || "",
         });
+        setAudiobookOverwrite(Boolean(book.audiobook_overwrite_existing));
     }, [book]);
 
     const set = (key: string, value: string) => setForm((prev) => ({...prev, [key]: value}));
@@ -58,6 +60,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
             for (const [key, value] of Object.entries(form)) {
                 data[key] = key === "keywords" && value ? value : (value || null);
             }
+            data.audiobook_overwrite_existing = audiobookOverwrite;
             await onSave(data);
             notify.success(t("ui.common.save", "Metadaten gespeichert"));
         } catch (err) {
@@ -211,11 +214,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             speed={form.tts_speed || "1.0"}
                             merge={form.audiobook_merge || "merged"}
                             customFilename={form.audiobook_filename || ""}
+                            overwriteExisting={audiobookOverwrite}
                             onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
                             onVoiceChange={(v: string) => set("tts_voice", v)}
                             onSpeedChange={(v: string) => set("tts_speed", v)}
                             onMergeChange={(v: string) => set("audiobook_merge", v)}
                             onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
+                            onOverwriteExistingChange={setAudiobookOverwrite}
                         />
                         <AudiobookDownloads bookId={book.id}/>
                     </div>
@@ -310,14 +315,16 @@ function slugifyForFilename(text: string): string {
 }
 
 function AudiobookBookConfig({
-    bookLanguage, bookTitle, engine, voice, speed, merge, customFilename,
+    bookLanguage, bookTitle, engine, voice, speed, merge, customFilename, overwriteExisting,
     onEngineChange, onVoiceChange, onSpeedChange, onMergeChange, onCustomFilenameChange,
+    onOverwriteExistingChange,
 }: {
     bookLanguage: string; bookTitle: string; engine: string; voice: string;
-    speed: string; merge: string; customFilename: string;
+    speed: string; merge: string; customFilename: string; overwriteExisting: boolean;
     onEngineChange: (v: string) => void; onVoiceChange: (v: string) => void;
     onSpeedChange: (v: string) => void; onMergeChange: (v: string) => void;
     onCustomFilenameChange: (v: string) => void;
+    onOverwriteExistingChange: (v: boolean) => void;
 }) {
     const {t} = useI18n();
     const [voices, setVoices] = useState<AudiobookVoice[]>([]);
@@ -422,6 +429,19 @@ function AudiobookBookConfig({
                 value={customFilename}
                 onChange={onCustomFilenameChange}
             />
+            <div className="field">
+                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <input
+                        type="checkbox"
+                        checked={overwriteExisting}
+                        onChange={(e) => onOverwriteExistingChange(e.target.checked)}
+                    />
+                    {t("ui.audiobook.overwrite_label", "Bestehende Dateien überschreiben")}
+                </label>
+                <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 4}}>
+                    {t("ui.audiobook.overwrite_description", "Wenn aktiviert, werden bei einem erneuten Export alle bereits generierten MP3-Dateien dieses Buchs überschrieben. Wenn deaktiviert, werden nur fehlende oder geänderte Kapitel neu generiert (Standard).")}
+                </small>
+            </div>
         </>
     );
 }

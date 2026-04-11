@@ -506,6 +506,8 @@ ui:
     skip_types: "Überspringe Kapitel-Typen"
     custom_filename: "Eigener Dateiname"
     custom_filename_hint: "Ohne Dateiendung. Leer lassen, um den Standardnamen zu verwenden."
+    overwrite_label: "Bestehende Dateien überschreiben"
+    overwrite_description: "Wenn aktiviert, werden bei einem erneuten Export alle bereits generierten MP3-Dateien dieses Buchs überschrieben. Wenn deaktiviert, werden nur fehlende oder geänderte Kapitel neu generiert (Standard)."
     voices_loading: "Stimmen werden geladen..."
     preview: "Vorhören"
     engine_unavailable: "Engine nicht verfügbar"

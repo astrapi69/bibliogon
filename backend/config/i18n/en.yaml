@@ -506,6 +506,8 @@ ui:
     skip_types: "Skip chapter types"
     custom_filename: "Custom filename"
     custom_filename_hint: "Without extension. Leave empty to use the default name."
+    overwrite_label: "Overwrite existing files"
+    overwrite_description: "When enabled, all previously generated MP3 files for this book will be overwritten on the next export. When disabled, only missing or changed chapters will be regenerated (default)."
     voices_loading: "Loading voices..."
     preview: "Preview"
     engine_unavailable: "Engine unavailable"
