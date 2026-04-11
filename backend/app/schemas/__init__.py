@@ -80,6 +80,7 @@ class BookUpdate(BaseModel):
     tts_speed: str | None = None
     audiobook_merge: str | None = None
     audiobook_filename: str | None = None
+    audiobook_overwrite_existing: bool | None = None
     # ms-tools per-book threshold overrides
     ms_tools_max_sentence_length: int | None = None
     ms_tools_repetition_window: int | None = None
@@ -121,6 +122,7 @@ class BookOut(BaseModel):
     tts_speed: str | None = None
     audiobook_merge: str | None = None
     audiobook_filename: str | None = None
+    audiobook_overwrite_existing: bool = False
     ms_tools_max_sentence_length: int | None = None
     ms_tools_repetition_window: int | None = None
     ms_tools_max_filler_ratio: float | None = None

@@ -83,6 +83,10 @@ class Book(Base):
     audiobook_merge: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Custom audiobook output filename (without extension). None -> derive from book title.
     audiobook_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # When True, the next audiobook export regenerates every chapter and
+    # skips the "audiobook already exists" confirm dialog. Replaces the
+    # former plugin-global ``audiobook.settings.overwrite_existing`` flag.
+    audiobook_overwrite_existing: Mapped[bool] = mapped_column(default=False)
 
     # ms-tools per-book threshold overrides. None -> fall back to plugin defaults.
     ms_tools_max_sentence_length: Mapped[int | None] = mapped_column(Integer, nullable=True)
