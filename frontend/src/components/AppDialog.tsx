@@ -132,12 +132,17 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
 
                                 <div className="dialog-footer">
                                     {dialog.type !== "alert" && (
-                                        <button className="btn btn-ghost" onClick={handleCancel}>
+                                        <button
+                                            className="btn btn-ghost"
+                                            data-testid="app-dialog-cancel"
+                                            onClick={handleCancel}
+                                        >
                                             {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
                                         </button>
                                     )}
                                     <button
                                         className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
+                                        data-testid="app-dialog-confirm"
                                         onClick={handleConfirm}
                                         disabled={dialog.type === "prompt" && !inputValue.trim()}
                                         autoFocus={dialog.type !== "prompt"}

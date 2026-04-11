@@ -14,10 +14,21 @@ export const test = base.extend<{
 });
 
 /**
- * Accept a custom confirm/alert dialog by clicking the confirm button.
+ * Accept a custom confirm/alert dialog by clicking the confirm
+ * button. Uses the data-testid on the AppDialog confirm button so
+ * the helper stays stable across language changes and ASCII-vs-
+ * real-umlaut text variations.
  */
 export async function acceptDialog(page: Page) {
-    await page.getByRole("button", {name: "Bestaetigen"}).or(page.getByRole("button", {name: "OK"})).click();
+    await page.getByTestId("app-dialog-confirm").click();
+}
+
+/**
+ * Cancel a custom confirm/prompt dialog by clicking the cancel
+ * button.
+ */
+export async function cancelDialog(page: Page) {
+    await page.getByTestId("app-dialog-cancel").click();
 }
 
 /**
@@ -25,7 +36,7 @@ export async function acceptDialog(page: Page) {
  */
 export async function fillPrompt(page: Page, value: string) {
     await page.locator("input.input").last().fill(value);
-    await page.getByRole("button", {name: "Bestaetigen"}).click();
+    await page.getByTestId("app-dialog-confirm").click();
 }
 
 export {createBook, createChapter, resetDb};
