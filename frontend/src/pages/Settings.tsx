@@ -291,6 +291,9 @@ function AppSettings({config, onSave, saving}: {
                             {value: "warm-literary", label: "Warm Literary"},
                             {value: "cool-modern", label: "Cool Modern"},
                             {value: "nord", label: "Nord"},
+                            {value: "classic", label: "Klassisch"},
+                            {value: "studio", label: "Studio"},
+                            {value: "notebook", label: "Notizbuch"},
                         ]}
                     />
                 </div>
