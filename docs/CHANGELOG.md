@@ -2,6 +2,48 @@
 
 Erledigte Phasen und deren Inhalt. Aktueller Stand in CLAUDE.md, offene Punkte in ROADMAP.md.
 
+## [0.12.0] - 2026-04-11
+
+### Added
+- **Backup-Vergleich (V-02):** `POST /api/backup/compare` vergleicht zwei hochgeladene `.bgb`-Dateien in-memory ohne Server-State. Liefert per-Buch-Diff mit Metadaten-Tabelle und Zwei-Spalten-Kapitel-Vergleich (rot/grün) auf HTML-zu-Plain-Text projiziertem Content. Frontend-Dialog im Dashboard neben dem Versionsgeschichte-Toggle. Stop-Gap bis zur geplanten Git-Sicherung.
+- **Per-Buch Audiobook-Overwrite-Flag:** `Book.audiobook_overwrite_existing` (neue Alembic-Migration) ersetzt das plugin-globale `overwrite_existing`-Flag. Sichtbar als Checkbox in Metadaten > Audiobook. Wenn aktiviert: Content-Hash-Cache wird für diesen Lauf deaktiviert, die "audiobook_exists" 409-Warnung wird übersprungen.
+- **Per-Buch Audiobook-Skip-Chapter-Types:** `Book.audiobook_skip_chapter_types` (JSON-text) ersetzt das plugin-globale `skip_types`. UI in Metadaten > Audiobook als Checkbox-Liste aller 26 Typen, gruppiert in "Im Buch vorhanden" und "Weitere Typen". Dry-Run-Cost-Estimate respektiert die per-Buch-Liste (zwei hardcoded Skip-Sets im Backend entfernt, Bug-Fix).
+- **Per-Buch ms-tools-Schwellwerte (M-16):** `Book.ms_tools_max_sentence_length`, `ms_tools_repetition_window`, `ms_tools_max_filler_ratio` als Spalten. `/ms-tools/check` akzeptiert `book_id` und löst Thresholds in der Reihenfolge Request > Buch > Plugin-Config > Default auf.
+- **Auto-Sanitization beim Markdown-Import (M-12):** Neuer Hook `content_pre_import` im Hookspec, ms-tools implementiert ihn via `sanitize()` auf Buch-Sprache. Gated durch `auto_sanitize_on_import: true` in `ms-tools.yaml`. Wirkt auf alle 4 Import-Pfade.
+- **5 neue ChapterTypes:** `part`, `final_thoughts`, `also_by_author`, `excerpt`, `call_to_action`. Insgesamt jetzt 26 Typen. Marketing-Typen (also_by_author, excerpt, call_to_action) sind im Audiobook-Export per Default in der Skip-Liste. Scaffolder erkennt Body-Level-Typen explizit (`_BODY_TYPES`) statt über Default-Fall.
+- **Grammar-Plugin Premium-Auth:** `languagetool_username` und `languagetool_api_key` in neuer minimaler `grammar.yaml`. LanguageToolClient hängt beide als POST-Form-Felder an wenn gesetzt. Ermöglicht Self-Hosting und LanguageTool-Premium.
+- **Plugin-Settings Audit:** Generic Plugin-Settings-Panel rendert Scalars typisiert (Boolean → Checkbox, Number → Number-Input, String → Text-Input, Objekt → JSON-Textarea mit Advanced-Hinweis). 4 bisher als "string true/false" gerenderte Felder werden jetzt als Checkbox angezeigt. Neuer TranslationSettingsPanel mit Provider-Select und maskiertem DeepL-API-Key.
+- **Event-Recorder und Error-Report-Dialog:** Ring-Buffer für User-Aktionen mit Sanitizer, opt-in History, verbesserter GitHub-Issue-Dialog mit Preview und URL-Length-Truncation.
+- **M-17/M-18:** Füllwort-Listen werden aus YAML-Dateien geladen (pro Sprache, erweiterbar durch User-Edit). Per-Sprache Allowlist zum Ausschluss von Begriffen aus den Checks.
+
+### Changed
+- **Architektur-Regel: Plugin-Settings Sichtbarkeit.** Jedes `config/plugins/*.yaml`-Feld muss entweder UI-editierbar oder mit `# INTERNAL` markiert sein. Tote Settings sind verboten. Per-Buch-Werte gehören aufs Book-Modell, nicht ins Plugin-YAML. Codifiziert in `.claude/rules/architecture.md`.
+- **Architektur-Regel: Plugin-Paket-Versionen.** Plugin-Versionen sind unabhängig von der App-Version. Kein Zwangs-Bump bei App-Releases.
+- **Plugin-Settings Aufraeumung:** `audiobook.yaml` verliert `overwrite_existing`, `skip_types`, `language` (alle jetzt per-Buch oder dead). `ms-tools.yaml` verliert `languages` (hardcoded im Code). `kdp.yaml` verliert den kompletten `settings.cover` und `settings.manuscript` Block (von Amazon vorgegeben, als Modul-Konstante `KDP_COVER_REQUIREMENTS` dokumentiert). `export.yaml` `formats`, `export_defaults`, `ui_formats` als `# INTERNAL` markiert.
+- **Scaffolder Bug-Fix:** `part_intro` und `interlude` werden jetzt explizit als Body-Typen klassifiziert statt über den Default-Branch zu fallen.
+- **Dokumentation aufgeräumt:** `CLAUDE.md` auf v0.12-Stand gebracht (manuscripta ^0.7.0, ChapterType-Liste vollständig, Test-Zahlen korrigiert, KDP nicht mehr "geplant"). `docs/API.md` zu einem <100-Zeilen High-Level-Überblick umgeschrieben, der auf `/docs` und `/openapi.json` als Quelle der Wahrheit verweist. `docs/CONCEPT.md` Version/Stand-Header entfernt. `docs/help/de+en/export/audiobook.md` um per-Buch Overwrite/Skip/ChapterNumber-Sektionen erweitert, veraltete "Skip-Liste in Plugin-Konfiguration"-Referenz entfernt. Leere `docs/de/` und `docs/en/` Placeholder-Verzeichnisse gelöscht.
+
+### Fixed
+- **i18n Bug (kritisch, v0.11.x):** Beim Einfügen des TranslationSettingsPanel wurden die neuen `ui.translation:` Keys an der falschen Stelle in `de.yaml` und `en.yaml` eingefügt. Das hat den `ui.settings:`-Block frühzeitig beendet und ~50 Settings-Keys (free, premium, active, off, on, expand_settings, plugin_*, white_label_*, trash_*, license_required, enter_license) unter `ui.translation:` reparentet. Der Frontend-`t()`-Helper fand sie nicht und fiel auf englische Fallbacks zurück, also sah die UI in englischer Locale "korrekt" aus aber deutsche User sahen englische Strings. Commit `fix(i18n): move translation section out of settings and quote on/off`.
+- **YAML 1.1 Bool-Trap:** `on:` und `off:` als YAML-Keys wurden in pt/tr/ja.yaml zu Python `True`/`False` Keys geparst und waren im Frontend-Lookup unerreichbar. Jetzt als `"on":` / `"off":` gequotet.
+- **Dry-Run-Cost-Estimate:** Zwei hardcoded Skip-Sets im `audiobook.py` Dry-Run-Endpoint ignorierten die YAML und jede per-Buch-Konfiguration. Jetzt via `_resolve_book_skip_types(book)` Helper, der die per-Buch Spalte liest und auf `DEFAULT_AUDIOBOOK_SKIP_TYPES` zurückfällt.
+- **Error-Report Issue-Body:** URL-Length-Truncation verhindert dass GitHub den Body abschneidet.
+- **Audiobook Downloads:** Audio-Player + Confirm vor Delete, individuelle Chapter-MP3-Liste expanded by default, per-Chapter-Delete-Button im Downloads-Tab.
+- **Dev-Mode:** Backend startet vor Frontend, ECONNREFUSED-Rauschen beim Start unterdrückt.
+- **Sprachnamen:** Die Sprach-Namen-Strings werden in die aktuelle UI-Sprache übersetzt (nicht in die native Sprach-Form).
+
+### Security
+- Audit aller `config/plugins/*.yaml` gegen UI-Sichtbarkeit, keine aktiven Settings ohne Kontrolle mehr.
+
+### Removed
+- Plugin-globales `audiobook.settings.overwrite_existing` (ersetzt durch `Book.audiobook_overwrite_existing`, Migration seedet einmal aus YAML)
+- Plugin-globales `audiobook.settings.skip_types` (ersetzt durch `Book.audiobook_skip_chapter_types`, Migration seedet einmal aus YAML)
+- Plugin-globales `audiobook.settings.language` (war UI-only Voice-Filter, nie von Export-Pipeline gelesen)
+- `ms-tools.settings.languages` (wurde nie gelesen, Sprachen kommen aus Modul-Konstanten)
+- Alle `kdp.settings.cover.*` und `kdp.settings.manuscript.*` Felder (nie gelesen, Amazon-vorgegebene Werte jetzt als Modul-Konstante)
+- Grammar-Plugin `default_language`, `enabled_rules`, `disabled_rules`, `disabled_categories` (nicht gepflegt, LanguageTool-Defaults reichen)
+- Leere `docs/de/` und `docs/en/` Placeholder-Verzeichnisse
+
 ## [0.11.0] - 2026-04-10
 
 ### Added
