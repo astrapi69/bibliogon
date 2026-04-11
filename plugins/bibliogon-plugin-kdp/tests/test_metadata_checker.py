@@ -62,6 +62,27 @@ def test_few_keywords_warns():
     assert any(i.field == "keywords" and "2 keyword" in i.message for i in result.issues)
 
 
+def test_keywords_as_list_from_new_api():
+    """The API now exposes keywords as list[str] directly; checker must accept it."""
+    book = {
+        "title": "T", "author": "A", "language": "de", "description": "D",
+        "keywords": ["one", "two"],
+        "chapters": [{}],
+    }
+    result = check_metadata_completeness(book)
+    assert any(i.field == "keywords" and "2 keyword" in i.message for i in result.issues)
+
+
+def test_enough_keywords_no_warning():
+    book = {
+        "title": "T", "author": "A", "language": "de", "description": "D",
+        "keywords": ["a", "b", "c", "d"],
+        "chapters": [{}],
+    }
+    result = check_metadata_completeness(book)
+    assert not any(i.field == "keywords" for i in result.issues)
+
+
 def test_no_cover_warns():
     book = {"title": "T", "author": "A", "language": "de", "description": "D", "chapters": [{}]}
     result = check_metadata_completeness(book)
