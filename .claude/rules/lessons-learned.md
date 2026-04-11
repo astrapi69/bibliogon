@@ -242,13 +242,20 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
 - Im Debug-Mode liefert die Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).
 
-## Architektur-Entscheidungen
+## Architektur-Entscheidungen pruefen vor Implementierung
 
-Bevor du eine groessere Architektur-Entscheidung triffst:
-1. Lies die relevanten ROADMAP-Eintraege
-2. Pruefe ob in todo-prompts.md oder docs/chat-journal bereits 
-   Entscheidungen zu diesem Bereich dokumentiert sind
-3. Wenn du einen Konflikt zwischen einer User-Anweisung und 
-   dokumentierter Planung findest: STOP, frag den User explizit nach
-4. Niemals Parallel-Systeme bauen die schon zur Loeschung 
-   geplant sind, auch nicht als "Zwischenloesung"
+Aus dem V-02 Vorfall: Es gab eine fast-Implementierung eines 
+Backup-Vergleichs-Features (V-02), das parallel zum bereits 
+geplanten Git-Sicherungs-Feature gebaut worden waere. Erst 
+durch Querpruefung mit todo-prompts.md wurde der Konflikt 
+sichtbar.
+
+Regel: Bevor eine groessere Architektur-Entscheidung umgesetzt 
+wird, pruefe:
+1. ROADMAP-Eintraege im Bereich
+2. todo-prompts.md auf bereits geplante Aenderungen
+3. docs/chat-journal auf frueher diskutierte Entscheidungen
+
+Bei Konflikt zwischen User-Anweisung und dokumentierter Planung: 
+STOP und explizit beim User nachfragen welche Variante gilt. 
+Niemals Parallel-Systeme bauen die zur Loeschung geplant sind.
