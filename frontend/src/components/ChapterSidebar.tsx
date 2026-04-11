@@ -313,9 +313,9 @@ export default function ChapterSidebar({
     };
 
     return (
-        <aside style={styles.sidebar}>
+        <aside style={styles.sidebar} data-testid="chapter-sidebar">
             {/* Header */}
-            <div style={styles.header}>
+            <div style={styles.header} data-testid="chapter-sidebar-header">
                 <Tooltip content={t("ui.sidebar.back_to_dashboard", "Zurück zum Dashboard")}>
                     <button style={styles.backBtn} onClick={onBack}>
                         <ChevronLeft size={18}/>
@@ -340,7 +340,7 @@ export default function ChapterSidebar({
                     <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                         <Tooltip content={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}>
                             <DropdownMenu.Trigger asChild>
-                                <button style={styles.addBtn}>
+                                <button style={styles.addBtn} data-testid="chapter-add-trigger">
                                     <Plus size={14}/>
                                 </button>
                             </DropdownMenu.Trigger>
@@ -355,24 +355,28 @@ export default function ChapterSidebar({
                             >
                                 <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.front_matter", "Front Matter")}</DropdownMenu.Label>
                                 {FRONT_MATTER_TYPES.map((t) => (
-                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" data-testid="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
                                     </DropdownMenu.Item>
                                 ))}
                                 <DropdownMenu.Separator className="chapter-dropdown-separator"/>
                                 <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.chapters", "Kapitel")}</DropdownMenu.Label>
-                                <DropdownMenu.Item className="chapter-dropdown-item" onSelect={() => onAdd("chapter")}>
+                                <DropdownMenu.Item
+                                    className="chapter-dropdown-item"
+                                    data-testid="chapter-dropdown-item"
+                                    onSelect={() => onAdd("chapter")}
+                                >
                                     {t("ui.editor.new_chapter", "Neues Kapitel")}
                                 </DropdownMenu.Item>
                                 {STRUCTURE_TYPES.map((t) => (
-                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" data-testid="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
                                     </DropdownMenu.Item>
                                 ))}
                                 <DropdownMenu.Separator className="chapter-dropdown-separator"/>
                                 <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.back_matter", "Back Matter")}</DropdownMenu.Label>
                                 {BACK_MATTER_TYPES.map((t) => (
-                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
+                                    <DropdownMenu.Item key={t} className="chapter-dropdown-item" data-testid="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}
                                     </DropdownMenu.Item>
                                 ))}
@@ -465,7 +469,7 @@ export default function ChapterSidebar({
             </div>
 
             {/* Actions */}
-            <div style={styles.exportSection}>
+            <div style={styles.exportSection} data-testid="chapter-sidebar-footer">
                 <button
                     style={{...styles.exportBtn, ...(showMetadata ? styles.exportBtnActive : {}), marginBottom: 6}}
                     onClick={onMetadata}
