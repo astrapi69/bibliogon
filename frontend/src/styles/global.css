@@ -183,6 +183,251 @@
     --danger-hover: #d08770;
 }
 
+/* --- Classic Theme (Light) ---
+   Warmes Papier-Gefuehl, beige-creme Toene, Bordeaux-Akzent,
+   Serif-Schrift. Spricht Autoren an die einen literarischen,
+   traditionellen Look bevorzugen. */
+[data-app-theme="classic"] {
+    --bg-primary: #f4ede0;
+    --bg-secondary: #ebe1d0;
+    --bg-sidebar: #2a1f15;
+    --bg-card: #faf6eb;
+    --bg-hover: #e0d5c0;
+    --bg-editor: #faf6eb;
+
+    --text-primary: #2a1f15;
+    --text-secondary: #5c4733;
+    --text-muted: #8b7355;
+    --text-inverse: #f4ede0;
+    --text-sidebar: #d6c9a8;
+
+    --accent: #8b3a1f;
+    --accent-hover: #6b2a14;
+    --accent-light: #f0d9c7;
+    --accent-subtle: #e0b89b;
+
+    --border: #c9b896;
+    --border-strong: #a89770;
+
+    --danger: #b8372a;
+    --danger-hover: #8f2a1f;
+
+    --shadow-sm: 0 1px 2px rgba(60, 40, 20, 0.06);
+    --shadow-md: 0 4px 12px rgba(60, 40, 20, 0.10);
+    --shadow-lg: 0 8px 24px rgba(60, 40, 20, 0.14);
+
+    --font-display: "Crimson Pro", Georgia, serif;
+    --font-body: "Crimson Pro", Georgia, serif;
+}
+
+/* --- Classic Theme (Dark) --- */
+[data-app-theme="classic"][data-theme="dark"] {
+    --bg-primary: #1a140d;
+    --bg-secondary: #251c12;
+    --bg-sidebar: #0f0a06;
+    --bg-card: #251c12;
+    --bg-hover: #2f2418;
+    --bg-editor: #1a140d;
+
+    --text-primary: #e8d8c0;
+    --text-secondary: #b8a583;
+    --text-muted: #8b7855;
+    --text-inverse: #1a140d;
+    --text-sidebar: #b8a583;
+
+    --accent: #d4956b;
+    --accent-hover: #e0a37a;
+    --accent-light: rgba(212, 149, 107, 0.15);
+    --accent-subtle: rgba(212, 149, 107, 0.25);
+
+    --border: #4a3a25;
+    --border-strong: #5e4b30;
+
+    --danger: #e67e6d;
+    --danger-hover: #f08a79;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Studio Theme (Light) ---
+   Klares professionelles Layout, hohe Kontraste, Mint-Akzent.
+   Spricht Power-User an die lange Schreib-Sessions ohne visuelle
+   Ablenkung brauchen. Look orientiert sich an professionellen
+   Audio-/Video-Schnitt-Tools. */
+[data-app-theme="studio"] {
+    --bg-primary: #f7f8fa;
+    --bg-secondary: #eef0f4;
+    --bg-sidebar: #1a1d23;
+    --bg-card: #ffffff;
+    --bg-hover: #e4e7ed;
+    --bg-editor: #ffffff;
+
+    --text-primary: #1a1d23;
+    --text-secondary: #4a5159;
+    --text-muted: #8b929c;
+    --text-inverse: #f7f8fa;
+    --text-sidebar: #cbd5e1;
+
+    --accent: #0d9488;
+    --accent-hover: #0f766e;
+    --accent-light: #ccfbf1;
+    --accent-subtle: #99f6e4;
+
+    --border: #d1d5db;
+    --border-strong: #9ca3af;
+
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    --font-display: "Source Serif Pro", Georgia, serif;
+    --font-body: "Inter", system-ui, sans-serif;
+}
+
+/* --- Studio Theme (Dark) --- */
+[data-app-theme="studio"][data-theme="dark"] {
+    --bg-primary: #1c1e22;
+    --bg-secondary: #25282d;
+    --bg-sidebar: #14161a;
+    --bg-card: #25282d;
+    --bg-hover: #2e3239;
+    --bg-editor: #1c1e22;
+
+    --text-primary: #e4e6eb;
+    --text-secondary: #9ba3af;
+    --text-muted: #6b7280;
+    --text-inverse: #1c1e22;
+    --text-sidebar: #9ba3af;
+
+    --accent: #5eead4;
+    --accent-hover: #2dd4bf;
+    --accent-light: rgba(94, 234, 212, 0.15);
+    --accent-subtle: rgba(94, 234, 212, 0.25);
+
+    --border: #374151;
+    --border-strong: #4b5563;
+
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Notebook Theme (Light) ---
+   Helles Papier mit Linien-Optik, handschriftliches Gefuehl.
+   Spricht Autoren an die ein notizbuch-aehnliches Schreibgefuehl
+   moegen. Der Editor bekommt zusaetzlich horizontale Linien und
+   einen linken Rand-Strich - siehe .ProseMirror-Regeln weiter unten. */
+[data-app-theme="notebook"] {
+    --bg-primary: #fdfcf7;
+    --bg-secondary: #f7f5ed;
+    --bg-sidebar: #1f2937;
+    --bg-card: #ffffff;
+    --bg-hover: #f0ede0;
+    --bg-editor: #fdfcf7;
+
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --text-inverse: #fdfcf7;
+    --text-sidebar: #d4cfb8;
+
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: #dbeafe;
+    --accent-subtle: #bfdbfe;
+
+    --border: #d4cfb8;
+    --border-strong: #b5ad8d;
+
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+
+    --shadow-sm: 0 1px 2px rgba(60, 50, 30, 0.05);
+    --shadow-md: 0 4px 12px rgba(60, 50, 30, 0.08);
+    --shadow-lg: 0 8px 24px rgba(60, 50, 30, 0.12);
+
+    --font-display: "Lora", Georgia, serif;
+    --font-body: "Lora", Georgia, serif;
+
+    /* Notebook-specific tunables: color of the horizontal rule lines
+       in the editor background and the vertical margin line. Kept as
+       locals so the dark variant can override them without touching
+       --border (which is also used by borders of unrelated elements). */
+    --notebook-rule: #e8e3cd;
+    --notebook-margin: rgba(220, 38, 38, 0.55);
+}
+
+/* --- Notebook Theme (Dark) --- */
+[data-app-theme="notebook"][data-theme="dark"] {
+    --bg-primary: #1f1d18;
+    --bg-secondary: #2a2820;
+    --bg-sidebar: #14130f;
+    --bg-card: #2a2820;
+    --bg-hover: #353228;
+    --bg-editor: #1f1d18;
+
+    --text-primary: #f0ede0;
+    --text-secondary: #b8b29a;
+    --text-muted: #807a65;
+    --text-inverse: #1f1d18;
+    --text-sidebar: #b8b29a;
+
+    --accent: #60a5fa;
+    --accent-hover: #93c5fd;
+    --accent-light: rgba(96, 165, 250, 0.15);
+    --accent-subtle: rgba(96, 165, 250, 0.25);
+
+    --border: #4a4538;
+    --border-strong: #5e5846;
+
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+    --notebook-rule: #353228;
+    --notebook-margin: rgba(239, 68, 68, 0.4);
+}
+
+/* --- Editor-specific palette rules ---
+   Applied to TipTap's .ProseMirror container so they only affect
+   the editor surface, not sidebars or metadata forms. */
+
+/* Classic: first-line indent on body paragraphs. :not(:first-child)
+   follows typographic convention that the first paragraph after a
+   heading is flush-left. */
+[data-app-theme="classic"] .ProseMirror p:not(:first-child) {
+    text-indent: 1.5em;
+}
+
+/* Notebook: horizontal ruled lines + left margin line. The background
+   gradient draws a 1px line at the bottom of each 1.6em row, so the
+   baseline of the text sits exactly on the line. Matching line-height
+   is mandatory or the lines drift away from the text after a few
+   paragraphs. The left padding clears the margin line. */
+[data-app-theme="notebook"] .ProseMirror {
+    background-image: linear-gradient(
+        transparent,
+        transparent calc(1.6em - 1px),
+        var(--notebook-rule) calc(1.6em - 1px),
+        var(--notebook-rule) 1.6em
+    );
+    background-size: 100% 1.6em;
+    line-height: 1.6em;
+    border-left: 2px solid var(--notebook-margin);
+    padding-left: 2em;
+}
+
 /* Dark mode button adjustments */
 [data-theme="dark"] .btn-danger:hover {
     background: rgba(239, 68, 68, 0.15);
