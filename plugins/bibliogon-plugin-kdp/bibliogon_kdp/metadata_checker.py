@@ -83,24 +83,32 @@ def check_metadata_completeness(book: dict[str, Any]) -> MetadataCheckResult:
             "description", "Book description is required for KDP listing", "error"
         ))
 
-    # Recommended fields (warnings)
+    # Recommended fields (warnings). ``keywords`` is now a list[str] from
+    # the API layer but the legacy JSON-string form is still accepted so
+    # callers that hand raw ORM data in keep working.
     keywords = book.get("keywords")
-    if not keywords:
+    kw_list: list[str] = []
+    if isinstance(keywords, list):
+        kw_list = [str(k) for k in keywords if str(k).strip()]
+    elif isinstance(keywords, str) and keywords.strip():
+        import json
+        try:
+            parsed = json.loads(keywords)
+            if isinstance(parsed, list):
+                kw_list = [str(k) for k in parsed if str(k).strip()]
+        except (json.JSONDecodeError, TypeError):
+            kw_list = []
+
+    if not kw_list:
         result.issues.append(MetadataIssue(
             "keywords", "No keywords set. KDP allows up to 7 keywords for discoverability", "warning"
         ))
-    elif isinstance(keywords, str):
-        import json
-        try:
-            kw_list = json.loads(keywords)
-            if len(kw_list) < 3:
-                result.issues.append(MetadataIssue(
-                    "keywords",
-                    f"Only {len(kw_list)} keyword(s). KDP recommends 7 for best discoverability",
-                    "warning",
-                ))
-        except (json.JSONDecodeError, TypeError):
-            pass
+    elif len(kw_list) < 3:
+        result.issues.append(MetadataIssue(
+            "keywords",
+            f"Only {len(kw_list)} keyword(s). KDP recommends 7 for best discoverability",
+            "warning",
+        ))
 
     if not book.get("cover_image"):
         result.issues.append(MetadataIssue(

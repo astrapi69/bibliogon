@@ -72,7 +72,7 @@ class BookUpdate(BaseModel):
     asin_ebook: str | None = None
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
-    keywords: str | None = None
+    keywords: list[str] | None = None
     html_description: str | None = None
     backpage_description: str | None = None
     backpage_author_bio: str | None = None
@@ -80,6 +80,41 @@ class BookUpdate(BaseModel):
     custom_css: str | None = None
     # AI-assisted content flag
     ai_assisted: bool | None = None
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def _coerce_keywords_in(cls, value: Any) -> Any:
+        # Accept legacy callers that still send a JSON-encoded string or
+        # a comma-separated string. Empty entries and duplicates (case
+        # insensitive, order preserved) are dropped.
+        if value is None:
+            return None
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    value = parsed
+                else:
+                    value = [raw]
+            except json.JSONDecodeError:
+                value = [part.strip() for part in raw.split(",")]
+        if not isinstance(value, list):
+            return value
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            key = text.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(text)
+        return cleaned
     # Audiobook / TTS settings
     tts_engine: str | None = None
     tts_voice: str | None = None
@@ -117,7 +152,7 @@ class BookOut(BaseModel):
     asin_ebook: str | None = None
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
-    keywords: str | None = None
+    keywords: list[str] = []
     html_description: str | None = None
     backpage_description: str | None = None
     backpage_author_bio: str | None = None
@@ -138,15 +173,15 @@ class BookOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("audiobook_skip_chapter_types", mode="before")
+    @field_validator("audiobook_skip_chapter_types", "keywords", mode="before")
     @classmethod
-    def _decode_skip_chapter_types(cls, value: Any) -> list[str]:
-        """Decode the JSON-encoded Text column into a list for the API.
+    def _decode_json_list(cls, value: Any) -> list[str]:
+        """Decode a JSON-encoded Text column into a list for the API.
 
-        The DB stores ``Book.audiobook_skip_chapter_types`` as JSON text
-        (mirroring how ``keywords`` is stored). When Pydantic loads from
-        ORM the value comes in as a string and needs to be parsed before
-        the ``list[str]`` type check.
+        Both ``Book.audiobook_skip_chapter_types`` and ``Book.keywords``
+        are stored as JSON text. When Pydantic loads from ORM the value
+        comes in as a string and needs to be parsed before the
+        ``list[str]`` type check.
         """
         if value is None or value == "":
             return []
