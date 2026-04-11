@@ -63,7 +63,12 @@ class CheckResult:
 
 
 class LanguageToolClient:
-    """Client for the LanguageTool API."""
+    """Client for the LanguageTool API.
+
+    Premium accounts authenticate via ``username`` + ``api_key`` form
+    fields per LanguageTool Plus docs. Both must be set together; if
+    either is missing the request goes out as anonymous (free quota).
+    """
 
     def __init__(
         self,
@@ -72,12 +77,16 @@ class LanguageToolClient:
         disabled_rules: list[str] | None = None,
         disabled_categories: list[str] | None = None,
         max_chunk_chars: int | None = None,
+        username: str = "",
+        api_key: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.default_language = default_language
         self.disabled_rules = disabled_rules or []
         self.disabled_categories = disabled_categories or []
         self.max_chunk_chars = max_chunk_chars or self.DEFAULT_MAX_CHUNK_CHARS
+        self.username = username
+        self.api_key = api_key
 
     # The free LanguageTool public API has a very low payload limit
     # (~1000 chars). Self-hosted instances and premium accounts allow
@@ -158,6 +167,9 @@ class LanguageToolClient:
             data["disabledRules"] = ",".join(self.disabled_rules)
         if self.disabled_categories:
             data["disabledCategories"] = ",".join(self.disabled_categories)
+        if self.username and self.api_key:
+            data["username"] = self.username
+            data["apiKey"] = self.api_key
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

@@ -1,0 +1,22 @@
+plugin:
+  name: "grammar"
+  display_name:
+    de: "Grammatikpruefung"
+    en: "Grammar Check"
+  description:
+    de: "Grammatik- und Rechtschreibpruefung via LanguageTool"
+    en: "Grammar and spell checking via LanguageTool"
+  version: "1.0.0"
+  license: "Proprietary"
+  depends_on: []
+  api_version: "1"
+
+settings:
+  # Self-hosted LanguageTool: e.g. http://localhost:8081/v2
+  # Default points at the public LanguageTool Plus API.
+  languagetool_url: "https://api.languagetoolplus.com/v2"
+  # Optional: LanguageTool Premium credentials. Both must be set to take
+  # effect; if either is empty the request goes out anonymously and uses
+  # the free public quota.
+  languagetool_username: ""
+  languagetool_api_key: ""

@@ -22,9 +22,8 @@ class GrammarPlugin(BasePlugin):
         settings = self.config.get("settings", {})
         self._client = LanguageToolClient(
             base_url=settings.get("languagetool_url", "https://api.languagetoolplus.com/v2"),
-            default_language=settings.get("default_language", "auto"),
-            disabled_rules=settings.get("disabled_rules", []),
-            disabled_categories=settings.get("disabled_categories", []),
+            username=settings.get("languagetool_username", ""),
+            api_key=settings.get("languagetool_api_key", ""),
         )
 
     def deactivate(self) -> None:
