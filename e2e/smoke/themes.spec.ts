@@ -162,30 +162,27 @@ test.describe("Themes - palette selector via Settings UI", () => {
 });
 
 test.describe("Themes - Classic editor first-line indent", () => {
-    // Seed a book + chapter once, then switch palettes between
-    // tests via localStorage. Saves ~1.5s per test vs recreating
-    // the book.
+    // Classic novel typography has two rules, both implemented in
+    // ``[data-app-theme="classic"] .ProseMirror`` CSS:
+    //   1. ``p:not(:first-child)`` gets text-indent: 1.5em.
+    //      Means: first element of the chapter is flush-left,
+    //      subsequent paragraphs are indented.
+    //   2. ``h1-h6 + p`` gets text-indent: 0.
+    //      Means: any paragraph that directly follows a heading
+    //      is also flush-left, even if it is not the first child.
+    //
+    // This describe covers both rules plus the negative case
+    // (Warm Literary applies neither). Each test seeds its own
+    // book so the chapter structure is explicit in the test
+    // body - saves mental load vs shared fixtures where you have
+    // to go look up what was seeded.
     let bookId: string;
-    let chapterId: string;
 
-    test.beforeEach(async () => {
-        const book = await createBook("Classic Indent Smoke");
+    async function seedBookWithChapter(title: string, tiptapDoc: unknown): Promise<void> {
+        const book = await createBook(title);
         bookId = book.id;
-        // Three plain paragraphs, no heading. In this structure
-        // paragraph[0] is the :first-child of .ProseMirror, so the
-        // rule ``p:not(:first-child)`` only applies to paragraphs
-        // 1 and 2. That is what the CSS intentionally pins.
-        const tiptapJson = JSON.stringify({
-            type: "doc",
-            content: [
-                {type: "paragraph", content: [{type: "text", text: "First paragraph."}]},
-                {type: "paragraph", content: [{type: "text", text: "Second paragraph."}]},
-                {type: "paragraph", content: [{type: "text", text: "Third paragraph."}]},
-            ],
-        });
-        const chapter = await createChapter(bookId, "Capitulo", tiptapJson);
-        chapterId = chapter.id;
-    });
+        await createChapter(book.id, "Capitulo", JSON.stringify(tiptapDoc));
+    }
 
     /** Returns the computed textIndent (in px) for every direct
      * paragraph child of .ProseMirror. */
@@ -200,38 +197,75 @@ test.describe("Themes - Classic editor first-line indent", () => {
 
     async function openChapter(page: Page) {
         await page.goto(`/book/${bookId}`);
-        // Click the seeded chapter to open it in the editor.
         await page.getByText("Capitulo").first().click();
         await page.locator(".ProseMirror").waitFor({state: "visible"});
     }
 
-    test("Classic palette indents paragraphs past the first child", async ({page}) => {
+    test("Classic indents paragraphs past the first child (all-paragraph chapter)", async ({page}) => {
+        await seedBookWithChapter("Classic Indent - Paragraphs Only", {
+            type: "doc",
+            content: [
+                {type: "paragraph", content: [{type: "text", text: "First paragraph."}]},
+                {type: "paragraph", content: [{type: "text", text: "Second paragraph."}]},
+                {type: "paragraph", content: [{type: "text", text: "Third paragraph."}]},
+            ],
+        });
         await seedPalette(page, "classic");
         await openChapter(page);
 
         const indents = await getParagraphIndents(page);
-        expect(indents.length).toBeGreaterThanOrEqual(3);
-        // First paragraph is the :first-child of .ProseMirror, so
-        // the rule does NOT apply.
+        expect(indents).toHaveLength(3);
+        // First element of the chapter is flush-left.
         expect(indents[0]).toBe(0);
-        // Paragraphs 1 and 2 are not :first-child, so they get
-        // text-indent: 1.5em. With the default font-size of 16px
-        // that resolves to 24px, but we assert "> 0" instead of a
-        // hard pixel value to stay stable if the editor font-size
-        // changes.
+        // All subsequent paragraphs are indented.
         expect(indents[1]).toBeGreaterThan(0);
         expect(indents[2]).toBeGreaterThan(0);
     });
 
-    test("Warm Literary palette does NOT indent any paragraph", async ({page}) => {
+    test("Classic resets indent on paragraphs that follow a heading", async ({page}) => {
+        // Structure: h2, p (follows heading -> flush), p (not
+        // :first-child and does not follow a heading -> indented).
+        // Regression pin for the CSS fix that added
+        // ``[data-app-theme="classic"] .ProseMirror h1-h6 + p
+        // { text-indent: 0 }`` on top of the :not(:first-child)
+        // base rule.
+        await seedBookWithChapter("Classic Indent - Heading", {
+            type: "doc",
+            content: [
+                {
+                    type: "heading",
+                    attrs: {level: 2},
+                    content: [{type: "text", text: "Section heading"}],
+                },
+                {type: "paragraph", content: [{type: "text", text: "Paragraph after heading."}]},
+                {type: "paragraph", content: [{type: "text", text: "Second paragraph."}]},
+            ],
+        });
+        await seedPalette(page, "classic");
+        await openChapter(page);
+
+        const indents = await getParagraphIndents(page);
+        expect(indents).toHaveLength(2);
+        // First paragraph follows the h2 -> flush-left.
+        expect(indents[0]).toBe(0);
+        // Second paragraph is a plain non-:first-child and does
+        // not directly follow a heading -> indented.
+        expect(indents[1]).toBeGreaterThan(0);
+    });
+
+    test("Warm Literary does NOT indent any paragraph", async ({page}) => {
+        await seedBookWithChapter("Warm Literary Indent", {
+            type: "doc",
+            content: [
+                {type: "paragraph", content: [{type: "text", text: "First paragraph."}]},
+                {type: "paragraph", content: [{type: "text", text: "Second paragraph."}]},
+                {type: "paragraph", content: [{type: "text", text: "Third paragraph."}]},
+            ],
+        });
         await seedPalette(page, "warm-literary");
         await openChapter(page);
 
         const indents = await getParagraphIndents(page);
-        // chapterId is seeded above but only used so TS does not
-        // flag the beforeEach assignment as dead. Real assertion
-        // is on indent values.
-        void chapterId;
         for (const indent of indents) {
             expect(indent).toBe(0);
         }

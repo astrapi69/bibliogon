@@ -410,6 +410,20 @@
     text-indent: 1.5em;
 }
 
+/* Classic novel convention: the first paragraph of a chapter is
+   flush-left (caught by :not(:first-child) above), AND the first
+   paragraph after any heading is also flush-left. The adjacent-
+   sibling selector cancels the indent on any paragraph that comes
+   immediately after an h1-h6. */
+[data-app-theme="classic"] .ProseMirror h1 + p,
+[data-app-theme="classic"] .ProseMirror h2 + p,
+[data-app-theme="classic"] .ProseMirror h3 + p,
+[data-app-theme="classic"] .ProseMirror h4 + p,
+[data-app-theme="classic"] .ProseMirror h5 + p,
+[data-app-theme="classic"] .ProseMirror h6 + p {
+    text-indent: 0;
+}
+
 /* Notebook: horizontal ruled lines + left margin line. The background
    gradient draws a 1px line at the bottom of each 1.6em row, so the
    baseline of the text sits exactly on the line. Matching line-height
