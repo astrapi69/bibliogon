@@ -1,61 +1,61 @@
-# Bibliogon - Konzeptdokument
+# Bibliogon - concept document
 
 **Repository:** [github.com/astrapi69/bibliogon](https://github.com/astrapi69/bibliogon)
-**Verwandtes Projekt:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
+**Related project:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
 **PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
 
-Dieses Dokument beschreibt die Architektur und das Konzept. Die aktuelle App-Version steht in `CLAUDE.md`, konkrete Aenderungen pro Release in `docs/CHANGELOG.md`.
+This document describes the architecture and the concept. The current app version lives in `CLAUDE.md`, concrete changes per release in `docs/CHANGELOG.md`.
 
 ---
 
-## 1. Ziel
+## 1. Goal
 
-Bibliogon besteht aus zwei Teilen:
+Bibliogon consists of two parts:
 
-1. **PluginForge** - Ein anwendungsunabhaengiges Plugin-Framework fuer Python/FastAPI-Anwendungen. Aufgebaut auf [pluggy](https://pluggy.readthedocs.io/) (dem Hook-System hinter pytest), erweitert um YAML-Konfiguration, Plugin-Lifecycle, FastAPI-Integration und Frontend-Plugin-Loading. Kann von jedem Entwickler als Grundlage fuer eigene Plugin-faehige Anwendungen genutzt werden.
+1. **PluginForge** - An application-agnostic plugin framework for Python/FastAPI applications. Built on top of [pluggy](https://pluggy.readthedocs.io/) (the hook system behind pytest), extended with YAML configuration, plugin lifecycle, FastAPI integration and frontend plugin loading. Any developer can use it as the foundation for their own plugin-capable applications.
 
-2. **Bibliogon App** - Eine Open-Source Web-Plattform zum Schreiben und Exportieren von Buechern. Die erste Anwendung, die auf PluginForge aufbaut. Der gesamte Export (EPUB, PDF, write-book-template Struktur) ist selbst ein Plugin.
+2. **Bibliogon app** - An open-source web platform for writing and exporting books. The first application built on PluginForge. The entire export (EPUB, PDF, write-book-template structure) is itself a plugin.
 
-Das Prinzip: Der App-Kern (UI, Datenbank, Kapitel-Editor) ist schlank. Alles Weitere, Export, Kinderbuch-Modus, Audiobook, KDP-Integration, wird ueber Plugins realisiert. Dadurch entsteht ein Freemium-Modell: Core kostenlos, Premium-Plugins kostenpflichtig.
+The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. This produces a freemium model: core free, premium plugins paid.
 
-Langfristiges Ziel ist ein kommerzielles SaaS-Produkt. Sowohl PluginForge als auch der Bibliogon-Kern bleiben Open Source (MIT-Lizenz).
+The long-term goal is a commercial SaaS product. Both PluginForge and the Bibliogon core stay open source (MIT license).
 
 ---
 
-## 2. Architektur
+## 2. Architecture
 
-### 2.1 Schichtenmodell
+### 2.1 Layered architecture
 
 ```
 +----------------------------------------------------------+
-|  Bibliogon App (Frontend: React + TipTap)                |
+|  Bibliogon app (frontend: React + TipTap)                |
 +----------------------------------------------------------+
-|  Bibliogon App (Backend: FastAPI, Book/Chapter CRUD)     |
+|  Bibliogon app (backend: FastAPI, Book/Chapter CRUD)     |
 +----------------------------------------------------------+
-|  PluginForge (Framework)                                  |
-|  +-- pluggy (Hook-Specs + Hook-Impls)                    |
-|  +-- YAML-Konfiguration (App, Plugins, i18n)             |
-|  +-- Plugin-Lifecycle (init, activate, deactivate)       |
-|  +-- FastAPI-Router-Integration                          |
-|  +-- Alembic-Migration-Support fuer Plugin-Tabellen      |
+|  PluginForge (framework)                                  |
+|  +-- pluggy (hook specs + hook impls)                    |
+|  +-- YAML configuration (app, plugins, i18n)             |
+|  +-- plugin lifecycle (init, activate, deactivate)       |
+|  +-- FastAPI router integration                          |
+|  +-- Alembic migration support for plugin tables         |
 +----------------------------------------------------------+
 |  Plugins                                                  |
 |  +-- plugin-export       (EPUB, PDF, write-book-template)|
-|  +-- plugin-kinderbuch   (Bild-Layout, spezielle Export) |
+|  +-- plugin-kinderbuch   (image layout, special export)  |
 |  +-- plugin-audiobook    (TTS, MP3/M4B)                  |
-|  +-- plugin-kdp          (KDP-Metadaten, Vorschau)       |
+|  +-- plugin-kdp          (KDP metadata, preview)         |
 |  +-- ...                                                  |
 +----------------------------------------------------------+
 ```
 
-### 2.2 Zwei Repositories
+### 2.2 Two repositories
 
-| Repository | Beschreibung | Lizenz |
-|------------|-------------|--------|
-| `pluginforge` | Anwendungsunabhaengiges Plugin-Framework (basiert auf pluggy) | MIT |
-| `bibliogon` | Buch-Autoren-Plattform, nutzt PluginForge | MIT (Core), proprietaer (Premium-Plugins) |
+| Repository | Description | License |
+|------------|-------------|---------|
+| `pluginforge` | Application-agnostic plugin framework (based on pluggy) | MIT |
+| `bibliogon` | Book authoring platform, uses PluginForge | MIT (core), proprietary (premium plugins) |
 
-PluginForge ist ein eigenstaendiges PyPI-Paket:
+PluginForge is a standalone PyPI package:
 
 ```toml
 # bibliogon/backend/pyproject.toml
@@ -63,7 +63,7 @@ PluginForge ist ein eigenstaendiges PyPI-Paket:
 pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
 ```
 
-Ein anderer Entwickler kann PluginForge unabhaengig nutzen:
+Another developer can use PluginForge independently:
 
 ```toml
 # podcast-tool/pyproject.toml
@@ -71,74 +71,74 @@ Ein anderer Entwickler kann PluginForge unabhaengig nutzen:
 pluginforge = "^0.5.0"
 ```
 
-### 2.3 Tech-Stack
+### 2.3 Tech stack
 
-| Komponente | Technologie |
-|------------|-------------|
-| PluginForge | Python 3.11+, pluggy, YAML, Entry Points, Alembic |
+| Component | Technology |
+|-----------|------------|
+| PluginForge | Python 3.11+, pluggy, YAML, entry points, Alembic |
 | Backend | FastAPI, SQLAlchemy, SQLite/PostgreSQL, Pydantic v2 |
-| Frontend | React 18, TypeScript, TipTap (15 Extensions), Vite, Radix UI, @dnd-kit, Lucide Icons |
-| Export-Plugin | manuscripta (PyPI), Pandoc, write-book-template Struktur |
+| Frontend | React 18, TypeScript, TipTap (15 extensions), Vite, Radix UI, @dnd-kit, Lucide icons |
+| Export plugin | manuscripta (PyPI), Pandoc, write-book-template structure |
 | Tooling | Poetry, npm, Docker, Make, Playwright (E2E) |
 
-### 2.4 UI-Komponentenstrategie
+### 2.4 UI component strategy
 
-Prinzip: Bestehende Open-Source-Bibliotheken nutzen statt das Rad neu zu erfinden.
+Principle: use existing open-source libraries instead of reinventing the wheel.
 
-| Bibliothek | Zweck | Lizenz |
-|------------|-------|--------|
-| **Radix UI** | Unstyled accessible Primitives (Dialog, Tabs, Dropdown, Select, Tooltip) | MIT |
-| **@dnd-kit** | Drag-and-Drop (Kapitel-Sortierung, Listen-Reorder) | MIT |
-| **TipTap** | WYSIWYG/Markdown-Editor (StarterKit + 15 Extensions) | MIT |
-| **@pentestpad/tiptap-extension-figure** | Figure + Figcaption (Bildunterschriften) | MIT |
-| **@tiptap/extension-table** | Tabellen (+ row, cell, header) | MIT |
-| **@tiptap/extension-text-align** | Textausrichtung (links, zentriert, rechts, Blocksatz) | MIT |
-| **@tiptap/extension-typography** | Smart Quotes, Gedankenstriche automatisch | MIT |
-| **@tiptap/extension-character-count** | Wort- und Zeichenzaehlung | MIT |
-| **@tiptap/extension-highlight** | Text hervorheben | MIT |
-| **@tiptap/extension-task-list** | Checklisten mit Checkboxen | MIT |
-| **@tiptap/extension-underline** | Unterstreichung | MIT |
-| **@tiptap/extension-sub/superscript** | Tief-/Hochgestellt (H2O, E=mc2) | MIT |
+| Library | Purpose | License |
+|---------|---------|---------|
+| **Radix UI** | Unstyled accessible primitives (Dialog, Tabs, Dropdown, Select, Tooltip) | MIT |
+| **@dnd-kit** | Drag-and-drop (chapter sorting, list reordering) | MIT |
+| **TipTap** | WYSIWYG/Markdown editor (StarterKit + 15 extensions) | MIT |
+| **@pentestpad/tiptap-extension-figure** | Figure + figcaption (captions) | MIT |
+| **@tiptap/extension-table** | Tables (+ row, cell, header) | MIT |
+| **@tiptap/extension-text-align** | Text alignment (left, center, right, justify) | MIT |
+| **@tiptap/extension-typography** | Smart quotes, automatic dashes | MIT |
+| **@tiptap/extension-character-count** | Word and character count | MIT |
+| **@tiptap/extension-highlight** | Highlight text | MIT |
+| **@tiptap/extension-task-list** | Checklists with checkboxes | MIT |
+| **@tiptap/extension-underline** | Underline | MIT |
+| **@tiptap/extension-sub/superscript** | Subscript/superscript (H2O, E=mc2) | MIT |
 | **Lucide React** | Icons | ISC |
-| **react-toastify** | Toast-Notifications | MIT |
+| **react-toastify** | Toast notifications | MIT |
 
-Warum Radix UI:
-- Unstyled: Passt zu unserem CSS-Variables-Theming (3 Themes x Light/Dark)
-- Accessible: ARIA-Attribute, Fokus-Management, Keyboard-Navigation out-of-the-box
-- Einzeln installierbar: Nur die Primitives die wir brauchen
-- Kein Tailwind noetig: Wir stylen weiter mit Custom Properties
+Why Radix UI:
+- Unstyled: fits our CSS variable theming (3 themes x light/dark)
+- Accessible: ARIA attributes, focus management, keyboard navigation out of the box
+- Individually installable: only the primitives we need
+- No Tailwind required: we keep styling with custom properties
 
-Abgelehnte Alternativen:
-- shadcn/ui (braucht Tailwind), MUI (zu opinionated), Ant Design (zu schwer), Mantine/Chakra (eigenes Theme-System)
+Rejected alternatives:
+- shadcn/ui (requires Tailwind), MUI (too opinionated), Ant Design (too heavy), Mantine/Chakra (their own theme system)
 
-Diese Strategie gilt auch als Referenz fuer andere Projekte die auf PluginForge aufbauen.
+This strategy is also a reference for other projects that build on PluginForge.
 
 ---
 
-## 3. PluginForge - Das Framework
+## 3. PluginForge - the framework
 
-### 3.1 Kernkonzept
+### 3.1 Core concept
 
-PluginForge baut auf pluggy auf und ergaenzt:
+PluginForge builds on pluggy and adds:
 
 | Feature | pluggy | PluginForge |
 |---------|--------|-------------|
-| Hook-Specs und Hook-Impls | Ja | Ja (via pluggy) |
-| Entry Point Discovery | Ja | Ja (via pluggy) |
-| YAML-Konfiguration | Nein | Ja (App, Plugins, i18n) |
-| Plugin-Lifecycle | Nein | Ja (init, activate, deactivate) |
-| Enable/Disable per Config | Nein | Ja |
-| FastAPI-Router-Integration | Nein | Ja (Plugin-Routen automatisch einbinden) |
-| DB-Migration Support | Nein | Ja (Alembic pro Plugin) |
-| Plugin-Abhaengigkeiten | Nein | Ja (deklarativ in YAML) |
-| Frontend-Plugin-Loading | Nein | Ja (Manifest fuer UI-Komponenten) |
-| API-Versionierung | Nein | Ja (Hook-Specs versioniert) |
+| Hook specs and hook impls | Yes | Yes (via pluggy) |
+| Entry point discovery | Yes | Yes (via pluggy) |
+| YAML configuration | No | Yes (app, plugins, i18n) |
+| Plugin lifecycle | No | Yes (init, activate, deactivate) |
+| Enable/disable per config | No | Yes |
+| FastAPI router integration | No | Yes (plugin routes mounted automatically) |
+| DB migration support | No | Yes (Alembic per plugin) |
+| Plugin dependencies | No | Yes (declarative in YAML) |
+| Frontend plugin loading | No | Yes (manifest for UI components) |
+| API versioning | No | Yes (hook specs versioned) |
 
-### 3.2 Konfigurationssystem
+### 3.2 Configuration system
 
-Alles anwendungsspezifische liegt in YAML-Dateien. Keine hartcodierten Strings.
+Everything application-specific lives in YAML files. No hardcoded strings.
 
-**App-Konfiguration (`config/app.yaml`):**
+**App configuration (`config/app.yaml`):**
 
 ```yaml
 app:
@@ -159,12 +159,12 @@ plugins:
 
 ui:
   title: "Bibliogon"
-  subtitle: "Buecher schreiben und exportieren"
+  subtitle: "Write and export books"
   logo: "assets/logo.svg"
   theme: "warm-literary"
 ```
 
-**Plugin-Konfiguration (`config/plugins/export.yaml`):**
+**Plugin configuration (`config/plugins/export.yaml`):**
 
 ```yaml
 plugin:
@@ -179,8 +179,8 @@ plugin:
     en: "EPUB, PDF and project structure export via Pandoc"
   version: "1.0.0"
   license: "MIT"
-  depends_on: []            # Keine Abhaengigkeiten
-  api_version: "1"          # Kompatibel mit Hook-Spec v1
+  depends_on: []            # no dependencies
+  api_version: "1"          # compatible with hook spec v1
 
 settings:
   pandoc_path: "pandoc"
@@ -203,7 +203,7 @@ formats:
     media_type: "application/zip"
 ```
 
-**Internationalisierung (`config/i18n/de.yaml`):**
+**Internationalization (`config/i18n/de.yaml`):**
 
 ```yaml
 ui:
@@ -227,10 +227,10 @@ ui:
     save: "Speichern"
 ```
 
-Fuer eine andere Anwendung (z.B. Podcast-Tool) aendert man nur die YAML-Dateien:
+For a different application (e.g. a podcast tool) you only change the YAML files:
 
 ```yaml
-# config/app.yaml fuer ein Podcast-Tool
+# config/app.yaml for a podcast tool
 app:
   name: "PodForge"
   version: "1.0.0"
@@ -244,22 +244,22 @@ ui:
   subtitle: "Record, edit, publish"
 ```
 
-### 3.3 Warum pluggy als Basis
+### 3.3 Why pluggy as the base
 
-pluggy ist der De-facto-Standard fuer Python Plugin-Systeme. Pytest, tox, datasette und kedro nutzen es. Es bietet:
+pluggy is the de-facto standard for Python plugin systems. pytest, tox, datasette and kedro use it. It provides:
 
-- Hook-Specification und Hook-Implementation als Dekoratoren
-- Entry Point Discovery (`load_setuptools_entrypoints`)
-- firstresult-Hooks (erster Rueckgabewert gewinnt)
-- Call-Order-Management (trylast, tryfirst)
-- Typsichere Hook-Aufrufe
+- Hook specification and hook implementation as decorators
+- Entry point discovery (`load_setuptools_entrypoints`)
+- firstresult hooks (the first return value wins)
+- Call-order management (trylast, tryfirst)
+- Type-safe hook calls
 
-PluginForge erfindet das Rad nicht neu, sondern baut die Schichten darauf, die pluggy fehlen: Konfiguration, Lifecycle, Web-Integration.
+PluginForge does not reinvent the wheel, it adds the layers pluggy is missing: configuration, lifecycle, web integration.
 
-### 3.4 Plugin-Interface (v0.5.0)
+### 3.4 Plugin interface (v0.5.0)
 
 ```python
-# pluginforge/base.py (PyPI-Paket, nicht lokal)
+# pluginforge/base.py (PyPI package, not local)
 
 from abc import ABC
 from typing import Any
@@ -270,67 +270,67 @@ class BasePlugin(ABC):
     api_version: str = "1"
     description: str = ""
     author: str = ""
-    depends_on: list[str] = []        # Plugin-Abhaengigkeiten als Klassen-Attribut
-    config_schema: dict[str, type] | None = None  # Optionale Config-Validierung
+    depends_on: list[str] = []        # plugin dependencies as a class attribute
+    config_schema: dict[str, type] | None = None  # optional config validation
 
     def init(self, app_config, plugin_config) -> None: ...
     def activate(self) -> None: ...
     def deactivate(self) -> None: ...
-    def get_routes(self) -> list: ...           # FastAPI Router
-    def get_frontend_manifest(self) -> dict | None: ...  # UI-Manifest
-    def health(self) -> dict[str, Any]: ...     # Health Check
+    def get_routes(self) -> list: ...           # FastAPI router
+    def get_frontend_manifest(self) -> dict | None: ...  # UI manifest
+    def health(self) -> dict[str, Any]: ...     # health check
     def get_migrations_dir(self) -> str | None: ...      # Alembic
 ```
 
 ```python
-# Bibliogon main.py - Integration mit PluginForge v0.5.0
+# Bibliogon main.py - integration with PluginForge v0.5.0
 from pluginforge import PluginManager
 
 manager = PluginManager(
     config_path="config/app.yaml",
-    pre_activate=license_check,  # Callback vor Plugin-Aktivierung
+    pre_activate=license_check,  # callback before plugin activation
     api_version="1",
 )
 manager.register_hookspecs(BibliogonHookSpec)
-manager.discover_plugins()       # Entry Points laden, filtern, sortieren, aktivieren
-manager.mount_routes(app)        # FastAPI-Router mounten (prefix="/api")
+manager.discover_plugins()       # load entry points, filter, sort, activate
+manager.mount_routes(app)        # mount FastAPI routers (prefix="/api")
 
-# Laufzeit-API
-manager.get_active_plugins()     # Liste aktiver Plugins
-manager.get_plugin("export")     # Plugin-Instanz nach Name
-manager.deactivate_plugin("x")   # Deaktivieren + Hook-Unregister
-manager.reload_plugin("x")       # Hot Reload
-manager.reload_config()           # Config von Disk neu laden
-manager.health_check()            # Health aller Plugins
-manager.get_load_errors()         # Fehler beim Laden
-manager.call_hook("hook_name")    # Hook aufrufen
-manager.get_text("key", "de")     # i18n String
+# runtime API
+manager.get_active_plugins()     # list of active plugins
+manager.get_plugin("export")     # plugin instance by name
+manager.deactivate_plugin("x")   # deactivate + hook unregister
+manager.reload_plugin("x")       # hot reload
+manager.reload_config()           # reload config from disk
+manager.health_check()            # health of all plugins
+manager.get_load_errors()         # errors during loading
+manager.call_hook("hook_name")    # invoke a hook
+manager.get_text("key", "de")     # i18n string
 ```
 
-### 3.5 PluginForge Repository
+### 3.5 PluginForge repository
 
-PluginForge ist ein eigenstaendiges PyPI-Paket: https://github.com/astrapi69/pluginforge
+PluginForge is a standalone PyPI package: https://github.com/astrapi69/pluginforge
 
 ```
-pluginforge/       # Eigenes Repo, nicht Teil von Bibliogon
+pluginforge/       # own repo, not part of Bibliogon
 ├── pluginforge/
-│   ├── __init__.py          # Public API: BasePlugin, PluginManager
+│   ├── __init__.py          # public API: BasePlugin, PluginManager
 │   ├── base.py              # BasePlugin ABC (lifecycle, routes, health, manifest)
 │   ├── manager.py           # PluginManager (wraps pluggy, pre_activate, hot reload)
-│   ├── config.py            # YAML-Config Loader
-│   ├── discovery.py         # Entry Points + topologische Sortierung
-│   ├── lifecycle.py         # init/activate/deactivate Steuerung
-│   ├── fastapi_ext.py       # FastAPI-Router mounten (konfigurierbarer prefix)
-│   ├── alembic_ext.py       # Alembic-Migrations sammeln
-│   ├── i18n.py              # Mehrsprachige Strings aus YAML
-│   └── security.py          # Plugin-Name-Validierung, Path Traversal Prevention
+│   ├── config.py            # YAML config loader
+│   ├── discovery.py         # entry points + topological sort
+│   ├── lifecycle.py         # init/activate/deactivate control
+│   ├── fastapi_ext.py       # mount FastAPI routers (configurable prefix)
+│   ├── alembic_ext.py       # collect Alembic migrations
+│   ├── i18n.py              # multi-language strings from YAML
+│   └── security.py          # plugin name validation, path traversal prevention
 ├── tests/
 ├── pyproject.toml
 ├── README.md
 └── LICENSE
 ```
 
-Abhaengigkeiten: `pluggy`, `pyyaml`. Sonst nichts. FastAPI und Alembic sind optionale Extras:
+Dependencies: `pluggy`, `pyyaml`. Nothing else. FastAPI and Alembic are optional extras:
 
 ```toml
 [tool.poetry.dependencies]
@@ -344,11 +344,11 @@ migrations = ["alembic"]
 
 ---
 
-## 4. Bibliogon App
+## 4. Bibliogon app
 
-### 4.1 Datenmodell
+### 4.1 Data model
 
-**Aktuell (v0.7.0):**
+**Current (v0.7.0):**
 
 ```
 Book
@@ -382,11 +382,11 @@ Book
   # Timestamps
   created_at: datetime
   updated_at: datetime
-  deleted_at: datetime? (Soft-Delete)
+  deleted_at: datetime? (soft delete)
   chapters: [Chapter]
   assets: [Asset]
 
-ChapterType (enum, 14 Werte)
+ChapterType (enum, 14 values)
   CHAPTER, PREFACE, FOREWORD, ACKNOWLEDGMENTS,
   ABOUT_AUTHOR, APPENDIX, BIBLIOGRAPHY, GLOSSARY,
   EPILOGUE, IMPRINT, NEXT_IN_SERIES, PART_INTRO,
@@ -396,7 +396,7 @@ Chapter
   id: str (UUID)
   book_id: str (FK -> Book)
   title: str
-  content: str (TipTap JSON, siehe 4.3)
+  content: str (TipTap JSON, see 4.3)
   position: int
   chapter_type: ChapterType (default: CHAPTER)
   created_at: datetime
@@ -411,17 +411,17 @@ Asset
   uploaded_at: datetime
 ```
 
-**Fruehere Versionen:**
+**Earlier versions:**
 
 ```
-UserBackup (v0.4.0 - jetzt durch .bgb Backup ersetzt)
+UserBackup (v0.4.0 - now replaced by the .bgb backup)
   id: str
   created_at: datetime
   format: str (zip)
   path: str
 ```
 
-### 4.2 Integration mit PluginForge v0.5.0
+### 4.2 Integration with PluginForge v0.5.0
 
 ```python
 # bibliogon/backend/app/main.py
@@ -430,14 +430,14 @@ from pluginforge import PluginManager
 
 manager = PluginManager(
     config_path="config/app.yaml",
-    pre_activate=license_check,  # Lizenzpruefung vor Aktivierung
+    pre_activate=license_check,  # license check before activation
     api_version="1",
 )
 manager.register_hookspecs(BibliogonHookSpec)
 manager.discover_plugins()
-manager.mount_routes(app)  # FastAPI-Router mounten
+manager.mount_routes(app)  # mount FastAPI routers
 
-# Health Check und Load Errors
+# Health check and load errors
 @app.get("/api/plugins/health")
 def health(): return manager.health_check()
 
@@ -445,16 +445,16 @@ def health(): return manager.health_check()
 def errors(): return manager.get_load_errors()
 ```
 
-### 4.3 Internes Speicherformat
+### 4.3 Internal storage format
 
-TipTap kann Inhalte als HTML oder als JSON speichern. Wir nutzen **TipTap JSON** als internes Format:
+TipTap can store content as HTML or as JSON. We use **TipTap JSON** as the internal format:
 
-- Strukturiert und maschinenlesbar
-- Verlustfreie Roundtrips (JSON -> Editor -> JSON)
-- Leichter zu transformieren als HTML (z.B. fuer Export)
-- Unabhaengig vom Editor (migrierbar zu einem anderen Editor)
+- Structured and machine-readable
+- Lossless roundtrips (JSON -> editor -> JSON)
+- Easier to transform than HTML (e.g. for export)
+- Editor-independent (migratable to another editor)
 
-Beim Export konvertiert das Export-Plugin TipTap-JSON zu Markdown (fuer write-book-template) oder HTML (fuer EPUB). Die Konvertierung ist damit Plugin-Verantwortung, nicht Kern-Verantwortung.
+On export the export plugin converts TipTap JSON to Markdown (for write-book-template) or HTML (for EPUB). The conversion is therefore a plugin responsibility, not a core responsibility.
 
 ```json
 {
@@ -463,19 +463,19 @@ Beim Export konvertiert das Export-Plugin TipTap-JSON zu Markdown (fuer write-bo
     {
       "type": "heading",
       "attrs": { "level": 2 },
-      "content": [{ "type": "text", "text": "Kapitel 1" }]
+      "content": [{ "type": "text", "text": "Chapter 1" }]
     },
     {
       "type": "paragraph",
-      "content": [{ "type": "text", "text": "Es war einmal..." }]
+      "content": [{ "type": "text", "text": "Once upon a time..." }]
     }
   ]
 }
 ```
 
-### 4.4 Export als Plugin
+### 4.4 Export as a plugin
 
-Der gesamte Export ist ein Plugin (`bibliogon-plugin-export`):
+The entire export is a plugin (`bibliogon-plugin-export`):
 
 ```
 bibliogon-plugin-export/
@@ -483,10 +483,10 @@ bibliogon-plugin-export/
 ├── bibliogon_export/
 │   ├── __init__.py
 │   ├── plugin.py            # ExportPlugin(BasePlugin)
-│   ├── hookimpls.py         # Hook-Implementations
-│   ├── scaffolder.py        # write-book-template Verzeichnisstruktur
-│   ├── pandoc_runner.py     # Pandoc-Aufrufe
-│   ├── tiptap_to_md.py     # TipTap-JSON -> Markdown Konvertierung
+│   ├── hookimpls.py         # hook implementations
+│   ├── scaffolder.py        # write-book-template directory structure
+│   ├── pandoc_runner.py     # Pandoc calls
+│   ├── tiptap_to_md.py      # TipTap JSON -> Markdown conversion
 │   └── routes.py            # /api/books/{id}/export/{fmt}
 ├── config/
 │   └── export.yaml
@@ -499,16 +499,16 @@ bibliogon-plugin-export/
 export = "bibliogon_export.plugin:ExportPlugin"
 ```
 
-### 4.5 write-book-template Verzeichnisstruktur
+### 4.5 write-book-template directory structure
 
-Das Export-Plugin erzeugt beim Export:
+On export the plugin produces:
 
 ```
-{buch-titel}/
+{book-title}/
 ├── manuscript/
 │   ├── chapters/
-│   │   ├── 01-kapitel-titel.md
-│   │   ├── 02-kapitel-titel.md
+│   │   ├── 01-chapter-title.md
+│   │   ├── 02-chapter-title.md
 │   ├── front-matter/
 │   │   ├── toc.md
 │   │   ├── preface.md
@@ -539,90 +539,90 @@ Das Export-Plugin erzeugt beim Export:
 └── pyproject.toml             (optional)
 ```
 
-Mapping DB -> Dateisystem:
+Mapping DB -> filesystem:
 
-| Bibliogon (DB) | write-book-template (Dateisystem) |
-|----------------|-----------------------------------|
-| `Book.title` | Projektordner-Name, `config/metadata.yaml` -> `title` |
+| Bibliogon (DB) | write-book-template (filesystem) |
+|----------------|----------------------------------|
+| `Book.title` | project folder name, `config/metadata.yaml` -> `title` |
 | `Book.subtitle` | `config/metadata.yaml` -> `subtitle` |
 | `Book.author` | `config/metadata.yaml` -> `author`, `back-matter/about-the-author.md` |
 | `Book.language` | `config/metadata.yaml` -> `lang` |
 | `Book.series` | `config/metadata.yaml` -> `series` |
 | `Book.series_index` | `config/metadata.yaml` -> `series_index` |
 | `Book.description` | `config/metadata.yaml` -> `description` |
-| `Chapter.title` | Dateiname `{NN}-{slug}.md`, H1 im Inhalt |
-| `Chapter.content` | Markdown-Body (konvertiert aus TipTap-JSON) |
-| `Chapter.position` | Numerisches Praefix (`01-`, `02-`, ...) |
+| `Chapter.title` | filename `{NN}-{slug}.md`, H1 in the content |
+| `Chapter.content` | Markdown body (converted from TipTap JSON) |
+| `Chapter.position` | numeric prefix (`01-`, `02-`, ...) |
 
-### 4.6 Offline/Local-first
+### 4.6 Offline/local-first
 
-Bibliogon muss komplett offline funktionieren:
+Bibliogon has to work completely offline:
 
-- SQLite als Default-DB (keine externe DB noetig)
-- Alle Assets lokal im Dateisystem
-- Frontend als statische Dateien auslieferbar (kein CDN-Zwang)
-- Premium-Plugin-Lizenzen offline validierbar (signierte Lizenzschluessel, kein Lizenzserver noetig)
-- Einzige Ausnahme: Plugins die externe APIs nutzen (TTS, KI-Hilfe) brauchen natuerlich Netz
+- SQLite as the default DB (no external DB required)
+- All assets local on the filesystem
+- Frontend deliverable as static files (no CDN forced)
+- Premium plugin licenses validatable offline (signed license keys, no license server required)
+- Only exception: plugins that call external APIs (TTS, AI help) naturally need network access
 
-### 4.7 Datensicherung
+### 4.7 Backup
 
-Full-Data-Backup als ZIP:
+Full-data backup as a ZIP:
 
 ```
 bibliogon-backup-2026-03-26/
 ├── books/
 │   ├── {book-id-1}/
-│   │   ├── book.json          # Book-Metadaten
+│   │   ├── book.json          # book metadata
 │   │   ├── chapters/
-│   │   │   ├── {chapter-id}.json  # Kapitel mit TipTap-JSON
+│   │   │   ├── {chapter-id}.json  # chapter with TipTap JSON
 │   │   │   └── ...
-│   │   └── assets/            # Zugehoerige Bilder
+│   │   └── assets/            # associated images
 │   └── {book-id-2}/
 │       └── ...
-├── settings.json              # App-Einstellungen
-└── manifest.json              # Backup-Metadaten, Version, Datum
+├── settings.json              # app settings
+└── manifest.json              # backup metadata, version, date
 ```
 
-Import eines Backups stellt den kompletten Zustand wieder her. Unabhaengig vom Export-Plugin (das write-book-template Struktur erzeugt).
+Importing a backup restores the entire state. Independent of the export plugin (which produces the write-book-template structure).
 
 ---
 
-## 5. Geschaeftsmodell
+## 5. Business model
 
-| Schicht | Lizenz | Inhalt |
-|---------|--------|--------|
-| PluginForge | MIT (kostenlos) | Framework, fuer jeden nutzbar |
-| Bibliogon Core | MIT (kostenlos) | UI, Editor, Book/Chapter CRUD, Backup |
-| plugin-export | MIT (kostenlos) | EPUB, PDF, Projektstruktur |
-| Community Plugins | MIT (kostenlos) | Von der Community entwickelt |
-| Premium Plugins | Proprietaer (kostenpflichtig) | Audiobook, Kinderbuch, KDP, Kollaboration |
+| Layer | License | Content |
+|-------|---------|---------|
+| PluginForge | MIT (free) | Framework, usable by anyone |
+| Bibliogon core | MIT (free) | UI, editor, Book/Chapter CRUD, backup |
+| plugin-export | MIT (free) | EPUB, PDF, project structure |
+| Community plugins | MIT (free) | Developed by the community |
+| Premium plugins | Proprietary (paid) | Audiobook, children's books, KDP, collaboration |
 
-### 5.1 Plugin-Katalog
+### 5.1 Plugin catalog
 
-**Kostenlos (MIT):**
+**Free (MIT):**
 
-| Plugin | Typ | Beschreibung |
-|--------|-----|-------------|
+| Plugin | Type | Description |
+|--------|------|-------------|
 | `plugin-export` | Export | EPUB, PDF, write-book-template ZIP |
-| `plugin-characters` | Struktur | Figurendatenbank, Beziehungsgraph |
-| `plugin-wordcount` | Editor | Wortzaehler pro Kapitel und Gesamt |
+| `plugin-characters` | Structure | Character database, relationship graph |
+| `plugin-wordcount` | Editor | Word count per chapter and total |
 
 **Premium:**
 
-| Plugin | Typ | Beschreibung | Abhaengigkeit |
-|--------|-----|-------------|---------------|
-| `plugin-kinderbuch` | Export + Editor | Bild-pro-Seite Layout, spezielle Templates | plugin-export |
-| `plugin-kdp` | Export | KDP-Metadaten, Cover-Validierung, Vorschau | plugin-export |
-| `plugin-audiobook` | Export | Text-to-Speech, MP3/M4B, Kapitelmarker | plugin-export |
-| `plugin-grammar` | Editor | LanguageTool-Integration | - |
-| `plugin-ai-assist` | Editor | KI-Schreibhilfe | - |
-| `plugin-collaboration` | Struktur | Multi-User Echtzeit-Bearbeitung | - |
-| `plugin-versioning` | Editor | Kapitel-Versionsgeschichte mit Diff | - |
-| `plugin-docx` | Export | Word-Export fuer Lektorate | plugin-export |
+| Plugin | Type | Description | Depends on |
+|--------|------|-------------|------------|
+| `plugin-kinderbuch` | Export + editor | One-image-per-page layout, special templates | plugin-export |
+| `plugin-kdp` | Export | KDP metadata, cover validation, preview | plugin-export |
+| `plugin-audiobook` | Export | Text-to-speech, MP3/M4B, chapter markers | plugin-export |
+| `plugin-grammar` | Editor | LanguageTool integration | - |
+| `plugin-ai-assist` | Editor | AI writing help | - |
+| `plugin-collaboration` | Structure | Multi-user real-time editing | - |
+| `plugin-versioning` | Editor | Chapter version history with diff | - |
+| `plugin-docx` | Export | Word export for editors | plugin-export |
 
-### 5.2 Plugin-Abhaengigkeiten
+### 5.2 Plugin dependencies
 
-Deklariert in der Plugin-YAML:
+Declared in the plugin YAML:
 
 ```yaml
 plugin:
@@ -630,7 +630,7 @@ plugin:
   depends_on: ["export"]
 ```
 
-PluginForge prueft beim Laden ob alle Abhaengigkeiten aktiv sind (topologische Sortierung). Fehlende Abhaengigkeiten fuehren zum Ueberspringen mit Warnung (sichtbar via `get_load_errors()`). Abhaengigkeiten werden jetzt als Klassen-Attribut deklariert:
+On load PluginForge verifies that all dependencies are active (topological sort). Missing dependencies cause the plugin to be skipped with a warning (visible via `get_load_errors()`). Dependencies are now declared as a class attribute:
 
 ```python
 class KinderbuchPlugin(BasePlugin):
@@ -638,38 +638,38 @@ class KinderbuchPlugin(BasePlugin):
     depends_on = ["export"]
 ```
 
-### 5.3 Plugin-Lizenzierung (Offline)
+### 5.3 Plugin licensing (offline)
 
-Lizenzierung ist bibliogon-spezifisch (nicht Teil von PluginForge) und lebt in `backend/app/licensing.py`. Die Pruefung erfolgt via `pre_activate` Callback auf dem PluginManager:
+Licensing is Bibliogon-specific (not part of PluginForge) and lives in `backend/app/licensing.py`. The check runs via a `pre_activate` callback on the PluginManager:
 
 ```python
 manager = PluginManager(
     config_path="config/app.yaml",
-    pre_activate=license_check,  # Return False -> Plugin wird nicht aktiviert
+    pre_activate=license_check,  # return False -> plugin is not activated
 )
 ```
 
-Premium-Plugins nutzen HMAC-SHA256 signierte Lizenzschluessel:
+Premium plugins use HMAC-SHA256 signed license keys:
 
 ```
 BIBLIOGON-KINDERBUCH-v1-<base64 payload>.<base64 signature>
 ```
 
-Der Schluessel enthaelt (Base64-kodiert + signiert):
-- Plugin-Name und Version
-- Ablaufdatum (oder "lifetime")
-- Maschinen-ID (optional, fuer Einzelplatz-Lizenzen)
+The key contains (base64-encoded + signed):
+- Plugin name and version
+- Expiry date (or "lifetime")
+- Machine ID (optional, for single-seat licenses)
 
-Validierung passiert lokal. Kein Lizenzserver noetig, kein Internet erforderlich. Lizenzen werden in `config/licenses.json` gespeichert und ueber die Settings-UI verwaltet.
+Validation happens locally. No license server required, no internet required. Licenses are stored in `config/licenses.json` and managed through the Settings UI.
 
-#### License Tiers
+#### License tiers
 
-Jedes Plugin hat ein `license_tier` Klassen-Attribut:
+Every plugin has a `license_tier` class attribute:
 
-| Tier | Beschreibung | Lizenzpruefung |
+| Tier | Description | License check |
 |------|-------------|----------------|
-| `core` | Kostenlos, funktioniert immer | Keine |
-| `premium` | Braucht gueltigen Lizenzschluessel | HMAC-SHA256 |
+| `core` | Free, always works | None |
+| `premium` | Needs a valid license key | HMAC-SHA256 |
 
 | Plugin | Tier |
 |--------|------|
@@ -683,40 +683,40 @@ Jedes Plugin hat ein `license_tier` Klassen-Attribut:
 | audiobook | premium |
 | translation | premium |
 
-#### Trial Keys
+#### Trial keys
 
-Trial-Keys schalten alle Premium-Plugins fuer eine begrenzte Zeit frei:
+Trial keys unlock all premium plugins for a limited time:
 
-- Plugin-Name im Payload ist `"*"` (Wildcard, matcht alle Plugins)
-- Standard-Laufzeit: 30 Tage
-- Generierung: `make generate-trial-key`
-- Speicherung: `licenses.json` unter Key `"*"`
+- Plugin name in the payload is `"*"` (wildcard, matches every plugin)
+- Default duration: 30 days
+- Generation: `make generate-trial-key`
+- Storage: `licenses.json` under the key `"*"`
 - Format: `BIBLIOGON-*-v1-<base64 payload>.<base64 signature>`
 
 ---
 
-## 5.4 Plugin-Installation (ZIP)
+## 5.4 Plugin installation (ZIP)
 
-Drittanbieter-Plugins koennen als ZIP-Datei ueber die Settings-UI installiert werden. Die Installation erfolgt dynamisch zur Laufzeit (Strategie B: Dynamic Loading).
+Third-party plugins can be installed as a ZIP file via the Settings UI. Installation happens dynamically at runtime (strategy B: dynamic loading).
 
-**ZIP-Struktur:**
+**ZIP structure:**
 
 ```
-mein-plugin.zip
-└── mein-plugin/
-    ├── plugin.yaml          # Plugin-Konfiguration (erforderlich)
-    ├── mein_plugin/          # Python-Paket (erforderlich)
+my-plugin.zip
+└── my-plugin/
+    ├── plugin.yaml          # plugin configuration (required)
+    ├── my_plugin/           # Python package (required)
     │   ├── __init__.py
-    │   ├── plugin.py         # Plugin-Klasse (BasePlugin-Unterklasse)
-    │   └── routes.py         # Optionale FastAPI-Router
-    └── requirements.txt      # Optionale Abhaengigkeiten
+    │   ├── plugin.py        # plugin class (BasePlugin subclass)
+    │   └── routes.py        # optional FastAPI router
+    └── requirements.txt     # optional dependencies
 ```
 
-**plugin.yaml Mindestinhalt:**
+**plugin.yaml minimum content:**
 
 ```yaml
 plugin:
-  name: "mein-plugin"
+  name: "my-plugin"
   display_name:
     de: "Mein Plugin"
     en: "My Plugin"
@@ -727,48 +727,48 @@ plugin:
   license: "MIT"
   depends_on: []
   api_version: "1"
-  entry_point: "mein_plugin.plugin"  # Optional, wird auto-detektiert
+  entry_point: "my_plugin.plugin"  # optional, auto-detected
 
 settings:
-  # Plugin-spezifische Einstellungen
+  # plugin-specific settings
 ```
 
-**Installationsablauf:**
+**Installation flow:**
 
-1. Benutzer laedt ZIP ueber Settings > Plugins > "ZIP installieren"
-2. Backend validiert ZIP-Struktur (plugin.yaml, Python-Paket, plugin.py)
-3. Extraktion nach `plugins/installed/{plugin-name}/`
-4. Plugin-Config wird nach `config/plugins/{name}.yaml` kopiert
-5. Plugin wird zum `sys.path` hinzugefuegt und dynamisch registriert
-6. Plugin erscheint in den Einstellungen und kann konfiguriert werden
+1. User uploads the ZIP through Settings > Plugins > "Install ZIP"
+2. Backend validates the ZIP structure (plugin.yaml, Python package, plugin.py)
+3. Extraction to `plugins/installed/{plugin-name}/`
+4. Plugin config is copied to `config/plugins/{name}.yaml`
+5. Plugin is added to `sys.path` and registered dynamically
+6. Plugin shows up in the settings and can be configured
 
-**Sicherheit:**
+**Security:**
 
-- Plugin-Namen werden validiert (nur Kleinbuchstaben, Ziffern, Bindestriche)
-- ZIP-Pfade werden auf Path Traversal geprueft
-- Plugins laufen im selben Prozess (kein Sandboxing) - nur vertrauenswuerdige Plugins installieren
+- Plugin names are validated (lowercase letters, digits, hyphens only)
+- ZIP paths are checked for path traversal
+- Plugins run in the same process (no sandboxing) - only install trusted plugins
 
-**API-Endpunkte:**
+**API endpoints:**
 
-- `POST /api/plugins/install` - Plugin-ZIP hochladen und installieren
-- `DELETE /api/plugins/install/{name}` - Plugin deinstallieren
-- `GET /api/plugins/installed` - Installierte Plugins auflisten
+- `POST /api/plugins/install` - upload and install a plugin ZIP
+- `DELETE /api/plugins/install/{name}` - uninstall a plugin
+- `GET /api/plugins/installed` - list installed plugins
 
-### 5.5 Plugin UI-Strategie (Manifest-driven)
+### 5.5 Plugin UI strategy (manifest-driven)
 
-Plugins koennen UI-Erweiterungen deklarieren ueber die `get_frontend_manifest()` Methode. Das Frontend fragt `GET /api/plugins/manifests` ab und rendert vordefinierte UI-Slots.
+Plugins can declare UI extensions through the `get_frontend_manifest()` method. The frontend queries `GET /api/plugins/manifests` and renders predefined UI slots.
 
-**Vordefinierte UI-Slots:**
+**Predefined UI slots:**
 
-| Slot | Beschreibung | Ort in der App |
-|------|-------------|----------------|
-| `sidebar_actions` | Buttons in der Kapitel-Sidebar | BookEditor Sidebar |
-| `toolbar_buttons` | Buttons in der Editor-Toolbar | Editor Toolbar |
-| `editor_panels` | Panels neben dem Editor | BookEditor |
-| `settings_section` | Zusaetzliche Einstellungen | Settings > Plugins |
-| `export_options` | Optionen im Export-Dialog | ExportDialog |
+| Slot | Description | Location in the app |
+|------|-------------|---------------------|
+| `sidebar_actions` | Buttons in the chapter sidebar | BookEditor sidebar |
+| `toolbar_buttons` | Buttons in the editor toolbar | Editor toolbar |
+| `editor_panels` | Panels next to the editor | BookEditor |
+| `settings_section` | Additional settings | Settings > Plugins |
+| `export_options` | Options in the export dialog | ExportDialog |
 
-**Manifest-Beispiel (Export-Plugin):**
+**Manifest example (export plugin):**
 
 ```python
 def get_frontend_manifest(self) -> dict | None:
@@ -793,16 +793,16 @@ def get_frontend_manifest(self) -> dict | None:
     }
 ```
 
-**Strategie fuer komplexe Plugin-UIs:**
+**Strategy for complex plugin UIs:**
 
-Fuer Plugins die ueber einfache Manifest-Deklarationen hinausgehen (z.B. interaktive Vorschau, komplexe Formulare), koennen Web Components als Custom Elements geliefert werden. Das Plugin-ZIP enthaelt dann ein kompiliertes JS-Bundle das ueber einen definierten Slot geladen wird.
+For plugins that go beyond simple manifest declarations (e.g. interactive preview, complex forms), Web Components as custom elements can be delivered. The plugin ZIP then contains a compiled JS bundle that is loaded through a defined slot.
 
-## 6. API-Versionierung
+## 6. API versioning
 
-Hook-Specs bekommen eine Version. Plugins deklarieren welche API-Version sie unterstuetzen:
+Hook specs are versioned. Plugins declare which API version they support:
 
 ```python
-# bibliogon/hookspecs.py - Version 1
+# bibliogon/hookspecs.py - version 1
 import pluggy
 hookspec = pluggy.HookspecMarker("bibliogon.plugins")
 
@@ -816,78 +816,78 @@ class BibliogonHookSpec:
         """Execute an export. First plugin to return wins."""
 ```
 
-Wenn sich Hooks aendern, wird eine neue Spec-Version erstellt (v2). Alte Plugins (api_version: "1") funktionieren weiter solange die v1-Hooks nicht entfernt werden. Deprecation-Warnungen bei alten Hooks.
+When hooks change, a new spec version is created (v2). Old plugins (api_version: "1") keep working as long as the v1 hooks are not removed. Deprecation warnings on old hooks.
 
 ---
 
 ## 7. Roadmap
 
-Feature-Details und offene Punkte siehe docs/ROADMAP.md (mit IDs fuer Prompt-Referenz).
+Feature details and open items see docs/ROADMAP.md (with IDs for prompt references).
 
 | Phase | Version | Status |
 |-------|---------|--------|
-| 1: MVP | v0.1.0 | erledigt |
-| 2: PluginForge Framework | v0.2.0 | erledigt |
-| 3: Export als Plugin | v0.3.0 | erledigt |
-| 4: Import, Backup, Kapiteltypen | v0.4.0 | erledigt |
-| 5: Erste Premium-Plugins (kinderbuch, kdp) | v0.5.0 | erledigt |
-| 6: Editor-Erweiterungen, i18n, Themes | v0.6.0 | erledigt |
-| 7: Erweiterte Metadaten, Publishing | v0.7.0 | erledigt |
-| 8: Manuskript-Qualitaet, Editor, Export | v0.9.0 | erledigt |
-| 9: Uebersetzung, Audiobook, Infrastruktur | v0.10.0 | erledigt (aktuell) |
-| 10: Multi-User und SaaS | v1.0.0 | naechste Phase |
+| 1: MVP | v0.1.0 | done |
+| 2: PluginForge framework | v0.2.0 | done |
+| 3: Export as a plugin | v0.3.0 | done |
+| 4: Import, backup, chapter types | v0.4.0 | done |
+| 5: First premium plugins (kinderbuch, kdp) | v0.5.0 | done |
+| 6: Editor extensions, i18n, themes | v0.6.0 | done |
+| 7: Extended metadata, publishing | v0.7.0 | done |
+| 8: Manuscript quality, editor, export | v0.9.0 | done |
+| 9: Translation, audiobook, infrastructure | v0.10.0 | done (current) |
+| 10: Multi-user and SaaS | v1.0.0 | next phase |
 
 ---
 
-## 8. Abgrenzung
+## 8. Scope
 
-### Was Bibliogon ist
+### What Bibliogon is
 
-- Eine Web-UI zum Schreiben von Buechern
-- Aufgebaut auf PluginForge (wiederverwendbares Plugin-Framework)
-- Offline-faehig und Local-first
-- Ein Generator fuer write-book-template Projektstrukturen (via Plugin)
-- Ein EPUB/PDF-Export-Tool via Pandoc (via Plugin)
-- Open Source mit SaaS-Potenzial
+- A web UI for writing books
+- Built on PluginForge (reusable plugin framework)
+- Offline-capable and local-first
+- A generator for write-book-template project structures (via a plugin)
+- An EPUB/PDF export tool via Pandoc (via a plugin)
+- Open source with SaaS potential
 
-### Was PluginForge ist
+### What PluginForge is
 
-- Eine Erweiterungsschicht auf pluggy, kein Ersatz
-- Anwendungsunabhaengig, wiederverwendbar
-- YAML-konfigurierbar (Titel, Labels, Einstellungen, i18n)
-- Mit FastAPI-Integration und DB-Migration-Support
+- An extension layer on top of pluggy, not a replacement
+- Application-agnostic, reusable
+- YAML-configurable (title, labels, settings, i18n)
+- With FastAPI integration and DB migration support
 
-### Was beides nicht ist
+### What neither is
 
-- Kein KI-Textgenerator (aber erweiterbar per Plugin)
-- Kein kollaboratives Echtzeit-Tool (aber erweiterbar per Plugin)
-- Kein Layoutprogramm (kein InDesign-Ersatz)
-
----
-
-## 9. Konkurrenzanalyse
-
-| Tool | Open Source | Web | Offline | Plugin-System | Projektstruktur |
-|------|-----------|-----|---------|---------------|-----------------|
-| Scrivener | Nein | Nein | Ja | Nein | Proprietaer |
-| Reedsy Studio | Nein | Ja | Nein | Nein | Nein |
-| Manuskript | Ja | Nein | Ja | Nein | Proprietaer |
-| Obsidian | Nein | Nein | Ja | Ja (Community) | Nein |
-| VS Code | Ja | Ja | Ja | Ja (Extensions) | Nein |
-| **Bibliogon** | **Ja** | **Ja** | **Ja** | **Ja (PluginForge)** | **write-book-template** |
-
-Kein anderes Autoren-Tool kombiniert Open Source, Web-UI, Offline-Faehigkeit, ein echtes Plugin-Framework auf pluggy-Basis, und eine standardisierte Pandoc-kompatible Projektstruktur.
+- Not an AI text generator (but extensible via a plugin)
+- Not a collaborative real-time tool (but extensible via a plugin)
+- Not a layout program (no InDesign replacement)
 
 ---
 
-## 10. Offene Fragen
+## 9. Competitive analysis
 
-1. ~~**PluginForge Name:** Ist `pluginforge` als PyPI-Paketname frei?~~ Erledigt - auf PyPI als `pluginforge` veroeffentlicht.
+| Tool | Open source | Web | Offline | Plugin system | Project structure |
+|------|-------------|-----|---------|---------------|-------------------|
+| Scrivener | No | No | Yes | No | Proprietary |
+| Reedsy Studio | No | Yes | No | No | No |
+| Manuskript | Yes | No | Yes | No | Proprietary |
+| Obsidian | No | No | Yes | Yes (community) | No |
+| VS Code | Yes | Yes | Yes | Yes (extensions) | No |
+| **Bibliogon** | **Yes** | **Yes** | **Yes** | **Yes (PluginForge)** | **write-book-template** |
 
-2. **Frontend-Plugin-Loading:** Dynamisches Laden von React-Komponenten zur Laufzeit (Module Federation, importmaps) oder statisches Bundling beim Build?
+No other authoring tool combines open source, a web UI, offline capability, a real plugin framework on top of pluggy, and a standardized Pandoc-compatible project structure.
 
-3. **PluginForge Scope Frontend:** Soll PluginForge auch ein npm-Pendant haben fuer Frontend-Plugin-Loading, oder bleibt das Bibliogon-spezifisch?
+---
 
-4. **Plugin-DB-Migrationen:** Alembic mit mehreren `versions`-Ordnern (einer pro Plugin) oder ein zentraler Ordner mit Plugin-Prefix?
+## 10. Open questions
 
-5. **TipTap-JSON Groesse:** Bei langen Kapiteln kann TipTap-JSON deutlich groesser sein als HTML. Relevanz fuer SQLite-Performance bei Phase 7 (PostgreSQL) pruefen.
+1. ~~**PluginForge name:** is `pluginforge` available as a PyPI package name?~~ Done - published on PyPI as `pluginforge`.
+
+2. **Frontend plugin loading:** dynamic loading of React components at runtime (module federation, importmaps) or static bundling at build time?
+
+3. **PluginForge scope frontend:** should PluginForge also have an npm counterpart for frontend plugin loading, or does that stay Bibliogon-specific?
+
+4. **Plugin DB migrations:** Alembic with multiple `versions` folders (one per plugin) or a central folder with a plugin prefix?
+
+5. **TipTap JSON size:** for long chapters TipTap JSON can be noticeably larger than HTML. Check relevance for SQLite performance before phase 7 (PostgreSQL).
