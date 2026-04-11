@@ -241,3 +241,14 @@ Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wieder
 - File-Upload-Funktionen (fetch statt request()) muessen bei Fehler ApiError werfen, nicht Error.
 - Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
 - Im Debug-Mode liefert die Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).
+
+## Architektur-Entscheidungen
+
+Bevor du eine groessere Architektur-Entscheidung triffst:
+1. Lies die relevanten ROADMAP-Eintraege
+2. Pruefe ob in todo-prompts.md oder docs/chat-journal bereits 
+   Entscheidungen zu diesem Bereich dokumentiert sind
+3. Wenn du einen Konflikt zwischen einer User-Anweisung und 
+   dokumentierter Planung findest: STOP, frag den User explizit nach
+4. Niemals Parallel-Systeme bauen die schon zur Loeschung 
+   geplant sind, auch nicht als "Zwischenloesung"
