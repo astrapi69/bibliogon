@@ -111,6 +111,11 @@ ui:
         index: "Indice remissivo"
         epigraph: "Epigrafe"
         endnotes: "Notas finais"
+        part: "Parte"
+        final_thoughts: "Consideracoes finais"
+        also_by_author: "Tambem do autor"
+        excerpt: "Trecho"
+        call_to_action: "Chamada para acao"
     export_dialog:
         title: "Exportar"
         format: "Formato"

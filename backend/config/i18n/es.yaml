@@ -105,6 +105,11 @@ ui:
     index: "Indice"
     epigraph: "Epigrafe"
     endnotes: "Notas finales"
+    part: "Parte"
+    final_thoughts: "Reflexiones finales"
+    also_by_author: "Tambien del autor"
+    excerpt: "Extracto"
+    call_to_action: "Llamada a la accion"
   export_dialog:
     title: "Exportar"
     format: "Formato"

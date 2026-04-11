@@ -144,6 +144,11 @@ ui:
     index: "Index"
     epigraph: "Epigraph"
     endnotes: "Endnotes"
+    part: "Part"
+    final_thoughts: "Final Thoughts"
+    also_by_author: "Also by the Author"
+    excerpt: "Excerpt"
+    call_to_action: "Call to Action"
   export_dialog:
     title: "Export"
     format: "Format"

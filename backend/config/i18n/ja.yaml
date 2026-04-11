@@ -111,6 +111,11 @@ ui:
         index: "索引"
         epigraph: "題辞"
         endnotes: "巻末注"
+        part: "部"
+        final_thoughts: "最後に"
+        also_by_author: "同じ著者の他の本"
+        excerpt: "抜粋"
+        call_to_action: "行動の呼びかけ"
     export_dialog:
         title: "エクスポート"
         format: "フォーマット"

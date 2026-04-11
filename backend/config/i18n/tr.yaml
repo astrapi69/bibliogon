@@ -111,6 +111,11 @@ ui:
         index: "Dizin"
         epigraph: "Ozlu soz"
         endnotes: "Son notlar"
+        part: "Kisim"
+        final_thoughts: "Son dusunceler"
+        also_by_author: "Ayni yazardan"
+        excerpt: "Alinti"
+        call_to_action: "Eylem cagrisi"
     export_dialog:
         title: "Disa aktar"
         format: "Format"

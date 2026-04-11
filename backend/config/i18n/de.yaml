@@ -144,6 +144,11 @@ ui:
     index: "Stichwortverzeichnis"
     epigraph: "Motto"
     endnotes: "Endnoten"
+    part: "Teil"
+    final_thoughts: "Schlussgedanken"
+    also_by_author: "Weitere Bücher des Autors"
+    excerpt: "Leseprobe"
+    call_to_action: "Aufruf zur Aktion"
   export_dialog:
     title: "Export"
     format: "Format"

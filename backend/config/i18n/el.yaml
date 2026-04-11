@@ -105,6 +105,11 @@ ui:
     index: "Ευρετήριο"
     epigraph: "Επίγραμμα"
     endnotes: "Σημειώσεις τέλους"
+    part: "Μέρος"
+    final_thoughts: "Τελικές σκέψεις"
+    also_by_author: "Επίσης από τον συγγραφέα"
+    excerpt: "Απόσπασμα"
+    call_to_action: "Πρόσκληση σε δράση"
   export_dialog:
     title: "Εξαγωγή"
     format: "Μορφή"
