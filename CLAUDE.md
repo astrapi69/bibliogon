@@ -1,12 +1,12 @@
 # Bibliogon
 
-Open-source book authoring platform. Aufgebaut auf PluginForge (PyPI), einem wiederverwendbaren Plugin-Framework basierend auf pluggy. Offline-faehig, i18n-ready, local-first, Freemium-Modell.
+Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first, freemium model.
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.12.0 (per-Buch Audio-Konfiguration, V-02 Backup-Vergleich, Plugin-Settings Audit, 5 neue ChapterTypes. Naechste Phase: Multi-User/SaaS)
-- **Konzept:** docs/CONCEPT.md
-- **API-Referenz:** FastAPI OpenAPI unter `/docs` und `/openapi.json` (Quelle der Wahrheit). docs/API.md ist ein High-Level-Ueberblick.
-- **Verlauf:** docs/CHANGELOG.md (erledigte Phasen), docs/ROADMAP.md (offene Punkte)
+- **Version:** 0.12.0 (per-book audio configuration, V-02 backup compare, plugin settings audit, 5 new ChapterTypes. Next phase: multi-user/SaaS)
+- **Concept:** docs/CONCEPT.md
+- **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
+- **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)
 
 ## Development guidelines
 
@@ -24,108 +24,108 @@ Detailed rules live in `.claude/rules/`. Claude Code reads them on demand.
 
 On a conflict between CLAUDE.md and the rules, the rules win.
 
-## Tech Stack
+## Tech stack
 
 - **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.0, SQLite, Pydantic v2, Poetry
-- **Frontend:** React 18, TypeScript (strict), TipTap (15+1 Extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
-- **Plugins:** pluginforge ^0.5.0 (PyPI), Entry Points, YAML-Config
-- **Export:** manuscripta ^0.7.0 (PyPI), Pandoc, write-book-template Struktur. Alle TTS-Engines delegieren an manuscripta-Adapter.
+- **Frontend:** React 18, TypeScript (strict), TipTap (15+1 extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
+- **Plugins:** pluginforge ^0.5.0 (PyPI), entry points, YAML config
+- **Export:** manuscripta ^0.7.0 (PyPI), Pandoc, write-book-template structure. All TTS engines delegate to the manuscripta adapter.
 - **Testing:** pytest, Vitest, Playwright, mutmut, Stryker
 - **Tooling:** Poetry, npm, Docker, Make, ruff, ESLint, Prettier, pre-commit
 
-## Architektur (Kurz)
+## Architecture (short)
 
-4 Schichten: Frontend -> Backend -> PluginForge -> Plugins. Details in `.claude/rules/architecture.md`.
+4 layers: Frontend -> Backend -> PluginForge -> Plugins. Details in `.claude/rules/architecture.md`.
 
-Schlanker Kern (UI, Editor, CRUD, Backup). Alles weitere via Plugins. Freemium: `license_tier = "core"` (MIT) oder `"premium"` (HMAC-signierte Keys, offline validierbar).
+Lean core (UI, editor, CRUD, backup). Everything else via plugins. Freemium: `license_tier = "core"` (MIT) or `"premium"` (HMAC-signed keys, offline-validatable).
 
-## Befehle
+## Commands
 
 ```bash
-make install              # Poetry + npm + Plugins
-make dev                  # Backend (8000) + Frontend (5173) parallel
-make dev-bg / dev-down    # Hintergrund-Modus
-make test                 # Alle Tests (Backend + Plugins + Frontend)
-make test-backend         # Nur Backend
-make test-plugins         # Alle Plugin-Tests
+make install              # Poetry + npm + plugins
+make dev                  # backend (8000) + frontend (5173) in parallel
+make dev-bg / dev-down    # background mode
+make test                 # all tests (backend + plugins + frontend)
+make test-backend         # backend only
+make test-plugins         # all plugin tests
 make test-frontend        # Vitest
-make prod                 # Docker Compose (Port 7880)
-make prod-down            # Docker stoppen
-make generate-trial-key   # 30-Tage Trial-Key fuer alle Premium-Plugins
-make clean                # Build-Artefakte entfernen
-make help                 # Alle Targets
+make prod                 # Docker Compose (port 7880)
+make prod-down            # stop Docker
+make generate-trial-key   # 30-day trial key for all premium plugins
+make clean                # remove build artifacts
+make help                 # all targets
 ```
 
-Plugin-spezifisch: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,audiobook,translation}`
+Plugin-specific: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,audiobook,translation}`
 
-## Session-Start (Claude Code)
+## Session start (Claude Code)
 
-1. `git log --oneline -10` - Letzte Aenderungen
-2. `docs/ROADMAP.md` lesen - Aktueller Stand
-3. `make test` - Baseline gruen
+1. `git log --oneline -10` - recent changes
+2. Read `docs/ROADMAP.md` - current state
+3. `make test` - green baseline
 
-## Datenmodell (Kurz)
+## Data model (short)
 
-- **Book:** id, title, subtitle, author, language, series, series_index, description, Publishing (ISBN/ASIN/Publisher/Edition), Marketing (keywords, html_description, backpage), Design (cover_image, custom_css)
+- **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css)
 - **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type
 - **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
 
-**ChapterType (26):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action. Marketing types (also_by_author, excerpt, call_to_action) sind im Audiobook-Export per Default in der Skip-Liste. Per-Buch-Override ueber Book.audiobook_skip_chapter_types.
+**ChapterType (26):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action. Marketing types (also_by_author, excerpt, call_to_action) are in the audiobook-export skip list by default. Per-book override via Book.audiobook_skip_chapter_types.
 
 ## Plugins
 
-| Plugin             | Tier    | Abhaengigkeit | Beschreibung                                                |
-| ------------------ | ------- | ------------- | ----------------------------------------------------------- |
-| plugin-export      | core    | -             | EPUB, PDF, write-book-template ZIP, Async-Jobs mit SSE       |
-| plugin-help        | core    | -             | In-App Hilfe, Shortcuts, FAQ                                |
-| plugin-getstarted  | core    | -             | Onboarding, Beispielbuch                                    |
-| plugin-ms-tools    | core    | -             | Stil-Checks, Sanitization, Metriken, per-Buch Schwellwerte   |
-| plugin-audiobook   | premium | export        | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-Buch Config |
-| plugin-translation | premium | -             | DeepL/LMStudio Uebersetzung, Custom Settings-Panel            |
-| plugin-grammar     | premium | -             | LanguageTool (self-hosted + Premium-Auth Support)             |
-| plugin-kinderbuch  | premium | export        | Bild-pro-Seite Layout mit 4 Vorlagen                          |
-| plugin-kdp         | premium | export        | KDP-Metadaten, Cover-Validierung, Completeness-Check          |
+| Plugin             | Tier    | Depends on | Description                                                     |
+| ------------------ | ------- | ---------- | --------------------------------------------------------------- |
+| plugin-export      | core    | -          | EPUB, PDF, write-book-template ZIP, async jobs with SSE         |
+| plugin-help        | core    | -          | In-app help, shortcuts, FAQ                                     |
+| plugin-getstarted  | core    | -          | Onboarding, example book                                        |
+| plugin-ms-tools    | core    | -          | Style checks, sanitization, metrics, per-book thresholds        |
+| plugin-audiobook   | premium | export     | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-book config |
+| plugin-translation | premium | -          | DeepL/LMStudio translation, custom settings panel               |
+| plugin-grammar     | premium | -          | LanguageTool (self-hosted + premium auth support)               |
+| plugin-kinderbuch  | premium | export     | One-image-per-page layout with 4 templates                      |
+| plugin-kdp         | premium | export     | KDP metadata, cover validation, completeness check              |
 
-Plugin-Versionen sind unabhaengig von der App-Version. Ein Plugin wird nur gebumpt wenn sich am Plugin selbst etwas geaendert hat, nicht bei jedem App-Release.
+Plugin versions are independent of the app version. A plugin is only bumped when the plugin itself changed, not on every app release.
 
-## Verzeichnisstruktur (Kurz)
+## Directory structure (short)
 
 ```
 bibliogon/
-├── backend/app/           # FastAPI Kern (main, database, hookspecs, licensing, models, routers, services)
-├── backend/config/        # app.yaml, plugins/, i18n/ (8 Sprachen)
-├── backend/tests/         # Backend Tests
-├── plugins/               # Plugin-Pakete (bibliogon-plugin-{name})
-│   └── installed/         # Dynamisch via ZIP installierte Plugins
+├── backend/app/           # FastAPI core (main, database, hookspecs, licensing, models, routers, services)
+├── backend/config/        # app.yaml, plugins/, i18n/ (8 languages)
+├── backend/tests/         # backend tests
+├── plugins/               # plugin packages (bibliogon-plugin-{name})
+│   └── installed/         # plugins installed dynamically via ZIP
 ├── frontend/src/
-│   ├── api/client.ts      # Typed API Client
-│   ├── components/        # Editor, Toolbar, ChapterSidebar, Dialoge
+│   ├── api/client.ts      # typed API client
+│   ├── components/        # Editor, Toolbar, ChapterSidebar, dialogs
 │   ├── pages/             # Dashboard, BookEditor, Settings, Help, GetStarted
-│   └── styles/global.css  # CSS Variables, 3 Themes x Light/Dark
+│   └── styles/global.css  # CSS variables, 3 themes x light/dark
 ├── docs/                  # CONCEPT.md, ROADMAP.md, CHANGELOG.md
 └── Makefile, docker-compose.yml, docker-compose.prod.yml
 ```
 
-## Kern-Konventionen
+## Core conventions
 
-- TipTap JSON als internes Speicherformat (NICHT HTML, NICHT Markdown)
-- i18n: 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA), alle UI-Strings in config/i18n/{lang}.yaml
-- Python: Typehints, snake_case, Pydantic v2, SQLAlchemy 2.0 Mapped Columns
-- TypeScript: strict mode, kein `any`, Radix UI fuer Primitives
-- CSS: Custom Properties, Dark Mode via [data-theme="dark"]
-- Plugins: eigenstaendige Pakete unter plugins/, depends_on als Klassen-Attribut, license_tier (core/premium)
-- Export: manuscripta (PyPI), Plugin-Config in export.yaml ist 1:1 manuscripta Format
-- Commits: Englisch, konventionell (feat/fix/refactor/docs)
+- TipTap JSON as the internal storage format (NOT HTML, NOT Markdown)
+- i18n: 8 languages (DE, EN, ES, FR, EL, PT, TR, JA), all UI strings in config/i18n/{lang}.yaml
+- Python: type hints, snake_case, Pydantic v2, SQLAlchemy 2.0 mapped columns
+- TypeScript: strict mode, no `any`, Radix UI for primitives
+- CSS: custom properties, dark mode via [data-theme="dark"]
+- Plugins: standalone packages under plugins/, depends_on as a class attribute, license_tier (core/premium)
+- Export: manuscripta (PyPI), plugin config in export.yaml is 1:1 the manuscripta format
+- Commits: English, conventional (feat/fix/refactor/docs)
 
 ## Tests
 
-- Backend + Plugins: 228 (via `make test-backend` + `make test-plugins`)
+- Backend + plugins: 228 (via `make test-backend` + `make test-plugins`)
 - Frontend (Vitest): 90
-- E2E (Playwright): weiterhin 52 Tests unter `frontend/e2e/`, nicht im `make test` Default-Pfad
-- `make test` muss nach jeder Aenderung gruen sein
+- E2E (Playwright): 52 tests under `frontend/e2e/`, not on the `make test` default path
+- `make test` must stay green after every change
 
-## Verwandte Projekte
+## Related projects
 
-- [pluginforge](https://github.com/astrapi69/pluginforge) - Plugin-Framework (PyPI)
-- [manuscripta](https://github.com/astrapi69/manuscripta) - Buch-Export-Pipeline (PyPI)
-- [write-book-template](https://github.com/astrapi69/write-book-template) - Ziel-Verzeichnisstruktur fuer Export
+- [pluginforge](https://github.com/astrapi69/pluginforge) - plugin framework (PyPI)
+- [manuscripta](https://github.com/astrapi69/manuscripta) - book export pipeline (PyPI)
+- [write-book-template](https://github.com/astrapi69/write-book-template) - target directory structure for export
