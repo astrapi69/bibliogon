@@ -2,7 +2,7 @@
 
 Offene Punkte, geplante Features und technische Schulden.
 Checkboxen: `[ ]` = offen, `[x]` = erledigt.
-IDs: U=UI/UX, I=i18n, X=Import/Export, T=TipTap, B=Backend, Q=Tests, P=Plugin, S=Schulden.
+IDs: U=UI/UX, I=i18n, X=Import/Export, T=TipTap, B=Backend, Q=Tests, P=Plugin, S=Schulden, O=Offline-Haertung.
 
 Prompt-Referenz: `Setze T-01 um.` reicht als Anweisung.
 
@@ -190,6 +190,22 @@ Diese Punkte haben Vorrang vor den kategorisierten Listen unten.
       mit `_iter_toc_links` Generator. `_TYPE_ANCHORS` als Modul-Konstante
       aus dem Funktionskoerper rausgezogen.
 
+## Offline-Haertung
+
+- [ ] O-01: Alle UI-Schriftarten lokal buendeln statt Google-Fonts-CDN.
+      Aktuell laedt `frontend/index.html` sechs Schriftfamilien
+      (Crimson Pro, JetBrains Mono, DM Sans, Inter, Lora, Source Serif
+      Pro) ueber `fonts.googleapis.com`, was offline und in
+      privacy-sensitiven Umgebungen bricht. Plan: WOFF2-Dateien nach
+      `frontend/public/fonts/` legen (OFL-lizenziert, Lizenztexte als
+      `LICENSE-{name}.txt` mit ablegen), passende `@font-face`-Regeln
+      in `global.css` ergaenzen, Google-Fonts-Link aus `index.html`
+      entfernen, PWA-Manifest/Service-Worker die neuen Asset-URLs
+      cachen lassen. Muss konsistent sein: entweder alle sechs Fonts
+      lokal oder keine. Teil-Umstellungen erzeugen nur Verwirrung.
+      Auslagerung aus dem Themes-Task weil dort nur die drei neuen
+      Schriften hinzukamen; das Bundling betrifft alle sechs.
+
 ## KDP Publishing Workflow
 - [x] K-01: KDP-Plugin fertig implementieren und deployen
 - [x] K-02: Cover-Validierung: Dimensionen, DPI, Farbprofil gegen KDP-Specs
@@ -242,3 +258,11 @@ Geplant:
        (fuer User ohne bestehenden SSH-Key)
 - [ ] SI-04: Visueller Indikator in der Sidebar wenn Remote-Stand 
        neuer ist als lokal (Warnung statt erst beim Push-Versuch)
+
+
+- [ ] O-01: Bundle all fonts locally for true offline-first compliance.
+       Currently all six theme fonts (Crimson Pro, Lora, Source Serif Pro, 
+       Inter, Crimson Text, Atkinson Hyperlegible) are loaded from Google 
+       Fonts CDN. This contradicts the offline-first principle. Move to 
+       frontend/public/fonts/ with @font-face rules and SIL OFL license 
+       files. Verify all six fonts are SIL OFL compatible before bundling.

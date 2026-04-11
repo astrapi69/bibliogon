@@ -66,6 +66,12 @@ navigation:
         slug: plugins/lizenzen
 
   - title:
+      de: Themes
+      en: Themes
+    slug: themes
+    icon: palette
+
+  - title:
       de: Tastenkuerzel
       en: Keyboard Shortcuts
     slug: shortcuts

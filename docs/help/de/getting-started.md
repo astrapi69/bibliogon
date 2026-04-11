@@ -10,7 +10,7 @@ Für den PDF-Export wird Pandoc benötigt. Pandoc ist ein separates Kommandozeil
 
 Nach der Installation startet `make dev` zwei parallele Prozesse: das FastAPI-Backend auf Port 8000 und das React-Frontend auf Port 5173. Sobald beide Prozesse laufen, oeffne einen Browser und navigiere zu `http://localhost:5173`. Du landest auf dem Dashboard, der zentralen Übersicht über alle Buecher.
 
-Beim ersten Start ist die Datenbank leer. Bibliogon nutzt SQLite als lokale Datenbank. Alle Daten liegen auf deinem Rechner, es wird kein externer Server benötigt. Über die Einstellungen kannst du Sprache und Theme anpassen. Es stehen drei Themes (Warm Literary, Cool Modern, Nord) jeweils in Light- und Dark-Variante zur Verfuegung.
+Beim ersten Start ist die Datenbank leer. Bibliogon nutzt SQLite als lokale Datenbank. Alle Daten liegen auf deinem Rechner, es wird kein externer Server benötigt. Über die Einstellungen kannst du Sprache und Theme anpassen. Es stehen sechs Themes (Warm Literary, Cool Modern, Nord, Klassisch, Studio, Notizbuch) jeweils in Light- und Dark-Variante zur Verfuegung - Details im Abschnitt Themes.
 
 ## Das erste Buch anlegen
 
