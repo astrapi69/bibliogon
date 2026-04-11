@@ -108,7 +108,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             <Copy size={14}/> {t("ui.metadata.copy_from", "Von Buch uebernehmen")}
                         </button>
                     )}
-                    <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={handleSave}
+                        disabled={saving}
+                        data-testid="metadata-save"
+                    >
                         <Save size={14}/> {saving ? t("ui.editor.saving", "Speichert...") : t("ui.common.save", "Speichern")}
                     </button>
                 </div>
@@ -134,7 +139,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                     <Tabs.Trigger value="general" className="radix-tab-trigger">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="publisher" className="radix-tab-trigger">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
                     <Tabs.Trigger value="isbn" className="radix-tab-trigger">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
-                    <Tabs.Trigger value="marketing" className="radix-tab-trigger">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
+                    <Tabs.Trigger value="marketing" className="radix-tab-trigger" data-testid="metadata-tab-marketing">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
                     <Tabs.Trigger value="design" className="radix-tab-trigger">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
                     <Tabs.Trigger value="audiobook" className="radix-tab-trigger">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
                 </Tabs.List>
