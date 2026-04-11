@@ -1,5 +1,6 @@
-import {useState} from "react";
+import {useState, useRef, useEffect} from "react";
 import {X, GripVertical} from "lucide-react";
+import {toast} from "react-toastify";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {
@@ -20,15 +21,109 @@ import {
 } from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
 
-const MAX_KEYWORDS = 7;
+export const RECOMMENDED_MAX = 7;
+export const MAX_LENGTH = 50;
+
+export type KeywordValidationError = "empty" | "too_long" | "no_comma" | "duplicate";
+
+export interface KeywordValidationResult {
+    ok: boolean;
+    cleaned?: string;
+    error?: KeywordValidationError;
+}
+
+/**
+ * Pure validator for add and inline-edit. Accepts a raw input plus the
+ * current keyword list; ``ignoreIndex`` lets edit-in-place skip the slot
+ * being edited so a no-op edit is not flagged as a duplicate.
+ */
+export function validateKeyword(
+    raw: string,
+    existing: string[],
+    ignoreIndex: number | null = null,
+): KeywordValidationResult {
+    const keyword = raw.trim();
+    if (!keyword) return {ok: false, error: "empty"};
+    if (keyword.length > MAX_LENGTH) return {ok: false, error: "too_long"};
+    if (keyword.includes(",")) return {ok: false, error: "no_comma"};
+    const lower = keyword.toLowerCase();
+    const duplicate = existing.some((k, i) => i !== ignoreIndex && k.toLowerCase() === lower);
+    if (duplicate) return {ok: false, error: "duplicate"};
+    return {ok: true, cleaned: keyword};
+}
 
 interface Props {
     keywords: string[];
     onChange: (keywords: string[]) => void;
 }
 
-function SortableChip({id, keyword, onRemove}: {id: string; keyword: string; onRemove: () => void}) {
+interface SortableChipProps {
+    id: string;
+    keyword: string;
+    index: number;
+    editing: boolean;
+    allKeywords: string[];
+    onStartEdit: () => void;
+    onCommitEdit: (newValue: string) => boolean;
+    onCancelEdit: () => void;
+    onRemove: () => void;
+}
+
+function SortableChip({
+    id, keyword, index, editing, allKeywords,
+    onStartEdit, onCommitEdit, onCancelEdit, onRemove,
+}: SortableChipProps) {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id});
+    const [draft, setDraft] = useState(keyword);
+    const [error, setError] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editing) {
+            setDraft(keyword);
+            setError(false);
+            // Defer focus so the input is mounted
+            requestAnimationFrame(() => {
+                inputRef.current?.focus();
+                inputRef.current?.select();
+            });
+        }
+    }, [editing, keyword]);
+
+    const tryCommit = () => {
+        const ok = onCommitEdit(draft);
+        if (!ok) setError(true);
+    };
+
+    if (editing) {
+        return (
+            <span
+                ref={setNodeRef}
+                style={{
+                    ...styles.chip,
+                    transform: CSS.Transform.toString(transform),
+                    transition,
+                    padding: "2px 4px",
+                    border: error ? "1px solid var(--danger, #d33)" : "1px solid var(--accent)",
+                }}
+            >
+                <input
+                    ref={inputRef}
+                    value={draft}
+                    onChange={(e) => { setDraft(e.target.value); setError(false); }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); tryCommit(); }
+                        if (e.key === "Escape") { e.preventDefault(); onCancelEdit(); }
+                    }}
+                    onBlur={tryCommit}
+                    maxLength={MAX_LENGTH + 10}
+                    style={styles.editInput}
+                />
+            </span>
+        );
+    }
+
+    const overLimit = allKeywords.length > RECOMMENDED_MAX && index >= RECOMMENDED_MAX;
 
     return (
         <span
@@ -38,13 +133,17 @@ function SortableChip({id, keyword, onRemove}: {id: string; keyword: string; onR
                 transform: CSS.Transform.toString(transform),
                 transition,
                 opacity: isDragging ? 0.5 : 1,
+                background: overLimit ? "var(--warning-light, #fef3c7)" : "var(--accent-light)",
+                color: overLimit ? "var(--warning-dark, #92400e)" : "var(--accent)",
             }}
+            onDoubleClick={onStartEdit}
+            title={keyword}
         >
             <span {...attributes} {...listeners} style={{cursor: "grab", display: "flex"}}>
                 <GripVertical size={12} style={{opacity: 0.4}}/>
             </span>
             <span style={styles.chipText}>{keyword}</span>
-            <button style={styles.chipRemove} onClick={onRemove}>
+            <button style={styles.chipRemove} onClick={onRemove} type="button">
                 <X size={12}/>
             </button>
         </span>
@@ -54,26 +153,81 @@ function SortableChip({id, keyword, onRemove}: {id: string; keyword: string; onR
 export default function KeywordInput({keywords, onChange}: Props) {
     const {t} = useI18n();
     const [input, setInput] = useState("");
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
         useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
     );
 
+    // Reports validation failures to the user via the notify facade.
+    // Empty inputs are silently ignored (Enter on empty field is a no-op).
+    const reportError = (error: KeywordValidationError) => {
+        if (error === "empty") return;
+        if (error === "too_long") {
+            notify.warning(
+                t("ui.keywords.too_long", `Schluesselwort darf maximal ${MAX_LENGTH} Zeichen lang sein`)
+                    .replace("{max}", String(MAX_LENGTH)),
+            );
+        } else if (error === "no_comma") {
+            notify.warning(t("ui.keywords.no_comma", "Schluesselwort darf kein Komma enthalten"));
+        } else if (error === "duplicate") {
+            notify.info(t("ui.keywords.duplicate", "Schluesselwort existiert bereits"));
+        }
+    };
+
     const addKeyword = (raw: string) => {
-        const keyword = raw.trim();
-        if (!keyword) return;
-        if (keywords.length >= MAX_KEYWORDS) return;
-        if (keywords.some((k) => k.toLowerCase() === keyword.toLowerCase())) {
-            notify.info(t("ui.keywords.duplicate", "Keyword bereits vorhanden"));
+        const result = validateKeyword(raw, keywords);
+        if (!result.ok) {
+            if (result.error) reportError(result.error);
             return;
         }
-        onChange([...keywords, keyword]);
+        onChange([...keywords, result.cleaned!]);
         setInput("");
     };
 
     const removeKeyword = (index: number) => {
-        onChange(keywords.filter((_, i) => i !== index));
+        const removed = keywords[index];
+        const next = keywords.filter((_, i) => i !== index);
+        onChange(next);
+        // Undo toast: react-toastify custom content with an inline action.
+        // AutoClose ~5s matches the design spec. On undo click we splice
+        // the keyword back into its original index so ordering is preserved.
+        const toastId = toast.info(
+            <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                <span>{t("ui.keywords.removed", "Schluesselwort entfernt")}: {removed}</span>
+                <button
+                    type="button"
+                    onClick={() => {
+                        const restored = [...keywords];
+                        restored.splice(index, 0, removed);
+                        onChange(restored);
+                        toast.dismiss(toastId);
+                    }}
+                    style={styles.undoButton}
+                >
+                    {t("ui.keywords.undo", "Rueckgaengig")}
+                </button>
+            </div>,
+            {autoClose: 5000},
+        );
+    };
+
+    const commitEdit = (index: number, newValue: string): boolean => {
+        const result = validateKeyword(newValue, keywords, index);
+        if (!result.ok) {
+            if (result.error) reportError(result.error);
+            return false;
+        }
+        if (result.cleaned === keywords[index]) {
+            setEditingIndex(null);
+            return true;
+        }
+        const next = [...keywords];
+        next[index] = result.cleaned!;
+        onChange(next);
+        setEditingIndex(null);
+        return true;
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,7 +235,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
             e.preventDefault();
             addKeyword(input);
         }
-        if (e.key === "Backspace" && !input && keywords.length > 0) {
+        if (e.key === "Backspace" && !input && keywords.length > 0 && editingIndex === null) {
             removeKeyword(keywords.length - 1);
         }
     };
@@ -89,14 +243,15 @@ export default function KeywordInput({keywords, onChange}: Props) {
     const handleDragEnd = (event: DragEndEvent) => {
         const {active, over} = event;
         if (!over || active.id === over.id) return;
-        const ids = keywords.map((k, i) => `kw-${i}`);
+        const ids = keywords.map((_, i) => `kw-${i}`);
         const oldIndex = ids.indexOf(active.id as string);
         const newIndex = ids.indexOf(over.id as string);
         onChange(arrayMove(keywords, oldIndex, newIndex));
     };
 
     const ids = keywords.map((_, i) => `kw-${i}`);
-    const atLimit = keywords.length >= MAX_KEYWORDS;
+    const overRecommended = keywords.length > RECOMMENDED_MAX;
+    const counterColor = overRecommended ? "var(--warning-dark, #b45309)" : "var(--text-muted)";
 
     return (
         <div>
@@ -108,28 +263,44 @@ export default function KeywordInput({keywords, onChange}: Props) {
                                 key={ids[i]}
                                 id={ids[i]}
                                 keyword={kw}
+                                index={i}
+                                editing={editingIndex === i}
+                                allKeywords={keywords}
+                                onStartEdit={() => setEditingIndex(i)}
+                                onCommitEdit={(val) => commitEdit(i, val)}
+                                onCancelEdit={() => setEditingIndex(null)}
                                 onRemove={() => removeKeyword(i)}
                             />
                         ))}
                     </SortableContext>
                 </DndContext>
-                {!atLimit && (
-                    <input
-                        style={styles.input}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onBlur={() => { if (input.trim()) addKeyword(input); }}
-                        placeholder={keywords.length === 0
-                            ? t("ui.keywords.placeholder", "Keyword eingeben...")
-                            : ""
-                        }
-                    />
-                )}
+                <input
+                    style={styles.input}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={() => { if (input.trim()) addKeyword(input); }}
+                    placeholder={keywords.length === 0
+                        ? t("ui.keywords.placeholder", "Schluesselwort eingeben...")
+                        : ""
+                    }
+                />
             </div>
-            <span style={styles.counter}>
-                {keywords.length}/{MAX_KEYWORDS} {t("ui.keywords.counter", "Keywords")}
+            <span style={{...styles.counter, color: counterColor}}>
+                {keywords.length} / {RECOMMENDED_MAX} {t("ui.keywords.counter", "Schluesselwoerter")}
+                {overRecommended && (
+                    <>
+                        {" - "}
+                        {t(
+                            "ui.keywords.over_limit",
+                            "Amazon KDP empfiehlt maximal 7 Schluesselwoerter. Andere Plattformen erlauben mehr.",
+                        )}
+                    </>
+                )}
             </span>
+            <div style={styles.hint}>
+                {t("ui.keywords.hint", "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren")}
+            </div>
         </div>
     );
 }
@@ -169,7 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
         background: "none",
         border: "none",
         cursor: "pointer",
-        color: "var(--accent)",
+        color: "inherit",
         padding: 0,
         opacity: 0.6,
     },
@@ -183,10 +354,34 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)",
         padding: "2px 0",
     },
+    editInput: {
+        border: "none",
+        outline: "none",
+        background: "transparent",
+        fontSize: "0.8125rem",
+        fontWeight: 500,
+        color: "inherit",
+        minWidth: 80,
+        maxWidth: 200,
+    },
     counter: {
         display: "block",
         fontSize: "0.6875rem",
-        color: "var(--text-muted)",
         marginTop: 4,
+    },
+    hint: {
+        fontSize: "0.6875rem",
+        color: "var(--text-muted)",
+        marginTop: 2,
+    },
+    undoButton: {
+        border: "1px solid currentColor",
+        background: "transparent",
+        color: "inherit",
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        padding: "2px 8px",
+        borderRadius: 4,
+        cursor: "pointer",
     },
 };
