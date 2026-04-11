@@ -1,271 +1,270 @@
-# Bekannte Fallstricke und Patterns
+# Known pitfalls and patterns
 
-Diese Regeln stammen aus realer Entwicklung und loesen Probleme die sonst wiederholt auftreten.
+These rules come from real development and solve problems that would otherwise come back over and over.
 
-## Alembic-Migration + frische Test-DB
+## Alembic migration + fresh test DB
 
-- Bei jeder neuen Alembic-Migration die auf `books` (oder eine andere Kerntabelle) per `ALTER TABLE` zugreift: Die Datei `backend/bibliogon.db` MUSS vor dem naechsten `make test` geloescht werden. Sonst kommt `sqlite3.OperationalError: duplicate column name: ...`.
-- Grund: `backend/tests/conftest.py` ruft `Base.metadata.create_all(engine)` vor jedem Test und legt die Tabellen mit dem NEUEN Schema an. Gleichzeitig persistiert `alembic_version` auf der alten Revision in der On-Disk-DB. Beim `TestClient(app)` triggert das Lifespan `init_db()`, der bei vorhandenen Tabellen + vorhandenem `alembic_version` einen `upgrade head` laeuft - was versucht die neue Spalte ein zweites Mal per ALTER TABLE hinzuzufuegen und crashed.
-- Fix dauerhaft: `rm backend/bibliogon.db` nach `git pull` mit neuer Migration, dann `make test`. `init_db()` sieht keine Tabellen, macht `create_all` + `stamp head`, und die naechsten Test-Runs laufen durch weil die alembic_version-Tabelle schon beim neuen Head steht.
-- Ideal waere ein echter In-Memory-Test-DB-Setup (z.B. via `BIBLIOGON_TEST=1` Env-Var) der `init_db()` im Test-Modus ueberspringt - existiert aber aktuell nicht.
+- For every new Alembic migration that touches `books` (or another core table) via `ALTER TABLE`: the file `backend/bibliogon.db` MUST be deleted before the next `make test`. Otherwise you get `sqlite3.OperationalError: duplicate column name: ...`.
+- Reason: `backend/tests/conftest.py` calls `Base.metadata.create_all(engine)` before every test and creates the tables with the NEW schema. At the same time the on-disk DB still has `alembic_version` pinned to the old revision. `TestClient(app)` triggers the lifespan `init_db()`, which runs `upgrade head` when tables + `alembic_version` both exist - which tries to add the new column via ALTER TABLE a second time and crashes.
+- Permanent fix: `rm backend/bibliogon.db` after `git pull` with a new migration, then `make test`. `init_db()` now sees no tables, runs `create_all` + `stamp head`, and subsequent test runs pass because `alembic_version` is already at the new head.
+- The clean solution would be a real in-memory test DB setup (e.g. via a `BIBLIOGON_TEST=1` env var) that skips `init_db()` in test mode - does not exist yet.
 
-## TipTap Editor
+## TipTap editor
 
-### Speicherformat
-- TipTap speichert als JSON. NICHT HTML, NICHT Markdown.
-- TipTap kann KEIN Markdown rendern. Markdown muss vor der Speicherung zu HTML konvertiert werden.
-- Beim Import: Markdown-Dateien mit Python `markdown` Library zu HTML konvertieren, dann als TipTap JSON speichern.
-- Beim Wechsel WYSIWYG -> Markdown: JSON zu Markdown konvertieren (nodeToMarkdown).
-- Beim Wechsel Markdown -> WYSIWYG: Markdown zu HTML konvertieren, dann zu JSON.
+### Storage format
+- TipTap stores as JSON. NOT HTML, NOT Markdown.
+- TipTap CANNOT render Markdown. Markdown must be converted to HTML before storage.
+- On import: convert Markdown files to HTML with the Python `markdown` library, then store as TipTap JSON.
+- When switching WYSIWYG -> Markdown: convert JSON to Markdown (nodeToMarkdown).
+- When switching Markdown -> WYSIWYG: convert Markdown to HTML, then to JSON.
 
 ### Extensions
-- StarterKit enthaelt KEINE Image-Extension. @tiptap/extension-image separat noetig.
-- Figure/Figcaption: @pentestpad/tiptap-extension-figure nutzen, KEIN Custom-Code.
-- Zeichenzaehlung: @tiptap/extension-character-count nutzen, KEIN Custom-Code.
-- Aktuell 15 offizielle + 1 Community Extension installiert (siehe CLAUDE.md).
-- Vor Custom-Code IMMER pruefen ob eine offizielle TipTap-Extension existiert.
+- StarterKit does NOT include an image extension. @tiptap/extension-image is required separately.
+- Figure/Figcaption: use @pentestpad/tiptap-extension-figure, NO custom code.
+- Character count: use @tiptap/extension-character-count, NO custom code.
+- Currently 15 official + 1 community extension installed (see CLAUDE.md).
+- Before writing custom code, ALWAYS check whether an official TipTap extension exists.
 
-### Peer Dependencies
-- Community Extensions (@pentestpad/tiptap-extension-figure, tiptap-footnotes) koennen unbemerkt auf @tiptap/core v3 upgraden. Immer mit --save-exact pinnen.
-- @pentestpad/tiptap-extension-figure: Pin auf 1.0.12 (letzte v2-kompatible), 1.1.0 erfordert @tiptap/core ^3.19.
-- tiptap-footnotes: Pin auf 2.0.4 (letzte v2-kompatible), 3.0.x erfordert @tiptap/core ^3.0.
-- npm ci in CI schlaegt fehl bei Peer-Dep-Konflikten. NICHT --legacy-peer-deps als Loesung verwenden.
+### Peer dependencies
+- Community extensions (@pentestpad/tiptap-extension-figure, tiptap-footnotes) can silently upgrade to @tiptap/core v3. Always pin with --save-exact.
+- @pentestpad/tiptap-extension-figure: pin to 1.0.12 (last v2-compatible); 1.1.0 requires @tiptap/core ^3.19.
+- tiptap-footnotes: pin to 2.0.4 (last v2-compatible); 3.0.x requires @tiptap/core ^3.0.
+- `npm ci` in CI fails on peer-dep conflicts. Do NOT use --legacy-peer-deps as a fix.
 
 ### CSS
-- TipTap rendert innerhalb von .ProseMirror. CSS-Selektoren muessen das beruecksichtigen.
-- Spezifitaet: `.ProseMirror p.classname` statt `.tiptap-editor classname`.
-- Alle Styles MUESSEN mit CSS Variables arbeiten (3 Themes x Light/Dark = 6 Varianten).
+- TipTap renders inside .ProseMirror. CSS selectors have to account for that.
+- Specificity: `.ProseMirror p.classname` instead of `.tiptap-editor classname`.
+- All styles MUST work through CSS variables (3 themes x light/dark = 6 variants).
 
 ## Import (write-book-template)
 
-### Markdown-zu-HTML
-- IMMER Markdown zu HTML konvertieren beim Import. TipTap kann kein Markdown.
-- Python `markdown` Library nutzen (bereits installiert).
-- Einrueckung: write-book-template nutzt 2-Space-Indent fuer Listen, Python's markdown braucht 4-Space. Einrueckung vor Konvertierung verdoppeln.
+### Markdown-to-HTML
+- ALWAYS convert Markdown to HTML on import. TipTap cannot handle Markdown.
+- Use the Python `markdown` library (already installed).
+- Indentation: write-book-template uses 2-space indent for lists, Python's markdown needs 4-space. Double the indentation before conversion.
 
-### Kapiteltyp-Mapping
-- acknowledgments gehoert in BACK-MATTER, nicht Front-Matter.
-- TOC (toc.md) wird als eigener Kapiteltyp importiert (chapter_type: toc).
-- next-in-series.md wird gemappt auf chapter_type: next_in_series.
-- part-intro und interlude werden korrekt erkannt.
+### Chapter-type mapping
+- acknowledgments belongs in BACK-MATTER, not front-matter.
+- TOC (toc.md) is imported as its own chapter type (chapter_type: toc).
+- next-in-series.md maps to chapter_type: next_in_series.
+- part-intro and interlude are detected correctly.
 
-### Reihenfolge
-- Section-Order aus export-settings.yaml lesen und fuer Kapitel-Positionierung nutzen.
-- TOC muss als erstes in Front-Matter stehen.
-- Fallback auf alphabetische Sortierung wenn keine export-settings.yaml existiert.
+### Order
+- Read the section order from export-settings.yaml and use it for chapter positioning.
+- TOC must come first in front-matter.
+- Fall back to alphabetical sort if no export-settings.yaml exists.
 
-### Assets/Bilder
-- Assets aus assets/-Ordner importieren und als DB-Assets speichern.
-- Bild-Pfade von `assets/figures/...` zu `/api/books/{id}/assets/file/{filename}` umschreiben.
-- Asset-Serving-Endpoint: GET /api/books/{id}/assets/file/{filename}
+### Assets/images
+- Import assets from the assets/ folder and save them as DB assets.
+- Rewrite image paths from `assets/figures/...` to `/api/books/{id}/assets/file/{filename}`.
+- Asset serving endpoint: GET /api/books/{id}/assets/file/{filename}
 
-### Metadaten
-- metadata.yaml parsen fuer: title, subtitle, author, language, series, series_index.
-- ISBN/ASIN aus metadata.yaml extrahieren (isbn_ebook, isbn_paperback, isbn_hardcover, asin_ebook).
-- description.html, backpage-description, backpage-author-bio, custom CSS importieren.
-- series kann ein dict sein (name + index), nicht nur ein String. Beide Varianten handlen.
-- language normalisieren (z.B. "german" -> "de").
+### Metadata
+- Parse metadata.yaml for: title, subtitle, author, language, series, series_index.
+- Extract ISBN/ASIN from metadata.yaml (isbn_ebook, isbn_paperback, isbn_hardcover, asin_ebook).
+- Import description.html, backpage-description, backpage-author-bio, custom CSS.
+- `series` can be a dict (name + index), not only a string. Handle both forms.
+- Normalize `language` (e.g. "german" -> "de").
 
 ## Export
 
-### Ueberschriften
-- Content kann bereits eine H1 enthalten. Vor dem Hinzufuegen einer H1 pruefen ob schon eine existiert.
-- _prepend_title muss checken ob Content mit `#` oder `<h1` beginnt.
+### Headings
+- Content may already contain an H1. Before adding an H1, check whether one already exists.
+- `_prepend_title` has to check whether the content starts with `#` or `<h1`.
 
 ### TOC
-- Wenn manuelles TOC-Kapitel existiert: use_manual_toc=true an manuscripta durchreichen.
-- KEIN doppeltes TOC (generiert + manuell). Checkbox im Export-Dialog laesst User waehlen.
-- Verschachtelte Listen im TOC: Baumstruktur mit 2-Space-Einrueckung pro Level beibehalten.
+- If a manual TOC chapter exists: pass use_manual_toc=true through to manuscripta.
+- NO double TOC (generated + manual). A checkbox in the export dialog lets the user choose.
+- Nested lists in the TOC: keep the tree structure with 2-space indentation per level.
 
-### Bilder im EPUB
-- Assets muessen beim Scaffolding aus der DB in die Projektstruktur kopiert werden.
-- API-Pfade (/api/books/.../assets/file/...) zurueck zu relatives Pfade (assets/figures/...) umschreiben.
+### Images in EPUB
+- Assets have to be copied from the DB into the project structure during scaffolding.
+- Rewrite API paths (/api/books/.../assets/file/...) back to relative paths (assets/figures/...).
 
 ### Pandoc/manuscripta
-- manuscripta's OUTPUT_FILE ist ein Modul-Global. Muss direkt gesetzt werden, nicht ueber CLI.
-- section_order aus dem scaffolded Projekt lesen, fehlende Dateien filtern.
-- metadata.yaml braucht --- YAML-Delimiter fuer Pandoc.
-- --- in Markdown (Horizontal Rules) zu *** konvertieren, sonst YAML-Parse-Konflikte.
+- manuscripta's OUTPUT_FILE is a module-level global. It has to be set directly, not via CLI.
+- Read `section_order` from the scaffolded project and filter out missing files.
+- metadata.yaml needs --- YAML delimiters for Pandoc.
+- Convert --- in Markdown (horizontal rules) to ***, otherwise they collide with YAML parsing.
 
-### Dateinamen
-- Buchtyp-Suffix im Dateinamen: title-ebook.epub, title-paperback.pdf.
-- Setting type_suffix_in_filename (default: true).
+### Filenames
+- Book-type suffix in the filename: title-ebook.epub, title-paperback.pdf.
+- Setting `type_suffix_in_filename` (default: true).
 
-## Doku ist Spezifikation, nicht Wunschliste
+## Docs are specification, not a wish list
 
-- Wenn ein Feature in der Hilfe steht, muss es im Code existieren. Feature-Audits nach jeder grossen Doku-Ergaenzung sind Pflicht.
-- Features die noch nicht implementiert sind aber in der Doku beschrieben werden, muessen mit `> Geplant fuer eine kommende Version` markiert werden. Nichts versprechen was nicht da ist.
-- Audit-Tabelle mit IST-Zustand erstellen, Gap-Analyse in A/B/C Kategorien, dann erst implementieren. Kein blindes Draufloscodieren.
+- If a feature is in the help, it must exist in the code. Feature audits after every large docs addition are mandatory.
+- Features that are not yet implemented but are described in the docs must be marked with `> Planned for a future version`. Do not promise what isn't there.
+- Build an audit table with the current state, run a gap analysis in A/B/C categories, then implement. No blind coding.
 
-## Help-System: Single Source of Truth
+## Help system: single source of truth
 
-- Hilfe-Content lebt in `docs/help/`, nicht im Plugin-Code. Sowohl das In-App Help-Plugin als auch MkDocs lesen die gleichen Markdown-Dateien.
-- `docs/help/_meta.yaml` ist die Single Source of Truth fuer die Navigation. `scripts/generate_mkdocs_nav.py` konvertiert sie in das MkDocs-Format.
-- Markdown-Rendering im Frontend via `react-markdown` mit `remark-gfm` + `rehype-slug` + `rehype-autolink-headings`. Nie `dangerouslySetInnerHTML` fuer User-Content.
-- MkDocs-Dependencies leben in `docs/pyproject.toml` (eigenes Venv), nicht im Backend-Venv. `make docs-install` / `docs-build` / `docs-serve` im Root.
-- Kontext-sensitive Hilfe via `<HelpLink slug="export/epub"/>` - oeffnet das HelpPanel direkt auf der relevanten Seite.
+- Help content lives in `docs/help/`, not in plugin code. Both the in-app Help plugin and MkDocs read the same Markdown files.
+- `docs/help/_meta.yaml` is the single source of truth for navigation. `scripts/generate_mkdocs_nav.py` converts it into the MkDocs format.
+- Markdown rendering on the frontend via `react-markdown` with `remark-gfm` + `rehype-slug` + `rehype-autolink-headings`. Never `dangerouslySetInnerHTML` for user content.
+- MkDocs dependencies live in `docs/pyproject.toml` (its own venv), not in the backend venv. `make docs-install` / `docs-build` / `docs-serve` from the root.
+- Context-sensitive help via `<HelpLink slug="export/epub"/>` - opens the HelpPanel directly on the relevant page.
 
-## Config-Migration (Bool -> Enum)
+## Config migration (bool -> enum)
 
-- Wenn ein Boolean-Setting zu einem Enum mit mehr Optionen erweitert wird (z.B. audiobook `merge: true|false` -> `merge: separate|merged|both`): IMMER eine `normalize_*`-Funktion einfuehren die alte Bool-Werte stillschweigend uebersetzt (True -> "merged", False -> "separate") und unbekannte/None-Werte auf den Default mappt.
-- Begruendung: User-Configs in YAML, Backups (.bgb) und DB-Spalten enthalten weiterhin alte Bool-Werte. Eine harte Schema-Validierung wuerde bestehende Installationen brechen. Der Default im Pydantic-Schema wird vom Typ-System nicht auf Migration geprueft.
-- Praxis: Die Normalisierung MUSS sowohl im Backend (Generator/Service-Layer) als auch im Frontend (State-Init aus Settings) passieren, damit beide Seiten dieselben Migrationsregeln teilen. Sonst zeigen alte Configs im UI den falschen Default.
-- Tests: Pro Bool-Wert ein expliziter Migrationstest plus Passthrough fuer alle Enum-Werte plus Default fuer None/Unknown.
+- When a boolean setting is extended to an enum with more options (e.g. audiobook `merge: true|false` -> `merge: separate|merged|both`): ALWAYS introduce a `normalize_*` function that silently translates old bool values (True -> "merged", False -> "separate") and maps unknown/None values to the default.
+- Reason: user configs in YAML, backups (.bgb) and DB columns still contain old bool values. A hard schema validation would break existing installations. The default in the Pydantic schema is not checked for migration by the type system.
+- In practice: the normalization MUST happen on both the backend (generator/service layer) AND the frontend (state init from settings), so both sides share the same migration rules. Otherwise old configs show the wrong default in the UI.
+- Tests: one explicit migration test per bool value, plus pass-through for all enum values, plus default for None/unknown.
 
-## Stimmen-Dropdown: KEIN engine-agnostischer Fallback
+## Voice dropdown: NO engine-agnostic fallback
 
-- Frueher fielen `BookMetadataEditor` und `Settings` auf eine hardcoded `EDGE_TTS_VOICES`-Liste zurueck wenn `/api/voices?engine=X&language=Y` ein leeres Array lieferte. Effekt: User waehlt Google TTS / pyttsx3 / ElevenLabs, der Backend-Cache hat keine Voices fuer diese Engines (nur Edge wird ueber `sync_edge_tts_voices` geseedet) -> Frontend dumpt 16 Edge-DE-Voices in das Dropdown obwohl die Engine sie gar nicht abspielen kann. Bug-Report war "Dropdown zeigt ALLE Stimmen statt nur die passenden".
-- Loesung: Ein gemeinsamer Helper `api.audiobook.listVoices(engine, language)` versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin-Endpoint), dann gibt er `[]` zurueck. KEINE hardcoded Liste mehr. Beide UI-Stellen rendern bei `voices.length === 0` einen klaren Empty-State "Keine Stimmen fuer {engine} in {language} verfuegbar" statt etwas zu fingieren.
-- `frontend/src/data/edge-tts-voices.ts` wurde komplett geloescht. Wenn ein User wirklich Edge-DE-Voices sehen will, ist Edge die einzige Engine die der Backend-Cache seedet und das Dropdown wird durch den normalen Pfad gefuellt.
-- Backend `voice_store.get_voices` matcht jetzt zweistufig: enthaelt das `language` einen Bindestrich (`"de-DE"`), ist es ein exakter case-insensitiver Match. Bare Code (`"de"`) ist Prefix-Match (`de-DE`, `de-AT`, `de-CH`). Vorher hat er den Region-Suffix immer abgeschnitten, sodass `"de-DE"` und `"de"` dasselbe Ergebnis lieferten - das war zwar fuer Bibliogons aktuelles Datenmodell egal (Book.language ist ein bare Code), aber die strikte Variante schliesst Plugin-Tests und kuenftige Caller mit ein.
-- Tests: `backend/tests/test_voice_store.py` (8 Tests) deckt jeden Pfad ab (Engine-Isolation, Bare vs Region, Case-Insensitivitaet, unbekannte Engine, unbekannte Sprache, Engine-Leak-Regression). `frontend/src/api/client.test.ts` haelt fest dass die Helper-Funktion bei `[]` aus beiden Endpoints **kein** hardcoded Edge-Fallback mehr liefert - das ist die Regression-Versicherung gegen das urspruengliche Symptom.
+- Previously `BookMetadataEditor` and `Settings` fell back to a hardcoded `EDGE_TTS_VOICES` list when `/api/voices?engine=X&language=Y` returned an empty array. Effect: user picks Google TTS / pyttsx3 / ElevenLabs, the backend cache has no voices for those engines (only Edge is seeded via `sync_edge_tts_voices`) -> frontend dumps 16 Edge-DE voices into the dropdown even though the engine cannot play them. Bug report was "dropdown shows ALL voices instead of only the matching ones".
+- Solution: a shared helper `api.audiobook.listVoices(engine, language)` tries `/api/voices` (cache) first, then `/api/audiobook/voices` (live plugin endpoint), then returns `[]`. NO more hardcoded list. Both UI sites render a clear empty state "No voices available for {engine} in {language}" on `voices.length === 0` instead of faking something.
+- `frontend/src/data/edge-tts-voices.ts` was deleted entirely. If a user really wants to see Edge-DE voices, Edge is the only engine the backend cache seeds and the dropdown fills through the normal path.
+- Backend `voice_store.get_voices` now matches in two steps: if the `language` contains a hyphen (`"de-DE"`), it is an exact case-insensitive match. A bare code (`"de"`) is a prefix match (`de-DE`, `de-AT`, `de-CH`). Previously it always stripped the region suffix, so `"de-DE"` and `"de"` returned the same result - irrelevant for Bibliogon's current data model (Book.language is a bare code), but the strict variant protects plugin tests and future callers.
+- Tests: `backend/tests/test_voice_store.py` (8 tests) covers every path (engine isolation, bare vs region, case insensitivity, unknown engine, unknown language, engine-leak regression). `frontend/src/api/client.test.ts` pins that the helper returns NO hardcoded Edge fallback on `[]` from both endpoints - this is the regression insurance against the original symptom.
 
-## Audiobook Progress-Dialog: SSE-Listener gehoert in den Context, nicht in die Komponente
+## Audiobook progress dialog: the SSE listener belongs in the context, not in the component
 
-- Frueher lebte der `EventSource` im `AudioExportProgress`-Modal. Sobald der User minimierte oder einen Re-Render triggerte, wurde der Listener neu aufgebaut und Events gingen verloren - oder noch schlimmer, der Job war nach `clear()` weg, weil das Modal die einzige Stelle mit Live-State war.
-- Loesung: Der gesamte SSE-Lifecycle (open/onmessage/close) lebt jetzt im `AudiobookJobProvider`. Die Phase, der Event-Log, current/total/currentTitle, downloadUrl/chapterFiles - alles liegt im Context. Das Modal und das Badge sind reine Konsumenten und tauschen sich nicht gegenseitig aus.
-- Reload-Recovery: jobId+bookId+bookTitle werden in `localStorage` (`bibliogon.audiobook_job`) gespiegelt. Beim Mount des Providers prueft `useEffect`, ob ein persisted Job existiert, und reaktiviert die SSE-Verbindung. Das Badge taucht nach F5 wieder auf, das Modal bleibt minimiert (kein Pop-up ins Gesicht).
-- Persisted-Eintrag wird beim `stream_end`-Event geloescht. Sonst meldet sich nach Reload ein Job zurueck der bereits beendet ist.
-- Wichtige Konvention: Nummern als reine Anzeige-Logik. `formatChapterPrefix(index, total)` baut "01 | Vorwort" / "003 | Vorwort" - die TTS-Engine bekommt weiterhin NUR den nackten Chapter-Title, keine Nummer, keinen Pipe. SSE-Event traegt `{type, index, title, duration_seconds}` als getrennte Felder, das Frontend formatiert. Ein Test in `tests/test_generator.py` haelt fest dass `chapter_done` ein `duration_seconds`-Feld mitliefert, ein Vitest-Test in `AudioExportProgress.test.ts` haelt fest dass das Frontend NIE "Kapitel X:" rendert.
-- BookEditor liest jetzt `?view=metadata` aus `useSearchParams`, damit das Badge nach Abschluss `navigate("/book/{id}?view=metadata")` aufrufen kann und der Tab direkt offen ist. `setShowMetadata` wurde in `_setShowMetadata` gewrappt das Query-Param und State synchron haelt.
+- Previously the `EventSource` lived in the `AudioExportProgress` modal. As soon as the user minimized or a re-render happened, the listener was rebuilt and events were lost - or worse, the job was gone after `clear()` because the modal was the only place holding live state.
+- Solution: the entire SSE lifecycle (open/onmessage/close) now lives in `AudiobookJobProvider`. Phase, event log, current/total/currentTitle, downloadUrl/chapterFiles - everything is in the context. Modal and badge are pure consumers and do not talk to each other.
+- Reload recovery: jobId+bookId+bookTitle are mirrored into `localStorage` (`bibliogon.audiobook_job`). On provider mount a `useEffect` checks whether a persisted job exists and reactivates the SSE connection. The badge reappears after F5, the modal stays minimized (no pop-up in the user's face).
+- The persisted entry is cleared on the `stream_end` event. Otherwise a reload would bring back a job that already finished.
+- Important convention: chapter numbers are pure display logic. `formatChapterPrefix(index, total)` builds "01 | Foreword" / "003 | Foreword" - the TTS engine still only gets the bare chapter title, no number, no pipe. The SSE event carries `{type, index, title, duration_seconds}` as separate fields; the frontend does the formatting. A test in `tests/test_generator.py` pins that `chapter_done` ships a `duration_seconds` field, a Vitest test in `AudioExportProgress.test.ts` pins that the frontend NEVER renders "Chapter X:".
+- BookEditor now reads `?view=metadata` from `useSearchParams`, so the badge can call `navigate("/book/{id}?view=metadata")` after completion and the tab is already open. `setShowMetadata` was wrapped into `_setShowMetadata` that keeps the query param and state in sync.
 
-## Generierte Audiobook-Dateien muessen persistent gespeichert werden
+## Generated audiobook files must be persisted
 
-- Vor v0.10.x lebten exportierte Audiobook-MP3s ausschliesslich in einem Temp-Dir des Job-Workers. Sobald der User den Progress-Dialog geschlossen hatte, war die einzige Kopie weg - bei ElevenLabs (kostenpflichtig) ist das echter Daten- und Geldverlust.
-- Loesung: nach erfolgreichem `_run_audiobook_job` werden alle generierten Dateien nach `uploads/{book_id}/audiobook/` kopiert (chapters/ + audiobook.mp3 + metadata.json). Die Endpoints `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}` und `/zip` exposen sie wieder zum Download.
-- Wichtig: das Persistieren passiert im `try/except` und darf einen erfolgreichen Job NIE abbrechen. Lieber loggen, Datei ist im Temp-Dir noch downloadbar.
-- Die Persistenz-Endpoints leben im Backend-Core (`backend/app/routers/audiobook.py`), NICHT im premium-lizenzierten Audiobook-Plugin. Sonst kann ein User mit abgelaufener Lizenz seine bereits generierten Dateien nicht mehr abrufen.
-- Regeneration warnt vor Ueberschreibung: `POST /api/books/{id}/export/async/audiobook` antwortet mit HTTP 409 + `{code: "audiobook_exists", existing: {engine, voice, created_at, ...}}`, sobald `audiobook_storage.has_audiobook(book_id)` true ist. Frontend zeigt einen Confirm-Dialog mit den existierenden Metadaten und ruft denselben Endpoint mit `?confirm_overwrite=true` erneut auf.
-- Plugin-Setting `audiobook.settings.overwrite_existing: true` ueberspringt die 409 - User-Wunsch: "es gibt auch ne konfig fuer die ueberschreibung aber trotzdem warnung", deshalb bleibt der Frontend-Confirm trotzdem als zweite Sicherheit.
-- Backup: `GET /api/backup/export?include_audiobook=true` bundelt die persistenten Audiobook-Verzeichnisse mit ein. Default ist false, weil MP3-Backups schnell auf 100+MB pro Buch wachsen.
+- Before v0.10.x exported audiobook MP3s only existed in the job worker's temp dir. As soon as the user closed the progress dialog the only copy was gone - with ElevenLabs (paid) this is real data and money loss.
+- Solution: after a successful `_run_audiobook_job`, all generated files are copied to `uploads/{book_id}/audiobook/` (chapters/ + audiobook.mp3 + metadata.json). The endpoints `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}` and `/zip` expose them again for download.
+- Important: persistence runs inside `try/except` and must NEVER fail a successful job. Prefer logging; the file is still downloadable from the temp dir.
+- The persistence endpoints live in the backend core (`backend/app/routers/audiobook.py`), NOT in the premium-licensed audiobook plugin. Otherwise a user with an expired license could no longer retrieve their already-generated files.
+- Regeneration warns before overwriting: `POST /api/books/{id}/export/async/audiobook` responds with HTTP 409 + `{code: "audiobook_exists", existing: {engine, voice, created_at, ...}}` as soon as `audiobook_storage.has_audiobook(book_id)` is true. The frontend shows a confirm dialog with the existing metadata and calls the same endpoint again with `?confirm_overwrite=true`.
+- Plugin setting `audiobook.settings.overwrite_existing: true` skips the 409 - user request: "there is also a config for the overwrite but the warning should stay", so the frontend confirm is kept as a second safety net.
+- Backup: `GET /api/backup/export?include_audiobook=true` includes the persistent audiobook directories. Default is false because MP3 backups quickly grow to 100+MB per book.
 
-## ElevenLabs API-Key gehoert NICHT in .env
+## ElevenLabs API key does NOT belong in .env
 
-- Der ElevenLabs-API-Key wurde frueher nur ueber `ELEVENLABS_API_KEY` env var gelesen. Das ist fuer User undurchsichtig: keine UI, kein Test-Knopf, keine Fehlermeldung wenn der Key fehlt.
-- Loesung: `audiobook.yaml` hat jetzt einen `elevenlabs.api_key` Block, gefuettert ueber `POST /api/audiobook/config/elevenlabs` (verifiziert vor dem Speichern gegen `GET https://api.elevenlabs.io/v1/user`). `tts_engine.set_elevenlabs_api_key()` bekommt den Key beim Plugin-Activate und bei jedem POST.
-- Env-Var bleibt als Fallback - bestehende Installationen mit `.env` brechen nicht.
-- Der Key wird in GET-Responses NIE im Klartext zurueckgegeben. Frontend zeigt nur `{configured: bool}` und bietet "Schluessel hinterlegt"-Indikator + Loeschen-Button.
-- Die Endpoints liegen wie die Persistenz-Endpoints im Backend-Core, weil das Audiobook-Plugin premium ist und User trotzdem ihren Key konfigurieren koennen sollen wenn die Lizenz aus anderen Gruenden gerade nicht aktiv ist.
+- The ElevenLabs API key was previously read only from the `ELEVENLABS_API_KEY` env var. That is opaque for users: no UI, no test button, no error message when the key is missing.
+- Solution: `audiobook.yaml` now has an `elevenlabs.api_key` block, fed through `POST /api/audiobook/config/elevenlabs` (verified before save against `GET https://api.elevenlabs.io/v1/user`). `tts_engine.set_elevenlabs_api_key()` gets the key on plugin activate and on every POST.
+- The env var stays as a fallback - existing installations with `.env` do not break.
+- The key is NEVER returned in clear text in GET responses. The frontend only shows `{configured: bool}` and offers a "key stored" indicator + delete button.
+- These endpoints live in the backend core like the persistence endpoints, because the audiobook plugin is premium and users should still be able to configure their key even when the license is not active for other reasons.
 
-## Audiobook-Export ist asynchron mit SSE-Progress
+## Audiobook export is async with SSE progress
 
-- Der Endpoint `POST /api/books/{id}/export/audiobook` darf NIE synchron eine MP3 zurueckgeben. Audiobook-Generierung dauert Minuten; jeder synchrone Pfad blockiert den Request-Thread und liefert dem User nichts Sichtbares.
-- Pflicht-Form: Client schickt `POST /api/books/{id}/export/async/audiobook`, bekommt `{job_id}` zurueck, abonniert anschliessend `GET /api/export/jobs/{job_id}/stream` (Server-Sent Events).
-- Die alte sync-Route `GET /api/books/{id}/export/audiobook` antwortet jetzt absichtlich mit HTTP 410 + Hinweis auf den async-Pfad. Regression-Test `test_sync_audiobook_route_returns_410` schlaegt Alarm wenn jemand den Endpoint wieder anschaltet.
-- Progress-Events die der Generator emittiert: `start`, `chapter_start`, `chapter_done`, `chapter_skipped`, `chapter_error`, `merge_start`, `merge_done`, `merge_error`, `done`. Der Routen-Wrapper fuegt `ready` (mit `download_url`) und `JobStore.update()` haengt das synthetische `stream_end` an, damit SSE-Subscriber sauber rausfliegen.
-- Frontend nutzt browser-natives `EventSource` (kein Package noetig). Modal ist `modal=true` und nicht via Escape/Click-Outside schliessbar bis der Job einen Terminal-Status hat - sonst orphaned der User Jobs durch versehentliches Klicken.
-- Generator-Callbacks duerfen niemals den Export killen: `progress_callback`-Aufrufe sind in `try/except` gewickelt und loggen nur. Ein broken Subscriber darf NICHT eine Stunde TTS-Arbeit zerstoeren.
-- Tests muessen durch `with TestClient(app) as c:` laufen, sonst feuert FastAPIs lifespan nicht und der Plugin-Manager mounted die Audiobook-/Export-Routen ueberhaupt nicht (404 statt 410). TTS-Engine immer mocken via `patch("bibliogon_audiobook.generator.get_engine", ...)`.
+- The endpoint `POST /api/books/{id}/export/audiobook` must NEVER return an MP3 synchronously. Audiobook generation takes minutes; any synchronous path blocks the request thread and gives the user nothing visible.
+- Required shape: the client sends `POST /api/books/{id}/export/async/audiobook`, gets back `{job_id}`, and subscribes to `GET /api/export/jobs/{job_id}/stream` (Server-Sent Events).
+- The old sync route `GET /api/books/{id}/export/audiobook` now intentionally responds with HTTP 410 + a pointer to the async path. The regression test `test_sync_audiobook_route_returns_410` fires if anyone turns the endpoint back on.
+- Progress events emitted by the generator: `start`, `chapter_start`, `chapter_done`, `chapter_skipped`, `chapter_error`, `merge_start`, `merge_done`, `merge_error`, `done`. The route wrapper adds `ready` (with `download_url`) and `JobStore.update()` appends the synthetic `stream_end` so SSE subscribers exit cleanly.
+- Frontend uses the browser-native `EventSource` (no package required). The modal is `modal=true` and cannot be dismissed via Escape/click-outside until the job is in a terminal status - otherwise the user orphans jobs with a stray click.
+- Generator callbacks must never kill the export: `progress_callback` calls are wrapped in `try/except` and only log. A broken subscriber must NOT destroy an hour of TTS work.
+- Tests must run through `with TestClient(app) as c:`, otherwise FastAPI's lifespan does not fire and the plugin manager never mounts the audiobook/export routes (404 instead of 410). Always mock the TTS engine via `patch("bibliogon_audiobook.generator.get_engine", ...)`.
 
-## Async im FastAPI-Lifespan
+## Async in the FastAPI lifespan
 
-- Im `async def lifespan(app)` Handler laeuft bereits der uvicorn-Event-Loop. `asyncio.new_event_loop()` + `loop.run_until_complete(...)` ist dort verboten und crasht mit "Cannot run the event loop while another loop is running".
-- Wenn eine Hilfsfunktion wie `sync_edge_tts_voices` waehrend des Startups eine Coroutine ausfuehren muss: Funktion `async` machen und im Lifespan `await`-en, NICHT eigenen Loop bauen.
-- Symptome wenn falsch gemacht: `RuntimeWarning: coroutine '...' was never awaited` plus das Loop-Conflict-ERROR im Startup-Log.
-- Andere Aufrufer derselben Funktion (CLI-Targets im Makefile, sync FastAPI-Endpoints) muessen mitziehen: `asyncio.run(...)` im CLI, `async def` + `await` in Endpoints.
+- Inside the `async def lifespan(app)` handler the uvicorn event loop is already running. `asyncio.new_event_loop()` + `loop.run_until_complete(...)` is forbidden there and crashes with "Cannot run the event loop while another loop is running".
+- When a helper like `sync_edge_tts_voices` needs to run a coroutine during startup: make the function `async` and `await` it in the lifespan, do NOT build your own loop.
+- Symptoms when done wrong: `RuntimeWarning: coroutine '...' was never awaited` plus the loop conflict ERROR in the startup log.
+- Other callers of the same function (CLI targets in the Makefile, sync FastAPI endpoints) have to follow along: `asyncio.run(...)` in the CLI, `async def` + `await` in endpoints.
 
-## Config-Migration (Bool -> Enum)
+## Config migration (bool -> enum)
 
-- Wenn ein Boolean-Setting zu einem Enum mit mehr Optionen erweitert wird (z.B. audiobook `merge: true|false` -> `merge: separate|merged|both`): IMMER eine `normalize_*`-Funktion einfuehren die alte Bool-Werte stillschweigend uebersetzt (True -> "merged", False -> "separate") und unbekannte/None-Werte auf den Default mappt.
-- Begruendung: User-Configs in YAML, Backups (.bgb) und DB-Spalten enthalten weiterhin alte Bool-Werte. Eine harte Schema-Validierung wuerde bestehende Installationen brechen. Der Default im Pydantic-Schema wird vom Typ-System nicht auf Migration geprueft.
-- Praxis: Die Normalisierung MUSS sowohl im Backend (Generator/Service-Layer) als auch im Frontend (State-Init aus Settings) passieren, damit beide Seiten dieselben Migrationsregeln teilen. Sonst zeigen alte Configs im UI den falschen Default.
-- Tests: Pro Bool-Wert ein expliziter Migrationstest plus Passthrough fuer alle Enum-Werte plus Default fuer None/Unknown.
+- When a boolean setting is extended to an enum with more options (e.g. audiobook `merge: true|false` -> `merge: separate|merged|both`): ALWAYS introduce a `normalize_*` function that silently translates old bool values (True -> "merged", False -> "separate") and maps unknown/None values to the default.
+- Reason: user configs in YAML, backups (.bgb) and DB columns still contain old bool values. A hard schema validation would break existing installations. The default in the Pydantic schema is not checked for migration by the type system.
+- In practice: the normalization MUST happen on both the backend (generator/service layer) AND the frontend (state init from settings), so both sides share the same migration rules. Otherwise old configs show the wrong default in the UI.
+- Tests: one explicit migration test per bool value, plus pass-through for all enum values, plus default for None/unknown.
 
-## HTML-zu-Markdown Konvertierung
+## HTML-to-Markdown conversion
 
-- KEIN Regex-basierter Konverter fuer verschachtelte HTML-Strukturen.
-- HTMLParser-basierten Konverter nutzen der Verschachtelungstiefe trackt.
-- Speziell fuer <ul>/<li>: Korrekte 2-Space-Einrueckung pro Level.
+- NO regex-based converter for nested HTML structures.
+- Use an HTMLParser-based converter that tracks nesting depth.
+- Specifically for <ul>/<li>: correct 2-space indentation per level.
 
 ## Deployment
 
-- Default-Port: 7880 (nicht 8080, zu oft belegt).
-- /api/test/reset NUR im Debug-Modus (BIBLIOGON_DEBUG=true).
-- CORS ueber BIBLIOGON_CORS_ORIGINS konfigurierbar (nicht hardcoded).
-- SQLite-Pfad konfigurierbar mit Docker-Volume-Persistenz.
-- BIBLIOGON_SECRET_KEY wird von start.sh automatisch generiert wenn nicht gesetzt.
-- Non-Root User im Dockerfile.
+- Default port: 7880 (not 8080, too often taken).
+- /api/test/reset ONLY in debug mode (BIBLIOGON_DEBUG=true).
+- CORS configurable via BIBLIOGON_CORS_ORIGINS (not hardcoded).
+- SQLite path configurable with Docker volume persistence.
+- BIBLIOGON_SECRET_KEY is auto-generated by start.sh when not set.
+- Non-root user in the Dockerfile.
 
-## Lizenzierung
+## Licensing
 
-### license_tier Attribut
-- PluginForge's BasePlugin ist ein externes PyPI-Paket - NICHT modifizieren. Stattdessen `license_tier` als Klassen-Attribut direkt auf den Plugin-Klassen setzen.
-- `_check_license` in main.py liest `getattr(plugin, "license_tier", "core")` - Default ist "core" (abwaertskompatibel).
+### license_tier attribute
+- PluginForge's BasePlugin is an external PyPI package - do NOT modify. Instead set `license_tier` as a class attribute directly on the plugin classes.
+- `_check_license` in main.py reads `getattr(plugin, "license_tier", "core")` - the default is "core" (backward-compatible).
 
-### Trial Keys
-- Trial-Keys nutzen `plugin="*"` als Wildcard im Payload. `LicensePayload.matches_plugin()` muss `"*"` explizit als Match-All behandeln.
-- Trial-Keys werden unter Key `"*"` in `licenses.json` gespeichert, nicht unter dem Plugin-Namen.
-- Ablaufdatum: Immer `date.today()` (UTC) nutzen, nicht `datetime.now()`. `date.fromisoformat()` erwartet "YYYY-MM-DD" Format.
-- `_check_license` muss sowohl per-Plugin-Key als auch Wildcard-Key pruefen (Fallback-Kette).
+### Trial keys
+- Trial keys use `plugin="*"` as a wildcard in the payload. `LicensePayload.matches_plugin()` must treat `"*"` explicitly as match-all.
+- Trial keys are stored under the key `"*"` in `licenses.json`, not under the plugin name.
+- Expiry: always use `date.today()` (UTC), not `datetime.now()`. `date.fromisoformat()` expects the "YYYY-MM-DD" format.
+- `_check_license` must check both the per-plugin key and the wildcard key (fallback chain).
 
 ### Settings UI
-- `discoveredPlugins` API liefert `license_tier` und `has_license` pro Plugin. Die Werte werden aus der Plugin-YAML (license-Feld) und dem LicenseStore/Validator abgeleitet.
-- Premium-Plugins ohne Lizenz: "Lizenz eingeben" Button statt Toggle. Kein Enable/Disable moeglich.
+- The `discoveredPlugins` API delivers `license_tier` and `has_license` per plugin. The values are derived from the plugin YAML (`license` field) and the LicenseStore/validator.
+- Premium plugins without a license: "Enter license" button instead of a toggle. No enable/disable.
 
-## Allgemeine Patterns
+## General patterns
 
-- Vor Custom-Implementierungen: Pruefen ob eine Library/Extension das schon loest.
-- Bei CSS-Problemen: Erst Spezifitaet pruefen (.ProseMirror Kontext).
-- Bei Import-Problemen: Pruefen ob das Quellformat (Markdown) korrekt zu HTML konvertiert wird.
-- Bei Export-Problemen: Pruefen ob HTML korrekt zurueck zu Markdown konvertiert wird.
-- Roundtrip testen: Import -> Editor -> Export -> epubcheck.
+- Before writing a custom implementation: check whether a library/extension already solves it.
+- On CSS problems: check specificity first (.ProseMirror context).
+- On import problems: check whether the source format (Markdown) is converted to HTML correctly.
+- On export problems: check whether HTML is converted back to Markdown correctly.
+- Test roundtrips: import -> editor -> export -> epubcheck.
 
-## Code-Struktur
+## Code structure
 
-### God Method vermeiden
-- Route-Handler die laenger als 50 Zeilen sind, muessen zerlegt werden.
-- Typisches Symptom: if/elif-Kaskaden fuer verschiedene Formate/Typen in einem Handler.
-- Loesung: ExportContext-Dataclass + eine Funktion pro Format-Gruppe + testbare Hilfsfunktionen.
-- Jede extrahierte Funktion muss ohne den gesamten Request-Kontext testbar sein.
-- Siehe coding-standards.md "Funktionsdesign" fuer das korrekte Pattern.
+### Avoid God Methods
+- Route handlers longer than 50 lines must be decomposed.
+- Typical symptom: if/elif cascades for different formats/types in one handler.
+- Solution: ExportContext dataclass + one function per format group + testable helper functions.
+- Every extracted function must be testable without reconstructing the whole request context.
+- See coding-standards.md "Function design" for the correct pattern.
 
-### Testbarkeit als Design-Kriterium
-- Wenn eine Funktion schwer zu testen ist (viel Mocking noetig), ist das ein Signal fuer schlechtes Design.
-- Service-Funktionen duerfen keine FastAPI-Abhaengigkeiten haben (kein Request, kein Response, kein Depends).
-- Hilfsfunktionen (validate_format, build_filename, detect_manual_toc) muessen mit einfachen Parametern aufrufbar sein.
-- Datenklassen (dataclass, TypedDict) statt loser Dicts fuer Kontext zwischen Funktionen.
+### Testability as a design criterion
+- If a function is hard to test (lots of mocking needed), that is a signal of bad design.
+- Service functions must have no FastAPI dependencies (no Request, no Response, no Depends).
+- Helper functions (validate_format, build_filename, detect_manual_toc) must be callable with simple parameters.
+- Data classes (dataclass, TypedDict) instead of loose dicts for context between functions.
 
-### Error-Handling Fehler die wir gemacht haben
-- HTTPException direkt in Services geworfen. Macht Services nicht testbar ohne FastAPI-Kontext. Loesung: Eigene Exception-Hierarchie (BibliogonError).
-- Nackte `except Exception: pass` in Plugin-Code. Fehler verschwinden spurlos. Loesung: Spezifische Exceptions fangen, mindestens loggen.
-- Externe Tool-Fehler (Pandoc subprocess.CalledProcessError) ungewrappt nach oben durchgereicht. User sieht kryptische Fehlermeldung. Loesung: ExternalServiceError mit klarem Service-Namen.
-- Frontend: API-Calls ohne catch. User klickt "Exportieren" und nichts passiert. Loesung: Immer try/catch mit Toast-Feedback und finally fuer Loading-State.
+### Error-handling mistakes we made
+- HTTPException thrown directly from services. Makes services untestable without a FastAPI context. Solution: our own exception hierarchy (BibliogonError).
+- Bare `except Exception: pass` in plugin code. Errors vanish silently. Solution: catch specific exceptions, at least log them.
+- External tool errors (Pandoc subprocess.CalledProcessError) passed up unwrapped. The user sees a cryptic error message. Solution: ExternalServiceError with a clear service name.
+- Frontend: API calls without catch. User clicks "Export" and nothing happens. Solution: always try/catch with toast feedback and finally for the loading state.
 
-### Fehler-Reporting Regeln
-- Fehlerdetails muessen ein GitHub Issue direkt actionable machen, ohne Rueckfragen.
-- Kette: BibliogonError (detail + str(e)) -> API Response (detail + traceback im Debug-Mode) -> Frontend ApiError -> Toast mit "Issue melden" Button -> GitHub Issue (Titel, Stacktrace, Browser, App-Version).
-- JEDER except-Block MUSS logger.error() mit exc_info=True aufrufen.
-- JEDER except-Block MUSS str(e) in die BibliogonError-Subklasse aufnehmen (NICHT HTTPException).
-- JEDER Frontend catch-Block MUSS toast.error() mit dem ApiError-Objekt aufrufen, NICHT nur mit einem String.
-- Generische Fehlermeldungen wie "Export failed" oder "Import failed" ohne Details sind VERBOTEN. Sie machen GitHub Issues wertlos.
-- File-Upload-Funktionen (fetch statt request()) muessen bei Fehler ApiError werfen, nicht Error.
-- Globaler Exception Handler in main.py loggt alle unbehandelten Fehler mit Stacktrace.
-- Im Debug-Mode liefert die Backend-Response den Stacktrace mit (fuer den "Issue melden" Button).
+### Error reporting rules
+- Error details must make a GitHub Issue directly actionable, without follow-up questions.
+- Chain: BibliogonError (detail + str(e)) -> API response (detail + traceback in debug mode) -> frontend ApiError -> toast with "Report issue" button -> GitHub Issue (title, stacktrace, browser, app version).
+- EVERY except block MUST call logger.error() with exc_info=True.
+- EVERY except block MUST include str(e) in the BibliogonError subclass (NOT HTTPException).
+- EVERY frontend catch block MUST call toast.error() with the ApiError object, NOT just with a string.
+- Generic error messages like "Export failed" or "Import failed" without details are FORBIDDEN. They make GitHub Issues worthless.
+- File upload functions (fetch instead of request()) must throw ApiError on failure, not Error.
+- The global exception handler in main.py logs every unhandled error with its stacktrace.
+- In debug mode the backend response includes the stacktrace (for the "Report issue" button).
 
-## Plugin-Settings: sichtbar oder INTERNAL, niemals heimlich
+## Plugin settings: visible or INTERNAL, never hidden
 
-Plugin-Settings sind entweder UI-sichtbar (User-relevant) oder als `# INTERNAL` markiert (nur YAML). Versteckte aktive Settings die User-Verhalten beeinflussen sind ein Bug, weil der User keine Moeglichkeit hat das Verhalten zu aendern ohne YAML-Editor und Repo-Zugriff.
+Plugin settings are either UI-visible (user-relevant) or marked `# INTERNAL` (YAML-only). Hidden active settings that influence user behavior are a bug, because the user has no way to change the behavior without a YAML editor and repo access.
 
-Tote Settings (in YAML aber nicht im Code gelesen) sind genauso schlimm: sie sind eine Luege gegenueber dem User. Beim Refactor eines Plugins immer pruefen ob alte YAML-Felder noch konsumiert werden, bevor sie stehen bleiben.
+Dead settings (in the YAML but not read by the code) are just as bad: they are a lie to the user. When refactoring a plugin, always check whether old YAML fields are still consumed before leaving them in place.
 
-Generic Plugin Settings Panel im Frontend: rendert Booleans als Checkbox, Numbers als Number-Input, Strings als Text-Input, Arrays als OrderedListEditor, Objekte als JSON-Textarea mit "Advanced"-Hinweis. Ein Boolean als Text-Input rendern (`value="true"`) ist ein UX-Bug weil der User nicht erkennt dass es ein Schalter ist.
+Generic plugin settings panel on the frontend: renders booleans as a checkbox, numbers as a number input, strings as a text input, arrays as an OrderedListEditor, objects as a JSON textarea with an "Advanced" hint. Rendering a boolean as a text input (`value="true"`) is a UX bug because the user cannot tell it is a switch.
 
-Konfigurations-Werte die zwischen Buechern variieren MUESSEN auf das Book-Modell, NICHT auf das Plugin-YAML. Plugin-YAML ist plugin-global und gilt fuer alle Buecher gleichzeitig - wer per-Buch-Granularitaet braucht baut eine Spalte (siehe Pattern bei `Book.audiobook_overwrite_existing`).
+Configuration values that vary between books MUST live on the Book model, NOT in the plugin YAML. Plugin YAML is plugin-global and applies to all books at once - anyone who needs per-book granularity adds a column (see the pattern on `Book.audiobook_overwrite_existing`).
 
-## Architektur-Entscheidungen pruefen vor Implementierung
+## Review architectural decisions before implementing
 
-Aus dem V-02 Vorfall: Es gab eine fast-Implementierung eines 
-Backup-Vergleichs-Features (V-02), das parallel zum bereits 
-geplanten Git-Sicherungs-Feature gebaut worden waere. Erst 
-durch Querpruefung mit todo-prompts.md wurde der Konflikt 
-sichtbar.
+From the V-02 incident: there was a near-implementation of a
+backup-compare feature (V-02) that would have been built in
+parallel with the already-planned Git-based backup feature. Only
+by cross-checking against todo-prompts.md did the conflict
+become visible.
 
-Regel: Bevor eine groessere Architektur-Entscheidung umgesetzt 
-wird, pruefe:
-1. ROADMAP-Eintraege im Bereich
-2. todo-prompts.md auf bereits geplante Aenderungen
-3. docs/chat-journal auf frueher diskutierte Entscheidungen
+Rule: before implementing a larger architectural decision, check:
+1. ROADMAP entries in the area
+2. todo-prompts.md for already-planned changes
+3. docs/chat-journal for earlier discussed decisions
 
-Bei Konflikt zwischen User-Anweisung und dokumentierter Planung: 
-STOP und explizit beim User nachfragen welche Variante gilt. 
-Niemals Parallel-Systeme bauen die zur Loeschung geplant sind.
+On a conflict between a user instruction and documented planning:
+STOP and explicitly ask the user which version applies.
+Never build parallel systems that are already slated for deletion.
