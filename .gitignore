@@ -55,6 +55,6 @@ build/
 /backend/config/licenses.json
 
 # prompt files
-/docs/todo-prompts.md
+/docs/backlog.md
 /tmp/todo-prompts.md
 /docs/chat-journal-session-*.md
