@@ -542,6 +542,7 @@ ui:
     too_long: "La palabra clave debe tener como máximo {max} caracteres"
     no_comma: "La palabra clave no puede contener comas"
     over_limit: "Amazon KDP recomienda un máximo de 7 palabras clave. Otras plataformas pueden permitir más."
+    hard_limit: "Se alcanzó el máximo de {max} palabras clave. Elimina una entrada para añadir más."
     removed: "Palabra clave eliminada"
     undo: "Deshacer"
     hint: "Doble clic para editar, arrastrar y soltar para reordenar"

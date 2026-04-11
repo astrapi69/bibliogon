@@ -596,6 +596,7 @@ ui:
     too_long: "Keyword must be at most {max} characters"
     no_comma: "Keyword must not contain a comma"
     over_limit: "Amazon KDP recommends a maximum of 7 keywords. Other platforms may allow more."
+    hard_limit: "Maximum of {max} keywords reached. Delete an entry to add more."
     removed: "Keyword removed"
     undo: "Undo"
     hint: "Double-click to edit, drag-and-drop to reorder"

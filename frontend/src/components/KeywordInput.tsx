@@ -23,6 +23,11 @@ import {CSS} from "@dnd-kit/utilities";
 
 export const RECOMMENDED_MAX = 7;
 export const MAX_LENGTH = 50;
+// Sanity upper bound. 50 keywords is already far beyond any
+// marketplace recommendation; the cap only exists to block runaway
+// input (bulk paste, automated misuse) and keep the DB column to
+// a reasonable size.
+export const HARD_LIMIT = 50;
 
 export type KeywordValidationError = "empty" | "too_long" | "no_comma" | "duplicate";
 
@@ -99,6 +104,7 @@ function SortableChip({
         return (
             <span
                 ref={setNodeRef}
+                data-testid={`keyword-chip-${index}-editing`}
                 style={{
                     ...styles.chip,
                     transform: CSS.Transform.toString(transform),
@@ -109,6 +115,7 @@ function SortableChip({
             >
                 <input
                     ref={inputRef}
+                    data-testid={`keyword-chip-${index}-edit-input`}
                     value={draft}
                     onChange={(e) => { setDraft(e.target.value); setError(false); }}
                     onKeyDown={(e) => {
@@ -128,6 +135,7 @@ function SortableChip({
     return (
         <span
             ref={setNodeRef}
+            data-testid={`keyword-chip-${index}`}
             style={{
                 ...styles.chip,
                 transform: CSS.Transform.toString(transform),
@@ -143,7 +151,13 @@ function SortableChip({
                 <GripVertical size={12} style={{opacity: 0.4}}/>
             </span>
             <span style={styles.chipText}>{keyword}</span>
-            <button style={styles.chipRemove} onClick={onRemove} type="button">
+            <button
+                data-testid={`keyword-chip-${index}-delete`}
+                aria-label={`Delete ${keyword}`}
+                style={styles.chipRemove}
+                onClick={onRemove}
+                type="button"
+            >
                 <X size={12}/>
             </button>
         </span>
@@ -177,6 +191,11 @@ export default function KeywordInput({keywords, onChange}: Props) {
     };
 
     const addKeyword = (raw: string) => {
+        // Hard limit blocks silently - the input is already disabled
+        // visually at this point, this is belt-and-braces for the
+        // onBlur path which fires even when the input is disabled
+        // via React-internal state transitions.
+        if (keywords.length >= HARD_LIMIT) return;
         const result = validateKeyword(raw, keywords);
         if (!result.ok) {
             if (result.error) reportError(result.error);
@@ -191,15 +210,18 @@ export default function KeywordInput({keywords, onChange}: Props) {
         const next = keywords.filter((_, i) => i !== index);
         onChange(next);
         // Undo toast: react-toastify custom content with an inline action.
-        // AutoClose ~5s matches the design spec. On undo click we splice
-        // the keyword back into its original index so ordering is preserved.
+        // The restore operates on ``next`` (the post-delete list), NOT on
+        // the closed-over ``keywords`` which is the pre-delete snapshot.
+        // Splicing into the pre-delete list would duplicate the removed
+        // entry instead of restoring it.
         const toastId = toast.info(
             <div style={{display: "flex", alignItems: "center", gap: 8}}>
                 <span>{t("ui.keywords.removed", "Schluesselwort entfernt")}: {removed}</span>
                 <button
                     type="button"
+                    data-testid="keyword-undo-button"
                     onClick={() => {
-                        const restored = [...keywords];
+                        const restored = [...next];
                         restored.splice(index, 0, removed);
                         onChange(restored);
                         toast.dismiss(toastId);
@@ -251,7 +273,12 @@ export default function KeywordInput({keywords, onChange}: Props) {
 
     const ids = keywords.map((_, i) => `kw-${i}`);
     const overRecommended = keywords.length > RECOMMENDED_MAX;
-    const counterColor = overRecommended ? "var(--warning-dark, #b45309)" : "var(--text-muted)";
+    const atHardLimit = keywords.length >= HARD_LIMIT;
+    const counterColor = atHardLimit
+        ? "var(--danger, #b91c1c)"
+        : overRecommended
+            ? "var(--warning-dark, #b45309)"
+            : "var(--text-muted)";
 
     return (
         <div>
@@ -275,6 +302,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                     </SortableContext>
                 </DndContext>
                 <input
+                    data-testid="keyword-add-input"
                     style={styles.input}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -284,11 +312,25 @@ export default function KeywordInput({keywords, onChange}: Props) {
                         ? t("ui.keywords.placeholder", "Schluesselwort eingeben...")
                         : ""
                     }
+                    disabled={atHardLimit}
                 />
             </div>
-            <span style={{...styles.counter, color: counterColor}}>
+            <span
+                data-testid="keyword-counter"
+                data-over-recommended={overRecommended ? "true" : "false"}
+                data-at-hard-limit={atHardLimit ? "true" : "false"}
+                style={{...styles.counter, color: counterColor}}
+            >
                 {keywords.length} / {RECOMMENDED_MAX} {t("ui.keywords.counter", "Schluesselwoerter")}
-                {overRecommended && (
+                {atHardLimit ? (
+                    <>
+                        {" - "}
+                        {t(
+                            "ui.keywords.hard_limit",
+                            `Maximum von ${HARD_LIMIT} Schluesselwoertern erreicht. Loesche einen Eintrag um weitere hinzuzufuegen.`,
+                        ).replace("{max}", String(HARD_LIMIT))}
+                    </>
+                ) : overRecommended ? (
                     <>
                         {" - "}
                         {t(
@@ -296,7 +338,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                             "Amazon KDP empfiehlt maximal 7 Schluesselwoerter. Andere Plattformen erlauben mehr.",
                         )}
                     </>
-                )}
+                ) : null}
             </span>
             <div style={styles.hint}>
                 {t("ui.keywords.hint", "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren")}

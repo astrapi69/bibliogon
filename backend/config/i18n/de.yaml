@@ -596,6 +596,7 @@ ui:
     too_long: "Schlüsselwort darf maximal {max} Zeichen lang sein"
     no_comma: "Schlüsselwort darf kein Komma enthalten"
     over_limit: "Amazon KDP empfiehlt maximal 7 Schlüsselwörter. Andere Plattformen erlauben mehr."
+    hard_limit: "Maximum von {max} Schlüsselwörtern erreicht. Lösche einen Eintrag um weitere hinzuzufügen."
     removed: "Schlüsselwort entfernt"
     undo: "Rückgängig"
     hint: "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren"

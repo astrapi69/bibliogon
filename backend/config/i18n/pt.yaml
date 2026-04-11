@@ -559,6 +559,7 @@ ui:
         too_long: "Palavra-chave deve ter no máximo {max} caracteres"
         no_comma: "Palavra-chave não pode conter vírgula"
         over_limit: "Amazon KDP recomenda no máximo 7 palavras-chave. Outras plataformas podem permitir mais."
+        hard_limit: "Máximo de {max} palavras-chave alcançado. Exclua uma entrada para adicionar mais."
         removed: "Palavra-chave removida"
         undo: "Desfazer"
         hint: "Clique duplo para editar, arrastar e soltar para reordenar"

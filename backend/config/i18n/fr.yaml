@@ -542,6 +542,7 @@ ui:
     too_long: "Le mot-clé doit contenir au maximum {max} caractères"
     no_comma: "Le mot-clé ne doit pas contenir de virgule"
     over_limit: "Amazon KDP recommande un maximum de 7 mots-clés. D'autres plateformes peuvent en autoriser davantage."
+    hard_limit: "Maximum de {max} mots-clés atteint. Supprimez une entrée pour en ajouter d'autres."
     removed: "Mot-clé supprimé"
     undo: "Annuler"
     hint: "Double-cliquer pour modifier, glisser-déposer pour réordonner"
