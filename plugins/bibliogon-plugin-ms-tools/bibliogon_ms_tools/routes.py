@@ -17,6 +17,9 @@ router = APIRouter(prefix="/ms-tools", tags=["manuscript-tools"])
 
 _config: dict = {}
 
+DEFAULT_MAX_SENTENCE_LENGTH = 25
+DEFAULT_REPETITION_WINDOW = 50
+
 
 def set_config(config: dict) -> None:
     """Set plugin config from plugin activation."""
@@ -24,13 +27,62 @@ def set_config(config: dict) -> None:
     _config = config
 
 
+def _plugin_settings() -> dict:
+    """Return the plugin ``settings`` block, falling back to the raw config."""
+    return (_config or {}).get("settings") or _config or {}
+
+
+def _resolve_thresholds(
+    book_id: str | None,
+    override_max_sentence_length: int | None,
+    override_repetition_window: int | None,
+) -> tuple[int, int]:
+    """Resolve effective thresholds: request > book > plugin settings > defaults.
+
+    Per-book overrides are read from the ``books`` table when ``book_id`` is
+    provided. Missing columns (e.g. in test DBs without the migration) are
+    tolerated silently.
+    """
+    settings = _plugin_settings()
+    max_sentence = settings.get("max_sentence_length", DEFAULT_MAX_SENTENCE_LENGTH)
+    repetition = settings.get("repetition_window", DEFAULT_REPETITION_WINDOW)
+
+    if book_id:
+        try:
+            from app.database import SessionLocal
+            from app.models import Book
+        except ImportError:
+            book = None
+        else:
+            db = SessionLocal()
+            try:
+                book = db.query(Book).filter(Book.id == book_id).first()
+            finally:
+                db.close()
+        if book is not None:
+            book_max = getattr(book, "ms_tools_max_sentence_length", None)
+            book_rep = getattr(book, "ms_tools_repetition_window", None)
+            if book_max is not None:
+                max_sentence = book_max
+            if book_rep is not None:
+                repetition = book_rep
+
+    if override_max_sentence_length is not None:
+        max_sentence = override_max_sentence_length
+    if override_repetition_window is not None:
+        repetition = override_repetition_window
+
+    return int(max_sentence), int(repetition)
+
+
 class StyleCheckRequest(BaseModel):
     """Request body for style check."""
 
     text: str = Field(..., min_length=1, description="Text to analyze")
     language: str = Field(default="de", pattern="^[a-z]{2}$")
-    max_sentence_length: int = Field(default=25, ge=10, le=100)
-    repetition_window: int = Field(default=50, ge=10, le=200)
+    max_sentence_length: int | None = Field(default=None, ge=10, le=100)
+    repetition_window: int | None = Field(default=None, ge=10, le=200)
+    book_id: str | None = Field(default=None, description="Resolve per-book threshold overrides")
 
 
 class SanitizeRequest(BaseModel):
@@ -56,12 +108,19 @@ class ReadabilityRequest(BaseModel):
 @router.post("/check")
 async def style_check(req: StyleCheckRequest) -> dict:
     """Run style checks: filler words, passive voice, sentence length,
-    word repetitions, adverbs, redundant phrases."""
+    word repetitions, adverbs, redundant phrases.
+
+    Thresholds are resolved in this order: explicit request values > per-book
+    overrides (when ``book_id`` is provided) > plugin config > built-in defaults.
+    """
+    max_sentence, repetition = _resolve_thresholds(
+        req.book_id, req.max_sentence_length, req.repetition_window
+    )
     return check_style(
         text=req.text,
         language=req.language,
-        max_sentence_length=req.max_sentence_length,
-        repetition_window=req.repetition_window,
+        max_sentence_length=max_sentence,
+        repetition_window=repetition,
     )
 
 

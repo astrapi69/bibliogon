@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -83,6 +83,11 @@ class Book(Base):
     audiobook_merge: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Custom audiobook output filename (without extension). None -> derive from book title.
     audiobook_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # ms-tools per-book threshold overrides. None -> fall back to plugin defaults.
+    ms_tools_max_sentence_length: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ms_tools_repetition_window: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ms_tools_max_filler_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(

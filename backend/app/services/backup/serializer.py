@@ -30,6 +30,9 @@ def serialize_book_for_backup(book: Book) -> dict[str, Any]:
         "tts_language": book.tts_language, "tts_speed": book.tts_speed,
         "audiobook_merge": book.audiobook_merge,
         "audiobook_filename": book.audiobook_filename,
+        "ms_tools_max_sentence_length": book.ms_tools_max_sentence_length,
+        "ms_tools_repetition_window": book.ms_tools_repetition_window,
+        "ms_tools_max_filler_ratio": book.ms_tools_max_filler_ratio,
         "created_at": book.created_at.isoformat(),
         "updated_at": book.updated_at.isoformat(),
     }
@@ -65,4 +68,7 @@ def restore_book_from_data(book_data: dict[str, Any]) -> Book:
         tts_speed=book_data.get("tts_speed"),
         audiobook_merge=book_data.get("audiobook_merge"),
         audiobook_filename=book_data.get("audiobook_filename"),
+        ms_tools_max_sentence_length=book_data.get("ms_tools_max_sentence_length"),
+        ms_tools_repetition_window=book_data.get("ms_tools_repetition_window"),
+        ms_tools_max_filler_ratio=book_data.get("ms_tools_max_filler_ratio"),
     )
