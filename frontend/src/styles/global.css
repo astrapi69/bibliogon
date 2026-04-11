@@ -687,16 +687,43 @@ body {
     to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
-/* --- Radix DropdownMenu (Chapter Sidebar) --- */
+/* --- Radix DropdownMenu (Chapter Sidebar) ---
+   The 26 chapter types plus section labels and separators easily
+   exceed the viewport height on small screens. Radix emits the
+   --radix-dropdown-menu-content-available-height CSS variable based
+   on the currently available space in the chosen side direction;
+   we cap max-height to that value and enable native vertical
+   scrolling so the dropdown never clips below the viewport edge.
+   The trigger-side collision detection that flips side="top" when
+   there isn't enough room below still works as before because
+   Radix recomputes the variable when it flips. */
 .chapter-dropdown-content {
     background: #2a2725;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 6px 0;
     min-width: 180px;
+    max-height: var(--radix-dropdown-menu-content-available-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 50;
     animation: fadeIn 100ms ease;
+}
+
+.chapter-dropdown-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chapter-dropdown-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+}
+
+.chapter-dropdown-content::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .chapter-dropdown-label {

@@ -333,7 +333,7 @@ export default function ChapterSidebar({
                 <span style={styles.manuscriptTitle}>{t("ui.sidebar.manuscript", "Manuskript")}</span>
             </div>
 
-            <div style={styles.list}>
+            <div style={styles.list} data-testid="chapter-sidebar-list">
                 {/* Add button with dropdown */}
                 <div style={{...styles.sectionHeader, justifyContent: "space-between"}}>
                     <span style={styles.listLabel}>{t("ui.sidebar.content", "Inhalt")}</span>
@@ -346,7 +346,13 @@ export default function ChapterSidebar({
                             </DropdownMenu.Trigger>
                         </Tooltip>
                         <DropdownMenu.Portal>
-                            <DropdownMenu.Content className="chapter-dropdown-content" align="end" sideOffset={4}>
+                            <DropdownMenu.Content
+                                className="chapter-dropdown-content"
+                                align="end"
+                                sideOffset={4}
+                                collisionPadding={16}
+                                data-testid="chapter-add-dropdown"
+                            >
                                 <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.front_matter", "Front Matter")}</DropdownMenu.Label>
                                 {FRONT_MATTER_TYPES.map((t) => (
                                     <DropdownMenu.Item key={t} className="chapter-dropdown-item" onSelect={() => onAdd(t)}>
@@ -497,6 +503,7 @@ const styles: Record<string, React.CSSProperties> = {
     },
     manuscriptHeader: {
         padding: "12px 16px 0",
+        flexShrink: 0,
     },
     manuscriptTitle: {
         fontFamily: "var(--font-display)", fontSize: "0.8125rem", fontWeight: 600,
@@ -505,6 +512,7 @@ const styles: Record<string, React.CSSProperties> = {
     header: {
         padding: "16px 12px 12px", display: "flex", alignItems: "center", gap: 6,
         borderBottom: "1px solid rgba(255,255,255,0.06)",
+        flexShrink: 0,
     },
     backBtn: {
         background: "none", border: "none", color: "var(--text-sidebar)",
@@ -534,7 +542,10 @@ const styles: Record<string, React.CSSProperties> = {
         background: "rgba(255,255,255,0.08)", border: "none", color: "var(--text-sidebar)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
     },
-    list: { flex: 1, overflowY: "auto" as const, padding: "0 8px" },
+    // minHeight: 0 is mandatory for flexbox scrolling. Without it, the
+    // flex child defaults to min-height: auto and expands to its
+    // intrinsic content height, silently defeating overflow-y: auto.
+    list: { flex: 1, minHeight: 0, overflowY: "auto" as const, padding: "0 8px" },
     empty: {
         padding: "12px 8px", fontSize: "0.8125rem", color: "rgba(255,255,255,0.25)", fontStyle: "italic",
     },
@@ -565,7 +576,11 @@ const styles: Record<string, React.CSSProperties> = {
         color: "#faf8f5", fontSize: "0.875rem", padding: "2px 6px", borderRadius: 4,
         outline: "none", fontFamily: "var(--font-body)",
     },
-    exportSection: { padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" },
+    exportSection: {
+        padding: "12px 16px 16px",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        flexShrink: 0,
+    },
     exportBtn: {
         width: "100%",
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
