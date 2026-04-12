@@ -126,9 +126,9 @@ bibliogon/
 
 ## Tests
 
-- Backend + plugins: 228 (via `make test-backend` + `make test-plugins`)
-- Frontend (Vitest): 90
-- E2E (Playwright): 52 tests under `e2e/`, not on the `make test` default path
+- Backend + plugins: 308 (via `make test-backend` + `make test-plugins`)
+- Frontend (Vitest): 145
+- E2E (Playwright): 57 tests under `e2e/`, not on the `make test` default path
 - `make test` must stay green after every change
 
 ## Related projects

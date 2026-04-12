@@ -9,17 +9,17 @@
 make test
 
 # Individually when targeted:
-make test-backend           # pytest backend (78 tests)
+make test-backend           # pytest backend (183 tests)
 make test-plugins           # all plugin tests (125 tests)
-make test-plugin-export     # export only (23 tests)
-make test-plugin-grammar    # grammar only (7 tests)
-make test-plugin-kdp        # KDP only (10 tests)
+make test-plugin-export     # export only (63 tests)
+make test-plugin-grammar    # grammar only (10 tests)
+make test-plugin-kdp        # KDP only (33 tests)
 make test-plugin-kinderbuch # kinderbuch only (8 tests)
-make test-frontend          # Vitest (21 tests)
+make test-frontend          # Vitest (145 tests)
 
 # E2E (needs a running app)
 make dev                    # start the app
-npx playwright test         # 52 E2E tests
+npx playwright test         # 57 E2E tests
 ```
 
 ### 2. Type check
@@ -176,7 +176,7 @@ def test_create_and_export_book():
 ### E2E tests (Playwright)
 
 **What to test:** critical user flows from the author's perspective.
-**Where:** `frontend/tests/` or `e2e/` (52 tests exist)
+**Where:** `frontend/tests/` or `e2e/` (57 tests exist)
 
 **Existing coverage:**
 - Dashboard: create, delete, backup/import a book
@@ -212,6 +212,53 @@ test('export book as EPUB with manual TOC', async ({ page }) => {
   expect(download.suggestedFilename()).toContain('.epub')
 })
 ```
+
+### Coverage targets per module type
+
+These are target coverage levels, not hard gates. They guide where to invest test effort and flag when a module is under-tested relative to its risk.
+
+**Project-wide target: 85-95% of modules at MEDIUM or above.** Currently at ~70% (2026-04-12 audit). The gap is mostly on the frontend side.
+
+**Principle: frontend coverage is not subordinate to backend coverage.** A 95% backend with a 32% frontend is not "good enough". The frontend is the user's interface - bugs there are visible immediately. Both sides of the pyramid must reach their targets independently.
+
+#### Backend (Python)
+
+| Module Type | Target | Rationale |
+|-------------|--------|-----------|
+| Services (`app/services/`) | HIGH (>= 80%) | Core business logic, highest bug risk |
+| Routers (`app/routers/`) | MEDIUM-HIGH (>= 70%) | Integration tests covering happy path + error cases |
+| Models (`app/models/`) | LOW-MEDIUM | Tested indirectly via integration tests; direct tests only for custom methods |
+| Schemas (`app/schemas/`) | MEDIUM | Validators and field transformations need explicit tests |
+| Utilities (`app/utils/`, `licensing.py`, `job_store.py`) | HIGH (>= 80%) | Pure functions, easy to test, often security-relevant |
+
+#### Plugins (Python)
+
+| Module Type | Target | Rationale |
+|-------------|--------|-----------|
+| Core logic (converters, generators, checkers) | HIGH (>= 80%) | The plugin's reason to exist |
+| `plugin.py` (hook implementations) | MEDIUM | Tested indirectly through integration; explicit tests for non-trivial hooks |
+| `routes.py` | MEDIUM | At least happy-path integration test per endpoint |
+
+#### Frontend (TypeScript/React)
+
+| Module Type | Target | Rationale |
+|-------------|--------|-----------|
+| `api/client.ts` | HIGH (>= 90%) | Every API call, error path, and interceptor |
+| Hooks (`hooks/`) | HIGH (>= 80%) | State logic, side effects, computed values |
+| Utility functions (`utils/`) | HIGH (>= 90%) | Pure functions, trivial to test |
+| Complex form components (ExportDialog, CreateBookModal, BookMetadataEditor) | MEDIUM (>= 60%) | Validate form logic, conditional fields, submission |
+| Simple display components (BookCard, Tooltip, ThemeToggle) | LOW | E2E covers rendering; unit tests only for non-trivial logic |
+| Page components | LOW | E2E covers navigation and layout |
+| Contexts/Providers | MEDIUM | Test the provider logic, not the React tree |
+
+#### E2E (Playwright)
+
+| Flow Type | Target | Rationale |
+|-----------|--------|-----------|
+| Data-critical flows (backup, import, export, trash) | MUST HAVE | Silent data corruption is the worst bug class |
+| Core user journeys (create book, edit, navigate) | MUST HAVE | Happy path must always work |
+| Plugin UI flows | SHOULD HAVE (one smoke per plugin) | Verify plugin UI mounts and basic interaction |
+| Edge cases (long titles, empty states, error recovery) | NICE TO HAVE | Fill as bugs surface |
 
 ### Mutation testing (Backend - mutmut)
 
@@ -432,3 +479,22 @@ Nightly (separate, slower):
 4. **Roundtrip tests** - import -> editor -> export -> epubcheck for every book format
 5. **Set up mypy** - type checking for the Python backend
 6. **CI pipeline** - GitHub Actions with all checks + nightly mutmut/Stryker
+
+## Coverage Targets per Module Type
+
+- Services and business logic: 95% minimum
+- API endpoints: 90% minimum
+- Frontend components with logic: 85% minimum
+- Frontend presentational components: 65% minimum
+- Hooks and utilities: 95% minimum
+- Models and schemas: 80% minimum
+- Plugin routes: 90% minimum
+
+Overall project target: 85-95% coverage.
+
+Frontend coverage is not subordinate to backend coverage. User-facing 
+bugs destroy trust as effectively as backend bugs destroy data.
+
+100% coverage is not the goal. Meaningful coverage is the goal: 
+tests must assert real behavior properties, not just line execution. 
+Regression pins for known bug classes count for more than line count.

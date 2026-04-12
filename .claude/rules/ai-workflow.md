@@ -66,13 +66,54 @@ Additionally for the AI:
 See architecture.md for architectural details. Additionally note:
 - Version: 0.12.0 (per-book audio config, V-02 backup compare, plugin settings audit, 5 new ChapterTypes).
 - Next phase: multi-user and SaaS.
-- Tests: 228 backend+plugins, 90 Vitest, 52 Playwright E2E. `make test` covers backend+plugins+Vitest, E2E is separate.
+- Tests: 308 backend+plugins, 145 Vitest, 57 Playwright E2E. `make test` covers backend+plugins+Vitest, E2E is separate.
 - 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
 - 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
 - 24 toolbar buttons in the editor.
 - Deployment: Docker Compose, port 7880, install.sh one-liner.
 - IMPORTANT: Before writing custom code, ALWAYS check whether a TipTap extension or library already exists.
 - IMPORTANT: See lessons-learned.md for known pitfalls (TipTap, import, export).
+
+## Test coverage audits
+
+### When to run
+
+- **After a major feature phase** (3+ new modules or endpoints): run a focused audit on the changed areas.
+- **Before a release**: run a full pyramid audit covering all levels (unit, integration, E2E).
+- **Quarterly**: run a full audit even without a release to catch organic drift.
+- **On request**: when the user asks for a coverage check or gap analysis.
+
+### Format
+
+Audits follow the structure in `docs/audits/current-coverage.md`:
+
+1. **Coverage map** - table per pyramid level (backend unit, plugin unit, integration, frontend unit, E2E). Each row: module/endpoint, test file, coverage rating (HIGH/MEDIUM/LOW/NONE).
+2. **Prioritized gap list** - categorized as Critical (A/B), Standard (C), Nice-to-have (D). Critical = regression pinning or data integrity. Standard = normal coverage for untested modules. Nice-to-have = unlikely edge cases.
+3. **Summary statistics** - tested/total counts per level, overall coverage percentage.
+
+### File location conventions
+
+```
+docs/audits/
+  current-coverage.md            # always the latest audit
+  history/
+    2026-04-12-coverage.md       # snapshot frozen at audit date
+    2026-MM-DD-coverage.md       # subsequent snapshots
+```
+
+- `current-coverage.md` is overwritten on every audit.
+- Before overwriting, copy the previous version to `history/YYYY-MM-DD-coverage.md`.
+- History files are never modified after creation.
+
+### Delta tracking
+
+Every audit must include:
+- **Baseline**: the test counts at the start of the audit period.
+- **Current**: the test counts after all changes.
+- **Delta**: explicit +N per suite (e.g., "Backend: 244 -> 308, +64").
+- **Gaps closed**: list of items that moved from "untested" to "tested" since the last audit.
+
+When closing gaps in a session, update `current-coverage.md` immediately - do not wait for the next full audit.
 
 ## Communication
 
