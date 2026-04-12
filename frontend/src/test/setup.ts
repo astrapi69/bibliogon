@@ -1,2 +1,3 @@
 // Vitest setup file
-// @testing-library/jest-dom matchers loaded automatically via vitest config
+// Extends vitest matchers with jest-dom matchers (toBeDisabled, toBeVisible, etc.)
+import "@testing-library/jest-dom/vitest"
