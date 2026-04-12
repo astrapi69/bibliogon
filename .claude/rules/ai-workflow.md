@@ -64,7 +64,7 @@ Additionally for the AI:
 ## Current state
 
 See architecture.md for architectural details. Additionally note:
-- Version: 0.12.0 (per-book audio config, V-02 backup compare, plugin settings audit, 5 new ChapterTypes).
+- Version: 0.13.0 (dashboard filters, keyword editor, 3 new themes, 274 new tests).
 - Next phase: multi-user and SaaS.
 - Tests: see `docs/audits/current-coverage.md` for current counts. `make test` covers backend+plugins+Vitest, E2E is separate.
 - 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
