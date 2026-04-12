@@ -148,19 +148,21 @@ Expected delta: ~30-40 tests across backend and plugins.
 - [ ] CW-13: audiobook dry-run + preview endpoint tests
 - [ ] CW-14: Google Cloud TTS config endpoint tests
 
-### Phase 3: Frontend Focus - raise frontend from 32% to 60%+
-Expected delta: ~40-60 frontend tests.
+### Phase 3: Frontend Focus - raise frontend from 32% to 68%
+Actual delta: +138 frontend tests (101 Phase 3a + 37 Phase 3b).
 
-- [ ] CW-15: `ExportDialog.tsx` component tests (form logic, conditional fields)
-- [ ] CW-16: `CreateBookModal.tsx` component tests (stepped modal, validation)
+- [x] CW-15: `ExportDialog.tsx` component tests (18 tests)
+- [x] CW-16: `CreateBookModal.tsx` component tests (11 tests)
 - [ ] CW-17: actual file export E2E (trigger export, verify download)
-- [ ] CW-18: `BookMetadataEditor.tsx` component tests
-- [ ] CW-19: `useEditorPluginStatus.ts` hook tests
-- [ ] CW-20: `CoverUpload.tsx` component tests
+- [x] CW-18: `BookMetadataEditor.tsx` component tests (19 tests)
+- [x] CW-19: `useEditorPluginStatus.ts` hook tests (11 tests)
+- [x] CW-20: `CoverUpload.tsx` component tests (8 tests)
 
-### Phase 4: Polish - edge cases and E2E gaps
-Expected delta: ~10-20 tests, mostly E2E.
+### Phase 4: Editor E2E + remaining gaps
+Expected delta: ~30-40 tests, mostly Playwright E2E.
 
+- [ ] CW-25: editor formatting E2E (text entry, toolbar, shortcuts, block elements, undo, alignment, button state sync)
+- [ ] CW-26: toolbar data-testid migration (add `toolbar-{action}` testids, migrate editor specs from getByTitle)
 - [ ] CW-21: audiobook generation E2E (mocked TTS)
 - [ ] CW-22: plugin ZIP installation E2E
 - [ ] CW-23: import flows E2E (project ZIP, markdown ZIP)
