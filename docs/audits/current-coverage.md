@@ -1,6 +1,6 @@
-# Test Coverage Audit - v0.12.0
+# Test Coverage Audit - v0.13.0
 
-Audit date: 2026-04-12 (updated after Phase 3)
+Audit date: 2026-04-12 (updated after Phase 4, released as v0.13.0)
 Baseline before all coverage work: 244 backend `make test`, 145 Vitest, 52 E2E.
 Post-Phase 1+2: 308 backend (244+64), 145 Vitest, 57 E2E (52+5).
 Post-Phase 3a: 308 backend, 246 Vitest (145+101), 57 E2E.

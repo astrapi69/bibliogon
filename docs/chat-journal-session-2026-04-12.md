@@ -1,6 +1,6 @@
 # Chat-Journal: Bibliogon Session 2026-04-12
 
-Test coverage audit, gap closure (Sessions 1-2), infrastructure setup, single-source-of-truth consolidation.
+Test coverage audit, gap closure (Sessions 1-2), infrastructure setup, single-source-of-truth consolidation, v0.13.0 release.
 
 ---
 
@@ -305,3 +305,31 @@ These are at a pragmatic ceiling for Vitest. Further frontend gains require Play
 | CW-21-24: Audiobook, plugin install, import, DnD E2E | ROADMAP | Low |
 | Editor advanced (tables, footnotes, images, links) | Not yet tracked | Medium |
 | Page component Vitest | N/A | Skip (E2E covers) |
+
+---
+
+## Release: v0.13.0
+
+- **Version:** 0.13.0
+- **Date:** 2026-04-12
+- **Tag:** v0.13.0
+- **GitHub Release:** https://github.com/astrapi69/bibliogon/releases/tag/v0.13.0
+
+### Highlights
+1. Dashboard genre/language filter dropdowns, sort toggle, URL persistence
+2. Keyword editor: inline edit, soft warning, undo-toast, 50-keyword limit
+3. Three new themes: Classic, Studio, Notebook (12 total variants)
+4. 274 new tests across 4 coverage phases (backend 308, frontend 283, E2E 88)
+5. Full English translation of all documentation and rules
+
+### Release steps
+- CHANGELOG.md updated, CHANGELOG-v0.13.0.md created
+- Version bumped in: backend/pyproject.toml, frontend/package.json, backend/app/main.py, CLAUDE.md, ai-workflow.md
+- CW-25 marked done in ROADMAP.md
+- `make test`: 308 backend + 283 frontend = 591 green
+- `tsc --noEmit`: clean
+- Frontend build: success (Vite + PWA)
+- Backend: package-mode=false (application, not distributable package), verified via test suite
+- Docker: skipped (not actively published)
+- MkDocs: skipped (not configured yet)
+- Tag pushed, GitHub release created via `gh release create`
