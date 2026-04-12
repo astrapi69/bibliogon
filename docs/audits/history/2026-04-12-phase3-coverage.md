@@ -1,9 +1,8 @@
 # Test Coverage Audit - v0.12.0
 
-Audit date: 2026-04-12 (updated after Phase 3)
-Baseline before all coverage work: 244 backend `make test`, 145 Vitest, 52 E2E.
-Post-Phase 1+2: 308 backend (244+64), 145 Vitest, 57 E2E (52+5).
-Post-Phase 3: 308 backend, 246 Vitest (145+101), 57 E2E.
+Audit date: 2026-04-12
+Baseline before coverage work: 244 `make test`, 52 E2E.
+Post-session counts: 308 `make test` (244+64), 57 E2E (52+5).
 
 ---
 
@@ -88,30 +87,25 @@ Post-Phase 3: 308 backend, 246 Vitest (145+101), 57 E2E.
 | `api/client.ts` | `client.test.ts` | HIGH |
 | `hooks/useI18n.ts` | `useI18n.test.ts` | HIGH |
 | `hooks/useBookFilters.ts` | `useBookFilters.test.ts` | HIGH |
-| `hooks/useTheme.ts` | `useTheme.test.ts` (10 tests) | HIGH |
-| `hooks/useEditorPluginStatus.ts` | `useEditorPluginStatus.test.ts` (11 tests) | HIGH |
+| `hooks/useTheme.ts` | NONE | **NONE** |
+| `hooks/useEditorPluginStatus.ts` | NONE | **NONE** |
 | `components/KeywordInput.tsx` | `KeywordInput.test.ts` + `.render.test.tsx` | HIGH |
 | `components/ChapterSidebar.tsx` | `ChapterSidebar.test.tsx` (CSS only) | MEDIUM |
 | `components/AudioExportProgress.tsx` | `AudioExportProgress.test.ts` (formatter only) | MEDIUM |
 | `contexts/AudiobookJobContext.tsx` | `AudiobookJobContext.test.ts` (helper only) | MEDIUM |
-| `contexts/HelpContext.tsx` | `HelpContext.test.tsx` (6 tests) | HIGH |
 | `utils/notify.ts` | `notify.test.ts` | HIGH |
 | `utils/eventRecorder.ts` | `eventRecorder.test.ts` | HIGH |
 | `themes/palettes.ts` | `palettes.test.ts` | HIGH |
 | `test/markdown-helpers.test.ts` | (self-contained) | HIGH |
-| `components/AppDialog.tsx` | `AppDialog.test.tsx` (10 tests) | HIGH |
-| `components/CreateBookModal.tsx` | `CreateBookModal.test.tsx` (11 tests) | HIGH |
-| `components/CoverUpload.tsx` | `CoverUpload.test.tsx` (8 tests) | MEDIUM |
-| `components/ErrorReportDialog.tsx` | `ErrorReportDialog.test.tsx` (10 tests) | HIGH |
-| `components/BackupCompareDialog.tsx` | `BackupCompareDialog.test.tsx` (7 tests) | MEDIUM |
-| `components/ThemeToggle.tsx` | `ThemeToggle.test.tsx` (4 tests) | HIGH |
-| `components/BookCard.tsx` | `BookCard.test.tsx` (11 tests) | HIGH |
-| `components/OrderedListEditor.tsx` | `OrderedListEditor.test.tsx` (9 tests) | HIGH |
-| `components/Editor.tsx` | NONE (deferred - TipTap in JSDOM unreliable) | **NONE** |
-| `components/Toolbar.tsx` | NONE (deferred - coupled to Editor) | **NONE** |
-| `components/BookMetadataEditor.tsx` | NONE (deferred - needs dedicated session) | **NONE** |
-| `components/ExportDialog.tsx` | NONE (deferred - needs dedicated session) | **NONE** |
-| All page components | NONE (E2E covers page rendering) | **NONE** |
+| `components/Editor.tsx` | NONE | **NONE** |
+| `components/Toolbar.tsx` | NONE | **NONE** |
+| `components/BookMetadataEditor.tsx` | NONE | **NONE** |
+| `components/ExportDialog.tsx` | NONE | **NONE** |
+| `components/AppDialog.tsx` | NONE | **NONE** |
+| `components/CreateBookModal.tsx` | NONE | **NONE** |
+| `components/CoverUpload.tsx` | NONE | **NONE** |
+| `components/BackupCompareDialog.tsx` | NONE | **NONE** |
+| All page components | NONE | **NONE** |
 
 ### E2E Smoke Tests (Playwright)
 
@@ -187,7 +181,7 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | Backend unit tests | 16/20 | 80% | MEDIUM-HIGH |
 | Plugin unit tests | 19/25 | 76% | MEDIUM-HIGH |
 | Backend integration (endpoint groups) | 13/13 | 100% | HIGH |
-| Frontend unit tests | 23/37 | 62% | MEDIUM-HIGH |
+| Frontend unit tests | 12/37 | 32% | LOW |
 | E2E user flows | 14/20 | 70% | MEDIUM |
 
 ### Test Count Totals (post-sessions 1-2)
@@ -197,5 +191,5 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | Backend + plugins (`make test`) | 308 |
 | - Backend tests alone | 183 |
 | - Plugin tests alone | 125 (export 63, grammar 10, kdp 33, kinderbuch 8, ms-tools 88, translation 35, audiobook 88, help ~12, getstarted ~8) |
-| Frontend (Vitest) | 246 |
+| Frontend (Vitest) | 145 |
 | E2E (Playwright) | 57 (52 existing + 5 new smoke) |
