@@ -107,7 +107,7 @@ bibliogon/
 │   └── styles/global.css  # CSS variables, 3 themes x light/dark
 ├── e2e/
 │   ├── smoke/             # fast smoke tests (per feature)
-│   └── full/              # full regression suite (52 tests)
+│   └── full/              # full regression suite
 ├── docs/                  # CONCEPT.md, ROADMAP.md, CHANGELOG.md
 └── Makefile, docker-compose.yml, docker-compose.prod.yml
 ```
@@ -126,10 +126,9 @@ bibliogon/
 
 ## Tests
 
-- Backend + plugins: 308 (via `make test-backend` + `make test-plugins`)
-- Frontend (Vitest): 145
-- E2E (Playwright): 57 tests under `e2e/`, not on the `make test` default path
 - `make test` must stay green after every change
+- E2E tests under `e2e/`, not on the `make test` default path
+- Current counts and coverage: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md)
 
 ## Related projects
 

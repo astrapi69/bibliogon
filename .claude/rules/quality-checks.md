@@ -9,17 +9,17 @@
 make test
 
 # Individually when targeted:
-make test-backend           # pytest backend (183 tests)
-make test-plugins           # all plugin tests (125 tests)
-make test-plugin-export     # export only (63 tests)
-make test-plugin-grammar    # grammar only (10 tests)
-make test-plugin-kdp        # KDP only (33 tests)
-make test-plugin-kinderbuch # kinderbuch only (8 tests)
-make test-frontend          # Vitest (145 tests)
+make test-backend           # pytest backend
+make test-plugins           # all plugin tests
+make test-plugin-export     # export only
+make test-plugin-grammar    # grammar only
+make test-plugin-kdp        # KDP only
+make test-plugin-kinderbuch # kinderbuch only
+make test-frontend          # Vitest
 
 # E2E (needs a running app)
 make dev                    # start the app
-npx playwright test         # 57 E2E tests
+npx playwright test         # E2E tests
 ```
 
 ### 2. Type check
@@ -52,15 +52,17 @@ Go through this checklist before committing:
 ### Test pyramid
 
 ```
-      /    E2E     \        Playwright (52 tests)
+      /    E2E     \        Playwright
      / ------------ \       Few, critical user flows
-    / Integration    \      pytest + TestClient (65 tests)
+    / Integration    \      pytest + TestClient
    / ---------------- \    API endpoints with real DB state
-  /    Unit Tests      \    pytest + Vitest (69+ tests)
+  /    Unit Tests      \    pytest + Vitest
  / -------------------- \  Business logic in isolation
 /   Mutation Testing      \ mutmut (Python) + Stryker (TypeScript)
  --------------------------  Verifies that tests actually catch bugs
 ```
+
+Current counts: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md).
 
 ### Unit tests (Backend - pytest)
 
@@ -103,7 +105,7 @@ def test_image_roundtrip():
 
 ### Unit tests (Frontend - Vitest)
 
-**Status:** set up, 21 tests active (happy-dom, Node 18 compatible).
+**Status:** set up (happy-dom, Node 18 compatible).
 
 **What to test:** API client functions, utility functions, complex hooks.
 **What NOT to test:** simple components that just render (E2E tests cover that).
@@ -176,7 +178,7 @@ def test_create_and_export_book():
 ### E2E tests (Playwright)
 
 **What to test:** critical user flows from the author's perspective.
-**Where:** `frontend/tests/` or `e2e/` (57 tests exist)
+**Where:** `frontend/tests/` or `e2e/`
 
 **Existing coverage:**
 - Dashboard: create, delete, backup/import a book

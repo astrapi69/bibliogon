@@ -112,9 +112,8 @@ These items take precedence over the categorized lists below.
 
 ## Tests
 
-- [x] 308 backend + plugin tests (pytest, via `make test-backend` + `make test-plugins`)
-- [x] 145 frontend tests (Vitest)
-- [x] 57 E2E tests (Playwright)
+Current counts and coverage: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md).
+
 - [x] Q-01: update E2E tests for Radix selectors and new features
 - [x] Q-02: set up mutation testing with mutmut
 - [x] Q-03: roundtrip tests: import -> editor -> export -> epubcheck
