@@ -156,12 +156,13 @@ export default function Dashboard() {
                             <div style={styles.headerSeparator}/>
                             <button
                                 className="btn btn-secondary btn-sm"
+                                data-testid="backup-export-btn"
                                 onClick={handleBackupExport}
                                 disabled={books.length === 0}
                             >
                                 <Download size={14}/> {t("ui.dashboard.backup", "Backup")}
                             </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => importInputRef.current?.click()}>
+                            <button className="btn btn-secondary btn-sm" data-testid="backup-import-btn" onClick={() => importInputRef.current?.click()}>
                                 <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
                             </button>
                             <div style={styles.headerSeparator}/>
@@ -222,7 +223,7 @@ export default function Dashboard() {
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
 
-                        <input ref={importInputRef} type="file" accept=".bgb,.bgp,.zip,.md" style={{display: "none"}} onChange={handleSmartImport}/>
+                        <input ref={importInputRef} data-testid="backup-import-input" type="file" accept=".bgb,.bgp,.zip,.md" style={{display: "none"}} onChange={handleSmartImport}/>
                     </div>
                 </div>
             </header>
