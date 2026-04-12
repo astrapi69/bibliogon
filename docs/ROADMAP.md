@@ -112,15 +112,60 @@ These items take precedence over the categorized lists below.
 
 ## Tests
 
-- [x] 228 backend + plugin tests (pytest, via `make test-backend` + `make test-plugins`)
-- [x] 90 frontend tests (Vitest)
-- [x] 52 E2E tests (Playwright)
+- [x] 308 backend + plugin tests (pytest, via `make test-backend` + `make test-plugins`)
+- [x] 145 frontend tests (Vitest)
+- [x] 57 E2E tests (Playwright)
 - [x] Q-01: update E2E tests for Radix selectors and new features
 - [x] Q-02: set up mutation testing with mutmut
 - [x] Q-03: roundtrip tests: import -> editor -> export -> epubcheck
 - [x] Q-04: API client unit tests (Vitest)
 - [x] Q-05: mypy type checking for the Python backend
 - [x] Q-06: CI pipeline (GitHub Actions)
+
+## Coverage Work
+
+Systematic test coverage improvements tracked as four phases.
+Full audit: `docs/audits/current-coverage.md`. Targets: `quality-checks.md`.
+
+### Phase 1: Critical (Category A/B) - data integrity + regression pinning
+Expected delta: +64 backend tests, +5 E2E tests.
+
+- [x] CW-01: serializer.py unit tests (10 tests)
+- [x] CW-02: backup export + import roundtrip E2E (5 tests)
+- [x] CW-03: trash endpoints integration tests (14 tests)
+- [x] CW-04: html_to_markdown.py unit tests (26 tests)
+- [x] CW-05: license activation/deactivation integration tests (12 tests)
+- [x] CW-06: plugin install/uninstall integration tests (15 tests)
+- [x] CW-07: settings GET/PATCH integration tests (23 tests)
+
+### Phase 2: Standard (Category C) - fill organic gaps
+Expected delta: ~30-40 tests across backend and plugins.
+
+- [ ] CW-08: `useTheme.ts` hook tests
+- [ ] CW-09: `pandoc_runner.py` tests (export plugin)
+- [ ] CW-10: `backup_history.py` + `GET /api/backup/history` tests
+- [ ] CW-11: `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` tests
+- [ ] CW-12: plugin `routes.py` integration tests (grammar, kdp, kinderbuch, translation)
+- [ ] CW-13: audiobook dry-run + preview endpoint tests
+- [ ] CW-14: Google Cloud TTS config endpoint tests
+
+### Phase 3: Frontend Focus - raise frontend from 32% to 60%+
+Expected delta: ~40-60 frontend tests.
+
+- [ ] CW-15: `ExportDialog.tsx` component tests (form logic, conditional fields)
+- [ ] CW-16: `CreateBookModal.tsx` component tests (stepped modal, validation)
+- [ ] CW-17: actual file export E2E (trigger export, verify download)
+- [ ] CW-18: `BookMetadataEditor.tsx` component tests
+- [ ] CW-19: `useEditorPluginStatus.ts` hook tests
+- [ ] CW-20: `CoverUpload.tsx` component tests
+
+### Phase 4: Polish - edge cases and E2E gaps
+Expected delta: ~10-20 tests, mostly E2E.
+
+- [ ] CW-21: audiobook generation E2E (mocked TTS)
+- [ ] CW-22: plugin ZIP installation E2E
+- [ ] CW-23: import flows E2E (project ZIP, markdown ZIP)
+- [ ] CW-24: chapter drag-and-drop reorder E2E
 
 ## Plugins (roadmap)
 
