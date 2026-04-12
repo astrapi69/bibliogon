@@ -223,7 +223,7 @@ All 7 items from the audit's Critical list are now covered:
   - Total `make test`: 389 -> 591 (+202)
 - **Frontend coverage:** 32% (12/37) -> 68% (25/37)
 
-### Remaining frontend NONE modules
+### Remaining frontend NONE modules (after Phase 3)
 
 | Component | Reason | Recommended coverage |
 |-----------|--------|---------------------|
@@ -232,3 +232,76 @@ All 7 items from the audit's Critical list are now covered:
 | Page components (5) | Thin shells, E2E covers rendering | No unit tests needed |
 
 These are at a pragmatic ceiling for Vitest. Further frontend gains require Playwright specs, not more unit tests.
+
+---
+
+## 9. Phase 4: Editor E2E Tests - Playwright (12:30)
+
+- Original prompt: Close the Editor.tsx/Toolbar.tsx gaps via Playwright E2E since TipTap relies on browser APIs that JSDOM cannot implement.
+- Goal: Comprehensive E2E coverage for editor formatting, toolbar, shortcuts, and button state sync.
+- Result:
+  - **Pre-audit:** Existing `book-editor.spec.ts` covers 9 tests for navigation and UI chrome (chapter switching, autosave indicator, markdown toggle). Zero formatting, zero toolbar, zero TipTap extension behavior was tested. All 27 toolbar buttons lack `data-testid` - use `getByTitle()` with German tooltips as stable selectors.
+  - **31 tests in `e2e/smoke/editor-formatting.spec.ts`** across 8 sections:
+    - **A. Text entry + persistence (3):** Type text, verify in editor. Type, autosave, reload, verify persistence. Autosave indicator shows "Speichert" then "Gespeichert".
+    - **B. Core toolbar (8):** Bold (strong tag), italic (em), underline (u), strikethrough (s), inline code (code), H1, H2, H3. Each: type text, select all, click toolbar button, verify DOM tag.
+    - **C. Keyboard shortcuts (4):** Ctrl+B toggle bold inline, Ctrl+I italic, Ctrl+U underline, Ctrl+Z undo last action.
+    - **D. Block elements (5):** Bullet list (ul li), ordered list (ol li), blockquote, horizontal rule (hr), code block (pre code).
+    - **E. Undo/Redo (2):** Toolbar undo button reverses bold formatting. Redo re-applies it.
+    - **F. Text alignment (4):** Center, right, justify via CSS text-align assertion. Left-restore after center verifies default is restored.
+    - **G. Integration (2):** Chapter switch preserves content (edit A, switch to B, switch back, verify A). Word count updates after typing "one two three four five" -> "5 Woerter".
+    - **H. Button state sync (3):** Bold button shows active inline style (accent-light background) when cursor is inside bold text. H2 button active exclusively (H1/H3 inactive). Bold deactivates when cursor moves out of bold span.
+  - **Technical decisions:**
+    - Toolbar buttons selected via `page.getByTitle(/Fett/)` (German tooltip with shortcut anchor). Future migration to `data-testid` tracked as CW-26 in ROADMAP.
+    - Button state detection via inline style check (`style.includes('accent-light')`) because Toolbar uses React inline styles, not CSS classes, for active state.
+    - Autosave assertions wait for "Gespeichert/Saved" indicator with 5s timeout after typing (800ms debounce + network).
+    - `waitForTimeout(100)` used in section H after cursor movement to let TipTap sync toolbar state (synchronous DOM update, but React render cycle needs a tick).
+  - **Limitation: Radix Tabs in happy-dom** confirmed again here - the same pattern as BookMetadataEditor. Toolbar button state sync had to use inline style inspection instead of CSS class assertions.
+  - E2E: 57 -> 88 tests (+31), user flow coverage 70% -> 95%.
+- Commits:
+  - `57cd1d0` test(e2e): Playwright editor formatting smoke suite (31 tests)
+  - `7a21ba9` chore(audits): update coverage for Phase 4 editor E2E
+
+---
+
+## Final Session Summary
+
+### Statistics (cumulative for the full 2026-04-12 session)
+
+- **Commits:** 15 total
+  - Infrastructure: `b99955e`, `da28ff4`, `1e854c7`
+  - Single source: `2f1f67c`, `a79908c`
+  - Phase 3a: `473978d`, `48a663e`, `c840778`, `1214133`
+  - Phase 3b: `818ff28`, `ad895a3`
+  - Phase 4: `57cd1d0`, `7a21ba9`
+  - Journals: `f1ca060`, `dbb38ec`
+- **New test files:** 21 (7 backend + 2 E2E + 12 frontend)
+- **New tests written:** 274 (105 backend/E2E + 138 frontend Vitest + 31 Playwright)
+- **Test count delta:**
+  - Backend+plugins: 244 -> 308 (+64)
+  - Frontend (Vitest): 145 -> 283 (+138)
+  - E2E (Playwright): 52 -> 88 (+36)
+  - Total: 441 -> 679 (+238)
+- **Coverage movement:**
+  - Frontend unit: 32% (12/37) -> 68% (25/37)
+  - E2E user flows: 70% (14/20) -> 95% (19/20)
+  - Backend integration: 69% -> 100% (all endpoint groups covered)
+
+### Coverage phases completed
+
+| Phase | Scope | Tests | Status |
+|-------|-------|-------|--------|
+| 1 (Critical) | Backend data integrity + security | 105 | Done |
+| 2 (Standard) | Deferred to organic fill | - | Deferred |
+| 3a (Frontend Focus) | Hooks, forms, wrappers | 101 | Done |
+| 3b (Frontend Focus) | ExportDialog, BookMetadataEditor | 37 | Done |
+| 4 (Editor E2E) | TipTap formatting, toolbar, shortcuts | 31 | Done |
+
+### Remaining gaps
+
+| Gap | Where | Priority |
+|-----|-------|----------|
+| CW-26: Toolbar data-testid migration | ROADMAP | Low (cleanup) |
+| CW-17: Actual file export E2E | ROADMAP | Medium |
+| CW-21-24: Audiobook, plugin install, import, DnD E2E | ROADMAP | Low |
+| Editor advanced (tables, footnotes, images, links) | Not yet tracked | Medium |
+| Page component Vitest | N/A | Skip (E2E covers) |
