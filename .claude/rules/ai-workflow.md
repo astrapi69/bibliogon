@@ -66,7 +66,7 @@ Additionally for the AI:
 See architecture.md for architectural details. Additionally note:
 - Version: 0.12.0 (per-book audio config, V-02 backup compare, plugin settings audit, 5 new ChapterTypes).
 - Next phase: multi-user and SaaS.
-- Tests: 308 backend+plugins, 145 Vitest, 57 Playwright E2E. `make test` covers backend+plugins+Vitest, E2E is separate.
+- Tests: see `docs/audits/current-coverage.md` for current counts. `make test` covers backend+plugins+Vitest, E2E is separate.
 - 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
 - 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
 - 24 toolbar buttons in the editor.
@@ -114,6 +114,23 @@ Every audit must include:
 - **Gaps closed**: list of items that moved from "untested" to "tested" since the last audit.
 
 When closing gaps in a session, update `current-coverage.md` immediately - do not wait for the next full audit.
+
+## Single source of truth for volatile statistics
+
+Numbers that change with every feature or test session live in ONE canonical location. Other documentation references that location instead of duplicating the number.
+
+| Statistic | Canonical location | Example reference |
+|-----------|-------------------|-------------------|
+| Test counts, coverage percentages, pyramid stats | `docs/audits/current-coverage.md` | "See docs/audits/current-coverage.md for test statistics." |
+| ChapterType list and count | `backend/app/models/__init__.py` (the `ChapterType` enum) | "See the ChapterType enum in models for the full list." |
+| Supported i18n languages | `backend/config/i18n/` (the directory listing) | "See config/i18n/ for supported languages." |
+| Plugin catalog | `CLAUDE.md` plugin table | Reference CLAUDE.md or `config/plugins/`. |
+
+**Never duplicate** these numbers in CLAUDE.md, README.md, ROADMAP.md, CONCEPT.md, rule files, or release notes. Historical documents (CHANGELOG, chat journals) are exempt because they record what was true at a point in time.
+
+**Rationale:** duplicated numbers drift out of sync within one session. A single source is always correct because there is only one place to update.
+
+**When writing documentation:** if you need to mention a count, write the principle or the reference, not the number. Example: "Bibliogon supports multiple languages (see config/i18n/)" instead of "Bibliogon supports 8 languages".
 
 ## Communication
 
