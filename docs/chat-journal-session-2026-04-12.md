@@ -151,3 +151,84 @@ All 7 items from the audit's Critical list are now covered:
 5. License API (security)
 6. Plugin install (filesystem safety)
 7. Settings API (user preferences)
+
+---
+
+## 6. Coverage Infrastructure: Single Source of Truth (11:15)
+
+- Original prompt: Consolidate test count statistics to one authoritative file.
+- Goal: Eliminate drift between CLAUDE.md, ROADMAP.md, ai-workflow.md, quality-checks.md.
+- Result:
+  - Audited all .md files for hardcoded test counts. Found duplications in 4 files.
+  - Removed hardcoded counts, replaced with references to `docs/audits/current-coverage.md`.
+  - Historical documents (CHANGELOG, chat journals) left alone as point-in-time records.
+  - Added "Single source of truth for volatile statistics" rule to ai-workflow.md with canonical location table (test counts, ChapterType list, i18n languages, plugin catalog).
+  - Verification grep confirmed zero hardcoded test counts remain in the main files.
+- Commits:
+  - `2f1f67c` refactor(docs): consolidate test count references to single source
+  - `a79908c` docs(rules): add single-source-of-truth rule for test statistics
+
+---
+
+## 7. Phase 3a: Frontend Focus - Hooks, Forms, Wrappers (11:30)
+
+- Original prompt: Raise frontend coverage from 32% toward 85%+ target.
+- Goal: Cover all untested hooks, contexts, and form components.
+- Result:
+  - **Pre-audit plan produced:** 4 groups (A: hooks/contexts, B: form components, C: editor - deferred, D: wrappers). Approved before writing tests.
+  - **Group A (27 tests):** useTheme (10 - localStorage, matchMedia, toggle, palette validation, DOM sync), useEditorPluginStatus (11 - pure utilities + hook fetch/loading/error/refresh), HelpContext (6 - open/close, slug, provider requirement).
+  - **Group B (46 tests):** AppDialog (10 - confirm/prompt/alert variants, resolve values, disabled state), CreateBookModal (11 - required validation, trim, collapsible, series toggle, genre-to-key mapping), CoverUpload (8 - file type validation, upload/error, preview), ErrorReportDialog (10 - checkboxes, preview, GitHub URL, ApiError details), BackupCompareDialog (7 - file picker, compare trigger, result display, reset, error).
+  - **Group D (24 tests):** ThemeToggle (4 - icon per theme, toggle callback), BookCard (11 - title/author/genre/series/cover rendering, testids), OrderedListEditor (9 - add/remove/Enter/trim/empty rejection).
+  - **Infrastructure fix:** vitest setup.ts updated to import `@testing-library/jest-dom/vitest` for DOM matchers (toBeDisabled, toBeVisible). Registered in vite.config.ts via `setupFiles`.
+  - Frontend: 145 -> 246 tests (+101), coverage 32% -> 62%.
+- Commits:
+  - `473978d` test(hooks): useTheme, useEditorPluginStatus, HelpContext
+  - `48a663e` test(components): form components (AppDialog, CreateBookModal, CoverUpload, ErrorReportDialog, BackupCompareDialog)
+  - `c840778` test(components): ThemeToggle, BookCard, OrderedListEditor
+  - `1214133` chore(audits): update coverage statistics for Phase 3 progress
+
+---
+
+## 8. Phase 3b: Frontend Focus - Deferred Components (12:00)
+
+- Original prompt: Continue with the deferred BookMetadataEditor and ExportDialog.
+- Goal: Cover the two most complex previously-deferred components.
+- Result:
+  - **ExportDialog (18 tests):** 7 format buttons rendering, book type visibility per format (hidden for project/audiobook), TOC depth selector and manual TOC checkbox conditionals, AI-assisted flag, audiobook dry-run section rendering, export URL construction via window.open, batch export button, cancel behavior.
+  - **BookMetadataEditor (19 tests):** Form initialization from book data (subtitle, description populated), save triggers onSave with correct payload (empty fields -> null), save success/error notifications, 6-tab structure (all triggers present, correct roles, marketing testid), general tab active by default with subtitle field, field editing updates state, copy-from-book dialog visibility with other books, audiobook tab trigger.
+  - **Limitation discovered:** Radix Tabs `fireEvent.click` does not trigger tab switching in happy-dom because Radix uses pointer events internally. Tab content per-tab is verified by E2E instead. Unit tests verify structure (6 panels in DOM, roles, active-by-default).
+  - Frontend: 246 -> 283 tests (+37), coverage 62% -> 68%.
+- Commits:
+  - `818ff28` test(components): ExportDialog + BookMetadataEditor
+  - `ad895a3` chore(audits): update coverage for Phase 3b
+
+---
+
+## Updated Session Summary
+
+### Statistics (cumulative)
+
+- **Commits:** 11 total
+  - Coverage sessions: `b99955e`, `da28ff4`, `1e854c7` (infrastructure)
+  - Single source: `2f1f67c`, `a79908c`
+  - Phase 3a: `473978d`, `48a663e`, `c840778`, `1214133`
+  - Phase 3b: `818ff28`, `ad895a3`
+  - Journal: `f1ca060`
+- **New test files:** 20 (7 backend + 1 E2E + 12 frontend)
+- **New tests written:** 243 (105 backend/E2E + 138 frontend)
+- **Test count delta:**
+  - Backend+plugins: 244 -> 308 (+64)
+  - Frontend (Vitest): 145 -> 283 (+138)
+  - E2E: 52 -> 57 (+5)
+  - Total `make test`: 389 -> 591 (+202)
+- **Frontend coverage:** 32% (12/37) -> 68% (25/37)
+
+### Remaining frontend NONE modules
+
+| Component | Reason | Recommended coverage |
+|-----------|--------|---------------------|
+| `Editor.tsx` | TipTap contentEditable in JSDOM unreliable | Playwright only |
+| `Toolbar.tsx` | Coupled to Editor TipTap instance | Playwright only |
+| Page components (5) | Thin shells, E2E covers rendering | No unit tests needed |
+
+These are at a pragmatic ceiling for Vitest. Further frontend gains require Playwright specs, not more unit tests.
