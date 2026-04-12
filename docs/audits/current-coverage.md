@@ -5,6 +5,7 @@ Baseline before all coverage work: 244 backend `make test`, 145 Vitest, 52 E2E.
 Post-Phase 1+2: 308 backend (244+64), 145 Vitest, 57 E2E (52+5).
 Post-Phase 3a: 308 backend, 246 Vitest (145+101), 57 E2E.
 Post-Phase 3b: 308 backend, 283 Vitest (246+37), 57 E2E.
+Post-Phase 4: 308 backend, 283 Vitest, 88 E2E (57+31).
 
 ---
 
@@ -131,6 +132,11 @@ Post-Phase 3b: 308 backend, 283 Vitest (246+37), 57 E2E.
 | Dashboard search/filter/sort | YES | `smoke/dashboard-filters.spec.ts` |
 | Chapter sidebar responsive | YES | `smoke/chapter-sidebar-viewport.spec.ts` |
 | Backup export + import roundtrip | YES | `smoke/backup-roundtrip.spec.ts` |
+| Editor formatting (bold, italic, headings, lists, etc.) | YES | `smoke/editor-formatting.spec.ts` |
+| Toolbar keyboard shortcuts (Ctrl+B/I/U/Z) | YES | `smoke/editor-formatting.spec.ts` |
+| Toolbar button state sync (active indicators) | YES | `smoke/editor-formatting.spec.ts` |
+| Text alignment (center, right, justify) | YES | `smoke/editor-formatting.spec.ts` |
+| Undo/Redo via toolbar and keyboard | YES | `smoke/editor-formatting.spec.ts` |
 | Audiobook generation flow | **NO** | - |
 | Plugin ZIP installation | **NO** | - |
 | License activation/deactivation | **NO** | - |
@@ -189,7 +195,7 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | Plugin unit tests | 19/25 | 76% | MEDIUM-HIGH |
 | Backend integration (endpoint groups) | 13/13 | 100% | HIGH |
 | Frontend unit tests | 25/37 | 68% | MEDIUM-HIGH |
-| E2E user flows | 14/20 | 70% | MEDIUM |
+| E2E user flows | 19/20 | 95% | HIGH |
 
 ### Test Count Totals (post-sessions 1-2)
 
@@ -199,4 +205,4 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | - Backend tests alone | 183 |
 | - Plugin tests alone | 125 (export 63, grammar 10, kdp 33, kinderbuch 8, ms-tools 88, translation 35, audiobook 88, help ~12, getstarted ~8) |
 | Frontend (Vitest) | 283 |
-| E2E (Playwright) | 57 (52 existing + 5 new smoke) |
+| E2E (Playwright) | 88 (52 existing + 5 backup + 31 editor) |
