@@ -3,7 +3,8 @@
 Audit date: 2026-04-12 (updated after Phase 3)
 Baseline before all coverage work: 244 backend `make test`, 145 Vitest, 52 E2E.
 Post-Phase 1+2: 308 backend (244+64), 145 Vitest, 57 E2E (52+5).
-Post-Phase 3: 308 backend, 246 Vitest (145+101), 57 E2E.
+Post-Phase 3a: 308 backend, 246 Vitest (145+101), 57 E2E.
+Post-Phase 3b: 308 backend, 283 Vitest (246+37), 57 E2E.
 
 ---
 
@@ -107,10 +108,10 @@ Post-Phase 3: 308 backend, 246 Vitest (145+101), 57 E2E.
 | `components/ThemeToggle.tsx` | `ThemeToggle.test.tsx` (4 tests) | HIGH |
 | `components/BookCard.tsx` | `BookCard.test.tsx` (11 tests) | HIGH |
 | `components/OrderedListEditor.tsx` | `OrderedListEditor.test.tsx` (9 tests) | HIGH |
+| `components/BookMetadataEditor.tsx` | `BookMetadataEditor.test.tsx` (19 tests) | HIGH |
+| `components/ExportDialog.tsx` | `ExportDialog.test.tsx` (18 tests) | HIGH |
 | `components/Editor.tsx` | NONE (deferred - TipTap in JSDOM unreliable) | **NONE** |
 | `components/Toolbar.tsx` | NONE (deferred - coupled to Editor) | **NONE** |
-| `components/BookMetadataEditor.tsx` | NONE (deferred - needs dedicated session) | **NONE** |
-| `components/ExportDialog.tsx` | NONE (deferred - needs dedicated session) | **NONE** |
 | All page components | NONE (E2E covers page rendering) | **NONE** |
 
 ### E2E Smoke Tests (Playwright)
@@ -187,7 +188,7 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | Backend unit tests | 16/20 | 80% | MEDIUM-HIGH |
 | Plugin unit tests | 19/25 | 76% | MEDIUM-HIGH |
 | Backend integration (endpoint groups) | 13/13 | 100% | HIGH |
-| Frontend unit tests | 23/37 | 62% | MEDIUM-HIGH |
+| Frontend unit tests | 25/37 | 68% | MEDIUM-HIGH |
 | E2E user flows | 14/20 | 70% | MEDIUM |
 
 ### Test Count Totals (post-sessions 1-2)
@@ -197,5 +198,5 @@ All critical gaps were closed in Sessions 1-2 (2026-04-12):
 | Backend + plugins (`make test`) | 308 |
 | - Backend tests alone | 183 |
 | - Plugin tests alone | 125 (export 63, grammar 10, kdp 33, kinderbuch 8, ms-tools 88, translation 35, audiobook 88, help ~12, getstarted ~8) |
-| Frontend (Vitest) | 246 |
+| Frontend (Vitest) | 283 |
 | E2E (Playwright) | 57 (52 existing + 5 new smoke) |
