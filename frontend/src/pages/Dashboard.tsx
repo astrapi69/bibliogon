@@ -3,10 +3,13 @@ import {useNavigate} from "react-router-dom";
 import {api, Book, BookCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
+import DashboardFilterBar from "../components/DashboardFilterBar";
+import DashboardFilterSheet from "../components/DashboardFilterSheet";
+import {useBookFilters} from "../hooks/useBookFilters";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, ArrowUpDown, History, ChevronDown, ChevronUp, GitCompare,
+    Menu, Search, History, ChevronDown, ChevronUp, GitCompare, SlidersHorizontal,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import BackupCompareDialog from "../components/BackupCompareDialog";
@@ -26,11 +29,11 @@ export default function Dashboard() {
     const [showHistory, setShowHistory] = useState(false);
     const [backupHistory, setBackupHistory] = useState<{timestamp: string; action: string; book_count: number; filename: string}[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState<"date" | "title" | "author">("date");
     const [showModal, setShowModal] = useState(false);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const navigate = useNavigate();
+    const filters = useBookFilters(books, t);
     const importInputRef = useRef<HTMLInputElement>(null);
 
     const loadBooks = async () => {
@@ -313,61 +316,53 @@ export default function Dashboard() {
                             <span style={styles.bookCount}>{books.length} {books.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                         </div>
                         {books.length > 1 && (
-                            <div style={styles.searchBar}>
-                                <Search size={16} style={{color: "var(--text-muted)", flexShrink: 0}}/>
-                                <input
-                                    className="input"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={t("ui.dashboard.search_placeholder", "Suche nach Titel, Autor, Genre oder Sprache...")}
-                                    style={{border: "none", background: "transparent", flex: 1, padding: "4px 0"}}
-                                />
-                                <div style={{display: "flex", gap: 2, flexShrink: 0, borderLeft: "1px solid var(--border)", paddingLeft: 8}}>
-                                    {(["date", "title", "author"] as const).map((field) => (
-                                        <button
-                                            key={field}
-                                            className="btn btn-ghost btn-sm"
-                                            style={{
-                                                padding: "2px 8px",
-                                                fontSize: "0.6875rem",
-                                                ...(sortBy === field ? {background: "var(--accent-light)", color: "var(--accent)"} : {}),
-                                            }}
-                                            onClick={() => setSortBy(field)}
-                                        >
-                                            {field === "date" ? t("ui.dashboard.sort_date", "Datum")
-                                                : field === "title" ? t("ui.dashboard.sort_title", "Titel")
-                                                : t("ui.dashboard.sort_author", "Autor")}
-                                        </button>
-                                    ))}
+                            <>
+                                <div className="hide-mobile">
+                                    <DashboardFilterBar filters={filters}/>
                                 </div>
+                                <button
+                                    className="btn btn-secondary btn-sm show-mobile-only"
+                                    data-testid="filter-sheet-trigger"
+                                    onClick={() => setFilterSheetOpen(true)}
+                                    style={{marginBottom: 8}}
+                                >
+                                    <SlidersHorizontal size={14}/> {t("ui.dashboard.filters", "Filter")}
+                                </button>
+                                <DashboardFilterSheet
+                                    filters={filters}
+                                    open={filterSheetOpen}
+                                    onOpenChange={setFilterSheetOpen}
+                                />
+                            </>
+                        )}
+                        {filters.filteredBooks.length === 0 && books.length > 0 && !loading ? (
+                            <div style={styles.emptyState} data-testid="filter-empty-state">
+                                <Search size={48} strokeWidth={1} color="var(--text-muted)"/>
+                                <p style={styles.emptyTitle}>{t("ui.dashboard.empty_filtered", "Keine Treffer")}</p>
+                                <p style={styles.emptyText}>
+                                    {t("ui.dashboard.empty_filtered_hint", "Es gibt keine Bücher die zu den aktuellen Filtern passen.")}
+                                </p>
+                                <button
+                                    className="btn btn-secondary"
+                                    data-testid="filter-reset-empty"
+                                    onClick={filters.resetFilters}
+                                >
+                                    {t("ui.dashboard.reset_filters", "Filter zurücksetzen")}
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={styles.grid}>
+                                {filters.filteredBooks.map((book) => (
+                                    <BookCard
+                                        key={book.id}
+                                        book={book}
+                                        onClick={() => navigate(`/book/${book.id}`)}
+                                        onDelete={() => handleDelete(book.id)}
+                                        onDeletePermanent={() => handleDeletePermanent(book.id)}
+                                    />
+                                ))}
                             </div>
                         )}
-                        <div style={styles.grid}>
-                            {[...books].sort((a, b) => {
-                                if (sortBy === "title") return a.title.localeCompare(b.title);
-                                if (sortBy === "author") return a.author.localeCompare(b.author);
-                                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-                            }).filter((book) => {
-                                if (!searchQuery.trim()) return true;
-                                const q = searchQuery.toLowerCase();
-                                return (
-                                    book.title.toLowerCase().includes(q) ||
-                                    book.author.toLowerCase().includes(q) ||
-                                    (book.genre || "").toLowerCase().includes(q) ||
-                                    book.language.toLowerCase().includes(q) ||
-                                    (book.series || "").toLowerCase().includes(q) ||
-                                    (book.subtitle || "").toLowerCase().includes(q)
-                                );
-                            }).map((book) => (
-                                <BookCard
-                                    key={book.id}
-                                    book={book}
-                                    onClick={() => navigate(`/book/${book.id}`)}
-                                    onDelete={() => handleDelete(book.id)}
-                                    onDeletePermanent={() => handleDeletePermanent(book.id)}
-                                />
-                            ))}
-                        </div>
                     </>
                 )}
                 {/* Version History */}
@@ -476,12 +471,6 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)",
     },
     bookCount: {fontSize: "0.875rem", color: "var(--text-muted)"},
-    searchBar: {
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "8px 12px", marginBottom: 16,
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-    },
     grid: {
         display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20,
     },
