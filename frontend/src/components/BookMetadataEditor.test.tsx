@@ -358,3 +358,54 @@ describe("sanitizeAmazonHtml", () => {
     expect(sanitizeAmazonHtml("")).toBe("")
   })
 })
+
+// --- HtmlFieldWithPreview toggle behavior ---
+
+import {HtmlFieldWithPreview} from "./BookMetadataEditor"
+
+describe("HtmlFieldWithPreview", () => {
+  it("renders textarea by default", () => {
+    render(
+      <HtmlFieldWithPreview label="Description" value="<b>bold</b>" onChange={() => {}} />,
+    )
+    expect(screen.getByRole("textbox")).toBeInTheDocument()
+  })
+
+  it("shows preview when toggle is clicked", () => {
+    render(
+      <HtmlFieldWithPreview label="Description" value="<b>bold</b>" onChange={() => {}} />,
+    )
+    fireEvent.click(screen.getByTestId("html-preview-toggle"))
+    // Textarea should be gone, preview should show rendered content
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument()
+    expect(screen.getByText("bold")).toBeInTheDocument()
+  })
+
+  it("shows textarea again when toggled back", () => {
+    render(
+      <HtmlFieldWithPreview label="Description" value="<b>bold</b>" onChange={() => {}} />,
+    )
+    const toggle = screen.getByTestId("html-preview-toggle")
+    fireEvent.click(toggle) // show preview
+    fireEvent.click(toggle) // back to textarea
+    expect(screen.getByRole("textbox")).toBeInTheDocument()
+  })
+
+  it("calls onChange when typing in textarea", () => {
+    const handleChange = vi.fn()
+    render(
+      <HtmlFieldWithPreview label="Description" value="" onChange={handleChange} />,
+    )
+    fireEvent.change(screen.getByRole("textbox"), {target: {value: "new text"}})
+    expect(handleChange).toHaveBeenCalledWith("new text")
+  })
+
+  it("sanitizes dangerous HTML in preview", () => {
+    render(
+      <HtmlFieldWithPreview label="Test" value='<b>safe</b><script>alert("xss")</script>' onChange={() => {}} />,
+    )
+    fireEvent.click(screen.getByTestId("html-preview-toggle"))
+    expect(screen.getByText("safe")).toBeInTheDocument()
+    expect(screen.queryByText("alert")).not.toBeInTheDocument()
+  })
+})

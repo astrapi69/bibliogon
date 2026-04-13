@@ -396,10 +396,8 @@ ui:
         copy_from: "Copiar de livro"
         copy_hint: "Copia editora, biografia e CSS:"
         copy_success: "Informacoes de editora e autor aplicadas"
-        html_preview_show: "Mostrar pre-visualizacao"
-        html_preview_hide: "Ocultar pre-visualizacao"
-        html_preview_hint: "Representacao aproximada. Nao e exata ao pixel."
-        html_preview_hint_amazon: "Representacao aproximada no Amazon KDP. Nao e exata ao pixel."
+        html_field_show_preview: "Mostrar pre-visualizacao"
+        html_field_show_source: "Mostrar HTML"
     cover:
         choose_file: "Escolher arquivo"
         uploading: "Enviando..."

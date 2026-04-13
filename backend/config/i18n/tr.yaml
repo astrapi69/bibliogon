@@ -429,10 +429,8 @@ ui:
         copy_from: "Kitaptan kopyala"
         copy_hint: "Yayinevi, biyografi ve CSS kopyalar:"
         copy_success: "Yayinevi ve yazar bilgileri uygulandi"
-        html_preview_show: "Onizlemeyi goster"
-        html_preview_hide: "Onizlemeyi gizle"
-        html_preview_hint: "Yaklasik gorunum. Piksel duzeyinde degil."
-        html_preview_hint_amazon: "Amazon KDP uzerindeki yaklasik gorunum. Piksel duzeyinde degil."
+        html_field_show_preview: "Onizlemeyi goster"
+        html_field_show_source: "HTML goster"
     cover:
         choose_file: "Dosya sec"
         uploading: "Yukleniyor..."

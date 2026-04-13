@@ -188,15 +188,25 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             <label className="label">{t("ui.metadata.keywords", "Schluesselwoerter")}</label>
                             <KeywordInput keywords={keywords} onChange={setKeywords}/>
                         </div>
-                        <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
-                            onChange={(v) => set("html_description", v)} multiline maxChars={4000}/>
-                        <HtmlPreview html={form.html_description || ""} hint={t("ui.metadata.html_preview_hint_amazon", "Ungefaehre Darstellung auf Amazon KDP. Nicht pixelgenau.")} />
-                        <Field label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")} value={form.backpage_description}
-                            onChange={(v) => set("backpage_description", v)} multiline maxChars={600}/>
-                        <HtmlPreview html={form.backpage_description || ""} />
-                        <Field label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")} value={form.backpage_author_bio}
-                            onChange={(v) => set("backpage_author_bio", v)} multiline maxChars={2000}/>
-                        <HtmlPreview html={form.backpage_author_bio || ""} />
+                        <HtmlFieldWithPreview
+                            label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")}
+                            value={form.html_description}
+                            onChange={(v) => set("html_description", v)}
+                            maxChars={4000}
+                        />
+                        <HtmlFieldWithPreview
+                            label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")}
+                            value={form.backpage_description}
+                            onChange={(v) => set("backpage_description", v)}
+                            maxChars={600}
+                            rows={4}
+                        />
+                        <HtmlFieldWithPreview
+                            label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")}
+                            value={form.backpage_author_bio}
+                            onChange={(v) => set("backpage_author_bio", v)}
+                            maxChars={2000}
+                        />
                     </div>
                 </Tabs.Content>
 
@@ -315,39 +325,62 @@ export function sanitizeAmazonHtml(html: string): string {
     return DOMPurify.sanitize(html, {ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: []});
 }
 
-function HtmlPreview({html, hint}: {html: string; hint?: string}) {
+/** Integrated HTML field: toggle between editable textarea and sanitized preview. */
+export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8}: {
+    label: string;
+    value: string | null | undefined;
+    onChange: (v: string) => void;
+    maxChars?: number;
+    rows?: number;
+}) {
     const {t} = useI18n();
     const [showPreview, setShowPreview] = useState(false);
-
-    if (!html.trim()) return null;
+    const text = value || "";
 
     return (
-        <div style={{marginBottom: 12}}>
-            <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowPreview(!showPreview)}
-                style={{marginBottom: 6, fontSize: "0.8125rem"}}
-            >
-                {showPreview
-                    ? t("ui.metadata.html_preview_hide", "Vorschau ausblenden")
-                    : t("ui.metadata.html_preview_show", "Vorschau anzeigen")}
-            </button>
-            {showPreview && (
-                <div style={{
-                    border: "1px solid var(--border)",
-                    borderRadius: 6,
-                    padding: "12px 16px",
-                    background: "var(--bg-secondary)",
-                    fontSize: "0.875rem",
-                    lineHeight: 1.6,
-                }}>
-                    <small style={{display: "block", marginBottom: 8, color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                        {hint || t("ui.metadata.html_preview_hint", "Ungefaehre Darstellung. Nicht pixelgenau.")}
-                    </small>
-                    <div
-                        dangerouslySetInnerHTML={{__html: sanitizeAmazonHtml(html)}}
-                    />
-                </div>
+        <div className="field" style={{flex: 1}}>
+            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4}}>
+                <label className="label" style={{marginBottom: 0}}>{label}</label>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setShowPreview((s) => !s)}
+                    data-testid="html-preview-toggle"
+                    style={{fontSize: "0.75rem", padding: "2px 8px"}}
+                >
+                    {showPreview
+                        ? t("ui.metadata.html_field_show_source", "HTML anzeigen")
+                        : t("ui.metadata.html_field_show_preview", "Vorschau anzeigen")}
+                </button>
+            </div>
+            {showPreview ? (
+                <div
+                    className="input"
+                    style={{
+                        ...styles.multilineInput,
+                        minHeight: rows * 24,
+                        padding: "12px 16px",
+                        fontSize: "0.875rem",
+                        lineHeight: 1.6,
+                        overflow: "auto",
+                    }}
+                    dangerouslySetInnerHTML={{__html: sanitizeAmazonHtml(text)}}
+                />
+            ) : (
+                <textarea
+                    className="input"
+                    style={{...styles.multilineInput, maxWidth: "100%"}}
+                    rows={rows}
+                    value={text}
+                    onChange={(e) => onChange(e.target.value)}
+                />
+            )}
+            {maxChars !== undefined && !showPreview && (
+                <CharCounter
+                    count={text.length}
+                    max={maxChars}
+                    label={t("ui.metadata.characters", "Zeichen")}
+                />
             )}
         </div>
     );

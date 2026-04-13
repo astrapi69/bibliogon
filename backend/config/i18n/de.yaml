@@ -396,10 +396,8 @@ ui:
     copy_from: "Von Buch übernehmen"
     copy_hint: "Übernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:"
     copy_success: "Verlag und Autoren-Info übernommen"
-    html_preview_show: "Vorschau anzeigen"
-    html_preview_hide: "Vorschau ausblenden"
-    html_preview_hint: "Ungefähre Darstellung. Nicht pixelgenau."
-    html_preview_hint_amazon: "Ungefähre Darstellung auf Amazon KDP. Nicht pixelgenau."
+    html_field_show_preview: "Vorschau anzeigen"
+    html_field_show_source: "HTML anzeigen"
   cover:
     choose_file: "Datei wählen"
     uploading: "Wird hochgeladen..."
