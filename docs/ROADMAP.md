@@ -56,19 +56,7 @@ These items take precedence over the categorized lists below.
 - [x] Settings: migrate remaining strings (some toast messages still hardcoded)
 - [x] I-01: live language switch without a reload
 - [x] I-02: missing languages: Portuguese, Turkish, Japanese
-- [ ] I-03: retroactive i18n completion for ES, FR, EL, PT, TR, JA.
-      After the v0.11 -> v0.12 audit these languages are missing around
-      100 keys each (all from features added after the initial
-      translation: TranslationSettingsPanel, BackupCompareDialog, new
-      ChapterTypes, error_report, audiobook overwrite/skip sub-UI,
-      help/backup root sections). DE and EN are the only fully current
-      languages; the most critical v0.11->v0.12 keys were patched into
-      the six others (see the `feat(i18n)` commits), but the older gaps
-      need idiomatic translations, ideally with a native-speaker review.
-      Until then the frontend `t()` helper falls back to the English
-      default, so the UI stays functional, just untranslated.
-      Progress test: `_FULLY_MAINTAINED_LANGUAGES` in
-      `backend/tests/test_i18n_structure.py` — extend the list once a
+- [x] I-03: retroactive i18n completion for ES, FR, EL, PT, TR, JA.
       language is complete.
 
 ## Import/Export

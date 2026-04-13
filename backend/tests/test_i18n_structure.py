@@ -75,7 +75,7 @@ def test_no_bool_keys_anywhere(lang: str):
 # maintained in lockstep with EN; the other six languages have known
 # gaps from before the v0.11 -> v0.12 audit and are tracked as roadmap
 # item I-03. Expand this list as I-03 is worked through.
-_FULLY_MAINTAINED_LANGUAGES = ["de"]
+_FULLY_MAINTAINED_LANGUAGES = ["de", "es", "fr", "el", "pt", "tr", "ja"]
 
 
 @pytest.mark.parametrize("lang", _FULLY_MAINTAINED_LANGUAGES)
