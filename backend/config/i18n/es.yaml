@@ -701,3 +701,13 @@ ui:
     hide: "Ocultar"
     loading: "Cargando..."
     show: "Mostrar"
+    back: "Atras"
+    next: "Siguiente"
+  ai_wizard:
+    title: "Configurar asistente AI"
+    step1_hint: "Elige tu proveedor de AI. Puedes cambiarlo mas tarde en Ajustes."
+    no_key_needed: "LM Studio no necesita clave API. Asegurate de que el servidor este en ejecucion."
+    step3_hint: "Prueba la conexion con tu proveedor de AI."
+    skip: "Omitir"
+    finish: "Listo"
+    done: "Asistente AI configurado"

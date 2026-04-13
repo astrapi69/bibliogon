@@ -694,3 +694,13 @@ ui:
     add_entry: "Add new entry..."
     hide: "Hide"
     show: "Show"
+    back: "Back"
+    next: "Next"
+  ai_wizard:
+    title: "Set up AI Assistant"
+    step1_hint: "Choose your AI provider. You can change this later in Settings."
+    no_key_needed: "LM Studio does not require an API key. Make sure the server is running."
+    step3_hint: "Test the connection to your AI provider."
+    skip: "Skip"
+    finish: "Done"
+    done: "AI assistant configured"

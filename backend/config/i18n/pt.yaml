@@ -668,6 +668,16 @@ ui:
         confirm: "Confirmar"
         hide: "Ocultar"
         show: "Mostrar"
+        back: "Voltar"
+        next: "Seguinte"
+    ai_wizard:
+        title: "Configurar assistente AI"
+        step1_hint: "Escolha o seu fornecedor AI. Pode alterar mais tarde nas Definicoes."
+        no_key_needed: "O LM Studio nao necessita de chave API. Certifique-se de que o servidor esta em execucao."
+        step3_hint: "Teste a ligacao ao seu fornecedor AI."
+        skip: "Saltar"
+        finish: "Concluir"
+        done: "Assistente AI configurado"
     error_report:
         title: "Criar relatorio de erro"
         intro: "O Bibliogon detetou um erro e pode preparar um relatorio para o programador."

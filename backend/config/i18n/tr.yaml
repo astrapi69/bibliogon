@@ -701,3 +701,13 @@ ui:
         confirm: "Onayla"
         hide: "Gizle"
         show: "Goster"
+        back: "Geri"
+        next: "Ileri"
+    ai_wizard:
+        title: "AI Asistanini Kur"
+        step1_hint: "AI saglayicinizi secin. Bunu daha sonra Ayarlar'dan degistirebilirsiniz."
+        no_key_needed: "LM Studio API anahtari gerektirmez. Sunucunun calistigindan emin olun."
+        step3_hint: "AI saglayicinizla baglanti testi yapin."
+        skip: "Atla"
+        finish: "Bitti"
+        done: "AI asistani yapilandirildi"

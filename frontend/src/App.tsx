@@ -14,12 +14,23 @@ import {HelpProvider} from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
 import ErrorReportDialog from "./components/ErrorReportDialog";
-import {ApiError} from "./api/client";
+import AiSetupWizard, {shouldShowAiWizard} from "./components/AiSetupWizard";
+import {api, ApiError} from "./api/client";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
     useTheme();
+
+    // AI setup wizard state — shows on first run when AI is not configured
+    const [showAiWizard, setShowAiWizard] = useState(false);
+    useEffect(() => {
+        api.settings.getApp()
+            .then((config) => {
+                if (shouldShowAiWizard(config)) setShowAiWizard(true);
+            })
+            .catch(() => {}); // Config load failure is not critical for the wizard
+    }, []);
 
     // Error report dialog state — opened via custom event from notify.ts
     const [errorReport, setErrorReport] = useState<{
@@ -59,6 +70,7 @@ export default function App() {
                 errorMessage={errorReport.message}
                 apiError={errorReport.apiError}
             />
+            <AiSetupWizard open={showAiWizard} onClose={() => setShowAiWizard(false)}/>
             <ToastContainer
                 position="bottom-right"
                 autoClose={3000}

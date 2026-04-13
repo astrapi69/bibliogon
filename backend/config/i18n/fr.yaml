@@ -701,3 +701,13 @@ ui:
     confirm: "Confirmer"
     hide: "Masquer"
     show: "Afficher"
+    back: "Retour"
+    next: "Suivant"
+  ai_wizard:
+    title: "Configurer l'assistant AI"
+    step1_hint: "Choisissez votre fournisseur AI. Vous pourrez le modifier plus tard dans les parametres."
+    no_key_needed: "LM Studio ne necessite pas de cle API. Assurez-vous que le serveur fonctionne."
+    step3_hint: "Testez la connexion a votre fournisseur AI."
+    skip: "Ignorer"
+    finish: "Terminer"
+    done: "Assistant AI configure"

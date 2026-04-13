@@ -694,3 +694,13 @@ ui:
     add_entry: "Neuen Eintrag hinzufügen..."
     hide: "Ausblenden"
     show: "Anzeigen"
+    back: "Zurück"
+    next: "Weiter"
+  ai_wizard:
+    title: "KI-Assistent einrichten"
+    step1_hint: "Wähle deinen KI-Anbieter. Du kannst dies später in den Einstellungen ändern."
+    no_key_needed: "LM Studio benötigt keinen API-Schlüssel. Stelle sicher, dass der Server läuft."
+    step3_hint: "Teste die Verbindung zu deinem KI-Anbieter."
+    skip: "Überspringen"
+    finish: "Fertig"
+    done: "KI-Assistent eingerichtet"

@@ -668,6 +668,16 @@ ui:
         confirm: "確認"
         hide: "非表示"
         show: "表示"
+        back: "戻る"
+        next: "次へ"
+    ai_wizard:
+        title: "AIアシスタントの設定"
+        step1_hint: "AIプロバイダーを選択してください。後で設定から変更できます。"
+        no_key_needed: "LM StudioはAPIキーが不要です。サーバーが起動していることを確認してください。"
+        step3_hint: "AIプロバイダーへの接続をテストします。"
+        skip: "スキップ"
+        finish: "完了"
+        done: "AIアシスタントを設定しました"
     error_report:
         title: "エラーレポートを作成"
         intro: "Bibliogonがエラーを検出しました。開発者向けのバグレポートを作成できます。"
