@@ -58,6 +58,7 @@ def scaffold_project(
     has_toc = _write_partitioned_chapters(project_dir / "manuscript", chapters)
     _write_placeholders(project_dir, book, has_toc)
     _write_styles_css(project_dir / "config" / "styles.css", book.get("custom_css"))
+    _write_backpage_files(project_dir / "config", book)
 
     return project_dir
 
@@ -162,6 +163,25 @@ def _write_placeholders(project_dir: Path, book: dict[str, Any], has_toc: bool) 
         project_dir / "manuscript" / "back-matter" / "about-the-author.md",
         f"# About the Author\n\n{book.get('author', '')}\n",
     )
+
+
+def _write_backpage_files(config_dir: Path, book: dict[str, Any]) -> None:
+    """Write backpage description and author bio to the config directory.
+
+    Mirrors what project_import reads from config/cover-back-page-*.md
+    so project export -> import roundtrips preserve backpage content.
+    """
+    backpage_desc = book.get("backpage_description")
+    if backpage_desc:
+        (config_dir / "cover-back-page-description.md").write_text(
+            backpage_desc, encoding="utf-8"
+        )
+
+    backpage_bio = book.get("backpage_author_bio")
+    if backpage_bio:
+        (config_dir / "cover-back-page-author-introduction.md").write_text(
+            backpage_bio, encoding="utf-8"
+        )
 
 
 def _write_styles_css(path: Path, custom_css: str | None) -> None:

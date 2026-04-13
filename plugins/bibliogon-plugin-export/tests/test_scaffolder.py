@@ -144,3 +144,47 @@ class TestScaffolder:
 
         ch_file = list((project_dir / "manuscript" / "chapters").glob("*.md"))[0]
         assert "JSON string content" in ch_file.read_text()
+
+    def test_backpage_description_written(self, tmp_path):
+        """Backpage description is written to config/cover-back-page-description.md."""
+        book = {**self._sample_book(), "backpage_description": "A gripping novel about..."}
+        chapters = self._sample_chapters()
+        project_dir = scaffold_project(book, chapters, tmp_path)
+
+        backpage_file = project_dir / "config" / "cover-back-page-description.md"
+        assert backpage_file.exists()
+        assert backpage_file.read_text(encoding="utf-8") == "A gripping novel about..."
+
+    def test_backpage_author_bio_written(self, tmp_path):
+        """Backpage author bio is written to config/cover-back-page-author-introduction.md."""
+        book = {**self._sample_book(), "backpage_author_bio": "Jane Doe writes fiction."}
+        chapters = self._sample_chapters()
+        project_dir = scaffold_project(book, chapters, tmp_path)
+
+        bio_file = project_dir / "config" / "cover-back-page-author-introduction.md"
+        assert bio_file.exists()
+        assert bio_file.read_text(encoding="utf-8") == "Jane Doe writes fiction."
+
+    def test_backpage_files_not_written_when_empty(self, tmp_path):
+        """Backpage files are not created when fields are empty or None."""
+        book = self._sample_book()
+        chapters = self._sample_chapters()
+        project_dir = scaffold_project(book, chapters, tmp_path)
+
+        assert not (project_dir / "config" / "cover-back-page-description.md").exists()
+        assert not (project_dir / "config" / "cover-back-page-author-introduction.md").exists()
+
+    def test_backpage_roundtrip_both_fields(self, tmp_path):
+        """Both backpage fields survive scaffold -> file read roundtrip."""
+        book = {
+            **self._sample_book(),
+            "backpage_description": "Back cover text here.",
+            "backpage_author_bio": "Author bio for the back cover.",
+        }
+        chapters = self._sample_chapters()
+        project_dir = scaffold_project(book, chapters, tmp_path)
+
+        desc = (project_dir / "config" / "cover-back-page-description.md").read_text(encoding="utf-8")
+        bio = (project_dir / "config" / "cover-back-page-author-introduction.md").read_text(encoding="utf-8")
+        assert desc == "Back cover text here."
+        assert bio == "Author bio for the back cover."
