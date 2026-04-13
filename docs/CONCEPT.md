@@ -16,7 +16,7 @@ Bibliogon consists of two parts:
 
 2. **Bibliogon app** - An open-source web platform for writing and exporting books. The first application built on PluginForge. The entire export (EPUB, PDF, write-book-template structure) is itself a plugin.
 
-The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. This produces a freemium model: core free, premium plugins paid.
+The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. All plugins are free during the development phase. The licensing infrastructure exists but is dormant (LICENSING_ENABLED=False). A freemium model (core free, premium plugins paid) is planned for the SaaS phase.
 
 The long-term goal is a commercial SaaS product. Both PluginForge and the Bibliogon core stay open source (MIT license).
 
@@ -53,7 +53,7 @@ The long-term goal is a commercial SaaS product. Both PluginForge and the Biblio
 | Repository | Description | License |
 |------------|-------------|---------|
 | `pluginforge` | Application-agnostic plugin framework (based on pluggy) | MIT |
-| `bibliogon` | Book authoring platform, uses PluginForge | MIT (core), proprietary (premium plugins) |
+| `bibliogon` | Book authoring platform, uses PluginForge | MIT (all plugins free during development) |
 
 PluginForge is a standalone PyPI package:
 
@@ -595,7 +595,7 @@ Importing a backup restores the entire state. Independent of the export plugin (
 | Bibliogon core | MIT (free) | UI, editor, Book/Chapter CRUD, backup |
 | plugin-export | MIT (free) | EPUB, PDF, project structure |
 | Community plugins | MIT (free) | Developed by the community |
-| Premium plugins | Proprietary (paid) | Audiobook, children's books, KDP, collaboration |
+| Premium plugins (planned) | MIT (free during development) | Audiobook, children's books, KDP, collaboration |
 
 ### 5.1 Plugin catalog
 
@@ -662,30 +662,34 @@ The key contains (base64-encoded + signed):
 
 Validation happens locally. No license server required, no internet required. Licenses are stored in `config/licenses.json` and managed through the Settings UI.
 
-#### License tiers
+#### License tiers (currently dormant)
+
+The licensing infrastructure exists but is disabled during development (LICENSING_ENABLED=False). All plugins are free and activate without a license key. The tier system is designed for the future SaaS phase.
 
 Every plugin has a `license_tier` class attribute:
 
-| Tier | Description | License check |
-|------|-------------|----------------|
+| Tier | Description | License check (when enabled) |
+|------|-------------|-------------------------------|
 | `core` | Free, always works | None |
-| `premium` | Needs a valid license key | HMAC-SHA256 |
+| `premium` | Will need a valid license key when licensing is enabled | HMAC-SHA256 |
 
-| Plugin | Tier |
-|--------|------|
+During the development phase, all plugins operate as `core` (free):
+
+| Plugin | Tier (dormant) |
+|--------|----------------|
 | export | core |
 | help | core |
 | getstarted | core |
 | ms-tools | core |
-| grammar | premium |
-| kinderbuch | premium |
-| kdp | premium |
-| audiobook | premium |
-| translation | premium |
+| grammar | core (premium when licensing is enabled) |
+| kinderbuch | core (premium when licensing is enabled) |
+| kdp | core (premium when licensing is enabled) |
+| audiobook | core (premium when licensing is enabled) |
+| translation | core (premium when licensing is enabled) |
 
-#### Trial keys
+#### Trial keys (dormant)
 
-Trial keys unlock all premium plugins for a limited time:
+When licensing is enabled, trial keys will unlock all premium plugins for a limited time:
 
 - Plugin name in the payload is `"*"` (wildcard, matches every plugin)
 - Default duration: 30 days

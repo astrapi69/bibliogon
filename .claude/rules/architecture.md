@@ -16,7 +16,7 @@ New features ALWAYS belong in a plugin, unless they touch the core (Book/Chapter
 | Repo | Purpose | License |
 |------|---------|---------|
 | `pluginforge` | Application-agnostic plugin framework (PyPI) | MIT |
-| `bibliogon` | Book authoring platform, uses PluginForge | MIT (core), proprietary (premium) |
+| `bibliogon` | Book authoring platform, uses PluginForge | MIT (all plugins free during development) |
 
 PluginForge is EXTERNAL. Changes to PluginForge are a separate repo and a separate release cycle. Bibliogon pins `pluginforge ^0.5.0`.
 

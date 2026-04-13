@@ -1,6 +1,6 @@
 # Bibliogon
 
-Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first, freemium model.
+Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see ROADMAP.md MN-01 for future monetization).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
 - **Version:** 0.13.0 (dashboard filters, keyword editor, 3 new themes, 274 new tests. Next phase: multi-user/SaaS)
@@ -38,7 +38,7 @@ On a conflict between CLAUDE.md and the rules, the rules win.
 
 4 layers: Frontend -> Backend -> PluginForge -> Plugins. Details in `.claude/rules/architecture.md`.
 
-Lean core (UI, editor, CRUD, backup). Everything else via plugins. Freemium: `license_tier = "core"` (MIT) or `"premium"` (HMAC-signed keys, offline-validatable).
+Lean core (UI, editor, CRUD, backup). Everything else via plugins. All plugins are currently free (`license_tier = "core"`). License infrastructure exists but is dormant (`LICENSING_ENABLED = False` in `backend/app/licensing.py`).
 
 ## Commands
 
@@ -52,7 +52,7 @@ make test-plugins         # all plugin tests
 make test-frontend        # Vitest
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
-make generate-trial-key   # 30-day trial key for all premium plugins
+make generate-trial-key   # 30-day trial key (dormant, licensing disabled)
 make clean                # remove build artifacts
 make help                 # all targets
 ```
@@ -83,11 +83,11 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 | plugin-help        | core    | -          | In-app help, shortcuts, FAQ                                     |
 | plugin-getstarted  | core    | -          | Onboarding, example book                                        |
 | plugin-ms-tools    | core    | -          | Style checks, sanitization, metrics, per-book thresholds        |
-| plugin-audiobook   | premium | export     | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-book config |
-| plugin-translation | premium | -          | DeepL/LMStudio translation, custom settings panel               |
-| plugin-grammar     | premium | -          | LanguageTool (self-hosted + premium auth support)               |
-| plugin-kinderbuch  | premium | export     | One-image-per-page layout with 4 templates                      |
-| plugin-kdp         | premium | export     | KDP metadata, cover validation, completeness check              |
+| plugin-audiobook   | core    | export     | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-book config |
+| plugin-translation | core    | -          | DeepL/LMStudio translation, custom settings panel               |
+| plugin-grammar     | core    | -          | LanguageTool (self-hosted + premium auth support)               |
+| plugin-kinderbuch  | core    | export     | One-image-per-page layout with 4 templates                      |
+| plugin-kdp         | core    | export     | KDP metadata, cover validation, completeness check              |
 
 Plugin versions are independent of the app version. A plugin is only bumped when the plugin itself changed, not on every app release.
 
@@ -119,7 +119,7 @@ bibliogon/
 - Python: type hints, snake_case, Pydantic v2, SQLAlchemy 2.0 mapped columns
 - TypeScript: strict mode, no `any`, Radix UI for primitives
 - CSS: custom properties, dark mode via [data-theme="dark"]
-- Plugins: standalone packages under plugins/, depends_on as a class attribute, license_tier (core/premium)
+- Plugins: standalone packages under plugins/, depends_on as a class attribute, all free (licensing dormant)
 - Export: manuscripta (PyPI), plugin config in export.yaml is 1:1 the manuscripta format
 - Commits: English, conventional (feat/fix/refactor/docs)
 - E2E: data-testid selectors only, no brittle CSS or XPath. Claude Code writes specs, Aster runs them.

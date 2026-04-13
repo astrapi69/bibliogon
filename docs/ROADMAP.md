@@ -235,6 +235,23 @@ Expected delta: ~30-40 tests, mostly Playwright E2E.
       with an `_iter_toc_links` generator. `_TYPE_ANCHORS` lifted out of
       the function body into a module constant.
 
+## Monetization
+
+- [ ] MN-01: Reactivate plugin licensing for premium plugins when:
+       - Active user base exceeds 500 users, AND
+       - At least one premium-worthy feature has stabilized, AND
+       - Support infrastructure exists to handle paying customers
+       Until then, all plugins are free. License infrastructure
+       remains in place but inactive (LICENSING_ENABLED = False
+       in backend/app/licensing.py).
+       When reactivating:
+       - Set LICENSING_ENABLED = True
+       - Restore Licenses tab in Settings (revert Settings.tsx)
+       - Change premium plugins back to license_tier = "premium"
+       - Re-enable premium badges in PluginCard
+       - Update help docs (recreate plugins/lizenzen.md)
+       - Update CLAUDE.md and CONCEPT.md
+
 ## Offline hardening
 
 - [ ] O-01: bundle all UI fonts locally instead of the Google Fonts CDN.
