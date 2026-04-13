@@ -90,6 +90,18 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [markdownText, setMarkdownText] = useState("");
 
+    // Ctrl+H toggles search (documented in toolbar but was not wired as a shortcut)
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "h") {
+                e.preventDefault();
+                setShowSearch((s) => !s);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, []);
+
     const debouncedSave = useCallback(
         (json: string) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);

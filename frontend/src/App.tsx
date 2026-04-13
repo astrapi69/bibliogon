@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {Routes, Route} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
@@ -15,6 +15,8 @@ import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
 import ErrorReportDialog from "./components/ErrorReportDialog";
 import AiSetupWizard, {shouldShowAiWizard} from "./components/AiSetupWizard";
+import ShortcutCheatsheet from "./components/ShortcutCheatsheet";
+import {useKeyboardShortcuts, Shortcut} from "./hooks/useKeyboardShortcuts";
 import {api, ApiError} from "./api/client";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -31,6 +33,13 @@ export default function App() {
             })
             .catch(() => {}); // Config load failure is not critical for the wizard
     }, []);
+
+    // Shortcut cheatsheet
+    const [showShortcuts, setShowShortcuts] = useState(false);
+    const shortcuts = useMemo<Shortcut[]>(() => [
+        {keys: "ctrl+/", handler: () => setShowShortcuts((s) => !s), label: "Show shortcuts"},
+    ], []);
+    useKeyboardShortcuts(shortcuts);
 
     // Error report dialog state — opened via custom event from notify.ts
     const [errorReport, setErrorReport] = useState<{
@@ -71,6 +80,7 @@ export default function App() {
                 apiError={errorReport.apiError}
             />
             <AiSetupWizard open={showAiWizard} onClose={() => setShowAiWizard(false)}/>
+            <ShortcutCheatsheet open={showShortcuts} onClose={() => setShowShortcuts(false)}/>
             <ToastContainer
                 position="bottom-right"
                 autoClose={3000}
