@@ -108,7 +108,7 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
                                         <Dialog.Title className="dialog-title">{dialog.title}</Dialog.Title>
                                     </div>
                                     <Dialog.Close asChild>
-                                        <button className="btn-icon" onClick={handleCancel}>
+                                        <button className="btn-icon" onClick={handleCancel} aria-label="Close">
                                             <X size={16}/>
                                         </button>
                                     </Dialog.Close>

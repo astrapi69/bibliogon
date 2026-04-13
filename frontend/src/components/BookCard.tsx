@@ -33,7 +33,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
             {coverUrl ? (
                 <img
                     src={coverUrl}
-                    alt=""
+                    alt={`${book.title} cover`}
                     style={styles.coverImage}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />

@@ -299,6 +299,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                         key={i}
                         onClick={btn.action}
                         title={btn.title}
+                        aria-label={btn.title}
                         data-testid={btn.testId}
                         style={{
                             ...styles.button,
@@ -318,6 +319,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleSearch}
                     title={t("ui.toolbar.search", "Suchen & Ersetzen") + " (Ctrl+H)"}
+                    aria-label={t("ui.toolbar.search", "Suchen & Ersetzen")}
                     data-testid="toolbar-search"
                     style={styles.button}
                 >
@@ -330,6 +332,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleFocus}
                     title={t("ui.toolbar.focus_mode", "Focus Mode")}
+                    aria-label={t("ui.toolbar.focus_mode", "Focus Mode")}
                     data-testid="toolbar-focus"
                     style={{
                         ...styles.button,
@@ -346,6 +349,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onToggleStyleCheck}
                     disabled={styleCheckLoading}
                     title={t("ui.toolbar.style_check", "Stilpruefung")}
+                    aria-label={t("ui.toolbar.style_check", "Stilpruefung")}
                     data-testid="toolbar-style-check"
                     style={{
                         ...styles.button,
@@ -363,6 +367,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onToggleSpellcheck || undefined}
                     disabled={!onToggleSpellcheck || !!spellcheckDisabledReason}
                     title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibpruefung (LanguageTool)")}
+                    aria-label={t("ui.toolbar.spellcheck", "Rechtschreibpruefung")}
                     data-testid="toolbar-spellcheck"
                     style={{
                         ...styles.button,
@@ -380,6 +385,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onPreviewAudio || undefined}
                     disabled={!onPreviewAudio || previewLoading || !!previewDisabledReason}
                     title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhoeren (TTS)")}
+                    aria-label={t("ui.toolbar.tts_preview", "Vorhoeren")}
                     data-testid="toolbar-tts-preview"
                     style={{
                         ...styles.button,
@@ -397,6 +403,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onToggleAi || undefined}
                     disabled={!onToggleAi || !!aiDisabledReason}
                     title={aiDisabledReason || t("ui.toolbar.ai_assistant", "KI-Assistent")}
+                    aria-label={t("ui.toolbar.ai_assistant", "KI-Assistent")}
                     data-testid="toolbar-ai"
                     style={{
                         ...styles.button,

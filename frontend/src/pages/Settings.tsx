@@ -394,7 +394,7 @@ function AppSettings({config, onSave, saving}: {
                         </small>
                     </div>
 
-                    <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}}>
+                    <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>
                         <div className="field">
                             <label className="label">{t("ui.settings.ai_provider", "KI-Anbieter")}</label>
                             <RadixSelect

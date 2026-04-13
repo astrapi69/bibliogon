@@ -40,6 +40,7 @@ export default function DashboardFilterSheet({filters, open, onOpenChange}: Prop
                             <button
                                 className="btn-icon"
                                 data-testid="filter-sheet-close"
+                                aria-label="Close"
                                 style={{marginLeft: "auto"}}
                             >
                                 <X size={18}/>

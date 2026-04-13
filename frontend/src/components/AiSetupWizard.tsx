@@ -261,7 +261,7 @@ export default function AiSetupWizard({open, onClose}: Props) {
           </div>
 
           <Dialog.Close asChild>
-            <button style={styles.close} onClick={handleSkip}><X size={16}/></button>
+            <button style={styles.close} onClick={handleSkip} aria-label="Close"><X size={16}/></button>
           </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>

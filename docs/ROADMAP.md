@@ -64,7 +64,7 @@ Replace the upload-based backup compare with proper Git integration.
 - [x] PS-02: onboarding flow for AI provider setup (first-run wizard)
 - [x] PS-03: keyboard shortcuts customization
 - [x] PS-04: performance optimization for large books (500+ pages, 100+ chapters)
-- [ ] PS-05: accessibility audit (WCAG 2.1 AA for core workflows)
+- [x] PS-05: accessibility audit (WCAG 2.1 AA for core workflows)
 - [ ] PS-06: manuscripta integration polish (rough edges in the export pipeline)
 - [ ] PS-07: plugin developer documentation (API reference, tutorial, example plugin)
 

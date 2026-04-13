@@ -59,7 +59,7 @@ export default function ShortcutCheatsheet({open, onClose}: Props) {
           </div>
 
           <Dialog.Close asChild>
-            <button style={styles.close}><X size={16}/></button>
+            <button style={styles.close} aria-label="Close"><X size={16}/></button>
           </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>

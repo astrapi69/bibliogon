@@ -113,7 +113,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
     };
 
     const itemContent = (
-        <div ref={setNodeRef} style={style} data-testid={`chapter-item-${chapter.id}`} onClick={() => !editing && onSelect(chapter.id)}>
+        <div ref={setNodeRef} style={style} data-testid={`chapter-item-${chapter.id}`} role="button" tabIndex={0} onClick={() => !editing && onSelect(chapter.id)} onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !editing) { e.preventDefault(); onSelect(chapter.id); } }}>
             <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}} data-testid={`drag-handle-${chapter.id}`}>
                 <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
             </span>
