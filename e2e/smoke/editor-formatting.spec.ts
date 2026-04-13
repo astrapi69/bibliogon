@@ -7,10 +7,8 @@
  * APIs. Each test creates a book with a chapter, navigates to the
  * editor, and exercises one formatting dimension.
  *
- * Toolbar buttons are selected via ``page.getByTitle()`` using the
- * German tooltip text (which includes the keyboard shortcut as a
- * stable anchor). A future cleanup (CW-26) will add data-testid
- * attributes and migrate to ``page.getByTestId()``.
+ * Toolbar buttons are selected via ``page.getByTestId()`` using
+ * stable data-testid attributes (e.g. "toolbar-bold", "toolbar-h1").
  *
  * Uses data-testid selectors for non-toolbar elements where available.
  */
@@ -102,7 +100,7 @@ test.describe('B. Toolbar formatting', () => {
     await focusEditor(page)
     await page.keyboard.type('make this bold')
     await selectAll(page)
-    await page.getByTitle(/Fett/).click()
+    await page.getByTestId("toolbar-bold").click()
     await expect(page.locator('.ProseMirror strong')).toContainText('make this bold')
   })
 
@@ -111,7 +109,7 @@ test.describe('B. Toolbar formatting', () => {
     await focusEditor(page)
     await page.keyboard.type('make this italic')
     await selectAll(page)
-    await page.getByTitle(/Kursiv/).click()
+    await page.getByTestId("toolbar-italic").click()
     await expect(page.locator('.ProseMirror em')).toContainText('make this italic')
   })
 
@@ -120,7 +118,7 @@ test.describe('B. Toolbar formatting', () => {
     await focusEditor(page)
     await page.keyboard.type('underlined text')
     await selectAll(page)
-    await page.getByTitle(/Unterstrichen/).click()
+    await page.getByTestId("toolbar-underline").click()
     await expect(page.locator('.ProseMirror u')).toContainText('underlined text')
   })
 
@@ -129,7 +127,7 @@ test.describe('B. Toolbar formatting', () => {
     await focusEditor(page)
     await page.keyboard.type('struck text')
     await selectAll(page)
-    await page.getByTitle(/Durchgestrichen/).click()
+    await page.getByTestId("toolbar-strikethrough").click()
     await expect(page.locator('.ProseMirror s')).toContainText('struck text')
   })
 
@@ -138,7 +136,7 @@ test.describe('B. Toolbar formatting', () => {
     await focusEditor(page)
     await page.keyboard.type('inline code')
     await selectAll(page)
-    await page.getByTitle(/^Code$/).click()
+    await page.getByTestId("toolbar-code").click()
     await expect(page.locator('.ProseMirror code')).toContainText('inline code')
   })
 
@@ -146,7 +144,7 @@ test.describe('B. Toolbar formatting', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('Main Title')
-    await page.getByTitle(/Ueberschrift 1/).click()
+    await page.getByTestId("toolbar-h1").click()
     await expect(page.locator('.ProseMirror h1')).toContainText('Main Title')
   })
 
@@ -154,7 +152,7 @@ test.describe('B. Toolbar formatting', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('Section Title')
-    await page.getByTitle(/Ueberschrift 2/).click()
+    await page.getByTestId("toolbar-h2").click()
     await expect(page.locator('.ProseMirror h2')).toContainText('Section Title')
   })
 
@@ -162,7 +160,7 @@ test.describe('B. Toolbar formatting', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('Subsection')
-    await page.getByTitle(/Ueberschrift 3/).click()
+    await page.getByTestId("toolbar-h3").click()
     await expect(page.locator('.ProseMirror h3')).toContainText('Subsection')
   })
 })
@@ -238,7 +236,7 @@ test.describe('D. Block elements', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('list item')
-    await page.getByTitle(/Aufzaehlung/).click()
+    await page.getByTestId("toolbar-bullet-list").click()
     await expect(page.locator('.ProseMirror ul li')).toContainText('list item')
   })
 
@@ -246,7 +244,7 @@ test.describe('D. Block elements', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('first item')
-    await page.getByTitle(/Nummerierung/).click()
+    await page.getByTestId("toolbar-ordered-list").click()
     await expect(page.locator('.ProseMirror ol li')).toContainText('first item')
   })
 
@@ -254,7 +252,7 @@ test.describe('D. Block elements', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('quoted text')
-    await page.getByTitle(/Zitat/).click()
+    await page.getByTestId("toolbar-blockquote").click()
     await expect(page.locator('.ProseMirror blockquote')).toContainText('quoted text')
   })
 
@@ -263,7 +261,7 @@ test.describe('D. Block elements', () => {
     await focusEditor(page)
     await page.keyboard.type('above the line')
     await page.keyboard.press('Enter')
-    await page.getByTitle(/Trennlinie/).click()
+    await page.getByTestId("toolbar-horizontal-rule").click()
     await expect(page.locator('.ProseMirror hr')).toBeVisible()
   })
 
@@ -271,7 +269,7 @@ test.describe('D. Block elements', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('code here')
-    await page.getByTitle(/Codeblock/).click()
+    await page.getByTestId("toolbar-code-block").click()
     await expect(page.locator('.ProseMirror pre code')).toContainText('code here')
   })
 })
@@ -294,11 +292,11 @@ test.describe('E. Undo and redo', () => {
     await focusEditor(page)
     await page.keyboard.type('plain text')
     await selectAll(page)
-    await page.getByTitle(/Fett/).click()
+    await page.getByTestId("toolbar-bold").click()
     // Text should be bold
     await expect(page.locator('.ProseMirror strong')).toBeVisible()
     // Click undo
-    await page.getByTitle(/Rueckgaengig/).click()
+    await page.getByTestId("toolbar-undo").click()
     // Bold should be removed
     await expect(page.locator('.ProseMirror strong')).not.toBeVisible()
     await expect(page.locator('.ProseMirror')).toContainText('plain text')
@@ -309,10 +307,10 @@ test.describe('E. Undo and redo', () => {
     await focusEditor(page)
     await page.keyboard.type('redo test')
     await selectAll(page)
-    await page.getByTitle(/Fett/).click()
-    await page.getByTitle(/Rueckgaengig/).click()
+    await page.getByTestId("toolbar-bold").click()
+    await page.getByTestId("toolbar-undo").click()
     await expect(page.locator('.ProseMirror strong')).not.toBeVisible()
-    await page.getByTitle(/Wiederholen/).click()
+    await page.getByTestId("toolbar-redo").click()
     await expect(page.locator('.ProseMirror strong')).toContainText('redo test')
   })
 })
@@ -334,7 +332,7 @@ test.describe('F. Text alignment', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('centered text')
-    await page.getByTitle(/Zentriert/).click()
+    await page.getByTestId("toolbar-align-center").click()
     const para = page.locator('.ProseMirror p').first()
     await expect(para).toHaveCSS('text-align', 'center')
   })
@@ -343,7 +341,7 @@ test.describe('F. Text alignment', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('right aligned')
-    await page.getByTitle(/Rechtsbuendig/).click()
+    await page.getByTestId("toolbar-align-right").click()
     const para = page.locator('.ProseMirror p').first()
     await expect(para).toHaveCSS('text-align', 'right')
   })
@@ -352,7 +350,7 @@ test.describe('F. Text alignment', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('justified text')
-    await page.getByTitle(/Blocksatz/).click()
+    await page.getByTestId("toolbar-align-justify").click()
     const para = page.locator('.ProseMirror p').first()
     await expect(para).toHaveCSS('text-align', 'justify')
   })
@@ -361,8 +359,8 @@ test.describe('F. Text alignment', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('back to left')
-    await page.getByTitle(/Zentriert/).click()
-    await page.getByTitle(/Linksbuendig/).click()
+    await page.getByTestId("toolbar-align-center").click()
+    await page.getByTestId("toolbar-align-left").click()
     const para = page.locator('.ProseMirror p').first()
     // Left is the default, so text-align should be left or empty
     const align = await para.evaluate((el) => getComputedStyle(el).textAlign)
@@ -424,9 +422,9 @@ test.describe('G. Integration', () => {
  */
 async function isToolbarButtonActive(
   page: import('@playwright/test').Page,
-  titlePattern: RegExp,
+  testId: string,
 ): Promise<boolean> {
-  const btn = page.getByTitle(titlePattern)
+  const btn = page.getByTestId(testId)
   const style = await btn.getAttribute('style') || ''
   return style.includes('accent-light')
 }
@@ -454,21 +452,21 @@ test.describe('H. Toolbar button state sync', () => {
 
     // Wait for TipTap to update toolbar state
     await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, /Fett/)).toBe(true)
+    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(true)
   })
 
   test('H2 button shows active style when cursor is in H2, H1 and H3 do not', async ({page}) => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('A Heading')
-    await page.getByTitle(/Ueberschrift 2/).click()
+    await page.getByTestId("toolbar-h2").click()
 
     // Cursor is in the H2 now - wait for state update
     await page.waitForTimeout(100)
 
-    expect(await isToolbarButtonActive(page, /Ueberschrift 2/)).toBe(true)
-    expect(await isToolbarButtonActive(page, /Ueberschrift 1/)).toBe(false)
-    expect(await isToolbarButtonActive(page, /Ueberschrift 3/)).toBe(false)
+    expect(await isToolbarButtonActive(page, "toolbar-h2")).toBe(true)
+    expect(await isToolbarButtonActive(page, "toolbar-h1")).toBe(false)
+    expect(await isToolbarButtonActive(page, "toolbar-h3")).toBe(false)
   })
 
   test('bold button loses active style when cursor moves out of bold text', async ({page}) => {
@@ -483,16 +481,16 @@ test.describe('H. Toolbar button state sync', () => {
 
     // Cursor is after " plain" - should NOT be active
     await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, /Fett/)).toBe(false)
+    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(false)
 
     // Move cursor into the bold text
     for (let i = 0; i < 8; i++) await page.keyboard.press('ArrowLeft')
     await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, /Fett/)).toBe(true)
+    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(true)
 
     // Move cursor out to the left of bold
     for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowLeft')
     await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, /Fett/)).toBe(false)
+    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(false)
   })
 })

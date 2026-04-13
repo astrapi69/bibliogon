@@ -67,6 +67,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleBold().run(),
             active: editor.isActive("bold"),
             title: t("ui.toolbar.bold", "Fett") + " (Ctrl+B)",
+            testId: "toolbar-bold",
             hidden: markdownMode,
         },
         {
@@ -74,6 +75,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleItalic().run(),
             active: editor.isActive("italic"),
             title: t("ui.toolbar.italic", "Kursiv") + " (Ctrl+I)",
+            testId: "toolbar-italic",
             hidden: markdownMode,
         },
         {
@@ -81,6 +83,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleUnderline().run(),
             active: editor.isActive("underline"),
             title: t("ui.toolbar.underline", "Unterstrichen") + " (Ctrl+U)",
+            testId: "toolbar-underline",
             hidden: markdownMode,
         },
         {
@@ -88,6 +91,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleStrike().run(),
             active: editor.isActive("strike"),
             title: t("ui.toolbar.strikethrough", "Durchgestrichen"),
+            testId: "toolbar-strikethrough",
             hidden: markdownMode,
         },
         {
@@ -95,6 +99,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleCode().run(),
             active: editor.isActive("code"),
             title: t("ui.toolbar.inline_code", "Code"),
+            testId: "toolbar-code",
             hidden: markdownMode,
         },
         {
@@ -102,6 +107,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleHighlight().run(),
             active: editor.isActive("highlight"),
             title: t("ui.toolbar.highlight", "Hervorheben"),
+            testId: "toolbar-highlight",
             hidden: markdownMode,
         },
         {
@@ -109,6 +115,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleSubscript().run(),
             active: editor.isActive("subscript"),
             title: t("ui.toolbar.subscript", "Tiefgestellt"),
+            testId: "toolbar-subscript",
             hidden: markdownMode,
         },
         {
@@ -116,6 +123,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleSuperscript().run(),
             active: editor.isActive("superscript"),
             title: t("ui.toolbar.superscript", "Hochgestellt"),
+            testId: "toolbar-superscript",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -126,6 +134,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleHeading({level: 1}).run(),
             active: editor.isActive("heading", {level: 1}),
             title: t("ui.toolbar.heading1", "Ueberschrift 1"),
+            testId: "toolbar-h1",
             hidden: markdownMode,
         },
         {
@@ -133,6 +142,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleHeading({level: 2}).run(),
             active: editor.isActive("heading", {level: 2}),
             title: t("ui.toolbar.heading2", "Ueberschrift 2"),
+            testId: "toolbar-h2",
             hidden: markdownMode,
         },
         {
@@ -140,6 +150,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleHeading({level: 3}).run(),
             active: editor.isActive("heading", {level: 3}),
             title: t("ui.toolbar.heading3", "Ueberschrift 3"),
+            testId: "toolbar-h3",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -150,6 +161,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().setTextAlign("left").run(),
             active: editor.isActive({textAlign: "left"}),
             title: t("ui.toolbar.align_left", "Linksbuendig"),
+            testId: "toolbar-align-left",
             hidden: markdownMode,
         },
         {
@@ -157,6 +169,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().setTextAlign("center").run(),
             active: editor.isActive({textAlign: "center"}),
             title: t("ui.toolbar.align_center", "Zentriert"),
+            testId: "toolbar-align-center",
             hidden: markdownMode,
         },
         {
@@ -164,6 +177,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().setTextAlign("right").run(),
             active: editor.isActive({textAlign: "right"}),
             title: t("ui.toolbar.align_right", "Rechtsbuendig"),
+            testId: "toolbar-align-right",
             hidden: markdownMode,
         },
         {
@@ -171,6 +185,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().setTextAlign("justify").run(),
             active: editor.isActive({textAlign: "justify"}),
             title: t("ui.toolbar.align_justify", "Blocksatz"),
+            testId: "toolbar-align-justify",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -181,6 +196,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleBulletList().run(),
             active: editor.isActive("bulletList"),
             title: t("ui.toolbar.bullet_list", "Aufzaehlung"),
+            testId: "toolbar-bullet-list",
             hidden: markdownMode,
         },
         {
@@ -188,6 +204,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleOrderedList().run(),
             active: editor.isActive("orderedList"),
             title: t("ui.toolbar.ordered_list", "Nummerierung"),
+            testId: "toolbar-ordered-list",
             hidden: markdownMode,
         },
         {
@@ -195,6 +212,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleTaskList().run(),
             active: editor.isActive("taskList"),
             title: t("ui.toolbar.task_list", "Checkliste"),
+            testId: "toolbar-task-list",
             hidden: markdownMode,
         },
         {
@@ -202,6 +220,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleBlockquote().run(),
             active: editor.isActive("blockquote"),
             title: t("ui.toolbar.blockquote", "Zitat"),
+            testId: "toolbar-blockquote",
             hidden: markdownMode,
         },
         {
@@ -209,6 +228,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
             active: editor.isActive("table"),
             title: t("ui.toolbar.insert_table", "Tabelle einfuegen"),
+            testId: "toolbar-table",
             hidden: markdownMode,
         },
         {
@@ -216,6 +236,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().addFootnote().run(),
             active: false,
             title: t("ui.toolbar.footnote", "Fussnote"),
+            testId: "toolbar-footnote",
             hidden: markdownMode,
         },
         {
@@ -223,6 +244,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().toggleCodeBlock().run(),
             active: editor.isActive("codeBlock"),
             title: t("ui.toolbar.code_block", "Codeblock"),
+            testId: "toolbar-code-block",
             hidden: markdownMode,
         },
         {
@@ -230,6 +252,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().setHorizontalRule().run(),
             active: false,
             title: t("ui.toolbar.horizontal_rule", "Trennlinie"),
+            testId: "toolbar-horizontal-rule",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
@@ -240,6 +263,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().undo().run(),
             active: false,
             title: t("ui.toolbar.undo", "Rueckgaengig") + " (Ctrl+Z)",
+            testId: "toolbar-undo",
             hidden: markdownMode,
         },
         {
@@ -247,6 +271,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             action: () => editor.chain().focus().redo().run(),
             active: false,
             title: t("ui.toolbar.redo", "Wiederholen") + " (Ctrl+Y)",
+            testId: "toolbar-redo",
             hidden: markdownMode,
         },
     ];
@@ -263,12 +288,14 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     action: () => void;
                     active: boolean;
                     title: string;
+                    testId?: string;
                 };
                 return (
                     <button
                         key={i}
                         onClick={btn.action}
                         title={btn.title}
+                        data-testid={btn.testId}
                         style={{
                             ...styles.button,
                             ...(btn.active ? styles.buttonActive : {}),
@@ -287,6 +314,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleSearch}
                     title={t("ui.toolbar.search", "Suchen & Ersetzen") + " (Ctrl+H)"}
+                    data-testid="toolbar-search"
                     style={styles.button}
                 >
                     <Search size={16}/>
@@ -298,6 +326,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleFocus}
                     title={t("ui.toolbar.focus_mode", "Focus Mode")}
+                    data-testid="toolbar-focus"
                     style={{
                         ...styles.button,
                         ...(focusMode ? styles.buttonActive : {}),
@@ -313,6 +342,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onToggleSpellcheck || undefined}
                     disabled={!onToggleSpellcheck || !!spellcheckDisabledReason}
                     title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibpruefung (LanguageTool)")}
+                    data-testid="toolbar-spellcheck"
                     style={{
                         ...styles.button,
                         ...(spellcheckActive ? styles.buttonActive : {}),
@@ -329,6 +359,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onPreviewAudio || undefined}
                     disabled={!onPreviewAudio || previewLoading || !!previewDisabledReason}
                     title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhoeren (TTS)")}
+                    data-testid="toolbar-tts-preview"
                     style={{
                         ...styles.button,
                         ...(previewLoading ? {opacity: 0.5, cursor: "wait"} : {}),
@@ -345,6 +376,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     onClick={onToggleAi || undefined}
                     disabled={!onToggleAi || !!aiDisabledReason}
                     title={aiDisabledReason || t("ui.toolbar.ai_assistant", "KI-Assistent")}
+                    data-testid="toolbar-ai"
                     style={{
                         ...styles.button,
                         ...(aiPanelActive ? styles.buttonActive : {}),
@@ -359,6 +391,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             <button
                 onClick={onToggleMarkdown}
                 title={markdownMode ? t("ui.toolbar.wysiwyg_mode", "WYSIWYG-Modus") : t("ui.toolbar.markdown_mode", "Markdown-Modus")}
+                data-testid="toolbar-markdown-toggle"
                 style={{
                     ...styles.modeToggle,
                     ...(markdownMode ? styles.modeToggleActive : {}),
