@@ -42,6 +42,8 @@ bibliogon-data/
 node_modules/
 build/
 .next/
+frontend/dev-dist/
+*.tsbuildinfo
 
 # Temp export files
 /tmp/bibliogon_*
