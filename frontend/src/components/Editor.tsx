@@ -40,9 +40,13 @@ interface Props {
     bookId?: string;
     chapterId?: string;
     chapterTitle?: string;
+    autosaveDebounceMs?: number;
+    draftSaveDebounceMs?: number;
+    draftMaxAgeDays?: number;
+    aiContextChars?: number;
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -92,17 +96,17 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 } else {
                     setSaveStatus("idle");
                 }
-            }, 800);
+            }, autosaveDebounceMs);
 
-            // Save draft to IndexedDB (2s debounce, parallel to server save)
+            // Save draft to IndexedDB (parallel to server save)
             if (chapterId && bookId) {
                 if (draftTimer.current) clearTimeout(draftTimer.current);
                 draftTimer.current = setTimeout(() => {
                     saveDraft(chapterId, bookId, json, serverContentHash.current);
-                }, 2000);
+                }, draftSaveDebounceMs);
             }
         },
-        [onSave, chapterId, bookId]
+        [onSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs]
     );
 
     const parseContent = (raw: string): Record<string, unknown> | string => {
@@ -239,7 +243,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     }, [chapterId]);
 
     // Cleanup old drafts on mount
-    useEffect(() => { cleanupOldDrafts(30); }, []);
+    useEffect(() => { cleanupOldDrafts(draftMaxAgeDays); }, [draftMaxAgeDays]);
 
     // Cleanup timer
     useEffect(() => {
@@ -350,10 +354,10 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         if (!editor) return;
         setPreviewLoading(true);
         try {
-            // Use selected text or first 2000 chars of chapter
+            // Use selected text or first N chars of chapter
             const {from, to} = editor.state.selection;
             let text = from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
-            if (text.length > 2000) text = text.slice(0, 2000);
+            if (text.length > aiContextChars) text = text.slice(0, aiContextChars);
             if (!text.trim()) {
                 notify.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
                 setPreviewLoading(false);

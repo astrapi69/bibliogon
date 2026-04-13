@@ -188,6 +188,7 @@ function AppSettings({config, onSave, saving}: {
     const enabledPlugins = (pluginsConfig.enabled as string[]) || [];
 
     const ai = (config.ai || {}) as Record<string, unknown>;
+    const editorConfig = (config.editor || {}) as Record<string, unknown>;
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
@@ -207,6 +208,10 @@ function AppSettings({config, onSave, saving}: {
     const [aiApiKey, setAiApiKey] = useState((ai.api_key as string) || "");
     const [showAiKey, setShowAiKey] = useState(false);
     const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+    const [edAutosave, setEdAutosave] = useState(String(editorConfig.autosave_debounce_ms ?? 800));
+    const [edDraftSave, setEdDraftSave] = useState(String(editorConfig.draft_save_debounce_ms ?? 2000));
+    const [edDraftAge, setEdDraftAge] = useState(String(editorConfig.draft_max_age_days ?? 30));
+    const [edAiChars, setEdAiChars] = useState(String(editorConfig.ai_context_chars ?? 2000));
 
     useEffect(() => {
         setLang((app.default_language as string) || "de");
@@ -226,6 +231,10 @@ function AppSettings({config, onSave, saving}: {
         setAiTemp(String(ai.temperature ?? "0.7"));
         setAiMaxTokens(String(ai.max_tokens ?? "4096"));
         setAiApiKey((ai.api_key as string) || "");
+        setEdAutosave(String(editorConfig.autosave_debounce_ms ?? 800));
+        setEdDraftSave(String(editorConfig.draft_save_debounce_ms ?? 2000));
+        setEdDraftAge(String(editorConfig.draft_max_age_days ?? 30));
+        setEdAiChars(String(editorConfig.ai_context_chars ?? 2000));
     }, [config]);
 
     return (
@@ -344,6 +353,12 @@ function AppSettings({config, onSave, saving}: {
                                 max_tokens: parseInt(aiMaxTokens) || 4096,
                                 api_key: aiApiKey,
                             },
+                            editor: {
+                                autosave_debounce_ms: parseInt(edAutosave) || 800,
+                                draft_save_debounce_ms: parseInt(edDraftSave) || 2000,
+                                draft_max_age_days: parseInt(edDraftAge) || 30,
+                                ai_context_chars: parseInt(edAiChars) || 2000,
+                            },
                         });
                     }}
                 >
@@ -411,6 +426,41 @@ function AppSettings({config, onSave, saving}: {
                             : aiTestStatus === "fail" ? t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")
                             : t("ui.settings.ai_test", "Verbindung testen")}
                     </button>
+                </div>
+            </div>
+
+            {/* Editor Settings */}
+            <div style={{marginTop: 16}}>
+                <h2 style={styles.sectionTitle}>{t("ui.settings.editor_title", "Editor")}</h2>
+                <div style={styles.card}>
+                    <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
+                        <div className="field" style={{flex: 1, minWidth: 140}}>
+                            <label className="label">{t("ui.settings.editor_autosave", "Autosave (ms)")}</label>
+                            <input className="input" type="number" min="200" max="5000" step="100"
+                                value={edAutosave} onChange={(e) => setEdAutosave(e.target.value)}/>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_autosave_hint", "Verzoegerung bis zum automatischen Speichern")}</small>
+                        </div>
+                        <div className="field" style={{flex: 1, minWidth: 140}}>
+                            <label className="label">{t("ui.settings.editor_draft_save", "Entwurf (ms)")}</label>
+                            <input className="input" type="number" min="500" max="10000" step="500"
+                                value={edDraftSave} onChange={(e) => setEdDraftSave(e.target.value)}/>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_hint", "Verzoegerung bis zur lokalen Sicherung")}</small>
+                        </div>
+                    </div>
+                    <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
+                        <div className="field" style={{flex: 1, minWidth: 140}}>
+                            <label className="label">{t("ui.settings.editor_draft_age", "Entwurf-Alter (Tage)")}</label>
+                            <input className="input" type="number" min="1" max="365" step="1"
+                                value={edDraftAge} onChange={(e) => setEdDraftAge(e.target.value)}/>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe aelter als dieser Wert werden geloescht")}</small>
+                        </div>
+                        <div className="field" style={{flex: 1, minWidth: 140}}>
+                            <label className="label">{t("ui.settings.editor_ai_chars", "KI-Kontext (Zeichen)")}</label>
+                            <input className="input" type="number" min="500" max="32000" step="500"
+                                value={edAiChars} onChange={(e) => setEdAiChars(e.target.value)}/>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl fuer KI-Vorschlaege")}</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 

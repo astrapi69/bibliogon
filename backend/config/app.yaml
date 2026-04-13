@@ -4,6 +4,11 @@ ai:
   max_tokens: 2048
   model: ''
   temperature: 0.7
+editor:
+  autosave_debounce_ms: 800
+  draft_save_debounce_ms: 2000
+  draft_max_age_days: 30
+  ai_context_chars: 2000
 app:
   default_language: de
   delete_permanently: false

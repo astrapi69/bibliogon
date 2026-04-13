@@ -70,6 +70,12 @@ export default function BookEditor() {
     };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [editorSettings, setEditorSettings] = useState<{
+        autosave_debounce_ms?: number;
+        draft_save_debounce_ms?: number;
+        draft_max_age_days?: number;
+        ai_context_chars?: number;
+    }>({});
 
     const activeChapter = book?.chapters.find((c) => c.id === activeChapterId) ?? null;
 
@@ -96,6 +102,10 @@ export default function BookEditor() {
 
     useEffect(() => {
         loadBook();
+        api.settings.getApp().then((cfg) => {
+            const ed = (cfg as Record<string, unknown>).editor as Record<string, number> | undefined;
+            if (ed) setEditorSettings(ed);
+        }).catch(() => {});
         api.books.list().then(setAllBooks).catch(() => {});
     }, [loadBook]);
 
@@ -266,6 +276,10 @@ export default function BookEditor() {
                     chapterId={activeChapter.id}
                     chapterTitle={activeChapter.title}
                     placeholder={`Schreibe "${activeChapter.title}"...`}
+                    autosaveDebounceMs={editorSettings.autosave_debounce_ms}
+                    draftSaveDebounceMs={editorSettings.draft_save_debounce_ms}
+                    draftMaxAgeDays={editorSettings.draft_max_age_days}
+                    aiContextChars={editorSettings.ai_context_chars}
                 />
             ) : (
                 <div style={styles.noChapter}>

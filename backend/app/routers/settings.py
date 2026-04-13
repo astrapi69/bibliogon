@@ -48,6 +48,7 @@ class AppSettingsUpdate(BaseModel):
     author: dict[str, Any] | None = None
     plugins: dict[str, Any] | None = None
     ai: dict[str, Any] | None = None
+    editor: dict[str, Any] | None = None
 
 
 @router.patch("/app")
@@ -66,6 +67,8 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
         current.setdefault("plugins", {}).update(body.plugins)
     if body.ai is not None:
         current.setdefault("ai", {}).update(body.ai)
+    if body.editor is not None:
+        current.setdefault("editor", {}).update(body.editor)
 
     _write_yaml(path, current)
 
