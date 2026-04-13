@@ -64,8 +64,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const {status: pluginStatus} = useEditorPluginStatus();
     const [showAiPanel, setShowAiPanel] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState("");
+    const [aiReview, setAiReview] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
-    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom">("improve");
+    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom" | "review">("improve");
     const [aiCustomPrompt, setAiCustomPrompt] = useState("");
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
@@ -444,6 +445,44 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiSuggestion("");
     };
 
+    const handleAiReview = async () => {
+        if (!editor) return;
+        const fullText = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n");
+        if (!fullText.trim()) {
+            notify.info(t("ui.editor.ai_review_empty", "Das Kapitel ist leer."));
+            return;
+        }
+        setShowAiPanel(true);
+        setAiLoading(true);
+        setAiReview("");
+        setAiSuggestion("");
+
+        try {
+            const res = await fetch("/api/ai/review", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    content: fullText,
+                    chapter_title: chapterTitle || "",
+                    book_title: "",
+                    language: document.documentElement.getAttribute("lang") || "de",
+                    focus: ["style", "coherence", "pacing"],
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "AI review failed"}));
+                notify.error(err.detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
+                setAiReview("");
+            } else {
+                const data = await res.json();
+                setAiReview(data.review || "");
+            }
+        } catch {
+            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+        }
+        setAiLoading(false);
+    };
+
     const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
     const handleRestore = () => {
@@ -550,22 +589,23 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 <div style={styles.aiPanel}>
                     <div style={styles.aiHeader}>
                         <strong>{t("ui.editor.ai_assistant", "AI-Assistent")}</strong>
-                        <div style={{display: "flex", gap: 4, marginLeft: "auto"}}>
-                            {(["improve", "shorten", "expand", "custom"] as const).map((type) => (
+                        <div style={{display: "flex", gap: 4, marginLeft: "auto", flexWrap: "wrap"}}>
+                            {(["improve", "shorten", "expand", "custom", "review"] as const).map((type) => (
                                 <button
                                     key={type}
                                     className={`btn btn-sm ${aiPromptType === type ? "btn-primary" : "btn-ghost"}`}
-                                    onClick={() => setAiPromptType(type)}
+                                    onClick={() => { setAiPromptType(type); setAiSuggestion(""); setAiReview(""); }}
                                     style={{padding: "2px 8px", fontSize: "0.75rem"}}
                                 >
                                     {type === "improve" ? t("ui.editor.ai_improve", "Verbessern")
                                         : type === "shorten" ? t("ui.editor.ai_shorten", "Kuerzen")
                                         : type === "expand" ? t("ui.editor.ai_expand", "Erweitern")
-                                        : t("ui.editor.ai_custom", "Eigener Prompt")}
+                                        : type === "custom" ? t("ui.editor.ai_custom", "Eigener Prompt")
+                                        : t("ui.editor.ai_review", "Review")}
                                 </button>
                             ))}
                         </div>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setShowAiPanel(false)}>&times;</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => { setShowAiPanel(false); setAiReview(""); }}>&times;</button>
                     </div>
                     {aiPromptType === "custom" && (
                         <input
@@ -576,29 +616,62 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                             onChange={(e) => setAiCustomPrompt(e.target.value)}
                         />
                     )}
-                    <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
-                        <button
-                            className="btn btn-primary btn-sm"
-                            onClick={handleAiSuggest}
-                            disabled={aiLoading}
-                        >
-                            {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_suggest", "Vorschlag generieren")}
-                        </button>
-                    </div>
-                    {aiSuggestion && (
-                        <div style={styles.aiSuggestion}>
-                            <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)"}}>
-                                {aiSuggestion}
+                    {aiPromptType === "review" ? (
+                        <>
+                            <div style={{padding: "4px 16px"}}>
+                                <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                    {t("ui.editor.ai_review_hint", "Analysiert das gesamte Kapitel auf Stil, Kohaerenz und Pacing.")}
+                                </small>
                             </div>
-                            <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                                <button className="btn btn-primary btn-sm" onClick={handleAiApply}>
-                                    {t("ui.editor.ai_apply", "Uebernehmen")}
-                                </button>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setAiSuggestion("")}>
-                                    {t("ui.editor.ai_discard", "Verwerfen")}
+                            <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={handleAiReview}
+                                    disabled={aiLoading}
+                                >
+                                    {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_review_start", "Kapitel reviewen")}
                                 </button>
                             </div>
-                        </div>
+                            {aiReview && (
+                                <div style={styles.aiSuggestion}>
+                                    <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)", lineHeight: 1.6}}>
+                                        {aiReview}
+                                    </div>
+                                    <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setAiReview("")}>
+                                            {t("ui.editor.ai_review_close", "Schliessen")}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={handleAiSuggest}
+                                    disabled={aiLoading}
+                                >
+                                    {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_suggest", "Vorschlag generieren")}
+                                </button>
+                            </div>
+                            {aiSuggestion && (
+                                <div style={styles.aiSuggestion}>
+                                    <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)"}}>
+                                        {aiSuggestion}
+                                    </div>
+                                    <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                                        <button className="btn btn-primary btn-sm" onClick={handleAiApply}>
+                                            {t("ui.editor.ai_apply", "Uebernehmen")}
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setAiSuggestion("")}>
+                                            {t("ui.editor.ai_discard", "Verwerfen")}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}

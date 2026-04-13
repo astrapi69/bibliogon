@@ -66,6 +66,19 @@ class GenerateRequest(BaseModel):
     temperature: float | None = Field(default=None, ge=0, le=2)
 
 
+class ReviewRequest(BaseModel):
+    """Request for AI-assisted chapter review."""
+
+    content: str = Field(..., min_length=1, description="Chapter text to review")
+    chapter_title: str = Field(default="", description="Title of the chapter")
+    book_title: str = Field(default="", description="Title of the book")
+    language: str = Field(default="de", description="Language code (de, en, ...)")
+    focus: list[str] = Field(
+        default_factory=lambda: ["style", "coherence", "pacing"],
+        description="Review focus areas: style, coherence, pacing, dialogue, tension",
+    )
+
+
 @router.post("/chat")
 async def chat_completion(req: ChatRequest) -> dict[str, Any]:
     """Send a chat completion request to the configured LLM server."""
@@ -123,6 +136,80 @@ async def ai_health() -> dict[str, Any]:
 async def list_providers() -> list[dict[str, Any]]:
     """List all known AI provider presets."""
     return [preset.model_dump() for preset in PROVIDER_PRESETS.values()]
+
+
+def _build_review_system_prompt(language: str, focus: list[str]) -> str:
+    """Build the system prompt for chapter review based on language and focus areas."""
+    focus_descriptions = {
+        "style": "writing style (word choice, sentence variety, readability, voice consistency)",
+        "coherence": "coherence and structure (logical flow, paragraph transitions, argument clarity)",
+        "pacing": "pacing (scene length balance, tension curve, slow or rushed sections)",
+        "dialogue": "dialogue quality (natural speech, character voice distinction, said-bookisms)",
+        "tension": "narrative tension (stakes, conflict escalation, reader engagement)",
+    }
+    focus_list = "\n".join(
+        f"- {focus_descriptions.get(f, f)}" for f in focus if f in focus_descriptions
+    )
+
+    lang_instruction = ""
+    if language == "de":
+        lang_instruction = "The chapter is in German. Write your review in German."
+    elif language == "en":
+        lang_instruction = "The chapter is in English. Write your review in English."
+    else:
+        lang_instruction = f"The chapter is in language '{language}'. Write your review in that language."
+
+    return f"""You are a professional book editor reviewing a chapter manuscript.
+
+{lang_instruction}
+
+Analyze the chapter for these aspects:
+{focus_list}
+
+Structure your review as follows:
+1. **Summary**: One sentence summarizing the chapter's content.
+2. **Strengths**: 2-3 specific things done well (with brief quotes or references).
+3. **Suggestions**: 3-5 concrete, actionable improvements. For each suggestion:
+   - State what the issue is
+   - Explain why it matters
+   - Suggest how to fix it
+4. **Overall**: One sentence overall assessment.
+
+Be constructive and specific. Refer to actual passages in the text. Avoid generic advice like "show don't tell" without pointing to a specific instance. Do not rewrite the chapter - give editorial feedback the author can act on."""
+
+
+@router.post("/review")
+async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
+    """AI-assisted chapter review for style, coherence, and pacing."""
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    client = _get_client()
+    system_prompt = _build_review_system_prompt(req.language, req.focus)
+
+    user_prompt_parts = []
+    if req.book_title:
+        user_prompt_parts.append(f"Book: {req.book_title}")
+    if req.chapter_title:
+        user_prompt_parts.append(f"Chapter: {req.chapter_title}")
+    user_prompt_parts.append(f"\n---\n\n{req.content}")
+    user_prompt = "\n".join(user_prompt_parts)
+
+    try:
+        result = await client.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=2048,
+        )
+        return {
+            "review": result["content"],
+            "model": result.get("model", ""),
+            "usage": result.get("usage", {}),
+        }
+    except LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.get("/test-connection")
