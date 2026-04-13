@@ -212,6 +212,120 @@ async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
         raise HTTPException(status_code=502, detail=str(e))
 
 
+class MarketingRequest(BaseModel):
+    """Request for AI-generated marketing text."""
+
+    field: str = Field(
+        ...,
+        description="Which field to generate: html_description, backpage_description, backpage_author_bio, keywords",
+    )
+    book_title: str = Field(..., min_length=1)
+    author: str = Field(default="")
+    genre: str = Field(default="")
+    language: str = Field(default="de")
+    description: str = Field(default="", description="Existing book description for context")
+    chapter_titles: list[str] = Field(default_factory=list, description="Chapter titles for context")
+    existing_text: str = Field(default="", description="Current field value to refine")
+
+
+_MARKETING_PROMPTS: dict[str, str] = {
+    "html_description": """Write a compelling book description for an online book store (e.g. Amazon KDP).
+
+Rules:
+- Use simple HTML: <p>, <b>, <i>, <br> tags only. No headings, no lists.
+- 150-300 words.
+- Start with a hook that grabs attention.
+- Describe the premise without spoilers.
+- End with a question or teaser that makes the reader want to buy.
+- Do NOT include the title or author name in the description.
+- Write in {language}.""",
+
+    "backpage_description": """Write a back cover description for a printed book.
+
+Rules:
+- Plain text, no HTML.
+- 80-150 words (must fit on a physical back cover).
+- Concise, punchy, enticing.
+- Write in {language}.""",
+
+    "backpage_author_bio": """Write a short author biography for the back cover of a book.
+
+Rules:
+- Plain text, no HTML.
+- 50-100 words.
+- Third person ("The author..." / "Der Autor...").
+- Professional but warm tone.
+- If no specific details are provided, write a plausible generic bio based on the genre.
+- Write in {language}.""",
+
+    "keywords": """Generate 7 Amazon KDP keywords (search terms) for this book.
+
+Rules:
+- Return ONLY a JSON array of strings, e.g. ["keyword 1", "keyword 2", ...]
+- Each keyword can be a phrase (2-4 words are ideal for Amazon).
+- Focus on what readers would search for.
+- Include genre terms, theme terms, and comparable-title terms.
+- No duplicates, no single-character entries.
+- Write keywords in {language}.""",
+}
+
+
+def _build_marketing_prompt(field: str, req: MarketingRequest) -> tuple[str, str]:
+    """Build system and user prompts for marketing text generation."""
+    lang_map = {"de": "German", "en": "English", "es": "Spanish", "fr": "French",
+                "el": "Greek", "pt": "Portuguese", "tr": "Turkish", "ja": "Japanese"}
+    lang_name = lang_map.get(req.language, req.language)
+
+    system = _MARKETING_PROMPTS[field].replace("{language}", lang_name)
+
+    parts = [f"Title: {req.book_title}"]
+    if req.author:
+        parts.append(f"Author: {req.author}")
+    if req.genre:
+        parts.append(f"Genre: {req.genre}")
+    if req.description:
+        parts.append(f"Description: {req.description}")
+    if req.chapter_titles:
+        parts.append(f"Chapter titles: {', '.join(req.chapter_titles[:20])}")
+    if req.existing_text:
+        parts.append(f"\nCurrent text to improve:\n{req.existing_text}")
+
+    return system, "\n".join(parts)
+
+
+@router.post("/generate-marketing")
+async def generate_marketing(req: MarketingRequest) -> dict[str, Any]:
+    """Generate marketing text (blurb, backpage, bio, keywords) for a book."""
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    if req.field not in _MARKETING_PROMPTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown field: {req.field}. Must be one of: {', '.join(_MARKETING_PROMPTS)}",
+        )
+
+    client = _get_client()
+    system_prompt, user_prompt = _build_marketing_prompt(req.field, req)
+
+    try:
+        result = await client.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=1024,
+        )
+        return {
+            "content": result["content"],
+            "field": req.field,
+            "model": result.get("model", ""),
+            "usage": result.get("usage", {}),
+        }
+    except LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @router.get("/test-connection")
 async def test_connection() -> dict[str, Any]:
     """Test the current AI configuration with a minimal request."""

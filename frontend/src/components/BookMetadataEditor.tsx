@@ -1,10 +1,11 @@
 import {useState, useEffect} from "react";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookVoice, Book, BookAudiobook, BookDetail, formatVoiceLabel} from "../api/client";
-import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
+import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
+import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
 import * as Tabs from "@radix-ui/react-tabs";
@@ -25,6 +26,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
+    const [aiGenerating, setAiGenerating] = useState<string | null>(null);
+    const {status: pluginStatus} = useEditorPluginStatus();
 
     useEffect(() => {
         setForm({
@@ -90,6 +93,53 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
         }));
         setShowCopyDialog(false);
         notify.success(t("ui.metadata.copy_success", "Verlag und Autoren-Info übernommen"));
+    };
+
+    const aiAvailable = isPluginAvailable(pluginStatus, "ai");
+
+    const handleAiGenerate = async (field: string) => {
+        setAiGenerating(field);
+        try {
+            const res = await fetch("/api/ai/generate-marketing", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    field,
+                    book_title: book.title,
+                    author: book.author,
+                    genre: book.genre || "",
+                    language: book.language || "de",
+                    description: book.description || "",
+                    chapter_titles: book.chapters.map((ch) => ch.title),
+                    existing_text: field === "keywords" ? "" : (form[field] || ""),
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: "AI generation failed"}));
+                notify.error(err.detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+            } else {
+                const data = await res.json();
+                if (field === "keywords") {
+                    try {
+                        const parsed = JSON.parse(data.content);
+                        if (Array.isArray(parsed)) {
+                            setKeywords(parsed.map(String).filter(Boolean));
+                            notify.success(t("ui.metadata.ai_keywords_generated", "Keywords generiert"));
+                        } else {
+                            notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+                        }
+                    } catch {
+                        notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+                    }
+                } else {
+                    set(field, data.content || "");
+                    notify.success(t("ui.metadata.ai_text_generated", "Text generiert"));
+                }
+            }
+        } catch {
+            notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+        }
+        setAiGenerating(null);
     };
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
@@ -187,7 +237,22 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                 <Tabs.Content value="marketing">
                     <div style={styles.tabContent}>
                         <div className="field">
-                            <label className="label">{t("ui.metadata.keywords", "Schluesselwoerter")}</label>
+                            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4}}>
+                                <label className="label" style={{marginBottom: 0}}>{t("ui.metadata.keywords", "Schluesselwoerter")}</label>
+                                {aiAvailable && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        disabled={aiGenerating === "keywords"}
+                                        onClick={() => handleAiGenerate("keywords")}
+                                        title={t("ui.metadata.ai_generate_keywords", "Keywords mit AI generieren")}
+                                        style={{fontSize: "0.75rem", padding: "2px 8px", display: "flex", alignItems: "center", gap: 4}}
+                                    >
+                                        <Sparkles size={12}/>
+                                        {aiGenerating === "keywords" ? t("ui.common.loading", "Laden...") : t("ui.metadata.ai_generate", "AI")}
+                                    </button>
+                                )}
+                            </div>
                             <KeywordInput keywords={keywords} onChange={setKeywords}/>
                         </div>
                         <HtmlFieldWithPreview
@@ -195,6 +260,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             value={form.html_description}
                             onChange={(v) => set("html_description", v)}
                             maxChars={4000}
+                            aiButton={aiAvailable ? {
+                                loading: aiGenerating === "html_description",
+                                onClick: () => handleAiGenerate("html_description"),
+                                label: aiGenerating === "html_description" ? t("ui.common.loading", "Laden...") : t("ui.metadata.ai_generate", "AI"),
+                            } : undefined}
                         />
                         <HtmlFieldWithPreview
                             label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")}
@@ -202,12 +272,22 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             onChange={(v) => set("backpage_description", v)}
                             maxChars={600}
                             rows={4}
+                            aiButton={aiAvailable ? {
+                                loading: aiGenerating === "backpage_description",
+                                onClick: () => handleAiGenerate("backpage_description"),
+                                label: aiGenerating === "backpage_description" ? t("ui.common.loading", "Laden...") : t("ui.metadata.ai_generate", "AI"),
+                            } : undefined}
                         />
                         <HtmlFieldWithPreview
                             label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")}
                             value={form.backpage_author_bio}
                             onChange={(v) => set("backpage_author_bio", v)}
                             maxChars={2000}
+                            aiButton={aiAvailable ? {
+                                loading: aiGenerating === "backpage_author_bio",
+                                onClick: () => handleAiGenerate("backpage_author_bio"),
+                                label: aiGenerating === "backpage_author_bio" ? t("ui.common.loading", "Laden...") : t("ui.metadata.ai_generate", "AI"),
+                            } : undefined}
                         />
                     </div>
                 </Tabs.Content>
@@ -334,12 +414,13 @@ export function sanitizeAmazonHtml(html: string): string {
 }
 
 /** Integrated HTML field: toggle between editable textarea and sanitized preview. */
-export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8}: {
+export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8, aiButton}: {
     label: string;
     value: string | null | undefined;
     onChange: (v: string) => void;
     maxChars?: number;
     rows?: number;
+    aiButton?: {loading: boolean; onClick: () => void; label: string};
 }) {
     const {t} = useI18n();
     const [showPreview, setShowPreview] = useState(false);
@@ -349,17 +430,31 @@ export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8
         <div className="field" style={{flex: 1}}>
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4}}>
                 <label className="label" style={{marginBottom: 0}}>{label}</label>
-                <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowPreview((s) => !s)}
-                    data-testid="html-preview-toggle"
-                    style={{fontSize: "0.75rem", padding: "2px 8px"}}
-                >
-                    {showPreview
-                        ? t("ui.metadata.html_field_show_source", "HTML anzeigen")
-                        : t("ui.metadata.html_field_show_preview", "Vorschau anzeigen")}
-                </button>
+                <div style={{display: "flex", gap: 4}}>
+                    {aiButton && (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            disabled={aiButton.loading}
+                            onClick={aiButton.onClick}
+                            style={{fontSize: "0.75rem", padding: "2px 8px", display: "flex", alignItems: "center", gap: 4}}
+                        >
+                            <Sparkles size={12}/>
+                            {aiButton.label}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setShowPreview((s) => !s)}
+                        data-testid="html-preview-toggle"
+                        style={{fontSize: "0.75rem", padding: "2px 8px"}}
+                    >
+                        {showPreview
+                            ? t("ui.metadata.html_field_show_source", "HTML anzeigen")
+                            : t("ui.metadata.html_field_show_preview", "Vorschau anzeigen")}
+                    </button>
+                </div>
             </div>
             {showPreview ? (
                 <div

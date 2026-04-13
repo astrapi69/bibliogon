@@ -459,6 +459,11 @@ ui:
     copy_from: "Von Buch übernehmen"
     copy_hint: "Übernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:"
     copy_success: "Verlag und Autoren-Info übernommen"
+    ai_generate: "AI"
+    ai_generate_keywords: "Keywords mit AI generieren"
+    ai_generate_error: "AI-Generierung fehlgeschlagen"
+    ai_text_generated: "Text generiert"
+    ai_keywords_generated: "Keywords generiert"
     html_field_show_preview: "Vorschau anzeigen"
     html_field_show_source: "HTML anzeigen"
   cover:

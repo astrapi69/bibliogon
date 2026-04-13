@@ -25,7 +25,7 @@ Building on the multi-provider foundation, extend AI into the writing workflow.
 - [x] AI-04: connection test with error-specific feedback (7 error categories)
 - [x] AI-05: AI enable/disable toggle (default: off)
 - [x] AI-06: AI-assisted chapter review (style, coherence, pacing suggestions)
-- [ ] AI-07: AI-assisted book blurb and marketing text generation
+- [x] AI-07: AI-assisted book blurb and marketing text generation
 - [ ] AI-08: context-aware AI prompts (pass chapter context, book metadata, genre)
 - [ ] AI-09: AI usage tracking per book (token count, cost estimate display)
 

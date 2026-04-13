@@ -458,6 +458,11 @@ ui:
     copy_from: "Αντιγραφή από βιβλίο"
     copy_hint: "Αντιγράφει εκδότη, βιογραφικό και CSS:"
     copy_success: "Πληροφορίες εκδότη και συγγραφέα εφαρμόστηκαν"
+    ai_generate: "AI"
+    ai_generate_keywords: "Δημιουργία λέξεων-κλειδιών με AI"
+    ai_generate_error: "Η δημιουργία AI απέτυχε"
+    ai_text_generated: "Κείμενο δημιουργήθηκε"
+    ai_keywords_generated: "Λέξεις-κλειδιά δημιουργήθηκαν"
     html_field_show_preview: "Εμφάνιση προεπισκόπησης"
     html_field_show_source: "Εμφάνιση HTML"
   cover:

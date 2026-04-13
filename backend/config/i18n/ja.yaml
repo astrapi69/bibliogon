@@ -458,6 +458,11 @@ ui:
         copy_from: "書籍からコピー"
         copy_hint: "出版社、略歴、CSSをコピー："
         copy_success: "出版社と著者情報を適用しました"
+        ai_generate: "AI"
+        ai_generate_keywords: "AIでキーワードを生成"
+        ai_generate_error: "AI生成に失敗しました"
+        ai_text_generated: "テキストが生成されました"
+        ai_keywords_generated: "キーワードが生成されました"
         html_field_show_preview: "プレビューを表示"
         html_field_show_source: "HTMLを表示"
     cover:

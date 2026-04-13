@@ -458,6 +458,11 @@ ui:
         copy_from: "Copiar de livro"
         copy_hint: "Copia editora, biografia e CSS:"
         copy_success: "Informacoes de editora e autor aplicadas"
+        ai_generate: "AI"
+        ai_generate_keywords: "Gerar palavras-chave com AI"
+        ai_generate_error: "Geracao AI falhou"
+        ai_text_generated: "Texto gerado"
+        ai_keywords_generated: "Palavras-chave geradas"
         html_field_show_preview: "Mostrar pre-visualizacao"
         html_field_show_source: "Mostrar HTML"
     cover:

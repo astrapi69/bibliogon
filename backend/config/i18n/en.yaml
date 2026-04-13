@@ -459,6 +459,11 @@ ui:
     copy_from: "Copy from Book"
     copy_hint: "Copies publisher, author bio and CSS from another book:"
     copy_success: "Publisher and author info applied"
+    ai_generate: "AI"
+    ai_generate_keywords: "Generate keywords with AI"
+    ai_generate_error: "AI generation failed"
+    ai_text_generated: "Text generated"
+    ai_keywords_generated: "Keywords generated"
     html_field_show_preview: "Show preview"
     html_field_show_source: "Show HTML"
   cover:
