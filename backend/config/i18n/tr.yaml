@@ -429,6 +429,9 @@ ui:
         copy_from: "Kitaptan kopyala"
         copy_hint: "Yayinevi, biyografi ve CSS kopyalar:"
         copy_success: "Yayinevi ve yazar bilgileri uygulandi"
+        html_preview_show: "Onizlemeyi goster"
+        html_preview_hide: "Onizlemeyi gizle"
+        html_preview_hint: "Amazon KDP uzerindeki yaklasik gorunum. Piksel duzeyinde degil."
     cover:
         choose_file: "Dosya sec"
         uploading: "Yukleniyor..."

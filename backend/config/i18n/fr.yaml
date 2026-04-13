@@ -429,6 +429,9 @@ ui:
     copy_from: "Copier d'un livre"
     copy_hint: "Copie editeur, bio auteur et CSS d'un autre livre:"
     copy_success: "Informations editeur et auteur appliquees"
+    html_preview_show: "Afficher l'apercu"
+    html_preview_hide: "Masquer l'apercu"
+    html_preview_hint: "Rendu approximatif sur Amazon KDP. Pas au pixel pres."
   cover:
     choose_file: "Choisir un fichier"
     uploading: "Telechargement..."

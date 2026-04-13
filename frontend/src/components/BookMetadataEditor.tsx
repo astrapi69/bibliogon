@@ -1,4 +1,5 @@
 import {useState, useEffect} from "react";
+import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookVoice, Book, BookAudiobook, BookDetail, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package} from "lucide-react";
 import {notify} from "../utils/notify";
@@ -189,6 +190,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                         </div>
                         <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
                             onChange={(v) => set("html_description", v)} multiline maxChars={4000}/>
+                        <HtmlDescriptionPreview html={form.html_description || ""} />
                         <Field label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")} value={form.backpage_description}
                             onChange={(v) => set("backpage_description", v)} multiline maxChars={600}/>
                         <Field label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")} value={form.backpage_author_bio}
@@ -300,6 +302,53 @@ function CharCounter({count, max, label}: {count: number; max: number; label: st
         >
             {count} / {max} {label}
         </small>
+    );
+}
+
+/** Amazon KDP allows only a limited subset of HTML tags. */
+const AMAZON_ALLOWED_TAGS = ["b", "strong", "i", "em", "u", "ul", "ol", "li", "h4", "h5", "h6", "p", "br"];
+
+/** Sanitize HTML to only Amazon-compatible tags. */
+export function sanitizeAmazonHtml(html: string): string {
+    return DOMPurify.sanitize(html, {ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: []});
+}
+
+function HtmlDescriptionPreview({html}: {html: string}) {
+    const {t} = useI18n();
+    const [showPreview, setShowPreview] = useState(false);
+
+    if (!html.trim()) return null;
+
+    return (
+        <div style={{marginBottom: 12}}>
+            <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowPreview(!showPreview)}
+                style={{marginBottom: 6, fontSize: "0.8125rem"}}
+            >
+                {showPreview
+                    ? t("ui.metadata.html_preview_hide", "Vorschau ausblenden")
+                    : t("ui.metadata.html_preview_show", "Vorschau anzeigen")}
+            </button>
+            {showPreview && (
+                <div style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    padding: "12px 16px",
+                    background: "var(--bg-secondary)",
+                    fontSize: "0.875rem",
+                    lineHeight: 1.6,
+                }}>
+                    <small style={{display: "block", marginBottom: 8, color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                        {t("ui.metadata.html_preview_hint", "Ungefaehre Darstellung auf Amazon KDP. Nicht pixelgenau.")}
+                    </small>
+                    <div
+                        className="amazon-description-preview"
+                        dangerouslySetInnerHTML={{__html: sanitizeAmazonHtml(html)}}
+                    />
+                </div>
+            )}
+        </div>
     );
 }
 

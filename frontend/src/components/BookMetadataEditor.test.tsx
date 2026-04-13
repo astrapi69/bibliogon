@@ -284,3 +284,77 @@ describe("BookMetadataEditor", () => {
     expect(audioTab.getAttribute("role")).toBe("tab")
   })
 })
+
+// --- HTML description preview sanitization ---
+
+import {sanitizeAmazonHtml} from "./BookMetadataEditor"
+
+describe("sanitizeAmazonHtml", () => {
+  it("preserves allowed Amazon tags", () => {
+    const html = "<b>bold</b> <i>italic</i> <em>em</em> <strong>strong</strong> <u>underline</u>"
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<b>bold</b>")
+    expect(result).toContain("<i>italic</i>")
+    expect(result).toContain("<em>em</em>")
+    expect(result).toContain("<strong>strong</strong>")
+    expect(result).toContain("<u>underline</u>")
+  })
+
+  it("preserves list tags", () => {
+    const html = "<ul><li>item 1</li><li>item 2</li></ul>"
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<ul>")
+    expect(result).toContain("<li>")
+  })
+
+  it("preserves allowed heading tags", () => {
+    const html = "<h4>heading 4</h4><h5>heading 5</h5><h6>heading 6</h6>"
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<h4>")
+    expect(result).toContain("<h5>")
+    expect(result).toContain("<h6>")
+  })
+
+  it("preserves paragraph and break tags", () => {
+    const html = "<p>paragraph</p><br>"
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<p>")
+    expect(result).toContain("<br>")
+  })
+
+  it("strips script tags", () => {
+    const html = '<b>safe</b><script>alert("xss")</script>'
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<b>safe</b>")
+    expect(result).not.toContain("script")
+    expect(result).not.toContain("alert")
+  })
+
+  it("strips style tags", () => {
+    const html = "<p>text</p><style>body{color:red}</style>"
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<p>text</p>")
+    expect(result).not.toContain("style")
+    expect(result).not.toContain("color")
+  })
+
+  it("strips iframe tags", () => {
+    const html = '<p>safe</p><iframe src="evil.com"></iframe>'
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<p>safe</p>")
+    expect(result).not.toContain("iframe")
+  })
+
+  it("strips all attributes", () => {
+    const html = '<b style="color:red" class="big" onclick="alert()">text</b>'
+    const result = sanitizeAmazonHtml(html)
+    expect(result).toContain("<b>text</b>")
+    expect(result).not.toContain("style")
+    expect(result).not.toContain("class")
+    expect(result).not.toContain("onclick")
+  })
+
+  it("returns empty string for empty input", () => {
+    expect(sanitizeAmazonHtml("")).toBe("")
+  })
+})

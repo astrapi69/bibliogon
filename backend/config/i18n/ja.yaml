@@ -396,6 +396,9 @@ ui:
         copy_from: "書籍からコピー"
         copy_hint: "出版社、略歴、CSSをコピー："
         copy_success: "出版社と著者情報を適用しました"
+        html_preview_show: "プレビューを表示"
+        html_preview_hide: "プレビューを非表示"
+        html_preview_hint: "Amazon KDPでの概算表示。ピクセル単位では正確ではありません。"
     cover:
         choose_file: "ファイルを選択"
         uploading: "アップロード中..."

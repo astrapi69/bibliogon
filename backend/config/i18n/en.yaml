@@ -396,6 +396,9 @@ ui:
     copy_from: "Copy from Book"
     copy_hint: "Copies publisher, author bio and CSS from another book:"
     copy_success: "Publisher and author info applied"
+    html_preview_show: "Show preview"
+    html_preview_hide: "Hide preview"
+    html_preview_hint: "Approximate rendering on Amazon KDP. Not pixel-perfect."
   cover:
     choose_file: "Choose file"
     uploading: "Uploading..."
