@@ -126,10 +126,10 @@ Expected delta: +64 backend tests, +5 E2E tests.
 ### Phase 2: Standard (Category C) - fill organic gaps
 Expected delta: ~30-40 tests across backend and plugins.
 
-- [ ] CW-08: `useTheme.ts` hook tests
-- [ ] CW-09: `pandoc_runner.py` tests (export plugin)
-- [ ] CW-10: `backup_history.py` + `GET /api/backup/history` tests
-- [ ] CW-11: `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` tests
+- [x] CW-08: `useTheme.ts` hook tests
+- [x] CW-09: `pandoc_runner.py` tests (export plugin)
+- [x] CW-10: `backup_history.py` + `GET /api/backup/history` tests
+- [x] CW-11: `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` tests
 - [ ] CW-12: plugin `routes.py` integration tests (grammar, kdp, kinderbuch, translation)
 - [ ] CW-13: audiobook dry-run + preview endpoint tests
 - [ ] CW-14: Google Cloud TTS config endpoint tests
