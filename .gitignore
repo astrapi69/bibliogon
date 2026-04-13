@@ -57,4 +57,4 @@ build/
 # prompt files
 /docs/backlog.md
 /tmp/todo-prompts.md
-/docs/chat-journal-session-*.md
+/docs/journal/chat-journal-session-*.md
