@@ -238,7 +238,7 @@ but the release is still out.
 
 ## Step 11: Post-release documentation
 
-- `docs/chat-journal-session-{today}.md`:
+- `docs/journal/chat-journal-session-{today}.md`:
   release entry with version, date, main changes, deploy time
 - `ROADMAP.md`:
   mark every item included in the release as `[x]`

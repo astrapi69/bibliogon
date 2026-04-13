@@ -263,7 +263,7 @@ become visible.
 Rule: before implementing a larger architectural decision, check:
 1. ROADMAP entries in the area
 2. todo-prompts.md for already-planned changes
-3. docs/chat-journal for earlier discussed decisions
+3. docs/journal/ for earlier discussed decisions
 
 On a conflict between a user instruction and documented planning:
 STOP and explicitly ask the user which version applies.

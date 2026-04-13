@@ -143,7 +143,7 @@ Numbers that change with every feature or test session live in ONE canonical loc
 
 Every session is documented. This is mandatory, not optional. The documentation serves as a retrospective and as a knowledge base for future sessions.
 
-### Chat journal (docs/chat-journal-session-{YYYY-MM-DD}.md)
+### Chat journal (docs/journal/chat-journal-session-{YYYY-MM-DD}.md)
 
 Every relevant step of the work is recorded. Format per entry:
 
