@@ -438,6 +438,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 body: JSON.stringify({
                     prompt: selectedText,
                     system: basePrompts[aiPromptType],
+                    book_id: bookId || "",
                 }),
             });
             if (!res.ok) {
@@ -488,6 +489,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                     genre: bookContext?.genre || "",
                     language: bookContext?.language || document.documentElement.getAttribute("lang") || "de",
                     focus: ["style", "coherence", "pacing"],
+                    book_id: bookId || "",
                 }),
             });
             if (!res.ok) {

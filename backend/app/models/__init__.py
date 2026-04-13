@@ -78,6 +78,8 @@ class Book(Base):
 
     # AI-assisted content flag (for KDP/export metadata)
     ai_assisted: Mapped[bool] = mapped_column(default=False)
+    # Cumulative AI token usage for this book (prompt + completion tokens)
+    ai_tokens_used: Mapped[int] = mapped_column(default=0)
 
     # Audiobook / TTS settings per book
     tts_engine: Mapped[str | None] = mapped_column(String(50), nullable=True)

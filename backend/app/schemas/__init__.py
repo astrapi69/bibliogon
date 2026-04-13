@@ -80,6 +80,7 @@ class BookUpdate(BaseModel):
     custom_css: str | None = None
     # AI-assisted content flag
     ai_assisted: bool | None = None
+    ai_tokens_used: int | None = None
 
     @field_validator("keywords", mode="before")
     @classmethod
@@ -159,6 +160,7 @@ class BookOut(BaseModel):
     cover_image: str | None = None
     custom_css: str | None = None
     ai_assisted: bool = False
+    ai_tokens_used: int = 0
     tts_engine: str | None = None
     tts_voice: str | None = None
     tts_language: str | None = None

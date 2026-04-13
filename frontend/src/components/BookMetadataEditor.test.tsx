@@ -85,6 +85,7 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     cover_image: null,
     custom_css: null,
     ai_assisted: false,
+    ai_tokens_used: 0,
     tts_engine: null,
     tts_voice: null,
     tts_language: null,

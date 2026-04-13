@@ -496,6 +496,8 @@ ui:
         ai_generate_error: "AI olusturma basarisiz"
         ai_text_generated: "Metin olusturuldu"
         ai_keywords_generated: "Anahtar kelimeler olusturuldu"
+        ai_usage: "AI kullanimi"
+        ai_cost_hint: "Tipik saglayici fiyatlarina gore tahmini maliyet"
         html_field_show_preview: "Onizlemeyi goster"
         html_field_show_source: "HTML goster"
     cover:

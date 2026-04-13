@@ -496,6 +496,8 @@ ui:
     ai_generate_error: "Generation AI echouee"
     ai_text_generated: "Texte genere"
     ai_keywords_generated: "Mots-cles generes"
+    ai_usage: "Utilisation AI"
+    ai_cost_hint: "Cout estime base sur les tarifs typiques des fournisseurs"
     html_field_show_preview: "Afficher l'apercu"
     html_field_show_source: "Afficher le HTML"
   cover:

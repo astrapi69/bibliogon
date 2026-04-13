@@ -463,6 +463,8 @@ ui:
     ai_generate_error: "Η δημιουργία AI απέτυχε"
     ai_text_generated: "Κείμενο δημιουργήθηκε"
     ai_keywords_generated: "Λέξεις-κλειδιά δημιουργήθηκαν"
+    ai_usage: "Χρήση AI"
+    ai_cost_hint: "Εκτιμώμενο κόστος βάσει τυπικών τιμών παρόχων"
     html_field_show_preview: "Εμφάνιση προεπισκόπησης"
     html_field_show_source: "Εμφάνιση HTML"
   cover:

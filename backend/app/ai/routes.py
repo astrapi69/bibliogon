@@ -13,6 +13,26 @@ from .providers import PROVIDER_PRESETS
 
 logger = logging.getLogger(__name__)
 
+
+def _track_usage(book_id: str, usage: dict[str, int]) -> None:
+    """Increment ai_tokens_used on a book. Best-effort, never raises."""
+    total = usage.get("total_tokens", 0) or (
+        usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+    )
+    if not total or not book_id:
+        return
+    try:
+        from app.database import SessionLocal
+        from app.models import Book
+
+        with SessionLocal() as db:
+            book = db.query(Book).filter(Book.id == book_id).first()
+            if book:
+                book.ai_tokens_used = (book.ai_tokens_used or 0) + total
+                db.commit()
+    except Exception:
+        logger.debug("Failed to track AI usage for book %s", book_id, exc_info=True)
+
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
@@ -64,6 +84,7 @@ class GenerateRequest(BaseModel):
     system: str = Field(default="")
     model: str = Field(default="")
     temperature: float | None = Field(default=None, ge=0, le=2)
+    book_id: str = Field(default="", description="Book ID for usage tracking")
 
 
 class ReviewRequest(BaseModel):
@@ -78,6 +99,7 @@ class ReviewRequest(BaseModel):
         default_factory=lambda: ["style", "coherence", "pacing"],
         description="Review focus areas: style, coherence, pacing, dialogue, tension",
     )
+    book_id: str = Field(default="", description="Book ID for usage tracking")
 
 
 @router.post("/chat")
@@ -98,19 +120,24 @@ async def chat_completion(req: ChatRequest) -> dict[str, Any]:
 
 
 @router.post("/generate")
-async def generate_text(req: GenerateRequest) -> dict[str, str]:
+async def generate_text(req: GenerateRequest) -> dict[str, Any]:
     """Simple text generation with optional system prompt."""
     if not _is_ai_enabled():
         raise HTTPException(status_code=403, detail="AI features are disabled")
     client = _get_client()
+    messages: list[dict[str, str]] = []
+    if req.system:
+        messages.append({"role": "system", "content": req.system})
+    messages.append({"role": "user", "content": req.prompt})
     try:
-        content = await client.generate(
-            prompt=req.prompt,
-            system=req.system,
+        result = await client.chat(
+            messages=messages,
             model=req.model,
             temperature=req.temperature,
         )
-        return {"content": content}
+        usage = result.get("usage", {})
+        _track_usage(req.book_id, usage)
+        return {"content": result["content"], "usage": usage}
     except LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -208,10 +235,12 @@ async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
             ],
             max_tokens=2048,
         )
+        usage = result.get("usage", {})
+        _track_usage(req.book_id, usage)
         return {
             "review": result["content"],
             "model": result.get("model", ""),
-            "usage": result.get("usage", {}),
+            "usage": usage,
         }
     except LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -231,6 +260,7 @@ class MarketingRequest(BaseModel):
     description: str = Field(default="", description="Existing book description for context")
     chapter_titles: list[str] = Field(default_factory=list, description="Chapter titles for context")
     existing_text: str = Field(default="", description="Current field value to refine")
+    book_id: str = Field(default="", description="Book ID for usage tracking")
 
 
 _MARKETING_PROMPTS: dict[str, str] = {
@@ -321,11 +351,13 @@ async def generate_marketing(req: MarketingRequest) -> dict[str, Any]:
             ],
             max_tokens=1024,
         )
+        usage = result.get("usage", {})
+        _track_usage(req.book_id, usage)
         return {
             "content": result["content"],
             "field": req.field,
             "model": result.get("model", ""),
-            "usage": result.get("usage", {}),
+            "usage": usage,
         }
     except LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))

@@ -55,6 +55,7 @@ export interface Book {
     cover_image: string | null;
     custom_css: string | null;
     ai_assisted: boolean;
+    ai_tokens_used: number;
     tts_engine: string | null;
     tts_voice: string | null;
     tts_language: string | null;

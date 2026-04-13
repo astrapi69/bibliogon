@@ -112,6 +112,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                     description: book.description || "",
                     chapter_titles: book.chapters.map((ch) => ch.title),
                     existing_text: field === "keywords" ? "" : (form[field] || ""),
+                    book_id: book.id,
                 }),
             });
             if (!res.ok) {
@@ -236,6 +237,23 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
 
                 <Tabs.Content value="marketing">
                     <div style={styles.tabContent}>
+                        {book.ai_tokens_used > 0 && (
+                            <div style={{
+                                display: "flex", alignItems: "center", gap: 8,
+                                padding: "8px 12px", marginBottom: 12,
+                                background: "var(--bg-surface, var(--bg-card))", borderRadius: "var(--radius-sm)",
+                                fontSize: "0.75rem", color: "var(--text-muted)",
+                            }}>
+                                <Sparkles size={14}/>
+                                <span>
+                                    {t("ui.metadata.ai_usage", "AI-Nutzung")}: {book.ai_tokens_used.toLocaleString()} Tokens
+                                    {" "}
+                                    <span title={t("ui.metadata.ai_cost_hint", "Geschaetzte Kosten basierend auf typischen Anbieterpreisen")}>
+                                        (~${(book.ai_tokens_used * 0.000003).toFixed(4)}{" - "}${(book.ai_tokens_used * 0.000015).toFixed(4)})
+                                    </span>
+                                </span>
+                            </div>
+                        )}
                         <div className="field">
                             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4}}>
                                 <label className="label" style={{marginBottom: 0}}>{t("ui.metadata.keywords", "Schluesselwoerter")}</label>

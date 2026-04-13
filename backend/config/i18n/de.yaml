@@ -464,6 +464,8 @@ ui:
     ai_generate_error: "AI-Generierung fehlgeschlagen"
     ai_text_generated: "Text generiert"
     ai_keywords_generated: "Keywords generiert"
+    ai_usage: "AI-Nutzung"
+    ai_cost_hint: "Geschätzte Kosten basierend auf typischen Anbieterpreisen"
     html_field_show_preview: "Vorschau anzeigen"
     html_field_show_source: "HTML anzeigen"
   cover:

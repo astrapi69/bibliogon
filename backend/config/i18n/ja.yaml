@@ -463,6 +463,8 @@ ui:
         ai_generate_error: "AI生成に失敗しました"
         ai_text_generated: "テキストが生成されました"
         ai_keywords_generated: "キーワードが生成されました"
+        ai_usage: "AI使用量"
+        ai_cost_hint: "一般的なプロバイダー料金に基づく推定コスト"
         html_field_show_preview: "プレビューを表示"
         html_field_show_source: "HTMLを表示"
     cover:
