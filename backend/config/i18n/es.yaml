@@ -114,6 +114,10 @@ ui:
     ai_applied: "Sugerencia AI aplicada"
     ai_error: "Servidor AI no disponible"
     ai_select_text: "Selecciona texto primero para sugerencias AI"
+    recovery_title: "Cambios no guardados encontrados"
+    recovery_desc: "Se encontraron cambios del {timestamp} que no se guardaron en el servidor. Restaurar?"
+    recovery_restore: "Restaurar"
+    recovery_discard: "Descartar"
   sidebar:
     manuscript: "Manuscrito"
     content: "Contenido"

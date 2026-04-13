@@ -114,6 +114,10 @@ ui:
     toc_invalid: "Ungültige Links"
     toc_error: "Fehler bei der TOC-Validierung."
     ai_select_text: "Markiere zuerst einen Text für AI-Vorschlaege"
+    recovery_title: "Ungespeicherte Änderungen gefunden"
+    recovery_desc: "Änderungen vom {timestamp} gefunden, die nicht auf dem Server gespeichert wurden. Wiederherstellen?"
+    recovery_restore: "Wiederherstellen"
+    recovery_discard: "Verwerfen"
   sidebar:
     manuscript: "Manuskript"
     content: "Inhalt"

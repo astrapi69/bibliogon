@@ -1,6 +1,7 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
+import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -70,6 +71,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const [editingGoal, setEditingGoal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [replaceTerm, setReplaceTerm] = useState("");
+    const [recoveryDraft, setRecoveryDraft] = useState<{content: string; savedAt: number} | null>(null);
+    const serverContentHash = useRef(hashContent(content));
+    const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [markdownText, setMarkdownText] = useState("");
 
     const debouncedSave = useCallback(
@@ -80,14 +84,25 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 if (json !== lastSaved.current) {
                     lastSaved.current = json;
                     onSave(json);
+                    // Delete draft on successful server save
+                    if (chapterId) deleteDraft(chapterId);
+                    serverContentHash.current = hashContent(json);
                     setSaveStatus("saved");
                     setTimeout(() => setSaveStatus("idle"), 2000);
                 } else {
                     setSaveStatus("idle");
                 }
             }, 800);
+
+            // Save draft to IndexedDB (2s debounce, parallel to server save)
+            if (chapterId && bookId) {
+                if (draftTimer.current) clearTimeout(draftTimer.current);
+                draftTimer.current = setTimeout(() => {
+                    saveDraft(chapterId, bookId, json, serverContentHash.current);
+                }, 2000);
+            }
         },
-        [onSave]
+        [onSave, chapterId, bookId]
     );
 
     const parseContent = (raw: string): Record<string, unknown> | string => {
@@ -210,6 +225,21 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             }
         }
     }, [content, editor]);
+
+    // Check for recovery draft when chapter loads
+    useEffect(() => {
+        if (!chapterId || !editor) return;
+        const activeChapter = chapterId;
+        checkForRecovery(chapterId, content, new Date().toISOString()).then((draft) => {
+            if (draft && activeChapter === chapterId) {
+                setRecoveryDraft({content: draft.content, savedAt: draft.savedAt});
+            }
+        });
+        serverContentHash.current = hashContent(content);
+    }, [chapterId]);
+
+    // Cleanup old drafts on mount
+    useEffect(() => { cleanupOldDrafts(30); }, []);
 
     // Cleanup timer
     useEffect(() => {
@@ -412,8 +442,51 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
 
     const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
 
+    const handleRestore = () => {
+        if (editor && recoveryDraft) {
+            try {
+                const parsed = JSON.parse(recoveryDraft.content);
+                editor.commands.setContent(parsed);
+                const json = recoveryDraft.content;
+                lastSaved.current = json;
+                onSave(json);
+                if (chapterId) deleteDraft(chapterId);
+            } catch {
+                // Corrupt draft - discard
+                if (chapterId) deleteDraft(chapterId);
+            }
+        }
+        setRecoveryDraft(null);
+    };
+
+    const handleDiscardDraft = () => {
+        if (chapterId) deleteDraft(chapterId);
+        setRecoveryDraft(null);
+    };
+
     return (
         <div style={styles.wrapper}>
+            {/* Recovery dialog */}
+            {recoveryDraft && (
+                <div style={styles.recoveryBanner}>
+                    <div style={{flex: 1}}>
+                        <strong>{t("ui.editor.recovery_title", "Ungespeicherte Aenderungen gefunden")}</strong>
+                        <p style={{margin: "4px 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)"}}>
+                            {t("ui.editor.recovery_desc", "Aenderungen vom {timestamp} gefunden, die nicht gespeichert wurden.")
+                                .replace("{timestamp}", new Date(recoveryDraft.savedAt).toLocaleString())}
+                        </p>
+                    </div>
+                    <div style={{display: "flex", gap: 8}}>
+                        <button className="btn btn-primary btn-sm" onClick={handleRestore}>
+                            {t("ui.editor.recovery_restore", "Wiederherstellen")}
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={handleDiscardDraft}>
+                            {t("ui.editor.recovery_discard", "Verwerfen")}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <Toolbar
                 editor={editor}
                 markdownMode={markdownMode}
@@ -906,6 +979,15 @@ const styles: Record<string, React.CSSProperties> = {
         flexDirection: "column",
         height: "100vh",
         overflow: "hidden",
+    },
+    recoveryBanner: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "10px 16px",
+        background: "rgba(251, 191, 36, 0.15)",
+        borderBottom: "1px solid rgba(251, 191, 36, 0.3)",
+        fontSize: "0.875rem",
     },
     searchBar: {
         display: "flex",
