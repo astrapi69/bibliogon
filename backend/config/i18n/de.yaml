@@ -493,6 +493,7 @@ ui:
     redo: "Wiederholen"
     search: "Suchen & Ersetzen"
     focus_mode: "Fokus-Modus"
+    style_check: "Stilprüfung"
     spellcheck: "Rechtschreibprüfung (LanguageTool)"
     tts_preview: "Vorhören (TTS)"
     ai_assistant: "KI-Assistent"

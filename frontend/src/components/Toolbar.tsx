@@ -33,6 +33,7 @@ import {
     SpellCheck,
     Headphones,
     Sparkles,
+    Wrench,
 } from "lucide-react";
 
 interface Props {
@@ -54,9 +55,12 @@ interface Props {
     aiDisabledReason?: string;
     /** Reason why spellcheck is disabled. */
     spellcheckDisabledReason?: string;
+    styleCheckActive?: boolean;
+    styleCheckLoading?: boolean;
+    onToggleStyleCheck?: () => void;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck}: Props) {
     const {t} = useI18n();
     if (!editor) return null;
 
@@ -333,6 +337,23 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     }}
                 >
                     <Focus size={16}/>
+                </button>
+            )}
+
+            {/* Style check toggle (ms-tools) */}
+            {onToggleStyleCheck && !markdownMode && (
+                <button
+                    onClick={onToggleStyleCheck}
+                    disabled={styleCheckLoading}
+                    title={t("ui.toolbar.style_check", "Stilpruefung")}
+                    data-testid="toolbar-style-check"
+                    style={{
+                        ...styles.button,
+                        ...(styleCheckActive ? styles.buttonActive : {}),
+                        ...(styleCheckLoading ? {opacity: 0.5, cursor: "wait"} : {}),
+                    }}
+                >
+                    <Wrench size={16}/>
                 </button>
             )}
 

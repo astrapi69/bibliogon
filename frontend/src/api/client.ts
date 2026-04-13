@@ -82,6 +82,15 @@ export interface Chapter {
     updated_at: string;
 }
 
+export interface StyleFinding {
+    type: string;
+    word: string;
+    offset: number;
+    length: number;
+    severity: "info" | "warning";
+    message: {de: string; en: string};
+}
+
 export interface BookCreate {
     title: string;
     subtitle?: string;
@@ -843,6 +852,34 @@ export const api = {
 
         manifests: () =>
             request<Record<string, Record<string, unknown>>>("/plugins/manifests"),
+    },
+
+    msTools: {
+        /** POST /api/ms-tools/check -> style analysis with findings */
+        check: (text: string, language: string = "de", bookId?: string) => {
+            const params = new URLSearchParams({text, language})
+            if (bookId) params.set("book_id", bookId)
+            return request<{
+                total_words: number;
+                total_sentences: number;
+                finding_count: number;
+                filler_count: number;
+                passive_count: number;
+                long_sentence_count: number;
+                repetition_count: number;
+                adverb_count: number;
+                adjective_count: number;
+                redundant_phrase_count: number;
+                filler_ratio: number;
+                passive_ratio: number;
+                adverb_ratio: number;
+                adjective_ratio: number;
+                findings: StyleFinding[];
+            }>("/ms-tools/check", {
+                method: "POST",
+                body: JSON.stringify({text, language, book_id: bookId}),
+            })
+        },
     },
 
     licenses: {

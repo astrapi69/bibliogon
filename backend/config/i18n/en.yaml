@@ -493,6 +493,7 @@ ui:
     redo: "Redo"
     search: "Search & Replace"
     focus_mode: "Focus mode"
+    style_check: "Style check"
     spellcheck: "Spellcheck (LanguageTool)"
     tts_preview: "Listen (TTS)"
     ai_assistant: "AI Assistant"

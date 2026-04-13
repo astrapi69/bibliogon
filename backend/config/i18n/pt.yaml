@@ -490,6 +490,7 @@ ui:
         redo: "Refazer"
         search: "Buscar e substituir"
         focus_mode: "Modo foco"
+        style_check: "Verificacao de estilo"
         spellcheck: "Verificacao ortografica (LanguageTool)"
         tts_preview: "Ouvir (TTS)"
         ai_assistant: "Assistente AI"

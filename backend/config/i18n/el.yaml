@@ -490,6 +490,7 @@ ui:
     redo: "Επανάληψη"
     search: "Αναζήτηση και αντικατάσταση"
     focus_mode: "Λειτουργία εστίασης"
+    style_check: "Έλεγχος ύφους"
     spellcheck: "Ορθογραφικός έλεγχος (LanguageTool)"
     tts_preview: "Ακρόαση (TTS)"
     ai_assistant: "Βοηθός AI"

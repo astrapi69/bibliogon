@@ -253,7 +253,7 @@ Done:
 Planned:
 - [x] M-12: auto-sanitization on import (hook into the import system)
 - [x] M-13: adjective density detection (suffix-based, no external NLP dependency)
-- [ ] M-14: inline marks in the TipTap editor (TipTap extension)
+- [x] M-14: inline marks in the TipTap editor (TipTap extension)
 - [ ] M-15: quality tab in book metadata (chapter table with outlier markers)
 - [x] M-16: persist per-book thresholds (DB migration)
 - [x] M-17: load filler-word lists from YAML (user-extensible)

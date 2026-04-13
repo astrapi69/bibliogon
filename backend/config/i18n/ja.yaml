@@ -490,6 +490,7 @@ ui:
         redo: "やり直し"
         search: "検索と置換"
         focus_mode: "集中モード"
+        style_check: "文体チェック"
         spellcheck: "スペルチェック (LanguageTool)"
         tts_preview: "試聴 (TTS)"
         ai_assistant: "AIアシスタント"

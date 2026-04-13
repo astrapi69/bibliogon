@@ -1222,6 +1222,47 @@ body {
     background-color: rgba(251, 146, 60, 0.6);
 }
 
+/* Style check marks (ms-tools inline decorations) */
+.tiptap-editor .style-mark {
+    border-radius: 1px;
+    cursor: help;
+}
+.tiptap-editor .style-mark--filler_word {
+    background-color: rgba(96, 165, 250, 0.2);
+    text-decoration: underline wavy rgba(96, 165, 250, 0.7);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--passive_voice {
+    background-color: rgba(251, 146, 60, 0.2);
+    text-decoration: underline wavy rgba(251, 146, 60, 0.7);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--long_sentence {
+    background-color: rgba(239, 68, 68, 0.1);
+    text-decoration: underline rgba(239, 68, 68, 0.5);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--word_repetition {
+    background-color: rgba(250, 204, 21, 0.2);
+    text-decoration: underline rgba(250, 204, 21, 0.7);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--adverb {
+    background-color: rgba(168, 85, 247, 0.15);
+    text-decoration: underline dotted rgba(168, 85, 247, 0.6);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--adjective {
+    background-color: rgba(34, 197, 94, 0.15);
+    text-decoration: underline dotted rgba(34, 197, 94, 0.6);
+    text-underline-offset: 3px;
+}
+.tiptap-editor .style-mark--redundant_phrase {
+    background-color: rgba(236, 72, 153, 0.15);
+    text-decoration: underline rgba(236, 72, 153, 0.6);
+    text-underline-offset: 3px;
+}
+
 /* Footnotes */
 .tiptap-editor .footnotes {
     border-top: 1px solid var(--border);

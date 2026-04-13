@@ -523,6 +523,7 @@ ui:
     redo: "Rehacer"
     search: "Buscar y reemplazar"
     focus_mode: "Modo enfoque"
+    style_check: "Revision de estilo"
     spellcheck: "Corrector ortografico (LanguageTool)"
     tts_preview: "Escuchar (TTS)"
     ai_assistant: "Asistente AI"

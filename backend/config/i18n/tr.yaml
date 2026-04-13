@@ -523,6 +523,7 @@ ui:
         redo: "Yinele"
         search: "Bul ve degistir"
         focus_mode: "Odak modu"
+        style_check: "Stil kontrolu"
         spellcheck: "Yazim denetimi (LanguageTool)"
         tts_preview: "Dinle (TTS)"
         ai_assistant: "AI Asistan"

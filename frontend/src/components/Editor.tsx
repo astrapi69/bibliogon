@@ -24,6 +24,7 @@ import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
+import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api} from "../api/client";
@@ -51,6 +52,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const [showSpellcheck, setShowSpellcheck] = useState(false);
     const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
+    const [styleCheckActive, setStyleCheckActive] = useState(false);
+    const [styleCheckLoading, setStyleCheckLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
@@ -156,6 +159,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 className: "has-focus",
                 mode: "deepest",
             }),
+            StyleCheckExtension,
         ],
         content: parseContent(content),
         onUpdate: ({editor}) => {
@@ -287,6 +291,31 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setSpellcheckLoading(false);
     };
 
+    const handleToggleStyleCheck = async () => {
+        if (!editor) return;
+        if (styleCheckActive) {
+            editor.commands.clearStyleFindings();
+            setStyleCheckActive(false);
+            return;
+        }
+        setStyleCheckLoading(true);
+        setStyleCheckActive(true);
+        try {
+            const text = editor.getText();
+            if (!text.trim()) {
+                setStyleCheckActive(false);
+                setStyleCheckLoading(false);
+                return;
+            }
+            const result = await api.msTools.check(text, "de", bookId);
+            editor.commands.setStyleFindings(result.findings);
+        } catch {
+            notify.error(t("ui.editor.spellcheck_error", "Stilpruefung fehlgeschlagen"));
+            setStyleCheckActive(false);
+        }
+        setStyleCheckLoading(false);
+    };
+
     const handlePreviewAudio = async () => {
         if (!editor) return;
         setPreviewLoading(true);
@@ -401,6 +430,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 onToggleAi={isPluginAvailable(pluginStatus, "ai") ? () => setShowAiPanel(!showAiPanel) : undefined}
                 aiDisabledReason={!isPluginAvailable(pluginStatus, "ai") ? pluginDisabledMessage(pluginStatus, "ai") : undefined}
                 spellcheckDisabledReason={!isPluginAvailable(pluginStatus, "grammar") ? pluginDisabledMessage(pluginStatus, "grammar") : undefined}
+                styleCheckActive={styleCheckActive}
+                styleCheckLoading={styleCheckLoading}
+                onToggleStyleCheck={isPluginAvailable(pluginStatus, "ms-tools") ? handleToggleStyleCheck : undefined}
             />
 
             {/* TTS Preview Player */}
