@@ -28,17 +28,23 @@ DEBUG = os.getenv("BIBLIOGON_DEBUG", "true").lower() in ("true", "1", "yes")
 CORS_ORIGINS = os.getenv("BIBLIOGON_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 SECRET_KEY = os.getenv("BIBLIOGON_SECRET_KEY", "")
 
-# Licensing (bibliogon-specific gate for premium plugins)
-_app_config_raw: dict[str, Any] = {}
-try:
-    import yaml
-    with open(CONFIG_PATH, encoding="utf-8") as _f:
-        _app_config_raw = yaml.safe_load(_f) or {}
-except Exception:
-    pass
+# App config helpers
+import yaml
 
-_license_secret = SECRET_KEY or _app_config_raw.get("licensing", {}).get("secret_key", "pluginforge-default-key")
-_license_file = _app_config_raw.get("licensing", {}).get("store_path", "config/licenses.json")
+
+def _load_app_config() -> dict[str, Any]:
+    """Read app.yaml fresh from disk. Called per-request where freshness matters."""
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+
+# Licensing reads at startup (licensing config doesn't change at runtime)
+_startup_config = _load_app_config()
+_license_secret = SECRET_KEY or _startup_config.get("licensing", {}).get("secret_key", "pluginforge-default-key")
+_license_file = _startup_config.get("licensing", {}).get("store_path", "config/licenses.json")
 license_validator = LicenseValidator(_license_secret)
 license_store = LicenseStore(BASE_DIR / _license_file)
 
@@ -224,6 +230,13 @@ import time as _time
 
 _plugin_status_cache: dict[str, Any] = {}
 _plugin_status_timestamp: float = 0
+
+
+def invalidate_plugin_status_cache() -> None:
+    """Clear the plugin-status cache so the next request reads fresh state."""
+    global _plugin_status_cache, _plugin_status_timestamp
+    _plugin_status_cache = {}
+    _plugin_status_timestamp = 0
 _PLUGIN_STATUS_TTL = 30  # seconds
 
 
@@ -271,10 +284,20 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
     for name, info in editor_plugins.items():
         # Special case: AI is not a plugin but a core module
         if name == "ai":
+            ai_cfg = _load_app_config().get("ai", {})
+            if not ai_cfg.get("enabled", False):
+                result[name] = {
+                    "available": False,
+                    "reason": "disabled",
+                    "message": "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > Allgemein > KI-Assistent.",
+                }
+                continue
             try:
                 from app.ai.llm_client import LLMClient
                 client = LLMClient(
-                    base_url=_app_config_raw.get("ai", {}).get("base_url", "http://localhost:1234/v1"),
+                    base_url=ai_cfg.get("base_url", "http://localhost:1234/v1"),
+                    api_key=ai_cfg.get("api_key", ""),
+                    provider=ai_cfg.get("provider", ""),
                 )
                 health = await client.health()
                 if health.get("status") == "ok":

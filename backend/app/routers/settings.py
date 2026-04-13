@@ -76,6 +76,10 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
     if _manager:
         _manager.reload_config()
 
+    # Invalidate the plugin-status cache so the editor sees fresh state
+    from app.main import invalidate_plugin_status_cache
+    invalidate_plugin_status_cache()
+
     return current
 
 
