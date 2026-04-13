@@ -259,6 +259,8 @@ async def export_metrics(req: MetricsExportRequest) -> StreamingResponse:
                 "repetition_count": style.get("repetition_count", 0),
                 "adverb_count": style.get("adverb_count", 0),
                 "adverb_ratio": style.get("adverb_ratio", 0),
+                "adjective_count": style.get("adjective_count", 0),
+                "adjective_ratio": style.get("adjective_ratio", 0),
             })
     finally:
         db.close()

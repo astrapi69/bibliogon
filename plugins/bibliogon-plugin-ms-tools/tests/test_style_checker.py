@@ -1,6 +1,7 @@
 """Tests for style checker module."""
 
 from bibliogon_ms_tools.style_checker import (
+    check_adjectives,
     check_filler_words,
     check_passive_voice,
     check_sentence_length,
@@ -275,3 +276,92 @@ def test_allowlist_case_insensitive():
     filtered = _filter_allowlist(findings, "de")
     assert len(filtered) == 0
     _allowlist_cache.clear()
+
+
+# --- Adjective Detection ---
+
+
+def test_adjective_german_ig():
+    """German adjectives ending in -ig are detected."""
+    text = "Das ist ein riesig grosses und wunderbar sonniges Haus."
+    findings = check_adjectives(text, "de")
+    words = [f["word"].lower() for f in findings]
+    assert "riesig" in words
+    assert "sonniges" in words
+
+
+def test_adjective_german_isch():
+    """German adjectives ending in -isch are detected."""
+    text = "Das ist ein fantastisch und heroisch gelungenes Werk."
+    findings = check_adjectives(text, "de")
+    words = [f["word"].lower() for f in findings]
+    assert "fantastisch" in words
+    assert "heroisch" in words
+
+
+def test_adjective_german_bar():
+    """German adjectives ending in -bar are detected."""
+    text = "Das Ergebnis ist wunderbar und erreichbar."
+    findings = check_adjectives(text, "de")
+    words = [f["word"].lower() for f in findings]
+    assert "wunderbar" in words
+    assert "erreichbar" in words
+
+
+def test_adjective_english_ous():
+    """English adjectives ending in -ous are detected."""
+    text = "The famous and dangerous adventure was marvelous."
+    findings = check_adjectives(text, "en")
+    words = [f["word"].lower() for f in findings]
+    assert "famous" in words
+    assert "dangerous" in words
+    assert "marvelous" in words
+
+
+def test_adjective_english_ful():
+    """English adjectives ending in -ful are detected."""
+    text = "A beautiful and wonderful day."
+    findings = check_adjectives(text, "en")
+    words = [f["word"].lower() for f in findings]
+    assert "beautiful" in words
+    assert "wonderful" in words
+
+
+def test_adjective_english_false_positives_excluded():
+    """Known non-adjective words are not flagged."""
+    text = "Put the cable on the table and give me five."
+    findings = check_adjectives(text, "en")
+    words = [f["word"].lower() for f in findings]
+    assert "table" not in words
+    assert "cable" not in words
+    assert "give" not in words
+    assert "five" not in words
+
+
+def test_adjective_short_words_skipped():
+    """Words shorter than 4 characters are not checked."""
+    text = "A big bad dog."
+    findings = check_adjectives(text, "en")
+    assert len(findings) == 0
+
+
+def test_adjective_finding_has_correct_type():
+    """Each adjective finding has type 'adjective' and bilingual message."""
+    text = "Ein wunderbarer Tag."
+    findings = check_adjectives(text, "de")
+    assert len(findings) >= 1
+    finding = findings[0]
+    assert finding["type"] == "adjective"
+    assert finding["severity"] == "info"
+    assert "de" in finding["message"]
+    assert "en" in finding["message"]
+
+
+def test_check_style_includes_adjective_count():
+    """check_style() includes adjective_count and adjective_ratio."""
+    text = "Ein wunderbarer und fantastischer Tag in einer herrlichen Landschaft."
+    result = check_style(text, "de")
+    assert "adjective_count" in result
+    assert "adjective_ratio" in result
+    assert result["adjective_count"] >= 2
+    assert result["adjective_ratio"] > 0

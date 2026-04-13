@@ -1,5 +1,5 @@
 """Style checker: detects filler words, passive voice, long sentences,
-word repetitions, adverbs, and redundant phrases."""
+word repetitions, adverbs, adjectives, and redundant phrases."""
 
 import logging
 import re
@@ -159,6 +159,38 @@ ADVERB_SUFFIXES: dict[str, list[str]] = {
     "en": ["ly"],
     "es": ["mente"],
     "fr": ["ment"],
+}
+
+# Adjective suffixes per language (suffix-based heuristic, same approach as adverbs).
+# German adjectives are inflected (-er, -es, -em, -en, -e), so the regex checks
+# for the base suffix followed by optional inflection endings.
+ADJECTIVE_SUFFIXES: dict[str, list[str]] = {
+    "de": ["ig", "isch", "bar", "sam", "haft", "los", "voll", "reich", "arm"],
+    "en": ["ous", "ive", "ful", "less", "able", "ible", "ical"],
+    "es": ["oso", "osa", "ivo", "iva", "ble"],
+    "fr": ["eux", "euse", "ble"],
+}
+
+# German inflection endings that follow the adjective stem
+_DE_INFLECTION = r"(?:e[rsnm]?|em)?"
+
+# Known false positives per language (words that end with adjective suffixes
+# but are not adjectives). Keeps the suffix-based approach usable without a
+# POS tagger.
+_ADJECTIVE_FALSE_POSITIVES: dict[str, set[str]] = {
+    "de": {
+        "landschaft", "gesellschaft", "wissenschaft", "wirtschaft",
+        "botschaft", "mannschaft", "eigenschaft", "bereitschaft",
+        "nachbarschaft", "freundschaft", "leidenschaft", "herrschaft",
+    },
+    "en": {
+        "table", "able", "cable", "fable", "stable", "double", "trouble",
+        "give", "live", "have", "five", "drive", "arrive",
+        "house", "mouse", "because", "use", "refuse", "excuse",
+        "bus", "plus", "us", "thus", "focus", "bonus", "campus",
+    },
+    "es": set(),
+    "fr": set(),
 }
 
 # Stop words excluded from repetition detection
@@ -359,6 +391,51 @@ def check_adverbs(text: str, language: str = "de") -> list[dict]:
     return findings
 
 
+def check_adjectives(text: str, language: str = "de") -> list[dict]:
+    """Detect adjectives by suffix (-ous, -ig, -ivo, -eux, etc.).
+
+    High adjective density can indicate over-description. The detector
+    uses the same suffix-based heuristic as adverbs, with a false-positive
+    exclusion list to filter common non-adjective words.
+
+    For German, adjective inflection (-er, -es, -em, -en, -e) is handled
+    by matching the base suffix followed by optional inflection endings.
+    """
+    suffixes = ADJECTIVE_SUFFIXES.get(language, ADJECTIVE_SUFFIXES.get("en", ["ous", "ive", "ful"]))
+    false_positives = _ADJECTIVE_FALSE_POSITIVES.get(language, set())
+    findings: list[dict] = []
+
+    # Build compiled patterns per suffix, with inflection for German
+    tail = _DE_INFLECTION if language == "de" else ""
+    patterns = []
+    for suffix in suffixes:
+        patterns.append(re.compile(rf"^.{{2,}}{re.escape(suffix)}{tail}$", re.I))
+
+    for match in re.finditer(r"\b(\w+)\b", text):
+        word = match.group(1)
+        if len(word) < 4:
+            continue
+        word_lower = word.lower()
+        if word_lower in false_positives:
+            continue
+        for pattern in patterns:
+            if pattern.match(word_lower):
+                findings.append({
+                    "type": "adjective",
+                    "word": word,
+                    "offset": match.start(),
+                    "length": len(word),
+                    "severity": "info",
+                    "message": {
+                        "de": f"Adjektiv '{word}' - zu viele Adjektive schwaecht den Text.",
+                        "en": f"Adjective '{word}' - high adjective density weakens prose.",
+                    },
+                })
+                break
+
+    return findings
+
+
 def check_redundant_phrases(text: str, language: str = "de") -> list[dict]:
     """Detect redundant phrases that can be shortened."""
     phrases = REDUNDANT_PHRASES.get(language, REDUNDANT_PHRASES.get("en", []))
@@ -399,6 +476,7 @@ def check_style(
     findings.extend(check_sentence_length(text, max_sentence_length))
     findings.extend(check_word_repetitions(text, language, repetition_window))
     findings.extend(check_adverbs(text, language))
+    findings.extend(check_adjectives(text, language))
     findings.extend(check_redundant_phrases(text, language))
 
     # Apply user allowlist: remove findings for explicitly excluded terms
@@ -409,6 +487,7 @@ def check_style(
     filler_count = sum(1 for f in findings if f["type"] == "filler_word")
     passive_count = sum(1 for f in findings if f["type"] == "passive_voice")
     adverb_count = sum(1 for f in findings if f["type"] == "adverb")
+    adjective_count = sum(1 for f in findings if f["type"] == "adjective")
 
     return {
         "total_words": total_words,
@@ -419,9 +498,11 @@ def check_style(
         "long_sentence_count": sum(1 for f in findings if f["type"] == "long_sentence"),
         "repetition_count": sum(1 for f in findings if f["type"] == "word_repetition"),
         "adverb_count": adverb_count,
+        "adjective_count": adjective_count,
         "redundant_phrase_count": sum(1 for f in findings if f["type"] == "redundant_phrase"),
         "filler_ratio": round(filler_count / total_words, 4) if total_words > 0 else 0,
         "passive_ratio": round(passive_count / total_sentences, 4) if total_sentences > 0 else 0,
         "adverb_ratio": round(adverb_count / total_words, 4) if total_words > 0 else 0,
+        "adjective_ratio": round(adjective_count / total_words, 4) if total_words > 0 else 0,
         "findings": findings,
     }
