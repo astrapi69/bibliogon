@@ -18,7 +18,7 @@ Bibliogon consists of two parts:
 
 The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. All plugins are free and open source (MIT). Donations are the current funding model.
 
-The long-term goal is a commercial SaaS product. Both PluginForge and the Bibliogon core stay open source (MIT license).
+Both PluginForge and the Bibliogon core are open source (MIT license).
 
 ---
 
@@ -615,7 +615,7 @@ Importing a backup restores the entire state. Independent of the export plugin (
 | `plugin-audiobook` | Export | Text-to-speech, MP3/M4B, chapter markers | plugin-export |
 | `plugin-grammar` | Editor | LanguageTool integration | - |
 | `plugin-ai-assist` | Editor | AI writing help | - |
-| `plugin-collaboration` | Structure | Multi-user real-time editing | - |
+| `plugin-collaboration` | Structure | Multi-user real-time editing (exploration) | - |
 | `plugin-versioning` | Editor | Chapter version history with diff | - |
 | `plugin-docx` | Export | Word export for editors | plugin-export |
 
@@ -792,7 +792,6 @@ Feature details and open items see docs/ROADMAP.md (with IDs for prompt referenc
 | 7: Extended metadata, publishing | v0.7.0 | done |
 | 8: Manuscript quality, editor, export | v0.9.0 | done |
 | 9: Translation, audiobook, infrastructure | v0.10.0 | done (current) |
-| 10: Multi-user and SaaS | v1.0.0 | next phase |
 
 ---
 
@@ -805,7 +804,7 @@ Feature details and open items see docs/ROADMAP.md (with IDs for prompt referenc
 - Offline-capable and local-first
 - A generator for write-book-template project structures (via a plugin)
 - An EPUB/PDF export tool via Pandoc (via a plugin)
-- Open source with SaaS potential
+- Open source (MIT)
 
 ### What PluginForge is
 

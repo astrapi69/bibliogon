@@ -173,13 +173,6 @@ Expected delta: ~30-40 tests, mostly Playwright E2E.
 - [x] P-04: MP3 per chapter, merge into an audiobook (ffmpeg)
 - [x] P-05: preview function in the editor
 
-### Phase 11: multi-user and SaaS (v1.0.0)
-- [ ] P-12: user registration and authentication
-- [ ] P-13: PostgreSQL instead of SQLite
-- [ ] P-14: pen-name management per user (not global)
-- [ ] P-15: plugin marketplace
-- [ ] P-16: Stripe integration
-
 ## Technical debt
 
 - [x] S-01: hardcoded strings in the dashboard (some dialog texts)

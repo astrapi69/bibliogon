@@ -449,7 +449,7 @@ POST   /api/books/{id}/chapters      # subresource create
 - No envelope (no `{ "data": ..., "status": "ok" }`). The HTTP status is enough.
 - IDs are UUIDs as strings.
 - Timestamps as ISO 8601 (UTC).
-- Lists are NOT paginated (phase 1-10). Pagination only when needed (phase 11 SaaS).
+- Lists are NOT paginated. Pagination only when needed.
 - Plugin endpoints under /api/{plugin-name}/... (e.g. /api/grammar/check).
 
 ---

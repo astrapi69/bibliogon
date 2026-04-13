@@ -140,7 +140,7 @@ For complex plugin UIs: Web Components as custom elements (compiled JS bundle in
 
 ## Persistence
 
-- Backend: SQLAlchemy + SQLite (phase 11 switches to PostgreSQL).
+- Backend: SQLAlchemy + SQLite.
 - Frontend: no local storage for book data. Everything via the API.
 - Assets: local on the filesystem, managed through /api/assets/.
 - Backup: .bgb files (ZIP), restore brings the entire state back.
