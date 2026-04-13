@@ -2,7 +2,7 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api, AudiobookVoice, formatVoiceLabel} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Key, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
@@ -17,11 +17,9 @@ export default function Settings() {
     const {t} = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
-    const [licenses, setLicenses] = useState<Record<string, unknown>>({});
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
     const [activeTab, setActiveTab] = useState("app");
-    const [preselectedPlugin, setPreselectedPlugin] = useState("");
 
     useEffect(() => {
         loadData();
@@ -40,12 +38,6 @@ export default function Settings() {
             setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
         } catch (err) {
             console.error("Failed to load plugin configs:", err);
-        }
-        try {
-            const lics = await api.licenses.list();
-            setLicenses(lics);
-        } catch (err) {
-            console.error("Failed to load licenses:", err);
         }
     };
 
@@ -82,7 +74,6 @@ export default function Settings() {
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
                     <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
-                    <Tabs.Trigger value="licenses" className="radix-tab-trigger">{t("ui.settings.tab_licenses", "Lizenzen")}</Tabs.Trigger>
                 </Tabs.List>
 
             <main style={styles.main}>
@@ -173,42 +164,6 @@ export default function Settings() {
                                 showMessage(`${name} ${t("ui.common.remove", "entfernt")}`);
                             } catch (err) {
                                 showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
-                            }
-                        }}
-                        onActivateLicense={async (pluginName) => {
-                            setPreselectedPlugin(pluginName);
-                            setActiveTab("licenses");
-                        }}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="licenses">
-                    <LicenseSettings
-                        licenses={licenses}
-                        preselectedPlugin={preselectedPlugin}
-                        onActivate={async (pluginName, key) => {
-                            try {
-                                const result = await api.licenses.activate(pluginName, key);
-                                const lics = await api.licenses.list();
-                                setLicenses(lics);
-                                if (result.warning) {
-                                    showMessage(`${t("ui.settings.license_activated", "Lizenz aktiviert")} - ${result.warning}`);
-                                } else {
-                                    showMessage(t("ui.settings.license_activated", "Lizenz aktiviert"));
-                                }
-                                setPreselectedPlugin("");
-                                loadData();
-                            } catch (err) {
-                                showMessage(`${t("ui.settings.license_error", "Lizenzfehler")}: ${err}`);
-                            }
-                        }}
-                        onDeactivate={async (pluginName) => {
-                            try {
-                                await api.licenses.deactivate(pluginName);
-                                const lics = await api.licenses.list();
-                                setLicenses(lics);
-                                showMessage(t("ui.settings.license_removed", "Lizenz entfernt"));
-                            } catch (err) {
-                                showMessage(t("ui.common.error", "Fehler"), true);
                             }
                         }}
                     />
@@ -422,7 +377,7 @@ function AppSettings({config, onSave, saving}: {
 
 // --- Plugin Settings Tab ---
 
-function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload, onActivateLicense}: {
+function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload}: {
     configs: Record<string, Record<string, unknown>>;
     appConfig: Record<string, unknown>;
     onSavePlugin: (name: string, settings: Record<string, unknown>) => void;
@@ -430,7 +385,6 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onAddPlugin: (data: {name: string; display_name?: string; description?: string}) => void;
     onRemovePlugin: (name: string) => void;
     onReload: () => void;
-    onActivateLicense: (pluginName: string) => void;
 }) {
     const {t} = useI18n();
     const [showAdd, setShowAdd] = useState(false);
@@ -481,20 +435,10 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     };
 
     // Inactive plugins: only show plugins that are NOT active core plugins
-    // and NOT unimplemented premium plugins (no entry point loaded)
     const [loadedPlugins, setLoadedPlugins] = useState<Set<string>>(new Set());
-    const [pluginLicenseInfo, setPluginLicenseInfo] = useState<Record<string, {tier: string; hasLicense: boolean}>>({});
     useEffect(() => {
         api.settings.discoveredPlugins().then((discovered) => {
             setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
-            const info: Record<string, {tier: string; hasLicense: boolean}> = {};
-            for (const p of discovered) {
-                info[p.name] = {
-                    tier: (p as Record<string, unknown>).license_tier as string || "core",
-                    hasLicense: (p as Record<string, unknown>).has_license as boolean ?? true,
-                };
-            }
-            setPluginLicenseInfo(info);
         }).catch(() => {});
     }, [configs]);
 
@@ -502,8 +446,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         .filter(([name]) => {
             // Not currently enabled
             if (enabled.has(name) && !disabled.has(name)) return false;
-            // Show if loaded, ZIP-installed, or has license info (premium plugins with YAML config)
-            return loadedPlugins.has(name) || name.startsWith("installed-") || name in pluginLicenseInfo;
+            // Show if loaded or ZIP-installed
+            return loadedPlugins.has(name) || name.startsWith("installed-");
         });
 
     return (
@@ -536,8 +480,6 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         const meta = (config.plugin || {}) as Record<string, unknown>;
                         const displayName = getLocalized(meta.display_name, name);
                         const description = getLocalized(meta.description, "");
-                        const lic = (meta.license as string) || "MIT";
-                        const isPremium = lic !== "MIT" && lic.toLowerCase() !== "free";
                         return (
                             <div key={name} style={{
                                 display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -545,37 +487,16 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                             }}>
                                 <div>
                                     <strong>{displayName}</strong>
-                                    {isPremium && (
-                                        <span style={{
-                                            ...styles.badge, marginLeft: 8,
-                                            background: "rgba(168,85,247,0.12)", color: "#7c3aed",
-                                        }}>{t("ui.settings.premium", "Premium")}</span>
-                                    )}
-                                    {isPremium && !(pluginLicenseInfo[name]?.hasLicense) && (
-                                        <span style={{
-                                            ...styles.badge, marginLeft: 4,
-                                            background: "rgba(239,68,68,0.12)", color: "#ef4444",
-                                        }}>{t("ui.settings.license_required", "Lizenz erforderlich")}</span>
-                                    )}
                                     {description && (
                                         <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginTop: 2}}>{description}</p>
                                     )}
                                 </div>
-                                {isPremium && !(pluginLicenseInfo[name]?.hasLicense) ? (
-                                    <button
-                                        className="btn btn-sm btn-premium"
-                                        onClick={() => { setShowAdd(false); onActivateLicense(name); }}
-                                    >
-                                        <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
-                                    </button>
-                                ) : (
-                                    <button className="btn btn-primary btn-sm" onClick={() => {
-                                        onTogglePlugin(name, true);
-                                        setShowAdd(false);
-                                    }}>
-                                        <Check size={12}/> {t("ui.settings.activate", "Aktivieren")}
-                                    </button>
-                                )}
+                                <button className="btn btn-primary btn-sm" onClick={() => {
+                                    onTogglePlugin(name, true);
+                                    setShowAdd(false);
+                                }}>
+                                    <Check size={12}/> {t("ui.settings.activate", "Aktivieren")}
+                                </button>
                             </div>
                         );
                     })}
@@ -588,7 +509,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
             )}
 
             {Object.entries(configs)
-                .filter(([name]) => (enabled.has(name) && !disabled.has(name)) || (name in pluginLicenseInfo))
+                .filter(([name]) => enabled.has(name) && !disabled.has(name))
                 .map(([name, config]) => {
                 const pluginMeta = (config.plugin || {}) as Record<string, unknown>;
                 const settings = (config.settings || {}) as Record<string, unknown>;
@@ -602,8 +523,6 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         displayName={displayName}
                         description={description}
                         version={(pluginMeta.version as string) || ""}
-                        license={(pluginMeta.license as string) || "MIT"}
-                        hasLicense={pluginLicenseInfo[name]?.hasLicense ?? true}
                         enabled={enabled.has(name) && !disabled.has(name)}
                         settings={settings}
                         onSave={(s) => onSavePlugin(name, s)}
@@ -613,7 +532,6 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                                 onRemovePlugin(name);
                             }
                         }}
-                        onActivateLicense={() => onActivateLicense(name)}
                     />
                 );
             })}
@@ -1373,19 +1291,16 @@ function GoogleCloudTTSPanel() {
     );
 }
 
-function PluginCard({name, displayName, description, version, license, hasLicense, enabled, settings, onSave, onToggle, onRemove, onActivateLicense}: {
+function PluginCard({name, displayName, description, version, enabled, settings, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
     description: string;
     version: string;
-    license: string;
-    hasLicense: boolean;
     enabled: boolean;
     settings: Record<string, unknown>;
     onSave: (settings: Record<string, unknown>) => void;
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
-    onActivateLicense?: () => void;
 }) {
     const {t} = useI18n();
     const isCore = CORE_PLUGINS.has(name);
@@ -1418,8 +1333,6 @@ function PluginCard({name, displayName, description, version, license, hasLicens
     }
     const hasSettings = scalarSettings.length > 0 || orderedListSettings.length > 0 || complexSettings.length > 0;
 
-    const isPremium = license !== "MIT" && license.toLowerCase() !== "free";
-
     return (
         <div style={{
             ...styles.card,
@@ -1433,10 +1346,10 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                         <span style={styles.badge}>v{version}</span>
                         <span style={{
                             ...styles.badge,
-                            background: isPremium ? "rgba(168,85,247,0.12)" : "var(--accent-light)",
-                            color: isPremium ? "#7c3aed" : "var(--accent)",
+                            background: "var(--accent-light)",
+                            color: "var(--accent)",
                         }}>
-                            {isPremium ? t("ui.settings.premium", "Premium") : t("ui.settings.free", "Kostenlos")}
+                            {t("ui.settings.free", "Kostenlos")}
                         </span>
                         <span style={{
                             ...styles.badge,
@@ -1454,15 +1367,6 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                                 {t("ui.settings.standard", "Standard")}
                             </span>
                         )}
-                        {isPremium && !hasLicense && (
-                            <span style={{
-                                ...styles.badge,
-                                background: "rgba(239,68,68,0.12)",
-                                color: "#ef4444",
-                            }}>
-                                {t("ui.settings.license_required", "Lizenz erforderlich")}
-                            </span>
-                        )}
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
                 </div>
@@ -1472,14 +1376,7 @@ function PluginCard({name, displayName, description, version, license, hasLicens
                             {expanded ? t("ui.settings.collapse", "Zuklappen") : t("ui.settings.expand_settings", "Einstellungen")}
                         </button>
                     )}
-                    {!isCore && isPremium && !hasLicense ? (
-                        <button
-                            className="btn btn-sm btn-premium"
-                            onClick={() => onActivateLicense?.()}
-                        >
-                            <Key size={12}/> {t("ui.settings.enter_license", "Lizenz eingeben")}
-                        </button>
-                    ) : !isCore && (
+                    {!isCore && (
                         <button
                             className={`btn btn-sm ${enabled ? "btn-danger" : "btn-primary"}`}
                             onClick={() => onToggle(!enabled)}
@@ -1616,8 +1513,6 @@ function PluginCard({name, displayName, description, version, license, hasLicens
     );
 }
 
-// --- License Settings Tab ---
-
 // --- Author Settings Tab ---
 
 function AuthorSettings({config, onSave, saving}: {
@@ -1716,105 +1611,6 @@ function AuthorSettings({config, onSave, saving}: {
                     <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
             </div>
-        </div>
-    );
-}
-
-// --- License Settings Tab ---
-
-function LicenseSettings({licenses, preselectedPlugin, onActivate, onDeactivate}: {
-    licenses: Record<string, unknown>;
-    preselectedPlugin?: string;
-    onActivate: (pluginName: string, key: string) => void;
-    onDeactivate: (pluginName: string) => void;
-}) {
-    const {t} = useI18n();
-    const [pluginName, setPluginName] = useState(preselectedPlugin || "");
-    const [licenseKey, setLicenseKey] = useState("");
-
-    // Sync preselected plugin from parent
-    useEffect(() => {
-        if (preselectedPlugin) setPluginName(preselectedPlugin);
-    }, [preselectedPlugin]);
-
-    return (
-        <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t("ui.settings.licenses", "Lizenzen")}</h2>
-
-            {/* Activate new license */}
-            <div style={styles.card}>
-                <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.activate_license", "Lizenz aktivieren")}</h3>
-                <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-                    <input
-                        className="input"
-                        placeholder={t("ui.settings.plugin_name_placeholder", "Plugin-Name (z.B. kinderbuch)")}
-                        value={pluginName}
-                        onChange={(e) => setPluginName(e.target.value)}
-                        style={{flex: "1 1 200px"}}
-                    />
-                    <input
-                        className="input"
-                        placeholder={t("ui.settings.license_key_placeholder", "Lizenzschluessel")}
-                        value={licenseKey}
-                        onChange={(e) => setLicenseKey(e.target.value)}
-                        style={{flex: "2 1 300px"}}
-                    />
-                    <button
-                        className="btn btn-primary"
-                        disabled={!pluginName || !licenseKey}
-                        onClick={() => {
-                            onActivate(pluginName, licenseKey);
-                            setPluginName("");
-                            setLicenseKey("");
-                        }}
-                    >
-                        <Key size={14}/> {t("ui.settings.activate", "Aktivieren")}
-                    </button>
-                </div>
-            </div>
-
-            {/* Active licenses */}
-            {Object.keys(licenses).length > 0 && (
-                <div style={styles.card}>
-                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.active_licenses", "Aktive Lizenzen")}</h3>
-                    {Object.entries(licenses).map(([name, info]) => {
-                        const lic = info as Record<string, unknown>;
-                        const valid = lic.status === "valid";
-                        return (
-                            <div key={name} style={styles.licenseRow}>
-                                <div>
-                                    <strong>{name}</strong>
-                                    <span style={{
-                                        ...styles.badge,
-                                        marginLeft: 8,
-                                        background: valid ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-                                        color: valid ? "#16a34a" : "#dc2626",
-                                    }}>
-                                        {valid ? t("ui.settings.valid", "Gueltig") : t("ui.settings.invalid", "Ungueltig")}
-                                    </span>
-                                    {typeof lic.expires === "string" && (
-                                        <span style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginLeft: 8}}>
-                                            {lic.expires === "lifetime" ? t("ui.settings.lifetime", "Unbegrenzt") : `${t("ui.settings.until", "bis")} ${lic.expires}`}
-                                        </span>
-                                    )}
-                                    {typeof lic.error === "string" && (
-                                        <span style={{color: "var(--danger)", fontSize: "0.8125rem", marginLeft: 8}}>
-                                            {lic.error}
-                                        </span>
-                                    )}
-                                </div>
-                                <button className="btn btn-danger btn-sm" onClick={() => onDeactivate(name)}>
-                                    {t("ui.common.remove", "Entfernen")}
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {Object.keys(licenses).length === 0 && (
-                <p style={{color: "var(--text-muted)", marginTop: 12}}>{t("ui.settings.no_licenses", "Keine Lizenzen aktiviert.")}</p>
-            )}
         </div>
     );
 }
@@ -1953,9 +1749,5 @@ const styles: Record<string, React.CSSProperties> = {
     },
     settingsGrid: {
         display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12,
-    },
-    licenseRow: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "10px 0", borderBottom: "1px solid var(--border)",
     },
 };
