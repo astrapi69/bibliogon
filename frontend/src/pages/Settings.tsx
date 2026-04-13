@@ -187,16 +187,26 @@ function AppSettings({config, onSave, saving}: {
     const pluginsConfig = (config.plugins || {}) as Record<string, unknown>;
     const enabledPlugins = (pluginsConfig.enabled as string[]) || [];
 
+    const ai = (config.ai || {}) as Record<string, unknown>;
+
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
     const [uiSubtitle, setUiSubtitle] = useState((ui.subtitle as string) || "");
     const [theme, setTheme] = useState((ui.theme as string) || "warm-literary");
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
     const [trashDays, setTrashDays] = useState(String(Number(app.trash_auto_delete_days ?? 30)));
+    const [deletePermanently, setDeletePermanently] = useState(Boolean(app.delete_permanently));
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
         export: true, help: true, getstarted: true,
     });
+    const [aiBaseUrl, setAiBaseUrl] = useState((ai.base_url as string) || "");
+    const [aiModel, setAiModel] = useState((ai.model as string) || "");
+    const [aiTemp, setAiTemp] = useState(String(ai.temperature ?? "0.7"));
+    const [aiMaxTokens, setAiMaxTokens] = useState(String(ai.max_tokens ?? "4096"));
+    const [aiApiKey, setAiApiKey] = useState((ai.api_key as string) || "");
+    const [showAiKey, setShowAiKey] = useState(false);
+    const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
 
     useEffect(() => {
         setLang((app.default_language as string) || "de");
@@ -205,11 +215,17 @@ function AppSettings({config, onSave, saving}: {
         setTheme((ui.theme as string) || "warm-literary");
         setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
+        setDeletePermanently(Boolean(app.delete_permanently));
         setCorePlugins({
             export: enabledPlugins.includes("export"),
             help: enabledPlugins.includes("help"),
             getstarted: enabledPlugins.includes("getstarted"),
         });
+        setAiBaseUrl((ai.base_url as string) || "");
+        setAiModel((ai.model as string) || "");
+        setAiTemp(String(ai.temperature ?? "0.7"));
+        setAiMaxTokens(String(ai.max_tokens ?? "4096"));
+        setAiApiKey((ai.api_key as string) || "");
     }, [config]);
 
     return (
@@ -287,27 +303,115 @@ function AppSettings({config, onSave, saving}: {
                             : t("ui.settings.trash_disabled", "Deaktiviert (manuell loeschen)")}
                     </small>
                 </div>
+                <div className="field">
+                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
+                        <input
+                            type="checkbox"
+                            checked={deletePermanently}
+                            onChange={(e) => setDeletePermanently(e.target.checked)}
+                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
+                        />
+                        <span className="label" style={{margin: 0}}>{t("ui.settings.delete_permanently", "Geloeschte Buecher sofort permanent loeschen")}</span>
+                    </label>
+                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                        {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Buecher nicht in den Papierkorb verschoben.")}
+                    </small>
+                </div>
                 <button
                     className="btn btn-primary"
                     disabled={saving}
                     onClick={() => {
                         const enabled = Object.entries(corePlugins)
                             .filter(([, v]) => v).map(([k]) => k);
-                        // Add non-core plugins that were already enabled
                         for (const p of enabledPlugins) {
                             if (!["export", "help", "getstarted"].includes(p) && !enabled.includes(p)) {
                                 enabled.push(p);
                             }
                         }
                         onSave({
-                            app: {default_language: lang, trash_auto_delete_enabled: trashEnabled, trash_auto_delete_days: Number(trashDays)},
+                            app: {
+                                default_language: lang,
+                                trash_auto_delete_enabled: trashEnabled,
+                                trash_auto_delete_days: Number(trashDays),
+                                delete_permanently: deletePermanently,
+                            },
                             ui: {title: uiTitle, subtitle: uiSubtitle, theme},
                             plugins: {enabled},
+                            ai: {
+                                base_url: aiBaseUrl,
+                                model: aiModel,
+                                temperature: parseFloat(aiTemp) || 0.7,
+                                max_tokens: parseInt(aiMaxTokens) || 4096,
+                                api_key: aiApiKey,
+                            },
                         });
                     }}
                 >
                     <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
+            </div>
+
+            {/* AI Configuration */}
+            <div style={{marginTop: 16}}>
+                <h2 style={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
+                <div style={styles.card}>
+                    <div className="field">
+                        <label className="label">{t("ui.settings.ai_base_url", "Base URL")}</label>
+                        <input className="input" value={aiBaseUrl} onChange={(e) => setAiBaseUrl(e.target.value)}
+                            placeholder="https://api.anthropic.com/v1" style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                    </div>
+                    <div className="field">
+                        <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
+                        <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)}
+                            placeholder="claude-sonnet-4-5-20250514" style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                    </div>
+                    <div style={{display: "flex", gap: 12}}>
+                        <div className="field" style={{flex: 1}}>
+                            <label className="label">{t("ui.settings.ai_temperature", "Temperature")}</label>
+                            <input className="input" type="number" min="0" max="2" step="0.1"
+                                value={aiTemp} onChange={(e) => setAiTemp(e.target.value)}/>
+                        </div>
+                        <div className="field" style={{flex: 1}}>
+                            <label className="label">{t("ui.settings.ai_max_tokens", "Max Tokens")}</label>
+                            <input className="input" type="number" min="256" max="32768" step="256"
+                                value={aiMaxTokens} onChange={(e) => setAiMaxTokens(e.target.value)}/>
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
+                        <div style={{display: "flex", gap: 8}}>
+                            <input className="input" type={showAiKey ? "text" : "password"}
+                                value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
+                                placeholder="sk-..." style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                                title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
+                                {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                            </button>
+                        </div>
+                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                            {t("ui.settings.ai_key_hint", "Der API-Schluessel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst uebertragen.")}
+                        </small>
+                    </div>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={!aiBaseUrl || aiTestStatus === "testing"}
+                        onClick={async () => {
+                            setAiTestStatus("testing");
+                            try {
+                                const resp = await fetch("/api/ai/health");
+                                setAiTestStatus(resp.ok ? "ok" : "fail");
+                            } catch {
+                                setAiTestStatus("fail");
+                            }
+                            setTimeout(() => setAiTestStatus("idle"), 3000);
+                        }}
+                    >
+                        {aiTestStatus === "testing" ? t("ui.common.loading", "Laden...")
+                            : aiTestStatus === "ok" ? t("ui.settings.ai_test_ok", "Verbindung erfolgreich")
+                            : aiTestStatus === "fail" ? t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")
+                            : t("ui.settings.ai_test", "Verbindung testen")}
+                    </button>
+                </div>
             </div>
 
             {/* Advanced: White-Label */}
