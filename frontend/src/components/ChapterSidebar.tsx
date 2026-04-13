@@ -113,8 +113,8 @@ function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, t
     };
 
     const itemContent = (
-        <div ref={setNodeRef} style={style} onClick={() => !editing && onSelect(chapter.id)}>
-            <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}}>
+        <div ref={setNodeRef} style={style} data-testid={`chapter-item-${chapter.id}`} onClick={() => !editing && onSelect(chapter.id)}>
+            <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}} data-testid={`drag-handle-${chapter.id}`}>
                 <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
             </span>
             {editing ? (
