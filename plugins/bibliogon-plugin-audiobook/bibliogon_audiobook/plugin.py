@@ -18,7 +18,7 @@ class AudiobookPlugin(BasePlugin):
     name = "audiobook"
     version = "1.0.0"
     api_version = "1"
-    license_tier = "premium"
+    license_tier = "core"
 
     def activate(self) -> None:
         """Initialize plugin with config."""

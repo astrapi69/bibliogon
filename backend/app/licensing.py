@@ -18,6 +18,11 @@ Keys are bound to an author name (case-insensitive, soft check) and work
 on any device. No machine-ID, no device lock. Trust-based until Phase 11 (SaaS).
 """
 
+# Feature flag: set to True to reactivate license enforcement.
+# When False, all plugins are free and /api/licenses returns 410 Gone.
+# See ROADMAP.md MN-01 for reactivation criteria.
+LICENSING_ENABLED = False
+
 import base64
 import hashlib
 import hmac

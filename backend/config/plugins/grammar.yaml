@@ -7,7 +7,7 @@ plugin:
     de: "Grammatik- und Rechtschreibpruefung via LanguageTool"
     en: "Grammar and spell checking via LanguageTool"
   version: "1.0.0"
-  license: "Proprietary"
+  license: "MIT"
   depends_on: []
   api_version: "1"
 

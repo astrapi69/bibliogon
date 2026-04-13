@@ -7,7 +7,7 @@ plugin:
     de: "KDP-Metadaten, Cover-Validierung und Vorschau"
     en: "KDP metadata, cover validation, and preview"
   version: "1.0.0"
-  license: "Proprietary"
+  license: "MIT"
   depends_on: ["export"]
   api_version: "1"
 

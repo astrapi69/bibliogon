@@ -13,7 +13,7 @@ plugin:
     fr: Generation de livres audio basee sur TTS a partir de chapitres de livres
     el: Δημιουργία ηχητικών βιβλίων με TTS από κεφάλαια βιβλίων
   version: 1.0.0
-  license: Proprietary
+  license: MIT
   depends_on:
   - export
   api_version: '1'

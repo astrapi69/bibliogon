@@ -27,7 +27,7 @@ poetry install
 
 ## License
 
-Proprietary. Requires a valid Bibliogon license key (Premium tier).
+MIT
 
 ## API Endpoints
 

@@ -169,14 +169,8 @@ faq:
       de: "Welche Plugins sind verfügbar?"
       en: "Which plugins are available?"
     answer:
-      de: "6 Plugins: Export (EPUB/PDF/DOCX/HTML, kostenlos), Hilfe (In-App Hilfe, kostenlos), Erste Schritte (Onboarding, kostenlos), Grammatik (LanguageTool, Premium), Kinderbuch (Bild-Layout, Premium), KDP (Amazon-Metadaten, Premium). Kostenlose Plugins sind standardmäßig aktiv, Premium-Plugins brauchen eine Lizenz."
-      en: "6 plugins: Export (EPUB/PDF/DOCX/HTML, free), Help (in-app help, free), Get Started (onboarding, free), Grammar (LanguageTool, premium), Children's Book (image layout, premium), KDP (Amazon metadata, premium). Free plugins are active by default, premium plugins require a license."
-  - question:
-      de: "Wie aktiviere ich ein Premium-Plugin?"
-      en: "How do I activate a premium plugin?"
-    answer:
-      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen (z.B. 'grammar') und deinen Lizenzschlüssel ein und klicke 'Aktivieren'. Danach aktiviere das Plugin unter Einstellungen > Plugins mit dem 'An'-Button."
-      en: "Go to Settings > Licenses. Enter the plugin name (e.g. 'grammar') and your license key and click 'Activate'. Then enable the plugin under Settings > Plugins with the 'On' button."
+      de: "9 Plugins: Export (EPUB/PDF/DOCX/HTML), Hilfe (In-App Hilfe), Erste Schritte (Onboarding), Grammatik (LanguageTool), Kinderbuch (Bild-Layout), KDP (Amazon-Metadaten), Audiobook (TTS), Uebersetzung (DeepL/LLM), Manuskript-Tools (Stilpruefung). Alle Plugins sind kostenlos und koennen unter Einstellungen > Plugins aktiviert werden."
+      en: "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
   - question:
       de: "Kann ich eigene Plugins hinzufügen?"
       en: "Can I add custom plugins?"

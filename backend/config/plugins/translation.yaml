@@ -13,7 +13,7 @@ plugin:
     fr: "Traduction automatique de livres via DeepL ou LLM local (LMStudio)"
     el: "Αυτόματη μετάφραση βιβλίων μέσω DeepL ή τοπικού LLM (LMStudio)"
   version: "1.0.0"
-  license: "Proprietary"
+  license: "MIT"
   depends_on: []
   api_version: "1"
 

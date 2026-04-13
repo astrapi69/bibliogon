@@ -3,7 +3,7 @@ name = "bibliogon-plugin-kdp"
 version = "1.0.0"
 description = "Amazon KDP plugin for Bibliogon - metadata export, cover validation, preview"
 authors = ["astrapi69"]
-license = "Proprietary"
+license = "MIT"
 readme = "README.md"
 packages = [{include = "bibliogon_kdp"}]
 

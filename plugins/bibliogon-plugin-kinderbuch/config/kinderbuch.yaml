@@ -7,7 +7,7 @@ plugin:
     de: "Bild-pro-Seite Layout und spezielle Kinderbuch-Templates"
     en: "Picture-per-page layout and special children's book templates"
   version: "1.0.0"
-  license: "Proprietary"
+  license: "MIT"
   depends_on: ["export"]
   api_version: "1"
 

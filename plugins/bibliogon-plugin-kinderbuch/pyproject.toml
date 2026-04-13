@@ -3,7 +3,7 @@ name = "bibliogon-plugin-kinderbuch"
 version = "1.0.0"
 description = "Children's book plugin for Bibliogon - picture-per-page layout and special templates"
 authors = ["astrapi69"]
-license = "Proprietary"
+license = "MIT"
 readme = "README.md"
 packages = [{include = "bibliogon_kinderbuch"}]
 

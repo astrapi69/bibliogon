@@ -1,6 +1,6 @@
 plugin:
   name: kdp
-  license_tier: premium
+  license_tier: core
   display_name:
     de: "Amazon KDP"
     en: "Amazon KDP"
@@ -14,7 +14,7 @@ plugin:
     fr: "Metadonnees KDP, validation de couverture et flux de publication"
     el: "Μεταδεδομένα KDP, επικύρωση εξωφύλλου και ροή δημοσίευσης"
   version: "1.0.0"
-  license: "Proprietary"
+  license: "MIT"
   depends_on:
     - export
   api_version: "1"

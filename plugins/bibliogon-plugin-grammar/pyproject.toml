@@ -3,7 +3,7 @@ name = "bibliogon-plugin-grammar"
 version = "1.0.0"
 description = "Grammar check plugin for Bibliogon via LanguageTool"
 authors = ["astrapi69"]
-license = "Proprietary"
+license = "MIT"
 readme = "README.md"
 packages = [{include = "bibliogon_grammar"}]
 

@@ -3,7 +3,7 @@ name = "bibliogon-plugin-translation"
 version = "1.0.0"
 description = "Translation plugin for Bibliogon: DeepL and local LLM (LMStudio) integration."
 authors = ["Asterios Raptis"]
-license = "Proprietary"
+license = "MIT"
 package-mode = true
 packages = [{include = "bibliogon_translation"}]
 

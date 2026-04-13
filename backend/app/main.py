@@ -46,10 +46,15 @@ license_store = LicenseStore(BASE_DIR / _license_file)
 def _check_license(plugin: BasePlugin, plugin_config: dict[str, Any]) -> bool:
     """Pre-activate callback: check premium plugin licenses.
 
-    Core plugins (license_tier="core") always pass.
-    Premium plugins (license_tier="premium") need a valid license key.
-    Trial keys with plugin="*" unlock all premium plugins.
+    Currently disabled: all plugins are free during the development phase.
+    The LICENSING_ENABLED flag in backend/app/licensing.py controls this.
+    When reactivated, premium plugins will need a valid license key.
     """
+    from .licensing import LICENSING_ENABLED
+
+    if not LICENSING_ENABLED:
+        return True
+
     tier = getattr(plugin, "license_tier", "core")
     if tier == "core":
         return True
@@ -289,32 +294,11 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
             continue
 
         if name not in active_names:
-            # Check if plugin exists but is disabled vs missing entirely
-            tier = "unknown"
-            try:
-                # Try to find the plugin class to check license_tier
-                import importlib
-                mod = importlib.import_module(f"bibliogon_{name}.plugin")
-                plugin_cls = next(
-                    v for v in vars(mod).values()
-                    if isinstance(v, type) and hasattr(v, "license_tier")
-                )
-                tier = getattr(plugin_cls, "license_tier", "core")
-            except Exception:
-                pass
-
-            if tier == "premium":
-                result[name] = {
-                    "available": False,
-                    "reason": "license_missing",
-                    "message": f"{info['label']}-Plugin erfordert eine Lizenz",
-                }
-            else:
-                result[name] = {
-                    "available": False,
-                    "reason": "plugin_not_active",
-                    "message": f"{info['label']}-Plugin nicht aktiviert",
-                }
+            result[name] = {
+                "available": False,
+                "reason": "plugin_not_active",
+                "message": f"{info['label']}-Plugin nicht aktiviert",
+            }
             continue
 
         # Plugin is active - check external service if needed

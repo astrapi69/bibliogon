@@ -20,7 +20,7 @@ Amazon Kindle Direct Publishing plugin for [Bibliogon](https://github.com/astrap
 
 ## License
 
-Proprietary. Requires a valid Bibliogon license key (Premium tier).
+MIT
 
 ## API Endpoints
 

@@ -9,7 +9,7 @@ class KdpPlugin(BasePlugin):
     name = "kdp"
     version = "1.0.0"
     api_version = "1"
-    license_tier = "premium"
+    license_tier = "core"
     depends_on = ["export"]
 
     def activate(self) -> None:

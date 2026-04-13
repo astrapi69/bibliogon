@@ -63,8 +63,8 @@ guide:
         de: "Einstellungen"
         en: "Settings"
       description:
-        de: "Unter Einstellungen konfigurierst du die App, Plugins und Lizenzen."
-        en: "In Settings you can configure the app, plugins, and licenses."
+        de: "Unter Einstellungen konfigurierst du die App und Plugins."
+        en: "In Settings you can configure the app and plugins."
       icon: "settings"
 
     - id: "backup"

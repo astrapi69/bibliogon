@@ -3,7 +3,7 @@ name = "bibliogon-plugin-audiobook"
 version = "1.0.0"
 description = "Audiobook generation plugin for Bibliogon: TTS-based chapter-by-chapter audio."
 authors = ["Asterios Raptis"]
-license = "Proprietary"
+license = "MIT"
 package-mode = true
 packages = [{include = "bibliogon_audiobook"}]
 
