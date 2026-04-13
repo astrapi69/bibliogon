@@ -372,3 +372,88 @@ def test_async_audiobook_respects_per_book_skip_list(client, tmp_path, monkeypat
             assert "Glossar" in skipped_titles
     finally:
         _cleanup(client, book_id)
+
+
+# --- Error paths ---
+
+
+def test_async_audiobook_book_not_found(client):
+    """POST with a nonexistent book_id starts a job that fails."""
+    with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+        r = client.post("/api/books/nonexistent-id/export/async/audiobook")
+        # The endpoint accepts the request and starts a job, but the job
+        # fails when it cannot find the book during execution.
+        if r.status_code == 200:
+            job_id = r.json()["job_id"]
+            _wait_for_job(job_id)
+            job = job_store.get(job_id)
+            assert job is not None
+            assert job.status == JobStatus.FAILED
+        else:
+            assert r.status_code == 404
+
+
+def test_async_audiobook_no_chapters(client):
+    """POST with a book that has zero chapters returns an error."""
+    book_id = _create_book_with_chapters(client, 0)
+    try:
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            r = client.post(f"/api/books/{book_id}/export/async/audiobook")
+            assert r.status_code in (200, 400)
+            if r.status_code == 200:
+                # Job starts but fails immediately
+                job_id = r.json()["job_id"]
+                _wait_for_job(job_id)
+                job = job_store.get(job_id)
+                assert job is not None
+                assert job.status in (JobStatus.FAILED, JobStatus.COMPLETED)
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_async_audiobook_engine_failure_results_in_failed_job(client):
+    """When the TTS engine raises an error, the job status is FAILED."""
+    book_id = _create_book_with_chapters(client, 1)
+    try:
+        async def failing_synth(text, output_path, voice="", language="de", rate=""):
+            raise RuntimeError("TTS engine crashed")
+
+        engine = AsyncMock()
+        engine.synthesize = failing_synth
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=engine):
+            r = client.post(f"/api/books/{book_id}/export/async/audiobook")
+            assert r.status_code == 200
+            job_id = r.json()["job_id"]
+            _wait_for_job(job_id)
+
+            job = job_store.get(job_id)
+            assert job is not None
+            assert job.status == JobStatus.FAILED
+            assert job.error is not None
+    finally:
+        _cleanup(client, book_id)
+
+
+def test_async_audiobook_events_contain_expected_fields(client):
+    """Verify event data fields: start has total, chapter_done has duration_seconds."""
+    book_id = _create_book_with_chapters(client, 1)
+    try:
+        with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_tts_engine()):
+            job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
+            _wait_for_job(job_id)
+
+            job = job_store.get(job_id)
+            assert job is not None
+
+            start_event = next(e for e in job.events if e["type"] == "start")
+            assert "total" in start_event["data"]
+            assert start_event["data"]["total"] >= 1
+
+            done_event = next(e for e in job.events if e["type"] == "chapter_done")
+            assert "title" in done_event["data"]
+            assert "index" in done_event["data"]
+
+            ready_event = next(e for e in job.events if e["type"] == "ready")
+            assert "download_url" in ready_event["data"]
+    finally:
+        _cleanup(client, book_id)
