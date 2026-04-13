@@ -398,7 +398,8 @@ ui:
     copy_success: "Publisher and author info applied"
     html_preview_show: "Show preview"
     html_preview_hide: "Hide preview"
-    html_preview_hint: "Approximate rendering on Amazon KDP. Not pixel-perfect."
+    html_preview_hint: "Approximate rendering. Not pixel-perfect."
+    html_preview_hint_amazon: "Approximate rendering on Amazon KDP. Not pixel-perfect."
   cover:
     choose_file: "Choose file"
     uploading: "Uploading..."

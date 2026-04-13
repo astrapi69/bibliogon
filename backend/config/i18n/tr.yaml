@@ -431,7 +431,8 @@ ui:
         copy_success: "Yayinevi ve yazar bilgileri uygulandi"
         html_preview_show: "Onizlemeyi goster"
         html_preview_hide: "Onizlemeyi gizle"
-        html_preview_hint: "Amazon KDP uzerindeki yaklasik gorunum. Piksel duzeyinde degil."
+        html_preview_hint: "Yaklasik gorunum. Piksel duzeyinde degil."
+        html_preview_hint_amazon: "Amazon KDP uzerindeki yaklasik gorunum. Piksel duzeyinde degil."
     cover:
         choose_file: "Dosya sec"
         uploading: "Yukleniyor..."

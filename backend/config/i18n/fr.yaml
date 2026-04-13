@@ -431,7 +431,8 @@ ui:
     copy_success: "Informations editeur et auteur appliquees"
     html_preview_show: "Afficher l'apercu"
     html_preview_hide: "Masquer l'apercu"
-    html_preview_hint: "Rendu approximatif sur Amazon KDP. Pas au pixel pres."
+    html_preview_hint: "Rendu approximatif. Pas au pixel pres."
+    html_preview_hint_amazon: "Rendu approximatif sur Amazon KDP. Pas au pixel pres."
   cover:
     choose_file: "Choisir un fichier"
     uploading: "Telechargement..."

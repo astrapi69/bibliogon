@@ -398,7 +398,8 @@ ui:
     copy_success: "Πληροφορίες εκδότη και συγγραφέα εφαρμόστηκαν"
     html_preview_show: "Εμφάνιση προεπισκόπησης"
     html_preview_hide: "Απόκρυψη προεπισκόπησης"
-    html_preview_hint: "Κατά προσέγγιση απεικόνιση στο Amazon KDP. Όχι ακριβής σε pixel."
+    html_preview_hint: "Κατά προσέγγιση απεικόνιση. Όχι ακριβής σε pixel."
+    html_preview_hint_amazon: "Κατά προσέγγιση απεικόνιση στο Amazon KDP. Όχι ακριβής σε pixel."
   cover:
     choose_file: "Επιλογή αρχείου"
     uploading: "Μεταφόρτωση..."

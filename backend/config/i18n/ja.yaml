@@ -398,7 +398,8 @@ ui:
         copy_success: "出版社と著者情報を適用しました"
         html_preview_show: "プレビューを表示"
         html_preview_hide: "プレビューを非表示"
-        html_preview_hint: "Amazon KDPでの概算表示。ピクセル単位では正確ではありません。"
+        html_preview_hint: "概算表示。ピクセル単位では正確ではありません。"
+        html_preview_hint_amazon: "Amazon KDPでの概算表示。ピクセル単位では正確ではありません。"
     cover:
         choose_file: "ファイルを選択"
         uploading: "アップロード中..."

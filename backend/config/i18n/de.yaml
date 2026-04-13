@@ -398,7 +398,8 @@ ui:
     copy_success: "Verlag und Autoren-Info übernommen"
     html_preview_show: "Vorschau anzeigen"
     html_preview_hide: "Vorschau ausblenden"
-    html_preview_hint: "Ungefähre Darstellung auf Amazon KDP. Nicht pixelgenau."
+    html_preview_hint: "Ungefähre Darstellung. Nicht pixelgenau."
+    html_preview_hint_amazon: "Ungefähre Darstellung auf Amazon KDP. Nicht pixelgenau."
   cover:
     choose_file: "Datei wählen"
     uploading: "Wird hochgeladen..."

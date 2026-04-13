@@ -190,11 +190,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                         </div>
                         <Field label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")} value={form.html_description}
                             onChange={(v) => set("html_description", v)} multiline maxChars={4000}/>
-                        <HtmlDescriptionPreview html={form.html_description || ""} />
+                        <HtmlPreview html={form.html_description || ""} hint={t("ui.metadata.html_preview_hint_amazon", "Ungefaehre Darstellung auf Amazon KDP. Nicht pixelgenau.")} />
                         <Field label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")} value={form.backpage_description}
                             onChange={(v) => set("backpage_description", v)} multiline maxChars={600}/>
+                        <HtmlPreview html={form.backpage_description || ""} />
                         <Field label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")} value={form.backpage_author_bio}
                             onChange={(v) => set("backpage_author_bio", v)} multiline maxChars={2000}/>
+                        <HtmlPreview html={form.backpage_author_bio || ""} />
                     </div>
                 </Tabs.Content>
 
@@ -313,7 +315,7 @@ export function sanitizeAmazonHtml(html: string): string {
     return DOMPurify.sanitize(html, {ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: []});
 }
 
-function HtmlDescriptionPreview({html}: {html: string}) {
+function HtmlPreview({html, hint}: {html: string; hint?: string}) {
     const {t} = useI18n();
     const [showPreview, setShowPreview] = useState(false);
 
@@ -340,10 +342,9 @@ function HtmlDescriptionPreview({html}: {html: string}) {
                     lineHeight: 1.6,
                 }}>
                     <small style={{display: "block", marginBottom: 8, color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                        {t("ui.metadata.html_preview_hint", "Ungefaehre Darstellung auf Amazon KDP. Nicht pixelgenau.")}
+                        {hint || t("ui.metadata.html_preview_hint", "Ungefaehre Darstellung. Nicht pixelgenau.")}
                     </small>
                     <div
-                        className="amazon-description-preview"
                         dangerouslySetInnerHTML={{__html: sanitizeAmazonHtml(html)}}
                     />
                 </div>
