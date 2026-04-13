@@ -150,7 +150,7 @@ Expected delta: ~30-40 tests, mostly Playwright E2E.
 - [x] CW-25: editor formatting E2E (text entry, toolbar, shortcuts, block elements, undo, alignment, button state sync)
 - [x] CW-26: toolbar data-testid migration (add `toolbar-{action}` testids, migrate editor specs from getByTitle)
 - [x] CW-21: audiobook generation E2E (mocked TTS)
-- [ ] CW-22: plugin ZIP installation E2E
+- [x] CW-22: plugin ZIP installation E2E
 - [x] CW-23: import flows E2E (project ZIP, markdown ZIP)
 - [ ] CW-24: chapter drag-and-drop reorder E2E
 
