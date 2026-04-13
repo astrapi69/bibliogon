@@ -1,4 +1,9 @@
-"""License management API for premium plugins."""
+"""License management API for premium plugins.
+
+Currently disabled: all plugins are free during the development phase.
+The LICENSING_ENABLED flag in backend/app/licensing.py controls this.
+When reactivated, these endpoints manage HMAC-signed license keys.
+"""
 
 import yaml
 from pathlib import Path
@@ -7,13 +12,18 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.licensing import LicenseError, LicenseStore, LicenseValidator
+from app.licensing import LICENSING_ENABLED, LicenseError, LicenseStore, LicenseValidator
 
 router = APIRouter(prefix="/licenses", tags=["licenses"])
 
 _validator: LicenseValidator | None = None
 _store: LicenseStore | None = None
 _manager: Any = None
+
+_DISABLED_DETAIL = (
+    "License management is currently disabled. "
+    "All plugins are free during the current development phase."
+)
 
 
 def configure(manager: Any, validator: LicenseValidator, store: LicenseStore) -> None:
@@ -44,6 +54,8 @@ class LicenseActivate(BaseModel):
 @router.get("")
 def list_licenses() -> dict[str, Any]:
     """List all stored license keys with status, author, and expiry."""
+    if not LICENSING_ENABLED:
+        raise HTTPException(status_code=410, detail=_DISABLED_DETAIL)
     if not _store or not _validator:
         raise HTTPException(status_code=500, detail="License system not configured")
 
@@ -76,6 +88,8 @@ def list_licenses() -> dict[str, Any]:
 @router.post("")
 def activate_license(body: LicenseActivate) -> dict[str, Any]:
     """Activate a license key for a plugin."""
+    if not LICENSING_ENABLED:
+        raise HTTPException(status_code=410, detail=_DISABLED_DETAIL)
     if not _store or not _validator:
         raise HTTPException(status_code=500, detail="License system not configured")
 
@@ -130,6 +144,8 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
 @router.delete("/{plugin_name}")
 def deactivate_license(plugin_name: str) -> dict[str, str]:
     """Remove a license key for a plugin."""
+    if not LICENSING_ENABLED:
+        raise HTTPException(status_code=410, detail=_DISABLED_DETAIL)
     if not _store:
         raise HTTPException(status_code=500, detail="License system not configured")
 
