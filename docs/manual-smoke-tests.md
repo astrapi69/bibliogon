@@ -65,11 +65,9 @@ whether the result looks good. These are all judgment calls.
   marketing tab with 5+ keywords and confirm the chips remain
   visually distinct from the input field.
 - [ ] **Font loading FOUC** - on a cold page load in each theme,
-  is there a noticeable flash before the custom font (Crimson
-  Pro / Inter + Source Serif Pro / Lora) kicks in? Google Fonts
-  with `display=swap` should handle this but it is worth
-  eyeballing on a slow connection. O-01 (offline font bundling)
-  has landed, so this should no longer be an issue.
+  is there a noticeable flash before the custom font kicks in?
+  Fonts are bundled locally (O-01 complete), so this should not
+  be an issue. Check anyway on slow devices.
 - [ ] **Dark mode screenshot sanity** - take a screenshot of
   each of the 6 palettes in dark mode and scan for obvious
   contrast failures, unreadable text, or missing border-on-dark
@@ -97,8 +95,8 @@ not guaranteed to be installed in every test environment.
 - [ ] **Real LanguageTool Premium auth** - if you have a paid
   LanguageTool account, configure `grammar.yaml` with
   `languagetool_username` and `languagetool_api_key`, run a
-  grammar check, verify premium rules fire (the free tier
-  silently returns a smaller rule set).
+  grammar check, verify LanguageTool Premium rules fire (the
+  self-hosted free tier returns a smaller rule set).
 - [ ] **DeepL translation round-trip** - translate a book into a
   different language via the Translation plugin. Verify the
   translated book opens, chapter content is preserved, and the

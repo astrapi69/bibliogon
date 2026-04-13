@@ -44,7 +44,7 @@ plugins/bibliogon-plugin-{name}/
 - Pydantic v2 for all request/response schemas.
 - SQLAlchemy models in backend/app/models/.
 - Configuration via YAML (backend/config/plugins/{name}.yaml), NOT hardcoded.
-- Extend i18n strings in backend/config/i18n/{lang}.yaml (5 languages: DE, EN, ES, FR, EL).
+- Extend i18n strings in backend/config/i18n/{lang}.yaml (8 languages: DE, EN, ES, FR, EL, PT, TR, JA).
 - Plugin dependencies as a class attribute: `depends_on = ["export"]`.
 - All plugins are free (MIT). Licensing infrastructure exists but is dormant (`LICENSING_ENABLED = False`).
 

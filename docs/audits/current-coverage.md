@@ -1,6 +1,10 @@
-# Test Coverage Audit - v0.13.0
+# Test Coverage Audit - v0.14.0
 
-Audit date: 2026-04-12 (updated after Phase 4, released as v0.13.0)
+Audit date: 2026-04-13 (updated for v0.14.0 release)
+
+Note: v0.14.0 added 100+ tests for AI integration, usage tracking, config refresh, and providers. Current totals: 467 backend, 323 Vitest, 88 E2E. Detailed module-level audit below is from the v0.13.0 baseline and has not been updated module-by-module yet.
+
+Previous audit date: 2026-04-12 (v0.13.0)
 Baseline before all coverage work: 244 backend `make test`, 145 Vitest, 52 E2E.
 Post-Phase 1+2: 308 backend (244+64), 145 Vitest, 57 E2E (52+5).
 Post-Phase 3a: 308 backend, 246 Vitest (145+101), 57 E2E.

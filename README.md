@@ -21,9 +21,10 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Full-data backup and restore (.bgb) with images and optional audiobook files
 - Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
 - In-app help panel with Markdown rendering, search, and context-sensitive links
+- Multi-provider AI assistant (Anthropic, OpenAI, Gemini, Mistral, LM Studio) with chapter review, marketing text generation, and context-aware suggestions
 - Plugin system with ZIP installation for third-party plugins
 - Encrypted credential storage (Fernet) for API keys and service accounts
-- 3 themes (Warm Literary, Cool Modern, Nord) x Light/Dark
+- 6 themes (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) x Light/Dark
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
 - Responsive layout with hamburger menu on mobile
 
