@@ -216,19 +216,7 @@ Expected delta: ~30-40 tests, mostly Playwright E2E.
 
 ## Offline hardening
 
-- [ ] O-01: bundle all UI fonts locally instead of the Google Fonts CDN.
-      Currently `frontend/index.html` loads six font families
-      (Crimson Pro, JetBrains Mono, DM Sans, Inter, Lora, Source Serif
-      Pro) over `fonts.googleapis.com`, which breaks offline and in
-      privacy-sensitive environments. Plan: put WOFF2 files into
-      `frontend/public/fonts/` (OFL-licensed, license texts alongside
-      as `LICENSE-{name}.txt`), add matching `@font-face` rules in
-      `global.css`, remove the Google Fonts link from `index.html`,
-      have the PWA manifest/service worker cache the new asset URLs.
-      Must be consistent: either all six fonts local or none. Partial
-      migrations only create confusion. Extracted from the themes task
-      because only the three new fonts were added there; the bundling
-      touches all six.
+- [x] O-01: bundle all UI fonts locally instead of the Google Fonts CDN.
 
 ## KDP publishing workflow
 - [x] K-01: finish and deploy the KDP plugin
