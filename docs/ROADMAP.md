@@ -130,9 +130,9 @@ Expected delta: ~30-40 tests across backend and plugins.
 - [x] CW-09: `pandoc_runner.py` tests (export plugin)
 - [x] CW-10: `backup_history.py` + `GET /api/backup/history` tests
 - [x] CW-11: `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` tests
-- [ ] CW-12: plugin `routes.py` integration tests (grammar, kdp, kinderbuch, translation)
-- [ ] CW-13: audiobook dry-run + preview endpoint tests
-- [ ] CW-14: Google Cloud TTS config endpoint tests
+- [x] CW-12: plugin `routes.py` integration tests (kinderbuch, kdp)
+- [x] CW-13: audiobook dry-run + preview endpoint tests
+- [x] CW-14: Google Cloud TTS config endpoint tests
 
 ### Phase 3: Frontend Focus - raise frontend from 32% to 68%
 Actual delta: +138 frontend tests (101 Phase 3a + 37 Phase 3b).
