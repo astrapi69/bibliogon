@@ -1,4 +1,4 @@
-import {useState, useRef, useEffect} from "react";
+import React, {useState, useRef, useEffect} from "react";
 import {Chapter, ChapterType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {
@@ -66,7 +66,7 @@ const STRUCTURE_TYPES: ChapterType[] = ["part", "part_intro", "interlude"];
 
 // --- Sortable Chapter Item ---
 
-function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, typeLabels, deleteLabel, renameLabel}: {
+const SortableChapterItem = React.memo(function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, typeLabels, deleteLabel, renameLabel}: {
     chapter: Chapter;
     isActive: boolean;
     onSelect: (id: string) => void;
@@ -182,7 +182,7 @@ function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, t
             </ContextMenu.Portal>
         </ContextMenu.Root>
     );
-}
+});
 
 // --- Sortable Group ---
 

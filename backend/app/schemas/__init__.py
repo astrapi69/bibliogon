@@ -221,6 +221,17 @@ class ChapterUpdate(BaseModel):
     chapter_type: ChapterType | None = None
 
 
+class ChapterSummary(BaseModel):
+    """Chapter metadata without content (for book detail listings)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    book_id: str
+    title: str
+    position: int
+    chapter_type: str
+
+
 class ChapterOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

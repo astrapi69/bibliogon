@@ -77,7 +77,21 @@ export default function BookEditor() {
         ai_context_chars?: number;
     }>({});
 
-    const activeChapter = book?.chapters.find((c) => c.id === activeChapterId) ?? null;
+    const activeChapterMeta = book?.chapters.find((c) => c.id === activeChapterId) ?? null;
+    // Loaded chapter content (fetched on demand, not with the book)
+    const [loadedContent, setLoadedContent] = useState<{id: string; content: string} | null>(null);
+    const [contentLoading, setContentLoading] = useState(false);
+
+    // Fetch chapter content when active chapter changes
+    useEffect(() => {
+        if (!bookId || !activeChapterId) { setLoadedContent(null); return; }
+        if (loadedContent?.id === activeChapterId) return;
+        setContentLoading(true);
+        api.chapters.get(bookId, activeChapterId)
+            .then((ch) => setLoadedContent({id: ch.id, content: ch.content}))
+            .catch(() => notify.error(t("ui.common.error", "Fehler beim Laden")))
+            .finally(() => setContentLoading(false));
+    }, [bookId, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loadBook = useCallback(async () => {
         if (!bookId) return;
@@ -267,14 +281,14 @@ export default function BookEditor() {
                     onBack={() => _setShowMetadata(false)}
                     allBooks={allBooks}
                 />
-            ) : activeChapter ? (
+            ) : activeChapterMeta && loadedContent?.id === activeChapterMeta.id && !contentLoading ? (
                 <Editor
-                    key={activeChapter.id}
-                    content={activeChapter.content}
+                    key={activeChapterMeta.id}
+                    content={loadedContent.content}
                     onSave={handleSaveContent}
                     bookId={bookId}
-                    chapterId={activeChapter.id}
-                    chapterTitle={activeChapter.title}
+                    chapterId={activeChapterMeta.id}
+                    chapterTitle={activeChapterMeta.title}
                     bookContext={{
                         title: book.title,
                         author: book.author,
@@ -282,12 +296,14 @@ export default function BookEditor() {
                         genre: book.genre || "",
                         description: book.description || "",
                     }}
-                    placeholder={`Schreibe "${activeChapter.title}"...`}
+                    placeholder={`Schreibe "${activeChapterMeta.title}"...`}
                     autosaveDebounceMs={editorSettings.autosave_debounce_ms}
                     draftSaveDebounceMs={editorSettings.draft_save_debounce_ms}
                     draftMaxAgeDays={editorSettings.draft_max_age_days}
                     aiContextChars={editorSettings.ai_context_chars}
                 />
+            ) : activeChapterMeta && contentLoading ? (
+                <div style={styles.loading}><p>{t("ui.common.loading", "Laden...")}</p></div>
             ) : (
                 <div style={styles.noChapter}>
                     <p style={styles.noChapterText}>

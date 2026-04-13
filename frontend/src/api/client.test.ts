@@ -53,7 +53,7 @@ describe("api.books", () => {
         mockFetch.mockReturnValue(jsonResponse({id: "abc", title: "My Book", chapters: []}));
         const book = await api.books.get("abc");
         expect(book.id).toBe("abc");
-        expect(mockFetch).toHaveBeenCalledWith("/api/books/abc", expect.anything());
+        expect(mockFetch).toHaveBeenCalledWith("/api/books/abc?include_content=false", expect.anything());
     });
 
     it("create sends POST with body", async () => {

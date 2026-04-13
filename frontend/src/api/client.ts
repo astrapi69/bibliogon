@@ -409,7 +409,8 @@ export const api = {
     books: {
         list: () => request<Book[]>("/books"),
 
-        get: (id: string) => request<BookDetail>(`/books/${id}`),
+        get: (id: string, includeContent = false) =>
+            request<BookDetail>(`/books/${id}${includeContent ? "" : "?include_content=false"}`),
 
         create: (data: BookCreate) =>
             request<Book>("/books", {

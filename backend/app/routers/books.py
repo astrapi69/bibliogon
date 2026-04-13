@@ -99,7 +99,13 @@ def create_book(payload: BookCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{book_id}", response_model=BookDetail)
-def get_book(book_id: str, db: Session = Depends(get_db)):
+def get_book(book_id: str, include_content: bool = True, db: Session = Depends(get_db)):
+    """Get a single book with its chapters.
+
+    When include_content=false, chapter content is replaced with an empty
+    string to reduce payload size for large books (100+ chapters). The
+    frontend fetches individual chapter content on demand.
+    """
     book = (
         db.query(Book)
         .options(joinedload(Book.chapters))
@@ -108,6 +114,13 @@ def get_book(book_id: str, db: Session = Depends(get_db)):
     )
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
+    if not include_content:
+        # Serialize through Pydantic (handles keywords/skip_types JSON decoding),
+        # then strip chapter content to reduce payload.
+        result = BookDetail.model_validate(book).model_dump()
+        for ch in result.get("chapters", []):
+            ch["content"] = ""
+        return result
     return book
 
 
