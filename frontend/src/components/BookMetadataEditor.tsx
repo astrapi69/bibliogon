@@ -8,6 +8,7 @@ import {useDialog} from "./AppDialog";
 import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
 import * as Tabs from "@radix-ui/react-tabs";
+import QualityTab from "./QualityTab";
 
 interface Props {
     book: BookDetail;
@@ -143,6 +144,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                     <Tabs.Trigger value="marketing" className="radix-tab-trigger" data-testid="metadata-tab-marketing">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
                     <Tabs.Trigger value="design" className="radix-tab-trigger">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
                     <Tabs.Trigger value="audiobook" className="radix-tab-trigger">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
+                    <Tabs.Trigger value="quality" className="radix-tab-trigger">{t("ui.metadata.tab_quality", "Qualitaet")}</Tabs.Trigger>
                 </Tabs.List>
 
                 <Tabs.Content value="general">
@@ -244,6 +246,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
                             onSkipChapterTypesChange={setAudiobookSkipTypes}
                         />
                         <AudiobookDownloads bookId={book.id}/>
+                    </div>
+                </Tabs.Content>
+
+                <Tabs.Content value="quality">
+                    <div style={styles.tabContent}>
+                        <QualityTab bookId={book.id} />
                     </div>
                 </Tabs.Content>
             </Tabs.Root>

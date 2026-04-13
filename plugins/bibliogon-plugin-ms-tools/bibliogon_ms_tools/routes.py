@@ -286,3 +286,116 @@ async def export_metrics(req: MetricsExportRequest) -> StreamingResponse:
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
     )
+
+
+def _extract_text(content: object) -> str:
+    """Extract plain text from TipTap JSON without external plugin dependency."""
+    if isinstance(content, str):
+        try:
+            doc = json.loads(content)
+        except (json.JSONDecodeError, TypeError):
+            return content
+    elif isinstance(content, dict):
+        doc = content
+    else:
+        return str(content) if content else ""
+
+    parts: list[str] = []
+
+    def walk(node: dict) -> None:
+        if node.get("type") == "text":
+            parts.append(node.get("text", ""))
+        for child in node.get("content", []):
+            if isinstance(child, dict):
+                walk(child)
+            # Add a space between block-level children for word boundary
+        if node.get("type") in ("paragraph", "heading", "blockquote", "listItem"):
+            parts.append("\n")
+
+    if isinstance(doc, dict):
+        walk(doc)
+    return "".join(parts).strip()
+
+
+@router.get("/metrics/{book_id}")
+async def chapter_metrics(book_id: str) -> dict[str, Any]:
+    """Per-chapter quality metrics for the quality tab.
+
+    Returns readability + style metrics for each chapter, plus
+    book-wide averages for outlier detection.
+    """
+    try:
+        from app.database import SessionLocal
+        from app.models import Book, Chapter
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Database not available")
+
+    db = SessionLocal()
+    try:
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+
+        chapters = (
+            db.query(Chapter)
+            .filter(Chapter.book_id == book_id)
+            .order_by(Chapter.position)
+            .all()
+        )
+
+        rows: list[dict[str, Any]] = []
+        for ch in chapters:
+            plain = _extract_text(ch.content)
+            if not plain.strip():
+                rows.append({
+                    "chapter_id": ch.id,
+                    "chapter": ch.title,
+                    "position": ch.position,
+                    "chapter_type": ch.chapter_type,
+                    "word_count": 0,
+                    "sentence_count": 0,
+                    "empty": True,
+                })
+                continue
+
+            lang = book.language or "de"
+            readability = analyze_readability(plain, lang)
+            style = check_style(plain, lang)
+            rows.append({
+                "chapter_id": ch.id,
+                "chapter": ch.title,
+                "position": ch.position,
+                "chapter_type": ch.chapter_type,
+                "empty": False,
+                "word_count": readability.get("word_count", 0),
+                "sentence_count": readability.get("sentence_count", 0),
+                "avg_sentence_length": readability.get("avg_sentence_length", 0),
+                "flesch_reading_ease": readability.get("flesch_reading_ease", 0),
+                "difficulty": readability.get("difficulty", ""),
+                "reading_time_minutes": readability.get("reading_time_minutes", 0),
+                "filler_ratio": style.get("filler_ratio", 0),
+                "passive_ratio": style.get("passive_ratio", 0),
+                "adverb_ratio": style.get("adverb_ratio", 0),
+                "adjective_ratio": style.get("adjective_ratio", 0),
+                "long_sentence_count": style.get("long_sentence_count", 0),
+                "finding_count": style.get("finding_count", 0),
+            })
+    finally:
+        db.close()
+
+    # Compute book-wide averages for outlier detection
+    non_empty = [r for r in rows if not r.get("empty")]
+    avg: dict[str, float] = {}
+    if non_empty:
+        for key in ("word_count", "filler_ratio", "passive_ratio", "adverb_ratio",
+                     "adjective_ratio", "avg_sentence_length", "flesch_reading_ease",
+                     "long_sentence_count"):
+            values = [r.get(key, 0) for r in non_empty]
+            avg[key] = round(sum(values) / len(values), 4) if values else 0
+
+    return {
+        "book_title": book.title,
+        "chapter_count": len(rows),
+        "chapters": rows,
+        "averages": avg,
+    }

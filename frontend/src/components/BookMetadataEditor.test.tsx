@@ -183,7 +183,7 @@ describe("BookMetadataEditor", () => {
   it("all tab panels are present in the DOM", () => {
     renderEditor()
     const panels = document.querySelectorAll('[role="tabpanel"]')
-    expect(panels.length).toBe(6)
+    expect(panels.length).toBe(7)
   })
 
   // --- Save ---

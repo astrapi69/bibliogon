@@ -91,6 +91,33 @@ export interface StyleFinding {
     message: {de: string; en: string};
 }
 
+export interface ChapterMetric {
+    chapter_id: string;
+    chapter: string;
+    position: number;
+    chapter_type: string;
+    empty: boolean;
+    word_count: number;
+    sentence_count: number;
+    avg_sentence_length: number;
+    flesch_reading_ease: number;
+    difficulty: string;
+    reading_time_minutes: number;
+    filler_ratio: number;
+    passive_ratio: number;
+    adverb_ratio: number;
+    adjective_ratio: number;
+    long_sentence_count: number;
+    finding_count: number;
+}
+
+export interface ChapterMetricsResponse {
+    book_title: string;
+    chapter_count: number;
+    chapters: ChapterMetric[];
+    averages: Record<string, number>;
+}
+
 export interface BookCreate {
     title: string;
     subtitle?: string;
@@ -855,6 +882,10 @@ export const api = {
     },
 
     msTools: {
+        /** GET /api/ms-tools/metrics/{bookId} -> per-chapter quality metrics */
+        chapterMetrics: (bookId: string) =>
+            request<ChapterMetricsResponse>(`/ms-tools/metrics/${bookId}`),
+
         /** POST /api/ms-tools/check -> style analysis with findings */
         check: (text: string, language: string = "de", bookId?: string) => {
             const params = new URLSearchParams({text, language})
