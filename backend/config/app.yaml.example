@@ -29,10 +29,8 @@ app:
   trash_auto_delete_enabled: true
   version: 0.11.0
 author:
-  name: Asterios Raptis
-  pen_names:
-  - Draven Quantum
-  - Stelio Moon
+  name: ''
+  pen_names: []
 plugins:
   config_dir: config/plugins
   disabled: []
@@ -49,6 +47,6 @@ plugins:
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg
-  subtitle: Bücher schreiben und exportieren
-  theme: cool-modern
+  subtitle: ''
+  theme: warm-literary
   title: Bibliogon

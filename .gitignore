@@ -53,6 +53,7 @@ build/
 # Config files
 /backend/config/backup_history.json
 /backend/config/licenses.json
+/backend/config/app.yaml
 
 # prompt files
 /docs/backlog.md
