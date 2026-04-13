@@ -1,4 +1,4 @@
-"""Tests for plugin discovery and license tier display."""
+"""Tests for plugin discovery (all plugins are free)."""
 
 from fastapi.testclient import TestClient
 
@@ -18,8 +18,8 @@ def test_discovered_plugins_returns_core_plugins():
     assert "ms-tools" in names
 
 
-def test_discovered_plugins_includes_premium():
-    """Premium plugins (audiobook, translation, kinderbuch, kdp) should appear."""
+def test_discovered_plugins_includes_all():
+    """All plugins (audiobook, translation, kinderbuch, kdp) should appear."""
     resp = client.get("/api/settings/plugins/discovered")
     assert resp.status_code == 200
     names = {p["name"] for p in resp.json()}

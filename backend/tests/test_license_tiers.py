@@ -1,4 +1,9 @@
-"""Tests for the license tier system (core vs premium, author binding, no device lock)."""
+"""Tests for the license infrastructure (dormant but preserved for future reactivation).
+
+The licensing system is currently disabled (LICENSING_ENABLED=False), but these
+tests verify the underlying LicenseValidator/LicenseStore/key generation still
+work correctly so reactivation is a one-line change.
+"""
 
 from datetime import date, timedelta
 

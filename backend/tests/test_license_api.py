@@ -5,12 +5,11 @@ Covers:
   POST   /api/licenses              -> activate a license key
   DELETE /api/licenses/{plugin}     -> deactivate (remove) a license key
 
-Uses the real LicenseValidator and LicenseStore via TestClient, but
-patches the store path to a temp file so the real licenses.json is
-never touched.
+When LICENSING_ENABLED is False (current default), all endpoints return
+HTTP 410 Gone. The functional tests patch LICENSING_ENABLED=True to
+verify the dormant infrastructure still works correctly.
 """
 
-from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -27,6 +26,11 @@ from app.main import app
 from app.routers import licenses as licenses_module
 
 SECRET = "test-secret-integration"
+
+DISABLED_DETAIL = (
+    "License management is currently disabled. "
+    "All plugins are free during the current development phase."
+)
 
 
 @pytest.fixture
@@ -57,22 +61,58 @@ def client(validator, store):
     licenses_module._manager = original_manager
 
 
-# --- GET /api/licenses ---
+@pytest.fixture
+def enabled_client(client):
+    """TestClient with LICENSING_ENABLED patched to True."""
+    with patch("app.routers.licenses.LICENSING_ENABLED", True):
+        yield client
 
 
-def test_list_licenses_empty(client):
-    """Empty store returns empty dict."""
+# --- 410 Gone when licensing is disabled ---
+
+
+def test_list_licenses_returns_410_when_disabled(client):
+    """GET /api/licenses returns 410 when LICENSING_ENABLED is False."""
     resp = client.get("/api/licenses")
+    assert resp.status_code == 410
+    assert resp.json()["detail"] == DISABLED_DETAIL
+
+
+def test_activate_returns_410_when_disabled(client, validator):
+    """POST /api/licenses returns 410 when LICENSING_ENABLED is False."""
+    key = create_plugin_key(validator, "audiobook", "Author", 365)
+    resp = client.post(
+        "/api/licenses",
+        json={"plugin_name": "audiobook", "license_key": key},
+    )
+    assert resp.status_code == 410
+    assert resp.json()["detail"] == DISABLED_DETAIL
+
+
+def test_deactivate_returns_410_when_disabled(client):
+    """DELETE /api/licenses/{plugin} returns 410 when LICENSING_ENABLED is False."""
+    resp = client.delete("/api/licenses/audiobook")
+    assert resp.status_code == 410
+    assert resp.json()["detail"] == DISABLED_DETAIL
+
+
+# --- Functional tests (LICENSING_ENABLED=True) ---
+# These verify the dormant infrastructure still works when reactivated.
+
+
+def test_list_licenses_empty(enabled_client):
+    """Empty store returns empty dict."""
+    resp = enabled_client.get("/api/licenses")
     assert resp.status_code == 200
     assert resp.json() == {}
 
 
-def test_list_licenses_shows_valid_key(client, validator, store):
+def test_list_licenses_shows_valid_key(enabled_client, validator, store):
     """Valid key appears with status 'valid' and metadata."""
     key = create_plugin_key(validator, "audiobook", "Test Author", 365)
     store.set("audiobook", key)
 
-    resp = client.get("/api/licenses")
+    resp = enabled_client.get("/api/licenses")
     assert resp.status_code == 200
     data = resp.json()
     assert "audiobook" in data
@@ -81,39 +121,36 @@ def test_list_licenses_shows_valid_key(client, validator, store):
     assert data["audiobook"]["key_full"] == key
 
 
-def test_list_licenses_shows_expired_key(client, validator, store):
+def test_list_licenses_shows_expired_key(enabled_client, validator, store):
     """Expired key appears with status 'invalid' and error detail."""
     payload = LicensePayload(plugin="audiobook", version="1", expires="2020-01-01")
     key = validator.create_license(payload)
     store.set("audiobook", key)
 
-    resp = client.get("/api/licenses")
+    resp = enabled_client.get("/api/licenses")
     assert resp.status_code == 200
     data = resp.json()
     assert data["audiobook"]["status"] == "invalid"
     assert "expired" in data["audiobook"]["error"].lower()
 
 
-def test_list_licenses_shows_trial_wildcard(client, validator, store):
+def test_list_licenses_shows_trial_wildcard(enabled_client, validator, store):
     """Trial key stored as '*' appears in the list."""
     trial = create_trial_key(validator, author="Test", days=30)
     store.set("*", trial)
 
-    resp = client.get("/api/licenses")
+    resp = enabled_client.get("/api/licenses")
     assert resp.status_code == 200
     data = resp.json()
     assert "*" in data
     assert data["*"]["status"] == "valid"
 
 
-# --- POST /api/licenses ---
-
-
-def test_activate_valid_key(client, validator):
+def test_activate_valid_key(enabled_client, validator):
     """Activating a valid key stores it and returns success."""
     key = create_plugin_key(validator, "translation", "Author", 365)
 
-    resp = client.post(
+    resp = enabled_client.post(
         "/api/licenses",
         json={"plugin_name": "translation", "license_key": key},
     )
@@ -125,13 +162,13 @@ def test_activate_valid_key(client, validator):
     assert body["expires"] is not None
 
     # Verify it persists - shows up in GET
-    list_resp = client.get("/api/licenses")
+    list_resp = enabled_client.get("/api/licenses")
     assert "translation" in list_resp.json()
 
 
-def test_activate_invalid_key_returns_400(client):
+def test_activate_invalid_key_returns_400(enabled_client):
     """Malformed key is rejected with HTTP 400."""
-    resp = client.post(
+    resp = enabled_client.post(
         "/api/licenses",
         json={"plugin_name": "audiobook", "license_key": "INVALID-GARBAGE"},
     )
@@ -139,12 +176,12 @@ def test_activate_invalid_key_returns_400(client):
     assert "Malformed" in resp.json()["detail"]
 
 
-def test_activate_expired_key_returns_400(client, validator):
+def test_activate_expired_key_returns_400(enabled_client, validator):
     """Expired key is rejected with HTTP 400."""
     payload = LicensePayload(plugin="audiobook", version="1", expires="2020-01-01")
     key = validator.create_license(payload)
 
-    resp = client.post(
+    resp = enabled_client.post(
         "/api/licenses",
         json={"plugin_name": "audiobook", "license_key": key},
     )
@@ -152,11 +189,11 @@ def test_activate_expired_key_returns_400(client, validator):
     assert "expired" in resp.json()["detail"].lower()
 
 
-def test_activate_wrong_plugin_returns_400(client, validator):
+def test_activate_wrong_plugin_returns_400(enabled_client, validator):
     """Key for a different plugin is rejected."""
     key = create_plugin_key(validator, "audiobook", "Author", 365)
 
-    resp = client.post(
+    resp = enabled_client.post(
         "/api/licenses",
         json={"plugin_name": "translation", "license_key": key},
     )
@@ -164,13 +201,13 @@ def test_activate_wrong_plugin_returns_400(client, validator):
     assert "not 'translation'" in resp.json()["detail"]
 
 
-def test_activate_replaces_existing_key(client, validator, store):
+def test_activate_replaces_existing_key(enabled_client, validator, store):
     """Activating a new key for the same plugin replaces the old one."""
     old_key = create_plugin_key(validator, "audiobook", "Old Author", 365)
     store.set("audiobook", old_key)
 
     new_key = create_plugin_key(validator, "audiobook", "New Author", 365)
-    resp = client.post(
+    resp = enabled_client.post(
         "/api/licenses",
         json={"plugin_name": "audiobook", "license_key": new_key},
     )
@@ -178,49 +215,46 @@ def test_activate_replaces_existing_key(client, validator, store):
     assert resp.json()["author"] == "New Author"
 
     # Old key is gone
-    list_resp = client.get("/api/licenses")
+    list_resp = enabled_client.get("/api/licenses")
     assert list_resp.json()["audiobook"]["author"] == "New Author"
 
 
-# --- DELETE /api/licenses/{plugin} ---
-
-
-def test_deactivate_license(client, validator, store):
+def test_deactivate_license(enabled_client, validator, store):
     """Deactivating removes the key from the store."""
     key = create_plugin_key(validator, "audiobook", "Author", 365)
     store.set("audiobook", key)
 
-    resp = client.delete("/api/licenses/audiobook")
+    resp = enabled_client.delete("/api/licenses/audiobook")
     assert resp.status_code == 200
     assert resp.json()["status"] == "deactivated"
 
     # Verify removal
-    list_resp = client.get("/api/licenses")
+    list_resp = enabled_client.get("/api/licenses")
     assert "audiobook" not in list_resp.json()
 
 
-def test_deactivate_nonexistent_is_idempotent(client):
+def test_deactivate_nonexistent_is_idempotent(enabled_client):
     """Deactivating a plugin without a key does not error."""
-    resp = client.delete("/api/licenses/nonexistent")
+    resp = enabled_client.delete("/api/licenses/nonexistent")
     assert resp.status_code == 200
     assert resp.json()["status"] == "deactivated"
 
 
-def test_activate_then_deactivate_roundtrip(client, validator):
+def test_activate_then_deactivate_roundtrip(enabled_client, validator):
     """Full cycle: activate -> verify -> deactivate -> verify gone."""
     key = create_plugin_key(validator, "grammar", "Author", 365)
 
     # Activate
-    client.post("/api/licenses", json={"plugin_name": "grammar", "license_key": key})
+    enabled_client.post("/api/licenses", json={"plugin_name": "grammar", "license_key": key})
 
     # Verify active
-    list_resp = client.get("/api/licenses")
+    list_resp = enabled_client.get("/api/licenses")
     assert "grammar" in list_resp.json()
     assert list_resp.json()["grammar"]["status"] == "valid"
 
     # Deactivate
-    client.delete("/api/licenses/grammar")
+    enabled_client.delete("/api/licenses/grammar")
 
     # Verify gone
-    list_resp = client.get("/api/licenses")
+    list_resp = enabled_client.get("/api/licenses")
     assert "grammar" not in list_resp.json()
