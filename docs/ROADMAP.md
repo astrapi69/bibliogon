@@ -2,6 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-04-13
+Latest release: v0.14.0 (AI integration complete)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.13.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md).
 
