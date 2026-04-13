@@ -94,8 +94,6 @@ These items take precedence over the categorized lists below.
 - [x] Non-root Docker, health checks
 - [x] B-01: Alembic migrations instead of auto migration (more robust)
 - [x] B-02: structured logging (JSON format for production)
-- [ ] B-03: rate limiting on API endpoints
-- [ ] B-04: API versioning (v1/v2 prefix)
 - [x] B-05: asynchronous export jobs (long exports don't block)
 
 ## Tests
