@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from .llm_client import LLMClient, LLMError
+from .providers import PROVIDER_PRESETS
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,14 @@ def _get_client() -> LLMClient:
         temperature=cfg.get("temperature", 0.7),
         max_tokens=cfg.get("max_tokens", 2048),
         api_key=cfg.get("api_key", ""),
+        provider=cfg.get("provider", ""),
     )
+
+
+def _is_ai_enabled() -> bool:
+    """Check if AI features are enabled in config."""
+    cfg = _get_ai_config()
+    return bool(cfg.get("enabled", False))
 
 
 class ChatRequest(BaseModel):
@@ -61,6 +69,8 @@ class GenerateRequest(BaseModel):
 @router.post("/chat")
 async def chat_completion(req: ChatRequest) -> dict[str, Any]:
     """Send a chat completion request to the configured LLM server."""
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
     client = _get_client()
     try:
         return await client.chat(
@@ -76,6 +86,8 @@ async def chat_completion(req: ChatRequest) -> dict[str, Any]:
 @router.post("/generate")
 async def generate_text(req: GenerateRequest) -> dict[str, str]:
     """Simple text generation with optional system prompt."""
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
     client = _get_client()
     try:
         content = await client.generate(
@@ -92,6 +104,8 @@ async def generate_text(req: GenerateRequest) -> dict[str, str]:
 @router.get("/models")
 async def list_models() -> list[dict[str, str]]:
     """List available models from the LLM server."""
+    if not _is_ai_enabled():
+        return []
     client = _get_client()
     return await client.list_models()
 
@@ -99,5 +113,23 @@ async def list_models() -> list[dict[str, str]]:
 @router.get("/health")
 async def ai_health() -> dict[str, Any]:
     """Check LLM server health."""
+    if not _is_ai_enabled():
+        return {"status": "disabled"}
     client = _get_client()
     return await client.health()
+
+
+@router.get("/providers")
+async def list_providers() -> list[dict[str, Any]]:
+    """List all known AI provider presets."""
+    return [preset.model_dump() for preset in PROVIDER_PRESETS.values()]
+
+
+@router.get("/test-connection")
+async def test_connection() -> dict[str, Any]:
+    """Test the current AI configuration with a minimal request."""
+    if not _is_ai_enabled():
+        return {"success": False, "error_key": "disabled", "error_detail": ""}
+    client = _get_client()
+    success, error_key, error_detail = await client.test_connection()
+    return {"success": success, "error_key": error_key, "error_detail": error_detail}

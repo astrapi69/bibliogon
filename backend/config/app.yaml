@@ -1,4 +1,6 @@
 ai:
+  enabled: false
+  provider: lmstudio
   api_key: ''
   base_url: http://localhost:1234/v1
   max_tokens: 2048
