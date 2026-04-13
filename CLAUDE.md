@@ -1,6 +1,6 @@
 # Bibliogon
 
-Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see ROADMAP.md MN-01 for future monetization).
+Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see docs/explorations/monetization.md for future strategy).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
 - **Version:** 0.13.0 (dashboard filters, keyword editor, 3 new themes, 274 new tests)

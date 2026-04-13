@@ -93,9 +93,7 @@ Wenn du dir unsicher bist, aktiviere zuerst die Vorschau-Funktion die zeigt was 
 
 ### Sanitization beim Import
 
-> Geplant für eine kommende Version. Siehe ROADMAP.md
-
-In den Plugin-Einstellungen kannst du aktivieren dass die Sanitization automatisch beim Import eines Buches oder Kapitels laeuft. Das ist empfehlenswert für Importe aus Word oder write-book-template.
+In den Plugin-Einstellungen kannst du aktivieren dass die Sanitization automatisch beim Import eines Buches oder Kapitels laeuft. Das ist empfehlenswert fuer Importe aus Word oder write-book-template.
 
 ---
 

@@ -35,5 +35,5 @@ Each of the six palettes exists in a light and a dark variant. Light/dark is ind
 ## Technical notes
 
 - All themes use the same CSS variables. Plugins that contribute UI can support every theme without additional work by using `var(--bg-*)`, `var(--text-*)`, `var(--accent)`, `var(--border)`, `var(--shadow-*)` instead of hardcoded colors.
-- Fonts are currently loaded from Google Fonts. Full offline font bundling is on the roadmap (see ROADMAP O-01) and will then apply to the existing three palettes as well.
+- All fonts are bundled locally (O-01 completed). No external font services are contacted.
 - The theme selection is persisted in browser `localStorage` (`bibliogon-app-theme` for the palette, `bibliogon-theme` for light/dark). On first launch Bibliogon follows the system preference for light/dark and defaults the palette to Warm Literary.

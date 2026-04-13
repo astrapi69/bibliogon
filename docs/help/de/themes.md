@@ -35,5 +35,5 @@ Jede der sechs Paletten existiert in einer Hell- und einer Dunkel-Variante. Die 
 ## Technische Hinweise
 
 - Alle Themes nutzen dieselben CSS-Variablen. Plugins die eigene UI einblenden koennen ohne Anpassung alle Themes unterstuetzen indem sie `var(--bg-*)`, `var(--text-*)`, `var(--accent)`, `var(--border)`, `var(--shadow-*)` nutzen statt hardcoded Farbwerte.
-- Die Schriftarten werden derzeit ueber Google Fonts geladen. Eine komplette Offline-Einbettung ist geplant (siehe ROADMAP O-01) und dann auch fuer die bestehenden drei Paletten aktiv.
+- Alle Schriftarten sind lokal eingebettet (O-01 abgeschlossen). Es werden keine externen Schriftarten-Dienste kontaktiert.
 - Die Theme-Einstellung wird im `localStorage` des Browsers gespeichert (`bibliogon-app-theme` fuer die Palette, `bibliogon-theme` fuer Hell/Dunkel). Beim ersten Start folgt Bibliogon der System-Praeferenz fuer Hell/Dunkel, die Palette faellt auf Warm Literary zurueck.

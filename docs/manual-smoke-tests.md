@@ -68,8 +68,8 @@ whether the result looks good. These are all judgment calls.
   is there a noticeable flash before the custom font (Crimson
   Pro / Inter + Source Serif Pro / Lora) kicks in? Google Fonts
   with `display=swap` should handle this but it is worth
-  eyeballing on a slow connection. If ROADMAP O-01 (offline font
-  bundling) lands, this check becomes obsolete.
+  eyeballing on a slow connection. O-01 (offline font bundling)
+  has landed, so this should no longer be an issue.
 - [ ] **Dark mode screenshot sanity** - take a screenshot of
   each of the 6 palettes in dark mode and scan for obvious
   contrast failures, unreadable text, or missing border-on-dark
