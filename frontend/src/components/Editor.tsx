@@ -33,6 +33,14 @@ import {notify} from "../utils/notify";
 
 type SaveStatus = "idle" | "saving" | "saved";
 
+export interface BookContext {
+    title: string;
+    author: string;
+    language: string;
+    genre: string;
+    description: string;
+}
+
 interface Props {
     content: string;
     onSave: (json: string) => void;
@@ -40,13 +48,14 @@ interface Props {
     bookId?: string;
     chapterId?: string;
     chapterTitle?: string;
+    bookContext?: BookContext;
     autosaveDebounceMs?: number;
     draftSaveDebounceMs?: number;
     draftMaxAgeDays?: number;
     aiContextChars?: number;
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -404,11 +413,22 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiLoading(true);
         setAiSuggestion("");
 
-        const systemPrompts: Record<string, string> = {
-            improve: "You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.",
-            shorten: "You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.",
-            expand: "You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.",
-            custom: aiCustomPrompt || "Improve this text.",
+        // Build context-aware system prompt with book metadata
+        const ctx = bookContext;
+        const contextLines: string[] = [];
+        if (ctx?.language) contextLines.push(`Language: ${ctx.language}`);
+        if (ctx?.genre) contextLines.push(`Genre: ${ctx.genre}`);
+        if (ctx?.title) contextLines.push(`Book: ${ctx.title}`);
+        if (chapterTitle) contextLines.push(`Chapter: ${chapterTitle}`);
+        const contextBlock = contextLines.length > 0
+            ? `\n\nContext:\n${contextLines.join("\n")}\n\nMatch the tone and style appropriate for this genre and language.`
+            : "";
+
+        const basePrompts: Record<string, string> = {
+            improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
+            shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
+            expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
+            custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
         };
 
         try {
@@ -417,7 +437,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     prompt: selectedText,
-                    system: systemPrompts[aiPromptType],
+                    system: basePrompts[aiPromptType],
                 }),
             });
             if (!res.ok) {
@@ -464,8 +484,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 body: JSON.stringify({
                     content: fullText,
                     chapter_title: chapterTitle || "",
-                    book_title: "",
-                    language: document.documentElement.getAttribute("lang") || "de",
+                    book_title: bookContext?.title || "",
+                    genre: bookContext?.genre || "",
+                    language: bookContext?.language || document.documentElement.getAttribute("lang") || "de",
                     focus: ["style", "coherence", "pacing"],
                 }),
             });

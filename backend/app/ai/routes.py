@@ -72,6 +72,7 @@ class ReviewRequest(BaseModel):
     content: str = Field(..., min_length=1, description="Chapter text to review")
     chapter_title: str = Field(default="", description="Title of the chapter")
     book_title: str = Field(default="", description="Title of the book")
+    genre: str = Field(default="", description="Book genre for tone-appropriate feedback")
     language: str = Field(default="de", description="Language code (de, en, ...)")
     focus: list[str] = Field(
         default_factory=lambda: ["style", "coherence", "pacing"],
@@ -138,8 +139,8 @@ async def list_providers() -> list[dict[str, Any]]:
     return [preset.model_dump() for preset in PROVIDER_PRESETS.values()]
 
 
-def _build_review_system_prompt(language: str, focus: list[str]) -> str:
-    """Build the system prompt for chapter review based on language and focus areas."""
+def _build_review_system_prompt(language: str, focus: list[str], genre: str = "") -> str:
+    """Build the system prompt for chapter review based on language, focus areas, and genre."""
     focus_descriptions = {
         "style": "writing style (word choice, sentence variety, readability, voice consistency)",
         "coherence": "coherence and structure (logical flow, paragraph transitions, argument clarity)",
@@ -159,9 +160,13 @@ def _build_review_system_prompt(language: str, focus: list[str]) -> str:
     else:
         lang_instruction = f"The chapter is in language '{language}'. Write your review in that language."
 
+    genre_instruction = ""
+    if genre:
+        genre_instruction = f"\nThe book's genre is {genre}. Tailor your feedback to the conventions and reader expectations of this genre."
+
     return f"""You are a professional book editor reviewing a chapter manuscript.
 
-{lang_instruction}
+{lang_instruction}{genre_instruction}
 
 Analyze the chapter for these aspects:
 {focus_list}
@@ -185,7 +190,7 @@ async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
         raise HTTPException(status_code=403, detail="AI features are disabled")
 
     client = _get_client()
-    system_prompt = _build_review_system_prompt(req.language, req.focus)
+    system_prompt = _build_review_system_prompt(req.language, req.focus, genre=req.genre)
 
     user_prompt_parts = []
     if req.book_title:

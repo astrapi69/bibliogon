@@ -275,6 +275,13 @@ export default function BookEditor() {
                     bookId={bookId}
                     chapterId={activeChapter.id}
                     chapterTitle={activeChapter.title}
+                    bookContext={{
+                        title: book.title,
+                        author: book.author,
+                        language: book.language || "de",
+                        genre: book.genre || "",
+                        description: book.description || "",
+                    }}
                     placeholder={`Schreibe "${activeChapter.title}"...`}
                     autosaveDebounceMs={editorSettings.autosave_debounce_ms}
                     draftSaveDebounceMs={editorSettings.draft_save_debounce_ms}

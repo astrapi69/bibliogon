@@ -56,6 +56,17 @@ def test_build_review_prompt_structure():
     assert "Overall" in prompt
 
 
+def test_build_review_prompt_with_genre():
+    prompt = _build_review_system_prompt("en", ["style"], genre="Thriller")
+    assert "Thriller" in prompt
+    assert "genre" in prompt.lower()
+
+
+def test_build_review_prompt_without_genre():
+    prompt = _build_review_system_prompt("en", ["style"], genre="")
+    assert "genre" not in prompt.lower() or "genre is" not in prompt.lower()
+
+
 # ---------------------------------------------------------------------------
 # Integration tests for the review endpoint
 # ---------------------------------------------------------------------------
@@ -196,6 +207,29 @@ def test_review_system_prompt_uses_language(enabled_client):
         messages = call_args.kwargs.get("messages") or call_args[1].get("messages") or call_args[0][0]
         system_msg = next(m for m in messages if m["role"] == "system")
         assert "English" in system_msg["content"]
+
+
+def test_review_system_prompt_includes_genre(enabled_client):
+    """When genre is provided, the system prompt mentions it."""
+    with patch("app.ai.routes._get_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.chat = AsyncMock(return_value={
+            "content": "Review.",
+            "model": "test",
+            "usage": {},
+        })
+        mock_get_client.return_value = mock_client
+
+        enabled_client.post("/api/ai/review", json={
+            "content": "Text.",
+            "genre": "Science Fiction",
+            "language": "en",
+        })
+
+        call_args = mock_client.chat.call_args
+        messages = call_args.kwargs.get("messages") or call_args[1].get("messages") or call_args[0][0]
+        system_msg = next(m for m in messages if m["role"] == "system")
+        assert "Science Fiction" in system_msg["content"]
 
 
 def test_review_returns_502_on_llm_error(enabled_client):
