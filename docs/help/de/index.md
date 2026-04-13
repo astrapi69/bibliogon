@@ -12,7 +12,7 @@ Willkommen in der Bibliogon-Dokumentation. Hier findest du alles was du brauchst
 
 - **Editor** - Formatierung, Bilder, Fußnoten
 - **Export** - EPUB, PDF, Audiobook
-- **Plugins** - Core und Premium Plugins verwalten
+- **Plugins** - Plugins verwalten und konfigurieren
 - **Tastenkürzel** - Schneller arbeiten mit Shortcuts
 
 ## Hilfe und Support

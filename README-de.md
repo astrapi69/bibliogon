@@ -14,7 +14,6 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
 - Copy config between books (publisher, author bio, styles)
 - Plugin system with ZIP installation for third-party plugins
-- Offline license validation for premium plugins (HMAC-SHA256)
 - 3 themes (Warm Literary, Cool Modern, Nord) x Light/Dark
 - i18n: German, English, Spanish, French, Greek
 - In-app help with FAQ and keyboard shortcuts
@@ -90,9 +89,9 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | export | MIT | EPUB, PDF, Word, HTML, Markdown, Project ZIP |
 | help | MIT | In-app help, shortcuts, FAQ |
 | getstarted | MIT | Onboarding guide, sample book |
-| kinderbuch | Proprietary | Children's book page layout (4 templates) |
-| kdp | Proprietary | Amazon KDP metadata, cover validation |
-| grammar | Proprietary | LanguageTool grammar checking |
+| kinderbuch | MIT | Children's book page layout (4 templates) |
+| kdp | MIT | Amazon KDP metadata, cover validation |
+| grammar | MIT | LanguageTool grammar checking |
 
 Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
@@ -116,4 +115,4 @@ Environment variables (set in `.env`):
 
 ## License
 
-MIT (Core + free plugins). Premium plugins are proprietary.
+MIT. Alle Plugins sind kostenlos und Open Source.

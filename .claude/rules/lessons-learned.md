@@ -199,8 +199,7 @@ These rules come from real development and solve problems that would otherwise c
 - `_check_license` must check both the per-plugin key and the wildcard key (fallback chain).
 
 ### Settings UI
-- The `discoveredPlugins` API delivers `license_tier` and `has_license` per plugin. The values are derived from the plugin YAML (`license` field) and the LicenseStore/validator.
-- Premium plugins without a license: "Enter license" button instead of a toggle. No enable/disable.
+- The `discoveredPlugins` API delivers `license_tier` and `has_license` per plugin. Currently all plugins are free (`license_tier = "core"`). The Licenses tab has been removed from Settings.
 
 ## General patterns
 

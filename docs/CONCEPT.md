@@ -16,7 +16,7 @@ Bibliogon consists of two parts:
 
 2. **Bibliogon app** - An open-source web platform for writing and exporting books. The first application built on PluginForge. The entire export (EPUB, PDF, write-book-template structure) is itself a plugin.
 
-The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. All plugins are free during the development phase. The licensing infrastructure exists but is dormant (LICENSING_ENABLED=False). A freemium model (core free, premium plugins paid) is planned for the SaaS phase.
+The principle: the app core (UI, database, chapter editor) is lean. Everything else - export, children's book mode, audiobook, KDP integration - is delivered via plugins. All plugins are free and open source (MIT). Donations are the current funding model.
 
 The long-term goal is a commercial SaaS product. Both PluginForge and the Bibliogon core stay open source (MIT license).
 
@@ -561,7 +561,6 @@ Bibliogon has to work completely offline:
 - SQLite as the default DB (no external DB required)
 - All assets local on the filesystem
 - Frontend deliverable as static files (no CDN forced)
-- Premium plugin licenses validatable offline (signed license keys, no license server required)
 - Only exception: plugins that call external APIs (TTS, AI help) naturally need network access
 
 ### 4.7 Backup
@@ -595,7 +594,7 @@ Importing a backup restores the entire state. Independent of the export plugin (
 | Bibliogon core | MIT (free) | UI, editor, Book/Chapter CRUD, backup |
 | plugin-export | MIT (free) | EPUB, PDF, project structure |
 | Community plugins | MIT (free) | Developed by the community |
-| Premium plugins (planned) | MIT (free during development) | Audiobook, children's books, KDP, collaboration |
+| All other plugins | MIT (free) | Audiobook, children's books, KDP, translation, grammar |
 
 ### 5.1 Plugin catalog
 
@@ -649,53 +648,7 @@ manager = PluginManager(
 )
 ```
 
-Premium plugins use HMAC-SHA256 signed license keys:
-
-```
-BIBLIOGON-KINDERBUCH-v1-<base64 payload>.<base64 signature>
-```
-
-The key contains (base64-encoded + signed):
-- Plugin name and version
-- Expiry date (or "lifetime")
-- Machine ID (optional, for single-seat licenses)
-
-Validation happens locally. No license server required, no internet required. Licenses are stored in `config/licenses.json` and managed through the Settings UI.
-
-#### License tiers (currently dormant)
-
-The licensing infrastructure exists but is disabled during development (LICENSING_ENABLED=False). All plugins are free and activate without a license key. The tier system is designed for the future SaaS phase.
-
-Every plugin has a `license_tier` class attribute:
-
-| Tier | Description | License check (when enabled) |
-|------|-------------|-------------------------------|
-| `core` | Free, always works | None |
-| `premium` | Will need a valid license key when licensing is enabled | HMAC-SHA256 |
-
-During the development phase, all plugins operate as `core` (free):
-
-| Plugin | Tier (dormant) |
-|--------|----------------|
-| export | core |
-| help | core |
-| getstarted | core |
-| ms-tools | core |
-| grammar | core (premium when licensing is enabled) |
-| kinderbuch | core (premium when licensing is enabled) |
-| kdp | core (premium when licensing is enabled) |
-| audiobook | core (premium when licensing is enabled) |
-| translation | core (premium when licensing is enabled) |
-
-#### Trial keys (dormant)
-
-When licensing is enabled, trial keys will unlock all premium plugins for a limited time:
-
-- Plugin name in the payload is `"*"` (wildcard, matches every plugin)
-- Default duration: 30 days
-- Generation: `make generate-trial-key`
-- Storage: `licenses.json` under the key `"*"`
-- Format: `BIBLIOGON-*-v1-<base64 payload>.<base64 signature>`
+The codebase contains a dormant HMAC-SHA256 licensing system in `backend/app/licensing.py` (disabled via `LICENSING_ENABLED = False`). All plugins are free and activate without license checks. See `docs/explorations/monetization.md` for reactivation planning.
 
 ---
 
@@ -834,7 +787,7 @@ Feature details and open items see docs/ROADMAP.md (with IDs for prompt referenc
 | 2: PluginForge framework | v0.2.0 | done |
 | 3: Export as a plugin | v0.3.0 | done |
 | 4: Import, backup, chapter types | v0.4.0 | done |
-| 5: First premium plugins (kinderbuch, kdp) | v0.5.0 | done |
+| 5: Kinderbuch and KDP plugins | v0.5.0 | done |
 | 6: Editor extensions, i18n, themes | v0.6.0 | done |
 | 7: Extended metadata, publishing | v0.7.0 | done |
 | 8: Manuscript quality, editor, export | v0.9.0 | done |

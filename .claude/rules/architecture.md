@@ -46,8 +46,7 @@ plugins/bibliogon-plugin-{name}/
 - Configuration via YAML (backend/config/plugins/{name}.yaml), NOT hardcoded.
 - Extend i18n strings in backend/config/i18n/{lang}.yaml (5 languages: DE, EN, ES, FR, EL).
 - Plugin dependencies as a class attribute: `depends_on = ["export"]`.
-- Proprietary plugins need a license check via the pre_activate callback.
-- MIT plugins (export, help, getstarted) are free, no license check.
+- All plugins are free (MIT). Licensing infrastructure exists but is dormant (`LICENSING_ENABLED = False`).
 
 ### Plugin installation (ZIP)
 

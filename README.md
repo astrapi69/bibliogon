@@ -22,7 +22,6 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
 - In-app help panel with Markdown rendering, search, and context-sensitive links
 - Plugin system with ZIP installation for third-party plugins
-- Offline license validation for premium plugins (HMAC-SHA256)
 - Encrypted credential storage (Fernet) for API keys and service accounts
 - 3 themes (Warm Literary, Cool Modern, Nord) x Light/Dark
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
@@ -108,11 +107,11 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | help | MIT | In-app help panel with docs, search, shortcuts |
 | getstarted | MIT | Onboarding guide, sample book |
 | ms-tools | MIT | Style checks, sanitization, text metrics |
-| audiobook | Proprietary | TTS audiobook generation (5 engines) |
-| translation | Proprietary | DeepL / LMStudio translation |
-| grammar | Proprietary | LanguageTool grammar checking |
-| kinderbuch | Proprietary | Children's book page layout |
-| kdp | Proprietary | Amazon KDP metadata, cover validation |
+| audiobook | MIT | TTS audiobook generation (5 engines) |
+| translation | MIT | DeepL / LMStudio translation |
+| grammar | MIT | LanguageTool grammar checking |
+| kinderbuch | MIT | Children's book page layout |
+| kdp | MIT | Amazon KDP metadata, cover validation |
 
 Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
@@ -137,4 +136,4 @@ Environment variables (set in `.env`):
 
 ## License
 
-MIT (Core + free plugins). Premium plugins are proprietary.
+MIT. All plugins are free and open source.
