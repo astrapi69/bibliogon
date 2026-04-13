@@ -152,7 +152,7 @@ Expected delta: ~30-40 tests, mostly Playwright E2E.
 - [x] CW-21: audiobook generation E2E (mocked TTS)
 - [x] CW-22: plugin ZIP installation E2E
 - [x] CW-23: import flows E2E (project ZIP, markdown ZIP)
-- [ ] CW-24: chapter drag-and-drop reorder E2E
+- [x] CW-24: chapter drag-and-drop reorder E2E
 
 ## Plugins (roadmap)
 
