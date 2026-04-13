@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Audiobook plugin turns your chapters into spoken MP3 files using Text-to-Speech. The plugin is a premium feature and requires a valid license. It sits on top of the Export plugin and since v0.11 delegates all TTS work to [manuscripta](https://github.com/astrapi69/manuscripta).
+The Audiobook plugin turns your chapters into spoken MP3 files using Text-to-Speech. It sits on top of the Export plugin and since v0.11 delegates all TTS work to [manuscripta](https://github.com/astrapi69/manuscripta).
 
 Generation runs asynchronously in the background. A progress dialog shows each chapter's status via Server-Sent Events while you keep working. Finished files are persisted under `uploads/{book_id}/audiobook/` so they survive browser reloads and backend restarts.
 

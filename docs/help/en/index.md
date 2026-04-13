@@ -12,7 +12,7 @@ Welcome to the Bibliogon documentation. Everything you need to write, format, an
 
 - **Editor** - Formatting, images, footnotes
 - **Export** - EPUB, PDF, Audiobook
-- **Plugins** - Manage core and premium plugins
+- **Plugins** - Manage and configure plugins
 - **Shortcuts** - Work faster with keyboard shortcuts
 
 ## Help and Support

@@ -28,20 +28,6 @@ Wenn das Stimmen-Dropdown im Audiobook-Bereich leer bleibt oder "Keine Stimmen v
 - **pyttsx3**: Die verfügbaren Stimmen haengen vom Betriebssystem ab. Unter Linux muss espeak oder espeak-ng installiert sein.
 - **Falsche Sprache**: Manche Engines bieten nur Stimmen für bestimmte Sprachen an. Stelle sicher, dass die gewaehlte Buchsprache von der Engine unterstuetzt wird.
 
-## Plugin laesst sich nicht aktivieren
-
-Wenn ein Premium-Plugin in den Einstellungen als "Lizenz fehlt" angezeigt wird und sich nicht aktivieren laesst:
-
-1. Navigiere zu **Einstellungen > Lizenzen**.
-2. Gib den korrekten Plugin-Namen ein (kleingeschrieben, z.B. "audiobook", nicht "Audiobook").
-3. Fuege den Lizenzschlüssel ein und klicke auf "Aktivieren".
-4. Pruefe die Fehlermeldung:
-   - "Schlüssel abgelaufen": Du benötigst einen neuen Schlüssel.
-   - "Ungueltige Signatur": Der Schlüssel ist beschaedigt oder wurde mit einem anderen Secret erzeugt.
-   - "Plugin nicht gefunden": Der Plugin-Name im Schlüssel stimmt nicht überein.
-
-Für Testzwecke generiere einen Trial-Key: `make generate-trial-key`. Dieser gilt 30 Tage für alle Premium-Plugins.
-
 ## Bilder werden im Export nicht angezeigt
 
 Wenn Bilder im Editor sichtbar sind, aber in der exportierten EPUB- oder PDF-Datei fehlen:

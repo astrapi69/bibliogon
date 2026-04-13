@@ -20,10 +20,6 @@ Klicke "Backup" auf dem Dashboard. Alle Buecher, Kapitel, Assets und Einstellung
 
 Im Editor kannst du zwischen WYSIWYG und Markdown umschalten. Im WYSIWYG-Modus (Standard) arbeitest du visuell mit der Toolbar und siehst das Ergebnis sofort. Im Markdown-Modus siehst du den rohen Markdown-Quelltext und kannst ihn direkt bearbeiten. Beim Umschalten konvertiert Bibliogon den Inhalt automatisch zwischen den Formaten. Der Markdown-Modus eignet sich für erfahrene Nutzer, die schneller mit Markdown-Syntax arbeiten als mit der Toolbar.
 
-## Wie aktiviere ich ein Premium-Plugin?
-
-Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen (z.B. "audiobook") und deinen Lizenzschlüssel ein und klicke auf "Aktivieren". Der Schlüssel wird offline validiert. Für Testzwecke kannst du einen 30-Tage-Trial-Key generieren: `make generate-trial-key`. Trial-Keys gelten für alle Premium-Plugins gleichzeitig.
-
 ## Funktioniert Bibliogon offline?
 
-Ja. Bibliogon nutzt SQLite als lokale Datenbank und speichert alle Daten auf deinem Rechner. Es wird kein externer Server benötigt. Lizenzschlüssel werden ebenfalls offline validiert (HMAC-signiert). Nur Plugins, die auf externe Dienste zugreifen, benötigen eine Internetverbindung: Grammar (LanguageTool-Server), Translation (DeepL/LMStudio) und Audiobook mit Edge TTS, Google Cloud TTS oder ElevenLabs. Die Offline-TTS-Engine pyttsx3 funktioniert auch ohne Internet.
+Ja. Bibliogon nutzt SQLite als lokale Datenbank und speichert alle Daten auf deinem Rechner. Es wird kein externer Server benötigt. Nur Plugins, die auf externe Dienste zugreifen, benötigen eine Internetverbindung: Grammar (LanguageTool-Server), Translation (DeepL/LMStudio) und Audiobook mit Edge TTS, Google Cloud TTS oder ElevenLabs. Die Offline-TTS-Engine pyttsx3 funktioniert auch ohne Internet.

@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Das Audiobook-Plugin erzeugt aus deinen Buchkapiteln gesprochene Audiodateien (MP3) mithilfe von Text-to-Speech (TTS). Das Plugin ist ein Premium-Feature und erfordert eine gueltige Lizenz. Es baut auf dem Export-Plugin auf und nutzt dessen Kapitelstruktur. Alle TTS-Engines werden seit v0.11 ueber [manuscripta](https://github.com/astrapi69/manuscripta) angesteuert.
+Das Audiobook-Plugin erzeugt aus deinen Buchkapiteln gesprochene Audiodateien (MP3) mithilfe von Text-to-Speech (TTS). Es baut auf dem Export-Plugin auf und nutzt dessen Kapitelstruktur. Alle TTS-Engines werden seit v0.11 ueber [manuscripta](https://github.com/astrapi69/manuscripta) angesteuert.
 
 Die Audiobook-Generierung laeuft asynchron im Hintergrund. Nach dem Start wird ein Fortschrittsdialog angezeigt, der den aktuellen Status jedes Kapitels zeigt (ueber Server-Sent Events). Du kannst waehrend der Generierung weiterarbeiten. Die fertigen Dateien werden dauerhaft unter `uploads/{book_id}/audiobook/` gespeichert, sodass sie auch nach dem Schliessen des Browsers noch verfuegbar sind.
 

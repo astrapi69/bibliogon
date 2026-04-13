@@ -10,6 +10,4 @@
 
 **What is Markdown mode?** The editor supports switching between WYSIWYG and Markdown views. Content is converted automatically when toggling.
 
-**How do I activate a premium plugin?** Go to Settings > Licenses, enter the plugin name and license key, then click "Activate". Generate a 30-day trial key with `make generate-trial-key`.
-
 **Does Bibliogon work offline?** Yes. Bibliogon uses SQLite and stores everything locally. Only plugins that access external APIs (Grammar, Translation, Audiobook with cloud engines) require an internet connection.
