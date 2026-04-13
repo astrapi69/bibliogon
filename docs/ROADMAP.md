@@ -139,7 +139,7 @@ Actual delta: +138 frontend tests (101 Phase 3a + 37 Phase 3b).
 
 - [x] CW-15: `ExportDialog.tsx` component tests (18 tests)
 - [x] CW-16: `CreateBookModal.tsx` component tests (11 tests)
-- [ ] CW-17: actual file export E2E (trigger export, verify download)
+- [x] CW-17: actual file export E2E (trigger export, verify download)
 - [x] CW-18: `BookMetadataEditor.tsx` component tests (19 tests)
 - [x] CW-19: `useEditorPluginStatus.ts` hook tests (11 tests)
 - [x] CW-20: `CoverUpload.tsx` component tests (8 tests)
