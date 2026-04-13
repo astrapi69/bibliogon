@@ -22,6 +22,13 @@ from pluginforge.config import load_i18n
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "app.yaml"
+CONFIG_EXAMPLE_PATH = BASE_DIR / "config" / "app.yaml.example"
+
+# Auto-create app.yaml from example on first startup
+if not CONFIG_PATH.exists() and CONFIG_EXAMPLE_PATH.exists():
+    import shutil
+    shutil.copy2(CONFIG_EXAMPLE_PATH, CONFIG_PATH)
+    logging.getLogger(__name__).info("Created config/app.yaml from app.yaml.example")
 
 # Environment configuration
 DEBUG = os.getenv("BIBLIOGON_DEBUG", "true").lower() in ("true", "1", "yes")

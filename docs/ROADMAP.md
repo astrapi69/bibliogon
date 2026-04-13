@@ -60,7 +60,7 @@ Replace the upload-based backup compare with proper Git integration.
 
 ### 5. Polish and stability (runs in parallel throughout Phase 2)
 
-- [ ] PS-01: app.yaml auto-creation from app.yaml.example on first startup
+- [x] PS-01: app.yaml auto-creation from app.yaml.example on first startup
 - [ ] PS-02: onboarding flow for AI provider setup (first-run wizard)
 - [ ] PS-03: keyboard shortcuts customization
 - [ ] PS-04: performance optimization for large books (500+ pages, 100+ chapters)
