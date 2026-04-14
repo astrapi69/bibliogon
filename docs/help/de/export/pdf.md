@@ -6,7 +6,7 @@ PDF eignet sich besonders für druckfertige Buchversionen (Paperback, Hardcover)
 
 ## Pandoc als Voraussetzung
 
-Für den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates Kommandozeilenwerkzeug und muss auf dem System installiert sein, auf dem das Bibliogon-Backend laeuft. Ohne Pandoc schlaegt der PDF-Export mit einer entsprechenden Fehlermeldung fehl.
+Für den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates Kommandozeilenwerkzeug und muss auf dem System installiert sein, auf dem das Bibliogon-Backend läuft. Ohne Pandoc schlägt der PDF-Export mit einer entsprechenden Fehlermeldung fehl.
 
 **Installation:**
 
@@ -14,17 +14,17 @@ Für den PDF-Export ist Pandoc zwingend erforderlich. Pandoc ist ein separates K
 - **macOS (Homebrew):** `brew install pandoc`
 - **Windows:** Installer von [pandoc.org](https://pandoc.org/installing.html) herunterladen
 
-Zusaetzlich wird eine LaTeX-Distribution benötigt, da Pandoc PDF-Dateien über LaTeX erzeugt. Empfohlen wird TeX Live (Linux/macOS) oder MiKTeX (Windows). Auf Debian/Ubuntu genuegt `sudo apt install texlive-full` für eine vollstaendige Installation.
+Zusätzlich wird eine LaTeX-Distribution benötigt, da Pandoc PDF-Dateien über LaTeX erzeugt. Empfohlen wird TeX Live (Linux/macOS) oder MiKTeX (Windows). Auf Debian/Ubuntu genügt `sudo apt install texlive-full` für eine vollständige Installation.
 
 Wenn du Docker verwendest (`make prod`), sind Pandoc und TeX Live bereits im Container enthalten.
 
 ## Export-Optionen
 
-Der PDF-Export unterstuetzt die gleichen Optionen wie der EPUB-Export:
+Der PDF-Export unterstützt die gleichen Optionen wie der EPUB-Export:
 
 - **Buchtyp** (E-Book, Paperback, Hardcover): Bestimmt die Kapitelreihenfolge und das Inhaltsverzeichnis.
 - **Manuelles Inhaltsverzeichnis**: Falls ein eigenes TOC-Kapitel vorhanden ist.
-- **Cover**: Ein hinterlegtes Coverbild wird als erste Seite eingefuegt.
+- **Cover**: Ein hinterlegtes Coverbild wird als erste Seite eingefügt.
 - **Metadaten**: Titel, Autor, Sprache und ISBN fliessen in die PDF-Metadaten ein.
 
 ## Weitere Formate

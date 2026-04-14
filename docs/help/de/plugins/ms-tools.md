@@ -1,8 +1,8 @@
 # Manuskript-Tools
 
-Das Manuskript-Tools-Plugin unterstuetzt dich beim Überarbeiten deines Textes. Es prueft Stil, bereinigt Formatierungs-Reste und misst Lesbarkeit. Ziel ist nicht, dir vorzuschreiben wie du schreiben sollst, sondern dir Auffaelligkeiten zu zeigen die du übersehen hast.
+Das Manuskript-Tools-Plugin unterstützt dich beim Überarbeiten deines Textes. Es prüft Stil, bereinigt Formatierungs-Reste und misst Lesbarkeit. Ziel ist nicht, dir vorzuschreiben wie du schreiben sollst, sondern dir Auffälligkeiten zu zeigen die du übersehen hast.
 
-Das Plugin laeuft komplett lokal. Keine Texte werden an externe Dienste gesendet.
+Das Plugin läuft komplett lokal. Keine Texte werden an externe Dienste gesendet.
 
 ---
 
@@ -12,29 +12,29 @@ Die Stil-Checks finden Muster die den Lesefluss stören oder Texte schwammig wir
 
 ### Füllwörter
 
-Füllwörter sind Ausdruecke die im Satz nichts beitragen und meist gestrichen werden koennen, ohne dass sich die Bedeutung ändert. Das Plugin markiert typische Kandidaten wie "eigentlich", "quasi", "im Grunde", "sozusagen", "praktisch", "irgendwie", "wirklich", "halt", "eben", "also", "ja".
+Füllwörter sind Ausdrücke die im Satz nichts beitragen und meist gestrichen werden können, ohne dass sich die Bedeutung ändert. Das Plugin markiert typische Kandidaten wie "eigentlich", "quasi", "im Grunde", "sozusagen", "praktisch", "irgendwie", "wirklich", "halt", "eben", "also", "ja".
 
 Beispiel:
 - Vorher: "Ich wollte eigentlich nur sagen, dass das irgendwie seltsam ist."
 - Nachher: "Ich wollte sagen, dass das seltsam ist."
 
-Die Liste ist sprachspezifisch. Für Deutsch, Englisch, Spanisch, Franzoesisch und weitere Sprachen gibt es eigene Kataloge.
+Die Liste ist sprachspezifisch. Für Deutsch, Englisch, Spanisch, Französisch und weitere Sprachen gibt es eigene Kataloge.
 
 ### Passivkonstruktionen
 
-Passiv macht Saetze laenger und nimmt dem Subjekt die Handlung. Aktiv-Saetze sind meist direkter und lebendiger. Das Plugin markiert Passiv-Formen wie "wurde gemacht", "ist worden", "werden gesehen".
+Passiv macht Sätze länger und nimmt dem Subjekt die Handlung. Aktiv-Sätze sind meist direkter und lebendiger. Das Plugin markiert Passiv-Formen wie "wurde gemacht", "ist worden", "werden gesehen".
 
 Beispiel:
-- Passiv: "Die Tuer wurde von ihm geöffnet."
-- Aktiv: "Er öffnete die Tuer."
+- Passiv: "Die Tür wurde von ihm geöffnet."
+- Aktiv: "Er öffnete die Tür."
 
 Ausnahmen: In wissenschaftlichen Texten, Gerichtsurteilen oder wenn das Subjekt unbekannt oder unwichtig ist, bleibt Passiv die richtige Wahl. Das Plugin markiert nur, es entscheidet nicht.
 
-### Lange Saetze
+### Lange Sätze
 
-Saetze über 25 Wörter sind schwerer zu erfassen. Das Plugin markiert Saetze die diesen Schwellwert überschreiten und schlaegt Trennpunkte vor (meist Kommas oder Konjunktionen wo der Satz natuerlich geteilt werden kann).
+Sätze über 25 Wörter sind schwerer zu erfassen. Das Plugin markiert Sätze die diesen Schwellwert überschreiten und schlägt Trennpunkte vor (meist Kommas oder Konjunktionen wo der Satz natürlich geteilt werden kann).
 
-Der Schwellwert ist konfigurierbar. Für Sachbuecher sind 20 Wörter typisch, für literarische Texte darf es mehr sein. In den Plugin-Einstellungen kannst du den Wert pro Buch anpassen.
+Der Schwellwert ist konfigurierbar. Für Sachbücher sind 20 Wörter typisch, für literarische Texte darf es mehr sein. In den Plugin-Einstellungen kannst du den Wert pro Buch anpassen.
 
 ### Wortwiederholungen
 
@@ -44,11 +44,11 @@ Häufige Ausnahmen wie "der", "die", "das", "und", "ist" werden automatisch igno
 
 ### Adverbien auf -ly / -lich
 
-Zu viele Adverbien sind oft ein Zeichen für schwache Verben. "Er rannte schnell" kann oft durch ein praeziseres Verb ersetzt werden: "Er sprintete". Das Plugin markiert Adverbien die auf typische Endungen enden und zeigt die Dichte pro Absatz.
+Zu viele Adverbien sind oft ein Zeichen für schwache Verben. "Er rannte schnell" kann oft durch ein präziseres Verb ersetzt werden: "Er sprintete". Das Plugin markiert Adverbien die auf typische Endungen enden und zeigt die Dichte pro Absatz.
 
 ### Redundante Phrasen
 
-Ausdruecke die sich selbst wiederholen oder Information doppelt liefern. Beispiele: "rund und kreisfoermig", "komplett fertig", "persoenliche Meinung", "zukuenftige Plaene", "kurze Zusammenfassung".
+Ausdrücke die sich selbst wiederholen oder Information doppelt liefern. Beispiele: "rund und kreisförmig", "komplett fertig", "persönliche Meinung", "zukünftige Pläne", "kurze Zusammenfassung".
 
 Die Liste ist klein und konservativ gehalten um Fehlalarme zu vermeiden.
 
@@ -56,21 +56,21 @@ Die Liste ist klein und konservativ gehalten um Fehlalarme zu vermeiden.
 
 ## Text-Sanitization
 
-Wenn du Inhalte aus Word, Google Docs, Browsern oder PDFs übernimmst, schleppst du oft unsichtbaren Datenmuell mit: geschuetzte Leerzeichen, Unicode-Varianten von Zeichen, leere Absaetze, doppelte Leerzeichen. Das faellt beim Lesen nicht auf, macht aber im Export (besonders EPUB und Audiobook) Probleme.
+Wenn du Inhalte aus Word, Google Docs, Browsern oder PDFs übernimmst, schleppst du oft unsichtbaren Datenmüll mit: geschützte Leerzeichen, Unicode-Varianten von Zeichen, leere Absätze, doppelte Leerzeichen. Das fällt beim Lesen nicht auf, macht aber im Export (besonders EPUB und Audiobook) Probleme.
 
-Die Sanitization bereinigt typische Fehlerquellen auf Knopfdruck. Du kannst sie manuell ausloesen oder automatisch beim Import aktivieren.
+Die Sanitization bereinigt typische Fehlerquellen auf Knopfdruck. Du kannst sie manuell auslösen oder automatisch beim Import aktivieren.
 
 ### Was bereinigt wird
 
 **Unsichtbare Zeichen:**
-- Geschuetzte Leerzeichen (U+00A0) werden zu normalen Leerzeichen
+- Geschützte Leerzeichen (U+00A0) werden zu normalen Leerzeichen
 - Zero-Width Spaces (U+200B) werden entfernt
 - Byte Order Marks (U+FEFF) werden entfernt
 - Soft Hyphens (U+00AD) werden entfernt
 
 **Typografische Zeichen:**
-- "Gerade" Anfuehrungszeichen werden zu typografischen wenn der Buchtyp es erfordert
-- Doppelte Bindestriche (--) werden zu Gedankenstrichen, abhaengig von der Einstellung
+- "Gerade" Anführungszeichen werden zu typografischen wenn der Buchtyp es erfordert
+- Doppelte Bindestriche (--) werden zu Gedankenstrichen, abhängig von der Einstellung
 - Ellipsen aus drei Punkten (...) werden zu einem echten Ellipsen-Zeichen (U+2026)
 
 **Whitespace:**
@@ -86,14 +86,14 @@ Die Sanitization bereinigt typische Fehlerquellen auf Knopfdruck. Du kannst sie 
 ### Was NICHT bereinigt wird
 
 - Bewusst gesetzte Formatierung (fett, kursiv, Überschriften)
-- Absichtliche Formatierungen wie Zitate oder Code-Bloecke
-- Manuelle Zeilenumbrueche in Gedichten oder Dialogen
+- Absichtliche Formatierungen wie Zitate oder Code-Blöcke
+- Manuelle Zeilenumbrüche in Gedichten oder Dialogen
 
 Wenn du dir unsicher bist, aktiviere zuerst die Vorschau-Funktion die zeigt was geändert würde, bevor du die Änderungen übernimmst.
 
 ### Sanitization beim Import
 
-In den Plugin-Einstellungen kannst du aktivieren dass die Sanitization automatisch beim Import eines Buches oder Kapitels laeuft. Das ist empfehlenswert fuer Importe aus Word oder write-book-template.
+In den Plugin-Einstellungen kannst du aktivieren dass die Sanitization automatisch beim Import eines Buches oder Kapitels läuft. Das ist empfehlenswert für Importe aus Word oder write-book-template.
 
 ---
 
@@ -108,32 +108,32 @@ Die Basis. Pro Kapitel, pro Sektion und für das gesamte Buch.
 - Wörter (ohne Interpunktion)
 - Zeichen mit Leerzeichen
 - Zeichen ohne Leerzeichen
-- Absaetze
-- Saetze
-- Geschaetzte Druckseiten (250 Wörter = 1 Seite, konfigurierbar)
+- Absätze
+- Sätze
+- Geschätzte Druckseiten (250 Wörter = 1 Seite, konfigurierbar)
 
 ### Lesbarkeitsindex (Flesch-Kincaid)
 
-Der Flesch-Wert misst wie leicht ein Text zu lesen ist. Hoehere Werte bedeuten einfacher zu lesen.
+Der Flesch-Wert misst wie leicht ein Text zu lesen ist. Höhere Werte bedeuten einfacher zu lesen.
 
 Skala für Deutsch:
 
 | Wert | Schwierigkeit | Beispiel |
 |------|---------------|----------|
 | 0-30 | Sehr schwer | Wissenschaftliche Fachliteratur |
-| 30-50 | Schwer | Fachbuecher, gehobene Literatur |
-| 50-60 | Mittelschwer | Zeitungen, Sachbuecher |
+| 30-50 | Schwer | Fachbücher, gehobene Literatur |
+| 50-60 | Mittelschwer | Zeitungen, Sachbücher |
 | 60-70 | Mittel | Romane, allgemeine Belletristik |
-| 70-80 | Leicht | Jugendbuecher, einfache Sachtexte |
-| 80-100 | Sehr leicht | Kinderbuecher |
+| 70-80 | Leicht | Jugendbücher, einfache Sachtexte |
+| 80-100 | Sehr leicht | Kinderbücher |
 
-Für andere Sprachen nutzt das Plugin sprachspezifische Varianten: Englisch (Flesch Reading Ease), Spanisch (Fernandez-Huerta), Franzoesisch (Kandel-Moles).
+Für andere Sprachen nutzt das Plugin sprachspezifische Varianten: Englisch (Flesch Reading Ease), Spanisch (Fernandez-Huerta), Französisch (Kandel-Moles).
 
-### Durchschnittliche Satzlaenge
+### Durchschnittliche Satzlänge
 
-Kurze Saetze (unter 10 Wörter) wirken abgehackt, lange Saetze (über 25 Wörter) anstrengend. Ausreisser nach oben oder unten sind ein Signal.
+Kurze Sätze (unter 10 Wörter) wirken abgehackt, lange Sätze (über 25 Wörter) anstrengend. Ausreißer nach oben oder unten sind ein Signal.
 
-### Durchschnittliche Wortlaenge
+### Durchschnittliche Wortlänge
 
 Lange Wörter (mehr als 7 Zeichen) sind oft Fachbegriffe oder Substantivierungen. Für Belletristik sind 4-5 Zeichen typisch, für Wissenschaft eher 6-7.
 
@@ -141,11 +141,11 @@ Lange Wörter (mehr als 7 Zeichen) sind oft Fachbegriffe oder Substantivierungen
 
 > Adjektivdichte ist geplant für eine kommende Version (benötigt POS-Tagging). Adverbdichte ist bereits verfügbar über die Adverb-Erkennung in den Stil-Checks.
 
-Anteil von Adjektiven und Adverbien am Gesamttext. Über 15% ist ein Warnsignal. Guter Erzaehlstil traegt die Handlung mit Verben, nicht mit Beschreibungen.
+Anteil von Adjektiven und Adverbien am Gesamttext. Über 15% ist ein Warnsignal. Guter Erzählstil trägt die Handlung mit Verben, nicht mit Beschreibungen.
 
 ### Lesezeit
 
-Geschaetzte Lesezeit basierend auf Wortzahl und durchschnittlicher Lesegeschwindigkeit (Default: 200 Wörter pro Minute, konfigurierbar). Anzeige pro Kapitel und für das gesamte Buch.
+Geschätzte Lesezeit basierend auf Wortzahl und durchschnittlicher Lesegeschwindigkeit (Default: 200 Wörter pro Minute, konfigurierbar). Anzeige pro Kapitel und für das gesamte Buch.
 
 ### Füllwort-Quote
 
@@ -153,7 +153,7 @@ Wieviel Prozent deines Textes besteht aus Füllwörtern? Werte über 5% sind ein
 
 ### Passiv-Quote
 
-Anteil der Passiv-Saetze am Text. Für Belletristik sind 5-10% typisch, für Sachbuecher 10-20%.
+Anteil der Passiv-Sätze am Text. Für Belletristik sind 5-10% typisch, für Sachbücher 10-20%.
 
 ---
 
@@ -161,20 +161,20 @@ Anteil der Passiv-Saetze am Text. Für Belletristik sind 5-10% typisch, für Sac
 
 Die Schwellwerte existieren auf zwei Ebenen:
 
-**Plugin-global** unter `Einstellungen > Plugins > Manuskript-Tools` (Defaults fuer alle Buecher):
+**Plugin-global** unter `Einstellungen > Plugins > Manuskript-Tools` (Defaults für alle Bücher):
 
-- **Satzlaenge-Schwellwert**: Ab wieviel Woertern ein Satz als lang markiert wird. Default: 25.
-- **Auto-Sanitization beim Import**: Boolean, Default an. Saeubert Markdown-Importe von unsichtbaren Unicode-Zeichen, HTML-Artefakten und typografischen Anfuehrungszeichen.
+- **Satzlänge-Schwellwert**: Ab wieviel Wörtern ein Satz als lang markiert wird. Default: 25.
+- **Auto-Sanitization beim Import**: Boolean, Default an. Säubert Markdown-Importe von unsichtbaren Unicode-Zeichen, HTML-Artefakten und typografischen Anführungszeichen.
 
-**Pro Buch** im BookEditor > Metadaten (ueberschreibt die globalen Defaults fuer dieses Buch):
+**Pro Buch** im BookEditor > Metadaten (überschreibt die globalen Defaults für dieses Buch):
 
-- **Satzlaenge-Schwellwert** (`ms_tools_max_sentence_length`)
+- **Satzlänge-Schwellwert** (`ms_tools_max_sentence_length`)
 - **Wiederholungs-Fenster** (`ms_tools_repetition_window`)
-- **Max. Fuellwort-Anteil** (`ms_tools_max_filler_ratio`)
+- **Max. Füllwort-Anteil** (`ms_tools_max_filler_ratio`)
 
-Aufloesungs-Reihenfolge: Request > Buch > Plugin-global > Built-in-Default.
+Auflösungs-Reihenfolge: Request > Buch > Plugin-global > Built-in-Default.
 
-Die **Fuellwort-Listen** und die **Allowlist** (Begriffe von der Pruefung ausgenommen) liegen als YAML-Dateien im Plugin-Paket unter `content/fillers/{lang}.yaml` und `content/allowlist/{lang}.yaml`. Sie koennen direkt dort editiert werden und werden beim App-Start geladen.
+Die **Füllwort-Listen** und die **Allowlist** (Begriffe von der Prüfung ausgenommen) liegen als YAML-Dateien im Plugin-Paket unter `content/fillers/{lang}.yaml` und `content/allowlist/{lang}.yaml`. Sie können direkt dort editiert werden und werden beim App-Start geladen.
 
 ---
 
@@ -184,10 +184,10 @@ Die **Fuellwort-Listen** und die **Allowlist** (Begriffe von der Pruefung ausgen
 Die Stil-Checks kennen deinen Kontext nicht. Ignorier den Treffer wenn er nicht passt. Du kannst einzelne Begriffe in den Plugin-Einstellungen von der Prüfung ausnehmen.
 
 **Werden meine Texte an einen Server gesendet?**
-Nein. Das komplette Plugin laeuft lokal. Keine Cloud-Komponente, keine Telemetrie.
+Nein. Das komplette Plugin läuft lokal. Keine Cloud-Komponente, keine Telemetrie.
 
 **Kann ich die Stil-Checks auch auf englische Texte anwenden?**
 Ja. Die Listen und Regeln sind pro Sprache definiert. Das Plugin erkennt die Sprache automatisch aus den Buch-Metadaten.
 
 **Kann ich die Metriken exportieren?**
-Ja. Im Qualitaets-Tab der Buch-Metadaten gibt es einen "Exportieren" Button der alle Metriken als CSV oder JSON herunterlaedt.
+Ja. Im Qualitäts-Tab der Buch-Metadaten gibt es einen "Exportieren" Button der alle Metriken als CSV oder JSON herunterlädt.

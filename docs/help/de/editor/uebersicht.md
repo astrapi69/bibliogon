@@ -2,11 +2,11 @@
 
 ## Der TipTap-Editor
 
-Bibliogon verwendet TipTap als Texteditor. TipTap ist ein moderner WYSIWYG-Editor, der auf ProseMirror basiert und in allen gaengigen Browsern funktioniert. Du siehst deinen Text so, wie er später im Buch erscheinen wird, mit formatierten Überschriften, Listen, Bildern und Zitaten. Intern speichert Bibliogon die Inhalte als TipTap-JSON, nicht als HTML oder Markdown. Beim Export werden die Inhalte automatisch in das Zielformat konvertiert.
+Bibliogon verwendet TipTap als Texteditor. TipTap ist ein moderner WYSIWYG-Editor, der auf ProseMirror basiert und in allen gängigen Browsern funktioniert. Du siehst deinen Text so, wie er später im Buch erscheinen wird, mit formatierten Überschriften, Listen, Bildern und Zitaten. Intern speichert Bibliogon die Inhalte als TipTap-JSON, nicht als HTML oder Markdown. Beim Export werden die Inhalte automatisch in das Zielformat konvertiert.
 
 ## Toolbar
 
-Am oberen Rand des Editors befindet sich die Toolbar mit 24 Schaltflaechen für die gaengigsten Formatierungen. Von links nach rechts findest du dort unter anderem: Fett, Kursiv, Durchgestrichen, Code, Überschriften (H1 bis H6), Aufzählungsliste, nummerierte Liste, Zitat, Trennlinie, Bild einfügen, Tabelle, Fußnote und Rückgängig/Wiederholen. Alle Funktionen sind auch über Tastenkürzel erreichbar (siehe Tastenkürzel-Seite). Wenn du den Mauszeiger über eine Schaltflaeche haeltst, zeigt ein Tooltip die zugehoerige Aktion und das Kürzel an.
+Am oberen Rand des Editors befindet sich die Toolbar mit 24 Schaltflächen für die gängigsten Formatierungen. Von links nach rechts findest du dort unter anderem: Fett, Kursiv, Durchgestrichen, Code, Überschriften (H1 bis H6), Aufzählungsliste, nummerierte Liste, Zitat, Trennlinie, Bild einfügen, Tabelle, Fußnote und Rückgängig/Wiederholen. Alle Funktionen sind auch über Tastenkürzel erreichbar (siehe Tastenkürzel-Seite). Wenn du den Mauszeiger über eine Schaltfläche hältst, zeigt ein Tooltip die zugehörige Aktion und das Kürzel an.
 
 ## Kapitel-Sidebar
 
@@ -34,7 +34,7 @@ Im Reiter **Metadaten > Marketing** pflegst du Schlüsselwörter (Keywords) für
 
 **Hinzufügen:** Tippe ein Schlüsselwort in das Eingabefeld und drücke Enter. Kommas werden nicht als Trenner akzeptiert, weil sie den Export brechen würden - jedes Schlüsselwort ist ein eigener Eintrag. Umgebender Whitespace wird automatisch entfernt, Duplikate werden case-insensitive abgelehnt.
 
-**Bearbeiten:** Doppelklick auf einen Chip verwandelt ihn in ein Eingabefeld. Enter speichert die Änderung, Escape verwirft sie, ein Klick ausserhalb speichert ebenfalls. Validierungsfehler (leer, zu lang, Komma enthalten, Duplikat) lassen den Edit-Modus offen mit rotem Rand, damit du direkt korrigieren kannst.
+**Bearbeiten:** Doppelklick auf einen Chip verwandelt ihn in ein Eingabefeld. Enter speichert die Änderung, Escape verwirft sie, ein Klick außerhalb speichert ebenfalls. Validierungsfehler (leer, zu lang, Komma enthalten, Duplikat) lassen den Edit-Modus offen mit rotem Rand, damit du direkt korrigieren kannst.
 
 **Löschen und Rückgängig:** Das kleine X rechts an jedem Chip entfernt den Eintrag. Ein Toast unten rechts bietet fünf Sekunden lang einen Rückgängig-Button an, der das Schlüsselwort an seiner ursprünglichen Position wiederherstellt - nicht am Ende der Liste.
 
