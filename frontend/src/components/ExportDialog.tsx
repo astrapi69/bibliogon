@@ -3,6 +3,7 @@ import {Download, ChevronDown, ChevronUp, Headphones, XCircle} from "lucide-reac
 import {ApiError, DryRunResult, api} from "../api/client";
 import HelpLink from "./help/HelpLink";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
+import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
@@ -78,6 +79,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     // modal lives at the App root - that lets the user minimize it,
     // navigate freely, and pop it back open from a corner badge.
     const audiobookJob = useAudiobookJob();
+    const dialog = useDialog();
 
     const handleExport = async () => {
         setExporting(true);
@@ -147,7 +149,11 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     .replace("{engine}", engine)
                     .replace("{voice}", voice)
                     .replace("{created}", created);
-                if (confirm(message)) {
+                const title = t("ui.audiobook.regen_title", "Audiobook bereits vorhanden");
+                const confirmLabel = t("ui.audiobook.regen_confirm", "Überschreiben");
+                const cancelLabel = t("ui.common.cancel", "Abbrechen");
+                const shouldOverwrite = await dialog.confirm(title, message, "danger", {confirmLabel, cancelLabel});
+                if (shouldOverwrite) {
                     await _startAudiobookExport(true);
                     return;
                 }

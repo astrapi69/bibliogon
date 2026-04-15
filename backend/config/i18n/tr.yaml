@@ -668,6 +668,8 @@ ui:
         deleted: "Sesli kitap silindi"
         delete_failed: "Silme basarisiz"
         regen_warning: "Bu kitap icin zaten bir sesli kitap mevcut.\nMotor: {engine} | Ses: {voice} | {created}\n\nYeni bir disa aktarma mevcut dosyalarin uzerine yazacak.\n\nYine de yeniden olusturulsun mu?"
+        regen_title: "Sesli kitap zaten mevcut"
+        regen_confirm: "Uzerine yaz"
     languages:
         de: "Almanca"
         en: "İngilizce"

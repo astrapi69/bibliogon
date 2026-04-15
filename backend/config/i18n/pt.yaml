@@ -632,6 +632,8 @@ ui:
         deleted: "Audiolivro excluido"
         delete_failed: "Falha ao excluir"
         regen_warning: "Ja existe um audiolivro para este livro.\nMotor: {engine} | Voz: {voice} | {created}\n\nUma nova exportacao sobrescrevera os arquivos existentes.\n\nRecriar mesmo assim?"
+        regen_title: "O audiolivro ja existe"
+        regen_confirm: "Sobrescrever"
         delete_file: "Eliminar ficheiro"
         delete_file_confirm: "Eliminar este ficheiro?"
         elevenlabs_stored: "********** (guardado)"

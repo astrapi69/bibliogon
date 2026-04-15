@@ -668,6 +668,8 @@ ui:
     deleted: "Audiolibro eliminado"
     delete_failed: "Error al eliminar"
     regen_warning: "Ya existe un audiolibro para este libro.\nMotor: {engine} | Voz: {voice} | {created}\n\nUna nueva exportacion sobrescribira los archivos existentes.\n\nCrear de nuevo?"
+    regen_title: "El audiolibro ya existe"
+    regen_confirm: "Sobrescribir"
   languages:
     de: "Alemán"
     en: "Inglés"

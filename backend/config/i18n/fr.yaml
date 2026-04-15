@@ -665,6 +665,8 @@ ui:
     deleted: "Livre audio supprime"
     delete_failed: "Echec de la suppression"
     regen_warning: "Un livre audio existe deja pour ce livre.\nMoteur: {engine} | Voix: {voice} | {created}\n\nUn nouvel export ecrasera les fichiers existants.\n\nRecreer quand meme?"
+    regen_title: "Le livre audio existe deja"
+    regen_confirm: "Ecraser"
     delete_file: "Supprimer le fichier"
     delete_file_confirm: "Vraiment supprimer ce fichier?"
     elevenlabs_stored: "********** (enregistre)"

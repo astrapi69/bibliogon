@@ -25,8 +25,13 @@ interface DialogState extends DialogOptions {
 
 // --- Context ---
 
+interface ConfirmLabels {
+    confirmLabel?: string;
+    cancelLabel?: string;
+}
+
 interface DialogContextValue {
-    confirm: (title: string, message: string, variant?: DialogVariant) => Promise<boolean>;
+    confirm: (title: string, message: string, variant?: DialogVariant, labels?: ConfirmLabels) => Promise<boolean>;
     prompt: (title: string, message: string, placeholder?: string, defaultValue?: string) => Promise<string | null>;
     alert: (title: string, message: string, variant?: DialogVariant) => Promise<void>;
 }
@@ -53,8 +58,8 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
         });
     }, []);
 
-    const confirm = useCallback((title: string, message: string, variant?: DialogVariant) => {
-        return showDialog({title, message, type: "confirm", variant}) as Promise<boolean>;
+    const confirm = useCallback((title: string, message: string, variant?: DialogVariant, labels?: ConfirmLabels) => {
+        return showDialog({title, message, type: "confirm", variant, ...labels}) as Promise<boolean>;
     }, [showDialog]);
 
     const prompt = useCallback((title: string, message: string, placeholder?: string, defaultValue?: string) => {

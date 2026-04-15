@@ -663,6 +663,8 @@ ui:
     delete_file: "Delete file"
     delete_file_confirm: "Really delete this file?"
     regen_warning: "An audiobook for this book already exists.\nEngine: {engine} | Voice: {voice} | {created}\n\nA new export will overwrite the existing files.\n\nRecreate anyway?"
+    regen_title: "Audiobook already exists"
+    regen_confirm: "Overwrite"
   languages:
     de: "German"
     en: "English"

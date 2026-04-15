@@ -72,6 +72,14 @@ vi.mock("./help/HelpLink", () => ({
   default: () => null,
 }))
 
+vi.mock("./AppDialog", () => ({
+  useDialog: () => ({
+    confirm: vi.fn().mockResolvedValue(false),
+    prompt: vi.fn().mockResolvedValue(null),
+    alert: vi.fn().mockResolvedValue(undefined),
+  }),
+}))
+
 describe("ExportDialog", () => {
   const onClose = vi.fn()
   const defaultProps = {
