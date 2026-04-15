@@ -50,6 +50,65 @@ def pick_folder(title: str) -> str | None:
     return result or None
 
 
+def three_button_dialog(
+    title: str,
+    message: str,
+    primary_label: str,
+    secondary_label: str,
+    cancel_label: str = "Cancel",
+) -> str:
+    """Show a message with three labeled buttons. Returns ``primary``,
+    ``secondary``, or ``cancel`` depending on which button the user clicks.
+
+    Closing the window via the X returns ``cancel``. The primary button
+    is the default (Enter), the cancel button maps to Escape.
+    """
+    _ensure_root()
+    win = tk.Toplevel()
+    win.title(title)
+    win.resizable(False, False)
+
+    result = {"choice": "cancel"}
+
+    label = tk.Label(win, text=message, justify="left", wraplength=420, padx=20, pady=16)
+    label.pack()
+
+    buttons = tk.Frame(win)
+    buttons.pack(padx=20, pady=(0, 16))
+
+    def _click(choice: str) -> None:
+        result["choice"] = choice
+        win.destroy()
+
+    primary = tk.Button(buttons, text=primary_label, width=20, command=lambda: _click("primary"))
+    primary.pack(side="left", padx=(0, 8))
+    tk.Button(buttons, text=secondary_label, width=20, command=lambda: _click("secondary")).pack(side="left", padx=(0, 8))
+    tk.Button(buttons, text=cancel_label, width=10, command=lambda: _click("cancel")).pack(side="left")
+
+    primary.focus_set()
+    win.bind("<Return>", lambda _e: _click("primary"))
+    win.bind("<Escape>", lambda _e: _click("cancel"))
+    win.protocol("WM_DELETE_WINDOW", lambda: _click("cancel"))
+
+    _center_over_root(win)
+    win.grab_set()
+    win.wait_window()
+    return result["choice"]
+
+
+def _center_over_root(win: tk.Toplevel) -> None:
+    win.update_idletasks()
+    try:
+        root = _root_singleton
+        if root is None:
+            return
+        x = root.winfo_rootx() + (root.winfo_width() - win.winfo_width()) // 2
+        y = root.winfo_rooty() + (root.winfo_height() - win.winfo_height()) // 2
+        win.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+    except tk.TclError:
+        pass
+
+
 class StatusWindow:
     """A tiny window that shows current state and a Stop button.
 

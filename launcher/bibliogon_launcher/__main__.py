@@ -4,6 +4,12 @@ health wait, browser open, user-controlled stop, compose down.
 The flow is intentionally linear: each step has a concrete error dialog
 on failure so the user always knows what to do next. Heavy work runs on
 a background thread so the Tk event loop stays responsive.
+
+User-facing text in this file is intentionally free of internal file
+names, config keys, and raw subprocess output. When a user sees a
+dialog they should see plain-language guidance, not developer traces.
+Raw details go to launcher.log under %APPDATA%\\Bibliogon so
+troubleshooting is possible without leaking complexity into the UI.
 """
 
 from __future__ import annotations
@@ -18,6 +24,9 @@ from bibliogon_launcher import __version__, config, docker, health, lockfile, ui
 
 
 logger = logging.getLogger("bibliogon_launcher")
+
+INSTALL_GUIDE_URL = "https://github.com/astrapi69/bibliogon/blob/main/docs/help/en/launcher-windows.md"
+DOCKER_INSTALL_URL = "https://docs.docker.com/desktop/install/windows-install/"
 
 
 def main() -> int:
@@ -39,12 +48,12 @@ def _run_launcher() -> int:
     # 1. Docker installed?
     ok, detail = docker.docker_installed()
     if not ok:
+        logger.error("docker --version failed: %s", detail)
         ui.error_box(
-            "Docker is required",
+            "Docker Desktop is required",
             "Bibliogon needs Docker Desktop to run.\n\n"
-            "Install from https://docs.docker.com/desktop/install/windows-install/\n"
-            "and then start Bibliogon again.\n\n"
-            f"Details: {detail}",
+            f"You can download it from:\n{DOCKER_INSTALL_URL}\n\n"
+            "Install Docker Desktop, start it, then open Bibliogon again.",
         )
         return 1
 
@@ -53,29 +62,39 @@ def _run_launcher() -> int:
         ok, detail = docker.docker_daemon_running()
         if ok:
             break
+        logger.warning("docker info failed (attempt %d): %s", attempt + 1, detail)
         retry = ui.ask_retry_quit(
             "Docker Desktop is not running",
-            "Docker Desktop does not appear to be running.\n\n"
-            "Start Docker Desktop, wait for it to finish starting, then click Retry.\n\n"
-            f"Details: {detail}",
+            "Docker Desktop needs to be running before Bibliogon can start.\n\n"
+            "Open Docker Desktop, wait for it to finish starting, then click Retry.",
         )
         if not retry:
             return 1
     else:
-        ui.error_box("Docker Desktop is not running", "Giving up after 3 attempts. Start Docker Desktop and try again.")
+        ui.error_box(
+            "Docker Desktop is not running",
+            "Docker Desktop is still not running after several attempts.\n\n"
+            "Please start Docker Desktop and open Bibliogon again.",
+        )
         return 1
 
-    # 3. Locate repo. If missing, ask the user to pick the folder once.
+    # 3. Locate repo. If missing, show the three-button install-or-choose dialog.
     repo = config.resolve_repo_path()
     if not config.is_valid_repo(repo):
-        repo = _first_run_repo_picker(repo)
+        repo = _first_run_repo_picker()
         if repo is None:
             return 1
 
-    # 4. Ensure .env exists (copy from .env.example, generate secret).
+    # 4. Ensure configuration file exists (generated on first run).
     ok, detail = _ensure_env_file(repo)
     if not ok:
-        ui.error_box("Configuration failed", detail)
+        logger.error("env-file preparation failed: %s", detail)
+        ui.error_box(
+            "Could not prepare Bibliogon",
+            "Bibliogon's configuration could not be prepared. This is usually a "
+            "file-permissions problem with the Bibliogon folder.\n\n"
+            "Check that you have write access to the Bibliogon folder and try again.",
+        )
         return 1
 
     port = config.read_port(repo)
@@ -83,24 +102,27 @@ def _run_launcher() -> int:
     # 5. Launch status window, run docker compose + health wait + browser on a
     # background thread so the UI stays responsive.
     window = ui.StatusWindow()
-    window.set_starting("Starting Docker containers...")
+    window.set_starting("Starting Bibliogon...")
 
     def worker() -> None:
         ok, up_detail = docker.compose_up(repo, config.COMPOSE_FILENAME)
         if not ok:
-            window.after(0, lambda: _handle_compose_failure(window, up_detail))
+            logger.error("compose up failed: %s", up_detail)
+            window.after(0, lambda: _handle_compose_failure(window, port))
             return
 
-        window.after(0, lambda: window.set_starting("Waiting for Bibliogon to answer..."))
+        window.after(0, lambda: window.set_starting("Almost ready..."))
         if not health.wait_for_healthy(port, timeout_seconds=60.0):
             tail = docker.compose_logs_tail(repo, config.COMPOSE_FILENAME, lines=20)
-            window.after(0, lambda: _handle_health_timeout(window, repo, port, tail))
+            logger.error("health timeout; last lines:\n%s", tail)
+            window.after(0, lambda: _handle_health_timeout(window, repo, port))
             return
 
         url = f"http://localhost:{port}"
         try:
             opened = webbrowser.open(url)
-        except OSError:
+        except OSError as exc:
+            logger.warning("webbrowser.open failed: %s", exc)
             opened = False
         if not opened:
             window.after(0, lambda: ui.ask_copyable_url(url))
@@ -117,18 +139,40 @@ def _run_launcher() -> int:
 # --- Step helpers ---
 
 
-def _first_run_repo_picker(initial: Path) -> Path | None:
-    """Ask the user to pick the repo folder and persist the choice."""
-    ui.info_box(
-        "Bibliogon install not found",
-        f"Bibliogon is not installed at the default location:\n  {initial}\n\n"
-        "Click OK and pick the folder where you installed Bibliogon (the folder that contains "
-        f"{config.COMPOSE_FILENAME}).",
+def _first_run_repo_picker() -> Path | None:
+    """Ask the user to pick the repo folder or open the install guide.
+
+    Three buttons: Choose folder / Open install guide / Cancel. Selection
+    is persisted in ``%APPDATA%\\Bibliogon\\launcher.json`` so subsequent
+    launches skip this step.
+    """
+    message = (
+        "Bibliogon could not be found on your computer.\n\n"
+        "By default, Bibliogon is installed in a folder called 'bibliogon' "
+        "in your user directory. If you installed Bibliogon somewhere else, "
+        "click 'Choose folder' and point to that folder.\n\n"
+        "If Bibliogon is not installed yet, click 'Open install guide' to "
+        "see the installation instructions."
     )
-    for _ in range(3):
-        picked = ui.pick_folder("Pick the Bibliogon folder")
-        if picked is None:
+    while True:
+        choice = ui.three_button_dialog(
+            title="Bibliogon not found",
+            message=message,
+            primary_label="Choose folder",
+            secondary_label="Open install guide",
+            cancel_label="Cancel",
+        )
+        if choice == "cancel":
             return None
+        if choice == "secondary":
+            try:
+                webbrowser.open(INSTALL_GUIDE_URL)
+            except OSError as exc:
+                logger.warning("opening install guide failed: %s", exc)
+            return None
+        picked = ui.pick_folder("Choose the Bibliogon folder")
+        if picked is None:
+            continue  # back to the three-button dialog
         repo = Path(picked)
         if config.is_valid_repo(repo):
             cfg = config.load_launcher_config()
@@ -137,30 +181,29 @@ def _first_run_repo_picker(initial: Path) -> Path | None:
             return repo
         retry = ui.ask_retry_quit(
             "Not a Bibliogon folder",
-            f"{picked}\n\ndoes not contain {config.COMPOSE_FILENAME}. Pick the folder you installed "
-            "Bibliogon into, typically %USERPROFILE%\\bibliogon.",
+            "This folder does not look like a Bibliogon installation.\n\n"
+            "Please choose the folder where you installed Bibliogon.",
         )
         if not retry:
             return None
-    return None
 
 
 def _ensure_env_file(repo: Path) -> tuple[bool, str]:
-    """Copy .env.example to .env if missing; generate a random secret."""
+    """Create the configuration file on first run. Details go to the log."""
     env_file = repo / config.ENV_FILENAME
     if env_file.is_file():
         return True, "ok"
     example = repo / config.ENV_EXAMPLE_FILENAME
     if not example.is_file():
-        return False, f"Neither .env nor .env.example exist in {repo}"
+        return False, f"neither {config.ENV_FILENAME} nor {config.ENV_EXAMPLE_FILENAME} exist in {repo}"
     try:
         shutil.copyfile(example, env_file)
     except OSError as exc:
-        return False, f"Could not copy .env.example to .env: {exc}"
+        return False, f"copy failed: {exc}"
     try:
         _replace_secret_placeholder(env_file)
     except OSError as exc:
-        return False, f"Could not write generated secret into .env: {exc}"
+        return False, f"secret generation failed: {exc}"
     return True, "created"
 
 
@@ -171,21 +214,25 @@ def _replace_secret_placeholder(env_file: Path) -> None:
     env_file.write_text(text, encoding="utf-8")
 
 
-def _handle_compose_failure(window: ui.StatusWindow, detail: str) -> None:
+def _handle_compose_failure(window: ui.StatusWindow, port: int) -> None:
     ui.error_box(
         "Could not start Bibliogon",
-        "docker compose up failed. This is often caused by a port conflict or a Docker daemon problem.\n\n"
-        f"Last output:\n{detail}",
+        "Bibliogon could not start. This usually happens when another "
+        f"program is using port {port}, or when Docker Desktop is having "
+        "trouble.\n\n"
+        "Try the following: close other programs that might use the same "
+        "port, restart Docker Desktop, then open Bibliogon again.",
     )
     window.close()
 
 
-def _handle_health_timeout(window: ui.StatusWindow, repo: Path, port: int, tail: str) -> None:
+def _handle_health_timeout(window: ui.StatusWindow, repo: Path, port: int) -> None:
     retry = ui.ask_retry_quit(
-        "Bibliogon did not start in time",
-        f"Bibliogon did not answer on localhost:{port} within 60 seconds.\n\n"
-        f"Last 20 log lines:\n{tail}\n\n"
-        "Click Retry to keep waiting another 60 seconds, or Cancel to shut down.",
+        "Bibliogon is taking longer than expected",
+        "Bibliogon did not finish starting within a minute.\n\n"
+        "This can happen on the first start when Docker needs to prepare "
+        "the application for the first time.\n\n"
+        "Click Retry to wait another minute, or Cancel to shut down.",
     )
     if retry:
         if health.wait_for_healthy(port, timeout_seconds=60.0):
@@ -201,7 +248,7 @@ def _shutdown(window: ui.StatusWindow, repo: Path) -> None:
     window.set_stopping()
     ok, detail = docker.compose_down(repo, config.COMPOSE_FILENAME)
     if not ok:
-        logger.warning("compose down failed: %s", detail)
+        logger.warning("shutdown failed: %s", detail)
     window.close()
 
 
@@ -210,13 +257,13 @@ def _handle_already_running() -> None:
     port = config.read_port(repo) if config.is_valid_repo(repo) else config.DEFAULT_PORT
     url = f"http://localhost:{port}"
     ui.info_box(
-        "Bibliogon is already running",
-        f"Another launcher instance is running. Opening browser at {url} instead.",
+        "Bibliogon is already open",
+        "Bibliogon is already running. Your browser will switch to it.",
     )
     try:
         webbrowser.open(url)
-    except OSError:
-        pass
+    except OSError as exc:
+        logger.warning("webbrowser.open failed: %s", exc)
 
 
 def _setup_logging() -> None:
