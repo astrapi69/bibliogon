@@ -555,10 +555,11 @@ def test_figcaption_roundtrip_export():
     from bibliogon_export.scaffolder import _content_to_markdown
     md = _content_to_markdown(ch["content"])
 
-    # Export should have <figure><figcaption> in the markdown (as HTML block)
-    assert "<figure>" in md
-    assert "<figcaption>" in md
-    assert "My caption text" in md
+    # Export emits native Pandoc image syntax (caption as label, alt as
+    # title) so figures survive the LaTeX/DOCX writers, not raw HTML.
+    assert "![My caption text" in md
+    assert "test.png" in md
+    assert "<figure>" not in md
 
     _cleanup(book_id)
 
