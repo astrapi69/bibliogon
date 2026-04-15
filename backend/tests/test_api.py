@@ -9,7 +9,7 @@ client = TestClient(app)
 def test_health():
     r = client.get("/api/health")
     assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+    assert r.json()["status"] == "DELIBERATELY_BROKEN_TO_VERIFY_CI"  # CI verification: should fail
 
 
 def test_book_crud():
