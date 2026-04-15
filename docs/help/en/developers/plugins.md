@@ -70,7 +70,7 @@ class MyPlugin(BasePlugin):
     name = "myplugin"
     version = "1.0.0"
     api_version = "1"
-    license_tier = "core"           # "core" = free, always available
+    license_tier = "core"           # In Bibliogon "core" is the only value in use; all plugins are free.
     depends_on: list[str] = []      # e.g. ["export"] if you need the export plugin
 
     def activate(self) -> None:
