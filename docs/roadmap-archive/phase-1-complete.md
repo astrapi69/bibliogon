@@ -161,3 +161,13 @@ These four items are part of the Git-based backup integration theme.
 ## Items marked obsolete
 
 None. All planned items were either delivered or carried forward.
+
+## Postscript: 2026-04-15
+
+Two days after this archive was written, work on PS-06 (manuscripta integration polish, originally filed as Phase 2 polish) uncovered a silent-image-drop bug in the PDF and DOCX export pipeline. The bug was present in every shipped version from v0.1.0 through v0.14.0. Imported books that referenced figures via `<img>` tags exported to a PDF or DOCX with zero embedded images, while the EPUB output for the same book contained them — same source, different target, no error.
+
+Root cause: bibliogon's HTML-to-Markdown converter preserved `<figure>/<img>` as raw HTML in the intermediate Markdown. Pandoc's HTML and EPUB writers pass raw HTML through verbatim; the LaTeX (PDF) and DOCX writers silently drop it. Books authored natively in Bibliogon (TipTap-JSON storage) were unaffected because the TipTap-to-Markdown path emitted native image syntax.
+
+Fixed in v0.15.0 alongside the manuscripta v0.7.0 → v0.8.0 upgrade. The new strict-images mode in v0.8.0 catches missing image *files* but does not detect this dropping bug (raw HTML is discarded before resolution is attempted), so the bibliogon-side fix to emit native Markdown was the real corrective change. The work item was reclassified from PS-06 to CF-01 in the active roadmap once the shipped impact was understood.
+
+This entry exists so future readers see the actual trajectory of Phase 1: feature-complete on paper at v0.13.0, archived at v0.14.0, then a real shipped bug surfaced and fixed during the early Phase 2 polish window. The archive is not a sanitized record.
