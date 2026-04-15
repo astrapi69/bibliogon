@@ -2,7 +2,7 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
-## [0.15.0] - unreleased
+## [0.15.0] - 2026-04-15
 
 ### Added
 - **Onboarding wizard for AI provider setup (PS-02):** First-run flow that walks the user through provider selection, base URL, model, and connection test. Skippable; the existing Settings flow still works for power users.

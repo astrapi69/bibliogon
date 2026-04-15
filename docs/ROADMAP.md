@@ -2,8 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-04-15
-Latest release: v0.14.0
-On main (v0.15.0 imminent): PS-01 to PS-07 polish, manuscripta v0.7.0 to v0.8.0 upgrade, CF-01 silent-image-drop fix
+Latest release: v0.15.0 (PS-01 to PS-07 polish, manuscripta v0.7.0 to v0.8.0 upgrade, CF-01 silent-image-drop fix, full DE+EN help docs sweep)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 

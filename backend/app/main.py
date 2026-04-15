@@ -157,7 +157,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.14.0",
+    version="0.15.0",
     lifespan=lifespan,
     docs_url="/api/docs" if DEBUG else None,
     redoc_url="/api/redoc" if DEBUG else None,
@@ -386,7 +386,7 @@ def get_i18n(lang: str) -> dict[str, Any]:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.14.0", "debug": DEBUG}
+    return {"status": "ok", "version": "0.15.0", "debug": DEBUG}
 
 
 # Test reset endpoint - only available in debug mode

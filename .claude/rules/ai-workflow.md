@@ -64,7 +64,7 @@ Additionally for the AI:
 ## Current state
 
 See architecture.md for architectural details. Additionally note:
-- Version: 0.14.0 (multi-provider AI integration, chapter review, marketing generation, PWA fix).
+- Version: 0.15.0 (manuscripta v0.8.0 upgrade, CF-01 silent-image-drop fix, PS-01 to PS-07 polish, full DE+EN help docs sweep).
 - Tests: see `docs/audits/current-coverage.md` for current counts. `make test` covers backend+plugins+Vitest, E2E is separate.
 - 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
 - 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
