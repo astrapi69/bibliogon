@@ -45,15 +45,23 @@ def main() -> int:
 
 
 def _run_launcher() -> int:
+    show_details = config.get_show_details_default()
+
     # 1. Docker installed?
     ok, detail = docker.docker_installed()
     if not ok:
         logger.error("docker --version failed: %s", detail)
-        ui.error_box(
-            "Docker Desktop is required",
-            "Bibliogon needs Docker Desktop to run.\n\n"
-            f"You can download it from:\n{DOCKER_INSTALL_URL}\n\n"
-            "Install Docker Desktop, start it, then open Bibliogon again.",
+        ui.error_dialog(
+            title="Docker Desktop is required",
+            message=(
+                "Bibliogon needs Docker Desktop to run.\n\n"
+                f"You can download it from:\n{DOCKER_INSTALL_URL}\n\n"
+                "Install Docker Desktop, start it, then open Bibliogon again."
+            ),
+            actions=[("OK", "ok")],
+            details=f"docker --version check failed:\n{detail}",
+            help_url=DOCKER_INSTALL_URL,
+            initial_show_details=show_details,
         )
         return 1
 
@@ -63,18 +71,30 @@ def _run_launcher() -> int:
         if ok:
             break
         logger.warning("docker info failed (attempt %d): %s", attempt + 1, detail)
-        retry = ui.ask_retry_quit(
-            "Docker Desktop is not running",
-            "Docker Desktop needs to be running before Bibliogon can start.\n\n"
-            "Open Docker Desktop, wait for it to finish starting, then click Retry.",
+        choice = ui.error_dialog(
+            title="Docker Desktop is not running",
+            message=(
+                "Docker Desktop needs to be running before Bibliogon can start.\n\n"
+                "Open Docker Desktop, wait for it to finish starting, then click Retry."
+            ),
+            actions=[("Retry", "retry"), ("Cancel", "cancel")],
+            details=f"docker info attempt {attempt + 1} failed:\n{detail}",
+            help_url=INSTALL_GUIDE_URL,
+            initial_show_details=show_details,
         )
-        if not retry:
+        if choice != "retry":
             return 1
     else:
-        ui.error_box(
-            "Docker Desktop is not running",
-            "Docker Desktop is still not running after several attempts.\n\n"
-            "Please start Docker Desktop and open Bibliogon again.",
+        ui.error_dialog(
+            title="Docker Desktop is not running",
+            message=(
+                "Docker Desktop is still not running after several attempts.\n\n"
+                "Please start Docker Desktop and open Bibliogon again."
+            ),
+            actions=[("OK", "ok")],
+            details="docker info failed on three consecutive retries.",
+            help_url=INSTALL_GUIDE_URL,
+            initial_show_details=show_details,
         )
         return 1
 
@@ -89,11 +109,21 @@ def _run_launcher() -> int:
     ok, detail = _ensure_env_file(repo)
     if not ok:
         logger.error("env-file preparation failed: %s", detail)
-        ui.error_box(
-            "Could not prepare Bibliogon",
-            "Bibliogon's configuration could not be prepared. This is usually a "
-            "file-permissions problem with the Bibliogon folder.\n\n"
-            "Check that you have write access to the Bibliogon folder and try again.",
+        ui.error_dialog(
+            title="Could not prepare Bibliogon",
+            message=(
+                "Bibliogon's configuration could not be prepared. This is usually a "
+                "file-permissions problem with the Bibliogon folder.\n\n"
+                "Check that you have write access to the Bibliogon folder and try again."
+            ),
+            actions=[("OK", "ok")],
+            details=(
+                f"Preparation of configuration in {repo} failed:\n{detail}\n\n"
+                f"Expected template: {config.ENV_EXAMPLE_FILENAME}\n"
+                f"Target: {config.ENV_FILENAME}"
+            ),
+            help_url=INSTALL_GUIDE_URL,
+            initial_show_details=show_details,
         )
         return 1
 
@@ -108,14 +138,14 @@ def _run_launcher() -> int:
         ok, up_detail = docker.compose_up(repo, config.COMPOSE_FILENAME)
         if not ok:
             logger.error("compose up failed: %s", up_detail)
-            window.after(0, lambda: _handle_compose_failure(window, port))
+            window.after(0, lambda: _handle_compose_failure(window, port, up_detail, show_details))
             return
 
         window.after(0, lambda: window.set_starting("Almost ready..."))
         if not health.wait_for_healthy(port, timeout_seconds=60.0):
             tail = docker.compose_logs_tail(repo, config.COMPOSE_FILENAME, lines=20)
             logger.error("health timeout; last lines:\n%s", tail)
-            window.after(0, lambda: _handle_health_timeout(window, repo, port))
+            window.after(0, lambda: _handle_health_timeout(window, repo, port, tail, show_details))
             return
 
         url = f"http://localhost:{port}"
@@ -214,27 +244,48 @@ def _replace_secret_placeholder(env_file: Path) -> None:
     env_file.write_text(text, encoding="utf-8")
 
 
-def _handle_compose_failure(window: ui.StatusWindow, port: int) -> None:
-    ui.error_box(
-        "Could not start Bibliogon",
-        "Bibliogon could not start. This usually happens when another "
-        f"program is using port {port}, or when Docker Desktop is having "
-        "trouble.\n\n"
-        "Try the following: close other programs that might use the same "
-        "port, restart Docker Desktop, then open Bibliogon again.",
+def _handle_compose_failure(window: ui.StatusWindow, port: int, detail: str, show_details: bool) -> None:
+    ui.error_dialog(
+        title="Could not start Bibliogon",
+        message=(
+            "Bibliogon could not start. This usually happens when another "
+            f"program is using port {port}, or when Docker Desktop is having "
+            "trouble.\n\n"
+            "Try the following: close other programs that might use the same "
+            "port, restart Docker Desktop, then open Bibliogon again."
+        ),
+        actions=[("OK", "ok")],
+        details=f"docker compose -f {config.COMPOSE_FILENAME} up -d failed:\n{detail}",
+        help_url=INSTALL_GUIDE_URL,
+        initial_show_details=show_details,
     )
     window.close()
 
 
-def _handle_health_timeout(window: ui.StatusWindow, repo: Path, port: int) -> None:
-    retry = ui.ask_retry_quit(
-        "Bibliogon is taking longer than expected",
-        "Bibliogon did not finish starting within a minute.\n\n"
-        "This can happen on the first start when Docker needs to prepare "
-        "the application for the first time.\n\n"
-        "Click Retry to wait another minute, or Cancel to shut down.",
+def _handle_health_timeout(
+    window: ui.StatusWindow,
+    repo: Path,
+    port: int,
+    tail: str,
+    show_details: bool,
+) -> None:
+    choice = ui.error_dialog(
+        title="Bibliogon is taking longer than expected",
+        message=(
+            "Bibliogon did not finish starting within a minute.\n\n"
+            "This can happen on the first start when Docker needs to prepare "
+            "the application for the first time.\n\n"
+            "Click Retry to wait another minute, or Cancel to shut down."
+        ),
+        actions=[("Retry", "retry"), ("Cancel", "cancel")],
+        details=(
+            f"GET http://localhost:{port}/api/health did not respond in 60 s.\n\n"
+            f"Last 20 log lines from docker compose -f {config.COMPOSE_FILENAME}:\n{tail}"
+        ),
+        help_url=INSTALL_GUIDE_URL,
+        initial_show_details=show_details,
     )
-    if retry:
+    if choice == "retry":
         if health.wait_for_healthy(port, timeout_seconds=60.0):
             url = f"http://localhost:{port}"
             webbrowser.open(url)

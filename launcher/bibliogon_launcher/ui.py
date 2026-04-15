@@ -7,9 +7,52 @@ other modules and UI is a thin render of their return values.
 
 from __future__ import annotations
 
+import datetime
+import locale
 import threading
 import tkinter as tk
-from tkinter import filedialog, messagebox
+import webbrowser
+from tkinter import filedialog, messagebox, scrolledtext
+
+
+# Minimal DE/EN strings baked into the launcher so the .exe does not
+# need to ship the backend i18n YAML. Other locales fall back to EN
+# until we wire up a fuller translation path.
+_I18N: dict[str, dict[str, str]] = {
+    "show_details": {"en": "Show details", "de": "Details anzeigen"},
+    "hide_details": {"en": "Hide details", "de": "Details verbergen"},
+    "save_log": {"en": "Save log to file...", "de": "Log in Datei speichern..."},
+    "copy_clipboard": {"en": "Copy to clipboard", "de": "In Zwischenablage kopieren"},
+    "copied": {"en": "Copied.", "de": "Kopiert."},
+    "technical_details": {"en": "Technical details", "de": "Technische Details"},
+    "help": {"en": "Help", "de": "Hilfe"},
+    "save_default_filename": {
+        "en": "bibliogon-launcher-error-{ts}.log",
+        "de": "bibliogon-launcher-fehler-{ts}.log",
+    },
+}
+
+
+def _current_lang() -> str:
+    """Return ``"de"`` if the OS locale is German, else ``"en"``."""
+    try:
+        code, _ = locale.getlocale()
+    except (TypeError, ValueError):
+        code = None
+    if code is None:
+        try:
+            code = locale.getdefaultlocale()[0]
+        except (ValueError, IndexError, TypeError):
+            code = None
+    if code and code.lower().startswith("de"):
+        return "de"
+    return "en"
+
+
+def _t(key: str) -> str:
+    lang = _current_lang()
+    bucket = _I18N.get(key, {})
+    return bucket.get(lang) or bucket.get("en") or key
 
 
 def error_box(title: str, message: str) -> None:
@@ -48,6 +91,227 @@ def pick_folder(title: str) -> str | None:
     _ensure_root()
     result = filedialog.askdirectory(title=title, mustexist=True)
     return result or None
+
+
+def error_dialog(
+    title: str,
+    message: str,
+    *,
+    actions: list[tuple[str, str]],
+    details: str = "",
+    help_url: str | None = None,
+    initial_show_details: bool = False,
+) -> str:
+    """Error dialog with optional collapsible technical details.
+
+    ``message`` is the user-friendly explanation and recommended action
+    (kept free of internal file names, ports, raw stderr).
+
+    ``details`` is the technical block revealed by the Show-details
+    toggle. Supports multi-line text; includes Save-log and
+    Copy-clipboard helpers when non-empty.
+
+    ``actions`` is a list of ``(label, return_value)`` tuples. The first
+    entry is the default (Enter-activated) button. The cancel-equivalent
+    is always the last entry; Escape / window-X map to its
+    ``return_value``.
+
+    ``help_url`` adds a Help button that opens the URL in the default
+    browser. Independent of the action buttons.
+
+    ``initial_show_details`` defaults to False so end users see the
+    plain-language view first. Set True via the launcher config to
+    auto-expand for developers.
+    """
+    assert actions, "error_dialog requires at least one action"
+    _ensure_root()
+    dlg = _ErrorDialog(
+        title=title,
+        message=message,
+        actions=actions,
+        details=details,
+        help_url=help_url,
+        initial_show_details=initial_show_details,
+    )
+    return dlg.show()
+
+
+class _ErrorDialog:
+    """Internal impl of error_dialog. Separate class so the widget
+    references can be captured by closures and the test surface is
+    narrower (public callers only see ``error_dialog``).
+    """
+
+    PAD = 16
+
+    def __init__(
+        self,
+        *,
+        title: str,
+        message: str,
+        actions: list[tuple[str, str]],
+        details: str,
+        help_url: str | None,
+        initial_show_details: bool,
+    ) -> None:
+        self._actions = actions
+        self._details = details
+        self._help_url = help_url
+        self._result = actions[-1][1]  # default to cancel-equivalent
+        self._details_visible = False
+
+        self._win = tk.Toplevel()
+        self._win.title(title)
+        self._win.resizable(False, False)
+
+        tk.Label(
+            self._win,
+            text=message,
+            justify="left",
+            wraplength=460,
+            padx=self.PAD,
+            pady=self.PAD,
+        ).pack(fill="x")
+
+        self._buttons_frame = tk.Frame(self._win)
+        self._buttons_frame.pack(fill="x", padx=self.PAD, pady=(0, self.PAD))
+        self._build_action_buttons()
+
+        self._details_frame = tk.Frame(self._win)
+        self._details_text: tk.Text | None = None
+        if details:
+            self._build_details_frame()
+        if initial_show_details and details:
+            self._toggle_details()
+
+        self._win.bind("<Return>", lambda _e: self._handle_action(self._actions[0][1]))
+        self._win.bind("<Escape>", lambda _e: self._handle_action(self._actions[-1][1]))
+        self._win.protocol("WM_DELETE_WINDOW", lambda: self._handle_action(self._actions[-1][1]))
+        _center_over_root(self._win)
+
+    # --- Construction ---
+
+    def _build_action_buttons(self) -> None:
+        # Primary and secondary action buttons. Leftmost is the default.
+        for index, (label, value) in enumerate(self._actions):
+            width = 14 if index == 0 else 10
+            tk.Button(
+                self._buttons_frame,
+                text=label,
+                width=width,
+                command=lambda v=value: self._handle_action(v),
+            ).pack(side="left", padx=(0, 6))
+
+        # Spacer pushes the auxiliary buttons to the right.
+        tk.Frame(self._buttons_frame).pack(side="left", expand=True, fill="x")
+
+        if self._help_url:
+            tk.Button(
+                self._buttons_frame,
+                text=_t("help"),
+                width=8,
+                command=self._open_help,
+            ).pack(side="left", padx=(0, 6))
+        if self._details:
+            self._toggle_button = tk.Button(
+                self._buttons_frame,
+                text=_t("show_details"),
+                width=16,
+                command=self._toggle_details,
+            )
+            self._toggle_button.pack(side="left")
+
+    def _build_details_frame(self) -> None:
+        tk.Label(
+            self._details_frame,
+            text=_t("technical_details"),
+            anchor="w",
+            font=("Segoe UI", 9, "bold"),
+            padx=self.PAD,
+        ).pack(fill="x", pady=(0, 4))
+
+        text_widget = tk.Text(
+            self._details_frame,
+            height=10,
+            width=70,
+            wrap="none",
+            font=("Consolas", 9),
+            borderwidth=1,
+            relief="solid",
+        )
+        text_widget.insert("1.0", self._details)
+        text_widget.configure(state="disabled")
+        text_widget.pack(fill="both", expand=True, padx=self.PAD)
+
+        tools = tk.Frame(self._details_frame)
+        tools.pack(fill="x", padx=self.PAD, pady=(6, self.PAD))
+        tk.Button(tools, text=_t("save_log"), command=self._save_log).pack(side="left", padx=(0, 6))
+        tk.Button(tools, text=_t("copy_clipboard"), command=self._copy_clipboard).pack(side="left")
+
+        self._details_text = text_widget
+
+    # --- Events ---
+
+    def _toggle_details(self) -> None:
+        if self._details_visible:
+            self._details_frame.pack_forget()
+            self._toggle_button.configure(text=_t("show_details"))
+        else:
+            self._details_frame.pack(fill="both", expand=True)
+            self._toggle_button.configure(text=_t("hide_details"))
+        self._details_visible = not self._details_visible
+        self._win.update_idletasks()
+        _center_over_root(self._win)
+
+    def _open_help(self) -> None:
+        if not self._help_url:
+            return
+        try:
+            webbrowser.open(self._help_url)
+        except OSError:
+            pass
+
+    def _save_log(self) -> None:
+        ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        default_name = _t("save_default_filename").format(ts=ts)
+        path = filedialog.asksaveasfilename(
+            title=_t("save_log"),
+            defaultextension=".log",
+            initialfile=default_name,
+            filetypes=[("Log files", "*.log"), ("All files", "*.*")],
+        )
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(self._details)
+        except OSError:
+            messagebox.showerror(_t("save_log"), _t("save_log"))
+
+    def _copy_clipboard(self) -> None:
+        root = _ensure_root()
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(self._details)
+            root.update()
+        except tk.TclError:
+            return
+        # Transient confirmation via the window title so we do not spawn a
+        # second modal for a one-click action.
+        original = self._win.title()
+        self._win.title(f"{original}  —  {_t('copied')}")
+        self._win.after(1500, lambda: self._win.title(original))
+
+    def _handle_action(self, value: str) -> None:
+        self._result = value
+        self._win.destroy()
+
+    # --- Public ---
+
+    def show(self) -> str:
+        self._win.grab_set()
+        self._win.wait_window()
+        return self._result
 
 
 def three_button_dialog(

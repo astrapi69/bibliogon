@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-
-import pytest
 
 from bibliogon_launcher import config
 
@@ -79,6 +76,29 @@ class TestIsValidRepo:
 
     def test_false_when_compose_file_missing(self, tmp_path: Path) -> None:
         assert config.is_valid_repo(tmp_path) is False
+
+
+class TestGetShowDetailsDefault:
+
+    def test_false_when_config_missing(self, tmp_path: Path) -> None:
+        env = {"APPDATA": str(tmp_path)}
+        assert config.get_show_details_default(env) is False
+
+    def test_false_when_field_absent(self, tmp_path: Path) -> None:
+        env = {"APPDATA": str(tmp_path)}
+        config.save_launcher_config({"repo_path": "C:\\x"}, env)
+        assert config.get_show_details_default(env) is False
+
+    def test_true_when_field_true(self, tmp_path: Path) -> None:
+        env = {"APPDATA": str(tmp_path)}
+        config.save_launcher_config({"show_details_by_default": True}, env)
+        assert config.get_show_details_default(env) is True
+
+    def test_coerces_truthy_values(self, tmp_path: Path) -> None:
+        env = {"APPDATA": str(tmp_path)}
+        # JSON parsing yields ints if the user hand-edits the file.
+        config.save_launcher_config({"show_details_by_default": 1}, env)
+        assert config.get_show_details_default(env) is True
 
 
 class TestReadPort:

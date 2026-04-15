@@ -73,6 +73,17 @@ def save_launcher_config(data: dict, env: dict[str, str] | None = None) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def get_show_details_default(env: dict[str, str] | None = None) -> bool:
+    """Return the persisted "always show technical details" toggle.
+
+    Default is False so end users see the plain-language view first.
+    Developers can set this to True in ``launcher.json`` to auto-expand
+    the details block on every error dialog.
+    """
+    cfg = load_launcher_config(env)
+    return bool(cfg.get("show_details_by_default", False))
+
+
 def resolve_repo_path(env: dict[str, str] | None = None) -> Path:
     """Return the configured repo path or the default. Does not verify existence."""
     cfg = load_launcher_config(env)
