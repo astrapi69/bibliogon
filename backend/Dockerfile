@@ -8,11 +8,10 @@ WORKDIR /build
 # Copy backend dependency definitions
 COPY backend/pyproject.toml backend/poetry.lock* ./backend/
 
-# Copy local plugin packages (path dependencies in pyproject.toml)
-COPY plugins/bibliogon-plugin-export/ ./plugins/bibliogon-plugin-export/
-COPY plugins/bibliogon-plugin-help/ ./plugins/bibliogon-plugin-help/
-COPY plugins/bibliogon-plugin-getstarted/ ./plugins/bibliogon-plugin-getstarted/
-COPY plugins/bibliogon-plugin-ms-tools/ ./plugins/bibliogon-plugin-ms-tools/
+# Copy local plugin packages (path dependencies in backend/pyproject.toml).
+# Glob picks up every plugins/bibliogon-plugin-* directory so new plugins do
+# not require a Dockerfile change. .dockerignore strips tests and caches.
+COPY plugins/ ./plugins/
 
 WORKDIR /build/backend
 
@@ -20,12 +19,11 @@ WORKDIR /build/backend
 RUN poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root --only main
 
-# Reinstall local plugins as proper packages (not .pth path links)
-RUN pip install --no-cache-dir --force-reinstall --no-deps \
-    ../plugins/bibliogon-plugin-export \
-    ../plugins/bibliogon-plugin-help \
-    ../plugins/bibliogon-plugin-getstarted \
-    ../plugins/bibliogon-plugin-ms-tools
+# Reinstall local plugins as proper packages (not .pth path links).
+# Loop matches the COPY glob so any plugin in the tree is installed.
+RUN for pkg in ../plugins/bibliogon-plugin-*; do \
+        pip install --no-cache-dir --force-reinstall --no-deps "$pkg"; \
+    done
 
 # Remove .pth files left by Poetry's editable installs
 RUN rm -f /usr/local/lib/python3.11/site-packages/bibliogon_plugin_*.pth
