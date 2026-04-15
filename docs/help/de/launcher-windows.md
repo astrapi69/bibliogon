@@ -2,6 +2,8 @@
 
 Der Windows-Launcher ist eine kleine `bibliogon-launcher.exe`, die Bibliogon per Doppelklick startet: kein Terminal, keine `docker compose`-Kommandos. Docker Desktop laesst die App weiterhin laufen, der Launcher startet und stoppt sie nur fuer dich.
 
+> **Wichtig: der Launcher ist kein Installer.** Er setzt voraus, dass Bibliogon bereits auf deinem Rechner installiert ist (Schritte 1 und 2 unten). Wenn du nur die `.exe` herunterlaedst und sie auf einem frischen Rechner startest, erklaert sie dir, dass Bibliogon zuerst installiert werden muss, und beendet sich. Einen "Ein-Klick-alles-installieren"-Weg gibt es heute nicht; das ist als separater zukuenftiger Punkt (D-05) erfasst und haengt von Nutzer-Feedback ab.
+
 ## Einmalige Einrichtung
 
 ### 1. Docker Desktop installieren

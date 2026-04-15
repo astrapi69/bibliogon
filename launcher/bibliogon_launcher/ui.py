@@ -12,7 +12,7 @@ import locale
 import threading
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, messagebox, scrolledtext
+from tkinter import filedialog, messagebox
 
 
 # Minimal DE/EN strings baked into the launcher so the .exe does not
@@ -312,6 +312,54 @@ class _ErrorDialog:
         self._win.grab_set()
         self._win.wait_window()
         return self._result
+
+
+def two_button_dialog(
+    title: str,
+    message: str,
+    primary_label: str,
+    secondary_label: str,
+) -> str:
+    """Show a message with exactly two labeled buttons. Returns
+    ``primary`` or ``secondary`` depending on which button the user
+    clicks. Closing the window via the X returns ``secondary`` (treated
+    as the dismissive choice).
+
+    Primary is Enter-default, secondary is Escape. Used for simple
+    "do this or close" flows like the first-run welcome dialog where
+    a folder picker would be a dead end.
+    """
+    _ensure_root()
+    win = tk.Toplevel()
+    win.title(title)
+    win.resizable(False, False)
+
+    result = {"choice": "secondary"}
+
+    tk.Label(
+        win, text=message, justify="left", wraplength=440, padx=20, pady=16,
+    ).pack()
+
+    buttons = tk.Frame(win)
+    buttons.pack(padx=20, pady=(0, 16))
+
+    def _click(choice: str) -> None:
+        result["choice"] = choice
+        win.destroy()
+
+    primary = tk.Button(buttons, text=primary_label, width=22, command=lambda: _click("primary"))
+    primary.pack(side="left", padx=(0, 8))
+    tk.Button(buttons, text=secondary_label, width=12, command=lambda: _click("secondary")).pack(side="left")
+
+    primary.focus_set()
+    win.bind("<Return>", lambda _e: _click("primary"))
+    win.bind("<Escape>", lambda _e: _click("secondary"))
+    win.protocol("WM_DELETE_WINDOW", lambda: _click("secondary"))
+
+    _center_over_root(win)
+    win.grab_set()
+    win.wait_window()
+    return result["choice"]
 
 
 def three_button_dialog(

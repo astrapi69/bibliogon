@@ -28,10 +28,11 @@ Bugs whose impact on shipped versions warrants tracking separately from polish w
 
 Lower the installation barrier for non-technical users. Simple Launcher first, Tauri as a later option if needed. No Electron. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for the full evaluation.
 
-- [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close) — *in progress, code + CI build in [launcher/](../launcher/); manual Windows smoke test pending*
+- [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close) — *in progress, code + CI build in [launcher/](../launcher/); manual Windows smoke test pending. Scope is start/stop only; Bibliogon must already be installed separately.*
 - [ ] D-02: Simple Launcher for macOS (.app bundle with the same behavior)
 - [ ] D-03: Simple Launcher for Linux (.desktop file + launcher script)
 - [ ] D-04: auto-update check in the launcher (notify user of new versions)
+- [ ] D-05: Full Windows installer (downloads Docker Desktop + Bibliogon repo + generates .env, no terminal required at any step). Larger scope than D-01's launcher. Defer until user feedback shows the install (not the start) is the actual friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for context and triggers for reconsidering.
 
 ### 2. Book and chapter templates (priority: after distribution)
 

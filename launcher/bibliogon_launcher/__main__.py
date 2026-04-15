@@ -98,10 +98,22 @@ def _run_launcher() -> int:
         )
         return 1
 
-    # 3. Locate repo. If missing, show the three-button install-or-choose dialog.
+    # 3. Locate repo. Two distinct cases on "not found":
+    #    a) launcher.json does not exist  -> Bibliogon has likely never
+    #       been installed on this machine; show a welcome dialog that
+    #       points at the install guide (no folder picker; it would be
+    #       a dead end for a user who has nothing to pick).
+    #    b) launcher.json exists with a repo_path that no longer
+    #       resolves -> the installation moved or was deleted; offer
+    #       the three-button folder-picker-or-install-guide dialog.
     repo = config.resolve_repo_path()
     if not config.is_valid_repo(repo):
-        repo = _first_run_repo_picker()
+        had_previous_install = config.launcher_config_path().is_file()
+        if had_previous_install:
+            repo = _installation_moved_picker()
+        else:
+            _welcome_not_installed()
+            return 0
         if repo is None:
             return 1
 
@@ -169,24 +181,51 @@ def _run_launcher() -> int:
 # --- Step helpers ---
 
 
-def _first_run_repo_picker() -> Path | None:
-    """Ask the user to pick the repo folder or open the install guide.
+def _welcome_not_installed() -> None:
+    """First-run welcome: Bibliogon has never been installed here.
 
-    Three buttons: Choose folder / Open install guide / Cancel. Selection
-    is persisted in ``%APPDATA%\\Bibliogon\\launcher.json`` so subsequent
-    launches skip this step.
+    The launcher is a start/stop wrapper; it cannot install Bibliogon
+    for the user. Offering a folder picker in this state is a dead end
+    because the user has nothing to pick. Instead, explain that and
+    point them at the install guide. If they really did install to a
+    custom location, they can hand-edit launcher.json or re-run the
+    launcher after installing to the default location.
+    """
+    choice = ui.two_button_dialog(
+        title="Welcome to Bibliogon",
+        message=(
+            "Bibliogon is not installed on this computer yet.\n\n"
+            "The launcher starts Bibliogon for you once it is installed. "
+            "Follow the installation guide first, then run the launcher "
+            "again."
+        ),
+        primary_label="Open install guide",
+        secondary_label="Close",
+    )
+    if choice == "primary":
+        try:
+            webbrowser.open(INSTALL_GUIDE_URL)
+        except OSError as exc:
+            logger.warning("opening install guide failed: %s", exc)
+
+
+def _installation_moved_picker() -> Path | None:
+    """Bibliogon was launched here before but the remembered folder no
+    longer resolves. Offer folder picker or install guide.
+
+    Three buttons: Choose folder / Open install guide / Cancel.
     """
     message = (
-        "Bibliogon could not be found on your computer.\n\n"
-        "By default, Bibliogon is installed in a folder called 'bibliogon' "
-        "in your user directory. If you installed Bibliogon somewhere else, "
-        "click 'Choose folder' and point to that folder.\n\n"
-        "If Bibliogon is not installed yet, click 'Open install guide' to "
-        "see the installation instructions."
+        "Bibliogon could not be found at the folder we remembered from "
+        "last time.\n\n"
+        "If you moved or renamed the Bibliogon folder, click 'Choose "
+        "folder' and point to the new location.\n\n"
+        "If you removed Bibliogon and have not reinstalled it yet, "
+        "click 'Open install guide'."
     )
     while True:
         choice = ui.three_button_dialog(
-            title="Bibliogon not found",
+            title="Bibliogon installation moved",
             message=message,
             primary_label="Choose folder",
             secondary_label="Open install guide",
