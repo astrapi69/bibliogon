@@ -59,6 +59,18 @@ myplugin = "bibliogon_myplugin.plugin:MyPlugin"
 
 The entry point `[tool.poetry.plugins."bibliogon.plugins"]` is how PluginForge discovers your plugin.
 
+### Register the plugin in the backend
+
+For **bundled plugins** (any plugin shipped inside the bibliogon repository under `plugins/`), you must also add a path-dependency entry to `backend/pyproject.toml` so the backend's Poetry environment installs the plugin and its entry points become discoverable:
+
+```toml
+[tool.poetry.dependencies]
+# ...existing entries...
+bibliogon-plugin-myplugin = {path = "../plugins/bibliogon-plugin-myplugin", develop = true}
+```
+
+Then run `poetry lock` and `poetry install` in the `backend/` directory. **Skipping this step makes the plugin invisible in CI** (it works locally for anyone whose venv already has the dist-info from a previous install, but fresh checkouts and the CI runner load only what `pyproject.toml` declares). ZIP-distributed third-party plugins are exempt because they install at runtime via `sys.path`, not at setup time.
+
 ### plugin.py
 
 ```python

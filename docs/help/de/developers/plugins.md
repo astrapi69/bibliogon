@@ -59,6 +59,18 @@ meinplugin = "bibliogon_meinplugin.plugin:MeinPlugin"
 
 Der Entry Point `[tool.poetry.plugins."bibliogon.plugins"]` ist der Mechanismus, über den PluginForge das Plugin entdeckt.
 
+### Plugin im Backend registrieren
+
+Für **gebündelte Plugins** (jedes Plugin, das innerhalb des Bibliogon-Repositorys unter `plugins/` ausgeliefert wird) muss zusätzlich ein Path-Dependency-Eintrag in `backend/pyproject.toml` angelegt werden, damit das Backend-Poetry-Environment das Plugin installiert und dessen Entry Points auffindbar werden:
+
+```toml
+[tool.poetry.dependencies]
+# ...vorhandene Einträge...
+bibliogon-plugin-myplugin = {path = "../plugins/bibliogon-plugin-myplugin", develop = true}
+```
+
+Anschließend `poetry lock` und `poetry install` im Verzeichnis `backend/` ausführen. **Wenn dieser Schritt vergessen wird, ist das Plugin in CI unsichtbar** (lokal funktioniert es für alle, deren venv die dist-info aus einer früheren Installation noch enthält, aber frische Checkouts und der CI-Runner laden nur, was in `pyproject.toml` deklariert ist). ZIP-distribuierte Drittanbieter-Plugins sind ausgenommen, weil sie zur Laufzeit über `sys.path` installiert werden, nicht zur Setup-Zeit.
+
 ### plugin.py
 
 ```python
