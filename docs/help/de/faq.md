@@ -16,6 +16,10 @@ Ja. Auf dem Dashboard klicke "Projekt importieren" und wähle eine ZIP-Datei im 
 
 Klicke "Backup" auf dem Dashboard. Alle Bücher, Kapitel, Assets und Einstellungen werden in eine .bgb-Datei exportiert. Zum Wiederherstellen klicke "Restore" und wähle die .bgb-Datei aus.
 
+## Was passiert wenn ich ein Buch lösche?
+
+Standardmäßig werden gelöschte Bücher in den Papierkorb verschoben (Soft-Delete), damit du sie wiederherstellen kannst. Über das Papierkorb-Symbol auf dem Dashboard öffnest du die Papierkorb-Ansicht. Dort hat jedes Buch eine "Wiederherstellen"- und eine "Endgültig löschen"-Aktion. Über "Papierkorb leeren" lassen sich alle Einträge auf einmal endgültig entfernen. Bücher im Papierkorb werden standardmäßig nach 90 Tagen automatisch gelöscht; die Aufbewahrungsdauer lässt sich in den Einstellungen auf 7, 14, 30, 60, 90, 180 oder 365 Tage stellen, oder ganz deaktivieren (manuelles Löschen). Wenn du den Papierkorb komplett überspringen möchtest, aktiviere `delete_permanently` in den Einstellungen; dann werden Löschungen direkt durchgeführt, ohne den Umweg über den Papierkorb.
+
 ## Was ist der Markdown-Modus?
 
 Im Editor kannst du zwischen WYSIWYG und Markdown umschalten. Im WYSIWYG-Modus arbeitest du visuell mit der Toolbar. Im Markdown-Modus siehst du den rohen Quelltext. Beim Umschalten konvertiert Bibliogon den Inhalt automatisch.
