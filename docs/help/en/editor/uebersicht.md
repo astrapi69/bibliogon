@@ -19,3 +19,7 @@ In **Metadata > Marketing** you maintain keywords for the book. These land in th
 **Recommendation and hard limit:** Amazon KDP recommends a maximum of 7 keywords per book. As soon as you add the eighth entry the counter turns warning-colored and a hint explains that other platforms may allow more - you are not blocked. At 50 keywords the input field is hard-disabled; that is the absolute upper bound as an abuse guard. Individual keywords are capped at 50 characters each.
 
 **Persistence:** keyword changes are only written to the database when you click the global "Save" button in the metadata tab. Leaving the tab without saving loses the changes.
+
+## HTML preview in the Marketing tab
+
+Three marketing fields accept HTML and have a preview toggle: **Book description (HTML for Amazon)**, **Back cover description**, and **Author bio (back cover)**. The editable textarea is the default state. The preview button at the top-right of the field switches between edit mode and a rendered HTML preview, so you can see how your text will look with paragraphs, lists, bold passages, and similar elements without starting an export. The preview renders safely: dangerous HTML (e.g. scripts) is stripped before display.

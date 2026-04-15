@@ -43,3 +43,7 @@ Im Reiter **Metadaten > Marketing** pflegst du Schlüsselwörter (Keywords) für
 **Empfehlung und Hartlimit:** Amazon KDP empfiehlt maximal 7 Schlüsselwörter pro Buch. Sobald du den achten Eintrag hinzufügst, wird der Zähler warnfarben und ein Hinweis erklärt, dass andere Plattformen mehr erlauben - du wirst aber nicht blockiert. Bei 50 Schlüsselwörtern wird das Eingabefeld hart deaktiviert; das ist die absolute Obergrenze als Missbrauchs-Schutz. Einzelne Schlüsselwörter dürfen maximal 50 Zeichen lang sein.
 
 **Speicherung:** Änderungen an den Schlüsselwörtern werden erst beim globalen "Speichern"-Button des Metadaten-Tabs persistiert. Wenn du den Tab ohne Speichern verlässt, gehen deine Änderungen verloren.
+
+## HTML-Vorschau im Marketing-Tab
+
+Drei Marketing-Felder akzeptieren HTML und besitzen einen Vorschau-Umschalter: **Buch-Beschreibung (HTML für Amazon)**, **Rückseitenbeschreibung** und **Autor-Bio (Rückseite)**. Standardmäßig ist die bearbeitbare Textarea aktiv. Mit dem Vorschau-Button oben rechts am Feld schaltest du zwischen Bearbeitungsmodus und gerenderter HTML-Vorschau um. So kannst du prüfen, wie deine Beschreibung mit Absätzen, Listen, fett gesetzten Stellen und ähnlichen Elementen tatsächlich aussehen wird, ohne den Export starten zu müssen. Die Vorschau wird sicher gerendert: gefährliches HTML (z.B. Skripte) wird vor der Anzeige entfernt.
