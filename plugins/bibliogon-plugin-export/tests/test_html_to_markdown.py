@@ -148,6 +148,49 @@ class TestFigures:
         result = html_to_markdown(html)
         assert result == "![Fig](fig.png)"
 
+    def test_figure_caption_wins_over_alt_when_both_present(self) -> None:
+        html = (
+            '<figure><img src="x.png" alt="alt-text" />'
+            "<figcaption>caption-text</figcaption></figure>"
+        )
+        result = html_to_markdown(html)
+        assert result == '![caption-text](x.png "alt-text")'
+
+    def test_figure_with_only_caption_no_alt(self) -> None:
+        html = (
+            '<figure><img src="x.png" alt="" />'
+            "<figcaption>Just caption</figcaption></figure>"
+        )
+        result = html_to_markdown(html)
+        assert result == "![Just caption](x.png)"
+
+    def test_complex_multi_image_figure_falls_back_to_raw_html(self, caplog) -> None:
+        html = (
+            "<figure>"
+            '<img src="a.png" alt="A" />'
+            '<img src="b.png" alt="B" />'
+            "<figcaption>Both</figcaption>"
+            "</figure>"
+        )
+        with caplog.at_level("WARNING", logger="bibliogon_export.html_to_markdown"):
+            result = html_to_markdown(html)
+        assert "<figure>" in result and "</figure>" in result
+        assert 'src="a.png"' in result and 'src="b.png"' in result
+        assert any("complex <figure>" in r.message for r in caplog.records)
+
+    def test_figure_with_extra_content_falls_back_to_raw_html(self, caplog) -> None:
+        html = (
+            "<figure>"
+            '<img src="a.png" alt="A" />'
+            "Loose text"
+            "<figcaption>Cap</figcaption>"
+            "</figure>"
+        )
+        with caplog.at_level("WARNING", logger="bibliogon_export.html_to_markdown"):
+            result = html_to_markdown(html)
+        assert "<figure>" in result
+        assert any("complex <figure>" in r.message for r in caplog.records)
+
 
 class TestBlockquotes:
 
