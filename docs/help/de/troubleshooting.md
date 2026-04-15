@@ -36,6 +36,7 @@ Wenn Bilder im Editor sichtbar sind, aber in der exportierten EPUB- oder PDF-Dat
 - Pruefe in den Buch-Metadaten, ob das Coverbild korrekt hinterlegt ist.
 - Bei EPUB: Öffne die EPUB-Datei mit einem ZIP-Tool und prüfe, ob die Bilder im `assets/`-Ordner vorhanden sind.
 - Beim Import aus einem write-book-template-Projekt: Die Bildpfade werden automatisch umgeschrieben. Falls Bilder fehlen, prüfe, ob sie im `assets/figures/`-Ordner des Quellprojekts vorhanden waren.
+- **Für Bücher, die aus externen Quellen importiert wurden (write-book-template, EPUB, DOCX) und auf einer Version älter als v0.15.0 exportiert wurden:** PDF- und DOCX-Exporte konnten Bildabbildungen stillschweigend verlieren. v0.15.0 behebt das. Exportiere erneut, um zu prüfen, dass deine Ausgabe nun alle erwarteten Bilder enthält.
 
 ## Backend startet nicht
 
