@@ -65,6 +65,14 @@ Replace the upload-based backup compare with proper Git integration.
 
 ---
 
+## Maintenance and tech debt
+
+Items with external deadlines or recurring cost that deserve planning-view visibility. Not features; just upkeep that will bite if ignored.
+
+- [ ] **Node.js 20 deprecation (by 2026-09-16):** GitHub Actions runners remove Node.js 20 on 2026-09-16, and enforce Node.js 24 as default from 2026-06-02. `actions/checkout@v4`, `actions/setup-python@v5`, `actions/upload-artifact@v4` in our workflows currently run on Node.js 20. Action: bump action versions when upstream ships Node.js 24 support (watch their release notes), or set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` on the runner. First surfaced in the Launcher (Windows) CI run for commit `e5470d1`.
+
+---
+
 ## Completed in early Phase 2
 
 ### AI writing assistance (delivered in v0.14.0)
