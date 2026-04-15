@@ -1,20 +1,46 @@
-"""Run book export via manuscripta's compile_book.
+"""Run book export via manuscripta's run_export.
 
 Delegates the actual Pandoc invocation to manuscripta, which handles
 section ordering, metadata, cover images, TOC generation, and format-specific
 flags (EPUB/PDF/DOCX/HTML/Markdown).
 """
 
-import os
 from pathlib import Path
 from typing import Any
 
+from manuscripta import (
+    ManuscriptaError,
+    ManuscriptaImageError,
+    ManuscriptaLayoutError,
+    ManuscriptaPandocError,
+)
 from manuscripta.enums.book_type import BookType
-from manuscripta.export.book import compile_book, pick_section_order
+from manuscripta.export.book import pick_section_order, run_export
 
 
 class PandocError(Exception):
-    pass
+    """Wraps manuscripta failures with a user-facing message.
+
+    Subclasses preserve manuscripta's diagnostic attributes so the
+    backend exception handler can build actionable error responses
+    (frontend toast carries the unresolved image list, the GitHub
+    issue button gets stderr/returncode for Pandoc crashes).
+    """
+
+    def __init__(self, message: str, *, cause: ManuscriptaError | None = None):
+        super().__init__(message)
+        self.cause = cause
+
+
+class MissingImagesError(PandocError):
+    """Pandoc could not resolve one or more referenced images."""
+
+    def __init__(self, unresolved: list[str], *, cause: ManuscriptaImageError):
+        self.unresolved = list(unresolved)
+        super().__init__(
+            f"Missing images: {', '.join(unresolved)}",
+            cause=cause,
+        )
 
 
 _OUTPUT_EXTENSIONS = {"epub": "epub", "pdf": "pdf", "docx": "docx", "html": "html", "markdown": "md"}
@@ -40,30 +66,46 @@ def run_pandoc(
 
     Returns:
         Path to the generated output file.
+
+    Raises:
+        MissingImagesError: when strict image resolution is on and Pandoc
+            reports unresolved image resources. ``.unresolved`` lists the
+            offending paths.
+        PandocError: for any other manuscripta failure (layout problem,
+            Pandoc subprocess crash). ``.cause`` carries the original
+            ManuscriptaError for diagnostic access.
     """
     settings = config.get("settings", {})
     book_type = BookType.EBOOK
 
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(str(project_dir))
-        export_cfg = _read_export_settings(project_dir)
-        section_order = _resolve_section_order(export_cfg, book_type, fmt)
-        _set_manuscripta_output_file(export_cfg, settings, book_type, project_dir.name)
-        resolved_cover = _resolve_cover_path(project_dir, cover_path)
+    export_cfg = _read_export_settings(project_dir)
+    section_order = _resolve_section_order(project_dir, export_cfg, book_type, fmt)
+    output_file = _resolve_output_file(export_cfg, project_dir.name)
+    no_type_suffix = not settings.get("type_suffix_in_filename", True)
+    resolved_cover = _resolve_cover_path(project_dir, cover_path)
 
-        compile_book(
-            format=fmt,
-            section_order=section_order,
+    try:
+        run_export(
+            project_dir,
+            formats=fmt,
             book_type=book_type,
-            cover_path=resolved_cover,
+            section_order=section_order,
+            cover=resolved_cover,
             toc_depth=settings.get("toc_depth", 2),
             use_manual_toc=use_manual_toc,
+            output_file=output_file,
+            no_type_suffix=no_type_suffix,
+            strict_images=True,
         )
-    except Exception as e:
-        raise PandocError(f"Export failed: {e}")
-    finally:
-        os.chdir(original_cwd)
+    except ManuscriptaImageError as e:
+        raise MissingImagesError(e.unresolved, cause=e) from e
+    except ManuscriptaPandocError as e:
+        raise PandocError(
+            f"Pandoc failed (exit {e.returncode}): {e.stderr.strip()[-500:]}",
+            cause=e,
+        ) from e
+    except ManuscriptaLayoutError as e:
+        raise PandocError(str(e), cause=e) from e
 
     output = _find_output_file(project_dir, fmt)
     if fmt == "epub":
@@ -85,6 +127,7 @@ def _read_export_settings(project_dir: Path) -> dict[str, Any]:
 
 
 def _resolve_section_order(
+    project_dir: Path,
     export_cfg: dict[str, Any],
     book_type: BookType,
     fmt: str,
@@ -92,30 +135,21 @@ def _resolve_section_order(
     """Pick a section order and drop entries whose .md file doesn't exist."""
     so = export_cfg.get("section_order", {})
     section_order = so.get("ebook", None) or pick_section_order(book_type, fmt)
+    manuscript_dir = project_dir / "manuscript"
     filtered: list[str] = []
     for entry in section_order:
         if entry == "chapters":
             filtered.append(entry)
             continue
-        if (Path("manuscript") / entry).exists():
+        if (manuscript_dir / entry).exists():
             filtered.append(entry)
     return filtered
 
 
-def _set_manuscripta_output_file(
-    export_cfg: dict[str, Any],
-    settings: dict[str, Any],
-    book_type: BookType,
-    fallback_name: str,
-) -> None:
-    """Mutate manuscripta's module-global OUTPUT_FILE (normally set by its CLI)."""
-    import manuscripta.export.book as _mbook
+def _resolve_output_file(export_cfg: dict[str, Any], fallback_name: str) -> str:
+    """Resolve the base output filename from export-settings or fall back."""
     export_defaults = export_cfg.get("export_defaults", {})
-    output_file = export_defaults.get("output_file", fallback_name)
-    if settings.get("type_suffix_in_filename", True):
-        _mbook.OUTPUT_FILE = f"{output_file}_{book_type.value}"
-    else:
-        _mbook.OUTPUT_FILE = output_file
+    return export_defaults.get("output_file") or fallback_name
 
 
 def _resolve_cover_path(project_dir: Path, cover_path: str | None) -> str | None:

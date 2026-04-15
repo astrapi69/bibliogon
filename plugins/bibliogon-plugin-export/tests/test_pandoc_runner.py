@@ -8,13 +8,19 @@ import pytest
 import yaml
 
 from bibliogon_export.pandoc_runner import (
+    MissingImagesError,
     PandocError,
     _find_output_file,
     _read_export_settings,
     _resolve_cover_path,
+    _resolve_output_file,
     _resolve_section_order,
     _run_epubcheck,
-    _set_manuscripta_output_file,
+)
+from manuscripta import (
+    ManuscriptaImageError,
+    ManuscriptaLayoutError,
+    ManuscriptaPandocError,
 )
 from manuscripta.enums.book_type import BookType
 
@@ -58,21 +64,17 @@ class TestReadExportSettings:
 
 class TestResolveSectionOrder:
 
-    def test_keeps_chapters_entry_always(self, tmp_path: Path, monkeypatch):
+    def test_keeps_chapters_entry_always(self, tmp_path: Path):
         """The 'chapters' entry is always kept even without a matching file."""
-        monkeypatch.chdir(tmp_path)
         (tmp_path / "manuscript").mkdir()
 
         export_cfg = {"section_order": {"ebook": ["chapters"]}}
-        result = _resolve_section_order(export_cfg, BookType.EBOOK, "epub")
+        result = _resolve_section_order(tmp_path, export_cfg, BookType.EBOOK, "epub")
 
         assert "chapters" in result
 
-    def test_drops_entries_whose_md_file_does_not_exist(
-        self, tmp_path: Path, monkeypatch
-    ):
+    def test_drops_entries_whose_md_file_does_not_exist(self, tmp_path: Path):
         """Entries whose .md file is missing under manuscript/ are filtered out."""
-        monkeypatch.chdir(tmp_path)
         manuscript = tmp_path / "manuscript"
         front_matter = manuscript / "front-matter"
         front_matter.mkdir(parents=True)
@@ -87,63 +89,113 @@ class TestResolveSectionOrder:
                 ]
             }
         }
-        result = _resolve_section_order(export_cfg, BookType.EBOOK, "epub")
+        result = _resolve_section_order(tmp_path, export_cfg, BookType.EBOOK, "epub")
 
         assert "front-matter/preface.md" in result
         assert "front-matter/missing.md" not in result
         assert "chapters" in result
 
     @patch("bibliogon_export.pandoc_runner.pick_section_order")
-    def test_uses_pick_section_order_fallback(
-        self, mock_pick, tmp_path: Path, monkeypatch
-    ):
+    def test_uses_pick_section_order_fallback(self, mock_pick, tmp_path: Path):
         """Falls back to pick_section_order when config has no section_order."""
-        monkeypatch.chdir(tmp_path)
         (tmp_path / "manuscript").mkdir()
         mock_pick.return_value = ["chapters"]
 
-        result = _resolve_section_order({}, BookType.EBOOK, "epub")
+        result = _resolve_section_order(tmp_path, {}, BookType.EBOOK, "epub")
 
         mock_pick.assert_called_once_with(BookType.EBOOK, "epub")
         assert result == ["chapters"]
 
 
-# --- _set_manuscripta_output_file ---
+# --- _resolve_output_file ---
 
 
-class TestSetManuscriptaOutputFile:
+class TestResolveOutputFile:
 
-    def test_with_type_suffix(self):
-        """Appends _{book_type} when type_suffix_in_filename is True."""
-        import manuscripta.export.book as mbook
+    def test_uses_explicit_output_file_from_settings(self):
+        """Uses export_defaults.output_file when set."""
+        cfg = {"export_defaults": {"output_file": "my-book"}}
+        assert _resolve_output_file(cfg, "fallback") == "my-book"
 
-        original = getattr(mbook, "OUTPUT_FILE", None)
-        try:
-            _set_manuscripta_output_file(
-                export_cfg={"export_defaults": {"output_file": "my-book"}},
-                settings={"type_suffix_in_filename": True},
-                book_type=BookType.EBOOK,
-                fallback_name="fallback",
-            )
-            assert mbook.OUTPUT_FILE == f"my-book_{BookType.EBOOK.value}"
-        finally:
-            mbook.OUTPUT_FILE = original
+    def test_falls_back_to_project_dir_name_when_unset(self):
+        """Falls back to the project directory name when output_file is missing."""
+        assert _resolve_output_file({}, "fallback-name") == "fallback-name"
 
-    def test_without_type_suffix(self):
-        """Uses the bare name when type_suffix_in_filename is False."""
-        import manuscripta.export.book as mbook
+    def test_falls_back_when_output_file_is_empty_string(self):
+        """Empty string is treated as unset."""
+        cfg = {"export_defaults": {"output_file": ""}}
+        assert _resolve_output_file(cfg, "fallback-name") == "fallback-name"
 
-        original = getattr(mbook, "OUTPUT_FILE", None)
-        try:
-            _set_manuscripta_output_file(
-                export_cfg={"export_defaults": {"output_file": "my-book"}},
-                settings={"type_suffix_in_filename": False},
-                book_type=BookType.EBOOK,
-                fallback_name="fallback",
-            )
-            assert mbook.OUTPUT_FILE == "my-book"
-        finally:
-            mbook.OUTPUT_FILE = original
+
+# --- run_pandoc exception narrowing ---
+
+
+class TestRunPandocExceptionHandling:
+
+    def _scaffold(self, tmp_path: Path) -> Path:
+        proj = tmp_path / "proj"
+        for d in ("manuscript", "config", "assets", "output"):
+            (proj / d).mkdir(parents=True)
+        return proj
+
+    @patch("bibliogon_export.pandoc_runner.run_export")
+    def test_image_error_becomes_missing_images_error(
+        self, mock_run_export, tmp_path: Path
+    ):
+        """ManuscriptaImageError is narrowed to MissingImagesError with .unresolved."""
+        from bibliogon_export.pandoc_runner import run_pandoc
+
+        proj = self._scaffold(tmp_path)
+        mock_run_export.side_effect = ManuscriptaImageError(
+            ["assets/figures/missing.png", "assets/figures/also-missing.jpg"]
+        )
+
+        with pytest.raises(MissingImagesError) as exc_info:
+            run_pandoc(proj, "pdf", {"settings": {}})
+
+        assert exc_info.value.unresolved == [
+            "assets/figures/missing.png",
+            "assets/figures/also-missing.jpg",
+        ]
+        assert isinstance(exc_info.value.cause, ManuscriptaImageError)
+        assert "missing.png" in str(exc_info.value)
+
+    @patch("bibliogon_export.pandoc_runner.run_export")
+    def test_pandoc_error_preserves_returncode_and_stderr(
+        self, mock_run_export, tmp_path: Path
+    ):
+        """ManuscriptaPandocError attributes survive into PandocError.cause."""
+        from bibliogon_export.pandoc_runner import run_pandoc
+
+        proj = self._scaffold(tmp_path)
+        mock_run_export.side_effect = ManuscriptaPandocError(
+            returncode=1, stderr="latex: undefined control sequence", cmd=["pandoc", "..."]
+        )
+
+        with pytest.raises(PandocError) as exc_info:
+            run_pandoc(proj, "pdf", {"settings": {}})
+
+        assert isinstance(exc_info.value.cause, ManuscriptaPandocError)
+        assert exc_info.value.cause.returncode == 1
+        assert "undefined control sequence" in exc_info.value.cause.stderr
+
+    @patch("bibliogon_export.pandoc_runner.run_export")
+    def test_layout_error_becomes_pandoc_error(
+        self, mock_run_export, tmp_path: Path
+    ):
+        """ManuscriptaLayoutError is wrapped without losing the .cause chain."""
+        from bibliogon_export.pandoc_runner import run_pandoc
+
+        proj = self._scaffold(tmp_path)
+        mock_run_export.side_effect = ManuscriptaLayoutError(
+            proj, missing=["manuscript", "config"]
+        )
+
+        with pytest.raises(PandocError) as exc_info:
+            run_pandoc(proj, "pdf", {"settings": {}})
+
+        assert isinstance(exc_info.value.cause, ManuscriptaLayoutError)
+        assert not isinstance(exc_info.value, MissingImagesError)
 
 
 # --- _resolve_cover_path ---
