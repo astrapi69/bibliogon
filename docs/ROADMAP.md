@@ -28,7 +28,7 @@ Bugs whose impact on shipped versions warrants tracking separately from polish w
 
 Lower the installation barrier for non-technical users. Simple Launcher first, Tauri as a later option if needed. No Electron. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for the full evaluation.
 
-- [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close)
+- [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close) — *in progress, code + CI build in [launcher/](../launcher/); manual Windows smoke test pending*
 - [ ] D-02: Simple Launcher for macOS (.app bundle with the same behavior)
 - [ ] D-03: Simple Launcher for Linux (.desktop file + launcher script)
 - [ ] D-04: auto-update check in the launcher (notify user of new versions)

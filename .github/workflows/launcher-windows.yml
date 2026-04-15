@@ -1,0 +1,80 @@
+name: Launcher (Windows)
+
+# Builds the Windows launcher .exe and publishes a SHA256 checksum next
+# to it. Runs on:
+#   - push to main when launcher/ changes (smoke build, uploads an
+#     artifact to the workflow run for download + manual verification)
+#   - release tag v*.*.* (attaches the .exe + checksum to the GitHub
+#     release as release assets)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-windows.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-windows.yml"
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build launcher.exe
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: launcher
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install launcher dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run launcher unit tests
+        run: poetry run pytest tests/ -v
+
+      - name: Regenerate placeholder icon
+        run: poetry run python scripts/make_icon.py
+
+      - name: Build bibliogon-launcher.exe
+        run: poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm
+
+      - name: Compute SHA256 checksum
+        run: |
+          $hash = (Get-FileHash -Algorithm SHA256 dist\bibliogon-launcher.exe).Hash.ToLower()
+          "$hash  bibliogon-launcher.exe" | Out-File -Encoding utf8 -NoNewline dist\bibliogon-launcher.exe.sha256
+          Write-Host "SHA256: $hash"
+
+      - name: Upload smoke artifact (push / PR / dispatch)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bibliogon-launcher-windows
+          path: |
+            launcher/dist/bibliogon-launcher.exe
+            launcher/dist/bibliogon-launcher.exe.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attach to release (tag push)
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            launcher/dist/bibliogon-launcher.exe
+            launcher/dist/bibliogon-launcher.exe.sha256
+          fail_on_unmatched_files: true
