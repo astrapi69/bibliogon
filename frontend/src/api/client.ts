@@ -403,6 +403,14 @@ async function request<T>(
     return res.json();
 }
 
+function _filenameFromContentDisposition(header: string | null): string | null {
+    if (!header) return null;
+    const utf8 = header.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8) return decodeURIComponent(utf8[1]);
+    const ascii = header.match(/filename="?([^";]+)"?/i);
+    return ascii ? ascii[1] : null;
+}
+
 // --- Books ---
 
 export const api = {
@@ -533,6 +541,43 @@ export const api = {
 
         limits: (bookId: string) =>
             request<CoverLimits>(`/books/${bookId}/cover/limits`),
+    },
+
+    /** Document export (epub/pdf/docx/html/markdown). Fetches the file
+     *  via blob so 4xx errors (e.g. 422 missing_images) surface as
+     *  ApiError with detailBody, instead of being lost in window.open. */
+    documentExport: {
+        download: async (
+            bookId: string,
+            format: string,
+            params: URLSearchParams,
+        ): Promise<void> => {
+            const query = params.toString();
+            const url = `${BASE}/books/${bookId}/export/${format}${query ? `?${query}` : ""}`;
+            const res = await fetch(url, {method: "GET"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string" ? err.detail : (err.detail?.message || "Export failed"),
+                    url,
+                    "GET",
+                    err.stacktrace || "",
+                    typeof err.detail === "object" ? err.detail : undefined,
+                );
+            }
+            const blob = await res.blob();
+            const filename = _filenameFromContentDisposition(res.headers.get("Content-Disposition"))
+                ?? `${bookId}.${format}`;
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        },
     },
 
     exportJobs: {

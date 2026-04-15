@@ -10,8 +10,25 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 
-from .pandoc_runner import PandocError, run_pandoc
+from .pandoc_runner import MissingImagesError, PandocError, run_pandoc
 from .scaffolder import scaffold_project
+
+
+def _missing_images_http_exception(error: MissingImagesError) -> HTTPException:
+    """Wrap MissingImagesError in a structured 422 the frontend can render.
+
+    The detail dict carries the i18n key plus the raw list of unresolved
+    paths so the toast can show specific filenames, not a generic message.
+    """
+    return HTTPException(
+        status_code=422,
+        detail={
+            "code": "missing_images",
+            "i18n_key": "export.errors.missing_images",
+            "unresolved": error.unresolved,
+            "message": str(error),
+        },
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -340,6 +357,8 @@ def validate_epub(book_id: str, db: Any = Depends(lambda: None)):
         if results_path.exists():
             return json.loads(results_path.read_text(encoding="utf-8"))
         return {"valid": True, "errors": [], "warnings": [], "error_count": 0, "warning_count": 0}
+    except MissingImagesError as e:
+        raise _missing_images_http_exception(e) from e
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -399,6 +418,8 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
             )
         cover = _find_cover(book_data, project_dir)
         return _export_document(fmt, base_name, project_dir, config, manual_toc, cover)
+    except MissingImagesError as e:
+        raise _missing_images_http_exception(e) from e
     except PandocError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except HTTPException:

@@ -190,6 +190,8 @@ ui:
     ai_assisted_hint: "Some platforms (e.g. Amazon KDP) require disclosure of AI-assisted content."
     audiobook_generating: "Generating audiobook..."
     audiobook_done: "Audiobook ready! Download starting..."
+    missing_images: "Missing images: {files}"
+    missing_images_hint: "Check whether the listed image files still exist in the book."
   formats:
     epub: "EPUB"
     epub_desc: "E-Book Format"

@@ -29,6 +29,9 @@ vi.mock("../api/client", () => ({
     exportJobs: {
       startAudiobook: vi.fn().mockResolvedValue({job_id: "job-1"}),
     },
+    documentExport: {
+      download: vi.fn().mockResolvedValue(undefined),
+    },
     bookAudiobook: {
       dryRun: vi.fn().mockResolvedValue({
         audioUrl: "blob:test",
@@ -193,12 +196,14 @@ describe("ExportDialog", () => {
 
   // --- Export actions ---
 
-  it("export button opens download URL for document formats", () => {
+  it("export button calls documentExport.download for document formats", async () => {
+    const {api} = await import("../api/client")
     renderDialog()
     fireEvent.click(screen.getByText(/Als EPUB exportieren/))
-    expect(window.open).toHaveBeenCalledWith(
-      expect.stringContaining("/api/books/book-123/export/epub"),
-      "_blank",
+    expect(api.documentExport.download).toHaveBeenCalledWith(
+      "book-123",
+      "epub",
+      expect.any(URLSearchParams),
     )
   })
 

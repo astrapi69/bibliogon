@@ -79,7 +79,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     // navigate freely, and pop it back open from a corner badge.
     const audiobookJob = useAudiobookJob();
 
-    const handleExport = () => {
+    const handleExport = async () => {
         setExporting(true);
 
         if (format === "audiobook") {
@@ -87,17 +87,36 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
             return;
         }
 
-        // All other formats: direct download via new tab
         const params = new URLSearchParams();
         if (bookType !== "ebook") params.set("book_type", bookType);
         if (tocDepth !== 2) params.set("toc_depth", String(tocDepth));
         if (hasManualToc) params.set("use_manual_toc", String(useManualToc));
 
-        const query = params.toString();
-        const url = `/api/books/${bookId}/export/${format}${query ? `?${query}` : ""}`;
-        window.open(url, "_blank");
-
-        setTimeout(() => { setExporting(false); onClose(); }, 1000);
+        try {
+            await api.documentExport.download(bookId, format, params);
+            onClose();
+        } catch (err) {
+            // 422 missing_images carries the unresolved file list in
+            // detailBody.unresolved; show specific files, not a generic
+            // message, so the user can act on it.
+            if (
+                err instanceof ApiError &&
+                err.status === 422 &&
+                err.detailBody &&
+                (err.detailBody as {code?: string}).code === "missing_images"
+            ) {
+                const unresolved = ((err.detailBody as {unresolved?: string[]}).unresolved) || [];
+                const files = unresolved.join(", ");
+                const message = t("ui.export_dialog.missing_images", "Fehlende Bilder: {files}")
+                    .replace("{files}", files);
+                notify.error(message, err);
+            } else {
+                const detail = err instanceof ApiError ? err.detail : String(err);
+                notify.error(detail, err);
+            }
+        } finally {
+            setExporting(false);
+        }
     };
 
     const _startAudiobookExport = async (confirmOverwrite: boolean = false) => {
