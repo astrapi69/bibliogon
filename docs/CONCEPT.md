@@ -4,7 +4,7 @@
 **Related project:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
 **PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
 
-This document describes the architecture and the concept. The current app version lives in `CLAUDE.md`, concrete changes per release in `docs/CHANGELOG.md`.
+This document describes the architecture and the concept. For version history see `docs/CHANGELOG.md`, for current and planned work see `docs/ROADMAP.md`.
 
 ---
 
@@ -779,19 +779,7 @@ When hooks change, a new spec version is created (v2). Old plugins (api_version:
 
 ## 7. Roadmap
 
-Feature details and open items see docs/ROADMAP.md (with IDs for prompt references).
-
-| Phase | Version | Status |
-|-------|---------|--------|
-| 1: MVP | v0.1.0 | done |
-| 2: PluginForge framework | v0.2.0 | done |
-| 3: Export as a plugin | v0.3.0 | done |
-| 4: Import, backup, chapter types | v0.4.0 | done |
-| 5: Kinderbuch and KDP plugins | v0.5.0 | done |
-| 6: Editor extensions, i18n, themes | v0.6.0 | done |
-| 7: Extended metadata, publishing | v0.7.0 | done |
-| 8: Manuscript quality, editor, export | v0.9.0 | done |
-| 9: Translation, audiobook, infrastructure | v0.10.0 | done (current) |
+Feature details and open items see `docs/ROADMAP.md` (with IDs for prompt references). Per-version history see `docs/CHANGELOG.md`.
 
 ---
 
