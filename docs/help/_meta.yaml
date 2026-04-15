@@ -62,6 +62,12 @@ navigation:
         slug: plugins/ms-tools
 
   - title:
+      de: KI-Assistent
+      en: AI Assistant
+    slug: ai
+    icon: sparkles
+
+  - title:
       de: Themes
       en: Themes
     slug: themes
@@ -90,3 +96,9 @@ navigation:
       en: Troubleshooting
     slug: troubleshooting
     icon: alert-triangle
+
+  - title:
+      de: Plugin-Entwicklung
+      en: Plugin Development
+    slug: developers/plugins
+    icon: code
