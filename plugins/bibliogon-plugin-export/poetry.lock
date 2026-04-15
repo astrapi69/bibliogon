@@ -1040,14 +1040,14 @@ htmlsoup = ["BeautifulSoup4"]
 
 [[package]]
 name = "manuscripta"
-version = "0.7.0"
+version = "0.8.0"
 description = "Book production pipeline for authors and self-publishers. Multi-format export (PDF, EPUB, DOCX, HTML, Markdown), audiobook generation, translation, and manuscript tooling."
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "manuscripta-0.7.0-py3-none-any.whl", hash = "sha256:804a3d91c33d73c7fe3d5c3991d451f12718dfec7eb51ffd3dddd4201b88b632"},
-    {file = "manuscripta-0.7.0.tar.gz", hash = "sha256:094aa47101aa0090c0eb02ed1edfb07e7454b79618dedd82a057a0637c7582da"},
+    {file = "manuscripta-0.8.0-py3-none-any.whl", hash = "sha256:6704a105ac190a75f457aea3423060c10e8ee97708120d1353b94862af522f9a"},
+    {file = "manuscripta-0.8.0.tar.gz", hash = "sha256:0c7771cba33bcc6477da69e5c845245f12caf5fac5025e2939b730cc0ee798b0"},
 ]
 
 [package.dependencies]
@@ -2678,4 +2678,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "f620f8bf0ad1544226ab38fdc4ab9027cafab58b3d25d9757a6f4268b05aaa81"
+content-hash = "2ce75d35c9138aee3b85af7a1150d595386fb006b532f96dc97d64557457493c"

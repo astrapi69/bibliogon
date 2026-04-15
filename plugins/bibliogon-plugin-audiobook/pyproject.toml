@@ -11,14 +11,14 @@ packages = [{include = "bibliogon_audiobook"}]
 python = "^3.11"
 pluginforge = "^0.5.0"
 fastapi = "^0.115.0"
-# manuscripta ^0.7.0 ships a full TTS adapter layer with factory, exception
+# manuscripta ^0.8.0 ships a full TTS adapter layer with factory, exception
 # hierarchy, retry logic (tenacity) and lazy-imported optional engines.
 # Engine-specific packages (edge-tts, pyttsx3, elevenlabs,
 # google-cloud-texttospeech) are managed by manuscripta itself via lazy
 # imports that raise TTSEngineNotInstalledError when missing.  Bibliogon
 # no longer pins them directly - only edge-tts is a hard transitive dep
 # of manuscripta; the rest are genuinely optional.
-manuscripta = "^0.7.0"
+manuscripta = "^0.8.0"
 cryptography = "^46.0.7"
 
 [tool.poetry.group.dev.dependencies]
