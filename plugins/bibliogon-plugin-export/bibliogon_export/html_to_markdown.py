@@ -6,10 +6,13 @@ manuscripta/Pandoc. The TipTap-JSON path goes through ``tiptap_to_md``
 instead.
 """
 
+import logging
 import re
 from collections.abc import Callable
 from html.parser import HTMLParser
 
+
+logger = logging.getLogger(__name__)
 
 _HEADING_TAGS = ("h1", "h2", "h3", "h4", "h5", "h6")
 
@@ -43,6 +46,12 @@ class _HtmlToMdParser(HTMLParser):
         self._in_figcaption: bool = False
         self._figure_buf: list[str] = []
         self._figcaption_buf: list[str] = []
+        # Structured tracking so _close_figure can decide between native
+        # Markdown image syntax (renderable in PDF/DOCX) and raw-HTML
+        # fallback (PDF/DOCX silently drops raw HTML).
+        self._figure_imgs: list[dict[str, str]] = []
+        self._figure_caption: str = ""
+        self._figure_has_extra_content: bool = False
 
     # --- HTMLParser hooks ---
 
@@ -68,6 +77,11 @@ class _HtmlToMdParser(HTMLParser):
         if self._in_figcaption:
             self._figcaption_buf.append(data)
             return
+        if self._in_figure and data.strip():
+            # Text inside <figure> but outside <figcaption> means the
+            # figure is more complex than the native-Markdown image
+            # syntax can express; force the raw-HTML fallback.
+            self._figure_has_extra_content = True
         buf = self._buf()
         if "strong" in self.tag_stack:
             buf.append(f"**{data}**")
@@ -135,12 +149,50 @@ def _close_a(p: _HtmlToMdParser) -> None:
 def _open_figure(p: _HtmlToMdParser, _a: dict[str, str | None]) -> None:
     p._in_figure = True
     p._figure_buf = []
+    p._figure_imgs = []
+    p._figure_caption = ""
+    p._figure_has_extra_content = False
 
 
 def _close_figure(p: _HtmlToMdParser) -> None:
-    fig = "\n<figure>\n" + "\n".join(p._figure_buf) + "\n</figure>\n"
-    p.out.append(fig)
+    # Native Markdown image syntax survives all Pandoc writers (PDF/LaTeX,
+    # DOCX, EPUB, HTML); raw HTML is silently dropped by the LaTeX and
+    # DOCX writers. Emit native syntax whenever the figure shape is
+    # simple enough to round-trip.
+    simple = (
+        len(p._figure_imgs) == 1
+        and not p._figure_has_extra_content
+    )
+    if simple:
+        p.out.append(_native_figure_markdown(p._figure_imgs[0], p._figure_caption))
+    else:
+        logger.warning(
+            "html_to_markdown: complex <figure> preserved as raw HTML "
+            "(imgs=%d, has_extra_content=%s); may not appear in PDF/DOCX",
+            len(p._figure_imgs),
+            p._figure_has_extra_content,
+        )
+        p.out.append(_raw_figure_html(p._figure_buf))
     p._in_figure = False
+    p._figure_imgs = []
+    p._figure_caption = ""
+    p._figure_buf = []
+    p._figure_has_extra_content = False
+
+
+def _native_figure_markdown(img: dict[str, str], caption: str) -> str:
+    """Emit ``![caption](src "alt")`` so Pandoc's implicit_figures fires."""
+    src = img.get("src", "")
+    alt = img.get("alt", "")
+    label = caption or alt
+    if caption and alt:
+        title = alt.replace('"', "'")
+        return f'\n![{label}]({src} "{title}")\n'
+    return f"\n![{label}]({src})\n"
+
+
+def _raw_figure_html(buf: list[str]) -> str:
+    return "\n<figure>\n" + "\n".join(buf) + "\n</figure>\n"
 
 
 def _open_figcaption(p: _HtmlToMdParser, _a: dict[str, str | None]) -> None:
@@ -151,6 +203,7 @@ def _open_figcaption(p: _HtmlToMdParser, _a: dict[str, str | None]) -> None:
 def _close_figcaption(p: _HtmlToMdParser) -> None:
     caption = "".join(p._figcaption_buf).strip()
     if p._in_figure:
+        p._figure_caption = caption
         p._figure_buf.append(f"  <figcaption>\n    {caption}\n  </figcaption>")
     p._in_figcaption = False
 
@@ -158,11 +211,14 @@ def _close_figcaption(p: _HtmlToMdParser) -> None:
 def _open_img(p: _HtmlToMdParser, a: dict[str, str | None]) -> None:
     src = a.get("src", "") or ""
     alt = a.get("alt", "") or ""
-    img_html = f'  <img src="{src}" alt="{alt}" />'
     if p._in_figure:
-        p._figure_buf.append(img_html)
+        p._figure_imgs.append({"src": src, "alt": alt})
+        p._figure_buf.append(f'  <img src="{src}" alt="{alt}" />')
     else:
-        p._buf().append(f'\n<figure>\n{img_html}\n</figure>\n')
+        # Bare <img> outside <figure>: native Markdown so it survives
+        # PDF/DOCX. Pandoc's implicit_figures promotes a paragraph
+        # containing only one image into a proper figure block.
+        p._buf().append(f"\n![{alt}]({src})\n")
 
 
 def _open_br(p: _HtmlToMdParser, _a: dict[str, str | None]) -> None:

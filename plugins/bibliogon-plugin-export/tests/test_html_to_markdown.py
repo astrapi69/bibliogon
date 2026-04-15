@@ -119,17 +119,16 @@ class TestLists:
 class TestImages:
 
     def test_standalone_image(self) -> None:
+        # Images must emit native Markdown syntax so they survive Pandoc's
+        # PDF (LaTeX) and DOCX writers, which silently drop raw HTML.
         html = '<img src="assets/figures/photo.png" alt="A photo" />'
         result = html_to_markdown(html)
-        assert "<figure>" in result
-        assert 'src="assets/figures/photo.png"' in result
-        assert 'alt="A photo"' in result
+        assert result == "![A photo](assets/figures/photo.png)"
 
     def test_image_without_alt(self) -> None:
         html = '<img src="image.jpg" />'
         result = html_to_markdown(html)
-        assert 'src="image.jpg"' in result
-        assert 'alt=""' in result
+        assert result == "![](image.jpg)"
 
 
 class TestFigures:
@@ -142,16 +141,12 @@ class TestFigures:
             "</figure>"
         )
         result = html_to_markdown(html)
-        assert "<figure>" in result
-        assert 'src="fig.png"' in result
-        assert "<figcaption>" in result
-        assert "Caption text" in result
+        assert result == '![Caption text](fig.png "Figure 1")'
 
     def test_figure_without_caption(self) -> None:
         html = '<figure><img src="fig.png" alt="Fig" /></figure>'
         result = html_to_markdown(html)
-        assert "<figure>" in result
-        assert 'src="fig.png"' in result
+        assert result == "![Fig](fig.png)"
 
 
 class TestBlockquotes:
