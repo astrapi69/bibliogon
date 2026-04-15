@@ -14,7 +14,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from . import __version__, config, docker, health, lockfile, ui
+from bibliogon_launcher import __version__, config, docker, health, lockfile, ui
 
 
 logger = logging.getLogger("bibliogon_launcher")
@@ -88,7 +88,7 @@ def _run_launcher() -> int:
     def worker() -> None:
         ok, up_detail = docker.compose_up(repo, config.COMPOSE_FILENAME)
         if not ok:
-            window.after(0, lambda: _handle_compose_failure(window, repo, up_detail))
+            window.after(0, lambda: _handle_compose_failure(window, up_detail))
             return
 
         window.after(0, lambda: window.set_starting("Waiting for Bibliogon to answer..."))
@@ -171,7 +171,7 @@ def _replace_secret_placeholder(env_file: Path) -> None:
     env_file.write_text(text, encoding="utf-8")
 
 
-def _handle_compose_failure(window: ui.StatusWindow, repo: Path, detail: str) -> None:
+def _handle_compose_failure(window: ui.StatusWindow, detail: str) -> None:
     ui.error_box(
         "Could not start Bibliogon",
         "docker compose up failed. This is often caused by a port conflict or a Docker daemon problem.\n\n"
