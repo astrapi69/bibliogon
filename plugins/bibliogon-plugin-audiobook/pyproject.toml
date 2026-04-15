@@ -20,6 +20,11 @@ fastapi = "^0.115.0"
 # of manuscripta; the rest are genuinely optional.
 manuscripta = "^0.8.0"
 cryptography = "^46.0.7"
+# MP3 header parser for per-chapter duration readout. Pure Python, no
+# ffmpeg/ffprobe dependency. Used by audiobook_storage.flush_chapter to
+# record duration in metadata.json so the book-metadata UI can show
+# "5:23" per chapter.
+mutagen = "^1.47.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

@@ -241,6 +241,129 @@ async def test_generate_audiobook_returns_merged_file_key():
             assert result["merge_mode"] == "merged"  # default
 
 
+# --- on_chapter_persisted hook ---
+
+
+@pytest.mark.asyncio
+async def test_on_chapter_persisted_fires_per_chapter():
+    """Hook is invoked once per successfully generated chapter, not at the end."""
+    async def stub_synth(text, output_path, **kwargs):
+        Path(output_path).write_bytes(b"\x00fake mp3\x00")
+
+    calls: list[dict] = []
+
+    async def on_persisted(mp3_path, chapter_info):
+        # Verify the file is ALREADY on disk when the hook fires.
+        assert mp3_path.exists()
+        calls.append({"path": str(mp3_path), **chapter_info})
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(side_effect=stub_synth)
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "Intro", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "A."}]}],
+            }), "chapter_type": "chapter", "position": 0},
+            {"title": "Chapter 1", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "B."}]}],
+            }), "chapter_type": "chapter", "position": 1},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                on_chapter_persisted=on_persisted,
+            )
+    assert result["generated_count"] == 2
+    assert [c["title"] for c in calls] == ["Intro", "Chapter 1"]
+    assert [c["position"] for c in calls] == [0, 1]
+    assert all(not c["reused"] for c in calls)
+
+
+@pytest.mark.asyncio
+async def test_on_chapter_persisted_hook_exception_does_not_kill_export():
+    """A broken subscriber must NOT abort the export. Cancellation
+    robustness depends on every chapter_done making it past the hook."""
+    async def stub_synth(text, output_path, **kwargs):
+        Path(output_path).write_bytes(b"\x00fake\x00")
+
+    async def broken_hook(mp3_path, chapter_info):
+        raise RuntimeError("downstream write failed")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(side_effect=stub_synth)
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "Chapter 1", "content": json.dumps({
+                "type": "doc",
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": "X."}]}],
+            }), "chapter_type": "chapter", "position": 0},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                on_chapter_persisted=broken_hook,
+            )
+    assert result["generated_count"] == 1
+    assert result["error_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_cache_hit_same_path_does_not_raise():
+    """When output_dir == cache_dir (direct-persist mode) the cache-hit
+    branch must skip the self-copy instead of crashing with SameFileError."""
+    import hashlib
+    from bibliogon_audiobook.generator import _slugify
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        plain = "Z."
+        # Pre-populate the dir with a valid cached chapter matching the
+        # content hash the generator will compute.
+        title = "Chapter 1"
+        fname = f"001-{_slugify(title)}.mp3"
+        (tmp_path / fname).write_bytes(b"\x00cached\x00")
+        (tmp_path / fname).with_suffix(".meta.json").write_text(
+            json.dumps({
+                "content_hash": hashlib.sha256(plain.encode("utf-8")).hexdigest(),
+                "engine": "edge-tts",
+                "voice": "",
+                "speed": "1.0",
+            }),
+        )
+
+        persisted: list[str] = []
+
+        async def on_persisted(mp3_path, chapter_info):
+            persisted.append(mp3_path.name)
+
+        with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+            mock_engine = AsyncMock()
+            mock_engine.synthesize = AsyncMock()
+            mock_get.return_value = mock_engine
+
+            chapters = [{
+                "title": title, "content": json.dumps({
+                    "type": "doc",
+                    "content": [{"type": "paragraph", "content": [{"type": "text", "text": plain}]}],
+                }), "chapter_type": "chapter", "position": 0,
+            }]
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters,
+                output_dir=tmp_path, cache_dir=tmp_path,
+                on_chapter_persisted=on_persisted,
+            )
+        assert result["reused_count"] == 1
+        assert persisted == [fname]
+        # TTS engine must NOT have been called on a cache hit
+        mock_engine.synthesize.assert_not_called()
+
+
 # --- normalize_merge_mode (legacy bool migration) ---
 
 

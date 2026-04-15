@@ -107,6 +107,139 @@ def test_chapter_file_path_blocks_path_traversal(tmp_path: Path, source_dir: Pat
     assert escape is None
 
 
+# --- Incremental persistence: flush_chapter + finalize_audiobook ---
+
+def test_has_audiobook_requires_complete_status(tmp_path: Path, source_dir: Path):
+    """A partial run (status=in_progress) must NOT count as an existing audiobook.
+
+    Pins the contract that powers the overwrite warning: users only
+    see the "audiobook already exists" 409 when a previous export
+    actually completed, not while their own currently-running
+    incremental flushes are landing.
+    """
+    audiobook_storage.flush_chapter(
+        book_id="book-partial",
+        source_mp3=source_dir / "001-vorwort.mp3",
+        chapter_extras={"title": "Vorwort", "position": 0},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    # load_metadata finds it (the UI can read partial state)
+    meta = audiobook_storage.load_metadata("book-partial", root=tmp_path)
+    assert meta is not None
+    assert meta["status"] == "in_progress"
+    # but has_audiobook returns False (no overwrite warning yet)
+    assert audiobook_storage.has_audiobook("book-partial", root=tmp_path) is False
+
+
+def test_flush_chapter_then_finalize_flips_status(tmp_path: Path, source_dir: Path):
+    audiobook_storage.flush_chapter(
+        book_id="book-seq",
+        source_mp3=source_dir / "001-vorwort.mp3",
+        chapter_extras={"title": "Vorwort", "position": 0},
+        base_metadata={"engine": "edge-tts", "voice": "Katja"},
+        root=tmp_path,
+    )
+    audiobook_storage.flush_chapter(
+        book_id="book-seq",
+        source_mp3=source_dir / "002-kapitel-1.mp3",
+        chapter_extras={"title": "Kapitel 1", "position": 1},
+        base_metadata={"engine": "edge-tts", "voice": "Katja"},
+        root=tmp_path,
+    )
+    audiobook_storage.finalize_audiobook(
+        book_id="book-seq",
+        source_dir=source_dir,
+        merged_file="test-book-audiobook.mp3",
+        base_metadata={"engine": "edge-tts", "voice": "Katja", "merge_mode": "both"},
+        root=tmp_path,
+    )
+    meta = audiobook_storage.load_metadata("book-seq", root=tmp_path)
+    assert meta["status"] == "complete"
+    assert meta["created_at"]
+    assert {c["title"] for c in meta["chapter_files"]} == {"Vorwort", "Kapitel 1"}
+    assert meta["merged"]["filename"] == "audiobook.mp3"
+    assert audiobook_storage.has_audiobook("book-seq", root=tmp_path) is True
+
+
+def test_cancellation_preserves_completed_chapters(tmp_path: Path, source_dir: Path):
+    """Partial writes survive when finalize_audiobook is never reached.
+
+    Simulates the cancellation path: two chapters get flushed, then
+    an exception prevents finalize from running. The chapters must
+    remain on disk AND visible in metadata.json.
+    """
+    audiobook_storage.flush_chapter(
+        book_id="book-cancel",
+        source_mp3=source_dir / "001-vorwort.mp3",
+        chapter_extras={"title": "Vorwort", "position": 0},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    audiobook_storage.flush_chapter(
+        book_id="book-cancel",
+        source_mp3=source_dir / "002-kapitel-1.mp3",
+        chapter_extras={"title": "Kapitel 1", "position": 1},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    # Simulate cancellation: the caller's mark_failed annotates the
+    # partial state. No finalize call.
+    audiobook_storage.mark_failed("book-cancel", "Cancelled by user", root=tmp_path)
+
+    target = tmp_path / "book-cancel" / "audiobook"
+    assert (target / "chapters" / "001-vorwort.mp3").exists()
+    assert (target / "chapters" / "002-kapitel-1.mp3").exists()
+    meta = audiobook_storage.load_metadata("book-cancel", root=tmp_path)
+    assert meta["status"] == "in_progress"
+    assert meta["last_error"] == "Cancelled by user"
+    assert len(meta["chapter_files"]) == 2
+    # has_audiobook still False - the partial run should trigger
+    # "skip existing"/"regenerate all" on re-export, not the plain
+    # overwrite warning that implies a completed audiobook exists.
+    assert audiobook_storage.has_audiobook("book-cancel", root=tmp_path) is False
+
+
+def test_flush_chapter_same_path_is_noop_copy(tmp_path: Path):
+    """When source_mp3 is already in the persistent dir (direct-write
+    path), flush must not raise SameFileError on self-copy."""
+    chapters_dir = audiobook_storage.prepare_chapters_dir("book-direct", root=tmp_path)
+    existing = chapters_dir / "001-inplace.mp3"
+    existing.write_bytes(b"\x00already here\x00")
+
+    meta = audiobook_storage.flush_chapter(
+        book_id="book-direct",
+        source_mp3=existing,
+        chapter_extras={"title": "Inplace", "position": 0},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    assert existing.exists()
+    assert existing.read_bytes() == b"\x00already here\x00"
+    assert meta["chapter_files"][0]["filename"] == "001-inplace.mp3"
+
+
+def test_flush_chapter_updates_existing_entry(tmp_path: Path, source_dir: Path):
+    """Re-flushing the same filename replaces the entry, not appends."""
+    audiobook_storage.flush_chapter(
+        book_id="book-refl",
+        source_mp3=source_dir / "001-vorwort.mp3",
+        chapter_extras={"title": "First take", "position": 0},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    audiobook_storage.flush_chapter(
+        book_id="book-refl",
+        source_mp3=source_dir / "001-vorwort.mp3",
+        chapter_extras={"title": "Second take", "position": 0},
+        base_metadata={"engine": "edge-tts"},
+        root=tmp_path,
+    )
+    meta = audiobook_storage.load_metadata("book-refl", root=tmp_path)
+    assert len(meta["chapter_files"]) == 1
+    assert meta["chapter_files"][0]["title"] == "Second take"
+
+
 def test_delete_audiobook_removes_directory(tmp_path: Path, source_dir: Path):
     audiobook_storage.persist_audiobook(
         book_id="book-5", source_dir=source_dir,

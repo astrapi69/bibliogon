@@ -286,6 +286,7 @@ develop = true
 cryptography = "^46.0.7"
 fastapi = "^0.115.0"
 manuscripta = "^0.8.0"
+mutagen = "^1.47.0"
 pluginforge = "^0.5.0"
 
 [package.source]
@@ -2269,6 +2270,18 @@ files = [
     {file = "multidict-6.7.1-cp39-cp39-win_arm64.whl", hash = "sha256:749aa54f578f2e5f439538706a475aa844bfa8ef75854b1401e6e528e4937cf9"},
     {file = "multidict-6.7.1-py3-none-any.whl", hash = "sha256:55d97cc6dae627efa6a6e548885712d4864b81110ac76fa4e534c03819fa4a56"},
     {file = "multidict-6.7.1.tar.gz", hash = "sha256:ec6652a1bee61c53a3e5776b6049172c53b6aaba34f18c9ad04f82712bac623d"},
+]
+
+[[package]]
+name = "mutagen"
+version = "1.47.0"
+description = "read and write audio tags for many formats"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "mutagen-1.47.0-py3-none-any.whl", hash = "sha256:edd96f50c5907a9539d8e5bba7245f62c9f520aef333d13392a79a4f70aca719"},
+    {file = "mutagen-1.47.0.tar.gz", hash = "sha256:719fadef0a978c31b4cf3c956261b3c58b6948b32023078a2117b1de09f0fc99"},
 ]
 
 [[package]]

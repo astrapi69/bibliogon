@@ -530,8 +530,19 @@ async def _run_audiobook_job(
     voice = book_data.get("tts_voice") or ""
     language = book_data.get("tts_language") or book_data.get("language", "de")
     rate = book_data.get("tts_speed") or ""
-    audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
     merge_mode = _resolve_audiobook_merge_mode(book_data)
+
+    # Persistent-path mode: when we have a book_id we write chapter
+    # MP3s directly into uploads/{book_id}/audiobook/chapters/ and
+    # flush metadata after every chapter, so cancellation, browser
+    # crash or backend restart never loses completed chapters.
+    # Without a book_id (shouldn't happen from the production route,
+    # but kept for defensive symmetry) we fall back to a temp dir.
+    book_id = book_data.get("id")
+    if book_id:
+        audio_dir = audiobook_storage.prepare_chapters_dir(book_id)
+    else:
+        audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
 
     # Per-book skip list (replaces the former plugin-global
     # ``audiobook.settings.skip_types``). An empty list means "use the
@@ -550,15 +561,29 @@ async def _run_audiobook_job(
     async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
         job_store.publish_event(job_id, event_type, payload)
 
-    # Point the generator at the persistent audiobook directory so it
-    # can skip chapters whose content + engine + voice + speed have not
-    # changed since the last export (content-hash cache).
+    # Baseline metadata recorded in uploads/{book_id}/audiobook/metadata.json
+    # on every incremental flush + the finalize step. Kept small and
+    # serializable so the book-metadata UI can render engine/voice/speed
+    # badges next to the per-chapter list.
+    base_metadata: dict[str, Any] = {
+        "engine": engine_id,
+        "voice": voice or "default",
+        "language": language,
+        "speed": rate or "1.0",
+        "merge_mode": merge_mode,
+        "book_title": book_data.get("title"),
+    }
+
+    # Cache-dir flag: when ``audiobook_overwrite_existing`` is false the
+    # generator looks up previously persisted chapters and reuses those
+    # whose content + engine + voice + speed still match. The persistent
+    # path IS the cache, so when we write directly there the generator
+    # sees "already on disk" and short-circuits without extra I/O
+    # (the same-path guard inside the cache branch prevents SameFileError).
     #
-    # When the per-book ``audiobook_overwrite_existing`` flag is true the
-    # cache is disabled entirely so every chapter is regenerated. This is
-    # the explicit "ignore the cache, redo the whole book" escape hatch
-    # the user toggles from the metadata editor.
-    book_id = book_data.get("id")
+    # NOTE: ``audiobook_overwrite_existing`` is the per-book escape hatch
+    # toggled from the metadata editor. A per-job "regenerate all"
+    # override is coming in a follow-up commit (spec TM-like).
     overwrite_existing = bool(book_data.get("audiobook_overwrite_existing", False))
     cache_dir: Path | None = None
     if book_id and not overwrite_existing:
@@ -566,43 +591,78 @@ async def _run_audiobook_job(
         if candidate.exists():
             cache_dir = candidate
 
-    result = await generate_audiobook(
-        book_title=book_data.get("title", "audiobook"),
-        chapters=chapters, output_dir=audio_dir,
-        engine_id=engine_id, voice=voice, language=language, rate=rate,
-        merge=merge_mode, progress_callback=progress_cb,
-        skip_types=skip_types, read_chapter_number=read_chapter_number,
-        cache_dir=cache_dir,
-    )
-    output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
-    if output is None:
-        raise RuntimeError("Audiobook generation produced no files")
+    async def on_chapter_persisted(mp3_path: Path, chapter_info: dict[str, Any]) -> None:
+        """Record one completed chapter in metadata.json.
 
-    # Persist the generated MP3s under uploads/{book_id}/audiobook/ so the
-    # user can download them again later from the metadata tab. Failures
-    # here MUST NOT lose the in-progress download (the temp ZIP/MP3 still
-    # exists), so we log and continue rather than raising.
-    book_id = book_data.get("id")
+        Fires after each chapter MP3 lands in the persistent chapters
+        dir. Without a book_id there is no persistent path, so this
+        becomes a no-op (the rare defensive fallback).
+        """
+        if not book_id:
+            return
+        try:
+            audiobook_storage.flush_chapter(
+                book_id=book_id,
+                source_mp3=mp3_path,
+                chapter_extras={
+                    "title": chapter_info.get("title"),
+                    "position": chapter_info.get("position"),
+                    "chapter_type": chapter_info.get("chapter_type"),
+                    "reused": bool(chapter_info.get("reused")),
+                    "index": chapter_info.get("index"),
+                },
+                base_metadata=base_metadata,
+            )
+        except Exception as flush_error:  # noqa: BLE001
+            # A flush failure must not drop completed work - the MP3
+            # is on disk, the next flush (or finalize) will try again.
+            logger.warning(
+                "Failed to flush chapter %s for book %s: %s",
+                mp3_path.name, book_id, flush_error,
+            )
+
+    try:
+        result = await generate_audiobook(
+            book_title=book_data.get("title", "audiobook"),
+            chapters=chapters, output_dir=audio_dir,
+            engine_id=engine_id, voice=voice, language=language, rate=rate,
+            merge=merge_mode, progress_callback=progress_cb,
+            skip_types=skip_types, read_chapter_number=read_chapter_number,
+            cache_dir=cache_dir,
+            on_chapter_persisted=on_chapter_persisted,
+        )
+        output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
+        if output is None:
+            raise RuntimeError("Audiobook generation produced no files")
+    except BaseException as run_error:
+        # Partial persistence: chapters generated so far are already on
+        # disk and already in metadata.json (via on_chapter_persisted).
+        # We only need to annotate the metadata with the failure reason
+        # so the UI can distinguish a cancelled/failed partial export
+        # from a still-running one. Use BaseException so this also fires
+        # on asyncio.CancelledError, which is NOT an Exception subclass.
+        if book_id:
+            audiobook_storage.mark_failed(book_id, str(run_error) or type(run_error).__name__)
+        raise
+
+    # Seal the metadata: copy the merged MP3 into the persistent dir,
+    # flip status to "complete" and stamp created_at. After this call
+    # ``has_audiobook`` returns True and future exports get the 409
+    # overwrite warning.
     if book_id:
         try:
-            audiobook_storage.persist_audiobook(
+            audiobook_storage.finalize_audiobook(
                 book_id=book_id,
                 source_dir=audio_dir,
-                generated_files=list(result.get("generated_files") or []),
                 merged_file=result.get("merged_file"),
-                metadata={
-                    "engine": engine_id,
-                    "voice": voice or "default",
-                    "language": language,
-                    "speed": rate or "1.0",
-                    "merge_mode": merge_mode,
-                    "book_title": book_data.get("title"),
-                },
+                base_metadata=base_metadata,
             )
-        except Exception as persist_error:  # noqa: BLE001
+        except Exception as finalize_error:  # noqa: BLE001
+            # Finalize failure must not kill the download - chapter
+            # files are already persistent, user can still grab them.
             logger.error(
-                "Failed to persist audiobook for book %s: %s",
-                book_id, persist_error, exc_info=True,
+                "Failed to finalize audiobook for book %s: %s",
+                book_id, finalize_error, exc_info=True,
             )
 
     if output.suffix == ".mp3":

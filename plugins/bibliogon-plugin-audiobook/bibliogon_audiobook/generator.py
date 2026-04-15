@@ -211,6 +211,11 @@ async def generate_chapter_audio(
 
 
 ProgressCallback = Callable[[str, dict], Awaitable[None]] | None
+# Called after each chapter MP3 is in its final on-disk location.
+# Payload carries the source path + enough chapter metadata that the
+# consumer (``_run_audiobook_job``) can incrementally record the
+# chapter in the persistent audiobook metadata.
+ChapterPersistedCallback = Callable[[Path, dict], Awaitable[None]] | None
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +289,7 @@ async def generate_audiobook(
     progress_callback: ProgressCallback = None,
     read_chapter_number: bool = False,
     cache_dir: Path | None = None,
+    on_chapter_persisted: ChapterPersistedCallback = None,
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
@@ -338,6 +344,21 @@ async def generate_audiobook(
             # Never let a broken subscriber kill the export.
             logger.warning("progress_callback raised on %s: %s", event_type, e)
 
+    async def emit_persisted(mp3_path: Path, chapter_info: dict) -> None:
+        """Fire the per-chapter persistence hook, shielded from crashes.
+
+        Same "never kill the export" contract as ``emit``: a broken
+        persistence hook must NOT lose the in-progress audiobook work,
+        it just means the UI won't see that chapter until the next
+        flush or until finalize.
+        """
+        if on_chapter_persisted is None:
+            return
+        try:
+            await on_chapter_persisted(mp3_path, chapter_info)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("on_chapter_persisted raised: %s", e)
+
     await emit(
         "start",
         book_title=book_title,
@@ -366,18 +387,30 @@ async def generate_audiobook(
         if cache_dir and not should_regenerate(
             plain_text, cache_dir / expected_filename, engine_id, voice, speed_str,
         ):
-            # Cache hit: copy the existing MP3 + sidecar into the temp
+            # Cache hit: copy the existing MP3 + sidecar into the
             # output dir so the rest of the pipeline (merge, bundle,
             # persist) sees the file as if we had just generated it.
+            # When ``output_dir == cache_dir`` (generator writes
+            # straight into the persistent path) the file is already
+            # where we want it - skip the self-copy, which would raise
+            # SameFileError.
             cached_mp3 = cache_dir / expected_filename
             dest_mp3 = output_dir / expected_filename
-            shutil.copy2(cached_mp3, dest_mp3)
-            cached_meta = cached_mp3.with_suffix(".meta.json")
-            if cached_meta.exists():
-                shutil.copy2(cached_meta, dest_mp3.with_suffix(".meta.json"))
+            if cached_mp3.resolve() != dest_mp3.resolve():
+                shutil.copy2(cached_mp3, dest_mp3)
+                cached_meta = cached_mp3.with_suffix(".meta.json")
+                if cached_meta.exists():
+                    shutil.copy2(cached_meta, dest_mp3.with_suffix(".meta.json"))
             generated.append(expected_filename)
             reused.append(ch_title)
             await emit("chapter_reused", index=i, title=ch_title, filename=expected_filename)
+            await emit_persisted(dest_mp3, {
+                "title": ch_title,
+                "position": ch.get("position"),
+                "chapter_type": ch_type,
+                "reused": True,
+                "index": i,
+            })
             continue
 
         await emit("chapter_start", index=i, title=ch_title)
@@ -410,6 +443,13 @@ async def generate_audiobook(
                     index=i, title=ch_title, filename=result.name,
                     duration_seconds=duration,
                 )
+                await emit_persisted(result, {
+                    "title": ch_title,
+                    "position": ch.get("position"),
+                    "chapter_type": ch_type,
+                    "reused": False,
+                    "index": i,
+                })
             else:
                 skipped.append(ch_title)
                 await emit("chapter_skipped", index=i, title=ch_title, reason="empty")
