@@ -58,6 +58,9 @@ def main() -> int:
 def _run_launcher() -> int:
     show_details = config.get_show_details_default()
 
+    # 0. Retry pending cleanup from a previously interrupted uninstall.
+    _retry_pending_cleanup()
+
     # 1. Docker installed?
     ok, detail = docker.docker_installed()
     if not ok:
@@ -204,6 +207,64 @@ def _run_launcher() -> int:
 
 
 # --- Step helpers ---
+
+
+def _retry_pending_cleanup() -> None:
+    """Silently retry any incomplete uninstall from a previous session.
+
+    Reads cleanup.json. For each step still marked False, retries it.
+    Updates cleanup.json after each successful retry. Deletes the file
+    when all steps are done. Never blocks or shows dialogs except a
+    one-time warning if rmtree still fails (the user may need to
+    delete the directory manually).
+    """
+    pending = manifest.read_cleanup_pending()
+    if pending is None:
+        return
+
+    steps = pending.get("steps", {})
+    install_dir = Path(pending.get("install_dir", ""))
+    logger.info("Pending cleanup found from %s, retrying...", pending.get("pending_since", "?"))
+
+    if not steps.get("compose_down"):
+        ok, _ = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
+        manifest.update_cleanup_step("compose_down", ok)
+
+    if not steps.get("remove_volumes"):
+        ok, _ = docker.remove_volumes()
+        manifest.update_cleanup_step("remove_volumes", ok)
+
+    if not steps.get("remove_images"):
+        ok, _ = docker.remove_images()
+        manifest.update_cleanup_step("remove_images", ok)
+
+    if not steps.get("rmtree"):
+        ok, detail = installer.remove_install(install_dir)
+        manifest.update_cleanup_step("rmtree", ok)
+        if not ok and install_dir.exists():
+            logger.warning("Pending rmtree still failed: %s", detail)
+            ui.error_dialog(
+                title="Previous uninstall incomplete",
+                message=(
+                    f"Bibliogon could not be fully removed from:\n{install_dir}\n\n"
+                    "You may need to delete this folder manually."
+                ),
+                actions=[("OK", "ok")],
+                details=detail,
+                initial_show_details=config.get_show_details_default(),
+            )
+
+    if not steps.get("delete_manifest"):
+        manifest.delete_manifest()
+        manifest.update_cleanup_step("delete_manifest", True)
+
+    # Check if everything is now done
+    updated = manifest.read_cleanup_pending()
+    if manifest.all_cleanup_done(updated):
+        manifest.delete_cleanup_pending()
+        logger.info("Pending cleanup completed successfully.")
+    else:
+        logger.warning("Pending cleanup still has incomplete steps.")
 
 
 def _install_or_welcome() -> Path | None:
