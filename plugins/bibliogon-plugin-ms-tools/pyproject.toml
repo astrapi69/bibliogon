@@ -10,7 +10,7 @@ packages = [{include = "bibliogon_ms_tools"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 pluginforge = "^0.5.0"
-fastapi = "^0.115.0"
+fastapi = "^0.135.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

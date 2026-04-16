@@ -10,7 +10,7 @@ packages = [{include = "bibliogon_kinderbuch"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 pluginforge = "^0.5.0"
-fastapi = "^0.115.0"
+fastapi = "^0.135.0"
 pyyaml = "^6.0"
 pillow = "^11.0.0"
 
