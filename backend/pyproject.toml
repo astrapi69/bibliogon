@@ -10,9 +10,9 @@ package-mode = false
 python = "^3.11"
 fastapi = "^0.135.0"
 uvicorn = { extras = ["standard"], version = "^0.44.0" }
-sqlalchemy = "^2.0.0"
-pydantic = "^2.0.0"
-python-multipart = "^0.0.12"
+sqlalchemy = "^2.0.49"
+pydantic = "^2.13.0"
+python-multipart = "^0.0.26"
 pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
 bibliogon-plugin-export = {path = "../plugins/bibliogon-plugin-export", develop = true}
 bibliogon-plugin-help = {path = "../plugins/bibliogon-plugin-help", develop = true}
@@ -25,7 +25,7 @@ bibliogon-plugin-kinderbuch = {path = "../plugins/bibliogon-plugin-kinderbuch", 
 bibliogon-plugin-translation = {path = "../plugins/bibliogon-plugin-translation", develop = true}
 markdown = "^3.10.2"
 alembic = "^1.18.4"
-pillow = "^11.0.0"
+pillow = "^11.2.1"
 gtts = "^2.5.0"
 pyttsx3 = "^2.90"
 elevenlabs = "^0.2.27"
@@ -33,7 +33,7 @@ cryptography = "^46.0.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
-httpx = "^0.27.0"
+httpx = "^0.28.0"
 mutmut = "^3.5.0"
 mypy = "^1.20.0"
 types-pyyaml = "^6.0.12.20250915"

@@ -18,7 +18,7 @@ python = ">=3.11,<3.14"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pyinstaller = "^6.11.0"
-pillow = "^11.0.0"  # Used only by the icon-generation script
+pillow = "^11.2.1"  # Used only by the icon-generation script
 
 [tool.poetry.scripts]
 bibliogon-launcher = "bibliogon_launcher.__main__:main"
