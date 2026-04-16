@@ -20,7 +20,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from bibliogon_launcher import __version__, config, docker, health, lockfile, ui
+from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, ui
 
 
 logger = logging.getLogger("bibliogon_launcher")
@@ -109,24 +109,38 @@ def _run_launcher() -> int:
         )
         return 1
 
-    # 3. Locate repo. Two distinct cases on "not found":
-    #    a) launcher.json does not exist  -> Bibliogon has likely never
-    #       been installed on this machine; show a welcome dialog that
-    #       points at the install guide (no folder picker; it would be
-    #       a dead end for a user who has nothing to pick).
-    #    b) launcher.json exists with a repo_path that no longer
-    #       resolves -> the installation moved or was deleted; offer
-    #       the three-button folder-picker-or-install-guide dialog.
-    repo = config.resolve_repo_path()
-    if not config.is_valid_repo(repo):
-        had_previous_install = config.launcher_config_path().is_file()
-        if had_previous_install:
-            repo = _installation_moved_picker()
+    # 3. Locate repo via manifest or legacy launcher.json.
+    #    Priority: manifest (written by installer) > launcher.json (legacy).
+    #    Three cases:
+    #    a) manifest exists + install_dir valid -> proceed
+    #    b) manifest exists + install_dir missing -> treat as not installed
+    #    c) no manifest -> check legacy launcher.json, else show install UI
+    mdata = manifest.read_manifest()
+    if mdata and mdata.get("install_dir"):
+        repo = Path(mdata["install_dir"])
+        if not config.is_valid_repo(repo):
+            logger.warning("Manifest points at %s but it is not a valid repo", repo)
+            mdata = None  # fall through to install UI
+
+    if mdata is None:
+        # Try legacy launcher.json
+        repo = config.resolve_repo_path()
+        if config.is_valid_repo(repo):
+            # Migrate: write manifest so future starts skip legacy path
+            try:
+                manifest.write_manifest(repo, installer.COMPATIBLE_VERSION)
+            except Exception as exc:
+                logger.warning("Could not write manifest during migration: %s", exc)
+            mdata = manifest.read_manifest()
         else:
-            _welcome_not_installed()
-            return 0
-        if repo is None:
-            return 1
+            had_previous_install = config.launcher_config_path().is_file()
+            if had_previous_install:
+                repo = _installation_moved_picker()
+            else:
+                repo = _install_or_welcome()
+            if repo is None:
+                return 0
+            mdata = manifest.read_manifest()
 
     # 4. Ensure configuration file exists (generated on first run).
     ok, detail = _ensure_env_file(repo)
@@ -192,32 +206,156 @@ def _run_launcher() -> int:
 # --- Step helpers ---
 
 
-def _welcome_not_installed() -> None:
-    """First-run welcome: Bibliogon has never been installed here.
+def _install_or_welcome() -> Path | None:
+    """First-run welcome: offer to install Bibliogon or open the guide.
 
-    The launcher is a start/stop wrapper; it cannot install Bibliogon
-    for the user. Offering a folder picker in this state is a dead end
-    because the user has nothing to pick. Instead, explain that and
-    point them at the install guide. If they really did install to a
-    custom location, they can hand-edit launcher.json or re-run the
-    launcher after installing to the default location.
+    Returns the install directory on success, or None if the user
+    cancelled or only opened the guide.
     """
-    choice = ui.two_button_dialog(
+    choice = ui.three_button_dialog(
         title="Welcome to Bibliogon",
         message=(
             "Bibliogon is not installed on this computer yet.\n\n"
-            "The launcher starts Bibliogon for you once it is installed. "
-            "Follow the installation guide first, then run the launcher "
-            "again."
+            "Click 'Install' to download and set up Bibliogon automatically, "
+            "or 'Open install guide' for manual installation instructions."
         ),
-        primary_label="Open install guide",
-        secondary_label="Close",
+        primary_label="Install",
+        secondary_label="Open install guide",
+        cancel_label="Close",
     )
-    if choice == "primary":
+    if choice == "cancel":
+        return None
+    if choice == "secondary":
         try:
             webbrowser.open(INSTALL_GUIDE_URL)
         except OSError as exc:
             logger.warning("opening install guide failed: %s", exc)
+        return None
+
+    # User chose "Install" -> pick folder, download, extract
+    return _run_install_flow()
+
+
+def _run_install_flow() -> Path | None:
+    """Download and install Bibliogon, returning the install dir on success."""
+    show_details = config.get_show_details_default()
+    target = config.default_repo_path()
+
+    # Let user pick a custom folder (pre-filled with default)
+    picked = ui.pick_folder("Choose installation folder", initial_dir=str(target.parent))
+    if picked is None:
+        return None
+    target = Path(picked) if picked else target
+
+    # Show status window during download + extract
+    window = ui.StatusWindow()
+    window.set_starting(f"Downloading Bibliogon v{installer.COMPATIBLE_VERSION}...")
+
+    result: dict = {}
+
+    def worker() -> None:
+        ok, detail = installer.download_release(target)
+        if not ok:
+            result["error"] = detail
+            window.after(0, window.destroy)
+            return
+        window.after(0, lambda: window.set_starting("Preparing configuration..."))
+        ok2, detail2 = installer.create_env_file(target)
+        if not ok2:
+            logger.warning("env file creation: %s", detail2)
+        # Write manifest
+        try:
+            manifest.write_manifest(target, installer.COMPATIBLE_VERSION)
+        except Exception as exc:
+            result["error"] = f"Could not write manifest: {exc}"
+            window.after(0, window.destroy)
+            return
+        # Save to legacy config too for backward compat
+        cfg = config.load_launcher_config()
+        cfg["repo_path"] = str(target)
+        config.save_launcher_config(cfg)
+        result["ok"] = True
+        window.after(0, window.destroy)
+
+    window.run_in_background(worker)
+    window.run_mainloop()
+
+    if result.get("error"):
+        ui.error_dialog(
+            title="Installation failed",
+            message=(
+                "Bibliogon could not be installed. Check your internet "
+                "connection and try again."
+            ),
+            actions=[("OK", "ok")],
+            details=result["error"],
+            initial_show_details=show_details,
+        )
+        return None
+
+    if result.get("ok"):
+        ui.two_button_dialog(
+            title="Installation complete",
+            message=(
+                f"Bibliogon v{installer.COMPATIBLE_VERSION} has been installed to:\n"
+                f"{target}\n\n"
+                "Click 'Start' to launch Bibliogon now."
+            ),
+            primary_label="Start",
+            secondary_label="Close",
+        )
+        return target
+
+    return None
+
+
+def _run_uninstall_flow(install_dir: Path) -> bool:
+    """Uninstall Bibliogon after user confirmation. Returns True if uninstalled."""
+    show_details = config.get_show_details_default()
+    choice = ui.two_button_dialog(
+        title="Uninstall Bibliogon",
+        message=(
+            f"This will remove Bibliogon from:\n{install_dir}\n\n"
+            "Your Docker volumes (book data) are not affected.\n"
+            "Continue?"
+        ),
+        primary_label="Uninstall",
+        secondary_label="Cancel",
+    )
+    if choice != "primary":
+        return False
+
+    ok, detail = installer.remove_install(install_dir)
+    if not ok:
+        ui.error_dialog(
+            title="Uninstall failed",
+            message=(
+                "Bibliogon could not be fully removed. Please stop Docker "
+                "Desktop and close any programs using the Bibliogon folder, "
+                "then try again."
+            ),
+            actions=[("OK", "ok")],
+            details=detail,
+            initial_show_details=show_details,
+        )
+        return False
+
+    manifest.delete_manifest()
+    # Clear legacy config
+    try:
+        cfg = config.load_launcher_config()
+        cfg.pop("repo_path", None)
+        config.save_launcher_config(cfg)
+    except Exception:
+        pass
+
+    ui.two_button_dialog(
+        title="Uninstall complete",
+        message="Bibliogon has been uninstalled.",
+        primary_label="OK",
+        secondary_label="",
+    )
+    return True
 
 
 def _installation_moved_picker() -> Path | None:

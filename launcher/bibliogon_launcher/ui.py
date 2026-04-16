@@ -86,10 +86,15 @@ def ask_copyable_url(url: str) -> None:
     win.wait_window()
 
 
-def pick_folder(title: str) -> str | None:
+def pick_folder(title: str, initial_dir: str | None = None) -> str | None:
     """Show a folder picker. Returns the selected path or None if cancelled."""
     _ensure_root()
-    result = filedialog.askdirectory(title=title, mustexist=True)
+    kwargs: dict = {"title": title}
+    if initial_dir:
+        kwargs["initialdir"] = initial_dir
+    else:
+        kwargs["mustexist"] = True
+    result = filedialog.askdirectory(**kwargs)
     return result or None
 
 
