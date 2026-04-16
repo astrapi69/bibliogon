@@ -323,3 +323,42 @@ Never build parallel systems that are already slated for deletion.
 - This pattern generalizes: any long-running deterministic process where re-running on unchanged input is wasteful can use sidecar fingerprint files. The sidecar stays next to the output artifact, travels with it through copy/persist operations, and is authoritative for "is this output still current?" decisions.
 - Key design decision: the sidecar includes ALL parameters that affect the output (content + engine + voice + speed), not just the content hash. Changing from Edge-TTS to ElevenLabs with the same text invalidates the MP3 even though the text is identical. Always fingerprint the full parameter set.
 - Pre-audit for the three-mode regeneration dialog assumed a new DB schema was needed for content-hash tracking. The sidecar files already provided it. Lesson: before designing new infrastructure, check whether existing persistence artifacts already carry the information you need.
+
+## Dependency currency in active development
+
+In active development projects, dependency versions should be kept current from day one. Shipping with end-of-life or deprecation-imminent versions creates technical debt immediately.
+
+Rules:
+- Only stable releases, no beta/RC/alpha versions ever in production code
+- "Latest stable" means most recent version that has proven stable (minimum 2 weeks since release)
+- For LTS products (Node.js), prefer Active LTS over Current
+- Review dependencies at each release cycle: run `poetry show --outdated` and `npm outdated` before cutting any release
+- Major version bumps get their own commit with migration notes
+- Routine minor/patch bumps can be batched by category
+
+Red flags for outdated dependencies:
+- Deprecation warnings in build output
+- End-of-life announcements in package READMEs
+- Security advisories against installed versions
+- Upstream pins blocking other upgrades (e.g. manuscripta ^0.8.0 blocking Pillow 12)
+
+Upstream blockers: when an external dependency (e.g. manuscripta) pins a transitive dep (e.g. pillow <12), the bump is deferred until the upstream releases a compatible version. Document the blocker in the commit that updates what it can, so the next sweep picks it up.
+
+## Release-cycle dependency review
+
+Before cutting any release, run dependency currency check:
+- `poetry show --outdated` in backend and each plugin
+- `poetry show --outdated` in launcher
+- `npm outdated` in frontend
+
+Apply routine bumps (patch + minor + low-risk minor) as part of release prep. Defer major bumps to dedicated sessions with their own testing cycle.
+
+Never ship with:
+- End-of-life versions
+- Deprecation-imminent versions (forced migration within 6 months)
+- Versions with known unpatched P0 bugs
+
+Stability filter:
+- Latest stable only, never beta/RC/alpha
+- Minimum 2 weeks since release for new major versions
+- For LTS products (Node.js), prefer Active LTS over Current

@@ -134,6 +134,25 @@ chore(release): bump version to v0.X.0
 
 ---
 
+## Step 4b: Dependency currency check
+
+Before running the test suite, check for outdated dependencies:
+
+```bash
+cd backend && poetry show --outdated
+cd launcher && poetry show --outdated
+cd frontend && npm outdated
+```
+
+Apply routine bumps (patch + minor within the same major) as part
+of the release. Major bumps with breaking changes get their own
+dedicated session, not bundled into a release.
+
+See ``lessons-learned.md`` "Release-cycle dependency review" for
+the stability filter and red-flag rules.
+
+---
+
 ## Step 5: Tests
 
 Full test suite:
