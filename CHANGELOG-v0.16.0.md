@@ -7,6 +7,7 @@ Audiobook export is now robust against cancellation and live-updates during gene
 - **Per-chapter audio status in book metadata:** the audiobook tab shows every chapter with audio state (generated with duration/play/download, or "Nicht generiert").
 - **Four-mode regeneration dialog:** chapter classification (current/outdated/missing) with four radio choices for re-export.
 - **Real-time metadata updates via WebSocket:** metadata view updates live as chapters generate.
+- **Themed audiobook player:** custom player with progress scrub, speed control, volume, keyboard shortcuts, auto-advance. Replaces bare HTML5 audio.
 - **D-01 Windows Simple Launcher:** code, CI, install guide ready. Smoke test in v0.17.0.
 
 ### Fixed
