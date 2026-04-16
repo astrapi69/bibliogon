@@ -48,22 +48,25 @@ class TestWriteManifest:
 
     def test_creates_parent_dirs_and_writes(self, tmp_path: Path) -> None:
         target = tmp_path / "nested" / "install.json"
+        install_dir = tmp_path / "bibliogon"
         with patch.object(manifest, "manifest_path", return_value=target):
-            manifest.write_manifest(Path("/home/user/bibliogon"), "0.16.0")
+            manifest.write_manifest(install_dir, "0.16.0")
         assert target.is_file()
         data = json.loads(target.read_text(encoding="utf-8"))
         assert data["version"] == "0.16.0"
-        assert data["install_dir"] == "/home/user/bibliogon"
+        assert data["install_dir"] == str(install_dir)
         assert "installed_at" in data
         assert "platform" in data
 
     def test_overwrites_existing_manifest(self, tmp_path: Path) -> None:
         target = tmp_path / "install.json"
+        old_dir = tmp_path / "old"
+        new_dir = tmp_path / "new"
         with patch.object(manifest, "manifest_path", return_value=target):
-            manifest.write_manifest(Path("/old"), "0.15.0")
-            manifest.write_manifest(Path("/new"), "0.16.0")
+            manifest.write_manifest(old_dir, "0.15.0")
+            manifest.write_manifest(new_dir, "0.16.0")
         data = json.loads(target.read_text(encoding="utf-8"))
-        assert data["install_dir"] == "/new"
+        assert data["install_dir"] == str(new_dir)
         assert data["version"] == "0.16.0"
 
 
