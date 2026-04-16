@@ -34,10 +34,21 @@ def main() -> int:
     logger.info("Bibliogon launcher v%s starting", __version__)
 
     lock_path = config.lockfile_path()
-    if lockfile.another_instance_alive(lock_path):
-        _handle_already_running()
-        return 0
-    lockfile.write_lock(lock_path)
+    try:
+        if lockfile.another_instance_alive(lock_path):
+            _handle_already_running()
+            return 0
+    except Exception as exc:
+        # Fail open: if the lockfile check crashes for any reason
+        # (stdout=None on Windows locale edge case, file encoding,
+        # unexpected OS state), assume no other instance and proceed.
+        # A false negative (two launchers running) is recoverable;
+        # a crash that blocks every single launch is not.
+        logger.warning("lockfile check failed, proceeding anyway: %s", exc)
+    try:
+        lockfile.write_lock(lock_path)
+    except Exception as exc:
+        logger.warning("could not write lockfile: %s", exc)
     try:
         return _run_launcher()
     finally:

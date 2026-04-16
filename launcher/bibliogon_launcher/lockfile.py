@@ -18,7 +18,7 @@ def read_lock(path: Path) -> int | None:
         return None
     try:
         content = path.read_text(encoding="utf-8").strip()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return None
     if not content.isdigit():
         return None
@@ -76,7 +76,11 @@ def _pid_alive_windows(pid: int) -> bool:
         # If we cannot check, prefer to report "alive" so we do not
         # silently clobber a running launcher's lockfile.
         return True
-    return str(pid) in result.stdout
+    # result.stdout can be None on Windows when locale encoding fails
+    # or capture_output encounters an edge case. Guard against it so
+    # the `in` operator does not raise TypeError on NoneType.
+    output = result.stdout or ""
+    return str(pid) in output
 
 
 def another_instance_alive(path: Path) -> bool:
