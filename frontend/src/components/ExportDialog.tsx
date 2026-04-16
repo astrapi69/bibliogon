@@ -121,42 +121,75 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         }
     };
 
-    const _startAudiobookExport = async (confirmOverwrite: boolean = false) => {
+    const _startAudiobookExport = async (confirmOverwrite: boolean = false, regenerateAll: boolean = false) => {
         try {
-            const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite);
+            const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite, regenerateAll);
             audiobookJob.start(job_id, bookId, bookTitle);
             onClose();
         } catch (err) {
-            // 409 with audiobook_exists -> ask the user before overwriting.
-            // The backend embeds the existing engine/voice/created_at so the
-            // dialog has concrete details, not a vague "are you sure?".
+            // 409 with audiobook_exists -> offer skip-existing / regenerate-all / cancel.
+            // The backend embeds the existing engine/voice/created_at and chapter counts
+            // so the dialog can show "23 of 30 chapters already have audio".
             if (
                 err instanceof ApiError &&
                 err.status === 409 &&
                 err.detailBody &&
                 (err.detailBody as {code?: string}).code === "audiobook_exists"
             ) {
-                const existing = (err.detailBody as {existing?: Record<string, string>}).existing || {};
+                const body = err.detailBody as {
+                    existing?: Record<string, string>;
+                    chapter_count?: number;
+                    total_chapters?: number;
+                    status?: string;
+                };
+                const existing = body.existing || {};
                 const created = existing.created_at
                     ? new Date(existing.created_at).toLocaleString()
                     : "?";
                 const engine = existing.engine || "?";
                 const voice = existing.voice || "?";
-                const message = t(
-                    "ui.audiobook.regen_warning",
-                    "Ein Audiobook fuer dieses Buch wurde bereits erstellt.\nEngine: {engine} | Stimme: {voice} | {created}\n\nBei einem neuen Export werden die bestehenden Dateien ueberschrieben.\n\nTrotzdem neu erstellen?",
-                )
-                    .replace("{engine}", engine)
-                    .replace("{voice}", voice)
-                    .replace("{created}", created);
+                const chapterCount = body.chapter_count ?? 0;
+                const totalChapters = body.total_chapters ?? 0;
+                const isPartial = body.status === "in_progress";
+
+                const countLine = totalChapters > 0
+                    ? t("ui.audiobook.regen_chapter_count", "{done} von {total} Kapiteln haben bereits Audio.")
+                        .replace("{done}", String(chapterCount))
+                        .replace("{total}", String(totalChapters))
+                    : "";
+                const statusLine = isPartial
+                    ? t("ui.audiobook.regen_partial_hint", "Der vorherige Export wurde abgebrochen.")
+                    : "";
+                const metaLine = `Engine: ${engine} | ${t("ui.audiobook.voice", "Stimme")}: ${voice} | ${created}`;
+
+                const message = [metaLine, countLine, statusLine]
+                    .filter(Boolean)
+                    .join("\n");
+
                 const title = t("ui.audiobook.regen_title", "Audiobook bereits vorhanden");
-                const confirmLabel = t("ui.audiobook.regen_confirm", "Überschreiben");
-                const cancelLabel = t("ui.common.cancel", "Abbrechen");
-                const shouldOverwrite = await dialog.confirm(title, message, "danger", {confirmLabel, cancelLabel});
-                if (shouldOverwrite) {
-                    await _startAudiobookExport(true);
+                const choice = await dialog.choose(title, message, [
+                    {
+                        value: "skip",
+                        label: t("ui.audiobook.regen_skip", "Vorhandene überspringen"),
+                        variant: "success",
+                        autoFocus: true,
+                    },
+                    {
+                        value: "regenerate",
+                        label: t("ui.audiobook.regen_all", "Alle neu generieren"),
+                        variant: "danger",
+                    },
+                ], t("ui.common.cancel", "Abbrechen"));
+
+                if (choice === "skip") {
+                    await _startAudiobookExport(true, false);
                     return;
                 }
+                if (choice === "regenerate") {
+                    await _startAudiobookExport(true, true);
+                    return;
+                }
+                // Cancel (null): do nothing
                 setExporting(false);
                 return;
             }

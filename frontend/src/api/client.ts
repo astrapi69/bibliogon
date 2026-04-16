@@ -596,10 +596,13 @@ export const api = {
         startAudiobook: async (
             bookId: string,
             confirmOverwrite: boolean = false,
+            regenerateAll: boolean = false,
         ): Promise<{job_id: string; status: string}> => {
-            const url = `${BASE}/books/${bookId}/export/async/audiobook${
-                confirmOverwrite ? "?confirm_overwrite=true" : ""
-            }`;
+            const params = new URLSearchParams();
+            if (confirmOverwrite) params.set("confirm_overwrite", "true");
+            if (regenerateAll) params.set("regenerate_all", "true");
+            const qs = params.toString();
+            const url = `${BASE}/books/${bookId}/export/async/audiobook${qs ? `?${qs}` : ""}`;
             const res = await fetch(url, {method: "POST"});
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));

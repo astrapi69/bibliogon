@@ -664,7 +664,10 @@ ui:
     delete_file_confirm: "Diese Datei wirklich löschen?"
     regen_warning: "Ein Audiobook für dieses Buch wurde bereits erstellt.\nEngine: {engine} | Stimme: {voice} | {created}\n\nBei einem neuen Export werden die bestehenden Dateien überschrieben.\n\nTrotzdem neu erstellen?"
     regen_title: "Audiobook bereits vorhanden"
-    regen_confirm: "Überschreiben"
+    regen_skip: "Vorhandene überspringen"
+    regen_all: "Alle neu generieren"
+    regen_chapter_count: "{done} von {total} Kapiteln haben bereits Audio."
+    regen_partial_hint: "Der vorherige Export wurde abgebrochen."
     status_partial: "Export unvollständig. Einige Kapitel wurden noch nicht generiert."
     chapter_not_generated: "Nicht generiert"
   languages:

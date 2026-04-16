@@ -438,16 +438,21 @@ async def export_async(
     book_type: str = "ebook",
     use_manual_toc: bool | None = None,
     confirm_overwrite: bool = False,
+    regenerate_all: bool = False,
 ) -> dict[str, Any]:
     """Start an export job in the background.
 
-    For ``fmt=audiobook``, refuses to start if a persisted audiobook
-    already exists for the book unless ``confirm_overwrite=true``. The
-    409 response carries the existing metadata so the frontend can show
-    the regeneration warning dialog with concrete details (engine, voice,
-    creation date) before letting the user click "Trotzdem neu erstellen".
-    The per-book ``Book.audiobook_overwrite_existing`` column is honoured:
-    when true, the warning is skipped and the export proceeds silently.
+    For ``fmt=audiobook``, refuses to start if ANY persisted audiobook
+    metadata exists for the book (complete OR partial from a cancelled
+    export) unless ``confirm_overwrite=true``. The 409 response carries
+    the existing metadata plus chapter counts so the frontend can show
+    a dialog with "Skip existing / Regenerate all / Cancel".
+
+    ``regenerate_all=true`` disables the content-hash cache for this
+    job only, forcing every chapter to be re-generated from scratch.
+    This is a per-job override; the per-book
+    ``Book.audiobook_overwrite_existing`` column still applies as a
+    permanent preference.
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'.")
@@ -461,14 +466,26 @@ async def export_async(
             from bibliogon_audiobook import audiobook_storage
         except ImportError:
             audiobook_storage = None  # type: ignore[assignment]
-        if audiobook_storage is not None and audiobook_storage.has_audiobook(book_id):
-            if not _load_book_overwrite_flag(book_id):
-                existing = audiobook_storage.load_metadata(book_id) or {}
+        if audiobook_storage is not None and not _load_book_overwrite_flag(book_id):
+            existing = audiobook_storage.load_metadata(book_id)
+            if existing is not None:
+                chapter_count = len(existing.get("chapter_files") or [])
+                # Count total book chapters so the dialog can show
+                # "23 of 30 chapters already have audio".
+                total_chapters = 0
+                try:
+                    _, chapters_raw, _ = _load_book(book_id)
+                    total_chapters = len(chapters_raw)
+                except Exception:  # noqa: BLE001
+                    pass
                 raise HTTPException(
                     status_code=409,
                     detail={
                         "code": "audiobook_exists",
                         "message": "An audiobook already exists for this book.",
+                        "status": existing.get("status", "complete"),
+                        "chapter_count": chapter_count,
+                        "total_chapters": total_chapters,
                         "existing": {
                             "created_at": existing.get("created_at"),
                             "engine": existing.get("engine"),
@@ -493,7 +510,7 @@ async def export_async(
             return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
 
         if fmt == "audiobook":
-            return await _run_audiobook_job(job_id, book_data, chapters, base_name)
+            return await _run_audiobook_job(job_id, book_data, chapters, base_name, regenerate_all=regenerate_all)
 
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
@@ -511,6 +528,8 @@ async def _run_audiobook_job(
     book_data: dict[str, Any],
     chapters: list[dict[str, Any]],
     default_base_name: str,
+    *,
+    regenerate_all: bool = False,
 ) -> dict[str, Any]:
     """Audiobook job worker that streams progress events to the job store.
 
@@ -574,19 +593,17 @@ async def _run_audiobook_job(
         "book_title": book_data.get("title"),
     }
 
-    # Cache-dir flag: when ``audiobook_overwrite_existing`` is false the
-    # generator looks up previously persisted chapters and reuses those
-    # whose content + engine + voice + speed still match. The persistent
-    # path IS the cache, so when we write directly there the generator
-    # sees "already on disk" and short-circuits without extra I/O
-    # (the same-path guard inside the cache branch prevents SameFileError).
-    #
-    # NOTE: ``audiobook_overwrite_existing`` is the per-book escape hatch
-    # toggled from the metadata editor. A per-job "regenerate all"
-    # override is coming in a follow-up commit (spec TM-like).
+    # Cache-dir flag: when neither the per-book ``audiobook_overwrite_existing``
+    # column NOR the per-job ``regenerate_all`` param is set, the generator
+    # looks up previously persisted chapters and reuses those whose content
+    # + engine + voice + speed still match. The persistent path IS the
+    # cache, so when we write directly there the generator sees "already
+    # on disk" and short-circuits without extra I/O (the same-path guard
+    # inside the cache branch prevents SameFileError).
     overwrite_existing = bool(book_data.get("audiobook_overwrite_existing", False))
+    disable_cache = overwrite_existing or regenerate_all
     cache_dir: Path | None = None
-    if book_id and not overwrite_existing:
+    if book_id and not disable_cache:
         candidate = audiobook_storage.audiobook_dir(book_id) / "chapters"
         if candidate.exists():
             cache_dir = candidate

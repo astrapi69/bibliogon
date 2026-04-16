@@ -77,6 +77,7 @@ vi.mock("./AppDialog", () => ({
     confirm: vi.fn().mockResolvedValue(false),
     prompt: vi.fn().mockResolvedValue(null),
     alert: vi.fn().mockResolvedValue(undefined),
+    choose: vi.fn().mockResolvedValue(null),
   }),
 }))
 

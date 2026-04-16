@@ -669,7 +669,10 @@ ui:
     delete_failed: "Error al eliminar"
     regen_warning: "Ya existe un audiolibro para este libro.\nMotor: {engine} | Voz: {voice} | {created}\n\nUna nueva exportacion sobrescribira los archivos existentes.\n\nCrear de nuevo?"
     regen_title: "El audiolibro ya existe"
-    regen_confirm: "Sobrescribir"
+    regen_skip: "Omitir existentes"
+    regen_all: "Regenerar todo"
+    regen_chapter_count: "{done} de {total} capítulos ya tienen audio."
+    regen_partial_hint: "La exportación anterior fue cancelada."
     status_partial: "Exportación incompleta. Algunos capítulos aún no se han generado."
     chapter_not_generated: "No generado"
   languages:

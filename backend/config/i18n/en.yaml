@@ -664,7 +664,10 @@ ui:
     delete_file_confirm: "Really delete this file?"
     regen_warning: "An audiobook for this book already exists.\nEngine: {engine} | Voice: {voice} | {created}\n\nA new export will overwrite the existing files.\n\nRecreate anyway?"
     regen_title: "Audiobook already exists"
-    regen_confirm: "Overwrite"
+    regen_skip: "Skip existing"
+    regen_all: "Regenerate all"
+    regen_chapter_count: "{done} of {total} chapters already have audio."
+    regen_partial_hint: "The previous export was cancelled."
     status_partial: "Export incomplete. Some chapters have not been generated yet."
     chapter_not_generated: "Not generated"
   languages:
