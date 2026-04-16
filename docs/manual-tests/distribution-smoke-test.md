@@ -102,6 +102,45 @@ If the install fails, capture:
 
 ---
 
+## Part 3: Launcher Install/Uninstall Flow
+
+**Tests the built-in installer that replaced install.sh on Windows.**
+
+### Install Flow
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| Launch with no manifest | Install UI appears (Install / Open guide / Close) |  | PASS / FAIL |
+| Click Install | Folder picker opens |  | PASS / FAIL |
+| Accept default folder | Download progress indicator visible |  | PASS / FAIL |
+| Download completes | Files extracted to chosen folder |  | PASS / FAIL |
+| .env created | .env file present with random secret |  | PASS / FAIL |
+| Manifest written | `%APPDATA%\bibliogon\install.json` exists with correct content |  | PASS / FAIL |
+| Success dialog | "Installation complete" with Start button |  | PASS / FAIL |
+| Click Start | Main UI appears, Bibliogon starts |  | PASS / FAIL |
+
+### Uninstall Flow
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| Uninstall button visible | Only when manifest exists (after install) |  | PASS / FAIL |
+| Click Uninstall | Confirmation dialog shows install path |  | PASS / FAIL |
+| Cancel confirmation | Nothing deleted |  | PASS / FAIL |
+| Confirm uninstall | Install directory removed |  | PASS / FAIL |
+| Manifest deleted | `install.json` no longer present |  | PASS / FAIL |
+| UI transitions | Install UI reappears (Install button, no Uninstall) |  | PASS / FAIL |
+
+### Edge Cases
+
+| Step | Setup | Expected | Observed | Status |
+|------|-------|----------|----------|--------|
+| Manifest but dir missing | Delete install_dir manually, launch | Treat as not installed, show install UI |  | PASS / FAIL |
+| Network failure | Disconnect network, click Install | Error dialog, manifest not written |  | PASS / FAIL |
+| Cancel folder picker | Click Install, then cancel picker | Returns to welcome dialog |  | PASS / FAIL |
+| Docker locked files | Docker running, attempt uninstall | Error dialog with locked path |  | PASS / FAIL |
+
+---
+
 ## Issues Found
 
 - None / List any bugs or UX problems:
@@ -115,8 +154,11 @@ Attach relevant sections of `%APPDATA%\Bibliogon\launcher.log` for any failing s
 
 ## Decision
 
-- [ ] Install path verified, no Docker build errors
-- [ ] D-01 launcher happy path passes
-- [ ] D-01 failure paths pass
+- [ ] Part 1: Install path verified, no Docker build errors
+- [ ] Part 2: D-01 launcher happy path passes
+- [ ] Part 2: D-01 failure paths pass
+- [ ] Part 3: Install flow works (download, extract, manifest, start)
+- [ ] Part 3: Uninstall flow works (confirm, remove, manifest delete)
+- [ ] Part 3: Edge cases handled (missing dir, network failure, cancel)
 - [ ] D-01 marked `[x]` in ROADMAP, launcher ready for release asset
 - [ ] Issues require iteration (listed above)
