@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from "react";
-import {Download, ChevronDown, ChevronUp, Headphones, XCircle} from "lucide-react";
-import {ApiError, DryRunResult, api} from "../api/client";
+import {Download, ChevronDown, ChevronUp, Headphones, XCircle, AlertTriangle, CheckCircle, Clock, RefreshCw} from "lucide-react";
+import {ApiError, AudiobookClassification, DryRunResult, api} from "../api/client";
 import HelpLink from "./help/HelpLink";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useDialog} from "./AppDialog";
@@ -81,6 +81,12 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     const audiobookJob = useAudiobookJob();
     const dialog = useDialog();
 
+    // --- Regeneration mode dialog state ---
+    const [regenOpen, setRegenOpen] = useState(false);
+    const [regenClassification, setRegenClassification] = useState<AudiobookClassification | null>(null);
+    const [regenMode, setRegenMode] = useState<string>("missing_and_outdated");
+    const [regenLoading, setRegenLoading] = useState(false);
+
     const handleExport = async () => {
         setExporting(true);
 
@@ -127,69 +133,37 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
             audiobookJob.start(job_id, bookId, bookTitle);
             onClose();
         } catch (err) {
-            // 409 with audiobook_exists -> offer skip-existing / regenerate-all / cancel.
-            // The backend embeds the existing engine/voice/created_at and chapter counts
-            // so the dialog can show "23 of 30 chapters already have audio".
+            // 409 with audiobook_exists -> fetch classification and open the
+            // regeneration-mode dialog with radio choices.
             if (
                 err instanceof ApiError &&
                 err.status === 409 &&
                 err.detailBody &&
                 (err.detailBody as {code?: string}).code === "audiobook_exists"
             ) {
-                const body = err.detailBody as {
-                    existing?: Record<string, string>;
-                    chapter_count?: number;
-                    total_chapters?: number;
-                    status?: string;
-                };
-                const existing = body.existing || {};
-                const created = existing.created_at
-                    ? new Date(existing.created_at).toLocaleString()
-                    : "?";
-                const engine = existing.engine || "?";
-                const voice = existing.voice || "?";
-                const chapterCount = body.chapter_count ?? 0;
-                const totalChapters = body.total_chapters ?? 0;
-                const isPartial = body.status === "in_progress";
-
-                const countLine = totalChapters > 0
-                    ? t("ui.audiobook.regen_chapter_count", "{done} von {total} Kapiteln haben bereits Audio.")
-                        .replace("{done}", String(chapterCount))
-                        .replace("{total}", String(totalChapters))
-                    : "";
-                const statusLine = isPartial
-                    ? t("ui.audiobook.regen_partial_hint", "Der vorherige Export wurde abgebrochen.")
-                    : "";
-                const metaLine = `Engine: ${engine} | ${t("ui.audiobook.voice", "Stimme")}: ${voice} | ${created}`;
-
-                const message = [metaLine, countLine, statusLine]
-                    .filter(Boolean)
-                    .join("\n");
-
-                const title = t("ui.audiobook.regen_title", "Audiobook bereits vorhanden");
-                const choice = await dialog.choose(title, message, [
-                    {
-                        value: "skip",
-                        label: t("ui.audiobook.regen_skip", "Vorhandene überspringen"),
-                        variant: "success",
-                        autoFocus: true,
-                    },
-                    {
-                        value: "regenerate",
-                        label: t("ui.audiobook.regen_all", "Alle neu generieren"),
-                        variant: "danger",
-                    },
-                ], t("ui.common.cancel", "Abbrechen"));
-
-                if (choice === "skip") {
-                    await _startAudiobookExport(true, "missing_and_outdated");
-                    return;
+                try {
+                    const classification = await api.bookAudiobook.classify(bookId);
+                    setRegenClassification(classification);
+                    // Pre-select the most useful default
+                    const hasMissing = classification.missing.length > 0;
+                    const hasOutdated = classification.outdated.length > 0;
+                    if (hasMissing && hasOutdated) setRegenMode("missing_and_outdated");
+                    else if (hasMissing) setRegenMode("missing_only");
+                    else if (hasOutdated) setRegenMode("outdated_only");
+                    else setRegenMode("all");
+                    setRegenOpen(true);
+                } catch (classifyErr) {
+                    // If classification fails, fall back to simple confirm
+                    const confirmed = await dialog.confirm(
+                        t("ui.audiobook.regen_title", "Audiobook bereits vorhanden"),
+                        t("ui.audiobook.regen_warning", "Audiobook neu generieren?"),
+                        "danger",
+                    );
+                    if (confirmed) {
+                        await _startAudiobookExport(true, "missing_and_outdated");
+                        return;
+                    }
                 }
-                if (choice === "regenerate") {
-                    await _startAudiobookExport(true, "all");
-                    return;
-                }
-                // Cancel (null): do nothing
                 setExporting(false);
                 return;
             }
@@ -197,6 +171,18 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
             notify.error(t("ui.export_dialog.audiobook_failed", "Audiobook-Export fehlgeschlagen") + ": " + detail, err);
             setExporting(false);
         }
+    };
+
+    const handleRegenConfirm = async () => {
+        setRegenOpen(false);
+        setRegenLoading(true);
+        await _startAudiobookExport(true, regenMode);
+        setRegenLoading(false);
+    };
+
+    const handleRegenCancel = () => {
+        setRegenOpen(false);
+        setExporting(false);
     };
 
     // --- Dry-run (test export with first paragraph) ---
@@ -226,6 +212,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     }, [open]);
 
     return (
+        <>
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay"/>
@@ -429,6 +416,125 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+
+        {/* --- Regeneration mode dialog --- */}
+        <Dialog.Root open={regenOpen} onOpenChange={(open) => { if (!open) handleRegenCancel(); }}>
+            <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay"/>
+                <Dialog.Content className="dialog-content" style={{maxWidth: 520}} onEscapeKeyDown={handleRegenCancel}>
+                    <div className="dialog-header">
+                        <Dialog.Title className="dialog-title">
+                            {t("ui.audiobook.regen_title", "Audiobook bereits vorhanden")}
+                        </Dialog.Title>
+                    </div>
+                    {regenClassification && (() => {
+                        const cur = regenClassification.current.length;
+                        const out = regenClassification.outdated.length;
+                        const mis = regenClassification.missing.length;
+                        const total = cur + out + mis;
+                        const modes = [
+                            {value: "missing_only", count: mis, icon: <Clock size={14}/>,
+                                label: t("ui.audiobook.regen_mode_missing", "Nur fehlende generieren ({n})")
+                                    .replace("{n}", String(mis)),
+                                disabled: mis === 0},
+                            {value: "outdated_only", count: out, icon: <RefreshCw size={14}/>,
+                                label: t("ui.audiobook.regen_mode_outdated", "Nur veraltete neu generieren ({n})")
+                                    .replace("{n}", String(out)),
+                                disabled: out === 0},
+                            {value: "missing_and_outdated", count: mis + out,
+                                icon: <CheckCircle size={14} style={{color: "var(--success, #16a34a)"}}/>,
+                                label: t("ui.audiobook.regen_mode_standard", "Fehlende und veraltete generieren ({n})")
+                                    .replace("{n}", String(mis + out)),
+                                recommended: true,
+                                disabled: mis + out === 0},
+                            {value: "all", count: total,
+                                icon: <AlertTriangle size={14} style={{color: "var(--danger, #c0392b)"}}/>,
+                                label: t("ui.audiobook.regen_mode_all", "Alle neu generieren ({n})")
+                                    .replace("{n}", String(total)),
+                                disabled: false},
+                        ];
+                        return (
+                            <>
+                                <Dialog.Description asChild>
+                                    <div style={{fontSize: "0.8125rem", color: "var(--text-secondary)", marginBottom: 16}}>
+                                        <div style={{display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8}}>
+                                            <span style={{display: "flex", alignItems: "center", gap: 4}}>
+                                                <CheckCircle size={12} style={{color: "var(--success, #16a34a)"}}/>
+                                                {t("ui.audiobook.regen_count_current", "{n} aktuell").replace("{n}", String(cur))}
+                                            </span>
+                                            {out > 0 && <span style={{display: "flex", alignItems: "center", gap: 4}}>
+                                                <RefreshCw size={12} style={{color: "var(--warning, #e67e22)"}}/>
+                                                {t("ui.audiobook.regen_count_outdated", "{n} veraltet").replace("{n}", String(out))}
+                                            </span>}
+                                            {mis > 0 && <span style={{display: "flex", alignItems: "center", gap: 4}}>
+                                                <Clock size={12} style={{color: "var(--text-muted)"}}/>
+                                                {t("ui.audiobook.regen_count_missing", "{n} fehlend").replace("{n}", String(mis))}
+                                            </span>}
+                                        </div>
+                                    </div>
+                                </Dialog.Description>
+
+                                <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 16}} role="radiogroup">
+                                    {modes.map((mode) => (
+                                        <label
+                                            key={mode.value}
+                                            style={{
+                                                display: "flex", alignItems: "center", gap: 10,
+                                                padding: "8px 12px",
+                                                borderRadius: "var(--radius-sm)",
+                                                border: regenMode === mode.value ? "1px solid var(--accent)" : "1px solid var(--border)",
+                                                background: regenMode === mode.value ? "var(--accent-light, rgba(59,130,246,0.06))" : "var(--bg-primary)",
+                                                cursor: mode.disabled ? "not-allowed" : "pointer",
+                                                opacity: mode.disabled ? 0.5 : 1,
+                                                fontSize: "0.8125rem",
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="regen-mode"
+                                                value={mode.value}
+                                                checked={regenMode === mode.value}
+                                                onChange={() => setRegenMode(mode.value)}
+                                                disabled={mode.disabled}
+                                                style={{accentColor: "var(--accent)"}}
+                                            />
+                                            {mode.icon}
+                                            <span style={{flex: 1}}>{mode.label}</span>
+                                            {mode.recommended && (
+                                                <span style={{
+                                                    fontSize: "0.6875rem", fontWeight: 600,
+                                                    color: "var(--accent)", textTransform: "uppercase",
+                                                    letterSpacing: "0.05em",
+                                                }}>
+                                                    {t("ui.audiobook.regen_recommended", "Empfohlen")}
+                                                </span>
+                                            )}
+                                        </label>
+                                    ))}
+                                </div>
+                            </>
+                        );
+                    })()}
+                    <div className="dialog-footer">
+                        <button className="btn btn-ghost" onClick={handleRegenCancel}>
+                            {t("ui.common.cancel", "Abbrechen")}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleRegenConfirm}
+                            disabled={regenLoading}
+                            autoFocus
+                        >
+                            <Download size={14}/>
+                            {regenLoading
+                                ? t("ui.export_dialog.exporting", "Exportiert...")
+                                : t("ui.audiobook.regen_generate", "Generieren")}
+                        </button>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+        </>
     );
 }
 
