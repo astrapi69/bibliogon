@@ -14,6 +14,7 @@ packages = [{include = "bibliogon_launcher"}]
 python = ">=3.11,<3.14"
 # stdlib-only runtime: tkinter, urllib, webbrowser, subprocess, pathlib, json, logging
 # Tkinter ships with Python on Windows installers; no pip dep required.
+platformdirs = "^4.9.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
