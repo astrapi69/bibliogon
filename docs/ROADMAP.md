@@ -72,6 +72,18 @@ Items with external deadlines or recurring cost that deserve planning-view visib
 
 - [x] **Node.js 20 -> 22 LTS:** Dockerfile and CI upgraded from Node 20 to Node 22 (Active LTS until Apr 2027). Node 20 EOL Sep 2026 is no longer a concern.
 
+### Deferred major dependency upgrades
+
+Each gets a dedicated session with its own testing cycle. Not urgent, but tracked so they don't get forgotten. See `lessons-learned.md` "Dependency currency" for the rules.
+
+- [ ] DEP-01: React 18 -> 19 migration (Server Components, hooks, refs changes, @types/react 19)
+- [ ] DEP-02: TipTap 2 -> 3 migration (major rewrite, community extensions @pentestpad + tiptap-footnotes need v3-compat versions)
+- [ ] DEP-03: react-router-dom 6 -> 7 migration (complete API rework, Remix-based)
+- [ ] DEP-04: Vite 6 -> 8 + TypeScript 5 -> 6 (paired, do after DEP-01)
+- [ ] DEP-05: elevenlabs SDK 0.2 -> 2.x migration (complete SDK rewrite, needs real API testing)
+- [ ] DEP-06: pandas 2 -> 3 evaluation (check actual usage, may be droppable)
+- [ ] DEP-07: Pillow 11 -> 12 (blocked by manuscripta ^0.8.0 pinning pillow <12, re-check after manuscripta release)
+
 ---
 
 ## Completed in early Phase 2
