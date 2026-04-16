@@ -106,6 +106,63 @@ def compose_logs_tail(repo: Path, compose_file: str, lines: int = 20) -> str:
     return (result.stdout or result.stderr or "(no output)").strip()
 
 
+def remove_volumes() -> tuple[bool, str]:
+    """Remove all Docker volumes whose name contains 'bibliogon'.
+
+    Dynamic lookup via ``docker volume ls --filter`` so we never
+    hardcode volume names that vary by compose config.
+    """
+    try:
+        result = _run(["docker", "volume", "ls", "--filter", "name=bibliogon", "-q"])
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True, "docker not available, skipping"
+    volumes = [v for v in (result.stdout or "").strip().splitlines() if v]
+    if not volumes:
+        return True, "no volumes found"
+    try:
+        _run(["docker", "volume", "rm"] + volumes, timeout=30.0)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        return False, f"volume removal failed: {exc}"
+    return True, f"removed {len(volumes)} volume(s)"
+
+
+def remove_images() -> tuple[bool, str]:
+    """Remove all Docker images matching 'bibliogon'.
+
+    Uses ``--force`` so running containers do not block removal.
+    """
+    try:
+        result = _run(["docker", "images", "--filter", "reference=*bibliogon*", "-q"])
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True, "docker not available, skipping"
+    images = [i for i in (result.stdout or "").strip().splitlines() if i]
+    if not images:
+        return True, "no images found"
+    try:
+        _run(["docker", "image", "rm", "--force"] + images, timeout=60.0)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        return False, f"image removal failed: {exc}"
+    return True, f"removed {len(images)} image(s)"
+
+
+def compose_build(repo: Path, compose_file: str) -> tuple[bool, str]:
+    """Build images and start the stack. Used by the install flow where
+    images need to be pulled/built for the first time."""
+    try:
+        result = _run(
+            ["docker", "compose", "-f", compose_file, "up", "--build", "-d"],
+            cwd=repo,
+            timeout=600.0,  # first build can take several minutes
+        )
+    except FileNotFoundError:
+        return False, "docker command not found on PATH"
+    except subprocess.TimeoutExpired:
+        return False, "docker compose up --build timed out after 10 minutes"
+    if result.returncode != 0:
+        return False, _tail_output(result)
+    return True, "started"
+
+
 def _tail_output(result: subprocess.CompletedProcess) -> str:
     """Surface the last diagnostic lines, preferring stderr over stdout."""
     text = result.stderr.strip() or result.stdout.strip()

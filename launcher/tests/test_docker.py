@@ -93,3 +93,57 @@ class TestComposeLogsTail:
     def test_tolerates_missing_docker(self, tmp_path: Path) -> None:
         with patch("bibliogon_launcher.docker._run", side_effect=FileNotFoundError):
             assert docker.compose_logs_tail(tmp_path, "docker-compose.prod.yml") == "(logs unavailable)"
+
+
+class TestRemoveVolumes:
+
+    def test_removes_found_volumes(self) -> None:
+        ls_result = _run_result(stdout="bibliogon_data\nbibliogon_cache\n")
+        rm_result = _run_result()
+        with patch("bibliogon_launcher.docker._run", side_effect=[ls_result, rm_result]):
+            ok, detail = docker.remove_volumes()
+        assert ok
+        assert "2 volume" in detail
+
+    def test_noop_when_no_volumes(self) -> None:
+        with patch("bibliogon_launcher.docker._run", return_value=_run_result(stdout="")):
+            ok, detail = docker.remove_volumes()
+        assert ok
+        assert "no volumes" in detail
+
+    def test_tolerates_missing_docker(self) -> None:
+        with patch("bibliogon_launcher.docker._run", side_effect=FileNotFoundError):
+            ok, _ = docker.remove_volumes()
+        assert ok  # skips gracefully
+
+
+class TestRemoveImages:
+
+    def test_removes_found_images(self) -> None:
+        ls_result = _run_result(stdout="abc123\ndef456\n")
+        rm_result = _run_result()
+        with patch("bibliogon_launcher.docker._run", side_effect=[ls_result, rm_result]):
+            ok, detail = docker.remove_images()
+        assert ok
+        assert "2 image" in detail
+
+    def test_noop_when_no_images(self) -> None:
+        with patch("bibliogon_launcher.docker._run", return_value=_run_result(stdout="")):
+            ok, detail = docker.remove_images()
+        assert ok
+        assert "no images" in detail
+
+
+class TestComposeBuild:
+
+    def test_success(self, tmp_path: Path) -> None:
+        with patch("bibliogon_launcher.docker._run", return_value=_run_result()):
+            ok, _ = docker.compose_build(tmp_path, "docker-compose.prod.yml")
+        assert ok
+
+    def test_failure_returns_detail(self, tmp_path: Path) -> None:
+        with patch("bibliogon_launcher.docker._run",
+                   return_value=_run_result(returncode=1, stderr="build error")):
+            ok, detail = docker.compose_build(tmp_path, "docker-compose.prod.yml")
+        assert not ok
+        assert "build error" in detail

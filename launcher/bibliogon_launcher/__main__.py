@@ -254,6 +254,7 @@ def _run_install_flow() -> Path | None:
     result: dict = {}
 
     def worker() -> None:
+        # Phase 1: Download and extract
         ok, detail = installer.download_release(target)
         if not ok:
             result["error"] = detail
@@ -274,7 +275,24 @@ def _run_install_flow() -> Path | None:
         cfg = config.load_launcher_config()
         cfg["repo_path"] = str(target)
         config.save_launcher_config(cfg)
+
+        # Phase 2: Build and start Docker stack
+        window.after(0, lambda: window.set_starting("Building Docker images (first time, may take a few minutes)..."))
+        ok3, detail3 = docker.compose_build(target, config.COMPOSE_FILENAME)
+        if not ok3:
+            result["error"] = f"Docker build failed:\n{detail3}"
+            window.after(0, window.destroy)
+            return
+
+        # Phase 3: Wait for health
+        window.after(0, lambda: window.set_starting("Waiting for Bibliogon to be ready..."))
+        port = config.read_port(target)
+        if not health.wait_for_healthy(port, timeout_seconds=120.0):
+            # Not fatal: stack may still be starting
+            result["slow_start"] = True
+
         result["ok"] = True
+        result["port"] = port
         window.after(0, window.destroy)
 
     window.run_in_background(worker)
@@ -294,16 +312,34 @@ def _run_install_flow() -> Path | None:
         return None
 
     if result.get("ok"):
-        ui.two_button_dialog(
-            title="Installation complete",
-            message=(
-                f"Bibliogon v{installer.COMPATIBLE_VERSION} has been installed to:\n"
-                f"{target}\n\n"
-                "Click 'Start' to launch Bibliogon now."
-            ),
-            primary_label="Start",
-            secondary_label="Close",
-        )
+        port = result.get("port", config.DEFAULT_PORT)
+        if result.get("slow_start"):
+            choice = ui.two_button_dialog(
+                title="Installation complete",
+                message=(
+                    f"Bibliogon v{installer.COMPATIBLE_VERSION} has been installed.\n\n"
+                    "The application is taking longer than expected to start. "
+                    "It may still be starting in the background.\n\n"
+                    "Open in browser anyway?"
+                ),
+                primary_label="Open browser",
+                secondary_label="Close",
+            )
+        else:
+            choice = ui.two_button_dialog(
+                title="Installation complete",
+                message=(
+                    f"Bibliogon v{installer.COMPATIBLE_VERSION} is installed and running.\n\n"
+                    f"Opening http://localhost:{port} in your browser."
+                ),
+                primary_label="Open browser",
+                secondary_label="Close",
+            )
+        if choice == "primary":
+            try:
+                webbrowser.open(f"http://localhost:{port}")
+            except OSError as exc:
+                logger.warning("browser open failed: %s", exc)
         return target
 
     return None
@@ -316,7 +352,9 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
         title="Uninstall Bibliogon",
         message=(
             f"This will remove Bibliogon from:\n{install_dir}\n\n"
-            "Your Docker volumes (book data) are not affected.\n"
+            "This also removes all Docker containers, volumes (book data), "
+            "and images.\n\n"
+            "Export your books first if you want to keep them.\n"
             "Continue?"
         ),
         primary_label="Uninstall",
@@ -325,6 +363,39 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     if choice != "primary":
         return False
 
+    # Phase 1: Stop Docker stack (best-effort, continue if Docker is not running)
+    window = ui.StatusWindow()
+    window.set_starting("Stopping Bibliogon...")
+
+    docker_errors: list[str] = []
+
+    def uninstall_worker() -> None:
+        # Stop stack
+        ok, detail = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
+        if not ok:
+            logger.warning("compose down: %s", detail)
+            docker_errors.append(f"compose down: {detail}")
+
+        # Remove volumes
+        window.after(0, lambda: window.set_starting("Removing data volumes..."))
+        ok2, detail2 = docker.remove_volumes()
+        if not ok2:
+            logger.warning("remove volumes: %s", detail2)
+            docker_errors.append(f"volumes: {detail2}")
+
+        # Remove images
+        window.after(0, lambda: window.set_starting("Removing Docker images..."))
+        ok3, detail3 = docker.remove_images()
+        if not ok3:
+            logger.warning("remove images: %s", detail3)
+            docker_errors.append(f"images: {detail3}")
+
+        window.after(0, window.destroy)
+
+    window.run_in_background(uninstall_worker)
+    window.run_mainloop()
+
+    # Phase 2: Remove install directory
     ok, detail = installer.remove_install(install_dir)
     if not ok:
         ui.error_dialog(
@@ -340,8 +411,8 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
         )
         return False
 
+    # Phase 3: Clean up manifest and legacy config
     manifest.delete_manifest()
-    # Clear legacy config
     try:
         cfg = config.load_launcher_config()
         cfg.pop("repo_path", None)
