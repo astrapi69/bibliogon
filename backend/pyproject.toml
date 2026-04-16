@@ -25,7 +25,7 @@ bibliogon-plugin-kinderbuch = {path = "../plugins/bibliogon-plugin-kinderbuch", 
 bibliogon-plugin-translation = {path = "../plugins/bibliogon-plugin-translation", develop = true}
 markdown = "^3.10.2"
 alembic = "^1.18.4"
-pillow = "^11.2.1"
+pillow = "^12.0.0"
 gtts = "^2.5.0"
 pyttsx3 = "^2.90"
 elevenlabs = "^0.2.27"
