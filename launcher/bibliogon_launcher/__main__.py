@@ -642,13 +642,32 @@ def _handle_already_running() -> None:
 
 
 def _setup_logging() -> None:
-    log_path = config.logfile_path()
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        filename=str(log_path),
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
+    from logging.handlers import RotatingFileHandler
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+
+    # Handler 1: legacy launcher.log under APPDATA/Bibliogon/
+    legacy_path = config.logfile_path()
+    legacy_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_handler = logging.FileHandler(str(legacy_path), encoding="utf-8")
+    legacy_handler.setFormatter(fmt)
+    root.addHandler(legacy_handler)
+
+    # Handler 2: install.log under platformdirs config dir (lowercase
+    # "bibliogon"), rotated at 1 MB. This is the activity log that
+    # records install/uninstall events for troubleshooting.
+    try:
+        activity_path = manifest.manifest_path().parent / "install.log"
+        activity_path.parent.mkdir(parents=True, exist_ok=True)
+        activity_handler = RotatingFileHandler(
+            str(activity_path), maxBytes=1_000_000, backupCount=1, encoding="utf-8",
+        )
+        activity_handler.setFormatter(fmt)
+        root.addHandler(activity_handler)
+    except OSError:
+        pass  # Never crash because activity logging setup failed
 
 
 if __name__ == "__main__":
