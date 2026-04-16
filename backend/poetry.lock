@@ -1915,14 +1915,14 @@ testing = ["pytest"]
 
 [[package]]
 name = "manuscripta"
-version = "0.8.0"
+version = "0.8.1"
 description = "Book production pipeline for authors and self-publishers. Multi-format export (PDF, EPUB, DOCX, HTML, Markdown), audiobook generation, translation, and manuscript tooling."
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "manuscripta-0.8.0-py3-none-any.whl", hash = "sha256:6704a105ac190a75f457aea3423060c10e8ee97708120d1353b94862af522f9a"},
-    {file = "manuscripta-0.8.0.tar.gz", hash = "sha256:0c7771cba33bcc6477da69e5c845245f12caf5fac5025e2939b730cc0ee798b0"},
+    {file = "manuscripta-0.8.1-py3-none-any.whl", hash = "sha256:1f96b226c535ae5f530ca2b26b29c1c1b9ddc741f5f7ff380e94ef8a36c8a077"},
+    {file = "manuscripta-0.8.1.tar.gz", hash = "sha256:d66a729d7c0a8752374b0d55a657d1ebff2ce96051d0014102af20686cb0876b"},
 ]
 
 [package.dependencies]
