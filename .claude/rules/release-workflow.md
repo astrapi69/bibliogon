@@ -113,12 +113,13 @@ Update every place the version lives. Typical locations:
 - `frontend/package.json`
 - `plugins/*/pyproject.toml`
 - `backend/app/__init__.py` (`__version__`)
+- `install.sh` (`VERSION` default on line 15)
 - `docs/CONCEPT.md` (if the version is mentioned)
 - `README.md` (if the version is mentioned)
 
 Check via grep:
 ```bash
-grep -rn "0\.9\.0" --include="*.toml" --include="*.json" --include="*.py" --include="*.md"
+grep -rn "0\.9\.0" --include="*.toml" --include="*.json" --include="*.py" --include="*.md" --include="*.sh"
 ```
 
 (Adjust the old version number to the actual predecessor.)
