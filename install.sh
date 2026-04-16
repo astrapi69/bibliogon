@@ -61,42 +61,55 @@ fi
 echo -e "${GREEN}Docker and Docker Compose found.${NC}"
 
 # --- Download ---
+# When an existing install is detected, we delete and re-clone
+# instead of trying to update in-place. Previous installs were
+# shallow clones whose git state cannot be reliably updated across
+# major version jumps (different refspecs, missing remote branches,
+# detached HEAD from tag-only clones). Re-cloning is fast (small
+# repo) and eliminates an entire class of platform-specific git bugs.
+# The only user artifact in the repo directory is .env - we preserve it.
+BACKUP_ENV=""
 if [ -d "$INSTALL_DIR/.git" ]; then
     echo -e "${YELLOW}Bibliogon is already installed in ${INSTALL_DIR}${NC}"
-    echo "Updating..."
-    cd "$INSTALL_DIR"
-    # Previous installs may be shallow clones (--depth 1) that lack
-    # tags and full history. Unshallow first so we can switch to any
-    # tag or branch, then force-fetch tags so the VERSION tag exists.
-    git fetch origin --unshallow 2>/dev/null || git fetch origin
-    git fetch origin --tags --force 2>/dev/null || true
-    git checkout "$VERSION" 2>/dev/null || git checkout -B main origin/main
-else
-    echo -e "${BLUE}Downloading Bibliogon ${VERSION}...${NC}"
-
-    # Try git clone first (preferred)
-    if command -v git &> /dev/null; then
-        git clone --depth 1 --branch "$VERSION" "https://github.com/${REPO}.git" "$INSTALL_DIR" 2>/dev/null || \
-        git clone --depth 1 "https://github.com/${REPO}.git" "$INSTALL_DIR"
-    else
-        # Fallback: download tarball
-        echo "Git not found, downloading archive..."
-        mkdir -p "$INSTALL_DIR"
-        TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
-        if command -v curl &> /dev/null; then
-            curl -fsSL "$TARBALL_URL" | tar xz --strip-components=1 -C "$INSTALL_DIR" 2>/dev/null || {
-                # Tag might not exist yet, try main
-                curl -fsSL "https://github.com/${REPO}/archive/refs/heads/main.tar.gz" | tar xz --strip-components=1 -C "$INSTALL_DIR"
-            }
-        elif command -v wget &> /dev/null; then
-            wget -qO- "$TARBALL_URL" | tar xz --strip-components=1 -C "$INSTALL_DIR" 2>/dev/null || {
-                wget -qO- "https://github.com/${REPO}/archive/refs/heads/main.tar.gz" | tar xz --strip-components=1 -C "$INSTALL_DIR"
-            }
-        else
-            echo -e "${RED}Error: Neither git, curl, nor wget found.${NC}"
-            exit 1
-        fi
+    echo "Updating to ${VERSION}..."
+    if [ -f "$INSTALL_DIR/.env" ]; then
+        BACKUP_ENV=$(mktemp)
+        cp "$INSTALL_DIR/.env" "$BACKUP_ENV"
+        echo -e "${GREEN}Backed up .env configuration.${NC}"
     fi
+    rm -rf "$INSTALL_DIR"
+fi
+
+echo -e "${BLUE}Downloading Bibliogon ${VERSION}...${NC}"
+
+# Try git clone first (preferred)
+if command -v git &> /dev/null; then
+    git clone --depth 1 --branch "$VERSION" "https://github.com/${REPO}.git" "$INSTALL_DIR" 2>/dev/null || \
+    git clone --depth 1 "https://github.com/${REPO}.git" "$INSTALL_DIR"
+else
+    # Fallback: download tarball
+    echo "Git not found, downloading archive..."
+    mkdir -p "$INSTALL_DIR"
+    TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
+    if command -v curl &> /dev/null; then
+        curl -fsSL "$TARBALL_URL" | tar xz --strip-components=1 -C "$INSTALL_DIR" 2>/dev/null || {
+            # Tag might not exist yet, try main
+            curl -fsSL "https://github.com/${REPO}/archive/refs/heads/main.tar.gz" | tar xz --strip-components=1 -C "$INSTALL_DIR"
+        }
+    elif command -v wget &> /dev/null; then
+        wget -qO- "$TARBALL_URL" | tar xz --strip-components=1 -C "$INSTALL_DIR" 2>/dev/null || {
+            wget -qO- "https://github.com/${REPO}/archive/refs/heads/main.tar.gz" | tar xz --strip-components=1 -C "$INSTALL_DIR"
+        }
+    else
+        echo -e "${RED}Error: Neither git, curl, nor wget found.${NC}"
+        exit 1
+    fi
+fi
+
+# Restore .env from previous install (preserved above)
+if [ -n "$BACKUP_ENV" ] && [ -f "$BACKUP_ENV" ]; then
+    mv "$BACKUP_ENV" "$INSTALL_DIR/.env"
+    echo -e "${GREEN}Restored .env configuration from previous install.${NC}"
 fi
 
 cd "$INSTALL_DIR"
