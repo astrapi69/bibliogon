@@ -637,6 +637,8 @@ ui:
         regen_warning: "この書籍のオーディオブックは既に存在します。\nエンジン: {engine} | 音声: {voice} | {created}\n\n新しいエクスポートで既存のファイルが上書きされます。\n\nそれでも再作成しますか?"
         regen_title: "オーディオブックは既に存在します"
         regen_confirm: "上書き"
+        status_partial: "エクスポートが不完全です。まだ生成されていない章があります。"
+        chapter_not_generated: "未生成"
     languages:
         de: "ドイツ語"
         en: "英語"

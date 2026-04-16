@@ -665,6 +665,8 @@ ui:
     regen_warning: "Ein Audiobook für dieses Buch wurde bereits erstellt.\nEngine: {engine} | Stimme: {voice} | {created}\n\nBei einem neuen Export werden die bestehenden Dateien überschrieben.\n\nTrotzdem neu erstellen?"
     regen_title: "Audiobook bereits vorhanden"
     regen_confirm: "Überschreiben"
+    status_partial: "Export unvollständig. Einige Kapitel wurden noch nicht generiert."
+    chapter_not_generated: "Nicht generiert"
   languages:
     de: "Deutsch"
     en: "Englisch"

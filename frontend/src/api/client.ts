@@ -210,17 +210,22 @@ export interface AudiobookChapterFile {
     filename: string;
     size_bytes: number;
     url: string;
+    title?: string;
+    position?: number;
+    duration_seconds?: number | null;
 }
 
 export interface AudiobookMergedFile {
     filename: string;
     size_bytes: number;
     url: string;
+    duration_seconds?: number | null;
 }
 
 export interface BookAudiobook {
     exists: boolean;
     book_id: string;
+    status?: string;
     created_at?: string;
     engine?: string;
     voice?: string;

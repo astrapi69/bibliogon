@@ -634,6 +634,8 @@ ui:
         regen_warning: "Ja existe um audiolivro para este livro.\nMotor: {engine} | Voz: {voice} | {created}\n\nUma nova exportacao sobrescrevera os arquivos existentes.\n\nRecriar mesmo assim?"
         regen_title: "O audiolivro ja existe"
         regen_confirm: "Sobrescrever"
+        status_partial: "Exportação incompleta. Alguns capítulos ainda não foram gerados."
+        chapter_not_generated: "Não gerado"
         delete_file: "Eliminar ficheiro"
         delete_file_confirm: "Eliminar este ficheiro?"
         elevenlabs_stored: "********** (guardado)"

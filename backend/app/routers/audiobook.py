@@ -577,6 +577,9 @@ def get_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict[str,
             "filename": item["filename"],
             "size_bytes": item.get("size_bytes", 0),
             "url": f"/api/books/{book_id}/audiobook/chapters/{item['filename']}",
+            "title": item.get("title"),
+            "position": item.get("position"),
+            "duration_seconds": item.get("duration_seconds"),
         }
         for item in chapter_files
     ]
@@ -587,10 +590,12 @@ def get_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict[str,
             "filename": merged.get("filename", "audiobook.mp3"),
             "size_bytes": merged.get("size_bytes", 0),
             "url": f"/api/books/{book_id}/audiobook/merged",
+            "duration_seconds": merged.get("duration_seconds"),
         }
     return {
         "exists": True,
         "book_id": book_id,
+        "status": metadata.get("status", "complete"),
         "created_at": metadata.get("created_at"),
         "engine": metadata.get("engine"),
         "voice": metadata.get("voice"),
