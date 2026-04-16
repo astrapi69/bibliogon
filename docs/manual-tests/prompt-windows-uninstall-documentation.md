@@ -2,26 +2,44 @@
 
 ## Context
 
-User has successfully tested install.sh on Windows. Now needs a 
-clean uninstall procedure for:
-1. Repeat smoke testing (fresh environment each time)
-2. Users who want to remove Bibliogon from their system
+User has successfully tested install.sh on Windows. The launcher
+now has a built-in uninstall flow (manifest-based, platformdirs,
+implemented in commits 8974be1 through 2813f5e). Documentation
+must cover two uninstall paths:
+
+1. **Launcher uninstall** (primary, recommended): click Uninstall
+   button in the launcher UI - handles install_dir removal and
+   manifest deletion automatically
+2. **Manual uninstall** (fallback): for users who installed via
+   install.sh without the launcher, or when the launcher itself
+   is unavailable
+
+Both paths are needed for:
+- Repeat smoke testing (fresh environment each time)
+- Users who want to remove Bibliogon from their system
 
 ## Create: docs/help/en/uninstall.md
 
-Complete uninstall guide covering:
-- Stopping the running stack
-- Removing Docker volumes (with explicit user data warning)
-- Removing Docker images (optional, for full cleanup)
-- Removing the repo directory
-- Removing launcher config at `%APPDATA%\Bibliogon`
-- Verification that cleanup is complete
+Complete uninstall guide covering both paths:
 
-Match the DE version `docs/help/de/uninstall.md` with same content. 
-Content must mention that this removes all books and chapters, so 
-users should export important data first.
+### Path A: Launcher uninstall (recommended)
 
-### Suggested uninstall steps content
+If Bibliogon was installed via the launcher:
+
+1. Open the Bibliogon launcher
+2. Click the **Uninstall** button (only visible if an installation
+   is detected)
+3. Confirm the dialog - the launcher removes the install directory
+   and clears its manifest
+4. Docker volumes and images are not removed automatically - follow
+   Step 2 and Step 3 of the manual path below to remove user data
+   and images
+
+Note: the Uninstall button is absent if no installation is detected
+(manifest missing or install_dir already gone). In that case use
+the manual path.
+
+### Path B: Manual uninstall
 
 **Step 1: Stop Bibliogon**
 
@@ -77,19 +95,21 @@ rm -rf ~/bibliogon
 In Git Bash, this corresponds to the Windows path 
 `C:\Users\[YourName]\bibliogon`.
 
-**Step 5: Delete launcher config (if used)**
+**Step 5: Delete launcher manifest (if launcher was used)**
 
-If you used the launcher, also delete its configuration. In 
-Git Bash:
+If you used the launcher, delete its manifest and config directory.
+platformdirs writes to lowercase `bibliogon`, not `Bibliogon`.
+
+In Git Bash:
 
 ```bash
-rm -rf "$APPDATA/Bibliogon"
+rm -rf "$APPDATA/bibliogon"
 ```
 
 Or in PowerShell:
 
 ```powershell
-Remove-Item -Recurse -Force "$env:APPDATA\Bibliogon"
+Remove-Item -Recurse -Force "$env:APPDATA\bibliogon"
 ```
 
 **Step 6: Verification**
@@ -112,6 +132,10 @@ docker volume ls | grep bibliogon
 # No images (if deleted in step 3)
 docker images | grep bibliogon
 # Should be empty
+
+# No launcher manifest (if launcher was used)
+ls "$APPDATA/bibliogon"
+# Should say: No such file or directory
 ```
 
 When everything is empty, Bibliogon is cleanly uninstalled.
@@ -216,14 +240,20 @@ is the primary Linux/Mac path and its uninstall is different
 
 ## Closing checklist
 
-- [ ] docs/help/en/uninstall.md created with all 7 steps
+- [ ] docs/help/en/uninstall.md created covering Path A (launcher)
+      and Path B (manual) with all steps
 - [ ] docs/help/de/uninstall.md matches EN content with real umlauts
-- [ ] docs/manual-tests/windows-clean-uninstall.md created as 
+- [ ] Both paths mention that Docker volumes/images are not removed
+      by the launcher and must be handled manually
+- [ ] `%APPDATA%\bibliogon` (lowercase) used consistently, not
+      `%APPDATA%\Bibliogon`
+- [ ] Verification step includes launcher manifest check
+- [ ] docs/manual-tests/windows-clean-uninstall.md created as
       test reference
-- [ ] docs/manual-tests/d01-launcher-smoke-test.md updated with 
+- [ ] docs/manual-tests/d01-launcher-smoke-test.md updated with
       prerequisites section pointing to uninstall reference
-- [ ] docs/help/_meta.yaml updated in EN and DE to include 
+- [ ] docs/help/_meta.yaml updated in EN and DE to include
       uninstall entry
 - [ ] No dead links or missing cross-references
-- [ ] Alternative "parallel instance" approach mentioned where 
+- [ ] Alternative "parallel instance" approach mentioned where
       appropriate
