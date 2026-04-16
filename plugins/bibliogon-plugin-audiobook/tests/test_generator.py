@@ -10,7 +10,7 @@ import pytest
 from bibliogon_audiobook.generator import (
     MERGE_MODES,
     SKIP_TYPES,
-    _content_hash,
+    content_hash,
     _write_cache_meta,
     bundle_audiobook_output,
     extract_plain_text,
@@ -362,6 +362,69 @@ async def test_cache_hit_same_path_does_not_raise():
         assert persisted == [fname]
         # TTS engine must NOT have been called on a cache hit
         mock_engine.synthesize.assert_not_called()
+
+
+# --- positions_to_generate filter ---
+
+
+@pytest.mark.asyncio
+async def test_positions_filter_skips_unselected_chapters():
+    """Only chapters whose position is in the filter set are processed."""
+    async def stub_synth(text, output_path, **kwargs):
+        Path(output_path).write_bytes(b"\x00fake\x00")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(side_effect=stub_synth)
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "Ch 1", "content": json.dumps({
+                "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "A."}]}],
+            }), "chapter_type": "chapter", "position": 0},
+            {"title": "Ch 2", "content": json.dumps({
+                "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "B."}]}],
+            }), "chapter_type": "chapter", "position": 1},
+            {"title": "Ch 3", "content": json.dumps({
+                "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "C."}]}],
+            }), "chapter_type": "chapter", "position": 2},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                positions_to_generate={0, 2},  # skip position 1
+            )
+    assert result["generated_count"] == 2
+    assert result["skipped_count"] == 1
+    assert "Ch 2" in result["skipped"]
+
+
+@pytest.mark.asyncio
+async def test_positions_filter_none_processes_all():
+    """positions_to_generate=None means no filtering (all chapters processed)."""
+    async def stub_synth(text, output_path, **kwargs):
+        Path(output_path).write_bytes(b"\x00fake\x00")
+
+    with patch("bibliogon_audiobook.generator.get_engine") as mock_get:
+        mock_engine = AsyncMock()
+        mock_engine.synthesize = AsyncMock(side_effect=stub_synth)
+        mock_get.return_value = mock_engine
+
+        chapters = [
+            {"title": "Ch 1", "content": json.dumps({
+                "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "A."}]}],
+            }), "chapter_type": "chapter", "position": 0},
+            {"title": "Ch 2", "content": json.dumps({
+                "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "B."}]}],
+            }), "chapter_type": "chapter", "position": 1},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            result = await generate_audiobook(
+                book_title="Test", chapters=chapters, output_dir=Path(tmp),
+                positions_to_generate=None,
+            )
+    assert result["generated_count"] == 2
+    assert result["skipped_count"] == 0
 
 
 # --- normalize_merge_mode (legacy bool migration) ---
@@ -830,14 +893,14 @@ def test_should_regenerate_false_on_full_match(tmp_path):
     text = "Hello world"
     mp3 = tmp_path / "ch.mp3"
     mp3.write_bytes(b"fake")
-    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v1", "1.0")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), content_hash(text), "edge-tts", "v1", "1.0")
     assert should_regenerate(text, mp3, "edge-tts", "v1", "1.0") is False
 
 
 def test_should_regenerate_true_on_content_change(tmp_path):
     mp3 = tmp_path / "ch.mp3"
     mp3.write_bytes(b"fake")
-    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash("old text"), "edge-tts", "v1", "1.0")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), content_hash("old text"), "edge-tts", "v1", "1.0")
     assert should_regenerate("new text", mp3, "edge-tts", "v1", "1.0") is True
 
 
@@ -845,7 +908,7 @@ def test_should_regenerate_true_on_voice_change(tmp_path):
     text = "same"
     mp3 = tmp_path / "ch.mp3"
     mp3.write_bytes(b"fake")
-    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "old-voice", "1.0")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), content_hash(text), "edge-tts", "old-voice", "1.0")
     assert should_regenerate(text, mp3, "edge-tts", "new-voice", "1.0") is True
 
 
@@ -853,7 +916,7 @@ def test_should_regenerate_true_on_engine_change(tmp_path):
     text = "same"
     mp3 = tmp_path / "ch.mp3"
     mp3.write_bytes(b"fake")
-    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v", "1.0")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), content_hash(text), "edge-tts", "v", "1.0")
     assert should_regenerate(text, mp3, "elevenlabs", "v", "1.0") is True
 
 
@@ -861,7 +924,7 @@ def test_should_regenerate_true_on_speed_change(tmp_path):
     text = "same"
     mp3 = tmp_path / "ch.mp3"
     mp3.write_bytes(b"fake")
-    _write_cache_meta(mp3.with_suffix(".meta.json"), _content_hash(text), "edge-tts", "v", "1.0")
+    _write_cache_meta(mp3.with_suffix(".meta.json"), content_hash(text), "edge-tts", "v", "1.0")
     assert should_regenerate(text, mp3, "edge-tts", "v", "1.5") is True
 
 
@@ -881,7 +944,7 @@ async def test_generate_audiobook_reuses_cached_chapters(tmp_path):
     plain = extract_plain_text(chapter_content)
     _write_cache_meta(
         cached_mp3.with_suffix(".meta.json"),
-        _content_hash(plain), "edge-tts", "", "1.0",
+        content_hash(plain), "edge-tts", "", "1.0",
     )
 
     events: list[tuple[str, dict]] = []

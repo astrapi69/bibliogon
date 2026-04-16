@@ -222,8 +222,12 @@ ChapterPersistedCallback = Callable[[Path, dict], Awaitable[None]] | None
 # Content-hash cache
 # ---------------------------------------------------------------------------
 
-def _content_hash(plain_text: str) -> str:
-    """SHA-256 of the plain text that goes to the TTS engine."""
+def content_hash(plain_text: str) -> str:
+    """SHA-256 of the plain text that goes to the TTS engine.
+
+    Public so the classification endpoint can compute hashes for
+    comparison without duplicating the algorithm.
+    """
     return hashlib.sha256(plain_text.encode("utf-8")).hexdigest()
 
 
@@ -269,7 +273,7 @@ def should_regenerate(
     if meta is None:
         return True
     return (
-        meta.get("content_hash") != _content_hash(plain_text)
+        meta.get("content_hash") != content_hash(plain_text)
         or meta.get("engine") != engine
         or meta.get("voice") != voice
         or meta.get("speed") != speed
@@ -290,6 +294,7 @@ async def generate_audiobook(
     read_chapter_number: bool = False,
     cache_dir: Path | None = None,
     on_chapter_persisted: ChapterPersistedCallback = None,
+    positions_to_generate: set[int] | None = None,
 ) -> dict:
     """Generate audiobook MP3 files for all chapters.
 
@@ -376,6 +381,16 @@ async def generate_audiobook(
             await emit("chapter_skipped", index=i, title=ch_title, reason=ch_type)
             continue
 
+        # Position filter: when set, only chapters whose position is in
+        # the filter are processed. Others are skipped with reason
+        # "filtered" so the SSE stream still reports them.
+        if positions_to_generate is not None:
+            ch_pos = ch.get("position", 0)
+            if ch_pos not in positions_to_generate:
+                skipped.append(ch_title)
+                await emit("chapter_skipped", index=i, title=ch_title, reason="filtered")
+                continue
+
         # Extract plain text once — used by both the cache check and TTS.
         raw_content = ch.get("content", "")
         plain_text = extract_plain_text(raw_content)
@@ -436,7 +451,7 @@ async def generate_audiobook(
                 # Write the sidecar so the NEXT export can reuse this file.
                 _write_cache_meta(
                     result.with_suffix(".meta.json"),
-                    _content_hash(plain_text), engine_id, voice, speed_str,
+                    content_hash(plain_text), engine_id, voice, speed_str,
                 )
                 await emit(
                     "chapter_done",

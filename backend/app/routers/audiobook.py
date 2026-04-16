@@ -609,6 +609,77 @@ def get_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict[str,
     }
 
 
+@router.get("/books/{book_id}/audiobook/classify")
+def classify_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Classify each book chapter as current / outdated / missing.
+
+    Compares the current TipTap content hash against the persisted
+    ``.meta.json`` sidecar for each chapter MP3. Returns three lists
+    so the frontend can populate the regeneration-mode dialog with
+    accurate counts.
+
+    Also reads the current TTS settings (engine, voice, speed) from
+    the book model so that engine/voice changes are detected as
+    "outdated" even when the text is unchanged.
+    """
+    book = _verify_book_exists(book_id, db)
+    from app.models import Chapter as ChapterModel
+    chapters = (
+        db.query(ChapterModel)
+        .filter(ChapterModel.book_id == book_id)
+        .order_by(ChapterModel.position)
+        .all()
+    )
+
+    try:
+        from bibliogon_audiobook.generator import (
+            _slugify,
+            content_hash,
+            extract_plain_text,
+            should_regenerate,
+        )
+        from bibliogon_audiobook import audiobook_storage
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Audiobook plugin not installed")
+
+    engine = getattr(book, "tts_engine", None) or "edge-tts"
+    voice = getattr(book, "tts_voice", None) or ""
+    speed = getattr(book, "tts_speed", None) or "1.0"
+
+    chapters_dir = audiobook_storage.audiobook_dir(book_id) / "chapters"
+
+    current: list[dict[str, Any]] = []
+    outdated: list[dict[str, Any]] = []
+    missing: list[dict[str, Any]] = []
+
+    for idx, ch in enumerate(chapters, start=1):
+        plain = extract_plain_text(ch.content or "")
+        entry = {
+            "chapter_id": ch.id,
+            "title": ch.title,
+            "position": ch.position,
+            "chapter_type": ch.chapter_type.value if hasattr(ch.chapter_type, "value") else str(ch.chapter_type or "chapter"),
+        }
+        expected_filename = f"{idx:03d}-{_slugify(ch.title)}.mp3"
+        mp3_path = chapters_dir / expected_filename
+
+        if not mp3_path.exists():
+            missing.append(entry)
+        elif should_regenerate(plain, mp3_path, engine, voice, speed):
+            outdated.append(entry)
+        else:
+            current.append(entry)
+
+    return {
+        "current": current,
+        "outdated": outdated,
+        "missing": missing,
+        "engine": engine,
+        "voice": voice,
+        "speed": speed,
+    }
+
+
 @router.delete("/books/{book_id}/audiobook", status_code=204)
 def delete_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> None:
     """Delete the persisted audiobook directory for a book."""

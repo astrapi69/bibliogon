@@ -438,7 +438,7 @@ async def export_async(
     book_type: str = "ebook",
     use_manual_toc: bool | None = None,
     confirm_overwrite: bool = False,
-    regenerate_all: bool = False,
+    generation_mode: str = "missing_and_outdated",
 ) -> dict[str, Any]:
     """Start an export job in the background.
 
@@ -446,13 +446,22 @@ async def export_async(
     metadata exists for the book (complete OR partial from a cancelled
     export) unless ``confirm_overwrite=true``. The 409 response carries
     the existing metadata plus chapter counts so the frontend can show
-    a dialog with "Skip existing / Regenerate all / Cancel".
+    the regeneration-mode dialog.
 
-    ``regenerate_all=true`` disables the content-hash cache for this
-    job only, forcing every chapter to be re-generated from scratch.
-    This is a per-job override; the per-book
-    ``Book.audiobook_overwrite_existing`` column still applies as a
-    permanent preference.
+    ``generation_mode`` controls which chapters are processed:
+
+    - ``missing_and_outdated`` (default): generate chapters without MP3
+      AND chapters whose content/engine/voice/speed changed since the
+      last export. This is the standard "skip existing" behavior.
+    - ``missing_only``: generate only chapters that have no MP3 at all.
+      Stale-hash chapters are left untouched.
+    - ``outdated_only``: regenerate only chapters whose hash changed.
+      Chapters without any MP3 are skipped.
+    - ``all``: disable the content-hash cache entirely and regenerate
+      every chapter from scratch.
+
+    The per-book ``Book.audiobook_overwrite_existing`` column still
+    applies as a permanent preference that overrides generation_mode.
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'.")
@@ -510,7 +519,7 @@ async def export_async(
             return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
 
         if fmt == "audiobook":
-            return await _run_audiobook_job(job_id, book_data, chapters, base_name, regenerate_all=regenerate_all)
+            return await _run_audiobook_job(job_id, book_data, chapters, base_name, generation_mode=generation_mode)
 
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
@@ -529,7 +538,7 @@ async def _run_audiobook_job(
     chapters: list[dict[str, Any]],
     default_base_name: str,
     *,
-    regenerate_all: bool = False,
+    generation_mode: str = "missing_and_outdated",
 ) -> dict[str, Any]:
     """Audiobook job worker that streams progress events to the job store.
 
@@ -593,20 +602,53 @@ async def _run_audiobook_job(
         "book_title": book_data.get("title"),
     }
 
-    # Cache-dir flag: when neither the per-book ``audiobook_overwrite_existing``
-    # column NOR the per-job ``regenerate_all`` param is set, the generator
-    # looks up previously persisted chapters and reuses those whose content
-    # + engine + voice + speed still match. The persistent path IS the
-    # cache, so when we write directly there the generator sees "already
-    # on disk" and short-circuits without extra I/O (the same-path guard
-    # inside the cache branch prevents SameFileError).
+    # Cache-dir flag: the content-hash cache lets the generator reuse
+    # previously generated chapters whose content + engine + voice + speed
+    # still match. The persistent path IS the cache, so when we write
+    # directly there the generator sees "already on disk" and short-circuits.
+    #
+    # The cache is disabled entirely when generation_mode is "all" or the
+    # per-book ``audiobook_overwrite_existing`` column is true. For the
+    # finer modes ("missing_only", "outdated_only") the cache stays on
+    # but the generator receives a positions_to_generate filter that
+    # restricts which chapters enter the loop at all.
     overwrite_existing = bool(book_data.get("audiobook_overwrite_existing", False))
-    disable_cache = overwrite_existing or regenerate_all
+    disable_cache = overwrite_existing or generation_mode == "all"
     cache_dir: Path | None = None
     if book_id and not disable_cache:
         candidate = audiobook_storage.audiobook_dir(book_id) / "chapters"
         if candidate.exists():
             cache_dir = candidate
+
+    # Position filter for fine-grained generation modes. When set, only
+    # chapters whose position is in this set are processed; all others
+    # are emitted as "chapter_skipped" with reason "filtered".
+    #
+    # "missing_and_outdated" and "all" pass None (= process everything
+    # the cache/skip logic allows). "missing_only" and "outdated_only"
+    # use the classification logic to pre-compute which chapters qualify.
+    positions_to_generate: set[int] | None = None
+    if generation_mode in ("missing_only", "outdated_only") and book_id:
+        try:
+            from bibliogon_audiobook.generator import (
+                _slugify, extract_plain_text, should_regenerate,
+            )
+            chapters_dir = audiobook_storage.audiobook_dir(book_id) / "chapters"
+            sorted_chs = sorted(chapters, key=lambda c: c.get("position", 0))
+            positions_to_generate = set()
+            for idx, ch in enumerate(sorted_chs, start=1):
+                plain = extract_plain_text(ch.get("content", ""))
+                fname = f"{idx:03d}-{_slugify(ch.get('title', ''))}.mp3"
+                mp3 = chapters_dir / fname
+                is_missing = not mp3.exists()
+                is_outdated = mp3.exists() and should_regenerate(plain, mp3, engine_id, voice, rate or "1.0")
+                if generation_mode == "missing_only" and is_missing:
+                    positions_to_generate.add(ch.get("position", 0))
+                elif generation_mode == "outdated_only" and is_outdated:
+                    positions_to_generate.add(ch.get("position", 0))
+        except Exception as classify_err:  # noqa: BLE001
+            logger.warning("Position filter computation failed, falling back to all: %s", classify_err)
+            positions_to_generate = None
 
     async def on_chapter_persisted(mp3_path: Path, chapter_info: dict[str, Any]) -> None:
         """Record one completed chapter in metadata.json.
@@ -647,6 +689,7 @@ async def _run_audiobook_job(
             skip_types=skip_types, read_chapter_number=read_chapter_number,
             cache_dir=cache_dir,
             on_chapter_persisted=on_chapter_persisted,
+            positions_to_generate=positions_to_generate,
         )
         output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
         if output is None:

@@ -121,9 +121,9 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         }
     };
 
-    const _startAudiobookExport = async (confirmOverwrite: boolean = false, regenerateAll: boolean = false) => {
+    const _startAudiobookExport = async (confirmOverwrite: boolean = false, generationMode: string = "missing_and_outdated") => {
         try {
-            const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite, regenerateAll);
+            const {job_id} = await api.exportJobs.startAudiobook(bookId, confirmOverwrite, generationMode);
             audiobookJob.start(job_id, bookId, bookTitle);
             onClose();
         } catch (err) {
@@ -182,11 +182,11 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                 ], t("ui.common.cancel", "Abbrechen"));
 
                 if (choice === "skip") {
-                    await _startAudiobookExport(true, false);
+                    await _startAudiobookExport(true, "missing_and_outdated");
                     return;
                 }
                 if (choice === "regenerate") {
-                    await _startAudiobookExport(true, true);
+                    await _startAudiobookExport(true, "all");
                     return;
                 }
                 // Cancel (null): do nothing

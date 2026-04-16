@@ -237,6 +237,22 @@ export interface BookAudiobook {
     zip_url?: string;
 }
 
+export interface AudiobookClassifiedChapter {
+    chapter_id: string;
+    title: string;
+    position: number;
+    chapter_type: string;
+}
+
+export interface AudiobookClassification {
+    current: AudiobookClassifiedChapter[];
+    outdated: AudiobookClassifiedChapter[];
+    missing: AudiobookClassifiedChapter[];
+    engine: string;
+    voice: string;
+    speed: string;
+}
+
 export interface DryRunResult {
     /** Object URL for the generated sample MP3 (revoke when done). */
     audioUrl: string;
@@ -596,11 +612,11 @@ export const api = {
         startAudiobook: async (
             bookId: string,
             confirmOverwrite: boolean = false,
-            regenerateAll: boolean = false,
+            generationMode: string = "missing_and_outdated",
         ): Promise<{job_id: string; status: string}> => {
             const params = new URLSearchParams();
             if (confirmOverwrite) params.set("confirm_overwrite", "true");
-            if (regenerateAll) params.set("regenerate_all", "true");
+            if (generationMode !== "missing_and_outdated") params.set("generation_mode", generationMode);
             const qs = params.toString();
             const url = `${BASE}/books/${bookId}/export/async/audiobook${qs ? `?${qs}` : ""}`;
             const res = await fetch(url, {method: "POST"});
@@ -730,6 +746,10 @@ export const api = {
         /** GET /api/books/{id}/audiobook -> persisted audiobook metadata */
         get: (bookId: string) =>
             request<BookAudiobook>(`/books/${bookId}/audiobook`),
+
+        /** GET /api/books/{id}/audiobook/classify -> chapter classification */
+        classify: (bookId: string) =>
+            request<AudiobookClassification>(`/books/${bookId}/audiobook/classify`),
 
         /** DELETE /api/books/{id}/audiobook -> remove persisted files */
         delete: (bookId: string) =>
