@@ -65,9 +65,12 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     echo -e "${YELLOW}Bibliogon is already installed in ${INSTALL_DIR}${NC}"
     echo "Updating..."
     cd "$INSTALL_DIR"
-    git fetch origin
-    git checkout "$VERSION" 2>/dev/null || git checkout main
-    git pull origin main 2>/dev/null || true
+    # Previous installs may be shallow clones (--depth 1) that lack
+    # tags and full history. Unshallow first so we can switch to any
+    # tag or branch, then force-fetch tags so the VERSION tag exists.
+    git fetch origin --unshallow 2>/dev/null || git fetch origin
+    git fetch origin --tags --force 2>/dev/null || true
+    git checkout "$VERSION" 2>/dev/null || git checkout -B main origin/main
 else
     echo -e "${BLUE}Downloading Bibliogon ${VERSION}...${NC}"
 
