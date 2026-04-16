@@ -83,7 +83,7 @@ Each gets a dedicated session with its own testing cycle. Not urgent, but tracke
 - [ ] DEP-05: elevenlabs SDK 0.2 -> 2.x migration (complete SDK rewrite, needs real API testing)
 - [ ] DEP-06: pandas 2 -> 3 evaluation (check actual usage, may be droppable)
 - [ ] DEP-07: lucide-react 0.468 -> 1.x migration (icon API changes, moderate risk)
-- [ ] DEP-08: Pillow 11 -> 12 (block type: dependency chain. Blocked by manuscripta ^0.8.0 pinning pillow <12. manuscripta is a project under our control, so this is actionable whenever manuscripta-level work happens. Not blocked by external parties. Re-check after manuscripta release.)
+- [ ] DEP-08: Pillow 11 -> 12 (block type: dependency chain. Still blocked as of manuscripta 0.8.1 which pins `pillow >=11.2.1,<12.0.0`. Re-check after next manuscripta release.)
 
 ---
 
