@@ -32,7 +32,7 @@ elevenlabs = "^0.2.27"
 cryptography = "^46.0.7"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
+pytest = "^9.0.0"
 httpx = "^0.28.0"
 mutmut = "^3.5.0"
 mypy = "^1.20.0"

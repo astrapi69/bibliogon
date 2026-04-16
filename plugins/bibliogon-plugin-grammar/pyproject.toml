@@ -14,7 +14,7 @@ fastapi = "^0.135.0"
 httpx = "^0.28.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0"
+pytest = "^9.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 grammar = "bibliogon_grammar.plugin:GrammarPlugin"

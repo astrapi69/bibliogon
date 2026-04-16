@@ -27,7 +27,7 @@ cryptography = "^46.0.7"
 mutagen = "^1.47.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
+pytest = "^9.0.0"
 pytest-asyncio = "^0.24.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
