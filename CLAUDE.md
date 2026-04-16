@@ -3,7 +3,7 @@
 Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see docs/explorations/monetization.md for future strategy).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.15.0 (manuscripta v0.8.0 upgrade, CF-01 silent-image-drop fix, PS-01 to PS-07 polish, full DE+EN help docs sweep)
+- **Version:** 0.16.0 (audiobook incremental persistence, four-mode regen dialog, WebSocket live updates, dependency currency sweep)
 - **Concept:** docs/CONCEPT.md
 - **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
 - **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)
