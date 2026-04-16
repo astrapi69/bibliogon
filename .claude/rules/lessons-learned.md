@@ -362,3 +362,10 @@ Stability filter:
 - Latest stable only, never beta/RC/alpha
 - Minimum 2 weeks since release for new major versions
 - For LTS products (Node.js), prefer Active LTS over Current
+
+## install.sh VERSION drift
+
+- `install.sh` pinned `VERSION="v0.7.0"` as the default, but Dockerfile and docker-compose.prod.yml evolved significantly after that tag. The v0.7.0 compose used `build: ./backend` (backend-only context), while current uses `context: .` (repo root). Plugins live at `<repo>/plugins/` which is entirely outside the v0.7.0 build context, so `poetry install` inside the container could never find them.
+- The fix for the original Docker bug (commit 59cf3d6) was verified by building from the local working tree, not by running install.sh end-to-end. The local build used the current compose/Dockerfile; install.sh used the ancient tagged version. The verification test was wrong because it didn't test the actual user flow.
+- Rule: when fixing an install/deployment script, always test THE SCRIPT, not just the artifacts it references. `docker build -f Dockerfile .` is not the same test as `./install.sh` because the script may select a different version of the files.
+- install.sh now defaults to `main` instead of a pinned tag, so fresh installs always get the current code. Users can override with `BIBLIOGON_VERSION=v0.16.0` for reproducibility.
