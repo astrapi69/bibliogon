@@ -184,6 +184,9 @@ app.include_router(plugin_install.router, prefix="/api")
 from app.ai.routes import router as ai_router
 app.include_router(ai_router, prefix="/api")
 
+from app.routers.websocket import router as ws_router
+app.include_router(ws_router, prefix="/api")
+
 
 # Global exception handler: log all unhandled errors with stacktrace
 from fastapi import Request

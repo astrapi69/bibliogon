@@ -651,7 +651,7 @@ async def _run_audiobook_job(
             positions_to_generate = None
 
     async def on_chapter_persisted(mp3_path: Path, chapter_info: dict[str, Any]) -> None:
-        """Record one completed chapter in metadata.json.
+        """Record one completed chapter in metadata.json and broadcast via WS.
 
         Fires after each chapter MP3 lands in the persistent chapters
         dir. Without a book_id there is no persistent path, so this
@@ -680,6 +680,21 @@ async def _run_audiobook_job(
                 mp3_path.name, book_id, flush_error,
             )
 
+        # Broadcast to any open metadata tabs watching this book.
+        try:
+            from app.routers.websocket import manager as ws_manager
+            await ws_manager.broadcast(f"audiobook:{book_id}", {
+                "event": "chapter_persisted",
+                "title": chapter_info.get("title"),
+                "filename": mp3_path.name,
+                "position": chapter_info.get("position"),
+                "duration_seconds": audiobook_storage.get_mp3_duration(mp3_path),
+                "size_bytes": mp3_path.stat().st_size if mp3_path.exists() else 0,
+                "reused": bool(chapter_info.get("reused")),
+            })
+        except Exception:  # noqa: BLE001
+            pass  # WS broadcast is best-effort, never kills the export
+
     try:
         result = await generate_audiobook(
             book_title=book_data.get("title", "audiobook"),
@@ -703,6 +718,14 @@ async def _run_audiobook_job(
         # on asyncio.CancelledError, which is NOT an Exception subclass.
         if book_id:
             audiobook_storage.mark_failed(book_id, str(run_error) or type(run_error).__name__)
+            try:
+                from app.routers.websocket import manager as ws_manager
+                await ws_manager.broadcast(f"audiobook:{book_id}", {
+                    "event": "job_failed",
+                    "error": str(run_error) or type(run_error).__name__,
+                })
+            except Exception:  # noqa: BLE001
+                pass
         raise
 
     # Seal the metadata: copy the merged MP3 into the persistent dir,
@@ -717,6 +740,14 @@ async def _run_audiobook_job(
                 merged_file=result.get("merged_file"),
                 base_metadata=base_metadata,
             )
+            try:
+                from app.routers.websocket import manager as ws_manager
+                await ws_manager.broadcast(f"audiobook:{book_id}", {
+                    "event": "job_complete",
+                    "status": "complete",
+                })
+            except Exception:  # noqa: BLE001
+                pass
         except Exception as finalize_error:  # noqa: BLE001
             # Finalize failure must not kill the download - chapter
             # files are already persistent, user can still grab them.

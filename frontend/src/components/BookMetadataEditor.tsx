@@ -1,9 +1,10 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useCallback} from "react";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, Chapter, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
@@ -811,7 +812,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
     const [busy, setBusy] = useState(false);
     const [subTab, setSubTab] = useState<"downloads" | "previews">("downloads");
 
-    const load = async () => {
+    const load = useCallback(async () => {
         try {
             const result = await api.bookAudiobook.get(bookId);
             setData(result);
@@ -827,11 +828,19 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
         } catch {
             setPreviews([]);
         }
-    };
+    }, [bookId]);
 
     useEffect(() => {
         load();
-    }, [bookId]);
+    }, [load]);
+
+    // Live-update the audiobook metadata view as chapters are generated.
+    // The backend broadcasts events to audiobook:{bookId} via WebSocket
+    // after each flush_chapter, finalize, and mark_failed call.
+    useWebSocket<{event: string}>(
+        `audiobook:${bookId}`,
+        useCallback(() => { load(); }, [load]),
+    );
 
     const handleDelete = async () => {
         const confirmed = await dialog.confirm(
