@@ -81,9 +81,9 @@ Each gets a dedicated session with its own testing cycle. Not urgent, but tracke
 - [ ] DEP-03: react-router-dom 6 -> 7 migration (complete API rework, Remix-based)
 - [ ] DEP-04: Vite 6 -> 8 + TypeScript 5 -> 6 (paired, do after DEP-01)
 - [ ] DEP-05: elevenlabs SDK 0.2 -> 2.x migration (complete SDK rewrite, needs real API testing)
-- [ ] DEP-06: pandas 2 -> 3 evaluation (check actual usage, may be droppable)
+- [x] DEP-06: pandas 2 -> 3 (resolved: transitive dep of manuscripta 0.9.0 which requires pandas >=3.0)
 - [ ] DEP-07: lucide-react 0.468 -> 1.x migration (icon API changes, moderate risk)
-- [ ] DEP-08: Pillow 11 -> 12 (block type: dependency chain. Still blocked as of manuscripta 0.8.1 which pins `pillow >=11.2.1,<12.0.0`. Re-check after next manuscripta release.)
+- [x] DEP-08: Pillow 11 -> 12 (resolved: manuscripta 0.9.0 requires pillow >=12.0. Both bumped together.)
 
 ---
 
