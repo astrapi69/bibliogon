@@ -84,6 +84,56 @@ class TestDeleteManifest:
             manifest.delete_manifest()  # must not raise
 
 
+class TestCleanupPersistence:
+
+    def _patch_cleanup(self, tmp_path: Path):
+        return patch.object(manifest, "cleanup_path", return_value=tmp_path / "cleanup.json")
+
+    def test_read_returns_none_when_absent(self, tmp_path: Path) -> None:
+        with self._patch_cleanup(tmp_path):
+            assert manifest.read_cleanup_pending() is None
+
+    def test_write_and_read_roundtrip(self, tmp_path: Path) -> None:
+        with self._patch_cleanup(tmp_path):
+            manifest.write_cleanup_pending(tmp_path / "bibliogon")
+            data = manifest.read_cleanup_pending()
+            assert data is not None
+            assert data["install_dir"] == str(tmp_path / "bibliogon")
+            assert all(v is False for v in data["steps"].values())
+            assert "pending_since" in data
+
+    def test_update_step_marks_true(self, tmp_path: Path) -> None:
+        with self._patch_cleanup(tmp_path):
+            manifest.write_cleanup_pending(tmp_path / "bib")
+            manifest.update_cleanup_step("compose_down", True)
+            data = manifest.read_cleanup_pending()
+            assert data["steps"]["compose_down"] is True
+            assert data["steps"]["rmtree"] is False
+
+    def test_update_step_noop_when_no_file(self, tmp_path: Path) -> None:
+        with self._patch_cleanup(tmp_path):
+            manifest.update_cleanup_step("compose_down", True)  # must not raise
+
+    def test_delete_removes_file(self, tmp_path: Path) -> None:
+        target = tmp_path / "cleanup.json"
+        target.write_text("{}", encoding="utf-8")
+        with patch.object(manifest, "cleanup_path", return_value=target):
+            manifest.delete_cleanup_pending()
+        assert not target.exists()
+
+    def test_all_cleanup_done_true_when_all_true(self) -> None:
+        data = {"steps": {s: True for s in manifest.CLEANUP_STEPS}}
+        assert manifest.all_cleanup_done(data) is True
+
+    def test_all_cleanup_done_false_when_any_false(self) -> None:
+        steps = {s: True for s in manifest.CLEANUP_STEPS}
+        steps["rmtree"] = False
+        assert manifest.all_cleanup_done({"steps": steps}) is False
+
+    def test_all_cleanup_done_true_when_none(self) -> None:
+        assert manifest.all_cleanup_done(None) is True
+
+
 class TestInstallDirFromManifest:
 
     def test_returns_none_when_no_manifest(self, tmp_path: Path) -> None:

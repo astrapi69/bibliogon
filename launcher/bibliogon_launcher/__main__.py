@@ -363,32 +363,31 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     if choice != "primary":
         return False
 
+    # Write cleanup state BEFORE any destructive operation so a crash
+    # or abort mid-uninstall can be retried on next launcher start.
+    manifest.write_cleanup_pending(install_dir)
+
     # Phase 1: Stop Docker stack (best-effort, continue if Docker is not running)
     window = ui.StatusWindow()
     window.set_starting("Stopping Bibliogon...")
 
-    docker_errors: list[str] = []
-
     def uninstall_worker() -> None:
-        # Stop stack
         ok, detail = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
+        manifest.update_cleanup_step("compose_down", ok)
         if not ok:
             logger.warning("compose down: %s", detail)
-            docker_errors.append(f"compose down: {detail}")
 
-        # Remove volumes
         window.after(0, lambda: window.set_starting("Removing data volumes..."))
         ok2, detail2 = docker.remove_volumes()
+        manifest.update_cleanup_step("remove_volumes", ok2)
         if not ok2:
             logger.warning("remove volumes: %s", detail2)
-            docker_errors.append(f"volumes: {detail2}")
 
-        # Remove images
         window.after(0, lambda: window.set_starting("Removing Docker images..."))
         ok3, detail3 = docker.remove_images()
+        manifest.update_cleanup_step("remove_images", ok3)
         if not ok3:
             logger.warning("remove images: %s", detail3)
-            docker_errors.append(f"images: {detail3}")
 
         window.after(0, window.destroy)
 
@@ -397,6 +396,7 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
 
     # Phase 2: Remove install directory
     ok, detail = installer.remove_install(install_dir)
+    manifest.update_cleanup_step("rmtree", ok)
     if not ok:
         ui.error_dialog(
             title="Uninstall failed",
@@ -413,12 +413,16 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
 
     # Phase 3: Clean up manifest and legacy config
     manifest.delete_manifest()
+    manifest.update_cleanup_step("delete_manifest", True)
     try:
         cfg = config.load_launcher_config()
         cfg.pop("repo_path", None)
         config.save_launcher_config(cfg)
     except Exception:
         pass
+
+    # All steps done: remove cleanup state file
+    manifest.delete_cleanup_pending()
 
     ui.two_button_dialog(
         title="Uninstall complete",
