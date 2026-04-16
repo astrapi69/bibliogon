@@ -1,7 +1,7 @@
 import {useState, useEffect, useCallback} from "react";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, Chapter, formatVoiceLabel} from "../api/client";
-import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle} from "lucide-react";
+import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useWebSocket} from "../hooks/useWebSocket";
@@ -9,6 +9,7 @@ import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
+import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
 import QualityTab from "./QualityTab";
 
@@ -811,6 +812,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
     const [previews, setPreviews] = useState<{filename: string; size_bytes: number; url: string}[]>([]);
     const [busy, setBusy] = useState(false);
     const [subTab, setSubTab] = useState<"downloads" | "previews">("downloads");
+    const [playingIndex, setPlayingIndex] = useState<number | null>(null);
 
     const load = useCallback(async () => {
         try {
@@ -1012,46 +1014,78 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                             )}
 
                             {/* Per-chapter audio status list */}
-                            {sortedChapters.length > 0 && (
-                                <ul style={{...audiobookStyles.chapterList, marginTop: 16}}>
-                                    {sortedChapters.map((bookCh) => {
-                                        const audio = audioByTitle.get(bookCh.title);
-                                        const dur = audio ? formatDuration(audio.duration_seconds) : "";
-                                        return (
-                                            <li key={bookCh.id} style={{...audiobookStyles.chapterItem, flexDirection: "column", alignItems: "stretch", gap: 4}}>
-                                                <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                                                    {audio ? (
-                                                        <CheckCircle size={14} style={{color: "var(--success, #16a34a)", flexShrink: 0}}/>
-                                                    ) : (
-                                                        <Clock size={14} style={{color: "var(--text-muted)", flexShrink: 0}}/>
-                                                    )}
-                                                    <span style={{flex: 1, fontSize: "0.8125rem", fontWeight: 500}}>
-                                                        {bookCh.title}
-                                                    </span>
-                                                    {audio ? (
-                                                        <>
-                                                            {dur && <span style={{...audiobookStyles.muted, whiteSpace: "nowrap"}}>{dur}</span>}
-                                                            <span style={audiobookStyles.muted}>{formatBytes(audio.size_bytes)}</span>
-                                                            <a href={audio.url} download className="btn-icon" title="Download"><Download size={12}/></a>
-                                                            <button className="btn-icon" onClick={() => handleDeleteChapter(audio.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
-                                                                <Trash2 size={12}/>
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <span style={{fontSize: "0.6875rem", color: "var(--text-muted)"}}>
-                                                            {t("ui.audiobook.chapter_not_generated", "Nicht generiert")}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {audio && (
-                                                    /* eslint-disable-next-line jsx-a11y/media-has-caption */
-                                                    <audio controls src={audio.url} style={{width: "100%", height: 28}} preload="none"/>
-                                                )}
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
+                            {(() => {
+                                // Build the player chapter list: only chapters with audio, in order
+                                const playerChapters: PlayerChapter[] = [];
+                                const chapterToPlayerIndex = new Map<string, number>();
+                                for (const bookCh of sortedChapters) {
+                                    const audio = audioByTitle.get(bookCh.title);
+                                    if (audio) {
+                                        chapterToPlayerIndex.set(bookCh.id, playerChapters.length);
+                                        playerChapters.push({title: bookCh.title, url: audio.url, position: bookCh.position});
+                                    }
+                                }
+                                return sortedChapters.length > 0 && (
+                                    <>
+                                        <ul style={{...audiobookStyles.chapterList, marginTop: 16}}>
+                                            {sortedChapters.map((bookCh) => {
+                                                const audio = audioByTitle.get(bookCh.title);
+                                                const dur = audio ? formatDuration(audio.duration_seconds) : "";
+                                                const playerIdx = chapterToPlayerIndex.get(bookCh.id);
+                                                const isPlaying = playingIndex !== null && playerIdx === playingIndex;
+                                                return (
+                                                    <li key={bookCh.id} style={{
+                                                        ...audiobookStyles.chapterItem,
+                                                        flexDirection: "column", alignItems: "stretch", gap: 4,
+                                                        ...(isPlaying ? {borderLeft: "3px solid var(--accent)", paddingLeft: 5} : {}),
+                                                    }}>
+                                                        <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                                            {audio ? (
+                                                                <button
+                                                                    className="btn-icon"
+                                                                    onClick={() => setPlayingIndex(playerIdx ?? null)}
+                                                                    style={{flexShrink: 0, color: isPlaying ? "var(--accent)" : "var(--success, #16a34a)"}}
+                                                                    title={isPlaying ? t("ui.audiobook.player.pause", "Pause") : t("ui.audiobook.player.play", "Abspielen")}
+                                                                >
+                                                                    {isPlaying ? <Pause size={14}/> : <Play size={14}/>}
+                                                                </button>
+                                                            ) : (
+                                                                <Clock size={14} style={{color: "var(--text-muted)", flexShrink: 0}}/>
+                                                            )}
+                                                            <span style={{flex: 1, fontSize: "0.8125rem", fontWeight: isPlaying ? 600 : 500, color: isPlaying ? "var(--accent)" : undefined}}>
+                                                                {bookCh.title}
+                                                            </span>
+                                                            {audio ? (
+                                                                <>
+                                                                    {dur && <span style={{...audiobookStyles.muted, whiteSpace: "nowrap"}}>{dur}</span>}
+                                                                    <span style={audiobookStyles.muted}>{formatBytes(audio.size_bytes)}</span>
+                                                                    <a href={audio.url} download className="btn-icon" title="Download"><Download size={12}/></a>
+                                                                    <button className="btn-icon" onClick={() => handleDeleteChapter(audio.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
+                                                                        <Trash2 size={12}/>
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <span style={{fontSize: "0.6875rem", color: "var(--text-muted)"}}>
+                                                                    {t("ui.audiobook.chapter_not_generated", "Nicht generiert")}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                        {playingIndex !== null && playerChapters.length > 0 && (
+                                            <AudiobookPlayer
+                                                chapters={playerChapters}
+                                                currentIndex={playingIndex}
+                                                bookTitle={data.engine ? `${data.engine} / ${data.voice || ""}` : ""}
+                                                onChapterChange={setPlayingIndex}
+                                                onClose={() => setPlayingIndex(null)}
+                                            />
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </>;
                     })()}
                 </>
