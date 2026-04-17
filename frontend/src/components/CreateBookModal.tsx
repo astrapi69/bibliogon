@@ -1,24 +1,31 @@
 import {useState, useEffect} from "react";
-import {api, BookCreate} from "../api/client";
+import {api, BookCreate, BookFromTemplateCreate, BookTemplate} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
+import * as Tabs from "@radix-ui/react-tabs";
 import {ChevronDown, ChevronRight} from "lucide-react";
+
+type Mode = "blank" | "template";
 
 interface Props {
     open: boolean;
     onClose: () => void;
     onCreate: (data: BookCreate) => void;
+    onCreateFromTemplate?: (data: BookFromTemplateCreate) => void;
 }
 
-export default function CreateBookModal({open, onClose, onCreate}: Props) {
+export default function CreateBookModal({open, onClose, onCreate, onCreateFromTemplate}: Props) {
     const {t} = useI18n();
     const GENRE_KEYS = [
         "novel", "non_fiction", "technical", "children", "biography", "poetry",
         "short_stories", "academic", "textbook", "self_help", "fantasy",
         "thriller", "romance", "cookbook", "travel",
     ];
+
+    // Mode (Blank vs. From template)
+    const [mode, setMode] = useState<Mode>("blank");
 
     // Stage 1: Required
     const [title, setTitle] = useState("");
@@ -29,9 +36,15 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
     const [genre, setGenre] = useState("");
     const [subtitle, setSubtitle] = useState("");
     const [language, setLanguage] = useState("de");
+    const [description, setDescription] = useState("");
     const [isSeries, setIsSeries] = useState(false);
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
+
+    // Template state
+    const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
+    const [templatesError, setTemplatesError] = useState<string | null>(null);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     // Load author profile on open
     useEffect(() => {
@@ -50,8 +63,47 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
         }).catch(() => {});
     }, [open]);
 
+    // Fetch templates the first time the user switches into template mode
+    useEffect(() => {
+        if (mode !== "template" || templates !== null) return;
+        api.templates.list()
+            .then((list) => {
+                setTemplates(list);
+                setTemplatesError(null);
+            })
+            .catch((err) => {
+                setTemplates([]);
+                setTemplatesError(String(err?.message || err));
+            });
+    }, [mode, templates]);
+
+    // When a template is picked, pre-fill language + description from it
+    useEffect(() => {
+        if (!selectedTemplateId || !templates) return;
+        const tpl = templates.find((t) => t.id === selectedTemplateId);
+        if (!tpl) return;
+        setLanguage(tpl.language);
+        setDescription(tpl.description);
+    }, [selectedTemplateId, templates]);
+
+    const resetForm = () => {
+        setTitle("");
+        setAuthor("");
+        setGenre("");
+        setLanguage("de");
+        setDescription("");
+        setSubtitle("");
+        setIsSeries(false);
+        setSeries("");
+        setSeriesIndex("");
+        setDetailsOpen(false);
+        setSelectedTemplateId(null);
+        setMode("blank");
+    };
+
     const handleSubmit = () => {
         if (!title.trim() || !author.trim()) return;
+
         // Map translated genre back to key (e.g. "Roman" -> "novel")
         let genreValue = genre.trim();
         if (genreValue) {
@@ -61,26 +113,38 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
             if (matchedKey) genreValue = matchedKey;
         }
 
-        onCreate({
-            title: title.trim(),
-            author: author.trim(),
-            language,
-            genre: genreValue || undefined,
-            subtitle: subtitle.trim() || undefined,
-            series: series.trim() || undefined,
-            series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
-        });
-        // Reset form
-        setTitle("");
-        setAuthor("");
-        setGenre("");
-        setLanguage("de");
-        setSubtitle("");
-        setIsSeries(false);
-        setSeries("");
-        setSeriesIndex("");
-        setDetailsOpen(false);
+        if (mode === "template") {
+            if (!selectedTemplateId || !onCreateFromTemplate) return;
+            onCreateFromTemplate({
+                template_id: selectedTemplateId,
+                title: title.trim(),
+                author: author.trim(),
+                language,
+                genre: genreValue || undefined,
+                subtitle: subtitle.trim() || undefined,
+                description: description.trim() || undefined,
+                series: series.trim() || undefined,
+                series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
+            });
+        } else {
+            onCreate({
+                title: title.trim(),
+                author: author.trim(),
+                language,
+                genre: genreValue || undefined,
+                subtitle: subtitle.trim() || undefined,
+                description: description.trim() || undefined,
+                series: series.trim() || undefined,
+                series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
+            });
+        }
+        resetForm();
     };
+
+    const canSubmit =
+        !!title.trim() &&
+        !!author.trim() &&
+        (mode === "blank" || !!selectedTemplateId);
 
     return (
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -90,6 +154,82 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                     <div className="dialog-header">
                         <Dialog.Title className="dialog-title">{t("ui.create_book.title", "Neues Buch")}</Dialog.Title>
                     </div>
+
+                    <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
+                        <Tabs.List className="radix-tab-list" style={{marginBottom: 12}}>
+                            <Tabs.Trigger
+                                value="blank"
+                                className="radix-tab-trigger"
+                                data-testid="create-book-mode-blank"
+                            >
+                                {t("ui.create_book.mode_blank", "Leer")}
+                            </Tabs.Trigger>
+                            <Tabs.Trigger
+                                value="template"
+                                className="radix-tab-trigger"
+                                data-testid="create-book-mode-template"
+                            >
+                                {t("ui.create_book.mode_template", "Aus Vorlage")}
+                            </Tabs.Trigger>
+                        </Tabs.List>
+
+                        <Tabs.Content value="template">
+                            <div style={styles.templatePickerHeader}>
+                                <div className="label">{t("ui.create_book.template_picker_title", "Waehle eine Vorlage")}</div>
+                            </div>
+                            {templates === null && (
+                                <div style={styles.templatesEmpty}>
+                                    {t("ui.create_book.template_loading", "Lade Vorlagen...")}
+                                </div>
+                            )}
+                            {templates !== null && templates.length === 0 && (
+                                <div style={styles.templatesEmpty}>
+                                    {templatesError
+                                        ? t("ui.create_book.template_load_error", "Vorlagen konnten nicht geladen werden")
+                                        : t("ui.create_book.template_empty", "Keine Vorlagen verfuegbar")}
+                                </div>
+                            )}
+                            {templates !== null && templates.length > 0 && (
+                                <div style={styles.templateList} role="radiogroup">
+                                    {templates.map((tpl) => {
+                                        const selected = tpl.id === selectedTemplateId;
+                                        const genreLabel = t(
+                                            `ui.template_genres.${tpl.genre}`,
+                                            tpl.genre,
+                                        );
+                                        return (
+                                            <button
+                                                key={tpl.id}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={selected}
+                                                data-testid={`template-card-${tpl.id}`}
+                                                onClick={() => setSelectedTemplateId(tpl.id)}
+                                                style={{
+                                                    ...styles.templateCard,
+                                                    ...(selected ? styles.templateCardSelected : {}),
+                                                }}
+                                            >
+                                                <div style={styles.templateCardHeader}>
+                                                    <span style={styles.templateName}>{tpl.name}</span>
+                                                    <span style={styles.templateBadge}>{genreLabel}</span>
+                                                </div>
+                                                <div style={styles.templateDescription}>{tpl.description}</div>
+                                                <div style={styles.templateMeta}>
+                                                    {t("ui.create_book.template_chapter_count", "{count} Kapitel")
+                                                        .replace("{count}", String(tpl.chapters.length))}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Tabs.Content>
+
+                        <Tabs.Content value="blank">
+                            {/* Blank mode has no extra content above the shared fields */}
+                        </Tabs.Content>
+                    </Tabs.Root>
 
                     <div style={styles.body}>
                         {/* === Stage 1: Required fields only === */}
@@ -188,6 +328,17 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                                     </div>
 
                                     <div className="field">
+                                        <label className="label">{t("ui.create_book.description", "Beschreibung")}</label>
+                                        <textarea
+                                            className="input"
+                                            rows={3}
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder={t("ui.create_book.description_placeholder", "Kurze Beschreibung (optional)")}
+                                        />
+                                    </div>
+
+                                    <div className="field">
                                         <label className="label">{t("ui.create_book.language", "Sprache")}</label>
                                         <Select.Root value={language} onValueChange={setLanguage}>
                                             <Select.Trigger className="radix-select-trigger">
@@ -263,7 +414,7 @@ export default function CreateBookModal({open, onClose, onCreate}: Props) {
                         <button
                             className="btn btn-primary"
                             onClick={handleSubmit}
-                            disabled={!title.trim() || !author.trim()}
+                            disabled={!canSubmit}
                         >
                             {t("ui.common.create", "Erstellen")}
                         </button>
@@ -307,5 +458,65 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: "pointer",
         fontSize: "0.875rem",
         marginTop: 8,
+    },
+    templatePickerHeader: {
+        marginBottom: 8,
+    },
+    templatesEmpty: {
+        padding: "16px 0",
+        color: "var(--text-muted)",
+        fontSize: "0.875rem",
+    },
+    templateList: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+        gap: 8,
+        marginBottom: 8,
+    },
+    templateCard: {
+        textAlign: "left",
+        padding: 12,
+        borderRadius: 8,
+        border: "1px solid var(--border)",
+        background: "var(--bg-surface)",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        fontFamily: "var(--font-body)",
+        color: "var(--text)",
+    },
+    templateCardSelected: {
+        borderColor: "var(--accent)",
+        outline: "2px solid var(--accent)",
+        outlineOffset: -1,
+    },
+    templateCardHeader: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 8,
+    },
+    templateName: {
+        fontWeight: 600,
+        fontSize: "0.9375rem",
+    },
+    templateBadge: {
+        fontSize: "0.75rem",
+        padding: "2px 6px",
+        borderRadius: 4,
+        background: "var(--accent-muted, var(--bg-subtle))",
+        color: "var(--text-muted)",
+        whiteSpace: "nowrap",
+    },
+    templateDescription: {
+        fontSize: "0.8125rem",
+        color: "var(--text-muted)",
+        lineHeight: 1.4,
+    },
+    templateMeta: {
+        fontSize: "0.75rem",
+        color: "var(--text-muted)",
+        marginTop: 2,
     },
 };

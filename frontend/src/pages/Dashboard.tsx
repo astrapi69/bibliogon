@@ -1,6 +1,6 @@
 import {useEffect, useState, useRef} from "react";
 import {useNavigate} from "react-router-dom";
-import {api, Book, BookCreate} from "../api/client";
+import {api, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
 import DashboardFilterBar from "../components/DashboardFilterBar";
@@ -69,6 +69,12 @@ export default function Dashboard() {
 
     const handleCreate = async (data: BookCreate) => {
         const book = await api.books.create(data);
+        setBooks((prev) => [book, ...prev]);
+        setShowModal(false);
+    };
+
+    const handleCreateFromTemplate = async (data: BookFromTemplateCreate) => {
+        const book = await api.books.createFromTemplate(data);
         setBooks((prev) => [book, ...prev]);
         setShowModal(false);
     };
@@ -432,6 +438,7 @@ export default function Dashboard() {
                 open={showModal}
                 onClose={() => setShowModal(false)}
                 onCreate={handleCreate}
+                onCreateFromTemplate={handleCreateFromTemplate}
             />
             <BackupCompareDialog
                 open={showCompareDialog}
