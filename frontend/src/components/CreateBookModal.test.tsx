@@ -21,6 +21,8 @@ vi.mock("../hooks/useI18n", () => ({
 }))
 
 const mockListTemplates = vi.fn()
+const mockDeleteTemplate = vi.fn()
+const mockConfirm = vi.fn()
 
 vi.mock("../api/client", () => ({
   api: {
@@ -29,8 +31,30 @@ vi.mock("../api/client", () => ({
     },
     templates: {
       list: () => mockListTemplates(),
+      delete: (id: string) => mockDeleteTemplate(id),
     },
   },
+  ApiError: class ApiError extends Error {
+    status: number
+    detail: string
+    constructor(status: number, detail: string) {
+      super(detail)
+      this.status = status
+      this.detail = detail
+    }
+  },
+}))
+
+vi.mock("./AppDialog", () => ({
+  useDialog: () => ({
+    confirm: (...args: unknown[]) => mockConfirm(...args),
+    alert: vi.fn(),
+    prompt: vi.fn(),
+  }),
+}))
+
+vi.mock("../utils/notify", () => ({
+  notify: {success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 
 describe("CreateBookModal", () => {

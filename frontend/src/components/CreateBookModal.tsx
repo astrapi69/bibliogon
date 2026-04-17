@@ -1,11 +1,13 @@
 import {useState, useEffect} from "react";
-import {api, BookCreate, BookFromTemplateCreate, BookTemplate} from "../api/client";
+import {api, ApiError, BookCreate, BookFromTemplateCreate, BookTemplate} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
+import {useDialog} from "./AppDialog";
+import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
 import * as Tabs from "@radix-ui/react-tabs";
-import {ChevronDown, ChevronRight} from "lucide-react";
+import {ChevronDown, ChevronRight, Lock, Trash2} from "lucide-react";
 
 type Mode = "blank" | "template";
 
@@ -18,6 +20,7 @@ interface Props {
 
 export default function CreateBookModal({open, onClose, onCreate, onCreateFromTemplate}: Props) {
     const {t} = useI18n();
+    const dialog = useDialog();
     const GENRE_KEYS = [
         "novel", "non_fiction", "technical", "children", "biography", "poetry",
         "short_stories", "academic", "textbook", "self_help", "fantasy",
@@ -45,6 +48,29 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
     const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
     const [templatesError, setTemplatesError] = useState<string | null>(null);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+    const handleDeleteTemplate = async (tpl: BookTemplate) => {
+        if (tpl.is_builtin) return;
+        const ok = await dialog.confirm(
+            t("ui.template_picker.delete_title", "Vorlage loeschen"),
+            t("ui.template_picker.delete_confirm", "Vorlage '{name}' wirklich loeschen? Dies kann nicht rueckgaengig gemacht werden.")
+                .replace("{name}", tpl.name),
+            "danger",
+        );
+        if (!ok) return;
+        try {
+            await api.templates.delete(tpl.id);
+            setTemplates((prev) => (prev ? prev.filter((t) => t.id !== tpl.id) : prev));
+            if (selectedTemplateId === tpl.id) setSelectedTemplateId(null);
+            notify.success(t("ui.template_picker.deleted", "Vorlage geloescht"));
+        } catch (err) {
+            notify.error(
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.template_picker.delete_failed", "Loeschen fehlgeschlagen"),
+            );
+        }
+    };
 
     // Load author profile on open
     useEffect(() => {
@@ -197,14 +223,21 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                             `ui.template_genres.${tpl.genre}`,
                                             tpl.genre,
                                         );
+                                        const select = () => setSelectedTemplateId(tpl.id);
                                         return (
-                                            <button
+                                            <div
                                                 key={tpl.id}
-                                                type="button"
                                                 role="radio"
                                                 aria-checked={selected}
+                                                tabIndex={0}
                                                 data-testid={`template-card-${tpl.id}`}
-                                                onClick={() => setSelectedTemplateId(tpl.id)}
+                                                onClick={select}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === " " || e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        select();
+                                                    }
+                                                }}
                                                 style={{
                                                     ...styles.templateCard,
                                                     ...(selected ? styles.templateCardSelected : {}),
@@ -212,14 +245,37 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                             >
                                                 <div style={styles.templateCardHeader}>
                                                     <span style={styles.templateName}>{tpl.name}</span>
-                                                    <span style={styles.templateBadge}>{genreLabel}</span>
+                                                    <div style={styles.templateCardBadges}>
+                                                        <span style={styles.templateBadge}>{genreLabel}</span>
+                                                        {tpl.is_builtin ? (
+                                                            <span
+                                                                style={styles.builtinBadge}
+                                                                title={t("ui.template_picker.builtin_hint", "Mitgelieferte Vorlage")}
+                                                                data-testid={`template-builtin-badge-${tpl.id}`}
+                                                            >
+                                                                <Lock size={10}/>
+                                                                {t("ui.template_picker.builtin", "Mitgeliefert")}
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                className="btn-icon"
+                                                                style={styles.deleteBtn}
+                                                                aria-label={t("ui.template_picker.delete", "Loeschen")}
+                                                                data-testid={`template-delete-${tpl.id}`}
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl); }}
+                                                            >
+                                                                <Trash2 size={14}/>
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div style={styles.templateDescription}>{tpl.description}</div>
                                                 <div style={styles.templateMeta}>
                                                     {t("ui.create_book.template_chapter_count", "{count} Kapitel")
                                                         .replace("{count}", String(tpl.chapters.length))}
                                                 </div>
-                                            </button>
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -499,6 +555,33 @@ const styles: Record<string, React.CSSProperties> = {
         justifyContent: "space-between",
         alignItems: "center",
         gap: 8,
+    },
+    templateCardBadges: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+    },
+    builtinBadge: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        fontSize: "0.6875rem",
+        padding: "1px 6px",
+        borderRadius: 4,
+        background: "var(--bg-subtle, var(--bg-surface))",
+        color: "var(--text-muted)",
+        whiteSpace: "nowrap",
+    },
+    deleteBtn: {
+        padding: 4,
+        background: "none",
+        border: "none",
+        borderRadius: 4,
+        color: "var(--text-muted)",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
     },
     templateName: {
         fontWeight: 600,
