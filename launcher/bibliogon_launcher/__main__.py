@@ -20,7 +20,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, ui
+from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, ui, update_check
 
 
 logger = logging.getLogger("bibliogon_launcher")
@@ -198,6 +198,10 @@ def _run_launcher() -> int:
             window.after(0, lambda: ui.ask_copyable_url(url))
 
         window.after(0, lambda: window.set_running(port, on_stop=lambda: _shutdown(window, repo)))
+        # Non-blocking update check: fires after the main UI is running.
+        # Any failure is swallowed inside update_check; the callback
+        # schedules the notification on the main thread via window.after.
+        _schedule_update_check(window, mdata)
 
     window.run_in_background(worker)
 
@@ -207,6 +211,53 @@ def _run_launcher() -> int:
 
 
 # --- Step helpers ---
+
+
+def _schedule_update_check(window: ui.StatusWindow, mdata: dict | None) -> None:
+    """Kick off a background update check and surface a notification.
+
+    Skipped silently if no manifest (Bibliogon not installed) or the
+    manifest has no version field. The update_check module handles
+    all failure modes silently - this helper's only job is to wire
+    the callback through window.after so the tkinter UI update runs
+    on the main thread.
+    """
+    if not mdata:
+        return
+    current = mdata.get("version")
+    if not current:
+        return
+
+    def on_update(tag: str, url: str) -> None:
+        # Called on a background thread. Marshal the UI call to the
+        # main thread via window.after so tkinter stays thread-safe.
+        logger.info("Update available: %s (current: %s)", tag, current)
+        window.after(0, lambda: _show_update_notification(tag, url, current))
+
+    update_check.check_for_update_async(
+        current_version=current,
+        on_update_available=on_update,
+    )
+
+
+def _show_update_notification(tag: str, url: str, current: str) -> None:
+    """Present the "new version available" dialog. Main thread only."""
+    choice = ui.two_button_dialog(
+        title="Update available",
+        message=(
+            f"A newer version of Bibliogon is available.\n\n"
+            f"Installed: {current}\n"
+            f"Latest: {tag}\n\n"
+            "Open the release page to see what's new and download?"
+        ),
+        primary_label="Open release page",
+        secondary_label="Dismiss",
+    )
+    if choice == "primary":
+        try:
+            webbrowser.open(url)
+        except OSError as exc:
+            logger.warning("update release page open failed: %s", exc)
 
 
 def _retry_pending_cleanup() -> None:
