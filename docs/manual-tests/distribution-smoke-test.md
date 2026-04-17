@@ -1,17 +1,17 @@
 # Distribution Smoke Test - YYYY-MM-DD
 
-Combined smoke test for the install path and the Windows launcher.
+Combined smoke test for the install path and the Windows + Linux launchers.
 Copy this file before each test run (e.g.
 `distribution-smoke-test-2026-04-XX.md`), fill in the fields,
 commit the filled-in copy. Keep this template unchanged.
 
 ## Environment
 
-- Windows version:
-- Docker Desktop version:
-- Git Bash version:
+- OS version (Windows + Linux distro/kernel):
+- Docker Desktop / Docker Engine version:
+- Git Bash version (Windows only):
 - Bibliogon version (git tag or commit):
-- Launcher version (from the .exe properties dialog):
+- Launcher version (from the .exe properties dialog or `--version`):
 - Launcher SHA256 (from the CI artifact or release asset):
 
 ---
@@ -141,6 +141,45 @@ If the install fails, capture:
 
 ---
 
+## Part 4: Linux Launcher (D-03)
+
+**Tests the Linux PyInstaller binary built by the Launcher (Linux) workflow.**
+
+### Preflight
+
+- [ ] Downloaded `bibliogon-launcher` artifact from the GitHub Actions run
+- [ ] Downloaded `bibliogon-launcher.sha256` alongside
+- [ ] Verified SHA256: `sha256sum bibliogon-launcher` matches the hex string in `.sha256`
+- [ ] Made executable: `chmod +x bibliogon-launcher`
+
+### Happy-Path Test Results
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| First run (no manifest) | Welcome dialog appears (no crash) |  | PASS / FAIL |
+| Install guide button | Browser opens to launcher help page |  | PASS / FAIL |
+| Close button | Launcher exits cleanly, return code 0 |  | PASS / FAIL |
+| Install flow: folder picker | Tkinter folder picker opens with default `~/bibliogon` |  | PASS / FAIL |
+| Install flow: download | Progress shown, ZIP downloaded, extracted |  | PASS / FAIL |
+| Install flow: Docker build | `docker compose up --build -d` runs, progress visible |  | PASS / FAIL |
+| Install flow: browser open | Default browser opens at `http://localhost:7880`, Dashboard loads |  | PASS / FAIL |
+| Manifest written | `~/.config/bibliogon/install.json` exists with correct content |  | PASS / FAIL |
+| Second run (manifest present) | Main UI appears with Uninstall button |  | PASS / FAIL |
+| Uninstall: confirmation | Dialog shows install path, Cancel/Uninstall buttons |  | PASS / FAIL |
+| Uninstall: Docker cleanup | Stack stopped, volumes + images removed |  | PASS / FAIL |
+| Uninstall: dir removal | Install directory deleted |  | PASS / FAIL |
+| Uninstall: UI transition | Welcome dialog returns, no Uninstall button |  | PASS / FAIL |
+
+### Linux-specific Edge Cases
+
+| Step | Setup | Expected | Observed | Status |
+|------|-------|----------|----------|--------|
+| No tkinter system package | Rare on end-user systems, but test on minimal container | Binary fails with libtk error; document required package (`sudo apt install python3-tk`) |  | PASS / FAIL / N/A |
+| Docker via rootless/podman | Run with podman-docker alias | Compose commands succeed or show clear error |  | PASS / FAIL / N/A |
+| Wayland session | Launch from GNOME/KDE on Wayland | Tkinter renders via XWayland fallback |  | PASS / FAIL |
+
+---
+
 ## Issues Found
 
 - None / List any bugs or UX problems:
@@ -160,5 +199,6 @@ Attach relevant sections of `%APPDATA%\Bibliogon\launcher.log` for any failing s
 - [ ] Part 3: Install flow works (download, extract, manifest, start)
 - [ ] Part 3: Uninstall flow works (confirm, remove, manifest delete)
 - [ ] Part 3: Edge cases handled (missing dir, network failure, cancel)
+- [ ] Part 4: Linux launcher binary runs, install/uninstall flow works
 - [ ] D-01 marked `[x]` in ROADMAP, launcher ready for release asset
 - [ ] Issues require iteration (listed above)

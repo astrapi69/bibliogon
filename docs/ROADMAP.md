@@ -30,7 +30,7 @@ Lower the installation barrier for non-technical users. Simple Launcher first, T
 
 - [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close) — *in progress, code + CI build in [launcher/](../launcher/); manual Windows smoke test pending. Scope is start/stop only; Bibliogon must already be installed separately.*
 - [ ] D-02: Simple Launcher for macOS (.app bundle with the same behavior)
-- [ ] D-03: Simple Launcher for Linux (.desktop file + launcher script)
+- [ ] D-03: Simple Launcher for Linux (PyInstaller binary via CI, smoke test pending). Same source as Windows launcher; spec file is cross-platform aware. CI workflow: [launcher-linux.yml](../.github/workflows/launcher-linux.yml). Optional follow-up: .desktop file for GNOME/KDE menu integration.
 - [ ] D-04: auto-update check in the launcher (notify user of new versions)
 - [ ] D-05: Full Windows installer (downloads Docker Desktop + Bibliogon repo + generates .env, no terminal required at any step). Larger scope than D-01's launcher. Defer until user feedback shows the install (not the start) is the actual friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for context and triggers for reconsidering.
 
