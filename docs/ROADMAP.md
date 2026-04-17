@@ -10,7 +10,7 @@ Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived 
 
 ## Current focus
 
-Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Next active theme: Templates (TM-01 onward) for genre-specific starter structures.
+Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Templates theme is complete: book templates (TM-01/02/03/05) and chapter templates (TM-04) all shipped. Next active theme: TBD - likely Git-based backup (SI-01 onward) or deferred DEP-* dependency upgrades.
 
 ---
 
@@ -39,11 +39,11 @@ Lower the installation barrier for non-technical users. Simple Launcher first, T
 
 Pre-built structures for common book genres. Lowers the entry barrier for new users who do not know how to structure a book.
 
-- [ ] TM-01: template data model (book template = title, description, chapter list with types and placeholder content)
-- [ ] TM-02: built-in templates for common genres (children's book, sci-fi novel, non-fiction/how-to, philosophy, memoir)
-- [ ] TM-03: "Create from template" option in CreateBookModal
-- [ ] TM-04: chapter templates (reusable chapter structures, e.g. "interview chapter", "recipe chapter")
-- [ ] TM-05: user-created templates (save current book structure as a template)
+- [x] TM-01: template data model. `BookTemplate` + `BookTemplateChapter` tables (Alembic migration `b7c8d9e0f1a2`), `/api/templates/` CRUD, 5 new `ChapterType` values (half_title, title_page, copyright, section, conclusion), idempotent seed at startup.
+- [x] TM-02: 5 builtin templates seeded with TM-01 - Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Definitions live in `backend/app/data/builtin_templates.py`.
+- [x] TM-03: "Create from template" mode in CreateBookModal (Radix Tabs toggle), POST /api/books/from-template builds the book + chapters in a single commit, template picker cards with genre badge and chapter count.
+- [x] TM-04: chapter templates. `ChapterTemplate` table (Alembic migration `c8d9e0f1a2b3`), `/api/chapter-templates/` CRUD, 4 builtins seeded (Interview, FAQ, Recipe, Photo Report) as TipTap JSON. Frontend: "Aus Vorlage..." entry in the new-chapter dropdown opens `ChapterTemplatePickerModal`; "Save as template" entry in each chapter's ContextMenu opens `SaveAsChapterTemplateModal` (empty-placeholders vs preserve-content). User templates deletable; builtins show a "Built-in" badge. TM-04b items deferred: update endpoint exposed in UI, JSON export/import, multi-chapter templates.
+- [x] TM-05: user-created templates. "Save as template" in the ChapterSidebar footer opens SaveAsTemplateModal (empty-placeholders vs preserve-content), user templates appear in the picker alongside builtins with a trash-icon delete action; builtin templates show a "Built-in" badge and are read-only.
 
 ### 3. Polish and stability (runs in parallel throughout Phase 2)
 
@@ -72,6 +72,7 @@ Replace the upload-based backup compare with proper Git integration.
 Items with external deadlines or recurring cost that deserve planning-view visibility. Not features; just upkeep that will bite if ignored.
 
 - [x] **Node.js 20 -> 22 LTS:** Dockerfile and CI upgraded from Node 20 to Node 22 (Active LTS until Apr 2027). Node 20 EOL Sep 2026 is no longer a concern.
+- [x] **Coverage moved to CI:** `make test` stays fast and coverage-free for everyday local use. Opt-in `make test-coverage` available for local runs. `.github/workflows/coverage.yml` runs on every push/PR and uploads HTML + XML artifacts (14-day retention) for backend, the 5 ci-matrix plugins (export, grammar, kdp, kinderbuch, ms-tools), and frontend. Audiobook + translation plugins still uncovered in CI (mirroring `ci.yml`); pairing them is a follow-up. Codecov integration deferred.
 
 ### Deferred major dependency upgrades
 
