@@ -67,6 +67,8 @@ describe("CreateBookModal", () => {
     onCreate.mockClear()
     onCreateFromTemplate.mockClear()
     mockListTemplates.mockReset()
+    mockDeleteTemplate.mockReset()
+    mockConfirm.mockReset()
   })
 
   function renderModal(open = true) {
@@ -381,5 +383,73 @@ describe("CreateBookModal", () => {
       // Fallback text from t("ui.create_book.template_load_error", "Vorlagen konnten nicht geladen werden")
       expect(screen.getByText(/konnten nicht geladen/i)).toBeTruthy()
     })
+  })
+
+  // --- User template delete flow (TM-05) ---
+
+  const USER_TPL = {
+    id: "tpl-user",
+    name: "My Custom",
+    description: "Mine",
+    genre: "memoir",
+    language: "en",
+    is_builtin: false,
+    created_at: "2026-04-17T00:00:00Z",
+    updated_at: "2026-04-17T00:00:00Z",
+    chapters: [{position: 0, title: "x", chapter_type: "chapter", content: null}],
+  }
+
+  it("user templates have a delete button, builtins show a badge", async () => {
+    mockListTemplates.mockResolvedValue([FAKE_TEMPLATES[0], USER_TPL])
+    renderModal()
+    clickTab("create-book-mode-template")
+
+    await waitFor(() => {
+      expect(screen.getByText("My Custom")).toBeTruthy()
+    })
+
+    // Builtin card: badge visible, no delete button
+    expect(screen.getByTestId("template-builtin-badge-tpl-scifi")).toBeTruthy()
+    expect(screen.queryByTestId("template-delete-tpl-scifi")).toBeNull()
+
+    // User card: delete button visible, no builtin badge
+    expect(screen.getByTestId("template-delete-tpl-user")).toBeTruthy()
+    expect(screen.queryByTestId("template-builtin-badge-tpl-user")).toBeNull()
+  })
+
+  it("clicking delete on a user template confirms then calls api.templates.delete", async () => {
+    mockListTemplates.mockResolvedValue([USER_TPL])
+    mockConfirm.mockResolvedValue(true)
+    mockDeleteTemplate.mockResolvedValue(undefined)
+    renderModal()
+    clickTab("create-book-mode-template")
+
+    await waitFor(() => {
+      expect(screen.getByTestId("template-delete-tpl-user")).toBeTruthy()
+    })
+    fireEvent.click(screen.getByTestId("template-delete-tpl-user"))
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(mockDeleteTemplate).toHaveBeenCalledWith("tpl-user"))
+    await waitFor(() => {
+      expect(screen.queryByText("My Custom")).toBeNull()
+    })
+  })
+
+  it("delete cancelled by user does not call the API", async () => {
+    mockListTemplates.mockResolvedValue([USER_TPL])
+    mockConfirm.mockResolvedValue(false)
+    renderModal()
+    clickTab("create-book-mode-template")
+
+    await waitFor(() => {
+      expect(screen.getByTestId("template-delete-tpl-user")).toBeTruthy()
+    })
+    fireEvent.click(screen.getByTestId("template-delete-tpl-user"))
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1))
+    expect(mockDeleteTemplate).not.toHaveBeenCalled()
+    // Card still rendered
+    expect(screen.getByText("My Custom")).toBeTruthy()
   })
 })
