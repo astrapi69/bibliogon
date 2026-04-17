@@ -151,6 +151,13 @@ async def lifespan(app: FastAPI):
         seed_builtin_templates(_bt_db)
     finally:
         _bt_db.close()
+    # Seed builtin chapter templates (idempotent)
+    from app.data.builtin_chapter_templates import seed_builtin_chapter_templates
+    _ct_db = SessionLocal()
+    try:
+        seed_builtin_chapter_templates(_ct_db)
+    finally:
+        _ct_db.close()
     _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)

@@ -12,6 +12,10 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
+from app.data.builtin_chapter_templates import (
+    BUILTIN_CHAPTER_TEMPLATES,
+    seed_builtin_chapter_templates,
+)
 from app.database import SessionLocal
 from app.main import app
 from app.models import ChapterTemplate
@@ -159,6 +163,70 @@ def test_delete_user_chapter_template(client: TestClient):
     assert r.status_code == 204
     r = client.get(f"/api/chapter-templates/{template_id}")
     assert r.status_code == 404
+
+
+# --- Builtin seed tests ---
+
+
+@pytest.fixture(autouse=True)
+def _reseed_builtin_chapter_templates():
+    """Re-seed builtins before each API-facing test.
+
+    conftest.py's ``setup_db`` fixture drops and recreates all tables
+    around every test, which wipes the rows the module-scoped
+    lifespan inserted. Re-seed so list-style tests observe the
+    expected builtin count.
+    """
+    db = SessionLocal()
+    try:
+        seed_builtin_chapter_templates(db)
+    finally:
+        db.close()
+    yield
+
+
+def test_seed_inserts_expected_builtins():
+    db = SessionLocal()
+    try:
+        names = {
+            t.name
+            for t in db.query(ChapterTemplate)
+            .filter(ChapterTemplate.is_builtin.is_(True))
+            .all()
+        }
+        expected = {spec["name"] for spec in BUILTIN_CHAPTER_TEMPLATES}
+        assert expected.issubset(names)
+    finally:
+        db.close()
+
+
+def test_seed_is_idempotent():
+    db = SessionLocal()
+    try:
+        before = (
+            db.query(ChapterTemplate)
+            .filter(ChapterTemplate.is_builtin.is_(True))
+            .count()
+        )
+        inserted = seed_builtin_chapter_templates(db)
+        after = (
+            db.query(ChapterTemplate)
+            .filter(ChapterTemplate.is_builtin.is_(True))
+            .count()
+        )
+        assert inserted == 0
+        assert before == after
+    finally:
+        db.close()
+
+
+def test_builtin_content_is_valid_tiptap_json():
+    import json
+    for spec in BUILTIN_CHAPTER_TEMPLATES:
+        doc = json.loads(spec["content"])
+        assert doc["type"] == "doc"
+        assert isinstance(doc["content"], list)
+        assert len(doc["content"]) > 0
 
 
 def test_delete_and_update_builtin_returns_403(client: TestClient):
