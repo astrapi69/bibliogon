@@ -51,6 +51,7 @@ interface Props {
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
     onAddFromTemplate?: () => void;
+    onSaveAsChapterTemplate?: (chapterId: string) => void;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -69,15 +70,17 @@ const STRUCTURE_TYPES: ChapterType[] = ["part", "part_intro", "interlude"];
 
 // --- Sortable Chapter Item ---
 
-const SortableChapterItem = React.memo(function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, typeLabels, deleteLabel, renameLabel}: {
+const SortableChapterItem = React.memo(function SortableChapterItem({chapter, isActive, onSelect, onDelete, onRename, onSaveAsChapterTemplate, typeLabels, deleteLabel, renameLabel, saveTemplateLabel}: {
     chapter: Chapter;
     isActive: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
     onRename: (id: string, newTitle: string) => void;
+    onSaveAsChapterTemplate?: (id: string) => void;
     typeLabels: Record<ChapterType, string>;
     deleteLabel: string;
     renameLabel: string;
+    saveTemplateLabel: string;
 }) {
     const [editing, setEditing] = useState(false);
     const [editValue, setEditValue] = useState(chapter.title);
@@ -177,6 +180,15 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
                     }}>
                         <Pencil size={12} style={{marginRight: 6}}/> {renameLabel}
                     </ContextMenu.Item>
+                    {onSaveAsChapterTemplate && (
+                        <ContextMenu.Item
+                            className="chapter-dropdown-item"
+                            data-testid={`chapter-context-save-template-${chapter.id}`}
+                            onSelect={() => onSaveAsChapterTemplate(chapter.id)}
+                        >
+                            <BookmarkPlus size={12} style={{marginRight: 6}}/> {saveTemplateLabel}
+                        </ContextMenu.Item>
+                    )}
                     <ContextMenu.Separator className="chapter-dropdown-separator"/>
                     <ContextMenu.Item className="chapter-dropdown-item chapter-dropdown-item-danger" onSelect={() => onDelete(chapter.id)}>
                         <Trash2 size={12} style={{marginRight: 6}}/> {deleteLabel}
@@ -189,17 +201,19 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
 
 // --- Sortable Group ---
 
-function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onRename, onReorder, typeLabels, deleteLabel, renameLabel}: {
+function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDelete, onRename, onSaveAsChapterTemplate, onReorder, typeLabels, deleteLabel, renameLabel, saveTemplateLabel}: {
     chapters: Chapter[];
     allChapters: Chapter[];
     activeChapterId: string | null;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
     onRename: (id: string, newTitle: string) => void;
+    onSaveAsChapterTemplate?: (id: string) => void;
     onReorder: (chapterIds: string[]) => void;
     typeLabels: Record<ChapterType, string>;
     deleteLabel: string;
     renameLabel: string;
+    saveTemplateLabel: string;
 }) {
     const sensors = useSensors(
         useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
@@ -244,9 +258,11 @@ function SortableGroup({chapters, allChapters, activeChapterId, onSelect, onDele
                         onSelect={onSelect}
                         onDelete={onDelete}
                         onRename={onRename}
+                        onSaveAsChapterTemplate={onSaveAsChapterTemplate}
                         typeLabels={typeLabels}
                         deleteLabel={deleteLabel}
                         renameLabel={renameLabel}
+                        saveTemplateLabel={saveTemplateLabel}
                     />
                 ))}
             </SortableContext>
@@ -271,6 +287,7 @@ export default function ChapterSidebar({
                                            onValidateToc,
                                            onSaveAsTemplate,
                                            onAddFromTemplate,
+                                           onSaveAsChapterTemplate,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -418,9 +435,11 @@ export default function ChapterSidebar({
                                 onDelete={onDelete}
                                 onRename={onRename}
                                 onReorder={onReorder}
+                                onSaveAsChapterTemplate={onSaveAsChapterTemplate}
                                 typeLabels={TYPE_LABELS}
                                 deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                                 renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
+                                saveTemplateLabel={t("ui.sidebar.chapter_save_as_template", "Als Vorlage speichern")}
                             />
                         )}
                     </>
@@ -447,9 +466,11 @@ export default function ChapterSidebar({
                             onDelete={onDelete}
                             onRename={onRename}
                             onReorder={onReorder}
+                            onSaveAsChapterTemplate={onSaveAsChapterTemplate}
                             typeLabels={TYPE_LABELS}
                             deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                             renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
+                            saveTemplateLabel={t("ui.sidebar.chapter_save_as_template", "Als Vorlage speichern")}
                         />
                     </>
                 )}
@@ -473,9 +494,11 @@ export default function ChapterSidebar({
                                 onDelete={onDelete}
                                 onRename={onRename}
                                 onReorder={onReorder}
+                                onSaveAsChapterTemplate={onSaveAsChapterTemplate}
                                 typeLabels={TYPE_LABELS}
                                 deleteLabel={t("ui.sidebar.delete_chapter", "Kapitel löschen")}
                                 renameLabel={t("ui.sidebar.rename_chapter", "Umbenennen")}
+                                saveTemplateLabel={t("ui.sidebar.chapter_save_as_template", "Als Vorlage speichern")}
                             />
                         )}
                     </>

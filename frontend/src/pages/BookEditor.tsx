@@ -7,6 +7,7 @@ import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
 import ChapterTemplatePickerModal from "../components/ChapterTemplatePickerModal";
+import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -51,6 +52,7 @@ export default function BookEditor() {
     const [showExport, setShowExport] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
+    const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
 
@@ -280,6 +282,7 @@ export default function BookEditor() {
                 onMetadata={() => _setShowMetadata(true)}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
+                onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -391,6 +394,19 @@ export default function BookEditor() {
                 onClose={() => setShowChapterTemplatePicker(false)}
                 onInsert={handleAddChapterFromTemplate}
             />
+
+            {saveChapterTemplateId && bookId && (() => {
+                const ch = book.chapters.find((c) => c.id === saveChapterTemplateId);
+                if (!ch) return null;
+                return (
+                    <SaveAsChapterTemplateModal
+                        open={true}
+                        chapter={ch}
+                        bookId={bookId}
+                        onClose={() => setSaveChapterTemplateId(null)}
+                    />
+                );
+            })()}
         </div>
     );
 }
