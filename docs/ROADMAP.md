@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-04-15
+Last updated: 2026-04-17
 Latest release: v0.16.0 (audiobook incremental persistence, four-mode regen dialog, WebSocket live updates, dependency currency sweep)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
@@ -10,7 +10,7 @@ Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived 
 
 ## Current focus
 
-Distribution is the next active theme: lower the install barrier for non-technical users via the Simple Launcher (Windows, macOS, Linux). After Distribution, Templates open the door to genre-specific starter structures.
+Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Next active theme: Templates (TM-01 onward) for genre-specific starter structures.
 
 ---
 
@@ -28,9 +28,9 @@ Bugs whose impact on shipped versions warrants tracking separately from polish w
 
 Lower the installation barrier for non-technical users. Simple Launcher first, Tauri as a later option if needed. No Electron. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for the full evaluation.
 
-- [ ] D-01: Simple Launcher for Windows (Python script packaged as .exe: starts Docker, opens browser, stops on close) — *in progress, code + CI build in [launcher/](../launcher/); manual Windows smoke test pending. Scope is start/stop only; Bibliogon must already be installed separately.*
-- [ ] D-02: Simple Launcher for macOS (.app bundle, arm64-only for initial release). CI workflow: [launcher-macos.yml](../.github/workflows/launcher-macos.yml). Same source as Windows launcher; spec file's darwin BUNDLE block produces the .app. Smoke test pending Mac hardware. Unsigned binary requires Gatekeeper bypass (right-click -> Open) on first launch. Intel Mac support (universal2) and code signing deferred until user demand.
-- [ ] D-03: Simple Launcher for Linux (PyInstaller binary via CI, smoke test pending). Same source as Windows launcher; spec file is cross-platform aware. CI workflow: [launcher-linux.yml](../.github/workflows/launcher-linux.yml). Optional follow-up: .desktop file for GNOME/KDE menu integration.
+- [x] D-01: Simple Launcher for Windows (`.exe` via PyInstaller). Install, uninstall, Docker start/stop, browser open, health check, update notification. CI: [launcher-windows.yml](../.github/workflows/launcher-windows.yml). Manual smoke test: [issue #2](https://github.com/astrapi69/bibliogon/issues/2).
+- [x] D-02: Simple Launcher for macOS (`.app` bundle, arm64-only for initial release). Same source as Windows launcher; spec file's darwin BUNDLE block produces the `.app`. CI: [launcher-macos.yml](../.github/workflows/launcher-macos.yml). Unsigned binary requires Gatekeeper bypass (right-click -> Open) on first launch. Intel Mac support (universal2) and code signing deferred until user demand. Manual smoke test: [issue #3](https://github.com/astrapi69/bibliogon/issues/3).
+- [x] D-03: Simple Launcher for Linux (PyInstaller binary). Same source as Windows launcher; spec file is cross-platform aware. CI: [launcher-linux.yml](../.github/workflows/launcher-linux.yml). Requires `python3-tk` on target (preinstalled on every major desktop distro). Optional follow-up: `.desktop` file for GNOME/KDE menu integration. Manual smoke test: [issue #4](https://github.com/astrapi69/bibliogon/issues/4).
 - [ ] D-03a: AppImage for Linux — deferred. The PyInstaller binary requires `python3-tk` on the target (preinstalled on every major desktop distro). AppImage would make that self-contained at a 4-10x size cost and added CI complexity (FUSE + appimagetool). Re-evaluate only when a user reports a missing-tkinter failure in the wild.
 - [x] D-04: auto-update check in the launcher (notify user of new versions). Background thread polls `https://api.github.com/repos/astrapi69/bibliogon/releases/latest` on every launcher start, compares against the installed version from the manifest, and shows a non-blocking "Open release page / Dismiss" dialog when a strictly newer release is available. All failures are silent (network, timeout, rate limit, malformed response). Stdlib-only (urllib + threading). 21 tests in [test_update_check.py](../launcher/tests/test_update_check.py).
 - [ ] D-05: Full Windows installer (downloads Docker Desktop + Bibliogon repo + generates .env, no terminal required at any step). Larger scope than D-01's launcher. Defer until user feedback shows the install (not the start) is the actual friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for context and triggers for reconsidering.
