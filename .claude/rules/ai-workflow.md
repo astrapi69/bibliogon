@@ -114,6 +114,47 @@ Every audit must include:
 
 When closing gaps in a session, update `current-coverage.md` immediately - do not wait for the next full audit.
 
+## Where coverage runs
+
+Coverage runs on CI, not as part of the normal local workflow.
+Running full coverage locally (`make test-coverage`) is heavy
+and thermally stresses the developer machine, so it is opt-in
+only.
+
+- `make test` - default everyday command. Fast, no coverage.
+  Stays green as the gate after every change.
+- `make test-coverage` - explicit opt-in. Runs backend, frontend
+  and the 5 in-CI plugins (export, grammar, kdp, kinderbuch,
+  ms-tools) with `pytest --cov` and `vitest --coverage`. Frontend
+  coverage requires Node 20+; lower versions fail with a
+  `node:inspector/promises` ImportError. CI uses Node 22 so this
+  is only a local concern.
+- `.github/workflows/coverage.yml` - runs on every push to main
+  and every PR. Uploads HTML reports + coverage.xml as
+  GitHub Actions artifacts (14 day retention):
+    - `backend-coverage`
+    - `bibliogon-plugin-{export,grammar,kdp,kinderbuch,ms-tools}-coverage`
+    - `frontend-coverage`
+
+To pull the latest coverage reports without running coverage
+locally:
+
+```bash
+gh run download --name backend-coverage
+gh run download --name frontend-coverage
+gh run download --name bibliogon-plugin-export-coverage  # etc.
+```
+
+`audiobook` and `translation` plugins are not yet in the coverage
+matrix - they are tested by `make test` but not by CI's
+`ci.yml` plugin matrix either, so adding them to coverage is
+paired with adding them to ci.yml in a follow-up.
+
+Codecov integration is intentionally not wired up. Adding it is
+a separate prompt: enable the repo on codecov.io, add
+`CODECOV_TOKEN` to GitHub Secrets, append a `codecov-action`
+step after each coverage step in `coverage.yml`.
+
 ## Single source of truth for volatile statistics
 
 Numbers that change with every feature or test session live in ONE canonical location. Other documentation references that location instead of duplicating the number.
