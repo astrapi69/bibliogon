@@ -31,7 +31,7 @@ GITHUB_REPO = "astrapi69/bibliogon"
 
 # The Bibliogon version this launcher was built for. Updated during
 # the release workflow (Step 4) alongside the other version strings.
-COMPATIBLE_VERSION = "0.16.0"
+COMPATIBLE_VERSION = "0.17.0"
 
 
 def release_zip_url(version: str | None = None) -> str:

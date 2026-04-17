@@ -64,7 +64,7 @@ Additionally for the AI:
 ## Current state
 
 See architecture.md for architectural details. Additionally note:
-- Version: 0.16.0 (audiobook incremental persistence, four-mode regen dialog, WebSocket live updates, dependency currency sweep).
+- Version: 0.17.0 (one-click launcher install/uninstall across Windows/macOS/Linux, auto-update check with opt-out, cleanup retry, activity log, manuscripta 0.9.0 + Pillow 12).
 - Tests: see `docs/audits/current-coverage.md` for current counts. `make test` covers backend+plugins+Vitest, E2E is separate.
 - 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
 - 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).

@@ -157,7 +157,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.16.0",
+    version="0.17.0",
     lifespan=lifespan,
     docs_url="/api/docs" if DEBUG else None,
     redoc_url="/api/redoc" if DEBUG else None,
