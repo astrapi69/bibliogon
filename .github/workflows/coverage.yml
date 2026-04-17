@@ -1,0 +1,120 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-coverage:
+    name: Backend Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run backend coverage
+        working-directory: backend
+        run: |
+          poetry run pytest tests/ \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: |
+            backend/htmlcov/
+            backend/coverage.xml
+          retention-days: 14
+
+  plugin-coverage:
+    name: Plugin Coverage (${{ matrix.plugin }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plugin: bibliogon-plugin-export
+            package: bibliogon_export
+          - plugin: bibliogon-plugin-grammar
+            package: bibliogon_grammar
+          - plugin: bibliogon-plugin-kdp
+            package: bibliogon_kdp
+          - plugin: bibliogon-plugin-kinderbuch
+            package: bibliogon_kinderbuch
+          - plugin: bibliogon-plugin-ms-tools
+            package: bibliogon_ms_tools
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install plugin dependencies
+        working-directory: plugins/${{ matrix.plugin }}
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run plugin coverage
+        working-directory: plugins/${{ matrix.plugin }}
+        run: |
+          poetry run pytest tests/ \
+            --cov=${{ matrix.package }} \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term
+
+      - name: Upload plugin coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.plugin }}-coverage
+          path: |
+            plugins/${{ matrix.plugin }}/htmlcov/
+            plugins/${{ matrix.plugin }}/coverage.xml
+          retention-days: 14
+
+  frontend-coverage:
+    name: Frontend Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 14
