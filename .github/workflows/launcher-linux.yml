@@ -1,0 +1,94 @@
+name: Launcher (Linux)
+
+# Builds the Linux launcher binary and publishes a SHA256 checksum next
+# to it. Runs on:
+#   - push to main when launcher/ changes (smoke build, uploads an
+#     artifact to the workflow run for download + manual verification)
+#   - release tag v*.*.* (attaches the binary + checksum to the GitHub
+#     release as release assets)
+#
+# Parallels launcher-windows.yml. The launcher source code is platform-
+# agnostic (platformdirs, subprocess, tkinter) so both jobs run the
+# same pyproject.toml, tests, and PyInstaller spec file.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-linux.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-linux.yml"
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build launcher binary
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        # tkinter is not bundled with the manylinux Python wheels used
+        # by actions/setup-python on Linux runners. Install the system
+        # tk package so PyInstaller can detect and bundle it.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install launcher dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run launcher unit tests
+        run: poetry run pytest tests/ -v
+
+      - name: Regenerate placeholder icon
+        run: poetry run python scripts/make_icon.py
+
+      - name: Build bibliogon-launcher binary
+        # The spec file is cross-platform aware (icon + version metadata
+        # are Windows-only and are skipped on Linux). Same spec as the
+        # Windows build, same entrypoint, same excludes.
+        run: poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm
+
+      - name: Compute SHA256 checksum
+        run: |
+          hash=$(sha256sum dist/bibliogon-launcher | awk '{print $1}')
+          echo "$hash  bibliogon-launcher" > dist/bibliogon-launcher.sha256
+          echo "SHA256: $hash"
+
+      - name: Upload smoke artifact (push / PR / dispatch)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bibliogon-launcher-linux
+          path: |
+            launcher/dist/bibliogon-launcher
+            launcher/dist/bibliogon-launcher.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attach to release (tag push)
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            launcher/dist/bibliogon-launcher
+            launcher/dist/bibliogon-launcher.sha256
+          fail_on_unmatched_files: true
