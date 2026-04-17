@@ -144,6 +144,13 @@ async def lifespan(app: FastAPI):
             await sync_edge_tts_voices(_vs_db)
     finally:
         _vs_db.close()
+    # Seed builtin book templates (idempotent)
+    from app.data.builtin_templates import seed_builtin_templates
+    _bt_db = SessionLocal()
+    try:
+        seed_builtin_templates(_bt_db)
+    finally:
+        _bt_db.close()
     _load_installed_plugins()
     manager.discover_plugins()
     manager.mount_routes(app)
