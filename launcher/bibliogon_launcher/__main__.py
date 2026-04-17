@@ -20,7 +20,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, ui, update_check
+from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, settings, ui, update_check
 
 
 logger = logging.getLogger("bibliogon_launcher")
@@ -227,6 +227,10 @@ def _schedule_update_check(window: ui.StatusWindow, mdata: dict | None) -> None:
     current = mdata.get("version")
     if not current:
         return
+    # User opt-out: respect the auto_update_check setting.
+    if not settings.get("auto_update_check"):
+        logger.info("Update check disabled by user setting.")
+        return
 
     def on_update(tag: str, url: str) -> None:
         # Called on a background thread. Marshal the UI call to the
@@ -241,8 +245,12 @@ def _schedule_update_check(window: ui.StatusWindow, mdata: dict | None) -> None:
 
 
 def _show_update_notification(tag: str, url: str, current: str) -> None:
-    """Present the "new version available" dialog. Main thread only."""
-    choice = ui.two_button_dialog(
+    """Present the "new version available" dialog. Main thread only.
+
+    Three choices: Open release page (primary) / Dismiss (secondary)
+    / Don't check for updates (cancel - turns off auto_update_check).
+    """
+    choice = ui.three_button_dialog(
         title="Update available",
         message=(
             f"A newer version of Bibliogon is available.\n\n"
@@ -252,12 +260,17 @@ def _show_update_notification(tag: str, url: str, current: str) -> None:
         ),
         primary_label="Open release page",
         secondary_label="Dismiss",
+        cancel_label="Don't check for updates",
     )
     if choice == "primary":
         try:
             webbrowser.open(url)
         except OSError as exc:
             logger.warning("update release page open failed: %s", exc)
+    elif choice == "cancel":
+        # User opted out of future update checks.
+        settings.update("auto_update_check", False)
+        logger.info("Auto-update check disabled by user.")
 
 
 def _retry_pending_cleanup() -> None:
