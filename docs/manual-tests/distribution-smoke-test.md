@@ -1,9 +1,20 @@
 # Distribution Smoke Test - YYYY-MM-DD
 
-Combined smoke test for the install path and the Windows + Linux launchers.
+Combined smoke test covering the full distribution surface:
+- Part 1: `install.sh` (all platforms, curl pipe)
+- Part 2: D-01 Windows launcher basic flow
+- Part 3: Launcher install/uninstall + cleanup retry + activity log
+- Part 4: D-03 Linux PyInstaller binary
+- Part 5: D-02 macOS `.app` bundle
+- Part 6: `uninstall.sh` script (all platforms)
+
 Copy this file before each test run (e.g.
 `distribution-smoke-test-2026-04-XX.md`), fill in the fields,
 commit the filled-in copy. Keep this template unchanged.
+
+Not every part applies to every test session. Fill only the parts
+relevant to the platform / artifact being tested and mark the rest
+`N/A` in the Decision checklist at the bottom.
 
 ## Environment
 
@@ -139,6 +150,29 @@ If the install fails, capture:
 | Cancel folder picker | Click Install, then cancel picker | Returns to welcome dialog |  | PASS / FAIL |
 | Docker locked files | Docker running, attempt uninstall | Error dialog with locked path |  | PASS / FAIL |
 
+### Interrupted Uninstall Retry
+
+Tests the cleanup.json persistence + retry logic (commit d75ec87 + a81e75a).
+
+| Step | Setup | Expected | Observed | Status |
+|------|-------|----------|----------|--------|
+| Mid-uninstall kill | Click Uninstall, kill launcher process during Docker cleanup | cleanup.json exists in `%APPDATA%\bibliogon\` with partial step states |  | PASS / FAIL |
+| Relaunch after kill | Start launcher again | Silent retry of remaining steps, no user-facing dialog |  | PASS / FAIL |
+| Full cleanup | All steps complete after retry | cleanup.json deleted, install UI appears |  | PASS / FAIL |
+| rmtree still fails | Make install_dir read-only between runs | One-time warning dialog, cleanup.json retained |  | PASS / FAIL |
+
+### Activity Log Verification
+
+Tests the `install.log` produced by the launcher (commit 1a44529).
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| Log exists after first launch | `%APPDATA%\bibliogon\install.log` created |  | PASS / FAIL |
+| Install events logged | Each step (download, extract, manifest, Docker up) has an ISO-timestamped line |  | PASS / FAIL |
+| Uninstall events logged | Each cleanup step has its own line |  | PASS / FAIL |
+| Error events logged | Failed Docker cleanup step appears at ERROR level |  | PASS / FAIL |
+| Log rotates | When log exceeds ~1 MB, `install.log.1` appears and a fresh `install.log` is started |  | PASS / FAIL |
+
 ---
 
 ## Part 4: Linux Launcher (D-03)
@@ -237,6 +271,60 @@ If the install fails, capture:
 
 ---
 
+## Part 6: uninstall.sh Script (all platforms)
+
+**Tests the shell-based uninstall path (alternative to launcher UI uninstall).**
+Relevant when the launcher was never installed, when the user prefers a terminal
+workflow, or on platforms where no launcher binary exists yet.
+
+### Prerequisites
+
+- [ ] Bibliogon installed via `install.sh` or by the launcher
+- [ ] Bibliogon stack currently running OR stopped - both states must work
+- [ ] Some books and chapters exist (to verify the warning is taken seriously)
+
+### Run the script
+
+```bash
+cd ~/bibliogon
+bash uninstall.sh
+```
+
+### Test Results
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| Warning banner | Red ASCII banner listing everything that will be removed |  | PASS / FAIL |
+| Confirmation prompt | `Type 'yes' to confirm uninstall:` |  | PASS / FAIL |
+| Abort on wrong input | Typing anything other than "yes" prints "Uninstall cancelled." and exits 0 with nothing removed |  | PASS / FAIL |
+| Proceed on "yes" | Typing `yes` starts the sequence |  | PASS / FAIL |
+| Stack stopped | `docker compose down` runs; no container remains |  | PASS / FAIL |
+| Volumes removed | `docker volume ls \| grep bibliogon` returns nothing |  | PASS / FAIL |
+| Images removed | `docker images \| grep bibliogon` returns nothing |  | PASS / FAIL |
+| Manifest removed | Launcher manifest directory deleted at platform path |  | PASS / FAIL |
+| Install directory removed | `~/bibliogon` no longer exists |  | PASS / FAIL |
+| Summary printed | Green success banner with reinstall command |  | PASS / FAIL |
+
+### Platform-specific manifest path
+
+Verify the correct path was removed:
+
+| Platform | Path |
+|----------|------|
+| Linux | `~/.config/bibliogon/` |
+| macOS | `~/Library/Application Support/bibliogon/` |
+| Windows Git Bash | `%APPDATA%/bibliogon/` and (legacy) `%APPDATA%/Bibliogon/` |
+
+### Edge Cases
+
+| Step | Setup | Expected | Observed | Status |
+|------|-------|----------|----------|--------|
+| No Docker running | Stop Docker Desktop, run script | Non-fatal: `compose down` errors silently, volumes/images steps skip |  | PASS / FAIL |
+| No install dir | Already uninstalled, run `uninstall.sh` from old path | Script fails at `cd` - expected, no partial state |  | PASS / FAIL |
+| POSIX sh only | Run with `sh uninstall.sh` (not bash) | Script completes without bashism errors |  | PASS / FAIL |
+
+---
+
 ## Issues Found
 
 - None / List any bugs or UX problems:
@@ -258,5 +346,6 @@ Attach relevant sections of `%APPDATA%\Bibliogon\launcher.log` for any failing s
 - [ ] Part 3: Edge cases handled (missing dir, network failure, cancel)
 - [ ] Part 4: Linux launcher binary runs, install/uninstall flow works
 - [ ] Part 5: macOS .app bundle runs (Gatekeeper bypass), install/uninstall flow works
+- [ ] Part 6: uninstall.sh script removes everything cleanly on target platform
 - [ ] D-01 marked `[x]` in ROADMAP, launcher ready for release asset
 - [ ] Issues require iteration (listed above)
