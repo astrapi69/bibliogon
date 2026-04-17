@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -164,6 +164,60 @@ class Asset(Base):
 
     def __repr__(self) -> str:
         return f"<Asset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
+
+
+class BookTemplate(Base):
+    """Reusable book structure that pre-fills a new book with chapters.
+
+    Builtin templates ship with the app (``is_builtin=True``) and are
+    read-only for the user; user-created templates can be edited and
+    deleted.
+    """
+
+    __tablename__ = "book_templates"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    name: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    genre: Mapped[str] = mapped_column(String(100), nullable=False)
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    is_builtin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    chapters: Mapped[list["BookTemplateChapter"]] = relationship(
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="BookTemplateChapter.position",
+    )
+
+    def __repr__(self) -> str:
+        return f"<BookTemplate {self.id!r} name={self.name!r} builtin={self.is_builtin}>"
+
+
+class BookTemplateChapter(Base):
+    __tablename__ = "book_template_chapters"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    template_id: Mapped[str] = mapped_column(
+        ForeignKey("book_templates.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    chapter_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ChapterType.CHAPTER.value
+    )
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    template: Mapped["BookTemplate"] = relationship(back_populates="chapters")
+
+    def __repr__(self) -> str:
+        return (
+            f"<BookTemplateChapter {self.id!r} title={self.title!r} "
+            f"type={self.chapter_type} pos={self.position}>"
+        )
 
 
 class AudioVoice(Base):
