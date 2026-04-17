@@ -7,8 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Book
-from app.schemas import BookCreate, BookDetail, BookOut, BookUpdate
+from app.models import Book, BookTemplate, Chapter
+from app.schemas import (
+    BookCreate,
+    BookDetail,
+    BookFromTemplateCreate,
+    BookOut,
+    BookUpdate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +99,58 @@ def list_books(db: Session = Depends(get_db)):
 def create_book(payload: BookCreate, db: Session = Depends(get_db)):
     book = Book(**payload.model_dump())
     db.add(book)
+    db.commit()
+    db.refresh(book)
+    return book
+
+
+@router.post(
+    "/from-template",
+    response_model=BookDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_book_from_template(
+    payload: BookFromTemplateCreate, db: Session = Depends(get_db)
+):
+    """Create a new book with chapters pre-filled from a template.
+
+    The book and all its chapters are persisted in a single commit -
+    if any chapter insert fails the book insert rolls back with it.
+    """
+    template = (
+        db.query(BookTemplate)
+        .filter(BookTemplate.id == payload.template_id)
+        .first()
+    )
+    if template is None:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    description = payload.description if payload.description is not None else template.description
+
+    book = Book(
+        title=payload.title,
+        subtitle=payload.subtitle,
+        author=payload.author,
+        language=payload.language,
+        genre=payload.genre if payload.genre is not None else template.genre,
+        series=payload.series,
+        series_index=payload.series_index,
+        description=description,
+    )
+    db.add(book)
+    db.flush()  # assign book.id for the chapter FKs
+
+    for tpl_chapter in sorted(template.chapters, key=lambda c: c.position):
+        db.add(
+            Chapter(
+                book_id=book.id,
+                title=tpl_chapter.title,
+                chapter_type=tpl_chapter.chapter_type,
+                position=tpl_chapter.position,
+                content=tpl_chapter.content or "",
+            )
+        )
+
     db.commit()
     db.refresh(book)
     return book

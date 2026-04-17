@@ -294,6 +294,114 @@ def test_delete_user_template_succeeds(client: TestClient):
     assert r.status_code == 404
 
 
+# --- POST /api/books/from-template ---
+
+
+def test_from_template_creates_book_with_all_chapters(client: TestClient):
+    templates = client.get("/api/templates").json()
+    memoir = next(t for t in templates if t["name"] == "Memoir")
+
+    r = client.post(
+        "/api/books/from-template",
+        json={
+            "template_id": memoir["id"],
+            "title": "My Memoir",
+            "author": "Test Author",
+            "language": "en",
+        },
+    )
+    assert r.status_code == 201, r.text
+    book = r.json()
+    assert book["title"] == "My Memoir"
+    assert book["author"] == "Test Author"
+    # Description falls back to template description
+    assert book["description"] == memoir["description"]
+    # Genre falls back to template genre
+    assert book["genre"] == memoir["genre"]
+    # All chapters present and position-ordered
+    assert len(book["chapters"]) == len(memoir["chapters"])
+    positions = [c["position"] for c in book["chapters"]]
+    assert positions == sorted(positions)
+    # Chapter types carried over
+    expected_types = [c["chapter_type"] for c in sorted(memoir["chapters"], key=lambda c: c["position"])]
+    actual_types = [c["chapter_type"] for c in book["chapters"]]
+    assert expected_types == actual_types
+    # Cleanup
+    client.delete(f"/api/books/{book['id']}")
+
+
+def test_from_template_respects_user_supplied_description(client: TestClient):
+    templates = client.get("/api/templates").json()
+    template_id = next(t["id"] for t in templates if t["is_builtin"])
+
+    r = client.post(
+        "/api/books/from-template",
+        json={
+            "template_id": template_id,
+            "title": "Custom",
+            "author": "A",
+            "language": "de",
+            "description": "My own description",
+            "genre": "my-genre",
+        },
+    )
+    assert r.status_code == 201
+    book = r.json()
+    assert book["description"] == "My own description"
+    assert book["genre"] == "my-genre"
+    assert book["language"] == "de"
+    client.delete(f"/api/books/{book['id']}")
+
+
+def test_from_template_unknown_id_returns_404_without_creating_book(client: TestClient):
+    before = len(client.get("/api/books").json())
+    r = client.post(
+        "/api/books/from-template",
+        json={
+            "template_id": "does-not-exist",
+            "title": "Ghost Book",
+            "author": "A",
+            "language": "en",
+        },
+    )
+    assert r.status_code == 404
+    after = len(client.get("/api/books").json())
+    assert before == after
+
+
+def test_from_template_with_empty_chapter_list(client: TestClient):
+    """Template with zero chapters creates a book with zero chapters."""
+    # Create a user template with zero... wait, schema enforces non-empty.
+    # Instead manually insert via the DB layer to cover this edge case.
+    db = SessionLocal()
+    try:
+        template = BookTemplate(
+            name="Empty Edge Case",
+            description="Zero chapters",
+            genre="test",
+            language="en",
+        )
+        db.add(template)
+        db.commit()
+        template_id = template.id
+    finally:
+        db.close()
+
+    r = client.post(
+        "/api/books/from-template",
+        json={
+            "template_id": template_id,
+            "title": "Empty",
+            "author": "A",
+            "language": "en",
+        },
+    )
+    assert r.status_code == 201
+    book = r.json()
+    assert book["chapters"] == []
+    client.delete(f"/api/books/{book['id']}")
+
+
 # --- Seed idempotency ---
 
 

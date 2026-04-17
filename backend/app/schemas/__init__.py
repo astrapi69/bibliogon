@@ -136,6 +136,24 @@ class BookUpdate(BaseModel):
     ms_tools_max_filler_ratio: float | None = None
 
 
+class BookFromTemplateCreate(BaseModel):
+    """Payload for ``POST /api/books/from-template``.
+
+    ``template_id`` selects the source template. ``description`` is
+    optional: when omitted the server falls back to the template's
+    description.
+    """
+    template_id: str
+    title: str
+    author: str
+    language: str = "en"
+    subtitle: str | None = None
+    genre: str | None = None
+    series: str | None = None
+    series_index: int | None = None
+    description: str | None = None
+
+
 class BookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
