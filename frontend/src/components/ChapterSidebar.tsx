@@ -50,6 +50,7 @@ interface Props {
     onMetadata: () => void;
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
+    onAddFromTemplate?: () => void;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -269,6 +270,7 @@ export default function ChapterSidebar({
                                            onMetadata,
                                            onValidateToc,
                                            onSaveAsTemplate,
+                                           onAddFromTemplate,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -371,6 +373,15 @@ export default function ChapterSidebar({
                                 >
                                     {t("ui.editor.new_chapter", "Neues Kapitel")}
                                 </DropdownMenu.Item>
+                                {onAddFromTemplate && (
+                                    <DropdownMenu.Item
+                                        className="chapter-dropdown-item"
+                                        data-testid="chapter-dropdown-from-template"
+                                        onSelect={onAddFromTemplate}
+                                    >
+                                        {t("ui.editor.new_chapter_from_template", "Aus Vorlage...")}
+                                    </DropdownMenu.Item>
+                                )}
                                 {STRUCTURE_TYPES.map((t) => (
                                     <DropdownMenu.Item key={t} className="chapter-dropdown-item" data-testid="chapter-dropdown-item" onSelect={() => onAdd(t)}>
                                         {TYPE_LABELS[t]}

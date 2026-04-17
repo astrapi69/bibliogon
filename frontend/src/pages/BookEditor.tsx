@@ -6,6 +6,7 @@ import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
+import ChapterTemplatePickerModal from "../components/ChapterTemplatePickerModal";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -49,6 +50,7 @@ export default function BookEditor() {
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+    const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
 
@@ -145,6 +147,28 @@ export default function BookEditor() {
             return {...prev, chapters: [...prev.chapters, chapter]};
         });
         setActiveChapterId(chapter.id);
+    };
+
+    const handleAddChapterFromTemplate = async (template: import("../api/client").ChapterTemplate) => {
+        if (!bookId) return;
+        try {
+            const chapter = await api.chapters.create(bookId, {
+                title: template.name,
+                chapter_type: template.chapter_type,
+                content: template.content ?? "",
+            });
+            setBook((prev) => {
+                if (!prev) return prev;
+                return {...prev, chapters: [...prev.chapters, chapter]};
+            });
+            setActiveChapterId(chapter.id);
+            notify.success(t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefuegt"));
+        } catch (err) {
+            notify.error(
+                t("ui.chapter_template_picker.insert_failed", "Einfuegen fehlgeschlagen"),
+            );
+            throw err;
+        }
     };
 
     const handleRenameChapter = async (chapterId: string, newTitle: string) => {
@@ -255,6 +279,7 @@ export default function BookEditor() {
                 onExport={handleExport}
                 onMetadata={() => _setShowMetadata(true)}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
+                onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -359,6 +384,12 @@ export default function BookEditor() {
                 open={showSaveTemplate}
                 book={book}
                 onClose={() => setShowSaveTemplate(false)}
+            />
+
+            <ChapterTemplatePickerModal
+                open={showChapterTemplatePicker}
+                onClose={() => setShowChapterTemplatePicker(false)}
+                onInsert={handleAddChapterFromTemplate}
             />
         </div>
     );
