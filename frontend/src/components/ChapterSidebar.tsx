@@ -12,6 +12,7 @@ import {
     FileText,
     ListChecks,
     Pencil,
+    BookmarkPlus,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -48,6 +49,7 @@ interface Props {
     onReorder: (chapterIds: string[]) => void;
     onMetadata: () => void;
     onValidateToc?: () => void;
+    onSaveAsTemplate?: () => void;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -266,6 +268,7 @@ export default function ChapterSidebar({
                                            onReorder,
                                            onMetadata,
                                            onValidateToc,
+                                           onSaveAsTemplate,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -483,6 +486,18 @@ export default function ChapterSidebar({
                     >
                         <ListChecks size={14}/> {t("ui.sidebar.toc_validate", "TOC prüfen")}
                     </button>
+                )}
+                {onSaveAsTemplate && (
+                    <Tooltip content={chapters.length === 0 ? t("ui.sidebar.save_template_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.save_template_tooltip", "Buchstruktur als wiederverwendbare Vorlage speichern")}>
+                        <button
+                            style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {}), marginBottom: 6}}
+                            onClick={onSaveAsTemplate}
+                            disabled={chapters.length === 0}
+                            data-testid="sidebar-save-as-template"
+                        >
+                            <BookmarkPlus size={14}/> {t("ui.sidebar.save_as_template", "Als Vorlage speichern")}
+                        </button>
+                    </Tooltip>
                 )}
                 <Tooltip content={chapters.length === 0 ? t("ui.sidebar.export_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.export_book", "Buch exportieren")}>
                     <button

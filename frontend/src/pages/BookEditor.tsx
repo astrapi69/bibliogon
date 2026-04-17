@@ -5,6 +5,7 @@ import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
+import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -47,6 +48,7 @@ export default function BookEditor() {
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
+    const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
 
@@ -252,6 +254,7 @@ export default function BookEditor() {
                 onBack={() => navigate("/")}
                 onExport={handleExport}
                 onMetadata={() => _setShowMetadata(true)}
+                onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -351,6 +354,12 @@ export default function BookEditor() {
                     onClose={() => setShowExport(false)}
                 />
             )}
+
+            <SaveAsTemplateModal
+                open={showSaveTemplate}
+                book={book}
+                onClose={() => setShowSaveTemplate(false)}
+            />
         </div>
     );
 }
