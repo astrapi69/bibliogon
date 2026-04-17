@@ -220,6 +220,37 @@ class BookTemplateChapter(Base):
         )
 
 
+class ChapterTemplate(Base):
+    """Reusable single-chapter structure (Interview, FAQ, Recipe, ...).
+
+    Parallel to ``BookTemplate`` but for one chapter instead of a
+    whole book. Builtins ship with the app (``is_builtin=True``) and
+    are read-only for the user.
+    """
+
+    __tablename__ = "chapter_templates"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    name: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    chapter_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ChapterType.CHAPTER.value
+    )
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    is_builtin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ChapterTemplate {self.id!r} name={self.name!r} "
+            f"type={self.chapter_type} builtin={self.is_builtin}>"
+        )
+
+
 class AudioVoice(Base):
     """Cached TTS voice from an engine (e.g. Edge TTS, Google TTS)."""
 
