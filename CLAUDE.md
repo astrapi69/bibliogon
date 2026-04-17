@@ -46,7 +46,8 @@ Lean core (UI, editor, CRUD, backup). Everything else via plugins. All plugins a
 make install              # Poetry + npm + plugins
 make dev                  # backend (8000) + frontend (5173) in parallel
 make dev-bg / dev-down    # background mode
-make test                 # all tests (backend + plugins + frontend)
+make test                 # all tests (backend + plugins + frontend), no coverage
+make test-coverage        # opt-in coverage run (heavy; CI runs this on every push)
 make test-backend         # backend only
 make test-plugins         # all plugin tests
 make test-frontend        # Vitest
@@ -72,8 +73,10 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 - **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css)
 - **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type
 - **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
+- **BookTemplate / BookTemplateChapter:** reusable book structures; 5 builtins seeded at startup. `/api/templates/`, `POST /api/books/from-template`.
+- **ChapterTemplate:** reusable single-chapter structures with TipTap JSON content; 4 builtins (Interview, FAQ, Recipe, Photo Report). `/api/chapter-templates/`.
 
-**ChapterType (26):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action. Marketing types (also_by_author, excerpt, call_to_action) are in the audiobook-export skip list by default. Per-book override via Book.audiobook_skip_chapter_types.
+**ChapterType (31):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action, half_title, title_page, copyright, section, conclusion. Marketing types (also_by_author, excerpt, call_to_action) are in the audiobook-export skip list by default. Per-book override via Book.audiobook_skip_chapter_types.
 
 ## Plugins
 
