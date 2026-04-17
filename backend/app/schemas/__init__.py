@@ -267,3 +267,53 @@ class AssetOut(BaseModel):
     asset_type: str
     path: str
     uploaded_at: datetime
+
+
+# --- Book template schemas ---
+
+
+class BookTemplateChapterSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    position: int
+    title: str
+    chapter_type: ChapterType = ChapterType.CHAPTER
+    content: str | None = None
+
+
+class BookTemplateCreate(BaseModel):
+    name: str
+    description: str
+    genre: str
+    language: str = "en"
+    is_builtin: bool = False
+    chapters: list[BookTemplateChapterSchema]
+
+    @field_validator("chapters")
+    @classmethod
+    def _require_chapters(cls, value: list[BookTemplateChapterSchema]) -> list[BookTemplateChapterSchema]:
+        if not value:
+            raise ValueError("chapters must not be empty")
+        return value
+
+
+class BookTemplateUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    genre: str | None = None
+    language: str | None = None
+    chapters: list[BookTemplateChapterSchema] | None = None
+
+
+class BookTemplateRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    description: str
+    genre: str
+    language: str
+    is_builtin: bool
+    created_at: datetime
+    updated_at: datetime
+    chapters: list[BookTemplateChapterSchema] = []
