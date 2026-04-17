@@ -62,6 +62,12 @@ navigation:
         slug: plugins/ms-tools
 
   - title:
+      de: Vorlagen
+      en: Templates
+    slug: templates
+    icon: bookmark
+
+  - title:
       de: Windows-Launcher
       en: Windows Launcher
     slug: launcher-windows
