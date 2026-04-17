@@ -197,7 +197,11 @@ def _run_launcher() -> int:
         if not opened:
             window.after(0, lambda: ui.ask_copyable_url(url))
 
-        window.after(0, lambda: window.set_running(port, on_stop=lambda: _shutdown(window, repo)))
+        window.after(0, lambda: window.set_running(
+            port,
+            on_stop=lambda: _shutdown(window, repo),
+            on_settings=_open_settings_dialog,
+        ))
         # Non-blocking update check: fires after the main UI is running.
         # Any failure is swallowed inside update_check; the callback
         # schedules the notification on the main thread via window.after.
@@ -242,6 +246,16 @@ def _schedule_update_check(window: ui.StatusWindow, mdata: dict | None) -> None:
         current_version=current,
         on_update_available=on_update,
     )
+
+
+def _open_settings_dialog() -> None:
+    """Open the Settings dialog, persist changes on Save."""
+    current = settings.read_settings()
+    updated = ui.settings_dialog(current)
+    if updated is None:
+        return  # user cancelled
+    settings.write_settings(updated)
+    logger.info("Settings saved: %s", {k: v for k, v in updated.items() if k in settings.DEFAULTS})
 
 
 def _show_update_notification(tag: str, url: str, current: str) -> None:

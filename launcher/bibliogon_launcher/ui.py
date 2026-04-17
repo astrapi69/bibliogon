@@ -413,6 +413,71 @@ def three_button_dialog(
     return result["choice"]
 
 
+def settings_dialog(current: dict) -> dict | None:
+    """Show a settings dialog. Returns the new settings dict on Save,
+    or None if the user cancelled.
+
+    ``current`` is the starting state (typically the result of
+    ``settings.read_settings()``). Only the keys rendered in the UI
+    are updated; any other keys in ``current`` pass through unchanged
+    so forward-compatibility with future settings is automatic.
+    """
+    _ensure_root()
+    win = tk.Toplevel()
+    win.title("Settings")
+    win.resizable(False, False)
+
+    result: dict = {"saved": None}
+
+    # Body
+    body = tk.Frame(win, padx=20, pady=16)
+    body.pack(fill="both", expand=True)
+
+    auto_update_var = tk.BooleanVar(value=bool(current.get("auto_update_check", True)))
+    tk.Checkbutton(
+        body,
+        text="Check for updates automatically",
+        variable=auto_update_var,
+        anchor="w",
+    ).pack(fill="x", pady=(0, 8))
+
+    tk.Label(
+        body,
+        text="When enabled, the launcher checks GitHub for newer versions\non every start.",
+        justify="left",
+        fg="#555",
+        font=("Segoe UI", 9),
+    ).pack(fill="x", pady=(0, 8))
+
+    # Footer
+    footer = tk.Frame(win, padx=20, pady=(0, 16))
+    footer.pack(fill="x")
+
+    def _save() -> None:
+        new_settings = dict(current)
+        new_settings["auto_update_check"] = bool(auto_update_var.get())
+        result["saved"] = new_settings
+        win.destroy()
+
+    def _cancel() -> None:
+        result["saved"] = None
+        win.destroy()
+
+    save_btn = tk.Button(footer, text="Save", width=12, command=_save)
+    save_btn.pack(side="right", padx=(8, 0))
+    tk.Button(footer, text="Cancel", width=12, command=_cancel).pack(side="right")
+
+    save_btn.focus_set()
+    win.bind("<Return>", lambda _e: _save())
+    win.bind("<Escape>", lambda _e: _cancel())
+    win.protocol("WM_DELETE_WINDOW", _cancel)
+
+    _center_over_root(win)
+    win.grab_set()
+    win.wait_window()
+    return result["saved"]
+
+
 def _center_over_root(win: tk.Toplevel) -> None:
     win.update_idletasks()
     try:
@@ -440,7 +505,7 @@ class StatusWindow:
     def __init__(self, on_close: callable | None = None) -> None:
         self._root = _ensure_root()
         self._root.title("Bibliogon")
-        self._root.geometry("360x160")
+        self._root.geometry("360x200")
         self._root.protocol("WM_DELETE_WINDOW", self._handle_close)
 
         self._label = tk.Label(self._root, text="Starting Bibliogon...", font=("Segoe UI", 11))
@@ -450,7 +515,13 @@ class StatusWindow:
         self._detail.pack(pady=(0, 12))
 
         self._button = tk.Button(self._root, text="", state="disabled", width=20)
-        self._button.pack(pady=(0, 16))
+        self._button.pack(pady=(0, 8))
+
+        # Secondary action button (e.g. Settings). Hidden until set_running
+        # populates it so the starting-state UI stays minimal.
+        self._secondary = tk.Button(self._root, text="", width=20)
+        self._secondary.pack(pady=(0, 16))
+        self._secondary.pack_forget()
 
         self._on_close_cb = on_close
         self._stop_cb: callable | None = None
@@ -461,11 +532,14 @@ class StatusWindow:
         self._button.configure(text="", state="disabled")
         self._root.update_idletasks()
 
-    def set_running(self, port: int, on_stop: callable) -> None:
+    def set_running(self, port: int, on_stop: callable, on_settings: callable | None = None) -> None:
         self._label.configure(text=f"Bibliogon is running on localhost:{port}")
         self._detail.configure(text="Browser opened. Close this window or click Stop to shut down.")
         self._stop_cb = on_stop
         self._button.configure(text="Stop Bibliogon", state="normal", command=self._handle_stop)
+        if on_settings is not None:
+            self._secondary.configure(text="Settings", command=on_settings)
+            self._secondary.pack(pady=(0, 16))
         self._root.update_idletasks()
 
     def set_stopping(self) -> None:
