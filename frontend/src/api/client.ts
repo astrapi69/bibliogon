@@ -130,6 +130,29 @@ export interface BookCreate {
     description?: string;
 }
 
+export interface BookFromTemplateCreate extends BookCreate {
+    template_id: string;
+}
+
+export interface BookTemplateChapter {
+    position: number;
+    title: string;
+    chapter_type: ChapterType;
+    content: string | null;
+}
+
+export interface BookTemplate {
+    id: string;
+    name: string;
+    description: string;
+    genre: string;
+    language: string;
+    is_builtin: boolean;
+    created_at: string;
+    updated_at: string;
+    chapters: BookTemplateChapter[];
+}
+
 export interface ChapterCreate {
     title: string;
     content?: string;
@@ -443,6 +466,12 @@ export const api = {
 
         create: (data: BookCreate) =>
             request<Book>("/books", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        createFromTemplate: (data: BookFromTemplateCreate) =>
+            request<BookDetail>("/books/from-template", {
                 method: "POST",
                 body: JSON.stringify(data),
             }),
@@ -999,5 +1028,11 @@ export const api = {
 
         deactivate: (pluginName: string) =>
             request<Record<string, unknown>>(`/licenses/${pluginName}`, {method: "DELETE"}),
+    },
+
+    templates: {
+        list: () => request<BookTemplate[]>("/templates"),
+
+        get: (id: string) => request<BookTemplate>(`/templates/${id}`),
     },
 };
