@@ -153,6 +153,15 @@ export interface BookTemplate {
     chapters: BookTemplateChapter[];
 }
 
+export interface BookTemplateCreate {
+    name: string;
+    description: string;
+    genre: string;
+    language: string;
+    is_builtin?: boolean;  // server forces false on POST
+    chapters: BookTemplateChapter[];
+}
+
 export interface ChapterCreate {
     title: string;
     content?: string;
@@ -1034,5 +1043,14 @@ export const api = {
         list: () => request<BookTemplate[]>("/templates"),
 
         get: (id: string) => request<BookTemplate>(`/templates/${id}`),
+
+        create: (data: BookTemplateCreate) =>
+            request<BookTemplate>("/templates", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        delete: (id: string) =>
+            request<void>(`/templates/${id}`, {method: "DELETE"}),
     },
 };
