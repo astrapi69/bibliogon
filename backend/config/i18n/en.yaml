@@ -225,6 +225,15 @@ ui:
     more_details: "More Details"
     genre: "Genre"
     genre_placeholder: "Choose genre..."
+    description: "Description"
+    description_placeholder: "Short description (optional)"
+    mode_blank: "Blank"
+    mode_template: "From template"
+    template_picker_title: "Choose a template"
+    template_chapter_count: "{count} chapters"
+    template_loading: "Loading templates..."
+    template_empty: "No templates available"
+    template_load_error: "Could not load templates"
   genres:
     novel: "Novel"
     non_fiction: "Non-Fiction"
@@ -242,6 +251,12 @@ ui:
     cookbook: "Cookbook"
     travel: "Travel Guide"
     other: "Other"
+  template_genres:
+    children: "Children's book"
+    scifi: "Sci-Fi"
+    nonfiction: "Non-fiction"
+    philosophy: "Philosophy"
+    memoir: "Memoir"
   settings:
     title: "Settings"
     tab_general: "General"

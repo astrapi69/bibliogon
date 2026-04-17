@@ -233,6 +233,15 @@ ui:
     more_details: "Mas detalles"
     genre: "Genre"
     genre_placeholder: "Elegir genero..."
+    description: "Descripcion"
+    description_placeholder: "Descripcion breve (opcional)"
+    mode_blank: "En blanco"
+    mode_template: "Desde plantilla"
+    template_picker_title: "Elige una plantilla"
+    template_chapter_count: "{count} capitulos"
+    template_loading: "Cargando plantillas..."
+    template_empty: "No hay plantillas disponibles"
+    template_load_error: "No se pudieron cargar las plantillas"
   genres:
     novel: "Novela"
     non_fiction: "No ficcion"
@@ -250,6 +259,12 @@ ui:
     cookbook: "Libro de cocina"
     travel: "Guia de viaje"
     other: "Otro"
+  template_genres:
+    children: "Libro infantil"
+    scifi: "Ciencia ficcion"
+    nonfiction: "No ficcion"
+    philosophy: "Filosofia"
+    memoir: "Memorias"
   settings:
     title: "Configuracion"
     tab_general: "General"

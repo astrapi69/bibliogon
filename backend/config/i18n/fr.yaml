@@ -233,6 +233,15 @@ ui:
     more_details: "Plus de details"
     genre: "Genre"
     genre_placeholder: "Choisir le genre..."
+    description: "Description"
+    description_placeholder: "Courte description (facultatif)"
+    mode_blank: "Vierge"
+    mode_template: "Depuis un modele"
+    template_picker_title: "Choisir un modele"
+    template_chapter_count: "{count} chapitres"
+    template_loading: "Chargement des modeles..."
+    template_empty: "Aucun modele disponible"
+    template_load_error: "Impossible de charger les modeles"
   genres:
     novel: "Roman"
     non_fiction: "Non-fiction"
@@ -250,6 +259,12 @@ ui:
     cookbook: "Livre de cuisine"
     travel: "Guide de voyage"
     other: "Autre"
+  template_genres:
+    children: "Livre pour enfants"
+    scifi: "Science-fiction"
+    nonfiction: "Non-fiction"
+    philosophy: "Philosophie"
+    memoir: "Memoires"
   settings:
     title: "Parametres"
     tab_general: "General"

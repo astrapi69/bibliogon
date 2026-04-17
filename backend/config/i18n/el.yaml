@@ -222,6 +222,15 @@ ui:
     more_details: "Περισσότερες λεπτομέρειες"
     genre: "Genre"
     genre_placeholder: "Επιλέξτε είδος..."
+    description: "Περιγραφή"
+    description_placeholder: "Σύντομη περιγραφή (προαιρετικό)"
+    mode_blank: "Κενό"
+    mode_template: "Από πρότυπο"
+    template_picker_title: "Επιλέξτε πρότυπο"
+    template_chapter_count: "{count} κεφάλαια"
+    template_loading: "Φόρτωση προτύπων..."
+    template_empty: "Δεν υπάρχουν διαθέσιμα πρότυπα"
+    template_load_error: "Αδυναμία φόρτωσης προτύπων"
   genres:
     novel: "Μυθιστόρημα"
     non_fiction: "Μη μυθοπλασία"
@@ -239,6 +248,12 @@ ui:
     cookbook: "Βιβλίο μαγειρικής"
     travel: "Ταξιδιωτικός οδηγός"
     other: "Άλλο"
+  template_genres:
+    children: "Παιδικό βιβλίο"
+    scifi: "Επιστημονική φαντασία"
+    nonfiction: "Μη μυθοπλασία"
+    philosophy: "Φιλοσοφία"
+    memoir: "Απομνημονεύματα"
   settings:
     title: "Ρυθμίσεις"
     tab_general: "Γενικά"

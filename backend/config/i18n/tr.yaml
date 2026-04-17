@@ -233,6 +233,15 @@ ui:
         more_details: "Daha fazla detay"
         genre: "Tur"
         genre_placeholder: "Tur secin..."
+        description: "Aciklama"
+        description_placeholder: "Kisa aciklama (istege bagli)"
+        mode_blank: "Bos"
+        mode_template: "Sablondan"
+        template_picker_title: "Sablon sec"
+        template_chapter_count: "{count} bolum"
+        template_loading: "Sablonlar yukleniyor..."
+        template_empty: "Kullanilabilir sablon yok"
+        template_load_error: "Sablonlar yuklenemedi"
     genres:
         novel: "Roman"
         non_fiction: "Kurgu disi"
@@ -250,6 +259,12 @@ ui:
         cookbook: "Yemek kitabi"
         travel: "Gezi rehberi"
         other: "Diger"
+    template_genres:
+        children: "Cocuk kitabi"
+        scifi: "Bilim kurgu"
+        nonfiction: "Kurgu disi"
+        philosophy: "Felsefe"
+        memoir: "Anilar"
     settings:
         title: "Ayarlar"
         tab_general: "Genel"

@@ -225,6 +225,15 @@ ui:
     more_details: "Weitere Details"
     genre: "Genre"
     genre_placeholder: "Genre wählen..."
+    description: "Beschreibung"
+    description_placeholder: "Kurze Beschreibung (optional)"
+    mode_blank: "Leer"
+    mode_template: "Aus Vorlage"
+    template_picker_title: "Vorlage wählen"
+    template_chapter_count: "{count} Kapitel"
+    template_loading: "Lade Vorlagen..."
+    template_empty: "Keine Vorlagen verfügbar"
+    template_load_error: "Vorlagen konnten nicht geladen werden"
   genres:
     novel: "Roman"
     non_fiction: "Sachbuch"
@@ -242,6 +251,12 @@ ui:
     cookbook: "Kochbuch"
     travel: "Reiseführer"
     other: "Sonstiges"
+  template_genres:
+    children: "Kinderbuch"
+    scifi: "Science-Fiction"
+    nonfiction: "Sachbuch"
+    philosophy: "Philosophie"
+    memoir: "Memoiren"
   settings:
     title: "Einstellungen"
     tab_general: "Allgemein"

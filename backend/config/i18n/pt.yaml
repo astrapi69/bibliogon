@@ -222,6 +222,15 @@ ui:
         more_details: "Mais detalhes"
         genre: "Genero"
         genre_placeholder: "Escolher genero..."
+        description: "Descricao"
+        description_placeholder: "Breve descricao (opcional)"
+        mode_blank: "Em branco"
+        mode_template: "A partir de modelo"
+        template_picker_title: "Escolha um modelo"
+        template_chapter_count: "{count} capitulos"
+        template_loading: "A carregar modelos..."
+        template_empty: "Nenhum modelo disponivel"
+        template_load_error: "Nao foi possivel carregar os modelos"
     genres:
         novel: "Romance"
         non_fiction: "Nao ficcao"
@@ -239,6 +248,12 @@ ui:
         cookbook: "Livro de receitas"
         travel: "Guia de viagem"
         other: "Outro"
+    template_genres:
+        children: "Livro infantil"
+        scifi: "Ficcao cientifica"
+        nonfiction: "Nao ficcao"
+        philosophy: "Filosofia"
+        memoir: "Memorias"
     settings:
         title: "Configuracoes"
         tab_general: "Geral"

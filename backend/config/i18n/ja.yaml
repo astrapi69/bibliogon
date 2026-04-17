@@ -222,6 +222,15 @@ ui:
         more_details: "詳細"
         genre: "ジャンル"
         genre_placeholder: "ジャンルを選択..."
+        description: "説明"
+        description_placeholder: "短い説明 (任意)"
+        mode_blank: "空白"
+        mode_template: "テンプレートから"
+        template_picker_title: "テンプレートを選択"
+        template_chapter_count: "{count} 章"
+        template_loading: "テンプレートを読み込み中..."
+        template_empty: "利用可能なテンプレートはありません"
+        template_load_error: "テンプレートを読み込めませんでした"
     genres:
         novel: "小説"
         non_fiction: "ノンフィクション"
@@ -239,6 +248,12 @@ ui:
         cookbook: "料理本"
         travel: "旅行ガイド"
         other: "その他"
+    template_genres:
+        children: "児童書"
+        scifi: "SF"
+        nonfiction: "ノンフィクション"
+        philosophy: "哲学"
+        memoir: "回想録"
     settings:
         title: "設定"
         tab_general: "一般"
