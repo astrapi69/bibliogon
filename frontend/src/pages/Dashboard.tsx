@@ -153,7 +153,7 @@ export default function Dashboard() {
                     <div style={styles.headerActions}>
                         {/* Always visible */}
                         <ThemeToggle/>
-                        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                        <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
                             <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
                         </button>
 

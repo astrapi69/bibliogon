@@ -240,6 +240,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder={t("ui.create_book.book_title_placeholder", "Der Titel deines Buches")}
+                                data-testid="create-book-title"
                                 autoFocus
                             />
                         </div>
@@ -270,6 +271,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                     value={author}
                                     onChange={(e) => setAuthor(e.target.value)}
                                     placeholder={t("ui.create_book.author_placeholder", "Autorenname oder Pen Name")}
+                                    data-testid="create-book-author"
                                 />
                             )}
                         </div>
@@ -415,6 +417,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                             className="btn btn-primary"
                             onClick={handleSubmit}
                             disabled={!canSubmit}
+                            data-testid="create-book-submit"
                         >
                             {t("ui.common.create", "Erstellen")}
                         </button>
