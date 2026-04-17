@@ -36,6 +36,11 @@ class ChapterType(str, Enum):
     ALSO_BY_AUTHOR = "also_by_author"
     EXCERPT = "excerpt"
     CALL_TO_ACTION = "call_to_action"
+    HALF_TITLE = "half_title"
+    TITLE_PAGE = "title_page"
+    COPYRIGHT = "copyright"
+    SECTION = "section"
+    CONCLUSION = "conclusion"
 
 
 # --- Book schemas ---
