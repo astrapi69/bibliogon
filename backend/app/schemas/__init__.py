@@ -335,3 +335,37 @@ class BookTemplateRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     chapters: list[BookTemplateChapterSchema] = []
+
+
+# --- Chapter template schemas ---
+
+
+class ChapterTemplateCreate(BaseModel):
+    name: str
+    description: str
+    chapter_type: ChapterType = ChapterType.CHAPTER
+    content: str | None = None
+    language: str = "en"
+    is_builtin: bool = False
+
+
+class ChapterTemplateUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    chapter_type: ChapterType | None = None
+    content: str | None = None
+    language: str | None = None
+
+
+class ChapterTemplateRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    description: str
+    chapter_type: str
+    content: str | None
+    language: str
+    is_builtin: bool
+    created_at: datetime
+    updated_at: datetime
