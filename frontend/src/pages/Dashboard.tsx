@@ -14,6 +14,8 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import BackupCompareDialog from "../components/BackupCompareDialog";
 import ThemeToggle from "../components/ThemeToggle";
+import {useTheme} from "../hooks/useTheme";
+import {Moon, Sun} from "lucide-react";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -23,6 +25,7 @@ export default function Dashboard() {
     const dialog = useDialog();
     const {openHelp} = useHelp();
     const {t} = useI18n();
+    const {theme, toggle: toggleTheme} = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
@@ -152,7 +155,6 @@ export default function Dashboard() {
                     </div>
                     <div style={styles.headerActions}>
                         {/* Always visible */}
-                        <ThemeToggle/>
                         <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
                             <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
                         </button>
@@ -194,6 +196,7 @@ export default function Dashboard() {
                                     </span>
                                 )}
                             </button>
+                            <ThemeToggle/>
                         </div>
 
                         {/* Mobile: hamburger menu */}
@@ -224,6 +227,11 @@ export default function Dashboard() {
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setShowTrash(!showTrash)}>
                                         <Trash2 size={16}/> {t("ui.dashboard.trash", "Papierkorb")} {trash.length > 0 && `(${trash.length})`}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={(e) => { e.preventDefault(); toggleTheme(); }}>
+                                        {theme === "dark"
+                                            ? <><Sun size={16}/> {t("ui.dashboard.light_mode", "Light Mode")}</>
+                                            : <><Moon size={16}/> {t("ui.dashboard.dark_mode", "Dark Mode")}</>}
                                     </DropdownMenu.Item>
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
