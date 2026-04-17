@@ -73,8 +73,8 @@ faq:
       de: "Welche Kapiteltypen gibt es?"
       en: "What chapter types are available?"
     answer:
-      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band). Alle waehlbar über das '+'-Dropdown in der Sidebar."
-      en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
+      de: "31 Kapiteltypen in 3 Gruppen: Front Matter (Half-Title, Titelseite, Copyright, Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Sektion, Teil, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Schlussfolgerung, Schlussgedanken, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band, Weitere Bücher, Leseprobe, Call to Action). Alle waehlbar über das '+'-Dropdown in der Sidebar. Die Marketing-Typen (Weitere Bücher, Leseprobe, Call to Action) werden bei der Audiobook-Generierung per Default übersprungen."
+      en: "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
   - question:
       de: "Wie ordne ich Kapitel um?"
       en: "How do I reorder chapters?"
@@ -211,8 +211,8 @@ faq:
       de: "Welche Kapiteltypen gibt es jetzt?"
       en: "What chapter types are available now?"
     answer:
-      de: "21 Kapiteltypen in 3 Gruppen: Front Matter (Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band). Alle waehlbar über das '+'-Dropdown in der Sidebar."
-      en: "21 chapter types in 3 groups: Front Matter (Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Part Intro, Interlude), Back Matter (Epilogue, Afterword, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series). All selectable via the '+' dropdown in the sidebar."
+      de: "31 Kapiteltypen in 3 Gruppen: Front Matter (Half-Title, Titelseite, Copyright, Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Sektion, Teil, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Schlussfolgerung, Schlussgedanken, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band, Weitere Bücher, Leseprobe, Call to Action). Alle waehlbar über das '+'-Dropdown in der Sidebar. Die Marketing-Typen (Weitere Bücher, Leseprobe, Call to Action) werden bei der Audiobook-Generierung per Default übersprungen."
+      en: "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
   # --- Plugin-Installation ---
   - question:
       de: "Wie installiere ich ein Drittanbieter-Plugin?"
@@ -239,3 +239,40 @@ faq:
     answer:
       de: "Kopiere .env.example nach .env, setze BIBLIOGON_SECRET_KEY auf einen zufaelligen Wert, und fuehre 'make prod' aus. Die App ist dann unter Port 8080 erreichbar. Daten werden in einem Docker-Volume persistent gespeichert."
       en: "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+  # === Vorlagen ===
+  - question:
+      de: "Was sind Vorlagen und welche sind mitgeliefert?"
+      en: "What are templates and which ones ship with Bibliogon?"
+    answer:
+      de: "Vorlagen sind wiederverwendbare Strukturen. Buchvorlagen fuellen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge); 5 Genres sind mitgeliefert: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie, Memoiren. Kapitelvorlagen fuellen ein einzelnes Kapitel mit einer TipTap-JSON-Gliederung; 4 sind mitgeliefert: Interview, FAQ, Rezept, Fotoreportage. Mitgelieferte Vorlagen sind schreibgeschuetzt (Schloss-Badge), eigene Vorlagen kann man per Muelleimer-Button loeschen."
+      en: "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+  - question:
+      de: "Wie erstelle ich ein Buch aus einer Vorlage?"
+      en: "How do I create a book from a template?"
+    answer:
+      de: "Im Dashboard auf 'Neues Buch' klicken, am oberen Rand des Dialogs auf den Tab 'Aus Vorlage' wechseln, eine Karte auswaehlen, Titel und Autor eintragen und 'Erstellen' klicken. Sprache und Beschreibung sind aus der Vorlage vorbelegt, aber editierbar. Das Buch wird mit allen Kapiteln in einem einzigen Datenbank-Commit erstellt."
+      en: "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+  - question:
+      de: "Wie speichere ich ein Buch als eigene Vorlage?"
+      en: "How do I save a book as my own template?"
+    answer:
+      de: "Buch im Editor oeffnen, in der Sidebar-Fusszeile 'Als Vorlage speichern' anklicken. Name (Pflicht, eindeutig) und Beschreibung eintragen. Beim Content-Modus zwischen 'Leere Platzhalter' (nur Struktur, empfohlen) und 'Inhalt uebernehmen' (voller Kapiteltext) waehlen. 'Kapitelvorschau' ausklappen, um die Liste vor dem Speichern zu pruefen. Bei Namenskonflikt (409) zeigt das Namensfeld einen Inline-Fehler."
+      en: "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+  - question:
+      de: "Wie erstelle ich ein Kapitel aus einer Vorlage?"
+      en: "How do I create a chapter from a template?"
+    answer:
+      de: "In der Editor-Sidebar auf das '+'-Icon klicken, in der Gruppe 'Kapitel' auf 'Aus Vorlage...' klicken. Eine Karte auswaehlen und auf 'Einfuegen' klicken. Das Kapitel wird am Ende der Liste angehaengt, mit Titel, Kapiteltyp und Inhalt aus der Vorlage. Den Titel kannst du per Doppelklick inline umbenennen."
+      en: "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+  - question:
+      de: "Wie speichere ich ein Kapitel als eigene Vorlage?"
+      en: "How do I save a chapter as my own template?"
+    answer:
+      de: "Rechtsklick auf das Kapitel in der Sidebar, 'Als Vorlage speichern' aus dem Kontextmenue. Name (vorbelegt mit Kapiteltitel) und Beschreibung eintragen. 'Leerer Platzhalter' speichert nur die Struktur, 'Inhalt uebernehmen' kopiert den aktuellen Kapiteltext in die Vorlage."
+      en: "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+  - question:
+      de: "Wie loesche ich eine eigene Vorlage?"
+      en: "How do I delete a user template?"
+    answer:
+      de: "Den Vorlagen-Picker oeffnen (Buch oder Kapitel). Eigene Vorlagen haben einen Muelleimer-Button in der Kartenkopfzeile. Klick darauf, Bestaetigungsdialog, fertig. Mitgelieferte Vorlagen (mit Schloss-Badge) haben diesen Button nicht und koennen nicht geloescht werden; der Server antwortet mit 403."
+      en: "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
