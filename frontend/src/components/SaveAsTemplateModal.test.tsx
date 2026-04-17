@@ -19,10 +19,22 @@ vi.mock("../api/client", () => {
   class ApiError extends Error {
     status: number
     detail: string
-    constructor(status: number, detail: string) {
+    endpoint: string
+    method: string
+    stacktrace: string
+    constructor(
+      status: number,
+      detail: string,
+      endpoint = "",
+      method = "",
+      stacktrace = "",
+    ) {
       super(detail)
       this.status = status
       this.detail = detail
+      this.endpoint = endpoint
+      this.method = method
+      this.stacktrace = stacktrace
     }
   }
   return {
@@ -182,7 +194,7 @@ describe("SaveAsTemplateModal", () => {
 
   it("409 from server renders inline name_taken error", async () => {
     const {ApiError} = await import("../api/client")
-    mockCreate.mockRejectedValue(new ApiError(409, "Template name already exists"))
+    mockCreate.mockRejectedValue(new ApiError(409, "Template name already exists", "", "POST", ""))
     renderModal()
 
     fireEvent.change(screen.getByTestId("save-template-name"), {

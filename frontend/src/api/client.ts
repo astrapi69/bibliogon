@@ -162,6 +162,26 @@ export interface BookTemplateCreate {
     chapters: BookTemplateChapter[];
 }
 
+export interface ChapterTemplate {
+    id: string;
+    name: string;
+    description: string;
+    chapter_type: ChapterType;
+    content: string | null;
+    language: string;
+    is_builtin: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ChapterTemplateCreate {
+    name: string;
+    description: string;
+    chapter_type: ChapterType;
+    content?: string | null;
+    language?: string;
+}
+
 export interface ChapterCreate {
     title: string;
     content?: string;
@@ -1052,5 +1072,18 @@ export const api = {
 
         delete: (id: string) =>
             request<void>(`/templates/${id}`, {method: "DELETE"}),
+    },
+
+    chapterTemplates: {
+        list: () => request<ChapterTemplate[]>("/chapter-templates"),
+
+        create: (data: ChapterTemplateCreate) =>
+            request<ChapterTemplate>("/chapter-templates", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        delete: (id: string) =>
+            request<void>(`/chapter-templates/${id}`, {method: "DELETE"}),
     },
 };
