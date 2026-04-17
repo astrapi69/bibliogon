@@ -2,6 +2,8 @@
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook \
+       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins \
+       test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        generate-trial-key \
@@ -65,7 +67,7 @@ install-plugins:
 
 # --- Test ---
 
-test: test-plugins test-backend test-frontend ## Run ALL tests (plugins + backend + frontend)
+test: test-plugins test-backend test-frontend ## Run ALL tests, no coverage (everyday use; coverage runs in CI - see test-coverage)
 	@echo ""
 	@echo "=== All tests complete ==="
 
@@ -115,6 +117,49 @@ test-plugin-audiobook: ## Run audiobook plugin tests
 	@echo ""
 	@echo "=== Audiobook Plugin Tests ==="
 	cd plugins/bibliogon-plugin-audiobook && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+# --- Coverage (heavy, opt-in; CI runs this on every push - see .github/workflows/coverage.yml) ---
+
+test-coverage: test-coverage-plugins test-coverage-backend test-coverage-frontend ## Run ALL tests with coverage (slow; prefer CI)
+	@echo ""
+	@echo "=== All coverage runs complete ==="
+
+test-coverage-backend: ## Backend coverage report (htmlcov/)
+	@echo ""
+	@echo "=== Backend Coverage ==="
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=app --cov-report=html --cov-report=term
+
+test-coverage-frontend: ## Frontend coverage report (coverage/)
+	@echo ""
+	@echo "=== Frontend Coverage ==="
+	cd frontend && npm run test:coverage
+
+test-coverage-plugins: test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools ## Run plugin tests with coverage
+
+test-coverage-plugin-export: ## Export plugin coverage
+	@echo ""
+	@echo "=== Export Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-export && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_export --cov-report=html --cov-report=term
+
+test-coverage-plugin-grammar: ## Grammar plugin coverage
+	@echo ""
+	@echo "=== Grammar Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-grammar && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_grammar --cov-report=html --cov-report=term
+
+test-coverage-plugin-kdp: ## KDP plugin coverage
+	@echo ""
+	@echo "=== KDP Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-kdp && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_kdp --cov-report=html --cov-report=term
+
+test-coverage-plugin-kinderbuch: ## Kinderbuch plugin coverage
+	@echo ""
+	@echo "=== Kinderbuch Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-kinderbuch && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_kinderbuch --cov-report=html --cov-report=term
+
+test-coverage-plugin-ms-tools: ## ms-tools plugin coverage
+	@echo ""
+	@echo "=== ms-tools Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-ms-tools && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_ms_tools --cov-report=html --cov-report=term
 
 # --- Mutation Testing ---
 
