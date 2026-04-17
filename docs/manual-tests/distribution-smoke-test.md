@@ -180,6 +180,63 @@ If the install fails, capture:
 
 ---
 
+## Part 5: macOS Launcher (.app bundle)
+
+**Tests the macOS .app bundle built by the Launcher (macOS) workflow.**
+
+### Prerequisites
+
+- Apple Silicon Mac (arm64), macOS 13 or later
+- Docker Desktop for Mac installed and running
+- No existing Bibliogon installation (clean state)
+
+### Preflight
+
+- [ ] Downloaded `bibliogon-launcher-macos.zip` from the GitHub Actions run
+- [ ] Downloaded `bibliogon-launcher-macos.zip.sha256` alongside
+- [ ] Verified SHA256: `shasum -a 256 bibliogon-launcher-macos.zip` matches
+- [ ] Unzipped: `Bibliogon Launcher.app` appears in Finder
+- [ ] Optionally dragged the `.app` to `/Applications/`
+
+### Happy-Path Test Results
+
+| Step | Expected | Observed | Status |
+|------|----------|----------|--------|
+| First launch (double-click) | Gatekeeper blocks with "unidentified developer" dialog |  | PASS / FAIL |
+| Gatekeeper bypass | Right-click -> Open, then "Open" in the second dialog. Launcher starts. |  | PASS / FAIL |
+| Welcome dialog | Appears (no crash) |  | PASS / FAIL |
+| Install guide button | Browser opens to launcher help page |  | PASS / FAIL |
+| Close button | Launcher exits cleanly |  | PASS / FAIL |
+| Install flow: folder picker | macOS folder picker opens with default `~/bibliogon` |  | PASS / FAIL |
+| Install flow: download | Progress shown, ZIP downloaded, extracted |  | PASS / FAIL |
+| Install flow: Docker build | `docker compose up --build -d` runs, progress visible |  | PASS / FAIL |
+| Install flow: browser open | Default browser opens at `http://localhost:7880`, Dashboard loads |  | PASS / FAIL |
+| Manifest written | `~/Library/Application Support/bibliogon/install.json` exists |  | PASS / FAIL |
+| Activity log written | `~/Library/Application Support/bibliogon/install.log` exists |  | PASS / FAIL |
+| Second launch | No Gatekeeper dialog, main UI appears, Uninstall button visible |  | PASS / FAIL |
+| Uninstall: confirmation | Dialog shows install path, Cancel/Uninstall buttons |  | PASS / FAIL |
+| Uninstall: Docker cleanup | Stack stopped, volumes + images removed |  | PASS / FAIL |
+| Uninstall: dir removal | Install directory deleted |  | PASS / FAIL |
+| Uninstall: UI transition | Welcome dialog returns, no Uninstall button |  | PASS / FAIL |
+
+### macOS-specific Edge Cases
+
+| Step | Setup | Expected | Observed | Status |
+|------|-------|----------|----------|--------|
+| App in /Applications | Move .app to /Applications, launch from Launchpad | Works the same as from any location |  | PASS / FAIL |
+| App quarantined | Download fresh (preserves xattr com.apple.quarantine) | First-launch right-click -> Open flow still works |  | PASS / FAIL |
+| Docker Desktop not running | Quit Docker Desktop, launch installer | Error dialog with docker.com install URL |  | PASS / FAIL |
+| Spotlight search | Cmd+Space -> "Bibliogon Launcher" | App indexed, appears in Spotlight |  | PASS / FAIL |
+
+### Known limitations (initial D-02)
+
+- **arm64 only:** Apple Silicon Macs (M1/M2/M3/M4). Intel Macs are not supported in this build. Tracking as optional follow-up.
+- **Unsigned:** Gatekeeper bypass required on first launch. Code signing + notarization require an Apple Developer account.
+- **ZIP distribution:** no DMG. User unzips and drags .app to /Applications manually.
+- **No tkinter system deps:** unlike Linux, macOS Python ships with tkinter built-in. No extra setup needed.
+
+---
+
 ## Issues Found
 
 - None / List any bugs or UX problems:
@@ -200,5 +257,6 @@ Attach relevant sections of `%APPDATA%\Bibliogon\launcher.log` for any failing s
 - [ ] Part 3: Uninstall flow works (confirm, remove, manifest delete)
 - [ ] Part 3: Edge cases handled (missing dir, network failure, cancel)
 - [ ] Part 4: Linux launcher binary runs, install/uninstall flow works
+- [ ] Part 5: macOS .app bundle runs (Gatekeeper bypass), install/uninstall flow works
 - [ ] D-01 marked `[x]` in ROADMAP, launcher ready for release asset
 - [ ] Issues require iteration (listed above)
