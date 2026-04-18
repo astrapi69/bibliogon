@@ -2,6 +2,56 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.19.0] - 2026-04-18
+
+Content safety is the headline of this release. A silent data-loss path in autosave (status flipped to "saved" and the IndexedDB draft was deleted before the server round-trip completed) is closed, and the whole save pipeline is hardened against tab crashes, offline outages, concurrent edits from a second tab, and accidental overwrites. Plus the donation-integration S-series (Liberapay, GitHub Sponsors, Ko-fi, PayPal) and an MkDocs restructure that finally gives macOS and Linux launcher users proper documentation.
+
+### Added
+
+**Content safety**
+- **Autosave awaits server acknowledgment.** The Editor's save-status indicator no longer flips to "saved" and the IndexedDB draft is no longer deleted before `onSave` resolves. On failure the status stays in `error` and the draft is retained as the safety net.
+- **Save-failure toast with retry.** On network / server error the user sees a dismissible toast with a Retry button that re-triggers the save immediately. The IndexedDB draft is preserved until the retry succeeds.
+- **`beforeunload` / `pagehide` / `visibilitychange` flush.** New `useFlushOnUnload` hook registers all three events. On tab close / mobile background / iOS pagehide the pending debounce is cancelled, the current content is written to IndexedDB via Dexie's transaction queue (which survives the tab dying), and a best-effort `fetch(..., {keepalive: true})` PATCH is attempted.
+- **Offline detection with reconnect flush.** New `OfflineBanner` (mounted globally in `App.tsx`) watches `navigator.onLine`. While offline, save failures suppress the retry toast (the banner is authoritative). On reconnect, `syncAllDrafts` iterates every IndexedDB draft, fetches the current server version, PATCHes the content with the correct version, and toasts a summary ("Kapitel synchronisiert: N" or `sync_partial` if any failed).
+- **Optimistic locking on PATCH /chapters.** New `Chapter.version` column (Alembic migration `e1f2a3b4c5d6`), required `version` field on `ChapterUpdate`, 409 with structured detail `{error, message, current_version, server_content, server_title, server_updated_at}` on mismatch. The backend bumps `version += 1` on every successful write.
+- **Conflict resolution dialog.** New `ConflictResolutionDialog.tsx` shows a side-by-side preview of local vs server content on 409. Two primary actions: "Meine Änderungen behalten" (force-save with the new server version) and "Meine Änderungen verwerfen" (pull the server version into the editor).
+- **`chapter_versions` table with restore flow.** New table (Alembic migration `f2a3b4c5d6e7`) stores an immutable snapshot of the pre-update content on every successful PATCH. Retention policy: last 20 per chapter, trimmed after each insert. Three new endpoints: `GET /api/books/{bid}/chapters/{cid}/versions`, `GET /api/books/{bid}/chapters/{cid}/versions/{vid}`, `POST .../restore`. Frontend: "Versionsverlauf" entry in the chapter context menu opens `ChapterVersionsModal` with a scrollable list and per-entry Restore button. Restore snapshots the current state before overwriting so nothing is lost.
+- **AbortController per-chapter save dedup.** `api.chapters.update` aborts any prior in-flight save for the same chapter before starting a new one. Aborts surface as a new `SaveAbortedError` class that the Editor treats as a no-op. Latest save always wins; no more races between rapid keystrokes.
+- **SQLite PRAGMA on every connection.** SQLAlchemy event listener enables `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`. WAL unblocks concurrent readers during background jobs; `foreign_keys=ON` is a correctness fix (ON DELETE CASCADE was silently ignored without it); NORMAL sync removes per-commit fsync. **Side effect: `make test` runtime dropped from ~2:03 to ~15s** on the reference machine.
+- **12 new backend tests** (`test_chapter_versioning.py`, `test_database_pragma.py`) covering the optimistic-lock happy path, the 409 detail shape, the `version`-required 422, `updated_at` bumps, snapshot creation on PATCH, retention at exactly 20 per chapter, the restore endpoint's overwrite + snapshot contract, PRAGMA WAL / synchronous=1 / foreign_keys=1.
+- **15 new frontend Vitest tests** (`useOnlineStatus`, `useFlushOnUnload`, `ConflictResolutionDialog`) pinning the online/offline transitions, the three-event flush contract, and the conflict-dialog callback invariants.
+- **Two Playwright E2E specs** (`e2e/smoke/content-safety.spec.ts`): tab-crash recovery via IndexedDB seeding and `offline → online` flush via `context.setOffline()`.
+
+**Donation integration (S-series)**
+- **S-01 Support Settings tab.** New `SupportSection.tsx` rendered as a conditional 4th Radix tab in `Settings.tsx`. Shows one card per channel with name, optional "Recommended" star (Liberapay), localised description, and an external-link button (`target="_blank"`, `rel="noopener noreferrer"`). `donations.enabled: false` in `app.yaml` hides the entire tab; `landing_page_url` collapses the UI to one primary button.
+- **S-02 One-time onboarding dialog.** New `DonationOnboardingDialog.tsx` mirroring the AiSetupWizard pattern. Trigger: Dashboard's book-creation handler, gated on `books.length === 0` BEFORE the create and the `bibliogon-donation-onboarding-seen` localStorage flag being unset. Every dismiss path sets the flag; two-step UX falls back to a channel list when `landing_page_url` is null.
+- **S-03 90-day reminder banner.** New `DonationReminderBanner.tsx` + pure `shouldShowReminder` helper. Shown at the top of the Dashboard when all of: donations enabled, onboarding seen, `bibliogon-first-use-date` at least 90 days old, `bibliogon-donation-reminder-next-allowed` missing or in the past. Dismiss paths: "Support the project" sets a 180-day cooldown, "Not now" / close-X set 90 days. Never during an editor/export session (Dashboard is a separate route).
+- **Donation config** in `backend/config/app.yaml.example` with `enabled` kill switch, `landing_page_url` override, and the four active channels (Liberapay, GitHub Sponsors, Ko-fi, PayPal). Not editable via the Settings UI; project-level YAML only.
+- **Help page** `docs/help/{de,en}/support.md` registered in `_meta.yaml` with `heart` icon. Channel descriptions, FAQ covering tax-deductibility, anonymity per platform, recurring vs one-time, how to cancel, why no direct bank transfer. Top-level nav entry (15 entries total).
+- **i18n for all 8 languages** (`ui.donations.*`: tab, section_title, intro, recommended_badge, support_button, understood_button, not_now_button, onboarding_title / body / hint, reminder_body, reminder_close, 4 channel descriptions).
+
+**Documentation**
+- **MkDocs installation restructure.** New top-level "Installation" nav section with five children: Overview landing page, Windows Launcher (existing, harmonised), macOS Launcher (new), Linux Launcher (new), and Uninstall (pulled into the section). URLs preserved via flat slug structure: `/launcher-windows/` still works, plus new `/launcher-macos/`, `/launcher-linux/`, `/installation/`. Top-level nav count stays at 14 (Installation replaces the standalone "Windows Launcher" entry).
+- **macOS launcher page** covers arm64-only builds, the right-click → Open Gatekeeper bypass, the `xattr -d com.apple.quarantine` fallback, `shasum -a 256` verification, the `~/Library/Application Support/bibliogon/` config dir.
+- **Linux launcher page** covers glibc 2.35+ requirement, Docker group setup, `chmod +x`, `sha256sum`, the optional `python3-tk` runtime, `~/.config/bibliogon/` config dir.
+- **mkdocs.yml nav regenerated** from `_meta.yaml`. The committed nav was stale against the meta file and missing templates, ai, themes, and developers/plugins entries that had been added since v0.17.0.
+
+### Changed
+- **PATCH /chapters is a breaking API change** for any client that does not send `version`. The schema rejects missing `version` with 422 (Pydantic). Backend test helpers and the frontend `api.chapters.update` signature were both updated; any third-party caller must add `version` or pre-fetch the chapter first. The `OfflineBanner` reconnect flush already does a GET before each PATCH to read the server-side version.
+- **`api.chapters.update` is now async with abort semantics.** New `SaveAbortedError` exported from `frontend/src/api/client.ts`. Callers should treat it as a no-op (the Editor already does).
+
+### Fixed
+- **Chapter Rename rejected stale version** silently before - it followed the same last-write-wins path as chapter content. With optimistic locking in place, the rename handler catches `SaveAbortedError` from the dedup layer and suppresses the "Rename failed" toast on abort (rapid-rename races).
+
+### Known pending post-release
+
+A UI smoke-test session is scheduled to cover three areas on the running app:
+- DEP-01 / DEP-04 partial / DEP-07 zero-touch upgrades carried over from v0.18.0 (GitHub issue #5)
+- S-01 / S-02 / S-03 donation UI surfaces (GitHub issue #5 mentions this too but the primary tracker is this CHANGELOG)
+- Content safety: Playwright recovery and offline specs plus a manual checklist for the 5 UX paths that E2E cannot cover cleanly (GitHub issue #8)
+
+Automated coverage is in place (530+ backend + 400+ Vitest tests, all green) but multi-tab 409 conflict, beforeunload-on-tab-close, mobile Safari pagehide, and the version-history restore modal need human eyes before v0.19.0 gets a clean bill of health.
+
 ## [0.18.0] - 2026-04-18
 
 Templates are the headline feature: reusable book and chapter structures, with 5 book builtins and 4 chapter builtins seeded at startup, covering front-matter, back-matter, and specialised content types. Three major frontend dependency upgrades landed cleanly (React 18 -> 19, Vite 6 -> 7, TypeScript 5 -> 6, lucide-react 0 -> 1) with every automated check green; a dedicated UI smoke-test session is scheduled post-release. Plugin YAML saves no longer silently strip comments.
