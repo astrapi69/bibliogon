@@ -73,3 +73,46 @@ Templates theme (book + chapter level) shipped end-to-end: TM-01, TM-03, TM-04, 
 - **CI changes:** new `coverage.yml` workflow, plugin matrices expanded 5 -> 7.
 - **Docs:** 1 new help page (DE + EN), 6 new FAQ entries, CLAUDE.md data-model updated, CHANGELOG Unreleased section opened.
 - **Open polish items:** PS-11+ (catch-all for future surfaced items).
+
+---
+
+## Release session (afternoon, 2026-04-18)
+
+Continued the day with the YAML round-trip fix, three major frontend dependency upgrades, regression pinning, audit refresh, CI matrix cleanup, and cut v0.18.0.
+
+### YAML round-trip (commits `364a6ff`, `3c8c10e`, `decb531`)
+
+- **Root cause.** User reported that saving plugin settings through the Settings UI rewrote `backend/config/plugins/translation.yaml` from quoted/commented form to bare form. Traced to four call sites that use PyYAML's `yaml.dump`: `settings.py`, `plugin_install.py`, `audiobook.py`, `licenses.py`. PyYAML silently strips comments, blank lines, and quote styles.
+- **Fix.** Introduced `backend/app/yaml_io.py` with `read_yaml_roundtrip` / `write_yaml_roundtrip` backed by ruamel.yaml in round-trip mode. Swapped all four write paths. Added ruamel.yaml ^0.18.0 as a backend dep.
+- **PS-11.** Added 5 unit tests in `backend/tests/test_yaml_io.py` (byte-identical round-trip, `# INTERNAL` comment preservation, double-quote style preservation, missing-file error, parent-dir creation). Fixed missing Spanish diacritics across 4 plugin YAMLs: `translation` (Traduccion -> Traducción, automatica -> automática, via -> vía), `kinderbuch` (pagina -> página), `kdp` (validacion -> validación, publicacion -> publicación), `audiobook` (Generacion -> Generación, capitulos -> capítulos). ms-tools was already correct.
+- **Regression pin at HTTP boundary.** Added `test_update_preserves_comments_and_formatting` in `test_settings_api.py` that POSTs to `PATCH /api/settings/plugins/export`, reads the YAML back from disk, and asserts both the mutated value AND the `# INTERNAL` comment AND the quote style survived. Negative-proof confirmed: swapping `yaml_io` back to PyYAML makes it fail.
+
+### Dependency upgrades DEP-01 / DEP-04 / DEP-07 (commits `dbf8abe`, `43fc801`, `54f619f`, `3c6008c`)
+
+- **DEP-01 (React 18 -> 19).** Bump-only. Verified first with `npm view` that every peer dep accepts React ^19 (TipTap 2.27.2, react-router-dom 6, react-toastify 11, react-markdown 10, lucide-react, @dnd-kit, Radix). Scanned for React 19 breakage patterns (`forwardRef`, `defaultProps`, `PropTypes`, `findDOMNode`, legacy lifecycle, `useRef<T>()` without initial value, `ReactDOM.render`) - found zero. Already using `createRoot`. tsc clean, 351 Vitest tests green, build clean.
+- **DEP-04 (Vite 6 -> 7 + TS 5 -> 6).** Vite 8 aborted upstream: `vite-plugin-pwa@1.2.0` only lists peer deps through Vite 7. Cut scope to Vite 7. Raised `@vitejs/plugin-react` 4 -> 5 (needed for Vite 7 compat). TypeScript 5 -> 6 broke `node:fs`/`node:path` imports in `ChapterSidebar.test.tsx` because TS 6 no longer auto-includes every `@types/*` in node_modules. Fix: explicit `@types/node` devDep + `"types": ["node", "vite/client"]` in `tsconfig.json`. Vite 7 requires Node 20.19+/22.12+: switched dev from Node 18 to 22; CI already on 22. DEP-09 opened as a new tracked item for the Vite 7 -> 8 follow-up.
+- **DEP-07 (lucide-react 0.468 -> 1.8.0).** Zero-touch. Researched the 1.0 migration notes via claude-code-guide: only breaking change was removal of 13 brand icons (GitHub, Instagram, Slack, etc.); Bibliogon's 32 lucide imports across 29 files use only semantic UI icons. tsc clean, 351 tests green, build clean.
+
+### Coverage audit refresh + help/getstarted CI wiring (commits `a348ebb`, `8f36c25`)
+
+- **Audit refresh (`docs/audits/current-coverage.md`).** Archived the v0.14.0 snapshot to `history/2026-04-13-coverage.md`. Collected fresh numbers: 511 backend, 373 plugin (in the `make test` matrix), 36 plugin (orphaned), 351 Vitest, 193 Playwright (across 19 spec files). Deltas vs 2026-04-13 baseline: +44 backend, +65 plugin, +28 Vitest, +105 E2E. 4 of 5 previously-open E2E gaps closed.
+- **Help + Getstarted joined the CI matrix.** `Makefile` gets `test-plugin-help` / `test-plugin-getstarted` + coverage targets; `test-plugins` and `test-coverage-plugins` aggregators extended. Both plugins added to `ci.yml` and `coverage.yml` plugin matrices. `pytest-cov` as dev dep for both; `httpx` added to help (its tests use `starlette.TestClient`). `make test` now runs 409 plugin tests across 9 suites.
+
+### Release v0.18.0 (commits `0da8a20`, `953da46`, `a4eca1b`, tag `v0.18.0`)
+
+- **Pre-flight help check.** Only one stale reference found: `docs/help/en/developers/plugins.md` line 342 still named React 18. Updated to `React 19, TypeScript 6, Vite 7`. No other version drift in the help content.
+- **SemVer decision.** v0.17.0 -> v0.18.0. Minor bump: substantial new feature (templates), three major dep upgrades, infrastructure (CI coverage + matrix), polish. No breaking changes for users.
+- **Changelog.** Rewrote the existing `[Unreleased]` block into `[0.18.0] - 2026-04-18` with three sections (Added / Changed / Fixed) plus a "Known pending post-release" note that UI smoke testing of the three DEP upgrades is scheduled for a dedicated post-release session. `CHANGELOG-v0.18.0.md` created at repo root for the GitHub release body.
+- **Version bumps.** `backend/pyproject.toml` 0.17.0 -> 0.18.0, `frontend/package.json` 0.17.0 -> 0.18.0, `install.sh` VERSION 0.17.0 -> 0.18.0, `backend/app/main.py` FastAPI version string 0.17.0 -> 0.18.0, `CLAUDE.md` version line updated, `ROADMAP.md` "Latest release" line updated. `backend/app/__init__.py` still empty (no `__version__` maintained there - left alone).
+- **Dependency currency review.** Ran `poetry show --outdated`. Patch-level bumps available (pydantic, numpy, mypy, etc.) but deliberately deferred: release already carries three major frontend DEPs; stability filter from lessons-learned says don't pile on right before ship. elevenlabs 0.2 -> 2.x is DEP-05 (dedicated session), starlette 1.0 / rich 15 / ruamel.yaml 0.19 deferred to next cycle.
+- **Test gate.** Full `make test` green: 511 backend + 9 plugin suites (92 + 10 + 33 + 8 + 97 + 35 + 98 + 30 + 6 = 409) + 351 Vitest = 1,271 automated tests. tsc clean. Frontend `vite build` + PWA regen clean on Node 22.
+- **mypy status.** 14 pre-existing errors (all "Returning Any" from `yaml.safe_load`/`read_yaml_roundtrip` or untyped plugin imports). Verified pre-existing via stash test on v0.17.0 state. Not a release regression.
+- **Tag and release.** `v0.18.0` pushed to `origin main` and `origin v0.18.0`. GitHub release published via `gh release create` with `CHANGELOG-v0.18.0.md` as body: <https://github.com/astrapi69/bibliogon/releases/tag/v0.18.0>.
+- **Docker push:** skipped (not active in release pipeline).
+- **MkDocs deploy:** GitHub Action will fire on the main push automatically.
+
+### Post-release follow-ups pending
+
+- UI smoke test session for DEP-01 / DEP-04 partial / DEP-07 (browser-level visual + interaction testing on a running instance). Owner: Aster.
+- DEP-09 (Vite 7 -> 8) when vite-plugin-pwa publishes Vite 8 compat. Owner: Aster, re-check cadence ~2 weeks.
+- Deferred patch-level dep bumps (pydantic 2.13.1 -> 2.13.2, numpy 2.4.3 -> 2.4.4, click 8.1 -> 8.3, etc.) for the next release cycle.
