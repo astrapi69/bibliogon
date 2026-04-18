@@ -205,22 +205,20 @@ export default function BookEditor() {
 
     const handleSaveContent = async (content: string) => {
         if (!bookId || !activeChapterId) return;
-        try {
-            const updated = await api.chapters.update(bookId, activeChapterId, {
-                content,
-            });
-            setBook((prev) => {
-                if (!prev) return prev;
-                return {
-                    ...prev,
-                    chapters: prev.chapters.map((c) =>
-                        c.id === updated.id ? updated : c
-                    ),
-                };
-            });
-        } catch (err) {
-            console.error("Autosave failed:", err);
-        }
+        // Rethrow on failure so the Editor sees the error and sets its
+        // status to "error" instead of lying to the user with "saved".
+        const updated = await api.chapters.update(bookId, activeChapterId, {
+            content,
+        });
+        setBook((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                chapters: prev.chapters.map((c) =>
+                    c.id === updated.id ? updated : c
+                ),
+            };
+        });
     };
 
     const handleReorder = async (chapterIds: string[]) => {

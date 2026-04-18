@@ -31,7 +31,7 @@ import {useI18n} from "../hooks/useI18n";
 import {api} from "../api/client";
 import {notify} from "../utils/notify";
 
-type SaveStatus = "idle" | "saving" | "saved";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export interface BookContext {
     title: string;
@@ -43,7 +43,7 @@ export interface BookContext {
 
 interface Props {
     content: string;
-    onSave: (json: string) => void;
+    onSave: (json: string) => void | Promise<void>;
     placeholder?: string;
     bookId?: string;
     chapterId?: string;
@@ -106,21 +106,30 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         (json: string) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
             setSaveStatus("saving");
-            saveTimer.current = setTimeout(() => {
-                if (json !== lastSaved.current) {
-                    lastSaved.current = json;
-                    onSave(json);
-                    // Delete draft on successful server save
-                    if (chapterId) deleteDraft(chapterId);
-                    serverContentHash.current = hashContent(json);
-                    setSaveStatus("saved");
-                    setTimeout(() => setSaveStatus("idle"), 2000);
-                } else {
+            saveTimer.current = setTimeout(async () => {
+                if (json === lastSaved.current) {
                     setSaveStatus("idle");
+                    return;
                 }
+                try {
+                    await onSave(json);
+                } catch (err) {
+                    // Keep IndexedDB draft as fallback, leave status in "error".
+                    // Toast UX is the consumer's responsibility (BookEditor).
+                    console.error("Autosave failed:", err);
+                    setSaveStatus("error");
+                    return;
+                }
+                lastSaved.current = json;
+                if (chapterId) deleteDraft(chapterId);
+                serverContentHash.current = hashContent(json);
+                setSaveStatus("saved");
+                setTimeout(() => setSaveStatus("idle"), 2000);
             }, autosaveDebounceMs);
 
-            // Save draft to IndexedDB (parallel to server save)
+            // Save draft to IndexedDB (parallel to server save, independent debounce).
+            // This is the safety net: even if the server save later fails, the
+            // local draft is already written.
             if (chapterId && bookId) {
                 if (draftTimer.current) clearTimeout(draftTimer.current);
                 draftTimer.current = setTimeout(() => {
@@ -298,16 +307,26 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         // Debounced save in markdown mode
         if (saveTimer.current) clearTimeout(saveTimer.current);
         setSaveStatus("saving");
-        saveTimer.current = setTimeout(() => {
-            if (editor) {
-                const html = markdownToHtml(text);
-                editor.commands.setContent(html);
-                const json = JSON.stringify(editor.getJSON());
-                if (json !== lastSaved.current) {
-                    lastSaved.current = json;
-                    onSave(json);
-                }
+        saveTimer.current = setTimeout(async () => {
+            if (!editor) {
+                setSaveStatus("idle");
+                return;
             }
+            const html = markdownToHtml(text);
+            editor.commands.setContent(html);
+            const json = JSON.stringify(editor.getJSON());
+            if (json === lastSaved.current) {
+                setSaveStatus("idle");
+                return;
+            }
+            try {
+                await onSave(json);
+            } catch (err) {
+                console.error("Markdown autosave failed:", err);
+                setSaveStatus("error");
+                return;
+            }
+            lastSaved.current = json;
             setSaveStatus("saved");
             setTimeout(() => setSaveStatus("idle"), 2000);
         }, 800);
@@ -518,7 +537,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiLoading(false);
     };
 
-    const statusLabel = saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") : saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") : "";
+    const statusLabel =
+        saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") :
+        saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") :
+        saveStatus === "error" ? t("ui.editor.save_failed_short", "Speichern fehlgeschlagen") :
+        "";
 
     const handleRestore = () => {
         if (editor && recoveryDraft) {
@@ -844,8 +867,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 {statusLabel && (
                     <span style={{
                         ...styles.saveStatus,
-                        color: saveStatus === "saving" ? "var(--text-muted)" : "var(--accent)",
-                    }}>
+                        color:
+                            saveStatus === "saving" ? "var(--text-muted)" :
+                            saveStatus === "error" ? "var(--danger, #b91c1c)" :
+                            "var(--accent)",
+                    }} data-testid={`editor-save-status-${saveStatus}`}>
                         {statusLabel}
                     </span>
                 )}

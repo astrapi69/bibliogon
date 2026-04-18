@@ -76,6 +76,7 @@ ui:
     placeholder: "Start writing..."
     saving: "Saving..."
     saved: "Saved"
+    save_failed_short: "Save failed"
     words: "Words"
     characters: "Characters"
     search: "Search..."
