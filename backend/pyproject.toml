@@ -59,12 +59,16 @@ select = [
     "UP",   # pyupgrade
 ]
 ignore = [
-    "E501",  # line length - handled by formatter, too noisy to fix blind
+    "E501",   # line length - handled by formatter, too noisy to fix blind
+    "B008",   # function-call-in-default-argument - FastAPI `Depends(...)` idiom is intentional
+    "UP042",  # replace-str-enum - `(str, Enum)` base class ships in migrations too; deferred
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["B"]  # bugbear too strict for test fixtures (unused args, etc.)
-"migrations/versions/*" = ["UP"]  # Alembic templates predate py312 syntax
+"tests/*" = ["B"]                       # bugbear too strict for test fixtures
+"migrations/versions/*" = ["UP"]        # Alembic templates predate py312 syntax
+"app/main.py" = ["E402"]                # setup_logging() before imports is intentional
+"app/licensing.py" = ["E402"]           # LICENSING_ENABLED flag before imports is intentional
 
 [tool.mypy]
 python_version = "3.12"

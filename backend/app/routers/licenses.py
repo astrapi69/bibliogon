@@ -101,7 +101,7 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
             body.license_key, body.plugin_name, author_name
         )
     except LicenseError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     _store.set(body.plugin_name, body.license_key)
 

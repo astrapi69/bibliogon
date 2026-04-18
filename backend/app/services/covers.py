@@ -161,12 +161,12 @@ def _validate_image_format(payload: bytes) -> tuple[int, int]:
                     detail=f"File is not a supported image (detected: {fmt or 'unknown'})",
                 )
             return img.width, img.height
-    except UnidentifiedImageError:
-        raise HTTPException(status_code=400, detail="File is not a valid image")
+    except UnidentifiedImageError as e:
+        raise HTTPException(status_code=400, detail="File is not a valid image") from e
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image validation failed: {e}")
+        raise HTTPException(status_code=400, detail=f"Image validation failed: {e}") from e
 
 
 # --- Storage helpers ---

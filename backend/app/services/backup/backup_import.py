@@ -75,8 +75,8 @@ def _extract_bgb(file: UploadFile, tmp_dir: Path) -> Path:
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(extracted)
-    except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="Beschaedigte .bgb-Datei")
+    except zipfile.BadZipFile as e:
+        raise HTTPException(status_code=400, detail="Beschaedigte .bgb-Datei") from e
     return extracted
 
 

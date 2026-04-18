@@ -93,5 +93,5 @@ def _read_zip_names(zip_path: Path) -> list[str]:
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
             return zf.namelist()
-    except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="Corrupted ZIP file")
+    except zipfile.BadZipFile as e:
+        raise HTTPException(status_code=400, detail="Corrupted ZIP file") from e

@@ -93,11 +93,11 @@ def _extract_upload(file: UploadFile, dest: Path, label: str) -> Path:
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(extracted)
-    except zipfile.BadZipFile:
+    except zipfile.BadZipFile as e:
         raise HTTPException(
             status_code=400,
             detail=f"Backup {label}: Datei ist beschaedigt und kann nicht gelesen werden",
-        )
+        ) from e
 
     manifest = find_manifest(extracted)
     if manifest:

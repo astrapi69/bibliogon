@@ -101,12 +101,12 @@ class LLMClient:
                     headers=headers,
                     timeout=120.0,
                 )
-            except httpx.ConnectError:
+            except httpx.ConnectError as e:
                 raise LLMError(
                     f"KI-Server nicht erreichbar ({self.base_url}). "
                     "Starte LMStudio oder Ollama, oder deaktiviere die KI-Funktion "
                     "in Einstellungen > App > AI."
-                )
+                ) from e
 
             if response.status_code == 401:
                 raise LLMError("API-Schluessel ungueltig oder fehlend.")
@@ -179,11 +179,11 @@ class LLMClient:
                     headers=headers,
                     timeout=120.0,
                 )
-            except httpx.ConnectError:
+            except httpx.ConnectError as e:
                 raise LLMError(
                     f"KI-Server nicht erreichbar ({self.base_url}). "
                     "Pruefe die Anthropic API-Verbindung."
-                )
+                ) from e
 
             if response.status_code == 401:
                 raise LLMError("API-Schluessel ungueltig oder fehlend.")

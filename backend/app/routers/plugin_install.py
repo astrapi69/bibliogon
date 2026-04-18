@@ -60,8 +60,8 @@ async def install_plugin(file: UploadFile) -> dict[str, Any]:
     content = await file.read()
     try:
         zf = zipfile.ZipFile(file=__import__("io").BytesIO(content))
-    except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="Ungueltige ZIP-Datei.")
+    except zipfile.BadZipFile as e:
+        raise HTTPException(status_code=400, detail="Ungueltige ZIP-Datei.") from e
 
     plugin_name, package_name, plugin_config = _validate_plugin_zip(zf)
     install_path = _extract_plugin(zf, plugin_name)
@@ -97,8 +97,8 @@ def _validate_plugin_zip(zf: zipfile.ZipFile) -> tuple[str, str, dict]:
 
     try:
         config = yaml.safe_load(zf.read(yaml_path))
-    except Exception:
-        raise HTTPException(status_code=400, detail="plugin.yaml ist ungueltig.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="plugin.yaml ist ungueltig.") from e
 
     plugin_name = config.get("plugin", {}).get("name", "")
     _validate_plugin_name(plugin_name)
@@ -201,7 +201,8 @@ def uninstall_plugin(plugin_name: str) -> dict[str, str]:
     if app_yaml_path.exists():
         app_config = _read_yaml(app_yaml_path)
         enabled = app_config.get("plugins", {}).get("enabled", [])
-        disabled = app_config.get("plugins", {}).setdefault("disabled", [])
+        # Ensure `plugins.disabled` exists in the YAML even if unused here.
+        app_config.get("plugins", {}).setdefault("disabled", [])
         if plugin_name in enabled:
             enabled.remove(plugin_name)
         _write_yaml(app_yaml_path, app_config)

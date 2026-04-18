@@ -131,7 +131,7 @@ class LicenseValidator:
         try:
             payload_b64, sig_b64 = self._parse_key(license_key)
         except ValueError as e:
-            raise LicenseError(f"Malformed license key: {e}")
+            raise LicenseError(f"Malformed license key: {e}") from e
 
         # Verify signature
         expected_sig = self._sign(payload_b64)
@@ -145,7 +145,7 @@ class LicenseValidator:
             data = json.loads(payload_json)
             payload = LicensePayload.from_dict(data)
         except (json.JSONDecodeError, KeyError) as e:
-            raise LicenseError(f"Corrupted license payload: {e}")
+            raise LicenseError(f"Corrupted license payload: {e}") from e
 
         # Check plugin match
         if not payload.matches_plugin(plugin_name):

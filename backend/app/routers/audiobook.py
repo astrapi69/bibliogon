@@ -110,7 +110,7 @@ def _write_yaml_config(cfg: dict[str, Any]) -> None:
     try:
         write_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH, cfg)
     except OSError as e:
-        raise HTTPException(status_code=500, detail=f"Failed to write audiobook config: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to write audiobook config: {e}") from e
 
 
 def _push_key_to_engine(api_key: str) -> None:
@@ -180,7 +180,7 @@ def _verify_elevenlabs_key(api_key: str) -> dict[str, Any]:
         raise HTTPException(
             status_code=500,
             detail=f"httpx not installed in backend environment: {e}",
-        )
+        ) from e
     try:
         with httpx.Client(timeout=10.0) as client:
             response = client.get(
@@ -188,7 +188,7 @@ def _verify_elevenlabs_key(api_key: str) -> dict[str, Any]:
                 headers={"xi-api-key": api_key},
             )
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"ElevenLabs unreachable: {e}")
+        raise HTTPException(status_code=502, detail=f"ElevenLabs unreachable: {e}") from e
     if response.status_code == 401:
         raise HTTPException(status_code=400, detail="ElevenLabs rejected the API key (401 Unauthorized).")
     if response.status_code >= 400:
@@ -345,7 +345,7 @@ async def upload_google_credentials(
     try:
         credential_store.validate_service_account_json(raw)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     meta = credential_store.save_encrypted(raw)
 
@@ -480,8 +480,8 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     # Generate sample audio
     try:
         from bibliogon_audiobook.tts_engine import get_engine
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Audiobook plugin not available")
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail="Audiobook plugin not available") from e
 
     import tempfile as _tmpmod
     tmp_dir = Path(_tmpmod.mkdtemp(prefix="bibliogon_dryrun_"))
@@ -496,7 +496,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
             language=language,
         )
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Dry-run TTS failed: {e}")
+        raise HTTPException(status_code=502, detail=f"Dry-run TTS failed: {e}") from e
 
     if not output_path.exists():
         raise HTTPException(status_code=500, detail="Sample audio was not generated")
@@ -634,12 +634,11 @@ def classify_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict
         from bibliogon_audiobook import audiobook_storage
         from bibliogon_audiobook.generator import (
             _slugify,
-            content_hash,
             extract_plain_text,
             should_regenerate,
         )
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Audiobook plugin not installed")
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail="Audiobook plugin not installed") from e
 
     engine = getattr(book, "tts_engine", None) or "edge-tts"
     voice = getattr(book, "tts_voice", None) or ""
@@ -797,7 +796,7 @@ def download_book_preview(
     try:
         candidate.relative_to(previews.resolve())
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid filename")
+        raise HTTPException(status_code=400, detail="Invalid filename") from None
     if not candidate.exists():
         raise HTTPException(status_code=404, detail="Preview not found")
     return FileResponse(path=str(candidate), media_type="audio/mpeg", filename=filename)
@@ -814,7 +813,7 @@ def delete_book_preview(
     try:
         candidate.relative_to(previews.resolve())
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid filename")
+        raise HTTPException(status_code=400, detail="Invalid filename") from None
     if not candidate.exists():
         raise HTTPException(status_code=404, detail="Preview not found")
     candidate.unlink()

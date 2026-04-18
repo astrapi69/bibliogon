@@ -116,7 +116,7 @@ async def chat_completion(req: ChatRequest) -> dict[str, Any]:
             max_tokens=req.max_tokens,
         )
     except LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/generate")
@@ -139,7 +139,7 @@ async def generate_text(req: GenerateRequest) -> dict[str, Any]:
         _track_usage(req.book_id, usage)
         return {"content": result["content"], "usage": usage}
     except LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.get("/models")
@@ -243,7 +243,7 @@ async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
             "usage": usage,
         }
     except LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 class MarketingRequest(BaseModel):
@@ -360,7 +360,7 @@ async def generate_marketing(req: MarketingRequest) -> dict[str, Any]:
             "usage": usage,
         }
     except LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.get("/test-connection")
