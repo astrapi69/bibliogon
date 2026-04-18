@@ -81,6 +81,10 @@ export interface Chapter {
     chapter_type: ChapterType;
     created_at: string;
     updated_at: string;
+    /** Optimistic-lock counter. Bumped by the backend on every
+     *  successful PATCH. Clients must echo it back on update.
+     */
+    version: number;
 }
 
 export interface StyleFinding {

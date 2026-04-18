@@ -253,6 +253,7 @@ class ChapterSummary(BaseModel):
     title: str
     position: int
     chapter_type: str
+    version: int
 
 
 class ChapterOut(BaseModel):
@@ -266,6 +267,7 @@ class ChapterOut(BaseModel):
     chapter_type: str
     created_at: datetime
     updated_at: datetime
+    version: int
 
 
 class ChapterReorder(BaseModel):

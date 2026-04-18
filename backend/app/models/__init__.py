@@ -143,11 +143,16 @@ class Chapter(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+    # Optimistic-lock version counter. Incremented by the PATCH handler
+    # on every successful content write (commit 6). Starts at 1.
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 
     def __repr__(self) -> str:
-        return f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type}>"
+        return f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type} v={self.version}>"
 
 
 class Asset(Base):

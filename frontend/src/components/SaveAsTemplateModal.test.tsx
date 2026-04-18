@@ -103,12 +103,14 @@ const FAKE_BOOK: BookDetail = {
       chapter_type: "prologue",
       created_at: "2026-04-17T00:00:00Z",
       updated_at: "2026-04-17T00:00:00Z",
+      version: 1,
     },
     {
       id: "c2", book_id: "book-1", title: "Chapter 1",
       content: "", position: 1, chapter_type: "chapter",
       created_at: "2026-04-17T00:00:00Z",
       updated_at: "2026-04-17T00:00:00Z",
+      version: 1,
     },
   ],
 }

@@ -45,6 +45,7 @@ function makeChapter(overrides: Partial<Chapter> = {}): Chapter {
         chapter_type: "chapter",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        version: 1,
         ...overrides,
     };
 }
