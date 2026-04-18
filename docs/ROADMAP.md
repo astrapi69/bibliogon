@@ -57,7 +57,8 @@ Pre-built structures for common book genres. Lowers the entry barrier for new us
 - [x] PS-08: docs + help catch-up for the Templates theme. New `docs/help/{de,en}/templates.md` pages registered in `_meta.yaml`, 6 new FAQ entries in `backend/config/plugins/help.yaml` (DE + EN), stale "21 chapter types" answer refreshed to 31, CLAUDE.md data-model updated with BookTemplate / ChapterTemplate entries and the new `make test-coverage` target, CHANGELOG Unreleased section opened capturing templates + coverage-to-CI + theme-toggle placement work.
 - [x] PS-09: expand the CI plugin matrix. `ci.yml` and `coverage.yml` now run 7 plugins (added audiobook + translation alongside the existing export, grammar, kdp, kinderbuch, ms-tools). pytest-cov added to both new plugins' dev deps; root Makefile gets matching `test-coverage-plugin-audiobook` and `test-coverage-plugin-translation` targets.
 - [x] PS-10: trivial cleanup of the `plugin_config` unused-parameter warning in `backend/app/main.py` `_check_license`. Pluginforge's `pre_activate` signature requires the second argument, so the parameter was prefixed with `_` (`_plugin_config`) to silence the warning while preserving the hook contract.
-- [ ] PS-11+: future polish items, surface as found
+- [x] PS-11: regression tests for the ruamel.yaml round-trip (`backend/tests/test_yaml_io.py`, 5 tests covering byte-identical round-trip, `# INTERNAL` comment survival, quote-style preservation, missing-file errors, and parent-directory creation) + missing Spanish accents fixed in 4 plugin YAMLs (`translation.yaml`, `kinderbuch.yaml`, `kdp.yaml`, `audiobook.yaml`: Traducción, página, validación, publicación, Generación, capítulos).
+- [ ] PS-12+: future polish items, surface as found
 
 ### 4. Git-based backup (priority: low, existing .bgb covers daily needs)
 

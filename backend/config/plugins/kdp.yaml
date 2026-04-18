@@ -10,7 +10,7 @@ plugin:
   description:
     de: "KDP-Metadaten, Cover-Validierung und Publishing-Workflow"
     en: "KDP metadata, cover validation, and publishing workflow"
-    es: "Metadatos KDP, validacion de portada y flujo de publicacion"
+    es: "Metadatos KDP, validación de portada y flujo de publicación"
     fr: "Metadonnees KDP, validation de couverture et flux de publication"
     el: "Μεταδεδομένα KDP, επικύρωση εξωφύλλου και ροή δημοσίευσης"
   version: "1.0.0"

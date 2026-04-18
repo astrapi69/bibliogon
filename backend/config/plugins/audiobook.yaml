@@ -9,7 +9,7 @@ plugin:
   description:
     de: TTS-basierte Audiobook-Generierung aus Buchkapiteln
     en: TTS-based audiobook generation from book chapters
-    es: Generacion de audiolibros basada en TTS a partir de capitulos de libros
+    es: Generación de audiolibros basada en TTS a partir de capítulos de libros
     fr: Generation de livres audio basee sur TTS a partir de chapitres de livres
     el: Δημιουργία ηχητικών βιβλίων με TTS από κεφάλαια βιβλίων
   version: 1.0.0
