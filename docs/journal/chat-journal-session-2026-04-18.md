@@ -116,3 +116,66 @@ Continued the day with the YAML round-trip fix, three major frontend dependency 
 - UI smoke test session for DEP-01 / DEP-04 partial / DEP-07 (browser-level visual + interaction testing on a running instance). Owner: Aster.
 - DEP-09 (Vite 7 -> 8) when vite-plugin-pwa publishes Vite 8 compat. Owner: Aster, re-check cadence ~2 weeks.
 - Deferred patch-level dep bumps (pydantic 2.13.1 -> 2.13.2, numpy 2.4.3 -> 2.4.4, click 8.1 -> 8.3, etc.) for the next release cycle.
+
+---
+
+## Second release of the day: v0.19.0 (late afternoon)
+
+Two major workstreams shipped: the donation integration (S-series) plus the content-safety overhaul. Both ended with a release.
+
+### Donation integration (S-01/02/03), 8 commits
+
+- **S-01 Support Settings tab.** Conditional 4th Radix tab in `Settings.tsx`; `SupportSection.tsx` renders channels from `config.donations` with an optional "Recommended" star on Liberapay. `donations.enabled: false` hides the entire tab.
+- **S-02 One-time onboarding dialog.** Mirrors the `AiSetupWizard` pattern. Trigger: Dashboard's book-creation handlers, gated on `books.length === 0` BEFORE the create and the `bibliogon-donation-onboarding-seen` localStorage flag being unset. Every dismiss path sets the flag. Two-step UX: intro -> channel picker if no `landing_page_url`.
+- **S-03 90-day reminder banner** on Dashboard with pure `shouldShowReminder` helper. 180-day cooldown on "Support", 90 on "Not now" and close. Never during editor/export routes; never before S-02 is seen.
+- **Donation config** added to `app.yaml.example` with `enabled` kill switch, `landing_page_url` override, and the four active channels. Not in the PATCH schema (project-level only).
+- **Help page** `docs/help/{de,en}/support.md` with FAQ (tax-deductibility, anonymity, recurring vs one-time). New top-level nav entry "Support" / "Unterstuetzen" with icon `heart` (nav count 14 -> 15).
+- **i18n** for all 8 languages.
+- **31 new Vitest tests** across `SupportSection`, `DonationOnboardingDialog`, `DonationReminderBanner`. 2 new backend tests pin the GET `/api/settings/app` donation shape and kill-switch behavior.
+
+### Content safety audit + implementation (13 commits, 7 Critical + 6 Major gaps closed)
+
+Audit findings (`Content Safety Audit` prompt):
+- **Critical**: autosave's success-path lie (status flipped to "saved" and draft deleted before onSave resolved), save-failure UX (swallowed in console.error), no beforeunload/pagehide/visibilitychange flush, no offline detection, no optimistic locking, no 409 handling, no version column on Chapter.
+- **Major**: no AbortController dedup, SQLite on default rollback-journal + sync=FULL, no chapter_versions table, no frontend save-path tests, no E2E crash-recovery test, no mypy gate on regressions.
+
+Implementation arc (13 commits):
+1. `db57892` fix(editor): `await onSave` before success side effects - closes the silent-loss path
+2. `c8de0fd` feat(editor): toast + retry on save failure, new `notify.saveError(message, onRetry, retryLabel)` + `SaveErrorContent` React component
+3. `8d70fe1` feat(editor): `useFlushOnUnload` hook registers beforeunload/pagehide/visibilitychange; IndexedDB write via Dexie + best-effort `fetch(..., {keepalive: true})`
+4. `43195aa` feat(editor): offline detection + reconnect auto-flush; new `useOnlineStatus`, `OfflineBanner`, `syncAllDrafts`
+5. `1422631` feat(models): `Chapter.version` column + migration `e1f2a3b4c5d6`
+6. `7a8735e` feat(api): optimistic locking on PATCH /chapters, 409 with structured detail body; client helper normalises dict detail into `ApiError.detailBody`
+7. `5db75d8` feat(editor): `ConflictResolutionDialog` with side-by-side TipTap text preview, Keep/Discard resolution
+8. `01d13b1` feat(api-client): per-chapter `AbortController` dedup + new `SaveAbortedError` class
+9. `2d5ce21` feat(db): SQLAlchemy event listener sets `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`. Measured side effect: `make test` runtime 2:03 -> 15s.
+10. `2e8747f` feat(versioning): `chapter_versions` table + migration `f2a3b4c5d6e7`, retention=20, 3 new endpoints, `ChapterVersionsModal` + sidebar context-menu entry
+11. `8826714` test(backend): 12 tests covering the optimistic lock contract, 409 payload shape, `updated_at` bumps, snapshot-on-PATCH, retention at exactly 20, restore with pre-restore snapshot, PRAGMA probes
+12. `02cf1df` test(frontend): 15 Vitest tests for `useOnlineStatus`, `useFlushOnUnload`, `ConflictResolutionDialog`
+13. `76a2974` test(e2e): 2 Playwright smoke specs (force-close recovery via IndexedDB seeding, `context.setOffline()` transitions)
+
+Breaking API change shipped: PATCH /chapters now requires `version` (422 without). All backend test helpers + `api.chapters.update` + `OfflineBanner.syncAllDrafts` + `BookEditor.handleSaveContent` / `handleRenameChapter` updated in the same commit that landed the backend change.
+
+### MkDocs installation restructure (1 commit)
+
+- `342617e` Installation top-level nav with Overview + Windows + macOS + Linux + Uninstall. URLs preserved via flat slug structure. macOS + Linux pages written from scratch covering Gatekeeper, `xattr` fallback, glibc 2.35+, Docker group setup, optional `python3-tk`.
+
+### GitHub issue filed post-content-safety
+
+- **#8** UI + E2E smoke test for content safety: Playwright recovery + offline flush + 5 manual UX checks (autosave+retry, beforeunload flush, offline reconnect, multi-tab 409 conflict, version-history restore). Covers the paths E2E cannot reliably test.
+
+### Release v0.19.0 (5f02f57 changelog, 606b2f7 version bump)
+
+- **SemVer decision.** v0.18.0 -> v0.19.0. Minor bump despite a breaking PATCH API change; the break is contained to clients calling the chapters endpoint and the frontend was updated in the same commit. No plugin contract change.
+- **Changelog.** Lead with content safety (the user-visible headline that protects against data loss). Donation integration second. MkDocs restructure third. Known-pending post-release block calls out issue #5 (DEP upgrades + donation UI) and issue #8 (content safety smoke).
+- **Version bumps.** Standard 5 locations.
+- **Dependency review.** No new bumps. Same deferred set as v0.18.0. Stability filter says don't pile on a release that already carries a big breaking change.
+- **Test gate.** Full `make test` green: 525 backend + 9 plugin suites (409 tests) + 397 Vitest = 1,331 automated tests. tsc clean. `vite build` + PWA regen clean.
+- **Tag and release.** `v0.19.0` pushed, GitHub release published via `gh release create` with `CHANGELOG-v0.19.0.md` body.
+- **MkDocs deploy** fired on the main push.
+
+### Post-release follow-ups pending
+
+- UI smoke test for content safety (issue #8): 2 Playwright scenarios + 5 manual UX checks.
+- DEP-09 Vite 7 -> 8 still blocked upstream on vite-plugin-pwa.
+- Patch-level dep bumps deferred again.
