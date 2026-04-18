@@ -111,7 +111,6 @@ export default function ConflictResolutionDialog({conflict, onKeepLocal, onDisca
               <RotateCcw size={14} aria-hidden />
               {t("ui.conflict.discard_local", "Meine Änderungen verwerfen")}
             </button>
-            {/* TODO: "Save as new chapter" - deferred from v1 */}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

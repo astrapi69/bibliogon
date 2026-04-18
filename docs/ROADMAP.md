@@ -59,7 +59,8 @@ Pre-built structures for common book genres. Lowers the entry barrier for new us
 - [x] PS-10: trivial cleanup of the `plugin_config` unused-parameter warning in `backend/app/main.py` `_check_license`. Pluginforge's `pre_activate` signature requires the second argument, so the parameter was prefixed with `_` (`_plugin_config`) to silence the warning while preserving the hook contract.
 - [x] PS-11: regression tests for the ruamel.yaml round-trip (`backend/tests/test_yaml_io.py`, 5 tests covering byte-identical round-trip, `# INTERNAL` comment survival, quote-style preservation, missing-file errors, and parent-directory creation) + missing Spanish accents fixed in 4 plugin YAMLs (`translation.yaml`, `kinderbuch.yaml`, `kdp.yaml`, `audiobook.yaml`: Traducción, página, validación, publicación, Generación, capítulos).
 - [x] PS-12: removed .gitignore rule blocking session journals; aligned ai-workflow.md
-- [ ] PS-13+: future polish items, surface as found
+- [ ] PS-13: "Save as new chapter" action in `ConflictResolutionDialog`. Third button alongside Keep/Discard that clones the local-edit into a fresh chapter appended after the current one, then pulls the server content into the current chapter. Requires new backend endpoint (e.g. `POST /api/books/{id}/chapters/fork`), i18n keys across 8 locales, E2E coverage, and scope discussion for position ordering. Deferred from v1 of the 409 conflict flow; inline TODO removed in favor of this tracker entry.
+- [ ] PS-14+: future polish items, surface as found
 
 ### 4. Git-based backup (priority: low, existing .bgb covers daily needs)
 
