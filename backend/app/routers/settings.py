@@ -7,6 +7,8 @@ import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 _base_dir: Path = Path(".")
@@ -339,11 +341,8 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    return read_yaml_roundtrip(path)
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    write_yaml_roundtrip(path, data)

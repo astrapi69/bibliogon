@@ -26,7 +26,10 @@ import yaml
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from ruamel.yaml import YAMLError as RuamelYAMLError
 from sqlalchemy.orm import Session
+
+from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 from app import credential_store
 from app.database import SessionLocal, get_db
@@ -86,8 +89,8 @@ def _load_yaml_config() -> dict[str, Any]:
     if not AUDIOBOOK_CONFIG_PATH.exists():
         return {}
     try:
-        return yaml.safe_load(AUDIOBOOK_CONFIG_PATH.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError) as e:
+        return read_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH)
+    except (OSError, yaml.YAMLError, RuamelYAMLError) as e:
         logger.warning("Failed to read audiobook.yaml: %s", e)
         return {}
 
@@ -106,10 +109,7 @@ def _write_yaml_config(cfg: dict[str, Any]) -> None:
             detail=f"Audiobook plugin config not found at {AUDIOBOOK_CONFIG_PATH}",
         )
     try:
-        AUDIOBOOK_CONFIG_PATH.write_text(
-            yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True),
-            encoding="utf-8",
-        )
+        write_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH, cfg)
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Failed to write audiobook config: {e}")
 

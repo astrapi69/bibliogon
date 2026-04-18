@@ -11,6 +11,8 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+
 router = APIRouter(prefix="/plugins", tags=["plugin-install"])
 
 _base_dir: Path = Path(".")
@@ -256,11 +258,8 @@ def list_installed_plugins() -> list[dict[str, Any]]:
 # --- Helpers ---
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    return read_yaml_roundtrip(path)
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    write_yaml_roundtrip(path, data)

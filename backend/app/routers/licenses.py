@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.licensing import LICENSING_ENABLED, LicenseError, LicenseStore, LicenseValidator
+from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 router = APIRouter(prefix="/licenses", tags=["licenses"])
 
@@ -117,11 +118,9 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
                 # Write back to config
                 config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
                 if config_path.exists():
-                    with open(config_path, encoding="utf-8") as f:
-                        full_config = yaml.safe_load(f) or {}
+                    full_config = read_yaml_roundtrip(config_path)
                     full_config.setdefault("plugins", {})["enabled"] = enabled_list
-                    with open(config_path, "w", encoding="utf-8") as f:
-                        yaml.dump(full_config, f, default_flow_style=False, allow_unicode=True)
+                    write_yaml_roundtrip(config_path, full_config)
                     _manager.reload_config()
             # Try to discover and activate the plugin
             _manager.discover_plugins()
