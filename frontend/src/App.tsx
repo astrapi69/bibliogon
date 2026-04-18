@@ -15,6 +15,7 @@ import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
 import ErrorReportDialog from "./components/ErrorReportDialog";
 import AiSetupWizard, {shouldShowAiWizard} from "./components/AiSetupWizard";
+import {ensureFirstUseDate} from "./components/DonationReminderBanner";
 import ShortcutCheatsheet from "./components/ShortcutCheatsheet";
 import {useKeyboardShortcuts, Shortcut} from "./hooks/useKeyboardShortcuts";
 import {api, ApiError} from "./api/client";
@@ -27,6 +28,7 @@ export default function App() {
     // AI setup wizard state — shows on first run when AI is not configured
     const [showAiWizard, setShowAiWizard] = useState(false);
     useEffect(() => {
+        ensureFirstUseDate();
         api.settings.getApp()
             .then((config) => {
                 if (shouldShowAiWizard(config)) setShowAiWizard(true);

@@ -22,6 +22,7 @@ import {useI18n} from "../hooks/useI18n";
 import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
+import DonationReminderBanner, {shouldShowReminder} from "../components/DonationReminderBanner";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -39,6 +40,7 @@ export default function Dashboard() {
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
+    const [reminderVisible, setReminderVisible] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
     const importInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +71,11 @@ export default function Dashboard() {
         // Load donation config once per mount for S-02 / S-03 logic.
         // Failure is non-critical; donations stay hidden if it fails.
         api.settings.getApp()
-            .then((config) => setDonationsConfig(getDonationsConfig(config)))
+            .then((config) => {
+                const donations = getDonationsConfig(config);
+                setDonationsConfig(donations);
+                setReminderVisible(shouldShowReminder(donations));
+            })
             .catch(() => {});
     }, []);
 
@@ -264,6 +270,12 @@ export default function Dashboard() {
 
             {/* Content */}
             <main style={styles.main}>
+                {donationsConfig && reminderVisible && !showTrash ? (
+                    <DonationReminderBanner
+                        donations={donationsConfig}
+                        onDismiss={() => setReminderVisible(false)}
+                    />
+                ) : null}
                 {showTrash ? (
                     /* Trash view */
                     <div data-testid="trash-view">
