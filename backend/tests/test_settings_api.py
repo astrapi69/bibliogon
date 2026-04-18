@@ -231,6 +231,64 @@ def test_update_nonexistent_plugin_returns_404(client):
     assert resp.status_code == 404
 
 
+def test_get_app_settings_exposes_donations_when_configured(client, temp_base):
+    """The existing /api/settings/app endpoint is the transport for the
+    donation config. This test pins the shape so a future refactor that
+    strips unknown keys from the response would fail loudly instead of
+    silently breaking S-01/S-02/S-03.
+    """
+    app_yaml = temp_base / "config" / "app.yaml"
+    base = yaml.safe_load(app_yaml.read_text()) or {}
+    base["donations"] = {
+        "enabled": True,
+        "landing_page_url": None,
+        "channels": [
+            {
+                "name": "Liberapay",
+                "url": "https://liberapay.com/astrapi69/donate",
+                "icon": "liberapay",
+                "recommended": True,
+                "description_key": "ui.donations.channels.liberapay_desc",
+            },
+            {
+                "name": "GitHub Sponsors",
+                "url": "https://github.com/sponsors/astrapi69",
+                "icon": "github",
+                "description_key": "ui.donations.channels.github_desc",
+            },
+        ],
+    }
+    app_yaml.write_text(yaml.dump(base))
+
+    resp = client.get("/api/settings/app")
+    assert resp.status_code == 200
+    body = resp.json()
+    donations = body.get("donations")
+    assert donations is not None, "donations block missing from app config"
+    assert donations["enabled"] is True
+    assert donations["landing_page_url"] is None
+    assert len(donations["channels"]) == 2
+    assert donations["channels"][0]["name"] == "Liberapay"
+    assert donations["channels"][0]["recommended"] is True
+    # The second channel omits `recommended`; the endpoint must not
+    # synthesise a default, it returns what the YAML had.
+    assert "recommended" not in donations["channels"][1]
+
+
+def test_get_app_settings_donations_disabled(client, temp_base):
+    """Kill switch: donations.enabled=false is returned as-is. The
+    frontend consumers treat this as 'hide all visibility levels'.
+    """
+    app_yaml = temp_base / "config" / "app.yaml"
+    base = yaml.safe_load(app_yaml.read_text()) or {}
+    base["donations"] = {"enabled": False, "landing_page_url": None, "channels": []}
+    app_yaml.write_text(yaml.dump(base))
+
+    resp = client.get("/api/settings/app")
+    assert resp.status_code == 200
+    assert resp.json()["donations"]["enabled"] is False
+
+
 def test_update_preserves_comments_and_formatting(client, temp_base):
     """PATCH must not strip YAML comments or quote styles.
 
