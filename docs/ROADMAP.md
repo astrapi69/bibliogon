@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-04-18
-Latest release: v0.18.0 (book + chapter templates with 5+4 builtins, React 19 / Vite 7 / TypeScript 6 / lucide-react 1.x upgrades, plugin YAML saves preserve comments via ruamel.yaml, help+getstarted plugins joined the CI matrix)
+Latest release: v0.19.0 (content-safety overhaul: autosave awaits server ack, beforeunload/offline flush to IndexedDB, optimistic locking with 409 conflict dialog, chapter_versions table with restore, WAL+NORMAL SQLite, donation integration S-01/02/03, MkDocs installation section covers Windows/macOS/Linux launchers)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 
