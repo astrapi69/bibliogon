@@ -155,6 +155,35 @@ class Chapter(Base):
         return f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type} v={self.version}>"
 
 
+class ChapterVersion(Base):
+    """Immutable snapshot of a chapter at a point in time.
+
+    Populated by the PATCH /chapters handler right before it bumps
+    `Chapter.version`. Retention policy: trim to the last N per
+    chapter (N=20) after each insert. Used by the Restore flow and
+    crash-recovery workflows that need to look further back than the
+    TipTap in-session undo stack.
+    """
+    __tablename__ = "chapter_versions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    chapter_id: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("chapters.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<ChapterVersion chapter={self.chapter_id!r} v={self.version}>"
+
+
 class Asset(Base):
     __tablename__ = "assets"
 

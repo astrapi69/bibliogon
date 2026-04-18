@@ -277,6 +277,22 @@ class ChapterOut(BaseModel):
     version: int
 
 
+class ChapterVersionSummary(BaseModel):
+    """Version metadata for the list view (no content)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    chapter_id: str
+    title: str
+    version: int
+    created_at: datetime
+
+
+class ChapterVersionRead(ChapterVersionSummary):
+    """Full version with content (for preview and restore)."""
+    content: str
+
+
 class ChapterReorder(BaseModel):
     """List of chapter IDs in the desired order."""
     chapter_ids: list[str]

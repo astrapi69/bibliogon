@@ -853,6 +853,15 @@ ui:
         banner_message: "Estas sem conexao. As alteracoes sao salvas localmente e serao sincronizadas quando voltares a ter rede."
         synced_toast: "Capitulos sincronizados: {count}"
         sync_partial: "Alguns capitulos nao puderam ser sincronizados."
+    versions:
+        menu_item: "Historico de versoes"
+        title: "Historico de versoes"
+        description: "As ultimas 20 versoes salvas deste capitulo. Restaurar sobrescreve o conteudo atual - a versao atual e salva antes como um novo instantaneo."
+        restore: "Restaurar"
+        restored: "Versao restaurada."
+        restore_failed: "Falha ao restaurar."
+        load_failed: "Nao foi possivel carregar o historico de versoes."
+        empty: "Ainda nao existem versoes anteriores."
     conflict:
         title: "Este capitulo foi alterado noutro local"
         description: "Outra alteracao foi salva antes de enviares a tua. Escolhe o que fazer com as tuas alteracoes locais."

@@ -853,6 +853,15 @@ ui:
         banner_message: "Cevrimdisisiniz. Degisiklikler yerel olarak kaydediliyor ve baglanti dondugunde senkronize edilecek."
         synced_toast: "Senkronize edilen bolumler: {count}"
         sync_partial: "Bazi bolumler senkronize edilemedi."
+    versions:
+        menu_item: "Surum gecmisi"
+        title: "Surum gecmisi"
+        description: "Bu bolumun son 20 kaydedilmis surumu. Geri yukleme mevcut icerigin uzerine yazar - mevcut surum once yeni bir anlik goruntu olarak kaydedilir."
+        restore: "Geri yukle"
+        restored: "Surum geri yuklendi."
+        restore_failed: "Geri yukleme basarisiz oldu."
+        load_failed: "Surum gecmisi yuklenemedi."
+        empty: "Henuz eski surum yok."
     conflict:
         title: "Bu bolum baska bir yerde degistirildi"
         description: "Sizinki gonderilmeden once baska bir degisiklik kaydedildi. Yerel degisikliklerinizle ne yapilacagini secin."

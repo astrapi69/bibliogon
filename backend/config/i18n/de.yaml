@@ -848,6 +848,15 @@ ui:
     banner_message: "Du bist offline. Änderungen sind lokal gesichert und werden beim nächsten Verbindungsaufbau synchronisiert."
     synced_toast: "Kapitel synchronisiert: {count}"
     sync_partial: "Einige Kapitel konnten nicht synchronisiert werden."
+  versions:
+    menu_item: "Versionsverlauf"
+    title: "Versionsverlauf"
+    description: "Die letzten 20 gespeicherten Fassungen dieses Kapitels. Wiederherstellen überschreibt den aktuellen Inhalt - die aktuelle Fassung wird zuvor als neue Version gesichert."
+    restore: "Wiederherstellen"
+    restored: "Version wiederhergestellt."
+    restore_failed: "Wiederherstellen fehlgeschlagen."
+    load_failed: "Versionsverlauf konnte nicht geladen werden."
+    empty: "Noch keine älteren Fassungen vorhanden."
   conflict:
     title: "Dieses Kapitel wurde anderswo geändert"
     description: "Eine andere Änderung wurde gespeichert, bevor du deine Version abgeschickt hast. Wähle, was mit deinen lokalen Änderungen geschehen soll."

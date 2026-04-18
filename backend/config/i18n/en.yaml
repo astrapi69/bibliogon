@@ -848,6 +848,15 @@ ui:
     banner_message: "You are offline. Changes are saved locally and will sync when you reconnect."
     synced_toast: "Chapters synced: {count}"
     sync_partial: "Some chapters could not be synced."
+  versions:
+    menu_item: "Version history"
+    title: "Version history"
+    description: "The last 20 saved revisions of this chapter. Restore overwrites the current content - the current version is first saved as a new snapshot."
+    restore: "Restore"
+    restored: "Version restored."
+    restore_failed: "Restore failed."
+    load_failed: "Version history could not be loaded."
+    empty: "No older revisions yet."
   conflict:
     title: "This chapter was updated elsewhere"
     description: "Another change was saved before you submitted yours. Pick what should happen with your local changes."

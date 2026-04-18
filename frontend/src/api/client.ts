@@ -204,6 +204,18 @@ export interface ChapterUpdatePayload {
     chapter_type?: ChapterType;
 }
 
+export interface ChapterVersionSummary {
+    id: string;
+    chapter_id: string;
+    title: string;
+    version: number;
+    created_at: string;
+}
+
+export interface ChapterVersionRead extends ChapterVersionSummary {
+    content: string;
+}
+
 export interface Asset {
     id: string;
     book_id: string;
@@ -647,6 +659,17 @@ export const api = {
             request<Chapter[]>(`/books/${bookId}/chapters/reorder`, {
                 method: "PUT",
                 body: JSON.stringify({chapter_ids: chapterIds}),
+            }),
+
+        listVersions: (bookId: string, chapterId: string) =>
+            request<ChapterVersionSummary[]>(`/books/${bookId}/chapters/${chapterId}/versions`),
+
+        getVersion: (bookId: string, chapterId: string, versionId: string) =>
+            request<ChapterVersionRead>(`/books/${bookId}/chapters/${chapterId}/versions/${versionId}`),
+
+        restoreVersion: (bookId: string, chapterId: string, versionId: string) =>
+            request<Chapter>(`/books/${bookId}/chapters/${chapterId}/versions/${versionId}/restore`, {
+                method: "POST",
             }),
 
         validateToc: (bookId: string) =>

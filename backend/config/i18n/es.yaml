@@ -853,6 +853,15 @@ ui:
     banner_message: "Sin conexion. Los cambios se guardan localmente y se sincronizaran cuando vuelvas a estar en linea."
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Algunos capitulos no se pudieron sincronizar."
+  versions:
+    menu_item: "Historial de versiones"
+    title: "Historial de versiones"
+    description: "Las ultimas 20 versiones guardadas de este capitulo. Restaurar sobrescribe el contenido actual - la version actual se guarda antes como una nueva instantanea."
+    restore: "Restaurar"
+    restored: "Version restaurada."
+    restore_failed: "Error al restaurar."
+    load_failed: "No se pudo cargar el historial de versiones."
+    empty: "Aun no hay versiones anteriores."
   conflict:
     title: "Este capitulo fue modificado en otro lugar"
     description: "Otro cambio se guardo antes de que enviaras el tuyo. Elige que hacer con tus cambios locales."

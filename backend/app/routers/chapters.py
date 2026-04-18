@@ -2,11 +2,23 @@ import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Book, Chapter
-from app.schemas import ChapterCreate, ChapterOut, ChapterReorder, ChapterUpdate
+from app.models import Book, Chapter, ChapterVersion
+from app.schemas import (
+    ChapterCreate,
+    ChapterOut,
+    ChapterReorder,
+    ChapterUpdate,
+    ChapterVersionRead,
+    ChapterVersionSummary,
+)
+
+# Retention: keep at most the last N snapshots per chapter. Further
+# history is only available via .bgb backups.
+VERSION_RETENTION = 20
 
 router = APIRouter(prefix="/books/{book_id}/chapters", tags=["chapters"])
 
@@ -90,12 +102,150 @@ def update_chapter(
                 "server_updated_at": chapter.updated_at.isoformat(),
             },
         )
+    # Snapshot the PRE-update state into chapter_versions so restore
+    # can bring back what the user had before this change.
+    snapshot = ChapterVersion(
+        chapter_id=chapter.id,
+        content=chapter.content,
+        title=chapter.title,
+        version=chapter.version,
+    )
+    db.add(snapshot)
+
     updates = payload.model_dump(exclude_unset=True, exclude={"version"})
     for key, value in updates.items():
         setattr(chapter, key, value)
     chapter.version += 1
     db.commit()
     db.refresh(chapter)
+
+    # Retention: keep only the last N versions per chapter. Done after
+    # the commit above so the snapshot we just wrote is never a candidate
+    # for deletion.
+    db.execute(
+        text(
+            "DELETE FROM chapter_versions "
+            "WHERE chapter_id = :cid AND id NOT IN ("
+            "  SELECT id FROM chapter_versions "
+            "  WHERE chapter_id = :cid "
+            "  ORDER BY created_at DESC, version DESC "
+            "  LIMIT :keep"
+            ")"
+        ),
+        {"cid": chapter.id, "keep": VERSION_RETENTION},
+    )
+    db.commit()
+
+    return chapter
+
+
+# --- Version history endpoints ---
+
+
+@router.get("/{chapter_id}/versions", response_model=list[ChapterVersionSummary])
+def list_chapter_versions(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
+    """Return version metadata (no content) for a chapter, newest first."""
+    _get_book_or_404(book_id, db)
+    chapter = (
+        db.query(Chapter)
+        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
+        .first()
+    )
+    if not chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+    return (
+        db.query(ChapterVersion)
+        .filter(ChapterVersion.chapter_id == chapter_id)
+        .order_by(ChapterVersion.version.desc())
+        .all()
+    )
+
+
+@router.get(
+    "/{chapter_id}/versions/{version_id}",
+    response_model=ChapterVersionRead,
+)
+def get_chapter_version(
+    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+):
+    _get_book_or_404(book_id, db)
+    version = (
+        db.query(ChapterVersion)
+        .join(Chapter, ChapterVersion.chapter_id == Chapter.id)
+        .filter(
+            ChapterVersion.id == version_id,
+            ChapterVersion.chapter_id == chapter_id,
+            Chapter.book_id == book_id,
+        )
+        .first()
+    )
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return version
+
+
+@router.post(
+    "/{chapter_id}/versions/{version_id}/restore",
+    response_model=ChapterOut,
+)
+def restore_chapter_version(
+    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+):
+    """Restore a chapter's content and title from a historic version.
+
+    Snapshots the current state first (just like a normal PATCH), then
+    overwrites content + title with the version's values and bumps
+    the chapter version counter.
+    """
+    _get_book_or_404(book_id, db)
+    chapter = (
+        db.query(Chapter)
+        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
+        .first()
+    )
+    if not chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+    version = (
+        db.query(ChapterVersion)
+        .filter(
+            ChapterVersion.id == version_id,
+            ChapterVersion.chapter_id == chapter_id,
+        )
+        .first()
+    )
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    # Snapshot current state before overwriting, same as the PATCH path.
+    snapshot = ChapterVersion(
+        chapter_id=chapter.id,
+        content=chapter.content,
+        title=chapter.title,
+        version=chapter.version,
+    )
+    db.add(snapshot)
+
+    chapter.content = version.content
+    chapter.title = version.title
+    chapter.version += 1
+    db.commit()
+    db.refresh(chapter)
+
+    # Retention trim (same query as PATCH).
+    db.execute(
+        text(
+            "DELETE FROM chapter_versions "
+            "WHERE chapter_id = :cid AND id NOT IN ("
+            "  SELECT id FROM chapter_versions "
+            "  WHERE chapter_id = :cid "
+            "  ORDER BY created_at DESC, version DESC "
+            "  LIMIT :keep"
+            ")"
+        ),
+        {"cid": chapter.id, "keep": VERSION_RETENTION},
+    )
+    db.commit()
+
     return chapter
 
 

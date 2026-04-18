@@ -2,6 +2,7 @@ import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate, useSearchParams} from "react-router-dom";
 import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from "../api/client";
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
+import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
@@ -54,6 +55,7 @@ export default function BookEditor() {
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
+    const [versionsChapterId, setVersionsChapterId] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
 
@@ -356,6 +358,7 @@ export default function BookEditor() {
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
+                onShowVersions={(id) => setVersionsChapterId(id)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -486,6 +489,29 @@ export default function BookEditor() {
                 onKeepLocal={resolveConflictKeepLocal}
                 onDiscardLocal={resolveConflictDiscardLocal}
             />
+            {bookId ? (
+                <ChapterVersionsModal
+                    open={versionsChapterId !== null}
+                    bookId={bookId}
+                    chapterId={versionsChapterId}
+                    onClose={() => setVersionsChapterId(null)}
+                    onRestored={async (restoredId) => {
+                        // Reload the book so the restored chapter's new content
+                        // and bumped version land in state.
+                        if (!bookId) return;
+                        try {
+                            const fresh = await api.books.get(bookId);
+                            setBook(fresh);
+                            if (restoredId === activeChapterId) {
+                                const ch = fresh.chapters.find((c) => c.id === restoredId);
+                                if (ch) setLoadedContent({id: ch.id, content: ch.content});
+                            }
+                        } catch {
+                            /* next interaction will reload */
+                        }
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

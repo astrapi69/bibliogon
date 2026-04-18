@@ -853,6 +853,15 @@ ui:
     banner_message: "Vous etes hors ligne. Les modifications sont sauvees localement et seront synchronisees a la reconnexion."
     synced_toast: "Chapitres synchronises: {count}"
     sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
+  versions:
+    menu_item: "Historique des versions"
+    title: "Historique des versions"
+    description: "Les 20 dernieres versions enregistrees de ce chapitre. Restaurer ecrase le contenu actuel - la version courante est d'abord sauvegardee comme un nouvel instantane."
+    restore: "Restaurer"
+    restored: "Version restauree."
+    restore_failed: "Echec de la restauration."
+    load_failed: "Impossible de charger l'historique des versions."
+    empty: "Aucune version precedente."
   conflict:
     title: "Ce chapitre a ete modifie ailleurs"
     description: "Une autre modification a ete enregistree avant la votre. Choisissez quoi faire de vos modifications locales."
