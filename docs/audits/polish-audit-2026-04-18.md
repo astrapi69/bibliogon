@@ -18,6 +18,10 @@ strings, stale docs, test coverage gaps, existing audit items.
 - Backend: 0 deprecations
 - 21 `ResourceWarning` emitted by `pytest -W default`:
   - 20x unclosed asyncio event loop in audiobook async tests
+    (RESOLVED in this session: `asyncio.new_event_loop().run_until_complete(...)`
+    replaced with `asyncio.run(...)` across 5 test files). One
+    residual warning remained attributed to `test_backup_compare`
+    but only surfaces during full-suite GC, not in isolation.
   - 1x unclosed file in `smart_import.py:66` (RESOLVED in commit
     `08ff3ba` on 2026-04-18)
 - Frontend: 0 deprecations. Loud test output from happy-dom:
@@ -80,7 +84,7 @@ tests.
 | # | Area | Finding | Effort | Value | Status |
 |---|------|---------|--------|-------|--------|
 | 1 | ResourceWarning | Unclosed file at `smart_import.py:66` | Small | Medium | **Resolved 2026-04-18** (commit `08ff3ba`) |
-| 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | Open |
+| 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | **Resolved 2026-04-18** (commit pending in this session) |
 | 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | **Resolved 2026-04-18** (commit pending in this session) |
 | 4 | i18n | "Front Matter" / "Back Matter" hardcoded | Small | Medium | **Resolved 2026-04-18** (commit `989a7c8`) |
 | 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | Open |

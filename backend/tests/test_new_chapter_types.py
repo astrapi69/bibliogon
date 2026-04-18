@@ -84,7 +84,7 @@ def _wait(job_id: str, timeout: float = 5.0) -> None:
                 raise TimeoutError(f"Job {job_id} did not finish")
             await asyncio.sleep(0.05)
 
-    asyncio.new_event_loop().run_until_complete(_w())
+    asyncio.run(_w())
 
 
 # --- Enum coverage ---

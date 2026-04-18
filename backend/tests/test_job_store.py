@@ -76,8 +76,6 @@ def test_submit_runs_async():
     async def mock_task(job_id: str):
         return {"path": "/tmp/result.pdf", "filename": "book.pdf"}
 
-    loop = asyncio.new_event_loop()
-
     async def run():
         job_id = store.submit(mock_task)
         assert job_id
@@ -87,8 +85,7 @@ def test_submit_runs_async():
         assert job.status == JobStatus.COMPLETED
         assert job.result["filename"] == "book.pdf"
 
-    loop.run_until_complete(run())
-    loop.close()
+    asyncio.run(run())
 
 
 def test_submit_handles_failure():
@@ -97,8 +94,6 @@ def test_submit_handles_failure():
     async def failing_task(job_id: str):
         raise RuntimeError("Export failed")
 
-    loop = asyncio.new_event_loop()
-
     async def run():
         job_id = store.submit(failing_task)
         await asyncio.sleep(0.1)
@@ -106,8 +101,7 @@ def test_submit_handles_failure():
         assert job.status == JobStatus.FAILED
         assert "Export failed" in job.error
 
-    loop.run_until_complete(run())
-    loop.close()
+    asyncio.run(run())
 
 
 # --- Event streaming ---
@@ -166,7 +160,7 @@ def test_subscribe_replays_events_then_exits_on_terminal():
         # stream_end is always last
         assert types[-1] == "stream_end"
 
-    asyncio.new_event_loop().run_until_complete(run())
+    asyncio.run(run())
 
 
 def test_subscribe_unknown_job_yields_nothing():
@@ -176,7 +170,7 @@ def test_subscribe_unknown_job_yields_nothing():
         events = [e async for e in store.subscribe("missing")]
         assert events == []
 
-    asyncio.new_event_loop().run_until_complete(run())
+    asyncio.run(run())
 
 
 def test_subscribe_cleanup_removes_subscriber():
@@ -201,4 +195,4 @@ def test_subscribe_cleanup_removes_subscriber():
         # Subscriber list must be back to empty
         assert store.get(job.id)._subscribers == []
 
-    asyncio.new_event_loop().run_until_complete(run())
+    asyncio.run(run())

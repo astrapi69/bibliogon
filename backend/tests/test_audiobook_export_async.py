@@ -84,7 +84,7 @@ def _wait_for_job(job_id: str, timeout: float = 5.0) -> None:
     Runs the wait coroutine on a fresh event loop so it works whether
     or not pytest already has one active.
     """
-    asyncio.new_event_loop().run_until_complete(_wait_for_job_async(job_id, timeout))
+    asyncio.run(_wait_for_job_async(job_id, timeout))
 
 
 def _fake_tts_engine() -> AsyncMock:
@@ -232,7 +232,7 @@ def test_cancel_running_job_returns_204(client):
         with patch("bibliogon_audiobook.generator.get_engine", return_value=engine):
             job_id = client.post(f"/api/books/{book_id}/export/async/audiobook").json()["job_id"]
             # Give the job a beat to actually start
-            asyncio.new_event_loop().run_until_complete(asyncio.sleep(0.05))
+            asyncio.run(asyncio.sleep(0.05))
 
             r = client.delete(f"/api/export/jobs/{job_id}")
             assert r.status_code == 204
