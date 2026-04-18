@@ -68,10 +68,31 @@ navigation:
     icon: bookmark
 
   - title:
-      de: Windows-Launcher
-      en: Windows Launcher
-    slug: launcher-windows
-    icon: monitor
+      de: Installation
+      en: Installation
+    slug: installation
+    icon: download
+    children:
+      - title:
+          de: Uebersicht
+          en: Overview
+        slug: installation
+      - title:
+          de: Windows-Launcher
+          en: Windows Launcher
+        slug: launcher-windows
+      - title:
+          de: macOS-Launcher
+          en: macOS Launcher
+        slug: launcher-macos
+      - title:
+          de: Linux-Launcher
+          en: Linux Launcher
+        slug: launcher-linux
+      - title:
+          de: Deinstallieren
+          en: Uninstall
+        slug: uninstall
 
   - title:
       de: KI-Assistent

@@ -73,8 +73,17 @@ nav:
 - Plugins:
   - Uebersicht: de/plugins/uebersicht.md
   - Manuskript-Tools: de/plugins/ms-tools.md
-  - Lizenzen: de/plugins/lizenzen.md
+- Vorlagen: de/templates.md
+- Installation:
+  - Uebersicht: de/installation.md
+  - Windows-Launcher: de/launcher-windows.md
+  - macOS-Launcher: de/launcher-macos.md
+  - Linux-Launcher: de/launcher-linux.md
+  - Deinstallieren: de/uninstall.md
+- KI-Assistent: de/ai.md
+- Themes: de/themes.md
 - Tastenkuerzel: de/shortcuts.md
 - FAQ: de/faq.md
 - Glossar: de/glossary.md
 - Fehlerbehebung: de/troubleshooting.md
+- Plugin-Entwicklung: de/developers/plugins.md

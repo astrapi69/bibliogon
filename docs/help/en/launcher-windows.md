@@ -4,6 +4,8 @@ The Windows launcher is a small `bibliogon-launcher.exe` that starts Bibliogon w
 
 > **Heads-up: the launcher is not an installer.** It assumes Bibliogon is already installed on your computer (steps 1 and 2 below). If you download only the `.exe` and run it on a fresh machine, it will tell you to install Bibliogon first and exit. There is no "one-click install everything" path today; that is tracked as a separate future item (D-05) and depends on user feedback.
 
+For macOS or Linux, see [macOS Launcher](launcher-macos.md) / [Linux Launcher](launcher-linux.md). For the big picture across all three platforms, see [Installation overview](installation.md).
+
 ## One-time setup
 
 ### 1. Install Docker Desktop
@@ -81,8 +83,8 @@ Another program is already using the Bibliogon port. Options: stop the other pro
 **"Bibliogon did not start in time"**  
 The first start of a fresh install needs to build Docker images, which can take several minutes. Click Retry to wait another 60 seconds. If it still fails, check the last log lines in the dialog and open Docker Desktop's container view to see what happened.
 
-**Launcher log**  
-Every launch writes `%APPDATA%\Bibliogon\launcher.log`. Attach it to bug reports.
+**Activity log**
+Every launch writes to `%APPDATA%\bibliogon\install.log` (1 MB rotation, 1 backup). The legacy path `%APPDATA%\Bibliogon\launcher.log` is still written for backward compatibility. Attach the current log file to bug reports.
 
 ## Why is there a security warning?
 
@@ -90,6 +92,18 @@ Windows shows the "unrecognized app" warning for any executable that is not sign
 
 We plan to revisit code-signing when Bibliogon has a user base that justifies the cost and the maintenance burden. Until then, the "More info" -> "Run anyway" path is the intended flow. The source code for the launcher is in `launcher/` in the Bibliogon repository; you are welcome to inspect or build it yourself.
 
-## Uninstalling the launcher
+## Uninstalling
 
-Delete `bibliogon-launcher.exe` from wherever you saved it. Optionally, delete `%APPDATA%\Bibliogon\` to remove the remembered repo path, the lockfile, and the log. Docker Desktop and the Bibliogon folder itself are not affected; uninstall those separately if you also want them gone.
+See [Uninstall](uninstall.md) for the launcher UI path and the `uninstall.sh` script fallback.
+
+Short version: click **Uninstall** inside the launcher window and confirm. The launcher removes the installation directory and its own manifest. Docker volumes (your book data) are preserved by default; add them explicitly if you want a complete wipe.
+
+If you only want to remove the launcher binary itself and keep Bibliogon installed, delete `bibliogon-launcher.exe` and optionally the config directory at `%APPDATA%\bibliogon\`.
+
+## Related pages
+
+- [Installation overview](installation.md)
+- [macOS Launcher](launcher-macos.md)
+- [Linux Launcher](launcher-linux.md)
+- [Uninstall](uninstall.md)
+- [Troubleshooting](troubleshooting.md) (general app issues after it is running)

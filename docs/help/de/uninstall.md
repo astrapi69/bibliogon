@@ -2,15 +2,17 @@
 
 Es gibt zwei Wege, Bibliogon zu deinstallieren, je nach Installationsart.
 
-## Weg A: Launcher (Windows)
+## Weg A: Launcher (alle Plattformen)
 
-Wenn du Bibliogon über den Launcher (.exe) installiert hast:
+Wenn du Bibliogon über einen der Launcher installiert hast ([Windows](launcher-windows.md), [macOS](launcher-macos.md) oder [Linux](launcher-linux.md)):
 
-1. Öffne den Bibliogon-Launcher
-2. Klicke auf **Deinstallieren**
-3. Bestätige die Abfrage
+1. Öffne den Bibliogon-Launcher.
+2. Klicke auf **Uninstall**.
+3. Bestätige die Abfrage.
 
 Der Launcher entfernt das Installationsverzeichnis und seine eigene Manifest-Datei. Docker-Volumes (deine Buchdaten) bleiben standardmäßig erhalten.
+
+Falls die Deinstallation unterbrochen wird (Prozess abgeschossen, gesperrte Docker-Dateien, Stromausfall), schreibt der Launcher zu Beginn `cleanup.json` und markiert jeden Schritt als abgeschlossen. Beim nächsten Start wiederholt der Launcher stillschweigend jeden Schritt, der noch als unvollständig markiert ist.
 
 Um auch Docker-Volumes und -Images zu entfernen, führe die Befehle im Abschnitt "Was wird entfernt" aus.
 
