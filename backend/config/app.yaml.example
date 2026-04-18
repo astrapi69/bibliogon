@@ -50,3 +50,29 @@ ui:
   subtitle: ''
   theme: warm-literary
   title: Bibliogon
+donations:
+  # Project-level config: edit via this YAML, not via the Settings UI.
+  # Flip `enabled: false` to hide all three donation visibility levels
+  # (S-01 Settings section, S-02 onboarding dialog, S-03 90-day banner).
+  # Set `landing_page_url` to a single URL to route every button there
+  # instead of showing the per-channel list; leave null for the list.
+  enabled: true
+  landing_page_url: null
+  channels:
+    - name: Liberapay
+      url: https://liberapay.com/astrapi69/donate
+      icon: liberapay
+      recommended: true
+      description_key: ui.donations.channels.liberapay_desc
+    - name: GitHub Sponsors
+      url: https://github.com/sponsors/astrapi69
+      icon: github
+      description_key: ui.donations.channels.github_desc
+    - name: Ko-fi
+      url: https://ko-fi.com/astrapi69
+      icon: kofi
+      description_key: ui.donations.channels.kofi_desc
+    - name: PayPal
+      url: https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=MJ7V43GU2H386
+      icon: paypal
+      description_key: ui.donations.channels.paypal_desc
