@@ -113,6 +113,12 @@ navigation:
     icon: keyboard
 
   - title:
+      de: Unterstützen
+      en: Support
+    slug: support
+    icon: heart
+
+  - title:
       de: FAQ
       en: FAQ
     slug: faq
