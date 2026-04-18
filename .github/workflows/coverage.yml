@@ -50,6 +50,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - plugin: bibliogon-plugin-audiobook
+            package: bibliogon_audiobook
           - plugin: bibliogon-plugin-export
             package: bibliogon_export
           - plugin: bibliogon-plugin-grammar
@@ -60,6 +62,8 @@ jobs:
             package: bibliogon_kinderbuch
           - plugin: bibliogon-plugin-ms-tools
             package: bibliogon_ms_tools
+          - plugin: bibliogon-plugin-translation
+            package: bibliogon_translation
     steps:
       - uses: actions/checkout@v4
 

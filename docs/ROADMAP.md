@@ -55,7 +55,7 @@ Pre-built structures for common book genres. Lowers the entry barrier for new us
 - [x] PS-06: manuscripta integration polish (rough edges in the export pipeline) (reclassified as CF-01 after diagnosis revealed critical severity)
 - [x] PS-07: plugin developer documentation (API reference, tutorial, example plugin)
 - [x] PS-08: docs + help catch-up for the Templates theme. New `docs/help/{de,en}/templates.md` pages registered in `_meta.yaml`, 6 new FAQ entries in `backend/config/plugins/help.yaml` (DE + EN), stale "21 chapter types" answer refreshed to 31, CLAUDE.md data-model updated with BookTemplate / ChapterTemplate entries and the new `make test-coverage` target, CHANGELOG Unreleased section opened capturing templates + coverage-to-CI + theme-toggle placement work.
-- [ ] PS-09: expand the CI plugin matrix. `ci.yml` and `coverage.yml` currently run 5 plugins (export, grammar, kdp, kinderbuch, ms-tools); audiobook and translation are tested locally via the root Makefile but not in CI. Small matrix edit, no code changes expected.
+- [x] PS-09: expand the CI plugin matrix. `ci.yml` and `coverage.yml` now run 7 plugins (added audiobook + translation alongside the existing export, grammar, kdp, kinderbuch, ms-tools). pytest-cov added to both new plugins' dev deps; root Makefile gets matching `test-coverage-plugin-audiobook` and `test-coverage-plugin-translation` targets.
 - [ ] PS-10: trivial cleanup of the `plugin_config` unused-parameter warning in `backend/app/main.py` `_check_license`. Either drop the parameter (if the pluginforge pre-activate hook signature allows it) or prefix with `_`.
 - [ ] PS-11+: future polish items, surface as found
 

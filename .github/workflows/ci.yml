@@ -34,11 +34,13 @@ jobs:
     strategy:
       matrix:
         plugin:
+          - bibliogon-plugin-audiobook
           - bibliogon-plugin-export
           - bibliogon-plugin-grammar
           - bibliogon-plugin-kdp
           - bibliogon-plugin-kinderbuch
           - bibliogon-plugin-ms-tools
+          - bibliogon-plugin-translation
     steps:
       - uses: actions/checkout@v4
 
