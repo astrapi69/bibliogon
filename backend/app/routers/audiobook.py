@@ -88,7 +88,8 @@ def _load_yaml_config() -> dict[str, Any]:
     if not AUDIOBOOK_CONFIG_PATH.exists():
         return {}
     try:
-        return read_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH)
+        data = read_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH)
+        return data if isinstance(data, dict) else {}
     except (OSError, yaml.YAMLError, RuamelYAMLError) as e:
         logger.warning("Failed to read audiobook.yaml: %s", e)
         return {}
@@ -142,7 +143,7 @@ def _get_engine_key() -> str:
         from bibliogon_audiobook.tts_engine import get_elevenlabs_api_key
         key = get_elevenlabs_api_key()
         if key:
-            return key
+            return str(key)
     except ImportError:
         pass
 
@@ -151,7 +152,7 @@ def _get_engine_key() -> str:
         try:
             import json as _json
             raw = credential_store.load_decrypted(ELEVENLABS_CRED_FILENAME)
-            return _json.loads(raw).get("api_key", "")
+            return str(_json.loads(raw).get("api_key", "") or "")
         except Exception:
             pass
 
@@ -197,7 +198,8 @@ def _verify_elevenlabs_key(api_key: str) -> dict[str, Any]:
             detail=f"ElevenLabs API error {response.status_code}: {response.text[:200]}",
         )
     try:
-        return response.json()
+        body = response.json()
+        return body if isinstance(body, dict) else {}
     except ValueError:
         return {}
 

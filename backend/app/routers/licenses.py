@@ -42,7 +42,7 @@ def _get_author_name() -> str:
     try:
         with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        return config.get("author", {}).get("name", "")
+        return str(config.get("author", {}).get("name", "") or "")
     except Exception:
         return ""
 

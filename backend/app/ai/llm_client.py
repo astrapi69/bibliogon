@@ -235,7 +235,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         result = await self.chat(messages, model=model, temperature=temperature)
-        return result["content"]
+        return str(result["content"])
 
     async def list_models(self) -> list[dict[str, str]]:
         """List available models from the LLM server.

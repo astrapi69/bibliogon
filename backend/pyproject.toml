@@ -82,32 +82,18 @@ plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 module = "pluginforge.*"
 ignore_missing_imports = true
 
+# bibliogon_audiobook + manuscripta are the only plugin modules
+# actually imported from backend/app/ at runtime (audiobook router
+# delegates into them). Other plugins (export, grammar, kdp, ms_tools,
+# kinderbuch, translation, help, getstarted) are loaded dynamically
+# via the plugin manager, never imported from `app/`, so their
+# mypy overrides would be unused.
 [[tool.mypy.overrides]]
-module = "bibliogon_export.*"
+module = "bibliogon_audiobook.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "bibliogon_help.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "bibliogon_getstarted.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "bibliogon_ms_tools.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "bibliogon_grammar.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "bibliogon_kinderbuch.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "bibliogon_kdp.*"
+module = "manuscripta.*"
 ignore_missing_imports = true
 
 [tool.mutmut]

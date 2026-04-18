@@ -44,7 +44,8 @@ def _get_ai_config() -> dict[str, Any]:
     try:
         with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        return config.get("ai", {})
+        ai_config = config.get("ai", {})
+        return ai_config if isinstance(ai_config, dict) else {}
     except Exception:
         return {}
 

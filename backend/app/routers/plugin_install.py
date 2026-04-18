@@ -259,7 +259,8 @@ def list_installed_plugins() -> list[dict[str, Any]]:
 # --- Helpers ---
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    return read_yaml_roundtrip(path)
+    data = read_yaml_roundtrip(path)
+    return data if isinstance(data, dict) else {}
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:

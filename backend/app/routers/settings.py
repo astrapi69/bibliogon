@@ -169,7 +169,7 @@ def _read_license_tier(yaml_path: Path) -> str:
         meta = cfg.get("plugin", {})
         explicit = meta.get("license_tier", "")
         if explicit in ("core", "premium"):
-            return explicit
+            return str(explicit)
         license_type = meta.get("license", "MIT")
         return "premium" if license_type not in ("MIT", "free", "Free") else "core"
     except Exception:
@@ -341,7 +341,8 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    return read_yaml_roundtrip(path)
+    data = read_yaml_roundtrip(path)
+    return data if isinstance(data, dict) else {}
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
