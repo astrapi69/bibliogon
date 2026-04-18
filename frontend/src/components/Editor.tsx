@@ -1,5 +1,6 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
+import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
 import StarterKit from "@tiptap/starter-kit";
@@ -152,6 +153,13 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         [performSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs]
     );
 
+    // Flush pending saves on tab close / page unload / backgrounding. Uses
+    // IndexedDB (Dexie writes via a transaction queue that survives the
+    // tab dying) plus a best-effort keepalive fetch. Reuses the existing
+    // `editorRef` (wired by the useEffect further down).
+    const flushPendingSaveRef = useRef<() => void>(() => {});
+    useFlushOnUnload(() => flushPendingSaveRef.current());
+
     const parseContent = (raw: string): Record<string, unknown> | string => {
         try {
             const parsed = JSON.parse(raw);
@@ -260,6 +268,30 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
 
     // Keep ref in sync for async callbacks (image upload)
     useEffect(() => { editorRef.current = editor; }, [editor]);
+
+    // Keep the flush callback fresh: on every render capture the current
+    // chapterId, bookId, and editor. Invoked from beforeunload/pagehide/
+    // visibilitychange handlers installed by `useFlushOnUnload` above.
+    useEffect(() => {
+        flushPendingSaveRef.current = () => {
+            if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+            if (draftTimer.current) { clearTimeout(draftTimer.current); draftTimer.current = null; }
+            const editorInstance = editorRef.current;
+            if (!editorInstance || !chapterId || !bookId) return;
+            let json: string;
+            try {
+                json = JSON.stringify(editorInstance.getJSON());
+            } catch {
+                return;
+            }
+            if (json === lastSaved.current) return;
+            // 1) IndexedDB write is the authoritative fallback.
+            void saveDraft(chapterId, bookId, json, serverContentHash.current);
+            // 2) Best-effort keepalive PATCH - may succeed or may be dropped;
+            //    the IndexedDB draft covers it either way.
+            api.chapters.updateKeepalive(bookId, chapterId, {content: json});
+        };
+    });
 
     // Update content when switching chapters
     useEffect(() => {

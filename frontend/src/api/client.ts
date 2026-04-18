@@ -549,6 +549,30 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
+        /** Best-effort save that survives tab close / page unload.
+         *
+         * Uses `fetch(..., {keepalive: true})` so the browser completes
+         * the request after the tab is gone. Does NOT go through the
+         * normal `request` helper: keepalive requests cannot be
+         * cancelled and we intentionally skip the abort-controller
+         * queue (see commit 8). Errors are swallowed - the IndexedDB
+         * draft is the authoritative fallback for unload-time saves.
+         */
+        updateKeepalive: (bookId: string, chapterId: string, data: Partial<ChapterCreate>): void => {
+            try {
+                void fetch(`${BASE}/books/${bookId}/chapters/${chapterId}`, {
+                    method: "PATCH",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(data),
+                    keepalive: true,
+                }).catch(() => {
+                    // IndexedDB draft covers this case.
+                });
+            } catch {
+                // Some browsers reject keepalive bodies > 64KB. The draft covers it.
+            }
+        },
+
         delete: (bookId: string, chapterId: string) =>
             request<void>(`/books/${bookId}/chapters/${chapterId}`, {
                 method: "DELETE",
