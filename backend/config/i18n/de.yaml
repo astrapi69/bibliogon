@@ -131,9 +131,9 @@ ui:
   sidebar:
     manuscript: "Manuskript"
     content: "Inhalt"
-    front_matter: "Front Matter"
+    front_matter: "Vorderer Teil"
     chapters: "Kapitel"
-    back_matter: "Back Matter"
+    back_matter: "Hinterer Teil"
     no_chapters: "Noch keine Kapitel"
     add_chapter: "Kapitel hinzufügen"
     delete_chapter: "Kapitel löschen"

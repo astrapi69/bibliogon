@@ -420,7 +420,7 @@ export default function BookEditor() {
 
                     <div style={styles.chapterTypeGrid}>
                         <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>Front Matter</span>
+                            <span style={styles.typeGroupLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
                             {(["toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction"] as ChapterType[]).map((ct) => (
                                 <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
                                     {TYPE_LABELS[ct]}
@@ -439,7 +439,7 @@ export default function BookEditor() {
                             ))}
                         </div>
                         <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>Back Matter</span>
+                            <span style={styles.typeGroupLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
                             {(["epilogue", "afterword", "about_author", "acknowledgments", "appendix", "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series"] as ChapterType[]).map((ct) => (
                                 <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
                                     {TYPE_LABELS[ct]}
