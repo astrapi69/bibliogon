@@ -93,7 +93,7 @@ tests.
 | 4 | i18n | "Front Matter" / "Back Matter" hardcoded | Small | Medium | **Resolved 2026-04-18** (commit `989a7c8`) |
 | 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | **Revised 2026-04-18**: `test_backup_history.py` already existed with 8 unit tests covering the class API. Gaps closed in this session: persistence roundtrip + parent-directory creation + `GET /api/backup/history` HTTP route test (3 new tests, total 11). |
 | 6 | Test coverage | `archive_utils.py` / `asset_utils.py` / `markdown_utils.py` | Medium | Medium | **Resolved 2026-04-18** (34 direct unit tests in `test_backup_utils_direct.py`) |
-| 7 | Test coverage | `licensing.py` zero tests (security-adjacent) | Large | High | Open |
+| 7 | Test coverage | `licensing.py` zero tests (security-adjacent) | Large | High | **Resolved 2026-04-18** (35 tests in `test_licensing.py` covering payload/validator/store/helpers including tampered-signature, wrong-secret, expired, and wildcard paths) |
 | 8 | TODO | Deferred "Save as new chapter" v1 in conflict dialog | Large | Low | Open |
 
 ## How to re-run this audit
