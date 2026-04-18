@@ -56,7 +56,7 @@ license_validator = LicenseValidator(_license_secret)
 license_store = LicenseStore(BASE_DIR / _license_file)
 
 
-def _check_license(plugin: BasePlugin, plugin_config: dict[str, Any]) -> bool:
+def _check_license(plugin: BasePlugin, _plugin_config: dict[str, Any]) -> bool:
     """Pre-activate callback: check premium plugin licenses.
 
     Currently disabled: all plugins are free during the development phase.

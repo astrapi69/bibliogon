@@ -19,6 +19,7 @@ Templates theme shipped end-to-end (book + chapter level). Coverage infrastructu
 
 ### Fixed
 - **Pre-existing TS error in `SaveAsTemplateModal.test.tsx`.** The mocked `ApiError` constructor only accepted 2 args while the real class requires 4-6, causing `tsc --noEmit` to fail silently (tests passed because the mock ran at runtime, but type-check did not). Mock signature widened to match the real class and the one call site updated.
+- **PS-10 unused-parameter warning in `_check_license`.** The `plugin_config` parameter in `backend/app/main.py` was never read but had to stay in the signature because pluginforge's `pre_activate` hook requires it. Renamed to `_plugin_config` so ruff stops flagging it while the hook contract is preserved.
 
 ## [0.17.0] - 2026-04-17
 
