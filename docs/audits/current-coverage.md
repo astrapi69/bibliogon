@@ -32,7 +32,7 @@ Scope: everything on `main` as of commit `decb531`.
 
 - **Audiobook generation E2E** - still no dedicated spec. Backend generator and TTS engine are covered by plugin unit tests (98 tests), but no end-to-end flow from "click generate" through SSE progress to playback.
 - **Image/asset upload in editor E2E** - still no spec.
-- **Help and Getstarted plugins not in the `make test` matrix** - their tests (30 + 6) exist but the Makefile's `test-plugins` target doesn't invoke them, and neither does CI's plugin matrix. Easy fix: append both to `test-plugins` in `Makefile` and to the plugin matrix in `.github/workflows/{ci,coverage}.yml`.
+- ~~Help and Getstarted plugins not in the `make test` matrix~~ - **closed 2026-04-18**: both are now wired into `Makefile` (`test-plugin-help`, `test-plugin-getstarted`, `test-coverage-plugin-*` targets + aggregators) and CI's `ci.yml` / `coverage.yml` plugin matrices. `pytest-cov` added as dev dep to both; `httpx` added to help (uses `starlette.TestClient`).
 - `pandoc_runner.py` in export plugin - still zero unit tests (exercised indirectly by integration tests).
 - `backup_history.py` + `GET /api/backup/history` - still zero tests.
 - `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` under `app/services/backup/` - still zero direct unit tests.
@@ -194,13 +194,12 @@ None. The regression pin we just shipped (`test_update_preserves_comments_and_fo
 |---|-----|-----------|
 | 1 | Audiobook generation E2E | Backend is well-covered (98 unit tests); the UX glue (SSE progress dialog, download flow) has no end-to-end pin |
 | 2 | Image/asset upload in editor E2E | No spec; drag-drop and file picker paths untested at UX level |
-| 3 | Help + Getstarted in `make test` and CI | Add to `test-plugins` in `Makefile` and plugin matrix in `.github/workflows/{ci,coverage}.yml` (one-liner each) |
-| 4 | `pandoc_runner.py` (export plugin) | Pandoc invocation wrapper, no dedicated tests |
-| 5 | `backup_history.py` + `GET /api/backup/history` | Feature + endpoint, zero tests |
-| 6 | `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` | Backup utility modules under `services/backup/`, zero direct tests |
-| 7 | Audiobook dry-run + preview endpoints | 6 untested endpoints in `/api/books/{id}/audiobook` |
-| 8 | Google Cloud TTS config endpoints | 4 untested endpoints |
-| 9 | Plugin `routes.py` (grammar, kdp, kinderbuch, translation) | Integration covered indirectly by make test; no dedicated happy-path specs |
+| 3 | `pandoc_runner.py` (export plugin) | Pandoc invocation wrapper, no dedicated tests |
+| 4 | `backup_history.py` + `GET /api/backup/history` | Feature + endpoint, zero tests |
+| 5 | `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` | Backup utility modules under `services/backup/`, zero direct tests |
+| 6 | Audiobook dry-run + preview endpoints | 6 untested endpoints in `/api/books/{id}/audiobook` |
+| 7 | Google Cloud TTS config endpoints | 4 untested endpoints |
+| 8 | Plugin `routes.py` (grammar, kdp, kinderbuch, translation) | Integration covered indirectly by make test; no dedicated happy-path specs |
 
 ### Nice-to-have (Category D) - ignore unless a bug arises
 
@@ -228,8 +227,7 @@ None. The regression pin we just shipped (`test_update_preserves_comments_and_fo
 | Suite | Count |
 |-------|-------|
 | Backend only | 511 |
-| Plugins via `make test` matrix | 373 (export 92, ms-tools 97, audiobook 98, translation 35, kdp 33, grammar 10, kinderbuch 8) |
-| Plugins NOT in `make test` matrix | 36 (help 30, getstarted 6) - counted in CI via `poetry run pytest` inside each plugin dir but not by the Makefile |
+| Plugins via `make test` matrix | 409 (export 92, ms-tools 97, audiobook 98, translation 35, kdp 33, help 30, grammar 10, kinderbuch 8, getstarted 6) |
 | Total Python tests in repo | 920 |
 | Frontend (Vitest) | 351 |
 | E2E (Playwright) | 193 (across 19 spec files; 13 smoke, 6 integration) |

@@ -54,8 +54,12 @@ jobs:
             package: bibliogon_audiobook
           - plugin: bibliogon-plugin-export
             package: bibliogon_export
+          - plugin: bibliogon-plugin-getstarted
+            package: bibliogon_getstarted
           - plugin: bibliogon-plugin-grammar
             package: bibliogon_grammar
+          - plugin: bibliogon-plugin-help
+            package: bibliogon_help
           - plugin: bibliogon-plugin-kdp
             package: bibliogon_kdp
           - plugin: bibliogon-plugin-kinderbuch

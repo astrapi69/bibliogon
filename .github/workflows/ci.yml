@@ -36,7 +36,9 @@ jobs:
         plugin:
           - bibliogon-plugin-audiobook
           - bibliogon-plugin-export
+          - bibliogon-plugin-getstarted
           - bibliogon-plugin-grammar
+          - bibliogon-plugin-help
           - bibliogon-plugin-kdp
           - bibliogon-plugin-kinderbuch
           - bibliogon-plugin-ms-tools
