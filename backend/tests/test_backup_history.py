@@ -96,3 +96,49 @@ def test_load_handles_dict_shaped_data(tmp_path):
 
     history = BackupHistory(path=history_path)
     assert history.list() == []
+
+
+def test_persistence_roundtrip(tmp_path):
+    """An entry added by one instance is visible to a second instance
+    constructed on the same file."""
+    history_path = tmp_path / "history.json"
+
+    first = BackupHistory(path=history_path)
+    first.add(action="backup", book_count=2, filename="a.bgb")
+
+    second = BackupHistory(path=history_path)
+    entries = second.list()
+    assert len(entries) == 1
+    assert entries[0]["filename"] == "a.bgb"
+    assert entries[0]["book_count"] == 2
+
+
+def test_save_creates_parent_directory(tmp_path):
+    """A nested path without an existing parent directory is created on save."""
+    history_path = tmp_path / "nested" / "deeper" / "history.json"
+
+    history = BackupHistory(path=history_path)
+    history.add(action="backup", filename="x.bgb")
+
+    assert history_path.exists()
+    assert json.loads(history_path.read_text(encoding="utf-8"))[0]["filename"] == "x.bgb"
+
+
+# --- HTTP endpoint ---
+
+
+def test_get_backup_history_endpoint_returns_list():
+    """GET /api/backup/history returns a JSON list and respects limit."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        r = client.get("/api/backup/history")
+        assert r.status_code == 200
+        body = r.json()
+        assert isinstance(body, list)
+
+        r = client.get("/api/backup/history?limit=5")
+        assert r.status_code == 200
+        assert len(r.json()) <= 5

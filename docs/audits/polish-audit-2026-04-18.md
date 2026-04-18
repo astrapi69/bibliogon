@@ -73,7 +73,11 @@ tests.
 ### 7. Audit-flagged (from `current-coverage.md`)
 
 - `pandoc_runner.py` in export plugin - zero unit tests
-- `backup_history.py` + `GET /api/backup/history` - zero tests
+- `backup_history.py` + `GET /api/backup/history` - audit list was
+  stale: `test_backup_history.py` already held 8 unit tests. The
+  HTTP route had no direct coverage; added in this session along
+  with a persistence-roundtrip and parent-directory-creation test
+  (11 total now).
 - `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` under
   `app/services/backup/` - zero direct unit tests
 - Audiobook generation E2E - no dedicated spec
@@ -87,7 +91,7 @@ tests.
 | 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | **Resolved 2026-04-18** (commit pending in this session) |
 | 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | **Resolved 2026-04-18** (commit pending in this session) |
 | 4 | i18n | "Front Matter" / "Back Matter" hardcoded | Small | Medium | **Resolved 2026-04-18** (commit `989a7c8`) |
-| 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | Open |
+| 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | **Revised 2026-04-18**: `test_backup_history.py` already existed with 8 unit tests covering the class API. Gaps closed in this session: persistence roundtrip + parent-directory creation + `GET /api/backup/history` HTTP route test (3 new tests, total 11). |
 | 6 | Test coverage | `archive_utils.py` / `asset_utils.py` / `markdown_utils.py` | Medium | Medium | Open |
 | 7 | Test coverage | `licensing.py` zero tests (security-adjacent) | Large | High | Open |
 | 8 | TODO | Deferred "Save as new chapter" v1 in conflict dialog | Large | Low | Open |
