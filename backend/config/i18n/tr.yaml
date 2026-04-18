@@ -849,6 +849,10 @@ ui:
         undo: "Geri al"
         redo: "Yinele"
         hint: "Ipucu: Her zaman Ctrl+/ ile bu genel bakisi acabilirsiniz."
+    offline:
+        banner_message: "Cevrimdisisiniz. Degisiklikler yerel olarak kaydediliyor ve baglanti dondugunde senkronize edilecek."
+        synced_toast: "Senkronize edilen bolumler: {count}"
+        sync_partial: "Bazi bolumler senkronize edilemedi."
     donations:
         tab: "Destekle"
         section_title: "Bibliogon'u destekleyin"

@@ -844,6 +844,10 @@ ui:
     undo: "Rückgängig"
     redo: "Wiederherstellen"
     hint: "Tipp: Drücke Ctrl+/ um diese Übersicht jederzeit zu öffnen."
+  offline:
+    banner_message: "Du bist offline. Änderungen sind lokal gesichert und werden beim nächsten Verbindungsaufbau synchronisiert."
+    synced_toast: "Kapitel synchronisiert: {count}"
+    sync_partial: "Einige Kapitel konnten nicht synchronisiert werden."
   donations:
     tab: "Unterstützen"
     section_title: "Bibliogon unterstützen"

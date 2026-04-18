@@ -849,6 +849,10 @@ ui:
     undo: "Annuler"
     redo: "Retablir"
     hint: "Astuce: Appuyez sur Ctrl+/ pour ouvrir cette vue a tout moment."
+  offline:
+    banner_message: "Vous etes hors ligne. Les modifications sont sauvees localement et seront synchronisees a la reconnexion."
+    synced_toast: "Chapitres synchronises: {count}"
+    sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
   donations:
     tab: "Soutenir"
     section_title: "Soutenir Bibliogon"

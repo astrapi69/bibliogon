@@ -118,11 +118,17 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             } catch (err) {
                 console.error("Autosave failed:", err);
                 setSaveStatus("error");
-                notify.saveError(
-                    t("ui.editor.save_failed", "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert."),
-                    () => { void performSave(json); },
-                    t("ui.editor.save_retry", "Erneut versuchen"),
-                );
+                // While offline, OfflineBanner is already showing a
+                // status message, and reconnect will auto-flush the
+                // IndexedDB draft. Skip the retry toast in that case
+                // to avoid double-notifying the user.
+                if (typeof navigator !== "undefined" && navigator.onLine) {
+                    notify.saveError(
+                        t("ui.editor.save_failed", "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert."),
+                        () => { void performSave(json); },
+                        t("ui.editor.save_retry", "Erneut versuchen"),
+                    );
+                }
                 return;
             }
             lastSaved.current = json;

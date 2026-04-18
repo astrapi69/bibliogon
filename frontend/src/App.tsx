@@ -9,6 +9,7 @@ import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
 import {DialogProvider} from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
+import OfflineBanner from "./components/OfflineBanner";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
 import {HelpProvider} from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
@@ -65,6 +66,7 @@ export default function App() {
         <DialogProvider>
         <AudiobookJobProvider>
         <HelpProvider>
+            <OfflineBanner />
             <Routes>
                 <Route path="/" element={<Dashboard/>}/>
                 <Route path="/book/:bookId" element={<BookEditor/>}/>

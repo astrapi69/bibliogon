@@ -849,6 +849,10 @@ ui:
     undo: "Deshacer"
     redo: "Rehacer"
     hint: "Consejo: Pulsa Ctrl+/ para abrir esta vista en cualquier momento."
+  offline:
+    banner_message: "Sin conexion. Los cambios se guardan localmente y se sincronizaran cuando vuelvas a estar en linea."
+    synced_toast: "Capitulos sincronizados: {count}"
+    sync_partial: "Algunos capitulos no se pudieron sincronizar."
   donations:
     tab: "Apoyar"
     section_title: "Apoya Bibliogon"

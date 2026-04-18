@@ -849,6 +849,10 @@ ui:
         badge_failed: "オーディオブック失敗"
         completion_toast: "オーディオブックが完成しました。メタデータ > オーディオブックから利用可能です。"
         completed_hint: "オーディオブック完成 - クリックでメタデータを開く"
+    offline:
+        banner_message: "オフラインです。変更はローカルに保存され、接続復帰時に同期されます。"
+        synced_toast: "同期された章: {count}"
+        sync_partial: "一部の章は同期できませんでした。"
     donations:
         tab: "サポート"
         section_title: "Bibliogon をサポートする"

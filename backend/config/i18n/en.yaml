@@ -844,6 +844,10 @@ ui:
     undo: "Undo"
     redo: "Redo"
     hint: "Tip: Press Ctrl+/ to open this overview at any time."
+  offline:
+    banner_message: "You are offline. Changes are saved locally and will sync when you reconnect."
+    synced_toast: "Chapters synced: {count}"
+    sync_partial: "Some chapters could not be synced."
   donations:
     tab: "Support"
     section_title: "Support Bibliogon"

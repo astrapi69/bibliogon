@@ -849,6 +849,10 @@ ui:
         badge_failed: "Audiolivro falhou"
         completion_toast: "Audiolivro pronto. Disponivel em Metadados > Audiolivro."
         completed_hint: "Audiolivro pronto - clique abre metadados"
+    offline:
+        banner_message: "Estas sem conexao. As alteracoes sao salvas localmente e serao sincronizadas quando voltares a ter rede."
+        synced_toast: "Capitulos sincronizados: {count}"
+        sync_partial: "Alguns capitulos nao puderam ser sincronizados."
     donations:
         tab: "Apoiar"
         section_title: "Apoiar o Bibliogon"
