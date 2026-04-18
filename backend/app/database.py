@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # DB path: configurable via BIBLIOGON_DB_PATH env var, defaults to backend/bibliogon.db
@@ -12,6 +12,26 @@ DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{_DB_PATH}")
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):  # noqa: ARG001
+    """Enable WAL + NORMAL sync + foreign keys on every new connection.
+
+    WAL gives us concurrent readers without blocking the writer, which
+    matters as soon as background jobs (audiobook, export) run alongside
+    the editor saving chapters. synchronous=NORMAL is durable enough for
+    a single-user desktop app and avoids the per-commit fsync cost of
+    synchronous=FULL. foreign_keys=ON is the SQLite default-that-isn't;
+    without it, ON DELETE CASCADE is ignored.
+    """
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 class Base(DeclarativeBase):
