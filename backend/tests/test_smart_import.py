@@ -103,3 +103,31 @@ def test_smart_import_empty_zip():
         files={"file": ("empty.zip", buf, "application/zip")},
     )
     assert r.status_code == 400
+
+
+def test_smart_import_closes_zip_handle():
+    """Regression: _dispatch_zip must close the reopened file handles.
+
+    Without the fix, UploadFile held an unclosed file object which the
+    garbage collector later flagged as ResourceWarning.
+    """
+    import warnings
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr(
+            "my-book/config/metadata.yaml",
+            "title: Handle Close Test\nauthor: Test\nlanguage: en\n",
+        )
+        zf.writestr("my-book/manuscript/chapters/chapter-01.md", "# C1\n\nx\n")
+    buf.seek(0)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ResourceWarning)
+        r = client.post(
+            "/api/backup/smart-import",
+            files={"file": ("handles.zip", buf, "application/zip")},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        _cleanup(data["result"]["book_id"])

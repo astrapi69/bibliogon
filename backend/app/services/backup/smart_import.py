@@ -51,13 +51,18 @@ def smart_import_file(file: UploadFile, db: Session) -> dict[str, Any]:
 def _dispatch_zip(file: UploadFile, db: Session) -> dict[str, Any]:
     """Save the ZIP once, peek inside, and route to the right importer."""
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_smart_import_"))
+    opened_handles: list[Any] = []
     try:
         zip_path = _save_upload(file, tmp_dir / "upload.zip")
         names = _read_zip_names(zip_path)
 
         # Reopen-on-demand: each importer needs its own UploadFile handle.
+        # Handles are tracked so they can be closed in finally (UploadFile
+        # does not own the lifecycle of the underlying file object).
         def reopen(virtual_name: str) -> UploadFile:
-            return UploadFile(file=open(zip_path, "rb"), filename=virtual_name)
+            handle = open(zip_path, "rb")
+            opened_handles.append(handle)
+            return UploadFile(file=handle, filename=virtual_name)
 
         if any("manifest.json" in n for n in names):
             return {"type": "backup", "result": import_backup_archive(reopen("backup.bgb"), db)}
@@ -80,6 +85,11 @@ def _dispatch_zip(file: UploadFile, db: Session) -> dict[str, Any]:
             ),
         )
     finally:
+        for handle in opened_handles:
+            try:
+                handle.close()
+            except Exception:
+                pass
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
