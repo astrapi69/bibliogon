@@ -377,3 +377,21 @@ Stability filter:
 - This applies beyond lockfiles. Any startup check, guard, or health probe that gates the main application flow should be wrapped so that a failure in the check degrades gracefully rather than killing the app.
 
 - Shallow clone update trap: `git clone --depth 1 --branch v0.7.0` creates a repo where `origin/main` does not exist as a remote ref. A later `git fetch origin` does not fix this because the fetch refspec was configured for the tag, not for branch tracking. `git checkout -B main origin/main` then fails with "pathspec 'main' did not match". The fix is to not try to update shallow clones in place at all. Delete and re-clone (backing up .env first) is the only reliable cross-platform approach. Surgical git state repair across shallow clone versions, platforms, and git implementations is a losing battle.
+
+## TypeScript 6 no longer auto-includes all `@types/*`
+
+- TS 5 silently included every `@types/*` package from `node_modules` when the `types` compilerOption was absent. TS 6 stopped doing this: if `@types/node` is installed transitively but not named in `types`, `import fs from "node:fs"` fails with `TS2591: Cannot find name 'node:fs'`.
+- Concrete: `frontend/src/components/ChapterSidebar.test.tsx` imports `node:fs`/`node:path` to load fixture data. Worked under TS 5 (`@types/node` came in transitively via `happy-dom`/`vite`/`vitest`). Broke on TS 6 bump.
+- Fix: add an explicit `@types/node` devDependency AND list it in `tsconfig.json` under `"types": ["node", "vite/client"]`. Both halves are needed - installing the package alone does not bring it in on TS 6.
+- Applies going forward: any `@types/*` you want in scope under TS 6 must be named in `types` explicitly.
+
+## Vite 7 requires Node 20.19+ / 22.12+
+
+- Vite 7 uses Node's `crypto.hash` top-level API which landed in Node 20.12+ / 21.7+ (backported to 22 LTS). On Node 18, `vite build` fails with `[postcss] crypto.hash is not a function` coming from `vite-plugin-pwa`'s postcss handling. The error is misleading: it is not a PWA/postcss bug, it is a Node version issue.
+- Vitest 4 does NOT exercise the same code path, so `npm run test` can still pass on Node 18 even though `npm run build` fails. Do not rely on tests alone to validate a Vite major bump; always build too.
+- CI runs Node 22 (`.github/workflows/{ci,coverage}.yml`), which is fine. Local envs on Node 18 must upgrade to Node 22+.
+
+## Vite 8 blocked on vite-plugin-pwa
+
+- `vite-plugin-pwa@1.2.0` (latest as of 2026-04-18) lists Vite `^3 || ^4 || ^5 || ^6 || ^7` in its peer deps. No Vite 8 support yet. Attempting Vite 6 -> 8 with PWA installed will either refuse to install or runtime-break.
+- This is why DEP-04 landed as Vite 6 -> 7, not 6 -> 8. The Vite 8 bump is deferred until vite-plugin-pwa publishes compat. Check `npm view vite-plugin-pwa peerDependencies` before attempting the next bump.
