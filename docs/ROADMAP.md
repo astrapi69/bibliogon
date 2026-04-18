@@ -82,7 +82,7 @@ Items with external deadlines or recurring cost that deserve planning-view visib
 
 Each gets a dedicated session with its own testing cycle. Not urgent, but tracked so they don't get forgotten. See `lessons-learned.md` "Dependency currency" for the rules.
 
-- [ ] DEP-01: React 18 -> 19 migration (Server Components, hooks, refs changes, @types/react 19)
+- [x] DEP-01: React 18 -> 19 migration. `react`/`react-dom` bumped to ^19.2.0 and `@types/react`/`@types/react-dom` to ^19.2.0 in `frontend/package.json`. No code changes needed: the codebase was already on `createRoot` (React 18+ API) and has no `forwardRef`/`defaultProps`/`PropTypes`/`findDOMNode`/legacy lifecycle usage. All peer deps (TipTap 2.27.2, react-router-dom 6, react-toastify 11, react-markdown 10, lucide-react, @dnd-kit, Radix) accept React ^19. Verified: `tsc --noEmit` clean, 351 Vitest tests green, `npm run build` + PWA regen clean. UI smoke test by Aster pending.
 - [ ] DEP-02: TipTap 2 -> 3 migration (major rewrite, community extensions @pentestpad + tiptap-footnotes need v3-compat versions)
 - [ ] DEP-03: react-router-dom 6 -> 7 migration (complete API rework, Remix-based)
 - [ ] DEP-04: Vite 6 -> 8 + TypeScript 5 -> 6 (paired, do after DEP-01)
