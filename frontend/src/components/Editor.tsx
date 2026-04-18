@@ -628,7 +628,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         <div style={styles.wrapper}>
             {/* Recovery dialog */}
             {recoveryDraft && (
-                <div style={styles.recoveryBanner}>
+                <div style={styles.recoveryBanner} data-testid="recovery-banner">
                     <div style={{flex: 1}}>
                         <strong>{t("ui.editor.recovery_title", "Ungespeicherte Aenderungen gefunden")}</strong>
                         <p style={{margin: "4px 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)"}}>
