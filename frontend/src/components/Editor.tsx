@@ -49,6 +49,10 @@ interface Props {
     bookId?: string;
     chapterId?: string;
     chapterTitle?: string;
+    /** Current Chapter.version. Passed to keepalive PATCH on unload so
+     *  the backend's optimistic-lock check passes. The normal autosave
+     *  path gets version from the parent via `onSave`. */
+    chapterVersion?: number;
     bookContext?: BookContext;
     autosaveDebounceMs?: number;
     draftSaveDebounceMs?: number;
@@ -56,7 +60,7 @@ interface Props {
     aiContextChars?: number;
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -294,8 +298,15 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             // 1) IndexedDB write is the authoritative fallback.
             void saveDraft(chapterId, bookId, json, serverContentHash.current);
             // 2) Best-effort keepalive PATCH - may succeed or may be dropped;
-            //    the IndexedDB draft covers it either way.
-            api.chapters.updateKeepalive(bookId, chapterId, {content: json});
+            //    the IndexedDB draft covers it either way. Skipped if we do
+            //    not have a current version (e.g. chapter still loading); the
+            //    draft path still saves locally.
+            if (typeof chapterVersion === "number") {
+                api.chapters.updateKeepalive(bookId, chapterId, {
+                    content: json,
+                    version: chapterVersion,
+                });
+            }
         };
     });
 

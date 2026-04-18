@@ -34,7 +34,14 @@ export async function syncAllDrafts(): Promise<{synced: number; failed: number; 
   let conflicts = 0;
   for (const draft of drafts) {
     try {
-      await api.chapters.update(draft.bookId, draft.chapterId, {content: draft.content});
+      // Fetch the current chapter to read its server-side version so
+      // the optimistic-lock PATCH passes. If the chapter was deleted
+      // on the server, `.get` rejects and we fall through to `failed`.
+      const current = await api.chapters.get(draft.bookId, draft.chapterId);
+      await api.chapters.update(draft.bookId, draft.chapterId, {
+        content: draft.content,
+        version: current.version,
+      });
       await deleteDraft(draft.chapterId);
       synced += 1;
     } catch (err) {

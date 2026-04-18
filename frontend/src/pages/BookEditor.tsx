@@ -175,13 +175,18 @@ export default function BookEditor() {
 
     const handleRenameChapter = async (chapterId: string, newTitle: string) => {
         if (!bookId) return;
+        const current = book?.chapters.find((c) => c.id === chapterId);
+        if (!current) return;
         try {
-            const updated = await api.chapters.update(bookId, chapterId, {title: newTitle});
+            const updated = await api.chapters.update(bookId, chapterId, {
+                title: newTitle,
+                version: current.version,
+            });
             setBook((prev) => {
                 if (!prev) return prev;
                 return {
                     ...prev,
-                    chapters: prev.chapters.map((c) => c.id === updated.id ? {...c, title: updated.title} : c),
+                    chapters: prev.chapters.map((c) => c.id === updated.id ? {...c, title: updated.title, version: updated.version} : c),
                 };
             });
         } catch {
@@ -205,10 +210,15 @@ export default function BookEditor() {
 
     const handleSaveContent = async (content: string) => {
         if (!bookId || !activeChapterId) return;
+        const current = book?.chapters.find((c) => c.id === activeChapterId);
+        if (!current) return;
         // Rethrow on failure so the Editor sees the error and sets its
         // status to "error" instead of lying to the user with "saved".
+        // 409 (version_conflict) also flows through here and is handled
+        // by the conflict resolution dialog in the next commit.
         const updated = await api.chapters.update(bookId, activeChapterId, {
             content,
+            version: current.version,
         });
         setBook((prev) => {
             if (!prev) return prev;
@@ -318,6 +328,7 @@ export default function BookEditor() {
                     bookId={bookId}
                     chapterId={activeChapterMeta.id}
                     chapterTitle={activeChapterMeta.title}
+                    chapterVersion={activeChapterMeta.version}
                     bookContext={{
                         title: book.title,
                         author: book.author,

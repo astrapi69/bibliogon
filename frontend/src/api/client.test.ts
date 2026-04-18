@@ -146,12 +146,13 @@ describe("api.chapters", () => {
         }));
     });
 
-    it("update sends PATCH", async () => {
-        mockFetch.mockReturnValue(jsonResponse({id: "c1", title: "Renamed"}));
-        const ch = await api.chapters.update("b1", "c1", {title: "Renamed"});
+    it("update sends PATCH with version", async () => {
+        mockFetch.mockReturnValue(jsonResponse({id: "c1", title: "Renamed", version: 2}));
+        const ch = await api.chapters.update("b1", "c1", {title: "Renamed", version: 1});
         expect(ch.title).toBe("Renamed");
         expect(mockFetch).toHaveBeenCalledWith("/api/books/b1/chapters/c1", expect.objectContaining({
             method: "PATCH",
+            body: JSON.stringify({title: "Renamed", version: 1}),
         }));
     });
 

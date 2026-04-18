@@ -72,8 +72,28 @@ def update_chapter(
     )
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    # Optimistic lock: reject if the client's expected version does not
+    # match the server. The 409 payload includes the current server
+    # state so the frontend can offer a conflict resolution dialog.
+    if chapter.version != payload.version:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "version_conflict",
+                "message": (
+                    f"Chapter was updated elsewhere "
+                    f"(expected v{payload.version}, server has v{chapter.version})"
+                ),
+                "current_version": chapter.version,
+                "server_content": chapter.content,
+                "server_title": chapter.title,
+                "server_updated_at": chapter.updated_at.isoformat(),
+            },
+        )
+    updates = payload.model_dump(exclude_unset=True, exclude={"version"})
+    for key, value in updates.items():
         setattr(chapter, key, value)
+    chapter.version += 1
     db.commit()
     db.refresh(chapter)
     return chapter

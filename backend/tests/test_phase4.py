@@ -49,10 +49,11 @@ def test_chapter_type_update():
     book_id = _create_book()
     r = client.post(f"/api/books/{book_id}/chapters", json={"title": "Chapter"})
     ch_id = r.json()["id"]
+    initial_version = r.json()["version"]
 
     r = client.patch(
         f"/api/books/{book_id}/chapters/{ch_id}",
-        json={"chapter_type": "appendix"},
+        json={"chapter_type": "appendix", "version": initial_version},
     )
     assert r.status_code == 200
     assert r.json()["chapter_type"] == "appendix"

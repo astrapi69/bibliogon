@@ -238,6 +238,13 @@ class ChapterCreate(BaseModel):
 
 
 class ChapterUpdate(BaseModel):
+    """PATCH body for chapter updates.
+
+    `version` is required and must match the current `Chapter.version`
+    on the server. Mismatch -> 409 with the current server state so the
+    frontend can offer conflict resolution.
+    """
+    version: int
     title: str | None = None
     content: str | None = None
     position: int | None = None

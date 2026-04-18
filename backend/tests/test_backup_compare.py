@@ -23,9 +23,11 @@ def _add_chapter(client: TestClient, book_id: str, title: str, content: str) -> 
 
 
 def _update_chapter(client: TestClient, book_id: str, chapter_id: str, content: str) -> None:
+    # Fetch the current version for the optimistic-lock PATCH.
+    current = client.get(f"/api/books/{book_id}/chapters/{chapter_id}").json()
     r = client.patch(
         f"/api/books/{book_id}/chapters/{chapter_id}",
-        json={"content": content},
+        json={"content": content, "version": current["version"]},
     )
     assert r.status_code == 200, r.text
 

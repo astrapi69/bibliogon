@@ -193,6 +193,17 @@ export interface ChapterCreate {
     chapter_type?: ChapterType;
 }
 
+/** PATCH body for chapter updates. `version` is required and must
+ *  match the server's current value, else 409.
+ */
+export interface ChapterUpdatePayload {
+    version: number;
+    title?: string;
+    content?: string;
+    position?: number;
+    chapter_type?: ChapterType;
+}
+
 export interface Asset {
     id: string;
     book_id: string;
@@ -468,12 +479,22 @@ async function request<T>(
     } catch { /* recorder not available */ }
     if (!res.ok) {
         const err = await res.json().catch(() => ({detail: res.statusText}));
+        // Backend may return `detail` as a string (simple errors) or as a
+        // structured dict (conflict payloads with context). Normalise:
+        // the string form lands in `.detail`, the dict form lands in
+        // `.detailBody` with a synthetic `.detail` string pulled from
+        // `.message` (or a fallback).
+        const isDictDetail = err.detail && typeof err.detail === "object";
+        const detailString = isDictDetail
+            ? (err.detail.message || err.detail.error || "Request failed")
+            : (err.detail || "Request failed");
         throw new ApiError(
             res.status,
-            err.detail || "Request failed",
+            detailString,
             `${BASE}${path}`,
             method,
             err.stacktrace || "",
+            isDictDetail ? (err.detail as Record<string, unknown>) : undefined,
         );
     }
     if (res.status === 204) return undefined as T;
@@ -547,7 +568,7 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
-        update: (bookId: string, chapterId: string, data: Partial<ChapterCreate>) =>
+        update: (bookId: string, chapterId: string, data: ChapterUpdatePayload) =>
             request<Chapter>(`/books/${bookId}/chapters/${chapterId}`, {
                 method: "PATCH",
                 body: JSON.stringify(data),
@@ -562,7 +583,7 @@ export const api = {
          * queue (see commit 8). Errors are swallowed - the IndexedDB
          * draft is the authoritative fallback for unload-time saves.
          */
-        updateKeepalive: (bookId: string, chapterId: string, data: Partial<ChapterCreate>): void => {
+        updateKeepalive: (bookId: string, chapterId: string, data: ChapterUpdatePayload): void => {
             try {
                 void fetch(`${BASE}/books/${bookId}/chapters/${chapterId}`, {
                     method: "PATCH",

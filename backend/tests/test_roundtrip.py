@@ -74,7 +74,7 @@ def test_roundtrip_import_export_project():
     ch1 = [c for c in chapters if "Chapter 1" in c["title"]][0]
     r_update = client.patch(
         f"/api/books/{book_id}/chapters/{ch1['id']}",
-        json={"title": "Chapter 1: Updated Title"},
+        json={"title": "Chapter 1: Updated Title", "version": ch1["version"]},
     )
     assert r_update.status_code == 200
     assert r_update.json()["title"] == "Chapter 1: Updated Title"

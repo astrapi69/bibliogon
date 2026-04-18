@@ -65,11 +65,13 @@ def test_chapter_crud():
     r = client.get(f"/api/books/{book_id}/chapters")
     assert len(r.json()) == 2
 
-    # Update
+    # Update - optimistic lock requires the current version (starts at 1)
     r = client.patch(f"/api/books/{book_id}/chapters/{ch1_id}", json={
-        "content": "Neuer Inhalt"
+        "content": "Neuer Inhalt",
+        "version": 1,
     })
     assert r.json()["content"] == "Neuer Inhalt"
+    assert r.json()["version"] == 2
 
     # Reorder
     r = client.put(f"/api/books/{book_id}/chapters/reorder", json={
