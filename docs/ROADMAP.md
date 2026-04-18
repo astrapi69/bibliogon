@@ -69,6 +69,17 @@ Replace the upload-based backup compare with proper Git integration.
 - [ ] SI-03: SSH key generation from the UI (for users without an existing SSH key)
 - [ ] SI-04: visual indicator in the sidebar when the remote state is newer than local
 
+### 5. Donation integration (priority: after stability)
+
+Users can support the project. Prompts are subtle, respectful, without dark patterns. Donation state stored locally, no tracking.
+
+See [docs/explorations/donations-ux.md](explorations/donations-ux.md) for the full strategy document.
+
+- [x] S-01: Settings section "Support Bibliogon" - new 4th Radix tab in `frontend/src/pages/Settings.tsx`, rendered only when `donations.enabled === true`. Channel list with per-channel description and optional "Recommended" badge; `landing_page_url` override collapses UI to one primary button. New `SupportSection.tsx` component, i18n `ui.donations.*` in all 8 languages.
+- [x] S-02: One-time onboarding dialog after first book creation - new `DonationOnboardingDialog.tsx` mirroring the AiSetupWizard pattern. Triggered from `Dashboard.handleCreate`/`handleCreateFromTemplate` when `books.length === 0` BEFORE the create and the `bibliogon-donation-onboarding-seen` localStorage flag is unset. Every dismiss path (Support, Understood, close-X) sets the flag. Two-step: intro -> channel picker if no `landing_page_url`.
+- [x] S-03: 90-day reminder banner on Dashboard - new `DonationReminderBanner.tsx` + pure `shouldShowReminder` helper. Banner shows only when donations enabled AND onboarding seen AND 90+ days since `bibliogon-first-use-date` (initialised in `App.tsx`) AND `bibliogon-donation-reminder-next-allowed` is missing or in the past AND Dashboard is in book-grid mode. Dismiss: Support = 180-day cooldown, Not now / close-X = 90-day cooldown. Never during editor/export (different routes), no counter shown, no animation, no urgency.
+- [x] Help page: `docs/help/{de,en}/support.md` with channels, FAQ (tax-deductibility, anonymity per platform, recurring vs one-time, how to cancel), contact. Top-level nav entry with icon `heart`, brings nav from 14 to 15 entries.
+
 ---
 
 ## Maintenance and tech debt
