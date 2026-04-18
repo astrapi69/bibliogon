@@ -231,6 +231,55 @@ def test_update_nonexistent_plugin_returns_404(client):
     assert resp.status_code == 404
 
 
+def test_update_preserves_comments_and_formatting(client, temp_base):
+    """PATCH must not strip YAML comments or quote styles.
+
+    Regression pin for the PyYAML -> ruamel.yaml swap: saving plugin
+    settings through the UI used to drop `# INTERNAL` comments and
+    rewrite `"foo"` as `foo`. This test proves the HTTP round-trip
+    preserves both, so a future refactor that bypasses `app.yaml_io`
+    fails loudly instead of silently corrupting user configs.
+    """
+    export_yaml_path = temp_base / "config" / "plugins" / "export.yaml"
+    export_yaml_path.write_text(
+        'plugin:\n'
+        '  name: "export"\n'
+        '  version: "1.0.0"\n'
+        '  license: "MIT"\n'
+        '\n'
+        'settings:\n'
+        '  type_suffix_in_filename: true\n'
+        '  # INTERNAL: power-user knob, edit via YAML only\n'
+        '  pandoc_timeout_seconds: 120\n'
+        '  output_dir: "./out"\n',
+        encoding="utf-8",
+    )
+
+    resp = client.patch(
+        "/api/settings/plugins/export",
+        json={"settings": {"type_suffix_in_filename": False}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["settings"]["type_suffix_in_filename"] is False
+
+    on_disk = export_yaml_path.read_text(encoding="utf-8")
+
+    # The mutated value landed.
+    assert "type_suffix_in_filename: false" in on_disk
+
+    # The # INTERNAL comment survived the save.
+    assert "# INTERNAL: power-user knob, edit via YAML only" in on_disk
+
+    # Untouched fields kept their double-quote style.
+    assert 'name: "export"' in on_disk
+    assert 'version: "1.0.0"' in on_disk
+    assert 'license: "MIT"' in on_disk
+    assert 'output_dir: "./out"' in on_disk
+
+    # Untouched value untouched.
+    assert "pandoc_timeout_seconds: 120" in on_disk
+
+
 # --- DELETE /api/settings/plugins/{name} ---
 
 
