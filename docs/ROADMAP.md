@@ -90,6 +90,7 @@ Each gets a dedicated session with its own testing cycle. Not urgent, but tracke
 - [x] DEP-06: pandas 2 -> 3 (resolved: transitive dep of manuscripta 0.9.0 which requires pandas >=3.0)
 - [ ] DEP-07: lucide-react 0.468 -> 1.x migration (icon API changes, moderate risk)
 - [x] DEP-08: Pillow 11 -> 12 (resolved: manuscripta 0.9.0 requires pillow >=12.0. Both bumped together.)
+- [ ] DEP-09: Vite 7 -> 8. Blocked on `vite-plugin-pwa` upstream: `1.2.0` (latest as of 2026-04-18) lists peer deps `vite: ^3 || ^4 || ^5 || ^6 || ^7`; no Vite 8 PR visible on github.com/vite-pwa/vite-plugin-pwa. Do NOT force with `--legacy-peer-deps`: Vite 8 changed plugin APIs, and PWA is only exercised at `vite build`/SW regen, so a runtime break there is hard to detect. Re-check `npm view vite-plugin-pwa peerDependencies` every ~2 weeks or after a new release is cut.
 
 ---
 
