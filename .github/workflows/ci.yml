@@ -88,3 +88,36 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npx vite build
+
+  pre-commit:
+    name: Pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run hooks on all files
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  lint-and-type-check:
+    name: Backend ruff + mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+      - name: ruff check
+        working-directory: backend
+        run: poetry run ruff check app/
+      - name: mypy
+        working-directory: backend
+        run: poetry run mypy app/
