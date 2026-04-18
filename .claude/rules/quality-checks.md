@@ -494,9 +494,9 @@ Nightly (separate, slower):
 
 Overall project target: 85-95% coverage.
 
-Frontend coverage is not subordinate to backend coverage. User-facing 
+Frontend coverage is not subordinate to backend coverage. User-facing
 bugs destroy trust as effectively as backend bugs destroy data.
 
-100% coverage is not the goal. Meaningful coverage is the goal: 
-tests must assert real behavior properties, not just line execution. 
+100% coverage is not the goal. Meaningful coverage is the goal:
+tests must assert real behavior properties, not just line execution.
 Regression pins for known bug classes count for more than line count.

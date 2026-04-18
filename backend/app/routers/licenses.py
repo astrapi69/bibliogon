@@ -124,9 +124,7 @@ def activate_license(body: LicenseActivate) -> dict[str, Any]:
                     _manager.reload_config()
             # Try to discover and activate the plugin
             _manager.discover_plugins()
-            plugin_enabled = body.plugin_name in {
-                p.name for p in _manager.get_active_plugins()
-            }
+            plugin_enabled = body.plugin_name in {p.name for p in _manager.get_active_plugins()}
         except Exception:
             pass  # Plugin activation is best-effort
 

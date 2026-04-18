@@ -174,9 +174,14 @@ def _validate_image_format(payload: bytes) -> tuple[int, int]:
 
 def _delete_existing_covers(db: Session, book_id: str) -> bool:
     """Delete every cover Asset for the book and the file on disk."""
-    existing = db.query(Asset).filter(
-        Asset.book_id == book_id, Asset.asset_type == "cover",
-    ).all()
+    existing = (
+        db.query(Asset)
+        .filter(
+            Asset.book_id == book_id,
+            Asset.asset_type == "cover",
+        )
+        .all()
+    )
     if not existing:
         return False
     for asset in existing:

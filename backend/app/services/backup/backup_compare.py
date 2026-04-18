@@ -149,15 +149,35 @@ def _load_chapters(chapters_dir: Path) -> list[dict[str, Any]]:
 # (timestamps, ids) and large derived blobs (html_description, custom_css)
 # are skipped: they're either noise or better viewed in a chapter diff.
 _BOOK_METADATA_FIELDS: tuple[str, ...] = (
-    "title", "subtitle", "author", "language",
-    "series", "series_index", "description", "genre",
-    "edition", "publisher", "publisher_city", "publish_date",
-    "isbn_ebook", "isbn_paperback", "isbn_hardcover",
-    "asin_ebook", "asin_paperback", "asin_hardcover",
-    "keywords", "backpage_description", "backpage_author_bio",
-    "cover_image", "ai_assisted",
-    "tts_engine", "tts_voice", "tts_language", "tts_speed",
-    "audiobook_merge", "audiobook_filename",
+    "title",
+    "subtitle",
+    "author",
+    "language",
+    "series",
+    "series_index",
+    "description",
+    "genre",
+    "edition",
+    "publisher",
+    "publisher_city",
+    "publish_date",
+    "isbn_ebook",
+    "isbn_paperback",
+    "isbn_hardcover",
+    "asin_ebook",
+    "asin_paperback",
+    "asin_hardcover",
+    "keywords",
+    "backpage_description",
+    "backpage_author_bio",
+    "cover_image",
+    "ai_assisted",
+    "tts_engine",
+    "tts_voice",
+    "tts_language",
+    "tts_speed",
+    "audiobook_merge",
+    "audiobook_filename",
     "ms_tools_max_sentence_length",
     "ms_tools_repetition_window",
     "ms_tools_max_filler_ratio",
@@ -241,7 +261,10 @@ def _chapter_change(
         "title_changed": title_changed,
         "type_changed": type_changed,
         "lines": lines,
-        "has_changes": change_type != "changed" or has_text_changes or title_changed or type_changed,
+        "has_changes": change_type != "changed"
+        or has_text_changes
+        or title_changed
+        or type_changed,
     }
 
 

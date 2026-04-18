@@ -33,12 +33,7 @@ def _get_book_or_404(book_id: str, db: Session) -> Book:
 @router.get("", response_model=list[ChapterOut])
 def list_chapters(book_id: str, db: Session = Depends(get_db)):
     _get_book_or_404(book_id, db)
-    return (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    return db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
 
 
 @router.post("", response_model=ChapterOut, status_code=status.HTTP_201_CREATED)
@@ -63,11 +58,7 @@ def create_chapter(book_id: str, payload: ChapterCreate, db: Session = Depends(g
 
 @router.get("/{chapter_id}", response_model=ChapterOut)
 def get_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
-    chapter = (
-        db.query(Chapter)
-        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
-        .first()
-    )
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return chapter
@@ -75,13 +66,9 @@ def get_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
 
 @router.patch("/{chapter_id}", response_model=ChapterOut)
 def update_chapter(
-        book_id: str, chapter_id: str, payload: ChapterUpdate, db: Session = Depends(get_db)
+    book_id: str, chapter_id: str, payload: ChapterUpdate, db: Session = Depends(get_db)
 ):
-    chapter = (
-        db.query(Chapter)
-        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
-        .first()
-    )
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     # Optimistic lock: reject if the client's expected version does not
@@ -146,11 +133,7 @@ def update_chapter(
 def list_chapter_versions(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
     """Return version metadata (no content) for a chapter, newest first."""
     _get_book_or_404(book_id, db)
-    chapter = (
-        db.query(Chapter)
-        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
-        .first()
-    )
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return (
@@ -198,11 +181,7 @@ def restore_chapter_version(
     the chapter version counter.
     """
     _get_book_or_404(book_id, db)
-    chapter = (
-        db.query(Chapter)
-        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
-        .first()
-    )
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     version = (
@@ -251,11 +230,7 @@ def restore_chapter_version(
 
 @router.delete("/{chapter_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
-    chapter = (
-        db.query(Chapter)
-        .filter(Chapter.id == chapter_id, Chapter.book_id == book_id)
-        .first()
-    )
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     db.delete(chapter)
@@ -263,13 +238,9 @@ def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db))
 
 
 @router.put("/reorder", response_model=list[ChapterOut])
-def reorder_chapters(
-        book_id: str, payload: ChapterReorder, db: Session = Depends(get_db)
-):
+def reorder_chapters(book_id: str, payload: ChapterReorder, db: Session = Depends(get_db)):
     _get_book_or_404(book_id, db)
-    chapters = (
-        db.query(Chapter).filter(Chapter.book_id == book_id).all()
-    )
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
     chapter_map = {c.id: c for c in chapters}
 
     for position, chapter_id in enumerate(payload.chapter_ids):
@@ -280,12 +251,7 @@ def reorder_chapters(
         chapter_map[chapter_id].position = position
 
     db.commit()
-    return (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    return db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
 
 
 # Common alternative anchors for special chapter types (write-book-template
@@ -312,17 +278,15 @@ def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     chapter titles or explicit anchors in the book.
     """
     _get_book_or_404(book_id, db)
-    chapters = (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
 
     toc_chapters = [c for c in chapters if c.chapter_type == "toc"]
     if not toc_chapters:
         return {
-            "valid": True, "toc_found": False, "links": [], "broken": [],
+            "valid": True,
+            "toc_found": False,
+            "links": [],
+            "broken": [],
             "message": "Kein Inhaltsverzeichnis gefunden.",
         }
 
@@ -435,6 +399,7 @@ def _slugify(text: str) -> str:
     """
     import html
     import unicodedata
+
     # Decode HTML entities: &amp; -> &, &#39; -> '
     text = html.unescape(text)
     # Remove explicit anchor markers {#...}

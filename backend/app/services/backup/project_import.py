@@ -41,6 +41,7 @@ def import_project_zip(file: UploadFile, db: Session) -> dict[str, Any]:
     # Single Markdown upload bypass
     if file.filename and file.filename.endswith(".md"):
         from app.services.backup.markdown_import import import_single_markdown
+
         return import_single_markdown(file, db)
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_import_"))
@@ -52,7 +53,7 @@ def import_project_zip(file: UploadFile, db: Session) -> dict[str, Any]:
             raise HTTPException(
                 status_code=400,
                 detail="Das ist eine Backup-Datei, kein Projekt-ZIP. "
-                       "Fuer Backup-Restore nutze den 'Restore'-Button.",
+                "Fuer Backup-Restore nutze den 'Restore'-Button.",
             )
 
         project_root = find_project_root(extracted)
@@ -75,7 +76,7 @@ def _validate_project_filename(filename: str | None) -> None:
         raise HTTPException(
             status_code=400,
             detail="Das ist eine Backup-Datei (.bgb). Fuer Backup-Restore nutze den 'Restore'-Button. "
-                   "Fuer Projekt-Import wird eine .bgp- oder .zip-Datei erwartet.",
+            "Fuer Projekt-Import wird eine .bgp- oder .zip-Datei erwartet.",
         )
     if not (filename.endswith(".bgp") or filename.endswith(".zip") or filename.endswith(".md")):
         raise HTTPException(
@@ -188,7 +189,9 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         keywords=_parse_keywords(metadata),
         html_description=read_file_if_exists(config_dir / "book-description.html"),
         backpage_description=read_file_if_exists(config_dir / "cover-back-page-description.md"),
-        backpage_author_bio=read_file_if_exists(config_dir / "cover-back-page-author-introduction.md"),
+        backpage_author_bio=read_file_if_exists(
+            config_dir / "cover-back-page-author-introduction.md"
+        ),
         cover_image=metadata.get("cover_image"),
         custom_css=read_file_if_exists(config_dir / "styles.css"),
     )
@@ -364,13 +367,9 @@ def import_with_section_order(
     for entry in section_order:
         entry = entry.strip()
         if entry == "chapters":
-            _import_chapter_placeholder(
-                db, book_id, manuscript_dir / "chapters", state, language
-            )
+            _import_chapter_placeholder(db, book_id, manuscript_dir / "chapters", state, language)
         else:
-            _import_section_order_file(
-                db, book_id, manuscript_dir / entry, state, language
-            )
+            _import_section_order_file(db, book_id, manuscript_dir / entry, state, language)
 
     _import_remaining_special_files(db, book_id, manuscript_dir, state, language)
     return state.count
@@ -465,13 +464,15 @@ def _add_chapter_from_file(
     title = extract_title(content, md_file.stem)
     resolved_type = chapter_type or detect_chapter_type(md_file.stem)
     sanitized = sanitize_import_markdown(content.strip(), language)
-    db.add(Chapter(
-        book_id=book_id,
-        title=title,
-        content=md_to_html(sanitized),
-        position=position,
-        chapter_type=resolved_type.value,
-    ))
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title=title,
+            content=md_to_html(sanitized),
+            position=position,
+            chapter_type=resolved_type.value,
+        )
+    )
 
 
 # --- Asset import ---
@@ -494,9 +495,7 @@ def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
         return
     db.flush()
     cover_asset = (
-        db.query(Asset)
-        .filter(Asset.book_id == book.id, Asset.asset_type == "cover")
-        .first()
+        db.query(Asset).filter(Asset.book_id == book.id, Asset.asset_type == "cover").first()
     )
     if cover_asset:
         book.cover_image = cover_asset.path

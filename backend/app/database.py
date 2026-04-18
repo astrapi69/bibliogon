@@ -63,6 +63,7 @@ def init_db():
 
     # Check if this is a fresh database (no tables exist)
     from sqlalchemy import inspect
+
     inspector = inspect(engine)
     has_tables = inspector.has_table("books")
     has_alembic = inspector.has_table("alembic_version")

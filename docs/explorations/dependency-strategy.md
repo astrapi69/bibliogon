@@ -1,13 +1,13 @@
 # Create docs/explorations/dependency-strategy.md
 
-Context: The dependency audit revealed several deferred major 
-migrations (React 19, TipTap 3, Vite 8, TypeScript 6, 
-react-router-dom 7, elevenlabs SDK, pandas 3). Each is a strategic 
-decision that should be documented, not just a line in a commit 
+Context: The dependency audit revealed several deferred major
+migrations (React 19, TipTap 3, Vite 8, TypeScript 6,
+react-router-dom 7, elevenlabs SDK, pandas 3). Each is a strategic
+decision that should be documented, not just a line in a commit
 message.
 
-Also: the pin decisions for TipTap community extensions need 
-proper documentation so future sessions can understand the 
+Also: the pin decisions for TipTap community extensions need
+proper documentation so future sessions can understand the
 reasoning without re-discovering it.
 
 ## Document structure
@@ -15,14 +15,14 @@ reasoning without re-discovering it.
 ```markdown
 # Dependency Strategy
 
-Status: Active maintenance document  
-Last full review: YYYY-MM-DD  
+Status: Active maintenance document
+Last full review: YYYY-MM-DD
 Next review: YYYY-MM-DD (quarterly or at next major release)
 
 ## Purpose
 
-This document tracks Bibliogon's strategic decisions about major 
-dependency versions. It complements docs/ROADMAP.md (forward work) 
+This document tracks Bibliogon's strategic decisions about major
+dependency versions. It complements docs/ROADMAP.md (forward work)
 and lessons-learned.md (rules and patterns) by providing:
 
 - Active evaluation of deferred major version bumps
@@ -88,36 +88,36 @@ Special notes on community extensions:
 
 [same structure]
 
-Dependency chain note: Vite 8 may require React 19 first. 
+Dependency chain note: Vite 8 may require React 19 first.
 Cross-reference DEP-01.
 
 ### DEP-04: TypeScript 5 -> 6
 
 [same structure]
 
-Dependency chain note: should follow Vite 8 migration. 
+Dependency chain note: should follow Vite 8 migration.
 Cross-reference DEP-03.
 
 ### DEP-05: react-router-dom 6 -> 7
 
 [same structure]
 
-Note: v7 is a complete API rework (Remix-based). This is not a 
+Note: v7 is a complete API rework (Remix-based). This is not a
 minor migration even by "major bump" standards.
 
 ### DEP-06: elevenlabs SDK 0.2 -> 2.x
 
 [same structure]
 
-Special consideration: needs testing with real ElevenLabs API 
+Special consideration: needs testing with real ElevenLabs API
 during migration. Cannot be validated purely with mocks.
 
 ### DEP-07: pandas 2 -> 3
 
 [same structure]
 
-First audit step: verify actual pandas usage in the codebase. If 
-usage is minimal, migration is low effort. If pandas is used 
+First audit step: verify actual pandas usage in the codebase. If
+usage is minimal, migration is low effort. If pandas is used
 extensively with DataFrame manipulations, effort increases.
 
 ## Active pins with expiration
@@ -127,7 +127,7 @@ extensively with DataFrame manipulations, effort increases.
 - @pentestpad/tiptap-extension-figure pinned at 1.0.12
 - tiptap-footnotes pinned at 2.0.4
 
-Reason: both require @tiptap/core v2. Upgrading either to their 
+Reason: both require @tiptap/core v2. Upgrading either to their
 latest requires TipTap v3 migration (see DEP-02).
 
 Unpin condition: TipTap 2 -> 3 migration (DEP-02) is completed.
@@ -154,9 +154,9 @@ Chronological record of completed migrations.
 ### 2026-04-XX: manuscripta 0.7 -> 0.8 (PS-06)
 - Reason: silent-image-drop bug fix, strict-images mode
 - Effort: medium
-- Issues encountered: required bibliogon-side fix for 
+- Issues encountered: required bibliogon-side fix for
   html_to_markdown
-- Commits: 82be282, e0f7a32, 5adf01e, e1e57cc, dfebfe8, 7a80462, 
+- Commits: 82be282, e0f7a32, 5adf01e, e1e57cc, dfebfe8, 7a80462,
   6a25a0f
 
 ### [Previous migrations as they exist]
@@ -168,7 +168,7 @@ Chronological record of completed migrations.
 - At major decisions: document here before committing
 
 Specific next reviews:
-- DEP-02 (TipTap): [date when community extensions might have 
+- DEP-02 (TipTap): [date when community extensions might have
   v3 compat, or a fixed review date]
 - DEP-01 (React 19): [date]
 - DEP-05 (react-router-dom): [date]
@@ -177,7 +177,7 @@ Specific next reviews:
 
 ## Sources for content
 
-Use the findings from the dependency audit you just produced for 
+Use the findings from the dependency audit you just produced for
 commit sequence 8:
 - The categorized tables
 - The risk assessment
@@ -196,59 +196,59 @@ For each deferred migration, fill in:
 
 ## Relationship to other docs
 
-- **ROADMAP.md**: DEP items stay in this document, not roadmap. 
+- **ROADMAP.md**: DEP items stay in this document, not roadmap.
   Roadmap is for forward feature work.
-- **lessons-learned.md**: rules about dependency discipline live 
+- **lessons-learned.md**: rules about dependency discipline live
   there, not here
 - **CHANGELOG.md**: actual version bumps are recorded there
 - **This document**: strategic decisions and deferred work
 
 Cross-reference from other docs to this one where relevant:
-- CLAUDE.md: brief mention that dependency decisions live in 
+- CLAUDE.md: brief mention that dependency decisions live in
   docs/explorations/dependency-strategy.md
 - release-workflow rule: reference for the release-cycle review step
 
 ## Commit plan
 
-1. `docs(explorations): create dependency strategy document with 
+1. `docs(explorations): create dependency strategy document with
     current state`
-2. `docs: cross-reference dependency strategy from CLAUDE.md and 
+2. `docs: cross-reference dependency strategy from CLAUDE.md and
     release-workflow rule`
 
-This document is created in one commit, not incrementally. It is 
+This document is created in one commit, not incrementally. It is
 a complete snapshot as of the current audit.
 
 ## Maintenance
 
 Once created, this document should be updated:
-- When a DEP item is acted upon (implemented or officially 
+- When a DEP item is acted upon (implemented or officially
   cancelled)
 - When re-evaluation triggers fire
 - When new deferred migrations accumulate
 - At quarterly review (at minimum once per quarter)
 
-Update with commit message pattern: 
+Update with commit message pattern:
 `docs(explorations): [specific change to dependency strategy]`
 
-Do NOT silently update. Each change is tracked in git history 
+Do NOT silently update. Each change is tracked in git history
 for decision audit trail.
 
 ## Design principle
 
-This document is a **strategic decision log**, not a specification. 
+This document is a **strategic decision log**, not a specification.
 The difference matters:
 
 - A specification says "this is how it works"
-- A strategic decision log says "this is why we chose X, and these 
+- A strategic decision log says "this is why we chose X, and these
   are the conditions that would make us reconsider"
 
-When future sessions encounter a DEP-X question, they should read 
+When future sessions encounter a DEP-X question, they should read
 the relevant section and either:
 1. Find that the deferral conditions still apply, action = wait
-2. Find that a trigger has fired, action = re-evaluate with current 
+2. Find that a trigger has fired, action = re-evaluate with current
    data and update the document
-3. Find that circumstances have changed in ways not captured, 
+3. Find that circumstances have changed in ways not captured,
    action = update the document to reflect new understanding
 
-The document is wrong if it ossifies. It is correct if it evolves 
+The document is wrong if it ossifies. It is correct if it evolves
 with project understanding.

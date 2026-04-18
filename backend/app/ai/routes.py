@@ -33,6 +33,7 @@ def _track_usage(book_id: str, usage: dict[str, int]) -> None:
     except Exception:
         logger.debug("Failed to track AI usage for book %s", book_id, exc_info=True)
 
+
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
@@ -186,7 +187,9 @@ def _build_review_system_prompt(language: str, focus: list[str], genre: str = ""
     elif language == "en":
         lang_instruction = "The chapter is in English. Write your review in English."
     else:
-        lang_instruction = f"The chapter is in language '{language}'. Write your review in that language."
+        lang_instruction = (
+            f"The chapter is in language '{language}'. Write your review in that language."
+        )
 
     genre_instruction = ""
     if genre:
@@ -259,7 +262,9 @@ class MarketingRequest(BaseModel):
     genre: str = Field(default="")
     language: str = Field(default="de")
     description: str = Field(default="", description="Existing book description for context")
-    chapter_titles: list[str] = Field(default_factory=list, description="Chapter titles for context")
+    chapter_titles: list[str] = Field(
+        default_factory=list, description="Chapter titles for context"
+    )
     existing_text: str = Field(default="", description="Current field value to refine")
     book_id: str = Field(default="", description="Book ID for usage tracking")
 
@@ -275,7 +280,6 @@ Rules:
 - End with a question or teaser that makes the reader want to buy.
 - Do NOT include the title or author name in the description.
 - Write in {language}.""",
-
     "backpage_description": """Write a back cover description for a printed book.
 
 Rules:
@@ -283,7 +287,6 @@ Rules:
 - 80-150 words (must fit on a physical back cover).
 - Concise, punchy, enticing.
 - Write in {language}.""",
-
     "backpage_author_bio": """Write a short author biography for the back cover of a book.
 
 Rules:
@@ -293,7 +296,6 @@ Rules:
 - Professional but warm tone.
 - If no specific details are provided, write a plausible generic bio based on the genre.
 - Write in {language}.""",
-
     "keywords": """Generate 7 Amazon KDP keywords (search terms) for this book.
 
 Rules:
@@ -308,8 +310,16 @@ Rules:
 
 def _build_marketing_prompt(field: str, req: MarketingRequest) -> tuple[str, str]:
     """Build system and user prompts for marketing text generation."""
-    lang_map = {"de": "German", "en": "English", "es": "Spanish", "fr": "French",
-                "el": "Greek", "pt": "Portuguese", "tr": "Turkish", "ja": "Japanese"}
+    lang_map = {
+        "de": "German",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "el": "Greek",
+        "pt": "Portuguese",
+        "tr": "Turkish",
+        "ja": "Japanese",
+    }
     lang_name = lang_map.get(req.language, req.language)
 
     system = _MARKETING_PROMPTS[field].replace("{language}", lang_name)

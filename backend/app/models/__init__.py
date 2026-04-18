@@ -75,7 +75,9 @@ class Book(Base):
     asin_paperback: Mapped[str | None] = mapped_column(String(20), nullable=True)
     asin_hardcover: Mapped[str | None] = mapped_column(String(20), nullable=True)
     keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
-    html_description: Mapped[str | None] = mapped_column(Text, nullable=True)  # Amazon book description
+    html_description: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # Amazon book description
     backpage_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -90,7 +92,9 @@ class Book(Base):
     tts_engine: Mapped[str | None] = mapped_column(String(50), nullable=True)
     tts_voice: Mapped[str | None] = mapped_column(String(200), nullable=True)
     tts_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    tts_speed: Mapped[str | None] = mapped_column(String(10), nullable=True)  # e.g. "1.0", "0.75", "1.25"
+    tts_speed: Mapped[str | None] = mapped_column(
+        String(10), nullable=True
+    )  # e.g. "1.0", "0.75", "1.25"
     # Audiobook merge mode: "separate", "merged", "both" (None -> use plugin default)
     audiobook_merge: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Custom audiobook output filename (without extension). None -> derive from book title.
@@ -136,23 +140,21 @@ class Chapter(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str] = mapped_column(Text, default="")
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    chapter_type: Mapped[str] = mapped_column(
-        String(20), default=ChapterType.CHAPTER.value
-    )
+    chapter_type: Mapped[str] = mapped_column(String(20), default=ChapterType.CHAPTER.value)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
     # Optimistic-lock version counter. Incremented by the PATCH handler
     # on every successful content write (commit 6). Starts at 1.
-    version: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1, server_default="1"
-    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 
     def __repr__(self) -> str:
-        return f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type} v={self.version}>"
+        return (
+            f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type} v={self.version}>"
+        )
 
 
 class ChapterVersion(Base):
@@ -164,6 +166,7 @@ class ChapterVersion(Base):
     crash-recovery workflows that need to look further back than the
     TipTap in-session undo stack.
     """
+
     __tablename__ = "chapter_versions"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)

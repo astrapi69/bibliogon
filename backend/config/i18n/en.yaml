@@ -124,7 +124,6 @@ ui:
     toc_valid: "TOC valid: all links correct."
     toc_invalid: "Invalid links"
     toc_error: "Error validating TOC."
-    ai_select_text: "Select text first for AI suggestions"
     recovery_title: "Unsaved changes found"
     recovery_desc: "Changes from {timestamp} found that were not saved to the server. Restore?"
     recovery_restore: "Restore"

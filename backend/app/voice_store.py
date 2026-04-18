@@ -48,8 +48,10 @@ def get_voices(db: Session, engine: str, language: str | None = None) -> list[di
     voices = query.order_by(AudioVoice.language, AudioVoice.display_name).all()
     return [
         {
-            "id": v.voice_id, "name": v.display_name,
-            "language": v.language, "gender": v.gender,
+            "id": v.voice_id,
+            "name": v.display_name,
+            "language": v.language,
+            "gender": v.gender,
             "quality": getattr(v, "quality", "standard"),
         }
         for v in voices
@@ -101,16 +103,26 @@ async def sync_edge_tts_voices(db: Session) -> int:
             existing.language = locale
             existing.updated_at = now
         else:
-            db.add(AudioVoice(
-                engine="edge-tts", language=locale, voice_id=voice_id,
-                display_name=display, gender=gender, updated_at=now,
-            ))
+            db.add(
+                AudioVoice(
+                    engine="edge-tts",
+                    language=locale,
+                    voice_id=voice_id,
+                    display_name=display,
+                    gender=gender,
+                    updated_at=now,
+                )
+            )
 
     # Delete voices that no longer exist in the API response
-    deleted = db.query(AudioVoice).filter(
-        AudioVoice.engine == "edge-tts",
-        AudioVoice.voice_id.notin_(seen_ids),
-    ).delete(synchronize_session=False)
+    deleted = (
+        db.query(AudioVoice)
+        .filter(
+            AudioVoice.engine == "edge-tts",
+            AudioVoice.voice_id.notin_(seen_ids),
+        )
+        .delete(synchronize_session=False)
+    )
 
     db.commit()
     total = len(seen_ids)

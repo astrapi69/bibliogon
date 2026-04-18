@@ -24,6 +24,7 @@ router = APIRouter(prefix="/books", tags=["books"])
 def _is_permanent_delete() -> bool:
     """Check app config for delete_permanently setting."""
     from pathlib import Path
+
     config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
     if not config_path.exists():
         return False
@@ -38,6 +39,7 @@ def _is_permanent_delete() -> bool:
 def _get_trash_auto_delete_config() -> tuple[bool, int]:
     """Get trash auto-delete settings: (enabled, days)."""
     from pathlib import Path
+
     config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
     if not config_path.exists():
         return False, 30
@@ -62,18 +64,25 @@ def cleanup_expired_trash() -> int:
         return 0
 
     from app.database import SessionLocal
+
     db = SessionLocal()
     try:
         cutoff = datetime.now(UTC) - timedelta(days=days)
-        expired = db.query(Book).filter(
-            Book.deleted_at.is_not(None),
-            Book.deleted_at < cutoff,
-        ).all()
+        expired = (
+            db.query(Book)
+            .filter(
+                Book.deleted_at.is_not(None),
+                Book.deleted_at < cutoff,
+            )
+            .all()
+        )
         count = len(expired)
         for book in expired:
             logger.info(
                 "Auto-deleting book: id=%s title=%s deleted_at=%s",
-                book.id, book.title, book.deleted_at,
+                book.id,
+                book.title,
+                book.deleted_at,
             )
             db.delete(book)
         if count > 0:
@@ -87,12 +96,7 @@ def cleanup_expired_trash() -> int:
 @router.get("", response_model=list[BookOut])
 def list_books(db: Session = Depends(get_db)):
     """List all active (non-deleted) books."""
-    return (
-        db.query(Book)
-        .filter(Book.deleted_at.is_(None))
-        .order_by(Book.updated_at.desc())
-        .all()
-    )
+    return db.query(Book).filter(Book.deleted_at.is_(None)).order_by(Book.updated_at.desc()).all()
 
 
 @router.post("", response_model=BookOut, status_code=status.HTTP_201_CREATED)
@@ -109,19 +113,13 @@ def create_book(payload: BookCreate, db: Session = Depends(get_db)):
     response_model=BookDetail,
     status_code=status.HTTP_201_CREATED,
 )
-def create_book_from_template(
-    payload: BookFromTemplateCreate, db: Session = Depends(get_db)
-):
+def create_book_from_template(payload: BookFromTemplateCreate, db: Session = Depends(get_db)):
     """Create a new book with chapters pre-filled from a template.
 
     The book and all its chapters are persisted in a single commit -
     if any chapter insert fails the book insert rolls back with it.
     """
-    template = (
-        db.query(BookTemplate)
-        .filter(BookTemplate.id == payload.template_id)
-        .first()
-    )
+    template = db.query(BookTemplate).filter(BookTemplate.id == payload.template_id).first()
     if template is None:
         raise HTTPException(status_code=404, detail="Template not found")
 
@@ -164,12 +162,7 @@ def get_book(book_id: str, include_content: bool = True, db: Session = Depends(g
     string to reduce payload size for large books (100+ chapters). The
     frontend fetches individual chapter content on demand.
     """
-    book = (
-        db.query(Book)
-        .options(joinedload(Book.chapters))
-        .filter(Book.id == book_id)
-        .first()
-    )
+    book = db.query(Book).options(joinedload(Book.chapters)).filter(Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     if not include_content:
@@ -220,10 +213,7 @@ def delete_book(book_id: str, db: Session = Depends(get_db)):
 def list_trash(db: Session = Depends(get_db)):
     """List all books in the trash."""
     return (
-        db.query(Book)
-        .filter(Book.deleted_at.is_not(None))
-        .order_by(Book.deleted_at.desc())
-        .all()
+        db.query(Book).filter(Book.deleted_at.is_not(None)).order_by(Book.deleted_at.desc()).all()
     )
 
 

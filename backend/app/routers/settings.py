@@ -17,7 +17,9 @@ _license_store: Any = None
 _license_validator: Any = None
 
 
-def configure(base_dir: Path, manager: Any, license_store: Any = None, license_validator: Any = None) -> None:
+def configure(
+    base_dir: Path, manager: Any, license_store: Any = None, license_validator: Any = None
+) -> None:
     global _base_dir, _manager, _license_store, _license_validator
     _base_dir = base_dir
     _manager = manager
@@ -80,6 +82,7 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
 
     # Invalidate the plugin-status cache so the editor sees fresh state
     from app.main import invalidate_plugin_status_cache
+
     invalidate_plugin_status_cache()
 
     return current
@@ -127,12 +130,16 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
                 continue
             tier = _read_license_tier(yaml_file)
             has_license = _check_plugin_license(name, tier)
-            result.append({
-                "name": name, "has_config": True,
-                "enabled": name in enabled and name not in disabled,
-                "loaded": name in active,
-                "license_tier": tier, "has_license": has_license,
-            })
+            result.append(
+                {
+                    "name": name,
+                    "has_config": True,
+                    "enabled": name in enabled and name not in disabled,
+                    "loaded": name in active,
+                    "license_tier": tier,
+                    "has_license": has_license,
+                }
+            )
     return result
 
 

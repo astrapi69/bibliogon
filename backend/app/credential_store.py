@@ -72,9 +72,7 @@ def validate_service_account_json(raw_bytes: bytes) -> dict[str, Any]:
         raise ValueError("Expected a JSON object, got " + type(data).__name__)
 
     if data.get("type") != "service_account":
-        raise ValueError(
-            f"Expected type 'service_account', got '{data.get('type', '<missing>')}'"
-        )
+        raise ValueError(f"Expected type 'service_account', got '{data.get('type', '<missing>')}'")
 
     required = {"project_id", "private_key", "client_email"}
     missing = required - data.keys()

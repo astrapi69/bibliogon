@@ -58,12 +58,14 @@ def import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
         dest_path = dest_dir / file_path.name
         shutil.copy2(file_path, dest_path)
 
-        db.add(Asset(
-            book_id=book_id,
-            filename=file_path.name,
-            asset_type=asset_type,
-            path=str(dest_path),
-        ))
+        db.add(
+            Asset(
+                book_id=book_id,
+                filename=file_path.name,
+                asset_type=asset_type,
+                path=str(dest_path),
+            )
+        )
         count += 1
 
     return count

@@ -28,24 +28,16 @@ def list_chapter_templates(db: Session = Depends(get_db)):
 
 @router.get("/{template_id}", response_model=ChapterTemplateRead)
 def get_chapter_template(template_id: str, db: Session = Depends(get_db)):
-    template = (
-        db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
-    )
+    template = db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Chapter template not found")
     return template
 
 
 @router.post("", response_model=ChapterTemplateRead, status_code=status.HTTP_201_CREATED)
-def create_chapter_template(
-    payload: ChapterTemplateCreate, db: Session = Depends(get_db)
-):
+def create_chapter_template(payload: ChapterTemplateCreate, db: Session = Depends(get_db)):
     """Create a user chapter template. ``is_builtin`` is forced to False."""
-    if (
-        db.query(ChapterTemplate)
-        .filter(ChapterTemplate.name == payload.name)
-        .first()
-    ):
+    if db.query(ChapterTemplate).filter(ChapterTemplate.name == payload.name).first():
         raise HTTPException(status_code=409, detail="Chapter template name already exists")
 
     template = ChapterTemplate(
@@ -67,9 +59,7 @@ def update_chapter_template(
     template_id: str, payload: ChapterTemplateUpdate, db: Session = Depends(get_db)
 ):
     """Update a user chapter template. Builtin templates are read-only (403)."""
-    template = (
-        db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
-    )
+    template = db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Chapter template not found")
     if template.is_builtin:
@@ -88,15 +78,11 @@ def update_chapter_template(
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_chapter_template(template_id: str, db: Session = Depends(get_db)):
     """Delete a user chapter template. Builtin templates return 403."""
-    template = (
-        db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
-    )
+    template = db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Chapter template not found")
     if template.is_builtin:
-        raise HTTPException(
-            status_code=403, detail="Builtin chapter templates cannot be deleted"
-        )
+        raise HTTPException(status_code=403, detail="Builtin chapter templates cannot be deleted")
 
     db.delete(template)
     db.commit()

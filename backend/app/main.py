@@ -39,6 +39,7 @@ CONFIG_EXAMPLE_PATH = BASE_DIR / "config" / "app.yaml.example"
 # Auto-create app.yaml from example on first startup
 if not CONFIG_PATH.exists() and CONFIG_EXAMPLE_PATH.exists():
     import shutil
+
     shutil.copy2(CONFIG_EXAMPLE_PATH, CONFIG_PATH)
     logging.getLogger(__name__).info("Created config/app.yaml from app.yaml.example")
 
@@ -62,7 +63,9 @@ def _load_app_config() -> dict[str, Any]:
 
 # Licensing reads at startup (licensing config doesn't change at runtime)
 _startup_config = _load_app_config()
-_license_secret = SECRET_KEY or _startup_config.get("licensing", {}).get("secret_key", "pluginforge-default-key")
+_license_secret = SECRET_KEY or _startup_config.get("licensing", {}).get(
+    "secret_key", "pluginforge-default-key"
+)
 _license_file = _startup_config.get("licensing", {}).get("store_path", "config/licenses.json")
 license_validator = LicenseValidator(_license_secret)
 license_store = LicenseStore(BASE_DIR / _license_file)
@@ -115,7 +118,9 @@ manager.register_hookspecs(BibliogonHookSpec)
 
 # Configure routes with manager and licensing
 licenses.configure(manager, license_validator, license_store)
-settings.configure(BASE_DIR, manager, license_store=license_store, license_validator=license_validator)
+settings.configure(
+    BASE_DIR, manager, license_store=license_store, license_validator=license_validator
+)
 plugin_install.configure(BASE_DIR, manager)
 
 
@@ -146,10 +151,12 @@ async def lifespan(app: FastAPI):
     init_db()
     # Auto-delete expired trash items on startup
     from app.routers.books import cleanup_expired_trash
+
     cleanup_expired_trash()
     # Seed voices if table is empty
     from app.database import SessionLocal
     from app.voice_store import sync_edge_tts_voices, voice_count
+
     _vs_db = SessionLocal()
     try:
         if voice_count(_vs_db) == 0:
@@ -158,6 +165,7 @@ async def lifespan(app: FastAPI):
         _vs_db.close()
     # Seed builtin book templates (idempotent)
     from app.data.builtin_templates import seed_builtin_templates
+
     _bt_db = SessionLocal()
     try:
         seed_builtin_templates(_bt_db)
@@ -165,6 +173,7 @@ async def lifespan(app: FastAPI):
         _bt_db.close()
     # Seed builtin chapter templates (idempotent)
     from app.data.builtin_chapter_templates import seed_builtin_chapter_templates
+
     _ct_db = SessionLocal()
     try:
         seed_builtin_chapter_templates(_ct_db)
@@ -227,9 +236,12 @@ from fastapi.responses import JSONResponse
 async def global_exception_handler(request: Request, exc: Exception):
     """Log all unhandled exceptions with full stacktrace."""
     import traceback
+
     logger.error(
         "Unhandled error: %s %s -> %s",
-        request.method, request.url.path, str(exc),
+        request.method,
+        request.url.path,
+        str(exc),
         exc_info=True,
     )
     detail: dict[str, Any] = {"detail": str(exc)}
@@ -245,6 +257,7 @@ def list_voices(engine: str = "edge-tts", language: str | None = None):
     """List TTS voices from the database (always available, no plugin needed)."""
     from app.database import SessionLocal
     from app.voice_store import get_voices
+
     db = SessionLocal()
     try:
         return get_voices(db, engine, language)
@@ -257,6 +270,7 @@ async def sync_voices():
     """Re-sync Edge TTS voices from the API into the database."""
     from app.database import SessionLocal
     from app.voice_store import sync_edge_tts_voices
+
     db = SessionLocal()
     try:
         count = await sync_edge_tts_voices(db)
@@ -278,6 +292,8 @@ def invalidate_plugin_status_cache() -> None:
     global _plugin_status_cache, _plugin_status_timestamp
     _plugin_status_cache = {}
     _plugin_status_timestamp = 0
+
+
 _PLUGIN_STATUS_TTL = 30  # seconds
 
 
@@ -334,6 +350,7 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
                 continue
             try:
                 from app.ai.llm_client import LLMClient
+
                 client = LLMClient(
                     base_url=ai_cfg.get("base_url", "http://localhost:1234/v1"),
                     api_key=ai_cfg.get("api_key", ""),

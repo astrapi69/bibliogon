@@ -55,7 +55,10 @@ def export_backup_archive(db: Session, include_audiobook: bool = False) -> tuple
 
 
 def _write_book_dir(
-    db: Session, book: Book, book_dir: Path, include_audiobook: bool = False,
+    db: Session,
+    book: Book,
+    book_dir: Path,
+    include_audiobook: bool = False,
 ) -> None:
     """Write one book.json + chapters/ + (optional) assets/audiobook/ to ``book_dir``."""
     book_dir.mkdir(parents=True)
@@ -108,12 +111,14 @@ def _write_assets(db: Session, book_id: str, book_dir: Path) -> None:
     assets_dir.mkdir()
     assets_meta = []
     for asset in assets:
-        assets_meta.append({
-            "id": asset.id,
-            "filename": asset.filename,
-            "asset_type": asset.asset_type,
-            "path": asset.path,
-        })
+        assets_meta.append(
+            {
+                "id": asset.id,
+                "filename": asset.filename,
+                "asset_type": asset.asset_type,
+                "path": asset.path,
+            }
+        )
         src = Path(asset.path)
         if src.exists():
             shutil.copy2(src, assets_dir / asset.filename)
@@ -121,13 +126,16 @@ def _write_assets(db: Session, book_id: str, book_dir: Path) -> None:
 
 
 def _write_manifest(backup_dir: Path, book_count: int, include_audiobook: bool = False) -> None:
-    _write_json(backup_dir / "manifest.json", {
-        "format": "bibliogon-backup",
-        "version": "1.0",
-        "created_at": datetime.now(UTC).isoformat(),
-        "book_count": book_count,
-        "includes_audiobook": include_audiobook,
-    })
+    _write_json(
+        backup_dir / "manifest.json",
+        {
+            "format": "bibliogon-backup",
+            "version": "1.0",
+            "created_at": datetime.now(UTC).isoformat(),
+            "book_count": book_count,
+            "includes_audiobook": include_audiobook,
+        },
+    )
 
 
 def _build_bgb_archive(backup_dir: Path) -> Path:

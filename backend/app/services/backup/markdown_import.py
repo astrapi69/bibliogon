@@ -26,13 +26,15 @@ def import_single_markdown(file: UploadFile, db: Session) -> dict[str, Any]:
     db.flush()
 
     sanitized = sanitize_import_markdown(content, book.language)
-    db.add(Chapter(
-        book_id=book.id,
-        title=title,
-        content=md_to_html(sanitized),
-        position=0,
-        chapter_type=ChapterType.CHAPTER.value,
-    ))
+    db.add(
+        Chapter(
+            book_id=book.id,
+            title=title,
+            content=md_to_html(sanitized),
+            position=0,
+            chapter_type=ChapterType.CHAPTER.value,
+        )
+    )
     db.commit()
     db.refresh(book)
 
@@ -54,7 +56,7 @@ def import_plain_markdown_zip(
         raise HTTPException(
             status_code=400,
             detail="Keine Markdown-Dateien im ZIP gefunden. "
-                   "Erwartet wird ein write-book-template Projekt oder eine Sammlung von .md Dateien.",
+            "Erwartet wird ein write-book-template Projekt oder eine Sammlung von .md Dateien.",
         )
 
     book_title = _derive_book_title(md_files, extracted)
@@ -65,13 +67,15 @@ def import_plain_markdown_zip(
     for position, md_file in enumerate(md_files):
         content = md_file.read_text(encoding="utf-8")
         sanitized = sanitize_import_markdown(content, book.language)
-        db.add(Chapter(
-            book_id=book.id,
-            title=extract_title(content, md_file.stem),
-            content=md_to_html(sanitized),
-            position=position,
-            chapter_type=ChapterType.CHAPTER.value,
-        ))
+        db.add(
+            Chapter(
+                book_id=book.id,
+                title=extract_title(content, md_file.stem),
+                content=md_to_html(sanitized),
+                position=position,
+                chapter_type=ChapterType.CHAPTER.value,
+            )
+        )
 
     db.commit()
     db.refresh(book)

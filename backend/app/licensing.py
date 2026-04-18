@@ -149,9 +149,7 @@ class LicenseValidator:
 
         # Check plugin match
         if not payload.matches_plugin(plugin_name):
-            raise LicenseError(
-                f"License is for plugin '{payload.plugin}', not '{plugin_name}'"
-            )
+            raise LicenseError(f"License is for plugin '{payload.plugin}', not '{plugin_name}'")
 
         # Check expiry
         if payload.is_expired:
@@ -161,8 +159,7 @@ class LicenseValidator:
         warning: str | None = None
         if author_name and payload.author and not payload.matches_author(author_name):
             warning = (
-                f"License issued for '{payload.author}', "
-                f"but author profile shows '{author_name}'"
+                f"License issued for '{payload.author}', but author profile shows '{author_name}'"
             )
 
         return payload, warning

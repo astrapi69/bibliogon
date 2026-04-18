@@ -58,7 +58,7 @@ def _validate_bgb_filename(filename: str | None) -> None:
         raise HTTPException(
             status_code=400,
             detail="Das ist eine ZIP-Datei. Fuer Projekt-Import nutze den 'Import'-Button. "
-                   "Fuer Backup-Restore wird eine .bgb-Datei erwartet (erstellt ueber 'Backup').",
+            "Fuer Backup-Restore wird eine .bgb-Datei erwartet (erstellt ueber 'Backup').",
         )
     raise HTTPException(
         status_code=400,
@@ -98,7 +98,7 @@ def _require_books_dir(extracted: Path) -> Path:
         raise HTTPException(
             status_code=400,
             detail="Ungueltige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
-                   "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button.",
+            "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button.",
         )
     return books_dir
 
@@ -134,14 +134,16 @@ def _restore_chapters(db: Session, chapters_dir: Path, book_id: str) -> None:
         return
     for ch_file in sorted(chapters_dir.glob("*.json")):
         ch_data = json.loads(ch_file.read_text(encoding="utf-8"))
-        db.add(Chapter(
-            id=ch_data["id"],
-            book_id=book_id,
-            title=ch_data["title"],
-            content=ch_data.get("content", ""),
-            position=ch_data.get("position", 0),
-            chapter_type=ch_data.get("chapter_type", ChapterType.CHAPTER.value),
-        ))
+        db.add(
+            Chapter(
+                id=ch_data["id"],
+                book_id=book_id,
+                title=ch_data["title"],
+                content=ch_data.get("content", ""),
+                position=ch_data.get("position", 0),
+                chapter_type=ch_data.get("chapter_type", ChapterType.CHAPTER.value),
+            )
+        )
 
 
 def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
@@ -164,9 +166,11 @@ def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
         if src_file.exists():
             shutil.copy2(src_file, dest_path)
 
-        db.add(Asset(
-            book_id=book_id,
-            filename=meta["filename"],
-            asset_type=asset_type,
-            path=str(dest_path),
-        ))
+        db.add(
+            Asset(
+                book_id=book_id,
+                filename=meta["filename"],
+                asset_type=asset_type,
+                path=str(dest_path),
+            )
+        )

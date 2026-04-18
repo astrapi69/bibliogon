@@ -9,6 +9,7 @@ Content strings are TipTap JSON documents. English-only in the
 DB; the frontend displays them verbatim, matching the book-
 template pattern.
 """
+
 from __future__ import annotations
 
 import json
@@ -86,18 +87,24 @@ _INTERVIEW: _ChapterTemplateSpec = {
     "name": "Interview",
     "description": "Structured interview with intro, questions, and closing",
     "chapter_type": "chapter",
-    "content": _doc([
-        _heading(2, "Introduction"),
-        _paragraph("Brief introduction of the interviewee and the context of the conversation."),
-        _heading(2, "Questions"),
-        _ordered_list([
-            "First question...",
-            "Second question...",
-            "Third question...",
-        ]),
-        _heading(2, "Closing"),
-        _paragraph("Closing thoughts and thanks."),
-    ]),
+    "content": _doc(
+        [
+            _heading(2, "Introduction"),
+            _paragraph(
+                "Brief introduction of the interviewee and the context of the conversation."
+            ),
+            _heading(2, "Questions"),
+            _ordered_list(
+                [
+                    "First question...",
+                    "Second question...",
+                    "Third question...",
+                ]
+            ),
+            _heading(2, "Closing"),
+            _paragraph("Closing thoughts and thanks."),
+        ]
+    ),
 }
 
 
@@ -105,14 +112,16 @@ _FAQ: _ChapterTemplateSpec = {
     "name": "FAQ",
     "description": "Frequently asked questions in Q&A format",
     "chapter_type": "chapter",
-    "content": _doc([
-        _heading(3, "Question 1?"),
-        _paragraph("Answer to the first question."),
-        _heading(3, "Question 2?"),
-        _paragraph("Answer to the second question."),
-        _heading(3, "Question 3?"),
-        _paragraph("Answer to the third question."),
-    ]),
+    "content": _doc(
+        [
+            _heading(3, "Question 1?"),
+            _paragraph("Answer to the first question."),
+            _heading(3, "Question 2?"),
+            _paragraph("Answer to the second question."),
+            _heading(3, "Question 3?"),
+            _paragraph("Answer to the third question."),
+        ]
+    ),
 }
 
 
@@ -120,22 +129,28 @@ _RECIPE: _ChapterTemplateSpec = {
     "name": "Recipe",
     "description": "Recipe with ingredients, preparation, and notes",
     "chapter_type": "chapter",
-    "content": _doc([
-        _heading(2, "Ingredients"),
-        _bullet_list([
-            "Ingredient 1",
-            "Ingredient 2",
-            "Ingredient 3",
-        ]),
-        _heading(2, "Preparation"),
-        _ordered_list([
-            "First step...",
-            "Second step...",
-            "Third step...",
-        ]),
-        _heading(2, "Notes"),
-        _paragraph("Tips, variations, or serving suggestions."),
-    ]),
+    "content": _doc(
+        [
+            _heading(2, "Ingredients"),
+            _bullet_list(
+                [
+                    "Ingredient 1",
+                    "Ingredient 2",
+                    "Ingredient 3",
+                ]
+            ),
+            _heading(2, "Preparation"),
+            _ordered_list(
+                [
+                    "First step...",
+                    "Second step...",
+                    "Third step...",
+                ]
+            ),
+            _heading(2, "Notes"),
+            _paragraph("Tips, variations, or serving suggestions."),
+        ]
+    ),
 }
 
 
@@ -143,15 +158,17 @@ _PHOTO_REPORT: _ChapterTemplateSpec = {
     "name": "Photo Report",
     "description": "Visual reportage with image placeholders and captions",
     "chapter_type": "chapter",
-    "content": _doc([
-        _heading(2, "Location"),
-        _paragraph("Where and when this scene was captured."),
-        _heading(2, "Impressions"),
-        _empty_paragraph(),
-        _paragraph("Describe the atmosphere, the people, the light."),
-        _heading(2, "Reflection"),
-        _paragraph("What you take away from this visit."),
-    ]),
+    "content": _doc(
+        [
+            _heading(2, "Location"),
+            _paragraph("Where and when this scene was captured."),
+            _heading(2, "Impressions"),
+            _empty_paragraph(),
+            _paragraph("Describe the atmosphere, the people, the light."),
+            _heading(2, "Reflection"),
+            _paragraph("What you take away from this visit."),
+        ]
+    ),
 }
 
 
@@ -168,11 +185,7 @@ def seed_builtin_chapter_templates(db: Session) -> int:
 
     Returns the number inserted. Idempotent.
     """
-    existing = (
-        db.query(ChapterTemplate)
-        .filter(ChapterTemplate.is_builtin.is_(True))
-        .count()
-    )
+    existing = db.query(ChapterTemplate).filter(ChapterTemplate.is_builtin.is_(True)).count()
     if existing > 0:
         return 0
 
@@ -189,7 +202,5 @@ def seed_builtin_chapter_templates(db: Session) -> int:
         )
 
     db.commit()
-    logger.info(
-        "Seeded %d builtin chapter templates", len(BUILTIN_CHAPTER_TEMPLATES)
-    )
+    logger.info("Seeded %d builtin chapter templates", len(BUILTIN_CHAPTER_TEMPLATES))
     return len(BUILTIN_CHAPTER_TEMPLATES)

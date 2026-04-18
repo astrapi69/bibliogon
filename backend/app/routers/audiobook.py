@@ -53,8 +53,14 @@ ELEVENLABS_USER_ENDPOINT = "https://api.elevenlabs.io/v1/user"
 # (also_by_author, excerpt, call_to_action) is skipped here as well so
 # the dry-run cost estimate matches the real export.
 DEFAULT_AUDIOBOOK_SKIP_TYPES: set[str] = {
-    "toc", "imprint", "index", "bibliography", "endnotes",
-    "also_by_author", "excerpt", "call_to_action",
+    "toc",
+    "imprint",
+    "index",
+    "bibliography",
+    "endnotes",
+    "also_by_author",
+    "excerpt",
+    "call_to_action",
 }
 
 
@@ -141,6 +147,7 @@ def _get_engine_key() -> str:
     """
     try:
         from bibliogon_audiobook.tts_engine import get_elevenlabs_api_key
+
         key = get_elevenlabs_api_key()
         if key:
             return str(key)
@@ -151,6 +158,7 @@ def _get_engine_key() -> str:
     if credential_store.is_configured(ELEVENLABS_CRED_FILENAME):
         try:
             import json as _json
+
             raw = credential_store.load_decrypted(ELEVENLABS_CRED_FILENAME)
             return str(_json.loads(raw).get("api_key", "") or "")
         except Exception:
@@ -191,7 +199,9 @@ def _verify_elevenlabs_key(api_key: str) -> dict[str, Any]:
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"ElevenLabs unreachable: {e}") from e
     if response.status_code == 401:
-        raise HTTPException(status_code=400, detail="ElevenLabs rejected the API key (401 Unauthorized).")
+        raise HTTPException(
+            status_code=400, detail="ElevenLabs rejected the API key (401 Unauthorized)."
+        )
     if response.status_code >= 400:
         raise HTTPException(
             status_code=502,
@@ -226,6 +236,7 @@ def set_elevenlabs_config(req: ElevenLabsKeyRequest) -> dict[str, Any]:
 
     import json as _json
     import os
+
     if os.environ.get("BIBLIOGON_CREDENTIALS_SECRET"):
         credential_store.save_encrypted(
             _json.dumps({"api_key": req.api_key}).encode(),
@@ -291,6 +302,7 @@ def _seed_google_voices_sync(credentials_path: Path) -> None:
     db = SessionLocal()
     try:
         from manuscripta.audiobook.tts import create_adapter
+
         adapter = create_adapter(
             "google-cloud-tts",
             credentials_path=str(credentials_path),
@@ -301,14 +313,16 @@ def _seed_google_voices_sync(credentials_path: Path) -> None:
 
         db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
         for v in voices:
-            db.add(AudioVoice(
-                engine=v.engine,
-                language=v.language,
-                voice_id=v.voice_id,
-                display_name=v.display_name,
-                gender=v.gender,
-                quality=getattr(v, "quality", "standard"),
-            ))
+            db.add(
+                AudioVoice(
+                    engine=v.engine,
+                    language=v.language,
+                    voice_id=v.voice_id,
+                    display_name=v.display_name,
+                    gender=v.gender,
+                    quality=getattr(v, "quality", "standard"),
+                )
+            )
         db.commit()
         _seeding_status["google-cloud-tts"] = {"done": True, "error": None, "count": len(voices)}
         logger.info("Seeded %d Google Cloud TTS voices", len(voices))
@@ -342,7 +356,9 @@ async def upload_google_credentials(
 
     raw = await file.read()
     if len(raw) > MAX_CREDENTIALS_SIZE:
-        raise HTTPException(status_code=400, detail=f"File too large (max {MAX_CREDENTIALS_SIZE // 1024} KB).")
+        raise HTTPException(
+            status_code=400, detail=f"File too large (max {MAX_CREDENTIALS_SIZE // 1024} KB)."
+        )
 
     try:
         credential_store.validate_service_account_json(raw)
@@ -394,6 +410,7 @@ def test_google_credentials() -> dict[str, Any]:
     tmp_path = credential_store.load_to_tempfile()
     try:
         from manuscripta.audiobook.tts import create_adapter
+
         adapter = create_adapter(
             "google-cloud-tts",
             credentials_path=str(tmp_path),
@@ -441,12 +458,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    chapters = (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
     if not chapters:
         raise HTTPException(status_code=400, detail="Book has no chapters")
 
@@ -463,6 +475,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
             continue
         try:
             from bibliogon_audiobook.generator import extract_plain_text
+
             full_text = extract_plain_text(ch.content)
         except ImportError:
             full_text = ch.content if isinstance(ch.content, str) else ""
@@ -486,6 +499,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
         raise HTTPException(status_code=500, detail="Audiobook plugin not available") from e
 
     import tempfile as _tmpmod
+
     tmp_dir = Path(_tmpmod.mkdtemp(prefix="bibliogon_dryrun_"))
     output_path = tmp_dir / "dry-run-sample.mp3"
 
@@ -509,6 +523,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     try:
         from bibliogon_audiobook.generator import extract_plain_text
         from manuscripta.audiobook.tts import create_adapter
+
         adapter = create_adapter(engine_id, lang=language, voice=voice or "default")
         total_cost = 0.0
         for ch in chapters:
@@ -550,6 +565,7 @@ def _storage():
     sys.path - which currently only happens in odd test setups.
     """
     from bibliogon_audiobook import audiobook_storage
+
     return audiobook_storage
 
 
@@ -625,6 +641,7 @@ def classify_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict
     """
     book = _verify_book_exists(book_id, db)
     from app.models import Chapter as ChapterModel
+
     chapters = (
         db.query(ChapterModel)
         .filter(ChapterModel.book_id == book_id)
@@ -658,7 +675,9 @@ def classify_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict
             "chapter_id": ch.id,
             "title": ch.title,
             "position": ch.position,
-            "chapter_type": ch.chapter_type.value if hasattr(ch.chapter_type, "value") else str(ch.chapter_type or "chapter"),
+            "chapter_type": ch.chapter_type.value
+            if hasattr(ch.chapter_type, "value")
+            else str(ch.chapter_type or "chapter"),
         }
         expected_filename = f"{idx:03d}-{_slugify(ch.title)}.mp3"
         mp3_path = chapters_dir / expected_filename
@@ -703,7 +722,9 @@ def download_book_audiobook_merged(book_id: str, db: Session = Depends(get_db)) 
 
 @router.delete("/books/{book_id}/audiobook/chapters/{filename}", status_code=204)
 def delete_book_audiobook_chapter(
-    book_id: str, filename: str, db: Session = Depends(get_db),
+    book_id: str,
+    filename: str,
+    db: Session = Depends(get_db),
 ) -> None:
     """Delete a single chapter MP3 from the persisted audiobook."""
     _verify_book_exists(book_id, db)
@@ -720,7 +741,9 @@ def delete_book_audiobook_chapter(
 
 @router.get("/books/{book_id}/audiobook/chapters/{filename}")
 def download_book_audiobook_chapter(
-    book_id: str, filename: str, db: Session = Depends(get_db),
+    book_id: str,
+    filename: str,
+    db: Session = Depends(get_db),
 ) -> FileResponse:
     """Download a single chapter MP3 from the persisted audiobook."""
     _verify_book_exists(book_id, db)
@@ -779,17 +802,21 @@ def list_book_previews(book_id: str, db: Session = Depends(get_db)) -> list[dict
     result = []
     for f in sorted(previews.iterdir()):
         if f.suffix == ".mp3":
-            result.append({
-                "filename": f.name,
-                "size_bytes": f.stat().st_size,
-                "url": f"/api/books/{book_id}/audiobook/previews/{f.name}",
-            })
+            result.append(
+                {
+                    "filename": f.name,
+                    "size_bytes": f.stat().st_size,
+                    "url": f"/api/books/{book_id}/audiobook/previews/{f.name}",
+                }
+            )
     return result
 
 
 @router.get("/books/{book_id}/audiobook/previews/{filename}")
 def download_book_preview(
-    book_id: str, filename: str, db: Session = Depends(get_db),
+    book_id: str,
+    filename: str,
+    db: Session = Depends(get_db),
 ) -> FileResponse:
     """Download a single preview MP3."""
     _verify_book_exists(book_id, db)
@@ -806,7 +833,9 @@ def download_book_preview(
 
 @router.delete("/books/{book_id}/audiobook/previews/{filename}", status_code=204)
 def delete_book_preview(
-    book_id: str, filename: str, db: Session = Depends(get_db),
+    book_id: str,
+    filename: str,
+    db: Session = Depends(get_db),
 ) -> None:
     """Delete a single preview MP3."""
     _verify_book_exists(book_id, db)
@@ -828,4 +857,5 @@ def delete_all_book_previews(book_id: str, db: Session = Depends(get_db)) -> Non
     previews = _previews_dir(book_id)
     if previews.exists():
         import shutil as _shutil
+
         _shutil.rmtree(previews)

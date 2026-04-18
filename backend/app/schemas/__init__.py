@@ -120,6 +120,7 @@ class BookUpdate(BaseModel):
             seen.add(key)
             cleaned.append(text)
         return cleaned
+
     # Audiobook / TTS settings
     tts_engine: str | None = None
     tts_voice: str | None = None
@@ -142,6 +143,7 @@ class BookFromTemplateCreate(BaseModel):
     optional: when omitted the server falls back to the template's
     description.
     """
+
     template_id: str
     title: str
     author: str
@@ -243,6 +245,7 @@ class ChapterUpdate(BaseModel):
     on the server. Mismatch -> 409 with the current server state so the
     frontend can offer conflict resolution.
     """
+
     version: int
     title: str | None = None
     content: str | None = None
@@ -252,6 +255,7 @@ class ChapterUpdate(BaseModel):
 
 class ChapterSummary(BaseModel):
     """Chapter metadata without content (for book detail listings)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -278,6 +282,7 @@ class ChapterOut(BaseModel):
 
 class ChapterVersionSummary(BaseModel):
     """Version metadata for the list view (no content)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -289,11 +294,13 @@ class ChapterVersionSummary(BaseModel):
 
 class ChapterVersionRead(ChapterVersionSummary):
     """Full version with content (for preview and restore)."""
+
     content: str
 
 
 class ChapterReorder(BaseModel):
     """List of chapter IDs in the desired order."""
+
     chapter_ids: list[str]
 
 
@@ -333,7 +340,9 @@ class BookTemplateCreate(BaseModel):
 
     @field_validator("chapters")
     @classmethod
-    def _require_chapters(cls, value: list[BookTemplateChapterSchema]) -> list[BookTemplateChapterSchema]:
+    def _require_chapters(
+        cls, value: list[BookTemplateChapterSchema]
+    ) -> list[BookTemplateChapterSchema]:
         if not value:
             raise ValueError("chapters must not be empty")
         return value

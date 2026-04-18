@@ -37,7 +37,7 @@ def _validate_plugin_name(name: str) -> None:
         raise HTTPException(
             status_code=400,
             detail=f"Ungültiger Plugin-Name: '{name}'. "
-                   "Erlaubt: Kleinbuchstaben, Ziffern, Bindestriche, Unterstriche (3-50 Zeichen).",
+            "Erlaubt: Kleinbuchstaben, Ziffern, Bindestriche, Unterstriche (3-50 Zeichen).",
         )
 
 
@@ -71,11 +71,14 @@ async def install_plugin(file: UploadFile) -> dict[str, Any]:
     return {
         "plugin": plugin_name,
         "version": plugin_config.get("plugin", {}).get("version", "unknown"),
-        "package": package_name, "installed_path": str(install_path),
-        "registered": registered, "error": error_msg or None,
+        "package": package_name,
+        "installed_path": str(install_path),
+        "registered": registered,
+        "error": error_msg or None,
         "status": "installed" if registered else "installed_pending_restart",
         "message": (
-            f"Plugin '{plugin_name}' installiert und aktiviert." if registered
+            f"Plugin '{plugin_name}' installiert und aktiviert."
+            if registered
             else f"Plugin '{plugin_name}' installiert. Neustart erforderlich."
             + (f" Fehler: {error_msg}" if error_msg else "")
         ),
@@ -104,7 +107,8 @@ def _validate_plugin_zip(zf: zipfile.ZipFile) -> tuple[str, str, dict]:
     _validate_plugin_name(plugin_name)
 
     packages = [
-        n.split("/")[1] for n in zf.namelist()
+        n.split("/")[1]
+        for n in zf.namelist()
         if n.count("/") == 2 and n.endswith("__init__.py") and n.startswith(plugin_dir + "/")
     ]
     if not packages:
@@ -150,9 +154,15 @@ def _register_plugin(plugin_name: str, package_name: str, plugin_config: dict) -
     try:
         module = importlib.import_module(f"{package_name}.plugin")
         from pluginforge import BasePlugin
+
         plugin_class = next(
-            (getattr(module, a) for a in dir(module)
-             if isinstance(getattr(module, a), type) and issubclass(getattr(module, a), BasePlugin) and getattr(module, a) is not BasePlugin),
+            (
+                getattr(module, a)
+                for a in dir(module)
+                if isinstance(getattr(module, a), type)
+                and issubclass(getattr(module, a), BasePlugin)
+                and getattr(module, a) is not BasePlugin
+            ),
             None,
         )
         if not plugin_class:
@@ -243,20 +253,23 @@ def list_installed_plugins() -> list[dict[str, Any]]:
         if _manager:
             active_names = {p.name for p in _manager.get_active_plugins()}
 
-        result.append({
-            "name": meta.get("name", plugin_dir.name),
-            "display_name": meta.get("display_name", plugin_dir.name),
-            "description": meta.get("description", ""),
-            "version": meta.get("version", "unknown"),
-            "license": meta.get("license", "unknown"),
-            "active": meta.get("name", plugin_dir.name) in active_names,
-            "path": str(plugin_dir),
-        })
+        result.append(
+            {
+                "name": meta.get("name", plugin_dir.name),
+                "display_name": meta.get("display_name", plugin_dir.name),
+                "description": meta.get("description", ""),
+                "version": meta.get("version", "unknown"),
+                "license": meta.get("license", "unknown"),
+                "active": meta.get("name", plugin_dir.name) in active_names,
+                "path": str(plugin_dir),
+            }
+        )
 
     return result
 
 
 # --- Helpers ---
+
 
 def _read_yaml(path: Path) -> dict[str, Any]:
     data = read_yaml_roundtrip(path)

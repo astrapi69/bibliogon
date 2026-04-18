@@ -5,6 +5,7 @@ For user-facing config files (plugin settings, app.yaml) that may contain
 ``# INTERNAL`` markers per the architecture rules, we use ruamel.yaml in
 round-trip mode so comments and formatting survive a save through the UI.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

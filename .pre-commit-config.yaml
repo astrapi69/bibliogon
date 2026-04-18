@@ -1,0 +1,32 @@
+# Pre-commit hooks. Installed by contributors with:
+#
+#     cd backend && poetry run pre-commit install
+#
+# Run manually on every tracked file:
+#
+#     poetry run pre-commit run --all-files
+#
+# Each `rev` is pinned to a stable release. Do NOT use `main` or
+# branch names - that would silently pull hook updates on every
+# auto-fetch.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.11
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/app/
+      - id: ruff-format
+        files: ^backend/app/

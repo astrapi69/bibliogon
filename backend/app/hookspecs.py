@@ -24,7 +24,9 @@ class BibliogonHookSpec:
         ...
 
     @hookspec(firstresult=True)
-    def export_execute(self, book: dict[str, Any], fmt: str, options: dict[str, Any]) -> Path | None:
+    def export_execute(
+        self, book: dict[str, Any], fmt: str, options: dict[str, Any]
+    ) -> Path | None:
         """Execute an export. First plugin to return a result wins.
 
         Args:

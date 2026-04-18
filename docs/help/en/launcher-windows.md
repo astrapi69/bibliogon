@@ -71,16 +71,16 @@ Double-click the launcher again. If Bibliogon is already running (for example be
 
 ## Troubleshooting
 
-**"Docker Desktop is not running"**  
+**"Docker Desktop is not running"**
 Open Docker Desktop from the Start menu. Wait until the whale icon in the taskbar is steady (not animating). Then click Retry in the launcher dialog.
 
-**"Bibliogon install not found"**  
+**"Bibliogon install not found"**
 The launcher cannot find `docker-compose.prod.yml` at the default or configured path. Click OK, then pick the folder where you cloned or unzipped Bibliogon. That folder typically contains `README.md`, `Makefile`, and the `docker-compose.prod.yml` file.
 
-**"Port 7880 is in use"**  
+**"Port 7880 is in use"**
 Another program is already using the Bibliogon port. Options: stop the other program, or edit `.env` in your Bibliogon folder and set `BIBLIOGON_PORT` to a different value (for example `7881`), then start the launcher again.
 
-**"Bibliogon did not start in time"**  
+**"Bibliogon did not start in time"**
 The first start of a fresh install needs to build Docker images, which can take several minutes. Click Retry to wait another 60 seconds. If it still fails, check the last log lines in the dialog and open Docker Desktop's container view to see what happened.
 
 **Activity log**

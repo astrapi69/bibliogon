@@ -63,11 +63,7 @@ def upload_asset(
 @router.get("/{asset_id}/file")
 def serve_asset(book_id: str, asset_id: str, db: Session = Depends(get_db)):
     """Serve an asset file by ID."""
-    asset = (
-        db.query(Asset)
-        .filter(Asset.id == asset_id, Asset.book_id == book_id)
-        .first()
-    )
+    asset = db.query(Asset).filter(Asset.id == asset_id, Asset.book_id == book_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     file_path = Path(asset.path)
@@ -79,11 +75,7 @@ def serve_asset(book_id: str, asset_id: str, db: Session = Depends(get_db)):
 @router.get("/file/{filename}")
 def serve_asset_by_name(book_id: str, filename: str, db: Session = Depends(get_db)):
     """Serve an asset file by filename (used by img tags in editor)."""
-    asset = (
-        db.query(Asset)
-        .filter(Asset.book_id == book_id, Asset.filename == filename)
-        .first()
-    )
+    asset = db.query(Asset).filter(Asset.book_id == book_id, Asset.filename == filename).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     file_path = Path(asset.path)
@@ -94,11 +86,7 @@ def serve_asset_by_name(book_id: str, filename: str, db: Session = Depends(get_d
 
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_asset(book_id: str, asset_id: str, db: Session = Depends(get_db)):
-    asset = (
-        db.query(Asset)
-        .filter(Asset.id == asset_id, Asset.book_id == book_id)
-        .first()
-    )
+    asset = db.query(Asset).filter(Asset.id == asset_id, Asset.book_id == book_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 

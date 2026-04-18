@@ -65,9 +65,7 @@ def create_template(payload: BookTemplateCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{template_id}", response_model=BookTemplateRead)
-def update_template(
-    template_id: str, payload: BookTemplateUpdate, db: Session = Depends(get_db)
-):
+def update_template(template_id: str, payload: BookTemplateUpdate, db: Session = Depends(get_db)):
     """Update a user template. Builtin templates are read-only (403)."""
     template = db.query(BookTemplate).filter(BookTemplate.id == template_id).first()
     if not template:

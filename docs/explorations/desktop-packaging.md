@@ -1,6 +1,6 @@
 # Desktop Packaging Exploration
 
-Status: Exploration, not decided.  
+Status: Exploration, not decided.
 Last updated: 2026-04-12
 
 ## Context
@@ -9,12 +9,12 @@ Bibliogon currently ships as:
 - Docker container (primary distribution)
 - Source (clone + manual setup)
 
-Both require technical knowledge. The Medium article acknowledged 
-this directly: "Docker-Installation und Plugin-Verwaltung erfordern 
-Grundverstaendnis". This is a real barrier for the self-publishing 
+Both require technical knowledge. The Medium article acknowledged
+this directly: "Docker-Installation und Plugin-Verwaltung erfordern
+Grundverstaendnis". This is a real barrier for the self-publishing
 target audience, who are writers, not developers.
 
-A desktop app distribution would lower the barrier significantly. 
+A desktop app distribution would lower the barrier significantly.
 This document explores the options without committing to any.
 
 ---
@@ -23,7 +23,7 @@ This document explores the options without committing to any.
 
 ### 1. Electron
 
-Chromium + Node.js bundled as a desktop app. Mature, widely used 
+Chromium + Node.js bundled as a desktop app. Mature, widely used
 (VS Code, Slack, Discord, Obsidian).
 
 **Pros:**
@@ -33,10 +33,10 @@ Chromium + Node.js bundled as a desktop app. Mature, widely used
 - Well-understood distribution model
 
 **Cons:**
-- Large binary size: 100-150 MB base + 50 MB Python runtime + 
+- Large binary size: 100-150 MB base + 50 MB Python runtime +
   Pandoc binary. Per platform.
-- Python bundling is non-trivial. Need pyinstaller for backend 
-  binary, handle native deps (SQLite, Pillow), manage Pandoc as 
+- Python bundling is non-trivial. Need pyinstaller for backend
+  binary, handle native deps (SQLite, Pillow), manage Pandoc as
   external binary.
 - Three platform builds per release (Mac, Windows, Linux)
 - Apple Notarization requires paid Developer account
@@ -47,7 +47,7 @@ Chromium + Node.js bundled as a desktop app. Mature, widely used
 
 ### 2. Tauri
 
-Rust-based alternative to Electron. Uses native OS WebView instead 
+Rust-based alternative to Electron. Uses native OS WebView instead
 of bundling Chromium.
 
 **Pros:**
@@ -60,11 +60,11 @@ of bundling Chromium.
 **Cons:**
 - Less mature than Electron (but production-ready)
 - Rust knowledge needed for Tauri-side code, though minimal
-- Different WebViews on different OSes can show subtle rendering 
+- Different WebViews on different OSes can show subtle rendering
   differences
 - Smaller community than Electron
 
-**Realistic effort:** 1-2 weeks for a prototype, 2-3 weeks for 
+**Realistic effort:** 1-2 weeks for a prototype, 2-3 weeks for
 production-ready.
 
 ### 3. Neutralino.js
@@ -81,7 +81,7 @@ Lighter than Tauri. Uses system WebView, bundles almost nothing.
 - Smaller community
 - Fewer features out of the box (no built-in auto-update)
 
-**Realistic effort:** Similar to Tauri, but with more DIY work 
+**Realistic effort:** Similar to Tauri, but with more DIY work
 for features that Electron/Tauri provide.
 
 ### 4. PyWebView
@@ -96,7 +96,7 @@ Python-native solution. Wraps a system WebView in a Python process.
 **Cons:**
 - Less polished than Electron/Tauri for end-user distribution
 - Fewer advanced features (auto-update needs custom work)
-- Bundling Python+FastAPI for distribution has same challenges 
+- Bundling Python+FastAPI for distribution has same challenges
   as Electron
 
 **Realistic effort:** 1 week for a basic version.
@@ -160,30 +160,30 @@ Packaged as a platform-specific binary (pyinstaller for Windows/Mac/Linux).
 ## Recommendation path
 
 ### Immediate (next sessions)
-**Do nothing on desktop packaging.** Current focus is coverage and 
+**Do nothing on desktop packaging.** Current focus is coverage and
 stability. Desktop packaging is a distraction right now.
 
 ### Short-term (post v0.14.0 or v0.15.0)
-**Build the Simple Launcher.** Two-to-three day investment that 
-immediately solves 70% of the UX problem for non-technical users. 
-Docker still required but runs invisibly. Users get "click icon, 
+**Build the Simple Launcher.** Two-to-three day investment that
+immediately solves 70% of the UX problem for non-technical users.
+Docker still required but runs invisibly. Users get "click icon,
 use app" experience.
 
 ### Medium-term (post v0.20.0 or when a real user base demands it)
-**Tauri prototype.** If the launcher approach is insufficient and 
-users are asking for a "real" desktop app, evaluate Tauri as the 
-path. Weekend prototype first. If the prototype works, plan a 
+**Tauri prototype.** If the launcher approach is insufficient and
+users are asking for a "real" desktop app, evaluate Tauri as the
+path. Weekend prototype first. If the prototype works, plan a
 multi-week focused effort.
 
 ### Long-term (v1.0.0 target?)
-**Production Tauri distribution.** If Tauri prototype validates 
-the approach, invest in signed builds for all three platforms, 
-auto-update infrastructure, and distribution channels (direct 
+**Production Tauri distribution.** If Tauri prototype validates
+the approach, invest in signed builds for all three platforms,
+auto-update infrastructure, and distribution channels (direct
 download, possibly package managers like winget/homebrew).
 
 ### Not recommended at any point
-**Electron.** The size penalty alone is disqualifying for a 
-writing tool that should feel lightweight. Tauri covers the same 
+**Electron.** The size penalty alone is disqualifying for a
+writing tool that should feel lightweight. Tauri covers the same
 use cases with 10% of the binary size and better security.
 
 ---
@@ -192,25 +192,25 @@ use cases with 10% of the binary size and better security.
 
 Before committing to any desktop path, answer these:
 
-1. **Is there actual user demand?** Not assumed, measured. Does 
-   feedback from the Medium article mention Docker as a barrier? 
+1. **Is there actual user demand?** Not assumed, measured. Does
+   feedback from the Medium article mention Docker as a barrier?
    Do beta testers request a desktop app specifically?
 
-2. **What's the distribution channel?** Direct download from a 
-   website? Package managers? App stores (Mac App Store has strict 
+2. **What's the distribution channel?** Direct download from a
+   website? Package managers? App stores (Mac App Store has strict
    sandboxing that might conflict with Pandoc usage)?
 
-3. **Who handles Apple Notarization and Windows code signing?** 
-   Both cost money and require ongoing maintenance. Who has the 
+3. **Who handles Apple Notarization and Windows code signing?**
+   Both cost money and require ongoing maintenance. Who has the
    Developer accounts?
 
-4. **Update frequency?** Desktop apps need auto-updates or users 
-   get stuck on old versions. What's the acceptable frequency 
+4. **Update frequency?** Desktop apps need auto-updates or users
+   get stuck on old versions. What's the acceptable frequency
    (monthly, per release, per patch)?
 
-5. **Does Bibliogon stay offline-first with a desktop app?** Some 
-   auto-update mechanisms require server communication that 
-   contradicts the offline-first principle. Need a design that 
+5. **Does Bibliogon stay offline-first with a desktop app?** Some
+   auto-update mechanisms require server communication that
+   contradicts the offline-first principle. Need a design that
    respects this.
 
 ---
@@ -219,15 +219,15 @@ Before committing to any desktop path, answer these:
 
 Re-evaluate this document when:
 
-- Bibliogon has 100+ active users and 10%+ of feedback mentions 
+- Bibliogon has 100+ active users and 10%+ of feedback mentions
   installation difficulty
-- A specific publishing event (major release, press coverage) 
+- A specific publishing event (major release, press coverage)
   would benefit from desktop-app-as-primary-distribution
-- Tauri ecosystem reaches a maturity milestone (e.g., Tauri 2.0 
+- Tauri ecosystem reaches a maturity milestone (e.g., Tauri 2.0
   stable with sidecar Python well-documented)
 - Contributor offers to handle the desktop build process
 
-Without one of these triggers, staying on Docker-plus-Launcher is 
+Without one of these triggers, staying on Docker-plus-Launcher is
 the right decision.
 
 ---

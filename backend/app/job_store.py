@@ -104,10 +104,12 @@ class JobStore:
             job.error = error
         if status in TERMINAL_STATUSES:
             job.completed_at = time.time()
-            job.events.append({
-                "type": "stream_end",
-                "data": {"status": status.value, "error": error},
-            })
+            job.events.append(
+                {
+                    "type": "stream_end",
+                    "data": {"status": status.value, "error": error},
+                }
+            )
             self._wake_subscribers(job)
 
     def submit(
@@ -242,16 +244,21 @@ class JobStore:
         elif event_type == "chapter_start":
             job.progress["current_title"] = data.get("title", "")
         elif event_type == "chapter_done" or event_type == "chapter_skipped":
-            job.progress["current_chapter"] = data.get("index", job.progress.get("current_chapter", 0))
+            job.progress["current_chapter"] = data.get(
+                "index", job.progress.get("current_chapter", 0)
+            )
         elif event_type == "chapter_error":
-            job.progress["current_chapter"] = data.get("index", job.progress.get("current_chapter", 0))
+            job.progress["current_chapter"] = data.get(
+                "index", job.progress.get("current_chapter", 0)
+            )
             job.progress["errors"] = job.progress.get("errors", 0) + 1
 
     def _cleanup_expired(self) -> None:
         """Remove completed/failed jobs older than TTL."""
         now = time.time()
         expired = [
-            jid for jid, job in self._jobs.items()
+            jid
+            for jid, job in self._jobs.items()
             if job.completed_at and (now - job.completed_at) > self._ttl
         ]
         for jid in expired:

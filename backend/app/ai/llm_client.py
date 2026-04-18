@@ -207,8 +207,7 @@ class LLMClient:
             "prompt_tokens": anthropic_usage.get("input_tokens", 0),
             "completion_tokens": anthropic_usage.get("output_tokens", 0),
             "total_tokens": (
-                anthropic_usage.get("input_tokens", 0)
-                + anthropic_usage.get("output_tokens", 0)
+                anthropic_usage.get("input_tokens", 0) + anthropic_usage.get("output_tokens", 0)
             ),
         }
 
@@ -367,7 +366,10 @@ class LLMClient:
         if status_code == 408:
             return {"status": "timeout", "error": detail or "Request timed out"}
         if status_code >= 500:
-            return {"status": "server_error", "error": detail or f"Server error (HTTP {status_code})"}
+            return {
+                "status": "server_error",
+                "error": detail or f"Server error (HTTP {status_code})",
+            }
 
         return {"status": "error", "error": detail or f"HTTP {status_code}"}
 

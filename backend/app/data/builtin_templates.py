@@ -8,6 +8,7 @@ Using the existing ``ABOUT_AUTHOR = "about_author"`` enum value for the
 "about the author" chapter type - we deliberately did not introduce a
 second near-duplicate ``ABOUT_THE_AUTHOR``.
 """
+
 from __future__ import annotations
 
 import logging

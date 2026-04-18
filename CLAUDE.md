@@ -133,6 +133,22 @@ bibliogon/
 - E2E tests under `e2e/`, not on the `make test` default path
 - Current counts and coverage: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md)
 
+## Pre-commit hooks
+
+The repo uses pre-commit for formatting and linting. Contributors install once:
+
+```bash
+cd backend && poetry run pre-commit install
+```
+
+Hooks run automatically on `git commit`. To run manually on all files:
+
+```bash
+cd backend && poetry run pre-commit run --all-files
+```
+
+Config in `.pre-commit-config.yaml` at repo root. Current hooks: trailing-whitespace, end-of-file-fixer, check-yaml, check-json, check-added-large-files, check-merge-conflict, ruff (with `--fix`), ruff-format. Backend-only; frontend has its own Prettier/ESLint path.
+
 ## Related projects
 
 - [pluginforge](https://github.com/astrapi69/pluginforge) - plugin framework (PyPI)
