@@ -20,6 +20,8 @@ import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useHelp} from "../contexts/HelpContext";
+import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
+import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -35,6 +37,8 @@ export default function Dashboard() {
     const [showModal, setShowModal] = useState(false);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+    const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
+    const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
     const importInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +66,11 @@ export default function Dashboard() {
     useEffect(() => {
         loadBooks();
         loadTrash();
+        // Load donation config once per mount for S-02 / S-03 logic.
+        // Failure is non-critical; donations stay hidden if it fails.
+        api.settings.getApp()
+            .then((config) => setDonationsConfig(getDonationsConfig(config)))
+            .catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -70,16 +79,27 @@ export default function Dashboard() {
         }
     }, [showHistory]);
 
+    const maybeShowDonationOnboarding = (wasFirstBook: boolean) => {
+        if (!wasFirstBook) return;
+        if (!donationsConfig) return;
+        if (!shouldShowDonationOnboarding()) return;
+        setShowDonationOnboarding(true);
+    };
+
     const handleCreate = async (data: BookCreate) => {
+        const wasFirstBook = books.length === 0;
         const book = await api.books.create(data);
         setBooks((prev) => [book, ...prev]);
         setShowModal(false);
+        maybeShowDonationOnboarding(wasFirstBook);
     };
 
     const handleCreateFromTemplate = async (data: BookFromTemplateCreate) => {
+        const wasFirstBook = books.length === 0;
         const book = await api.books.createFromTemplate(data);
         setBooks((prev) => [book, ...prev]);
         setShowModal(false);
+        maybeShowDonationOnboarding(wasFirstBook);
     };
 
     const handleDelete = async (id: string) => {
@@ -452,6 +472,13 @@ export default function Dashboard() {
                 open={showCompareDialog}
                 onClose={() => setShowCompareDialog(false)}
             />
+            {donationsConfig ? (
+                <DonationOnboardingDialog
+                    open={showDonationOnboarding}
+                    onClose={() => setShowDonationOnboarding(false)}
+                    donations={donationsConfig}
+                />
+            ) : null}
         </div>
     );
 }
