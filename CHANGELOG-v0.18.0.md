@@ -1,0 +1,34 @@
+# Bibliogon v0.18.0
+
+Templates are the headline feature: reusable book and chapter structures, with 5 book builtins and 4 chapter builtins seeded at startup, covering front-matter, back-matter, and specialised content types. Three major frontend dependency upgrades landed cleanly (React 18 -> 19, Vite 6 -> 7, TypeScript 5 -> 6, lucide-react 0 -> 1) with every automated check green; a dedicated UI smoke-test session is scheduled post-release. Plugin YAML saves no longer silently strip comments.
+
+## Added
+
+- **Book templates (TM-01, TM-02, TM-03, TM-05).** `BookTemplate` + `BookTemplateChapter` tables (Alembic migration `b7c8d9e0f1a2`), `/api/templates/` CRUD with `is_builtin` enforcement (403 on PUT/DELETE to builtins, 409 on duplicate name), 5 new `ChapterType` values (`half_title`, `title_page`, `copyright`, `section`, `conclusion`), and 5 builtins seeded idempotently at startup: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Frontend: `CreateBookModal` gains a Radix Tabs "Blank / From template" toggle; `POST /api/books/from-template` creates the book + all chapters in a single commit. Save-as-template action in the `ChapterSidebar` footer with empty-placeholder vs preserve-content modes. User templates have a trash-icon delete; builtins show a "Built-in" lock badge.
+- **Chapter templates (TM-04).** `ChapterTemplate` table (migration `c8d9e0f1a2b3`), `/api/chapter-templates/` CRUD, 4 builtins seeded as TipTap JSON: Interview, FAQ, Recipe, Photo Report. "From template..." entry in the new-chapter dropdown opens `ChapterTemplatePickerModal`; "Save as template" entry in each chapter's ContextMenu opens `SaveAsChapterTemplateModal` (same empty/preserve content choice). Mirrors the book-template UX and 403/409 behavior.
+- **Templates i18n.** All template UI strings localised to the 8 supported languages (DE, EN, ES, FR, EL, PT, TR, JA).
+- **Coverage workflow on CI.** `.github/workflows/coverage.yml` runs on every push to main and every PR. Uploads HTML + XML coverage artifacts (14-day retention) for backend, all plugins, and frontend. `make test-coverage` is an explicit opt-in local target; `make test` stays fast and coverage-free.
+- **PS-09: CI plugin matrix expansion.** `ci.yml` and `coverage.yml` matrices extended to include audiobook + translation alongside the original five. Initial coverage: audiobook 63%, translation 43%.
+- **Help + Getstarted plugins now in CI matrix.** 36 previously-orphaned plugin tests (help 30, getstarted 6) are now run by `make test` and the CI plugin matrix. `pytest-cov` added to both plugins; `httpx` added to help for `starlette.TestClient`.
+- **Templates help content (PS-08).** New `docs/help/{de,en}/templates.md` pages registered in `_meta.yaml`, plus 6 new FAQ entries in `backend/config/plugins/help.yaml` (DE + EN). Two stale "21 chapter types" FAQ answers refreshed to 31 with the new types listed.
+- **YAML round-trip tests (PS-11).** 5 unit tests in `backend/tests/test_yaml_io.py` pinning byte-identical round-trip, `# INTERNAL` comment preservation, quote-style preservation, error handling, and parent-directory creation. Plus 1 HTTP-level integration test in `test_settings_api.py` (`test_update_preserves_comments_and_formatting`) that pins the same behavior through `PATCH /api/settings/plugins/{name}`.
+- **Coverage audit refresh.** `docs/audits/current-coverage.md` regenerated for v0.18.0. Deltas since 2026-04-13 baseline: +44 backend tests, +65 plugin tests (+36 once help/getstarted joined the matrix), +28 Vitest, +105 E2E. 4 of 5 previously-open E2E gaps closed this cycle.
+
+## Changed
+
+- **React 18 -> 19 (DEP-01).** `react`, `react-dom`, `@types/react`, `@types/react-dom` bumped to `^19.2.0`. No code changes required: the codebase was already on `createRoot` and has no `forwardRef`/`defaultProps`/`PropTypes`/`findDOMNode`/legacy lifecycle usage. All peer deps (TipTap 2.27.2, react-router-dom 6, react-toastify 11, react-markdown 10, lucide-react, @dnd-kit, Radix) accept React ^19.
+- **Vite 6 -> 7 + TypeScript 5 -> 6 + @vitejs/plugin-react 4 -> 5 (DEP-04 partial).** Vite 7 brings a Node floor of 20.19+/22.12+ (CI's Node 22 is fine; local dev must now use Node 22+). TypeScript 6 no longer auto-includes every `@types/*` in node_modules, so `@types/node` is now explicit in `package.json` and `tsconfig.json` gets `"types": ["node", "vite/client"]`. Vite 8 is deferred to DEP-09: `vite-plugin-pwa@1.2.0` (the current latest) still lists peer deps through Vite 7 only.
+- **lucide-react 0.468 -> 1.8.0 (DEP-07).** Zero-touch upgrade: the only breaking change in 1.0 was removal of 13 brand icons (GitHub, Slack, Chromium, etc.) and Bibliogon uses only semantic UI icons. Bonus: UMD format dropped (smaller bundle), `aria-hidden` auto-added on icons for a11y.
+- **Plugin YAML writes preserve comments and formatting.** The settings API (`PATCH /api/settings/plugins/{name}`), plugin install, audiobook config, and license routes all swapped from PyYAML's `yaml.dump` (which silently strips comments, blank lines, quote styles) to a shared ruamel.yaml round-trip helper in `backend/app/yaml_io.py`. A save from the UI now leaves `# INTERNAL` markers and formatting intact.
+- **Dashboard theme toggle placement.** The `ThemeToggle` icon moved from an isolated spot next to "Neues Buch" into the rightmost position of the header icon cluster (after Trash). Mobile hamburger gets a matching Sun/Moon entry.
+- **CLAUDE.md.** Chapter-type count bumped 26 -> 31; BookTemplate and ChapterTemplate entries added to the Data model section; Commands block now documents `make test-coverage`.
+
+## Fixed
+
+- **Spanish accents restored across plugin YAMLs (PS-11).** `translation.yaml`, `kinderbuch.yaml`, `kdp.yaml`, and `audiobook.yaml` had missing diacritics in their Spanish `display_name`/`description` strings (`Traduccion`, `pagina`, `validacion`, `publicacion`, `Generacion`, `capitulos`). Corrected to the proper forms.
+- **Pre-existing TS error in `SaveAsTemplateModal.test.tsx`.** The mocked `ApiError` constructor only accepted 2 args while the real class requires 4-6, causing `tsc --noEmit` to fail silently. Mock signature widened to match the real class.
+- **PS-10 unused-parameter warning in `_check_license`.** The `plugin_config` parameter in `backend/app/main.py` was never read but had to stay in the signature for pluginforge's `pre_activate` hook contract. Renamed to `_plugin_config`.
+
+## Known pending post-release
+
+A dedicated UI smoke-test session is scheduled after v0.18.0 ships to verify DEP-01 (React 19), DEP-04 partial (Vite 7 + TS 6), and DEP-07 (lucide 1.x) on the running application. These are verified by the automated test suite (tsc clean, 351 Vitest tests green, `vite build` + PWA regen clean) but browser-level visual regression testing has not been performed. Report any rendering or interaction issues via the bug-session workflow.
