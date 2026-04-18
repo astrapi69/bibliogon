@@ -11,6 +11,7 @@ import * as Select from "@radix-ui/react-select";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/aiProviders";
+import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -75,6 +76,9 @@ export default function Settings() {
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
                     <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
+                    {getDonationsConfig(appConfig) ? (
+                        <Tabs.Trigger value="support" className="radix-tab-trigger" data-testid="settings-tab-support">{t("ui.donations.tab", "Unterstützen")}</Tabs.Trigger>
+                    ) : null}
                 </Tabs.List>
 
             <main style={styles.main}>
@@ -169,6 +173,11 @@ export default function Settings() {
                         }}
                     />
                 </Tabs.Content>
+                {getDonationsConfig(appConfig) ? (
+                    <Tabs.Content value="support">
+                        <SupportSection config={getDonationsConfig(appConfig)!} />
+                    </Tabs.Content>
+                ) : null}
             </main>
             </Tabs.Root>
         </div>
