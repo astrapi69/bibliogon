@@ -87,6 +87,42 @@ function ErrorContent({message, apiError}: {message: string; apiError?: ApiError
   )
 }
 
+/** Content for save-failed toasts with a Retry action button. */
+function SaveErrorContent(
+  {message, onRetry, retryLabel, closeToast}: {
+    message: string;
+    onRetry: () => void;
+    retryLabel: string;
+    closeToast?: () => void;
+  },
+) {
+  return React.createElement(
+    'div',
+    {style: {display: 'flex', flexDirection: 'column', gap: 8, maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word'}},
+    React.createElement('span', {style: {display: 'block', fontSize: '0.8125rem', lineHeight: 1.4}}, message),
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        'data-testid': 'save-error-retry',
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation();
+          onRetry();
+          closeToast?.();
+        },
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600,
+          color: '#fff', background: 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: 4, cursor: 'pointer', alignSelf: 'flex-start',
+        },
+      },
+      retryLabel,
+    ),
+  );
+}
+
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
@@ -104,6 +140,13 @@ export const notify = {
       autoClose: 15000,
       closeOnClick: false,
     })
+  },
+  saveError: (message: string, onRetry: () => void, retryLabel: string) => {
+    recordToast('error', message)
+    return toast.error(
+      React.createElement(SaveErrorContent, {message, onRetry, retryLabel}),
+      {autoClose: false, closeOnClick: false, toastId: 'save-error'},
+    )
   },
   warning: (message: string) => { recordToast('warning', message); return toast.warning(message, {autoClose: 12000}) },
   info: (message: string) => { recordToast('info', message); return toast.info(message, {autoClose: 10000}) },

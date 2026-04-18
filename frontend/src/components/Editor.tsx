@@ -102,30 +102,42 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         return () => window.removeEventListener("keydown", handler);
     }, []);
 
+    const lastAttemptedJson = useRef<string | null>(null);
+
+    const performSave = useCallback(
+        async (json: string) => {
+            if (json === lastSaved.current) {
+                setSaveStatus("idle");
+                return;
+            }
+            lastAttemptedJson.current = json;
+            setSaveStatus("saving");
+            try {
+                await onSave(json);
+            } catch (err) {
+                console.error("Autosave failed:", err);
+                setSaveStatus("error");
+                notify.saveError(
+                    t("ui.editor.save_failed", "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert."),
+                    () => { void performSave(json); },
+                    t("ui.editor.save_retry", "Erneut versuchen"),
+                );
+                return;
+            }
+            lastSaved.current = json;
+            if (chapterId) deleteDraft(chapterId);
+            serverContentHash.current = hashContent(json);
+            setSaveStatus("saved");
+            setTimeout(() => setSaveStatus("idle"), 2000);
+        },
+        [onSave, chapterId, t],
+    );
+
     const debouncedSave = useCallback(
         (json: string) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
             setSaveStatus("saving");
-            saveTimer.current = setTimeout(async () => {
-                if (json === lastSaved.current) {
-                    setSaveStatus("idle");
-                    return;
-                }
-                try {
-                    await onSave(json);
-                } catch (err) {
-                    // Keep IndexedDB draft as fallback, leave status in "error".
-                    // Toast UX is the consumer's responsibility (BookEditor).
-                    console.error("Autosave failed:", err);
-                    setSaveStatus("error");
-                    return;
-                }
-                lastSaved.current = json;
-                if (chapterId) deleteDraft(chapterId);
-                serverContentHash.current = hashContent(json);
-                setSaveStatus("saved");
-                setTimeout(() => setSaveStatus("idle"), 2000);
-            }, autosaveDebounceMs);
+            saveTimer.current = setTimeout(() => { void performSave(json); }, autosaveDebounceMs);
 
             // Save draft to IndexedDB (parallel to server save, independent debounce).
             // This is the safety net: even if the server save later fails, the
@@ -137,7 +149,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 }, draftSaveDebounceMs);
             }
         },
-        [onSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs]
+        [performSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs]
     );
 
     const parseContent = (raw: string): Record<string, unknown> | string => {
@@ -304,10 +316,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         const text = e.target.value;
         setMarkdownText(text);
 
-        // Debounced save in markdown mode
+        // Debounced save in markdown mode - delegates to performSave so the
+        // retry toast and status transitions match the WYSIWYG path.
         if (saveTimer.current) clearTimeout(saveTimer.current);
         setSaveStatus("saving");
-        saveTimer.current = setTimeout(async () => {
+        saveTimer.current = setTimeout(() => {
             if (!editor) {
                 setSaveStatus("idle");
                 return;
@@ -315,20 +328,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             const html = markdownToHtml(text);
             editor.commands.setContent(html);
             const json = JSON.stringify(editor.getJSON());
-            if (json === lastSaved.current) {
-                setSaveStatus("idle");
-                return;
-            }
-            try {
-                await onSave(json);
-            } catch (err) {
-                console.error("Markdown autosave failed:", err);
-                setSaveStatus("error");
-                return;
-            }
-            lastSaved.current = json;
-            setSaveStatus("saved");
-            setTimeout(() => setSaveStatus("idle"), 2000);
+            void performSave(json);
         }, 800);
     };
 
