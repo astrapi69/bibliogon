@@ -340,7 +340,9 @@ describe("sanitizeAmazonHtml", () => {
   })
 
   it("strips iframe tags", () => {
-    const html = '<p>safe</p><iframe src="evil.com"></iframe>'
+    // No src attribute so happy-dom's HTML parser does not try to resolve
+    // or load a page. The sanitizer strips the tag regardless of src.
+    const html = "<p>safe</p><iframe></iframe>"
     const result = sanitizeAmazonHtml(html)
     expect(result).toContain("<p>safe</p>")
     expect(result).not.toContain("iframe")

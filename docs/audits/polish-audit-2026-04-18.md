@@ -22,9 +22,13 @@ strings, stale docs, test coverage gaps, existing audit items.
     `08ff3ba` on 2026-04-18)
 - Frontend: 0 deprecations. Loud test output from happy-dom:
   `ECONNREFUSED 127.0.0.1:3000` + `AsyncTaskManager destroyed`
-  messages on every run despite 397 passing tests. Source is a
-  CORS/navigation test that fetches
-  `http://localhost:3000/evil.com`.
+  messages on every run despite 397 passing tests. Source was
+  the iframe-stripping sanitizer test in
+  `BookMetadataEditor.test.tsx` using `src="evil.com"`, which
+  happy-dom resolved against its default base URL and tried to
+  fetch. RESOLVED in this session by dropping the `src`
+  attribute from the test fixture (sanitizer strips the tag
+  either way; src value is not material to the assertion).
 
 ### 3. Unused exports
 
@@ -77,7 +81,7 @@ tests.
 |---|------|---------|--------|-------|--------|
 | 1 | ResourceWarning | Unclosed file at `smart_import.py:66` | Small | Medium | **Resolved 2026-04-18** (commit `08ff3ba`) |
 | 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | Open |
-| 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | Open |
+| 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | **Resolved 2026-04-18** (commit pending in this session) |
 | 4 | i18n | "Front Matter" / "Back Matter" hardcoded | Small | Medium | **Resolved 2026-04-18** (commit `989a7c8`) |
 | 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | Open |
 | 6 | Test coverage | `archive_utils.py` / `asset_utils.py` / `markdown_utils.py` | Medium | Medium | Open |
