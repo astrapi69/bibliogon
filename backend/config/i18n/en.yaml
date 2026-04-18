@@ -848,6 +848,16 @@ ui:
     banner_message: "You are offline. Changes are saved locally and will sync when you reconnect."
     synced_toast: "Chapters synced: {count}"
     sync_partial: "Some chapters could not be synced."
+  conflict:
+    title: "This chapter was updated elsewhere"
+    description: "Another change was saved before you submitted yours. Pick what should happen with your local changes."
+    your_changes: "Your changes"
+    server_version: "Server version"
+    keep_local: "Keep my changes"
+    discard_local: "Discard my changes"
+    saved_local: "Your changes were saved."
+    server_restored: "Server version loaded."
+    save_failed_again: "Save failed. Please try again."
   donations:
     tab: "Support"
     section_title: "Support Bibliogon"

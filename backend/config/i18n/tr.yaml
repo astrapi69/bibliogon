@@ -853,6 +853,16 @@ ui:
         banner_message: "Cevrimdisisiniz. Degisiklikler yerel olarak kaydediliyor ve baglanti dondugunde senkronize edilecek."
         synced_toast: "Senkronize edilen bolumler: {count}"
         sync_partial: "Bazi bolumler senkronize edilemedi."
+    conflict:
+        title: "Bu bolum baska bir yerde degistirildi"
+        description: "Sizinki gonderilmeden once baska bir degisiklik kaydedildi. Yerel degisikliklerinizle ne yapilacagini secin."
+        your_changes: "Sizin degisiklikleriniz"
+        server_version: "Sunucu surumu"
+        keep_local: "Degisikliklerimi koru"
+        discard_local: "Degisikliklerimi iptal et"
+        saved_local: "Degisiklikleriniz kaydedildi."
+        server_restored: "Sunucu surumu yuklendi."
+        save_failed_again: "Kaydedilemedi. Lutfen tekrar deneyin."
     donations:
         tab: "Destekle"
         section_title: "Bibliogon'u destekleyin"

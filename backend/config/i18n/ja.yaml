@@ -853,6 +853,16 @@ ui:
         banner_message: "オフラインです。変更はローカルに保存され、接続復帰時に同期されます。"
         synced_toast: "同期された章: {count}"
         sync_partial: "一部の章は同期できませんでした。"
+    conflict:
+        title: "この章は他の場所で変更されました"
+        description: "あなたの送信前に別の変更が保存されました。ローカルの変更をどうするか選択してください。"
+        your_changes: "あなたの変更"
+        server_version: "サーバー版"
+        keep_local: "自分の変更を保持"
+        discard_local: "自分の変更を破棄"
+        saved_local: "変更を保存しました。"
+        server_restored: "サーバー版を読み込みました。"
+        save_failed_again: "保存に失敗しました。再度お試しください。"
     donations:
         tab: "サポート"
         section_title: "Bibliogon をサポートする"

@@ -29,7 +29,7 @@ import Focus from "@tiptap/extension-focus";
 import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
-import {api} from "../api/client";
+import {api, ApiError} from "../api/client";
 import {notify} from "../utils/notify";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -122,11 +122,16 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             } catch (err) {
                 console.error("Autosave failed:", err);
                 setSaveStatus("error");
-                // While offline, OfflineBanner is already showing a
-                // status message, and reconnect will auto-flush the
-                // IndexedDB draft. Skip the retry toast in that case
-                // to avoid double-notifying the user.
-                if (typeof navigator !== "undefined" && navigator.onLine) {
+                // Three suppress-toast cases:
+                // - 409 (version_conflict): the BookEditor opens the
+                //   conflict dialog; a retry toast would duplicate the
+                //   signal and the retry action is wrong (wrong version)
+                // - offline: OfflineBanner already tells the user;
+                //   reconnect will auto-flush the IndexedDB draft
+                // All other errors: show the retry toast.
+                const isConflict = err instanceof ApiError && err.status === 409;
+                const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+                if (!isConflict && !isOffline) {
                     notify.saveError(
                         t("ui.editor.save_failed", "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert."),
                         () => { void performSave(json); },

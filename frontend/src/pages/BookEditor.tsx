@@ -1,6 +1,7 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate, useSearchParams} from "react-router-dom";
-import {api, BookDetail, Chapter, ChapterType} from "../api/client";
+import {api, ApiError, BookDetail, Chapter, ChapterType} from "../api/client";
+import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
@@ -75,6 +76,7 @@ export default function BookEditor() {
         setSearchParams(params, {replace: true});
     };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+    const [conflict, setConflict] = useState<ConflictInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [editorSettings, setEditorSettings] = useState<{
         autosave_debounce_ms?: number;
@@ -212,23 +214,83 @@ export default function BookEditor() {
         if (!bookId || !activeChapterId) return;
         const current = book?.chapters.find((c) => c.id === activeChapterId);
         if (!current) return;
-        // Rethrow on failure so the Editor sees the error and sets its
-        // status to "error" instead of lying to the user with "saved".
-        // 409 (version_conflict) also flows through here and is handled
-        // by the conflict resolution dialog in the next commit.
-        const updated = await api.chapters.update(bookId, activeChapterId, {
-            content,
-            version: current.version,
-        });
+        try {
+            // Rethrow on failure so the Editor sees the error and sets
+            // its status to "error" instead of lying with "saved". 409
+            // (version_conflict) is caught below and routed into the
+            // conflict resolution dialog.
+            const updated = await api.chapters.update(bookId, activeChapterId, {
+                content,
+                version: current.version,
+            });
+            setBook((prev) => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    chapters: prev.chapters.map((c) =>
+                        c.id === updated.id ? updated : c
+                    ),
+                };
+            });
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 409 && err.detailBody) {
+                const body = err.detailBody as {
+                    current_version?: number;
+                    server_content?: string;
+                    server_title?: string;
+                    server_updated_at?: string;
+                };
+                if (typeof body.current_version === "number" && typeof body.server_content === "string") {
+                    setConflict({
+                        chapterId: activeChapterId,
+                        localContent: content,
+                        serverContent: body.server_content,
+                        serverVersion: body.current_version,
+                        serverTitle: body.server_title,
+                        serverUpdatedAt: body.server_updated_at,
+                    });
+                }
+            }
+            throw err;
+        }
+    };
+
+    const resolveConflictKeepLocal = async (info: ConflictInfo) => {
+        if (!bookId) return;
+        try {
+            const updated = await api.chapters.update(bookId, info.chapterId, {
+                content: info.localContent,
+                version: info.serverVersion,
+            });
+            setBook((prev) => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    chapters: prev.chapters.map((c) => (c.id === updated.id ? updated : c)),
+                };
+            });
+            setLoadedContent({id: updated.id, content: updated.content});
+            setConflict(null);
+            notify.success(t("ui.conflict.saved_local", "Deine Änderungen wurden gespeichert."));
+        } catch {
+            notify.error(t("ui.conflict.save_failed_again", "Speichern fehlgeschlagen. Bitte erneut versuchen."));
+        }
+    };
+
+    const resolveConflictDiscardLocal = (info: ConflictInfo) => {
+        if (!bookId) return;
         setBook((prev) => {
             if (!prev) return prev;
             return {
                 ...prev,
                 chapters: prev.chapters.map((c) =>
-                    c.id === updated.id ? updated : c
+                    c.id === info.chapterId ? {...c, content: info.serverContent, version: info.serverVersion} : c,
                 ),
             };
         });
+        setLoadedContent({id: info.chapterId, content: info.serverContent});
+        setConflict(null);
+        notify.info(t("ui.conflict.server_restored", "Server-Version geladen."));
     };
 
     const handleReorder = async (chapterIds: string[]) => {
@@ -416,6 +478,11 @@ export default function BookEditor() {
                     />
                 );
             })()}
+            <ConflictResolutionDialog
+                conflict={conflict}
+                onKeepLocal={resolveConflictKeepLocal}
+                onDiscardLocal={resolveConflictDiscardLocal}
+            />
         </div>
     );
 }

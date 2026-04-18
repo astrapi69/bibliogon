@@ -853,6 +853,16 @@ ui:
     banner_message: "Sin conexion. Los cambios se guardan localmente y se sincronizaran cuando vuelvas a estar en linea."
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Algunos capitulos no se pudieron sincronizar."
+  conflict:
+    title: "Este capitulo fue modificado en otro lugar"
+    description: "Otro cambio se guardo antes de que enviaras el tuyo. Elige que hacer con tus cambios locales."
+    your_changes: "Tus cambios"
+    server_version: "Version del servidor"
+    keep_local: "Mantener mis cambios"
+    discard_local: "Descartar mis cambios"
+    saved_local: "Tus cambios se guardaron."
+    server_restored: "Version del servidor cargada."
+    save_failed_again: "Error al guardar. Por favor intentalo de nuevo."
   donations:
     tab: "Apoyar"
     section_title: "Apoya Bibliogon"

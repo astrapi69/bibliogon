@@ -853,6 +853,16 @@ ui:
     banner_message: "Vous etes hors ligne. Les modifications sont sauvees localement et seront synchronisees a la reconnexion."
     synced_toast: "Chapitres synchronises: {count}"
     sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
+  conflict:
+    title: "Ce chapitre a ete modifie ailleurs"
+    description: "Une autre modification a ete enregistree avant la votre. Choisissez quoi faire de vos modifications locales."
+    your_changes: "Vos modifications"
+    server_version: "Version du serveur"
+    keep_local: "Garder mes modifications"
+    discard_local: "Abandonner mes modifications"
+    saved_local: "Vos modifications ont ete enregistrees."
+    server_restored: "Version du serveur chargee."
+    save_failed_again: "Echec de l'enregistrement. Reessayez."
   donations:
     tab: "Soutenir"
     section_title: "Soutenir Bibliogon"
