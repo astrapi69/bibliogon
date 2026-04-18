@@ -169,7 +169,7 @@ cd frontend && npx tsc --noEmit && npm run test
 npx playwright test --project=smoke
 
 # Linting and type checking
-cd backend && ruff check . && mypy .
+cd backend && poetry run ruff check app/ && poetry run mypy app/
 
 # Pre-commit hooks on all files
 pre-commit run --all-files
