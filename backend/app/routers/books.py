@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -64,7 +64,7 @@ def cleanup_expired_trash() -> int:
     from app.database import SessionLocal
     db = SessionLocal()
     try:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         expired = db.query(Book).filter(
             Book.deleted_at.is_not(None),
             Book.deleted_at < cutoff,
@@ -209,7 +209,7 @@ def delete_book(book_id: str, db: Session = Depends(get_db)):
     if _is_permanent_delete():
         db.delete(book)
     else:
-        book.deleted_at = datetime.now(timezone.utc)
+        book.deleted_at = datetime.now(UTC)
     db.commit()
 
 

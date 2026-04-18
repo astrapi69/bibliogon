@@ -22,9 +22,10 @@ import asyncio
 import logging
 import time
 import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

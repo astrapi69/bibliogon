@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from app.models import Asset, Chapter
 
-
 _ASSET_TYPE_MAP: dict[str, str] = {
     "covers": "cover",
     "figures": "figure",

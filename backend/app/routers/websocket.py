@@ -21,7 +21,6 @@ Usage from backend code::
     })
 """
 
-import asyncio
 import logging
 from typing import Any
 

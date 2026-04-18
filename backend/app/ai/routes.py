@@ -1,10 +1,10 @@
 """AI API routes for generic LLM interaction."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import yaml
-from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 

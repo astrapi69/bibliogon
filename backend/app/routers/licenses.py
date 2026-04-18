@@ -5,10 +5,10 @@ The LICENSING_ENABLED flag in backend/app/licensing.py controls this.
 When reactivated, these endpoints manage HMAC-signed license keys.
 """
 
-import yaml
 from pathlib import Path
 from typing import Any
 
+import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 

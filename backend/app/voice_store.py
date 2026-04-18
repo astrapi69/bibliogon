@@ -5,8 +5,7 @@ the table is updated with current voices; removed voices are deleted.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -80,7 +79,7 @@ async def sync_edge_tts_voices(db: Session) -> int:
         logger.error("Failed to fetch Edge TTS voices: %s", e)
         return 0
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     seen_ids: set[str] = set()
 
     for v in voices:

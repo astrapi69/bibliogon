@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 from app.models import Asset, Book
 from app.routers.assets import UPLOAD_DIR
 
-
 # Whitelisted extensions (KDP-friendly raster formats only)
 ALLOWED_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -63,7 +62,7 @@ def upload_cover(db: Session, book_id: str, file: UploadFile) -> CoverUploadResu
         book_id=book_id,
         filename=target_filename,
         asset_type="cover",
-        path=str((UPLOAD_DIR / book_id / "cover" / target_filename)),
+        path=str(UPLOAD_DIR / book_id / "cover" / target_filename),
     )
     db.add(asset)
     book.cover_image = relative_path

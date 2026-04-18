@@ -20,7 +20,6 @@ from fastapi import HTTPException, UploadFile
 
 from app.services.backup.archive_utils import find_books_dir, find_manifest
 
-
 # --- Public entry point ---
 
 

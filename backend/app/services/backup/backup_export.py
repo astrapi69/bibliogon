@@ -3,7 +3,7 @@
 import json
 import shutil
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +31,7 @@ def export_backup_archive(db: Session, include_audiobook: bool = False) -> tuple
     books = db.query(Book).options(joinedload(Book.chapters)).all()
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_backup_"))
-    backup_dir = tmp_dir / f"bibliogon-backup-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    backup_dir = tmp_dir / f"bibliogon-backup-{datetime.now(UTC).strftime('%Y-%m-%d')}"
     books_dir = backup_dir / "books"
 
     for book in books:
@@ -124,7 +124,7 @@ def _write_manifest(backup_dir: Path, book_count: int, include_audiobook: bool =
     _write_json(backup_dir / "manifest.json", {
         "format": "bibliogon-backup",
         "version": "1.0",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "book_count": book_count,
         "includes_audiobook": include_audiobook,
     })

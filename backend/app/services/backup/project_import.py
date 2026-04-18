@@ -28,7 +28,6 @@ from app.services.backup.markdown_utils import (
     sanitize_import_markdown,
 )
 
-
 # --- Top-level entry point ---
 
 
@@ -157,7 +156,7 @@ class ProjectMetadata:
 def _read_metadata_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
@@ -244,7 +243,7 @@ def _read_section_order(path: Path) -> list[str]:
     """Read ``section_order.ebook`` (or ``.paperback``) from export-settings.yaml."""
     if not path.exists():
         return []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         export_settings = yaml.safe_load(f) or {}
     so = export_settings.get("section_order", {})
     section_order = so.get("ebook", so.get("paperback", []))

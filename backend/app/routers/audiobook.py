@@ -29,11 +29,10 @@ from pydantic import BaseModel, Field
 from ruamel.yaml import YAMLError as RuamelYAMLError
 from sqlalchemy.orm import Session
 
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
-
 from app import credential_store
 from app.database import SessionLocal, get_db
 from app.models import AudioVoice, Book
+from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 logger = logging.getLogger(__name__)
 
@@ -632,13 +631,13 @@ def classify_book_audiobook(book_id: str, db: Session = Depends(get_db)) -> dict
     )
 
     try:
+        from bibliogon_audiobook import audiobook_storage
         from bibliogon_audiobook.generator import (
             _slugify,
             content_hash,
             extract_plain_text,
             should_regenerate,
         )
-        from bibliogon_audiobook import audiobook_storage
     except ImportError:
         raise HTTPException(status_code=500, detail="Audiobook plugin not installed")
 

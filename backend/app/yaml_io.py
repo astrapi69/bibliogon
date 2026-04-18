@@ -23,7 +23,7 @@ def _yaml() -> YAML:
 
 def read_yaml_roundtrip(path: Path) -> Any:
     """Load a YAML file preserving comments and formatting for a later write."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return _yaml().load(f) or {}
 
 

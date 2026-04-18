@@ -13,12 +13,24 @@ from app.logging_config import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
-from app.hookspecs import BibliogonHookSpec
-from app.licensing import LicenseError, LicenseStore, LicenseValidator
-from app.routers import assets, audiobook, backup, books, chapter_templates, chapters, covers, licenses, plugin_install, settings, templates
-
 from pluginforge import BasePlugin, PluginManager
 from pluginforge.config import load_i18n
+
+from app.hookspecs import BibliogonHookSpec
+from app.licensing import LicenseError, LicenseStore, LicenseValidator
+from app.routers import (
+    assets,
+    audiobook,
+    backup,
+    books,
+    chapter_templates,
+    chapters,
+    covers,
+    licenses,
+    plugin_install,
+    settings,
+    templates,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "app.yaml"
@@ -136,8 +148,8 @@ async def lifespan(app: FastAPI):
     from app.routers.books import cleanup_expired_trash
     cleanup_expired_trash()
     # Seed voices if table is empty
-    from app.voice_store import sync_edge_tts_voices, voice_count
     from app.database import SessionLocal
+    from app.voice_store import sync_edge_tts_voices, voice_count
     _vs_db = SessionLocal()
     try:
         if voice_count(_vs_db) == 0:
@@ -198,15 +210,18 @@ app.include_router(templates.router, prefix="/api")
 app.include_router(chapter_templates.router, prefix="/api")
 
 from app.ai.routes import router as ai_router
+
 app.include_router(ai_router, prefix="/api")
 
 from app.routers.websocket import router as ws_router
+
 app.include_router(ws_router, prefix="/api")
 
 
 # Global exception handler: log all unhandled errors with stacktrace
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -228,8 +243,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/api/voices")
 def list_voices(engine: str = "edge-tts", language: str | None = None):
     """List TTS voices from the database (always available, no plugin needed)."""
-    from app.voice_store import get_voices
     from app.database import SessionLocal
+    from app.voice_store import get_voices
     db = SessionLocal()
     try:
         return get_voices(db, engine, language)
@@ -240,8 +255,8 @@ def list_voices(engine: str = "edge-tts", language: str | None = None):
 @app.post("/api/voices/sync")
 async def sync_voices():
     """Re-sync Edge TTS voices from the API into the database."""
-    from app.voice_store import sync_edge_tts_voices
     from app.database import SessionLocal
+    from app.voice_store import sync_edge_tts_voices
     db = SessionLocal()
     try:
         count = await sync_edge_tts_voices(db)
@@ -305,7 +320,6 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
     }
 
     result: dict[str, dict[str, Any]] = {}
-    from fastapi.testclient import TestClient
 
     for name, info in editor_plugins.items():
         # Special case: AI is not a plugin but a core module

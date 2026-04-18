@@ -52,10 +52,10 @@ def init_db():
     For new databases, creates all tables and stamps the alembic version.
     For existing databases, runs any pending migrations.
     """
-    import app.models  # noqa: F401 - ensure models are registered
-
     from alembic import command
     from alembic.config import Config
+
+    import app.models  # noqa: F401 - ensure models are registered
 
     alembic_cfg = Config(str(_BACKEND_DIR / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_BACKEND_DIR / "migrations"))
