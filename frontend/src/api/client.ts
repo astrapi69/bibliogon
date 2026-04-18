@@ -415,6 +415,17 @@ export interface AudiobookExistsError {
 
 // --- ApiError with context ---
 
+/** Thrown by `api.chapters.update` when a newer save for the same
+ *  chapter superseded the in-flight request. Consumers should treat
+ *  this as a no-op, not an error.
+ */
+export class SaveAbortedError extends Error {
+    constructor() {
+        super("Save superseded by a newer save for the same chapter");
+        this.name = "SaveAbortedError";
+    }
+}
+
 export class ApiError extends Error {
     status: number;
     detail: string;
@@ -449,6 +460,11 @@ export class ApiError extends Error {
 // --- Fetch helper ---
 
 const BASE = "/api";
+
+// Per-chapter in-flight save controllers for dedup/abort (see
+// `api.chapters.update`). Module-local so every call site shares the
+// same map.
+const saveControllers = new Map<string, AbortController>();
 
 async function request<T>(
     path: string,
@@ -568,11 +584,35 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
-        update: (bookId: string, chapterId: string, data: ChapterUpdatePayload) =>
-            request<Chapter>(`/books/${bookId}/chapters/${chapterId}`, {
-                method: "PATCH",
-                body: JSON.stringify(data),
-            }),
+        update: async (bookId: string, chapterId: string, data: ChapterUpdatePayload): Promise<Chapter> => {
+            // Per-chapter abort: if a save for this chapter is already
+            // in flight when a new one starts, cancel the old one. The
+            // latest save always wins. Aborts surface as
+            // SaveAbortedError so callers can treat them as no-ops.
+            const prior = saveControllers.get(chapterId);
+            if (prior) prior.abort();
+            const controller = new AbortController();
+            saveControllers.set(chapterId, controller);
+            try {
+                const result = await request<Chapter>(`/books/${bookId}/chapters/${chapterId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify(data),
+                    signal: controller.signal,
+                });
+                if (saveControllers.get(chapterId) === controller) {
+                    saveControllers.delete(chapterId);
+                }
+                return result;
+            } catch (err) {
+                if (saveControllers.get(chapterId) === controller) {
+                    saveControllers.delete(chapterId);
+                }
+                if (err instanceof Error && err.name === "AbortError") {
+                    throw new SaveAbortedError();
+                }
+                throw err;
+            }
+        },
 
         /** Best-effort save that survives tab close / page unload.
          *

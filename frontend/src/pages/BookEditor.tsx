@@ -1,6 +1,6 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate, useSearchParams} from "react-router-dom";
-import {api, ApiError, BookDetail, Chapter, ChapterType} from "../api/client";
+import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from "../api/client";
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
@@ -191,7 +191,10 @@ export default function BookEditor() {
                     chapters: prev.chapters.map((c) => c.id === updated.id ? {...c, title: updated.title, version: updated.version} : c),
                 };
             });
-        } catch {
+        } catch (err) {
+            // A newer rename superseded this one; the later one will
+            // resolve state. No user-visible error.
+            if (err instanceof SaveAbortedError) return;
             notify.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"));
         }
     };

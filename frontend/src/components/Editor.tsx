@@ -29,7 +29,7 @@ import Focus from "@tiptap/extension-focus";
 import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
-import {api, ApiError} from "../api/client";
+import {api, ApiError, SaveAbortedError} from "../api/client";
 import {notify} from "../utils/notify";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -120,6 +120,11 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             try {
                 await onSave(json);
             } catch (err) {
+                if (err instanceof SaveAbortedError) {
+                    // A newer save for the same chapter superseded us.
+                    // Leave the status to the newer call to resolve.
+                    return;
+                }
                 console.error("Autosave failed:", err);
                 setSaveStatus("error");
                 // Three suppress-toast cases:
