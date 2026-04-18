@@ -67,7 +67,6 @@ frontend/dev-dist/
 # prompt files
 /docs/backlog.md
 /tmp/todo-prompts.md
-/docs/journal/chat-journal-session-*.md
 
 # Playwright results
 /e2e/test-results/

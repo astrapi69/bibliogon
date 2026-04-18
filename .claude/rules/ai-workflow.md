@@ -185,6 +185,8 @@ Every session is documented. This is mandatory, not optional. The documentation 
 
 ### Chat journal (docs/journal/chat-journal-session-{YYYY-MM-DD}.md)
 
+Session journals (chat-journal-session-YYYY-MM-DD.md) are committed to docs/journal/ as part of the end-of-session workflow. They are part of project history, not local notes.
+
 Every relevant step of the work is recorded. Format per entry:
 
 ```markdown
