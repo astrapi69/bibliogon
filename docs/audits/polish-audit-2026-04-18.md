@@ -89,8 +89,8 @@ tests.
 | # | Area | Finding | Effort | Value | Status |
 |---|------|---------|--------|-------|--------|
 | 1 | ResourceWarning | Unclosed file at `smart_import.py:66` | Small | Medium | **Resolved 2026-04-18** (commit `08ff3ba`) |
-| 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | **Resolved 2026-04-18** (commit pending in this session) |
-| 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | **Resolved 2026-04-18** (commit pending in this session) |
+| 2 | ResourceWarning | 20x unclosed asyncio loop in audiobook tests | Medium | Medium | **Resolved 2026-04-18** (commit `debabcd`) |
+| 3 | Frontend test noise | CORS/navigation test spams stderr | Small | Low-Med | **Resolved 2026-04-18** (commit `8d82231`) |
 | 4 | i18n | "Front Matter" / "Back Matter" hardcoded | Small | Medium | **Resolved 2026-04-18** (commit `989a7c8`) |
 | 5 | Test coverage | `backup_history.py` zero tests | Medium | Medium | **Revised 2026-04-18**: `test_backup_history.py` already existed with 8 unit tests covering the class API. Gaps closed in this session: persistence roundtrip + parent-directory creation + `GET /api/backup/history` HTTP route test (3 new tests, total 11). |
 | 6 | Test coverage | `archive_utils.py` / `asset_utils.py` / `markdown_utils.py` | Medium | Medium | **Resolved 2026-04-18** (34 direct unit tests in `test_backup_utils_direct.py`) |
