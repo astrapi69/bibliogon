@@ -43,7 +43,7 @@
 ## Summary
 
 - Commits since v0.19.1: 14 (2 feat, 3 fix, 9 docs/chore/test).
-- Tests: 638 backend (+127) + 317 plugin + 405 Vitest (+54) + 162 Playwright smoke (was 135). 1,452 automated tests total (+181 vs 2026-04-18).
+- Tests: 638 backend (+127) + 409 plugin across 9 plugins (audiobook 98, export 92, getstarted 6, grammar 10, help 30, kdp 33, kinderbuch 8, ms-tools 97, translation 35) + 405 Vitest (+54) + 162 Playwright smoke (was 135). 1,452 automated tests total (+181 vs 2026-04-18).
 - Tracked follow-ups in GitHub issue #9: 4 Playwright skips (zoom x3, word count x1).
 - Deferred major deps: elevenlabs, starlette, rich.
 - Pillow 12 still blocked upstream by manuscripta.
