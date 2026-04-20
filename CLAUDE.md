@@ -3,7 +3,7 @@
 Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see docs/explorations/monetization.md for future strategy).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.19.0 (content-safety overhaul: autosave awaits server ack, beforeunload/pagehide/offline flush to IndexedDB, optimistic locking with 409 conflict dialog, chapter_versions table with restore, WAL+NORMAL SQLite, abort-dedup for concurrent saves, donation integration S-01/02/03, MkDocs installation section covers Windows/macOS/Linux launchers)
+- **Version:** 0.19.1 (maintenance: i18n for Front/Back Matter labels, backup zip handle leak closed, launcher release workflows granted contents:write permission, ruff+mypy+pre-commit wired into CI, react-router-dom ^7.14)
 - **Concept:** docs/CONCEPT.md
 - **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
 - **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)

@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-04-18
-Latest release: v0.19.0 (content-safety overhaul: autosave awaits server ack, beforeunload/offline flush to IndexedDB, optimistic locking with 409 conflict dialog, chapter_versions table with restore, WAL+NORMAL SQLite, donation integration S-01/02/03, MkDocs installation section covers Windows/macOS/Linux launchers)
+Last updated: 2026-04-20
+Latest release: v0.19.1 (maintenance: i18n for Front/Back Matter labels, backup zip handle leak closed, launcher release workflows granted contents:write permission, ruff+mypy+pre-commit wired into CI, react-router-dom ^7.14)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 
