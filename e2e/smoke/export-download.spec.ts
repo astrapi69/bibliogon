@@ -68,7 +68,10 @@ test.describe('Export file download', () => {
   test('project ZIP export returns a valid archive', async ({request}) => {
     const resp = await request.get(`${API}/books/${bookId}/export/project`)
     expect(resp.status()).toBe(200)
-    expect(resp.headers()['content-type']).toContain('zip')
+    // Content-type is `application/octet-stream` because the `.bgp`
+    // project archive extension overrides FastAPI's media-type guess.
+    // ZIP identity is asserted via the PK magic bytes below.
+    expect(resp.headers()['content-type']).toMatch(/zip|octet-stream/)
     const body = await resp.body()
     // ZIP magic bytes: PK (0x50, 0x4B)
     expect(body[0]).toBe(0x50)

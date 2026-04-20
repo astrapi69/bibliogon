@@ -114,8 +114,14 @@ test.describe("Themes - light/dark toggle", () => {
     });
 
     test("data-theme persists across reload", async ({page}) => {
-        await seedTheme(page, "light");
+        // NOTE: do NOT seed via addInitScript. That callback runs on
+        // EVERY navigation, including reload, which would overwrite
+        // the "dark" state we are trying to verify persists. Seed once
+        // via page.evaluate after the initial navigation instead.
         await page.goto("/");
+        await page.evaluate(() => window.localStorage.setItem("bibliogon-theme", "light"));
+        await page.reload();
+        expect(await getTheme(page)).toBe("light");
         await page.getByTestId("theme-toggle").first().click();
         expect(await getTheme(page)).toBe("dark");
         await page.reload();

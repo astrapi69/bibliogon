@@ -54,7 +54,10 @@ async function openDashboard(page: Page) {
 }
 
 function visibleBookCards(page: Page) {
-    return page.locator("[data-testid^='book-card-']");
+    // `book-card-{id}` matches both the card root AND the menu trigger
+    // button nested inside (`book-card-menu-{id}`). Exclude the menu
+    // variants so the locator returns one element per visible card.
+    return page.locator("[data-testid^='book-card-']:not([data-testid*='-menu-'])");
 }
 
 test.describe("Dashboard filters - text search", () => {

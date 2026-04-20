@@ -212,6 +212,11 @@ test.describe('C. Keyboard shortcuts', () => {
     await openEditor(page, bookId)
     await focusEditor(page)
     await page.keyboard.type('keep this')
+    // ProseMirror history groups consecutive typing events that land
+    // within `newGroupDelay` (500ms default). Wait past that window so
+    // the second chunk lands in its own undo group and Ctrl+Z drops
+    // only the second chunk.
+    await page.waitForTimeout(700)
     await page.keyboard.type(' remove this')
     await page.keyboard.press('Control+z')
     // The last typed chunk should be undone

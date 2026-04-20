@@ -24,17 +24,28 @@ const LOCAL_CONTENT =
 test.describe('Content safety', () => {
   test('force-close leaves a recoverable draft and the banner offers restore', async ({context, page}) => {
     const book = await createBook('Safety Recovery', 'T')
-    const chapter = await createChapter(
-      book.id,
-      'Chapter 1',
-      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Saved on server"}]}]}',
-    )
+    const serverContent =
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Saved on server"}]}]}'
+    const chapter = await createChapter(book.id, 'Chapter 1', serverContent)
 
     // Seed IndexedDB with a newer draft BEFORE visiting the editor so
     // the recovery check fires on mount. This models the result of a
-    // tab crash between typing and the debounced save landing.
+    // tab crash between typing and the debounced save landing. The
+    // draft's `contentHash` MUST equal the hash of the server content
+    // the draft was written against (same-state precondition in
+    // frontend/src/db/drafts.ts#checkForRecovery). The mismatch
+    // dimension is `draft.content !== serverContent`.
     await page.goto('/')
-    await page.evaluate(async ({chapterId, bookId, draftContent}) => {
+    await page.evaluate(async ({chapterId, bookId, draftContent, serverContent}) => {
+      function hashContent(content: string): string {
+        let hash = 0
+        for (let i = 0; i < content.length; i++) {
+          hash = ((hash << 5) - hash) + content.charCodeAt(i)
+          hash |= 0
+        }
+        return hash.toString(36)
+      }
+
       const req = indexedDB.open('bibliogon', 1)
       await new Promise((resolve, reject) => {
         req.onsuccess = () => resolve(null)
@@ -53,13 +64,14 @@ test.describe('Content safety', () => {
           chapterId,
           bookId,
           content: draftContent,
-          contentHash: '_mismatch_', // must differ from server hash to trigger recovery
-          savedAt: Date.now(),
+          contentHash: hashContent(serverContent),
+          // Future savedAt so draft is newer than server updated_at.
+          savedAt: Date.now() + 60_000,
         })
         tx.oncomplete = () => resolve()
         tx.onerror = () => reject(tx.error)
       })
-    }, {chapterId: chapter.id, bookId: book.id, draftContent: LOCAL_CONTENT})
+    }, {chapterId: chapter.id, bookId: book.id, draftContent: LOCAL_CONTENT, serverContent})
 
     await page.goto(`/book/${book.id}`)
     // Click the chapter in the sidebar to load it.

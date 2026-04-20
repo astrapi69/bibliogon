@@ -121,6 +121,12 @@ test.describe("Trash - restore", () => {
         // Trash card is gone from the trash view.
         await expect(page.getByTestId(`trash-card-${bookId}`)).not.toBeVisible();
 
+        // Leave trash view to verify the book shows up on the main
+        // dashboard grid. The trash toggle is a view switch, not a
+        // separate route; restore keeps the user in the trash view
+        // by design so they can restore multiple items in a row.
+        await page.getByTestId("trash-toggle").click();
+
         // Dashboard card is back.
         await expect(page.getByTestId(`book-card-${bookId}`)).toBeVisible();
 
