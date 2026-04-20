@@ -64,9 +64,7 @@ def estimate_cost_usd(
     return round(input_cost + output_cost, 4)
 
 
-def estimate_review_cost(
-    model: str, content: str
-) -> tuple[int, int, float | None]:
+def estimate_review_cost(model: str, content: str) -> tuple[int, int, float | None]:
     """Return (input_tokens, output_tokens, cost_usd) for a review call.
 
     Input tokens approximate content + system-prompt overhead. System

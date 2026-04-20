@@ -118,7 +118,5 @@ def delete_reviews_for_chapter(book_id: str, chapter_slug: str) -> int:
                 candidate.unlink()
                 deleted += 1
             except OSError:
-                logger.warning(
-                    "Failed to delete review file %s", candidate, exc_info=True
-                )
+                logger.warning("Failed to delete review file %s", candidate, exc_info=True)
     return deleted

@@ -3,6 +3,7 @@ import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from ".
 import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
+import {reviewString, NON_PROSE_CHAPTER_TYPES} from "../data/ai-review-strings";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -49,6 +50,10 @@ interface Props {
     bookId?: string;
     chapterId?: string;
     chapterTitle?: string;
+    /** Chapter type (ChapterType enum value). Drives the AI review's
+     *  chapter-type-specific prompt guidance and the non-prose warning
+     *  shown above the review start button. */
+    chapterType?: string;
     /** Current Chapter.version. Passed to keepalive PATCH on unload so
      *  the backend's optimistic-lock check passes. The normal autosave
      *  path gets version from the parent via `onSave`. */
@@ -60,7 +65,7 @@ interface Props {
     aiContextChars?: number;
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -82,6 +87,12 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const [aiLoading, setAiLoading] = useState(false);
     const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom" | "review">("improve");
     const [aiCustomPrompt, setAiCustomPrompt] = useState("");
+    // New for v0.20.x AI review extension. See docs/explorations/ai-review-extension.md.
+    const [reviewFocus, setReviewFocus] = useState<"style" | "consistency" | "beta_reader">("style");
+    const [reviewDownloadUrl, setReviewDownloadUrl] = useState<string | null>(null);
+    const [reviewStatusMsg, setReviewStatusMsg] = useState<string | null>(null);
+    const [reviewCostLabel, setReviewCostLabel] = useState<string | null>(null);
+    const reviewEventSource = useRef<EventSource | null>(null);
     const [wordGoal, setWordGoal] = useState<number | null>(() => {
         if (!chapterId) return null;
         const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
@@ -351,8 +362,49 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     useEffect(() => {
         return () => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
+            if (reviewEventSource.current) {
+                reviewEventSource.current.close();
+                reviewEventSource.current = null;
+            }
         };
     }, []);
+
+    // Fetch a rough token + USD cost estimate when the review tab is
+    // visible and the chapter content changes. Best-effort - a failed
+    // estimate just hides the cost label.
+    useEffect(() => {
+        if (!showAiPanel || aiPromptType !== "review" || !editor) {
+            setReviewCostLabel(null);
+            return;
+        }
+        const fullText = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n");
+        if (!fullText.trim()) {
+            setReviewCostLabel(null);
+            return;
+        }
+        let cancelled = false;
+        fetch("/api/ai/review/estimate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({content: fullText}),
+        })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((payload) => {
+                if (cancelled || !payload) return;
+                const tokens = Number(payload.input_tokens || 0);
+                const cost = typeof payload.cost_usd === "number" ? payload.cost_usd : null;
+                const tokensLabel = tokens >= 1000 ? `${Math.round(tokens / 100) / 10}k` : `${tokens}`;
+                if (cost !== null) {
+                    setReviewCostLabel(`~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}, ~$${cost.toFixed(3)}`);
+                } else {
+                    setReviewCostLabel(`~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}`);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setReviewCostLabel(null);
+            });
+        return () => { cancelled = true; };
+    }, [showAiPanel, aiPromptType, editor, chapterId, t]);
 
     const handleToggleMarkdown = () => {
         if (!editor) return;
@@ -556,6 +608,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiSuggestion("");
     };
 
+    const bookLanguage = bookContext?.language || document.documentElement.getAttribute("lang") || "de";
+
     const handleAiReview = async () => {
         if (!editor) return;
         const fullText = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n");
@@ -567,33 +621,88 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiLoading(true);
         setAiReview("");
         setAiSuggestion("");
+        setReviewDownloadUrl(null);
+        setReviewStatusMsg(reviewString(bookLanguage, "status_preparing"));
 
+        let jobId: string | null = null;
         try {
-            const res = await fetch("/api/ai/review", {
+            const submit = await fetch("/api/ai/review/async", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     content: fullText,
+                    chapter_id: chapterId || "",
                     chapter_title: chapterTitle || "",
+                    chapter_type: chapterType,
                     book_title: bookContext?.title || "",
                     genre: bookContext?.genre || "",
-                    language: bookContext?.language || document.documentElement.getAttribute("lang") || "de",
-                    focus: ["style", "coherence", "pacing"],
+                    language: bookLanguage,
+                    focus: [reviewFocus],
                     book_id: bookId || "",
                 }),
             });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "AI review failed"}));
+            if (!submit.ok) {
+                const err = await submit.json().catch(() => ({detail: "AI review failed"}));
                 notify.error(err.detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
-                setAiReview("");
-            } else {
-                const data = await res.json();
-                setAiReview(data.review || "");
+                setAiLoading(false);
+                setReviewStatusMsg(null);
+                return;
             }
+            const submitted = await submit.json();
+            jobId = submitted.job_id as string;
         } catch {
             notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+            setAiLoading(false);
+            setReviewStatusMsg(null);
+            return;
         }
-        setAiLoading(false);
+
+        // Close any previous stream before opening a new one.
+        if (reviewEventSource.current) {
+            reviewEventSource.current.close();
+        }
+        const es = new EventSource(`/api/ai/jobs/${jobId}/stream`);
+        reviewEventSource.current = es;
+        es.onmessage = (ev) => {
+            try {
+                const parsed = JSON.parse(ev.data) as {type: string; data: Record<string, unknown>};
+                if (parsed.type === "review_start") {
+                    setReviewStatusMsg(reviewString(bookLanguage, "status_analyzing"));
+                } else if (parsed.type === "review_llm_call") {
+                    setReviewStatusMsg(reviewString(bookLanguage, "status_generating"));
+                } else if (parsed.type === "review_done") {
+                    const url = typeof parsed.data.download_url === "string" ? parsed.data.download_url : null;
+                    setReviewDownloadUrl(url);
+                } else if (parsed.type === "stream_end") {
+                    es.close();
+                    reviewEventSource.current = null;
+                    setAiLoading(false);
+                    setReviewStatusMsg(null);
+                    // Pull the final result from the poll endpoint.
+                    if (jobId) {
+                        fetch(`/api/ai/jobs/${jobId}`)
+                            .then((r) => r.ok ? r.json() : null)
+                            .then((payload) => {
+                                if (payload?.result?.review) {
+                                    setAiReview(payload.result.review as string);
+                                }
+                            })
+                            .catch(() => {
+                                notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+                            });
+                    }
+                }
+            } catch {
+                // Malformed event - ignore.
+            }
+        };
+        es.onerror = () => {
+            es.close();
+            reviewEventSource.current = null;
+            setAiLoading(false);
+            setReviewStatusMsg(null);
+            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+        };
     };
 
     const statusLabel =
@@ -740,22 +849,81 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                                     {t("ui.editor.ai_review_hint", "Analysiert das gesamte Kapitel auf Stil, Kohaerenz und Pacing.")}
                                 </small>
                             </div>
-                            <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
+                            <div
+                                role="radiogroup"
+                                aria-label={t("ui.editor.ai_review_focus", "Review-Fokus")}
+                                style={{padding: "4px 16px", display: "flex", gap: 12, flexWrap: "wrap"}}
+                            >
+                                {(["style", "consistency", "beta_reader"] as const).map((value) => (
+                                    <label
+                                        key={value}
+                                        data-testid={`ai-review-focus-${value}`}
+                                        style={{display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.8125rem", cursor: "pointer"}}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="ai-review-focus"
+                                            value={value}
+                                            checked={reviewFocus === value}
+                                            onChange={() => setReviewFocus(value)}
+                                            disabled={aiLoading}
+                                        />
+                                        {value === "style"
+                                            ? t("ui.editor.ai_review_focus_style", "Stil")
+                                            : value === "consistency"
+                                                ? t("ui.editor.ai_review_focus_consistency", "Konsistenz")
+                                                : t("ui.editor.ai_review_focus_beta_reader", "Testleser")}
+                                    </label>
+                                ))}
+                            </div>
+                            {NON_PROSE_CHAPTER_TYPES.has(chapterType) && (
+                                <div
+                                    data-testid="ai-review-non-prose-warning"
+                                    style={{
+                                        padding: "4px 16px",
+                                        fontSize: "0.75rem",
+                                        color: "var(--warning, var(--text-muted))",
+                                    }}
+                                >
+                                    {reviewString(bookLanguage, "non_prose_warning")}
+                                </div>
+                            )}
+                            <div style={{padding: "6px 16px", display: "flex", gap: 8, alignItems: "center"}}>
                                 <button
+                                    data-testid="ai-review-start"
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiReview}
                                     disabled={aiLoading}
                                 >
-                                    {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_review_start", "Kapitel reviewen")}
+                                    {aiLoading
+                                        ? (reviewStatusMsg || t("ui.editor.ai_loading", "Denke nach..."))
+                                        : t("ui.editor.ai_review_start", "Kapitel reviewen")}
                                 </button>
+                                {reviewCostLabel && !aiLoading && (
+                                    <small data-testid="ai-review-cost" style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                        {reviewCostLabel}
+                                    </small>
+                                )}
                             </div>
                             {aiReview && (
                                 <div style={styles.aiSuggestion}>
                                     <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)", lineHeight: 1.6}}>
                                         {aiReview}
                                     </div>
-                                    <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => setAiReview("")}>
+                                    <div style={{display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap"}}>
+                                        {reviewDownloadUrl && (
+                                            <a
+                                                data-testid="ai-review-download"
+                                                className="btn btn-ghost btn-sm"
+                                                href={reviewDownloadUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                download
+                                            >
+                                                {t("ui.editor.ai_review_download", "Bericht herunterladen")}
+                                            </a>
+                                        )}
+                                        <button className="btn btn-ghost btn-sm" onClick={() => { setAiReview(""); setReviewDownloadUrl(null); }}>
                                             {t("ui.editor.ai_review_close", "Schliessen")}
                                         </button>
                                     </div>

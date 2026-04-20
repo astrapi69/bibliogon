@@ -25,21 +25,13 @@ LANG_MAP: dict[str, str] = {
 # Existing values kept for back-compat; `consistency` and `beta_reader`
 # are new as of v0.20.x. See ai-review-extension.md 3.4 and 3.6.
 FOCUS_DESCRIPTIONS: dict[str, str] = {
-    "style": (
-        "writing style (word choice, sentence variety, readability, voice consistency)"
-    ),
+    "style": ("writing style (word choice, sentence variety, readability, voice consistency)"),
     "coherence": (
         "coherence and structure (logical flow, paragraph transitions, argument clarity)"
     ),
-    "pacing": (
-        "pacing (scene length balance, tension curve, slow or rushed sections)"
-    ),
-    "dialogue": (
-        "dialogue quality (natural speech, character voice distinction, said-bookisms)"
-    ),
-    "tension": (
-        "narrative tension (stakes, conflict escalation, reader engagement)"
-    ),
+    "pacing": ("pacing (scene length balance, tension curve, slow or rushed sections)"),
+    "dialogue": ("dialogue quality (natural speech, character voice distinction, said-bookisms)"),
+    "tension": ("narrative tension (stakes, conflict escalation, reader engagement)"),
     "consistency": (
         "internal consistency within the chapter (contradictions in facts, timing, "
         "character traits, locations, object descriptions)"
@@ -88,8 +80,7 @@ CHAPTER_TYPE_GUIDANCE: dict[str, str] = {
     "title_page": "book title + author page; not prose",
     "copyright": "legal copyright notice; not prose",
     "section": "section divider within a part; title only",
-    "conclusion": "synthesizes the book's argument (non-fiction); clarity and "
-    "closure",
+    "conclusion": "synthesizes the book's argument (non-fiction); clarity and closure",
 }
 
 
@@ -125,19 +116,14 @@ def build_review_system_prompt(
     guidance. Unknown language codes fall through to a generic
     instruction. Unknown chapter types fall back to generic prose.
     """
-    focus_list = "\n".join(
-        f"- {FOCUS_DESCRIPTIONS[f]}" for f in focus if f in FOCUS_DESCRIPTIONS
-    )
+    focus_list = "\n".join(f"- {FOCUS_DESCRIPTIONS[f]}" for f in focus if f in FOCUS_DESCRIPTIONS)
 
     lang_name = LANG_MAP.get(language)
     if lang_name:
-        lang_instruction = (
-            f"The chapter is in {lang_name}. Write your review in {lang_name}."
-        )
+        lang_instruction = f"The chapter is in {lang_name}. Write your review in {lang_name}."
     else:
         lang_instruction = (
-            f"The chapter is in language '{language}'. "
-            "Write your review in that language."
+            f"The chapter is in language '{language}'. Write your review in that language."
         )
 
     genre_instruction = ""
@@ -150,13 +136,10 @@ def build_review_system_prompt(
     chapter_type_instruction = ""
     guidance = CHAPTER_TYPE_GUIDANCE.get(chapter_type)
     if guidance:
-        chapter_type_instruction = (
-            f"\nYou are reviewing a '{chapter_type}' section: {guidance}."
-        )
+        chapter_type_instruction = f"\nYou are reviewing a '{chapter_type}' section: {guidance}."
     elif chapter_type and chapter_type != "chapter":
         chapter_type_instruction = (
-            f"\nYou are reviewing a '{chapter_type}' section. "
-            "Apply standard prose review criteria."
+            f"\nYou are reviewing a '{chapter_type}' section. Apply standard prose review criteria."
         )
 
     return f"""You are a professional book editor reviewing a chapter manuscript.

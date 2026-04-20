@@ -396,6 +396,7 @@ export default function BookEditor() {
                     bookId={bookId}
                     chapterId={activeChapterMeta.id}
                     chapterTitle={activeChapterMeta.title}
+                    chapterType={activeChapterMeta.chapter_type}
                     chapterVersion={activeChapterMeta.version}
                     bookContext={{
                         title: book.title,
