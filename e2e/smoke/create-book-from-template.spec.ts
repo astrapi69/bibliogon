@@ -47,6 +47,23 @@ async function clickTab(page: Page, testId: string) {
     await locator.click();
 }
 
+/**
+ * Fill the author field in CreateBookModal. The modal swaps the plain
+ * <input data-testid="create-book-author"> for a Radix Select with
+ * data-testid="create-book-author-select" when `config.author.name` is
+ * configured. Handle both paths.
+ */
+async function pickAuthor(page: Page, fallbackName: string) {
+    const input = page.getByTestId("create-book-author");
+    if (await input.count()) {
+        await input.fill(fallbackName);
+        return;
+    }
+    // Select variant: open + pick the first option
+    await page.getByTestId("create-book-author-select").click();
+    await page.locator('[role="option"]').first().click();
+}
+
 test("create book from memoir template populates chapters", async ({page}) => {
     const templates = await fetchTemplates();
     const memoir = templates.find((t) => t.name === "Memoir" && t.is_builtin);
@@ -66,7 +83,7 @@ test("create book from memoir template populates chapters", async ({page}) => {
 
     // Fill required fields
     await page.getByTestId("create-book-title").fill("E2E Memoir");
-    await page.getByTestId("create-book-author").fill("Playwright");
+    await pickAuthor(page, "Playwright");
 
     // Submit
     const submit = page.getByTestId("create-book-submit");
@@ -103,7 +120,7 @@ test("create book blank mode still works after template tabs added", async ({pag
 
     // Blank is the default - no switch needed
     await page.getByTestId("create-book-title").fill("E2E Blank Book");
-    await page.getByTestId("create-book-author").fill("Playwright");
+    await pickAuthor(page, "Playwright");
 
     const submit = page.getByTestId("create-book-submit");
     await expect(submit).toBeEnabled();

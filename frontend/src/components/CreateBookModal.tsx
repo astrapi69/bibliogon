@@ -305,7 +305,10 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                             <label className="label">{t("ui.create_book.author", "Autor")} *</label>
                             {authorChoices.length > 0 ? (
                                 <Select.Root value={author} onValueChange={setAuthor}>
-                                    <Select.Trigger className="radix-select-trigger">
+                                    <Select.Trigger
+                                        className="radix-select-trigger"
+                                        data-testid="create-book-author-select"
+                                    >
                                         <Select.Value placeholder={t("ui.create_book.author_select", "Autor waehlen...")}/>
                                         <Select.Icon><ChevronDown size={14}/></Select.Icon>
                                     </Select.Trigger>

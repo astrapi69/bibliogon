@@ -130,10 +130,12 @@ test.describe("Dashboard filters - sort direction", () => {
         const firstCard = visibleBookCards(page).first();
         await expect(firstCard).toContainText("Der Mörder");
 
-        // Toggle to desc
+        // Toggle to desc: alphabetical reverse of the four seeded titles
+        // ["Der Mörder...", "Le Petit Prince", "Sternenstaub", "The
+        // Butler Did It"] puts "The Butler Did It" first.
         await page.getByTestId("filter-sort-direction").click();
         const firstAfterFlip = visibleBookCards(page).first();
-        await expect(firstAfterFlip).toContainText("Sternenstaub");
+        await expect(firstAfterFlip).toContainText("The Butler Did It");
     });
 });
 

@@ -566,13 +566,20 @@
    flush-left (caught by :not(:first-child) above), AND the first
    paragraph after any heading is also flush-left. The adjacent-
    sibling selector cancels the indent on any paragraph that comes
-   immediately after an h1-h6. */
-[data-app-theme="classic"] .ProseMirror h1 + p,
-[data-app-theme="classic"] .ProseMirror h2 + p,
-[data-app-theme="classic"] .ProseMirror h3 + p,
-[data-app-theme="classic"] .ProseMirror h4 + p,
-[data-app-theme="classic"] .ProseMirror h5 + p,
-[data-app-theme="classic"] .ProseMirror h6 + p {
+   immediately after an h1-h6.
+
+   Specificity note: the base rule uses `p:not(:first-child)` which
+   scores one pseudo-class; a bare `h2 + p` would have lower
+   specificity (zero pseudo-classes) and lose the cascade. Each
+   override below repeats `:not(:first-child)` so the specificity
+   matches the base rule on classes/pseudos, then adds the `h2` element
+   on top so the override actually wins. */
+[data-app-theme="classic"] .ProseMirror h1 + p:not(:first-child),
+[data-app-theme="classic"] .ProseMirror h2 + p:not(:first-child),
+[data-app-theme="classic"] .ProseMirror h3 + p:not(:first-child),
+[data-app-theme="classic"] .ProseMirror h4 + p:not(:first-child),
+[data-app-theme="classic"] .ProseMirror h5 + p:not(:first-child),
+[data-app-theme="classic"] .ProseMirror h6 + p:not(:first-child) {
     text-indent: 0;
 }
 

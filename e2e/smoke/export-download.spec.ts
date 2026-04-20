@@ -113,7 +113,7 @@ test.describe('Export via UI flow', () => {
     await createChapter(bookId, 'Test Chapter', '<p>Content for UI export.</p>')
   })
 
-  test('export dialog triggers download on format click', async ({page, context}) => {
+  test('export dialog triggers download on format click', async ({page}) => {
     await page.goto(`/book/${bookId}`)
     await expect(page.locator('.tiptap-editor')).toBeVisible({timeout: 5000})
 
@@ -121,15 +121,17 @@ test.describe('Export via UI flow', () => {
     await page.getByText(/Exportieren|Export\.\.\./).click()
     await expect(page.getByText(/Export:/)).toBeVisible({timeout: 3000})
 
-    // EPUB should be pre-selected, click the export button
-    // This opens a new tab via window.open - capture it
-    const popupPromise = context.waitForEvent('page')
+    // EPUB is pre-selected. The UI now fetches the export as a blob
+    // via `api.documentExport.download` and triggers a synthetic
+    // anchor click rather than `window.open`, so the Playwright
+    // signal is `page.waitForEvent('download')`, not a new page.
+    const downloadPromise = page.waitForEvent('download', {timeout: 15_000})
     await page.getByRole('button', {name: /EPUB.*exportieren|Export as EPUB/}).click()
 
-    // The popup loads the export URL and triggers a download
-    const popup = await popupPromise
-    await popup.waitForLoadState('domcontentloaded')
-    // The export dialog should close after triggering
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toMatch(/\.epub$/)
+
+    // The export dialog closes after a successful download.
     await expect(page.getByText(/Export:/)).not.toBeVisible({timeout: 5000})
   })
 })
