@@ -158,7 +158,15 @@ def _read_metadata_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     with open(path, encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        # Project exports wrap metadata.yaml in Pandoc-style
+        # `---` / `---` document markers, producing a stream of one
+        # real document followed by an empty trailing document. Use
+        # safe_load_all and pick the first non-empty document so both
+        # shapes (bare + Pandoc-wrapped) work.
+        for document in yaml.safe_load_all(f):
+            if document:
+                return document if isinstance(document, dict) else {}
+    return {}
 
 
 def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> ProjectMetadata:

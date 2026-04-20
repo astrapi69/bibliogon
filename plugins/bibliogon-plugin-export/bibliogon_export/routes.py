@@ -372,20 +372,33 @@ def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: b
     manual_toc = use_manual_toc if use_manual_toc is not None else _detect_manual_toc(chapters)
     cover = _find_cover(book_data, project_dir)
 
-    output_files: list[Path] = []
+    # Stash each format's output in a stable dir BEFORE the next
+    # run_pandoc call. manuscripta's run_export moves `project/output/`
+    # into `project/backup/` at the start of every call, which would
+    # invalidate a path held from the previous iteration. Copying into
+    # tmp_dir/batch/ decouples the ZIP from manuscripta's internal
+    # housekeeping.
+    import shutil
+
+    batch_dir = tmp_dir / "batch"
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    staged_files: list[Path] = []
     errors: list[str] = []
     for fmt in BATCH_FORMATS:
         try:
-            output_files.append(run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover))
+            produced = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
+            staged = batch_dir / produced.name
+            shutil.copy2(produced, staged)
+            staged_files.append(staged)
         except PandocError as e:
             errors.append(f"{fmt}: {e}")
-    if not output_files:
+    if not staged_files:
         raise HTTPException(status_code=500, detail=f"All exports failed: {'; '.join(errors)}")
 
     import zipfile
     zip_path = tmp_dir / f"{slug}-batch.zip"
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for f in output_files:
+        for f in staged_files:
             zf.write(f, f.name)
     return FileResponse(path=str(zip_path), media_type="application/zip", filename=f"{slug}-batch.zip")
 

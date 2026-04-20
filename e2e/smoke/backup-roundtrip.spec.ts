@@ -133,7 +133,7 @@ test.describe('Backup roundtrip', () => {
     expect(restored.series).toBe('Epic Saga')
     expect(restored.series_index).toBe(2)
     expect(restored.isbn_ebook).toBe('978-0-1234-5678-0')
-    expect(restored.keywords).toBe('["fantasy", "adventure"]')
+    expect(restored.keywords).toEqual(['fantasy', 'adventure'])
   })
 
   test('import into non-empty DB merges without duplicates', async ({request}) => {

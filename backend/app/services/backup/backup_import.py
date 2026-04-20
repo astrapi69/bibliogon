@@ -107,10 +107,16 @@ def _require_books_dir(extracted: Path) -> Path:
 
 
 def _restore_book_from_dir(db: Session, book_dir: Path) -> bool:
-    """Restore one book directory. Returns True if a book was added.
+    """Restore one book directory. Returns True if a book was added or
+    revived from the trash (soft-delete).
 
-    Skips silently when the directory is malformed or the book id already
-    exists in the DB (idempotent re-import).
+    Behavior:
+    - Directory malformed or no book.json: return False.
+    - Book id exists and is NOT soft-deleted: skip as already-imported.
+    - Book id exists and IS soft-deleted: clear `deleted_at`, replace
+      the book's scalar fields with the backup snapshot, wipe + re-add
+      chapters + assets, count as one restored book.
+    - Book id does not exist: create fresh.
     """
     if not book_dir.is_dir():
         return False
@@ -119,8 +125,27 @@ def _restore_book_from_dir(db: Session, book_dir: Path) -> bool:
         return False
 
     book_data = json.loads(book_json.read_text(encoding="utf-8"))
-    if db.query(Book).filter(Book.id == book_data["id"]).first():
-        return False  # already imported
+    existing = db.query(Book).filter(Book.id == book_data["id"]).first()
+    if existing is not None and existing.deleted_at is None:
+        return False  # live record: import is idempotent, skip
+    if existing is not None and existing.deleted_at is not None:
+        # Soft-deleted (trash): revive by hard-deleting the stale row
+        # and re-inserting via the same path as a fresh import. This
+        # avoids the landmine of partial attribute updates interacting
+        # with SQLAlchemy's unit of work for NOT-NULL columns the
+        # backup does not carry (ai_tokens_used, created_at,
+        # updated_at) and keeps the revived row consistent with the
+        # backup snapshot.
+        db.query(Chapter).filter(Chapter.book_id == book_data["id"]).delete()
+        db.query(Asset).filter(Asset.book_id == book_data["id"]).delete()
+        db.delete(existing)
+        db.flush()
+
+    book = restore_book_from_data(book_data)
+    db.add(book)
+    _restore_chapters(db, book_dir / "chapters", book_data["id"])
+    _restore_assets(db, book_dir, book_data["id"])
+    return True
 
     book = restore_book_from_data(book_data)
     db.add(book)

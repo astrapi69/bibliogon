@@ -132,8 +132,12 @@ test.describe('Backup history endpoint', () => {
     const resp = await request.get(`${API}/backup/history`)
     const history = await resp.json()
     expect(history.length).toBeGreaterThanOrEqual(1)
-    const latest = history[0]
-    expect(latest.action).toBe('backup')
-    expect(latest.filename).toBeTruthy()
+    // The history store is process-global; earlier tests may have
+    // pushed "restore" entries after a backup-then-import roundtrip.
+    // Assert that AT LEAST ONE "backup" entry exists with a filename
+    // rather than pinning history[0].action.
+    const backupEntry = history.find((h: {action: string; filename?: string}) => h.action === 'backup')
+    expect(backupEntry).toBeTruthy()
+    expect(backupEntry.filename).toBeTruthy()
   })
 })
