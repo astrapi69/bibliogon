@@ -2,6 +2,58 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.20.0] - 2026-04-20
+
+AI Review Extension is the headline feature. The existing chapter review grows from a single sync path into a three-mode async flow with persistent Markdown reports, cost estimates, and full 8-language prompt parity. Three real backend bugs in backup / batch export / smart-import are fixed along the way. Playwright smoke suite drops from 31 failures to zero.
+
+### Added
+
+**AI Review Extension**
+- Three primary focus modes in the Editor's AI panel: **Style**, **Consistency** (new; within-chapter contradictions, distinct from the legacy `coherence` focus), **Beta Reader** (new; open-ended simulated first-read feedback). Mutually exclusive radio buttons; the four legacy focus values stay on the API for power users but no longer appear in the UI.
+- Async review flow: `POST /api/ai/review/async`, `GET /api/ai/jobs/{id}`, `GET /api/ai/jobs/{id}/stream` (SSE), `DELETE /api/ai/jobs/{id}`. Rotating book-language status messages during the 5-60s job while the editor stays usable.
+- Persistent Markdown reports under `uploads/{book_id}/reviews/{review_id}-{chapter-slug}-{YYYY-MM-DD}.md`. `GET /api/ai/review/{id}/report.md?book_id=...` returns a `FileResponse`. Download button on the result panel.
+- Cascade delete on chapter removal wipes matching review files.
+- Chapter-type-aware prompts for all 31 `ChapterType` values; `ReviewRequest` gains `chapter_type`; the legacy sync `POST /api/ai/review` threads it through the same builder.
+- Non-prose warning above the Start button for 12 chapter types (`title_page`, `copyright`, `toc`, `imprint`, `index`, `half_title`, `also_by_author`, `next_in_series`, `call_to_action`, `endnotes`, `bibliography`, `glossary`), rendered in the book's language.
+- Token + USD cost preview on the Start button (`POST /api/ai/review/estimate`, chars/4 heuristic + small per-model pricing dict).
+- `GET /api/ai/review/meta` exposes UI focus values, primary focus list, non-prose types, supported languages, chapter types so the frontend avoids hardcoding.
+- Full 8-language prompt parity via a shared `LANG_MAP`; marketing prompt builder re-uses the same map.
+- New `backend/app/ai/prompts.py`, `pricing.py`, `review_store.py`. Thin `routes.py`.
+- i18n: six new UI keys per language x 8 languages.
+
+**Tests**
+- 31 new backend tests (AI review extended + cascade + store utilities).
+- 9 regression tests pinning the three backend fixes.
+- 8 frontend Vitest tests for 8-lang strings + non-prose-set parity.
+- 4 Playwright smoke tests for the AI review UI.
+- 16 smoke test-infra fixes (selector narrowing, seed corrections, timing tolerances, testid coverage, assumption refreshes).
+
+### Fixed
+
+- **`backup_import` now restores soft-deleted books** instead of silently skipping. Dedup check predated the trash feature. Fix: hard-delete the stale row + its chapters + assets, then fall through to the fresh-insert path.
+- **Batch export no longer raises `FileNotFoundError`**. `plugin-export.export_batch_route` collected per-format paths across a loop, but manuscripta's `run_export` moves `project/output/` to `project/backup/` on every call. Fix: copy each format's output into a stable `tmp_dir/batch/` staging dir before the next `run_pandoc`.
+- **`smart-import` handles Pandoc-wrapped `metadata.yaml`**. `safe_load` rejected the multi-document stream (`---` / `---` markers); fix uses `safe_load_all` + first non-empty document.
+- **Launcher release workflows** inherit the v0.19.1 permissions fix; tag push attaches Windows / macOS / Linux binaries as release assets.
+
+### Changed
+
+- `POST /api/ai/review` (sync) accepts `chapter_type`; backward-compatible default `"chapter"`.
+- `_build_review_system_prompt` is a thin alias for `prompts.build_review_system_prompt` (existing test imports keep working).
+- Classic palette first-line indent override uses `h* + p:not(:first-child)` to beat the base rule's specificity.
+- CreateBookModal Radix Select trigger gains `data-testid="create-book-author-select"`.
+
+### Documentation
+
+- AI help pages (`docs/help/{de,en}/ai.md`) rewrite the Chapter Review section with focus-mode guidance, non-prose warning, cost estimate, async progress, persistence + download.
+- `docs/API.md` documents the 8 new `/api/ai/` endpoints.
+- `.claude/rules/lessons-learned.md` adds 7 pitfalls from the release window.
+- `docs/audits/current-coverage.md` gets a v0.20.0 addendum with the +181 test delta.
+- Medium blog post for v0.19.1 archived under `docs/blog/`.
+
+### Known pending post-release
+
+4 Playwright smoke skips tracked in GitHub issue #9: three chapter-sidebar dropdown / layout tests at 125% + 150% CSS zoom, one editor word-count test (TipTap useEditor transaction re-render). Deferred major dependency bumps: elevenlabs 0.2 -> 2.43, starlette 0.46 -> 1.0, rich 14 -> 15. Pillow 12 still blocked upstream by manuscripta.
+
 ## [0.19.1] - 2026-04-20
 
 Maintenance release. Two user-visible fixes (i18n labels, backup resource leak), launcher release-workflow unblocked, and a substantial code-hygiene sweep (ruff + mypy + pre-commit wired into CI). No schema changes, no API breakage.
