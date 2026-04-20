@@ -3,7 +3,7 @@
 Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see docs/explorations/monetization.md for future strategy).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.19.1 (maintenance: i18n for Front/Back Matter labels, backup zip handle leak closed, launcher release workflows granted contents:write permission, ruff+mypy+pre-commit wired into CI, react-router-dom ^7.14)
+- **Version:** 0.20.0 (AI Review Extension: 3 focus modes Style/Consistency/Beta Reader, async flow with SSE, persistent Markdown reports, cost estimate, chapter-type-aware prompts for all 31 types, non-prose warning, 8-language prompt parity; 3 backend bugs fixed in backup-import soft-delete revival + batch export file staging + smart-import multi-doc YAML; Playwright smoke 31 failures -> 0)
 - **Concept:** docs/CONCEPT.md
 - **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
 - **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)
