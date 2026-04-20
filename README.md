@@ -8,9 +8,9 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 ## Features
 
-- WYSIWYG and Markdown editor (TipTap with 15 extensions, 24 toolbar buttons)
-- 26 chapter types (Preface, Foreword, Prologue, Dedication, Part, Epilogue, Afterword, Final Thoughts, Also by the Author, Excerpt, Call to Action, ...)
-- 16 book genres (Novel, Non-Fiction, Technical, Biography, Poetry, ...)
+- WYSIWYG and Markdown editor (TipTap with 15 official + 1 community extension, 24 toolbar buttons)
+- Full-book structure with chapter types for every section (Preface, Foreword, Prologue, Dedication, Part, Epilogue, Afterword, Index, Also by the Author, Excerpt, Call to Action, ...)
+- Genre catalog for Novel, Non-Fiction, Technical, Biography, Poetry, Children, Fantasy, Thriller, Romance, Cookbook, Travel, and more
 - Drag-and-drop chapter ordering with collapsible sections
 - EPUB, PDF, Word, HTML, Markdown export via [manuscripta](https://github.com/astrapi69/manuscripta)
 - Audiobook generation with 5 TTS engines (Edge TTS, Google Cloud TTS, Google Translate, pyttsx3, ElevenLabs)
@@ -97,7 +97,7 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 - **Frontend:** React 18, TypeScript, TipTap, Vite, Radix UI, @dnd-kit, react-markdown
 - **Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic v2
 - **Plugins:** PluginForge (PyPI), pluggy-based, YAML-configured
-- **Export:** manuscripta ^0.7.0 (PyPI), Pandoc, [write-book-template](https://github.com/astrapi69/write-book-template)
+- **Export:** manuscripta ^0.9.0 (PyPI), Pandoc, [write-book-template](https://github.com/astrapi69/write-book-template)
 - **TTS:** manuscripta adapter layer with 5 engines (Edge TTS, Google Cloud, gTTS, pyttsx3, ElevenLabs)
 
 ## Plugins
