@@ -25,6 +25,9 @@ backend/config/plugins/audiobook/google-credentials.enc
 
 # Database
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 
 # Uploads (user assets)
 backend/uploads/
