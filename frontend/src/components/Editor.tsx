@@ -1,7 +1,7 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
-import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
+import {useEditor, useEditorState, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
 import {reviewString, NON_PROSE_CHAPTER_TYPES} from "../data/ai-review-strings";
 import StarterKit from "@tiptap/starter-kit";
@@ -297,6 +297,24 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         },
     });
 
+    // Live word/char count off editor.storage.characterCount.
+    // useEditorState subscribes to the editor's transactionNumber and
+    // re-runs the selector on every transaction. See GitHub issue #12:
+    // inline reads in JSX do not re-render the status bar on keyboard
+    // input because `editor.storage` is not a React state dep.
+    const {words: wordCount, chars: charCount} = useEditorState({
+        editor,
+        selector: ({editor: ed}) => {
+            const storage = ed?.storage.characterCount as
+                | {words: () => number; characters: () => number}
+                | undefined;
+            return {
+                words: storage ? storage.words() : 0,
+                chars: storage ? storage.characters() : 0,
+            };
+        },
+    }) ?? {words: 0, chars: 0};
+
     // Keep ref in sync for async callbacks (image upload)
     useEffect(() => { editorRef.current = editor; }, [editor]);
 
@@ -357,6 +375,7 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
 
     // Cleanup old drafts on mount
     useEffect(() => { cleanupOldDrafts(draftMaxAgeDays); }, [draftMaxAgeDays]);
+
 
     // Cleanup timer
     useEffect(() => {
@@ -1042,9 +1061,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             {/* Status bar */}
             <div style={styles.statusBar}>
                 <span style={styles.wordCount}>
-                    {editor?.storage.characterCount?.words() ?? 0} {t("ui.editor.words", "Wörter")}
+                    {wordCount} {t("ui.editor.words", "Wörter")}
                     {" / "}
-                    {editor?.storage.characterCount?.characters() ?? 0} {t("ui.editor.characters", "Zeichen")}
+                    {charCount} {t("ui.editor.characters", "Zeichen")}
                     {/* Word goal */}
                     {chapterId && !editingGoal && (
                         <button
@@ -1086,8 +1105,8 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                     <div style={styles.goalProgress}>
                         <div style={{
                             ...styles.goalProgressFill,
-                            width: `${Math.min(100, ((editor?.storage.characterCount?.words() ?? 0) / wordGoal) * 100)}%`,
-                            background: (editor?.storage.characterCount?.words() ?? 0) >= wordGoal ? "#16a34a" : "var(--accent)",
+                            width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
+                            background: wordCount >= wordGoal ? "#16a34a" : "var(--accent)",
                         }}/>
                     </div>
                 )}

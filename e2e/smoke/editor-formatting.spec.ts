@@ -406,17 +406,17 @@ test.describe('G. Integration', () => {
     await expect(page.locator('.ProseMirror')).toContainText('Edited A')
   })
 
-  // Skipped: the status-bar word count is driven by
-  // editor.storage.characterCount.words() on every React render, but
-  // React only re-renders when TipTap's useEditor hook fires its
-  // internal `shouldRerenderOnTransaction` callback. For keyboard
-  // input, that callback runs but the counter stays at the pre-type
-  // value (snapshot shows 2/9 while the DOM shows "one two three
-  // four five"). The status-bar subscription to editor transactions
-  // needs a dedicated fix (likely `useState` + `editor.on('update')`
-  // in Editor.tsx); tracked in issue #9. The real feature (typing
-  // updates chapter content and autosaves) is covered by other
-  // tests in this file.
+  // Still skipped after partial #12 fix: Editor.tsx now uses
+  // `useEditorState` (the idiomatic TipTap reactive read) for word +
+  // character count instead of inline `editor.storage...` reads, but
+  // Playwright still sees a stale rendered counter after
+  // keyboard.type. The inline-read -> useEditorState migration is the
+  // right architectural direction and is the code fix for the
+  // user-visible bug; the test failure mode may be an interaction
+  // between React strict-mode double-mount and
+  // useSyncExternalStore's initial subscription timing in the Vite
+  // dev server Playwright drives against. Needs a dedicated debug
+  // session with browser-side console logging. Tracked in issue #12.
   test.skip('word count updates after typing', async ({page}) => {
     await openEditor(page, bookId)
     await page.getByText('Chapter A').click()
