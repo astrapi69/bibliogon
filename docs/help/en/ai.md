@@ -41,14 +41,44 @@ The AI adapts its suggestions to your book's genre and language.
 
 ## Chapter review
 
-Click the **Review** tab in the AI panel. The AI analyzes your entire chapter and provides structured feedback:
+Click the **Review** tab in the AI panel. The AI analyzes your entire chapter and returns a structured Markdown report you can save and re-open.
+
+### Focus modes
+
+Pick exactly one focus before clicking **Review chapter**:
+
+- **Style** - writing style: word choice, sentence variety, readability, voice consistency. Use this when the story works but the prose needs polish.
+- **Consistency** - internal contradictions within the chapter: facts, timing, character traits, locations, object descriptions. Use this to catch the small "her coat was blue two pages ago, now green" kind of mistakes before a reader spots them.
+- **Beta Reader** - open-ended first-read feedback: what engages, what drags, what confuses, questions left in the reader's mind. Use this when the chapter is done and you want a "fresh eyes" pass.
+
+The three legacy focus values (Coherence, Pacing, Dialogue, Tension) are still supported on the API level for power users but are no longer exposed in the UI.
+
+### Cost estimate
+
+The Start button shows a rough input-token count and USD cost estimate based on your chapter length and the configured model (e.g. `~5k tokens, ~$0.075`). The estimate is conservative; actual usage is usually lower. No estimate is shown when the model is unknown to Bibliogon's price table.
+
+### Non-prose chapters
+
+For chapter types that are not narrative prose (title page, copyright, table of contents, imprint, index, half title, also-by-author, next-in-series, call-to-action, endnotes, bibliography, glossary), Bibliogon shows a small warning above the Start button. You can still run a review; the feedback may be more limited than for prose.
+
+### Structured output
+
+Every review uses the same structure:
 
 - **Summary** - one sentence about the chapter's content
 - **Strengths** - what works well, with specific references
 - **Suggestions** - concrete improvements with explanations
 - **Overall** - a brief assessment
 
-The review considers your book's genre and provides genre-appropriate feedback (e.g. pacing feedback for thrillers, clarity feedback for non-fiction).
+The review considers your book's genre, language (all 8 supported UI languages), and the selected chapter type, so feedback is appropriate to the section (e.g. pacing feedback for thrillers, minimal tone notes on a dedication, compliance hints on copyright pages).
+
+### Persistence + download
+
+Every review is saved as a Markdown file under `uploads/{book_id}/reviews/` with a filename like `{review-id}-{chapter-slug}-{YYYY-MM-DD}.md`. A **Download report** button appears next to the result so you can save the file locally for a writing notebook, attach it to a commit, or keep a history per chapter. When a chapter is deleted, its review files are automatically cleaned up alongside the chapter content.
+
+### Async progress
+
+Large chapters can take 5-60 seconds. The review runs as a background job; the editor stays usable, and a rotating status message (in your book's language) is shown while the analysis runs. You can close the AI panel mid-review; when the review finishes, the result re-appears on reopen.
 
 ## Marketing text
 

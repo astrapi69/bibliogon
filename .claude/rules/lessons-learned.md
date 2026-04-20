@@ -395,3 +395,49 @@ Stability filter:
 
 - `vite-plugin-pwa@1.2.0` (latest as of 2026-04-18) lists Vite `^3 || ^4 || ^5 || ^6 || ^7` in its peer deps. No Vite 8 support yet. Attempting Vite 6 -> 8 with PWA installed will either refuse to install or runtime-break.
 - This is why DEP-04 landed as Vite 6 -> 7, not 6 -> 8. The Vite 8 bump is deferred until vite-plugin-pwa publishes compat. Check `npm view vite-plugin-pwa peerDependencies` before attempting the next bump.
+
+## AI Review extension (v0.20.0)
+
+### Backup import must check soft-delete state before dedup
+
+- `backup_import._restore_book_from_dir` previously treated any pre-existing `Book.id` in the DB as "already imported" and returned False. That check predates the soft-delete / trash feature: a backup made before trashing silently could not be restored once the books had been moved to trash - the importer saw them in the DB (with `deleted_at` set) and refused to rebuild.
+- Fix: when the pre-existing row is soft-deleted, HARD-delete it along with its chapters + assets, then fall through to the fresh-insert path. Do NOT try to revive via per-attribute setattr: the backup JSON does not carry every NOT NULL column (`ai_tokens_used`, `created_at`, `updated_at`), so SQLAlchemy emits an UPDATE that sets those to NULL and the integrity constraint trips. Hard-delete + fresh-insert sidesteps the whole partial-update dance and matches the backup's snapshot semantics.
+- Generalizes: any "idempotent by id" import path added before a soft-delete feature becomes silently buggy. Always branch on `deleted_at IS NULL` when deduping.
+
+### manuscripta `run_export` moves `output/` to `backup/` on every call
+
+- `manuscripta.export.book.run_export` copies the existing `project_dir/output/` to `project_dir/backup/` at the start of every invocation and creates a fresh `output/`. A list of per-format output paths collected across a batch-export loop contains stale paths by the time the loop finishes.
+- Symptom in v0.19.x: `FileNotFoundError` at `zipfile.ZipFile.write(f, f.name)` inside `/api/books/{id}/export/batch`, referencing a file that existed moments earlier.
+- Fix: after each `run_pandoc` call, IMMEDIATELY copy the produced file into a stable staging directory (`tmp_dir/batch/`) and zip from there. Do NOT keep references to files under `project_dir/output/` across subsequent `run_export` calls.
+
+### Pandoc-wrapped metadata.yaml is a multi-doc YAML stream
+
+- The project exporter wraps `metadata.yaml` in Pandoc-style `---` / `---` document markers. PyYAML's `safe_load` expects exactly one document and raises `yaml.composer.ComposerError` on any trailing `---` (even if the second document is empty).
+- Fix: use `yaml.safe_load_all(f)` and return the first non-empty document. Handles both the bare and the Pandoc-wrapped shapes in one code path.
+- Regression: `smart_import` crashing with 500 on a ZIP that `/api/backup/export` had just produced.
+
+### CSS specificity trap: `h2 + p` loses to `p:not(:first-child)`
+
+- Specificity for `[data-app-theme="classic"] .ProseMirror h2 + p`: (0, 1, 1, 2) - 1 attr, 1 class, 2 elements.
+- For `[data-app-theme="classic"] .ProseMirror p:not(:first-child)`: (0, 1, 2, 1) - 1 attr, 1 class + 1 pseudo-class = 2 "classes", 1 element. The pseudo-class pushes the base rule ahead of the adjacent-sibling override.
+- When both rules match (a paragraph that directly follows a heading AND is not the first child), the higher-specificity `:not(:first-child)` wins and the heading override never applies.
+- Fix: append `:not(:first-child)` to each `h* + p` override. Combined (0, 1, 2, 2) beats the base (0, 1, 2, 1).
+- Generalizes: any CSS override against a `:not(:first-child)` base rule needs at least the same pseudo-class weight.
+
+### TipTap `useEditor` does NOT flush `editor.storage` reads to React
+
+- A status-bar word count written as `{editor?.storage.characterCount?.words()}` inline in JSX looks fine but does not update reliably after keyboard input. TipTap's built-in re-render on transaction fires for selection changes but not for every content transaction we rely on.
+- Reliable fix: subscribe explicitly via `editor.on('update', () => forceUpdate())`, or mirror the count into React state via `useState` + `editor.on('update')`.
+- Surfaced as a smoke-test failure in `smoke/editor-formatting.spec.ts` "word count updates after typing". Currently skipped with a reference to issue #9 until the subscribe pattern is wired up.
+
+### Prefix testid selectors match every nested testid that shares the prefix
+
+- A selector like `[data-testid^='book-card-']` cleanly matches each card root AND every nested child testid that shares the prefix (`book-card-menu-{id}`, `book-card-menu-delete-{id}`). `toHaveCount(N)` returns `2N` or more per visible card.
+- Fix: `[data-testid^='book-card-']:not([data-testid*='-menu-'])`, or give the root a distinct testid like `book-card-root-{id}`.
+- Same shape as the `[class^=""]` overmatch antipattern. Always test a prefix selector against the full rendered surface before shipping.
+
+### IndexedDB recovery draft `contentHash` is a MATCH check, not a MISMATCH
+
+- `frontend/src/db/drafts.ts#checkForRecovery` returns a draft iff `draft.contentHash === hashContent(serverContent)` AND `draft.content !== serverContent`. The contract is "this draft was written against THIS server state, local content is newer". Seeding a test draft with `contentHash: '_mismatch_'` will NOT trigger the recovery banner.
+- A misleading test comment saying "must differ from server hash" burned multiple sessions before the `checkForRecovery` source was re-read.
+- When writing tests that seed IndexedDB, compute the hash of the real server content inside the seed script rather than using a sentinel value.

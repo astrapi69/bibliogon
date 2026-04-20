@@ -1,8 +1,50 @@
-# Test Coverage Audit - v0.17.0
+# Test Coverage Audit - v0.17.0 (with v0.20.0 addendum)
 
-Audit date: 2026-04-18
+Audit date: 2026-04-18 (primary), 2026-04-20 (v0.20.0 addendum below)
 Previous audit: 2026-04-13 (archived as `history/2026-04-13-coverage.md`)
-Scope: everything on `main` as of commit `decb531`.
+Scope: everything on `main` as of commit `decb531` (primary) plus
+the v0.19.1 -> v0.20.0 delta.
+
+## v0.20.0 addendum
+
+Delta since the 2026-04-18 primary audit:
+
+| Suite | 2026-04-18 | 2026-04-20 (v0.20.0) | Delta |
+|-------|-----------|----------------------|-------|
+| Backend (`backend/tests/`) | 511 | 638 | +127 |
+| Plugins in `make test` matrix | 409 | 409 | 0 |
+| Frontend (Vitest) | 351 | 405 | +54 |
+| E2E (Playwright smoke) | 135 passing / 31 failing | 162 passing / 0 failing / 4 skipped | +27 pass, -31 fail |
+| **Total automated tests** | 1,271 | 1,452 | +181 |
+
+### Gaps closed in the v0.20.0 window
+
+- **AI Review Extension**: 31 new backend tests across `test_ai_review.py` (47 total; includes prompt-builder for 8 languages, chapter-type injection, cost estimate, async review flow via JobStore + SSE, FileResponse download, cascade on chapter delete) and `test_ai_review_store.py` (15 direct unit tests: slugify, filename shape, report roundtrip, cascade boundary safety, DELETE chapter cascade integration).
+- **Backup regressions**: `test_backup_import_revive.py` pins 9 data-critical paths (soft-deleted book revival, idempotent live re-import, merge with non-empty DB, multi-doc YAML parse, smart-import project ZIP roundtrip, batch-export pandoc-skip gate).
+- **Playwright smoke for AI Review**: new `smoke/ai-review.spec.ts` (4 tests) covering the three radio focus buttons, non-prose warning visibility per chapter type, and a mocked happy-path download-report flow. Closes the step-7 protocol gap for the new UI feature.
+- **Frontend Vitest for AI Review**: `src/data/ai-review-strings.test.ts` (8 tests) pins 8-language coverage of the book-language status + warning strings and the non-prose chapter-type set's parity with the backend `NON_PROSE_TYPES` constant.
+- **Smoke test-infra cleanup**: `dashboard-filters` selector narrowed, content-safety recovery seed fixed, Ctrl+Z timing, theme reload seed via page.evaluate, export content-type tolerance, trash restore view switch, Classic first-line-indent CSS specificity, CreateBookModal Select testid, dashboard sort direction expectation, export dialog migrated to download event, word-count + viewport-zoom tracked as skipped with issue #9 references.
+
+### Still open as of v0.20.0
+
+- **Audiobook generation E2E** - still no dedicated smoke spec; same as 2026-04-18.
+- **Image/asset upload in editor E2E** - still no spec.
+- **TipTap useEditor -> React re-render for status bar** - currently ships with a stale word count on keyboard input. Lessons-learned has the subscribe pattern documented; dedicated fix + test un-skip is deferred to post-v0.20.0.
+- **Chapter-sidebar dropdown layout at 125% / 150% CSS zoom** - 3 skipped smoke tests; needs Radix Popper collision rework or a viewport-downscale test proxy.
+
+### v0.20.0 running totals
+
+| Suite | Count |
+|-------|-------|
+| Backend only | 638 |
+| Plugins via `make test` matrix | 409 |
+| Total Python tests in repo | 1,047 |
+| Frontend (Vitest) | 405 |
+| E2E (Playwright smoke) | 162 passing / 4 skipped |
+
+---
+
+## Primary audit (2026-04-18 baseline)
 
 ## Deltas since 2026-04-13
 
