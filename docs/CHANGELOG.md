@@ -2,6 +2,39 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.19.1] - 2026-04-20
+
+Maintenance release. Two user-visible fixes (i18n labels, backup resource leak), launcher release-workflow unblocked, and a substantial code-hygiene sweep (ruff + mypy + pre-commit wired into CI). No schema changes, no API breakage.
+
+### Fixed
+- **Front Matter / Back Matter labels translated.** The two section headers in the BookEditor chapter sidebar were hardcoded English strings. Now pulled from `ui.editor.front_matter` / `back_matter` in all 8 i18n YAMLs.
+- **Backup: zip file handle leak in `smart_import`.** The zip handle was not closed on all code paths, keeping the file locked on Windows and leaking file descriptors on long-running backends. Explicit `close()` in a `finally` block.
+- **Launcher release workflows granted `contents: write`.** `softprops/action-gh-release@v2` was failing with "Resource not accessible by integration" on tag pushes because the default `GITHUB_TOKEN` is read-only. All three launcher workflows (Linux, macOS, Windows) now declare `permissions: contents: write` at top level. Tagged releases publish the prebuilt launcher binaries + SHA256 checksums as release assets.
+
+### Changed
+- **Dependency bump: react-router-dom to ^7.14** (DEP-03). Backward-compatible minor within the v7 line.
+
+### Internal
+- **ruff configured and applied** across the backend; conservative rule set plus whole-tree auto-fix sweep.
+- **mypy errors closed.** 14 pre-existing `[no-any-return]` and `[import-untyped]` errors fixed without loosening the type-checker config.
+- **pre-commit installed and enforced.** Whole-tree formatter sweep landed as a single commit; every subsequent commit must pass the hook stack.
+- **CI jobs for pre-commit + ruff + mypy** in `.github/workflows/ci.yml`.
+- **release-workflow Step 5** uses `poetry run` for `ruff check` / `mypy` (docs fix).
+
+### Tests
+- **Licensing: full unit coverage** for `app.licensing` (payload, signatures, expiry edges, wildcard plugin `*`).
+- **Backup: direct unit tests** for archive, asset, markdown utility modules.
+- **Backup: persistence + HTTP route coverage** for `backup_history`.
+- **Async event-loop hygiene** in backend tests — `asyncio.run()` replaces manual loop construction.
+- **Frontend sanitizer test** no longer sets an iframe `src` (silences happy-dom fetch warning).
+
+### Docs
+- Exploration docs for AI review extension architecture and the children's-book plugin (architecture finalized, implementation deferred).
+- Audit docs — backup_history + backup utils coverage gaps closed; polish audit 2026-04-18 captured; placeholder hashes replaced with real hashes.
+- Roadmap — conflict-dialog "Save as new chapter" TODO promoted to PS-13.
+- Session journals backfilled for April 1–12; gitignore aligned with ai-workflow.md so journals are actually committed.
+- DEP-09 still blocked on vite-plugin-pwa compat.
+
 ## [0.19.0] - 2026-04-18
 
 Content safety is the headline of this release. A silent data-loss path in autosave (status flipped to "saved" and the IndexedDB draft was deleted before the server round-trip completed) is closed, and the whole save pipeline is hardened against tab crashes, offline outages, concurrent edits from a second tab, and accidental overwrites. Plus the donation-integration S-series (Liberapay, GitHub Sponsors, Ko-fi, PayPal) and an MkDocs restructure that finally gives macOS and Linux launcher users proper documentation.
