@@ -34,8 +34,8 @@ Scope: everything on `main` as of commit `decb531`.
 - **Image/asset upload in editor E2E** - still no spec.
 - ~~Help and Getstarted plugins not in the `make test` matrix~~ - **closed 2026-04-18**: both are now wired into `Makefile` (`test-plugin-help`, `test-plugin-getstarted`, `test-coverage-plugin-*` targets + aggregators) and CI's `ci.yml` / `coverage.yml` plugin matrices. `pytest-cov` added as dev dep to both; `httpx` added to help (uses `starlette.TestClient`).
 - `pandoc_runner.py` in export plugin - still zero unit tests (exercised indirectly by integration tests).
-- `backup_history.py` + `GET /api/backup/history` - still zero tests.
-- `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` under `app/services/backup/` - still zero direct unit tests.
+- ~~`backup_history.py` + `GET /api/backup/history` - still zero tests.~~ - **closed 2026-04-18**: `test_backup_history.py` now holds 11 tests (class API + persistence roundtrip + parent-dir creation + HTTP route with limit). `app/backup_history.py` reaches 100% line coverage.
+- ~~`archive_utils.py`, `asset_utils.py`, `markdown_utils.py` under `app/services/backup/` - still zero direct unit tests.~~ - **closed 2026-04-18**: `test_backup_utils_direct.py` adds 34 direct unit tests (find_manifest/books_dir/project_root paths, _classify_asset_type variants, import_assets DB roundtrip, rewrite_image_paths rewrites known / skips no-img, detect_chapter_type, extract_title, read_file_if_exists, md_to_html anchor/figure/nested-list/empty paths).
 
 ---
 
@@ -57,14 +57,15 @@ Scope: everything on `main` as of commit `decb531`.
 | `app/services/backup/markdown_import.py` | indirect via `test_smart_import.py` | MEDIUM |
 | `app/services/backup/serializer.py` | `test_serializer.py` | HIGH |
 | `app/services/backup/markdown_utils.py` | NONE | **NONE** |
-| `app/services/backup/archive_utils.py` | NONE | **NONE** |
-| `app/services/backup/asset_utils.py` | NONE | **NONE** |
+| `app/services/backup/archive_utils.py` | `test_backup_utils_direct.py` | HIGH |
+| `app/services/backup/asset_utils.py` | `test_backup_utils_direct.py` | HIGH |
+| `app/services/backup/markdown_utils.py` | `test_backup_utils_direct.py` | HIGH |
 | `app/licensing.py` | `test_license_tiers.py` | MEDIUM |
 | `app/job_store.py` | `test_job_store.py` | HIGH |
 | `app/credential_store.py` | `test_credential_store.py` | HIGH |
 | `app/voice_store.py` | `test_voice_store.py` | HIGH |
 | `app/audiobook_storage.py` | `test_audiobook_storage.py` | HIGH |
-| `app/backup_history.py` | NONE | **NONE** |
+| `app/backup_history.py` | `test_backup_history.py` | HIGH (100%) |
 | `app/ai/llm_client.py` | `test_ai_client.py` | HIGH |
 | `app/ai/routes.py` | `test_ai_marketing.py`, `test_ai_review.py`, `test_ai_providers.py`, `test_ai_config_refresh.py`, `test_ai_usage_tracking.py` | HIGH |
 | `app/data/builtin_templates.py` | covered via `test_templates.py` integration | MEDIUM |
@@ -195,8 +196,8 @@ None. The regression pin we just shipped (`test_update_preserves_comments_and_fo
 | 1 | Audiobook generation E2E | Backend is well-covered (98 unit tests); the UX glue (SSE progress dialog, download flow) has no end-to-end pin |
 | 2 | Image/asset upload in editor E2E | No spec; drag-drop and file picker paths untested at UX level |
 | 3 | `pandoc_runner.py` (export plugin) | Pandoc invocation wrapper, no dedicated tests |
-| 4 | `backup_history.py` + `GET /api/backup/history` | Feature + endpoint, zero tests |
-| 5 | `archive_utils.py`, `asset_utils.py`, `markdown_utils.py` | Backup utility modules under `services/backup/`, zero direct tests |
+| 4 | ~~`backup_history.py` + `GET /api/backup/history`~~ - **closed 2026-04-18** (11 tests, 100% coverage) | Feature + endpoint |
+| 5 | ~~`archive_utils.py`, `asset_utils.py`, `markdown_utils.py`~~ - **closed 2026-04-18** (34 direct tests in `test_backup_utils_direct.py`) | Backup utility modules under `services/backup/` |
 | 6 | Audiobook dry-run + preview endpoints | 6 untested endpoints in `/api/books/{id}/audiobook` |
 | 7 | Google Cloud TTS config endpoints | 4 untested endpoints |
 | 8 | Plugin `routes.py` (grammar, kdp, kinderbuch, translation) | Integration covered indirectly by make test; no dedicated happy-path specs |
