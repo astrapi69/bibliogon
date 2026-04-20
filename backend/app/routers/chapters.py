@@ -233,6 +233,14 @@ def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db))
     chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
+    # Cascade: delete AI review files linked to this chapter's slug. The
+    # reviews directory is best-effort; a missing dir or unreadable file
+    # never blocks the chapter deletion.
+    from app.ai.review_store import delete_reviews_for_chapter, slugify
+
+    chapter_slug = slugify(chapter.title or chapter_id)
+    delete_reviews_for_chapter(book_id, chapter_slug)
+
     db.delete(chapter)
     db.commit()
 

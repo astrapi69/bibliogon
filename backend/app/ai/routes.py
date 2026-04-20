@@ -1,15 +1,33 @@
 """AI API routes for generic LLM interaction."""
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.job_store import JobStatus, job_store
+
 from .llm_client import LLMClient, LLMError
+from .pricing import estimate_review_cost
+from .prompts import (
+    CHAPTER_TYPE_GUIDANCE,
+    FOCUS_DESCRIPTIONS,
+    LANG_MAP,
+    NON_PROSE_TYPES,
+    build_review_system_prompt,
+)
 from .providers import PROVIDER_PRESETS
+from .review_store import (
+    find_report,
+    new_review_id,
+    slugify,
+    write_report,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -93,15 +111,27 @@ class ReviewRequest(BaseModel):
     """Request for AI-assisted chapter review."""
 
     content: str = Field(..., min_length=1, description="Chapter text to review")
+    chapter_id: str = Field(
+        default="", description="Chapter id, used for report filename slug fallback"
+    )
     chapter_title: str = Field(default="", description="Title of the chapter")
+    chapter_type: str = Field(
+        default="chapter",
+        description="Chapter type (ChapterType enum value) for tailored review guidance",
+    )
     book_title: str = Field(default="", description="Title of the book")
     genre: str = Field(default="", description="Book genre for tone-appropriate feedback")
-    language: str = Field(default="de", description="Language code (de, en, ...)")
+    language: str = Field(
+        default="de", description="Language code (de, en, es, fr, el, pt, tr, ja)"
+    )
     focus: list[str] = Field(
         default_factory=lambda: ["style", "coherence", "pacing"],
-        description="Review focus areas: style, coherence, pacing, dialogue, tension",
+        description=(
+            "Review focus areas: style, coherence, pacing, dialogue, tension, "
+            "consistency, beta_reader"
+        ),
     )
-    book_id: str = Field(default="", description="Book ID for usage tracking")
+    book_id: str = Field(default="", description="Book ID for usage tracking + report storage")
 
 
 @router.post("/chat")
@@ -168,50 +198,19 @@ async def list_providers() -> list[dict[str, Any]]:
     return [preset.model_dump() for preset in PROVIDER_PRESETS.values()]
 
 
-def _build_review_system_prompt(language: str, focus: list[str], genre: str = "") -> str:
-    """Build the system prompt for chapter review based on language, focus areas, and genre."""
-    focus_descriptions = {
-        "style": "writing style (word choice, sentence variety, readability, voice consistency)",
-        "coherence": "coherence and structure (logical flow, paragraph transitions, argument clarity)",
-        "pacing": "pacing (scene length balance, tension curve, slow or rushed sections)",
-        "dialogue": "dialogue quality (natural speech, character voice distinction, said-bookisms)",
-        "tension": "narrative tension (stakes, conflict escalation, reader engagement)",
-    }
-    focus_list = "\n".join(
-        f"- {focus_descriptions.get(f, f)}" for f in focus if f in focus_descriptions
-    )
+def _build_review_system_prompt(
+    language: str,
+    focus: list[str],
+    genre: str = "",
+    chapter_type: str = "chapter",
+) -> str:
+    """Backwards-compatible alias for `prompts.build_review_system_prompt`.
 
-    lang_instruction = ""
-    if language == "de":
-        lang_instruction = "The chapter is in German. Write your review in German."
-    elif language == "en":
-        lang_instruction = "The chapter is in English. Write your review in English."
-    else:
-        lang_instruction = (
-            f"The chapter is in language '{language}'. Write your review in that language."
-        )
-
-    genre_instruction = ""
-    if genre:
-        genre_instruction = f"\nThe book's genre is {genre}. Tailor your feedback to the conventions and reader expectations of this genre."
-
-    return f"""You are a professional book editor reviewing a chapter manuscript.
-
-{lang_instruction}{genre_instruction}
-
-Analyze the chapter for these aspects:
-{focus_list}
-
-Structure your review as follows:
-1. **Summary**: One sentence summarizing the chapter's content.
-2. **Strengths**: 2-3 specific things done well (with brief quotes or references).
-3. **Suggestions**: 3-5 concrete, actionable improvements. For each suggestion:
-   - State what the issue is
-   - Explain why it matters
-   - Suggest how to fix it
-4. **Overall**: One sentence overall assessment.
-
-Be constructive and specific. Refer to actual passages in the text. Avoid generic advice like "show don't tell" without pointing to a specific instance. Do not rewrite the chapter - give editorial feedback the author can act on."""
+    Kept so existing imports (`from app.ai.routes import
+    _build_review_system_prompt`) keep working; new call sites should
+    import from `app.ai.prompts` directly.
+    """
+    return build_review_system_prompt(language, focus, genre, chapter_type)
 
 
 @router.post("/review")
@@ -221,7 +220,9 @@ async def review_chapter(req: ReviewRequest) -> dict[str, Any]:
         raise HTTPException(status_code=403, detail="AI features are disabled")
 
     client = _get_client()
-    system_prompt = _build_review_system_prompt(req.language, req.focus, genre=req.genre)
+    system_prompt = build_review_system_prompt(
+        req.language, req.focus, genre=req.genre, chapter_type=req.chapter_type
+    )
 
     user_prompt_parts = []
     if req.book_title:
@@ -310,17 +311,7 @@ Rules:
 
 def _build_marketing_prompt(field: str, req: MarketingRequest) -> tuple[str, str]:
     """Build system and user prompts for marketing text generation."""
-    lang_map = {
-        "de": "German",
-        "en": "English",
-        "es": "Spanish",
-        "fr": "French",
-        "el": "Greek",
-        "pt": "Portuguese",
-        "tr": "Turkish",
-        "ja": "Japanese",
-    }
-    lang_name = lang_map.get(req.language, req.language)
+    lang_name = LANG_MAP.get(req.language, req.language)
 
     system = _MARKETING_PROMPTS[field].replace("{language}", lang_name)
 
@@ -382,3 +373,202 @@ async def test_connection() -> dict[str, Any]:
     client = _get_client()
     success, error_key, error_detail = await client.test_connection()
     return {"success": success, "error_key": error_key, "error_detail": error_detail}
+
+
+# ---------------------------------------------------------------------------
+# Async review flow (persistent Markdown reports + SSE progress)
+# ---------------------------------------------------------------------------
+
+
+class ReviewCostEstimateRequest(BaseModel):
+    """Request payload for the cost-estimate helper."""
+
+    content: str = Field(..., min_length=1)
+    model: str = Field(default="")
+
+
+@router.post("/review/estimate")
+def estimate_review(req: ReviewCostEstimateRequest) -> dict[str, Any]:
+    """Rough input/output token and USD cost estimate for a review call.
+
+    Used by the UI to show "Start Review (~N tokens, ~$X)" on the
+    start button before the call runs. Always responds 200; missing
+    model or unknown model returns `cost_usd: null`.
+    """
+    model = req.model or _get_ai_config().get("model", "")
+    input_tokens, output_tokens, cost = estimate_review_cost(model, req.content)
+    return {
+        "model": model,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "cost_usd": cost,
+    }
+
+
+@router.get("/review/meta")
+def review_meta() -> dict[str, Any]:
+    """UI-facing metadata: focus values, non-prose types, supported languages.
+
+    Frontend uses this to drive the radio buttons, warning logic, and
+    (future) language selector without hardcoding the lists.
+    """
+    return {
+        "focus_values": sorted(FOCUS_DESCRIPTIONS.keys()),
+        "primary_focus": ["style", "consistency", "beta_reader"],
+        "non_prose_types": sorted(NON_PROSE_TYPES),
+        "languages": sorted(LANG_MAP.keys()),
+        "chapter_types": sorted(CHAPTER_TYPE_GUIDANCE.keys()),
+    }
+
+
+async def _run_review_job(
+    job_id: str,
+    req: ReviewRequest,
+    review_id: str,
+) -> dict[str, Any]:
+    """Background worker: call the LLM, persist the Markdown, publish events."""
+    job_store.publish_event(
+        job_id,
+        "review_start",
+        {"focus": req.focus, "chapter_type": req.chapter_type, "language": req.language},
+    )
+
+    client = _get_client()
+    system_prompt = build_review_system_prompt(
+        req.language, req.focus, genre=req.genre, chapter_type=req.chapter_type
+    )
+
+    user_prompt_parts = []
+    if req.book_title:
+        user_prompt_parts.append(f"Book: {req.book_title}")
+    if req.chapter_title:
+        user_prompt_parts.append(f"Chapter: {req.chapter_title}")
+    user_prompt_parts.append(f"\n---\n\n{req.content}")
+    user_prompt = "\n".join(user_prompt_parts)
+
+    job_store.publish_event(job_id, "review_llm_call", {"model": ""})
+
+    try:
+        result = await client.chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=2048,
+        )
+    except LLMError as exc:
+        job_store.publish_event(job_id, "review_error", {"error": str(exc)})
+        raise
+
+    review_markdown = result["content"]
+    usage = result.get("usage", {})
+    _track_usage(req.book_id, usage)
+
+    chapter_slug = slugify(req.chapter_title or req.chapter_id or review_id)
+    if req.book_id:
+        path = write_report(req.book_id, review_id, chapter_slug, review_markdown)
+        download_url = f"/api/ai/review/{review_id}/report.md?book_id={req.book_id}"
+    else:
+        # No book context - skip persistence; inline-only review.
+        path = None
+        download_url = None
+
+    job_store.publish_event(
+        job_id,
+        "review_done",
+        {
+            "review_id": review_id,
+            "download_url": download_url,
+            "filename": path.name if path else None,
+        },
+    )
+    return {
+        "review_id": review_id,
+        "review": review_markdown,
+        "model": result.get("model", ""),
+        "usage": usage,
+        "download_url": download_url,
+        "filename": path.name if path else None,
+    }
+
+
+@router.post("/review/async")
+async def review_chapter_async(req: ReviewRequest) -> dict[str, str]:
+    """Submit an AI review as a background job and return a job_id.
+
+    Progress and the final report land on
+    `GET /api/ai/jobs/{job_id}/stream` (SSE). The persisted Markdown
+    is downloadable from `/api/ai/review/{review_id}/report.md`.
+    """
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    review_id = new_review_id()
+
+    async def _runner(job_id: str) -> dict[str, Any]:
+        return await _run_review_job(job_id, req, review_id)
+
+    job_id = job_store.submit(_runner)
+    return {"job_id": job_id, "review_id": review_id}
+
+
+@router.get("/jobs/{job_id}")
+def get_job(job_id: str) -> dict[str, Any]:
+    """Poll a review job's current status, progress, and (if terminal) result."""
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "id": job.id,
+        "status": job.status.value,
+        "progress": job.progress,
+        "result": job.result,
+        "error": job.error,
+    }
+
+
+@router.get("/jobs/{job_id}/stream")
+async def stream_review_job(job_id: str) -> StreamingResponse:
+    """SSE stream of review job events; mirrors the export plugin pattern."""
+    if job_store.get(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_generator() -> Any:
+        async for event in job_store.subscribe(job_id):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.delete("/jobs/{job_id}", status_code=204)
+def cancel_review_job(job_id: str) -> None:
+    """Cancel a running review job."""
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED):
+        raise HTTPException(status_code=409, detail="Job already finished")
+    job_store.cancel(job_id)
+
+
+@router.get("/review/{review_id}/report.md")
+def download_review_report(review_id: str, book_id: str) -> FileResponse:
+    """Download a persisted review as Markdown."""
+    if not book_id:
+        raise HTTPException(status_code=422, detail="book_id query parameter is required")
+    path = find_report(book_id, review_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Review report not found")
+    return FileResponse(
+        path=str(path),
+        media_type="text/markdown",
+        filename=path.name,
+    )

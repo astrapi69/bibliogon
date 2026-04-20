@@ -269,3 +269,214 @@ def test_review_default_focus_is_style_coherence_pacing(enabled_client):
         assert "style" in system_msg["content"].lower()
         assert "coherence" in system_msg["content"].lower()
         assert "pacing" in system_msg["content"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Extended unit tests for the new prompt capabilities (v0.20.x)
+# ---------------------------------------------------------------------------
+
+
+def test_build_review_prompt_consistency_focus():
+    prompt = _build_review_system_prompt("en", ["consistency"])
+    assert "internal consistency" in prompt.lower()
+    assert "contradictions" in prompt.lower()
+
+
+def test_build_review_prompt_beta_reader_focus():
+    prompt = _build_review_system_prompt("en", ["beta_reader"])
+    assert "beta-reader" in prompt.lower()
+
+
+def test_build_review_prompt_chapter_type_injection():
+    prompt = _build_review_system_prompt(
+        "en", ["style"], chapter_type="dedication"
+    )
+    assert "dedication" in prompt.lower()
+    assert "brief" in prompt.lower()
+
+
+def test_build_review_prompt_unknown_chapter_type_falls_back():
+    prompt = _build_review_system_prompt(
+        "en", ["style"], chapter_type="nonexistent_type"
+    )
+    # Falls back to generic prose framing, NOT the typed guidance dict.
+    assert "nonexistent_type" in prompt
+
+
+def test_build_review_prompt_all_eight_languages():
+    from app.ai.prompts import LANG_MAP
+
+    assert set(LANG_MAP.keys()) == {"de", "en", "es", "fr", "el", "pt", "tr", "ja"}
+    for code, name in LANG_MAP.items():
+        prompt = _build_review_system_prompt(code, ["style"])
+        assert name in prompt, f"Language {code}/{name} missing from prompt"
+
+
+def test_non_prose_types_covers_kdp_frontmatter():
+    from app.ai.prompts import NON_PROSE_TYPES
+
+    for expected in ("title_page", "copyright", "toc", "imprint", "index"):
+        assert expected in NON_PROSE_TYPES
+
+
+# ---------------------------------------------------------------------------
+# Cost estimation helper
+# ---------------------------------------------------------------------------
+
+
+def test_estimate_review_cost_known_model():
+    from app.ai.pricing import estimate_review_cost
+
+    input_tokens, output_tokens, cost = estimate_review_cost(
+        "gpt-4o-mini", "x" * 4000
+    )
+    # 4000 chars / 4 = 1000 tokens + 300 system overhead
+    assert input_tokens == 1300
+    assert output_tokens == 1500
+    assert cost is not None and cost > 0
+
+
+def test_estimate_review_cost_unknown_model_returns_none():
+    from app.ai.pricing import estimate_review_cost
+
+    _, _, cost = estimate_review_cost("not-a-real-model", "hello")
+    assert cost is None
+
+
+def test_estimate_endpoint(enabled_client):
+    resp = enabled_client.post(
+        "/api/ai/review/estimate",
+        json={"content": "Some chapter text.", "model": "gpt-4o-mini"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["input_tokens"] > 0
+    assert body["cost_usd"] is not None
+    assert body["model"] == "gpt-4o-mini"
+
+
+# ---------------------------------------------------------------------------
+# Metadata endpoint
+# ---------------------------------------------------------------------------
+
+
+def test_review_meta_endpoint(enabled_client):
+    resp = enabled_client.get("/api/ai/review/meta")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "style" in body["focus_values"]
+    assert "consistency" in body["focus_values"]
+    assert "beta_reader" in body["focus_values"]
+    assert body["primary_focus"] == ["style", "consistency", "beta_reader"]
+    assert "title_page" in body["non_prose_types"]
+    assert set(body["languages"]) == {"de", "en", "es", "fr", "el", "pt", "tr", "ja"}
+
+
+# ---------------------------------------------------------------------------
+# Async review flow (job + SSE + persisted Markdown download)
+# ---------------------------------------------------------------------------
+
+
+def test_review_async_returns_job_id(enabled_client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    with patch("app.ai.routes._get_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.chat = AsyncMock(return_value={
+            "content": "## Summary\nGood chapter.",
+            "model": "test",
+            "usage": {"total_tokens": 100},
+        })
+        mock_get_client.return_value = mock_client
+
+        resp = enabled_client.post(
+            "/api/ai/review/async",
+            json={
+                "content": "Chapter text.",
+                "chapter_title": "Hello World",
+                "book_id": "testbook123",
+                "language": "en",
+                "focus": ["style"],
+            },
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "job_id" in body
+    assert "review_id" in body
+    assert len(body["review_id"]) == 12
+
+
+def test_review_async_persists_markdown_and_allows_download(
+    enabled_client, tmp_path, monkeypatch
+):
+    """End-to-end: submit async, poll until complete, download the MD."""
+    import time
+
+    monkeypatch.chdir(tmp_path)
+    with patch("app.ai.routes._get_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.chat = AsyncMock(return_value={
+            "content": "## Summary\nA test review.",
+            "model": "test",
+            "usage": {"total_tokens": 50},
+        })
+        mock_get_client.return_value = mock_client
+
+        submit = enabled_client.post(
+            "/api/ai/review/async",
+            json={
+                "content": "Chapter text.",
+                "chapter_title": "Test Chapter",
+                "book_id": "testbook456",
+                "language": "en",
+                "focus": ["style"],
+            },
+        )
+        job_id = submit.json()["job_id"]
+        review_id = submit.json()["review_id"]
+
+        # Poll until terminal (fast because AsyncMock is instant).
+        deadline = time.time() + 3
+        while time.time() < deadline:
+            poll = enabled_client.get(f"/api/ai/jobs/{job_id}")
+            if poll.json()["status"] in ("completed", "failed"):
+                break
+            time.sleep(0.05)
+
+        assert poll.status_code == 200
+        assert poll.json()["status"] == "completed"
+
+        download = enabled_client.get(
+            f"/api/ai/review/{review_id}/report.md?book_id=testbook456"
+        )
+    assert download.status_code == 200
+    assert "A test review." in download.text
+    assert download.headers["content-type"].startswith("text/markdown")
+
+
+def test_review_async_requires_ai_enabled(disabled_client):
+    resp = disabled_client.post(
+        "/api/ai/review/async",
+        json={"content": "Chapter text.", "book_id": "x"},
+    )
+    assert resp.status_code == 403
+
+
+def test_download_unknown_review_returns_404(enabled_client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    resp = enabled_client.get(
+        "/api/ai/review/deadbeef0000/report.md?book_id=nonexistent"
+    )
+    assert resp.status_code == 404
+
+
+def test_download_without_book_id_returns_422(enabled_client):
+    # FastAPI will reject because book_id is a required query param.
+    resp = enabled_client.get("/api/ai/review/any/report.md")
+    assert resp.status_code == 422
+
+
+def test_jobs_endpoint_returns_404_for_unknown_id(enabled_client):
+    resp = enabled_client.get("/api/ai/jobs/nonexistentjobid")
+    assert resp.status_code == 404
