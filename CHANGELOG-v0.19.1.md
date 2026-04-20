@@ -36,3 +36,7 @@ Maintenance release. Two user-visible fixes (i18n labels, backup resource leak),
 - **Roadmap** — conflict-dialog "Save as new chapter" TODO promoted to PS-13.
 - **Session journals** backfilled for April 1–12; gitignore aligned with ai-workflow.md so journals are actually committed.
 - **DEP-09 note** — Vite 8 still blocked on vite-plugin-pwa compat.
+
+## Known pending post-release
+
+Playwright smoke suite: 135 passed / 31 failed. Three-sample triage (content-safety, dashboard-filters, editor-formatting Ctrl+Z) classified all three as test-infrastructure drift or latent test-code bugs that predate v0.19.1 — no user-visible regressions identified. Full triage of the remaining 28 failures tracked in GitHub issue #9, mandatory before v0.20.0. `make test` (backend 598 + Vitest 397 + tsc + ruff + mypy + pre-commit) remains the authoritative release gate and is all green.
