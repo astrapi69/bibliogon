@@ -74,6 +74,7 @@ export default function Settings() {
             <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
+                    <Tabs.Trigger value="ai" className="radix-tab-trigger" data-testid="settings-tab-ai">{t("ui.settings.tab_ai", "KI-Assistent")}</Tabs.Trigger>
                     <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
                     <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
                     {getDonationsConfig(appConfig) ? (
@@ -93,6 +94,23 @@ export default function Settings() {
                                 // Live language switch without reload
                                 const newLang = (data.app as Record<string, unknown>)?.default_language as string;
                                 if (newLang) setGlobalLang(newLang);
+                                showMessage(t("ui.settings.saved", "Gespeichert"));
+                            } catch (err) {
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                            }
+                            setSaving(false);
+                        }}
+                        saving={saving}
+                    />
+                </Tabs.Content>
+                <Tabs.Content value="ai">
+                    <AiAssistantSettings
+                        config={appConfig}
+                        onSave={async (data) => {
+                            setSaving(true);
+                            try {
+                                const updated = await api.settings.updateApp(data);
+                                setAppConfig(updated);
                                 showMessage(t("ui.settings.saved", "Gespeichert"));
                             } catch (err) {
                                 showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
@@ -197,7 +215,6 @@ function AppSettings({config, onSave, saving}: {
     const pluginsConfig = (config.plugins || {}) as Record<string, unknown>;
     const enabledPlugins = (pluginsConfig.enabled as string[]) || [];
 
-    const ai = (config.ai || {}) as Record<string, unknown>;
     const editorConfig = (config.editor || {}) as Record<string, unknown>;
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
@@ -211,15 +228,6 @@ function AppSettings({config, onSave, saving}: {
     const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
         export: true, help: true, getstarted: true,
     });
-    const [aiEnabled, setAiEnabled] = useState(Boolean(ai.enabled));
-    const [aiProvider, setAiProvider] = useState((ai.provider as string) || "lmstudio");
-    const [aiBaseUrl, setAiBaseUrl] = useState((ai.base_url as string) || "");
-    const [aiModel, setAiModel] = useState((ai.model as string) || "");
-    const [aiTemp, setAiTemp] = useState(String(ai.temperature ?? "0.7"));
-    const [aiMaxTokens, setAiMaxTokens] = useState(String(ai.max_tokens ?? "4096"));
-    const [aiApiKey, setAiApiKey] = useState((ai.api_key as string) || "");
-    const [showAiKey, setShowAiKey] = useState(false);
-    const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
     const [edAutosave, setEdAutosave] = useState(String(editorConfig.autosave_debounce_ms ?? 800));
     const [edDraftSave, setEdDraftSave] = useState(String(editorConfig.draft_save_debounce_ms ?? 2000));
     const [edDraftAge, setEdDraftAge] = useState(String(editorConfig.draft_max_age_days ?? 30));
@@ -238,13 +246,6 @@ function AppSettings({config, onSave, saving}: {
             help: enabledPlugins.includes("help"),
             getstarted: enabledPlugins.includes("getstarted"),
         });
-        setAiEnabled(Boolean(ai.enabled));
-        setAiProvider((ai.provider as string) || "lmstudio");
-        setAiBaseUrl((ai.base_url as string) || "");
-        setAiModel((ai.model as string) || "");
-        setAiTemp(String(ai.temperature ?? "0.7"));
-        setAiMaxTokens(String(ai.max_tokens ?? "4096"));
-        setAiApiKey((ai.api_key as string) || "");
         setEdAutosave(String(editorConfig.autosave_debounce_ms ?? 800));
         setEdDraftSave(String(editorConfig.draft_save_debounce_ms ?? 2000));
         setEdDraftAge(String(editorConfig.draft_max_age_days ?? 30));
@@ -268,15 +269,6 @@ function AppSettings({config, onSave, saving}: {
             },
             ui: {title: uiTitle, subtitle: uiSubtitle, theme},
             plugins: {enabled},
-            ai: {
-                enabled: aiEnabled,
-                provider: aiProvider,
-                base_url: aiBaseUrl,
-                model: aiModel,
-                temperature: parseFloat(aiTemp) || 0.7,
-                max_tokens: parseInt(aiMaxTokens) || 4096,
-                api_key: aiApiKey,
-            },
             editor: {
                 autosave_debounce_ms: parseInt(edAutosave) || 800,
                 draft_save_debounce_ms: parseInt(edDraftSave) || 2000,
@@ -384,145 +376,6 @@ function AppSettings({config, onSave, saving}: {
                 </button>
             </div>
 
-            {/* AI Configuration */}
-            <div style={{marginTop: 16}}>
-                <h2 style={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
-                <div style={styles.card}>
-                    <div className="field">
-                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
-                            <input
-                                type="checkbox"
-                                checked={aiEnabled}
-                                onChange={(e) => setAiEnabled(e.target.checked)}
-                                style={{width: 16, height: 16, accentColor: "var(--accent)"}}
-                            />
-                            <span className="label" style={{margin: 0}}>{t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}</span>
-                        </label>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
-                            {t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
-                        </small>
-                    </div>
-
-                    <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>
-                        <div className="field">
-                            <label className="label">{t("ui.settings.ai_provider", "KI-Anbieter")}</label>
-                            <RadixSelect
-                                value={aiProvider}
-                                onValueChange={(val) => {
-                                    setAiProvider(val);
-                                    const preset = getProviderPreset(val);
-                                    if (preset) {
-                                        setAiBaseUrl(preset.base_url);
-                                        setAiModel(preset.default_model);
-                                        setAiApiKey("");
-                                    }
-                                }}
-                                options={AI_PROVIDER_IDS.map((pid) => ({
-                                    value: pid,
-                                    label: AI_PROVIDER_PRESETS[pid].label,
-                                }))}
-                            />
-                        </div>
-                        <div className="field">
-                            <label className="label">{t("ui.settings.ai_base_url", "Base URL")}</label>
-                            <input className="input" value={aiBaseUrl} onChange={(e) => setAiBaseUrl(e.target.value)}
-                                placeholder="https://api.openai.com/v1" style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
-                        </div>
-                        <div className="field">
-                            <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
-                            <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)}
-                                list="ai-model-suggestions"
-                                placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_model_lmstudio", "Vom Server bereitgestellt") : ""}
-                                style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
-                            <datalist id="ai-model-suggestions">
-                                {(getProviderPreset(aiProvider)?.model_suggestions || []).map((m) => (
-                                    <option key={m} value={m}/>
-                                ))}
-                            </datalist>
-                        </div>
-                        <div style={{display: "flex", gap: 12}}>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.settings.ai_temperature", "Temperature")}</label>
-                                <input className="input" type="number" min="0" max="2" step="0.1"
-                                    value={aiTemp} onChange={(e) => setAiTemp(e.target.value)}/>
-                            </div>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.settings.ai_max_tokens", "Max Tokens")}</label>
-                                <input className="input" type="number" min="256" max="32768" step="256"
-                                    value={aiMaxTokens} onChange={(e) => setAiMaxTokens(e.target.value)}/>
-                            </div>
-                        </div>
-                        <div className="field">
-                            <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
-                            <div style={{display: "flex", gap: 8}}>
-                                <input className="input" type={showAiKey ? "text" : "password"}
-                                    value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
-                                    placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_key_not_required", "Nicht erforderlich") : "sk-..."}
-                                    style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
-                                    title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
-                                    {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
-                                </button>
-                            </div>
-                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
-                                {t("ui.settings.ai_key_hint", "Der API-Schluessel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst uebertragen.")}
-                            </small>
-                        </div>
-                        {aiProvider === "lmstudio" && (
-                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
-                                {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schluessel noetig. Modelle werden vom LM Studio Server bereitgestellt.")}
-                            </small>
-                        )}
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            disabled={!aiBaseUrl || aiTestStatus === "testing"}
-                            onClick={async () => {
-                                setAiTestStatus("testing");
-                                try {
-                                    // Save current settings first so the backend sees the latest config
-                                    await onSave(buildSaveData());
-
-                                    const resp = await fetch("/api/ai/test-connection");
-                                    if (resp.ok) {
-                                        const data = await resp.json();
-                                        if (data.success) {
-                                            setAiTestStatus("ok");
-                                            notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
-                                        } else {
-                                            const errorKey = data.error_key || "error";
-                                            const detail = data.error_detail || "";
-                                            setAiTestStatus("fail");
-                                            const errorMessages: Record<string, string> = {
-                                                auth_error: t("ui.settings.ai_err_auth", "API-Schluessel ungueltig"),
-                                                rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte spaeter erneut versuchen."),
-                                                offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
-                                                timeout: t("ui.settings.ai_err_timeout", "Zeitueberschreitung"),
-                                                model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfuegbar"),
-                                                invalid_request: t("ui.settings.ai_err_invalid", "Ungueltige Anfrage"),
-                                                server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
-                                                disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > Allgemein > KI-Assistent."),
-                                            };
-                                            const baseMessage = errorMessages[errorKey] || t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
-                                            const fullMessage = detail ? `${baseMessage}: ${detail}` : baseMessage;
-                                            notify.warning(fullMessage);
-                                        }
-                                    } else {
-                                        setAiTestStatus("fail");
-                                        notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"));
-                                    }
-                                } catch {
-                                    setAiTestStatus("fail");
-                                    notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"));
-                                }
-                                setTimeout(() => setAiTestStatus("idle"), 3000);
-                            }}
-                        >
-                            {aiTestStatus === "testing" ? t("ui.common.loading", "Laden...") : t("ui.settings.ai_test", "Verbindung testen")}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             {/* Editor Settings */}
             <div style={{marginTop: 16}}>
                 <h2 style={styles.sectionTitle}>{t("ui.settings.editor_title", "Editor")}</h2>
@@ -618,6 +471,200 @@ function AppSettings({config, onSave, saving}: {
                         </p>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+// --- AI Assistant Tab ---
+
+function AiAssistantSettings({config, onSave, saving}: {
+    config: Record<string, unknown>;
+    onSave: (data: Record<string, unknown>) => Promise<void> | void;
+    saving: boolean;
+}) {
+    const {t} = useI18n();
+    const ai = (config.ai || {}) as Record<string, unknown>;
+
+    const [aiEnabled, setAiEnabled] = useState(Boolean(ai.enabled));
+    const [aiProvider, setAiProvider] = useState((ai.provider as string) || "lmstudio");
+    const [aiBaseUrl, setAiBaseUrl] = useState((ai.base_url as string) || "");
+    const [aiModel, setAiModel] = useState((ai.model as string) || "");
+    const [aiTemp, setAiTemp] = useState(String(ai.temperature ?? "0.7"));
+    const [aiMaxTokens, setAiMaxTokens] = useState(String(ai.max_tokens ?? "4096"));
+    const [aiApiKey, setAiApiKey] = useState((ai.api_key as string) || "");
+    const [showAiKey, setShowAiKey] = useState(false);
+    const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+
+    useEffect(() => {
+        setAiEnabled(Boolean(ai.enabled));
+        setAiProvider((ai.provider as string) || "lmstudio");
+        setAiBaseUrl((ai.base_url as string) || "");
+        setAiModel((ai.model as string) || "");
+        setAiTemp(String(ai.temperature ?? "0.7"));
+        setAiMaxTokens(String(ai.max_tokens ?? "4096"));
+        setAiApiKey((ai.api_key as string) || "");
+    }, [config]);
+
+    const buildSaveData = () => ({
+        ai: {
+            enabled: aiEnabled,
+            provider: aiProvider,
+            base_url: aiBaseUrl,
+            model: aiModel,
+            temperature: parseFloat(aiTemp) || 0.7,
+            max_tokens: parseInt(aiMaxTokens) || 4096,
+            api_key: aiApiKey,
+        },
+    });
+
+    return (
+        <div style={styles.main}>
+            <div style={styles.section}>
+                <h2 style={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
+                <div style={styles.card}>
+                    <div className="field">
+                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
+                            <input
+                                type="checkbox"
+                                checked={aiEnabled}
+                                onChange={(e) => setAiEnabled(e.target.checked)}
+                                style={{width: 16, height: 16, accentColor: "var(--accent)"}}
+                            />
+                            <span className="label" style={{margin: 0}}>{t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}</span>
+                        </label>
+                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                            {t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
+                        </small>
+                    </div>
+
+                    <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.ai_provider", "KI-Anbieter")}</label>
+                            <RadixSelect
+                                value={aiProvider}
+                                onValueChange={(val) => {
+                                    setAiProvider(val);
+                                    const preset = getProviderPreset(val);
+                                    if (preset) {
+                                        setAiBaseUrl(preset.base_url);
+                                        setAiModel(preset.default_model);
+                                        setAiApiKey("");
+                                    }
+                                }}
+                                options={AI_PROVIDER_IDS.map((pid) => ({
+                                    value: pid,
+                                    label: AI_PROVIDER_PRESETS[pid].label,
+                                }))}
+                            />
+                        </div>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.ai_base_url", "Base URL")}</label>
+                            <input className="input" value={aiBaseUrl} onChange={(e) => setAiBaseUrl(e.target.value)}
+                                placeholder="https://api.openai.com/v1" style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                        </div>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
+                            <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)}
+                                list="ai-model-suggestions"
+                                placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_model_lmstudio", "Vom Server bereitgestellt") : ""}
+                                style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                            <datalist id="ai-model-suggestions">
+                                {(getProviderPreset(aiProvider)?.model_suggestions || []).map((m) => (
+                                    <option key={m} value={m}/>
+                                ))}
+                            </datalist>
+                        </div>
+                        <div style={{display: "flex", gap: 12}}>
+                            <div className="field" style={{flex: 1}}>
+                                <label className="label">{t("ui.settings.ai_temperature", "Temperature")}</label>
+                                <input className="input" type="number" min="0" max="2" step="0.1"
+                                    value={aiTemp} onChange={(e) => setAiTemp(e.target.value)}/>
+                            </div>
+                            <div className="field" style={{flex: 1}}>
+                                <label className="label">{t("ui.settings.ai_max_tokens", "Max Tokens")}</label>
+                                <input className="input" type="number" min="256" max="32768" step="256"
+                                    value={aiMaxTokens} onChange={(e) => setAiMaxTokens(e.target.value)}/>
+                            </div>
+                        </div>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
+                            <div style={{display: "flex", gap: 8}}>
+                                <input className="input" type={showAiKey ? "text" : "password"}
+                                    value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
+                                    placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_key_not_required", "Nicht erforderlich") : "sk-..."}
+                                    style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                                    title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
+                                    {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                                </button>
+                            </div>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                                {t("ui.settings.ai_key_hint", "Der API-Schluessel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst uebertragen.")}
+                            </small>
+                        </div>
+                        {aiProvider === "lmstudio" && (
+                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
+                                {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schluessel noetig. Modelle werden vom LM Studio Server bereitgestellt.")}
+                            </small>
+                        )}
+                        <div style={{display: "flex", gap: 8, alignItems: "center", marginTop: 8}}>
+                            <button
+                                className="btn btn-primary"
+                                disabled={saving}
+                                onClick={() => onSave(buildSaveData())}
+                            >
+                                <Save size={14}/> {t("ui.common.save", "Speichern")}
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                disabled={!aiBaseUrl || aiTestStatus === "testing"}
+                                onClick={async () => {
+                                    setAiTestStatus("testing");
+                                    try {
+                                        // Save current settings first so the backend sees the latest config
+                                        await onSave(buildSaveData());
+
+                                        const resp = await fetch("/api/ai/test-connection");
+                                        if (resp.ok) {
+                                            const data = await resp.json();
+                                            if (data.success) {
+                                                setAiTestStatus("ok");
+                                                notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+                                            } else {
+                                                const errorKey = data.error_key || "error";
+                                                const detail = data.error_detail || "";
+                                                setAiTestStatus("fail");
+                                                const errorMessages: Record<string, string> = {
+                                                    auth_error: t("ui.settings.ai_err_auth", "API-Schluessel ungueltig"),
+                                                    rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte spaeter erneut versuchen."),
+                                                    offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
+                                                    timeout: t("ui.settings.ai_err_timeout", "Zeitueberschreitung"),
+                                                    model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfuegbar"),
+                                                    invalid_request: t("ui.settings.ai_err_invalid", "Ungueltige Anfrage"),
+                                                    server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
+                                                    disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent."),
+                                                };
+                                                const baseMessage = errorMessages[errorKey] || t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
+                                                const fullMessage = detail ? `${baseMessage}: ${detail}` : baseMessage;
+                                                notify.warning(fullMessage);
+                                            }
+                                        } else {
+                                            setAiTestStatus("fail");
+                                            notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"));
+                                        }
+                                    } catch {
+                                        setAiTestStatus("fail");
+                                        notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"));
+                                    }
+                                    setTimeout(() => setAiTestStatus("idle"), 3000);
+                                }}
+                            >
+                                {aiTestStatus === "testing" ? t("ui.common.loading", "Laden...") : t("ui.settings.ai_test", "Verbindung testen")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
