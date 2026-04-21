@@ -27,6 +27,37 @@ class CommitRequest(BaseModel):
     message: str = Field("", max_length=2000)
 
 
+class RemoteConfigRequest(BaseModel):
+    url: str = Field(..., max_length=2000)
+    pat: str | None = Field(default=None, max_length=500)
+
+
+class RemoteConfigResponse(BaseModel):
+    url: str | None
+    has_credential: bool
+
+
+class PushResponse(BaseModel):
+    branch: str
+    summary: str
+    flags: int
+
+
+class PullResponse(BaseModel):
+    branch: str
+    updated: bool
+    fast_forward: bool
+    head_hash: str | None = None
+
+
+class SyncStatus(BaseModel):
+    remote_configured: bool
+    has_credential: bool
+    ahead: int
+    behind: int
+    state: str
+
+
 class CommitEntry(BaseModel):
     hash: str
     short_hash: str
@@ -105,5 +136,121 @@ def get_status(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     _assert_book(book_id, db)
     try:
         return git_backup.status(book_id, db)
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# --- Phase 2: remote, push, pull, sync-status ---
+
+
+@router.post("/remote", response_model=RemoteConfigResponse)
+def set_remote(
+    book_id: str,
+    payload: RemoteConfigRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.configure_remote(book_id, payload.url, payload.pat, db)
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/remote", response_model=RemoteConfigResponse)
+def get_remote(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.get_remote_config(book_id, db)
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.delete("/remote", status_code=status.HTTP_204_NO_CONTENT)
+def delete_remote(book_id: str, db: Session = Depends(get_db)) -> None:
+    _assert_book(book_id, db)
+    try:
+        git_backup.delete_remote_config(book_id, db)
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/push", response_model=PushResponse)
+def do_push(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.push(book_id, db)
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "remote_not_configured", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteRejectedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "remote_rejected", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteAuthError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "remote_auth", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteNetworkError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "remote_network", "message": str(exc)},
+        ) from exc
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/pull", response_model=PullResponse)
+def do_pull(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.pull(book_id, db)
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "remote_not_configured", "message": str(exc)},
+        ) from exc
+    except git_backup.DivergedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "diverged", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteAuthError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "remote_auth", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteNetworkError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "remote_network", "message": str(exc)},
+        ) from exc
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/sync-status", response_model=SyncStatus)
+def get_sync_status(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.sync_status(book_id, db)
     except git_backup.GitBackupError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

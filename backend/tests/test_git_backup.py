@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 
+import git
 import pytest
 from fastapi.testclient import TestClient
 
@@ -28,8 +29,11 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def _isolate_uploads(tmp_path, monkeypatch):
-    """Redirect UPLOADS_ROOT to a tmp dir for every test."""
+    """Redirect UPLOADS_ROOT + credentials dir to a tmp dir for every test."""
     monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
+    monkeypatch.setattr(git_backup, "GIT_CRED_DIR", tmp_path / "git_credentials")
+    # Phase 2 uses credential_store which requires a secret in env.
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-for-git-backup")
     yield
 
 
@@ -284,3 +288,201 @@ def test_removed_chapter_drops_from_repo_on_commit():
     remaining = list(chapters_dir.glob("*.json"))
     assert len(remaining) == 1
     assert "keeper" in remaining[0].name
+
+
+# --- Phase 2: remote config, push, pull, sync-status ---
+
+
+def _bare_remote(tmp_path, name: str = "remote.git") -> str:
+    """Create a file-system bare repo and return its path (usable as URL)."""
+    path = tmp_path / name
+    git.Repo.init(path, bare=True, initial_branch="main")
+    return str(path)
+
+
+def _init_book_with_remote(tmp_path, title: str = "Remote Test") -> tuple[str, str]:
+    book_id = _create_book(title)
+    _add_chapter(book_id, "Ch A")
+    assert client.post(f"/api/books/{book_id}/git/init").status_code == 200
+    url = _bare_remote(tmp_path)
+    resp = client.post(
+        f"/api/books/{book_id}/git/remote",
+        json={"url": url, "pat": "secret-pat-value"},
+    )
+    assert resp.status_code == 200
+    return book_id, url
+
+
+def test_remote_config_round_trip(tmp_path):
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    client.post(f"/api/books/{book_id}/git/init")
+
+    url = _bare_remote(tmp_path)
+    resp = client.post(
+        f"/api/books/{book_id}/git/remote",
+        json={"url": url, "pat": "ghp_xxx"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["url"] == url
+    assert body["has_credential"] is True
+
+    get_resp = client.get(f"/api/books/{book_id}/git/remote")
+    assert get_resp.status_code == 200
+    assert get_resp.json()["url"] == url
+    assert get_resp.json()["has_credential"] is True
+    # PAT must never appear in responses.
+    assert "ghp_xxx" not in get_resp.text
+
+
+def test_remote_config_refuses_before_init(tmp_path):
+    book_id = _create_book()
+    url = _bare_remote(tmp_path)
+    resp = client.post(
+        f"/api/books/{book_id}/git/remote",
+        json={"url": url, "pat": None},
+    )
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "repo_not_initialized"
+
+
+def test_remote_config_gitignore_entry(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    gitignore = (git_backup.repo_path(book_id) / ".gitignore").read_text()
+    assert git_backup.GIT_CONFIG_FILENAME in gitignore
+
+
+def test_remote_delete_removes_config_and_credential(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    assert client.delete(f"/api/books/{book_id}/git/remote").status_code == 204
+    body = client.get(f"/api/books/{book_id}/git/remote").json()
+    assert body["url"] is None
+    assert body["has_credential"] is False
+
+
+def test_push_to_bare_remote(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    resp = client.post(f"/api/books/{book_id}/git/push")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["branch"] == "main"
+    # Confirm the remote actually has the commit now.
+    remote_repo = git.Repo(url)
+    assert "main" in [h.name for h in remote_repo.heads]
+
+
+def test_push_refuses_without_remote():
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    client.post(f"/api/books/{book_id}/git/init")
+    resp = client.post(f"/api/books/{book_id}/git/push")
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "remote_not_configured"
+
+
+def test_pull_fast_forwards_from_remote(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    # First push so remote has the initial commit.
+    client.post(f"/api/books/{book_id}/git/push")
+
+    # Clone the bare remote, add an external commit, push back.
+    work = tmp_path / "external-clone"
+    ext_repo = git.Repo.clone_from(url, work)
+    (work / "external.txt").write_text("external change", encoding="utf-8")
+    ext_repo.git.add(A=True)
+    ext_repo.index.commit(
+        "External commit",
+        author=git.Actor("Reviewer", "reviewer@example.com"),
+        committer=git.Actor("Reviewer", "reviewer@example.com"),
+    )
+    ext_repo.remote().push()
+
+    # Now pull from the Bibliogon side.
+    resp = client.post(f"/api/books/{book_id}/git/pull")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["updated"] is True
+    assert body["fast_forward"] is True
+    # Pulled file is now present in the book's repo.
+    assert (git_backup.repo_path(book_id) / "external.txt").is_file()
+
+
+def test_pull_no_changes_is_idempotent(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+    resp = client.post(f"/api/books/{book_id}/git/pull")
+    assert resp.status_code == 200
+    assert resp.json()["updated"] is False
+
+
+def test_pull_diverged_returns_409(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+
+    # Remote gains a commit the local hasn't seen.
+    work = tmp_path / "external-clone-diverge"
+    ext_repo = git.Repo.clone_from(url, work)
+    (work / "from-remote.txt").write_text("remote side", encoding="utf-8")
+    ext_repo.git.add(A=True)
+    ext_repo.index.commit(
+        "Remote-only commit",
+        author=git.Actor("Reviewer", "reviewer@example.com"),
+        committer=git.Actor("Reviewer", "reviewer@example.com"),
+    )
+    ext_repo.remote().push()
+
+    # Local gains a DIFFERENT commit on top of the previously-shared
+    # state (so histories diverge).
+    _add_chapter(book_id, "Local-only chapter")
+    client.post(
+        f"/api/books/{book_id}/git/commit",
+        json={"message": "Local-only commit"},
+    )
+
+    resp = client.post(f"/api/books/{book_id}/git/pull")
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "diverged"
+
+
+def test_sync_status_no_remote():
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    client.post(f"/api/books/{book_id}/git/init")
+    body = client.get(f"/api/books/{book_id}/git/sync-status").json()
+    assert body["remote_configured"] is False
+    assert body["state"] == "no_remote"
+
+
+def test_sync_status_in_sync_after_push_and_pull(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+    client.post(f"/api/books/{book_id}/git/pull")
+    body = client.get(f"/api/books/{book_id}/git/sync-status").json()
+    assert body["state"] == "in_sync"
+    assert body["ahead"] == 0
+    assert body["behind"] == 0
+
+
+def test_sync_status_local_ahead_after_commit(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+    client.post(f"/api/books/{book_id}/git/pull")
+
+    _add_chapter(book_id, "Another Ch")
+    client.post(
+        f"/api/books/{book_id}/git/commit", json={"message": "New local"}
+    )
+    body = client.get(f"/api/books/{book_id}/git/sync-status").json()
+    assert body["state"] == "local_ahead"
+    assert body["ahead"] == 1
+    assert body["behind"] == 0
+
+
+def test_pat_never_appears_on_disk_in_git_config(tmp_path):
+    """Guard against leaking the PAT through git's remote URL config."""
+    book_id, url = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+    config_text = (git_backup.repo_path(book_id) / ".git" / "config").read_text()
+    assert "secret-pat-value" not in config_text
+    assert "x-access-token" not in config_text

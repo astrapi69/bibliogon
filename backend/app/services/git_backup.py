@@ -1,18 +1,19 @@
-"""Phase 1 git-based backup service.
+"""Git-based backup service.
 
-Per-book git repo at ``uploads/{book_id}/.git``. Local-only: no push,
-no pull, no remote, no auth. See
+Per-book git repo at ``uploads/{book_id}/.git``. See
 [docs/explorations/git-based-backup.md](../../../docs/explorations/git-based-backup.md)
 for the full phased plan.
 
-Commit writes the current book state to disk as TipTap JSON per chapter
-plus ``config/metadata.yaml`` then runs ``git add . && git commit``.
+Phase 1 (shipped): init, commit, log, status. Local-only.
+Phase 2 (this module): remote configure, push, pull (ff-only),
+sync-status. Auth: HTTPS + Personal Access Token only for MVP.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -21,10 +22,16 @@ import git  # GitPython
 import yaml
 from sqlalchemy.orm import Session
 
+from app import credential_store
 from app.models import Book, Chapter, ChapterType
 
 # Bibliogon convention: every book's uploads live at ``uploads/{book_id}/``.
 UPLOADS_ROOT = Path("uploads")
+
+# Encrypted PAT storage. One file per book under config/git_credentials/.
+GIT_CRED_DIR = Path("config/git_credentials")
+# Per-book remote URL + metadata. Plain YAML (URL is not secret; PAT is).
+GIT_CONFIG_FILENAME = ".bibliogon-git-config.yaml"
 
 # ChapterType classification mirrors ``frontend/src/components/ChapterSidebar.tsx``.
 # Keep in sync when new types land.
@@ -84,6 +91,26 @@ class RepoNotInitializedError(GitBackupError):
 
 class NothingToCommitError(GitBackupError):
     """Commit requested but the working tree has no changes."""
+
+
+class RemoteNotConfiguredError(GitBackupError):
+    """A remote operation was requested but no remote has been configured."""
+
+
+class RemoteAuthError(GitBackupError):
+    """Remote rejected the credentials (401/403)."""
+
+
+class RemoteRejectedError(GitBackupError):
+    """Push rejected because the remote has diverged commits (non-fast-forward)."""
+
+
+class DivergedError(GitBackupError):
+    """Pull cannot fast-forward; local and remote diverged."""
+
+
+class RemoteNetworkError(GitBackupError):
+    """Generic network failure reaching the remote."""
 
 
 # --- Public API ---
@@ -220,7 +247,341 @@ def status(book_id: str, db: Session) -> dict[str, Any]:
     }
 
 
+# --- Phase 2: remote, push, pull, sync-status ---
+
+
+def configure_remote(
+    book_id: str,
+    url: str,
+    pat: str | None,
+    db: Session,
+) -> dict[str, Any]:
+    """Set (or update) the remote URL + PAT for this book.
+
+    Storage:
+    - URL lives in the repo at ``.bibliogon-git-config.yaml`` (not
+      secret; also git-ignored so push never propagates it).
+    - PAT is encrypted via :mod:`credential_store` under
+      ``config/git_credentials/{book_id}.enc``. Empty/missing PAT
+      clears the stored credential.
+
+    Also writes the URL into git's own config so native
+    ``git push``/``pull`` commands outside Bibliogon work.
+    """
+    _get_book_or_raise(book_id, db)
+    if not is_initialized(book_id):
+        raise RepoNotInitializedError(
+            f"Book {book_id} has no git repo. Initialize first."
+        )
+    url = (url or "").strip()
+    if not url:
+        raise GitBackupError("Remote URL must not be empty.")
+
+    repo_dir = repo_path(book_id)
+    _write_remote_config(repo_dir, {"url": url})
+
+    # Keep the .bibliogon-git-config.yaml out of commits so the remote
+    # URL does not travel with pushes (and so a shared repo does not
+    # leak one user's remote to another).
+    _ensure_gitignore_entry(repo_dir, GIT_CONFIG_FILENAME)
+
+    # Mirror into git's native remote config for parity with CLI use.
+    repo = git.Repo(repo_dir)
+    if "origin" in [r.name for r in repo.remotes]:
+        repo.remotes.origin.set_url(url)
+    else:
+        repo.create_remote("origin", url)
+
+    if pat:
+        credential_store.save_encrypted(
+            pat.encode("utf-8"),
+            filename=_pat_filename(book_id),
+            credentials_dir=GIT_CRED_DIR,
+        )
+    else:
+        credential_store.secure_delete(
+            filename=_pat_filename(book_id),
+            credentials_dir=GIT_CRED_DIR,
+        )
+    return get_remote_config(book_id, db)
+
+
+def get_remote_config(book_id: str, db: Session) -> dict[str, Any]:
+    """Return remote URL + whether a PAT is configured. Never returns the PAT."""
+    _get_book_or_raise(book_id, db)
+    config = _read_remote_config(repo_path(book_id))
+    return {
+        "url": config.get("url") if config else None,
+        "has_credential": credential_store.is_configured(
+            filename=_pat_filename(book_id),
+            credentials_dir=GIT_CRED_DIR,
+        ),
+    }
+
+
+def delete_remote_config(book_id: str, db: Session) -> None:
+    """Remove remote URL + stored PAT. Idempotent."""
+    _get_book_or_raise(book_id, db)
+    repo_dir = repo_path(book_id)
+    config_path = repo_dir / GIT_CONFIG_FILENAME
+    config_path.unlink(missing_ok=True)
+    credential_store.secure_delete(
+        filename=_pat_filename(book_id),
+        credentials_dir=GIT_CRED_DIR,
+    )
+    if is_initialized(book_id):
+        repo = git.Repo(repo_dir)
+        if "origin" in [r.name for r in repo.remotes]:
+            git.Remote.remove(repo, "origin")
+
+
+def push(book_id: str, db: Session) -> dict[str, Any]:
+    """Push current branch to ``origin``. ff-only by default (non-force)."""
+    repo = _require_repo_with_remote(book_id, db)
+    remote_url = _authenticated_url(book_id, repo)
+    branch = repo.active_branch.name
+    try:
+        # Use a one-shot pushurl so the embedded PAT never lands in
+        # .git/config. Reset after push in a finally block.
+        original_url = next(repo.remotes.origin.urls)
+        repo.remotes.origin.set_url(remote_url)
+        try:
+            info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+        finally:
+            repo.remotes.origin.set_url(original_url)
+    except git.GitCommandError as exc:
+        raise _classify_git_error(exc) from exc
+
+    if not info_list:
+        raise RemoteNetworkError("Push returned no information from the remote.")
+    info = info_list[0]
+    if info.flags & git.PushInfo.ERROR:
+        if info.flags & info.REJECTED or info.flags & info.REMOTE_REJECTED:
+            raise RemoteRejectedError(
+                info.summary.strip() or "Push rejected by remote."
+            )
+        raise RemoteNetworkError(info.summary.strip() or "Push failed.")
+    return {
+        "branch": branch,
+        "summary": (info.summary or "").strip(),
+        "flags": int(info.flags),
+    }
+
+
+def pull(book_id: str, db: Session) -> dict[str, Any]:
+    """Fetch + fast-forward merge. Diverged histories raise DivergedError."""
+    repo = _require_repo_with_remote(book_id, db)
+    remote_url = _authenticated_url(book_id, repo)
+    branch = repo.active_branch.name
+
+    try:
+        original_url = next(repo.remotes.origin.urls)
+        repo.remotes.origin.set_url(remote_url)
+        try:
+            repo.remotes.origin.fetch(refspec=branch)
+        finally:
+            repo.remotes.origin.set_url(original_url)
+    except git.GitCommandError as exc:
+        raise _classify_git_error(exc) from exc
+
+    remote_ref = f"origin/{branch}"
+    if remote_ref not in [r.name for r in repo.refs]:
+        # Nothing on the remote for this branch yet.
+        return {"branch": branch, "updated": False, "fast_forward": False}
+
+    local = repo.head.commit
+    remote = repo.refs[remote_ref].commit
+
+    if local == remote:
+        return {"branch": branch, "updated": False, "fast_forward": True}
+
+    merge_base_commits = repo.merge_base(local, remote)
+    merge_base = merge_base_commits[0] if merge_base_commits else None
+
+    if merge_base == local:
+        # Fast-forward: local is strict ancestor of remote.
+        repo.git.merge("--ff-only", remote_ref)
+        return {
+            "branch": branch,
+            "updated": True,
+            "fast_forward": True,
+            "head_hash": repo.head.commit.hexsha,
+        }
+    if merge_base == remote:
+        # Local is ahead; nothing to pull.
+        return {"branch": branch, "updated": False, "fast_forward": True}
+    raise DivergedError(
+        "Local and remote have diverged. Resolve via Accept Remote / "
+        "Accept Local or an external git tool."
+    )
+
+
+def sync_status(book_id: str, db: Session) -> dict[str, Any]:
+    """Compare local HEAD against the last-fetched remote tracking ref.
+
+    Does NOT reach the network. Call :func:`pull` first if the remote
+    tracking ref is stale.
+    """
+    _get_book_or_raise(book_id, db)
+    remote_conf = get_remote_config(book_id, db)
+    base = {
+        "remote_configured": remote_conf["url"] is not None,
+        "has_credential": remote_conf["has_credential"],
+        "ahead": 0,
+        "behind": 0,
+        "state": "no_remote",
+    }
+    if not is_initialized(book_id) or not base["remote_configured"]:
+        return base
+
+    repo = git.Repo(repo_path(book_id))
+    branch = repo.active_branch.name
+    remote_ref = f"origin/{branch}"
+    if remote_ref not in [r.name for r in repo.refs]:
+        base["state"] = "never_synced"
+        return base
+
+    local = repo.head.commit
+    remote = repo.refs[remote_ref].commit
+    if local == remote:
+        base["state"] = "in_sync"
+        return base
+
+    merge_base_commits = repo.merge_base(local, remote)
+    merge_base = merge_base_commits[0] if merge_base_commits else None
+    ahead = len(list(repo.iter_commits(f"{remote_ref}..{branch}")))
+    behind = len(list(repo.iter_commits(f"{branch}..{remote_ref}")))
+    base["ahead"] = ahead
+    base["behind"] = behind
+    if merge_base == local and behind > 0:
+        base["state"] = "remote_ahead"
+    elif merge_base == remote and ahead > 0:
+        base["state"] = "local_ahead"
+    else:
+        base["state"] = "diverged"
+    return base
+
+
 # --- Internals ---
+
+
+def _pat_filename(book_id: str) -> str:
+    return f"{book_id}.enc"
+
+
+def _write_remote_config(repo_dir: Path, config: dict[str, Any]) -> None:
+    path = repo_dir / GIT_CONFIG_FILENAME
+    path.write_text(yaml.safe_dump(config, sort_keys=True), encoding="utf-8")
+
+
+def _read_remote_config(repo_dir: Path) -> dict[str, Any] | None:
+    path = repo_dir / GIT_CONFIG_FILENAME
+    if not path.exists():
+        return None
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except yaml.YAMLError:
+        return None
+
+
+def _ensure_gitignore_entry(repo_dir: Path, entry: str) -> None:
+    """Add ``entry`` to ``.gitignore`` if not already present."""
+    gitignore = repo_dir / ".gitignore"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    lines = {line.strip() for line in existing.splitlines()}
+    if entry in lines:
+        return
+    trailing_newline = existing and not existing.endswith("\n")
+    with gitignore.open("a", encoding="utf-8") as fh:
+        if trailing_newline:
+            fh.write("\n")
+        fh.write(f"{entry}\n")
+
+
+def _require_repo_with_remote(book_id: str, db: Session) -> git.Repo:
+    """Load the repo after verifying init + remote config are in place."""
+    _get_book_or_raise(book_id, db)
+    if not is_initialized(book_id):
+        raise RepoNotInitializedError(
+            f"Book {book_id} has no git repo. Initialize first."
+        )
+    config = _read_remote_config(repo_path(book_id))
+    if not config or not config.get("url"):
+        raise RemoteNotConfiguredError(
+            "No remote configured for this book. Set one before push/pull."
+        )
+    return git.Repo(repo_path(book_id))
+
+
+def _authenticated_url(book_id: str, repo: git.Repo) -> str:
+    """Build a one-shot HTTPS URL with the PAT embedded for authenticated push/fetch.
+
+    Only applied to ``http(s)://`` URLs. Everything else (file paths,
+    ssh) is returned unchanged so tests against a local bare repo and
+    future SSH support both work.
+    """
+    original = next(repo.remotes.origin.urls)
+    scheme = original.split("://", 1)[0] if "://" in original else ""
+    if scheme not in ("http", "https"):
+        return original
+
+    if not credential_store.is_configured(
+        filename=_pat_filename(book_id),
+        credentials_dir=GIT_CRED_DIR,
+    ):
+        return original
+
+    pat = credential_store.load_decrypted(
+        filename=_pat_filename(book_id),
+        credentials_dir=GIT_CRED_DIR,
+    ).decode("utf-8").strip()
+    if not pat:
+        return original
+
+    # GitHub/GitLab/Gitea convention: username can be anything, PAT is
+    # the password. ``x-access-token`` is the standard placeholder.
+    encoded_pat = urllib.parse.quote(pat, safe="")
+    prefix, rest = original.split("://", 1)
+    # Strip any existing credentials in the URL to avoid duplication.
+    if "@" in rest:
+        rest = rest.split("@", 1)[1]
+    return f"{prefix}://x-access-token:{encoded_pat}@{rest}"
+
+
+def _classify_git_error(exc: git.GitCommandError) -> GitBackupError:
+    """Map git CLI stderr text to our domain exceptions."""
+    raw = (exc.stderr or "").lower() + " " + (str(exc) or "").lower()
+    if any(
+        token in raw
+        for token in (
+            "authentication failed",
+            "unauthorized",
+            "permission denied",
+            "could not read username",
+            "access denied",
+        )
+    ):
+        return RemoteAuthError(
+            "Remote rejected credentials. Check your PAT and remote URL."
+        )
+    if "non-fast-forward" in raw or "rejected" in raw:
+        return RemoteRejectedError(
+            "Push rejected: remote has commits your local branch does not. "
+            "Pull first (or accept remote) before pushing again."
+        )
+    if any(
+        token in raw
+        for token in (
+            "could not resolve host",
+            "connection timed out",
+            "connection refused",
+            "unable to access",
+            "network",
+        )
+    ):
+        return RemoteNetworkError(f"Network error: {exc.stderr.strip() or exc}")
+    return GitBackupError(f"git failed: {exc.stderr.strip() or exc}")
 
 
 def _get_book_or_raise(book_id: str, db: Session) -> Book:
