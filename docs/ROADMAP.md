@@ -91,6 +91,10 @@ Items with external deadlines or recurring cost that deserve planning-view visib
 - [x] **Node.js 20 -> 22 LTS:** Dockerfile and CI upgraded from Node 20 to Node 22 (Active LTS until Apr 2027). Node 20 EOL Sep 2026 is no longer a concern.
 - [x] **Coverage moved to CI:** `make test` stays fast and coverage-free for everyday local use. Opt-in `make test-coverage` available for local runs. `.github/workflows/coverage.yml` runs on every push/PR and uploads HTML + XML artifacts (14-day retention) for backend, the 5 ci-matrix plugins (export, grammar, kdp, kinderbuch, ms-tools), and frontend. Audiobook + translation plugins still uncovered in CI (mirroring `ci.yml`); pairing them is a follow-up. Codecov integration deferred.
 
+### Security tracking
+
+- [ ] **SEC-01:** vite-plugin-pwa vulnerability chain. 4 high-severity vulns in frontend devDependencies, all routed through `vite-plugin-pwa@1.2.0 -> workbox-build -> @rollup/plugin-terser -> serialize-javascript <=7.0.4`. CVEs: GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v (DoS, CVSS 5.9). Production bundle audit: 0 vulns (dev-only exposure, not shipped to users). `npm audit fix` cannot resolve non-breaking; `--force` downgrades vite-plugin-pwa 1.2.0 -> 0.19.8 (SemVer major). Resolution path: wait for upstream patch; re-audit monthly via `npm audit --audit-level=high`. Triggers revisit: vite-plugin-pwa ships new release, any vuln reclassified as production, DEP-09 Vite 8 unblocks (forces migration). Same upstream blocker as DEP-09.
+
 ### Deferred major dependency upgrades
 
 Each gets a dedicated session with its own testing cycle. Not urgent, but tracked so they don't get forgotten. See `lessons-learned.md` "Dependency currency" for the rules.
