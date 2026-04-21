@@ -2,6 +2,49 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [Unreleased]
+
+Polish cycle after v0.20.0: two new AI editor modes, Settings refactor, CSS zoom fixes, and a full security sweep across the stack.
+
+### Added
+
+- **AI `fix_issue` mode for quality findings**: from the Quality tab in the editor, clicking a metric (Füll %, Passiv %, Adv %, Lange Sätze) jumps to the first matching finding in that chapter; StyleCheck decorations paint every finding so context is visible.
+- **Quality-tab navigate-to-first-issue**: per-chapter metrics are clickable and jump the editor to the relevant chapter + finding.
+
+### Changed
+
+- **Settings: KI-Assistent is its own tab.** AI provider config (enable, provider, base URL, model, temperature, max tokens, API key, test-connection) moved from the Allgemein tab into a dedicated tab between Allgemein and Autor. `AiAssistantSettings` saves via partial PATCH `/api/settings/app`; Allgemein stays focused on app/ui/plugins/editor. New i18n key `ui.settings.tab_ai` in all 8 languages.
+- **Reactive word/character count in editor status bar** via `useEditorState` (idiomatic TipTap React pattern) instead of inline `editor.storage` reads. Partial fix for issue #12; the Playwright smoke test for keyboard-type reactivity remains skipped (deeper TipTap `useEditor` subscription timing issue).
+- **Unified Radix tab-list CSS class.** `.radix-tab-list` (undefined class, relied on inline styles) removed; everything now uses `.radix-tabs-list` with `overflow-x: auto; white-space: nowrap;` baked into the shared rule. Removes the invisible-undefined-class footgun.
+
+### Fixed
+
+- **Main page overflowed viewport at 150% CSS zoom** (issue #11). html/body/#root now get explicit height + overflow constraints; document itself no longer scrolls under zoom. Re-enabled `e2e/smoke/chapter-sidebar-viewport.spec.ts:337`.
+- **Chapter sidebar dropdown escaped viewport at 125/150% CSS zoom** (issue #10). `collisionPadding` widened asymmetrically on the bottom (`{top: 16, bottom: 280, left: 16, right: 16}`) so Radix Popper reserves enough layout-space buffer that the zoom-scaled dropdown fits the viewport. Re-enabled both loop variants of `chapter-sidebar-viewport.spec.ts:290`.
+- **Scroll regression on non-editor pages.** The #11 fix initially applied `overflow: hidden` to #root too, which broke scroll on Settings, Dashboard, GetStarted, Help. Split the rule: html+body keep `overflow: hidden` (preserves the zoom assertion), `#root` gets `overflow-y: auto` for pages without their own scroll container.
+
+### Security
+
+- **Backend CVE sweep.** 13 CVEs across 3 packages cleared via transitive upgrades:
+  - `aiohttp` 3.13.3 → 3.13.5 (fixes 10 CVEs: CVE-2026-22815, CVE-2026-34513..34520, CVE-2026-34525)
+  - `pygments` 2.19.2 → 2.20.0 (fixes CVE-2026-4539)
+  - `starlette` 0.46.2 → 1.0.0 (fixes CVE-2025-54121, CVE-2025-62727; major bump transparent to Bibliogon code)
+
+  `pip-audit` post-upgrade: 0 vulnerabilities. Backend 638 + plugin 409 tests unchanged.
+- **`pip-audit` added as backend dev dependency** (`poetry run pip-audit`). Enables CVE auditing parity with frontend `npm audit`.
+- **Frontend SEC-01 tracked**: 4 high-severity vulns in `vite-plugin-pwa` dependency chain. All dev-only (0 in production bundle), blocked on upstream patch, documented in ROADMAP.
+
+### Chore
+
+- **Node.js 22 → 24 LTS.** New `.nvmrc`, `engines.node >=24.0.0` in `frontend/package.json` and `e2e/package.json`, `frontend/Dockerfile` to `node:24-slim`, CI workflows (`ci.yml`, `coverage.yml`) to `node-version: "24"`. Node 24 Active LTS until April 2028.
+
+### Documentation
+
+- TipTap 3 migration pre-audit at `docs/explorations/tiptap-3-migration.md`. Blocker: `@sereneinserenade/tiptap-search-and-replace` v0.2.0 merged on upstream main (TipTap 3 dual support, MIT) but not yet npm-published. Upstream issue filed: sereneinserenade/tiptap-search-and-replace#19. Fallback path documented: `prosemirror-search` adapter (~50-80 LOC).
+- Article authoring exploration at `docs/explorations/article-authoring.md` (deferred pending 4-week validation log of actual publishing workflow).
+- Numeric-claims verification rule in `.claude/rules/ai-workflow.md`: every numeric claim in docs/commits/reports requires running the authoritative command in the same session. Exists because the v0.19.1 article and v0.20.0 journal both reported stale plugin test counts.
+- Lesson on viewport vs app-container CSS rules in `.claude/rules/lessons-learned.md` (captured from the ef7ce5c → c25483e sequence).
+
 ## [0.20.0] - 2026-04-20
 
 AI Review Extension is the headline feature. The existing chapter review grows from a single sync path into a three-mode async flow with persistent Markdown reports, cost estimates, and full 8-language prompt parity. Three real backend bugs in backup / batch export / smart-import are fixed along the way. Playwright smoke suite drops from 31 failures to zero.
