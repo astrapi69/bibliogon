@@ -83,6 +83,10 @@ nav:
 - KI-Assistent: de/ai.md
 - Themes: de/themes.md
 - Tastenkuerzel: de/shortcuts.md
+- Git-Sicherung:
+  - Grundlagen: de/git-backup/basics.md
+  - Remote: de/git-backup/remote.md
+  - SSH-Schlüssel: de/git-backup/ssh.md
 - Unterstützen: de/support.md
 - FAQ: de/faq.md
 - Glossar: de/glossary.md

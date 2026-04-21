@@ -113,6 +113,25 @@ navigation:
     icon: keyboard
 
   - title:
+      de: Git-Sicherung
+      en: Git Backup
+    slug: git-backup
+    icon: git-branch
+    children:
+      - title:
+          de: Grundlagen
+          en: Basics
+        slug: git-backup/basics
+      - title:
+          de: Remote
+          en: Remote
+        slug: git-backup/remote
+      - title:
+          de: SSH-Schlüssel
+          en: SSH Keys
+        slug: git-backup/ssh
+
+  - title:
       de: Unterstützen
       en: Support
     slug: support
