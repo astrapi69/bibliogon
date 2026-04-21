@@ -62,14 +62,15 @@ Pre-built structures for common book genres. Lowers the entry barrier for new us
 - [ ] PS-13: "Save as new chapter" action in `ConflictResolutionDialog`. Third button alongside Keep/Discard that clones the local-edit into a fresh chapter appended after the current one, then pulls the server content into the current chapter. Requires new backend endpoint (e.g. `POST /api/books/{id}/chapters/fork`), i18n keys across 8 locales, E2E coverage, and scope discussion for position ordering. Deferred from v1 of the 409 conflict flow; inline TODO removed in favor of this tracker entry.
 - [ ] PS-14+: future polish items, surface as found
 
-### 4. Git-based backup (priority: low, existing .bgb covers daily needs)
+### 4. Git-based backup (phased)
 
-Replace the upload-based backup compare with proper Git integration.
+Replaces the upload-based backup-compare (V-02 stop-gap) with proper Git integration. Phased plan lives in [docs/explorations/git-based-backup.md](explorations/git-based-backup.md). MVP ships TipTap JSON per chapter under `uploads/{book_id}/.git`, user-controlled commits, remote-agnostic (any git URL), offline-first.
 
-- [ ] SI-01: "Accept remote state" button for external changes
-- [ ] SI-02: merge help on simple conflicts (only one chapter changed, no overlapping lines)
-- [ ] SI-03: SSH key generation from the UI (for users without an existing SSH key)
-- [ ] SI-04: visual indicator in the sidebar when the remote state is newer than local
+- [x] **Phase 1:** local git per book (init / commit / log / status). GitPython backend, Dockerfile git binary, frontend Commit dialog + sidebar button, i18n in 8 languages. Shipped in `feat(git-backup): Phase 1 local git per book` (commit `436de37`) + frontend `2203c2e` + i18n fix `556231c`.
+- [x] **Phase 2:** remote push/pull (SI-01 + SI-04). Backend: configure_remote/push/pull/sync_status with Fernet-encrypted PAT via credential_store, one-shot-URL PAT injection so the token never lands in `.git/config`, ff-only pull with DivergedError for SI-02. Frontend: remote config form, Push/Pull buttons, SyncBadge (in_sync / local_ahead / remote_ahead / diverged / never_synced). Shipped `c78fa1c` (backend) + `d9f72bc` (frontend).
+- [ ] **Phase 3:** SI-03 SSH key generation from the UI (Ed25519 via paramiko or ssh-keygen subprocess; public key copy-paste flow).
+- [ ] **Phase 4:** SI-02 simple conflict help (per-chapter Keep mine / Keep theirs when each side changed a different chapter; complex conflicts kick to external git tool).
+- [ ] **Phase 5:** Markdown export alongside JSON for readable diffs (reuses `plugin-export` TipTap -> Markdown).
 
 ### 5. Donation integration (priority: after stability)
 
