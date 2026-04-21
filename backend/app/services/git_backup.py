@@ -12,6 +12,7 @@ sync-status. Auth: HTTPS + Personal Access Token only for MVP.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import urllib.parse
 from datetime import datetime
@@ -903,19 +904,32 @@ def _write_book_state(book: Book, db: Session, repo_dir: Path) -> None:
 
     for index, chapter in enumerate(chapters, start=1):
         section = _section_for(chapter.chapter_type)
-        filename = f"{index:02d}-{_slugify(chapter.title or 'untitled')}.json"
+        stem = f"{index:02d}-{_slugify(chapter.title or 'untitled')}"
+        tiptap_doc = _safe_load_json(chapter.content)
         payload = {
             "id": chapter.id,
             "title": chapter.title,
             "chapter_type": chapter.chapter_type,
             "position": chapter.position,
-            "content": _safe_load_json(chapter.content),
+            "content": tiptap_doc,
         }
-        out_path = manuscript / section / filename
-        out_path.write_text(
+        json_path = manuscript / section / f"{stem}.json"
+        json_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+        # Phase 5: Markdown counterpart for readable diffs. JSON stays
+        # canonical; MD is advisory and regenerated from JSON on every
+        # commit. Failure to render MD must NEVER block the JSON
+        # commit.
+        md_path = manuscript / section / f"{stem}.md"
+        md = _render_chapter_markdown(chapter.title, tiptap_doc)
+        if md is not None:
+            md_path.write_text(md, encoding="utf-8")
+        elif md_path.exists():
+            # Plugin gone mid-flight? Drop stale MD rather than keep a
+            # diverging snapshot next to the JSON.
+            md_path.unlink()
 
     config_dir = repo_dir / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -956,6 +970,32 @@ def _book_metadata(book: Book) -> dict[str, Any]:
         "asin_hardcover",
     )
     return {field: getattr(book, field, None) for field in fields}
+
+
+def _render_chapter_markdown(title: str | None, tiptap_doc: Any) -> str | None:
+    """Render a chapter to Markdown. Returns None on any failure.
+
+    Phase 5: reuses the export plugin's converter. The export plugin
+    is a path-installed core dependency but the import is kept lazy +
+    exception-tolerant so a disabled/broken plugin never blocks a
+    commit — JSON is the canonical format, Markdown is advisory.
+    """
+    try:
+        from bibliogon_export.tiptap_to_md import tiptap_to_markdown
+    except ImportError:
+        logger_ = logging.getLogger(__name__)
+        logger_.info("bibliogon_export unavailable; skipping Markdown side-file")
+        return None
+    if not isinstance(tiptap_doc, dict) or tiptap_doc.get("type") != "doc":
+        return None
+    try:
+        body = tiptap_to_markdown(tiptap_doc)
+    except Exception as exc:  # noqa: BLE001 - render must not kill commit
+        logger_ = logging.getLogger(__name__)
+        logger_.warning("tiptap_to_markdown failed: %s", exc)
+        return None
+    header = f"# {title.strip()}\n\n" if title and title.strip() else ""
+    return header + body.rstrip() + "\n"
 
 
 def _safe_load_json(raw: str | None) -> Any:

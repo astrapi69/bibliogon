@@ -714,6 +714,132 @@ def test_merge_rejects_when_merge_in_progress(tmp_path):
     assert resp.json()["detail"]["code"] == "merge_in_progress"
 
 
+# --- Phase 5: Markdown side-files ---
+
+
+def test_commit_writes_markdown_alongside_json():
+    book_id = _create_book()
+    _add_chapter(
+        book_id,
+        "Intro",
+        content=json.dumps({
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Hello world."}],
+                }
+            ],
+        }),
+    )
+    client.post(f"/api/books/{book_id}/git/init")
+
+    root = git_backup.repo_path(book_id)
+    chapters_dir = root / "manuscript" / "chapters"
+    json_files = sorted(chapters_dir.glob("*.json"))
+    md_files = sorted(chapters_dir.glob("*.md"))
+    assert len(json_files) == 1
+    assert len(md_files) == 1
+    assert json_files[0].stem == md_files[0].stem
+
+
+def test_markdown_side_file_contains_title_header_and_body():
+    book_id = _create_book()
+    _add_chapter(
+        book_id,
+        "My Chapter",
+        content=json.dumps({
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "First paragraph."}],
+                }
+            ],
+        }),
+    )
+    client.post(f"/api/books/{book_id}/git/init")
+
+    md_path = next(
+        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
+    )
+    content = md_path.read_text(encoding="utf-8")
+    assert content.startswith("# My Chapter")
+    assert "First paragraph." in content
+
+
+def test_markdown_regenerates_on_every_commit():
+    book_id = _create_book()
+    ch_id = _add_chapter(
+        book_id,
+        "Evolving",
+        content=json.dumps({"type": "doc", "content": []}),
+    )
+    client.post(f"/api/books/{book_id}/git/init")
+
+    md_path = next(
+        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
+    )
+    # First pass: empty body.
+    first = md_path.read_text(encoding="utf-8")
+    assert first.startswith("# Evolving")
+    assert len(first.strip().splitlines()) == 1  # title only
+
+    # Modify chapter content via the book API - need to bypass the
+    # optimistic-lock version field by deleting + re-adding.
+    client.delete(f"/api/books/{book_id}/chapters/{ch_id}")
+    _add_chapter(
+        book_id,
+        "Evolving",
+        content=json.dumps({
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Added text."}],
+                }
+            ],
+        }),
+    )
+
+    client.post(
+        f"/api/books/{book_id}/git/commit", json={"message": "Second"}
+    )
+    second = md_path.read_text(encoding="utf-8")
+    assert "Added text." in second
+    assert second != first
+
+
+def test_markdown_side_file_renders_heading_node():
+    book_id = _create_book()
+    _add_chapter(
+        book_id,
+        "Heading Test",
+        content=json.dumps({
+            "type": "doc",
+            "content": [
+                {
+                    "type": "heading",
+                    "attrs": {"level": 2},
+                    "content": [{"type": "text", "text": "Subhead"}],
+                },
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Body."}],
+                },
+            ],
+        }),
+    )
+    client.post(f"/api/books/{book_id}/git/init")
+
+    md_path = next(
+        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
+    )
+    content = md_path.read_text(encoding="utf-8")
+    assert "## Subhead" in content
+    assert "Body." in content
+
+
 def test_pat_never_appears_on_disk_in_git_config(tmp_path):
     """Guard against leaking the PAT through git's remote URL config."""
     book_id, url = _init_book_with_remote(tmp_path)
