@@ -334,12 +334,7 @@ test.describe("Dropdown at simulated browser zoom", () => {
         });
     }
 
-    // Skipped: at 150% CSS zoom the document itself reports
-    // scrollHeight=1200 > clientHeight=802, i.e. the page has a
-    // scrollbar under zoom. The assertion is a sound UX goal but
-    // needs a real layout fix (likely main-content min-height) out
-    // of scope for smoke cleanup. Tracked in issue #9.
-    test.skip("sidebar list still internally scrolls at 150% zoom", async ({page}) => {
+    test("sidebar list still internally scrolls at 150% zoom", async ({page}) => {
         await openBookAtViewport(page, bookId, 800);
         await setCssZoom(page, 1.5);
 
