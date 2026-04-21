@@ -182,7 +182,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                     </div>
 
                     <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                        <Tabs.List className="radix-tab-list" style={{marginBottom: 12}}>
+                        <Tabs.List className="radix-tabs-list" style={{marginBottom: 12}}>
                             <Tabs.Trigger
                                 value="blank"
                                 className="radix-tab-trigger"

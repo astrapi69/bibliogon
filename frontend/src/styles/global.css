@@ -1026,6 +1026,8 @@ body {
     display: flex;
     gap: 0;
     border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .radix-tab-trigger {

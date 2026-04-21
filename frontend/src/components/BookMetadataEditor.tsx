@@ -191,7 +191,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 
             {/* Tabs */}
             <Tabs.Root defaultValue="general" style={{maxWidth: 800}}>
-                <Tabs.List className="radix-tab-list" style={{marginBottom: 16, overflowX: "auto", whiteSpace: "nowrap"}}>
+                <Tabs.List className="radix-tabs-list" style={{marginBottom: 16}}>
                     <Tabs.Trigger value="general" className="radix-tab-trigger">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="publisher" className="radix-tab-trigger">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
                     <Tabs.Trigger value="isbn" className="radix-tab-trigger">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
