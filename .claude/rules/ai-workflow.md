@@ -127,7 +127,7 @@ only.
   and the 5 in-CI plugins (export, grammar, kdp, kinderbuch,
   ms-tools) with `pytest --cov` and `vitest --coverage`. Frontend
   coverage requires Node 20+; lower versions fail with a
-  `node:inspector/promises` ImportError. CI uses Node 22 so this
+  `node:inspector/promises` ImportError. CI uses Node 24 so this
   is only a local concern.
 - `.github/workflows/coverage.yml` - runs on every push to main
   and every PR. Uploads HTML reports + coverage.xml as
