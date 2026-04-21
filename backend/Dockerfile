@@ -32,7 +32,7 @@ RUN rm -f /usr/local/lib/python3.12/site-packages/bibliogon_plugin_*.pth
 FROM python:3.12-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends pandoc && \
+    apt-get install -y --no-install-recommends pandoc git && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages and scripts from builder

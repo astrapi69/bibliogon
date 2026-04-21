@@ -26,6 +26,7 @@ from app.routers import (
     chapter_templates,
     chapters,
     covers,
+    git_backup,
     licenses,
     plugin_install,
     settings,
@@ -217,6 +218,7 @@ app.include_router(settings.router, prefix="/api")
 app.include_router(plugin_install.router, prefix="/api")
 app.include_router(templates.router, prefix="/api")
 app.include_router(chapter_templates.router, prefix="/api")
+app.include_router(git_backup.router, prefix="/api")
 
 from app.ai.routes import router as ai_router
 

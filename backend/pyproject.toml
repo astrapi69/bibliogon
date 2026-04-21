@@ -31,6 +31,7 @@ pyttsx3 = "^2.90"
 elevenlabs = "^0.2.27"
 cryptography = "^46.0.7"
 ruamel-yaml = "^0.18.0"
+gitpython = "^3.1.40"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
