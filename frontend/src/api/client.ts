@@ -1214,6 +1214,27 @@ export const api = {
 
         status: (bookId: string) =>
             request<GitRepoStatus>(`/books/${bookId}/git/status`),
+
+        getRemote: (bookId: string) =>
+            request<GitRemoteConfig>(`/books/${bookId}/git/remote`),
+
+        setRemote: (bookId: string, url: string, pat: string | null) =>
+            request<GitRemoteConfig>(`/books/${bookId}/git/remote`, {
+                method: "POST",
+                body: JSON.stringify({url, pat}),
+            }),
+
+        deleteRemote: (bookId: string) =>
+            request<void>(`/books/${bookId}/git/remote`, {method: "DELETE"}),
+
+        push: (bookId: string) =>
+            request<GitPushResult>(`/books/${bookId}/git/push`, {method: "POST"}),
+
+        pull: (bookId: string) =>
+            request<GitPullResult>(`/books/${bookId}/git/pull`, {method: "POST"}),
+
+        syncStatus: (bookId: string) =>
+            request<GitSyncStatus>(`/books/${bookId}/git/sync-status`),
     },
 };
 
@@ -1231,4 +1252,30 @@ export interface GitRepoStatus {
     uncommitted_files: number
     head_hash: string | null
     head_short_hash: string | null
+}
+
+export interface GitRemoteConfig {
+    url: string | null
+    has_credential: boolean
+}
+
+export interface GitPushResult {
+    branch: string
+    summary: string
+    flags: number
+}
+
+export interface GitPullResult {
+    branch: string
+    updated: boolean
+    fast_forward: boolean
+    head_hash: string | null
+}
+
+export interface GitSyncStatus {
+    remote_configured: boolean
+    has_credential: boolean
+    ahead: number
+    behind: number
+    state: "no_remote" | "never_synced" | "in_sync" | "local_ahead" | "remote_ahead" | "diverged"
 }

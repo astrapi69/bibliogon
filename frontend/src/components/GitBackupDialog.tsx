@@ -1,7 +1,24 @@
 import {useEffect, useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import {X, GitCommit, GitBranch, RefreshCw} from "lucide-react"
-import {api, ApiError, GitCommitEntry, GitRepoStatus} from "../api/client"
+import {
+    X,
+    GitCommit,
+    GitBranch,
+    RefreshCw,
+    Upload,
+    Download,
+    Unplug,
+    Check,
+    AlertTriangle,
+} from "lucide-react"
+import {
+    api,
+    ApiError,
+    GitCommitEntry,
+    GitRemoteConfig,
+    GitRepoStatus,
+    GitSyncStatus,
+} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 
@@ -15,7 +32,12 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
     const {t} = useI18n()
     const [status, setStatus] = useState<GitRepoStatus | null>(null)
     const [commits, setCommits] = useState<GitCommitEntry[]>([])
+    const [remote, setRemote] = useState<GitRemoteConfig | null>(null)
+    const [sync, setSync] = useState<GitSyncStatus | null>(null)
     const [message, setMessage] = useState("")
+    const [remoteUrlDraft, setRemoteUrlDraft] = useState("")
+    const [remotePatDraft, setRemotePatDraft] = useState("")
+    const [editingRemote, setEditingRemote] = useState(false)
     const [busy, setBusy] = useState(false)
 
     useEffect(() => {
@@ -28,9 +50,20 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             const st = await api.git.status(bookId)
             setStatus(st)
             if (st.initialized) {
-                setCommits(await api.git.log(bookId, 50))
+                const [logEntries, rc, ss] = await Promise.all([
+                    api.git.log(bookId, 50),
+                    api.git.getRemote(bookId),
+                    api.git.syncStatus(bookId),
+                ])
+                setCommits(logEntries)
+                setRemote(rc)
+                setSync(ss)
+                setRemoteUrlDraft(rc.url ?? "")
+                setRemotePatDraft("")
             } else {
                 setCommits([])
+                setRemote(null)
+                setSync(null)
             }
         } catch (err) {
             notify.error(describeError(err))
@@ -68,13 +101,97 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
         }
     }
 
+    async function handleSaveRemote() {
+        if (!remoteUrlDraft.trim()) {
+            notify.warning(t("ui.git.remote_url_required", "Remote-URL erforderlich"))
+            return
+        }
+        setBusy(true)
+        try {
+            await api.git.setRemote(bookId, remoteUrlDraft.trim(), remotePatDraft || null)
+            notify.success(t("ui.git.remote_saved", "Remote gespeichert"))
+            setEditingRemote(false)
+            setRemotePatDraft("")
+            await refresh()
+        } catch (err) {
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handleDeleteRemote() {
+        setBusy(true)
+        try {
+            await api.git.deleteRemote(bookId)
+            notify.success(t("ui.git.remote_deleted", "Remote entfernt"))
+            await refresh()
+        } catch (err) {
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handlePush() {
+        setBusy(true)
+        try {
+            await api.git.push(bookId)
+            notify.success(t("ui.git.push_ok", "Push erfolgreich"))
+            await refresh()
+        } catch (err) {
+            if (err instanceof ApiError && err.detailBody?.code === "remote_rejected") {
+                notify.warning(t(
+                    "ui.git.push_rejected",
+                    "Push abgelehnt. Remote hat neuere Commits. Pull zuerst oder akzeptiere Remote.",
+                ))
+                return
+            }
+            if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
+                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."))
+                return
+            }
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handlePull() {
+        setBusy(true)
+        try {
+            const res = await api.git.pull(bookId)
+            if (res.updated) {
+                notify.success(t("ui.git.pull_ok", "Pull erfolgreich"))
+            } else {
+                notify.success(t("ui.git.pull_no_changes", "Bereits aktuell"))
+            }
+            await refresh()
+        } catch (err) {
+            if (err instanceof ApiError && err.detailBody?.code === "diverged") {
+                notify.warning(t(
+                    "ui.git.diverged",
+                    "Lokal und Remote divergieren. Manuelle Auflösung erforderlich.",
+                ))
+                return
+            }
+            if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
+                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."))
+                return
+            }
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
     return (
         <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay"/>
                 <Dialog.Content
                     className="dialog-content"
-                    style={{maxWidth: 720, maxHeight: "85vh", overflowY: "auto"}}
+                    style={{maxWidth: 760, maxHeight: "85vh", overflowY: "auto"}}
                     data-testid="git-backup-dialog"
                 >
                     <div className="dialog-header">
@@ -105,7 +222,8 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
 
                     {status && status.initialized && (
                         <div style={{padding: 16, display: "flex", flexDirection: "column", gap: 16}}>
-                            <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: "0.8125rem"}}>
+                            {/* Header: HEAD + sync status + refresh */}
+                            <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: "0.8125rem", flexWrap: "wrap"}}>
                                 <span style={{color: "var(--text-muted)"}}>HEAD:</span>
                                 <code style={{fontFamily: "var(--font-mono)"}}>{status.head_short_hash}</code>
                                 {status.dirty && (
@@ -113,16 +231,140 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                                         {t("ui.git.dirty", "ungespeicherte Änderungen")} ({status.uncommitted_files})
                                     </span>
                                 )}
+                                {sync && <SyncBadge sync={sync}/>}
                                 <button
                                     className="btn btn-ghost btn-sm"
                                     onClick={refresh}
                                     title={t("ui.common.refresh", "Aktualisieren")}
                                     style={{marginLeft: "auto"}}
+                                    data-testid="git-refresh-btn"
                                 >
                                     <RefreshCw size={14}/>
                                 </button>
                             </div>
 
+                            {/* Remote config block */}
+                            <div style={{padding: 12, background: "var(--bg-secondary)", borderRadius: "var(--radius-sm)"}}>
+                                <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 8}}>
+                                    {t("ui.git.remote", "Remote")}
+                                </h3>
+                                {!editingRemote && remote && remote.url && (
+                                    <div style={{display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap"}}>
+                                        <code style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis"}}>
+                                            {remote.url}
+                                        </code>
+                                        {remote.has_credential && (
+                                            <span style={{fontSize: "0.75rem", color: "var(--accent)"}}>
+                                                <Check size={12} style={{verticalAlign: -1}}/> PAT
+                                            </span>
+                                        )}
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={handlePush}
+                                            disabled={busy}
+                                            data-testid="git-push-btn"
+                                        >
+                                            <Upload size={14}/> {t("ui.git.push", "Push")}
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={handlePull}
+                                            disabled={busy}
+                                            data-testid="git-pull-btn"
+                                        >
+                                            <Download size={14}/> {t("ui.git.pull", "Pull")}
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setEditingRemote(true)}
+                                        >
+                                            {t("ui.common.edit", "Bearbeiten")}
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={handleDeleteRemote}
+                                            disabled={busy}
+                                            title={t("ui.git.remote_delete", "Remote entfernen")}
+                                        >
+                                            <Unplug size={14}/>
+                                        </button>
+                                    </div>
+                                )}
+                                {!editingRemote && remote && !remote.url && (
+                                    <div style={{display: "flex", gap: 8, alignItems: "center"}}>
+                                        <span style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                                            {t("ui.git.no_remote", "Kein Remote konfiguriert.")}
+                                        </span>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => setEditingRemote(true)}
+                                            data-testid="git-remote-configure-btn"
+                                        >
+                                            {t("ui.git.remote_configure", "Remote konfigurieren")}
+                                        </button>
+                                    </div>
+                                )}
+                                {editingRemote && (
+                                    <div style={{display: "flex", flexDirection: "column", gap: 8}}>
+                                        <div className="field">
+                                            <label className="label">{t("ui.git.remote_url", "Remote-URL")}</label>
+                                            <input
+                                                className="input"
+                                                value={remoteUrlDraft}
+                                                onChange={(e) => setRemoteUrlDraft(e.target.value)}
+                                                placeholder="https://github.com/user/my-book.git"
+                                                style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}
+                                                data-testid="git-remote-url-input"
+                                            />
+                                        </div>
+                                        <div className="field">
+                                            <label className="label">
+                                                {t("ui.git.remote_pat", "Personal Access Token")}
+                                                {remote?.has_credential && (
+                                                    <small style={{marginLeft: 6, color: "var(--text-muted)"}}>
+                                                        ({t("ui.git.remote_pat_stored", "gespeichert — leer lassen zum Beibehalten")})
+                                                    </small>
+                                                )}
+                                            </label>
+                                            <input
+                                                className="input"
+                                                type="password"
+                                                value={remotePatDraft}
+                                                onChange={(e) => setRemotePatDraft(e.target.value)}
+                                                placeholder="ghp_..."
+                                                style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}
+                                                data-testid="git-remote-pat-input"
+                                            />
+                                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                                {t("ui.git.pat_hint", "Der PAT wird verschlüsselt gespeichert und nie zurückgegeben. Verwende ein privates Repository.")}
+                                            </small>
+                                        </div>
+                                        <div style={{display: "flex", gap: 8}}>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={handleSaveRemote}
+                                                disabled={busy}
+                                                data-testid="git-remote-save-btn"
+                                            >
+                                                {t("ui.common.save", "Speichern")}
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => {
+                                                    setEditingRemote(false)
+                                                    setRemoteUrlDraft(remote?.url ?? "")
+                                                    setRemotePatDraft("")
+                                                }}
+                                                disabled={busy}
+                                            >
+                                                {t("ui.common.cancel", "Abbrechen")}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Commit block */}
                             <div className="field">
                                 <label className="label">{t("ui.git.commit_message", "Commit-Nachricht")}</label>
                                 <input
@@ -179,6 +421,46 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
         </Dialog.Root>
     )
 }
+
+
+function SyncBadge({sync}: {sync: GitSyncStatus}) {
+    const {t} = useI18n()
+    if (!sync.remote_configured) return null
+    if (sync.state === "in_sync") {
+        return (
+            <span style={{color: "var(--accent)", fontSize: "0.75rem", fontWeight: 500}} data-testid="git-sync-in-sync">
+                <Check size={12} style={{verticalAlign: -1}}/> {t("ui.git.in_sync", "synchron")}
+            </span>
+        )
+    }
+    if (sync.state === "local_ahead") {
+        return (
+            <span style={{color: "var(--text-muted)", fontSize: "0.75rem"}} data-testid="git-sync-local-ahead">
+                <Upload size={12} style={{verticalAlign: -1}}/> {sync.ahead} {t("ui.git.ahead", "vorne")}
+            </span>
+        )
+    }
+    if (sync.state === "remote_ahead") {
+        return (
+            <span style={{color: "var(--accent)", fontSize: "0.75rem", fontWeight: 500}} data-testid="git-sync-remote-ahead">
+                <Download size={12} style={{verticalAlign: -1}}/> {sync.behind} {t("ui.git.behind", "hinten")}
+            </span>
+        )
+    }
+    if (sync.state === "diverged") {
+        return (
+            <span style={{color: "var(--accent)", fontSize: "0.75rem", fontWeight: 500}} data-testid="git-sync-diverged">
+                <AlertTriangle size={12} style={{verticalAlign: -1}}/> {t("ui.git.diverged_short", "divergiert")}
+            </span>
+        )
+    }
+    return (
+        <span style={{color: "var(--text-muted)", fontSize: "0.75rem"}} data-testid="git-sync-never-synced">
+            {t("ui.git.never_synced", "noch nicht synchronisiert")}
+        </span>
+    )
+}
+
 
 function describeError(err: unknown): string {
     if (err instanceof ApiError) return err.detail || err.message
