@@ -172,6 +172,79 @@ Numbers that change with every feature or test session live in ONE canonical loc
 
 **When writing documentation:** if you need to mention a count, write the principle or the reference, not the number. Example: "Bibliogon supports multiple languages (see config/i18n/)" instead of "Bibliogon supports 8 languages".
 
+## Numeric claims verification
+
+Any numeric claim about the project must be verified by running
+the authoritative command in the same session it is reported.
+
+This rule applies to ALL of:
+
+- Public documentation (README, CHANGELOG, blog posts, release
+  notes, GitHub releases)
+- Internal documentation (session journals, coverage audits,
+  explorations, handover documents)
+- Commit messages and pull-request descriptions
+- Chat summaries and status reports
+- Any claim made to the user about project size or status
+
+Numbers covered by this rule include (non-exhaustive):
+
+- Test counts (backend, plugin, frontend, smoke, aggregate)
+- File counts, line counts, commit counts
+- Plugin counts (number of plugins)
+- Coverage percentages
+- Release counts, version-in-use counts
+- Any "N passed / N failed / N skipped" statistic
+
+Verification means running the actual command, not:
+
+- Grep output (grep can miss entries due to line-parsing or
+  pagination)
+- Memory of a previous count
+- Inferring from another count
+- Hardcoded numbers from an old session journal
+
+If a command cannot be run in the current session (environment
+issue, network issue), the number must be marked as "approximate"
+or "as of [last verified date]" and flagged for verification in
+the next session.
+
+### Required verification commands for common numbers
+
+- **Backend tests:** `cd backend && poetry run pytest --collect-only -q | tail -5`
+- **Plugin tests total:** iterate all plugins:
+  ```
+  for dir in plugins/*/; do
+    echo "=== $dir ==="
+    cd "$dir" && poetry run pytest --collect-only -q 2>/dev/null | tail -3
+    cd - >/dev/null
+  done
+  ```
+- **Plugin count:** `ls -d plugins/*/ | wc -l`
+- **Frontend Vitest:** `cd frontend && npx vitest --run --reporter=verbose 2>&1 | tail -5`
+- **Playwright smoke:** `cd frontend && npx playwright test e2e/smoke/ 2>&1 | tail -5`
+- **LOC (approximate):** `git ls-files | xargs wc -l | tail -1`
+
+### Incident record
+
+This rule exists because of two repeated incidents:
+
+1. v0.19.1 article session (2026-04-20): plugin test count
+   reported as 317, actual 409. Caught pre-publication.
+2. v0.20.0 release journal (2026-04-20): plugin test count
+   reported as 317 again, actual 409. Caught in internal docs.
+
+Both were grep-parse errors where `export` plugin (92 tests) was
+missed in the parse. Both would have been prevented by running
+the full per-plugin iteration.
+
+### When the user provides a number
+
+If a user states a number in conversation (e.g. "we have 31
+failing tests"), this number is a starting point, not authoritative.
+Re-verify before echoing it back in any document or commit. Users
+are frequently working from their own stale sources.
+
 ## Communication
 
 - Direct, factual, no sugar-coating.
