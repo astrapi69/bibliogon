@@ -28,6 +28,16 @@ import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
 import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
+import {FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType} from "../data/fix-issue-prompts";
+
+type Translator = (key: string, fallback: string) => string;
+
+const ISSUE_TYPE_LABELS: Record<FixIssueType, (t: Translator) => string> = {
+    passive_voice: (t) => t("ui.editor.ai_fix_issue_label_passive", "Passiv"),
+    adverb: (t) => t("ui.editor.ai_fix_issue_label_adverb", "Adverb"),
+    filler_word: (t) => t("ui.editor.ai_fix_issue_label_filler", "Fuellwort"),
+    long_sentence: (t) => t("ui.editor.ai_fix_issue_label_long", "Langer Satz"),
+};
 import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api, ApiError, SaveAbortedError} from "../api/client";
@@ -91,8 +101,20 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
     const [aiSuggestion, setAiSuggestion] = useState("");
     const [aiReview, setAiReview] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
-    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom" | "review">("improve");
+    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom" | "review" | "fix_issue">("improve");
     const [aiCustomPrompt, setAiCustomPrompt] = useState("");
+    // activeIssue is set by the navigate-to-issue flow (initialFocus
+    // effect) and cleared on chapter switch. Used by the AI "fix issue"
+    // mode to target the rewrite with type-aware prompts (passive ->
+    // active, adverb -> stronger verb, ...). The plain-text offsets
+    // let the handler expand the selection to the enclosing sentence
+    // so the AI gets enough context even when the raw finding is one
+    // word long (filler_word, adverb).
+    const [activeIssue, setActiveIssue] = useState<{
+        type: "filler_word" | "passive_voice" | "adverb" | "long_sentence";
+        offset: number;
+        length: number;
+    } | null>(null);
     // New for v0.20.x AI review extension. See docs/explorations/ai-review-extension.md.
     const [reviewFocus, setReviewFocus] = useState<"style" | "consistency" | "beta_reader">("style");
     const [reviewDownloadUrl, setReviewDownloadUrl] = useState<string | null>(null);
@@ -416,12 +438,35 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                     .setTextSelection({from, to: to ?? from})
                     .scrollIntoView()
                     .run();
+                // Arm the "fix issue" AI mode for this finding. The AI
+                // panel stays closed until the user clicks; the button
+                // on the quality tab is diagnosis, not remediation.
+                setActiveIssue({
+                    type: match.type as "filler_word" | "passive_voice" | "adverb" | "long_sentence",
+                    offset: match.offset,
+                    length: match.length,
+                });
+                setAiPromptType("fix_issue");
+                // Only open the AI panel if the AI plugin is enabled;
+                // otherwise the user sees no button to press and the
+                // arm is a no-op.
+                if (isPluginAvailable(pluginStatus, "ai")) {
+                    setShowAiPanel(true);
+                }
             } catch {
                 // style check failure: nothing to jump to
             }
         })();
         return () => { cancelled = true; };
     }, [editor, initialFocus?.type, initialFocus?.seq]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Clear activeIssue on chapter switch. The finding offsets belong
+    // to the previous chapter's plain text, so re-using them after a
+    // swap would jump to the wrong range.
+    useEffect(() => {
+        setActiveIssue(null);
+        setAiPromptType((prev) => (prev === "fix_issue" ? "improve" : prev));
+    }, [chapterId]);
 
     // Check for recovery draft when chapter loads
     useEffect(() => {
@@ -624,8 +669,65 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setPreviewLoading(false);
     };
 
+    /** Expand the plain-text issue range to its enclosing sentence
+     *  and return ProseMirror from/to positions. Mirrors the walk in
+     *  StyleCheckExtension.textOffsetToDocPos so the mapping stays
+     *  consistent. Returns null if the offsets fall outside the
+     *  current document (chapter drift, doc edited since the check). */
+    const expandToSentenceRange = (
+        ed: TiptapEditor,
+        issueOffset: number,
+        issueLength: number,
+    ): {from: number; to: number} | null => {
+        const plain = ed.getText();
+        const {start, end} = findEnclosingSentence(plain, issueOffset, issueLength);
+        const doc = ed.state.doc;
+        let charCount = 0;
+        let from: number | null = null;
+        let to: number | null = null;
+        doc.descendants((node, pos) => {
+            if (from !== null && to !== null) return false;
+            if (node.isText && node.text) {
+                const nodeEnd = charCount + node.text.length;
+                if (from === null && start >= charCount && start < nodeEnd) {
+                    from = pos + (start - charCount);
+                }
+                // For `to`, a position that lands exactly at a text
+                // node boundary is still valid (inclusive end).
+                if (to === null && end >= charCount && end <= nodeEnd) {
+                    to = pos + (end - charCount);
+                }
+                charCount = nodeEnd;
+            } else if (node.isBlock && charCount > 0) {
+                charCount += 1;
+            }
+            return undefined;
+        });
+        if (from === null) return null;
+        if (to === null) to = from;
+        if (to < from) return null;
+        return {from, to};
+    };
+
     const handleAiSuggest = async () => {
         if (!editor) return;
+
+        // fix_issue mode expands the selection to the enclosing
+        // sentence before calling the AI, so single-word findings
+        // (filler_word, adverb) still get useful rewrite context.
+        if (aiPromptType === "fix_issue") {
+            if (!activeIssue) {
+                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewaehlt"));
+                return;
+            }
+            const range = expandToSentenceRange(editor, activeIssue.offset, activeIssue.length);
+            if (!range) {
+                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewaehlt"));
+                return;
+            }
+            editor.chain().focus().setTextSelection({from: range.from, to: range.to}).run();
+        }
+
         const {from, to} = editor.state.selection;
         const selectedText = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
         if (!selectedText.trim()) {
@@ -647,11 +749,16 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             ? `\n\nContext:\n${contextLines.join("\n")}\n\nMatch the tone and style appropriate for this genre and language.`
             : "";
 
+        const fixIssuePrompt = activeIssue
+            ? FIX_ISSUE_PROMPTS[activeIssue.type] + contextBlock
+            : "";
+
         const basePrompts: Record<string, string> = {
             improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
             shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
             expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
             custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
+            fix_issue: fixIssuePrompt,
         };
 
         try {
@@ -897,6 +1004,17 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                     <div style={styles.aiHeader}>
                         <strong>{t("ui.editor.ai_assistant", "AI-Assistent")}</strong>
                         <div style={{display: "flex", gap: 4, marginLeft: "auto", flexWrap: "wrap"}}>
+                            {activeIssue && (
+                                <button
+                                    key="fix_issue"
+                                    data-testid="ai-fix-issue-mode"
+                                    className={`btn btn-sm ${aiPromptType === "fix_issue" ? "btn-primary" : "btn-ghost"}`}
+                                    onClick={() => { setAiPromptType("fix_issue"); setAiSuggestion(""); setAiReview(""); }}
+                                    style={{padding: "2px 8px", fontSize: "0.75rem"}}
+                                >
+                                    {t("ui.editor.ai_fix_issue", "Problem beheben")}
+                                </button>
+                            )}
                             {(["improve", "shorten", "expand", "custom", "review"] as const).map((type) => (
                                 <button
                                     key={type}
@@ -1013,13 +1131,27 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                         </>
                     ) : (
                         <>
+                            {aiPromptType === "fix_issue" && activeIssue && (
+                                <div data-testid="ai-fix-issue-hint" style={{padding: "4px 16px"}}>
+                                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                        {t("ui.editor.ai_fix_issue_hint", "AI formuliert den markierten Satz um.")} ({ISSUE_TYPE_LABELS[activeIssue.type](t)})
+                                    </small>
+                                </div>
+                            )}
                             <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
                                 <button
+                                    data-testid={aiPromptType === "fix_issue" ? "ai-fix-issue-run" : undefined}
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiSuggest}
-                                    disabled={aiLoading}
+                                    disabled={aiLoading || (aiPromptType === "fix_issue" && !activeIssue)}
                                 >
-                                    {aiLoading ? t("ui.editor.ai_loading", "Denke nach...") : t("ui.editor.ai_suggest", "Vorschlag generieren")}
+                                    {aiLoading
+                                        ? (aiPromptType === "fix_issue" && activeIssue
+                                            ? t("ui.editor.ai_fix_issue_loading", "AI arbeitet am Satz...")
+                                            : t("ui.editor.ai_loading", "Denke nach..."))
+                                        : (aiPromptType === "fix_issue"
+                                            ? t("ui.editor.ai_fix_issue_run", "Vorschlag generieren")
+                                            : t("ui.editor.ai_suggest", "Vorschlag generieren"))}
                                 </button>
                             </div>
                             {aiSuggestion && (
