@@ -63,9 +63,15 @@ interface Props {
     draftSaveDebounceMs?: number;
     draftMaxAgeDays?: number;
     aiContextChars?: number;
+    /** When set, Editor runs a one-shot style check after mount and
+     *  scrolls+selects the first finding of the given type. `seq` is
+     *  used as a dep so repeated navigations to the same type re-fire
+     *  the jump even when chapter did not change. Set by BookEditor in
+     *  response to a Quality-tab click. */
+    initialFocus?: {type: string; seq: number};
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000}: Props) {
+export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -360,6 +366,62 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
             }
         }
     }, [content, editor]);
+
+    // Navigate-to-first-issue: when the parent sets initialFocus (e.g.
+    // from a Quality-tab click), run a style check and jump to the
+    // first matching finding. Decorations from StyleCheckExtension
+    // stay on until the user toggles the style-check button off.
+    useEffect(() => {
+        if (!editor || !initialFocus) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const text = editor.getText();
+                if (!text.trim()) return;
+                const result = await api.msTools.check(text, bookContext?.language || "de", bookId);
+                if (cancelled) return;
+                editor.commands.setStyleFindings(result.findings);
+                setStyleCheckActive(true);
+                const match = result.findings.find((f) => f.type === initialFocus.type);
+                if (!match) {
+                    notify.info(t("ui.metadata.quality_nav_no_issues", "Keine Treffer in diesem Kapitel"));
+                    return;
+                }
+                // Offsets are plain-text; convert via a temp doc walk
+                // that mirrors StyleCheckExtension's mapping.
+                const doc = editor.state.doc;
+                let charCount = 0;
+                let from: number | null = null;
+                let to: number | null = null;
+                doc.descendants((node, pos) => {
+                    if (from !== null && to !== null) return false;
+                    if (node.isText && node.text) {
+                        const nodeEnd = charCount + node.text.length;
+                        if (from === null && match.offset >= charCount && match.offset < nodeEnd) {
+                            from = pos + (match.offset - charCount);
+                        }
+                        const endOffset = match.offset + match.length;
+                        if (to === null && endOffset >= charCount && endOffset <= nodeEnd) {
+                            to = pos + (endOffset - charCount);
+                        }
+                        charCount = nodeEnd;
+                    } else if (node.isBlock && charCount > 0) {
+                        charCount += 1;
+                    }
+                    return undefined;
+                });
+                if (from === null) return;
+                editor.chain()
+                    .focus()
+                    .setTextSelection({from, to: to ?? from})
+                    .scrollIntoView()
+                    .run();
+            } catch {
+                // style check failure: nothing to jump to
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [editor, initialFocus?.type, initialFocus?.seq]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Check for recovery draft when chapter loads
     useEffect(() => {

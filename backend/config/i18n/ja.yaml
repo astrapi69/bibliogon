@@ -335,6 +335,7 @@ ui:
     settings:
         title: "設定"
         tab_general: "一般"
+        tab_ai: "AIアシスタント"
         tab_author: "著者"
         tab_plugins: "プラグイン"
         tab_licenses: "ライセンス"
@@ -535,6 +536,8 @@ ui:
         quality_tip_passive: "受動態の割合が書籍平均({avg}%)を超えています。能動態を優先してください。"
         quality_tip_adverb: "副詞の割合が書籍平均({avg}%)を超えています。より強い動詞を使用してください。"
         quality_tip_long: "書籍平均({avg})より多い長文があります。文を短くするか分割してください。"
+        quality_nav_label: "{chapter}の最初の{metric}にジャンプ"
+        quality_nav_no_issues: "この章に該当箇所はありません"
         subtitle: "サブタイトル"
         description: "説明"
         edition: "版"

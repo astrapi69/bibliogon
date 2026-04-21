@@ -335,6 +335,7 @@ ui:
   settings:
     title: "Ρυθμίσεις"
     tab_general: "Γενικά"
+    tab_ai: "Βοηθός AI"
     tab_author: "Συγγραφέας"
     tab_plugins: "Plugins"
     tab_licenses: "Άδειες"
@@ -535,6 +536,8 @@ ui:
     quality_tip_passive: "Ποσοστό παθητικής φωνής πάνω από τον μέσο όρο ({avg}%). Προτιμήστε ενεργητική φωνή."
     quality_tip_adverb: "Ποσοστό επιρρημάτων πάνω από τον μέσο όρο ({avg}%). Χρησιμοποιήστε ισχυρότερα ρήματα."
     quality_tip_long: "Περισσότερες μακριές προτάσεις από τον μέσο όρο ({avg}). Συντομεύστε ή χωρίστε τις προτάσεις."
+    quality_nav_label: "Μετάβαση στο πρώτο εύρημα ({metric}) στο {chapter}"
+    quality_nav_no_issues: "Δεν βρέθηκαν ευρήματα σε αυτό το κεφάλαιο"
     subtitle: "Υπότιτλος"
     description: "Περιγραφή"
     edition: "Έκδοση"

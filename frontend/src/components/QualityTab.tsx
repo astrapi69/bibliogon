@@ -2,9 +2,10 @@
  * Quality tab for book metadata: per-chapter table with style and
  * readability metrics plus outlier markers with tooltips.
  *
- * Calls GET /api/ms-tools/metrics/{bookId} on mount and displays
- * a table with one row per chapter. Cells that exceed 2x the book
- * average are highlighted as outliers with explanatory tooltips.
+ * Navigable metrics (filler, passive, adverb, long sentence) render
+ * as buttons that ask the parent to open the chapter at the first
+ * matching finding. Aggregate metrics (words, sentences, Flesch)
+ * stay plain text - there is no single location to jump to.
  */
 
 import {useEffect, useState} from "react"
@@ -12,8 +13,11 @@ import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
 
+export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
+
 interface Props {
     bookId: string
+    onNavigateToIssue?: (chapterId: string, findingType: NavigableFindingType) => void
 }
 
 const OUTLIER_FACTOR = 2.0
@@ -23,7 +27,7 @@ function isOutlier(value: number, avg: number): boolean {
     return value > avg * OUTLIER_FACTOR
 }
 
-export default function QualityTab({bookId}: Props) {
+export default function QualityTab({bookId, onNavigateToIssue}: Props) {
     const {t} = useI18n()
     const [data, setData] = useState<ChapterMetricsResponse | null>(null)
     const [loading, setLoading] = useState(false)
@@ -99,7 +103,7 @@ export default function QualityTab({bookId}: Props) {
                     </thead>
                     <tbody>
                         {data.chapters.map((ch) => (
-                            <ChapterRow key={ch.chapter_id} ch={ch} avg={avg} />
+                            <ChapterRow key={ch.chapter_id} ch={ch} avg={avg} onNavigate={onNavigateToIssue} />
                         ))}
                     </tbody>
                 </table>
@@ -117,7 +121,11 @@ function SummaryItem({label, value}: {label: string; value: string}) {
     )
 }
 
-function ChapterRow({ch, avg}: {ch: ChapterMetric; avg: Record<string, number>}) {
+function ChapterRow({ch, avg, onNavigate}: {
+    ch: ChapterMetric;
+    avg: Record<string, number>;
+    onNavigate?: (chapterId: string, findingType: NavigableFindingType) => void;
+}) {
     const {t} = useI18n()
 
     if (ch.empty) {
@@ -130,58 +138,70 @@ function ChapterRow({ch, avg}: {ch: ChapterMetric; avg: Record<string, number>})
         )
     }
 
+    const ariaTemplate = t("ui.metadata.quality_nav_label", "Zu erstem Treffer ({metric}) in {chapter} springen")
+    const navLabel = (metric: string) =>
+        ariaTemplate.replace("{metric}", metric).replace("{chapter}", ch.chapter)
+
     return (
         <tr>
             <td style={styles.td}>{ch.position + 1}</td>
             <td style={{...styles.td, textAlign: "left", fontWeight: 500}}>{ch.chapter}</td>
-            <MetricCell
+            <AggregateCell
                 value={ch.word_count}
                 display={String(ch.word_count)}
                 avg={avg.word_count}
-                factor={3}
                 tooltip={t("ui.metadata.quality_tip_words", "Deutlich mehr Woerter als der Buchdurchschnitt ({avg}). Kapitel eventuell aufteilen.")
                     .replace("{avg}", Math.round(avg.word_count || 0).toString())}
             />
             <td style={styles.td}>{ch.sentence_count}</td>
             <td style={styles.td}>{ch.flesch_reading_ease.toFixed(0)}</td>
-            <MetricCell
+            <NavigableCell
                 value={ch.filler_ratio}
                 display={`${(ch.filler_ratio * 100).toFixed(1)}`}
                 avg={avg.filler_ratio}
                 tooltip={t("ui.metadata.quality_tip_filler", "Fuellwortanteil ueber dem Buchdurchschnitt ({avg}%). Fuellwoerter reduzieren.")
                     .replace("{avg}", ((avg.filler_ratio || 0) * 100).toFixed(1))}
+                ariaLabel={navLabel(t("ui.metadata.quality_col_filler", "Fuell %"))}
+                onClick={onNavigate ? () => onNavigate(ch.chapter_id, "filler_word") : undefined}
             />
-            <MetricCell
+            <NavigableCell
                 value={ch.passive_ratio}
                 display={`${(ch.passive_ratio * 100).toFixed(1)}`}
                 avg={avg.passive_ratio}
                 tooltip={t("ui.metadata.quality_tip_passive", "Passivanteil ueber dem Buchdurchschnitt ({avg}%). Aktive Formulierungen bevorzugen.")
                     .replace("{avg}", ((avg.passive_ratio || 0) * 100).toFixed(1))}
+                ariaLabel={navLabel(t("ui.metadata.quality_col_passive", "Passiv %"))}
+                onClick={onNavigate ? () => onNavigate(ch.chapter_id, "passive_voice") : undefined}
             />
-            <MetricCell
+            <NavigableCell
                 value={ch.adverb_ratio}
                 display={`${(ch.adverb_ratio * 100).toFixed(1)}`}
                 avg={avg.adverb_ratio}
                 tooltip={t("ui.metadata.quality_tip_adverb", "Adverbanteil ueber dem Buchdurchschnitt ({avg}%). Staerkere Verben statt Adverb+schwaches Verb.")
                     .replace("{avg}", ((avg.adverb_ratio || 0) * 100).toFixed(1))}
+                ariaLabel={navLabel(t("ui.metadata.quality_col_adverb", "Adv %"))}
+                onClick={onNavigate ? () => onNavigate(ch.chapter_id, "adverb") : undefined}
             />
-            <MetricCell
+            <NavigableCell
                 value={ch.long_sentence_count}
                 display={String(ch.long_sentence_count)}
                 avg={avg.long_sentence_count}
                 tooltip={t("ui.metadata.quality_tip_long", "Mehr lange Saetze als der Buchdurchschnitt ({avg}). Saetze kuerzen oder aufteilen.")
                     .replace("{avg}", Math.round(avg.long_sentence_count || 0).toString())}
+                ariaLabel={navLabel(t("ui.metadata.quality_col_long", "Lange Saetze"))}
+                onClick={onNavigate ? () => onNavigate(ch.chapter_id, "long_sentence") : undefined}
             />
         </tr>
     )
 }
 
-function MetricCell({value, display, avg, tooltip, factor = OUTLIER_FACTOR}: {
+/** Aggregate cell: pure count/score, not tied to a text location.
+ *  Outlier tooltip still shown when value is extreme; no click. */
+function AggregateCell({value, display, avg, tooltip}: {
     value: number;
     display: string;
     avg: number;
     tooltip: string;
-    factor?: number;
 }) {
     const flagged = isOutlier(value, avg)
 
@@ -196,6 +216,45 @@ function MetricCell({value, display, avg, tooltip, factor = OUTLIER_FACTOR}: {
             </Tooltip>
         </td>
     )
+}
+
+/** Navigable cell: clickable button that jumps the editor to the
+ *  first matching finding. Outlier wrapping adds the tooltip +
+ *  orange background; non-outlier cells are still clickable but
+ *  render as a plain underlined button so the user can always
+ *  inspect findings, even when the metric is below average. */
+function NavigableCell({value, display, avg, tooltip, ariaLabel, onClick}: {
+    value: number;
+    display: string;
+    avg: number;
+    tooltip: string;
+    ariaLabel: string;
+    onClick?: () => void;
+}) {
+    const flagged = isOutlier(value, avg)
+    const button = (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={!onClick || value === 0}
+            aria-label={ariaLabel}
+            style={{...styles.navButton, ...(flagged ? styles.navButtonOutlier : {})}}
+        >
+            {display}
+        </button>
+    )
+
+    if (flagged) {
+        return (
+            <td style={styles.tdOutlier}>
+                <Tooltip content={tooltip} side="top">
+                    {button}
+                </Tooltip>
+            </td>
+        )
+    }
+
+    return <td style={styles.td}>{button}</td>
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -243,6 +302,23 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: "help",
         borderBottom: "1px dashed rgba(251, 146, 60, 0.6)",
         paddingBottom: 1,
+    },
+    navButton: {
+        background: "none",
+        border: "none",
+        padding: "2px 4px",
+        font: "inherit",
+        color: "var(--accent)",
+        cursor: "pointer",
+        textDecoration: "underline",
+        textDecorationStyle: "dotted",
+        textUnderlineOffset: 2,
+        borderRadius: 3,
+    },
+    navButtonOutlier: {
+        color: "inherit",
+        fontWeight: 600,
+        textDecorationColor: "rgba(251, 146, 60, 0.8)",
     },
     emptyRow: {
         opacity: 0.5,

@@ -346,6 +346,7 @@ ui:
   settings:
     title: "Parametres"
     tab_general: "General"
+    tab_ai: "Assistant AI"
     tab_author: "Auteur"
     tab_plugins: "Plugins"
     tab_licenses: "Licences"
@@ -568,6 +569,8 @@ ui:
     quality_tip_passive: "Taux de passif au-dessus de la moyenne ({avg}%). Preferer la voix active."
     quality_tip_adverb: "Taux d'adverbes au-dessus de la moyenne ({avg}%). Utiliser des verbes plus forts."
     quality_tip_long: "Plus de phrases longues que la moyenne ({avg}). Raccourcir ou scinder les phrases."
+    quality_nav_label: "Aller au premier probleme ({metric}) dans {chapter}"
+    quality_nav_no_issues: "Aucun resultat dans ce chapitre"
     subtitle: "Sous-titre"
     description: "Description"
     edition: "Edition"

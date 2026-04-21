@@ -337,6 +337,7 @@ ui:
   settings:
     title: "Einstellungen"
     tab_general: "Allgemein"
+    tab_ai: "KI-Assistent"
     tab_author: "Autor"
     tab_plugins: "Plugins"
     tab_licenses: "Lizenzen"
@@ -537,6 +538,8 @@ ui:
     quality_tip_passive: "Passivanteil über dem Buchdurchschnitt ({avg}%). Aktive Formulierungen bevorzugen."
     quality_tip_adverb: "Adverbanteil über dem Buchdurchschnitt ({avg}%). Stärkere Verben statt Adverb+schwaches Verb."
     quality_tip_long: "Mehr lange Sätze als der Buchdurchschnitt ({avg}). Sätze kürzen oder aufteilen."
+    quality_nav_label: "Zu erstem Treffer ({metric}) in {chapter} springen"
+    quality_nav_no_issues: "Keine Treffer in diesem Kapitel"
     subtitle: "Untertitel"
     description: "Beschreibung"
     edition: "Edition"

@@ -337,6 +337,7 @@ ui:
   settings:
     title: "Settings"
     tab_general: "General"
+    tab_ai: "AI Assistant"
     tab_author: "Author"
     tab_plugins: "Plugins"
     tab_licenses: "Licenses"
@@ -537,6 +538,8 @@ ui:
     quality_tip_passive: "Passive voice ratio above the book average ({avg}%). Prefer active phrasing."
     quality_tip_adverb: "Adverb ratio above the book average ({avg}%). Use stronger verbs instead."
     quality_tip_long: "More long sentences than the book average ({avg}). Shorten or split sentences."
+    quality_nav_label: "Jump to first {metric} issue in {chapter}"
+    quality_nav_no_issues: "No findings in this chapter"
     subtitle: "Subtitle"
     description: "Description"
     edition: "Edition"

@@ -11,16 +11,17 @@ import KeywordInput from "./KeywordInput";
 import CoverUpload from "./CoverUpload";
 import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
-import QualityTab from "./QualityTab";
+import QualityTab, {NavigableFindingType} from "./QualityTab";
 
 interface Props {
     book: BookDetail;
     onSave: (data: Record<string, unknown>) => Promise<void>;
     onBack: () => void;
     allBooks?: Book[];
+    onNavigateToIssue?: (chapterId: string, findingType: NavigableFindingType) => void;
 }
 
-export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Props) {
+export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNavigateToIssue}: Props) {
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [keywords, setKeywords] = useState<string[]>([]);
@@ -351,7 +352,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks}: Pro
 
                 <Tabs.Content value="quality">
                     <div style={styles.tabContent}>
-                        <QualityTab bookId={book.id} />
+                        <QualityTab bookId={book.id} onNavigateToIssue={onNavigateToIssue} />
                     </div>
                 </Tabs.Content>
             </Tabs.Root>

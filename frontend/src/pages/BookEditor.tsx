@@ -7,6 +7,7 @@ import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
+import type {NavigableFindingType} from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
 import ChapterTemplatePickerModal from "../components/ChapterTemplatePickerModal";
 import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal";
@@ -78,6 +79,7 @@ export default function BookEditor() {
         setSearchParams(params, {replace: true});
     };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+    const [pendingFocus, setPendingFocus] = useState<{chapterId: string; type: NavigableFindingType; seq: number} | null>(null);
     const [conflict, setConflict] = useState<ConflictInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [editorSettings, setEditorSettings] = useState<{
@@ -132,6 +134,17 @@ export default function BookEditor() {
         }).catch(() => {});
         api.books.list().then(setAllBooks).catch(() => {});
     }, [loadBook]);
+
+    const handleNavigateToIssue = (chapterId: string, findingType: NavigableFindingType) => {
+        setPendingFocus((prev) => ({
+            chapterId,
+            type: findingType,
+            seq: (prev?.seq ?? 0) + 1,
+        }));
+        setActiveChapterId(chapterId);
+        _setShowMetadata(false);
+        setSidebarOpen(false);
+    };
 
     const handleSaveMetadata = async (data: Record<string, unknown>) => {
         if (!bookId) return;
@@ -387,6 +400,7 @@ export default function BookEditor() {
                     onSave={handleSaveMetadata}
                     onBack={() => _setShowMetadata(false)}
                     allBooks={allBooks}
+                    onNavigateToIssue={handleNavigateToIssue}
                 />
             ) : activeChapterMeta && loadedContent?.id === activeChapterMeta.id && !contentLoading ? (
                 <Editor
@@ -410,6 +424,7 @@ export default function BookEditor() {
                     draftSaveDebounceMs={editorSettings.draft_save_debounce_ms}
                     draftMaxAgeDays={editorSettings.draft_max_age_days}
                     aiContextChars={editorSettings.ai_context_chars}
+                    initialFocus={pendingFocus && pendingFocus.chapterId === activeChapterMeta.id ? {type: pendingFocus.type, seq: pendingFocus.seq} : undefined}
                 />
             ) : activeChapterMeta && contentLoading ? (
                 <div style={styles.loading}><p>{t("ui.common.loading", "Laden...")}</p></div>
