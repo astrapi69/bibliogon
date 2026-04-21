@@ -39,6 +39,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
     const [remotePatDraft, setRemotePatDraft] = useState("")
     const [editingRemote, setEditingRemote] = useState(false)
     const [busy, setBusy] = useState(false)
+    const [conflictKind, setConflictKind] = useState<"push_rejected" | "diverged" | null>(null)
 
     useEffect(() => {
         if (!open) return
@@ -133,22 +134,51 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
         }
     }
 
-    async function handlePush() {
+    async function handlePush(force: boolean = false) {
         setBusy(true)
         try {
-            await api.git.push(bookId)
-            notify.success(t("ui.git.push_ok", "Push erfolgreich"))
+            await api.git.push(bookId, force)
+            notify.success(
+                force
+                    ? t("ui.git.force_push_ok", "Force Push erfolgreich — Remote überschrieben")
+                    : t("ui.git.push_ok", "Push erfolgreich"),
+            )
+            setConflictKind(null)
             await refresh()
         } catch (err) {
             if (err instanceof ApiError && err.detailBody?.code === "remote_rejected") {
-                notify.warning(t(
-                    "ui.git.push_rejected",
-                    "Push abgelehnt. Remote hat neuere Commits. Pull zuerst oder akzeptiere Remote.",
-                ))
+                // Open conflict dialog with both resolution options.
+                setConflictKind("push_rejected")
                 return
             }
             if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
                 notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."))
+                return
+            }
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handleAcceptRemote() {
+        // Pull first. If that fast-forwards, push is now clean. If it
+        // also diverges, the user already knows pull isn't enough.
+        setBusy(true)
+        try {
+            await api.git.pull(bookId)
+            notify.success(t("ui.git.accepted_remote", "Remote übernommen"))
+            setConflictKind(null)
+            await refresh()
+        } catch (err) {
+            if (err instanceof ApiError && err.detailBody?.code === "diverged") {
+                // Upgrade to diverged state - pure Accept Remote means
+                // discarding local, which pull cannot do. Offer force.
+                setConflictKind("diverged")
+                notify.warning(t(
+                    "ui.git.diverged_short",
+                    "divergiert",
+                ))
                 return
             }
             notify.error(describeError(err))
@@ -166,13 +196,11 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             } else {
                 notify.success(t("ui.git.pull_no_changes", "Bereits aktuell"))
             }
+            setConflictKind(null)
             await refresh()
         } catch (err) {
             if (err instanceof ApiError && err.detailBody?.code === "diverged") {
-                notify.warning(t(
-                    "ui.git.diverged",
-                    "Lokal und Remote divergieren. Manuelle Auflösung erforderlich.",
-                ))
+                setConflictKind("diverged")
                 return
             }
             if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
@@ -260,7 +288,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                                         )}
                                         <button
                                             className="btn btn-primary btn-sm"
-                                            onClick={handlePush}
+                                            onClick={() => handlePush()}
                                             disabled={busy}
                                             data-testid="git-push-btn"
                                         >
@@ -416,9 +444,102 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                             </div>
                         </div>
                     )}
+
+                    {conflictKind && (
+                        <ConflictResolution
+                            kind={conflictKind}
+                            busy={busy}
+                            onAcceptRemote={handleAcceptRemote}
+                            onAcceptLocal={() => handlePush(true)}
+                            onCancel={() => setConflictKind(null)}
+                        />
+                    )}
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+    )
+}
+
+
+function ConflictResolution({
+    kind,
+    busy,
+    onAcceptRemote,
+    onAcceptLocal,
+    onCancel,
+}: {
+    kind: "push_rejected" | "diverged"
+    busy: boolean
+    onAcceptRemote: () => void
+    onAcceptLocal: () => void
+    onCancel: () => void
+}) {
+    const {t} = useI18n()
+    const title =
+        kind === "push_rejected"
+            ? t("ui.git.conflict_push_rejected_title", "Push abgelehnt")
+            : t("ui.git.conflict_diverged_title", "Divergierte Historie")
+    const body =
+        kind === "push_rejected"
+            ? t(
+                  "ui.git.conflict_push_rejected_body",
+                  "Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:",
+              )
+            : t(
+                  "ui.git.conflict_diverged_body",
+                  "Beide Seiten haben eigene Commits. Ein einfacher Pull ist nicht möglich. Wähle:",
+              )
+    return (
+        <div
+            style={{
+                margin: "0 16px 16px",
+                padding: 12,
+                background: "var(--bg-card)",
+                border: "1px solid var(--accent)",
+                borderRadius: "var(--radius-sm)",
+            }}
+            data-testid="git-conflict-resolution"
+        >
+            <div style={{display: "flex", alignItems: "center", gap: 8, marginBottom: 6}}>
+                <AlertTriangle size={16} style={{color: "var(--accent)"}}/>
+                <strong style={{fontSize: "0.9375rem"}}>{title}</strong>
+            </div>
+            <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 10}}>
+                {body}
+            </p>
+            <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
+                <button
+                    className="btn btn-primary btn-sm"
+                    onClick={onAcceptRemote}
+                    disabled={busy}
+                    data-testid="git-conflict-accept-remote"
+                >
+                    <Download size={14}/> {t("ui.git.accept_remote", "Remote übernehmen (Pull)")}
+                </button>
+                <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                        if (confirm(t(
+                            "ui.git.confirm_accept_local",
+                            "Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.",
+                        ))) {
+                            onAcceptLocal()
+                        }
+                    }}
+                    disabled={busy}
+                    data-testid="git-conflict-accept-local"
+                >
+                    <Upload size={14}/> {t("ui.git.accept_local", "Lokal erzwingen (Force Push)")}
+                </button>
+                <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={onCancel}
+                    disabled={busy}
+                >
+                    {t("ui.common.cancel", "Abbrechen")}
+                </button>
+            </div>
+        </div>
     )
 }
 

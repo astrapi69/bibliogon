@@ -1227,8 +1227,11 @@ export const api = {
         deleteRemote: (bookId: string) =>
             request<void>(`/books/${bookId}/git/remote`, {method: "DELETE"}),
 
-        push: (bookId: string) =>
-            request<GitPushResult>(`/books/${bookId}/git/push`, {method: "POST"}),
+        push: (bookId: string, force: boolean = false) =>
+            request<GitPushResult>(`/books/${bookId}/git/push`, {
+                method: "POST",
+                body: JSON.stringify({force}),
+            }),
 
         pull: (bookId: string) =>
             request<GitPullResult>(`/books/${bookId}/git/pull`, {method: "POST"}),
@@ -1263,6 +1266,7 @@ export interface GitPushResult {
     branch: string
     summary: string
     flags: number
+    forced?: boolean
 }
 
 export interface GitPullResult {

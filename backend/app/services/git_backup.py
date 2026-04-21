@@ -335,8 +335,14 @@ def delete_remote_config(book_id: str, db: Session) -> None:
             git.Remote.remove(repo, "origin")
 
 
-def push(book_id: str, db: Session) -> dict[str, Any]:
-    """Push current branch to ``origin``. ff-only by default (non-force)."""
+def push(book_id: str, db: Session, force: bool = False) -> dict[str, Any]:
+    """Push current branch to ``origin``.
+
+    Default is non-force (ff-only from the remote's perspective). Set
+    ``force=True`` to overwrite remote history with local — this is
+    the "Accept Local" half of the SI conflict-resolution UX and is
+    only safe when the author has explicitly confirmed it.
+    """
     repo = _require_repo_with_remote(book_id, db)
     remote_url = _authenticated_url(book_id, repo)
     branch = repo.active_branch.name
@@ -346,7 +352,10 @@ def push(book_id: str, db: Session) -> dict[str, Any]:
         original_url = next(repo.remotes.origin.urls)
         repo.remotes.origin.set_url(remote_url)
         try:
-            info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+            info_list = repo.remotes.origin.push(
+                refspec=f"{branch}:{branch}",
+                force=force,
+            )
         finally:
             repo.remotes.origin.set_url(original_url)
     except git.GitCommandError as exc:
@@ -365,6 +374,7 @@ def push(book_id: str, db: Session) -> dict[str, Any]:
         "branch": branch,
         "summary": (info.summary or "").strip(),
         "flags": int(info.flags),
+        "forced": force,
     }
 
 

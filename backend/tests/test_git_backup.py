@@ -479,6 +479,43 @@ def test_sync_status_local_ahead_after_commit(tmp_path):
     assert body["behind"] == 0
 
 
+def test_force_push_overrides_diverged_remote(tmp_path):
+    """Accept-Local: force push wins over a diverged remote."""
+    book_id, url = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+
+    # External commit on remote.
+    work = tmp_path / "external-clone-force"
+    ext_repo = git.Repo.clone_from(url, work)
+    (work / "remote-only.txt").write_text("remote", encoding="utf-8")
+    ext_repo.git.add(A=True)
+    ext_repo.index.commit(
+        "Remote side",
+        author=git.Actor("Reviewer", "reviewer@example.com"),
+        committer=git.Actor("Reviewer", "reviewer@example.com"),
+    )
+    ext_repo.remote().push()
+
+    # Divergent local commit.
+    _add_chapter(book_id, "Local-only ch")
+    client.post(f"/api/books/{book_id}/git/commit", json={"message": "Local"})
+
+    # Plain push rejected.
+    plain = client.post(f"/api/books/{book_id}/git/push", json={"force": False})
+    assert plain.status_code == 409
+    assert plain.json()["detail"]["code"] == "remote_rejected"
+
+    # Force push accepted.
+    forced = client.post(f"/api/books/{book_id}/git/push", json={"force": True})
+    assert forced.status_code == 200
+    assert forced.json()["forced"] is True
+
+    # Remote now matches local HEAD.
+    remote_repo = git.Repo(url)
+    local_repo = git.Repo(git_backup.repo_path(book_id))
+    assert remote_repo.heads["main"].commit.hexsha == local_repo.head.commit.hexsha
+
+
 def test_pat_never_appears_on_disk_in_git_config(tmp_path):
     """Guard against leaking the PAT through git's remote URL config."""
     book_id, url = _init_book_with_remote(tmp_path)

@@ -37,10 +37,15 @@ class RemoteConfigResponse(BaseModel):
     has_credential: bool
 
 
+class PushRequest(BaseModel):
+    force: bool = False
+
+
 class PushResponse(BaseModel):
     branch: str
     summary: str
     flags: int
+    forced: bool = False
 
 
 class PullResponse(BaseModel):
@@ -180,10 +185,15 @@ def delete_remote(book_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.post("/push", response_model=PushResponse)
-def do_push(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+def do_push(
+    book_id: str,
+    payload: PushRequest | None = None,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     _assert_book(book_id, db)
+    force = bool(payload and payload.force)
     try:
-        return git_backup.push(book_id, db)
+        return git_backup.push(book_id, db, force=force)
     except git_backup.RepoNotInitializedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
