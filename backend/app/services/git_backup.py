@@ -114,6 +114,14 @@ class RemoteNetworkError(GitBackupError):
     """Generic network failure reaching the remote."""
 
 
+class MergeInProgressError(GitBackupError):
+    """Operation requires a clean tree but a merge is already in progress."""
+
+
+class NoMergeInProgressError(GitBackupError):
+    """Resolve or abort requested but no merge state exists."""
+
+
 # --- Public API ---
 
 
@@ -141,12 +149,17 @@ def init_repo(book_id: str, db: Session) -> dict[str, Any]:
 
     path.mkdir(parents=True, exist_ok=True)
     repo = git.Repo.init(path, initial_branch="main")
+    author = _author_for(book)
+    # Seed user.name / user.email so ``git merge`` (which reads
+    # repo-level config, not the index.commit author override) can
+    # produce merge commits without relying on a global ~/.gitconfig.
+    repo.git.config("user.name", author.name)
+    repo.git.config("user.email", author.email)
 
     _write_gitignore(path)
     _write_book_state(book, db, path)
 
     repo.git.add(A=True)
-    author = _author_for(book)
     repo.index.commit(
         f"Initial commit: {book.title}",
         author=author,
@@ -479,11 +492,207 @@ def sync_status(book_id: str, db: Session) -> dict[str, Any]:
     return base
 
 
+# --- Phase 4: conflict analysis + per-file resolution ---
+
+
+def analyze_conflict(book_id: str, db: Session) -> dict[str, Any]:
+    """Classify the state of local vs ``origin/<branch>`` tracking ref.
+
+    Does NOT reach the network; call ``pull`` first for a fresh fetch.
+    Returns a dict with:
+
+    - ``state``: ``"in_sync"`` / ``"local_ahead"`` / ``"remote_ahead"`` /
+      ``"diverged"`` / ``"no_remote"`` / ``"never_synced"``
+    - ``classification``: ``"simple"`` (disjoint file sets) /
+      ``"complex"`` (overlapping files) / ``None`` when irrelevant
+    - ``local_files`` / ``remote_files``: files changed on each side
+      since the merge base
+    - ``overlapping_files``: files modified on both sides (non-empty
+      iff classification == "complex")
+    - ``merge_in_progress``: True when ``.git/MERGE_HEAD`` exists
+    """
+    _get_book_or_raise(book_id, db)
+    base = {
+        "state": "no_remote",
+        "classification": None,
+        "local_files": [],
+        "remote_files": [],
+        "overlapping_files": [],
+        "merge_in_progress": False,
+    }
+    if not is_initialized(book_id):
+        return base
+    remote_conf = _read_remote_config(repo_path(book_id))
+    if not remote_conf or not remote_conf.get("url"):
+        return base
+
+    repo = git.Repo(repo_path(book_id))
+    base["merge_in_progress"] = (Path(repo.git_dir) / "MERGE_HEAD").exists()
+    branch = repo.active_branch.name
+    remote_ref = f"origin/{branch}"
+    if remote_ref not in [r.name for r in repo.refs]:
+        base["state"] = "never_synced"
+        return base
+
+    local = repo.head.commit
+    remote = repo.refs[remote_ref].commit
+    if local == remote:
+        base["state"] = "in_sync"
+        return base
+
+    merge_base_commits = repo.merge_base(local, remote)
+    merge_base = merge_base_commits[0] if merge_base_commits else None
+
+    if merge_base == local:
+        base["state"] = "remote_ahead"
+        return base
+    if merge_base == remote:
+        base["state"] = "local_ahead"
+        return base
+
+    base["state"] = "diverged"
+    if merge_base is not None:
+        local_files = _changed_files_between(repo, merge_base.hexsha, local.hexsha)
+        remote_files = _changed_files_between(
+            repo, merge_base.hexsha, remote.hexsha
+        )
+        overlap = sorted(set(local_files) & set(remote_files))
+        base["local_files"] = local_files
+        base["remote_files"] = remote_files
+        base["overlapping_files"] = overlap
+        base["classification"] = "complex" if overlap else "simple"
+    return base
+
+
+def merge(book_id: str, db: Session) -> dict[str, Any]:
+    """Attempt a 3-way merge of ``origin/<branch>`` into the current branch.
+
+    Contract:
+    - Clean merge (no overlapping edits) -> commits the merge, returns
+      ``{"status": "merged", "head_hash": ...}``.
+    - Working tree already matches -> ``{"status": "already_up_to_date"}``.
+    - Overlap -> leaves the repo in a merge-in-progress state and
+      returns ``{"status": "conflicts", "files": [...]}`` for the UI
+      to resolve via :func:`resolve_conflicts`.
+    """
+    repo = _require_repo_with_remote(book_id, db)
+    branch = repo.active_branch.name
+    remote_ref = f"origin/{branch}"
+    if (Path(repo.git_dir) / "MERGE_HEAD").exists():
+        raise MergeInProgressError(
+            "A merge is already in progress. Resolve or abort first."
+        )
+    if remote_ref not in [r.name for r in repo.refs]:
+        raise RemoteNotConfiguredError(
+            "Remote has never been fetched. Pull first."
+        )
+
+    local = repo.head.commit
+    remote = repo.refs[remote_ref].commit
+    if local == remote:
+        return {"status": "already_up_to_date", "head_hash": local.hexsha}
+
+    try:
+        # Plain 3-way merge. Clean merges auto-commit (no --no-commit).
+        repo.git.merge(remote_ref, "--no-ff")
+    except git.GitCommandError as exc:
+        # Conflict messages can land on stdout or stderr depending on
+        # git version. Inspect both plus the index state.
+        combined = (
+            (exc.stderr or "")
+            + " "
+            + (exc.stdout if hasattr(exc, "stdout") and exc.stdout else "")
+        ).lower()
+        conflicted = _conflicted_files(repo)
+        if conflicted or "conflict" in combined or "automatic merge failed" in combined:
+            return {"status": "conflicts", "files": conflicted}
+        raise _classify_git_error(exc) from exc
+
+    return {"status": "merged", "head_hash": repo.head.commit.hexsha}
+
+
+def resolve_conflicts(
+    book_id: str,
+    resolutions: dict[str, str],
+    db: Session,
+) -> dict[str, Any]:
+    """Resolve an in-progress merge by picking a side per conflicted file.
+
+    ``resolutions`` maps ``file_path -> "mine" | "theirs"``. Every
+    conflicted file must be listed; unknown files or unknown sides
+    raise :class:`GitBackupError`.
+    """
+    _get_book_or_raise(book_id, db)
+    if not is_initialized(book_id):
+        raise RepoNotInitializedError(
+            f"Book {book_id} has no git repo. Initialize first."
+        )
+    repo = git.Repo(repo_path(book_id))
+    if not (Path(repo.git_dir) / "MERGE_HEAD").exists():
+        raise NoMergeInProgressError(
+            "No merge in progress. Run pull or merge first."
+        )
+
+    conflicted = set(_conflicted_files(repo))
+    missing = conflicted - set(resolutions)
+    if missing:
+        raise GitBackupError(
+            "Resolution missing for: " + ", ".join(sorted(missing))
+        )
+
+    for path, side in resolutions.items():
+        if path not in conflicted:
+            raise GitBackupError(f"Not a conflicted file: {path}")
+        if side == "mine":
+            repo.git.checkout("--ours", "--", path)
+        elif side == "theirs":
+            repo.git.checkout("--theirs", "--", path)
+        else:
+            raise GitBackupError(
+                f"Invalid side {side!r} for {path}: expected 'mine' or 'theirs'"
+            )
+        repo.git.add("--", path)
+
+    # Finish the merge: a commit combining the two parents with the
+    # resolved tree. Git pre-populates a MERGE_MSG; let it stand.
+    repo.git.commit("--no-edit")
+    return {"status": "merged", "head_hash": repo.head.commit.hexsha}
+
+
+def abort_merge(book_id: str, db: Session) -> dict[str, Any]:
+    """Abort an in-progress merge. Restores pre-merge HEAD + working tree."""
+    _get_book_or_raise(book_id, db)
+    if not is_initialized(book_id):
+        raise RepoNotInitializedError(
+            f"Book {book_id} has no git repo. Initialize first."
+        )
+    repo = git.Repo(repo_path(book_id))
+    if not (Path(repo.git_dir) / "MERGE_HEAD").exists():
+        raise NoMergeInProgressError(
+            "No merge in progress. Nothing to abort."
+        )
+    repo.git.merge("--abort")
+    return {"status": "aborted", "head_hash": repo.head.commit.hexsha}
+
+
 # --- Internals ---
 
 
 def _pat_filename(book_id: str) -> str:
     return f"{book_id}.enc"
+
+
+def _changed_files_between(repo: git.Repo, base_sha: str, tip_sha: str) -> list[str]:
+    """Return names of files that differ between two commits."""
+    raw = repo.git.diff("--name-only", f"{base_sha}..{tip_sha}")
+    return sorted(line for line in raw.splitlines() if line.strip())
+
+
+def _conflicted_files(repo: git.Repo) -> list[str]:
+    """Return files currently marked as merge-conflicted in the index."""
+    # `git diff --name-only --diff-filter=U` lists unmerged paths.
+    raw = repo.git.diff("--name-only", "--diff-filter=U")
+    return sorted(line for line in raw.splitlines() if line.strip())
 
 
 def _write_remote_config(repo_dir: Path, config: dict[str, Any]) -> None:

@@ -63,6 +63,25 @@ class SyncStatus(BaseModel):
     state: str
 
 
+class ConflictAnalysis(BaseModel):
+    state: str
+    classification: str | None
+    local_files: list[str]
+    remote_files: list[str]
+    overlapping_files: list[str]
+    merge_in_progress: bool
+
+
+class MergeResult(BaseModel):
+    status: str
+    head_hash: str | None = None
+    files: list[str] | None = None
+
+
+class ResolveRequest(BaseModel):
+    resolutions: dict[str, str] = Field(default_factory=dict)
+
+
 class CommitEntry(BaseModel):
     hash: str
     short_hash: str
@@ -262,5 +281,83 @@ def get_sync_status(book_id: str, db: Session = Depends(get_db)) -> dict[str, An
     _assert_book(book_id, db)
     try:
         return git_backup.sync_status(book_id, db)
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# --- Phase 4: conflict analysis + per-file resolution ---
+
+
+@router.get("/conflict/analyze", response_model=ConflictAnalysis)
+def analyze_conflict(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.analyze_conflict(book_id, db)
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/merge", response_model=MergeResult)
+def do_merge(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.merge(book_id, db)
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
+    except git_backup.RemoteNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "remote_not_configured", "message": str(exc)},
+        ) from exc
+    except git_backup.MergeInProgressError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "merge_in_progress", "message": str(exc)},
+        ) from exc
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/conflict/resolve", response_model=MergeResult)
+def resolve_conflict(
+    book_id: str,
+    payload: ResolveRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.resolve_conflicts(book_id, payload.resolutions, db)
+    except git_backup.NoMergeInProgressError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "no_merge_in_progress", "message": str(exc)},
+        ) from exc
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
+    except git_backup.GitBackupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/conflict/abort", response_model=MergeResult)
+def abort_merge(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    _assert_book(book_id, db)
+    try:
+        return git_backup.abort_merge(book_id, db)
+    except git_backup.NoMergeInProgressError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "no_merge_in_progress", "message": str(exc)},
+        ) from exc
+    except git_backup.RepoNotInitializedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "repo_not_initialized", "message": str(exc)},
+        ) from exc
     except git_backup.GitBackupError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

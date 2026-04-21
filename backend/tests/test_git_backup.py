@@ -516,6 +516,204 @@ def test_force_push_overrides_diverged_remote(tmp_path):
     assert remote_repo.heads["main"].commit.hexsha == local_repo.head.commit.hexsha
 
 
+# --- Phase 4: conflict analysis + per-file resolution ---
+
+
+def _diverge_histories(tmp_path, book_id: str, url: str, *, overlap: bool) -> None:
+    """Leave book_id's local repo and the remote with divergent histories.
+
+    When overlap=True, both sides modify the same file. When False,
+    they modify different files (simple case).
+    """
+    # Seed identical first state on both sides.
+    client.post(f"/api/books/{book_id}/git/push")
+
+    # Remote-side commit via an external clone.
+    work = tmp_path / "external-for-diverge"
+    ext_repo = git.Repo.clone_from(url, work)
+    if overlap:
+        # Target a file Bibliogon writes via the book state export.
+        target_dir = work / "manuscript" / "chapters"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_files = list(target_dir.glob("*.json"))
+        target = target_files[0] if target_files else target_dir / "01-shared.json"
+        target.write_text("remote side edit", encoding="utf-8")
+    else:
+        (work / "remote-only.txt").write_text("remote only", encoding="utf-8")
+    ext_repo.git.add(A=True)
+    ext_repo.index.commit(
+        "Remote side commit",
+        author=git.Actor("Reviewer", "reviewer@example.com"),
+        committer=git.Actor("Reviewer", "reviewer@example.com"),
+    )
+    ext_repo.remote().push()
+
+    # Local-side commit.
+    if overlap:
+        # Force conflict on the same chapter file by re-committing the
+        # book state after an (invisible) change: easier to synthesise
+        # via direct file write.
+        root = git_backup.repo_path(book_id)
+        target_dir = root / "manuscript" / "chapters"
+        target_files = list(target_dir.glob("*.json"))
+        target = target_files[0] if target_files else target_dir / "01-shared.json"
+        target.write_text("local side edit", encoding="utf-8")
+        repo = git.Repo(root)
+        repo.git.add(A=True)
+        repo.index.commit(
+            "Local side commit",
+            author=git.Actor("Aster", "aster@bibliogon.local"),
+            committer=git.Actor("Aster", "aster@bibliogon.local"),
+        )
+    else:
+        _add_chapter(book_id, "Local-only chapter")
+        client.post(
+            f"/api/books/{book_id}/git/commit",
+            json={"message": "Local-only commit"},
+        )
+
+    # Fetch so origin/main is up-to-date locally without merging.
+    git.Repo(git_backup.repo_path(book_id)).remotes.origin.fetch()
+
+
+def test_analyze_conflict_no_remote():
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    client.post(f"/api/books/{book_id}/git/init")
+    body = client.get(f"/api/books/{book_id}/git/conflict/analyze").json()
+    assert body["state"] == "no_remote"
+    assert body["classification"] is None
+
+
+def test_analyze_conflict_in_sync(tmp_path):
+    book_id, _ = _init_book_with_remote(tmp_path)
+    client.post(f"/api/books/{book_id}/git/push")
+    body = client.get(f"/api/books/{book_id}/git/conflict/analyze").json()
+    assert body["state"] == "in_sync"
+    assert body["classification"] is None
+
+
+def test_analyze_conflict_simple_disjoint(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=False)
+    body = client.get(f"/api/books/{book_id}/git/conflict/analyze").json()
+    assert body["state"] == "diverged"
+    assert body["classification"] == "simple"
+    assert body["overlapping_files"] == []
+    assert body["local_files"]
+    assert body["remote_files"]
+
+
+def test_analyze_conflict_complex_overlap(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    body = client.get(f"/api/books/{book_id}/git/conflict/analyze").json()
+    assert body["state"] == "diverged"
+    assert body["classification"] == "complex"
+    assert body["overlapping_files"]
+
+
+def test_merge_simple_auto_merges(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=False)
+    resp = client.post(f"/api/books/{book_id}/git/merge")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "merged"
+    assert body["head_hash"]
+    # Remote-only file is now present locally.
+    assert (git_backup.repo_path(book_id) / "remote-only.txt").is_file()
+
+
+def test_merge_complex_returns_conflicts(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    resp = client.post(f"/api/books/{book_id}/git/merge")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "conflicts"
+    assert body["files"]
+    # Merge is now in progress.
+    assert (git_backup.repo_path(book_id) / ".git" / "MERGE_HEAD").exists()
+
+
+def test_resolve_keeps_mine(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    conflicts = client.post(f"/api/books/{book_id}/git/merge").json()
+    files = conflicts["files"]
+    assert files
+
+    resp = client.post(
+        f"/api/books/{book_id}/git/conflict/resolve",
+        json={"resolutions": {path: "mine" for path in files}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "merged"
+    # Local side wins: file has "local side edit".
+    root = git_backup.repo_path(book_id)
+    target = root / files[0]
+    assert target.read_text(encoding="utf-8") == "local side edit"
+
+
+def test_resolve_keeps_theirs(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    conflicts = client.post(f"/api/books/{book_id}/git/merge").json()
+    files = conflicts["files"]
+
+    resp = client.post(
+        f"/api/books/{book_id}/git/conflict/resolve",
+        json={"resolutions": {path: "theirs" for path in files}},
+    )
+    assert resp.status_code == 200
+    target = git_backup.repo_path(book_id) / files[0]
+    assert target.read_text(encoding="utf-8") == "remote side edit"
+
+
+def test_resolve_rejects_missing_files(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    client.post(f"/api/books/{book_id}/git/merge")
+    resp = client.post(
+        f"/api/books/{book_id}/git/conflict/resolve",
+        json={"resolutions": {}},
+    )
+    assert resp.status_code == 400
+    assert "missing" in resp.json()["detail"].lower()
+
+
+def test_abort_merge_returns_to_pre_merge_head(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    pre_head = git.Repo(git_backup.repo_path(book_id)).head.commit.hexsha
+    client.post(f"/api/books/{book_id}/git/merge")
+
+    resp = client.post(f"/api/books/{book_id}/git/conflict/abort")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "aborted"
+    assert git.Repo(git_backup.repo_path(book_id)).head.commit.hexsha == pre_head
+
+
+def test_abort_without_merge_returns_409():
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    client.post(f"/api/books/{book_id}/git/init")
+    resp = client.post(f"/api/books/{book_id}/git/conflict/abort")
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "no_merge_in_progress"
+
+
+def test_merge_rejects_when_merge_in_progress(tmp_path):
+    book_id, url = _init_book_with_remote(tmp_path)
+    _diverge_histories(tmp_path, book_id, url, overlap=True)
+    client.post(f"/api/books/{book_id}/git/merge")
+    # Second call must refuse.
+    resp = client.post(f"/api/books/{book_id}/git/merge")
+    assert resp.status_code == 409
+    assert resp.json()["detail"]["code"] == "merge_in_progress"
+
+
 def test_pat_never_appears_on_disk_in_git_config(tmp_path):
     """Guard against leaking the PAT through git's remote URL config."""
     book_id, url = _init_book_with_remote(tmp_path)
