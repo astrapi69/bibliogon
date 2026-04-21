@@ -3,7 +3,7 @@
 Status: Exploration. No architecture committed, no implementation scheduled.
 Last updated: 2026-04-21
 Revived when: validation data (see Section 12) justifies deeper investment.
-Source prompt: [prompt-article-authoring-exploration-v2.md](prompt-article-authoring-exploration-v2.md)
+Source prompt: [archive/prompt-article-authoring-exploration-v2.md](archive/prompt-article-authoring-exploration-v2.md)
 
 ---
 
