@@ -55,6 +55,7 @@ export default function BookEditor() {
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
     const [showGitBackup, setShowGitBackup] = useState(false);
+    const [gitSyncState, setGitSyncState] = useState<string | null>(null);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
@@ -107,6 +108,17 @@ export default function BookEditor() {
             .finally(() => setContentLoading(false));
     }, [bookId, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const refreshGitSync = useCallback(async () => {
+        if (!bookId) return;
+        try {
+            const sync = await api.git.syncStatus(bookId);
+            setGitSyncState(sync.state);
+        } catch {
+            // Non-fatal: repo may not be initialized yet.
+            setGitSyncState(null);
+        }
+    }, [bookId]);
+
     const loadBook = useCallback(async () => {
         if (!bookId) return;
         try {
@@ -121,6 +133,7 @@ export default function BookEditor() {
             } else {
                 setActiveChapterId(null);
             }
+            void refreshGitSync();
         } catch (err) {
             console.error("Failed to load book:", err);
         } finally {
@@ -370,6 +383,7 @@ export default function BookEditor() {
                 onBack={() => navigate("/")}
                 onExport={handleExport}
                 onGitBackup={() => setShowGitBackup(true)}
+                gitSyncState={gitSyncState}
                 onMetadata={() => _setShowMetadata(true)}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
@@ -483,7 +497,10 @@ export default function BookEditor() {
                 <GitBackupDialog
                     open={showGitBackup}
                     bookId={bookId}
-                    onClose={() => setShowGitBackup(false)}
+                    onClose={() => {
+                        setShowGitBackup(false);
+                        void refreshGitSync();
+                    }}
                 />
             )}
 

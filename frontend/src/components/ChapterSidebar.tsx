@@ -56,6 +56,7 @@ interface Props {
     onSaveAsChapterTemplate?: (chapterId: string) => void;
     onShowVersions?: (chapterId: string) => void;
     onGitBackup?: () => void;
+    gitSyncState?: string | null;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -309,6 +310,7 @@ export default function ChapterSidebar({
                                            onSaveAsChapterTemplate,
                                            onShowVersions,
                                            onGitBackup,
+                                           gitSyncState,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -542,11 +544,28 @@ export default function ChapterSidebar({
                 </button>
                 {onGitBackup && (
                     <button
-                        style={{...styles.exportBtn, marginBottom: 6}}
+                        style={{...styles.exportBtn, marginBottom: 6, position: "relative"}}
                         onClick={onGitBackup}
                         data-testid="sidebar-git-backup"
+                        data-git-sync-state={gitSyncState ?? ""}
+                        title={gitSyncStateLabel(gitSyncState, t)}
                     >
                         <GitBranch size={14}/> {t("ui.sidebar.git_backup", "Git-Sicherung")}
+                        {gitSyncState && ["remote_ahead", "diverged"].includes(gitSyncState) && (
+                            <span
+                                aria-hidden
+                                style={{
+                                    position: "absolute",
+                                    top: 4,
+                                    right: 6,
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    background: "var(--accent)",
+                                }}
+                                data-testid="sidebar-git-sync-dot"
+                            />
+                        )}
                     </button>
                 )}
                 {hasToc && onValidateToc && (
@@ -685,3 +704,20 @@ const styles: Record<string, React.CSSProperties> = {
         opacity: 0.3, cursor: "not-allowed",
     },
 };
+
+function gitSyncStateLabel(state: string | null | undefined, t: (key: string, fallback: string) => string): string {
+    switch (state) {
+        case "in_sync":
+            return t("ui.git.in_sync", "synchron");
+        case "local_ahead":
+            return t("ui.git.local_ahead", "lokal vorne");
+        case "remote_ahead":
+            return t("ui.git.remote_ahead", "Remote hat Änderungen");
+        case "diverged":
+            return t("ui.git.diverged_short", "divergiert");
+        case "never_synced":
+            return t("ui.git.never_synced", "noch nicht synchronisiert");
+        default:
+            return t("ui.sidebar.git_backup", "Git-Sicherung");
+    }
+}
