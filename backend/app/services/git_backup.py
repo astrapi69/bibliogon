@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app import credential_store
 from app.models import Book, Chapter, ChapterType
+from app.services import ssh_keys
 
 # Bibliogon convention: every book's uploads live at ``uploads/{book_id}/``.
 UPLOADS_ROOT = Path("uploads")
@@ -346,11 +347,14 @@ def push(book_id: str, db: Session, force: bool = False) -> dict[str, Any]:
     repo = _require_repo_with_remote(book_id, db)
     remote_url = _authenticated_url(book_id, repo)
     branch = repo.active_branch.name
+    ssh_env = _ssh_env(next(repo.remotes.origin.urls))
     try:
         # Use a one-shot pushurl so the embedded PAT never lands in
         # .git/config. Reset after push in a finally block.
         original_url = next(repo.remotes.origin.urls)
         repo.remotes.origin.set_url(remote_url)
+        if ssh_env:
+            repo.git.update_environment(**ssh_env)
         try:
             info_list = repo.remotes.origin.push(
                 refspec=f"{branch}:{branch}",
@@ -383,10 +387,13 @@ def pull(book_id: str, db: Session) -> dict[str, Any]:
     repo = _require_repo_with_remote(book_id, db)
     remote_url = _authenticated_url(book_id, repo)
     branch = repo.active_branch.name
+    ssh_env = _ssh_env(next(repo.remotes.origin.urls))
 
     try:
         original_url = next(repo.remotes.origin.urls)
         repo.remotes.origin.set_url(remote_url)
+        if ssh_env:
+            repo.git.update_environment(**ssh_env)
         try:
             repo.remotes.origin.fetch(refspec=branch)
         finally:
@@ -528,8 +535,8 @@ def _authenticated_url(book_id: str, repo: git.Repo) -> str:
     """Build a one-shot HTTPS URL with the PAT embedded for authenticated push/fetch.
 
     Only applied to ``http(s)://`` URLs. Everything else (file paths,
-    ssh) is returned unchanged so tests against a local bare repo and
-    future SSH support both work.
+    ssh) is returned unchanged; SSH auth is handled via
+    :func:`_ssh_env` / ``GIT_SSH_COMMAND`` instead.
     """
     original = next(repo.remotes.origin.urls)
     scheme = original.split("://", 1)[0] if "://" in original else ""
@@ -557,6 +564,37 @@ def _authenticated_url(book_id: str, repo: git.Repo) -> str:
     if "@" in rest:
         rest = rest.split("@", 1)[1]
     return f"{prefix}://x-access-token:{encoded_pat}@{rest}"
+
+
+def _is_ssh_url(url: str) -> bool:
+    """True when ``url`` uses SSH (``git@host:path`` or ``ssh://``)."""
+    if url.startswith("ssh://"):
+        return True
+    # ``git@github.com:user/repo.git`` shape: user@host:path, no scheme.
+    if "://" not in url and "@" in url and ":" in url.split("@", 1)[1]:
+        return True
+    return False
+
+
+def _ssh_env(url: str) -> dict[str, str] | None:
+    """Return a GIT_SSH_COMMAND env mapping when the URL is SSH and a
+    Bibliogon-managed key exists. None otherwise.
+
+    ``-i`` points at the stored private key; ``IdentitiesOnly=yes``
+    prevents ssh-agent from trying unrelated keys first;
+    ``StrictHostKeyChecking=accept-new`` lets first-time hosts connect
+    without manual ``known_hosts`` seeding while still pinning on
+    subsequent connects (standard OpenSSH TOFU).
+    """
+    if not _is_ssh_url(url) or not ssh_keys.exists():
+        return None
+    key_path = ssh_keys.private_key_path().resolve()
+    cmd = (
+        f'ssh -i "{key_path}" '
+        "-o IdentitiesOnly=yes "
+        "-o StrictHostKeyChecking=accept-new"
+    )
+    return {"GIT_SSH_COMMAND": cmd}
 
 
 def _classify_git_error(exc: git.GitCommandError) -> GitBackupError:
