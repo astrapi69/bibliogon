@@ -163,6 +163,7 @@ ui:
     save_template_tooltip: "Enregistrer la structure du livre comme modele reutilisable"
     save_template_disabled: "Creez d'abord un chapitre"
     chapter_save_as_template: "Enregistrer comme modele"
+    git_backup: "Sauvegarde Git"
   chapter_types:
     chapter: "Chapitre"
     preface: "Preface"

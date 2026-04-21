@@ -163,6 +163,7 @@ ui:
         save_template_tooltip: "Kitap yapisini tekrar kullanilabilir sablon olarak kaydet"
         save_template_disabled: "Once bir bolum olusturun"
         chapter_save_as_template: "Sablon olarak kaydet"
+        git_backup: "Git Yedek"
     chapter_types:
         chapter: "Bolum"
         preface: "Onsoz"

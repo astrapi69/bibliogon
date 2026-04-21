@@ -163,6 +163,7 @@ ui:
         save_template_tooltip: "本の構成を再利用可能なテンプレートとして保存"
         save_template_disabled: "まず章を作成してください"
         chapter_save_as_template: "テンプレートとして保存"
+        git_backup: "Git バックアップ"
     chapter_types:
         chapter: "章"
         preface: "序文"

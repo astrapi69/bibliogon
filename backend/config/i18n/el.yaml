@@ -163,6 +163,7 @@ ui:
     save_template_tooltip: "Αποθήκευση της δομής του βιβλίου ως επαναχρησιμοποιήσιμο πρότυπο"
     save_template_disabled: "Δημιουργήστε πρώτα ένα κεφάλαιο"
     chapter_save_as_template: "Αποθήκευση ως πρότυπο"
+    git_backup: "Git Αντίγραφο"
   chapter_types:
     chapter: "Κεφάλαιο"
     preface: "Πρόλογος"

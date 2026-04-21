@@ -1198,4 +1198,37 @@ export const api = {
         delete: (id: string) =>
             request<void>(`/chapter-templates/${id}`, {method: "DELETE"}),
     },
+
+    git: {
+        init: (bookId: string) =>
+            request<GitRepoStatus>(`/books/${bookId}/git/init`, {method: "POST"}),
+
+        commit: (bookId: string, message: string) =>
+            request<GitCommitEntry>(`/books/${bookId}/git/commit`, {
+                method: "POST",
+                body: JSON.stringify({message}),
+            }),
+
+        log: (bookId: string, limit: number = 50) =>
+            request<GitCommitEntry[]>(`/books/${bookId}/git/log?limit=${limit}`),
+
+        status: (bookId: string) =>
+            request<GitRepoStatus>(`/books/${bookId}/git/status`),
+    },
 };
+
+export interface GitCommitEntry {
+    hash: string
+    short_hash: string
+    message: string
+    author: string
+    date: string
+}
+
+export interface GitRepoStatus {
+    initialized: boolean
+    dirty: boolean
+    uncommitted_files: number
+    head_hash: string | null
+    head_short_hash: string | null
+}

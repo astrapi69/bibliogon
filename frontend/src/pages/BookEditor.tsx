@@ -6,6 +6,7 @@ import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
+import GitBackupDialog from "../components/GitBackupDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import type {NavigableFindingType} from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
@@ -53,6 +54,7 @@ export default function BookEditor() {
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [showExport, setShowExport] = useState(false);
+    const [showGitBackup, setShowGitBackup] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
@@ -367,6 +369,7 @@ export default function BookEditor() {
                 onRename={handleRenameChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
+                onGitBackup={() => setShowGitBackup(true)}
                 onMetadata={() => _setShowMetadata(true)}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
@@ -473,6 +476,14 @@ export default function BookEditor() {
                     bookTitle={book.title}
                     hasManualToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
                     onClose={() => setShowExport(false)}
+                />
+            )}
+
+            {bookId && (
+                <GitBackupDialog
+                    open={showGitBackup}
+                    bookId={bookId}
+                    onClose={() => setShowGitBackup(false)}
                 />
             )}
 

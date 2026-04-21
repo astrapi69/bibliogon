@@ -14,6 +14,7 @@ import {
     Pencil,
     BookmarkPlus,
     History,
+    GitBranch,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -54,6 +55,7 @@ interface Props {
     onAddFromTemplate?: () => void;
     onSaveAsChapterTemplate?: (chapterId: string) => void;
     onShowVersions?: (chapterId: string) => void;
+    onGitBackup?: () => void;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -306,6 +308,7 @@ export default function ChapterSidebar({
                                            onAddFromTemplate,
                                            onSaveAsChapterTemplate,
                                            onShowVersions,
+                                           onGitBackup,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -537,6 +540,15 @@ export default function ChapterSidebar({
                 >
                     <FileText size={14}/> {t("ui.sidebar.metadata", "Metadaten")}
                 </button>
+                {onGitBackup && (
+                    <button
+                        style={{...styles.exportBtn, marginBottom: 6}}
+                        onClick={onGitBackup}
+                        data-testid="sidebar-git-backup"
+                    >
+                        <GitBranch size={14}/> {t("ui.sidebar.git_backup", "Git-Sicherung")}
+                    </button>
+                )}
                 {hasToc && onValidateToc && (
                     <button
                         style={{...styles.exportBtn, marginBottom: 6}}
