@@ -287,15 +287,7 @@ test.describe("Dropdown at simulated browser zoom", () => {
     const ZOOM_FACTORS = [1.25, 1.5] as const;
 
     for (const zoom of ZOOM_FACTORS) {
-        // Skipped: intermittent layout-at-zoom failure documented in
-        // GitHub issue #9. The Radix dropdown collision boundary
-        // against a CSS-zoomed viewport sits out of tolerance
-        // (visually within pixels of the edge, but the rect check is
-        // strict). Needs a dedicated UI session to rework the
-        // Popper collision avoidance or relax the tolerance with a
-        // more realistic zoom proxy (viewport downscale instead of
-        // style.zoom).
-        test.skip(`dropdown stays inside viewport at ${Math.round(zoom * 100)}% zoom`, async ({page}) => {
+        test(`dropdown stays inside viewport at ${Math.round(zoom * 100)}% zoom`, async ({page}) => {
             await openBookAtViewport(page, bookId, 800);
             await setCssZoom(page, zoom);
 

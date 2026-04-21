@@ -390,7 +390,7 @@ export default function ChapterSidebar({
                                 className="chapter-dropdown-content"
                                 align="end"
                                 sideOffset={4}
-                                collisionPadding={16}
+                                collisionPadding={{top: 16, bottom: 280, left: 16, right: 16}}
                                 data-testid="chapter-add-dropdown"
                             >
                                 <DropdownMenu.Label className="chapter-dropdown-label">{t("ui.sidebar.front_matter", "Front Matter")}</DropdownMenu.Label>
