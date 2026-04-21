@@ -1238,6 +1238,21 @@ export const api = {
 
         syncStatus: (bookId: string) =>
             request<GitSyncStatus>(`/books/${bookId}/git/sync-status`),
+
+        analyzeConflict: (bookId: string) =>
+            request<GitConflictAnalysis>(`/books/${bookId}/git/conflict/analyze`),
+
+        merge: (bookId: string) =>
+            request<GitMergeResult>(`/books/${bookId}/git/merge`, {method: "POST"}),
+
+        resolveConflict: (bookId: string, resolutions: Record<string, "mine" | "theirs">) =>
+            request<GitMergeResult>(`/books/${bookId}/git/conflict/resolve`, {
+                method: "POST",
+                body: JSON.stringify({resolutions}),
+            }),
+
+        abortMerge: (bookId: string) =>
+            request<GitMergeResult>(`/books/${bookId}/git/conflict/abort`, {method: "POST"}),
     },
 
     ssh: {
@@ -1296,6 +1311,21 @@ export interface GitSyncStatus {
     ahead: number
     behind: number
     state: "no_remote" | "never_synced" | "in_sync" | "local_ahead" | "remote_ahead" | "diverged"
+}
+
+export interface GitConflictAnalysis {
+    state: string
+    classification: "simple" | "complex" | null
+    local_files: string[]
+    remote_files: string[]
+    overlapping_files: string[]
+    merge_in_progress: boolean
+}
+
+export interface GitMergeResult {
+    status: "merged" | "conflicts" | "already_up_to_date" | "aborted"
+    head_hash?: string | null
+    files?: string[]
 }
 
 export interface SshKeyInfo {

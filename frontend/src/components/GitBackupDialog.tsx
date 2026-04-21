@@ -18,6 +18,7 @@ import {
     GitRemoteConfig,
     GitRepoStatus,
     GitSyncStatus,
+    GitMergeResult,
 } from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
@@ -40,6 +41,8 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
     const [editingRemote, setEditingRemote] = useState(false)
     const [busy, setBusy] = useState(false)
     const [conflictKind, setConflictKind] = useState<"push_rejected" | "diverged" | null>(null)
+    const [conflictFiles, setConflictFiles] = useState<string[]>([])
+    const [resolutions, setResolutions] = useState<Record<string, "mine" | "theirs">>({})
 
     useEffect(() => {
         if (!open) return
@@ -161,26 +164,62 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
         }
     }
 
-    async function handleAcceptRemote() {
-        // Pull first. If that fast-forwards, push is now clean. If it
-        // also diverges, the user already knows pull isn't enough.
+    async function handleMergeRemote() {
         setBusy(true)
         try {
-            await api.git.pull(bookId)
-            notify.success(t("ui.git.accepted_remote", "Remote übernommen"))
-            setConflictKind(null)
-            await refresh()
-        } catch (err) {
-            if (err instanceof ApiError && err.detailBody?.code === "diverged") {
-                // Upgrade to diverged state - pure Accept Remote means
-                // discarding local, which pull cannot do. Offer force.
-                setConflictKind("diverged")
-                notify.warning(t(
-                    "ui.git.diverged_short",
-                    "divergiert",
-                ))
+            const res: GitMergeResult = await api.git.merge(bookId)
+            if (res.status === "merged" || res.status === "already_up_to_date") {
+                notify.success(t("ui.git.merge_ok", "Merge erfolgreich"))
+                setConflictKind(null)
+                setConflictFiles([])
+                setResolutions({})
+                await refresh()
                 return
             }
+            if (res.status === "conflicts") {
+                setConflictKind("diverged")
+                setConflictFiles(res.files ?? [])
+                const initial: Record<string, "mine" | "theirs"> = {}
+                for (const path of res.files ?? []) initial[path] = "mine"
+                setResolutions(initial)
+                notify.warning(t(
+                    "ui.git.conflicts_found",
+                    "Konflikte gefunden — wähle pro Datei",
+                ))
+            }
+        } catch (err) {
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handleResolveMerge() {
+        setBusy(true)
+        try {
+            await api.git.resolveConflict(bookId, resolutions)
+            notify.success(t("ui.git.merge_resolved", "Konflikte aufgelöst"))
+            setConflictKind(null)
+            setConflictFiles([])
+            setResolutions({})
+            await refresh()
+        } catch (err) {
+            notify.error(describeError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function handleAbortMerge() {
+        setBusy(true)
+        try {
+            await api.git.abortMerge(bookId)
+            notify.success(t("ui.git.merge_aborted", "Merge abgebrochen"))
+            setConflictKind(null)
+            setConflictFiles([])
+            setResolutions({})
+            await refresh()
+        } catch (err) {
             notify.error(describeError(err))
         } finally {
             setBusy(false)
@@ -449,9 +488,20 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                         <ConflictResolution
                             kind={conflictKind}
                             busy={busy}
-                            onAcceptRemote={handleAcceptRemote}
+                            files={conflictFiles}
+                            resolutions={resolutions}
+                            onResolutionChange={(path, side) =>
+                                setResolutions((prev) => ({...prev, [path]: side}))
+                            }
+                            onMerge={handleMergeRemote}
+                            onResolve={handleResolveMerge}
+                            onAbort={handleAbortMerge}
                             onAcceptLocal={() => handlePush(true)}
-                            onCancel={() => setConflictKind(null)}
+                            onCancel={() => {
+                                setConflictKind(null)
+                                setConflictFiles([])
+                                setResolutions({})
+                            }}
                         />
                     )}
                 </Dialog.Content>
@@ -464,31 +514,50 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
 function ConflictResolution({
     kind,
     busy,
-    onAcceptRemote,
+    files,
+    resolutions,
+    onResolutionChange,
+    onMerge,
+    onResolve,
+    onAbort,
     onAcceptLocal,
     onCancel,
 }: {
     kind: "push_rejected" | "diverged"
     busy: boolean
-    onAcceptRemote: () => void
+    files: string[]
+    resolutions: Record<string, "mine" | "theirs">
+    onResolutionChange: (path: string, side: "mine" | "theirs") => void
+    onMerge: () => void
+    onResolve: () => void
+    onAbort: () => void
     onAcceptLocal: () => void
     onCancel: () => void
 }) {
     const {t} = useI18n()
-    const title =
-        kind === "push_rejected"
-            ? t("ui.git.conflict_push_rejected_title", "Push abgelehnt")
-            : t("ui.git.conflict_diverged_title", "Divergierte Historie")
-    const body =
-        kind === "push_rejected"
-            ? t(
-                  "ui.git.conflict_push_rejected_body",
-                  "Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:",
-              )
-            : t(
-                  "ui.git.conflict_diverged_body",
-                  "Beide Seiten haben eigene Commits. Ein einfacher Pull ist nicht möglich. Wähle:",
-              )
+    const inResolution = files.length > 0
+
+    const title = inResolution
+        ? t("ui.git.conflict_resolve_title", "Konflikte pro Datei auflösen")
+        : kind === "push_rejected"
+        ? t("ui.git.conflict_push_rejected_title", "Push abgelehnt")
+        : t("ui.git.conflict_diverged_title", "Divergierte Historie")
+
+    const body = inResolution
+        ? t(
+              "ui.git.conflict_resolve_body",
+              "Pro betroffener Datei: lokale oder Remote-Version behalten. Danach wird ein Merge-Commit erzeugt.",
+          )
+        : kind === "push_rejected"
+        ? t(
+              "ui.git.conflict_push_rejected_body",
+              "Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:",
+          )
+        : t(
+              "ui.git.conflict_diverged_body",
+              "Beide Seiten haben eigene Commits. Wähle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.",
+          )
+
     return (
         <div
             style={{
@@ -507,38 +576,108 @@ function ConflictResolution({
             <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 10}}>
                 {body}
             </p>
-            <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-                <button
-                    className="btn btn-primary btn-sm"
-                    onClick={onAcceptRemote}
-                    disabled={busy}
-                    data-testid="git-conflict-accept-remote"
-                >
-                    <Download size={14}/> {t("ui.git.accept_remote", "Remote übernehmen (Pull)")}
-                </button>
-                <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                        if (confirm(t(
-                            "ui.git.confirm_accept_local",
-                            "Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.",
-                        ))) {
-                            onAcceptLocal()
-                        }
-                    }}
-                    disabled={busy}
-                    data-testid="git-conflict-accept-local"
-                >
-                    <Upload size={14}/> {t("ui.git.accept_local", "Lokal erzwingen (Force Push)")}
-                </button>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={onCancel}
-                    disabled={busy}
-                >
-                    {t("ui.common.cancel", "Abbrechen")}
-                </button>
-            </div>
+
+            {inResolution ? (
+                <div style={{display: "flex", flexDirection: "column", gap: 8}}>
+                    <ul
+                        style={{listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6}}
+                        data-testid="git-conflict-file-list"
+                    >
+                        {files.map((path) => (
+                            <li
+                                key={path}
+                                style={{
+                                    padding: 8,
+                                    background: "var(--bg-secondary)",
+                                    borderRadius: "var(--radius-sm)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    fontSize: "0.8125rem",
+                                }}
+                                data-testid="git-conflict-file"
+                            >
+                                <code style={{fontFamily: "var(--font-mono)", fontSize: "0.75rem", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis"}}>
+                                    {path}
+                                </code>
+                                <label style={{display: "flex", alignItems: "center", gap: 4, cursor: "pointer"}}>
+                                    <input
+                                        type="radio"
+                                        name={`resolution-${path}`}
+                                        checked={resolutions[path] === "mine"}
+                                        onChange={() => onResolutionChange(path, "mine")}
+                                        disabled={busy}
+                                        data-testid={`git-conflict-mine-${path}`}
+                                    />
+                                    {t("ui.git.keep_mine", "Lokal")}
+                                </label>
+                                <label style={{display: "flex", alignItems: "center", gap: 4, cursor: "pointer"}}>
+                                    <input
+                                        type="radio"
+                                        name={`resolution-${path}`}
+                                        checked={resolutions[path] === "theirs"}
+                                        onChange={() => onResolutionChange(path, "theirs")}
+                                        disabled={busy}
+                                        data-testid={`git-conflict-theirs-${path}`}
+                                    />
+                                    {t("ui.git.keep_theirs", "Remote")}
+                                </label>
+                            </li>
+                        ))}
+                    </ul>
+                    <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={onResolve}
+                            disabled={busy}
+                            data-testid="git-conflict-resolve-btn"
+                        >
+                            <Check size={14}/> {t("ui.git.apply_resolution", "Auflösung anwenden")}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={onAbort}
+                            disabled={busy}
+                            data-testid="git-conflict-abort-btn"
+                        >
+                            {t("ui.git.abort_merge", "Merge abbrechen")}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={onMerge}
+                        disabled={busy}
+                        data-testid="git-conflict-merge"
+                    >
+                        <Download size={14}/> {t("ui.git.merge", "Mergen")}
+                    </button>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                            if (confirm(t(
+                                "ui.git.confirm_accept_local",
+                                "Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.",
+                            ))) {
+                                onAcceptLocal()
+                            }
+                        }}
+                        disabled={busy}
+                        data-testid="git-conflict-accept-local"
+                    >
+                        <Upload size={14}/> {t("ui.git.accept_local", "Lokal erzwingen (Force Push)")}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={onCancel}
+                        disabled={busy}
+                    >
+                        {t("ui.common.cancel", "Abbrechen")}
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
