@@ -441,3 +441,23 @@ Stability filter:
 - `frontend/src/db/drafts.ts#checkForRecovery` returns a draft iff `draft.contentHash === hashContent(serverContent)` AND `draft.content !== serverContent`. The contract is "this draft was written against THIS server state, local content is newer". Seeding a test draft with `contentHash: '_mismatch_'` will NOT trigger the recovery banner.
 - A misleading test comment saying "must differ from server hash" burned multiple sessions before the `checkForRecovery` source was re-read.
 - When writing tests that seed IndexedDB, compute the hash of the real server content inside the seed script rather than using a sentinel value.
+
+## Global CSS rules: distinguish viewport containers from app container
+
+Setting `overflow: hidden` on `html, body, #root` as a single rule blocks document scroll but also blocks every full-page component that relied on scroll (Settings, Dashboard, GetStarted, Help).
+
+Correct pattern when preventing document-level scroll for editor zoom behavior:
+
+```css
+html, body { height: 100%; overflow: hidden; }  /* viewport lock */
+#root { height: 100%; overflow-y: auto; }       /* app scroll */
+```
+
+html and body control the browser viewport. `#root` is the React application root and must remain scrollable for pages that don't implement their own scroll container.
+
+When a layout fix requires setting `overflow: hidden` on one of the three, think explicitly about whether full-page components inside the app need internal scroll, and expose it via `#root`.
+
+### Incident record
+
+- `ef7ce5c`: added `html, body, #root { overflow: hidden; }` as fix for Issue #11 (chapter sidebar at 150% zoom). Broke scroll on Settings, Dashboard, GetStarted, Help pages.
+- `c25483e`: split the rule. Kept html/body locked (preserves zoom fix), restored `#root overflow-y: auto`.
