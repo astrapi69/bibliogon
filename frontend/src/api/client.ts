@@ -1239,6 +1239,20 @@ export const api = {
         syncStatus: (bookId: string) =>
             request<GitSyncStatus>(`/books/${bookId}/git/sync-status`),
     },
+
+    ssh: {
+        info: () => request<SshKeyInfo>("/ssh"),
+
+        generate: (comment: string | null = null, overwrite: boolean = false) =>
+            request<SshKeyInfo>("/ssh/generate", {
+                method: "POST",
+                body: JSON.stringify({comment, overwrite}),
+            }),
+
+        publicKey: () => request<{public_key: string}>("/ssh/public-key"),
+
+        remove: () => request<void>("/ssh", {method: "DELETE"}),
+    },
 };
 
 export interface GitCommitEntry {
@@ -1282,4 +1296,12 @@ export interface GitSyncStatus {
     ahead: number
     behind: number
     state: "no_remote" | "never_synced" | "in_sync" | "local_ahead" | "remote_ahead" | "diverged"
+}
+
+export interface SshKeyInfo {
+    exists: boolean
+    type?: string
+    comment?: string
+    created_at?: string
+    public_key?: string
 }

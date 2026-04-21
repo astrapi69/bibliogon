@@ -12,6 +12,7 @@ import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/aiProviders";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
+import SshKeySection from "../components/SshKeySection";
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -375,6 +376,8 @@ function AppSettings({config, onSave, saving}: {
                     <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
             </div>
+
+            <SshKeySection/>
 
             {/* Editor Settings */}
             <div style={{marginTop: 16}}>
