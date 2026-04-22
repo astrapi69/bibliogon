@@ -607,7 +607,7 @@ const styles: Record<string, React.CSSProperties> = {
         width: 260, minWidth: 260, height: "100vh",
         background: "var(--bg-sidebar)", color: "var(--text-sidebar)",
         display: "flex", flexDirection: "column",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
     },
     manuscriptHeader: {
         padding: "12px 16px 0",
@@ -615,11 +615,11 @@ const styles: Record<string, React.CSSProperties> = {
     },
     manuscriptTitle: {
         fontFamily: "var(--font-display)", fontSize: "0.8125rem", fontWeight: 600,
-        color: "rgba(255,255,255,0.5)", letterSpacing: "0.04em",
+        color: "color-mix(in srgb, var(--text-sidebar) 50%, transparent)", letterSpacing: "0.04em",
     },
     header: {
         padding: "16px 12px 12px", display: "flex", alignItems: "center", gap: 6,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
         flexShrink: 0,
     },
     backBtn: {
@@ -628,26 +628,26 @@ const styles: Record<string, React.CSSProperties> = {
     },
     bookTitle: {
         fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 600,
-        color: "#faf8f5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        color: "var(--text-sidebar)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     sectionHeader: {
         padding: "16px 16px 8px", display: "flex", alignItems: "center", gap: 4,
     },
     collapseBtn: {
-        background: "none", border: "none", color: "rgba(255,255,255,0.35)",
+        background: "none", border: "none", color: "color-mix(in srgb, var(--text-sidebar) 35%, transparent)",
         cursor: "pointer", padding: 2, borderRadius: 3, display: "flex", alignItems: "center",
         flexShrink: 0,
     },
     sectionCount: {
-        fontSize: "0.625rem", color: "rgba(255,255,255,0.25)",
+        fontSize: "0.625rem", color: "color-mix(in srgb, var(--text-sidebar) 25%, transparent)",
         marginLeft: "auto",
     },
     listLabel: {
         fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase" as const,
-        letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)",
+        letterSpacing: "0.08em", color: "color-mix(in srgb, var(--text-sidebar) 35%, transparent)",
     },
     addBtn: {
-        background: "rgba(255,255,255,0.08)", border: "none", color: "var(--text-sidebar)",
+        background: "color-mix(in srgb, var(--text-sidebar) 8%, transparent)", border: "none", color: "var(--text-sidebar)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
     },
     // minHeight: 0 is mandatory for flexbox scrolling. Without it, the
@@ -655,7 +655,7 @@ const styles: Record<string, React.CSSProperties> = {
     // intrinsic content height, silently defeating overflow-y: auto.
     list: { flex: 1, minHeight: 0, overflowY: "auto" as const, padding: "0 8px" },
     empty: {
-        padding: "12px 8px", fontSize: "0.8125rem", color: "rgba(255,255,255,0.25)", fontStyle: "italic",
+        padding: "12px 8px", fontSize: "0.8125rem", color: "color-mix(in srgb, var(--text-sidebar) 25%, transparent)", fontStyle: "italic",
     },
     item: {
         display: "flex", alignItems: "center", gap: 6, padding: "8px 8px",
@@ -663,42 +663,42 @@ const styles: Record<string, React.CSSProperties> = {
         transition: "background 150ms", marginBottom: 2,
         background: "transparent",
     },
-    itemActive: { background: "rgba(255,255,255,0.1)", color: "#faf8f5" },
-    itemDragging: { opacity: 0.5, background: "rgba(255,255,255,0.05)" },
+    itemActive: { background: "color-mix(in srgb, var(--text-sidebar) 10%, transparent)", color: "var(--text-sidebar)" },
+    itemDragging: { opacity: 0.5, background: "color-mix(in srgb, var(--text-sidebar) 5%, transparent)" },
     itemTitle: {
         flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
         display: "flex", alignItems: "center", gap: 4,
     },
     typeTag: {
         fontSize: "0.625rem", fontWeight: 600, textTransform: "uppercase" as const,
-        background: "rgba(255,255,255,0.08)", padding: "1px 4px", borderRadius: 3,
-        color: "rgba(255,255,255,0.4)", flexShrink: 0,
+        background: "color-mix(in srgb, var(--text-sidebar) 8%, transparent)", padding: "1px 4px", borderRadius: 3,
+        color: "color-mix(in srgb, var(--text-sidebar) 40%, transparent)", flexShrink: 0,
     },
     deleteBtn: {
-        background: "none", border: "none", color: "rgba(255,255,255,0.2)",
+        background: "none", border: "none", color: "color-mix(in srgb, var(--text-sidebar) 20%, transparent)",
         cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
         opacity: 0, transition: "opacity 150ms",
     },
     renameInput: {
-        flex: 1, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
-        color: "#faf8f5", fontSize: "0.875rem", padding: "2px 6px", borderRadius: 4,
+        flex: 1, background: "color-mix(in srgb, var(--text-sidebar) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--text-sidebar) 20%, transparent)",
+        color: "var(--text-sidebar)", fontSize: "0.875rem", padding: "2px 6px", borderRadius: 4,
         outline: "none", fontFamily: "var(--font-body)",
     },
     exportSection: {
         padding: "12px 16px 16px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderTop: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
         flexShrink: 0,
     },
     exportBtn: {
         width: "100%",
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "8px 0", background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.08)", color: "var(--text-sidebar)",
+        padding: "8px 0", background: "color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--text-sidebar) 8%, transparent)", color: "var(--text-sidebar)",
         borderRadius: 6, cursor: "pointer", fontSize: "0.8125rem",
         fontFamily: "var(--font-body)", fontWeight: 500, transition: "background 150ms",
     },
     exportBtnActive: {
-        background: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.15)",
+        background: "color-mix(in srgb, var(--text-sidebar) 12%, transparent)", borderColor: "color-mix(in srgb, var(--text-sidebar) 15%, transparent)",
     },
     btnDisabled: {
         opacity: 0.3, cursor: "not-allowed",
