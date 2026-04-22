@@ -87,6 +87,22 @@ See [docs/explorations/donations-ux.md](explorations/donations-ux.md) for the fu
 
 ---
 
+## Plugins
+
+New plugin work tracked separately from Phase 2 themes. Plugin versions are independent of the app version; a plugin is bumped only when the plugin itself changes.
+
+### plugin-git-sync (phased)
+
+Bi-directional git sync for Bibliogon books: import existing git-based book projects (write-book-template format), sync edits back. First plugin-to-plugin dependency (builds on plugin-export), orthogonal to the v0.21.0 core git integration. Full design in [docs/explorations/plugin-git-sync.md](explorations/plugin-git-sync.md).
+
+- [ ] **PGS-01:** plugin-git-sync Phase 1 (import-only MVP). New plugin scaffold, depends on plugin-export, "Import from Git" UI, clones repo to plugin workspace, parses `.bibliogon/` structure, creates Bibliogon book(s) (one per language branch when `branches.yaml` present), copies assets. No sync-back. Estimated effort: 12-18h.
+- [ ] **PGS-02:** plugin-git-sync Phase 2 (export to repo, overwrite MVP). "Commit to Repo" button, serializes current Bibliogon state to repo spec, commits to local clone, optional push (reuses core PAT handling). Overwrite semantics (variant 2c): no 3-way comparison, direct-repo edits lost unless re-imported first. Estimated effort: 10-15h.
+- [ ] **PGS-03:** plugin-git-sync Phase 3 (smart-merge on re-import). Three-way comparison using `last_imported_commit_sha`, per-chapter conflict classification, UI for Keep/Take/Mark-conflict resolution. Estimated effort: 14-20h.
+- [ ] **PGS-04:** plugin-git-sync Phase 4 (multi-language linking UI). Books from different branches of the same repo shown as linked (DE/EN/ES badges), new `Book.translation_group_id` column auto-populated on import, manual link/unlink in Settings. Estimated effort: 8-12h.
+- [ ] **PGS-05:** plugin-git-sync Phase 5 (core git integration bridge). Unified commit UI when a book has both plugin-git-sync and core git enabled; shared lock to avoid double-commits. Requires PGS-01..02 and core git Phase 1 stable in production for at least one release. Estimated effort: 6-10h.
+
+---
+
 ## Maintenance and tech debt
 
 Items with external deadlines or recurring cost that deserve planning-view visibility. Not features; just upkeep that will bite if ignored.
