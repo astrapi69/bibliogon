@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon"
-version = "0.20.0"
+version = "0.21.0"
 description = "Open-source book authoring platform with WYSIWYG and Markdown editing, EPUB/PDF export via Pandoc."
 authors = ["Asterios Raptis"]
 license = "MIT"

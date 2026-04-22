@@ -30,8 +30,10 @@ from app.routers import (
     licenses,
     plugin_install,
     settings,
-    ssh_keys as ssh_keys_router,
     templates,
+)
+from app.routers import (
+    ssh_keys as ssh_keys_router,
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -194,7 +196,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.20.0",
+    version="0.21.0",
     lifespan=lifespan,
     docs_url="/api/docs" if DEBUG else None,
     redoc_url="/api/redoc" if DEBUG else None,

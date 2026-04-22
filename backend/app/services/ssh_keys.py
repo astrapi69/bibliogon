@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -73,8 +73,7 @@ def generate(comment: str | None = None, *, overwrite: bool = False) -> dict[str
     """
     if exists() and not overwrite:
         raise SshKeyExistsError(
-            "An SSH keypair already exists. Delete it first or set "
-            "overwrite=True."
+            "An SSH keypair already exists. Delete it first or set overwrite=True."
         )
 
     label = (comment or "bibliogon").strip() or "bibliogon"
@@ -137,9 +136,7 @@ def get_metadata() -> dict[str, Any] | None:
         "exists": True,
         "type": key_type,
         "comment": comment,
-        "created_at": datetime.fromtimestamp(
-            stat_result.st_mtime, tz=timezone.utc
-        ).isoformat(),
+        "created_at": datetime.fromtimestamp(stat_result.st_mtime, tz=UTC).isoformat(),
         "public_key": pub,
     }
 

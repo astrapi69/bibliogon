@@ -183,9 +183,7 @@ def commit(
     path = repo_path(book_id)
 
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo. Initialize first."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
 
     repo = git.Repo(path)
     _write_book_state(book, db, path)
@@ -193,9 +191,7 @@ def commit(
     repo.git.add(A=True)
 
     if not repo.is_dirty(untracked_files=True) and not repo.index.diff("HEAD"):
-        raise NothingToCommitError(
-            "No changes to commit. Working tree matches last commit."
-        )
+        raise NothingToCommitError("No changes to commit. Working tree matches last commit.")
 
     author = _author_for(book)
     commit_obj = repo.index.commit(
@@ -216,9 +212,7 @@ def log(book_id: str, db: Session, limit: int = 50) -> list[dict[str, Any]]:
     """Return up to ``limit`` most recent commits, newest first."""
     _get_book_or_raise(book_id, db)
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo.")
 
     repo = git.Repo(repo_path(book_id))
     entries: list[dict[str, Any]] = []
@@ -285,9 +279,7 @@ def configure_remote(
     """
     _get_book_or_raise(book_id, db)
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo. Initialize first."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
     url = (url or "").strip()
     if not url:
         raise GitBackupError("Remote URL must not be empty.")
@@ -384,9 +376,7 @@ def push(book_id: str, db: Session, force: bool = False) -> dict[str, Any]:
     info = info_list[0]
     if info.flags & git.PushInfo.ERROR:
         if info.flags & info.REJECTED or info.flags & info.REMOTE_REJECTED:
-            raise RemoteRejectedError(
-                info.summary.strip() or "Push rejected by remote."
-            )
+            raise RemoteRejectedError(info.summary.strip() or "Push rejected by remote.")
         raise RemoteNetworkError(info.summary.strip() or "Push failed.")
     return {
         "branch": branch,
@@ -554,9 +544,7 @@ def analyze_conflict(book_id: str, db: Session) -> dict[str, Any]:
     base["state"] = "diverged"
     if merge_base is not None:
         local_files = _changed_files_between(repo, merge_base.hexsha, local.hexsha)
-        remote_files = _changed_files_between(
-            repo, merge_base.hexsha, remote.hexsha
-        )
+        remote_files = _changed_files_between(repo, merge_base.hexsha, remote.hexsha)
         overlap = sorted(set(local_files) & set(remote_files))
         base["local_files"] = local_files
         base["remote_files"] = remote_files
@@ -580,13 +568,9 @@ def merge(book_id: str, db: Session) -> dict[str, Any]:
     branch = repo.active_branch.name
     remote_ref = f"origin/{branch}"
     if (Path(repo.git_dir) / "MERGE_HEAD").exists():
-        raise MergeInProgressError(
-            "A merge is already in progress. Resolve or abort first."
-        )
+        raise MergeInProgressError("A merge is already in progress. Resolve or abort first.")
     if remote_ref not in [r.name for r in repo.refs]:
-        raise RemoteNotConfiguredError(
-            "Remote has never been fetched. Pull first."
-        )
+        raise RemoteNotConfiguredError("Remote has never been fetched. Pull first.")
 
     local = repo.head.commit
     remote = repo.refs[remote_ref].commit
@@ -600,9 +584,7 @@ def merge(book_id: str, db: Session) -> dict[str, Any]:
         # Conflict messages can land on stdout or stderr depending on
         # git version. Inspect both plus the index state.
         combined = (
-            (exc.stderr or "")
-            + " "
-            + (exc.stdout if hasattr(exc, "stdout") and exc.stdout else "")
+            (exc.stderr or "") + " " + (exc.stdout if hasattr(exc, "stdout") and exc.stdout else "")
         ).lower()
         conflicted = _conflicted_files(repo)
         if conflicted or "conflict" in combined or "automatic merge failed" in combined:
@@ -625,21 +607,15 @@ def resolve_conflicts(
     """
     _get_book_or_raise(book_id, db)
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo. Initialize first."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
     repo = git.Repo(repo_path(book_id))
     if not (Path(repo.git_dir) / "MERGE_HEAD").exists():
-        raise NoMergeInProgressError(
-            "No merge in progress. Run pull or merge first."
-        )
+        raise NoMergeInProgressError("No merge in progress. Run pull or merge first.")
 
     conflicted = set(_conflicted_files(repo))
     missing = conflicted - set(resolutions)
     if missing:
-        raise GitBackupError(
-            "Resolution missing for: " + ", ".join(sorted(missing))
-        )
+        raise GitBackupError("Resolution missing for: " + ", ".join(sorted(missing)))
 
     for path, side in resolutions.items():
         if path not in conflicted:
@@ -649,9 +625,7 @@ def resolve_conflicts(
         elif side == "theirs":
             repo.git.checkout("--theirs", "--", path)
         else:
-            raise GitBackupError(
-                f"Invalid side {side!r} for {path}: expected 'mine' or 'theirs'"
-            )
+            raise GitBackupError(f"Invalid side {side!r} for {path}: expected 'mine' or 'theirs'")
         repo.git.add("--", path)
 
     # Finish the merge: a commit combining the two parents with the
@@ -664,14 +638,10 @@ def abort_merge(book_id: str, db: Session) -> dict[str, Any]:
     """Abort an in-progress merge. Restores pre-merge HEAD + working tree."""
     _get_book_or_raise(book_id, db)
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo. Initialize first."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
     repo = git.Repo(repo_path(book_id))
     if not (Path(repo.git_dir) / "MERGE_HEAD").exists():
-        raise NoMergeInProgressError(
-            "No merge in progress. Nothing to abort."
-        )
+        raise NoMergeInProgressError("No merge in progress. Nothing to abort.")
     repo.git.merge("--abort")
     return {"status": "aborted", "head_hash": repo.head.commit.hexsha}
 
@@ -730,9 +700,7 @@ def _require_repo_with_remote(book_id: str, db: Session) -> git.Repo:
     """Load the repo after verifying init + remote config are in place."""
     _get_book_or_raise(book_id, db)
     if not is_initialized(book_id):
-        raise RepoNotInitializedError(
-            f"Book {book_id} has no git repo. Initialize first."
-        )
+        raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
     config = _read_remote_config(repo_path(book_id))
     if not config or not config.get("url"):
         raise RemoteNotConfiguredError(
@@ -759,10 +727,14 @@ def _authenticated_url(book_id: str, repo: git.Repo) -> str:
     ):
         return original
 
-    pat = credential_store.load_decrypted(
-        filename=_pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
-    ).decode("utf-8").strip()
+    pat = (
+        credential_store.load_decrypted(
+            filename=_pat_filename(book_id),
+            credentials_dir=GIT_CRED_DIR,
+        )
+        .decode("utf-8")
+        .strip()
+    )
     if not pat:
         return original
 
@@ -799,11 +771,7 @@ def _ssh_env(url: str) -> dict[str, str] | None:
     if not _is_ssh_url(url) or not ssh_keys.exists():
         return None
     key_path = ssh_keys.private_key_path().resolve()
-    cmd = (
-        f'ssh -i "{key_path}" '
-        "-o IdentitiesOnly=yes "
-        "-o StrictHostKeyChecking=accept-new"
-    )
+    cmd = f'ssh -i "{key_path}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
     return {"GIT_SSH_COMMAND": cmd}
 
 
@@ -820,9 +788,7 @@ def _classify_git_error(exc: git.GitCommandError) -> GitBackupError:
             "access denied",
         )
     ):
-        return RemoteAuthError(
-            "Remote rejected credentials. Check your PAT and remote URL."
-        )
+        return RemoteAuthError("Remote rejected credentials. Check your PAT and remote URL.")
     if "non-fast-forward" in raw or "rejected" in raw:
         return RemoteRejectedError(
             "Push rejected: remote has commits your local branch does not. "
@@ -895,12 +861,7 @@ def _write_book_state(book: Book, db: Session, repo_dir: Path) -> None:
                 file.unlink()
         section_dir.mkdir(parents=True, exist_ok=True)
 
-    chapters = (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book.id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    chapters = db.query(Chapter).filter(Chapter.book_id == book.id).order_by(Chapter.position).all()
 
     for index, chapter in enumerate(chapters, start=1):
         section = _section_for(chapter.chapter_type)
@@ -1012,11 +973,6 @@ _slug_re = re.compile(r"[^a-z0-9]+")
 
 def _slugify(value: str) -> str:
     value = (value or "").strip().lower()
-    value = (
-        value.replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-        .replace("ß", "ss")
-    )
+    value = value.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
     value = _slug_re.sub("-", value).strip("-")
     return value or f"ch-{int(datetime.now().timestamp())}"
