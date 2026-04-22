@@ -45,6 +45,9 @@ ui:
     no_history: "No backups created yet."
     compare_backups: "Compare Backups"
     compare_backups_tooltip: "Compare two .bgb files from your filesystem"
+    dark_mode: Dark Mode
+    light_mode: Light Mode
+    move_to_trash: Move to trash
   backup:
     compare:
       title: "Compare Backups"
@@ -212,6 +215,15 @@ ui:
     conflicts_found: "Conflicts found — pick per file"
     conflict_resolve_title: "Resolve conflicts per file"
     conflict_resolve_body: "For each affected file: keep the local or remote version. A merge commit is then created."
+    accept_local: Force push local
+    conflict_diverged_title: Diverged history
+    conflict_push_rejected_title: Push rejected
+    force_push_ok: Force push successful - remote overwritten
+    local_ahead: local ahead
+    remote_ahead: remote has changes
+    confirm_accept_local: Force-push the local version to the remote? Any remote commits will be overwritten and lost.
+    conflict_diverged_body: 'Both sides have their own commits. Choose: merge (decide per file on conflicts), ignore remote (force push), or cancel.'
+    conflict_push_rejected_body: 'The remote has newer commits that are not present locally. Decide which side wins:'
   ssh:
     title: "SSH Key for Git"
     intro: "One Ed25519 keypair per install. The public half is added to GitHub/GitLab/Gitea; the private half stays local (file mode 0600)."
@@ -279,6 +291,12 @@ ui:
     audiobook_done: "Audiobook ready! Download starting..."
     missing_images: "Missing images: {files}"
     missing_images_hint: "Check whether the listed image files still exist in the book."
+    dry_run_button: Hear sample
+    dry_run_failed: Test export failed
+    dry_run_hint: Generates only the first paragraph of the first chapter. Verifies engine and voice work and shows estimated cost.
+    dry_run_loading: Generating sample...
+    dry_run_title: Test export
+    free: free
   formats:
     epub: "EPUB"
     epub_desc: "E-Book Format"
@@ -694,6 +712,14 @@ ui:
     dry_run_loading: "Generating sample..."
     dry_run_failed: "Test export failed"
     free: "free"
+    badge_done: Audiobook ready
+    badge_failed: Audiobook failed
+    completed_hint: Audiobook ready - click to open metadata
+    popover_chapter_count: '{current} of {total} chapters'
+    popover_current: Current
+    popover_open: Open dialog
+    popover_title: Audiobook export
+    completion_toast: Audiobook ready. Now available under Metadata > Audiobook.
   error_report:
     title: "Create Issue Report"
     intro: "Bibliogon detected an error and can prepare a bug report for the developer."
@@ -862,6 +888,11 @@ ui:
       close: "Close player"
     status_partial: "Export incomplete. Some chapters have not been generated yet."
     chapter_not_generated: "Not generated"
+    delete_all_previews: Delete all
+    delete_previews: Delete all previews
+    delete_previews_confirm: Delete all preview files?
+    previews_empty: No previews yet. Use the Preview button in the editor to generate one.
+    speed: Speed
   languages:
     de: "German"
     en: "English"
@@ -897,6 +928,8 @@ ui:
     show: "Show"
     back: "Back"
     next: "Next"
+    edit: Edit
+    refresh: Refresh
   ai_wizard:
     title: "Set up AI Assistant"
     step1_hint: "Choose your AI provider. You can change this later in Settings."

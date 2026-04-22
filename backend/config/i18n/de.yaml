@@ -45,6 +45,9 @@ ui:
     no_history: "Noch keine Backups erstellt."
     compare_backups: "Backups vergleichen"
     compare_backups_tooltip: "Zwei .bgb-Dateien aus dem Dateisystem vergleichen"
+    dark_mode: Dark Mode
+    light_mode: Light Mode
+    move_to_trash: In den Papierkorb
   backup:
     compare:
       title: "Backups vergleichen"
@@ -212,6 +215,15 @@ ui:
     conflicts_found: "Konflikte gefunden — wähle pro Datei"
     conflict_resolve_title: "Konflikte pro Datei auflösen"
     conflict_resolve_body: "Pro betroffener Datei: lokale oder Remote-Version behalten. Danach wird ein Merge-Commit erzeugt."
+    accept_local: Lokal erzwingen (Force Push)
+    conflict_diverged_title: Divergierte Historie
+    conflict_push_rejected_title: Push abgelehnt
+    force_push_ok: Force Push erfolgreich - Remote ueberschrieben
+    local_ahead: lokal vorne
+    remote_ahead: Remote hat Aenderungen
+    confirm_accept_local: Lokale Version auf Remote erzwingen? Die Remote-Commits werden ueberschrieben und sind danach weg.
+    conflict_diverged_body: 'Beide Seiten haben eigene Commits. Waehle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.'
+    conflict_push_rejected_body: 'Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:'
   ssh:
     title: "SSH-Schlüssel für Git"
     intro: "Einmalig erzeugter Ed25519-Schlüssel. Der öffentliche Teil wird bei GitHub/GitLab/Gitea hinterlegt; der private Teil bleibt lokal (Dateirechte 0600)."
@@ -279,6 +291,12 @@ ui:
     audiobook_done: "Audiobook fertig! Download startet..."
     missing_images: "Fehlende Bilder: {files}"
     missing_images_hint: "Bitte ueberpruefe, ob die genannten Bilddateien noch im Buch vorhanden sind."
+    dry_run_button: Probe hoeren
+    dry_run_failed: Test-Export fehlgeschlagen
+    dry_run_hint: Generiert nur den ersten Absatz des ersten Kapitels. Prueft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.
+    dry_run_loading: Generiert Probe...
+    dry_run_title: Test-Export
+    free: kostenlos
   formats:
     epub: "EPUB"
     epub_desc: "E-Book Format"
@@ -694,6 +712,14 @@ ui:
     dry_run_loading: "Generiert Probe..."
     dry_run_failed: "Test-Export fehlgeschlagen"
     free: "kostenlos"
+    badge_done: Audiobook fertig
+    badge_failed: Audiobook fehlgeschlagen
+    completed_hint: Audiobook fertig - klicken oeffnet Metadaten
+    popover_chapter_count: '{current} von {total} Kapiteln'
+    popover_current: Aktuell
+    popover_open: Dialog oeffnen
+    popover_title: Audiobook Export
+    completion_toast: Audiobook fertig. Jetzt unter Metadaten > Audiobook verfuegbar.
   error_report:
     title: "Issue-Report erstellen"
     intro: "Bibliogon hat einen Fehler erkannt und kann einen Bug-Report für den Entwickler vorbereiten."
@@ -862,6 +888,11 @@ ui:
       close: "Player schließen"
     status_partial: "Export unvollständig. Einige Kapitel wurden noch nicht generiert."
     chapter_not_generated: "Nicht generiert"
+    delete_all_previews: Alle loeschen
+    delete_previews: Alle Previews loeschen
+    delete_previews_confirm: Alle Vorhoer-Dateien loeschen?
+    previews_empty: Keine Previews vorhanden. Nutze den Vorhoeren-Button im Editor um eine Vorschau zu erstellen.
+    speed: Geschwindigkeit
   languages:
     de: "Deutsch"
     en: "Englisch"
@@ -897,6 +928,8 @@ ui:
     show: "Anzeigen"
     back: "Zurück"
     next: "Weiter"
+    edit: Bearbeiten
+    refresh: Aktualisieren
   ai_wizard:
     title: "KI-Assistent einrichten"
     step1_hint: "Wähle deinen KI-Anbieter. Du kannst dies später in den Einstellungen ändern."

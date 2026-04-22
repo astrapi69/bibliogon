@@ -38,7 +38,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
             const data = await api.backup.compare(fileA, fileB);
             setResult(data);
         } catch (err) {
-            const msg = err instanceof ApiError ? err.detail : t("backup.compare.error_generic", "Vergleich fehlgeschlagen");
+            const msg = err instanceof ApiError ? err.detail : t("ui.backup.compare.error_generic", "Vergleich fehlgeschlagen");
             notify.error(msg);
             setResult(null);
         } finally {
@@ -58,13 +58,13 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                 <Dialog.Content className="dialog-content backup-compare-dialog" style={{maxWidth: "900px", maxHeight: "85vh", display: "flex", flexDirection: "column"}}>
                     <Dialog.Title className="dialog-title">
                         <GitCompare size={20} style={{marginRight: "0.5rem", verticalAlign: "text-bottom"}} />
-                        {t("backup.compare.title", "Backups vergleichen")}
+                        {t("ui.backup.compare.title", "Backups vergleichen")}
                     </Dialog.Title>
                     <Dialog.Description className="dialog-description" asChild>
                         <div style={{display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px", marginBottom: "1rem"}}>
                             <Info size={16} style={{marginTop: "2px", flexShrink: 0}} />
                             <span style={{fontSize: "0.9em"}}>
-                                {t("backup.compare.transition_note", "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Fuer jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen.")}
+                                {t("ui.backup.compare.transition_note", "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Fuer jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen.")}
                             </span>
                         </div>
                     </Dialog.Description>
@@ -72,18 +72,18 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                     {!result && (
                         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
                             <FilePickerRow
-                                label={t("backup.compare.file_a_label", "Backup A (aelterer Stand)")}
+                                label={t("ui.backup.compare.file_a_label", "Backup A (aelterer Stand)")}
                                 file={fileA}
                                 onChange={setFileA}
                             />
                             <FilePickerRow
-                                label={t("backup.compare.file_b_label", "Backup B (neuerer Stand)")}
+                                label={t("ui.backup.compare.file_b_label", "Backup B (neuerer Stand)")}
                                 file={fileB}
                                 onChange={setFileB}
                             />
                             <div style={{display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem"}}>
                                 <button type="button" onClick={handleClose} className="btn-secondary">
-                                    {t("common.cancel", "Abbrechen")}
+                                    {t("ui.common.cancel", "Abbrechen")}
                                 </button>
                                 <button
                                     type="button"
@@ -92,7 +92,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                                     className="btn-primary"
                                 >
                                     {loading ? <Loader2 size={16} className="spin" /> : <GitCompare size={16} />}
-                                    {t("backup.compare.compare_button", "Vergleichen")}
+                                    {t("ui.backup.compare.compare_button", "Vergleichen")}
                                 </button>
                             </div>
                         </div>
@@ -103,10 +103,10 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                             <CompareResultView result={result} />
                             <div style={{display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)"}}>
                                 <button type="button" onClick={reset} className="btn-secondary">
-                                    {t("backup.compare.new_comparison", "Neuer Vergleich")}
+                                    {t("ui.backup.compare.new_comparison", "Neuer Vergleich")}
                                 </button>
                                 <button type="button" onClick={handleClose} className="btn-primary">
-                                    {t("common.close", "Schliessen")}
+                                    {t("ui.common.close", "Schliessen")}
                                 </button>
                             </div>
                         </div>
@@ -145,15 +145,15 @@ function CompareResultView({result}: {result: BackupCompareResult}) {
         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
             <div style={{padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px"}}>
                 <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>
-                    {t("backup.compare.summary_title", "Uebersicht")}
+                    {t("ui.backup.compare.summary_title", "Uebersicht")}
                 </div>
                 <div style={{fontSize: "0.9em", color: "var(--color-text-muted)"}}>
-                    {t("backup.compare.summary_books", "Gemeinsame Buecher:")} {summary.books_in_both}
+                    {t("ui.backup.compare.summary_books", "Gemeinsame Buecher:")} {summary.books_in_both}
                     {summary.books_only_in_a.length > 0 && (
-                        <> &middot; {t("backup.compare.only_in_a", "Nur in A:")} {summary.books_only_in_a.length}</>
+                        <> &middot; {t("ui.backup.compare.only_in_a", "Nur in A:")} {summary.books_only_in_a.length}</>
                     )}
                     {summary.books_only_in_b.length > 0 && (
-                        <> &middot; {t("backup.compare.only_in_b", "Nur in B:")} {summary.books_only_in_b.length}</>
+                        <> &middot; {t("ui.backup.compare.only_in_b", "Nur in B:")} {summary.books_only_in_b.length}</>
                     )}
                 </div>
             </div>
@@ -183,25 +183,25 @@ function BookDiffView({book}: {book: {
             <header style={{marginBottom: "0.5rem"}}>
                 <strong>{book.title_b || book.title_a || book.book_id}</strong>
                 <div style={{fontSize: "0.8em", color: "var(--color-text-muted)"}}>
-                    {t("backup.compare.chapters_count", "Kapitel:")} {book.chapter_count_a} &rarr; {book.chapter_count_b}
+                    {t("ui.backup.compare.chapters_count", "Kapitel:")} {book.chapter_count_a} &rarr; {book.chapter_count_b}
                 </div>
             </header>
 
             {noChanges && (
                 <div style={{padding: "0.5rem", color: "var(--color-text-muted)", fontStyle: "italic"}}>
-                    {t("backup.compare.no_changes", "Keine Aenderungen")}
+                    {t("ui.backup.compare.no_changes", "Keine Aenderungen")}
                 </div>
             )}
 
             {book.metadata_changes.length > 0 && (
                 <div style={{marginBottom: "0.75rem"}}>
-                    <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>{t("backup.compare.metadata_heading", "Metadaten")}</div>
+                    <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>{t("ui.backup.compare.metadata_heading", "Metadaten")}</div>
                     <table style={{width: "100%", borderCollapse: "collapse", fontSize: "0.85em"}}>
                         <thead>
                             <tr style={{background: "var(--color-bg-subtle)"}}>
-                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("backup.compare.field", "Feld")}</th>
-                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("backup.compare.before", "Vorher")}</th>
-                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("backup.compare.after", "Nachher")}</th>
+                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.field", "Feld")}</th>
+                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.before", "Vorher")}</th>
+                                <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.after", "Nachher")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -228,9 +228,9 @@ function BookDiffView({book}: {book: {
 function ChapterDiffView({chapter}: {chapter: BackupChapterDiff}) {
     const {t} = useI18n();
     const badge = {
-        added: {label: t("backup.compare.badge_added", "Hinzugefuegt"), color: "#16a34a"},
-        removed: {label: t("backup.compare.badge_removed", "Entfernt"), color: "#dc2626"},
-        changed: {label: t("backup.compare.badge_changed", "Geaendert"), color: "#d97706"},
+        added: {label: t("ui.backup.compare.badge_added", "Hinzugefuegt"), color: "#16a34a"},
+        removed: {label: t("ui.backup.compare.badge_removed", "Entfernt"), color: "#dc2626"},
+        changed: {label: t("ui.backup.compare.badge_changed", "Geaendert"), color: "#d97706"},
     }[chapter.change_type];
 
     return (
@@ -247,8 +247,8 @@ function ChapterDiffView({chapter}: {chapter: BackupChapterDiff}) {
                 )}
             </summary>
             <div style={{marginTop: "0.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem"}}>
-                <DiffColumn title={t("backup.compare.version_a", "Version A")} lines={chapter.lines} side="a" />
-                <DiffColumn title={t("backup.compare.version_b", "Version B")} lines={chapter.lines} side="b" />
+                <DiffColumn title={t("ui.backup.compare.version_a", "Version A")} lines={chapter.lines} side="a" />
+                <DiffColumn title={t("ui.backup.compare.version_b", "Version B")} lines={chapter.lines} side="b" />
             </div>
         </details>
     );
