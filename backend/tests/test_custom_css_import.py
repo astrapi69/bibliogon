@@ -59,3 +59,22 @@ def test_config_styles_wins_over_root(project: Path) -> None:
     (project / "config" / "styles.css").write_text("/* config */", encoding="utf-8")
     (project / "style.css").write_text("/* root */", encoding="utf-8")
     assert _read_custom_css(project / "config", project) == "/* config */"
+
+
+def test_rglob_fallback_finds_nested_css(project: Path) -> None:
+    """Real ZIPs sometimes nest the stylesheet at a non-standard
+    location (e.g. ``book/print/custom.css``). Rather than leaving
+    the field empty, the fallback picks the first CSS it finds
+    anywhere in the project tree."""
+    (project / "print").mkdir()
+    (project / "print" / "theme.css").write_text("/* nested */", encoding="utf-8")
+    assert _read_custom_css(project / "config", project) == "/* nested */"
+
+
+def test_rglob_fallback_skips_node_modules(project: Path) -> None:
+    """Noise directories must be filtered out of the fallback scan."""
+    (project / "node_modules" / "pkg").mkdir(parents=True)
+    (project / "node_modules" / "pkg" / "style.css").write_text("/* noise */", encoding="utf-8")
+    (project / "print").mkdir()
+    (project / "print" / "theme.css").write_text("/* real */", encoding="utf-8")
+    assert _read_custom_css(project / "config", project) == "/* real */"
