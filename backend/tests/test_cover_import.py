@@ -93,28 +93,60 @@ def test_maybe_set_cover_filename_fallback_when_no_cover_type(db: Session) -> No
     assert book.cover_image == "uploads/b2/figure/my-cover.png"
 
 
-def test_maybe_set_cover_does_not_override_existing(db: Session) -> None:
+def test_maybe_set_cover_preserves_valid_metadata_reference(db: Session) -> None:
+    """If metadata.yaml set cover_image to a path whose basename matches an
+    imported asset, leave it alone. This is the common Bibliogon-native
+    export case."""
     book = Book(
-        id="b3",
+        id="b3a",
         title="X",
         author="A",
         language="en",
-        cover_image="assets/cover/custom.png",
+        cover_image="assets/covers/cover.png",
     )
     db.add(book)
     db.add(
         Asset(
-            book_id="b3",
+            book_id="b3a",
             filename="cover.png",
             asset_type="cover",
-            path="uploads/b3/cover/cover.png",
+            path="uploads/b3a/cover/cover.png",
         )
     )
     db.commit()
 
     _maybe_set_cover_from_assets(db, book)
 
-    assert book.cover_image == "assets/cover/custom.png"
+    assert book.cover_image == "assets/covers/cover.png"
+
+
+def test_maybe_set_cover_overrides_stale_metadata_reference(db: Session) -> None:
+    """write-book-template frequently ships a metadata.yaml whose
+    cover-image value references a file that doesn't exist in
+    assets/covers/ (translated title, renamed draft). The stale path
+    must be replaced with a real asset filename so the dashboard shows
+    a cover instead of a 404."""
+    book = Book(
+        id="b3b",
+        title="X",
+        author="A",
+        language="en",
+        cover_image="assets/covers/stale-name-never-shipped.jpg",
+    )
+    db.add(book)
+    db.add(
+        Asset(
+            book_id="b3b",
+            filename="actual-cover.png",
+            asset_type="cover",
+            path="uploads/b3b/cover/actual-cover.png",
+        )
+    )
+    db.commit()
+
+    _maybe_set_cover_from_assets(db, book)
+
+    assert book.cover_image == "uploads/b3b/cover/actual-cover.png"
 
 
 def test_metadata_cover_image_hyphenated_key() -> None:

@@ -508,20 +508,37 @@ def _import_project_assets(db: Session, book_id: str, assets_dir: Path) -> int:
 def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
     """Populate ``book.cover_image`` from the imported assets.
 
-    Three-tier strategy:
+    Strategy:
 
-    1. If metadata.yaml already set ``book.cover_image``, leave it.
-    2. Otherwise prefer an asset classified as ``cover``
-       (folder name ``cover`` or ``covers`` in the source ZIP).
-    3. As a last resort, match any asset whose filename contains
-       ``cover`` (case-insensitive). write-book-template projects with
-       a non-standard folder layout (e.g. ``assets/images/cover.png``)
-       would otherwise import an image that exists on disk but never
-       show up as the book's cover on the dashboard.
+    1. If ``book.cover_image`` is set AND its basename matches an
+       actual imported asset filename, keep it. This is the common
+       case for Bibliogon-native exports.
+    2. Otherwise (or if the metadata reference is stale - a frequent
+       write-book-template pattern where ``metadata.yaml`` carries a
+       translated or renamed cover-image path that doesn't match the
+       file in ``assets/covers/``), fall back to the first cover-typed
+       asset.
+    3. Last resort: any asset whose filename contains ``cover``
+       (case-insensitive).
+
+    Step 1 was previously written as an unconditional early-return
+    when ``book.cover_image`` was truthy. That skipped the validation
+    entirely, so imports where the metadata key named a non-existent
+    file ended up with a dead cover URL and no visible cover on the
+    dashboard.
     """
-    if book.cover_image:
-        return
     db.flush()
+    known_filenames = {
+        f for (f,) in db.query(Asset.filename).filter(Asset.book_id == book.id).all()
+    }
+
+    if book.cover_image:
+        basename = book.cover_image.rsplit("/", 1)[-1]
+        if basename in known_filenames:
+            return
+        # Metadata cover_image points at a file that never got
+        # imported; fall through and pick a real one.
+
     cover_asset = (
         db.query(Asset).filter(Asset.book_id == book.id, Asset.asset_type == "cover").first()
     )
