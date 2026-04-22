@@ -200,7 +200,15 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         backpage_author_bio=read_file_if_exists(
             config_dir / "cover-back-page-author-introduction.md"
         ),
-        cover_image=metadata.get("cover_image"),
+        # write-book-template / Pandoc ship this under the hyphenated
+        # ``cover-image`` key; older Bibliogon exports and custom YAMLs
+        # use the snake_case variant. Accept both plus a plain ``cover``
+        # fallback so a metadata.yaml written by hand still lands a cover.
+        cover_image=(
+            metadata.get("cover-image")
+            or metadata.get("cover_image")
+            or metadata.get("cover")
+        ),
         custom_css=read_file_if_exists(config_dir / "styles.css"),
     )
 
@@ -498,12 +506,31 @@ def _import_project_assets(db: Session, book_id: str, assets_dir: Path) -> int:
 
 
 def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
-    """If no cover_image was set explicitly, use the first ``cover`` asset."""
+    """Populate ``book.cover_image`` from the imported assets.
+
+    Three-tier strategy:
+
+    1. If metadata.yaml already set ``book.cover_image``, leave it.
+    2. Otherwise prefer an asset classified as ``cover``
+       (folder name ``cover`` or ``covers`` in the source ZIP).
+    3. As a last resort, match any asset whose filename contains
+       ``cover`` (case-insensitive). write-book-template projects with
+       a non-standard folder layout (e.g. ``assets/images/cover.png``)
+       would otherwise import an image that exists on disk but never
+       show up as the book's cover on the dashboard.
+    """
     if book.cover_image:
         return
     db.flush()
     cover_asset = (
         db.query(Asset).filter(Asset.book_id == book.id, Asset.asset_type == "cover").first()
     )
+    if not cover_asset:
+        cover_asset = (
+            db.query(Asset)
+            .filter(Asset.book_id == book.id, Asset.filename.ilike("%cover%"))
+            .order_by(Asset.filename)
+            .first()
+        )
     if cover_asset:
         book.cover_image = cover_asset.path

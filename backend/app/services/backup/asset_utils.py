@@ -9,8 +9,11 @@ from sqlalchemy.orm import Session
 from app.models import Asset, Chapter
 
 _ASSET_TYPE_MAP: dict[str, str] = {
+    "cover": "cover",
     "covers": "cover",
+    "back-cover": "cover",
     "figures": "figure",
+    "images": "figure",
     "diagrams": "diagram",
     "tables": "table",
     "logo": "figure",
