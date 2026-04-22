@@ -684,7 +684,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
     onRemovePlugin: (name: string) => void;
     onReload: () => void;
 }) {
-    const {t} = useI18n();
+    const {t, lang} = useI18n();
     const [showAdd, setShowAdd] = useState(false);
     const [uploading, setUploading] = useState(false);
     const pluginDialog = useDialog();
@@ -776,8 +776,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                     </p>
                     {inactivePlugins.map(([name, config]) => {
                         const meta = (config.plugin || {}) as Record<string, unknown>;
-                        const displayName = getLocalized(meta.display_name, name);
-                        const description = getLocalized(meta.description, "");
+                        const displayName = getLocalized(meta.display_name, name, lang);
+                        const description = getLocalized(meta.description, "", lang);
                         return (
                             <div key={name} style={{
                                 display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -811,8 +811,8 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 .map(([name, config]) => {
                 const pluginMeta = (config.plugin || {}) as Record<string, unknown>;
                 const settings = (config.settings || {}) as Record<string, unknown>;
-                const displayName = getLocalized(pluginMeta.display_name, name);
-                const description = getLocalized(pluginMeta.description, "");
+                const displayName = getLocalized(pluginMeta.display_name, name, lang);
+                const description = getLocalized(pluginMeta.description, "", lang);
 
                 return (
                     <PluginCard
@@ -1963,12 +1963,12 @@ function isSectionOrder(key: string, value: unknown): boolean {
     );
 }
 
-function getLocalized(value: unknown, fallback: string): string {
+function getLocalized(value: unknown, fallback: string, lang?: string): string {
     if (!value) return fallback;
     if (typeof value === "string") return value;
     if (typeof value === "object") {
         const obj = value as Record<string, string>;
-        return obj.de || obj.en || Object.values(obj)[0] || fallback;
+        return (lang && obj[lang]) || obj.en || obj.de || Object.values(obj)[0] || fallback;
     }
     return fallback;
 }
