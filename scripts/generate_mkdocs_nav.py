@@ -45,6 +45,42 @@ def _build_nav(items: list[dict], lang: str = "de") -> list:
     return nav
 
 
+def _collect_translations(items: list[dict], source_lang: str, target_lang: str) -> dict[str, str]:
+    """Walk navigation recursively, return {source_label: target_label} for every entry."""
+    out: dict[str, str] = {}
+    for item in items:
+        title = item.get("title", {})
+        source_label = title.get(source_lang)
+        target_label = title.get(target_lang)
+        if source_label and target_label and source_label != target_label:
+            out[source_label] = target_label
+        children = item.get("children") or []
+        out.update(_collect_translations(children, source_lang, target_lang))
+    return out
+
+
+def _inject_nav_translations(
+    mkdocs_config: dict, default_lang: str, meta_nav: list[dict]
+) -> None:
+    """Add nav_translations per non-default language to the mkdocs-static-i18n plugin config."""
+    plugins = mkdocs_config.get("plugins") or []
+    for plugin_entry in plugins:
+        if not isinstance(plugin_entry, dict) or "i18n" not in plugin_entry:
+            continue
+        i18n_config = plugin_entry["i18n"] or {}
+        languages = i18n_config.get("languages") or []
+        for lang_entry in languages:
+            locale = lang_entry.get("locale")
+            if not locale or locale == default_lang:
+                continue
+            translations = _collect_translations(meta_nav, default_lang, locale)
+            # Always include the top-level "Home" label so EN readers see "Home" not a DE synonym.
+            translations.setdefault("Home", "Home")
+            if translations:
+                lang_entry["nav_translations"] = translations
+        return
+
+
 def main() -> None:
     if not META_PATH.exists():
         print(f"ERROR: {META_PATH} not found")
@@ -57,8 +93,9 @@ def main() -> None:
             default_lang = lang_info["code"]
             break
 
+    meta_nav = meta.get("navigation", [])
     nav = [{"Home": f"{default_lang}/index.md"}]
-    nav.extend(_build_nav(meta.get("navigation", []), default_lang))
+    nav.extend(_build_nav(meta_nav, default_lang))
 
     # Read existing mkdocs.yml
     if not MKDOCS_PATH.exists():
@@ -67,6 +104,7 @@ def main() -> None:
 
     mkdocs_config = yaml.safe_load(MKDOCS_PATH.read_text(encoding="utf-8")) or {}
     mkdocs_config["nav"] = nav
+    _inject_nav_translations(mkdocs_config, default_lang, meta_nav)
 
     # Write back, preserving comments as much as possible (yaml.dump
     # does not preserve comments, but mkdocs.yml is mostly generated).

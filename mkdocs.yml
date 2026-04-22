@@ -42,6 +42,26 @@ plugins:
     - locale: en
       name: English
       build: true
+      nav_translations:
+        Erste Schritte: Getting Started
+        Uebersicht: Overview
+        Formatierung: Formatting
+        Manuskript-Tools: Manuscript Tools
+        Vorlagen: Templates
+        Windows-Launcher: Windows Launcher
+        macOS-Launcher: macOS Launcher
+        Linux-Launcher: Linux Launcher
+        Deinstallieren: Uninstall
+        KI-Assistent: AI Assistant
+        Tastenkuerzel: Keyboard Shortcuts
+        Git-Sicherung: Git Backup
+        Grundlagen: Basics
+        SSH-Schlüssel: SSH Keys
+        Unterstützen: Support
+        Glossar: Glossary
+        Fehlerbehebung: Troubleshooting
+        Plugin-Entwicklung: Plugin Development
+        Home: Home
 - git-revision-date-localized:
     enable_creation_date: true
 markdown_extensions:
