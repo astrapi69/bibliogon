@@ -436,8 +436,9 @@ justifies deeper investment.
 
 - [children-book-plugin.md](children-book-plugin.md) - precedent
   for a deferred feature with a validation plan
-- [ai-review-extension.md](ai-review-extension.md) - precedent for
-  extending Bibliogon with a focused capability
+- [archive/ai-review-extension.md](archive/ai-review-extension.md) -
+  precedent for extending Bibliogon with a focused capability (shipped
+  v0.20.0)
 - [monetization.md](monetization.md) - future tier strategy;
   relevant if writer features ever gate behind a plan
 - [../../.claude/rules/architecture.md](../../.claude/rules/architecture.md)

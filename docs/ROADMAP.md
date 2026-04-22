@@ -103,6 +103,20 @@ Bi-directional git sync for Bibliogon books: import existing git-based book proj
 
 ---
 
+## Validation tracks
+
+Exploration items in the data-collection phase. Not implementation work; observation logs that drive a later architecture decision.
+
+### Article authoring
+
+Publication workflow for articles, blogposts, tweets. Exploration in [docs/explorations/article-authoring.md](explorations/article-authoring.md). No architecture committed; validation data required before picking Option A/B/C.
+
+- [ ] **AR-01:** validation log. Track 3-5 real cross-posting workflows in [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md) before committing to architecture. Monthly review classifies pain points as tool- vs workflow-solvable, counts platforms actually used, identifies patterns across articles. Closes when validation data supports an architecture pick OR triggers from exploration Section 13 fire. Effort: zero new code, log filled as part of normal publication work.
+- [ ] **AR-02:** architecture decision. After AR-01 data is in, pick Option A (extend Book with content_type), B (new Article entity + plugin-article), or C (sister project) — or archive the exploration as "investigated and deferred". Blocks AR-03+.
+- [ ] **AR-03+:** implementation phases. Scope defined once AR-02 resolves.
+
+---
+
 ## Maintenance and tech debt
 
 Items with external deadlines or recurring cost that deserve planning-view visibility. Not features; just upkeep that will bite if ignored.
