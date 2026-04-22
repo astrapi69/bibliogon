@@ -534,3 +534,25 @@ def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
         )
     if cover_asset:
         book.cover_image = cover_asset.path
+
+
+def backfill_cover(db: Session, book_id: str) -> bool:
+    """Repair ``book.cover_image`` for a previously-imported book.
+
+    Public companion to ``asset_utils.backfill_image_paths``. Use it when
+    the book already has cover assets on disk and in the DB but
+    ``Book.cover_image`` stayed NULL (either because the importer missed
+    a Pandoc-style ``cover-image`` key or because the cover asset was
+    classified as ``figure`` before commit 3e91e5f widened the map).
+
+    Returns True iff a cover was freshly set. Commits on success.
+    """
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if book is None:
+        return False
+    before = book.cover_image
+    _maybe_set_cover_from_assets(db, book)
+    if book.cover_image and book.cover_image != before:
+        db.commit()
+        return True
+    return False

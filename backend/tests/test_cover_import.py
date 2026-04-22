@@ -21,7 +21,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Asset, Base, Book
 from app.services.backup.asset_utils import _classify_asset_type, import_assets
-from app.services.backup.project_import import _maybe_set_cover_from_assets
+from app.services.backup.project_import import (
+    _maybe_set_cover_from_assets,
+    backfill_cover,
+)
 
 
 @pytest.fixture
@@ -125,6 +128,48 @@ def test_metadata_cover_image_hyphenated_key() -> None:
             Path("/tmp"),
         )
         assert meta.cover_image == "assets/cover/cover.png", f"failed for key {key!r}"
+
+
+def test_backfill_cover_sets_image_for_existing_book(db: Session) -> None:
+    """A book imported before the cover-classifier widening lands with
+    Book.cover_image=NULL plus a correctly-imported cover asset. The
+    public backfill entry point must set the field without a re-import."""
+    book = Book(id="b5", title="X", author="A", language="en")
+    db.add(book)
+    db.add(
+        Asset(
+            book_id="b5",
+            filename="cover.png",
+            asset_type="cover",
+            path="uploads/b5/cover/cover.png",
+        )
+    )
+    db.commit()
+
+    assert backfill_cover(db, "b5") is True
+    assert db.query(Book).filter_by(id="b5").one().cover_image == "uploads/b5/cover/cover.png"
+
+
+def test_backfill_cover_idempotent(db: Session) -> None:
+    """Second call must not overwrite or reclaim; returns False."""
+    book = Book(id="b6", title="X", author="A", language="en")
+    db.add(book)
+    db.add(
+        Asset(
+            book_id="b6",
+            filename="cover.png",
+            asset_type="cover",
+            path="uploads/b6/cover/cover.png",
+        )
+    )
+    db.commit()
+
+    assert backfill_cover(db, "b6") is True
+    assert backfill_cover(db, "b6") is False
+
+
+def test_backfill_cover_unknown_book_returns_false(db: Session) -> None:
+    assert backfill_cover(db, "does-not-exist") is False
 
 
 def test_import_assets_classifies_singular_cover_folder(tmp_path: Path, db: Session) -> None:
