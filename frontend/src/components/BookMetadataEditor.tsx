@@ -310,8 +310,6 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                                 label: aiGenerating === "backpage_author_bio" ? t("ui.common.loading", "Laden...") : t("ui.metadata.ai_generate", "AI"),
                             } : undefined}
                         />
-                        <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
-                            multiline mono/>
                     </div>
                 </Tabs.Content>
 
@@ -322,6 +320,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             coverImage={form.cover_image ?? null}
                             onChange={(newPath) => set("cover_image", newPath ?? "")}
                         />
+                        <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
+                            multiline mono/>
                     </div>
                 </Tabs.Content>
 

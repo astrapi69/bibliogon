@@ -1,6 +1,7 @@
 """Import a write-book-template project (.bgp / .zip) as a new book."""
 
 import json
+import logging
 import shutil
 import tempfile
 import zipfile
@@ -11,6 +12,8 @@ from typing import Any
 import yaml
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.models import Asset, Book, Chapter, ChapterType
 from app.services.backup.archive_utils import find_manifest, find_project_root
@@ -243,6 +246,7 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
        empty CSS field in the editor is worse than picking the wrong
        file - the user can always overwrite it.
     """
+    tried: list[str] = []
     for folder, name in _CUSTOM_CSS_CANDIDATES:
         if folder == "config":
             path = config_dir / name
@@ -250,8 +254,10 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
             path = project_root / folder / name
         else:
             path = project_root / name
+        tried.append(str(path))
         content = read_file_if_exists(path)
         if content:
+            logger.info("custom_css: picked fixed-path hit %s", path)
             return content
 
     for css_path in sorted(project_root.rglob("*.css")):
@@ -262,7 +268,15 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
             continue
         content = read_file_if_exists(css_path)
         if content:
+            logger.info("custom_css: picked rglob fallback %s", css_path)
             return content
+
+    logger.warning(
+        "custom_css: no stylesheet found for import. project_root=%s tried fixed paths: %s "
+        "and rglob returned no *.css files (or all were empty/filtered).",
+        project_root,
+        tried,
+    )
     return None
 
 
