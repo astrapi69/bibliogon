@@ -209,8 +209,41 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
             or metadata.get("cover_image")
             or metadata.get("cover")
         ),
-        custom_css=read_file_if_exists(config_dir / "styles.css"),
+        custom_css=_read_custom_css(config_dir, project_root),
     )
+
+
+_CUSTOM_CSS_CANDIDATES: tuple[tuple[str, str], ...] = (
+    ("config", "styles.css"),
+    ("config", "style.css"),
+    ("config", "custom.css"),
+    ("config", "book.css"),
+    ("assets", "css/styles.css"),
+    ("assets", "css/style.css"),
+    ("assets", "css/custom.css"),
+    ("", "styles.css"),
+    ("", "style.css"),
+    ("", "custom.css"),
+)
+
+
+def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
+    """Look for a user-provided stylesheet in common write-book-template
+    locations. The historical hardcode was ``config/styles.css``, which
+    missed real-world projects that shipped their CSS as ``style.css``
+    (no ``s``), ``custom.css``, or under ``assets/css/``. Returns the
+    first file found, None if nothing matches."""
+    for folder, name in _CUSTOM_CSS_CANDIDATES:
+        if folder == "config":
+            path = config_dir / name
+        elif folder:
+            path = project_root / folder / name
+        else:
+            path = project_root / name
+        content = read_file_if_exists(path)
+        if content:
+            return content
+    return None
 
 
 def _normalize_language(lang: Any) -> str:
