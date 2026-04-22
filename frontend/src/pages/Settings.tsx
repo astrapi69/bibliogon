@@ -8,6 +8,7 @@ import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
+import {PALETTES} from "../themes/palettes";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/aiProviders";
@@ -310,14 +311,10 @@ function AppSettings({config, onSave, saving}: {
                             localStorage.setItem("bibliogon-app-theme", val);
                         }}
                         testId="palette-select"
-                        options={[
-                            {value: "warm-literary", label: "Warm Literary"},
-                            {value: "cool-modern", label: "Cool Modern"},
-                            {value: "nord", label: "Nord"},
-                            {value: "classic", label: "Klassisch"},
-                            {value: "studio", label: "Studio"},
-                            {value: "notebook", label: "Notizbuch"},
-                        ]}
+                        options={PALETTES.map((p) => ({
+                            value: p.id,
+                            label: t(`ui.themes.${p.id.replace(/-/g, "_")}`, p.label),
+                        }))}
                     />
                 </div>
                 <div className="field">

@@ -1000,3 +1000,10 @@ ui:
     onboarding_hint: "Bu notu her zaman Ayarlarda bulabilirsiniz."
     reminder_body: "Bibliogon'u uc aydir kullaniyorsunuz. Projeyi begeniyorsaniz:"
     reminder_close: "Kapat"
+  themes:
+    warm_literary: Sıcak edebî
+    cool_modern: Soğuk modern
+    nord: Nord
+    classic: Klasik
+    studio: Studio
+    notebook: Defter

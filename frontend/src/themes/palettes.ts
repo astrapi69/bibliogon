@@ -15,13 +15,18 @@ export interface Palette {
     label: string;
 }
 
+/**
+ * Labels here are English fallbacks only. Settings renders them through
+ * `t("ui.themes.<id>", label)`; the YAML keys under `ui.themes.*` are
+ * the localized source and take precedence.
+ */
 export const PALETTES: readonly Palette[] = [
     {id: "warm-literary", label: "Warm Literary"},
     {id: "cool-modern", label: "Cool Modern"},
     {id: "nord", label: "Nord"},
-    {id: "classic", label: "Klassisch"},
+    {id: "classic", label: "Classic"},
     {id: "studio", label: "Studio"},
-    {id: "notebook", label: "Notizbuch"},
+    {id: "notebook", label: "Notebook"},
 ];
 
 export const DEFAULT_PALETTE = "warm-literary";

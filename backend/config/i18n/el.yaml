@@ -1000,3 +1000,10 @@ ui:
     onboarding_hint: "Αυτή η υπόδειξη είναι διαθέσιμη ανά πάσα στιγμή στις Ρυθμίσεις."
     reminder_body: "Χρησιμοποιείτε το Bibliogon εδώ και τρεις μήνες. Αν σας αρέσει το έργο:"
     reminder_close: "Κλείσιμο"
+  themes:
+    warm_literary: Θερμό λογοτεχνικό
+    cool_modern: Ψυχρό μοντέρνο
+    nord: Nord
+    classic: Κλασικό
+    studio: Studio
+    notebook: Σημειωματάριο

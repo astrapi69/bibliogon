@@ -1000,3 +1000,10 @@ ui:
     onboarding_hint: "このヒントは設定から随時確認できます。"
     reminder_body: "Bibliogon を 3 か月ご利用いただきました。プロジェクトを気に入っていただけたら:"
     reminder_close: "閉じる"
+  themes:
+    warm_literary: ウォーム・リテラリー
+    cool_modern: クール・モダン
+    nord: ノルド
+    classic: クラシック
+    studio: スタジオ
+    notebook: ノートブック

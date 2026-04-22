@@ -1000,3 +1000,10 @@ ui:
     onboarding_hint: "Este aviso esta disponible en cualquier momento en Ajustes."
     reminder_body: "Llevas tres meses usando Bibliogon. Si te gusta el proyecto:"
     reminder_close: "Cerrar"
+  themes:
+    warm_literary: Literario cálido
+    cool_modern: Moderno frío
+    nord: Nord
+    classic: Clásico
+    studio: Studio
+    notebook: Cuaderno
