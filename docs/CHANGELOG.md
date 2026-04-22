@@ -2,14 +2,24 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
-## [Unreleased]
+## [0.21.0] - 2026-04-22
 
-Polish cycle after v0.20.0: two new AI editor modes, Settings refactor, CSS zoom fixes, and a full security sweep across the stack.
+Git-based backup is the headline feature: per-book git repos, remote push/pull with encrypted PATs, SSH key generation, 3-way merge with per-file conflict resolution, and Markdown side-files for readable diffs. Closes all four SI-01..04 ROADMAP items. Plus two new AI editor modes, a Settings refactor, CSS zoom fixes, and a full security sweep across the stack.
 
 ### Added
 
-- **AI `fix_issue` mode for quality findings**: from the Quality tab in the editor, clicking a metric (Füll %, Passiv %, Adv %, Lange Sätze) jumps to the first matching finding in that chapter; StyleCheck decorations paint every finding so context is visible.
-- **Quality-tab navigate-to-first-issue**: per-chapter metrics are clickable and jump the editor to the relevant chapter + finding.
+**Git-based backup (SI-01..04, full 5-phase plan shipped)**
+- **Phase 1 — local git per book.** `POST /api/books/{id}/git/init` creates `.git` under `uploads/{book_id}/` and records a first commit; `/git/commit` writes current book state (TipTap JSON per chapter plus `config/metadata.yaml`) and commits with a user-supplied message; `/git/log` returns history; `/git/status` reports clean/dirty + HEAD. Frontend `GitBackupDialog` in a new sidebar entry. Layout matches [write-book-template](https://github.com/astrapi69/write-book-template) conventions (manuscript/{front-matter,chapters,back-matter}, config/metadata.yaml, `.gitignore` for audiobook + output + temp).
+- **Phase 2 — remote push/pull (HTTPS+PAT).** `/git/remote` (POST/GET/DELETE), `/git/push`, `/git/pull`, `/git/sync-status`. PAT encrypted at rest via `credential_store` (Fernet), never returned in API responses, injected via one-shot URL reset around each push/fetch so the token never lands in `.git/config` (regression test `test_pat_never_appears_on_disk_in_git_config`). Sync badge in the dialog + sidebar dot for SI-04 remote-ahead/diverged states.
+- **SI-01 Accept Remote / Accept Local.** Dedicated in-dialog resolution panel on push rejection: Merge, Force push (with native confirm dialog), or Cancel. Backend `push(force=True)` support with regression test `test_force_push_overrides_diverged_remote`.
+- **Phase 3 — SI-03 SSH key generation.** `POST /api/ssh/generate` produces an Ed25519 keypair in OpenSSH format via the existing `cryptography` dep (no paramiko, no subprocess). Private key 0600 under `config/ssh/id_ed25519`. `GET /api/ssh`, `GET /api/ssh/public-key`, `DELETE /api/ssh`. `SshKeySection` in Settings > Allgemein with generate / copy / delete + overwrite-confirm flow. `git_backup` auto-wires `GIT_SSH_COMMAND` with `IdentitiesOnly=yes` + `StrictHostKeyChecking=accept-new` when the remote URL is SSH and a key exists.
+- **Phase 4 — SI-02 conflict analysis + per-file resolution.** `GET /git/conflict/analyze` classifies diverged state as simple (disjoint file changes) or complex (overlap) and lists per-side files. `POST /git/merge` attempts a 3-way merge (auto-commits on simple, leaves in-progress on complex); `POST /git/conflict/resolve` accepts `{path: "mine"|"theirs"}` and completes the merge; `POST /git/conflict/abort` rolls back. Two-mode in-dialog UI: merge/force choice → per-file radio picker with Apply/Abort.
+- **Phase 5 — Markdown side-files.** Every commit writes a `.md` next to each chapter `.json` via the export plugin's `tiptap_to_markdown` (lazy-imported, failure-tolerant). JSON stays canonical; Markdown is advisory for readable `git log` / `git diff`.
+- **Help docs.** `docs/help/{de,en}/git-backup/{basics,remote,ssh}.md` register under a new top-level "Git-Sicherung" nav entry.
+
+**AI editor modes**
+- **`fix_issue` AI mode for quality findings.** From the Quality tab, clicking a metric (Füll %, Passiv %, Adv %, Lange Sätze) jumps to the first matching finding; StyleCheck decorations paint every finding so context is visible.
+- **Quality-tab navigate-to-first-issue.** Per-chapter metrics clickable — jump the editor to the chapter + finding in one click.
 
 ### Changed
 
@@ -21,7 +31,7 @@ Polish cycle after v0.20.0: two new AI editor modes, Settings refactor, CSS zoom
 
 - **Main page overflowed viewport at 150% CSS zoom** (issue #11). html/body/#root now get explicit height + overflow constraints; document itself no longer scrolls under zoom. Re-enabled `e2e/smoke/chapter-sidebar-viewport.spec.ts:337`.
 - **Chapter sidebar dropdown escaped viewport at 125/150% CSS zoom** (issue #10). `collisionPadding` widened asymmetrically on the bottom (`{top: 16, bottom: 280, left: 16, right: 16}`) so Radix Popper reserves enough layout-space buffer that the zoom-scaled dropdown fits the viewport. Re-enabled both loop variants of `chapter-sidebar-viewport.spec.ts:290`.
-- **Scroll regression on non-editor pages.** The #11 fix initially applied `overflow: hidden` to #root too, which broke scroll on Settings, Dashboard, GetStarted, Help. Split the rule: html+body keep `overflow: hidden` (preserves the zoom assertion), `#root` gets `overflow-y: auto` for pages without their own scroll container.
+- **Scroll regression on non-editor pages** (from the #11 fix). The initial change applied `overflow: hidden` to `#root` too, which broke scroll on Settings, Dashboard, GetStarted, Help. Split the rule: html+body keep `overflow: hidden` (preserves the zoom assertion), `#root` gets `overflow-y: auto` for pages without their own scroll container.
 
 ### Security
 
@@ -30,20 +40,28 @@ Polish cycle after v0.20.0: two new AI editor modes, Settings refactor, CSS zoom
   - `pygments` 2.19.2 → 2.20.0 (fixes CVE-2026-4539)
   - `starlette` 0.46.2 → 1.0.0 (fixes CVE-2025-54121, CVE-2025-62727; major bump transparent to Bibliogon code)
 
-  `pip-audit` post-upgrade: 0 vulnerabilities. Backend 638 + plugin 409 tests unchanged.
-- **`pip-audit` added as backend dev dependency** (`poetry run pip-audit`). Enables CVE auditing parity with frontend `npm audit`.
-- **Frontend SEC-01 tracked**: 4 high-severity vulns in `vite-plugin-pwa` dependency chain. All dev-only (0 in production bundle), blocked on upstream patch, documented in ROADMAP.
+  `pip-audit` post-upgrade: 0 vulnerabilities.
+- **`pip-audit` added as backend dev dependency.** Enables CVE auditing parity with frontend `npm audit`. Usage: `cd backend && poetry run pip-audit`.
+- **Frontend SEC-01 tracked.** 4 high-severity vulns in the `vite-plugin-pwa → workbox-build → @rollup/plugin-terser → serialize-javascript` dev-dep chain. All dev-only (0 in production bundle). `workbox-build` pins `@rollup/plugin-terser: ^0.4.3` and has not released since 2025-11; patched serialize-javascript 7.0.5 exists but is unreachable from the chain's current cap. Deferred with monthly re-audit cadence. Documented in ROADMAP SEC-01.
 
 ### Chore
 
 - **Node.js 22 → 24 LTS.** New `.nvmrc`, `engines.node >=24.0.0` in `frontend/package.json` and `e2e/package.json`, `frontend/Dockerfile` to `node:24-slim`, CI workflows (`ci.yml`, `coverage.yml`) to `node-version: "24"`. Node 24 Active LTS until April 2028.
+- **GitPython 3.1.46 added** to the backend (BSD licensed) for the Git-based backup feature. `git` binary now installed alongside `pandoc` in the backend Dockerfile.
 
 ### Documentation
 
-- TipTap 3 migration pre-audit at `docs/explorations/tiptap-3-migration.md`. Blocker: `@sereneinserenade/tiptap-search-and-replace` v0.2.0 merged on upstream main (TipTap 3 dual support, MIT) but not yet npm-published. Upstream issue filed: sereneinserenade/tiptap-search-and-replace#19. Fallback path documented: `prosemirror-search` adapter (~50-80 LOC).
-- Article authoring exploration at `docs/explorations/article-authoring.md` (deferred pending 4-week validation log of actual publishing workflow).
-- Numeric-claims verification rule in `.claude/rules/ai-workflow.md`: every numeric claim in docs/commits/reports requires running the authoritative command in the same session. Exists because the v0.19.1 article and v0.20.0 journal both reported stale plugin test counts.
-- Lesson on viewport vs app-container CSS rules in `.claude/rules/lessons-learned.md` (captured from the ef7ce5c → c25483e sequence).
+- **Git-based backup exploration + help pages.** `docs/explorations/git-based-backup.md` (8 architectural decisions, Bibliogon-adapted repo layout, 5-phase plan). Per-phase help pages at `docs/help/{de,en}/git-backup/{basics,remote,ssh}.md` registered under a new "Git-Sicherung" nav entry with icon `git-branch`.
+- **TipTap 3 migration pre-audit** at `docs/explorations/tiptap-3-migration.md`. Blocker: `@sereneinserenade/tiptap-search-and-replace` v0.2.0 merged on upstream main (TipTap 3 dual support, MIT) but not yet npm-published. Upstream issue filed: sereneinserenade/tiptap-search-and-replace#19. Fallback path documented: `prosemirror-search` adapter (~50-80 LOC).
+- **Article authoring exploration** at `docs/explorations/article-authoring.md` (deferred pending 4-week validation log of actual publishing workflow).
+- **Numeric-claims verification rule** in `.claude/rules/ai-workflow.md`: every numeric claim in docs/commits/reports requires running the authoritative command in the same session. Exists because the v0.19.1 article and v0.20.0 journal both reported stale plugin test counts.
+- **Lesson on viewport vs app-container CSS rules** in `.claude/rules/lessons-learned.md` (captured from the `ef7ce5c` → `c25483e` fix + regression + split-rule sequence).
+
+### Tests
+
+- **+56 backend tests:** Phase 1 git-backup (19), Phase 2 remote (13), Phase 3 SSH (20), Phase 4 conflicts (11), Phase 5 Markdown side-files (4), force-push regression (1). Backend 638 → 707.
+- **+22 Vitest tests** for the quality-tab navigate + fix_issue AI mode (`QualityTab.test.tsx`, `fix-issue-prompts.test.ts`). Vitest 405 → 427.
+- **Playwright smoke unchanged**: 169 passed / 1 skipped. Git-backup UI smoke coverage deferred to v0.21.1.
 
 ## [0.20.0] - 2026-04-20
 
