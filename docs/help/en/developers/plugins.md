@@ -51,7 +51,7 @@ packages = [{include = "bibliogon_myplugin"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 pluginforge = "^0.5.0"
-fastapi = "^0.115.0"
+fastapi = "^0.135.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 myplugin = "bibliogon_myplugin.plugin:MyPlugin"

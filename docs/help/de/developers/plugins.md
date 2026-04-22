@@ -51,7 +51,7 @@ packages = [{include = "bibliogon_meinplugin"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 pluginforge = "^0.5.0"
-fastapi = "^0.115.0"
+fastapi = "^0.135.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 meinplugin = "bibliogon_meinplugin.plugin:MeinPlugin"
@@ -267,6 +267,14 @@ make test-plugin-{name}
 # Alle Plugin-Tests
 make test-plugins
 ```
+
+## Abhängigkeiten
+
+Benötigt dein Plugin eine Abhängigkeit, die nicht im Core ist, deklariere sie in deiner `pyproject.toml`. Für ZIP-verteilte Plugins müssen Abhängigkeiten gebündelt oder bereits in der Bibliogon-Umgebung verfügbar sein.
+
+Füge KEINE neuen Abhängigkeiten zum Core hinzu, ohne zu fragen. Aktueller Stack:
+- Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, PyYAML, httpx
+- Frontend: React 19, TypeScript 6, Vite 7, TipTap, Radix UI, Lucide
 
 ## Vorhandene Plugins als Referenz
 
