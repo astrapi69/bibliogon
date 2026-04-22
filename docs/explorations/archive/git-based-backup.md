@@ -1,8 +1,8 @@
 # Git-Based Backup Integration
 
-Status: Architecture decided, phased implementation planned.
-Last updated: 2026-04-21
-Revived when: starting Phase 1 (local-only MVP).
+Status: Shipped in v0.21.0 (2026-04-22). All 5 phases complete. Archived.
+Last updated: 2026-04-22
+Revived when: post-ship defects or extension proposals warrant a new round.
 
 ---
 

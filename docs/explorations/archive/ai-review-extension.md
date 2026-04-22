@@ -1,8 +1,8 @@
 # AI Review Extension
 
-Status: Architecture decided. Implementation pending (1-2 sessions).
-Last updated: 2026-04-20
-Source: pre-audit findings (this session) + UX review.
+Status: Shipped in v0.20.0 (2026-04-20). Archived.
+Last updated: 2026-04-22
+Source: pre-audit findings + UX review.
 
 ---
 
