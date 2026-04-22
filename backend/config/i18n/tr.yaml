@@ -169,7 +169,7 @@ ui:
     git_backup: "Git Yedek"
   git:
     title: "Git Backup"
-    not_initialized: "No repository for this book yet. Initialize one to start committing."
+    not_initialized: "Bu kitap için henüz bir depo yok. Commit yapmaya başlamak için bir tane başlat."
     init: "Initialize repository"
     init_ok: "Repository initialized"
     dirty: "uncommitted changes"
@@ -177,24 +177,24 @@ ui:
     commit_message_placeholder: "What changed?"
     commit: "Commit"
     commit_ok: "Commit created"
-    nothing_to_commit: "Nothing to commit"
+    nothing_to_commit: "Commit yapılacak bir şey yok"
     history: "History"
     no_commits: "No commits yet."
     abort_merge: Abort merge
     accept_local: Force push local
     ahead: ahead
     apply_resolution: Apply resolution
-    auth_failed: Authentication failed. Check the PAT.
+    auth_failed: Kimlik doğrulama başarısız. PAT'yi kontrol et.
     behind: behind
-    confirm_accept_local: Force-push the local version to the remote? Any remote commits will be overwritten and lost.
-    conflict_diverged_body: 'Both sides have their own commits. Choose: merge (decide per file on conflicts), ignore remote (force push), or cancel.'
+    confirm_accept_local: Yerel sürümü uzak depoya zorla gönder? Uzak commit'ler üzerine yazılacak ve kaybolacak.
+    conflict_diverged_body: 'Her iki tarafın da kendi commit''leri var. Seç: birleştir (çakışmalarda dosya bazında karar ver), uzak depoyu yok say (force push) veya iptal et.'
     conflict_diverged_title: Diverged history
-    conflict_push_rejected_body: 'The remote has newer commits that are not present locally. Decide which side wins:'
+    conflict_push_rejected_body: 'Uzak depoda yerel olarak bulunmayan daha yeni commit''ler var. Hangi tarafın kazanacağına karar ver:'
     conflict_push_rejected_title: Push rejected
-    conflict_resolve_body: 'For each affected file: keep the local or remote version. A merge commit is then created.'
+    conflict_resolve_body: 'Etkilenen her dosya için: yerel veya uzak sürümü koru. Ardından bir merge commit''i oluşturulur.'
     conflict_resolve_title: Resolve conflicts per file
     conflicts_found: Conflicts found — pick per file
-    diverged: Local and remote diverged. Manual resolution required.
+    diverged: Yerel ve uzak birbirinden ayrıldı. Manuel çözüm gerekli.
     diverged_short: diverged
     force_push_ok: Force push successful - remote overwritten
     in_sync: in sync
@@ -207,32 +207,32 @@ ui:
     merge_resolved: Conflicts resolved
     never_synced: not synced yet
     no_remote: No remote configured.
-    pat_hint: The PAT is stored encrypted and never returned. Use a private repository.
+    pat_hint: PAT şifrelenerek saklanır ve asla geri döndürülmez. Özel bir depo kullan.
     pull: Pull
-    pull_no_changes: Already up to date
+    pull_no_changes: Zaten güncel
     pull_ok: Pull successful
     push: Push
     push_ok: Push successful
-    push_rejected: Push rejected. Remote has newer commits. Pull first or accept remote.
+    push_rejected: Push reddedildi. Uzak depoda daha yeni commit'ler var. Önce pull yap veya uzak depoyu kabul et.
     remote: Remote
     remote_ahead: remote has changes
     remote_configure: Configure remote
     remote_delete: Remove remote
     remote_deleted: Remote removed
     remote_pat: Personal Access Token
-    remote_pat_stored: stored — leave empty to keep
+    remote_pat_stored: kaydedildi — korumak için boş bırak
     remote_saved: Remote saved
     remote_url: Remote URL
     remote_url_required: Remote URL required
   ssh:
     title: "SSH Key for Git"
-    intro: "One Ed25519 keypair per install. The public half is added to GitHub/GitLab/Gitea; the private half stays local (file mode 0600)."
+    intro: "Kurulum başına bir Ed25519 anahtar çifti. Açık anahtar GitHub/GitLab/Gitea'ya eklenir; özel anahtar yerel kalır (dosya modu 0600)."
     comment: "Comment (optional)"
-    comment_hint: "Shown as the key label in the host UI."
+    comment_hint: "Host arayüzünde anahtar etiketi olarak gösterilir."
     generate: "Generate key"
     generated: "SSH key generated"
-    confirm_overwrite: "Overwrite existing key? The old key becomes invalid."
-    confirm_delete: "Delete key? SSH push/pull will stop working until a new key is generated."
+    confirm_overwrite: "Mevcut anahtar üzerine yazılsın mı? Eski anahtar geçersiz olur."
+    confirm_delete: "Anahtar silinsin mi? Yeni bir anahtar oluşturulana kadar SSH push/pull çalışmayı durduracak."
     copy: "Copy public key"
     copied: "Public key copied"
     copy_failed: "Copy failed"
@@ -291,12 +291,12 @@ ui:
     audiobook_failed: "Sesli kitap aktarimi basarisiz"
     dry_run_button: Hear sample
     dry_run_failed: Test export failed
-    dry_run_hint: Generates only the first paragraph of the first chapter. Verifies engine and voice work and shows estimated cost.
+    dry_run_hint: Yalnızca ilk bölümün ilk paragrafını oluşturur. Motor ve sesin çalıştığını doğrular ve tahmini maliyeti gösterir.
     dry_run_loading: Generating sample...
     dry_run_title: Test export
     free: free
     missing_images: 'Missing images: {files}'
-    missing_images_hint: Check whether the listed image files still exist in the book.
+    missing_images_hint: Listelenen görsel dosyalarının kitapta hâlâ mevcut olup olmadığını kontrol et.
   error_report:
     title: "Hata raporu olustur"
     intro: "Bibliogon bir hata tespit etti ve gelistirici icin bir rapor hazirlayabilir."
@@ -891,7 +891,7 @@ ui:
     delete_all_previews: Delete all
     delete_previews: Delete all previews
     delete_previews_confirm: Delete all preview files?
-    previews_empty: No previews yet. Use the Preview button in the editor to generate one.
+    previews_empty: Henüz önizleme yok. Düzenleyicideki Önizleme düğmesini kullanarak bir tane oluştur.
     speed: Speed
   languages:
     de: "Almanca"
