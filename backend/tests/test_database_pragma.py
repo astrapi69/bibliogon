@@ -5,11 +5,19 @@ listener is silently removed: the backend keeps working on the surface,
 but cascade deletes start failing, commits get slower, and concurrent
 readers start blocking the writer.
 """
+import pytest
 from sqlalchemy import text
 
 from app.database import engine
 
+# In-memory SQLite cannot use WAL journal mode (needs a real file).
+# The test harness uses sqlite:///:memory: for isolation, which means
+# the WAL check below is a no-op there; only run it against a real
+# file-backed engine.
+_is_memory = ":memory:" in str(engine.url)
 
+
+@pytest.mark.skipif(_is_memory, reason="WAL requires a file-backed DB; test harness uses :memory:")
 def test_journal_mode_is_wal() -> None:
     with engine.connect() as conn:
         mode = conn.execute(text("PRAGMA journal_mode")).scalar()

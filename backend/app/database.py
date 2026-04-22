@@ -4,13 +4,49 @@ from pathlib import Path
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# DB path: configurable via BIBLIOGON_DB_PATH env var, defaults to backend/bibliogon.db
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
-_DB_PATH = Path(os.getenv("BIBLIOGON_DB_PATH", str(_BACKEND_DIR / "bibliogon.db")))
-_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{_DB_PATH}")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
+def _resolve_database_url() -> str:
+    """Decide which database URL to hand to SQLAlchemy.
+
+    Priority (highest wins):
+    1. BIBLIOGON_TEST=1 forces a test-only URL. TEST_DATABASE_URL may
+       override; default is sqlite:///:memory:. When BIBLIOGON_TEST is
+       set, it is IMPOSSIBLE to reach the production DB from this
+       function, which is the whole point (see tests/conftest.py and
+       tests/test_test_isolation.py).
+    2. DATABASE_URL env var is honoured verbatim.
+    3. BIBLIOGON_DB_PATH env var lets callers override the on-disk file
+       location; defaults to backend/bibliogon.db.
+    """
+    if os.getenv("BIBLIOGON_TEST") == "1":
+        return os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
+    if explicit := os.getenv("DATABASE_URL"):
+        return explicit
+    db_path = Path(os.getenv("BIBLIOGON_DB_PATH", str(_BACKEND_DIR / "bibliogon.db")))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{db_path}"
+
+
+DATABASE_URL = _resolve_database_url()
+
+
+def _engine_kwargs(url: str) -> dict:
+    """SQLAlchemy engine options. In-memory SQLite needs a StaticPool so
+    every SessionLocal() call sees the same ephemeral database; the
+    default QueuePool hands out independent connections and each one
+    gets its own fresh :memory: database, which is fine for a single
+    test but breaks autouse create_all/drop_all and FastAPI's DI."""
+    kwargs: dict = {"connect_args": {"check_same_thread": False}}
+    if ":memory:" in url:
+        from sqlalchemy.pool import StaticPool
+
+        kwargs["poolclass"] = StaticPool
+    return kwargs
+
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs(DATABASE_URL))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
