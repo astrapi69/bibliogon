@@ -12,6 +12,16 @@ After installing, `make dev` launches two parallel processes: the FastAPI backen
 
 On first launch the database is empty. Bibliogon uses SQLite as a local database; all data lives on your machine, no external server is required. From Settings you can change language and theme. Six themes (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) are available, each with light and dark variants - see the Themes page for details.
 
+## Dashboard: filter, sort, trash
+
+As the book collection grows, the Dashboard offers search, filter and sort controls above the book grid. You can search by title, author, genre or language, filter by genre and language, and sort by date, title or author in either direction.
+
+![Dashboard filter and sort controls](../assets/screenshots/dashboard-filter-sort.png)
+
+Deleted books go to the Trash (soft delete). The Trash view lists them with three actions: **Restore** puts a book back in the library, **Delete permanently** removes the book and its files immediately, **Empty trash** clears everything at once. Books in the Trash are automatically deleted after 90 days; the timer can be configured in Settings.
+
+![Trash view with Restore, Delete permanently, Empty trash](../assets/screenshots/dashboard-trash.png)
+
 ## Creating your first book
 
 On the Dashboard, click "New Book". A two-step dialog opens: in the first step you enter title and author; in the second (expandable via "More details") you can fill in optional fields such as genre, subtitle, language, and series. Only title and author are required.

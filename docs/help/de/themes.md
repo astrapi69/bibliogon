@@ -13,13 +13,19 @@ Kühle Blau-Grau-Töne mit Inter als serifenloser Schrift. Klares, modernes Layo
 ### Nord
 Die beliebte Nord-Farbpalette in Bibliogon-Anpassung. Gedämpfte Pastelltöne, gut für lange Lesesitzungen.
 
+![Nord-Theme](../assets/screenshots/theme-nord.png)
+
 ### Klassisch *(neu)*
 Papierhaftes Gefühl mit warmen beige-creme Tönen und Bordeaux-Akzent. Serif-Schrift (Crimson Pro) in Editor, Sidebar und UI. Der Editor hat zusätzlich eine Erst-Zeilen-Einrückung auf allen Absätzen außer dem ersten nach einer Überschrift - typografische Konvention für literarische Texte.
+
+![Klassisch-Theme](../assets/screenshots/theme-classic.png)
 
 **Wann wählen:** Literarisches Schreiben, Roman, Belletristik. Für Autoren die von papier-ähnlichen Werkzeugen kommen.
 
 ### Studio *(neu)*
 Dunkler, professioneller Look mit hohen Kontrasten und Mint/Teal-Akzent. Orientiert sich optisch an professionellen Audio- und Video-Schnitt-Programmen. Die Hell-Variante nutzt denselben Akzent auf hellem Grau. Inter für UI-Text, Source Serif Pro für Überschriften.
+
+![Studio-Theme](../assets/screenshots/theme-studio.png)
 
 **Wann wählen:** Lange Schreib-Sessions mit minimaler visueller Ablenkung. Power-User die viele Stunden am Stück arbeiten.
 

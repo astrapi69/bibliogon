@@ -12,6 +12,16 @@ Nach der Installation startet `make dev` zwei parallele Prozesse: das FastAPI-Ba
 
 Beim ersten Start ist die Datenbank leer. Bibliogon nutzt SQLite als lokale Datenbank. Alle Daten liegen auf deinem Rechner, es wird kein externer Server benötigt. Über die Einstellungen kannst du Sprache und Theme anpassen. Es stehen sechs Themes (Warm Literary, Cool Modern, Nord, Klassisch, Studio, Notizbuch) jeweils in Light- und Dark-Variante zur Verfügung - Details im Abschnitt Themes.
 
+## Dashboard: Filter, Sortierung, Papierkorb
+
+Wenn die Buchsammlung wächst, bietet das Dashboard oberhalb des Buch-Rasters Such-, Filter- und Sortier-Steuerungen. Du kannst nach Titel, Autor, Genre oder Sprache suchen, nach Genre und Sprache filtern und nach Datum, Titel oder Autor in beiden Richtungen sortieren.
+
+![Dashboard: Filter und Sortierung](../assets/screenshots/dashboard-filter-sort.png)
+
+Gelöschte Bücher landen im Papierkorb (Soft-Delete). Die Papierkorb-Ansicht listet sie mit drei Aktionen: **Wiederherstellen** holt ein Buch zurück in die Bibliothek, **Endgültig löschen** entfernt Buch und Dateien sofort, **Papierkorb leeren** entfernt alles auf einmal. Bücher im Papierkorb werden nach 90 Tagen automatisch gelöscht; die Frist lässt sich in den Einstellungen konfigurieren.
+
+![Papierkorb-Ansicht mit Wiederherstellen, Endgültig löschen, Papierkorb leeren](../assets/screenshots/dashboard-trash.png)
+
 ## Das erste Buch anlegen
 
 Klicke auf dem Dashboard den Button "Neues Buch". Es öffnet sich ein Dialog mit zwei Stufen: in der ersten gibst du Titel und Autor ein, in der zweiten (aufklappbar über "Weitere Details") kannst du optionale Felder wie Genre, Untertitel, Sprache und Serie ergänzen. Nur Titel und Autor sind Pflichtfelder.

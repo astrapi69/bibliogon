@@ -29,3 +29,5 @@ Jedes Plugin deklariert seine UI-Erweiterungen über ein Frontend-Manifest. Dadu
 ## Plugin-Verwaltung
 
 In den Einstellungen unter "Plugins" siehst du eine Liste aller installierten Plugins mit Name, Version und Status. Plugins können aktiviert oder deaktiviert werden. Der Status jedes Plugins (aktiv, inaktiv) wird auf einen Blick angezeigt.
+
+![Einstellungen > Plugins](../../assets/screenshots/settings-plugins.png)

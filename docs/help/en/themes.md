@@ -13,13 +13,19 @@ Cool blue-grey tones with Inter as the sans-serif typeface. Clean, modern layout
 ### Nord
 The popular Nord palette, adapted for Bibliogon. Muted pastel tones suited to long reading sessions.
 
+![Nord theme](../assets/screenshots/theme-nord.png)
+
 ### Classic *(new)*
 Paper-like feel with warm beige and cream tones and a bordeaux accent. Serif typography (Crimson Pro) everywhere - editor, sidebar, UI. The editor additionally renders a first-line indent on every paragraph except the first one after a heading, following the typographic convention for literary prose.
+
+![Classic theme](../assets/screenshots/theme-classic.png)
 
 **When to pick it:** literary writing, novels, fiction. For authors coming from paper-like tools.
 
 ### Studio *(new)*
 Dark, professional look with high contrast and a mint/teal accent. Visually inspired by professional audio/video editing software. The light variant applies the same accent to a muted light-grey canvas. Inter for UI text, Source Serif Pro for headings.
+
+![Studio theme](../assets/screenshots/theme-studio.png)
 
 **When to pick it:** long writing sessions with minimal visual distraction. Power users working for hours at a stretch.
 

@@ -47,3 +47,5 @@ Im Reiter **Metadaten > Marketing** pflegst du Schlüsselwörter (Keywords) für
 ## HTML-Vorschau im Marketing-Tab
 
 Drei Marketing-Felder akzeptieren HTML und besitzen einen Vorschau-Umschalter: **Buch-Beschreibung (HTML für Amazon)**, **Rückseitenbeschreibung** und **Autor-Bio (Rückseite)**. Standardmäßig ist die bearbeitbare Textarea aktiv. Mit dem Vorschau-Button oben rechts am Feld schaltest du zwischen Bearbeitungsmodus und gerenderter HTML-Vorschau um. So kannst du prüfen, wie deine Beschreibung mit Absätzen, Listen, fett gesetzten Stellen und ähnlichen Elementen tatsächlich aussehen wird, ohne den Export starten zu müssen. Die Vorschau wird sicher gerendert: gefährliches HTML (z.B. Skripte) wird vor der Anzeige entfernt.
+
+![Marketing-Tab HTML-Vorschau](../../assets/screenshots/editor-marketing-preview.png)
