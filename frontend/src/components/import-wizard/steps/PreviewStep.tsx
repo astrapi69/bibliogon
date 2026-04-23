@@ -1,4 +1,10 @@
-import type { DetectedProject, DuplicateInfo, Overrides } from "../../../api/import";
+import { useI18n } from "../../../hooks/useI18n";
+import type {
+    DetectedProject,
+    DuplicateInfo,
+    Overrides,
+} from "../../../api/import";
+import { PreviewPanel } from "./PreviewPanel";
 
 export function PreviewStep({
     detected,
@@ -19,21 +25,42 @@ export function PreviewStep({
     onBack: () => void;
     onConfirm: () => void;
 }) {
-    void detected;
-    void duplicate;
+    const { t } = useI18n();
+    // overrides + onOverridesChange are consumed by Commit 5; kept in
+    // the signature so the wizard shell does not need to change when
+    // the override UI lands.
     void overrides;
-    void duplicateAction;
     void onOverridesChange;
+    void duplicate;
+    void duplicateAction;
     void onDuplicateActionChange;
+
     return (
         <div data-testid="preview-step">
-            <p>Preview (scaffold)</p>
-            <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={onBack} data-testid="preview-back">
-                    Back
+            <PreviewPanel detected={detected} />
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 8,
+                    marginTop: 20,
+                    paddingTop: 16,
+                    borderTop: "1px solid var(--border)",
+                }}
+            >
+                <button
+                    className="btn btn-secondary"
+                    data-testid="preview-back"
+                    onClick={onBack}
+                >
+                    {t("ui.import_wizard.button_back", "Back")}
                 </button>
-                <button onClick={onConfirm} data-testid="preview-confirm">
-                    Import
+                <button
+                    className="btn btn-primary"
+                    data-testid="preview-confirm"
+                    onClick={onConfirm}
+                >
+                    {t("ui.import_wizard.button_import", "Import")}
                 </button>
             </div>
         </div>
