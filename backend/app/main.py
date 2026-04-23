@@ -27,11 +27,16 @@ from app.routers import (
     chapters,
     covers,
     git_backup,
+    import_orchestrator,
     licenses,
     plugin_install,
     settings,
     templates,
 )
+
+# Side-effect import: register core import handlers with the plugin
+# registry before any request hits the orchestrator.
+import app.import_plugins.handlers  # noqa: F401, E402
 from app.routers import (
     ssh_keys as ssh_keys_router,
 )
@@ -216,6 +221,7 @@ app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")
 app.include_router(covers.router, prefix="/api")
 app.include_router(backup.router, prefix="/api")
+app.include_router(import_orchestrator.router, prefix="/api")
 app.include_router(licenses.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 app.include_router(plugin_install.router, prefix="/api")
