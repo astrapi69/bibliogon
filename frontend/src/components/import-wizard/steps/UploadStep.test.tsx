@@ -75,6 +75,24 @@ describe("UploadStep", () => {
         expect(onInputSelected).toHaveBeenCalled();
     });
 
+    it("accepts .docx (CIO-04 office handler)", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        fireEvent.change(screen.getByTestId("upload-input"), {
+            target: { files: [file("manuscript.docx", 1024)] },
+        });
+        expect(onInputSelected).toHaveBeenCalled();
+    });
+
+    it("accepts .epub (CIO-04 office handler)", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        fireEvent.change(screen.getByTestId("upload-input"), {
+            target: { files: [file("book.epub", 1024)] },
+        });
+        expect(onInputSelected).toHaveBeenCalled();
+    });
+
     it("rejects files over 500 MB", () => {
         const onInputSelected = vi.fn();
         render(<UploadStep onInputSelected={onInputSelected} />);

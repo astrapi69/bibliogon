@@ -1018,7 +1018,7 @@ ui:
     button_back: Πίσω
     button_import: Εισαγωγή
     step_1_drop_zone: Σύρε το αρχείο εδώ ή κάνε κλικ για περιήγηση
-    step_1_accepted_formats: 'Δέχεται: .bgb, .md, .markdown, .txt, .zip (write-book-template)'
+    step_1_accepted_formats: 'Δέχεται: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Μη υποστηριζόμενη μορφή αρχείου. Δέχεται: {formats}'
     error_file_too_large: Αρχείο πολύ μεγάλο (>{max} MB).
     warn_large_file: Μεγάλο αρχείο ({size}); η ανίχνευση μπορεί να πάρει λίγο.

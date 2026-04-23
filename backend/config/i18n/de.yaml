@@ -1018,7 +1018,7 @@ ui:
     button_back: Zurueck
     button_import: Importieren
     step_1_drop_zone: Datei hier ablegen oder zum Durchsuchen klicken
-    step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .zip (write-book-template)'
+    step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Dateiformat nicht unterstuetzt. Akzeptiert: {formats}'
     error_file_too_large: Datei zu gross (>{max} MB).
     warn_large_file: Grosse Datei ({size}); Erkennung dauert einen Moment.

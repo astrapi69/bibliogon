@@ -1018,7 +1018,7 @@ ui:
     button_back: Back
     button_import: Import
     step_1_drop_zone: Drop file here or click to browse
-    step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .zip (write-book-template)'
+    step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Unsupported file format. Accepts: {formats}'
     error_file_too_large: File too large (>{max} MB).
     warn_large_file: Large file ({size}); detection may take a moment.

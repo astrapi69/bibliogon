@@ -3,11 +3,19 @@ import { Folder, Upload } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
 
 // Aligned with the backend handler registry
-// (app/import_plugins/handlers/__init__.py). ZIP is back as of
-// CIO-02 (2039fce) - WbtImportHandler claims ZIPs that carry a
-// write-book-template config/metadata.yaml marker. ZIPs without
-// that marker are still rejected by the orchestrator with 415.
-const ACCEPTED_EXTENSIONS = [".bgb", ".md", ".markdown", ".txt", ".zip"] as const;
+// (app/import_plugins/handlers/__init__.py). Evolution:
+// - CIO-01 shipped .bgb + .md/.markdown/.txt
+// - CIO-02 added .zip (WbtImportHandler, write-book-template)
+// - CIO-04 added .docx + .epub via Pandoc-based office handlers
+const ACCEPTED_EXTENSIONS = [
+    ".bgb",
+    ".md",
+    ".markdown",
+    ".txt",
+    ".zip",
+    ".docx",
+    ".epub",
+] as const;
 const FOLDER_MD_EXTENSIONS = [".md", ".markdown"] as const;
 const FOLDER_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"] as const;
 const WARN_SIZE_MB = 50;
@@ -205,7 +213,7 @@ export function UploadStep({
                 >
                     {t(
                         "ui.import_wizard.step_1_accepted_formats",
-                        "Accepts: .bgb, .md, .markdown, .txt, .zip (write-book-template)",
+                        "Accepts: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub",
                     )}
                 </p>
             </div>
