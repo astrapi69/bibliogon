@@ -1018,7 +1018,7 @@ ui:
     button_back: Geri
     button_import: Ice aktar
     step_1_drop_zone: Dosyayi buraya surukle veya goz atmak icin tikla
-    step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt, .zip'
+    step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt'
     error_unsupported_format: 'Desteklenmeyen dosya bicimi. Kabul eder: {formats}'
     error_file_too_large: Dosya cok buyuk (>{max} MB).
     warn_large_file: Buyuk dosya ({size}); algilama biraz surebilir.

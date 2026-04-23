@@ -45,6 +45,23 @@ describe("UploadStep", () => {
         expect(screen.getByTestId("upload-error")).toHaveTextContent(/unsupported/i);
     });
 
+    it("rejects .zip while no backend handler is registered for ZIPs", () => {
+        // Regression pin: the wizard previously advertised .zip in its
+        // accepted-formats list despite no registered backend handler.
+        // Users dropped ZIPs and hit a 415 from /api/import/detect
+        // only after upload. Keep .zip rejected at the gate until
+        // plugin-git-sync PGS-01 ships a ZIP handler.
+        const onFileSelected = vi.fn();
+        render(<UploadStep onFileSelected={onFileSelected} />);
+        fireEvent.change(screen.getByTestId("upload-input"), {
+            target: { files: [file("project.zip", 1024)] },
+        });
+        expect(onFileSelected).not.toHaveBeenCalled();
+        expect(screen.getByTestId("upload-error")).toHaveTextContent(
+            /unsupported/i,
+        );
+    });
+
     it("rejects files over 500 MB", () => {
         const onFileSelected = vi.fn();
         render(<UploadStep onFileSelected={onFileSelected} />);

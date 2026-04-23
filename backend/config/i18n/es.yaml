@@ -1018,7 +1018,7 @@ ui:
     button_back: Atras
     button_import: Importar
     step_1_drop_zone: Arrastra el archivo aqui o haz clic para buscar
-    step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .zip'
+    step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt'
     error_unsupported_format: 'Formato de archivo no admitido. Acepta: {formats}'
     error_file_too_large: Archivo demasiado grande (>{max} MB).
     warn_large_file: Archivo grande ({size}); la deteccion puede tardar un momento.

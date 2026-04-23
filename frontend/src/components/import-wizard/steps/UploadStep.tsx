@@ -2,7 +2,13 @@ import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
 
-const ACCEPTED_EXTENSIONS = [".bgb", ".md", ".markdown", ".txt", ".zip"] as const;
+// Aligned with the backend handler registry
+// (app/import_plugins/handlers/__init__.py). ZIP support is scheduled
+// for plugin-git-sync PGS-01 and will be re-added here the moment the
+// plugin ships a ZIP handler. Advertising .zip before that point
+// produces a "no handler" 415 from /api/import/detect, visible only
+// after the user already uploaded the file.
+const ACCEPTED_EXTENSIONS = [".bgb", ".md", ".markdown", ".txt"] as const;
 const WARN_SIZE_MB = 50;
 const MAX_SIZE_MB = 500;
 
@@ -121,7 +127,7 @@ export function UploadStep({
                 >
                     {t(
                         "ui.import_wizard.step_1_accepted_formats",
-                        "Accepts: .bgb, .md, .markdown, .txt, .zip",
+                        "Accepts: .bgb, .md, .markdown, .txt",
                     )}
                 </p>
             </div>

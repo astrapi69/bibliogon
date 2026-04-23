@@ -1018,7 +1018,7 @@ ui:
     button_back: 戻る
     button_import: インポート
     step_1_drop_zone: ファイルをここにドロップ、またはクリックして選択
-    step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt, .zip'
+    step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt'
     error_unsupported_format: 'サポートされていない形式です。対応: {formats}'
     error_file_too_large: ファイルが大きすぎます (>{max} MB)。
     warn_large_file: 大きなファイル ({size})。検出に時間がかかる場合があります。
