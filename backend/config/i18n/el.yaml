@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Εισαγωγή (Νέο)
   backup:
     compare:
       title: "Σύγκριση αντιγράφων ασφαλείας"
@@ -1007,3 +1008,50 @@ ui:
     classic: Κλασικό
     studio: Studio
     notebook: Σημειωματάριο
+  import_wizard:
+    title: Εισαγωγή βιβλίου
+    step_of: Βήμα {n} από 4
+    untitled_book: Χωρίς τίτλο
+    unknown_author: Άγνωστος συγγραφέας
+    language_label: Γλώσσα
+    warnings_heading: Προειδοποιήσεις
+    button_back: Πίσω
+    button_import: Εισαγωγή
+    step_1_drop_zone: Σύρε το αρχείο εδώ ή κάνε κλικ για περιήγηση
+    step_1_accepted_formats: 'Δέχεται: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Μη υποστηριζόμενη μορφή αρχείου. Δέχεται: {formats}'
+    error_file_too_large: Αρχείο πολύ μεγάλο (>{max} MB).
+    warn_large_file: Μεγάλο αρχείο ({size}); η ανίχνευση μπορεί να πάρει λίγο.
+    status_reading: Ανάγνωση αρχείου...
+    status_detecting: Ανίχνευση μορφής...
+    status_parsing: Ανάλυση δομής...
+    status_checking: Έλεγχος διπλοτύπων...
+    chapters_count: Ανιχνεύτηκαν {count} κεφάλαια
+    assets_count: Ανιχνεύτηκαν {count} πόροι
+    no_chapters_detected: Δεν ανιχνεύτηκαν κεφάλαια.
+    no_assets_detected: Δεν ανιχνεύτηκαν πόροι.
+    hint_no_cover: Δεν ανιχνεύτηκε εξώφυλλο· μπορείς να ορίσεις ένα παρακάτω.
+    override_title_label: Τίτλος
+    override_title_placeholder: Τίτλος βιβλίου
+    override_author_label: Συγγραφέας
+    override_author_placeholder: Όνομα συγγραφέα
+    override_language_label: Γλώσσα
+    override_subtitle_label: Υπότιτλος
+    override_subtitle_placeholder: Προαιρετικό
+    duplicate_banner_title: Το βιβλίο έχει ήδη εισαχθεί
+    duplicate_banner_existing: 'Υπάρχον: {title} (εισαγωγή {date})'
+    duplicate_action_cancel: Ακύρωση
+    duplicate_action_overwrite: Αντικατάσταση υπάρχοντος
+    duplicate_action_copy: Δημιουργία ως νέο αντίγραφο
+    duplicate_overwrite_title: Αντικατάσταση υπάρχοντος
+    duplicate_overwrite_confirm: Θα αντικατασταθούν όλα τα κεφάλαια και οι πόροι του '{title}'. Το ιστορικό επεξεργασίας θα χαθεί. Συνέχεια;
+    status_creating: Δημιουργία βιβλίου...
+    status_creating_subtle: Μπορεί να πάρει λίγο για μεγάλες εισαγωγές.
+    error_cancelled_server_side: Η εισαγωγή ακυρώθηκε στον διακομιστή.
+    success_title: Η εισαγωγή ολοκληρώθηκε
+    success_book_title: 'Εισήχθη ως: {title}'
+    success_open_editor: Άνοιγμα στον επεξεργαστή
+    success_import_another: Εισαγωγή άλλου
+    success_auto_redirect: Άνοιγμα επεξεργαστή σε {n}δ...
+    error_title: Αποτυχία εισαγωγής
+    error_retry: Επανάληψη

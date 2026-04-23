@@ -37,6 +37,19 @@ translations so the i18n advisory check stops flagging them.
 | `ui.ssh.confirm_overwrite` | ES, FR, EL, PT, TR, JA |
 | `ui.ssh.intro` | ES, FR, EL, PT, TR, JA |
 
+## 2026-04-23 — Import wizard (`ui.import_wizard.*`) strings for DE, ES, FR, EL, PT, TR, JA
+
+46 keys under `ui.import_wizard.*` plus one `ui.dashboard.import_new`
+added for the new CIO-01 import wizard (see
+`docs/explorations/core-import-orchestrator.md`). EN is the source;
+DE/ES/FR/EL/PT/TR/JA translations machine-generated with Claude,
+need native-speaker review.
+
+Technical terms left in English where the convention in each locale
+usually keeps them: Import, .bgb, .md, .markdown, .txt, .zip, MB.
+Placeholders (`{n}`, `{title}`, `{count}`, `{formats}`, `{size}`,
+`{max}`, `{date}`) preserved across all languages.
+
 ### Review guidance for native speakers
 
 - Technical terms (commit, push, pull, merge, force push, PAT,

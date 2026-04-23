@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: インポート (新)
   backup:
     compare:
       title: "バックアップの比較"
@@ -1007,3 +1008,50 @@ ui:
     classic: クラシック
     studio: スタジオ
     notebook: ノートブック
+  import_wizard:
+    title: 本をインポート
+    step_of: ステップ {n} / 4
+    untitled_book: 無題
+    unknown_author: 著者不明
+    language_label: 言語
+    warnings_heading: 警告
+    button_back: 戻る
+    button_import: インポート
+    step_1_drop_zone: ファイルをここにドロップ、またはクリックして選択
+    step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'サポートされていない形式です。対応: {formats}'
+    error_file_too_large: ファイルが大きすぎます (>{max} MB)。
+    warn_large_file: 大きなファイル ({size})。検出に時間がかかる場合があります。
+    status_reading: ファイルを読み込み中...
+    status_detecting: 形式を検出中...
+    status_parsing: 構造を解析中...
+    status_checking: 重複を確認中...
+    chapters_count: '{count} 章を検出'
+    assets_count: '{count} アセットを検出'
+    no_chapters_detected: 章が検出されませんでした。
+    no_assets_detected: アセットが検出されませんでした。
+    hint_no_cover: 表紙画像が検出されませんでした。下で割り当てられます。
+    override_title_label: タイトル
+    override_title_placeholder: 本のタイトル
+    override_author_label: 著者
+    override_author_placeholder: 著者名
+    override_language_label: 言語
+    override_subtitle_label: サブタイトル
+    override_subtitle_placeholder: 任意
+    duplicate_banner_title: 本はすでにインポートされています
+    duplicate_banner_existing: '既存: {title} ({date} にインポート)'
+    duplicate_action_cancel: キャンセル
+    duplicate_action_overwrite: 既存を上書き
+    duplicate_action_copy: 新しいコピーとして作成
+    duplicate_overwrite_title: 既存を上書き
+    duplicate_overwrite_confirm: "'{title}' のすべての章とアセットが置き換えられます。編集履歴は失われます。続行しますか？"
+    status_creating: 本を作成中...
+    status_creating_subtle: 大きなインポートでは少し時間がかかることがあります。
+    error_cancelled_server_side: サーバー側でインポートがキャンセルされました。
+    success_title: インポート完了
+    success_book_title: 'インポート: {title}'
+    success_open_editor: エディタで開く
+    success_import_another: 別のものをインポート
+    success_auto_redirect: '{n}秒後にエディタを開きます...'
+    error_title: インポート失敗
+    error_retry: 再試行

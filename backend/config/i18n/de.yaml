@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: In den Papierkorb
+    import_new: Import (Neu)
   backup:
     compare:
       title: "Backups vergleichen"
@@ -1007,3 +1008,50 @@ ui:
     classic: Klassisch
     studio: Studio
     notebook: Notizbuch
+  import_wizard:
+    title: Buch importieren
+    step_of: Schritt {n} von 4
+    untitled_book: Unbenannt
+    unknown_author: Unbekannter Autor
+    language_label: Sprache
+    warnings_heading: Warnungen
+    button_back: Zurueck
+    button_import: Importieren
+    step_1_drop_zone: Datei hier ablegen oder zum Durchsuchen klicken
+    step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Dateiformat nicht unterstuetzt. Akzeptiert: {formats}'
+    error_file_too_large: Datei zu gross (>{max} MB).
+    warn_large_file: Grosse Datei ({size}); Erkennung dauert einen Moment.
+    status_reading: Lese Datei...
+    status_detecting: Erkenne Format...
+    status_parsing: Analysiere Struktur...
+    status_checking: Pruefe auf Duplikate...
+    chapters_count: '{count} Kapitel erkannt'
+    assets_count: '{count} Assets erkannt'
+    no_chapters_detected: Keine Kapitel erkannt.
+    no_assets_detected: Keine Assets erkannt.
+    hint_no_cover: Kein Cover erkannt; du kannst unten eines zuweisen.
+    override_title_label: Titel
+    override_title_placeholder: Buchtitel
+    override_author_label: Autor
+    override_author_placeholder: Autorenname
+    override_language_label: Sprache
+    override_subtitle_label: Untertitel
+    override_subtitle_placeholder: Optional
+    duplicate_banner_title: Buch bereits importiert
+    duplicate_banner_existing: 'Vorhanden: {title} (importiert {date})'
+    duplicate_action_cancel: Abbrechen
+    duplicate_action_overwrite: Vorhandenes ueberschreiben
+    duplicate_action_copy: Als neue Kopie erstellen
+    duplicate_overwrite_title: Vorhandenes ueberschreiben
+    duplicate_overwrite_confirm: Alle Kapitel und Assets von '{title}' werden ersetzt. Die Bearbeitungshistorie geht verloren. Fortfahren?
+    status_creating: Buch wird erstellt...
+    status_creating_subtle: Kann bei grossen Importen einen Moment dauern.
+    error_cancelled_server_side: Import wurde serverseitig abgebrochen.
+    success_title: Import abgeschlossen
+    success_book_title: 'Importiert als: {title}'
+    success_open_editor: Im Editor oeffnen
+    success_import_another: Weiteres importieren
+    success_auto_redirect: Oeffne Editor in {n}s...
+    error_title: Import fehlgeschlagen
+    error_retry: Erneut versuchen

@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Importer (Nouveau)
   backup:
     compare:
       title: "Comparer les sauvegardes"
@@ -1007,3 +1008,50 @@ ui:
     classic: Classique
     studio: Studio
     notebook: Carnet
+  import_wizard:
+    title: Importer un livre
+    step_of: Etape {n} sur 4
+    untitled_book: Sans titre
+    unknown_author: Auteur inconnu
+    language_label: Langue
+    warnings_heading: Avertissements
+    button_back: Retour
+    button_import: Importer
+    step_1_drop_zone: Deposez un fichier ici ou cliquez pour parcourir
+    step_1_accepted_formats: 'Accepte : .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Format de fichier non pris en charge. Accepte : {formats}'
+    error_file_too_large: Fichier trop volumineux (>{max} Mo).
+    warn_large_file: Fichier volumineux ({size}) ; la detection peut prendre un instant.
+    status_reading: Lecture du fichier...
+    status_detecting: Detection du format...
+    status_parsing: Analyse de la structure...
+    status_checking: Verification des doublons...
+    chapters_count: '{count} chapitres detectes'
+    assets_count: '{count} ressources detectees'
+    no_chapters_detected: Aucun chapitre detecte.
+    no_assets_detected: Aucune ressource detectee.
+    hint_no_cover: Aucune couverture detectee ; vous pouvez en assigner une ci-dessous.
+    override_title_label: Titre
+    override_title_placeholder: Titre du livre
+    override_author_label: Auteur
+    override_author_placeholder: Nom de l'auteur
+    override_language_label: Langue
+    override_subtitle_label: Sous-titre
+    override_subtitle_placeholder: Optionnel
+    duplicate_banner_title: Livre deja importe
+    duplicate_banner_existing: 'Existant : {title} (importe le {date})'
+    duplicate_action_cancel: Annuler
+    duplicate_action_overwrite: Ecraser l'existant
+    duplicate_action_copy: Creer comme nouvelle copie
+    duplicate_overwrite_title: Ecraser l'existant
+    duplicate_overwrite_confirm: Cela remplacera tous les chapitres et ressources de '{title}'. L'historique d'edition sera perdu. Continuer ?
+    status_creating: Creation du livre...
+    status_creating_subtle: Peut prendre un moment pour les gros imports.
+    error_cancelled_server_side: L'import a ete annule cote serveur.
+    success_title: Import termine
+    success_book_title: 'Importe comme : {title}'
+    success_open_editor: Ouvrir dans l'editeur
+    success_import_another: Importer un autre
+    success_auto_redirect: Ouverture de l'editeur dans {n}s...
+    error_title: Echec de l'import
+    error_retry: Reessayer

@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Ice aktar (Yeni)
   backup:
     compare:
       title: "Yedekleri karsilastir"
@@ -1007,3 +1008,50 @@ ui:
     classic: Klasik
     studio: Studio
     notebook: Defter
+  import_wizard:
+    title: Kitap ice aktar
+    step_of: Adim {n} / 4
+    untitled_book: Isimsiz
+    unknown_author: Bilinmeyen yazar
+    language_label: Dil
+    warnings_heading: Uyarilar
+    button_back: Geri
+    button_import: Ice aktar
+    step_1_drop_zone: Dosyayi buraya surukle veya goz atmak icin tikla
+    step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Desteklenmeyen dosya bicimi. Kabul eder: {formats}'
+    error_file_too_large: Dosya cok buyuk (>{max} MB).
+    warn_large_file: Buyuk dosya ({size}); algilama biraz surebilir.
+    status_reading: Dosya okunuyor...
+    status_detecting: Bicim algilaniyor...
+    status_parsing: Yapi cozumleniyor...
+    status_checking: Yineli kontrol ediliyor...
+    chapters_count: '{count} bolum algilandi'
+    assets_count: '{count} varlik algilandi'
+    no_chapters_detected: Bolum algilanmadi.
+    no_assets_detected: Varlik algilanmadi.
+    hint_no_cover: Kapak algilanmadi; asagida atayabilirsin.
+    override_title_label: Baslik
+    override_title_placeholder: Kitap basligi
+    override_author_label: Yazar
+    override_author_placeholder: Yazar adi
+    override_language_label: Dil
+    override_subtitle_label: Alt baslik
+    override_subtitle_placeholder: Istege bagli
+    duplicate_banner_title: Kitap zaten ice aktarildi
+    duplicate_banner_existing: 'Mevcut: {title} (ice aktarildi {date})'
+    duplicate_action_cancel: Iptal
+    duplicate_action_overwrite: Mevcut olani uzerine yaz
+    duplicate_action_copy: Yeni kopya olarak olustur
+    duplicate_overwrite_title: Mevcut olani uzerine yaz
+    duplicate_overwrite_confirm: "'{title}' kitabinin tum bolumleri ve varliklari degistirilecek. Duzenleme gecmisi kaybolur. Devam?"
+    status_creating: Kitap olusturuluyor...
+    status_creating_subtle: Buyuk ice aktarmalarda biraz surebilir.
+    error_cancelled_server_side: Ice aktarma sunucuda iptal edildi.
+    success_title: Ice aktarma tamamlandi
+    success_book_title: 'Ice aktarildi: {title}'
+    success_open_editor: Duzenleyicide ac
+    success_import_another: Baska ice aktar
+    success_auto_redirect: '{n} sn icinde duzenleyici aciliyor...'
+    error_title: Ice aktarma basarisiz
+    error_retry: Tekrar dene

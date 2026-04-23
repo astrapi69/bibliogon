@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Import (New)
   backup:
     compare:
       title: "Compare Backups"
@@ -1007,3 +1008,50 @@ ui:
     classic: Classic
     studio: Studio
     notebook: Notebook
+  import_wizard:
+    title: Import Book
+    step_of: Step {n} of 4
+    untitled_book: Untitled
+    unknown_author: Unknown author
+    language_label: Language
+    warnings_heading: Warnings
+    button_back: Back
+    button_import: Import
+    step_1_drop_zone: Drop file here or click to browse
+    step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Unsupported file format. Accepts: {formats}'
+    error_file_too_large: File too large (>{max} MB).
+    warn_large_file: Large file ({size}); detection may take a moment.
+    status_reading: Reading file...
+    status_detecting: Detecting format...
+    status_parsing: Parsing structure...
+    status_checking: Checking for duplicates...
+    chapters_count: '{count} chapters detected'
+    assets_count: '{count} assets detected'
+    no_chapters_detected: No chapters detected.
+    no_assets_detected: No assets detected.
+    hint_no_cover: No cover image detected; you can assign one below.
+    override_title_label: Title
+    override_title_placeholder: Book title
+    override_author_label: Author
+    override_author_placeholder: Author name
+    override_language_label: Language
+    override_subtitle_label: Subtitle
+    override_subtitle_placeholder: Optional
+    duplicate_banner_title: Book already imported
+    duplicate_banner_existing: 'Existing: {title} (imported {date})'
+    duplicate_action_cancel: Cancel
+    duplicate_action_overwrite: Overwrite existing
+    duplicate_action_copy: Create as new copy
+    duplicate_overwrite_title: Overwrite existing
+    duplicate_overwrite_confirm: This will replace all chapters and assets of '{title}'. The existing book's edit history will be lost. Continue?
+    status_creating: Creating book...
+    status_creating_subtle: This may take a moment for large imports.
+    error_cancelled_server_side: Import was cancelled on the server.
+    success_title: Import complete
+    success_book_title: 'Imported as: {title}'
+    success_open_editor: Open in editor
+    success_import_another: Import another
+    success_auto_redirect: Opening editor in {n}s...
+    error_title: Import failed
+    error_retry: Retry

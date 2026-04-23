@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Importar (Nuevo)
   backup:
     compare:
       title: "Comparar copias de seguridad"
@@ -1007,3 +1008,50 @@ ui:
     classic: Clásico
     studio: Studio
     notebook: Cuaderno
+  import_wizard:
+    title: Importar libro
+    step_of: Paso {n} de 4
+    untitled_book: Sin titulo
+    unknown_author: Autor desconocido
+    language_label: Idioma
+    warnings_heading: Advertencias
+    button_back: Atras
+    button_import: Importar
+    step_1_drop_zone: Arrastra el archivo aqui o haz clic para buscar
+    step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Formato de archivo no admitido. Acepta: {formats}'
+    error_file_too_large: Archivo demasiado grande (>{max} MB).
+    warn_large_file: Archivo grande ({size}); la deteccion puede tardar un momento.
+    status_reading: Leyendo archivo...
+    status_detecting: Detectando formato...
+    status_parsing: Analizando estructura...
+    status_checking: Comprobando duplicados...
+    chapters_count: '{count} capitulos detectados'
+    assets_count: '{count} activos detectados'
+    no_chapters_detected: No se detectaron capitulos.
+    no_assets_detected: No se detectaron activos.
+    hint_no_cover: No se detecto imagen de portada; puedes asignar una abajo.
+    override_title_label: Titulo
+    override_title_placeholder: Titulo del libro
+    override_author_label: Autor
+    override_author_placeholder: Nombre del autor
+    override_language_label: Idioma
+    override_subtitle_label: Subtitulo
+    override_subtitle_placeholder: Opcional
+    duplicate_banner_title: Libro ya importado
+    duplicate_banner_existing: 'Existente: {title} (importado {date})'
+    duplicate_action_cancel: Cancelar
+    duplicate_action_overwrite: Sobrescribir existente
+    duplicate_action_copy: Crear como copia nueva
+    duplicate_overwrite_title: Sobrescribir existente
+    duplicate_overwrite_confirm: Esto reemplazara todos los capitulos y activos de '{title}'. Se perdera el historial de edicion. Continuar?
+    status_creating: Creando libro...
+    status_creating_subtle: Puede tardar un momento en importaciones grandes.
+    error_cancelled_server_side: La importacion se cancelo en el servidor.
+    success_title: Importacion completa
+    success_book_title: 'Importado como: {title}'
+    success_open_editor: Abrir en editor
+    success_import_another: Importar otro
+    success_auto_redirect: Abriendo editor en {n}s...
+    error_title: Error de importacion
+    error_retry: Reintentar

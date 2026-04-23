@@ -48,6 +48,7 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
+    import_new: Importar (Novo)
   backup:
     compare:
       title: "Comparar copias de seguranca"
@@ -1007,3 +1008,50 @@ ui:
     classic: Clássico
     studio: Studio
     notebook: Caderno
+  import_wizard:
+    title: Importar livro
+    step_of: Passo {n} de 4
+    untitled_book: Sem titulo
+    unknown_author: Autor desconhecido
+    language_label: Idioma
+    warnings_heading: Avisos
+    button_back: Voltar
+    button_import: Importar
+    step_1_drop_zone: Arrasta o ficheiro aqui ou clica para procurar
+    step_1_accepted_formats: 'Aceita: .bgb, .md, .markdown, .txt, .zip'
+    error_unsupported_format: 'Formato de ficheiro nao suportado. Aceita: {formats}'
+    error_file_too_large: Ficheiro demasiado grande (>{max} MB).
+    warn_large_file: Ficheiro grande ({size}); a detecao pode demorar um momento.
+    status_reading: A ler ficheiro...
+    status_detecting: A detectar formato...
+    status_parsing: A analisar estrutura...
+    status_checking: A verificar duplicados...
+    chapters_count: '{count} capitulos detectados'
+    assets_count: '{count} recursos detectados'
+    no_chapters_detected: Nenhum capitulo detectado.
+    no_assets_detected: Nenhum recurso detectado.
+    hint_no_cover: Nenhuma capa detectada; podes atribuir uma abaixo.
+    override_title_label: Titulo
+    override_title_placeholder: Titulo do livro
+    override_author_label: Autor
+    override_author_placeholder: Nome do autor
+    override_language_label: Idioma
+    override_subtitle_label: Subtitulo
+    override_subtitle_placeholder: Opcional
+    duplicate_banner_title: Livro ja importado
+    duplicate_banner_existing: 'Existente: {title} (importado em {date})'
+    duplicate_action_cancel: Cancelar
+    duplicate_action_overwrite: Sobrescrever existente
+    duplicate_action_copy: Criar como nova copia
+    duplicate_overwrite_title: Sobrescrever existente
+    duplicate_overwrite_confirm: Isto ira substituir todos os capitulos e recursos de '{title}'. O historico de edicao sera perdido. Continuar?
+    status_creating: A criar livro...
+    status_creating_subtle: Pode demorar um momento em imports grandes.
+    error_cancelled_server_side: A importacao foi cancelada no servidor.
+    success_title: Importacao concluida
+    success_book_title: 'Importado como: {title}'
+    success_open_editor: Abrir no editor
+    success_import_another: Importar outro
+    success_auto_redirect: A abrir editor em {n}s...
+    error_title: Falha ao importar
+    error_retry: Tentar novamente
