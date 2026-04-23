@@ -6,6 +6,7 @@ import type {
 } from "../../../api/import";
 import { PreviewPanel } from "./PreviewPanel";
 import { OverrideFields } from "./OverrideFields";
+import { DuplicateBanner } from "./DuplicateBanner";
 
 export function PreviewStep({
     detected,
@@ -27,14 +28,14 @@ export function PreviewStep({
     onConfirm: () => void;
 }) {
     const { t } = useI18n();
-    // duplicate banner + action selector land in Commit 6; kept in
-    // the signature so the wizard shell is stable.
-    void duplicate;
-    void duplicateAction;
-    void onDuplicateActionChange;
 
     return (
         <div data-testid="preview-step">
+            <DuplicateBanner
+                duplicate={duplicate}
+                currentAction={duplicateAction}
+                onActionChange={onDuplicateActionChange}
+            />
             <PreviewPanel detected={detected} />
             <OverrideFields
                 overrides={overrides}
