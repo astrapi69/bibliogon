@@ -5,6 +5,7 @@ import type {
     Overrides,
 } from "../../../api/import";
 import { PreviewPanel } from "./PreviewPanel";
+import { OverrideFields } from "./OverrideFields";
 
 export function PreviewStep({
     detected,
@@ -26,11 +27,8 @@ export function PreviewStep({
     onConfirm: () => void;
 }) {
     const { t } = useI18n();
-    // overrides + onOverridesChange are consumed by Commit 5; kept in
-    // the signature so the wizard shell does not need to change when
-    // the override UI lands.
-    void overrides;
-    void onOverridesChange;
+    // duplicate banner + action selector land in Commit 6; kept in
+    // the signature so the wizard shell is stable.
     void duplicate;
     void duplicateAction;
     void onDuplicateActionChange;
@@ -38,6 +36,13 @@ export function PreviewStep({
     return (
         <div data-testid="preview-step">
             <PreviewPanel detected={detected} />
+            <OverrideFields
+                overrides={overrides}
+                detectedTitle={detected.title}
+                detectedAuthor={detected.author}
+                detectedLanguage={detected.language}
+                onChange={onOverridesChange}
+            />
             <div
                 style={{
                     display: "flex",
