@@ -216,49 +216,37 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
     )
 
 
-_CUSTOM_CSS_CANDIDATES: tuple[tuple[str, str], ...] = (
-    ("config", "styles.css"),
-    ("config", "style.css"),
-    ("config", "custom.css"),
-    ("config", "book.css"),
-    ("assets", "css/styles.css"),
-    ("assets", "css/style.css"),
-    ("assets", "css/custom.css"),
-    ("", "styles.css"),
-    ("", "style.css"),
-    ("", "custom.css"),
-)
-
-
 def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
-    """Look for a user-provided stylesheet in common write-book-template
-    locations.
+    """Find a user-provided stylesheet anywhere in the project.
 
-    Strategy:
+    Strategy (first non-empty file wins):
 
-    1. Walk a fixed priority list of well-known paths
-       (``config/styles.css`` first, then style/custom/book variants
-       and ``assets/css/``). Returns the first hit.
-    2. Fall back to the first ``*.css`` found anywhere under
-       ``project_root`` (excluding obvious junk like ``node_modules``).
-       Real user ZIPs ship stylesheets at unpredictable nested paths
-       (e.g. ``book/print/styles.css``, ``theme/book.css``), and an
-       empty CSS field in the editor is worse than picking the wrong
-       file - the user can always overwrite it.
+    1. List every file in ``config/`` and pick the first ``*.css``.
+       write-book-template projects in the wild name this file in
+       every possible way (``styles.css``, ``style.css``, ``custom.css``,
+       ``book.css``, language-specific like ``styles-de.css``, and
+       translated names such as ``stile.css``). A directory listing
+       catches every one; the old hardcoded filename list missed them
+       one by one.
+    2. List ``assets/css/`` and ``assets/styles/`` the same way.
+    3. Fall back to ``rglob("*.css")`` anywhere under ``project_root``
+       (excluding ``node_modules``, ``__MACOSX``, ``.git``).
+
+    Returns the content of the first match, or ``None`` if nothing
+    turns up.
     """
-    tried: list[str] = []
-    for folder, name in _CUSTOM_CSS_CANDIDATES:
-        if folder == "config":
-            path = config_dir / name
-        elif folder:
-            path = project_root / folder / name
-        else:
-            path = project_root / name
-        tried.append(str(path))
-        content = read_file_if_exists(path)
-        if content:
-            logger.info("custom_css: picked fixed-path hit %s", path)
-            return content
+    listed: list[str] = []
+
+    for directory in (config_dir, project_root / "assets" / "css", project_root / "assets" / "styles"):
+        if not directory.is_dir():
+            continue
+        for entry in sorted(directory.iterdir()):
+            if entry.is_file() and entry.suffix.lower() == ".css":
+                listed.append(str(entry))
+                content = read_file_if_exists(entry)
+                if content:
+                    logger.warning("custom_css: picked directory scan %s", entry)
+                    return content
 
     for css_path in sorted(project_root.rglob("*.css")):
         if any(
@@ -266,16 +254,16 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
             for segment in ("node_modules", "__MACOSX", ".git")
         ):
             continue
+        listed.append(str(css_path))
         content = read_file_if_exists(css_path)
         if content:
-            logger.info("custom_css: picked rglob fallback %s", css_path)
+            logger.warning("custom_css: picked rglob fallback %s", css_path)
             return content
 
     logger.warning(
-        "custom_css: no stylesheet found for import. project_root=%s tried fixed paths: %s "
-        "and rglob returned no *.css files (or all were empty/filtered).",
+        "custom_css: NO stylesheet for import. project_root=%s listed=%s",
         project_root,
-        tried,
+        listed,
     )
     return None
 

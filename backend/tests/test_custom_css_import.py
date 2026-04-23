@@ -71,6 +71,23 @@ def test_rglob_fallback_finds_nested_css(project: Path) -> None:
     assert _read_custom_css(project / "config", project) == "/* nested */"
 
 
+def test_any_css_in_config_is_picked(project: Path) -> None:
+    """Directory scan picks up stylesheets under config/ regardless of
+    filename. This is the behaviour real ZIPs need: a user-shipped
+    ``stile.css`` (Italian) or ``styles-de.css`` (language-tagged)
+    must land as the book's custom CSS."""
+    (project / "config" / "styles-de.css").write_text(".lang{}", encoding="utf-8")
+    assert _read_custom_css(project / "config", project) == ".lang{}"
+
+
+def test_assets_styles_folder_is_scanned(project: Path) -> None:
+    """Directory scan also walks ``assets/styles/`` alongside
+    ``assets/css/``."""
+    (project / "assets" / "styles").mkdir(parents=True)
+    (project / "assets" / "styles" / "book.css").write_text(".a{}", encoding="utf-8")
+    assert _read_custom_css(project / "config", project) == ".a{}"
+
+
 def test_rglob_fallback_skips_node_modules(project: Path) -> None:
     """Noise directories must be filtered out of the fallback scan."""
     (project / "node_modules" / "pkg").mkdir(parents=True)
