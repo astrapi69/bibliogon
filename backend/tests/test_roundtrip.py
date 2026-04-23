@@ -60,12 +60,8 @@ def test_roundtrip_import_export_project():
         },
         back_matter={"epilogue.md": "# Epilogue\n\nThe end.\n"},
     )
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("test.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    result = r.json()
+    from tests.import_helpers import import_wbt_zip
+    result = import_wbt_zip(client, buf)
     book_id = result["book_id"]
     assert result["chapter_count"] >= 4  # preface + 2 chapters + epilogue
 
@@ -99,13 +95,10 @@ def test_roundtrip_with_assets():
         },
         assets={"figures/diagram.png": b"FAKE-PNG-DATA-12345"},
     )
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("test.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    book_id = r.json()["book_id"]
-    assert r.json().get("asset_count", 0) >= 1
+    from tests.import_helpers import import_wbt_zip
+    r_json = import_wbt_zip(client, buf, filename="test.zip")
+    book_id = r_json["book_id"]
+    assert r_json.get("asset_count", 0) >= 1
 
     # Verify image path was rewritten in content
     book = client.get(f"/api/books/{book_id}").json()
@@ -157,12 +150,9 @@ def test_roundtrip_chapter_types_preserved():
             "    - back-matter/glossary.md\n"
         ),
     )
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("test.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    book_id = r.json()["book_id"]
+    from tests.import_helpers import import_wbt_zip
+    r_json = import_wbt_zip(client, buf, filename="test.zip")
+    book_id = r_json["book_id"]
 
     # Verify chapter types
     book = client.get(f"/api/books/{book_id}").json()
@@ -207,12 +197,9 @@ def test_roundtrip_backup_restore_complete():
         assets={"figures/img.png": b"PNG-DATA"},
     )
     # Import
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("test.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    book_id = r.json()["book_id"]
+    from tests.import_helpers import import_wbt_zip
+    r_json = import_wbt_zip(client, buf, filename="test.zip")
+    book_id = r_json["book_id"]
 
     # Backup
     r_backup = client.get("/api/backup/export")
@@ -243,20 +230,22 @@ def test_roundtrip_backup_restore_complete():
 
 
 def test_roundtrip_plain_markdown_import():
-    """Import plain .md files (no project structure), export as project."""
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w") as zf:
-        zf.writestr("intro.md", "# Introduction\n\nHello world.\n")
-        zf.writestr("main.md", "# Main Content\n\nThe story.\n")
-        zf.writestr("end.md", "# Conclusion\n\nGoodbye.\n")
-    buf.seek(0)
+    """Import plain .md files (no project structure), export as project.
 
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("stories.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    result = r.json()
+    CIO-05: ZIPs of loose .md files are no longer a supported input
+    shape (the markdown-ZIP code path was removed when /api/backup/
+    smart-import went away). The equivalent user-facing flow is
+    ``webkitdirectory`` folder drop, which dispatches to
+    MarkdownFolderHandler.
+    """
+    from tests.import_helpers import import_markdown_folder
+
+    files = [
+        ("stories/01-intro.md", b"# Introduction\n\nHello world.\n"),
+        ("stories/02-main.md", b"# Main Content\n\nThe story.\n"),
+        ("stories/03-end.md", b"# Conclusion\n\nGoodbye.\n"),
+    ]
+    result = import_markdown_folder(client, files)
     assert result["chapter_count"] == 3
 
     # Export via scaffolder directly (plugin routes not available in TestClient)

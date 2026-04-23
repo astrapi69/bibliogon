@@ -179,12 +179,8 @@ def test_import_project():
         )
 
     zip_buffer.seek(0)
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("my-book.zip", zip_buffer, "application/zip")},
-    )
-    assert r.status_code == 200
-    result = r.json()
+    from tests.import_helpers import import_wbt_zip
+    result = import_wbt_zip(client, zip_buffer, filename="my-book.zip")
     assert result["title"] == "Imported Book"
     assert result["chapter_count"] == 4  # 2 chapters + preface + about_author
 

@@ -21,8 +21,6 @@ Accepted inputs:
 from __future__ import annotations
 
 import hashlib
-import shutil
-import tempfile
 import zipfile
 from pathlib import Path
 
@@ -192,14 +190,21 @@ def _folder_signature(project_root: Path) -> str:
 
 
 def _extracted_root(zip_path: Path) -> Path:
-    """Extract the ZIP to a sibling directory and return the project root.
+    """Extract the ZIP to an out-of-payload directory and return the
+    project root.
 
-    The extraction is cached next to the staged ZIP so detect and
-    execute in the same ``temp_ref`` don't pay the extraction cost
-    twice. The staging GC in the orchestrator cleans up the whole
-    ``temp_ref`` tree on TTL or on execute success.
+    Cache key is the ZIP's SHA-256 short prefix so two different
+    archives with the same filename produce different targets - a
+    previous iteration keyed on filename stem, which made the test
+    suite see stale extraction data when the same zip name was reused
+    across tests. Keeping the extraction out of the orchestrator's
+    ``payload/`` directory avoids ``_resolve_staged`` seeing both the
+    ZIP and the extracted dir and re-dispatching to the markdown-folder
+    handler on execute. Staging GC cleans up the ``temp_ref`` tree on
+    TTL or on execute success.
     """
-    target = zip_path.parent / f"{zip_path.name}.extracted"
+    digest = _sha256_of_file(zip_path)[:16]
+    target = zip_path.parent.parent / "wbt-extracted" / digest
     if not target.is_dir():
         target.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as zf:

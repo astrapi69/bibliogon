@@ -41,12 +41,12 @@ def _create_project_zip(
 
 
 def _import_zip(buf: io.BytesIO) -> dict:
-    r = client.post(
-        "/api/backup/import-project",
-        files={"file": ("test.zip", buf, "application/zip")},
-    )
-    assert r.status_code == 200
-    return r.json()
+    # CIO-05: legacy /api/backup/import-project was removed; this helper
+    # now goes through the orchestrator while preserving the legacy
+    # response shape for downstream assertions.
+    from tests.import_helpers import import_wbt_zip
+
+    return import_wbt_zip(client, buf, filename="test.zip")
 
 
 def _cleanup(book_id: str) -> None:

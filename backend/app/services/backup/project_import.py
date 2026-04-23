@@ -1,24 +1,25 @@
-"""Import a write-book-template project (.bgp / .zip) as a new book."""
+"""Helpers for importing a write-book-template project tree.
+
+CIO-05 removed the UploadFile-based ``import_project_zip`` entry point
+(it was only used by the legacy ``/api/backup/import-project`` +
+``/api/backup/smart-import`` routes). Remaining helpers are consumed
+by ``app.import_plugins.handlers.wbt.WbtImportHandler`` which runs
+inside the CIO-01 orchestrator.
+"""
 
 import json
 import logging
-import shutil
-import tempfile
-import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 from app.models import Asset, Book, Chapter, ChapterType
-from app.services.backup.archive_utils import find_manifest, find_project_root
 from app.services.backup.asset_utils import import_assets, rewrite_image_paths
-from app.services.backup.markdown_import import import_plain_markdown_zip
 from app.services.backup.markdown_utils import (
     ALL_SPECIAL_MAP,
     BACK_MATTER_MAP,
@@ -31,71 +32,7 @@ from app.services.backup.markdown_utils import (
     sanitize_import_markdown,
 )
 
-# --- Top-level entry point ---
-
-
-def import_project_zip(file: UploadFile, db: Session) -> dict[str, Any]:
-    """Import a write-book-template project ZIP as a new book.
-
-    Single .md uploads are delegated to ``import_single_markdown``.
-    """
-    _validate_project_filename(file.filename)
-
-    # Single Markdown upload bypass
-    if file.filename and file.filename.endswith(".md"):
-        from app.services.backup.markdown_import import import_single_markdown
-
-        return import_single_markdown(file, db)
-
-    tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_import_"))
-    try:
-        extracted = _extract_project_zip(file, tmp_dir)
-
-        # ".bgb mistakenly uploaded here" guard
-        if find_manifest(extracted):
-            raise HTTPException(
-                status_code=400,
-                detail="Das ist eine Backup-Datei, kein Projekt-ZIP. "
-                "Fuer Backup-Restore nutze den 'Restore'-Button.",
-            )
-
-        project_root = find_project_root(extracted)
-        if not project_root:
-            # No project structure -> try plain markdown collection import
-            return import_plain_markdown_zip(extracted, db, tmp_dir)
-
-        return _import_project_root(db, project_root)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-# --- Step helpers ---
-
-
-def _validate_project_filename(filename: str | None) -> None:
-    if not filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    if filename.endswith(".bgb"):
-        raise HTTPException(
-            status_code=400,
-            detail="Das ist eine Backup-Datei (.bgb). Fuer Backup-Restore nutze den 'Restore'-Button. "
-            "Fuer Projekt-Import wird eine .bgp- oder .zip-Datei erwartet.",
-        )
-    if not (filename.endswith(".bgp") or filename.endswith(".zip") or filename.endswith(".md")):
-        raise HTTPException(
-            status_code=400,
-            detail="Datei muss eine .bgp/.zip-Datei (Projekt) oder .md-Datei (Markdown) sein",
-        )
-
-
-def _extract_project_zip(file: UploadFile, tmp_dir: Path) -> Path:
-    zip_path = tmp_dir / "project.zip"
-    with open(zip_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    extracted = tmp_dir / "extracted"
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(extracted)
-    return extracted
+# --- Public entry point used by WbtImportHandler (CIO-02) -------------
 
 
 def _import_project_root(db: Session, project_root: Path) -> dict[str, Any]:

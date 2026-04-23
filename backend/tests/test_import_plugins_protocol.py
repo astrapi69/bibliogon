@@ -21,11 +21,27 @@ from app.import_plugins import (
 from app.import_plugins.registry import _reset_for_tests
 
 
+def _rebuild_core_handlers() -> None:
+    """Re-import handlers/__init__.py so its side-effect
+    ``register(...)`` calls run again after ``_reset_for_tests``."""
+    import importlib
+
+    import app.import_plugins.handlers
+
+    importlib.reload(app.import_plugins.handlers)
+
+
 @pytest.fixture(autouse=True)
 def clean_registry() -> None:
     _reset_for_tests()
     yield
+    # Restore the core handler registration so downstream tests that
+    # expect bgb/markdown/wbt/office/markdown-folder to dispatch still
+    # work. Without this the registry stays empty after this file
+    # finishes and everything that hits /api/import/detect gets a
+    # 415 "registered_formats=[]".
     _reset_for_tests()
+    _rebuild_core_handlers()
 
 
 def test_detected_project_defaults_are_empty() -> None:

@@ -177,18 +177,18 @@ def test_smart_import_roundtrips_project_with_pandoc_metadata(
     project = client.get(f"/api/books/{book_id}/export/project")
     assert project.status_code == 200
 
-    resp = client.post(
-        "/api/backup/smart-import",
-        files={"file": ("proj.bgp", project.content, "application/octet-stream")},
+    # CIO-05: legacy smart-import replaced by orchestrator detect +
+    # execute. The exported project lands through the WBT handler
+    # which runs the same metadata parser - the regression pin
+    # (pandoc-style --- markers in metadata.yaml) is preserved.
+    import io
+
+    from tests.import_helpers import import_wbt_zip
+
+    result = import_wbt_zip(
+        client, io.BytesIO(project.content), filename="proj.zip"
     )
-    assert resp.status_code == 200
-    payload = resp.json()
-    # smart-import dispatches by file shape; a project ZIP coming
-    # from /export/project lands either as "template" or "project"
-    # depending on whether the reopen helper unwraps `.bgp` first.
-    # Both are valid "imported successfully" signals.
-    assert payload["type"] in {"template", "project"}
-    assert payload["result"]["book_id"]
+    assert result["book_id"]
 
 
 # ---------------------------------------------------------------------------
