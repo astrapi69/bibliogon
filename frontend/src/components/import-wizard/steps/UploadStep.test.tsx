@@ -62,20 +62,17 @@ describe("UploadStep", () => {
         expect(screen.getByTestId("upload-error")).toHaveTextContent(/unsupported/i);
     });
 
-    it("rejects .zip while no backend handler is registered for ZIPs", () => {
-        // Regression pin: the wizard previously advertised .zip in its
-        // accepted-formats list despite no registered backend handler.
-        // Keep .zip rejected at the gate until plugin-git-sync PGS-01
-        // ships a ZIP handler.
+    it("accepts .zip (WbtImportHandler handles write-book-template archives)", () => {
+        // CIO-02 re-enables .zip in the wizard: WbtImportHandler claims
+        // ZIPs that carry a config/metadata.yaml marker. ZIPs without
+        // the marker still get rejected by the orchestrator at detect
+        // time (415) - the wizard just lets the gate open.
         const onInputSelected = vi.fn();
         render(<UploadStep onInputSelected={onInputSelected} />);
         fireEvent.change(screen.getByTestId("upload-input"), {
             target: { files: [file("project.zip", 1024)] },
         });
-        expect(onInputSelected).not.toHaveBeenCalled();
-        expect(screen.getByTestId("upload-error")).toHaveTextContent(
-            /unsupported/i,
-        );
+        expect(onInputSelected).toHaveBeenCalled();
     });
 
     it("rejects files over 500 MB", () => {
