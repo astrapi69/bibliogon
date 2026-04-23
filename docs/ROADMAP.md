@@ -87,6 +87,18 @@ See [docs/explorations/donations-ux.md](explorations/donations-ux.md) for the fu
 
 ---
 
+## Core import orchestrator
+
+Unified import wizard in core that dispatches to format-specific plugin handlers via a two-phase `ImportPlugin` protocol (detect + execute). Preview panel catches silent-failure bugs (wrong cover path, stale CSS, misclassified assets) before they reach the DB. Full design in [docs/explorations/core-import-orchestrator.md](explorations/core-import-orchestrator.md).
+
+- [x] **CIO-01:** core wizard + detect/execute endpoints + `ImportPlugin` protocol + preview panel + override UI + duplicate detection + `.bgb` and markdown core handlers. Shipped across 2 sessions (backend foundation 5 commits ending `52744f0`, frontend wizard 9 commits ending `9a0ac7f`). 40 new backend tests + 38 new Vitest tests. Legacy `/api/backup/*` endpoints untouched.
+- [ ] **CIO-02:** plugin-git-sync adopts `ImportPlugin`, WBT logic moves to plugin, `smart_import` deprecated (301). Rolls up with PGS-01. Integration overhead: 3-5h.
+- [ ] **CIO-03:** folder drag-drop handler (`core-markdown-folder`). HTML5 `webkitdirectory` in the wizard's Step 1, multipart folder upload backend handler. Estimated effort: 6-10h.
+- [ ] **CIO-04:** office formats via `plugin-import-office` (`.docx`, `.epub`). Pandoc-based. Estimated effort: 10-15h.
+- [ ] **CIO-05:** deprecation cleanup (remove `smart_import.py`, empty `project_import.py`, remove old routes + callers). Estimated effort: 4-6h.
+
+---
+
 ## Plugins
 
 New plugin work tracked separately from Phase 2 themes. Plugin versions are independent of the app version; a plugin is bumped only when the plugin itself changes.
@@ -95,7 +107,7 @@ New plugin work tracked separately from Phase 2 themes. Plugin versions are inde
 
 Bi-directional git sync for Bibliogon books: import existing git-based book projects (write-book-template format), sync edits back. First plugin-to-plugin dependency (builds on plugin-export), orthogonal to the v0.21.0 core git integration. Full design in [docs/explorations/plugin-git-sync.md](explorations/plugin-git-sync.md).
 
-- [ ] **PGS-01:** plugin-git-sync Phase 1 (import-only MVP). New plugin scaffold, depends on plugin-export, "Import from Git" UI, clones repo to plugin workspace, parses `.bibliogon/` structure, creates Bibliogon book(s) (one per language branch when `branches.yaml` present), copies assets. No sync-back. Estimated effort: 12-18h.
+- [ ] **PGS-01:** plugin-git-sync Phase 1 (import-only MVP). New plugin scaffold, depends on plugin-export, implements the `ImportPlugin` protocol from CIO-01 (see [docs/explorations/core-import-orchestrator.md](explorations/core-import-orchestrator.md) Section 5), "Import from Git" UI slots into the Step 1 source picker once CIO-02 wires it, clones repo to plugin workspace, parses `.bibliogon/` structure, creates Bibliogon book(s) (one per language branch when `branches.yaml` present), copies assets. No sync-back. Estimated effort: 12-18h.
 - [ ] **PGS-02:** plugin-git-sync Phase 2 (export to repo, overwrite MVP). "Commit to Repo" button, serializes current Bibliogon state to repo spec, commits to local clone, optional push (reuses core PAT handling). Overwrite semantics (variant 2c): no 3-way comparison, direct-repo edits lost unless re-imported first. Estimated effort: 10-15h.
 - [ ] **PGS-03:** plugin-git-sync Phase 3 (smart-merge on re-import). Three-way comparison using `last_imported_commit_sha`, per-chapter conflict classification, UI for Keep/Take/Mark-conflict resolution. Estimated effort: 14-20h.
 - [ ] **PGS-04:** plugin-git-sync Phase 4 (multi-language linking UI). Books from different branches of the same repo shown as linked (DE/EN/ES badges), new `Book.translation_group_id` column auto-populated on import, manual link/unlink in Settings. Estimated effort: 8-12h.
