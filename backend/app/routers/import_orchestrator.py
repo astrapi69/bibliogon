@@ -76,22 +76,43 @@ class ExecuteResponse(BaseModel):
 
 @router.post("/detect", response_model=DetectResponse)
 def detect_import(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
+    paths: list[str] | None = Form(default=None),
     db: Session = Depends(get_db),
 ) -> DetectResponse:
+    """Stage uploaded bytes and dispatch to the matching plugin handler.
+
+    Accepts:
+    - a single file (``files=<one>``) with or without ``paths``. Staged
+      directly; plugins see a FILE path.
+    - a folder drop (``files=<many>`` + ``paths=<same length>``). The
+      ``paths`` list carries browser-provided ``webkitRelativePath``
+      values. Every file lands at ``<stage>/payload/<rel path>`` and
+      the handler sees the shared DIRECTORY at ``<stage>/payload/<root>``.
+    """
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No files uploaded.",
+        )
+    if paths is not None and len(paths) != len(files):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="'paths' length must match 'files' length.",
+        )
+
     _gc_stale_staging()
     temp_ref = f"imp-{uuid.uuid4().hex}"
-    staging_path = _stage_upload(file, temp_ref)
+    staging_path = _stage_uploads(files, paths, temp_ref)
 
     plugin = find_handler(str(staging_path))
     if plugin is None:
-        # Drop the stage; nothing can consume it.
         _drop_staged(temp_ref)
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={
                 "message": "No import handler can process this file.",
-                "filename": file.filename,
+                "filename": files[0].filename,
                 "registered_formats": [p.format_name for p in list_plugins()],
             },
         )
@@ -168,25 +189,82 @@ def execute_import(
 # --- Helpers ---
 
 
-def _stage_upload(file: UploadFile, temp_ref: str) -> Path:
-    stage_dir = _STAGING_DIR / temp_ref
-    stage_dir.mkdir(parents=True, exist_ok=True)
-    original_name = file.filename or "upload"
-    # Preserve the original filename so can_handle can look at the suffix.
-    dest = stage_dir / original_name
-    with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    return dest
+def _stage_uploads(
+    files: list[UploadFile], paths: list[str] | None, temp_ref: str
+) -> Path:
+    """Persist one or more uploads to disk and return the path a handler
+    should inspect.
+
+    Layout: ``<STAGING_DIR>/<temp_ref>/payload/<rel>``. Single-file
+    uploads land at ``payload/<filename>`` and we return the file path.
+    Folder uploads (``paths`` aligned with ``files`` 1:1) land at their
+    ``webkitRelativePath`` position; we return ``payload/<root>`` where
+    ``<root>`` is the common first path segment.
+    """
+    payload_dir = _STAGING_DIR / temp_ref / "payload"
+    payload_dir.mkdir(parents=True, exist_ok=True)
+
+    for i, upload in enumerate(files):
+        rel = (paths[i] if paths else None) or upload.filename or f"file-{i}"
+        rel = _sanitise_rel_path(rel)
+        dest = payload_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "wb") as f:
+            shutil.copyfileobj(upload.file, f)
+
+    return _input_path_for_payload(payload_dir, files, paths)
+
+
+def _sanitise_rel_path(rel: str) -> str:
+    """Strip leading slashes and reject ``..`` components. Preserves the
+    ``webkitRelativePath`` layout while blocking path traversal."""
+    parts = [p for p in rel.replace("\\", "/").split("/") if p and p != "."]
+    if any(p == ".." for p in parts):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid path component in upload: {rel!r}",
+        )
+    return "/".join(parts) or "upload"
+
+
+def _input_path_for_payload(
+    payload_dir: Path,
+    files: list[UploadFile],
+    paths: list[str] | None,
+) -> Path:
+    """Work out which path the handler should see.
+
+    Single file upload -> the file itself. Folder upload -> the root
+    directory (``payload_dir / <first segment of the common path>``).
+    """
+    if len(files) == 1 and not (paths and "/" in _sanitise_rel_path(paths[0] or "")):
+        # single file: return the file path directly
+        rel = (paths[0] if paths else None) or files[0].filename or "upload"
+        return payload_dir / _sanitise_rel_path(rel)
+
+    # folder upload: shared first segment across all paths
+    roots: set[str] = set()
+    for i, upload in enumerate(files):
+        rel = (paths[i] if paths else None) or upload.filename or f"file-{i}"
+        first = _sanitise_rel_path(rel).split("/", 1)[0]
+        roots.add(first)
+    if len(roots) == 1:
+        return payload_dir / next(iter(roots))
+    return payload_dir
 
 
 def _resolve_staged(temp_ref: str) -> Path | None:
-    stage_dir = _STAGING_DIR / temp_ref
+    stage_dir = _STAGING_DIR / temp_ref / "payload"
     if not stage_dir.is_dir():
         return None
-    children = [c for c in stage_dir.iterdir() if c.is_file()]
-    if not children:
+    entries = list(stage_dir.iterdir())
+    if not entries:
         return None
-    return children[0]
+    if len(entries) == 1:
+        return entries[0]
+    # Multiple roots at payload level - return the payload dir so the
+    # handler sees everything as one directory input.
+    return stage_dir
 
 
 def _drop_staged(temp_ref: str) -> None:

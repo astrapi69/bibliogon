@@ -64,7 +64,7 @@ def _bgb_bytes(book_id: str = "e2e-1", title: str = "E2E Book") -> bytes:
 def _post_detect(client: TestClient, *, filename: str, content: bytes) -> dict:
     resp = client.post(
         "/api/import/detect",
-        files={"file": (filename, content, "application/octet-stream")},
+        files=[("files", (filename, content, "application/octet-stream"))],
     )
     assert resp.status_code == 200, resp.text
     return resp.json()
@@ -89,7 +89,7 @@ def test_detect_markdown_returns_preview(client: TestClient) -> None:
 def test_detect_unsupported_returns_415(client: TestClient) -> None:
     resp = client.post(
         "/api/import/detect",
-        files={"file": ("file.pdf", b"%PDF-1.4", "application/pdf")},
+        files=[("files", ("file.pdf", b"%PDF-1.4", "application/pdf"))],
     )
     assert resp.status_code == 415, resp.text
     payload = resp.json()["detail"]
@@ -166,6 +166,54 @@ def test_execute_cancel_does_not_create_book(client: TestClient) -> None:
         },
     )
     assert second.status_code == 404
+
+
+def test_detect_folder_upload_dispatches_to_markdown_folder_handler(
+    client: TestClient,
+) -> None:
+    """Multi-file multipart with webkit-style relative paths lands the
+    handler at the folder root (CIO-03)."""
+    resp = client.post(
+        "/api/import/detect",
+        files=[
+            (
+                "files",
+                ("project/01-intro.md", b"# Intro\n\nOne."),
+            ),
+            (
+                "files",
+                ("project/02-second.md", b"# Second\n\nTwo."),
+            ),
+        ],
+        data={"paths": ["project/01-intro.md", "project/02-second.md"]},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["detected"]["format_name"] == "markdown-folder"
+    assert body["detected"]["title"] == "Intro"
+    assert len(body["detected"]["chapters"]) == 2
+
+    execute = client.post(
+        "/api/import/execute",
+        json={
+            "temp_ref": body["temp_ref"],
+            "overrides": {},
+            "duplicate_action": "create",
+        },
+    )
+    assert execute.status_code == 200, execute.text
+    assert execute.json()["status"] == "created"
+
+
+def test_detect_rejects_path_traversal(client: TestClient) -> None:
+    resp = client.post(
+        "/api/import/detect",
+        files=[
+            ("files", ("../evil.md", b"# x")),
+        ],
+        data={"paths": ["../evil.md"]},
+    )
+    assert resp.status_code == 400, resp.text
 
 
 def test_execute_overwrite_replaces_book(client: TestClient) -> None:

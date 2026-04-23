@@ -71,9 +71,18 @@ function encodeUnsupportedFormatDetail(detail: unknown): string {
     return formats ? `${message} (supported: ${formats})` : message;
 }
 
-export async function detectImport(file: File): Promise<DetectResponse> {
+export async function detectImport(
+    input: File | File[],
+    relativePaths?: string[],
+): Promise<DetectResponse> {
     const form = new FormData();
-    form.append("file", file);
+    const files = Array.isArray(input) ? input : [input];
+    for (const f of files) {
+        form.append("files", f);
+    }
+    if (relativePaths && relativePaths.length === files.length) {
+        for (const p of relativePaths) form.append("paths", p);
+    }
     const response = await fetch(`${BASE}/import/detect`, {
         method: "POST",
         body: form,
