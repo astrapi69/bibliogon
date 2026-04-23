@@ -19,12 +19,17 @@ import { ExecutingStep } from "./steps/ExecutingStep";
 import { SuccessStep } from "./steps/SuccessStep";
 import { ErrorStep } from "./steps/ErrorStep";
 
+interface WizardInput {
+    files: File[];
+    paths?: string[];
+}
+
 export type WizardState =
     | { step: "upload" }
-    | { step: "detecting"; file: File }
+    | { step: "detecting"; input: WizardInput }
     | {
           step: "preview";
-          file: File;
+          input: WizardInput;
           detected: DetectedProject;
           duplicate: DuplicateInfo;
           tempRef: string;
@@ -33,7 +38,7 @@ export type WizardState =
       }
     | {
           step: "executing";
-          file: File;
+          input: WizardInput;
           detected: DetectedProject;
           tempRef: string;
           overrides: Overrides;
@@ -147,16 +152,25 @@ export default function ImportWizardModal({
                     >
                         {state.step === "upload" && (
                             <UploadStep
-                                onFileSelected={(file) => setState({ step: "detecting", file })}
+                                onInputSelected={(selection) =>
+                                    setState({
+                                        step: "detecting",
+                                        input: {
+                                            files: selection.files,
+                                            paths: selection.paths,
+                                        },
+                                    })
+                                }
                             />
                         )}
                         {state.step === "detecting" && (
                             <DetectingStep
-                                file={state.file}
+                                files={state.input.files}
+                                paths={state.input.paths}
                                 onDetected={(detected, duplicate, tempRef) =>
                                     setState({
                                         step: "preview",
-                                        file: state.file,
+                                        input: state.input,
                                         detected,
                                         duplicate,
                                         tempRef,
@@ -170,7 +184,7 @@ export default function ImportWizardModal({
                                         message,
                                         canRetry: true,
                                         retry: () => {
-                                            setState({ step: "detecting", file: state.file });
+                                            setState({ step: "detecting", input: state.input });
                                             retry?.();
                                         },
                                     })
@@ -198,7 +212,7 @@ export default function ImportWizardModal({
                                 onConfirm={() =>
                                     setState({
                                         step: "executing",
-                                        file: state.file,
+                                        input: state.input,
                                         detected: state.detected,
                                         tempRef: state.tempRef,
                                         overrides: state.overrides,

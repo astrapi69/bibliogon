@@ -14,11 +14,15 @@ const ROTATE_KEYS = [
 
 export function DetectingStep({
     file,
+    files,
+    paths,
     onDetected,
     onError,
     onCancel,
 }: {
-    file: File;
+    file?: File;
+    files?: File[];
+    paths?: string[];
     onDetected: (
         detected: DetectedProject,
         duplicate: DuplicateInfo,
@@ -40,7 +44,14 @@ export function DetectingStep({
             setStatusIdx((i) => (i + 1) % ROTATE_KEYS.length);
         }, 1200);
 
-        detectImport(file)
+        const input: File | File[] =
+            files && files.length > 0
+                ? files
+                : file
+                  ? file
+                  : (files ?? []);
+
+        detectImport(input as File | File[], paths)
             .then((response) => {
                 if (cancelledRef.current || !mounted) return;
                 onDetected(response.detected, response.duplicate, response.temp_ref);
@@ -60,7 +71,7 @@ export function DetectingStep({
             mounted = false;
             window.clearInterval(rotate);
         };
-    }, [file, onDetected, onError]);
+    }, [file, files, paths, onDetected, onError]);
 
     return (
         <div
@@ -93,7 +104,11 @@ export function DetectingStep({
                     textAlign: "center",
                 }}
             >
-                {file.name}
+                {file
+                    ? file.name
+                    : files && files.length > 0
+                      ? `${files.length} files`
+                      : ""}
             </p>
             <button
                 className="btn btn-secondary btn-sm"
