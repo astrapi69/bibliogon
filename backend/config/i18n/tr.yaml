@@ -1055,3 +1055,6 @@ ui:
     success_auto_redirect: '{n} sn icinde duzenleyici aciliyor...'
     error_title: Ice aktarma basarisiz
     error_retry: Tekrar dene
+    step_1_pick_folder: Veya Markdown dosyalari icin klasor sec
+    error_folder_empty: Klasorde .md/.markdown dosyasi yok.
+    error_folder_too_many: Klasorde cok fazla dosya var ({count}); maksimum {max}.

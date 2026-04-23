@@ -1055,3 +1055,6 @@ ui:
     success_auto_redirect: Oeffne Editor in {n}s...
     error_title: Import fehlgeschlagen
     error_retry: Erneut versuchen
+    step_1_pick_folder: Oder Markdown-Ordner auswaehlen
+    error_folder_empty: Ordner enthaelt keine .md/.markdown-Dateien.
+    error_folder_too_many: Zu viele Dateien im Ordner ({count}); Maximum {max}.

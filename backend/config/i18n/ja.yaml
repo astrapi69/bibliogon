@@ -1055,3 +1055,6 @@ ui:
     success_auto_redirect: '{n}秒後にエディタを開きます...'
     error_title: インポート失敗
     error_retry: 再試行
+    step_1_pick_folder: またはMarkdownファイルのフォルダを選択
+    error_folder_empty: フォルダに.md/.markdownファイルがありません。
+    error_folder_too_many: フォルダのファイルが多すぎます ({count})。最大 {max}。

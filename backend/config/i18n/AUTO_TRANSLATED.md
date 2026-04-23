@@ -37,6 +37,18 @@ translations so the i18n advisory check stops flagging them.
 | `ui.ssh.confirm_overwrite` | ES, FR, EL, PT, TR, JA |
 | `ui.ssh.intro` | ES, FR, EL, PT, TR, JA |
 
+## 2026-04-24 — CIO-03 folder-upload wizard strings for DE, ES, FR, EL, PT, TR, JA
+
+3 new keys per language added for the folder-upload UI shipped in
+commit 896e7e6:
+
+- `ui.import_wizard.step_1_pick_folder` (button label)
+- `ui.import_wizard.error_folder_empty`
+- `ui.import_wizard.error_folder_too_many`
+
+Placeholders (`{count}`, `{max}`) preserved across all languages.
+Machine-translated; native-speaker review welcome.
+
 ## 2026-04-23 — Import wizard (`ui.import_wizard.*`) strings for DE, ES, FR, EL, PT, TR, JA
 
 46 keys under `ui.import_wizard.*` plus one `ui.dashboard.import_new`

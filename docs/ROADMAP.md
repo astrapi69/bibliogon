@@ -93,7 +93,7 @@ Unified import wizard in core that dispatches to format-specific plugin handlers
 
 - [x] **CIO-01:** core wizard + detect/execute endpoints + `ImportPlugin` protocol + preview panel + override UI + duplicate detection + `.bgb` and markdown core handlers. Shipped across 2 sessions (backend foundation 5 commits ending `52744f0`, frontend wizard 9 commits ending `9a0ac7f`). 40 new backend tests + 38 new Vitest tests. Legacy `/api/backup/*` endpoints untouched.
 - [ ] **CIO-02:** plugin-git-sync adopts `ImportPlugin`, WBT logic moves to plugin, `smart_import` deprecated (301). Rolls up with PGS-01. Integration overhead: 3-5h.
-- [ ] **CIO-03:** folder drag-drop handler (`core-markdown-folder`). HTML5 `webkitdirectory` in the wizard's Step 1, multipart folder upload backend handler. Estimated effort: 6-10h.
+- [x] **CIO-03:** folder drag-drop handler (`core-markdown-folder`). Shipped in 4 commits: `f524ca1` (folder handler + 14 tests), `92f2331` (`/api/import/detect` accepts multi-file multipart + path-traversal guard), `896e7e6` (wizard webkitdirectory + drop-many support), i18n + this roadmap update.
 - [ ] **CIO-04:** office formats via `plugin-import-office` (`.docx`, `.epub`). Pandoc-based. Estimated effort: 10-15h.
 - [ ] **CIO-05:** deprecation cleanup (remove `smart_import.py`, empty `project_import.py`, remove old routes + callers). Estimated effort: 4-6h.
 

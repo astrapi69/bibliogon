@@ -1055,3 +1055,6 @@ ui:
     success_auto_redirect: A abrir editor em {n}s...
     error_title: Falha ao importar
     error_retry: Tentar novamente
+    step_1_pick_folder: Ou escolhe uma pasta de ficheiros Markdown
+    error_folder_empty: A pasta nao tem ficheiros .md/.markdown.
+    error_folder_too_many: Demasiados ficheiros na pasta ({count}); maximo {max}.

@@ -1055,3 +1055,6 @@ ui:
     success_auto_redirect: Άνοιγμα επεξεργαστή σε {n}δ...
     error_title: Αποτυχία εισαγωγής
     error_retry: Επανάληψη
+    step_1_pick_folder: Ή επέλεξε φάκελο με αρχεία Markdown
+    error_folder_empty: Ο φάκελος δεν περιέχει αρχεία .md/.markdown.
+    error_folder_too_many: Πάρα πολλά αρχεία στον φάκελο ({count})· μέγιστο {max}.
