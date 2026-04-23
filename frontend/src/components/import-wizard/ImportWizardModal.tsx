@@ -7,7 +7,7 @@
  * path is modified; the legacy button still uses /api/backup/smart-import.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
@@ -70,6 +70,21 @@ export default function ImportWizardModal({
 }: ImportWizardModalProps) {
     const { t } = useI18n();
     const [state, setState] = useState<WizardState>({ step: "upload" });
+    const bodyRef = useRef<HTMLDivElement>(null);
+
+    // Focus the first interactive element in the step body when the
+    // step changes. Improves keyboard UX and announces step content
+    // to screen readers.
+    useEffect(() => {
+        if (!open) return;
+        const id = window.requestAnimationFrame(() => {
+            const el = bodyRef.current?.querySelector<HTMLElement>(
+                "[data-autofocus], input, button, [tabindex]:not([tabindex='-1'])",
+            );
+            el?.focus();
+        });
+        return () => window.cancelAnimationFrame(id);
+    }, [state.step, open]);
 
     const resetAndClose = () => {
         setState({ step: "upload" });
@@ -126,7 +141,10 @@ export default function ImportWizardModal({
                         </Dialog.Close>
                     </div>
 
-                    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}>
+                    <div
+                        ref={bodyRef}
+                        style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}
+                    >
                         {state.step === "upload" && (
                             <UploadStep
                                 onFileSelected={(file) => setState({ step: "detecting", file })}
@@ -233,8 +251,26 @@ export default function ImportWizardModal({
                             />
                         )}
                     </div>
+                    <style>{WIZARD_STYLES}</style>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
     );
 }
+
+const WIZARD_STYLES = `
+.import-wizard-dialog { animation: iw-fade-in 160ms ease-out; }
+@keyframes iw-fade-in {
+    from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .import-wizard-dialog { animation: none; }
+    .import-wizard-spin { animation: none !important; }
+}
+@media (max-width: 640px) {
+    .preview-panel .preview-panel-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+`;

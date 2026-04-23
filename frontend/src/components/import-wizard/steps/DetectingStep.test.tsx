@@ -95,7 +95,7 @@ describe("DetectingStep", () => {
     });
 
     it("cancel stops calling onDetected even if the API resolves late", async () => {
-        let resolveDetect: ((v: unknown) => void) | null = null;
+        let resolveDetect: (v: unknown) => void = () => {};
         detectImportMock.mockImplementation(
             () =>
                 new Promise((resolve) => {
@@ -115,7 +115,7 @@ describe("DetectingStep", () => {
         fireEvent.click(screen.getByTestId("detecting-cancel"));
         expect(onCancel).toHaveBeenCalled();
         // Late resolution must not invoke onDetected.
-        resolveDetect?.({
+        resolveDetect({
             detected: {},
             duplicate: { found: false },
             temp_ref: "late",
