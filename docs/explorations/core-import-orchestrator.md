@@ -246,8 +246,9 @@ Implicit commitments:
 - Preview panel: title, author, language (inline editable), chapter list, asset grid with thumbnails, cover preview, CSS snippet, warnings panel.
 - Override UI: per-field inline editors; asset purpose dropdown; chapter reorder + drop.
 - Temporary upload staging: `uploads/.import-staging/{uuid}/` holds the input between detect and execute; cleaned on execute success or 30-minute TTL.
+- **Duplicate detection.** `detect()` computes a source identifier (git repo URL for cloned repos, SHA-256 of the input ZIP bytes, or content signature derived from title+author+chapter-count for folders and single files) and returns it on `DetectedProject.source_identifier`. Core compares against a new `BookImportSource` table keyed by `(source_identifier, book_id)`. If a match exists, the preview panel shows a warning `This book appears to already be imported (as <title>, created <date>)` with three options: **Cancel**, **Overwrite existing**, or **Create as a new copy**. Overwrite re-runs `execute()` against the matched `book_id` (plugin-dependent: transactional replace of chapters/assets/metadata, cover reset). Create-as-new imports into a fresh `book_id`. Silent duplicates — the current behaviour — are not an option in the new flow. Closes the user-reported "repeated imports create silent duplicates" class of bug.
 
-**Estimated effort:** 20-28h (revised up from 15-22 — preview panel alone is 4-6h including the asset grid; override inline editors add another 3-4h).
+**Estimated effort:** 22-32h (revised up from 20-28 — duplicate detection adds the `BookImportSource` schema, source-identifier computation in plugin `detect()`, and three-way confirm UX in the preview panel: ~2-4h).
 
 **Out of Phase 1:** git URL support, folder drag-drop, `.docx`/`.epub`, plugin-git-sync adoption.
 
@@ -303,7 +304,7 @@ Covers PGS-01 scope; integration overhead ~3-5h on top of the existing PGS-01 bu
 Non-blockers for Phase 1 start; each phase resolves what it needs.
 
 - **Large uploads.** WBT ZIPs routinely 20-50MB, books with audiobook masters can hit 500MB+. Phase 1 must decide: streaming multipart upload (backend streams to disk, never holds full content in memory) vs buffered (simpler but kills the backend on big files). Recommendation: streaming; FastAPI + `aiofiles` supports it cleanly.
-- **Duplicate book detection.** User imports the same repo twice. Warn and require confirm? Refuse? Silent overwrite? Recommendation: warn at Step 3 preview if any existing book has the same title + author, let user proceed anyway.
+- ~~**Duplicate book detection.**~~ Resolved: moved into Phase 1 scope (Section 8) as a requirement, not a future enhancement. See the `Duplicate detection` bullet there for the full contract (source identifier, `BookImportSource` table, three-way Cancel / Overwrite / Copy confirm in the preview panel).
 - **Partial failure recovery.** `execute` fails halfway through asset copy. Rollback? Leave partial book? Recommendation: execute wraps the DB work in a transaction; disk writes happen AFTER the transaction commits. On disk-write failure, rollback the transaction and delete any partial files.
 - **Format conflict at dispatch.** Two plugins both `can_handle()` the same input. Recommendation: priority config first-wins; log a warning listing all matching plugins so the user can re-order via settings if the automatic pick is wrong.
 - **Plugin discovery UX.** User drops a `.docx` on a Bibliogon install without `plugin-import-office`. Recommendation: wizard Step 2 detects the extension, shows "No plugin can handle `.docx` files yet. Install `plugin-import-office` (one-click)?"
@@ -381,7 +382,7 @@ After this exploration is committed, ROADMAP gets a new category (separate commi
 ```markdown
 ### Core import orchestrator
 
-- [ ] **CIO-01:** core wizard + detect/execute endpoints + `ImportPlugin` protocol + preview panel + override UI. Existing `.bgb` and markdown paths rewritten as core handlers. Estimated effort: 20-28h.
+- [ ] **CIO-01:** core wizard + detect/execute endpoints + `ImportPlugin` protocol + preview panel + override UI + duplicate detection (source identifier, `BookImportSource` table, Cancel/Overwrite/Copy confirm). Existing `.bgb` and markdown paths rewritten as core handlers. Estimated effort: 22-32h.
 - [ ] **CIO-02:** plugin-git-sync adopts `ImportPlugin`, WBT logic moves to plugin, `smart_import` deprecated (301). Rolls up with PGS-01 from the plugin roadmap. Integration overhead: 3-5h.
 - [ ] **CIO-03:** folder drag-drop handler (`core-markdown-folder`). Estimated effort: 6-10h.
 - [ ] **CIO-04:** office formats via `plugin-import-office` (`.docx`, `.epub`). Estimated effort: 10-15h.
