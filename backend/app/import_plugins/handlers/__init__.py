@@ -9,9 +9,12 @@ register via pluggy and do NOT live here.
 """
 
 from app.import_plugins.handlers.bgb import BgbImportHandler
+from app.import_plugins.handlers.markdown import MarkdownImportHandler
 from app.import_plugins.registry import register
 
 # Core handlers register themselves at module import time. Order defines
 # priority: the .bgb handler goes first so a .bgb file is never
-# mis-dispatched to a generic ZIP or markdown handler.
+# mis-dispatched to a generic ZIP handler; markdown follows because .md
+# is the universal fallback and must never outrank a specific format.
 register(BgbImportHandler())
+register(MarkdownImportHandler())
