@@ -124,6 +124,11 @@ class Book(Base):
     chapters: Mapped[list["Chapter"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", order_by="Chapter.position"
     )
+    import_source: Mapped["BookImportSource | None"] = relationship(
+        back_populates="book",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
     assets: Mapped[list["Asset"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
@@ -201,6 +206,43 @@ class Asset(Base):
 
     def __repr__(self) -> str:
         return f"<Asset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
+
+
+class BookImportSource(Base):
+    """Origin record for an imported book.
+
+    Written by the orchestrator's execute step; read by the detect
+    step so the preview panel can show "This book appears to already
+    be imported (as <title>, created <date>)" with Cancel / Overwrite /
+    Create-as-Copy options. Without this table, re-imports silently
+    create duplicate books (bug class documented in the cover-import
+    debugging sessions).
+    """
+
+    __tablename__ = "book_import_sources"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # Source identifier format is plugin-specific:
+    #   ``sha256:<hex>``      for content-addressable ZIPs / files
+    #   ``git:<normalized>``  for git URLs
+    #   ``signature:<...>``   for folder/single-file content signatures
+    source_identifier: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    format_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+
+    book: Mapped["Book"] = relationship(back_populates="import_source")
+
+    def __repr__(self) -> str:
+        return (
+            f"<BookImportSource book={self.book_id!r} "
+            f"identifier={self.source_identifier!r} type={self.source_type}>"
+        )
 
 
 class BookTemplate(Base):
