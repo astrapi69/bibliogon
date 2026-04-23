@@ -35,6 +35,26 @@ def test_smart_import_markdown_zip():
     _cleanup(data["result"]["book_id"])
 
 
+def test_smart_import_sets_deprecation_headers():
+    """CIO-02: smart-import endpoint carries Deprecation + Link headers
+    pointing callers at the new /api/import/detect successor."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("chapter.md", "# A\n\nHi.\n")
+    buf.seek(0)
+
+    r = client.post(
+        "/api/backup/smart-import",
+        files={"file": ("a.zip", buf, "application/zip")},
+    )
+    assert r.status_code == 200
+    assert r.headers.get("Deprecation") == "true"
+    assert "/api/import/detect" in r.headers.get("Link", "")
+    assert 'rel="successor-version"' in r.headers.get("Link", "")
+    assert "Deprecated" in r.headers.get("Warning", "")
+    _cleanup(r.json()["result"]["book_id"])
+
+
 def test_smart_import_bgb_backup():
     """A .bgb file should be detected as backup."""
     # Create a book first

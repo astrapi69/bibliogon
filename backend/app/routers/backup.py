@@ -7,7 +7,7 @@ All business logic lives in that package - see its ``__init__`` for the map.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -63,9 +63,30 @@ def import_project(file: UploadFile, db: Session = Depends(get_db)) -> dict[str,
     return import_project_zip(file, db)
 
 
-@router.post("/smart-import")
-def smart_import(file: UploadFile, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """Auto-detect file format and route to the matching importer."""
+@router.post("/smart-import", deprecated=True)
+def smart_import(
+    file: UploadFile,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """DEPRECATED (CIO-02): use POST /api/import/detect + /api/import/execute.
+
+    The new two-phase orchestrator surface (``/api/import/*``) replaces
+    this one-shot endpoint. Scheduled for removal in CIO-05 after at
+    least one release cycle of deprecation.
+
+    Until then this endpoint continues to work as before so existing
+    Dashboard buttons keep importing. Every response carries a
+    ``Deprecation: true`` + ``Link: </api/import/detect>; rel="successor-version"``
+    header pair so automated clients can notice the transition.
+    """
+    response.headers["Deprecation"] = "true"
+    response.headers["Link"] = (
+        '</api/import/detect>; rel="successor-version"'
+    )
+    response.headers["Warning"] = (
+        '299 - "Deprecated API: migrate to /api/import/detect + /api/import/execute"'
+    )
     return smart_import_file(file, db)
 
 
