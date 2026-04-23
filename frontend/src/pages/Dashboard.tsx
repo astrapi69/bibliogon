@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import BackupCompareDialog from "../components/BackupCompareDialog";
+import { ImportWizardModal } from "../components/import-wizard";
 import ThemeToggle from "../components/ThemeToggle";
 import {useTheme} from "../hooks/useTheme";
 import {Moon, Sun} from "lucide-react";
@@ -41,6 +42,7 @@ export default function Dashboard() {
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
     const [reminderVisible, setReminderVisible] = useState(false);
+    const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
     const importInputRef = useRef<HTMLInputElement>(null);
@@ -198,6 +200,9 @@ export default function Dashboard() {
                             </button>
                             <button className="btn btn-secondary btn-sm" data-testid="backup-import-btn" onClick={() => importInputRef.current?.click()}>
                                 <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
+                            </button>
+                            <button className="btn btn-secondary btn-sm" data-testid="import-wizard-btn" onClick={() => setImportWizardOpen(true)}>
+                                <Upload size={14}/> {t("ui.dashboard.import_new", "Import (New)")}
                             </button>
                             <div style={styles.headerSeparator}/>
                             <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
@@ -483,6 +488,11 @@ export default function Dashboard() {
             <BackupCompareDialog
                 open={showCompareDialog}
                 onClose={() => setShowCompareDialog(false)}
+            />
+            <ImportWizardModal
+                open={importWizardOpen}
+                onClose={() => setImportWizardOpen(false)}
+                onImported={() => loadBooks()}
             />
             {donationsConfig ? (
                 <DonationOnboardingDialog
