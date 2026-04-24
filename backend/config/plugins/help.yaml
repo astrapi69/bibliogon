@@ -282,3 +282,9 @@ faq:
     answer:
       de: "Dashboard -> Importieren. Oben im Assistenten gibt es ein Feld 'Import aus einer Git-URL': URL einfuegen, 'Klonen + Importieren' klicken. Bibliogon klont das Repo in ein temporaeres Verzeichnis und importiert es wie ein write-book-template-Projekt. Aktuell nur oeffentliche HTTPS-Repos; Authentifizierung, Branch-Auswahl und Smart-Merge folgen in spaeteren Phasen."
       en: "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+  - question:
+      de: "Wie kontrolliere ich, welche Metadaten-Felder importiert werden?"
+      en: "How do I control which metadata fields get imported?"
+    answer:
+      de: "Ab v0.22 zeigt Schritt 3 des Import-Assistenten jedes Feld des Buch-Metadaten-Editors als eigene Zeile mit Checkbox + editierbarem Wert. Titel und Autor sind Pflichtfelder. Jede andere Zeile kannst du abwaehlen (dann bleibt die Spalte leer) oder den Wert vor dem Import editieren. Langformige Felder (CSS, Rueckseitentext, Autoren-Bio) sind zuklappbar. Abschnitte, deren Felder alle leer sind, verbergen sich hinter 'Felder hinzufuegen'."
+      en: "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."

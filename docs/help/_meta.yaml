@@ -77,6 +77,10 @@ navigation:
           de: Git-URL
           en: Git URL
         slug: import/git-url
+      - title:
+          de: Feldauswahl
+          en: Field selection
+        slug: import/field-selection
 
   - title:
       de: Installation
