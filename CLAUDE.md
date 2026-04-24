@@ -3,7 +3,7 @@
 Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plugin framework based on pluggy. Offline-capable, i18n-ready, local-first. All plugins are free during the current development phase (see docs/explorations/monetization.md for future strategy).
 
 - **Repository:** https://github.com/astrapi69/bibliogon
-- **Version:** 0.21.0 (Git-based backup, full 5-phase plan shipped: local git per book, remote push/pull with encrypted PATs, SSH key generation, 3-way merge with per-file conflict resolution, Markdown side-files for readable diffs; closes SI-01..04. Plus AI fix_issue mode for quality findings, quality-tab navigate-to-first-issue, Settings KI-Assistent tab refactor, CSS zoom fixes (#10, #11), Node 22 -> 24 LTS migration, backend CVE sweep aiohttp/pygments/starlette 13 -> 0.)
+- **Version:** 0.22.0 (Core import orchestrator CIO-01..CIO-08: unified /api/import/* two-phase flow, 5 source handlers (.bgb, markdown file/folder, .docx, .epub, WBT zip), duplicate detection, full Book-column field-selection wizard, .git/ adoption, multi-cover + author-asset classification, Settings-sourced author picker. Plus plugin-git-sync PGS-01 for git-URL import (first plugin-to-plugin dep pattern). BREAKING: /api/backup/smart-import + /api/backup/import-project removed (deprecated in v0.21.0).)
 - **Concept:** docs/CONCEPT.md
 - **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
 - **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)
