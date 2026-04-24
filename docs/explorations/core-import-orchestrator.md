@@ -83,7 +83,7 @@ All three bugs became user-catchable at preview time. The DB never saw the broke
 ## 4. Plugin interface specification
 
 ```python
-# backend/app/import_plugins/protocol.py (tentative location - see Section 9)
+# backend/app/import_plugins/protocol.py (resolved location - see Section 9)
 
 from typing import Protocol
 from pydantic import BaseModel
@@ -240,7 +240,7 @@ Implicit commitments:
 - New React wizard component, 4-step flow (Source → Detect → Preview → Execute).
 - `POST /api/import/detect` endpoint (read-only, returns `DetectedProject`).
 - `POST /api/import/execute` endpoint (authoritative, creates book).
-- `ImportPlugin` protocol in `backend/app/import_plugins/protocol.py` (see Section 9 open questions).
+- `ImportPlugin` protocol in `backend/app/import_plugins/protocol.py` (location resolved — see Section 9).
 - PluginForge integration: import plugins discovered via a new `bibliogon.import_plugins` entry-point group.
 - Existing `.bgb` and `markdown_import` rewritten as core handlers.
 - Preview panel: title, author, language (inline editable), chapter list, asset grid with thumbnails, cover preview, CSS snippet, warnings panel.
@@ -316,7 +316,13 @@ Non-blockers for Phase 1 start; each phase resolves what it needs.
 
 Four decisions the spec leaves open; each blocks nothing in Phase 1 but needs resolution before the corresponding surface ships.
 
-- **Protocol location.** `backend/app/import_plugins/protocol.py` is the spec's tentative home. If `plugin-git-sync` (external repo, future PyPI package) must import the protocol, two options exist: (a) plugin depends on `bibliogon` as a transitive import (tight coupling, fights plugin independence); (b) protocol moves to PluginForge (expands PluginForge scope beyond framework, into domain-specific contracts). Decision needed before Phase 2.
+- **Protocol location. RESOLVED 2026-04-24: stays in Bibliogon (`backend/app/import_plugins/protocol.py`).** Audit findings behind the decision:
+  - *PluginForge is self-described "application-agnostic plugin framework"* (see `pluginforge/__init__.py` docstring). `DetectedProject` / `DetectedChapter` / `DetectedAsset` are book-authoring domain types. Putting them in PluginForge violates its stated scope and pushes the framework toward per-app domain ownership.
+  - *PluginForge has no `protocols/` or `types/` subpackage today.* Public API is `BasePlugin` + `PluginManager` + error types; zero `typing.Protocol` or pydantic usage. Moving `ImportPlugin` would be the first domain protocol in the package — a scope-expansion policy shift, not a file move.
+  - *Monorepo plugin pattern already works.* 9 existing Bibliogon plugins live under `plugins/` and import from `app.*` freely. PGS-01 can follow the same pattern at zero coupling cost. "External PyPI plugin" is a hypothetical future; no plugin has been extracted yet.
+  - *Hookspecs (`backend/app/hookspecs.py`) are already domain-local.* Bibliogon keeps its plugin-facing contracts in-repo as policy; `ImportPlugin` fits that policy.
+  - **Migration contract if the decision is revisited later:** when a concrete second consumer appears — either a second app implements `ImportPlugin`, or a third-party wants to distribute an `ImportPlugin` outside the Bibliogon repo — PluginForge can add a `protocols/` subpackage, Bibliogon re-exports from the new location for one minor release with a `DeprecationWarning` on the old path, then drops the local definition. Until then the protocol stays local and evolves at Bibliogon's cadence.
+  - **Unblocks PGS-01:** plugin-git-sync Phase 1 lives under `plugins/bibliogon-plugin-git-sync/` like the other 9 plugins, imports `from app.import_plugins.protocol import ImportPlugin`, and ships in this repo's `make test` matrix. No PluginForge release coordination needed.
 - **Override schema precision.** "User can override any detected field" is loose. The schema must name: which field paths are legal override keys (`title`, `author`, `language`, `assets[i].purpose`, `chapters[i].position`); what happens when an override references an asset/chapter not in the detection (raise? silently skip?); whether overrides can add entries (e.g. promote a figure asset to be the cover) or only modify existing ones. Spec-out at Phase 1 start.
 - **`smart_import` deprecation mechanism.** Wrap (URL stays, proxies internally to new detect+execute) vs deprecate (301 redirect, remove after one release cycle). Wrap keeps clients working through releases; deprecate forces migration and simplifies the codebase. Recommendation: **deprecate with 301** — one release warning is enough given Bibliogon has no external API consumers yet.
 - **Plugin-specific data evolution.** `plugin_specific_data: dict` is an escape hatch. When core later adds a first-class field for something currently living there, plugins need a migration path (translate the data, bump a schema version?). No immediate action; revisit if/when the first such migration is needed.
