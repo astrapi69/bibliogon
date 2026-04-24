@@ -15,6 +15,7 @@ pluggy-discovered plugins in later phases. See
 from app.import_plugins.protocol import (
     DetectedAsset,
     DetectedChapter,
+    DetectedGitRepo,
     DetectedProject,
     ImportPlugin,
 )
@@ -31,6 +32,7 @@ from app.import_plugins.registry import (
 __all__ = [
     "DetectedAsset",
     "DetectedChapter",
+    "DetectedGitRepo",
     "DetectedProject",
     "ImportPlugin",
     "RemoteSourceHandler",

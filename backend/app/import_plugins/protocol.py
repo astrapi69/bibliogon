@@ -38,6 +38,33 @@ class DetectedChapter(BaseModel):
     content_preview: str  # first ~200 chars of plain text
 
 
+class DetectedGitRepo(BaseModel):
+    """Metadata about a ``.git/`` directory found in an import source.
+
+    Populated when the handler's extracted source contains an
+    adoptable git repository. The wizard renders this in Step 3 so
+    the user can choose between adopting the history, adopting
+    history + remote, or starting fresh. None on DetectedProject
+    means the source had no .git/ directory.
+    """
+
+    present: bool
+    size_bytes: int = 0
+    current_branch: str | None = None
+    head_sha: str | None = None
+    commit_count: int | None = None
+    remote_url: str | None = None
+    has_lfs: bool = False
+    has_submodules: bool = False
+    is_shallow: bool = False
+    is_corrupted: bool = False
+    #: Human-readable warnings from the security scan. Each entry
+    #: describes a sanitization action that WILL be taken on adoption
+    #: (credential helper stripped, extraheader stripped, etc.) or a
+    #: caveat the user should know about (custom hooks not adopted).
+    security_warnings: list[str] = Field(default_factory=list)
+
+
 class DetectedProject(BaseModel):
     """Everything the handler found in the input, with no side effects yet.
 
@@ -98,6 +125,10 @@ class DetectedProject(BaseModel):
     chapters: list[DetectedChapter] = Field(default_factory=list)
     assets: list[DetectedAsset] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    #: Metadata about a .git/ directory found in the source, or None
+    #: if the source has no adoptable git repository. Handlers that
+    #: don't support git adoption leave this at None.
+    git_repo: DetectedGitRepo | None = None
     plugin_specific_data: dict = Field(default_factory=dict)
 
 
