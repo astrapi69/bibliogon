@@ -81,6 +81,10 @@ navigation:
           de: Feldauswahl
           en: Field selection
         slug: import/field-selection
+      - title:
+          de: Git-Historie uebernehmen
+          en: Adopt git history
+        slug: import/git-adoption
 
   - title:
       de: Installation
