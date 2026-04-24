@@ -127,9 +127,8 @@ describe("DetectingStep", () => {
             timeout: 2000,
         });
         const elapsed = Date.now() - startedAt;
-        // MIN_VISIBLE_MS = 600. Allow 50ms slack for scheduling jitter
-        // but not the full 600 - otherwise the spinner flashes.
-        expect(elapsed).toBeGreaterThanOrEqual(550);
+        // MIN_VISIBLE_MS = 300. Allow 50ms slack for scheduling jitter.
+        expect(elapsed).toBeGreaterThanOrEqual(250);
     });
 
     it("cancel stops calling onDetected even if the API resolves late", async () => {

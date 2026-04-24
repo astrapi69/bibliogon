@@ -63,8 +63,29 @@ const SUCCESS_DETECT = {
         format_name: "markdown",
         source_identifier: "signature:abc",
         title: "State Machine Book",
-        author: null,
-        language: null,
+        subtitle: null,
+        author: "Alice",
+        language: "en",
+        series: null,
+        series_index: null,
+        genre: null,
+        description: null,
+        edition: null,
+        publisher: null,
+        publisher_city: null,
+        publish_date: null,
+        isbn_ebook: null,
+        isbn_paperback: null,
+        isbn_hardcover: null,
+        asin_ebook: null,
+        asin_paperback: null,
+        asin_hardcover: null,
+        keywords: null,
+        html_description: null,
+        backpage_description: null,
+        backpage_author_bio: null,
+        cover_image: null,
+        custom_css: null,
         chapters: [
             {
                 title: "State Machine Book",
@@ -130,7 +151,7 @@ describe("ImportWizardModal state machine", () => {
         executeImportMock.mockReset();
     });
 
-    it("drives upload -> detecting -> preview -> executing -> success", async () => {
+    it("drives upload -> detecting -> summary -> preview -> executing -> success", async () => {
         detectImportMock.mockResolvedValue(SUCCESS_DETECT);
         executeImportMock.mockResolvedValue({
             book_id: "new-book-1",
@@ -141,10 +162,16 @@ describe("ImportWizardModal state machine", () => {
 
         dropFile(makeFile());
 
-        // Step 2: detecting spinner.
+        // Step 2a: detecting spinner.
         await waitFor(() =>
             expect(screen.getByTestId("detecting-step")).toBeInTheDocument(),
         );
+
+        // Step 2b: summary.
+        await waitFor(() =>
+            expect(screen.getByTestId("summary-step")).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("summary-next"));
 
         // Step 3: preview with detected title.
         await waitFor(() =>
@@ -161,7 +188,10 @@ describe("ImportWizardModal state machine", () => {
         );
         expect(executeImportMock).toHaveBeenCalledWith(
             "imp-statemachine",
-            {},
+            expect.objectContaining({
+                title: "State Machine Book",
+                author: "Alice",
+            }),
             "create",
             null,
         );
@@ -184,6 +214,11 @@ describe("ImportWizardModal state machine", () => {
         dropFile(makeFile());
 
         await waitFor(() =>
+            expect(screen.getByTestId("summary-step")).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("summary-next"));
+
+        await waitFor(() =>
             expect(screen.getByTestId("preview-step")).toBeInTheDocument(),
         );
         expect(screen.getByTestId("duplicate-banner")).toBeInTheDocument();
@@ -204,7 +239,10 @@ describe("ImportWizardModal state machine", () => {
         await waitFor(() =>
             expect(executeImportMock).toHaveBeenCalledWith(
                 "imp-duplicate",
-                {},
+                expect.objectContaining({
+                    title: "State Machine Book",
+                    author: "Alice",
+                }),
                 "overwrite",
                 "existing-1",
             ),
@@ -241,6 +279,10 @@ describe("ImportWizardModal state machine", () => {
 
         dropFile(makeFile());
         await waitFor(() =>
+            expect(screen.getByTestId("summary-step")).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("summary-next"));
+        await waitFor(() =>
             expect(screen.getByTestId("preview-step")).toBeInTheDocument(),
         );
         fireEvent.click(screen.getByTestId("preview-confirm"));
@@ -251,16 +293,16 @@ describe("ImportWizardModal state machine", () => {
         expect(screen.getByText(/boom/i)).toBeInTheDocument();
     });
 
-    it("preview back returns to upload step", async () => {
+    it("summary back returns to upload step", async () => {
         detectImportMock.mockResolvedValue(SUCCESS_DETECT);
         renderModal();
 
         dropFile(makeFile());
         await waitFor(() =>
-            expect(screen.getByTestId("preview-step")).toBeInTheDocument(),
+            expect(screen.getByTestId("summary-step")).toBeInTheDocument(),
         );
 
-        fireEvent.click(screen.getByTestId("preview-back"));
+        fireEvent.click(screen.getByTestId("summary-back"));
         expect(screen.getByTestId("upload-step")).toBeInTheDocument();
     });
 });

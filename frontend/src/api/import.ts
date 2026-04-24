@@ -25,23 +25,65 @@ export interface DetectedChapter {
 export interface DetectedProject {
     format_name: string;
     source_identifier: string;
+
+    // Basics
     title: string | null;
     subtitle: string | null;
     author: string | null;
     language: string | null;
+
+    // Series / classification
+    series: string | null;
+    series_index: number | null;
+    genre: string | null;
+
+    // Edition / publishing
+    description: string | null;
+    edition: string | null;
+    publisher: string | null;
+    publisher_city: string | null;
+    publish_date: string | null;
+
+    // Identifiers
+    isbn_ebook: string | null;
+    isbn_paperback: string | null;
+    isbn_hardcover: string | null;
+    asin_ebook: string | null;
+    asin_paperback: string | null;
+    asin_hardcover: string | null;
+
+    // Marketing / long-form
+    keywords: string[] | null;
+    html_description: string | null;
+    backpage_description: string | null;
+    backpage_author_bio: string | null;
+
+    // Cover + styling
+    cover_image: string | null;
+    custom_css: string | null;
+
+    // Structure
     chapters: DetectedChapter[];
     assets: DetectedAsset[];
     warnings: string[];
-    /** Presence flags for long-form Book metadata. Preview renders a
-     *  badge per True flag so the user can see what the import will
-     *  carry over without forcing kilobytes of CSS/HTML into the
-     *  modal. False means absent, not unsupported. */
-    has_html_description: boolean;
-    has_backpage_description: boolean;
-    has_backpage_author_bio: boolean;
-    has_custom_css: boolean;
     plugin_specific_data: Record<string, unknown>;
 }
+
+/** Keys the import wizard is allowed to override on the Book. Keeps
+ * the frontend in sync with BOOK_IMPORT_OVERRIDE_KEYS in
+ * backend/app/import_plugins/overrides.py. */
+export const BOOK_IMPORT_OVERRIDE_KEYS = [
+    "title", "subtitle", "author", "language",
+    "series", "series_index", "genre",
+    "description", "edition", "publisher", "publisher_city", "publish_date",
+    "isbn_ebook", "isbn_paperback", "isbn_hardcover",
+    "asin_ebook", "asin_paperback", "asin_hardcover",
+    "keywords",
+    "html_description", "backpage_description", "backpage_author_bio",
+    "cover_image", "custom_css",
+] as const;
+
+export type BookImportOverrideKey = (typeof BOOK_IMPORT_OVERRIDE_KEYS)[number];
 
 export interface DuplicateInfo {
     found: boolean;
@@ -63,7 +105,20 @@ export interface ExecuteResponse {
 
 export type DuplicateAction = "create" | "overwrite" | "cancel";
 
-export type Overrides = Record<string, unknown>;
+/** Per-field override payload. The key is a Book column name; the
+ * value is:
+ * - a concrete value (string / number / list) when the user includes
+ *   the field with that value (possibly edited)
+ * - ``null`` when the user deselected the field - the backend skips
+ *   the setattr and leaves the column at its handler-provided or
+ *   SQLAlchemy-default value.
+ *
+ * Mandatory fields (title, author) may not be null; the backend
+ * returns 400 in that case.
+ */
+export type Overrides = Partial<
+    Record<BookImportOverrideKey, string | number | string[] | null>
+>;
 
 const BASE = "/api";
 

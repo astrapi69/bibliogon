@@ -5,8 +5,15 @@ import type {
     Overrides,
 } from "../../../api/import";
 import { PreviewPanel } from "./PreviewPanel";
-import { OverrideFields } from "./OverrideFields";
 import { DuplicateBanner } from "./DuplicateBanner";
+
+function hasMandatoryValues(overrides: Overrides): boolean {
+    const title = overrides.title;
+    const author = overrides.author;
+    const valid = (v: unknown): boolean =>
+        typeof v === "string" && v.trim().length > 0;
+    return valid(title) && valid(author);
+}
 
 export function PreviewStep({
     detected,
@@ -28,6 +35,7 @@ export function PreviewStep({
     onConfirm: () => void;
 }) {
     const { t } = useI18n();
+    const canImport = hasMandatoryValues(overrides);
 
     return (
         <div data-testid="preview-step">
@@ -36,13 +44,10 @@ export function PreviewStep({
                 currentAction={duplicateAction}
                 onActionChange={onDuplicateActionChange}
             />
-            <PreviewPanel detected={detected} />
-            <OverrideFields
+            <PreviewPanel
+                detected={detected}
                 overrides={overrides}
-                detectedTitle={detected.title}
-                detectedAuthor={detected.author}
-                detectedLanguage={detected.language}
-                onChange={onOverridesChange}
+                onOverridesChange={onOverridesChange}
             />
             <div
                 style={{
@@ -65,6 +70,15 @@ export function PreviewStep({
                     className="btn btn-primary"
                     data-testid="preview-confirm"
                     onClick={onConfirm}
+                    disabled={!canImport}
+                    title={
+                        !canImport
+                            ? t(
+                                  "ui.import_wizard.mandatory_tooltip",
+                                  "Title and author are required",
+                              )
+                            : undefined
+                    }
                 >
                     {t("ui.import_wizard.button_import", "Import")}
                 </button>

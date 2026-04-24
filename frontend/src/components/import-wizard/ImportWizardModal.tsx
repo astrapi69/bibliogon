@@ -18,6 +18,7 @@ import { PreviewStep } from "./steps/PreviewStep";
 import { ExecutingStep } from "./steps/ExecutingStep";
 import { SuccessStep } from "./steps/SuccessStep";
 import { ErrorStep } from "./steps/ErrorStep";
+import { SummaryStep } from "./steps/SummaryStep";
 
 interface WizardInput {
     files: File[];
@@ -30,6 +31,13 @@ interface WizardInput {
 export type WizardState =
     | { step: "upload" }
     | { step: "detecting"; input: WizardInput }
+    | {
+          step: "summary";
+          input: WizardInput;
+          detected: DetectedProject;
+          duplicate: DuplicateInfo;
+          tempRef: string;
+      }
     | {
           step: "preview";
           input: WizardInput;
@@ -65,6 +73,7 @@ export interface ImportWizardModalProps {
 const STEP_NUMBERS: Record<WizardState["step"], number | null> = {
     upload: 1,
     detecting: 2,
+    summary: 2,
     preview: 3,
     executing: 4,
     success: 4,
@@ -174,13 +183,11 @@ export default function ImportWizardModal({
                                 gitUrl={state.input.gitUrl}
                                 onDetected={(detected, duplicate, tempRef) =>
                                     setState({
-                                        step: "preview",
+                                        step: "summary",
                                         input: state.input,
                                         detected,
                                         duplicate,
                                         tempRef,
-                                        overrides: {},
-                                        duplicateAction: duplicate.found ? "create" : "create",
                                     })
                                 }
                                 onError={(message, retry) =>
@@ -195,6 +202,23 @@ export default function ImportWizardModal({
                                     })
                                 }
                                 onCancel={() => setState({ step: "upload" })}
+                            />
+                        )}
+                        {state.step === "summary" && (
+                            <SummaryStep
+                                detected={state.detected}
+                                onBack={() => setState({ step: "upload" })}
+                                onNext={() =>
+                                    setState({
+                                        step: "preview",
+                                        input: state.input,
+                                        detected: state.detected,
+                                        duplicate: state.duplicate,
+                                        tempRef: state.tempRef,
+                                        overrides: {},
+                                        duplicateAction: "create",
+                                    })
+                                }
                             />
                         )}
                         {state.step === "preview" && (

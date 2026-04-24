@@ -12,14 +12,14 @@ const ROTATE_KEYS = [
     ["ui.import_wizard.status_checking", "Checking for duplicates..."],
 ] as const;
 
-// Minimum time the spinner must be visible even when detect
-// resolves faster. Without this, a fast backend detect (<200ms
-// on a single markdown file, typical for small inputs) makes
-// the step flash imperceptibly between upload and preview -
-// the user sees no feedback that analysis happened. 600ms is
-// long enough to register as a deliberate step, short enough
-// not to feel laggy.
-const MIN_VISIBLE_MS = 600;
+// Minimum time the spinner is visible even when detect resolves
+// faster. Keeps the transition into Step 2 Summary deliberate -
+// without this a cached detect flashes the spinner imperceptibly
+// and the user misses the cue that analysis ran. 300ms is shorter
+// than the earlier 600ms because Summary (the next step) is now
+// itself a deliberate acknowledgment step; the spinner only needs
+// to register as present.
+const MIN_VISIBLE_MS = 300;
 
 export function DetectingStep({
     file,
