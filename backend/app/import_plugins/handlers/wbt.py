@@ -162,6 +162,14 @@ class WbtImportHandler:
             # keyword JSON re-encoding).
             from app.import_plugins.overrides import apply_book_overrides
 
+            # Meta-override primary_cover promotes a specific cover
+            # filename onto book.cover_image. The named file must be
+            # one of the imported cover assets; otherwise raise so a
+            # UI typo surfaces instead of silently falling back.
+            primary_cover = overrides.get("primary_cover")
+            if primary_cover:
+                _apply_primary_cover(session, book_id, primary_cover)
+
             apply_book_overrides(session, book_id, overrides)
             if overrides:
                 session.commit()
@@ -181,6 +189,37 @@ class WbtImportHandler:
 
 
 # --- Helpers ---
+
+
+def _apply_primary_cover(
+    session: Session, book_id: str, cover_filename: str
+) -> None:
+    """Promote a specific cover Asset to book.cover_image.
+
+    ``cover_filename`` must match a filename already imported under
+    ``uploads/<book_id>/cover/``; otherwise a KeyError is raised so
+    a UI typo surfaces as a 400 via the orchestrator rather than a
+    silent no-op.
+    """
+    from app.models import Asset, Book
+
+    cover_assets = (
+        session.query(Asset)
+        .filter(Asset.book_id == book_id, Asset.asset_type == "cover")
+        .all()
+    )
+    match = next(
+        (a for a in cover_assets if a.filename == cover_filename), None
+    )
+    if match is None:
+        available = sorted(a.filename for a in cover_assets)
+        raise KeyError(
+            f"primary_cover={cover_filename!r} not among imported covers "
+            f"{available}"
+        )
+    book = session.query(Book).filter(Book.id == book_id).first()
+    if book is not None:
+        book.cover_image = match.path
 
 
 def _maybe_adopt_git(
@@ -425,6 +464,8 @@ def _purpose_from_path(rel_path: Path) -> str:
     first = parts[0]
     if first in {"cover", "covers", "back-cover"}:
         return "cover"
+    if first in {"author", "authors", "about-author"}:
+        return "author-asset"
     if first in {"figures", "images", "img"}:
         return "figure"
     if first == "css" or rel_path.suffix.lower() == ".css":

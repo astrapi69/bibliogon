@@ -17,7 +17,12 @@ _ASSET_TYPE_MAP: dict[str, str] = {
     "diagrams": "diagram",
     "tables": "table",
     "logo": "figure",
-    "author": "figure",
+    # author portrait / signature / bio images. Classified as
+    # "author-asset" so the Design tab of the metadata editor can
+    # render them separately from chapter figures.
+    "author": "author-asset",
+    "authors": "author-asset",
+    "about-author": "author-asset",
     "infographics": "figure",
 }
 

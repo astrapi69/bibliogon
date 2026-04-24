@@ -41,6 +41,14 @@ BOOK_IMPORT_OVERRIDE_KEYS: frozenset[str] = frozenset({
     "cover_image", "custom_css",
 })
 
+#: Meta-overrides that don't map to Book columns. Handlers consume
+#: these before delegating the rest to :func:`apply_book_overrides`.
+#: ``primary_cover`` names a cover filename to promote to
+#: book.cover_image when multiple covers exist.
+META_OVERRIDE_KEYS: frozenset[str] = frozenset({
+    "primary_cover",
+})
+
 #: Fields that must be non-empty strings. The wizard's UI enforces
 #: this on the client side; the server rejects bad payloads too so
 #: a buggy or hostile client cannot bypass the check.
@@ -66,7 +74,8 @@ def validate_overrides(
     ``detected`` to require the overrides to carry title + author
     itself.
     """
-    unknown = set(overrides) - BOOK_IMPORT_OVERRIDE_KEYS
+    allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
+    unknown = set(overrides) - allowed
     if unknown:
         raise KeyError(
             f"Overrides not allowed for Book import: {sorted(unknown)}"
@@ -105,7 +114,8 @@ def apply_book_overrides(
     """
     if not overrides:
         return
-    unknown = set(overrides) - BOOK_IMPORT_OVERRIDE_KEYS
+    allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
+    unknown = set(overrides) - allowed
     if unknown:
         raise KeyError(
             f"Overrides not allowed for Book import: {sorted(unknown)}"
@@ -114,6 +124,10 @@ def apply_book_overrides(
     if book is None:
         return
     for key, value in overrides.items():
+        if key in META_OVERRIDE_KEYS:
+            # Meta overrides (primary_cover, ...) don't map to Book
+            # columns; handlers consume them before calling here.
+            continue
         if value is None:
             # User deselected; keep the handler's value / column default.
             continue
