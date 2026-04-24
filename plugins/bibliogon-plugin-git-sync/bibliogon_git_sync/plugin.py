@@ -4,8 +4,6 @@ Registers a GitImportHandler with the core import orchestrator
 so the wizard's git-URL input has a handler to dispatch to.
 """
 
-from typing import Any
-
 from pluginforge import BasePlugin
 
 
@@ -25,8 +23,3 @@ class GitSyncPlugin(BasePlugin):
         from .registration import register_git_handler
 
         register_git_handler(GitImportHandler())
-
-    def get_routes(self) -> list[Any]:
-        from .routes import router
-
-        return [router]

@@ -1,7 +1,7 @@
 .PHONY: dev dev-bg dev-down dev-backend dev-frontend \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
-       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
@@ -81,7 +81,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -127,6 +127,11 @@ test-plugin-getstarted: ## Run getstarted plugin tests
 	@echo ""
 	@echo "=== Getstarted Plugin Tests ==="
 	cd plugins/bibliogon-plugin-getstarted && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-git-sync: ## Run git-sync plugin tests (PGS-01)
+	@echo ""
+	@echo "=== Git-Sync Plugin Tests ==="
+	cd plugins/bibliogon-plugin-git-sync && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- Coverage (heavy, opt-in; CI runs this on every push - see .github/workflows/coverage.yml) ---
 
