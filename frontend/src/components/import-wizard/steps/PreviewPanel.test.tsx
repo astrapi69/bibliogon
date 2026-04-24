@@ -273,6 +273,82 @@ describe("PreviewPanel — multi-cover selector", () => {
     });
 });
 
+describe("PreviewPanel — author-assets section", () => {
+    function authorAsset(filename: string) {
+        return {
+            filename,
+            path: `assets/author/${filename}`,
+            size_bytes: 2048,
+            mime_type: "image/png",
+            purpose: "author-asset",
+        };
+    }
+
+    it("no section when detected has no author-asset files", () => {
+        renderPanel();
+        expect(
+            screen.queryByTestId("preview-section-author-assets"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders author-assets grid with count when present", () => {
+        renderPanel(
+            project({
+                assets: [
+                    authorAsset("portrait.png"),
+                    authorAsset("signature.png"),
+                ],
+            }),
+        );
+        expect(
+            screen.getByTestId("preview-section-author-assets"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-author-assets-count"),
+        ).toHaveTextContent("(2)");
+        expect(
+            screen.getByTestId("preview-author-asset-portrait.png"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-author-asset-signature.png"),
+        ).toBeInTheDocument();
+    });
+
+    it("author-assets section kept separate from cover grid", () => {
+        renderPanel(
+            project({
+                assets: [
+                    {
+                        filename: "cover-a.png",
+                        path: "assets/covers/cover-a.png",
+                        size_bytes: 4096,
+                        mime_type: "image/png",
+                        purpose: "cover",
+                    },
+                    {
+                        filename: "cover-b.png",
+                        path: "assets/covers/cover-b.png",
+                        size_bytes: 4096,
+                        mime_type: "image/png",
+                        purpose: "cover",
+                    },
+                    authorAsset("portrait.png"),
+                ],
+            }),
+        );
+        expect(
+            screen.getByTestId("preview-section-covers"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-section-author-assets"),
+        ).toBeInTheDocument();
+        // Portrait must NOT appear as a selectable cover.
+        expect(
+            screen.queryByTestId("preview-cover-option-portrait.png"),
+        ).not.toBeInTheDocument();
+    });
+});
+
 describe("PreviewPanel — author datalist", () => {
     it("no datalist and no list attr when settings have no author choices", () => {
         mockAuthorChoices.mockReturnValueOnce([]);

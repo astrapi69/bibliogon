@@ -518,6 +518,14 @@ export function PreviewPanel({
                 />
             )}
 
+            {/* Section: author assets (portrait, signature, bio images) */}
+            {(assetGroups["author-asset"] ?? []).length > 0 && (
+                <AuthorAssetsSection
+                    assets={assetGroups["author-asset"] ?? []}
+                    tempRef={tempRef}
+                />
+            )}
+
             {/* Sections: per-field */}
             {SECTIONS.map((section) => (
                 <FieldSection
@@ -943,7 +951,15 @@ function ChapterRow({
 
 function AssetGroups({ groups }: { groups: Record<string, DetectedAsset[]> }) {
     const { t } = useI18n();
-    const order = ["cover", "covers", "figure", "css", "font", "other"];
+    const order = [
+        "cover",
+        "covers",
+        "author-asset",
+        "figure",
+        "css",
+        "font",
+        "other",
+    ];
     const keys = [
         ...order.filter((k) => groups[k] && groups[k].length),
         ...Object.keys(groups).filter((k) => !order.includes(k)),
@@ -1184,6 +1200,98 @@ function CoverGridSection({
                         </label>
                     );
                 })}
+            </div>
+        </section>
+    );
+}
+
+/**
+ * Author assets section: portraits, signatures, bio images.
+ *
+ * Read-only preview. All files classified with purpose="author-asset"
+ * (``assets/author/``, ``assets/authors/``, ``assets/about-author/``)
+ * are imported verbatim with asset_type="author-asset" so the metadata
+ * editor Design tab can surface them separately from chapter figures.
+ * The user cannot deselect here; imports track source fidelity.
+ */
+function AuthorAssetsSection({
+    assets,
+    tempRef,
+}: {
+    assets: DetectedAsset[];
+    tempRef?: string;
+}) {
+    const { t } = useI18n();
+    return (
+        <section
+            data-testid="preview-section-author-assets"
+            style={sectionStyle}
+        >
+            <h4 style={sectionHeadingStyle}>
+                {t(
+                    "ui.import_wizard.section_author_assets",
+                    "Author assets",
+                )}{" "}
+                <span
+                    data-testid="preview-author-assets-count"
+                    style={muteStyle}
+                >
+                    ({assets.length})
+                </span>
+            </h4>
+            <p style={{ ...muteStyle, margin: "4px 0 8px 0" }}>
+                {t(
+                    "ui.import_wizard.author_assets_hint",
+                    "Portrait, signature, or bio images imported for the Design tab of the metadata editor.",
+                )}
+            </p>
+            <div
+                data-testid="preview-author-assets-grid"
+                style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                        "repeat(auto-fill, minmax(88px, 1fr))",
+                    gap: 10,
+                }}
+            >
+                {assets.map((asset) => (
+                    <div
+                        key={asset.filename}
+                        data-testid={`preview-author-asset-${asset.filename}`}
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            padding: 6,
+                            border: "1px solid var(--border)",
+                            borderRadius: 6,
+                            background: "var(--bg-primary)",
+                            gap: 4,
+                        }}
+                    >
+                        <CoverThumbnail cover={asset} tempRef={tempRef} />
+                        <span
+                            style={{
+                                fontSize: "0.6875rem",
+                                color: "var(--text-secondary)",
+                                textAlign: "center",
+                                wordBreak: "break-all",
+                                maxWidth: "100%",
+                            }}
+                            title={asset.path}
+                        >
+                            {asset.filename}
+                        </span>
+                        <span
+                            style={{
+                                fontSize: "0.625rem",
+                                color: "var(--text-muted)",
+                            }}
+                        >
+                            {humanSize(asset.size_bytes)}
+                        </span>
+                    </div>
+                ))}
             </div>
         </section>
     );
