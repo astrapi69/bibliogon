@@ -48,6 +48,9 @@ plugins:
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
+        Git-URL: Git URL
+        Feldauswahl: Field selection
+        Git-Historie uebernehmen: Adopt git history
         Windows-Launcher: Windows Launcher
         macOS-Launcher: macOS Launcher
         Linux-Launcher: Linux Launcher
@@ -94,6 +97,10 @@ nav:
   - Uebersicht: de/plugins/uebersicht.md
   - Manuskript-Tools: de/plugins/ms-tools.md
 - Vorlagen: de/templates.md
+- Import:
+  - Git-URL: de/import/git-url.md
+  - Feldauswahl: de/import/field-selection.md
+  - Git-Historie uebernehmen: de/import/git-adoption.md
 - Installation:
   - Uebersicht: de/installation.md
   - Windows-Launcher: de/launcher-windows.md
