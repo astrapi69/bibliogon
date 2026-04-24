@@ -12,6 +12,15 @@ const ROTATE_KEYS = [
     ["ui.import_wizard.status_checking", "Checking for duplicates..."],
 ] as const;
 
+// Minimum time the spinner must be visible even when detect
+// resolves faster. Without this, a fast backend detect (<200ms
+// on a single markdown file, typical for small inputs) makes
+// the step flash imperceptibly between upload and preview -
+// the user sees no feedback that analysis happened. 600ms is
+// long enough to register as a deliberate step, short enough
+// not to feel laggy.
+const MIN_VISIBLE_MS = 600;
+
 export function DetectingStep({
     file,
     files,
@@ -46,6 +55,7 @@ export function DetectingStep({
             setStatusIdx((i) => (i + 1) % ROTATE_KEYS.length);
         }, 1200);
 
+        const startedAt = Date.now();
         const detection: Promise<
             Awaited<ReturnType<typeof detectImport>>
         > = gitUrl
@@ -59,12 +69,24 @@ export function DetectingStep({
                   paths,
               );
 
+        const minDelay = (): Promise<void> => {
+            const elapsed = Date.now() - startedAt;
+            const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
+            return remaining > 0
+                ? new Promise((resolve) => window.setTimeout(resolve, remaining))
+                : Promise.resolve();
+        };
+
         detection
-            .then((response) => {
+            .then(async (response) => {
+                await minDelay();
                 if (cancelledRef.current || !mounted) return;
                 onDetected(response.detected, response.duplicate, response.temp_ref);
             })
-            .catch((err: unknown) => {
+            .catch(async (err: unknown) => {
+                // Still respect the minimum visible time on error so
+                // the error step does not flash into view either.
+                await minDelay();
                 if (cancelledRef.current || !mounted) return;
                 const message =
                     err instanceof ApiError

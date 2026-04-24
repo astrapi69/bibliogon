@@ -94,6 +94,44 @@ describe("DetectingStep", () => {
         expect(onError.mock.calls[0][0]).toMatch(/unsupported/i);
     });
 
+    it("holds onDetected for at least the minimum visible time on fast detects", async () => {
+        const response = {
+            detected: {
+                format_name: "bgb",
+                source_identifier: "sha256:fast",
+                title: "Fast",
+                author: null,
+                language: null,
+                chapters: [],
+                assets: [],
+                warnings: [],
+                plugin_specific_data: {},
+            },
+            duplicate: { found: false },
+            temp_ref: "imp-fast",
+        };
+        // Resolve synchronously; the component must still hold the
+        // spinner visible for MIN_VISIBLE_MS before calling onDetected.
+        detectImportMock.mockResolvedValue(response);
+        const onDetected = vi.fn();
+        const startedAt = Date.now();
+        render(
+            <DetectingStep
+                file={makeFile()}
+                onDetected={onDetected}
+                onError={vi.fn()}
+                onCancel={vi.fn()}
+            />,
+        );
+        await waitFor(() => expect(onDetected).toHaveBeenCalled(), {
+            timeout: 2000,
+        });
+        const elapsed = Date.now() - startedAt;
+        // MIN_VISIBLE_MS = 600. Allow 50ms slack for scheduling jitter
+        // but not the full 600 - otherwise the spinner flashes.
+        expect(elapsed).toBeGreaterThanOrEqual(550);
+    });
+
     it("cancel stops calling onDetected even if the API resolves late", async () => {
         let resolveDetect: (v: unknown) => void = () => {};
         detectImportMock.mockImplementation(
