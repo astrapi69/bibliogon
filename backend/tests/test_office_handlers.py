@@ -238,3 +238,53 @@ def test_split_into_chapters_discards_prematter() -> None:
 def test_extract_title_returns_first_h1() -> None:
     assert _extract_title("## Not h1\n\n# Real Title\n\n# Later\n") == "Real Title"
     assert _extract_title("No heading at all.") is None
+
+
+# --- pandoc availability failover ---
+
+
+def test_detect_raises_pandoc_missing_when_binary_absent(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """If ``pandoc`` is not on PATH, detect must fail with a dedicated
+    ``_PandocMissing`` exception (mapped to a 500 with a clear message
+    by the orchestrator). Regression guard: a bare 500 with a generic
+    subprocess traceback is not acceptable - users need to know they
+    must install pandoc."""
+    from app.import_plugins.handlers.office import (
+        _PandocMissing,
+        _convert_to_markdown,
+    )
+
+    def _fake_run(*args, **kwargs):
+        raise FileNotFoundError(2, "No such file or directory: 'pandoc'")
+
+    monkeypatch.setattr("app.import_plugins.handlers.office.subprocess.run", _fake_run)
+    f = tmp_path / "book.docx"
+    f.write_bytes(b"PK\x03\x04")
+    with pytest.raises(_PandocMissing, match="pandoc"):
+        _convert_to_markdown(f, "docx")
+
+
+def test_detect_raises_pandoc_failure_on_nonzero_exit(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Pandoc present but conversion fails: the handler must surface
+    the stderr so users can diagnose the input file."""
+    import subprocess
+
+    from app.import_plugins.handlers.office import (
+        _PandocFailure,
+        _convert_to_markdown,
+    )
+
+    def _fake_run(*args, **kwargs):
+        raise subprocess.CalledProcessError(
+            returncode=1, cmd=["pandoc"], stderr="docx: invalid zip"
+        )
+
+    monkeypatch.setattr("app.import_plugins.handlers.office.subprocess.run", _fake_run)
+    f = tmp_path / "book.docx"
+    f.write_bytes(b"PK\x03\x04")
+    with pytest.raises(_PandocFailure, match="invalid zip"):
+        _convert_to_markdown(f, "docx")
