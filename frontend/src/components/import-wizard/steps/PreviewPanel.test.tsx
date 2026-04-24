@@ -375,7 +375,10 @@ describe("PreviewPanel — git adoption", () => {
         } = {},
     ) {
         const onOverridesChange = vi.fn();
-        const onGitAdoptionChange = gitProps.onGitAdoptionChange ?? vi.fn();
+        const onGitAdoptionChange = (gitProps.onGitAdoptionChange ??
+            vi.fn()) as unknown as (
+            choice: "start_fresh" | "adopt_with_remote" | "adopt_without_remote",
+        ) => void;
         render(
             <PreviewPanel
                 detected={project({

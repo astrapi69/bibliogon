@@ -132,3 +132,47 @@ def test_execute_persists_cover_image_to_book_row(
             f"book.cover_image is None even though {len(cover_assets)} "
             "cover asset(s) imported"
         )
+
+
+def test_stale_cover_image_override_does_not_clobber_upload_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Regression for the das-erwachen-der-waechter bug: metadata.yaml
+    names a cover file that DOES NOT exist in the ZIP (e.g.
+    ``cover_image: "assets/covers/das_erwachen_der_waechter.jpg"``)
+    while the actual file is ``assets/covers/cover.png``.
+
+    Pre-fix the wizard emitted this stale hint as a per-field override.
+    ``apply_book_overrides`` then set ``book.cover_image`` to the
+    dangling hint, overwriting the valid uploads/<id>/cover/<file>
+    path that ``_maybe_set_cover_from_assets`` had written.
+
+    The fix lives on the frontend: PreviewPanel force-sets
+    ``cover_image`` include=false so it is NEVER emitted in overrides.
+    This test pins the backend contract: when overrides do NOT contain
+    cover_image, the handler's post-import path survives.
+    """
+    monkeypatch.setattr(
+        "app.routers.assets.UPLOAD_DIR", tmp_path / "uploads"
+    )
+    Base.metadata.create_all(bind=engine)
+    zip_path = _broken_shape_zip(tmp_path)
+    handler = WbtImportHandler()
+    detected = handler.detect(str(zip_path))
+    # Wizard emits everything EXCEPT cover_image.
+    overrides = {
+        "title": "Das Erwachen",
+        "author": "Draven Quantum",
+        "language": "de",
+    }
+    book_id = handler.execute(
+        str(zip_path), detected, overrides=overrides, duplicate_action="create"
+    )
+    with SessionLocal() as session:
+        book = session.query(Book).filter(Book.id == book_id).one()
+        # Path is the full uploads path, not a dangling basename.
+        assert book.cover_image is not None
+        assert "cover.png" in book.cover_image
+        # cover.png is the actual file basename.
+        basename = book.cover_image.rsplit("/", 1)[-1]
+        assert basename == "cover.png"

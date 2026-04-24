@@ -4,6 +4,7 @@ import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useAuthorChoices} from "../hooks/useAuthorChoices";
 import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
@@ -31,9 +32,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
+    const authorChoices = useAuthorChoices();
 
     useEffect(() => {
         setForm({
+            author: book.author || "",
+            language: book.language || "de",
             subtitle: book.subtitle || "",
             description: book.description || "",
             edition: book.edition || "",
@@ -203,6 +207,21 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 
                 <Tabs.Content value="general">
                     <div style={styles.tabContent}>
+                        <Row>
+                            <Field
+                                label={t("ui.metadata.author", "Autor")}
+                                value={form.author}
+                                onChange={(v) => set("author", v)}
+                                datalist={authorChoices}
+                                datalistId="metadata-author-options"
+                            />
+                            <Field
+                                label={t("ui.metadata.language", "Sprache")}
+                                value={form.language}
+                                onChange={(v) => set("language", v)}
+                                placeholder="de"
+                            />
+                        </Row>
                         <Field label={t("ui.metadata.subtitle", "Untertitel")} value={form.subtitle} onChange={(v) => set("subtitle", v)}/>
                         <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline/>
                         <Row>
@@ -320,6 +339,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             coverImage={form.cover_image ?? null}
                             onChange={(newPath) => set("cover_image", newPath ?? "")}
                         />
+                        <AuthorAssetsPanel bookId={book.id}/>
                         <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
                             multiline mono/>
                     </div>
@@ -366,7 +386,7 @@ function Row({children}: {children: React.ReactNode}) {
     return <div style={styles.row}>{children}</div>;
 }
 
-function Field({label, value, onChange, placeholder, multiline, mono, maxChars}: {
+function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId}: {
     label: string;
     value: string | null | undefined;
     onChange: (v: string) => void;
@@ -377,10 +397,17 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars}:
      *  counter just turns red when exceeded so the user is warned but
      *  can still over-type if a platform allows more. */
     maxChars?: number;
+    /** Free-text input with dropdown suggestions. When non-empty, the
+     *  input gets a ``list=`` attribute pointing at a generated
+     *  ``<datalist>``. Ignored when ``multiline`` is true. */
+    datalist?: string[];
+    datalistId?: string;
 }) {
     const {t} = useI18n();
     const inputStyle = mono ? {...styles.input, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"} : styles.input;
     const text = value || "";
+    const listId =
+        !multiline && datalist && datalist.length > 0 ? datalistId : undefined;
     return (
         <div className="field" style={{flex: 1}}>
             <label className="label">{label}</label>
@@ -394,8 +421,18 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars}:
                     placeholder={placeholder}
                 />
             ) : (
-                <input className="input" style={inputStyle}
-                    value={text} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}/>
+                <>
+                    <input className="input" style={inputStyle}
+                        value={text} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+                        list={listId}/>
+                    {listId && (
+                        <datalist id={listId}>
+                            {(datalist ?? []).map((name) => (
+                                <option key={name} value={name}/>
+                            ))}
+                        </datalist>
+                    )}
+                </>
             )}
             {maxChars !== undefined && multiline && (
                 <CharCounter
@@ -404,6 +441,148 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars}:
                     label={t("ui.metadata.characters", "Zeichen")}
                 />
             )}
+        </div>
+    );
+}
+
+/**
+ * Author-assets panel: read-only thumbnail grid for files imported
+ * under ``assets/author/``, ``assets/authors/``, or
+ * ``assets/about-author/`` (purpose="author-asset" at detect time,
+ * asset_type="author-asset" at execute time).
+ *
+ * Rendered in the Design tab so portraits, signatures, and bio images
+ * are discoverable in the metadata editor. Delete per file; upload
+ * support lives behind a separate backend validator bump and is not
+ * wired here.
+ */
+export function AuthorAssetsPanel({bookId}: {bookId: string}) {
+    const {t} = useI18n();
+    const [assets, setAssets] = useState<{id: string; filename: string; asset_type: string; path: string}[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        api.assets
+            .list(bookId)
+            .then((rows) => {
+                if (cancelled) return;
+                setAssets(rows.filter((a) => a.asset_type === "author-asset"));
+            })
+            .catch(() => {
+                if (!cancelled) setAssets([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [bookId]);
+
+    const handleDelete = async (assetId: string) => {
+        try {
+            await api.assets.delete(bookId, assetId);
+            setAssets((prev) => prev.filter((a) => a.id !== assetId));
+            notify.success(t("ui.metadata.author_asset_deleted", "Autor-Asset geloescht"));
+        } catch (err) {
+            notify.error(t("ui.metadata.author_asset_delete_failed", "Loeschen fehlgeschlagen"), err);
+        }
+    };
+
+    if (loading || assets.length === 0) {
+        return null;
+    }
+
+    return (
+        <div
+            className="field"
+            data-testid="author-assets-panel"
+            style={{flex: 1, marginTop: 16}}
+        >
+            <label className="label">
+                {t("ui.metadata.author_assets", "Autoren-Bilder")}{" "}
+                <span style={{color: "var(--text-muted)", fontWeight: 400}}>
+                    ({assets.length})
+                </span>
+            </label>
+            <p style={{margin: "4px 0 8px 0", fontSize: "0.75rem", color: "var(--text-muted)"}}>
+                {t(
+                    "ui.metadata.author_assets_hint",
+                    "Portrait-, Signatur- oder Bio-Bilder aus dem Import (assets/author/).",
+                )}
+            </p>
+            <div
+                data-testid="author-assets-grid"
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                    gap: 10,
+                }}
+            >
+                {assets.map((asset) => (
+                    <div
+                        key={asset.id}
+                        data-testid={`author-asset-${asset.filename}`}
+                        style={{
+                            position: "relative",
+                            padding: 6,
+                            border: "1px solid var(--border)",
+                            borderRadius: 6,
+                            background: "var(--bg-primary)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 4,
+                        }}
+                    >
+                        <img
+                            src={`/api/books/${bookId}/assets/file/${asset.filename}`}
+                            alt={asset.filename}
+                            style={{
+                                width: "100%",
+                                aspectRatio: "3/4",
+                                objectFit: "cover",
+                                borderRadius: 4,
+                                background: "var(--bg-hover)",
+                            }}
+                        />
+                        <span
+                            style={{
+                                fontSize: "0.6875rem",
+                                color: "var(--text-secondary)",
+                                textAlign: "center",
+                                wordBreak: "break-all",
+                                maxWidth: "100%",
+                            }}
+                            title={asset.path}
+                        >
+                            {asset.filename}
+                        </span>
+                        <button
+                            type="button"
+                            data-testid={`author-asset-delete-${asset.filename}`}
+                            onClick={() => handleDelete(asset.id)}
+                            aria-label={t("ui.metadata.author_asset_delete", "Loeschen")}
+                            style={{
+                                position: "absolute",
+                                top: 4,
+                                right: 4,
+                                padding: "2px 6px",
+                                border: "1px solid var(--border)",
+                                borderRadius: 4,
+                                background: "var(--bg-card)",
+                                color: "var(--danger)",
+                                fontSize: "0.75rem",
+                                cursor: "pointer",
+                            }}
+                        >
+                            <Trash2 size={12}/>
+                        </button>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

@@ -34,6 +34,13 @@ vi.mock("./AppDialog", () => ({
   }),
 }))
 
+vi.mock("../hooks/useAuthorChoices", () => ({
+  useAuthorChoices: () => [],
+}))
+
+const assetsListMock = vi.fn().mockResolvedValue([])
+const assetsDeleteMock = vi.fn().mockResolvedValue(undefined)
+
 vi.mock("../api/client", () => ({
   api: {
     audiobook: {
@@ -41,6 +48,13 @@ vi.mock("../api/client", () => ({
     },
     bookAudiobook: {
       get: vi.fn().mockResolvedValue(null),
+    },
+    settings: {
+      getApp: vi.fn().mockResolvedValue({}),
+    },
+    assets: {
+      list: (...args: unknown[]) => assetsListMock(...args),
+      delete: (...args: unknown[]) => assetsDeleteMock(...args),
     },
   },
   ApiError: class extends Error {
@@ -410,5 +424,110 @@ describe("HtmlFieldWithPreview", () => {
     fireEvent.click(screen.getByTestId("html-preview-toggle"))
     expect(screen.getByText("safe")).toBeInTheDocument()
     expect(screen.queryByText("alert")).not.toBeInTheDocument()
+  })
+})
+
+// --- author + language in general tab ---
+
+describe("BookMetadataEditor — author + language fields", () => {
+  const onSave = vi.fn()
+  const onBack = vi.fn()
+
+  it("renders editable author field seeded from book", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b1",
+          title: "T",
+          subtitle: null,
+          author: "Imported Author",
+          language: "en",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={onSave}
+        onBack={onBack}
+      />,
+    )
+    const authorInput = screen.getByDisplayValue("Imported Author")
+    expect(authorInput).toBeInTheDocument()
+    fireEvent.change(authorInput, {target: {value: "Edited"}})
+    expect((authorInput as HTMLInputElement).value).toBe("Edited")
+  })
+
+  it("renders language input with current code", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b2",
+          title: "T",
+          subtitle: null,
+          author: "A",
+          language: "fr",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={onSave}
+        onBack={onBack}
+      />,
+    )
+    expect(screen.getByDisplayValue("fr")).toBeInTheDocument()
+  })
+})
+
+// --- AuthorAssetsPanel (Design tab) ---
+
+import {AuthorAssetsPanel} from "./BookMetadataEditor"
+
+describe("AuthorAssetsPanel", () => {
+  beforeEach(() => {
+    assetsListMock.mockReset()
+    assetsDeleteMock.mockReset()
+  })
+
+  it("panel hidden when no author-assets", async () => {
+    assetsListMock.mockResolvedValue([])
+    render(<AuthorAssetsPanel bookId="book-x"/>)
+    await waitFor(() => expect(assetsListMock).toHaveBeenCalledWith("book-x"))
+    expect(screen.queryByTestId("author-assets-panel")).not.toBeInTheDocument()
+  })
+
+  it("filters list to asset_type=author-asset", async () => {
+    assetsListMock.mockResolvedValue([
+      {id: "a1", filename: "figure.png", asset_type: "figure", path: "uploads/book-y/figure/figure.png"},
+      {id: "a2", filename: "portrait.png", asset_type: "author-asset", path: "uploads/book-y/author-asset/portrait.png"},
+      {id: "a3", filename: "signature.png", asset_type: "author-asset", path: "uploads/book-y/author-asset/signature.png"},
+    ])
+    render(<AuthorAssetsPanel bookId="book-y"/>)
+    await waitFor(() =>
+      expect(screen.getByTestId("author-assets-panel")).toBeInTheDocument(),
+    )
+    expect(screen.getByTestId("author-asset-portrait.png")).toBeInTheDocument()
+    expect(screen.getByTestId("author-asset-signature.png")).toBeInTheDocument()
+    expect(screen.queryByTestId("author-asset-figure.png")).not.toBeInTheDocument()
+  })
+
+  it("delete button removes asset from grid and calls api", async () => {
+    assetsListMock.mockResolvedValue([
+      {id: "a1", filename: "portrait.png", asset_type: "author-asset", path: "uploads/book-z/author-asset/portrait.png"},
+    ])
+    assetsDeleteMock.mockResolvedValue(undefined)
+    render(<AuthorAssetsPanel bookId="book-z"/>)
+    await waitFor(() =>
+      expect(screen.getByTestId("author-asset-portrait.png")).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByTestId("author-asset-delete-portrait.png"))
+    await waitFor(() =>
+      expect(assetsDeleteMock).toHaveBeenCalledWith("book-z", "a1"),
+    )
+    await waitFor(() =>
+      expect(screen.queryByTestId("author-asset-portrait.png")).not.toBeInTheDocument(),
+    )
   })
 })

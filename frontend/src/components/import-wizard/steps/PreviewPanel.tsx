@@ -228,6 +228,14 @@ function buildInitialFormState(
         const value = detectedStringValue(detected, key);
         state[key] = { include: !formValueEmpty(value), value };
     }
+    // cover_image is NOT user-editable in the wizard. The detected
+    // value is a metadata.yaml hint like "cover.png" which would
+    // OVERWRITE the full uploads/<id>/cover/<file> path the handler
+    // wrote via _maybe_set_cover_from_assets. Force include=false so
+    // the override comes through as null (skip) and the handler-set
+    // path survives. Multi-cover selection flows through the
+    // primary_cover meta-override instead.
+    state.cover_image = { include: false, value: "" };
     // Title and author are always included (mandatory).
     state.title = { include: true, value: state.title.value || (detected.title ?? "") };
     state.author = { include: true, value: state.author.value || (detected.author ?? "") };
