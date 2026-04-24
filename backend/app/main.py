@@ -27,6 +27,7 @@ from app.routers import (
     chapters,
     covers,
     git_backup,
+    git_import_backfill,
     import_orchestrator,
     licenses,
     plugin_install,
@@ -228,6 +229,7 @@ app.include_router(plugin_install.router, prefix="/api")
 app.include_router(templates.router, prefix="/api")
 app.include_router(chapter_templates.router, prefix="/api")
 app.include_router(git_backup.router, prefix="/api")
+app.include_router(git_import_backfill.router, prefix="/api")
 app.include_router(ssh_keys_router.router, prefix="/api")
 
 from app.ai.routes import router as ai_router
