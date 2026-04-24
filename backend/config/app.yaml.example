@@ -44,6 +44,7 @@ plugins:
   - translation
   - kinderbuch
   - grammar
+  - git-sync
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg
