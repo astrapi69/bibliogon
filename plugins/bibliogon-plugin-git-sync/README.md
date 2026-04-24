@@ -7,6 +7,12 @@ Phase 1 (PGS-01) scope: **import-only MVP**. Public HTTPS repos
 only. No authentication. No sync-back (that's PGS-02). No smart
 merge (PGS-03). No multi-language branch linking (PGS-04).
 
+Plugin authors writing a similar plugin: the patterns used here
+(source adapter, two registries, plugin-to-plugin path dep,
+activation-to-registry bridge) are documented with step-by-step
+tutorial in `docs/help/en/developers/plugins.md` sections
+"Import plugin patterns" and "Write your first plugin".
+
 ## How it works
 
 1. User pastes a git URL into the import wizard.
