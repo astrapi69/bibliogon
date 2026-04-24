@@ -545,6 +545,44 @@ def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
         book.cover_image = cover_asset.path
 
 
+def backfill_custom_css_from_source(
+    db: Session, book_id: str, source_project_root: Path
+) -> bool:
+    """Populate ``book.custom_css`` for a previously-imported book
+    by re-reading a stylesheet from the original source tree.
+
+    Use when a Book row was imported before the partial-extraction
+    hazard in ``WbtImportHandler._extracted_root`` was fixed (sentinel
+    marker added): the row has custom_css=NULL because a crashed or
+    interrupted extraction left a partial cache that was silently
+    reused on the successful second attempt.
+
+    ``source_project_root`` must be the write-book-template project
+    root on disk (the directory that contains ``config/`` and
+    ``manuscript/``). The orchestrator's staging directory is cleaned
+    after execute, so callers need to re-extract the source ZIP
+    themselves - the easiest path is just to re-run the import.
+
+    Returns True iff a stylesheet was found and the column changed.
+    Commits on success.
+    """
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if book is None:
+        return False
+    # Never overwrite a book that already has CSS. The backfill path
+    # is repair-only; edits the user made after the broken import
+    # must not be silently undone.
+    if book.custom_css and book.custom_css.strip():
+        return False
+    config_dir = source_project_root / "config"
+    css = _read_custom_css(config_dir, source_project_root)
+    if css:
+        book.custom_css = css
+        db.commit()
+        return True
+    return False
+
+
 def backfill_cover(db: Session, book_id: str) -> bool:
     """Repair ``book.cover_image`` for a previously-imported book.
 

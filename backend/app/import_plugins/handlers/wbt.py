@@ -21,6 +21,7 @@ Accepted inputs:
 from __future__ import annotations
 
 import hashlib
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -211,10 +212,23 @@ def _extracted_root(zip_path: Path) -> Path:
     """
     digest = _sha256_of_file(zip_path)[:16]
     target = zip_path.parent.parent / "wbt-extracted" / digest
-    if not target.is_dir():
+    # Sentinel guards against the "partial extraction" hazard: the
+    # previous version checked ``target.is_dir()`` only, so if a
+    # prior detect call crashed between ``mkdir`` and the end of
+    # ``extractall`` (OS signal, disk full, Ctrl+C), the dir existed
+    # with a partial tree and subsequent detects reused it silently.
+    # Symptom in the wild: a real repo imported with missing CSS,
+    # missing chapters, or wrong metadata, with no error surfaced.
+    # Now we write ``.extraction-complete`` after extractall returns
+    # and refuse to reuse the cache without it.
+    sentinel = target / ".extraction-complete"
+    if not sentinel.exists():
+        if target.exists():
+            shutil.rmtree(target, ignore_errors=True)
         target.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(target)
+        sentinel.write_text("ok", encoding="utf-8")
     root = find_project_root(target)
     if root is None:
         raise RuntimeError("Extracted ZIP has no WBT project root")
