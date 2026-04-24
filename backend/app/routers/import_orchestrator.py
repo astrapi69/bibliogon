@@ -236,6 +236,27 @@ def execute_import(
             detail="duplicate_action=overwrite requires existing_book_id",
         )
 
+    from app.import_plugins.overrides import (
+        MandatoryFieldMissing,
+        validate_overrides,
+    )
+
+    detected_dict = detected.model_dump()
+    try:
+        validate_overrides(payload.overrides, detected=detected_dict)
+    except MandatoryFieldMissing as exc:
+        _drop_staged(payload.temp_ref)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"field": exc.field, "message": str(exc)},
+        ) from exc
+    except KeyError as exc:
+        _drop_staged(payload.temp_ref)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
     try:
         book_id = plugin.execute(
             str(staging_path),
@@ -244,6 +265,18 @@ def execute_import(
             duplicate_action=payload.duplicate_action,
             existing_book_id=payload.existing_book_id,
         )
+    except MandatoryFieldMissing as exc:
+        _drop_staged(payload.temp_ref)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"field": exc.field, "message": str(exc)},
+        ) from exc
+    except KeyError as exc:
+        _drop_staged(payload.temp_ref)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     except Exception as exc:
         _drop_staged(payload.temp_ref)
         raise HTTPException(

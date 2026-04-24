@@ -44,15 +44,6 @@ class WbtImportHandler:
 
     format_name = "wbt-zip"
 
-    _ALLOWED_OVERRIDES = {
-        "title",
-        "author",
-        "subtitle",
-        "language",
-        "description",
-        "genre",
-    }
-
     # --- ImportPlugin ---
 
     def can_handle(self, input_path: str) -> bool:
@@ -99,13 +90,29 @@ class WbtImportHandler:
             subtitle=metadata.get("subtitle"),
             author=metadata.get("author"),
             language=metadata.get("language"),
+            series=metadata.get("series"),
+            series_index=metadata.get("series_index"),
+            genre=metadata.get("genre"),
+            description=metadata.get("description"),
+            edition=metadata.get("edition"),
+            publisher=metadata.get("publisher"),
+            publisher_city=metadata.get("publisher_city"),
+            publish_date=metadata.get("publish_date"),
+            isbn_ebook=metadata.get("isbn_ebook"),
+            isbn_paperback=metadata.get("isbn_paperback"),
+            isbn_hardcover=metadata.get("isbn_hardcover"),
+            asin_ebook=metadata.get("asin_ebook"),
+            asin_paperback=metadata.get("asin_paperback"),
+            asin_hardcover=metadata.get("asin_hardcover"),
+            keywords=metadata.get("keywords"),
+            html_description=metadata.get("html_description"),
+            backpage_description=metadata.get("backpage_description"),
+            backpage_author_bio=metadata.get("backpage_author_bio"),
+            cover_image=metadata.get("cover_image"),
+            custom_css=metadata.get("custom_css"),
             chapters=chapters,
             assets=assets,
             warnings=warnings,
-            has_html_description=metadata.get("has_html_description", False),
-            has_backpage_description=metadata.get("has_backpage_description", False),
-            has_backpage_author_bio=metadata.get("has_backpage_author_bio", False),
-            has_custom_css=metadata.get("has_custom_css", False),
             plugin_specific_data={
                 "project_root_name": project_root.name,
                 "chapter_count": len(chapters),
@@ -142,18 +149,12 @@ class WbtImportHandler:
             book_id = result["book_id"]
 
             # _import_project_root commits at the end; reopen the book
-            # to apply overrides in a fresh transaction.
-            book = session.query(Book).filter(Book.id == book_id).first()
-            if book is None:
-                raise RuntimeError(
-                    f"WBT import produced book_id {book_id!r} but no row found"
-                )
-            for key, value in overrides.items():
-                if key not in self._ALLOWED_OVERRIDES:
-                    raise KeyError(
-                        f"Override {key!r} is not allowed for the wbt-zip handler"
-                    )
-                setattr(book, key, value)
+            # to apply overrides in a fresh transaction via the shared
+            # helper (null-skip semantics, mandatory-field validation,
+            # keyword JSON re-encoding).
+            from app.import_plugins.overrides import apply_book_overrides
+
+            apply_book_overrides(session, book_id, overrides)
             if overrides:
                 session.commit()
             return book_id
@@ -221,51 +222,79 @@ def _extracted_root(zip_path: Path) -> Path:
 
 
 def _read_metadata(project_root: Path) -> dict:
-    """Parse metadata + presence flags for the preview panel.
+    """Parse metadata.yaml into the full DetectedProject field set.
 
-    Returns scalar strings (title / subtitle / author / language) for
-    inline display, plus ``has_*`` booleans for long-form fields that
-    the preview should telegraph without rendering (CSS content,
-    HTML description, back-cover text). Import-time uses the full
-    ProjectMetadata via ``_import_project_root`` - the reason to do
-    it twice is that detect must be cheap and side-effect-free.
+    Returns a dict keyed by the DetectedProject field names. Keys with
+    None values are still included so the caller can construct the
+    model with explicit ``None``. Detect is side-effect-free; it reads
+    the same files as ``_import_project_root`` via the shared
+    ``_parse_project_metadata`` helper so the two paths stay in sync.
     """
     from app.services.backup.project_import import (
         _parse_project_metadata,
         _read_metadata_yaml,
     )
 
-    empty = {
-        "title": None,
-        "subtitle": None,
-        "author": None,
-        "language": None,
-        "has_html_description": False,
-        "has_backpage_description": False,
-        "has_backpage_author_bio": False,
-        "has_custom_css": False,
-    }
+    empty_keys = [
+        "title", "subtitle", "author", "language", "series", "series_index",
+        "genre", "description", "edition", "publisher", "publisher_city",
+        "publish_date", "isbn_ebook", "isbn_paperback", "isbn_hardcover",
+        "asin_ebook", "asin_paperback", "asin_hardcover", "keywords",
+        "html_description", "backpage_description", "backpage_author_bio",
+        "cover_image", "custom_css",
+    ]
     try:
         raw = _read_metadata_yaml(project_root / "config" / "metadata.yaml")
     except Exception:
-        return empty
+        return {k: None for k in empty_keys}
     meta = _parse_project_metadata(raw, project_root)
     return {
         "title": meta.title,
         "subtitle": meta.subtitle,
         "author": meta.author,
         "language": meta.language,
-        "has_html_description": bool(
-            meta.html_description and meta.html_description.strip()
-        ),
-        "has_backpage_description": bool(
-            meta.backpage_description and meta.backpage_description.strip()
-        ),
-        "has_backpage_author_bio": bool(
-            meta.backpage_author_bio and meta.backpage_author_bio.strip()
-        ),
-        "has_custom_css": bool(meta.custom_css and meta.custom_css.strip()),
+        "series": meta.series_name,
+        "series_index": meta.series_index,
+        "genre": raw.get("genre"),
+        "description": meta.description,
+        "edition": meta.edition,
+        "publisher": meta.publisher,
+        "publisher_city": meta.publisher_city,
+        "publish_date": meta.publish_date,
+        "isbn_ebook": meta.isbn_ebook,
+        "isbn_paperback": meta.isbn_paperback,
+        "isbn_hardcover": meta.isbn_hardcover,
+        "asin_ebook": meta.asin_ebook,
+        "asin_paperback": meta.asin_paperback,
+        "asin_hardcover": meta.asin_hardcover,
+        "keywords": _parse_keywords(meta.keywords),
+        "html_description": meta.html_description,
+        "backpage_description": meta.backpage_description,
+        "backpage_author_bio": meta.backpage_author_bio,
+        "cover_image": meta.cover_image,
+        "custom_css": meta.custom_css,
     }
+
+
+def _parse_keywords(raw: str | None) -> list[str] | None:
+    """Book.keywords is a JSON array stored as text; ProjectMetadata
+    stores it as the raw string. Surface it to the wizard as a real
+    list so the preview can render keyword chips."""
+    if raw is None:
+        return None
+    import json
+
+    if isinstance(raw, list):
+        return [str(k) for k in raw]
+    try:
+        parsed = json.loads(raw) if raw.strip() else None
+    except (ValueError, TypeError):
+        return None
+    if parsed is None:
+        return None
+    if isinstance(parsed, list):
+        return [str(k) for k in parsed]
+    return [str(parsed)]
 
 
 def _detected_chapters(project_root: Path) -> list[DetectedChapter]:

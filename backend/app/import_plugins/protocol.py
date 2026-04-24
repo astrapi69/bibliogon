@@ -44,29 +44,60 @@ class DetectedProject(BaseModel):
     The wizard renders this directly. ``source_identifier`` drives the
     duplicate-detection check in core.
 
-    The ``has_*`` booleans telegraph presence of long-form metadata
-    (custom CSS, back-cover texts, HTML description). Handlers that
-    populate the corresponding Book columns at execute-time should
-    flip the matching flag at detect-time so the preview panel can
-    surface "custom CSS detected" / "back-cover text detected"
-    badges without rendering kilobytes of content in the modal. A
-    False flag means the field is empty, not that the handler doesn't
-    support it.
+    Full parity with the ``Book`` model's import-relevant columns:
+    every metadata field the BookMetadataEditor surfaces is mirrored
+    here, so the wizard can show real values (not just presence
+    flags) and let the user edit or deselect each one before import.
+    Long-form content (description, custom_css, ...) is a nullable
+    string; the wizard renders scrollable/collapsible panels when
+    the content is large. ``None`` means the source did not provide
+    the field; existing handlers that don't read a given field pass
+    ``None`` and the wizard hides the row.
     """
 
     format_name: str  # e.g. "bgb" | "markdown" | "wbt-zip"
     source_identifier: str  # URL / SHA-256 / content signature
+
+    # --- basics ---
     title: str | None = None
     subtitle: str | None = None
     author: str | None = None
     language: str | None = None
+
+    # --- series / classification ---
+    series: str | None = None
+    series_index: int | None = None
+    genre: str | None = None
+
+    # --- edition / publishing ---
+    description: str | None = None
+    edition: str | None = None
+    publisher: str | None = None
+    publisher_city: str | None = None
+    publish_date: str | None = None
+
+    # --- identifiers ---
+    isbn_ebook: str | None = None
+    isbn_paperback: str | None = None
+    isbn_hardcover: str | None = None
+    asin_ebook: str | None = None
+    asin_paperback: str | None = None
+    asin_hardcover: str | None = None
+
+    # --- marketing / long-form ---
+    keywords: list[str] | None = None  # deserialized from Book.keywords JSON
+    html_description: str | None = None
+    backpage_description: str | None = None
+    backpage_author_bio: str | None = None
+
+    # --- cover + styling ---
+    cover_image: str | None = None  # filename/path hint; cover asset has full details
+    custom_css: str | None = None
+
+    # --- structure (unchanged) ---
     chapters: list[DetectedChapter] = Field(default_factory=list)
     assets: list[DetectedAsset] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
-    has_html_description: bool = False
-    has_backpage_description: bool = False
-    has_backpage_author_bio: bool = False
-    has_custom_css: bool = False
     plugin_specific_data: dict = Field(default_factory=dict)
 
 

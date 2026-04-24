@@ -35,14 +35,6 @@ class MarkdownImportHandler:
     format_name = "markdown"
 
     _ACCEPT_SUFFIXES = (".md", ".markdown", ".txt")
-    _ALLOWED_OVERRIDES = {
-        "title",
-        "author",
-        "subtitle",
-        "language",
-        "description",
-        "genre",
-    }
 
     # --- ImportPlugin ---
 
@@ -94,8 +86,13 @@ class MarkdownImportHandler:
         return DetectedProject(
             format_name=self.format_name,
             source_identifier=source_identifier,
-            title=title,
-            author=None,
+            # Mandatory-field defaults surface at detect-time so the
+            # router's validate_overrides (which treats missing keys
+            # as "fall back to detected") passes for single-markdown
+            # inputs that have no author metadata. User can still
+            # edit these in the preview.
+            title=title or path.stem or "Untitled",
+            author="Unknown",
             language=None,
             chapters=chapters,
             assets=[],
@@ -123,21 +120,21 @@ class MarkdownImportHandler:
                 _hard_delete_book(session, existing_book_id)
 
             title = overrides.get("title") or detected.title or path.stem
-            author = overrides.get("author", "Unknown")
-            language = overrides.get("language", "de")
+            author = overrides.get("author") or "Unknown"
+            language = overrides.get("language") or "de"
 
             book = Book(title=title, author=author, language=language)
-            for key, value in overrides.items():
-                if key == "title" or key == "author" or key == "language":
-                    continue
-                if key not in self._ALLOWED_OVERRIDES:
-                    raise KeyError(
-                        f"Override {key!r} is not allowed for the markdown handler"
-                    )
-                setattr(book, key, value)
-
             session.add(book)
             session.flush()
+
+            from app.import_plugins.overrides import apply_book_overrides
+
+            remaining = {
+                k: v
+                for k, v in overrides.items()
+                if k not in {"title", "author", "language"}
+            }
+            apply_book_overrides(session, book.id, remaining)
 
             sanitized = sanitize_import_markdown(content, book.language)
             session.add(

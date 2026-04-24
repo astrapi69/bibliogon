@@ -52,15 +52,6 @@ class MarkdownFolderHandler:
 
     format_name = "markdown-folder"
 
-    _ALLOWED_OVERRIDES = {
-        "title",
-        "author",
-        "subtitle",
-        "language",
-        "description",
-        "genre",
-    }
-
     # --- ImportPlugin ---
 
     def can_handle(self, input_path: str) -> bool:
@@ -110,8 +101,8 @@ class MarkdownFolderHandler:
         return DetectedProject(
             format_name=self.format_name,
             source_identifier=_signature(title, len(md_files), root),
-            title=title,
-            author=None,
+            title=title or root.name or "Untitled",
+            author="Unknown",
             language=None,
             chapters=chapters,
             assets=assets,
@@ -150,21 +141,21 @@ class MarkdownFolderHandler:
                 or root.name
                 or "Untitled"
             )
-            author = overrides.get("author", "Unknown")
-            language = overrides.get("language", "de")
+            author = overrides.get("author") or "Unknown"
+            language = overrides.get("language") or "de"
 
             book = Book(title=title, author=author, language=language)
-            for key, value in overrides.items():
-                if key in {"title", "author", "language"}:
-                    continue
-                if key not in self._ALLOWED_OVERRIDES:
-                    raise KeyError(
-                        f"Override {key!r} is not allowed for the markdown-folder handler"
-                    )
-                setattr(book, key, value)
-
             session.add(book)
             session.flush()
+
+            from app.import_plugins.overrides import apply_book_overrides
+
+            remaining = {
+                k: v
+                for k, v in overrides.items()
+                if k not in {"title", "author", "language"}
+            }
+            apply_book_overrides(session, book.id, remaining)
 
             for position, md_path in enumerate(md_files):
                 content = md_path.read_text(encoding="utf-8")

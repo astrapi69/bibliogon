@@ -143,43 +143,96 @@ def test_detect_surfaces_subtitle_to_the_wizard(tmp_path: Path) -> None:
     assert detected.subtitle == "A Subtitle Appears"
 
 
-def test_detect_surfaces_has_flags_for_long_form_metadata(
-    tmp_path: Path,
-) -> None:
-    """Long-form fields (HTML description, back-cover, CSS) are too
-    big to render in the modal; the preview panel renders a badge
-    per non-empty field based on these booleans. Closes Bug 3."""
+def test_detect_surfaces_long_form_metadata_content(tmp_path: Path) -> None:
+    """Long-form fields (HTML description, back-cover, CSS) now land
+    in DetectedProject as actual content strings so the preview
+    panel can show them and the user can deselect them. Replaces
+    the earlier has_* boolean contract."""
     zip_path = _wbt_zip_with_all_metadata(tmp_path)
     detected = WbtImportHandler().detect(str(zip_path))
-    assert detected.has_html_description is True
-    assert detected.has_backpage_description is True
-    assert detected.has_backpage_author_bio is True
-    assert detected.has_custom_css is True
+    assert "Promotional HTML description" in (detected.html_description or "")
+    assert "Compelling back-cover teaser" in (detected.backpage_description or "")
+    assert "Short author bio" in (detected.backpage_author_bio or "")
+    assert "color: red" in (detected.custom_css or "")
 
 
-def test_detect_flags_absent_fields_as_false(tmp_path: Path) -> None:
-    """When the WBT project has no back-cover / CSS, the has_*
-    flags stay False so the preview does not render stale badges."""
+def test_detect_leaves_absent_fields_as_none(tmp_path: Path) -> None:
+    """When the WBT project has no back-cover / CSS the fields stay
+    None so the preview renders no row for them."""
     zip_path = _wbt_zip_sparse(tmp_path)
     detected = WbtImportHandler().detect(str(zip_path))
     assert detected.subtitle is None
-    assert detected.has_html_description is False
-    assert detected.has_backpage_description is False
-    assert detected.has_backpage_author_bio is False
-    assert detected.has_custom_css is False
+    assert detected.html_description is None
+    assert detected.backpage_description is None
+    assert detected.backpage_author_bio is None
+    assert detected.custom_css is None
+
+
+def test_detect_surfaces_series_publisher_and_isbn(tmp_path: Path) -> None:
+    """Series/publisher/ISBN fields added for full Metadata Editor
+    parity (Option B). Detect must return them so the preview can
+    render them and the user can edit or deselect."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "book/config/metadata.yaml",
+            "title: Parity Book\n"
+            "author: P. Arity\n"
+            "lang: en\n"
+            "series:\n"
+            "  title: Test Series\n"
+            "  volume: 3\n"
+            "publisher: Parity Press\n"
+            "publisher_city: Berlin\n"
+            "date: '2026-04-24'\n"
+            "edition: Second Edition\n"
+            "isbn:\n"
+            "  ebook: '978-0-ebook-01'\n"
+            "  paperback: '978-0-paper-01'\n"
+            "  hardcover: '978-0-hard-01'\n"
+            "asin:\n"
+            "  ebook: 'B0ABCDEBOOK'\n"
+            "  paperback: 'B0ABCDPAPER'\n"
+            "  hardcover: 'B0ABCDHARD'\n",
+        )
+        zf.writestr(
+            "book/manuscript/chapters/01-ch.md", "# C1\n\nBody.\n"
+        )
+    zip_path = tmp_path / "parity.zip"
+    zip_path.write_bytes(buf.getvalue())
+
+    detected = WbtImportHandler().detect(str(zip_path))
+    assert detected.series == "Test Series"
+    assert detected.series_index == 3
+    assert detected.publisher == "Parity Press"
+    assert detected.publisher_city == "Berlin"
+    assert detected.publish_date == "2026-04-24"
+    assert detected.edition == "Second Edition"
+    assert detected.isbn_ebook == "978-0-ebook-01"
+    assert detected.isbn_paperback == "978-0-paper-01"
+    assert detected.isbn_hardcover == "978-0-hard-01"
+    assert detected.asin_ebook == "B0ABCDEBOOK"
 
 
 def test_detect_defaults_are_safe_on_bare_model() -> None:
-    """DetectedProject added four has_* booleans; check they default
-    False so existing callers (bgb, markdown, office handlers) stay
-    green without a source change."""
+    """DetectedProject added 20 new nullable fields; check they
+    default None so existing callers (bgb, markdown, office handlers)
+    stay green without a source change."""
     from app.import_plugins.protocol import DetectedProject
 
     project = DetectedProject(
         format_name="bgb", source_identifier="sha256:abc"
     )
+    # Spot-check a representative subset; the Pydantic model pins
+    # every default.
     assert project.subtitle is None
-    assert project.has_html_description is False
-    assert project.has_backpage_description is False
-    assert project.has_backpage_author_bio is False
-    assert project.has_custom_css is False
+    assert project.series is None
+    assert project.description is None
+    assert project.publisher is None
+    assert project.isbn_ebook is None
+    assert project.keywords is None
+    assert project.html_description is None
+    assert project.custom_css is None

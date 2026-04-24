@@ -59,24 +59,43 @@ class BgbImportHandler:
             _validate_manifest(zf, warnings)
             book_blob = _first_book_blob(zf, warnings)
 
-        title = (book_blob or {}).get("title")
-        author = (book_blob or {}).get("author")
-        language = (book_blob or {}).get("language")
-
-        chapters = _detected_chapters(book_blob or {})
-        assets = _detected_assets(book_blob or {})
+        blob = book_blob or {}
+        chapters = _detected_chapters(blob)
+        assets = _detected_assets(blob)
 
         return DetectedProject(
             format_name=self.format_name,
             source_identifier=source_identifier,
-            title=title,
-            author=author,
-            language=language,
+            title=blob.get("title"),
+            subtitle=blob.get("subtitle"),
+            author=blob.get("author"),
+            language=blob.get("language"),
+            series=blob.get("series"),
+            series_index=blob.get("series_index"),
+            genre=blob.get("genre"),
+            description=blob.get("description"),
+            edition=blob.get("edition"),
+            publisher=blob.get("publisher"),
+            publisher_city=blob.get("publisher_city"),
+            publish_date=blob.get("publish_date"),
+            isbn_ebook=blob.get("isbn_ebook"),
+            isbn_paperback=blob.get("isbn_paperback"),
+            isbn_hardcover=blob.get("isbn_hardcover"),
+            asin_ebook=blob.get("asin_ebook"),
+            asin_paperback=blob.get("asin_paperback"),
+            asin_hardcover=blob.get("asin_hardcover"),
+            keywords=_parse_keywords_field(blob.get("keywords")),
+            html_description=blob.get("html_description"),
+            backpage_description=blob.get("backpage_description"),
+            backpage_author_bio=blob.get("backpage_author_bio"),
+            cover_image=blob.get("cover_image"),
+            custom_css=blob.get("custom_css"),
             chapters=chapters,
             assets=assets,
             warnings=warnings,
             plugin_specific_data={"book_count": _book_count(path)},
         )
+
 
     def execute(
         self,
@@ -110,6 +129,26 @@ class BgbImportHandler:
 
 
 # --- Helpers (module-level, testable in isolation) ---
+
+
+def _parse_keywords_field(raw: object) -> list[str] | None:
+    """Book.keywords is serialized as a JSON string in the .bgb blob;
+    older backups may serialize as a list directly. Accept both and
+    return a list[str] for the preview panel's chip renderer."""
+    if raw is None:
+        return None
+    if isinstance(raw, list):
+        return [str(k) for k in raw]
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw) if raw.strip() else None
+        except (ValueError, TypeError):
+            return [raw] if raw.strip() else None
+        if isinstance(parsed, list):
+            return [str(k) for k in parsed]
+        if parsed is not None:
+            return [str(parsed)]
+    return None
 
 
 def _sha256_of_file(path: Path) -> str:
@@ -243,24 +282,11 @@ def _restore_single_book(session: Session, bgb_path: Path) -> str:
 
 
 def _apply_overrides(session: Session, book_id: str, overrides: dict) -> None:
-    """Apply a flat overrides dict of Book column values.
+    """Delegate to the shared :mod:`app.import_plugins.overrides`
+    helper so every handler applies user edits the same way."""
+    from app.import_plugins.overrides import apply_book_overrides
 
-    The orchestrator passes whatever the user edited in the preview
-    panel. Only a safe-listed subset of scalar Book columns is
-    respected; anything else raises so the handler does not silently
-    ignore a user-visible override.
-    """
-    if not overrides:
-        return
-    ALLOWED = {"title", "author", "subtitle", "language", "description", "genre"}
-    book = session.query(Book).filter(Book.id == book_id).first()
-    if book is None:
-        return
-    for key, value in overrides.items():
-        if key in ALLOWED:
-            setattr(book, key, value)
-        else:
-            raise KeyError(f"Override {key!r} is not allowed for the .bgb handler")
+    apply_book_overrides(session, book_id, overrides)
 
 
 class _BgbInvalid(Exception):

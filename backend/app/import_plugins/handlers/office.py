@@ -38,16 +38,6 @@ from app.services.backup.markdown_utils import (
     sanitize_import_markdown,
 )
 
-_ALLOWED_OVERRIDES = {
-    "title",
-    "author",
-    "subtitle",
-    "language",
-    "description",
-    "genre",
-}
-
-
 class _OfficeHandlerBase:
     """Shared Pandoc-based import pipeline for docx + epub."""
 
@@ -79,8 +69,8 @@ class _OfficeHandlerBase:
         return DetectedProject(
             format_name=self.format_name,
             source_identifier=source_identifier,
-            title=title,
-            author=None,
+            title=title or path.stem or "Untitled",
+            author="Unknown",
             language=None,
             chapters=[
                 DetectedChapter(
@@ -128,20 +118,21 @@ class _OfficeHandlerBase:
                 or path.stem
                 or "Untitled"
             )
-            author = overrides.get("author", "Unknown")
-            language = overrides.get("language", "de")
+            author = overrides.get("author") or "Unknown"
+            language = overrides.get("language") or "de"
 
             book = Book(title=title, author=author, language=language)
-            for key, value in overrides.items():
-                if key in {"title", "author", "language"}:
-                    continue
-                if key not in _ALLOWED_OVERRIDES:
-                    raise KeyError(
-                        f"Override {key!r} is not allowed for the {self.format_name} handler"
-                    )
-                setattr(book, key, value)
             session.add(book)
             session.flush()
+
+            from app.import_plugins.overrides import apply_book_overrides
+
+            remaining = {
+                k: v
+                for k, v in overrides.items()
+                if k not in {"title", "author", "language"}
+            }
+            apply_book_overrides(session, book.id, remaining)
 
             for position, ch in enumerate(chapters):
                 sanitized = sanitize_import_markdown(ch["body"], book.language)

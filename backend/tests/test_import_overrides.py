@@ -68,7 +68,7 @@ def test_markdown_override_rejects_disallowed_key(client: TestClient) -> None:
             "duplicate_action": "create",
         },
     )
-    assert result["status_code"] == 500
+    assert result["status_code"] == 400
     assert "not allowed" in result["detail"].lower()
 
 
@@ -150,7 +150,7 @@ def test_bgb_override_rejects_disallowed_key(client: TestClient) -> None:
             "duplicate_action": "create",
         },
     )
-    assert result["status_code"] == 500
+    assert result["status_code"] == 400
     assert "not allowed" in result["detail"].lower()
 
 
@@ -192,11 +192,14 @@ def test_wbt_override_rejects_disallowed_key(client: TestClient) -> None:
         client,
         {
             "temp_ref": detect["temp_ref"],
-            "overrides": {"publisher": "Sneaky House"},
+            # Not in BOOK_IMPORT_OVERRIDE_KEYS; older restriction on
+            # "publisher" was lifted when the Metadata Editor fields
+            # gained full parity in DetectedProject.
+            "overrides": {"tts_engine": "sneaky-override"},
             "duplicate_action": "create",
         },
     )
-    assert result["status_code"] == 500
+    assert result["status_code"] == 400
     assert "not allowed" in result["detail"].lower()
 
 
@@ -250,5 +253,5 @@ def test_markdown_folder_override_rejects_disallowed_key(client: TestClient) -> 
             "duplicate_action": "create",
         },
     )
-    assert execute.status_code == 500
+    assert execute.status_code == 400
     assert "not allowed" in execute.json()["detail"].lower()
