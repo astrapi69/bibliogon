@@ -11,6 +11,11 @@ vi.mock("../../../hooks/useI18n", () => ({
     }),
 }));
 
+const mockAuthorChoices = vi.fn(() => [] as string[]);
+vi.mock("../../../hooks/useAuthorChoices", () => ({
+    useAuthorChoices: () => mockAuthorChoices(),
+}));
+
 function project(overrides: Partial<DetectedProject> = {}): DetectedProject {
     return {
         format_name: "wbt-zip",
@@ -159,6 +164,38 @@ describe("PreviewPanel — cover + overview", () => {
         expect(screen.getByTestId("preview-warnings")).toBeInTheDocument();
         expect(screen.getByTestId("preview-warning")).toHaveTextContent(
             "No cover image detected.",
+        );
+    });
+});
+
+describe("PreviewPanel — author datalist", () => {
+    it("no datalist and no list attr when settings have no author choices", () => {
+        mockAuthorChoices.mockReturnValueOnce([]);
+        renderPanel();
+        expect(
+            screen.queryByTestId("preview-author-datalist"),
+        ).not.toBeInTheDocument();
+        expect(screen.getByTestId("preview-field-author")).not.toHaveAttribute(
+            "list",
+        );
+    });
+
+    it("renders datalist with pen names when choices present", () => {
+        mockAuthorChoices.mockReturnValueOnce([
+            "Real Name",
+            "Pen Name One",
+            "Pen Name Two",
+        ]);
+        renderPanel();
+        const datalist = screen.getByTestId("preview-author-datalist");
+        expect(datalist).toBeInTheDocument();
+        expect(screen.getByTestId("preview-field-author")).toHaveAttribute(
+            "list",
+            "preview-author-options",
+        );
+        const options = datalist.querySelectorAll("option");
+        expect(Array.from(options).map((o) => o.getAttribute("value"))).toEqual(
+            ["Real Name", "Pen Name One", "Pen Name Two"],
         );
     });
 });

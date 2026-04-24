@@ -38,6 +38,10 @@ vi.mock("../AppDialog", () => ({
     }),
 }));
 
+vi.mock("../../hooks/useAuthorChoices", () => ({
+    useAuthorChoices: () => [],
+}));
+
 function renderModal(onClose = vi.fn(), onImported = vi.fn()) {
     return render(
         <MemoryRouter>

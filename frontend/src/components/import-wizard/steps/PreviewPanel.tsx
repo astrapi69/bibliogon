@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { BookOpen, ChevronRight, ImageOff, Plus, X } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
+import { useAuthorChoices } from "../../../hooks/useAuthorChoices";
 import type {
     BookImportOverrideKey,
     DetectedAsset,
@@ -280,6 +281,7 @@ export function PreviewPanel({
     tempRef?: string;
 }) {
     const { t } = useI18n();
+    const authorChoices = useAuthorChoices();
     const [state, setStateRaw] = useState<
         Record<BookImportOverrideKey, FieldState>
     >(() => buildInitialFormState(detected));
@@ -370,6 +372,11 @@ export function PreviewPanel({
                             onChange={(e) =>
                                 updateField("author", { value: e.target.value })
                             }
+                            list={
+                                authorChoices.length > 0
+                                    ? "preview-author-options"
+                                    : undefined
+                            }
                             style={{
                                 ...inputStyle,
                                 borderColor: authorEmpty
@@ -377,6 +384,16 @@ export function PreviewPanel({
                                     : "var(--border)",
                             }}
                         />
+                        {authorChoices.length > 0 && (
+                            <datalist
+                                id="preview-author-options"
+                                data-testid="preview-author-datalist"
+                            >
+                                {authorChoices.map((name) => (
+                                    <option key={name} value={name} />
+                                ))}
+                            </datalist>
+                        )}
                         {authorEmpty && (
                             <p data-testid="preview-author-error" style={errorStyle}>
                                 {t(
