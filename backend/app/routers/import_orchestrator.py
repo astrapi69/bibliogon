@@ -8,8 +8,10 @@ POST /api/import/execute commits the import honouring the user's
 duplicate-action choice (create / overwrite / cancel) and records a
 BookImportSource row so the next detect call recognizes the import.
 
-Legacy /api/backup/import, /api/backup/import-project and
-/api/backup/smart-import stay live; this router is additive. See
+/api/backup/import remains for .bgb backup restore (only .bgb
+files; project-ZIP/.md inputs go through this orchestrator).
+Legacy /api/backup/smart-import and /api/backup/import-project
+were removed in CIO-05. See
 docs/explorations/core-import-orchestrator.md.
 """
 

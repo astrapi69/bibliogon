@@ -48,7 +48,6 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
-    import_new: Ice aktar (Yeni)
   backup:
     compare:
       title: "Yedekleri karsilastir"

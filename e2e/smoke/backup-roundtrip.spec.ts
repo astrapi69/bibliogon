@@ -9,8 +9,7 @@
  * The export/import is done via Playwright's request API (not the
  * file picker UI) because the goal is to pin the data pipeline, not
  * the file-picker interaction. The UI testids (backup-export-btn,
- * backup-import-btn, backup-import-input) exist for future UI-level
- * tests.
+ * import-wizard-btn) exist for future UI-level tests.
  *
  * Uses data-testid selectors exclusively for any UI assertions.
  */
@@ -174,6 +173,6 @@ test.describe('Backup roundtrip', () => {
 
   test('import button is visible on dashboard', async ({page}) => {
     await page.goto('/')
-    await expect(page.getByTestId('backup-import-btn')).toBeVisible()
+    await expect(page.getByTestId('import-wizard-btn')).toBeVisible()
   })
 })

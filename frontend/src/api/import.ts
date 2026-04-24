@@ -1,11 +1,8 @@
 /**
- * Client for the CIO-01 core import orchestrator endpoints.
+ * Client for the core import orchestrator endpoints.
  *
  * POST /api/import/detect: multipart upload, returns preview payload.
  * POST /api/import/execute: JSON body, commits the import.
- *
- * Parallel to the legacy ``api.backup.smartImport`` client, which stays
- * wired to /api/backup/smart-import for the old import button.
  */
 
 import { ApiError } from "./client";

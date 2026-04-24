@@ -973,20 +973,6 @@ export const api = {
         history: (limit = 50) =>
             request<{timestamp: string; action: string; book_count: number; chapter_count: number; file_size_bytes: number; filename: string; details: string}[]>(`/backup/history?limit=${limit}`),
 
-        smartImport: async (file: File): Promise<{type: string; result: Record<string, unknown>}> => {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch(`${BASE}/backup/smart-import`, {
-                method: "POST",
-                body: formData,
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/smart-import`, "POST", err.stacktrace || "");
-            }
-            return res.json();
-        },
-
         import: async (file: File): Promise<{imported_books: number}> => {
             const formData = new FormData();
             formData.append("file", file);
@@ -997,20 +983,6 @@ export const api = {
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: res.statusText}));
                 throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/import`, "POST", err.stacktrace || "");
-            }
-            return res.json();
-        },
-
-        importProject: async (file: File): Promise<{book_id: string; title: string; chapter_count: number}> => {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch(`${BASE}/backup/import-project`, {
-                method: "POST",
-                body: formData,
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: res.statusText}));
-                throw new ApiError(res.status, err.detail || "Import failed", `${BASE}/backup/import-project`, "POST", err.stacktrace || "");
             }
             return res.json();
         },

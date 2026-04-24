@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
@@ -45,7 +45,6 @@ export default function Dashboard() {
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
-    const importInputRef = useRef<HTMLInputElement>(null);
 
     const loadBooks = async () => {
         try {
@@ -151,27 +150,6 @@ export default function Dashboard() {
         window.open(api.backup.exportUrl(), "_blank");
     };
 
-    const handleSmartImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            const {type, result} = await api.backup.smartImport(file);
-            if (type === "backup") {
-                notify.success(`${result.imported_books} ${t("ui.dashboard.backup_imported", "Bücher importiert")}`);
-            } else if (type === "project" || type === "template") {
-                notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
-            } else if (type === "markdown") {
-                notify.success(`"${result.title}" - ${result.chapter_count} ${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
-            } else if (type === "chapter") {
-                notify.success(`${t("ui.dashboard.chapters_imported", "Kapitel importiert")}`);
-            }
-            loadBooks();
-        } catch (err) {
-            notify.error(`${t("ui.dashboard.import_failed", "Import fehlgeschlagen")}: ${err}`, err);
-        }
-        e.target.value = "";
-    };
-
     return (
         <div style={styles.container}>
             {/* Header */}
@@ -198,11 +176,8 @@ export default function Dashboard() {
                             >
                                 <Download size={14}/> {t("ui.dashboard.backup", "Backup")}
                             </button>
-                            <button className="btn btn-secondary btn-sm" data-testid="backup-import-btn" onClick={() => importInputRef.current?.click()}>
-                                <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
-                            </button>
                             <button className="btn btn-secondary btn-sm" data-testid="import-wizard-btn" onClick={() => setImportWizardOpen(true)}>
-                                <Upload size={14}/> {t("ui.dashboard.import_new", "Import (New)")}
+                                <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
                             </button>
                             <div style={styles.headerSeparator}/>
                             <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
@@ -242,7 +217,7 @@ export default function Dashboard() {
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
                                         <Download size={16}/> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => importInputRef.current?.click()}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setImportWizardOpen(true)}>
                                         <Upload size={16}/> {t("ui.dashboard.import", "Importieren")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
@@ -268,7 +243,6 @@ export default function Dashboard() {
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
 
-                        <input ref={importInputRef} data-testid="backup-import-input" type="file" accept=".bgb,.bgp,.zip,.md" style={{display: "none"}} onChange={handleSmartImport}/>
                     </div>
                 </div>
             </header>
@@ -353,7 +327,7 @@ export default function Dashboard() {
                             <button className="btn btn-primary" onClick={() => setShowModal(true)}>
                                 <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
                             </button>
-                            <button className="btn btn-secondary" onClick={() => importInputRef.current?.click()}>
+                            <button className="btn btn-secondary" onClick={() => setImportWizardOpen(true)}>
                                 <FolderUp size={16}/> {t("ui.dashboard.import_project", "Projekt importieren")}
                             </button>
                             <button className="btn btn-secondary" onClick={() => navigate("/get-started")}>

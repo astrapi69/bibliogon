@@ -48,7 +48,6 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
-    import_new: Importer (Nouveau)
   backup:
     compare:
       title: "Comparer les sauvegardes"
