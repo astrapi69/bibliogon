@@ -38,6 +38,7 @@ from app.services.backup.markdown_utils import (
     sanitize_import_markdown,
 )
 
+
 class _OfficeHandlerBase:
     """Shared Pandoc-based import pipeline for docx + epub."""
 
@@ -52,9 +53,7 @@ class _OfficeHandlerBase:
     def detect(self, input_path: str) -> DetectedProject:
         path = Path(input_path)
         source_identifier = f"sha256:{_sha256_of_file(path)}"
-        markdown, media_dir = _convert_to_markdown(
-            path, self._pandoc_format
-        )
+        markdown, media_dir = _convert_to_markdown(path, self._pandoc_format)
         title = _extract_title(markdown) or path.stem
         chapters = _split_into_chapters(markdown)
         assets = _detected_assets(media_dir)
@@ -62,9 +61,7 @@ class _OfficeHandlerBase:
         if not chapters:
             warnings.append("No chapters detected in the converted Markdown.")
         if len(chapters) == 1 and len(markdown) > 50_000:
-            warnings.append(
-                "Pandoc produced a single long chapter; consider splitting on H1."
-            )
+            warnings.append("Pandoc produced a single long chapter; consider splitting on H1.")
 
         return DetectedProject(
             format_name=self.format_name,
@@ -103,9 +100,7 @@ class _OfficeHandlerBase:
             raise _DuplicateCancelled()
 
         path = Path(input_path)
-        markdown, media_dir = _convert_to_markdown(
-            path, self._pandoc_format
-        )
+        markdown, media_dir = _convert_to_markdown(path, self._pandoc_format)
         chapters = _split_into_chapters(markdown)
 
         session: Session = SessionLocal()
@@ -113,12 +108,7 @@ class _OfficeHandlerBase:
             if duplicate_action == "overwrite" and existing_book_id:
                 _hard_delete_book(session, existing_book_id)
 
-            title = (
-                overrides.get("title")
-                or detected.title
-                or path.stem
-                or "Untitled"
-            )
+            title = overrides.get("title") or detected.title or path.stem or "Untitled"
             author = overrides.get("author") or "Unknown"
             language = overrides.get("language") or "de"
 
@@ -129,9 +119,7 @@ class _OfficeHandlerBase:
             from app.import_plugins.overrides import apply_book_overrides
 
             remaining = {
-                k: v
-                for k, v in overrides.items()
-                if k not in {"title", "author", "language"}
+                k: v for k, v in overrides.items() if k not in {"title", "author", "language"}
             }
             apply_book_overrides(session, book.id, remaining)
 
@@ -214,9 +202,7 @@ def _convert_to_markdown(path: Path, pandoc_format: str) -> tuple[str, Path]:
             "Pandoc binary not found; office import requires pandoc in PATH."
         ) from exc
     except subprocess.CalledProcessError as exc:
-        raise _PandocFailure(
-            f"Pandoc failed converting {path.name}: {exc.stderr.strip()}"
-        ) from exc
+        raise _PandocFailure(f"Pandoc failed converting {path.name}: {exc.stderr.strip()}") from exc
     return result.stdout, media_dir
 
 

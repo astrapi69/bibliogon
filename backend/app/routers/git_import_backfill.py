@@ -17,7 +17,6 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
@@ -87,10 +86,7 @@ def adopt_from_upload(
         if git_dir is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "Uploaded ZIP contains no .git/ directory at root "
-                    "or one level deep."
-                ),
+                detail=("Uploaded ZIP contains no .git/ directory at root or one level deep."),
             )
 
         try:

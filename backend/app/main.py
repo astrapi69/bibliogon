@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 from pluginforge import BasePlugin, PluginManager
 from pluginforge.config import load_i18n
 
+# Side-effect import: register core import handlers with the plugin
+# registry before any request hits the orchestrator.
+import app.import_plugins.handlers  # noqa: F401, E402
 from app.hookspecs import BibliogonHookSpec
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import (
@@ -34,10 +37,6 @@ from app.routers import (
     settings,
     templates,
 )
-
-# Side-effect import: register core import handlers with the plugin
-# registry before any request hits the orchestrator.
-import app.import_plugins.handlers  # noqa: F401, E402
 from app.routers import (
     ssh_keys as ssh_keys_router,
 )

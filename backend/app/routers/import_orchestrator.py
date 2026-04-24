@@ -22,7 +22,7 @@ import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -81,9 +81,7 @@ class ExecuteRequest(BaseModel):
     #: "adopt_with_remote" (copy .git/ + adopt remote URL),
     #: "adopt_without_remote" (copy .git/, strip remote).
     #: None is equivalent to "start_fresh".
-    git_adoption: Literal[
-        "start_fresh", "adopt_with_remote", "adopt_without_remote"
-    ] | None = None
+    git_adoption: Literal["start_fresh", "adopt_with_remote", "adopt_without_remote"] | None = None
 
 
 class ExecuteResponse(BaseModel):
@@ -246,8 +244,7 @@ def detect_git_import(
                     "handler (e.g. plugin-git-sync)."
                 ),
                 "registered_remote_kinds": [
-                    getattr(h, "source_kind", "unknown")
-                    for h in list_remote_handlers()
+                    getattr(h, "source_kind", "unknown") for h in list_remote_handlers()
                 ],
             },
         )
@@ -399,9 +396,7 @@ def execute_import(
 # --- Helpers ---
 
 
-def _stage_uploads(
-    files: list[UploadFile], paths: list[str] | None, temp_ref: str
-) -> Path:
+def _stage_uploads(files: list[UploadFile], paths: list[str] | None, temp_ref: str) -> Path:
     """Persist one or more uploads to disk and return the path a handler
     should inspect.
 
@@ -529,11 +524,7 @@ def _record_import_source(
     overwrote: bool,
 ) -> None:
     if overwrote:
-        existing = (
-            db.query(BookImportSource)
-            .filter(BookImportSource.book_id == book_id)
-            .first()
-        )
+        existing = db.query(BookImportSource).filter(BookImportSource.book_id == book_id).first()
         if existing is not None:
             existing.source_identifier = source_identifier
             existing.source_type = source_type

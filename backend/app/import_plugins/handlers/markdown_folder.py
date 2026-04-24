@@ -70,9 +70,7 @@ class MarkdownFolderHandler:
         cover = _find_cover(root)
 
         title = _derive_title(md_files, readme, fallback=root.name)
-        description = (
-            readme.read_text(encoding="utf-8") if readme is not None else None
-        )
+        description = readme.read_text(encoding="utf-8") if readme is not None else None
 
         chapters = [
             DetectedChapter(
@@ -104,6 +102,7 @@ class MarkdownFolderHandler:
             title=title or root.name or "Untitled",
             author="Unknown",
             language=None,
+            description=description,
             chapters=chapters,
             assets=assets,
             warnings=warnings,
@@ -136,12 +135,7 @@ class MarkdownFolderHandler:
             if duplicate_action == "overwrite" and existing_book_id:
                 _hard_delete_book(session, existing_book_id)
 
-            title = (
-                overrides.get("title")
-                or detected.title
-                or root.name
-                or "Untitled"
-            )
+            title = overrides.get("title") or detected.title or root.name or "Untitled"
             author = overrides.get("author") or "Unknown"
             language = overrides.get("language") or "de"
 
@@ -152,9 +146,7 @@ class MarkdownFolderHandler:
             from app.import_plugins.overrides import apply_book_overrides
 
             remaining = {
-                k: v
-                for k, v in overrides.items()
-                if k not in {"title", "author", "language"}
+                k: v for k, v in overrides.items() if k not in {"title", "author", "language"}
             }
             apply_book_overrides(session, book.id, remaining)
 
@@ -192,9 +184,7 @@ def _ordered_md_files(root: Path) -> list[Path]:
     all_md = [
         p
         for p in root.rglob("*")
-        if p.is_file()
-        and p.suffix.lower() in _MD_SUFFIXES
-        and p.stem.lower() != "readme"
+        if p.is_file() and p.suffix.lower() in _MD_SUFFIXES and p.stem.lower() != "readme"
     ]
     return sorted(all_md, key=_sort_key)
 
@@ -234,9 +224,7 @@ def _find_figures(root: Path) -> list[Path]:
     return figures
 
 
-def _derive_title(
-    md_files: list[Path], readme: Path | None, fallback: str
-) -> str:
+def _derive_title(md_files: list[Path], readme: Path | None, fallback: str) -> str:
     if readme is not None:
         readme_content = readme.read_text(encoding="utf-8")
         match = re.search(r"^#\s+(.+)$", readme_content, re.MULTILINE)

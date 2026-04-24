@@ -28,15 +28,24 @@ _STANDARD_REF_PREFIXES = ("refs/heads/", "refs/tags/", "refs/remotes/")
 # Hook filenames shipped by ``git init`` in .sample form only. Any
 # OTHER executable file (or a non-.sample file with these names)
 # is user-installed and flagged.
-_DEFAULT_HOOK_NAMES = frozenset({
-    "applypatch-msg.sample", "commit-msg.sample",
-    "fsmonitor-watchman.sample", "post-update.sample",
-    "pre-applypatch.sample", "pre-commit.sample",
-    "pre-merge-commit.sample", "pre-push.sample",
-    "pre-rebase.sample", "pre-receive.sample",
-    "prepare-commit-msg.sample", "push-to-checkout.sample",
-    "sendemail-validate.sample", "update.sample",
-})
+_DEFAULT_HOOK_NAMES = frozenset(
+    {
+        "applypatch-msg.sample",
+        "commit-msg.sample",
+        "fsmonitor-watchman.sample",
+        "post-update.sample",
+        "pre-applypatch.sample",
+        "pre-commit.sample",
+        "pre-merge-commit.sample",
+        "pre-push.sample",
+        "pre-rebase.sample",
+        "pre-receive.sample",
+        "prepare-commit-msg.sample",
+        "push-to-checkout.sample",
+        "sendemail-validate.sample",
+        "update.sample",
+    }
+)
 
 
 def inspect_git_dir(git_dir: Path) -> DetectedGitRepo:
@@ -224,16 +233,12 @@ def _scan_security(git_dir: Path) -> list[str]:
             # http.<url>.extraheader carries Basic/Bearer auth.
             if section.startswith("http") and "extraheader" in config[section]:
                 warnings.append(
-                    "Git config contains HTTP extraheader "
-                    "(will be stripped on adoption)."
+                    "Git config contains HTTP extraheader (will be stripped on adoption)."
                 )
                 break
         # credential.helper: stripped on adoption.
         if config.has_option("credential", "helper"):
-            warnings.append(
-                "Git config contains credential helper "
-                "(will be stripped on adoption)."
-            )
+            warnings.append("Git config contains credential helper (will be stripped on adoption).")
         # user.email with token-like local part.
         if config.has_option("user", "email"):
             email = config.get("user", "email")
@@ -254,12 +259,9 @@ def _scan_security(git_dir: Path) -> list[str]:
                 if len(parts) != 2:
                     continue
                 ref = parts[1].strip()
-                if not any(
-                    ref.startswith(p) for p in _STANDARD_REF_PREFIXES
-                ):
+                if not any(ref.startswith(p) for p in _STANDARD_REF_PREFIXES):
                     warnings.append(
-                        f"Non-standard ref in packed-refs: {ref!r} "
-                        "(will be pruned on adoption)."
+                        f"Non-standard ref in packed-refs: {ref!r} (will be pruned on adoption)."
                     )
                     break
         except OSError:
@@ -278,9 +280,7 @@ def _scan_security(git_dir: Path) -> list[str]:
             except OSError:
                 executable = 0
             if executable:
-                warnings.append(
-                    "Custom git hooks detected (will NOT be adopted)."
-                )
+                warnings.append("Custom git hooks detected (will NOT be adopted).")
                 break
 
     return warnings

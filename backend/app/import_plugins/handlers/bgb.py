@@ -96,7 +96,6 @@ class BgbImportHandler:
             plugin_specific_data={"book_count": _book_count(path)},
         )
 
-
     def execute(
         self,
         input_path: str,
@@ -194,9 +193,7 @@ def _first_book_blob(zf: zipfile.ZipFile, warnings: list[str]) -> dict | None:
         warnings.append("No book.json inside the backup.")
         return None
     if len(blobs) > 1:
-        warnings.append(
-            f"Backup contains {len(blobs)} books; preview reflects the first one only."
-        )
+        warnings.append(f"Backup contains {len(blobs)} books; preview reflects the first one only.")
     return blobs[0]
 
 

@@ -65,9 +65,7 @@ class WbtImportHandler:
         if path.is_dir():
             project_root = find_project_root(path)
             if project_root is None:
-                raise RuntimeError(
-                    "WBT directory has no config/metadata.yaml"
-                )
+                raise RuntimeError("WBT directory has no config/metadata.yaml")
             source_identifier = _folder_signature(project_root)
         else:
             source_identifier = f"sha256:{_sha256_of_file(path)}"
@@ -140,11 +138,7 @@ class WbtImportHandler:
             raise _DuplicateCancelled()
 
         path = Path(input_path)
-        project_root = (
-            find_project_root(path)
-            if path.is_dir()
-            else _extracted_root(path)
-        )
+        project_root = find_project_root(path) if path.is_dir() else _extracted_root(path)
         if project_root is None:
             raise RuntimeError("WBT project_root not found for execute")
 
@@ -176,9 +170,7 @@ class WbtImportHandler:
 
             # Git adoption is post-DB because the adopter writes to
             # uploads/<book_id>/.git and needs the Book row to exist.
-            _maybe_adopt_git(
-                project_root, book_id, git_adoption, session
-            )
+            _maybe_adopt_git(project_root, book_id, git_adoption, session)
 
             return book_id
         except Exception:
@@ -191,9 +183,7 @@ class WbtImportHandler:
 # --- Helpers ---
 
 
-def _apply_primary_cover(
-    session: Session, book_id: str, cover_filename: str
-) -> None:
+def _apply_primary_cover(session: Session, book_id: str, cover_filename: str) -> None:
     """Promote a specific cover Asset to book.cover_image.
 
     ``cover_filename`` must match a filename already imported under
@@ -204,19 +194,12 @@ def _apply_primary_cover(
     from app.models import Asset, Book
 
     cover_assets = (
-        session.query(Asset)
-        .filter(Asset.book_id == book_id, Asset.asset_type == "cover")
-        .all()
+        session.query(Asset).filter(Asset.book_id == book_id, Asset.asset_type == "cover").all()
     )
-    match = next(
-        (a for a in cover_assets if a.filename == cover_filename), None
-    )
+    match = next((a for a in cover_assets if a.filename == cover_filename), None)
     if match is None:
         available = sorted(a.filename for a in cover_assets)
-        raise KeyError(
-            f"primary_cover={cover_filename!r} not among imported covers "
-            f"{available}"
-        )
+        raise KeyError(f"primary_cover={cover_filename!r} not among imported covers {available}")
     book = session.query(Book).filter(Book.id == book_id).first()
     if book is not None:
         book.cover_image = match.path
@@ -333,12 +316,30 @@ def _read_metadata(project_root: Path) -> dict:
     )
 
     empty_keys = [
-        "title", "subtitle", "author", "language", "series", "series_index",
-        "genre", "description", "edition", "publisher", "publisher_city",
-        "publish_date", "isbn_ebook", "isbn_paperback", "isbn_hardcover",
-        "asin_ebook", "asin_paperback", "asin_hardcover", "keywords",
-        "html_description", "backpage_description", "backpage_author_bio",
-        "cover_image", "custom_css",
+        "title",
+        "subtitle",
+        "author",
+        "language",
+        "series",
+        "series_index",
+        "genre",
+        "description",
+        "edition",
+        "publisher",
+        "publisher_city",
+        "publish_date",
+        "isbn_ebook",
+        "isbn_paperback",
+        "isbn_hardcover",
+        "asin_ebook",
+        "asin_paperback",
+        "asin_hardcover",
+        "keywords",
+        "html_description",
+        "backpage_description",
+        "backpage_author_bio",
+        "cover_image",
+        "custom_css",
     ]
     try:
         raw = _read_metadata_yaml(project_root / "config" / "metadata.yaml")

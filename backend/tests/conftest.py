@@ -14,11 +14,22 @@ session-scoped tripwire fixture. See commit history for context.
 from __future__ import annotations
 
 import os
+import sys
 
 # MUST run before any `from app.* import ...` statement in this file
 # or in any test module that pytest collects.
 os.environ["BIBLIOGON_TEST"] = "1"
 os.environ.setdefault("TEST_DATABASE_URL", "sqlite:///:memory:")
+
+# 41+ test modules open a FastAPI TestClient, each of which triggers the
+# app lifespan startup path. Starlette's TestClient recurses through its
+# receive loop on each startup; combined with the async thread-runner
+# wrapper this consumes ~25 frames per lifespan. Default limit 1000 ==
+# ~40 concurrent lifespans cap. The suite now exceeds that threshold,
+# which surfaces as RecursionError in downstream test modules whose
+# tests individually pass in isolation. Raising the limit is a
+# test-infra concession, not a production setting.
+sys.setrecursionlimit(5000)
 
 import pytest  # noqa: E402
 

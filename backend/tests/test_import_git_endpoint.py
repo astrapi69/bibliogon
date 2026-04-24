@@ -50,7 +50,14 @@ def _patch_git_repo(monkeypatch: pytest.MonkeyPatch, clone_impl):
         clone_from = staticmethod(clone_impl)
 
     sys.modules.setdefault("git", type(sys)("git"))
-    sys.modules["git"].Repo = _MockRepo  # type: ignore[attr-defined]
+    # Use monkeypatch.setattr (not raw assignment) so pytest reverts the
+    # mock after the test. Otherwise the next test that imports `git`
+    # sees _MockRepo instead of the real Repo class, causing spurious
+    # AttributeError: '_MockRepo' has no attribute 'init' failures in
+    # downstream tests that call Repo.init().
+    monkeypatch.setattr(
+        sys.modules["git"], "Repo", _MockRepo, raising=False
+    )
     monkeypatch.setattr(gh, "Repo", _MockRepo, raising=False)
 
 

@@ -131,9 +131,7 @@ class MarkdownImportHandler:
             from app.import_plugins.overrides import apply_book_overrides
 
             remaining = {
-                k: v
-                for k, v in overrides.items()
-                if k not in {"title", "author", "language"}
+                k: v for k, v in overrides.items() if k not in {"title", "author", "language"}
             }
             apply_book_overrides(session, book.id, remaining)
 

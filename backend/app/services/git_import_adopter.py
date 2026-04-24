@@ -70,9 +70,7 @@ def sanitize_git_dir(git_dir: Path) -> list[str]:
             for section in list(parser.sections()):
                 if section.startswith("http") and "extraheader" in parser[section]:
                     parser.remove_option(section, "extraheader")
-                    actions.append(
-                        f"stripped extraheader from [{section}]"
-                    )
+                    actions.append(f"stripped extraheader from [{section}]")
                     dirty = True
                     # Drop the section entirely if now empty.
                     if not parser.options(section):
@@ -94,9 +92,7 @@ def sanitize_git_dir(git_dir: Path) -> list[str]:
         repo.git.gc("--prune=now", "--quiet")
         actions.append("reflog cleared + unreachable objects pruned")
     except Exception as exc:
-        logger.warning(
-            "sanitize_git_dir: reflog expire/gc failed: %s", exc
-        )
+        logger.warning("sanitize_git_dir: reflog expire/gc failed: %s", exc)
 
     # --- 4: drop custom hooks ---
     hooks_dir = git_dir / "hooks"
@@ -184,9 +180,7 @@ def adopt_git_dir(
         source_repo = git.Repo(git_dir.parent)
         source_repo.git.fsck("--no-dangling", "--no-progress")
     except Exception as exc:
-        raise CorruptedSourceRepo(
-            f"Source .git/ failed fsck after sanitization: {exc}"
-        ) from exc
+        raise CorruptedSourceRepo(f"Source .git/ failed fsck after sanitization: {exc}") from exc
 
     # Read state we'll report back BEFORE copying, in case copy fails.
     current_branch: str | None = None
@@ -223,9 +217,7 @@ def adopt_git_dir(
                 adopted.create_remote("origin", remote_url)
             remote_adopted = True
         else:
-            configure_remote(
-                target_book_id, url=remote_url, pat=None, db=db
-            )
+            configure_remote(target_book_id, url=remote_url, pat=None, db=db)
             remote_adopted = True
     elif not preserve_remote:
         # Strip the origin remote from the adopted config so the

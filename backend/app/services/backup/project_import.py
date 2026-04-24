@@ -16,8 +16,6 @@ from typing import Any
 import yaml
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
-
 from app.models import Asset, Book, Chapter, ChapterType
 from app.services.backup.asset_utils import import_assets, rewrite_image_paths
 from app.services.backup.markdown_utils import (
@@ -31,6 +29,8 @@ from app.services.backup.markdown_utils import (
     read_file_if_exists,
     sanitize_import_markdown,
 )
+
+logger = logging.getLogger(__name__)
 
 # --- Public entry point used by WbtImportHandler (CIO-02) -------------
 
@@ -145,9 +145,7 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         # use the snake_case variant. Accept both plus a plain ``cover``
         # fallback so a metadata.yaml written by hand still lands a cover.
         cover_image=(
-            metadata.get("cover-image")
-            or metadata.get("cover_image")
-            or metadata.get("cover")
+            metadata.get("cover-image") or metadata.get("cover_image") or metadata.get("cover")
         ),
         custom_css=_read_custom_css(config_dir, project_root),
     )
@@ -174,7 +172,11 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
     """
     listed: list[str] = []
 
-    for directory in (config_dir, project_root / "assets" / "css", project_root / "assets" / "styles"):
+    for directory in (
+        config_dir,
+        project_root / "assets" / "css",
+        project_root / "assets" / "styles",
+    ):
         if not directory.is_dir():
             continue
         for entry in sorted(directory.iterdir()):
@@ -186,10 +188,7 @@ def _read_custom_css(config_dir: Path, project_root: Path) -> str | None:
                     return content
 
     for css_path in sorted(project_root.rglob("*.css")):
-        if any(
-            segment in css_path.parts
-            for segment in ("node_modules", "__MACOSX", ".git")
-        ):
+        if any(segment in css_path.parts for segment in ("node_modules", "__MACOSX", ".git")):
             continue
         listed.append(str(css_path))
         content = read_file_if_exists(css_path)
@@ -545,9 +544,7 @@ def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
         book.cover_image = cover_asset.path
 
 
-def backfill_custom_css_from_source(
-    db: Session, book_id: str, source_project_root: Path
-) -> bool:
+def backfill_custom_css_from_source(db: Session, book_id: str, source_project_root: Path) -> bool:
     """Populate ``book.custom_css`` for a previously-imported book
     by re-reading a stylesheet from the original source tree.
 

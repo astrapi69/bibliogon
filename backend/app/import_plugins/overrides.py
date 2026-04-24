@@ -30,24 +30,44 @@ from app.models import Book
 #: All Book columns the wizard can override. Mirrors the Metadata
 #: Editor's field list. Adding a new user-editable column to Book:
 #: add it here, add a form row in BookMetadataEditor + PreviewPanel.
-BOOK_IMPORT_OVERRIDE_KEYS: frozenset[str] = frozenset({
-    "title", "subtitle", "author", "language",
-    "series", "series_index", "genre",
-    "description", "edition", "publisher", "publisher_city", "publish_date",
-    "isbn_ebook", "isbn_paperback", "isbn_hardcover",
-    "asin_ebook", "asin_paperback", "asin_hardcover",
-    "keywords",
-    "html_description", "backpage_description", "backpage_author_bio",
-    "cover_image", "custom_css",
-})
+BOOK_IMPORT_OVERRIDE_KEYS: frozenset[str] = frozenset(
+    {
+        "title",
+        "subtitle",
+        "author",
+        "language",
+        "series",
+        "series_index",
+        "genre",
+        "description",
+        "edition",
+        "publisher",
+        "publisher_city",
+        "publish_date",
+        "isbn_ebook",
+        "isbn_paperback",
+        "isbn_hardcover",
+        "asin_ebook",
+        "asin_paperback",
+        "asin_hardcover",
+        "keywords",
+        "html_description",
+        "backpage_description",
+        "backpage_author_bio",
+        "cover_image",
+        "custom_css",
+    }
+)
 
 #: Meta-overrides that don't map to Book columns. Handlers consume
 #: these before delegating the rest to :func:`apply_book_overrides`.
 #: ``primary_cover`` names a cover filename to promote to
 #: book.cover_image when multiple covers exist.
-META_OVERRIDE_KEYS: frozenset[str] = frozenset({
-    "primary_cover",
-})
+META_OVERRIDE_KEYS: frozenset[str] = frozenset(
+    {
+        "primary_cover",
+    }
+)
 
 #: Fields that must be non-empty strings. The wizard's UI enforces
 #: this on the client side; the server rejects bad payloads too so
@@ -77,9 +97,7 @@ def validate_overrides(
     allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
     unknown = set(overrides) - allowed
     if unknown:
-        raise KeyError(
-            f"Overrides not allowed for Book import: {sorted(unknown)}"
-        )
+        raise KeyError(f"Overrides not allowed for Book import: {sorted(unknown)}")
     for field in MANDATORY_FIELDS:
         # Explicit null or blank string -> reject.
         if field in overrides:
@@ -91,15 +109,11 @@ def validate_overrides(
         if detected is None:
             raise MandatoryFieldMissing(field)
         fallback = detected.get(field)
-        if fallback is None or (
-            isinstance(fallback, str) and not fallback.strip()
-        ):
+        if fallback is None or (isinstance(fallback, str) and not fallback.strip()):
             raise MandatoryFieldMissing(field)
 
 
-def apply_book_overrides(
-    session: Session, book_id: str, overrides: dict[str, Any]
-) -> None:
+def apply_book_overrides(session: Session, book_id: str, overrides: dict[str, Any]) -> None:
     """Apply a flat overrides dict to the book row.
 
     Null values are skipped (the user deselected the field; keep
@@ -117,9 +131,7 @@ def apply_book_overrides(
     allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
     unknown = set(overrides) - allowed
     if unknown:
-        raise KeyError(
-            f"Overrides not allowed for Book import: {sorted(unknown)}"
-        )
+        raise KeyError(f"Overrides not allowed for Book import: {sorted(unknown)}")
     book = session.query(Book).filter(Book.id == book_id).first()
     if book is None:
         return
