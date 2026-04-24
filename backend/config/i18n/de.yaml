@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Publikation
     section_longform: Langformige Inhalte
     section_styling: Gestaltung
+    section_covers: Cover
+    covers_hint: Mehrere Cover erkannt. Waehle das Hauptcover fuer book.cover_image. Alle Dateien werden als Cover-Assets importiert und koennen spaeter im Metadaten-Editor ausgetauscht werden.
+    section_author_assets: Autor-Assets
+    author_assets_hint: Portrait-, Signatur- oder Bio-Bilder fuer den Design-Tab des Metadaten-Editors.
+    purpose_author-asset: Autor-Assets
     section_overview: Inhalts-Uebersicht
     section_show_empty: Felder hinzufuegen
     section_hide_empty: Leere Felder ausblenden

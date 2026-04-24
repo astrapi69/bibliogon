@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Publicacao
     section_longform: Conteudo longo
     section_styling: Estilo
+    section_covers: Capas
+    covers_hint: Multiplas capas detectadas. Escolha a capa principal para book.cover_image. Todos os arquivos sao importados como ativos de capa e podem ser trocados mais tarde no editor de metadados.
+    section_author_assets: Recursos do autor
+    author_assets_hint: Retratos, assinaturas ou imagens biograficas importadas para a aba Design do editor de metadados.
+    purpose_author-asset: Recursos do autor
     section_overview: Vista geral do conteudo
     section_show_empty: Adicionar campos
     section_hide_empty: Ocultar campos vazios

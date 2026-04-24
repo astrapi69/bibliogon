@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Publicacion
     section_longform: Contenido extenso
     section_styling: Estilo
+    section_covers: Portadas
+    covers_hint: Se detectaron varias portadas. Elige la portada principal para book.cover_image. Todos los archivos se importan como activos de portada y se pueden intercambiar mas tarde en el editor de metadatos.
+    section_author_assets: Recursos del autor
+    author_assets_hint: Retratos, firmas o imagenes biograficas importadas para la pestana Diseno del editor de metadatos.
+    purpose_author-asset: Recursos del autor
     section_overview: Vista general del contenido
     section_show_empty: Anadir campos
     section_hide_empty: Ocultar campos vacios

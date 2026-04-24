@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Publishing
     section_longform: Long-form content
     section_styling: Styling
+    section_covers: Covers
+    covers_hint: Multiple covers detected. Pick the primary cover for book.cover_image. All files are imported as cover assets and can be swapped later in the metadata editor.
+    section_author_assets: Author assets
+    author_assets_hint: Portrait, signature, or bio images imported for the Design tab of the metadata editor.
+    purpose_author-asset: Author assets
     section_overview: Content overview
     section_show_empty: Add fields
     section_hide_empty: Hide empty fields

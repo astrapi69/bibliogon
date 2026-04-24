@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Yayin
     section_longform: Uzun icerik
     section_styling: Stil
+    section_covers: Kapaklar
+    covers_hint: Birden fazla kapak tespit edildi. book.cover_image icin birincil kapagi secin. Tum dosyalar kapak varliklari olarak ice aktarilir ve daha sonra meta veri duzenleyicisinde degistirilebilir.
+    section_author_assets: Yazar varliklari
+    author_assets_hint: Meta veri duzenleyicisinin Tasarim sekmesi icin ice aktarilan portre, imza veya biyografi goruntuleri.
+    purpose_author-asset: Yazar varliklari
     section_overview: Icerik ozeti
     section_show_empty: Alan ekle
     section_hide_empty: Bos alanlari gizle

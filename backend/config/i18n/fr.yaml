@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Publication
     section_longform: Contenu long
     section_styling: Style
+    section_covers: Couvertures
+    covers_hint: Plusieurs couvertures detectees. Choisissez la couverture principale pour book.cover_image. Tous les fichiers sont importes comme assets de couverture et peuvent etre remplaces plus tard dans l'editeur de metadonnees.
+    section_author_assets: Ressources de l'auteur
+    author_assets_hint: Portraits, signatures ou images biographiques importes pour l'onglet Design de l'editeur de metadonnees.
+    purpose_author-asset: Ressources de l'auteur
     section_overview: Apercu du contenu
     section_show_empty: Ajouter des champs
     section_hide_empty: Masquer les champs vides

@@ -1091,6 +1091,11 @@ ui:
     section_publishing: 出版
     section_longform: 長文コンテンツ
     section_styling: スタイル
+    section_covers: カバー
+    covers_hint: 複数のカバーが検出されました。book.cover_image の主要なカバーを選択してください。すべてのファイルはカバーアセットとしてインポートされ、後でメタデータエディタで交換できます。
+    section_author_assets: 著者アセット
+    author_assets_hint: メタデータエディタのデザインタブ用にインポートされた肖像、署名、または略歴の画像。
+    purpose_author-asset: 著者アセット
     section_overview: コンテンツ概要
     section_show_empty: フィールドを追加
     section_hide_empty: 空のフィールドを非表示

@@ -1091,6 +1091,11 @@ ui:
     section_publishing: Έκδοση
     section_longform: Εκτενές περιεχόμενο
     section_styling: Μορφοποίηση
+    section_covers: Εξώφυλλα
+    covers_hint: Εντοπίστηκαν πολλά εξώφυλλα. Επιλέξτε το κύριο εξώφυλλο για το book.cover_image. Όλα τα αρχεία εισάγονται ως στοιχεία εξωφύλλου και μπορούν να αντικατασταθούν αργότερα στον επεξεργαστή μεταδεδομένων.
+    section_author_assets: Πόροι συγγραφέα
+    author_assets_hint: Πορτραίτα, υπογραφές ή εικόνες βιογραφικού που εισάγονται για την καρτέλα Design του επεξεργαστή μεταδεδομένων.
+    purpose_author-asset: Πόροι συγγραφέα
     section_overview: Επισκόπηση περιεχομένου
     section_show_empty: Προσθήκη πεδίων
     section_hide_empty: Απόκρυψη κενών πεδίων
