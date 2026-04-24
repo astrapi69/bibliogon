@@ -227,6 +227,7 @@ export default function ImportWizardModal({
                                 duplicate={state.duplicate}
                                 overrides={state.overrides}
                                 duplicateAction={state.duplicateAction}
+                                tempRef={state.tempRef}
                                 onOverridesChange={(overrides) =>
                                     setState({ ...state, overrides })
                                 }

@@ -267,10 +267,17 @@ export function PreviewPanel({
     detected,
     overrides: _overrides,
     onOverridesChange,
+    tempRef,
 }: {
     detected: DetectedProject;
     overrides: Overrides;
     onOverridesChange: (o: Overrides) => void;
+    /** Staging handle from detect; CoverThumbnail uses it to build
+     * the ``/api/import/staged/{tempRef}/file?path=...`` URL for
+     * the cover image preview. Undefined in tests that mount
+     * PreviewPanel standalone; renders the filename placeholder
+     * in that case. */
+    tempRef?: string;
 }) {
     const { t } = useI18n();
     const [state, setStateRaw] = useState<
@@ -324,7 +331,7 @@ export function PreviewPanel({
                     {t("ui.import_wizard.section_basics", "Basic information")}
                 </h4>
                 <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
-                    <CoverThumbnail cover={coverAsset} />
+                    <CoverThumbnail cover={coverAsset} tempRef={tempRef} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <label style={labelStyle}>
                             {t("ui.metadata.title", "Title")}{" "}
@@ -927,7 +934,13 @@ function AssetGroups({ groups }: { groups: Record<string, DetectedAsset[]> }) {
     );
 }
 
-function CoverThumbnail({ cover }: { cover: DetectedAsset | null }) {
+function CoverThumbnail({
+    cover,
+    tempRef,
+}: {
+    cover: DetectedAsset | null;
+    tempRef?: string;
+}) {
     if (!cover || !cover.mime_type.startsWith("image/")) {
         return (
             <div
@@ -947,6 +960,28 @@ function CoverThumbnail({ cover }: { cover: DetectedAsset | null }) {
             >
                 <ImageOff size={24} strokeWidth={1.25} />
             </div>
+        );
+    }
+    // Render the actual image when we have a temp_ref to fetch from
+    // the staging endpoint; otherwise fall back to the filename-as-
+    // label placeholder. Filename fallback also shows when the
+    // server refuses the asset (stale temp_ref, path rejected).
+    if (tempRef) {
+        const src = `/api/import/staged/${encodeURIComponent(tempRef)}/file?path=${encodeURIComponent(cover.path)}`;
+        return (
+            <img
+                data-testid="preview-cover-thumbnail"
+                src={src}
+                alt={cover.filename}
+                style={{
+                    width: 80,
+                    aspectRatio: "3/4",
+                    background: "var(--bg-hover)",
+                    borderRadius: 6,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                }}
+            />
         );
     }
     return (

@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -140,6 +141,79 @@ def detect_import(
     duplicate = _check_duplicate(db, detected)
 
     return DetectResponse(detected=detected, duplicate=duplicate, temp_ref=temp_ref)
+
+
+@router.get("/staged/{temp_ref}/file")
+def get_staged_asset(temp_ref: str, path: str) -> FileResponse:
+    """Serve a file from the staging directory for wizard preview.
+
+    Used by the Step 3 preview panel to render cover thumbnails +
+    any other staged image before the user commits the import. The
+    ``path`` query param is the DetectedAsset.path (relative to the
+    project root inside staging); the router validates it stays
+    under the staged ``payload/`` tree so a crafted ``..`` can't
+    escape.
+
+    Returns 404 when the temp_ref is unknown/expired or the file is
+    missing. No auth beyond "caller has a valid temp_ref" - staging
+    TTL is 30 minutes, temp_refs are UUIDs.
+    """
+    if not _is_safe_rel_path(path):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid path component.",
+        )
+    staging_root = _STAGING_DIR / temp_ref
+    if not staging_root.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unknown or expired temp_ref.",
+        )
+    # The staged project may live directly under payload/ (single-file
+    # / single-dir upload) or one level deep (wbt-extracted/<digest>/
+    # for extracted ZIPs). Try both.
+    candidates = [
+        staging_root / "payload" / path,
+        *(
+            (child / path)
+            for child in (staging_root / "wbt-extracted").glob("*")
+            if (staging_root / "wbt-extracted").is_dir() and child.is_dir()
+        ),
+    ]
+    # Also try nested ZIP-extracted project dir (e.g.
+    # wbt-extracted/<digest>/<project>/<rel>).
+    ext_root = staging_root / "wbt-extracted"
+    if ext_root.is_dir():
+        for digest_dir in ext_root.iterdir():
+            if digest_dir.is_dir():
+                for project_dir in digest_dir.iterdir():
+                    if project_dir.is_dir():
+                        candidates.append(project_dir / path)
+
+    for candidate in candidates:
+        if candidate.is_file():
+            # Resolve to ensure the candidate stays under the
+            # staging dir (defense-in-depth vs path traversal).
+            resolved = candidate.resolve()
+            staging_root_resolved = staging_root.resolve()
+            try:
+                resolved.relative_to(staging_root_resolved)
+            except ValueError:
+                continue
+            return FileResponse(path=resolved, filename=candidate.name)
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Staged file not found: {path!r}",
+    )
+
+
+def _is_safe_rel_path(path: str) -> bool:
+    """Reject paths with ``..`` components or absolute prefixes."""
+    if not path:
+        return False
+    parts = path.replace("\\", "/").split("/")
+    return not any(p == ".." for p in parts) and not path.startswith("/")
 
 
 @router.post("/detect/git", response_model=DetectResponse)

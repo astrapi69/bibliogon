@@ -20,6 +20,7 @@ export function PreviewStep({
     duplicate,
     overrides,
     duplicateAction,
+    tempRef,
     onOverridesChange,
     onDuplicateActionChange,
     onBack,
@@ -29,6 +30,7 @@ export function PreviewStep({
     duplicate: DuplicateInfo;
     overrides: Overrides;
     duplicateAction: "create" | "overwrite";
+    tempRef?: string;
     onOverridesChange: (o: Overrides) => void;
     onDuplicateActionChange: (a: "create" | "overwrite" | "cancel") => void;
     onBack: () => void;
@@ -48,6 +50,7 @@ export function PreviewStep({
                 detected={detected}
                 overrides={overrides}
                 onOverridesChange={onOverridesChange}
+                tempRef={tempRef}
             />
             <div
                 style={{
