@@ -84,6 +84,11 @@ class WbtImportHandler:
         if not any(a.purpose == "cover" for a in assets):
             warnings.append("No cover image detected under assets/covers/.")
 
+        from app.services.git_import_inspector import inspect_git_dir
+
+        git_dir = project_root / ".git"
+        git_repo = inspect_git_dir(git_dir) if git_dir.is_dir() else None
+
         return DetectedProject(
             format_name=self.format_name,
             source_identifier=source_identifier,
@@ -114,6 +119,7 @@ class WbtImportHandler:
             chapters=chapters,
             assets=assets,
             warnings=warnings,
+            git_repo=git_repo,
             plugin_specific_data={
                 "project_root_name": project_root.name,
                 "chapter_count": len(chapters),

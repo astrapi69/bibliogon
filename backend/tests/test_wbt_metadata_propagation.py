@@ -217,6 +217,64 @@ def test_detect_surfaces_series_publisher_and_isbn(tmp_path: Path) -> None:
     assert detected.asin_ebook == "B0ABCDEBOOK"
 
 
+def test_detect_reports_no_git_repo_when_zip_has_no_dot_git(
+    tmp_path: Path,
+) -> None:
+    """Default case: WBT ZIPs exported by plugin-export contain no
+    .git/ directory. git_repo must be None so the wizard hides the
+    git-adoption controls in Step 3."""
+    zip_path = _wbt_zip_with_all_metadata(tmp_path)
+    detected = WbtImportHandler().detect(str(zip_path))
+    assert detected.git_repo is None
+
+
+def test_detect_surfaces_git_repo_when_zip_has_dot_git(
+    tmp_path: Path,
+) -> None:
+    """Real-world case: user's source repo still had .git/ at export
+    time. WBT handler inspects it and surfaces metadata for the
+    wizard's adoption choice."""
+    import git as gitpy
+    import io
+    import zipfile
+
+    # Build a repo outside the ZIP.
+    src = tmp_path / "src"
+    src.mkdir()
+    repo = gitpy.Repo.init(src, initial_branch="main")
+    repo.git.config("user.name", "T")
+    repo.git.config("user.email", "t@example.com")
+    (src / "dummy.txt").write_text("x", encoding="utf-8")
+    repo.git.add(all=True)
+    repo.index.commit("init")
+    repo.create_remote("origin", "https://github.com/foo/bar.git")
+
+    # Build a WBT ZIP that includes the .git/ + the required WBT
+    # structure.
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "book/config/metadata.yaml",
+            "title: With Git\nauthor: A\nlang: en\n",
+        )
+        zf.writestr("book/manuscript/chapters/01.md", "# C1\n")
+        # Copy the .git/ tree into the ZIP.
+        for file in (src / ".git").rglob("*"):
+            if file.is_file():
+                rel = file.relative_to(src)
+                zf.write(file, f"book/{rel}")
+    zip_path = tmp_path / "with_git.zip"
+    zip_path.write_bytes(buf.getvalue())
+
+    detected = WbtImportHandler().detect(str(zip_path))
+    assert detected.git_repo is not None
+    assert detected.git_repo.present is True
+    assert detected.git_repo.current_branch == "main"
+    assert detected.git_repo.remote_url == (
+        "https://github.com/foo/bar.git"
+    )
+
+
 def test_detect_defaults_are_safe_on_bare_model() -> None:
     """DetectedProject added 20 new nullable fields; check they
     default None so existing callers (bgb, markdown, office handlers)
