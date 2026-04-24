@@ -168,6 +168,111 @@ describe("PreviewPanel — cover + overview", () => {
     });
 });
 
+describe("PreviewPanel — multi-cover selector", () => {
+    function cover(filename: string, mime = "image/png") {
+        return {
+            filename,
+            path: `assets/covers/${filename}`,
+            size_bytes: 4096,
+            mime_type: mime,
+            purpose: "cover",
+        };
+    }
+
+    it("no covers section when only one cover", () => {
+        renderPanel(
+            project({
+                cover_image: "cover.png",
+                assets: [cover("cover.png")],
+            }),
+        );
+        expect(
+            screen.queryByTestId("preview-section-covers"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders cover grid when >1 cover", () => {
+        renderPanel(
+            project({
+                cover_image: "a.png",
+                assets: [cover("a.png"), cover("b.png"), cover("c.png")],
+            }),
+        );
+        expect(
+            screen.getByTestId("preview-section-covers"),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("preview-cover-grid")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-cover-option-a.png"),
+        ).toHaveAttribute("data-selected", "true");
+        expect(
+            screen.getByTestId("preview-cover-option-b.png"),
+        ).toHaveAttribute("data-selected", "false");
+    });
+
+    it("primary_cover sent from initial mount when multiple covers", () => {
+        const { onOverridesChange } = renderPanel(
+            project({
+                cover_image: "b.png",
+                assets: [cover("a.png"), cover("b.png")],
+            }),
+        );
+        const last = onOverridesChange.mock.calls.at(-1)?.[0] as Overrides & {
+            primary_cover?: string;
+        };
+        expect(last.primary_cover).toBe("b.png");
+    });
+
+    it("no primary_cover override when only one cover", () => {
+        const { onOverridesChange } = renderPanel(
+            project({
+                cover_image: "solo.png",
+                assets: [cover("solo.png")],
+            }),
+        );
+        const last = onOverridesChange.mock.calls.at(-1)?.[0] as Overrides & {
+            primary_cover?: string;
+        };
+        expect(last.primary_cover).toBeUndefined();
+    });
+
+    it("clicking another cover swaps selection and updates overrides", () => {
+        const { onOverridesChange } = renderPanel(
+            project({
+                cover_image: "a.png",
+                assets: [cover("a.png"), cover("b.png")],
+            }),
+        );
+        fireEvent.click(screen.getByTestId("preview-cover-radio-b.png"));
+        expect(
+            screen.getByTestId("preview-cover-option-b.png"),
+        ).toHaveAttribute("data-selected", "true");
+        expect(
+            screen.getByTestId("preview-cover-option-a.png"),
+        ).toHaveAttribute("data-selected", "false");
+        const last = onOverridesChange.mock.calls.at(-1)?.[0] as Overrides & {
+            primary_cover?: string;
+        };
+        expect(last.primary_cover).toBe("b.png");
+    });
+
+    it("falls back to first cover when cover_image hint not in list", () => {
+        const { onOverridesChange } = renderPanel(
+            project({
+                cover_image: "ghost.png",
+                assets: [cover("first.png"), cover("second.png")],
+            }),
+        );
+        expect(
+            screen.getByTestId("preview-cover-option-first.png"),
+        ).toHaveAttribute("data-selected", "true");
+        const last = onOverridesChange.mock.calls.at(-1)?.[0] as Overrides & {
+            primary_cover?: string;
+        };
+        expect(last.primary_cover).toBe("first.png");
+    });
+});
+
 describe("PreviewPanel — author datalist", () => {
     it("no datalist and no list attr when settings have no author choices", () => {
         mockAuthorChoices.mockReturnValueOnce([]);

@@ -85,6 +85,19 @@ export const BOOK_IMPORT_OVERRIDE_KEYS = [
 
 export type BookImportOverrideKey = (typeof BOOK_IMPORT_OVERRIDE_KEYS)[number];
 
+/** Meta-override keys that do NOT map to Book columns. The backend
+ * handler consumes them before delegating the rest to
+ * ``apply_book_overrides``. Mirrors META_OVERRIDE_KEYS in
+ * backend/app/import_plugins/overrides.py.
+ *
+ * ``primary_cover`` names a cover filename to promote onto
+ * ``book.cover_image`` when the source project ships multiple
+ * covers. */
+export const IMPORT_META_OVERRIDE_KEYS = ["primary_cover"] as const;
+
+export type ImportMetaOverrideKey =
+    (typeof IMPORT_META_OVERRIDE_KEYS)[number];
+
 export interface DuplicateInfo {
     found: boolean;
     existing_book_id?: string | null;
@@ -117,7 +130,10 @@ export type DuplicateAction = "create" | "overwrite" | "cancel";
  * returns 400 in that case.
  */
 export type Overrides = Partial<
-    Record<BookImportOverrideKey, string | number | string[] | null>
+    Record<
+        BookImportOverrideKey | ImportMetaOverrideKey,
+        string | number | string[] | null
+    >
 >;
 
 const BASE = "/api";

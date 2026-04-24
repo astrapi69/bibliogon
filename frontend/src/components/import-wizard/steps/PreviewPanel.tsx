@@ -236,6 +236,7 @@ function buildInitialFormState(
 
 function overridesFromState(
     state: Record<BookImportOverrideKey, FieldState>,
+    primaryCover: string | null = null,
 ): Overrides {
     const out: Overrides = {};
     for (const [key, field] of Object.entries(state) as [
@@ -260,6 +261,11 @@ function overridesFromState(
             continue;
         }
         out[key] = field.value;
+    }
+    // primary_cover is a meta-override (not a Book column). Only set
+    // when a cover is actually chosen; backend skips null meta-overrides.
+    if (primaryCover) {
+        out.primary_cover = primaryCover;
     }
     return out;
 }
@@ -286,6 +292,37 @@ export function PreviewPanel({
         Record<BookImportOverrideKey, FieldState>
     >(() => buildInitialFormState(detected));
 
+    const assetGroups = groupAssetsByPurpose(detected.assets);
+    const coverAssets = useMemo(
+        () => [
+            ...(assetGroups["cover"] ?? []),
+            ...(assetGroups["covers"] ?? []),
+        ],
+        [assetGroups],
+    );
+
+    // Default primary cover: match detected.cover_image when set and
+    // present in the cover list; otherwise pick the first cover. When
+    // a project ships only one (or zero) covers this is null and the
+    // backend falls back to its handler-level default.
+    const [primaryCover, setPrimaryCover] = useState<string | null>(() => {
+        if (coverAssets.length === 0) return null;
+        const hinted = detected.cover_image
+            ? coverAssets.find(
+                  (a) =>
+                      a.filename === detected.cover_image ||
+                      a.path.endsWith(detected.cover_image as string),
+              )
+            : undefined;
+        return (hinted ?? coverAssets[0]).filename;
+    });
+
+    // Meta-override only makes sense when the user actually has a
+    // choice. A single cover becomes book.cover_image via the handler
+    // default and does not need an override.
+    const primaryCoverForOverride =
+        coverAssets.length > 1 ? primaryCover : null;
+
     const setState = (
         updater: (
             prev: Record<BookImportOverrideKey, FieldState>,
@@ -293,7 +330,9 @@ export function PreviewPanel({
     ) => {
         setStateRaw((prev) => {
             const next = updater(prev);
-            onOverridesChange(overridesFromState(next));
+            onOverridesChange(
+                overridesFromState(next, primaryCoverForOverride),
+            );
             return next;
         });
     };
@@ -305,18 +344,31 @@ export function PreviewPanel({
         setState((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
     };
 
+    const selectPrimaryCover = (filename: string) => {
+        setPrimaryCover(filename);
+        // Re-emit overrides so the parent sees the new primary_cover.
+        onOverridesChange(
+            overridesFromState(
+                state,
+                coverAssets.length > 1 ? filename : null,
+            ),
+        );
+    };
+
     // Propagate initial overrides on mount so the parent's submit
     // button reflects required-field validity on the first render.
     useMemo(
-        () => onOverridesChange(overridesFromState(state)),
+        () =>
+            onOverridesChange(
+                overridesFromState(state, primaryCoverForOverride),
+            ),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
 
-    const assetGroups = groupAssetsByPurpose(detected.assets);
-    const coverAsset =
-        (assetGroups["cover"] ?? [])[0] ??
-        (assetGroups["covers"] ?? [])[0] ??
+    const primaryCoverAsset =
+        coverAssets.find((a) => a.filename === primaryCover) ??
+        coverAssets[0] ??
         null;
 
     const titleEmpty = formValueEmpty(state.title.value);
@@ -333,7 +385,7 @@ export function PreviewPanel({
                     {t("ui.import_wizard.section_basics", "Basic information")}
                 </h4>
                 <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
-                    <CoverThumbnail cover={coverAsset} tempRef={tempRef} />
+                    <CoverThumbnail cover={primaryCoverAsset} tempRef={tempRef} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <label style={labelStyle}>
                             {t("ui.metadata.title", "Title")}{" "}
@@ -455,6 +507,16 @@ export function PreviewPanel({
                     </div>
                 </div>
             </section>
+
+            {/* Section: covers (multi-cover selector, only when >1) */}
+            {coverAssets.length > 1 && (
+                <CoverGridSection
+                    covers={coverAssets}
+                    primaryCover={primaryCover}
+                    onSelect={selectPrimaryCover}
+                    tempRef={tempRef}
+                />
+            )}
 
             {/* Sections: per-field */}
             {SECTIONS.map((section) => (
@@ -1021,6 +1083,109 @@ function CoverThumbnail({
         >
             {cover.filename}
         </div>
+    );
+}
+
+/**
+ * Multi-cover selector: one radio per cover asset with a thumbnail.
+ *
+ * Rendered only when the source project ships more than one file
+ * under ``assets/cover`` or ``assets/covers``. Picking a cover sends
+ * the meta-override ``primary_cover: <filename>`` to the backend, which
+ * promotes it onto ``book.cover_image`` and imports the rest as
+ * ``asset_type="cover"`` rows for later swapping in the metadata editor.
+ */
+function CoverGridSection({
+    covers,
+    primaryCover,
+    onSelect,
+    tempRef,
+}: {
+    covers: DetectedAsset[];
+    primaryCover: string | null;
+    onSelect: (filename: string) => void;
+    tempRef?: string;
+}) {
+    const { t } = useI18n();
+    return (
+        <section
+            data-testid="preview-section-covers"
+            style={sectionStyle}
+        >
+            <h4 style={sectionHeadingStyle}>
+                {t("ui.import_wizard.section_covers", "Covers")}
+            </h4>
+            <p style={{ ...muteStyle, margin: "4px 0 8px 0" }}>
+                {t(
+                    "ui.import_wizard.covers_hint",
+                    "Multiple covers detected. Pick the primary cover for book.cover_image. All files are imported as cover assets and can be swapped later in the metadata editor.",
+                )}
+            </p>
+            <div
+                data-testid="preview-cover-grid"
+                role="radiogroup"
+                aria-label={t(
+                    "ui.import_wizard.section_covers",
+                    "Covers",
+                )}
+                style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                        "repeat(auto-fill, minmax(88px, 1fr))",
+                    gap: 10,
+                }}
+            >
+                {covers.map((cover) => {
+                    const selected = cover.filename === primaryCover;
+                    return (
+                        <label
+                            key={cover.filename}
+                            data-testid={`preview-cover-option-${cover.filename}`}
+                            data-selected={selected ? "true" : "false"}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                cursor: "pointer",
+                                padding: 6,
+                                border: selected
+                                    ? "2px solid var(--accent)"
+                                    : "1px solid var(--border)",
+                                borderRadius: 6,
+                                background: selected
+                                    ? "var(--bg-hover)"
+                                    : "var(--bg-primary)",
+                                gap: 4,
+                            }}
+                        >
+                            <input
+                                type="radio"
+                                name="preview-primary-cover"
+                                value={cover.filename}
+                                checked={selected}
+                                onChange={() => onSelect(cover.filename)}
+                                data-testid={`preview-cover-radio-${cover.filename}`}
+                                style={{ position: "absolute", opacity: 0 }}
+                                aria-label={cover.filename}
+                            />
+                            <CoverThumbnail cover={cover} tempRef={tempRef} />
+                            <span
+                                style={{
+                                    fontSize: "0.6875rem",
+                                    color: "var(--text-secondary)",
+                                    textAlign: "center",
+                                    wordBreak: "break-all",
+                                    maxWidth: "100%",
+                                }}
+                                title={cover.path}
+                            >
+                                {cover.filename}
+                            </span>
+                        </label>
+                    );
+                })}
+            </div>
+        </section>
     );
 }
 
