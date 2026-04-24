@@ -689,6 +689,17 @@ ui:
     ai_cost_hint: "Tipik saglayici fiyatlarina gore tahmini maliyet"
     html_field_show_preview: "Onizlemeyi goster"
     html_field_show_source: "HTML goster"
+    title: Baslik
+    author: Yazar
+    language: Dil
+    series_index: Seri numarasi
+    isbn_ebook: ISBN e-kitap
+    isbn_paperback: ISBN karton kapak
+    isbn_hardcover: ISBN sert kapak
+    asin_ebook: ASIN e-kitap
+    asin_paperback: ASIN karton kapak
+    asin_hardcover: ASIN sert kapak
+    backpage_author_bio: Yazar hakkinda
   cover:
     choose_file: "Dosya sec"
     uploading: "Yukleniyor..."
@@ -1068,3 +1079,24 @@ ui:
     badge_backpage_author_bio: "Yazar biyografisi"
     badge_custom_css: "Ozel CSS"
     badge_tooltip: "Ice aktarilacak; ice aktardiktan sonra metadata panelinden duzenleyin."
+    summary_title: Algilama tamamlandi
+    summary_format: Format
+    summary_chapters: Bolumler
+    summary_assets: Varliklar
+    summary_cover: Kapak
+    summary_css: Ozel CSS
+    summary_next: 'Ileri: Gozden gecir ve yapilandir'
+    section_basics: Temel bilgiler
+    section_metadata: Metaveriler
+    section_publishing: Yayin
+    section_longform: Uzun icerik
+    section_styling: Stil
+    section_overview: Icerik ozeti
+    section_show_empty: Alan ekle
+    section_hide_empty: Bos alanlari gizle
+    error_title_required: Baslik gerekli
+    error_author_required: Yazar gerekli
+    mandatory_tooltip: Baslik ve yazar gerekli
+    language_default_hint: (varsayilan 'de')
+    field_collapse: Daralt
+    field_expand: Tumunu goster ({n} krk.)

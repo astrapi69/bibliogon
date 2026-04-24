@@ -656,6 +656,17 @@ ui:
     ai_cost_hint: "Εκτιμώμενο κόστος βάσει τυπικών τιμών παρόχων"
     html_field_show_preview: "Εμφάνιση προεπισκόπησης"
     html_field_show_source: "Εμφάνιση HTML"
+    title: Τίτλος
+    author: Συγγραφέας
+    language: Γλώσσα
+    series_index: Αριθμός σειράς
+    isbn_ebook: ISBN e-book
+    isbn_paperback: ISBN χαρτόδετο
+    isbn_hardcover: ISBN σκληρόδετο
+    asin_ebook: ASIN e-book
+    asin_paperback: ASIN χαρτόδετο
+    asin_hardcover: ASIN σκληρόδετο
+    backpage_author_bio: Σχετικά με τον συγγραφέα
   cover:
     choose_file: "Επιλογή αρχείου"
     uploading: "Μεταφόρτωση..."
@@ -1068,3 +1079,24 @@ ui:
     badge_backpage_author_bio: "Βιογραφικό συγγραφέα"
     badge_custom_css: "Προσαρμοσμένο CSS"
     badge_tooltip: "Θα εισαχθεί· επεξεργάσιμο μετά την εισαγωγή στο πάνελ μεταδεδομένων."
+    summary_title: Ανίχνευση ολοκληρώθηκε
+    summary_format: Μορφή
+    summary_chapters: Κεφάλαια
+    summary_assets: Περιεχόμενα
+    summary_cover: Εξώφυλλο
+    summary_css: Προσαρμοσμένο CSS
+    summary_next: 'Επόμενο: Έλεγχος & Ρύθμιση'
+    section_basics: Βασικές πληροφορίες
+    section_metadata: Μεταδεδομένα
+    section_publishing: Έκδοση
+    section_longform: Εκτενές περιεχόμενο
+    section_styling: Μορφοποίηση
+    section_overview: Επισκόπηση περιεχομένου
+    section_show_empty: Προσθήκη πεδίων
+    section_hide_empty: Απόκρυψη κενών πεδίων
+    error_title_required: Ο τίτλος είναι υποχρεωτικός
+    error_author_required: Ο συγγραφέας είναι υποχρεωτικός
+    mandatory_tooltip: Τίτλος και συγγραφέας είναι υποχρεωτικοί
+    language_default_hint: (προεπιλογή 'de')
+    field_collapse: Σύμπτυξη
+    field_expand: Εμφάνιση όλων ({n} χαρακτ.)

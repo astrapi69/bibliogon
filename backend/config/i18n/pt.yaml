@@ -656,6 +656,17 @@ ui:
     ai_cost_hint: "Custo estimado com base em precos tipicos de fornecedores"
     html_field_show_preview: "Mostrar pre-visualizacao"
     html_field_show_source: "Mostrar HTML"
+    title: Titulo
+    author: Autor
+    language: Idioma
+    series_index: Numero na serie
+    isbn_ebook: ISBN e-book
+    isbn_paperback: ISBN brochura
+    isbn_hardcover: ISBN capa dura
+    asin_ebook: ASIN e-book
+    asin_paperback: ASIN brochura
+    asin_hardcover: ASIN capa dura
+    backpage_author_bio: Sobre o autor
   cover:
     choose_file: "Escolher arquivo"
     uploading: "Enviando..."
@@ -1068,3 +1079,24 @@ ui:
     badge_backpage_author_bio: "Biografia autor"
     badge_custom_css: "CSS personalizado"
     badge_tooltip: "Sera importado; editavel no painel de metadados apos importar."
+    summary_title: Detecao concluida
+    summary_format: Formato
+    summary_chapters: Capitulos
+    summary_assets: Recursos
+    summary_cover: Capa
+    summary_css: CSS personalizado
+    summary_next: 'Seguinte: Rever e configurar'
+    section_basics: Informacao basica
+    section_metadata: Metadados
+    section_publishing: Publicacao
+    section_longform: Conteudo longo
+    section_styling: Estilo
+    section_overview: Vista geral do conteudo
+    section_show_empty: Adicionar campos
+    section_hide_empty: Ocultar campos vazios
+    error_title_required: O titulo e obrigatorio
+    error_author_required: O autor e obrigatorio
+    mandatory_tooltip: Titulo e autor sao obrigatorios
+    language_default_hint: (predefinicao 'de')
+    field_collapse: Recolher
+    field_expand: Mostrar tudo ({n} carat.)

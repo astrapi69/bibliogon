@@ -656,6 +656,17 @@ ui:
     ai_cost_hint: "Estimated cost based on typical provider pricing"
     html_field_show_preview: "Show preview"
     html_field_show_source: "Show HTML"
+    title: Title
+    author: Author
+    language: Language
+    series_index: Series index
+    isbn_ebook: ISBN e-book
+    isbn_paperback: ISBN paperback
+    isbn_hardcover: ISBN hardcover
+    asin_ebook: ASIN e-book
+    asin_paperback: ASIN paperback
+    asin_hardcover: ASIN hardcover
+    backpage_author_bio: About the author
   cover:
     choose_file: "Choose file"
     uploading: "Uploading..."
@@ -1068,3 +1079,24 @@ ui:
     badge_backpage_author_bio: "Author bio"
     badge_custom_css: "Custom CSS"
     badge_tooltip: "Imported; edit in the metadata panel after import."
+    summary_title: Detection complete
+    summary_format: Format
+    summary_chapters: Chapters
+    summary_assets: Assets
+    summary_cover: Cover
+    summary_css: Custom CSS
+    summary_next: 'Next: Review & Configure'
+    section_basics: Basic information
+    section_metadata: Metadata
+    section_publishing: Publishing
+    section_longform: Long-form content
+    section_styling: Styling
+    section_overview: Content overview
+    section_show_empty: Add fields
+    section_hide_empty: Hide empty fields
+    error_title_required: Title is required
+    error_author_required: Author is required
+    mandatory_tooltip: Title and author are required
+    language_default_hint: (defaults to 'de')
+    field_collapse: Collapse
+    field_expand: Show all ({n} chars)

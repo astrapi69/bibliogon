@@ -656,6 +656,17 @@ ui:
     ai_cost_hint: "一般的なプロバイダー料金に基づく推定コスト"
     html_field_show_preview: "プレビューを表示"
     html_field_show_source: "HTMLを表示"
+    title: タイトル
+    author: 著者
+    language: 言語
+    series_index: シリーズ番号
+    isbn_ebook: ISBN 電子書籍
+    isbn_paperback: ISBN ペーパーバック
+    isbn_hardcover: ISBN ハードカバー
+    asin_ebook: ASIN 電子書籍
+    asin_paperback: ASIN ペーパーバック
+    asin_hardcover: ASIN ハードカバー
+    backpage_author_bio: 著者について
   cover:
     choose_file: "ファイルを選択"
     uploading: "アップロード中..."
@@ -1068,3 +1079,24 @@ ui:
     badge_backpage_author_bio: "著者プロフィール"
     badge_custom_css: "カスタムCSS"
     badge_tooltip: "インポートされます。インポート後にメタデータパネルで編集できます。"
+    summary_title: 検出完了
+    summary_format: 形式
+    summary_chapters: 章
+    summary_assets: アセット
+    summary_cover: 表紙
+    summary_css: カスタムCSS
+    summary_next: '次へ: 確認と設定'
+    section_basics: 基本情報
+    section_metadata: メタデータ
+    section_publishing: 出版
+    section_longform: 長文コンテンツ
+    section_styling: スタイル
+    section_overview: コンテンツ概要
+    section_show_empty: フィールドを追加
+    section_hide_empty: 空のフィールドを非表示
+    error_title_required: タイトルは必須です
+    error_author_required: 著者は必須です
+    mandatory_tooltip: タイトルと著者は必須です
+    language_default_hint: (既定は 'de')
+    field_collapse: 折りたたむ
+    field_expand: すべて表示 ({n} 文字)
