@@ -531,7 +531,10 @@ def _maybe_set_cover_from_assets(db: Session, book: Book) -> None:
         # imported; fall through and pick a real one.
 
     cover_asset = (
-        db.query(Asset).filter(Asset.book_id == book.id, Asset.asset_type == "cover").first()
+        db.query(Asset)
+        .filter(Asset.book_id == book.id, Asset.asset_type == "cover")
+        .order_by(Asset.filename)
+        .first()
     )
     if not cover_asset:
         cover_asset = (
