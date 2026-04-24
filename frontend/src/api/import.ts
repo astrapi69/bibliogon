@@ -101,6 +101,32 @@ export async function detectImport(
     return (await response.json()) as DetectResponse;
 }
 
+export async function detectGitImport(
+    gitUrl: string,
+): Promise<DetectResponse> {
+    const response = await fetch(`${BASE}/import/detect/git`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ git_url: gitUrl }),
+    });
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const detail =
+            response.status === 415
+                ? encodeUnsupportedFormatDetail(body.detail)
+                : (body.detail as string) ||
+                  `Clone failed (HTTP ${response.status})`;
+        throw new ApiError(
+            response.status,
+            detail,
+            `${BASE}/import/detect/git`,
+            "POST",
+            (body.traceback as string) || "",
+        );
+    }
+    return (await response.json()) as DetectResponse;
+}
+
 export async function executeImport(
     tempRef: string,
     overrides: Overrides,

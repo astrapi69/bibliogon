@@ -22,6 +22,9 @@ import { ErrorStep } from "./steps/ErrorStep";
 interface WizardInput {
     files: File[];
     paths?: string[];
+    /** Set by the git URL path in Step 1; DetectingStep branches
+     * to the /api/import/detect/git endpoint when present. */
+    gitUrl?: string;
 }
 
 export type WizardState =
@@ -158,6 +161,7 @@ export default function ImportWizardModal({
                                         input: {
                                             files: selection.files,
                                             paths: selection.paths,
+                                            gitUrl: selection.gitUrl,
                                         },
                                     })
                                 }
@@ -167,6 +171,7 @@ export default function ImportWizardModal({
                             <DetectingStep
                                 files={state.input.files}
                                 paths={state.input.paths}
+                                gitUrl={state.input.gitUrl}
                                 onDetected={(detected, duplicate, tempRef) =>
                                     setState({
                                         step: "preview",

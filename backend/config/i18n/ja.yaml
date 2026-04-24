@@ -1057,3 +1057,9 @@ ui:
     step_1_pick_folder: またはMarkdownファイルのフォルダを選択
     error_folder_empty: フォルダに.md/.markdownファイルがありません。
     error_folder_too_many: フォルダのファイルが多すぎます ({count})。最大 {max}。
+    step_1_git_url_label: "git URLからインポート"
+    step_1_git_url_placeholder: "https://github.com/user/write-book-template-fork"
+    step_1_git_url_submit: "クローン + インポート"
+    step_1_git_url_hint: "このバージョンでは公開HTTPSのみ。対象リポジトリはwrite-book-template構造に従う必要があります。"
+    error_git_url_empty: "git URLを貼り付けてください。"
+    error_git_url_invalid: "認識できないgit URL。期待されるプレフィックス: https://、git@ または ssh://git@。"

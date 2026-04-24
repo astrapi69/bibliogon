@@ -1057,3 +1057,9 @@ ui:
     step_1_pick_folder: Oder Markdown-Ordner auswaehlen
     error_folder_empty: Ordner enthaelt keine .md/.markdown-Dateien.
     error_folder_too_many: Zu viele Dateien im Ordner ({count}); Maximum {max}.
+    step_1_git_url_label: "Import aus einer Git-URL"
+    step_1_git_url_placeholder: "https://github.com/user/write-book-template-fork"
+    step_1_git_url_submit: "Klonen + Importieren"
+    step_1_git_url_hint: "Nur oeffentliche HTTPS-URLs in dieser Version. Das Ziel-Repository muss der write-book-template-Struktur folgen."
+    error_git_url_empty: "Bitte eine Git-URL einfuegen."
+    error_git_url_invalid: "Keine gueltige Git-URL. Erwartet https://, git@ oder ssh://git@."

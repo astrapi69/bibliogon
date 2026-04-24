@@ -214,7 +214,7 @@ describe("ImportWizardModal state machine", () => {
     it("routes detect failure to error step with retry available", async () => {
         const { ApiError } = await import("../../api/client");
         detectImportMock.mockRejectedValue(
-            new ApiError(415, "Unsupported format"),
+            new ApiError(415, "Unsupported format", "/api/import/detect", "POST"),
         );
         renderModal();
 
@@ -230,7 +230,12 @@ describe("ImportWizardModal state machine", () => {
         const { ApiError } = await import("../../api/client");
         detectImportMock.mockResolvedValue(SUCCESS_DETECT);
         executeImportMock.mockRejectedValue(
-            new ApiError(500, "Import handler failed: boom"),
+            new ApiError(
+                500,
+                "Import handler failed: boom",
+                "/api/import/execute",
+                "POST",
+            ),
         );
         renderModal();
 

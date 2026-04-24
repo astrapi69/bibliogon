@@ -1057,3 +1057,9 @@ ui:
     step_1_pick_folder: Ή επέλεξε φάκελο με αρχεία Markdown
     error_folder_empty: Ο φάκελος δεν περιέχει αρχεία .md/.markdown.
     error_folder_too_many: Πάρα πολλά αρχεία στον φάκελο ({count})· μέγιστο {max}.
+    step_1_git_url_label: "Εισαγωγή από URL git"
+    step_1_git_url_placeholder: "https://github.com/user/write-book-template-fork"
+    step_1_git_url_submit: "Κλωνοποίηση + Εισαγωγή"
+    step_1_git_url_hint: "Μόνο δημόσια HTTPS σε αυτήν την έκδοση. Το αποθετήριο πρέπει να ακολουθεί τη δομή write-book-template."
+    error_git_url_empty: "Επικόλλησε μία URL git."
+    error_git_url_invalid: "Μη έγκυρη URL git. Αναμένεται πρόθεμα https://, git@ ή ssh://git@."

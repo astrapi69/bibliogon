@@ -1,6 +1,14 @@
 import { useRef, useState } from "react";
-import { Folder, Upload } from "lucide-react";
+import { Folder, GitBranch, Upload } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
+
+// Regex is intentionally loose: we accept HTTPS, http, git@ and
+// ssh:// URLs. Backend handler validates the actual git-ness by
+// attempting a clone and surfaces errors through the wizard's
+// error step. The client-side check is only to reject obvious
+// non-URLs early (empty strings, "hello world", etc.).
+const GIT_URL_RE =
+    /^(?:https?:\/\/|git@[^\s:]+:|ssh:\/\/git@)[^\s]+(?:\.git)?\/?$/i;
 
 // Aligned with the backend handler registry
 // (app/import_plugins/handlers/__init__.py). Evolution:
@@ -52,6 +60,10 @@ function isFolderRelevant(filename: string): boolean {
 export interface UploadSelection {
     files: File[];
     paths?: string[];
+    /** When set, the wizard skips file-based dispatch and clones
+     * the given URL via the plugin-git-sync handler instead. The
+     * ``files`` array stays empty in this branch. */
+    gitUrl?: string;
 }
 
 export function UploadStep({
@@ -65,6 +77,8 @@ export function UploadStep({
     const [dragOver, setDragOver] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
+    const [gitUrl, setGitUrl] = useState("");
+    const [gitError, setGitError] = useState<string | null>(null);
 
     const validateSingle = (file: File): string | null => {
         const ext = extensionOf(file.name);
@@ -150,6 +164,32 @@ export function UploadStep({
         onInputSelected({ files: picked, paths });
     };
 
+    const handleGitSubmit = () => {
+        setGitError(null);
+        setError(null);
+        setWarning(null);
+        const trimmed = gitUrl.trim();
+        if (!trimmed) {
+            setGitError(
+                t(
+                    "ui.import_wizard.error_git_url_empty",
+                    "Please paste a git URL.",
+                ),
+            );
+            return;
+        }
+        if (!GIT_URL_RE.test(trimmed)) {
+            setGitError(
+                t(
+                    "ui.import_wizard.error_git_url_invalid",
+                    "Not a recognised git URL. Expected https://, git@ or ssh://git@ prefix.",
+                ),
+            );
+            return;
+        }
+        onInputSelected({ files: [], gitUrl: trimmed });
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOver(false);
@@ -166,6 +206,101 @@ export function UploadStep({
 
     return (
         <div data-testid="upload-step">
+            <div
+                data-testid="git-url-section"
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    padding: "12px 14px",
+                    marginBottom: 14,
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    background: "var(--bg-subtle)",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "0.875rem",
+                        fontWeight: 500,
+                    }}
+                >
+                    <GitBranch size={14} />
+                    {t(
+                        "ui.import_wizard.step_1_git_url_label",
+                        "Import from a git URL",
+                    )}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                        type="url"
+                        data-testid="git-url-input"
+                        value={gitUrl}
+                        onChange={(e) => setGitUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleGitSubmit();
+                            }
+                        }}
+                        placeholder={t(
+                            "ui.import_wizard.step_1_git_url_placeholder",
+                            "https://github.com/user/write-book-template-fork",
+                        )}
+                        style={{
+                            flex: 1,
+                            padding: "6px 10px",
+                            border: "1px solid var(--border)",
+                            borderRadius: 4,
+                            fontSize: "0.875rem",
+                            fontFamily: "var(--font-mono)",
+                            background: "var(--bg-primary)",
+                            color: "var(--text-primary)",
+                        }}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        data-testid="git-url-submit"
+                        onClick={handleGitSubmit}
+                        disabled={!gitUrl.trim()}
+                    >
+                        {t(
+                            "ui.import_wizard.step_1_git_url_submit",
+                            "Clone + Import",
+                        )}
+                    </button>
+                </div>
+                <p
+                    style={{
+                        margin: 0,
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                    }}
+                >
+                    {t(
+                        "ui.import_wizard.step_1_git_url_hint",
+                        "Public HTTPS only in this version. The target repo must follow the write-book-template structure.",
+                    )}
+                </p>
+                {gitError && (
+                    <p
+                        role="alert"
+                        data-testid="git-url-error"
+                        style={{
+                            margin: 0,
+                            fontSize: "0.75rem",
+                            color: "var(--danger)",
+                        }}
+                    >
+                        {gitError}
+                    </p>
+                )}
+            </div>
+
             <div
                 data-testid="upload-dropzone"
                 onDragOver={(e) => {

@@ -191,4 +191,67 @@ describe("UploadStep", () => {
         fireEvent.click(screen.getByTestId("upload-folder-btn"));
         expect(clickSpy).toHaveBeenCalled();
     });
+
+    // --- git URL input (PGS-01) ---
+
+    it("git URL input submits a valid https URL via onInputSelected", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        fireEvent.change(screen.getByTestId("git-url-input"), {
+            target: { value: "https://github.com/astrapi69/write-book-template" },
+        });
+        fireEvent.click(screen.getByTestId("git-url-submit"));
+        expect(onInputSelected).toHaveBeenCalledWith({
+            files: [],
+            gitUrl: "https://github.com/astrapi69/write-book-template",
+        });
+    });
+
+    it("git URL input rejects a whitespace-only value via Enter", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        const input = screen.getByTestId("git-url-input");
+        // Submit button disables itself on empty input, so drive the
+        // submit path via Enter to exercise the trim-then-validate
+        // branch of handleGitSubmit.
+        fireEvent.change(input, { target: { value: "   " } });
+        fireEvent.keyDown(input, { key: "Enter" });
+        expect(onInputSelected).not.toHaveBeenCalled();
+        expect(screen.getByTestId("git-url-error")).toHaveTextContent(/paste/i);
+    });
+
+    it("git URL input rejects a plainly non-URL string", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        fireEvent.change(screen.getByTestId("git-url-input"), {
+            target: { value: "not a url" },
+        });
+        fireEvent.click(screen.getByTestId("git-url-submit"));
+        expect(onInputSelected).not.toHaveBeenCalled();
+        expect(screen.getByTestId("git-url-error")).toHaveTextContent(/recognised/i);
+    });
+
+    it("git URL submit button is disabled until something is typed", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        expect(screen.getByTestId("git-url-submit")).toBeDisabled();
+        fireEvent.change(screen.getByTestId("git-url-input"), {
+            target: { value: "https://github.com/foo/bar" },
+        });
+        expect(screen.getByTestId("git-url-submit")).not.toBeDisabled();
+    });
+
+    it("pressing Enter in the git URL input submits when valid", () => {
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        const input = screen.getByTestId("git-url-input");
+        fireEvent.change(input, {
+            target: { value: "git@github.com:foo/bar.git" },
+        });
+        fireEvent.keyDown(input, { key: "Enter" });
+        expect(onInputSelected).toHaveBeenCalledWith({
+            files: [],
+            gitUrl: "git@github.com:foo/bar.git",
+        });
+    });
 });

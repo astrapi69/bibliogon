@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { ApiError } from "../../../api/client";
-import { detectImport } from "../../../api/import";
+import { detectGitImport, detectImport } from "../../../api/import";
 import type { DetectedProject, DuplicateInfo } from "../../../api/import";
 import { useI18n } from "../../../hooks/useI18n";
 
@@ -16,6 +16,7 @@ export function DetectingStep({
     file,
     files,
     paths,
+    gitUrl,
     onDetected,
     onError,
     onCancel,
@@ -23,6 +24,7 @@ export function DetectingStep({
     file?: File;
     files?: File[];
     paths?: string[];
+    gitUrl?: string;
     onDetected: (
         detected: DetectedProject,
         duplicate: DuplicateInfo,
@@ -44,14 +46,20 @@ export function DetectingStep({
             setStatusIdx((i) => (i + 1) % ROTATE_KEYS.length);
         }, 1200);
 
-        const input: File | File[] =
-            files && files.length > 0
-                ? files
-                : file
-                  ? file
-                  : (files ?? []);
+        const detection: Promise<
+            Awaited<ReturnType<typeof detectImport>>
+        > = gitUrl
+            ? detectGitImport(gitUrl)
+            : detectImport(
+                  (files && files.length > 0
+                      ? files
+                      : file
+                        ? file
+                        : (files ?? [])) as File | File[],
+                  paths,
+              );
 
-        detectImport(input as File | File[], paths)
+        detection
             .then((response) => {
                 if (cancelledRef.current || !mounted) return;
                 onDetected(response.detected, response.duplicate, response.temp_ref);
@@ -71,7 +79,7 @@ export function DetectingStep({
             mounted = false;
             window.clearInterval(rotate);
         };
-    }, [file, files, paths, onDetected, onError]);
+    }, [file, files, paths, gitUrl, onDetected, onError]);
 
     return (
         <div
@@ -104,11 +112,13 @@ export function DetectingStep({
                     textAlign: "center",
                 }}
             >
-                {file
-                    ? file.name
-                    : files && files.length > 0
-                      ? `${files.length} files`
-                      : ""}
+                {gitUrl
+                    ? gitUrl
+                    : file
+                      ? file.name
+                      : files && files.length > 0
+                        ? `${files.length} files`
+                        : ""}
             </p>
             <button
                 className="btn btn-secondary btn-sm"

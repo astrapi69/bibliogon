@@ -1057,3 +1057,9 @@ ui:
     step_1_pick_folder: Veya Markdown dosyalari icin klasor sec
     error_folder_empty: Klasorde .md/.markdown dosyasi yok.
     error_folder_too_many: Klasorde cok fazla dosya var ({count}); maksimum {max}.
+    step_1_git_url_label: "Git URL'den ice aktar"
+    step_1_git_url_placeholder: "https://github.com/user/write-book-template-fork"
+    step_1_git_url_submit: "Klonla + Ice aktar"
+    step_1_git_url_hint: "Bu surumde yalnizca genel HTTPS. Hedef repo write-book-template yapisini takip etmeli."
+    error_git_url_empty: "Lutfen bir git URL'si yapistirin."
+    error_git_url_invalid: "Gecerli bir git URL'si degil. Beklenen onek: https://, git@ veya ssh://git@."
