@@ -1099,6 +1099,22 @@ ui:
     section_overview: Inhalts-Uebersicht
     section_show_empty: Felder hinzufuegen
     section_hide_empty: Leere Felder ausblenden
+    section_git: Git-Historie
+    git_detected_hint: Der Import enthaelt ein .git/-Verzeichnis. Waehle, ob die Historie ins neue Buch uebernommen werden soll.
+    git_branch: Branch
+    git_commits: Commits
+    git_remote: Remote
+    git_size: Groesse
+    git_has_lfs: LFS erkannt
+    git_has_submodules: Submodule vorhanden (nicht uebernommen)
+    git_is_shallow: Shallow-Clone
+    git_is_corrupted: Repository wirkt beschaedigt (fsck fehlgeschlagen)
+    git_start_fresh: Neu anfangen
+    git_start_fresh_desc: Das importierte .git/-Verzeichnis ignorieren. Beim ersten lokalen Edit wird ein neues Repo angelegt.
+    git_adopt_with_remote: Historie + Remote uebernehmen
+    git_adopt_with_remote_desc: Commits, Branches und die Remote-URL behalten. Anmeldedaten werden vor der Uebernahme entfernt.
+    git_adopt_without_remote: Nur Historie uebernehmen
+    git_adopt_without_remote_desc: Commits und Branches behalten. Remote-URL verwerfen, damit du eine neue anbindest.
     error_title_required: Titel ist Pflichtfeld
     error_author_required: Autor ist Pflichtfeld
     mandatory_tooltip: Titel und Autor sind Pflichtfelder

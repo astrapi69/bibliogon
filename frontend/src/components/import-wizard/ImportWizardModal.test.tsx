@@ -198,6 +198,7 @@ describe("ImportWizardModal state machine", () => {
             }),
             "create",
             null,
+            "start_fresh",
         );
 
         // Step success: bookId surfaced to onImported.
@@ -249,6 +250,7 @@ describe("ImportWizardModal state machine", () => {
                 }),
                 "overwrite",
                 "existing-1",
+                "start_fresh",
             ),
         );
     });

@@ -67,7 +67,47 @@ export interface DetectedProject {
     assets: DetectedAsset[];
     warnings: string[];
     plugin_specific_data: Record<string, unknown>;
+
+    // Optional: metadata about a ``.git/`` directory found in the
+    // import source. Populated when the handler ran git-import
+    // inspection; null/absent when the source has no .git/. The
+    // wizard renders a dedicated Step 3 section when present.
+    git_repo?: DetectedGitRepo | null;
 }
+
+/** Metadata about an adoptable ``.git/`` directory in an import source.
+ *
+ * Mirrors :class:`DetectedGitRepo` in backend protocol.py. Rendered
+ * in the import wizard so the user can choose between starting fresh
+ * (ignore .git/), adopting history only, or adopting history plus
+ * the remote URL. */
+export interface DetectedGitRepo {
+    present: boolean;
+    size_bytes: number;
+    current_branch: string | null;
+    head_sha: string | null;
+    commit_count: number | null;
+    remote_url: string | null;
+    has_lfs: boolean;
+    has_submodules: boolean;
+    is_shallow: boolean;
+    is_corrupted: boolean;
+    security_warnings: string[];
+}
+
+/** Choice for adopting a ``.git/`` directory from the import source.
+ *
+ * ``start_fresh``: ignore .git/, a brand-new repo is created on
+ * first edit.
+ * ``adopt_with_remote``: copy .git/ including the remote URL.
+ * ``adopt_without_remote``: copy .git/ but strip the remote so the
+ * user can wire up a fresh one.
+ * Null is equivalent to ``start_fresh`` on the backend.
+ */
+export type GitAdoption =
+    | "start_fresh"
+    | "adopt_with_remote"
+    | "adopt_without_remote";
 
 /** Keys the import wizard is allowed to override on the Book. Keeps
  * the frontend in sync with BOOK_IMPORT_OVERRIDE_KEYS in
@@ -212,6 +252,7 @@ export async function executeImport(
     overrides: Overrides,
     duplicateAction: DuplicateAction,
     existingBookId?: string | null,
+    gitAdoption?: GitAdoption | null,
 ): Promise<ExecuteResponse> {
     const response = await fetch(`${BASE}/import/execute`, {
         method: "POST",
@@ -221,6 +262,7 @@ export async function executeImport(
             overrides,
             duplicate_action: duplicateAction,
             existing_book_id: existingBookId ?? null,
+            git_adoption: gitAdoption ?? null,
         }),
     });
     if (!response.ok) {

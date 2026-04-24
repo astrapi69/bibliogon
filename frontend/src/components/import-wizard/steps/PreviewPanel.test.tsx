@@ -349,6 +349,133 @@ describe("PreviewPanel — author-assets section", () => {
     });
 });
 
+describe("PreviewPanel — git adoption", () => {
+    function gitRepo(overrides: Record<string, unknown> = {}) {
+        return {
+            present: true,
+            size_bytes: 2_500_000,
+            current_branch: "main",
+            head_sha: "abcdef1234567890",
+            commit_count: 42,
+            remote_url: "https://example.com/author/book.git",
+            has_lfs: false,
+            has_submodules: false,
+            is_shallow: false,
+            is_corrupted: false,
+            security_warnings: [],
+            ...overrides,
+        };
+    }
+
+    function renderWithGit(
+        gitProps: {
+            gitAdoption?: "start_fresh" | "adopt_with_remote" | "adopt_without_remote";
+            onGitAdoptionChange?: ReturnType<typeof vi.fn>;
+            repo?: ReturnType<typeof gitRepo> | null;
+        } = {},
+    ) {
+        const onOverridesChange = vi.fn();
+        const onGitAdoptionChange = gitProps.onGitAdoptionChange ?? vi.fn();
+        render(
+            <PreviewPanel
+                detected={project({
+                    git_repo:
+                        gitProps.repo === undefined
+                            ? gitRepo()
+                            : gitProps.repo,
+                })}
+                overrides={{} as Overrides}
+                onOverridesChange={onOverridesChange}
+                gitAdoption={gitProps.gitAdoption ?? "start_fresh"}
+                onGitAdoptionChange={onGitAdoptionChange}
+            />,
+        );
+        return { onGitAdoptionChange };
+    }
+
+    it("no section when detected.git_repo is null", () => {
+        renderWithGit({ repo: null });
+        expect(
+            screen.queryByTestId("preview-section-git-adoption"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("no section when git_repo.present is false", () => {
+        renderWithGit({ repo: gitRepo({ present: false }) });
+        expect(
+            screen.queryByTestId("preview-section-git-adoption"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders 3 radio options and metadata summary when present", () => {
+        renderWithGit();
+        expect(
+            screen.getByTestId("preview-section-git-adoption"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-git-option-start_fresh"),
+        ).toHaveAttribute("data-selected", "true");
+        expect(
+            screen.getByTestId("preview-git-option-adopt_with_remote"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-git-option-adopt_without_remote"),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("preview-git-branch")).toHaveTextContent(
+            "main",
+        );
+        expect(screen.getByTestId("preview-git-commits")).toHaveTextContent(
+            "42",
+        );
+        expect(screen.getByTestId("preview-git-remote")).toHaveTextContent(
+            "example.com/author/book.git",
+        );
+        expect(screen.getByTestId("preview-git-head")).toHaveTextContent(
+            "abcdef1234",
+        );
+    });
+
+    it("adopt_with_remote is disabled when no remote_url", () => {
+        renderWithGit({ repo: gitRepo({ remote_url: null }) });
+        expect(
+            screen.getByTestId("preview-git-radio-adopt_with_remote"),
+        ).toBeDisabled();
+    });
+
+    it("clicking a radio triggers onGitAdoptionChange", () => {
+        const onGitAdoptionChange = vi.fn();
+        renderWithGit({ onGitAdoptionChange });
+        fireEvent.click(
+            screen.getByTestId("preview-git-radio-adopt_with_remote"),
+        );
+        expect(onGitAdoptionChange).toHaveBeenCalledWith("adopt_with_remote");
+    });
+
+    it("renders security warnings when present", () => {
+        renderWithGit({
+            repo: gitRepo({
+                security_warnings: [
+                    "Credential helper stripped",
+                    "Custom hook will not be adopted: prepare-commit-msg",
+                ],
+            }),
+        });
+        expect(
+            screen.getByTestId("preview-git-security-warnings"),
+        ).toBeInTheDocument();
+        const items = screen.getAllByTestId("preview-git-security-warning");
+        expect(items).toHaveLength(2);
+        expect(items[0]).toHaveTextContent("Credential helper stripped");
+    });
+
+    it("flags corrupted repo with a visible notice", () => {
+        renderWithGit({ repo: gitRepo({ is_corrupted: true }) });
+        expect(
+            screen.getByTestId("preview-git-corrupted"),
+        ).toBeInTheDocument();
+    });
+});
+
 describe("PreviewPanel — author datalist", () => {
     it("no datalist and no list attr when settings have no author choices", () => {
         mockAuthorChoices.mockReturnValueOnce([]);

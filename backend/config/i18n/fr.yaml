@@ -1099,6 +1099,22 @@ ui:
     section_overview: Apercu du contenu
     section_show_empty: Ajouter des champs
     section_hide_empty: Masquer les champs vides
+    section_git: Historique Git
+    git_detected_hint: La source d'importation contient un repertoire .git/. Choisissez si vous voulez adopter son historique dans le nouveau livre.
+    git_branch: Branche
+    git_commits: Commits
+    git_remote: Distant
+    git_size: Taille
+    git_has_lfs: LFS detecte
+    git_has_submodules: Sous-modules presents (non adoptes)
+    git_is_shallow: Clone peu profond
+    git_is_corrupted: Le depot semble corrompu (fsck echoue)
+    git_start_fresh: Repartir de zero
+    git_start_fresh_desc: Ignorer le .git/ importe. Un nouveau depot sera cree lors de la premiere modification locale.
+    git_adopt_with_remote: Adopter historique + distant
+    git_adopt_with_remote_desc: Conserver commits, branches et URL distante. Les identifiants sont supprimes avant adoption.
+    git_adopt_without_remote: Adopter l'historique uniquement
+    git_adopt_without_remote_desc: Conserver commits et branches. Supprimer l'URL distante pour pouvoir en configurer une nouvelle.
     error_title_required: Le titre est requis
     error_author_required: L'auteur est requis
     mandatory_tooltip: Le titre et l'auteur sont requis

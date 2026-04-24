@@ -2,6 +2,7 @@ import { useI18n } from "../../../hooks/useI18n";
 import type {
     DetectedProject,
     DuplicateInfo,
+    GitAdoption,
     Overrides,
 } from "../../../api/import";
 import { PreviewPanel } from "./PreviewPanel";
@@ -21,8 +22,10 @@ export function PreviewStep({
     overrides,
     duplicateAction,
     tempRef,
+    gitAdoption,
     onOverridesChange,
     onDuplicateActionChange,
+    onGitAdoptionChange,
     onBack,
     onConfirm,
 }: {
@@ -31,8 +34,10 @@ export function PreviewStep({
     overrides: Overrides;
     duplicateAction: "create" | "overwrite";
     tempRef?: string;
+    gitAdoption: GitAdoption;
     onOverridesChange: (o: Overrides) => void;
     onDuplicateActionChange: (a: "create" | "overwrite" | "cancel") => void;
+    onGitAdoptionChange: (c: GitAdoption) => void;
     onBack: () => void;
     onConfirm: () => void;
 }) {
@@ -51,6 +56,8 @@ export function PreviewStep({
                 overrides={overrides}
                 onOverridesChange={onOverridesChange}
                 tempRef={tempRef}
+                gitAdoption={gitAdoption}
+                onGitAdoptionChange={onGitAdoptionChange}
             />
             <div
                 style={{

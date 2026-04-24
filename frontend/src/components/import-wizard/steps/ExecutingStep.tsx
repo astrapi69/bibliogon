@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { ApiError } from "../../../api/client";
 import { executeImport } from "../../../api/import";
-import type { DuplicateAction, Overrides } from "../../../api/import";
+import type {
+    DuplicateAction,
+    GitAdoption,
+    Overrides,
+} from "../../../api/import";
 import { useI18n } from "../../../hooks/useI18n";
 
 export function ExecutingStep({
@@ -10,6 +14,7 @@ export function ExecutingStep({
     overrides,
     duplicateAction,
     existingBookId,
+    gitAdoption,
     onSuccess,
     onError,
 }: {
@@ -17,6 +22,7 @@ export function ExecutingStep({
     overrides: Overrides;
     duplicateAction: DuplicateAction;
     existingBookId: string | null;
+    gitAdoption?: GitAdoption | null;
     onSuccess: (bookId: string) => void;
     onError: (message: string) => void;
 }) {
@@ -26,7 +32,13 @@ export function ExecutingStep({
     useEffect(() => {
         if (fired.current) return;
         fired.current = true;
-        executeImport(tempRef, overrides, duplicateAction, existingBookId)
+        executeImport(
+            tempRef,
+            overrides,
+            duplicateAction,
+            existingBookId,
+            gitAdoption ?? null,
+        )
             .then((response) => {
                 if (response.status === "cancelled" || response.book_id === null) {
                     onError(
@@ -48,7 +60,16 @@ export function ExecutingStep({
                           : String(err);
                 onError(message);
             });
-    }, [tempRef, overrides, duplicateAction, existingBookId, onError, onSuccess, t]);
+    }, [
+        tempRef,
+        overrides,
+        duplicateAction,
+        existingBookId,
+        gitAdoption,
+        onError,
+        onSuccess,
+        t,
+    ]);
 
     return (
         <div

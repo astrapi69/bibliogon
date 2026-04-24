@@ -1099,6 +1099,22 @@ ui:
     section_overview: コンテンツ概要
     section_show_empty: フィールドを追加
     section_hide_empty: 空のフィールドを非表示
+    section_git: Git 履歴
+    git_detected_hint: インポート元には .git/ ディレクトリが含まれています。履歴を新しい本に取り込むかを選択してください。
+    git_branch: ブランチ
+    git_commits: コミット数
+    git_remote: リモート
+    git_size: サイズ
+    git_has_lfs: LFS を検出
+    git_has_submodules: サブモジュールあり（取り込まれません）
+    git_is_shallow: シャロークローン
+    git_is_corrupted: リポジトリが破損しているようです (fsck 失敗)
+    git_start_fresh: 新規で開始
+    git_start_fresh_desc: インポートされた .git/ を無視します。最初のローカル編集時に新しいリポジトリが作成されます。
+    git_adopt_with_remote: 履歴 + リモートを取り込む
+    git_adopt_with_remote_desc: コミット、ブランチ、リモート URL を保持します。認証情報は取り込み前に削除されます。
+    git_adopt_without_remote: 履歴のみを取り込む
+    git_adopt_without_remote_desc: コミットとブランチを保持します。新しいリモートを設定できるよう、リモート URL は破棄します。
     error_title_required: タイトルは必須です
     error_author_required: 著者は必須です
     mandatory_tooltip: タイトルと著者は必須です

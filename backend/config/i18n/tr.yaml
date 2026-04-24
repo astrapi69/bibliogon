@@ -1099,6 +1099,22 @@ ui:
     section_overview: Icerik ozeti
     section_show_empty: Alan ekle
     section_hide_empty: Bos alanlari gizle
+    section_git: Git gecmisi
+    git_detected_hint: Ice aktarma kaynagi bir .git/ dizini iceriyor. Gecmisi yeni kitaba alip almayacaginizi secin.
+    git_branch: Dal
+    git_commits: Commit sayisi
+    git_remote: Uzak
+    git_size: Boyut
+    git_has_lfs: LFS tespit edildi
+    git_has_submodules: Alt modul mevcut (alinmaz)
+    git_is_shallow: Sig klon
+    git_is_corrupted: Depo bozuk gorunuyor (fsck basarisiz)
+    git_start_fresh: Sifirdan basla
+    git_start_fresh_desc: Ice aktarilan .git/ dizinini yok say. Ilk yerel duzenlemede yeni bir depo olusturulur.
+    git_adopt_with_remote: Gecmis + uzak al
+    git_adopt_with_remote_desc: Commitleri, dallari ve uzak URL'yi koru. Kimlik bilgileri aktarmadan once kaldirilir.
+    git_adopt_without_remote: Sadece gecmisi al
+    git_adopt_without_remote_desc: Commitleri ve dallari koru. Yenisini baglamak icin uzak URL'yi at.
     error_title_required: Baslik gerekli
     error_author_required: Yazar gerekli
     mandatory_tooltip: Baslik ve yazar gerekli

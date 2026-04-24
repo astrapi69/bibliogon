@@ -1099,6 +1099,22 @@ ui:
     section_overview: Vista general del contenido
     section_show_empty: Anadir campos
     section_hide_empty: Ocultar campos vacios
+    section_git: Historial de Git
+    git_detected_hint: La fuente de importacion contiene un directorio .git/. Elige si adoptar su historial en el nuevo libro.
+    git_branch: Rama
+    git_commits: Commits
+    git_remote: Remoto
+    git_size: Tamano
+    git_has_lfs: LFS detectado
+    git_has_submodules: Submodulos presentes (no adoptados)
+    git_is_shallow: Clon superficial
+    git_is_corrupted: El repositorio parece danado (fsck fallido)
+    git_start_fresh: Empezar desde cero
+    git_start_fresh_desc: Ignorar el .git/ importado. Se creara un nuevo repo en la primera edicion local.
+    git_adopt_with_remote: Adoptar historial + remoto
+    git_adopt_with_remote_desc: Mantener commits, ramas y la URL remota. Las credenciales se eliminan antes de adoptar.
+    git_adopt_without_remote: Adoptar solo el historial
+    git_adopt_without_remote_desc: Mantener commits y ramas. Descartar la URL remota para conectar una nueva.
     error_title_required: El titulo es obligatorio
     error_author_required: El autor es obligatorio
     mandatory_tooltip: Titulo y autor son obligatorios

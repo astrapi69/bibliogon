@@ -33,7 +33,7 @@ describe("ExecutingStep", () => {
         executeImportMock.mockReset();
     });
 
-    it("calls executeImport with (tempRef, overrides, duplicateAction, existingBookId)", async () => {
+    it("calls executeImport with (tempRef, overrides, duplicateAction, existingBookId, gitAdoption)", async () => {
         executeImportMock.mockResolvedValue({ book_id: "new-1", status: "created" });
         const onSuccess = vi.fn();
         render(
@@ -52,6 +52,31 @@ describe("ExecutingStep", () => {
             { title: "X" },
             "create",
             null,
+            null,
+        );
+    });
+
+    it("forwards gitAdoption to executeImport when set", async () => {
+        executeImportMock.mockResolvedValue({ book_id: "new-2", status: "created" });
+        const onSuccess = vi.fn();
+        render(
+            <ExecutingStep
+                tempRef="imp-git"
+                overrides={{ title: "X" }}
+                duplicateAction="create"
+                existingBookId={null}
+                gitAdoption="adopt_with_remote"
+                onSuccess={onSuccess}
+                onError={vi.fn()}
+            />,
+        );
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("new-2"));
+        expect(executeImportMock).toHaveBeenCalledWith(
+            "imp-git",
+            { title: "X" },
+            "create",
+            null,
+            "adopt_with_remote",
         );
     });
 

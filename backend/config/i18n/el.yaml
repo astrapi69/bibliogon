@@ -1099,6 +1099,22 @@ ui:
     section_overview: Επισκόπηση περιεχομένου
     section_show_empty: Προσθήκη πεδίων
     section_hide_empty: Απόκρυψη κενών πεδίων
+    section_git: Ιστορικό Git
+    git_detected_hint: Η πηγή εισαγωγής περιέχει έναν κατάλογο .git/. Επιλέξτε αν θα υιοθετήσετε το ιστορικό στο νέο βιβλίο.
+    git_branch: Κλάδος
+    git_commits: Commits
+    git_remote: Απομακρυσμένο
+    git_size: Μέγεθος
+    git_has_lfs: Εντοπίστηκε LFS
+    git_has_submodules: Υπάρχουν υποενότητες (δεν υιοθετούνται)
+    git_is_shallow: Ρηχό clone
+    git_is_corrupted: Το αποθετήριο φαίνεται κατεστραμμένο (fsck απέτυχε)
+    git_start_fresh: Ξεκινήστε από την αρχή
+    git_start_fresh_desc: Αγνοήστε το εισαγόμενο .git/. Θα δημιουργηθεί νέο αποθετήριο στην πρώτη τοπική επεξεργασία.
+    git_adopt_with_remote: Υιοθέτηση ιστορικού + απομακρυσμένου
+    git_adopt_with_remote_desc: Διατήρηση commits, κλάδων και URL απομακρυσμένου. Τα διαπιστευτήρια αφαιρούνται πριν την υιοθέτηση.
+    git_adopt_without_remote: Υιοθέτηση μόνο ιστορικού
+    git_adopt_without_remote_desc: Διατήρηση commits και κλάδων. Απόρριψη του απομακρυσμένου URL ώστε να συνδέσετε νέο.
     error_title_required: Ο τίτλος είναι υποχρεωτικός
     error_author_required: Ο συγγραφέας είναι υποχρεωτικός
     mandatory_tooltip: Τίτλος και συγγραφέας είναι υποχρεωτικοί

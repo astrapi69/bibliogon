@@ -11,7 +11,12 @@ import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import type { DetectedProject, DuplicateInfo, Overrides } from "../../api/import";
+import type {
+    DetectedProject,
+    DuplicateInfo,
+    GitAdoption,
+    Overrides,
+} from "../../api/import";
 import { UploadStep } from "./steps/UploadStep";
 import { DetectingStep } from "./steps/DetectingStep";
 import { PreviewStep } from "./steps/PreviewStep";
@@ -46,6 +51,7 @@ export type WizardState =
           tempRef: string;
           overrides: Overrides;
           duplicateAction: "create" | "overwrite";
+          gitAdoption: GitAdoption;
       }
     | {
           step: "executing";
@@ -55,6 +61,7 @@ export type WizardState =
           overrides: Overrides;
           duplicateAction: "create" | "overwrite";
           existingBookId: string | null;
+          gitAdoption: GitAdoption;
       }
     | { step: "success"; bookId: string; title: string }
     | {
@@ -217,6 +224,7 @@ export default function ImportWizardModal({
                                         tempRef: state.tempRef,
                                         overrides: {},
                                         duplicateAction: "create",
+                                        gitAdoption: "start_fresh",
                                     })
                                 }
                             />
@@ -228,6 +236,7 @@ export default function ImportWizardModal({
                                 overrides={state.overrides}
                                 duplicateAction={state.duplicateAction}
                                 tempRef={state.tempRef}
+                                gitAdoption={state.gitAdoption}
                                 onOverridesChange={(overrides) =>
                                     setState({ ...state, overrides })
                                 }
@@ -238,6 +247,9 @@ export default function ImportWizardModal({
                                     }
                                     setState({ ...state, duplicateAction: action });
                                 }}
+                                onGitAdoptionChange={(gitAdoption) =>
+                                    setState({ ...state, gitAdoption })
+                                }
                                 onBack={() => setState({ step: "upload" })}
                                 onConfirm={() =>
                                     setState({
@@ -249,6 +261,7 @@ export default function ImportWizardModal({
                                         duplicateAction: state.duplicateAction,
                                         existingBookId:
                                             state.duplicate.existing_book_id ?? null,
+                                        gitAdoption: state.gitAdoption,
                                     })
                                 }
                             />
@@ -259,6 +272,7 @@ export default function ImportWizardModal({
                                 overrides={state.overrides}
                                 duplicateAction={state.duplicateAction}
                                 existingBookId={state.existingBookId}
+                                gitAdoption={state.gitAdoption}
                                 onSuccess={(bookId) => {
                                     const title =
                                         (typeof state.overrides.title === "string" &&

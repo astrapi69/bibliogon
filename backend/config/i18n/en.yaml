@@ -1099,6 +1099,22 @@ ui:
     section_overview: Content overview
     section_show_empty: Add fields
     section_hide_empty: Hide empty fields
+    section_git: Git history
+    git_detected_hint: The import source contains a .git/ directory. Pick whether to adopt its history into the new book.
+    git_branch: Branch
+    git_commits: Commits
+    git_remote: Remote
+    git_size: Size
+    git_has_lfs: LFS detected
+    git_has_submodules: Submodules present (not adopted)
+    git_is_shallow: Shallow clone
+    git_is_corrupted: Repository appears corrupted (fsck failed)
+    git_start_fresh: Start fresh
+    git_start_fresh_desc: Ignore the imported .git/ directory. A new repo will be created on the first local edit.
+    git_adopt_with_remote: Adopt history + remote
+    git_adopt_with_remote_desc: Keep commits, branches and the remote URL. Credentials are stripped before adoption.
+    git_adopt_without_remote: Adopt history only
+    git_adopt_without_remote_desc: Keep commits and branches. Discard the remote URL so you can wire up a fresh one.
     error_title_required: Title is required
     error_author_required: Author is required
     mandatory_tooltip: Title and author are required
