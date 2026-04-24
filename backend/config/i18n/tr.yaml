@@ -1063,3 +1063,8 @@ ui:
     step_1_git_url_hint: "Bu surumde yalnizca genel HTTPS. Hedef repo write-book-template yapisini takip etmeli."
     error_git_url_empty: "Lutfen bir git URL'si yapistirin."
     error_git_url_invalid: "Gecerli bir git URL'si degil. Beklenen onek: https://, git@ veya ssh://git@."
+    badge_html_description: "HTML aciklamasi"
+    badge_backpage_description: "Arka kapak metni"
+    badge_backpage_author_bio: "Yazar biyografisi"
+    badge_custom_css: "Ozel CSS"
+    badge_tooltip: "Ice aktarilacak; ice aktardiktan sonra metadata panelinden duzenleyin."

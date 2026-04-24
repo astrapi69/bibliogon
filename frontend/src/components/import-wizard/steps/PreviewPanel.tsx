@@ -59,6 +59,19 @@ export function PreviewPanel({ detected }: { detected: DetectedProject }) {
                         {detected.title ??
                             t("ui.import_wizard.untitled_book", "Untitled")}
                     </h3>
+                    {detected.subtitle && (
+                        <p
+                            data-testid="preview-subtitle"
+                            style={{
+                                margin: "0 0 6px 0",
+                                fontSize: "0.9375rem",
+                                fontStyle: "italic",
+                                color: "var(--text-secondary)",
+                            }}
+                        >
+                            {detected.subtitle}
+                        </p>
+                    )}
                     <p
                         data-testid="preview-author"
                         style={{
@@ -83,6 +96,7 @@ export function PreviewPanel({ detected }: { detected: DetectedProject }) {
                             {detected.language}
                         </p>
                     )}
+                    <MetadataBadges detected={detected} />
                     <p
                         data-testid="preview-source-identifier"
                         style={{
@@ -232,6 +246,87 @@ export function PreviewPanel({ detected }: { detected: DetectedProject }) {
         </div>
     );
 }
+
+function MetadataBadges({ detected }: { detected: DetectedProject }) {
+    const { t } = useI18n();
+    const badges: {key: string; testid: string; label: string}[] = [];
+    if (detected.has_html_description) {
+        badges.push({
+            key: "html_description",
+            testid: "preview-badge-html-description",
+            label: t(
+                "ui.import_wizard.badge_html_description",
+                "HTML description",
+            ),
+        });
+    }
+    if (detected.has_backpage_description) {
+        badges.push({
+            key: "backpage_description",
+            testid: "preview-badge-backpage-description",
+            label: t(
+                "ui.import_wizard.badge_backpage_description",
+                "Back-cover text",
+            ),
+        });
+    }
+    if (detected.has_backpage_author_bio) {
+        badges.push({
+            key: "backpage_author_bio",
+            testid: "preview-badge-backpage-author-bio",
+            label: t(
+                "ui.import_wizard.badge_backpage_author_bio",
+                "Author bio",
+            ),
+        });
+    }
+    if (detected.has_custom_css) {
+        badges.push({
+            key: "custom_css",
+            testid: "preview-badge-custom-css",
+            label: t("ui.import_wizard.badge_custom_css", "Custom CSS"),
+        });
+    }
+
+    if (badges.length === 0) return null;
+
+    return (
+        <div
+            data-testid="preview-metadata-badges"
+            style={{
+                marginTop: 10,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 4,
+            }}
+        >
+            {badges.map((b) => (
+                <span
+                    key={b.key}
+                    data-testid={b.testid}
+                    title={t(
+                        "ui.import_wizard.badge_tooltip",
+                        "Imported; edit in the metadata panel after import.",
+                    )}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "2px 8px",
+                        fontSize: "0.6875rem",
+                        fontWeight: 500,
+                        borderRadius: 999,
+                        background: "var(--accent-light)",
+                        color: "var(--accent-hover)",
+                        border: "1px solid var(--accent)",
+                    }}
+                >
+                    {b.label}
+                </span>
+            ))}
+        </div>
+    );
+}
+
 
 function ChapterRow({
     chapter,

@@ -26,11 +26,20 @@ export interface DetectedProject {
     format_name: string;
     source_identifier: string;
     title: string | null;
+    subtitle: string | null;
     author: string | null;
     language: string | null;
     chapters: DetectedChapter[];
     assets: DetectedAsset[];
     warnings: string[];
+    /** Presence flags for long-form Book metadata. Preview renders a
+     *  badge per True flag so the user can see what the import will
+     *  carry over without forcing kilobytes of CSS/HTML into the
+     *  modal. False means absent, not unsupported. */
+    has_html_description: boolean;
+    has_backpage_description: boolean;
+    has_backpage_author_bio: boolean;
+    has_custom_css: boolean;
     plugin_specific_data: Record<string, unknown>;
 }
 

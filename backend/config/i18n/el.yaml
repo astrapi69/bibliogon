@@ -1063,3 +1063,8 @@ ui:
     step_1_git_url_hint: "Μόνο δημόσια HTTPS σε αυτήν την έκδοση. Το αποθετήριο πρέπει να ακολουθεί τη δομή write-book-template."
     error_git_url_empty: "Επικόλλησε μία URL git."
     error_git_url_invalid: "Μη έγκυρη URL git. Αναμένεται πρόθεμα https://, git@ ή ssh://git@."
+    badge_html_description: "Περιγραφή HTML"
+    badge_backpage_description: "Κείμενο οπισθοφύλλου"
+    badge_backpage_author_bio: "Βιογραφικό συγγραφέα"
+    badge_custom_css: "Προσαρμοσμένο CSS"
+    badge_tooltip: "Θα εισαχθεί· επεξεργάσιμο μετά την εισαγωγή στο πάνελ μεταδεδομένων."

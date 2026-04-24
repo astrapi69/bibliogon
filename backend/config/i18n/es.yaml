@@ -1063,3 +1063,8 @@ ui:
     step_1_git_url_hint: "Solo HTTPS publico en esta version. El repositorio de destino debe seguir la estructura write-book-template."
     error_git_url_empty: "Pega una URL de git."
     error_git_url_invalid: "URL de git no reconocida. Se espera prefijo https://, git@ o ssh://git@."
+    badge_html_description: "Descripcion HTML"
+    badge_backpage_description: "Texto contraportada"
+    badge_backpage_author_bio: "Biografia autor"
+    badge_custom_css: "CSS personalizado"
+    badge_tooltip: "Se importara; editable en el panel de metadatos tras importar."

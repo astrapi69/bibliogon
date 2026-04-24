@@ -16,11 +16,16 @@ function project(overrides: Partial<DetectedProject> = {}): DetectedProject {
         format_name: "bgb",
         source_identifier: "sha256:abc",
         title: "The Book",
+        subtitle: null,
         author: "Alice",
         language: "en",
         chapters: [],
         assets: [],
         warnings: [],
+        has_html_description: false,
+        has_backpage_description: false,
+        has_backpage_author_bio: false,
+        has_custom_css: false,
         plugin_specific_data: {},
         ...overrides,
     };
@@ -166,5 +171,72 @@ describe("PreviewPanel", () => {
     it("cover placeholder shown when no cover asset", () => {
         render(<PreviewPanel detected={project()} />);
         expect(screen.getByTestId("preview-cover-placeholder")).toBeInTheDocument();
+    });
+
+    // --- subtitle + long-form metadata badges (Bugs 2 + 3) ---
+
+    it("renders subtitle inline under the title when present", () => {
+        render(
+            <PreviewPanel
+                detected={project({subtitle: "An Actual Subtitle"})}
+            />,
+        );
+        expect(screen.getByTestId("preview-subtitle")).toHaveTextContent(
+            "An Actual Subtitle",
+        );
+    });
+
+    it("omits subtitle row when subtitle is null", () => {
+        render(<PreviewPanel detected={project()} />);
+        expect(screen.queryByTestId("preview-subtitle")).not.toBeInTheDocument();
+    });
+
+    it("renders a metadata badge per True has_* flag", () => {
+        render(
+            <PreviewPanel
+                detected={project({
+                    has_html_description: true,
+                    has_backpage_description: true,
+                    has_backpage_author_bio: true,
+                    has_custom_css: true,
+                })}
+            />,
+        );
+        expect(
+            screen.getByTestId("preview-metadata-badges"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-badge-html-description"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-badge-backpage-description"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-badge-backpage-author-bio"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-badge-custom-css"),
+        ).toBeInTheDocument();
+    });
+
+    it("renders no badge block when all has_* flags are False", () => {
+        render(<PreviewPanel detected={project()} />);
+        expect(
+            screen.queryByTestId("preview-metadata-badges"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders only the True flags as badges", () => {
+        render(
+            <PreviewPanel
+                detected={project({has_custom_css: true})}
+            />,
+        );
+        expect(
+            screen.getByTestId("preview-badge-custom-css"),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByTestId("preview-badge-html-description"),
+        ).not.toBeInTheDocument();
     });
 });
