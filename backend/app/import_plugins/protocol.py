@@ -43,16 +43,30 @@ class DetectedProject(BaseModel):
 
     The wizard renders this directly. ``source_identifier`` drives the
     duplicate-detection check in core.
+
+    The ``has_*`` booleans telegraph presence of long-form metadata
+    (custom CSS, back-cover texts, HTML description). Handlers that
+    populate the corresponding Book columns at execute-time should
+    flip the matching flag at detect-time so the preview panel can
+    surface "custom CSS detected" / "back-cover text detected"
+    badges without rendering kilobytes of content in the modal. A
+    False flag means the field is empty, not that the handler doesn't
+    support it.
     """
 
     format_name: str  # e.g. "bgb" | "markdown" | "wbt-zip"
     source_identifier: str  # URL / SHA-256 / content signature
     title: str | None = None
+    subtitle: str | None = None
     author: str | None = None
     language: str | None = None
     chapters: list[DetectedChapter] = Field(default_factory=list)
     assets: list[DetectedAsset] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    has_html_description: bool = False
+    has_backpage_description: bool = False
+    has_backpage_author_bio: bool = False
+    has_custom_css: bool = False
     plugin_specific_data: dict = Field(default_factory=dict)
 
 

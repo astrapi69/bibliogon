@@ -96,11 +96,16 @@ class WbtImportHandler:
             format_name=self.format_name,
             source_identifier=source_identifier,
             title=metadata.get("title"),
+            subtitle=metadata.get("subtitle"),
             author=metadata.get("author"),
             language=metadata.get("language"),
             chapters=chapters,
             assets=assets,
             warnings=warnings,
+            has_html_description=metadata.get("has_html_description", False),
+            has_backpage_description=metadata.get("has_backpage_description", False),
+            has_backpage_author_bio=metadata.get("has_backpage_author_bio", False),
+            has_custom_css=metadata.get("has_custom_css", False),
             plugin_specific_data={
                 "project_root_name": project_root.name,
                 "chapter_count": len(chapters),
@@ -216,27 +221,50 @@ def _extracted_root(zip_path: Path) -> Path:
 
 
 def _read_metadata(project_root: Path) -> dict:
-    """Reuse the existing metadata parser for title/author/language only.
+    """Parse metadata + presence flags for the preview panel.
 
-    The orchestrator wizard does not need the full ProjectMetadata
-    dataclass at detect time - just the strings we surface in the
-    preview panel. Import-time still uses the full parser via
-    _import_project_root.
+    Returns scalar strings (title / subtitle / author / language) for
+    inline display, plus ``has_*`` booleans for long-form fields that
+    the preview should telegraph without rendering (CSS content,
+    HTML description, back-cover text). Import-time uses the full
+    ProjectMetadata via ``_import_project_root`` - the reason to do
+    it twice is that detect must be cheap and side-effect-free.
     """
     from app.services.backup.project_import import (
         _parse_project_metadata,
         _read_metadata_yaml,
     )
 
+    empty = {
+        "title": None,
+        "subtitle": None,
+        "author": None,
+        "language": None,
+        "has_html_description": False,
+        "has_backpage_description": False,
+        "has_backpage_author_bio": False,
+        "has_custom_css": False,
+    }
     try:
         raw = _read_metadata_yaml(project_root / "config" / "metadata.yaml")
     except Exception:
-        return {"title": None, "author": None, "language": None}
+        return empty
     meta = _parse_project_metadata(raw, project_root)
     return {
         "title": meta.title,
+        "subtitle": meta.subtitle,
         "author": meta.author,
         "language": meta.language,
+        "has_html_description": bool(
+            meta.html_description and meta.html_description.strip()
+        ),
+        "has_backpage_description": bool(
+            meta.backpage_description and meta.backpage_description.strip()
+        ),
+        "has_backpage_author_bio": bool(
+            meta.backpage_author_bio and meta.backpage_author_bio.strip()
+        ),
+        "has_custom_css": bool(meta.custom_css and meta.custom_css.strip()),
     }
 
 

@@ -117,23 +117,51 @@ def test_custom_css_lands_on_book_row(client: TestClient) -> None:
 # --- DetectedProject (preview) side ---
 
 
-def test_detected_project_currently_has_no_subtitle_field(
+def test_detect_surfaces_subtitle_to_the_wizard(client: TestClient) -> None:
+    """DetectedProject.subtitle is populated at detect-time so the
+    preview panel can show it before import. Closes Bug 2."""
+    result = _import(client)
+    assert result["detect"]["subtitle"] == "A Subtitle Appears"
+
+
+def test_detect_surfaces_has_flags_for_long_form_metadata(
     client: TestClient,
 ) -> None:
-    """Pin the current state: DetectedProject does NOT carry
-    subtitle / backpage_* / custom_css, so the wizard preview
-    cannot show them even though import does persist them. This
-    is the user-reported bug: the preview panel hides fields
-    the DB actually imports, and the user interprets 'not in
-    preview' as 'not imported'.
-
-    Failing this test means DetectedProject grew one of these
-    fields and the preview panel should render it - update the
-    assertion to the new contract."""
+    """Long-form fields (HTML description, back-cover, CSS) are too
+    big to render in the modal; the preview panel renders a badge
+    per non-empty field based on these booleans. Closes Bug 3."""
     result = _import(client)
     detected = result["detect"]
-    assert "subtitle" not in detected
-    assert "backpage_description" not in detected
-    assert "backpage_author_bio" not in detected
-    assert "html_description" not in detected
-    assert "custom_css" not in detected
+    assert detected["has_html_description"] is True
+    assert detected["has_backpage_description"] is True
+    assert detected["has_backpage_author_bio"] is True
+    assert detected["has_custom_css"] is True
+
+
+def test_detect_flags_absent_fields_as_false(client: TestClient) -> None:
+    """When the WBT project has no back-cover / CSS, the has_*
+    flags must be False so the preview does not render stale
+    badges."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "book/config/metadata.yaml",
+            "title: Sparse Book\nauthor: T\nlang: en\n",
+        )
+        zf.writestr(
+            "book/manuscript/chapters/01-ch.md", "# C1\n\nBody.\n"
+        )
+    detect = client.post(
+        "/api/import/detect",
+        files=[("files", ("sparse.zip", buf.getvalue(), "application/zip"))],
+    )
+    assert detect.status_code == 200
+    detected = detect.json()["detected"]
+    assert detected["subtitle"] is None
+    assert detected["has_html_description"] is False
+    assert detected["has_backpage_description"] is False
+    assert detected["has_backpage_author_bio"] is False
+    assert detected["has_custom_css"] is False
