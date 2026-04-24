@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "bibliogon-plugin-git-sync"
+version = "1.0.0"
+description = "Import plugin for write-book-template git repositories. Clones a public git URL, stages the repo, and delegates to the core WbtImportHandler."
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_git_sync"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.135.0"
+gitpython = "^3.1.40"
+# First plugin-to-plugin dependency in the project. plugin-export
+# is declared here so the conversion utilities (markdown <-> TipTap)
+# are importable from this plugin. Phase 1 does not yet exercise
+# this dependency at runtime; PGS-02 (export-to-repo) will use
+# bibliogon_export.tiptap_to_md for serializing books back out.
+# The develop/path form works in the monorepo; a PyPI publication
+# of this plugin would need to pin a published plugin-export.
+bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pytest-cov = "^7.1.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+git-sync = "bibliogon_git_sync.plugin:GitSyncPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

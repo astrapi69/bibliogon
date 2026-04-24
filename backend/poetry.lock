@@ -344,6 +344,26 @@ type = "directory"
 url = "../plugins/bibliogon-plugin-getstarted"
 
 [[package]]
+name = "bibliogon-plugin-git-sync"
+version = "1.0.0"
+description = "Import plugin for write-book-template git repositories. Clones a public git URL, stages the repo, and delegates to the core WbtImportHandler."
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
+fastapi = "^0.135.0"
+gitpython = "^3.1.40"
+pluginforge = "^0.5.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-git-sync"
+
+[[package]]
 name = "bibliogon-plugin-grammar"
 version = "1.0.0"
 description = "Grammar check plugin for Bibliogon via LanguageTool"
@@ -8608,4 +8628,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "99206660c30ce2c3b9a5280b134077e46ac1a0ad12a7fdad320a4009b4bae992"
+content-hash = "60cb27e6683ce02cac88809811d5da6c48624f49f16b3204ce65e417ca016336"
