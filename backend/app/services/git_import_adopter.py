@@ -58,6 +58,7 @@ def sanitize_git_dir(git_dir: Path) -> list[str]:
 
     # --- 1 + 2: strip credential sections from config ---
     config_path = git_dir / "config"
+    parser: configparser.ConfigParser | None = None
     if config_path.is_file():
         parser = configparser.ConfigParser(strict=False, interpolation=None)
         try:
@@ -224,8 +225,10 @@ def adopt_git_dir(
         # book has no remote until the user configures one via the
         # Git-Backup dialog.
         adopted = git.Repo(target)
-        if "origin" in [r.name for r in adopted.remotes]:
-            adopted.delete_remote("origin")
+        for remote in list(adopted.remotes):
+            if remote.name == "origin":
+                adopted.delete_remote(remote)
+                break
 
     return {
         "sanitize_actions": sanitize_actions,

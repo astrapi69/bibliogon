@@ -71,4 +71,3 @@ Core import orchestrator is the headline feature. Eight CIO tasks land across ba
 - **Backend +300 tests.** Net increase: ~730 → 1000+. Core import orchestrator (90+), CIO-07 inspector (23) + adopter (12) + execute-adopt (13) + backfill (7), CIO-06 field-selection (32+), CIO-08 multi-cover (5) + author-assets (6) + CSS/cover propagation (5), WBT handler (20+), duplicate flows + overrides + source-ids (18), git-URL plugin (23), markdown folder (14).
 - **Frontend Vitest +38.** 475 → 513. Wizard step components, PreviewPanel sections (covers, author-assets, git adoption, author datalist), `useAuthorChoices`, `AuthorAssetsPanel`, metadata editor author+language fields, ExecutingStep 5-arg call.
 - **Playwright smoke:** new fixtures + `.bgb` import happy path + git URL import happy path.
-

@@ -271,7 +271,7 @@ def _restore_single_book(session: Session, bgb_path: Path) -> str:
             book_json = child / "book.json"
             if not book_json.exists():
                 continue
-            book_id = json.loads(book_json.read_text(encoding="utf-8"))["id"]
+            book_id = str(json.loads(book_json.read_text(encoding="utf-8"))["id"])
             if _restore_book_from_dir(session, child):
                 return book_id
         raise _BgbInvalid("Backup has no restorable book.json.")

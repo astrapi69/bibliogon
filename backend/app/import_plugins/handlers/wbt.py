@@ -148,7 +148,7 @@ class WbtImportHandler:
                 _hard_delete_book(session, existing_book_id)
 
             result = _import_project_root(session, project_root)
-            book_id = result["book_id"]
+            book_id = str(result["book_id"])
 
             # _import_project_root commits at the end; reopen the book
             # to apply overrides in a fresh transaction via the shared

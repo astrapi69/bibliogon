@@ -17,9 +17,12 @@ from pluginforge import BasePlugin, PluginManager
 from pluginforge.config import load_i18n
 
 # Side-effect import: register core import handlers with the plugin
-# registry before any request hits the orchestrator.
-import app.import_plugins.handlers  # noqa: F401, E402
+# registry before any request hits the orchestrator. Aliased so the
+# bare top-level `app` package name does not shadow the `app = FastAPI(
+# ...)` assignment below (mypy attr-defined cascade otherwise).
+from app import import_plugins as _register_core_import_handlers  # noqa: F401, E402
 from app.hookspecs import BibliogonHookSpec
+from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F401, E402
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import (
     assets,
@@ -201,7 +204,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bibliogon",
     description="Open-source book authoring platform.",
-    version="0.21.0",
+    version="0.22.0",
     lifespan=lifespan,
     docs_url="/api/docs" if DEBUG else None,
     redoc_url="/api/redoc" if DEBUG else None,

@@ -503,7 +503,7 @@ def analyze_conflict(book_id: str, db: Session) -> dict[str, Any]:
     - ``merge_in_progress``: True when ``.git/MERGE_HEAD`` exists
     """
     _get_book_or_raise(book_id, db)
-    base = {
+    base: dict[str, Any] = {
         "state": "no_remote",
         "classification": None,
         "local_files": [],
@@ -830,7 +830,10 @@ def _count_uncommitted(repo: git.Repo) -> int:
     does not exist yet (empty repo), counts all files as untracked.
     """
     if not repo.head.is_valid():
-        return len(list(Path(repo.working_tree_dir).rglob("*")))
+        working_dir = repo.working_tree_dir
+        if working_dir is None:
+            return 0
+        return len(list(Path(working_dir).rglob("*")))
     staged = len(repo.index.diff("HEAD"))
     unstaged = len(repo.index.diff(None))
     untracked = len(repo.untracked_files)
@@ -942,7 +945,7 @@ def _render_chapter_markdown(title: str | None, tiptap_doc: Any) -> str | None:
     commit — JSON is the canonical format, Markdown is advisory.
     """
     try:
-        from bibliogon_export.tiptap_to_md import tiptap_to_markdown
+        from bibliogon_export.tiptap_to_md import tiptap_to_markdown  # type: ignore[import-untyped]
     except ImportError:
         logger_ = logging.getLogger(__name__)
         logger_.info("bibliogon_export unavailable; skipping Markdown side-file")
@@ -956,7 +959,7 @@ def _render_chapter_markdown(title: str | None, tiptap_doc: Any) -> str | None:
         logger_.warning("tiptap_to_markdown failed: %s", exc)
         return None
     header = f"# {title.strip()}\n\n" if title and title.strip() else ""
-    return header + body.rstrip() + "\n"
+    return str(header + body.rstrip() + "\n")
 
 
 def _safe_load_json(raw: str | None) -> Any:
