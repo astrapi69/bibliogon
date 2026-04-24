@@ -68,6 +68,17 @@ navigation:
     icon: bookmark
 
   - title:
+      de: Import
+      en: Import
+    slug: import
+    icon: upload
+    children:
+      - title:
+          de: Git-URL
+          en: Git URL
+        slug: import/git-url
+
+  - title:
       de: Installation
       en: Installation
     slug: installation

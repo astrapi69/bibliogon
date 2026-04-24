@@ -276,3 +276,9 @@ faq:
     answer:
       de: "Den Vorlagen-Picker oeffnen (Buch oder Kapitel). Eigene Vorlagen haben einen Muelleimer-Button in der Kartenkopfzeile. Klick darauf, Bestaetigungsdialog, fertig. Mitgelieferte Vorlagen (mit Schloss-Badge) haben diesen Button nicht und koennen nicht geloescht werden; der Server antwortet mit 403."
       en: "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+  - question:
+      de: "Wie importiere ich ein Buch aus einem Git-Repository?"
+      en: "How do I import a book from a git repository?"
+    answer:
+      de: "Dashboard -> Importieren. Oben im Assistenten gibt es ein Feld 'Import aus einer Git-URL': URL einfuegen, 'Klonen + Importieren' klicken. Bibliogon klont das Repo in ein temporaeres Verzeichnis und importiert es wie ein write-book-template-Projekt. Aktuell nur oeffentliche HTTPS-Repos; Authentifizierung, Branch-Auswahl und Smart-Merge folgen in spaeteren Phasen."
+      en: "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
