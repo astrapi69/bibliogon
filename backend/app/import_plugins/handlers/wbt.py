@@ -134,6 +134,7 @@ class WbtImportHandler:
         overrides: dict,
         duplicate_action: str = "create",
         existing_book_id: str | None = None,
+        git_adoption: str | None = None,
     ) -> str:
         if duplicate_action == "cancel":
             raise _DuplicateCancelled()
@@ -164,6 +165,13 @@ class WbtImportHandler:
             apply_book_overrides(session, book_id, overrides)
             if overrides:
                 session.commit()
+
+            # Git adoption is post-DB because the adopter writes to
+            # uploads/<book_id>/.git and needs the Book row to exist.
+            _maybe_adopt_git(
+                project_root, book_id, git_adoption, session
+            )
+
             return book_id
         except Exception:
             session.rollback()
@@ -173,6 +181,36 @@ class WbtImportHandler:
 
 
 # --- Helpers ---
+
+
+def _maybe_adopt_git(
+    project_root: Path,
+    book_id: str,
+    git_adoption: str | None,
+    session: Session,
+) -> None:
+    """Run git_import_adopter when user picked adopt_*.
+
+    Deferred import so the plugin stays testable without loading
+    the adopter module. None + "start_fresh" are both no-ops; the
+    router already validated that adopt_* implies detected.git_repo
+    is present, so the git_dir existence check here is defensive.
+    """
+    if not git_adoption or git_adoption == "start_fresh":
+        return
+    git_dir = project_root / ".git"
+    if not git_dir.is_dir():
+        return
+
+    from app.services.git_import_adopter import adopt_git_dir
+
+    preserve_remote = git_adoption == "adopt_with_remote"
+    adopt_git_dir(
+        git_dir=git_dir,
+        target_book_id=book_id,
+        preserve_remote=preserve_remote,
+        db=session,
+    )
 
 
 def _sha256_of_file(path: Path) -> str:

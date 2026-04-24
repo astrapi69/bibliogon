@@ -166,6 +166,7 @@ class ImportPlugin(Protocol):
         overrides: dict,
         duplicate_action: str = "create",
         existing_book_id: str | None = None,
+        git_adoption: str | None = None,
     ) -> str:
         """Commit the import. Returns the new (or replaced) book_id.
 
@@ -177,5 +178,10 @@ class ImportPlugin(Protocol):
         - ``duplicate_action``: ``"create"`` | ``"overwrite"`` | ``"cancel"``.
           If ``"overwrite"``, ``existing_book_id`` must be set and the
           plugin performs a transactional replace.
+        - ``git_adoption``: ``None`` | ``"start_fresh"`` |
+          ``"adopt_with_remote"`` | ``"adopt_without_remote"``. When
+          ``detected.git_repo`` is present, the handler calls
+          :mod:`app.services.git_import_adopter` accordingly.
+          Handlers without git-adoption support can ignore this.
         """
         ...

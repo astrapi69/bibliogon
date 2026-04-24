@@ -75,6 +75,14 @@ class ExecuteRequest(BaseModel):
     overrides: dict = Field(default_factory=dict)
     duplicate_action: Literal["create", "overwrite", "cancel"] = "create"
     existing_book_id: str | None = None
+    #: When detected.git_repo.present is True, the user picks one of:
+    #: "start_fresh" (default; ignore .git/),
+    #: "adopt_with_remote" (copy .git/ + adopt remote URL),
+    #: "adopt_without_remote" (copy .git/, strip remote).
+    #: None is equivalent to "start_fresh".
+    git_adoption: Literal[
+        "start_fresh", "adopt_with_remote", "adopt_without_remote"
+    ] | None = None
 
 
 class ExecuteResponse(BaseModel):
@@ -257,6 +265,19 @@ def execute_import(
             detail=str(exc),
         ) from exc
 
+    # Reject git_adoption=adopt_* when the source carries no .git/;
+    # handler would silently no-op which is worse than a 400.
+    if payload.git_adoption and payload.git_adoption.startswith("adopt"):
+        if detected.git_repo is None or not detected.git_repo.present:
+            _drop_staged(payload.temp_ref)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "git_adoption=adopt_* requires detected.git_repo.present; "
+                    "source has no .git/ directory."
+                ),
+            )
+
     try:
         book_id = plugin.execute(
             str(staging_path),
@@ -264,6 +285,7 @@ def execute_import(
             payload.overrides,
             duplicate_action=payload.duplicate_action,
             existing_book_id=payload.existing_book_id,
+            git_adoption=payload.git_adoption,
         )
     except MandatoryFieldMissing as exc:
         _drop_staged(payload.temp_ref)

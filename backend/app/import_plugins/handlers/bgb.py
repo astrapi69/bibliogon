@@ -104,6 +104,7 @@ class BgbImportHandler:
         overrides: dict,
         duplicate_action: str = "create",
         existing_book_id: str | None = None,
+        git_adoption: str | None = None,
     ) -> str:
         if duplicate_action == "cancel":
             raise _DuplicateCancelled()
