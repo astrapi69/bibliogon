@@ -18,14 +18,26 @@ from app.import_plugins.protocol import (
     DetectedProject,
     ImportPlugin,
 )
-from app.import_plugins.registry import find_handler, list_plugins, register
+from app.import_plugins.registry import (
+    RemoteSourceHandler,
+    find_handler,
+    find_remote_handler,
+    list_plugins,
+    list_remote_handlers,
+    register,
+    register_remote_handler,
+)
 
 __all__ = [
     "DetectedAsset",
     "DetectedChapter",
     "DetectedProject",
     "ImportPlugin",
+    "RemoteSourceHandler",
     "find_handler",
+    "find_remote_handler",
     "list_plugins",
+    "list_remote_handlers",
     "register",
+    "register_remote_handler",
 ]
