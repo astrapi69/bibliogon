@@ -954,6 +954,9 @@ ui:
     privacy: "Nenhum conteudo de livro, senha ou chave de licenca e enviado."
     show_preview: "Mostrar pre-visualizacao"
     hide_preview: "Ocultar pre-visualizacao"
+    copy_preview: "Copiar pre-visualizacao"
+    copy_success: "Copiado!"
+    copy_failed: "Falha ao copiar"
     submit: "Criar issue no GitHub"
   help:
     title: "Ajuda"

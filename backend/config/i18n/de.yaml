@@ -749,6 +749,9 @@ ui:
     privacy: "Keine Buch-Inhalte, keine Passwörter, keine Lizenz-Keys werden jemals gesendet."
     show_preview: "Vorschau anzeigen"
     hide_preview: "Vorschau ausblenden"
+    copy_preview: "Vorschau kopieren"
+    copy_success: "Kopiert!"
+    copy_failed: "Kopieren fehlgeschlagen"
     submit: "Issue auf GitHub erstellen"
   toolbar:
     bold: "Fett"

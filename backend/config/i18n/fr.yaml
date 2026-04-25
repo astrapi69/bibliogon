@@ -308,6 +308,9 @@ ui:
     privacy: "Aucun contenu de livre, mot de passe ou cle de licence n'est envoye."
     show_preview: "Afficher l'apercu"
     hide_preview: "Masquer l'apercu"
+    copy_preview: "Copier l'apercu"
+    copy_success: "Copie!"
+    copy_failed: "Echec de la copie"
     submit: "Creer une issue sur GitHub"
   formats:
     epub: "EPUB"

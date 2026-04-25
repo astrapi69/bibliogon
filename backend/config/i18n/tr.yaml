@@ -308,6 +308,9 @@ ui:
     privacy: "Kitap icerigi, sifre veya lisans anahtari gonderilmez."
     show_preview: "Onizlemeyi goster"
     hide_preview: "Onizlemeyi gizle"
+    copy_preview: "Onizlemeyi kopyala"
+    copy_success: "Kopyalandi!"
+    copy_failed: "Kopyalama basarisiz"
     submit: "GitHub'da issue olustur"
   formats:
     epub: "EPUB"

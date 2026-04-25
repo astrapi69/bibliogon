@@ -308,6 +308,9 @@ ui:
     privacy: "No se envian contenidos de libros, contrasenas ni claves de licencia."
     show_preview: "Mostrar vista previa"
     hide_preview: "Ocultar vista previa"
+    copy_preview: "Copiar vista previa"
+    copy_success: "¡Copiado!"
+    copy_failed: "Error al copiar"
     submit: "Crear issue en GitHub"
   formats:
     epub: "EPUB"

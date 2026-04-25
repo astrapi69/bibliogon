@@ -138,4 +138,46 @@ describe("ErrorReportDialog", () => {
     renderDialog()
     expect(screen.getByText(/Keine Buch-Inhalte/)).toBeTruthy()
   })
+
+  it("copy preview button writes the issue body to the clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      value: {writeText},
+      configurable: true,
+    })
+    renderDialog({errorMessage: "Boom"})
+    fireEvent.click(screen.getByTestId("error-report-copy-preview"))
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalled())
+    const arg = writeText.mock.calls[0][0] as string
+    expect(arg).toContain("Boom")
+    expect(arg).toContain("Fehlerbeschreibung")
+  })
+
+  it("copy preview button surfaces success state for ~1.5s", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {writeText: vi.fn().mockResolvedValue(undefined)},
+      configurable: true,
+    })
+    renderDialog()
+    fireEvent.click(screen.getByTestId("error-report-copy-preview"))
+    await vi.waitFor(() =>
+      expect(
+        screen.getByTestId("error-report-copy-preview").textContent,
+      ).toContain("Kopiert!"),
+    )
+  })
+
+  it("copy preview button surfaces failure state when clipboard rejects", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {writeText: vi.fn().mockRejectedValue(new Error("denied"))},
+      configurable: true,
+    })
+    renderDialog()
+    fireEvent.click(screen.getByTestId("error-report-copy-preview"))
+    await vi.waitFor(() =>
+      expect(
+        screen.getByTestId("error-report-copy-preview").textContent,
+      ).toContain("fehlgeschlagen"),
+    )
+  })
 })

@@ -1,9 +1,10 @@
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import {Bug, ChevronDown, ChevronUp, X} from "lucide-react";
+import {Bug, Check, ChevronDown, ChevronUp, Copy, X} from "lucide-react";
 
 import {ApiError} from "../api/client";
 import {eventRecorder, formatEventLog} from "../utils/eventRecorder";
+import {copyToClipboard} from "../utils/clipboard";
 import {useI18n} from "../hooks/useI18n";
 
 const ISSUES_URL = "https://github.com/astrapi69/bibliogon/issues/new";
@@ -30,6 +31,31 @@ export default function ErrorReportDialog({open, onClose, errorMessage, apiError
     const [includeHistory, setIncludeHistory] = useState(true);
     const [showHistory, setShowHistory] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">(
+        "idle",
+    );
+    const copyTimerRef = useRef<number | null>(null);
+
+    useEffect(
+        () => () => {
+            if (copyTimerRef.current !== null) {
+                window.clearTimeout(copyTimerRef.current);
+            }
+        },
+        [],
+    );
+
+    const handleCopyPreview = async () => {
+        const ok = await copyToClipboard(issueBody);
+        setCopyState(ok ? "ok" : "fail");
+        if (copyTimerRef.current !== null) {
+            window.clearTimeout(copyTimerRef.current);
+        }
+        copyTimerRef.current = window.setTimeout(() => {
+            setCopyState("idle");
+            copyTimerRef.current = null;
+        }, 1500);
+    };
 
     const events = eventRecorder.getAll();
     const historyLog = formatEventLog(events);
@@ -147,6 +173,24 @@ export default function ErrorReportDialog({open, onClose, errorMessage, apiError
                             {showPreview
                                 ? t("ui.error_report.hide_preview", "Vorschau ausblenden")
                                 : t("ui.error_report.show_preview", "Vorschau anzeigen")}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={handleCopyPreview}
+                            data-testid="error-report-copy-preview"
+                            aria-label={t(
+                                "ui.error_report.copy_preview",
+                                "Vorschau kopieren",
+                            )}
+                            style={{display: "inline-flex", alignItems: "center", gap: 4}}
+                        >
+                            {copyState === "ok" ? <Check size={14}/> : <Copy size={14}/>}
+                            {copyState === "ok"
+                                ? t("ui.error_report.copy_success", "Kopiert!")
+                                : copyState === "fail"
+                                    ? t("ui.error_report.copy_failed", "Kopieren fehlgeschlagen")
+                                    : t("ui.error_report.copy_preview", "Vorschau kopieren")}
                         </button>
                         <button type="button" className="btn btn-ghost" onClick={onClose}>
                             {t("ui.common.cancel", "Abbrechen")}

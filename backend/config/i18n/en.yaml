@@ -749,6 +749,9 @@ ui:
     privacy: "No book content, no passwords, no license keys are ever sent."
     show_preview: "Show preview"
     hide_preview: "Hide preview"
+    copy_preview: "Copy preview"
+    copy_success: "Copied!"
+    copy_failed: "Copy failed"
     submit: "Create issue on GitHub"
   toolbar:
     bold: "Bold"

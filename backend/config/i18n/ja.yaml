@@ -954,6 +954,9 @@ ui:
     privacy: "書籍の内容、パスワード、ライセンスキーは送信されません。"
     show_preview: "プレビューを表示"
     hide_preview: "プレビューを非表示"
+    copy_preview: "プレビューをコピー"
+    copy_success: "コピーしました！"
+    copy_failed: "コピーに失敗しました"
     submit: "GitHubでissueを作成"
   help:
     title: "ヘルプ"
