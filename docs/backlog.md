@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-25
+Last updated: 2026-04-25 (TD-01 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -59,6 +59,20 @@ release pass.
 
 ---
 
+## Recently closed
+
+- **TD-01** (order-dependent test fix): closed 2026-04-25 as
+  already resolved. Investigation showed the
+  `test_detect_surfaces_git_repo_when_zip_has_dot_git` failure
+  was the `_MockRepo` leak from `test_import_git_endpoint`,
+  fixed in `c40cbb2` ("fix(tests): unblock full-suite backend
+  tests for v0.22.0 release") on 2026-04-24 by routing the
+  monkeypatch through `monkeypatch.setattr`. Verified: 5/5
+  consecutive full-suite runs green (1069 passed, 1 skipped,
+  ~40-65s).
+
+---
+
 ## Top 10 priorities (ranked)
 
 Ranked by user-value, deadline pressure, follow-up scope from
@@ -87,31 +101,21 @@ recently-shipped work.
   PGS-02 follow-up in v0.23.0 release notes.
 - **Status**: scoped, not started.
 
-### 3. Order-dependent test fix
-
-- **ID**: TD-01 (new)
-- **Effort**: 1-2h
-- **Why rank 3**: technical debt, blocks confident future test
-  suite work. Specific failure:
-  `test_detect_surfaces_git_repo_when_zip_has_dot_git` only fails
-  in certain run orders (suspect shared staged-temp dir state).
-- **Status**: known, not investigated.
-
-### 4. audiobook + translation plugin coverage in CI
+### 3. audiobook + translation plugin coverage in CI
 
 - **ID**: PS-09-FU-01 (new)
 - **Effort**: S (~1-2h)
-- **Why rank 4**: closes the gap noted in the maintenance section
+- **Why rank 3**: closes the gap noted in the maintenance section
   of ROADMAP. Both plugins run in `make test` but neither in
   `coverage.yml` matrix. Pair with `ci.yml` matrix expansion if
   not already done.
 - **Status**: open.
 
-### 5. Multi-book wizard finishing work
+### 4. Multi-book wizard finishing work
 
 - **ID**: CIO-08-FU-01 (new, deferred from a809943)
 - **Effort**: 3-4h
-- **Why rank 5**: cleaner UX in the multi-book BGB import path.
+- **Why rank 4**: cleaner UX in the multi-book BGB import path.
   Two sub-items:
   - Full `useMachine` migration of `ImportWizardModal` (currently
     a partial XState v5 graph alongside legacy state).
@@ -119,56 +123,67 @@ recently-shipped work.
     instead of the single "Done" terminal.
 - **Status**: deferred during PGS work.
 
-### 6. PS-13 - "Save as new chapter" in ConflictResolutionDialog
+### 5. PS-13 - "Save as new chapter" in ConflictResolutionDialog
 
 - **ID**: PS-13
 - **Effort**: 2-3h
-- **Why rank 6**: real UX gap in the 409 conflict flow. Needs
+- **Why rank 5**: real UX gap in the 409 conflict flow. Needs
   new endpoint (`POST /api/books/{id}/chapters/fork`), 8-language
   i18n, E2E coverage. Position-ordering scope discussion before
   implementation.
 - **Status**: tracked in ROADMAP, no design pinned.
 
-### 7. PGS-03 follow-up: mark_conflict + rename detection
+### 6. PGS-03 follow-up: mark_conflict + rename detection
 
 - **ID**: PGS-03-FU-01 (new)
 - **Effort**: M (~6-8h split)
-- **Why rank 7**: out-of-MVP-scope items from PGS-03. Useful
+- **Why rank 6**: out-of-MVP-scope items from PGS-03. Useful
   once a real translation workflow exercises the smart-merge
   path. `mark_conflict` writes both versions as a visible
   conflict block in the chapter content; rename detection
   collapses delete+add pairs.
 - **Status**: deferred at MVP cut.
 
-### 8. PGS-04 follow-up: cross-language conflict UI
+### 7. PGS-04 follow-up: cross-language conflict UI
 
 - **ID**: PGS-04-FU-01 (new)
 - **Effort**: M
-- **Why rank 8**: deferred from PGS-04. Two diverging language
+- **Why rank 7**: deferred from PGS-04. Two diverging language
   branches with incompatible chapter structure currently surface
   as silent skip + log. UI needed when first user hits this.
 - **Status**: deferred at MVP cut. Triggered by user report.
 
-### 9. Monitor v0.22.0 → v0.22.1 upgrade feedback
+### 8. Monitor v0.22.0 → v0.22.1 upgrade feedback
 
 - **ID**: MAINT-01
 - **Effort**: 0 code (review only)
-- **Why rank 9**: scheduled review on 2026-05-09 (14 days out).
+- **Why rank 8**: scheduled review on 2026-05-09 (14 days out).
   No telemetry; drift would surface as bug reports. If silent,
   close. If reports, audit other `Mapped` columns added without
   Alembic revisions.
 - **Status**: open, time-bound.
 
-### 10. AR-01 - article authoring validation log
+### 9. AR-01 - article authoring validation log
 
 - **ID**: AR-01
 - **Effort**: 0 new code; observation only
-- **Why rank 10**: validates whether article-publication workflow
+- **Why rank 9**: validates whether article-publication workflow
   warrants a Bibliogon feature at all. 3-5 cross-posting workflows
   logged in `docs/journal/article-workflow-observations.md`. Drives
   AR-02 architecture decision.
 - **Status**: open log file; fill as part of normal release-article
   publication.
+
+### 10. DOC-03 - plugin author docs refresh
+
+- **ID**: DOC-03
+- **Effort**: M (~3h)
+- **Why rank 10**: `docs/help/{de,en}/developers/plugins.md` covers
+  the PGS-01 patterns (source adapter, two registries) but not
+  PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
+  side-files via lazy import). Update before next plugin author
+  arrives.
+- **Status**: open.
 
 ---
 
@@ -205,11 +220,8 @@ recently-shipped work.
 
 ### Quality / Polish
 
-- **TD-01**: order-dependent test fix
-  (`test_detect_surfaces_git_repo_when_zip_has_dot_git`). See
-  top-10 #3.
 - **PS-09-FU-01**: audiobook + translation plugin CI coverage.
-  See top-10 #4.
+  See top-10 #3.
 - **Modal sticky-footer audit beyond wizard**: v0.22.0 covered
   13 dialog modals. Confirm whether any non-wizard modal still
   scrolls without sticky footer. Effort: S audit + per-modal fix.
