@@ -15,6 +15,7 @@ import {
     ApiError,
     GitSyncCommitResult,
     GitSyncMappingStatus,
+    GitSyncUnifiedCommitResult,
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
@@ -46,6 +47,9 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
     const [lastResult, setLastResult] = useState<GitSyncCommitResult | null>(
         null,
     );
+    const [unifiedResult, setUnifiedResult] =
+        useState<GitSyncUnifiedCommitResult | null>(null);
+    const [unifying, setUnifying] = useState(false);
     const [showDiff, setShowDiff] = useState(false);
 
     useEffect(() => {
@@ -126,6 +130,63 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
         }
     }
 
+    async function handleUnifiedCommit(): Promise<void> {
+        if (!status?.mapped) return;
+        setUnifying(true);
+        setLastResult(null);
+        setUnifiedResult(null);
+        try {
+            const result = await api.gitSync.unifiedCommit(bookId, {
+                message: message.trim() || null,
+                push_plugin: push,
+            });
+            setUnifiedResult(result);
+            // Per-subsystem status defines the toast tier - if either side
+            // failed, surface a single warning toast with both lines so
+            // the user does not have to read the inline summary block.
+            const anyFailed =
+                result.core_git.status === "failed" ||
+                result.plugin_git_sync.status === "failed";
+            if (anyFailed) {
+                notify.warning(
+                    t(
+                        "ui.git_sync.unified_partial",
+                        "Commit teils erfolgreich. Details unten.",
+                    ),
+                );
+            } else {
+                notify.success(
+                    t(
+                        "ui.git_sync.unified_success",
+                        "Commit auf beiden Seiten erstellt.",
+                    ),
+                );
+            }
+            await refresh();
+        } catch (err) {
+            if (err instanceof ApiError) {
+                if (err.status === 503) {
+                    notify.warning(
+                        t(
+                            "ui.git_sync.unified_lock_busy",
+                            "Anderer Commit laeuft gerade. Bitte kurz warten.",
+                        ),
+                    );
+                } else {
+                    notify.error(
+                        t(
+                            "ui.git_sync.unified_error",
+                            "Unified-Commit fehlgeschlagen.",
+                        ),
+                        err,
+                    );
+                }
+            }
+        } finally {
+            setUnifying(false);
+        }
+    }
+
     return (
         <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
             <Dialog.Portal>
@@ -162,6 +223,9 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                     ) : (
                         <>
                             <MappingSummary status={status} />
+                            {status.core_git_initialized && (
+                                <UnifiedCommitBanner />
+                            )}
                             {status.dirty === null ? (
                                 <CloneMissingNotice />
                             ) : (
@@ -174,6 +238,11 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                                         onPushChange={setPush}
                                         committing={committing}
                                         onSubmit={handleCommit}
+                                        unifiedAvailable={
+                                            status.core_git_initialized
+                                        }
+                                        unifying={unifying}
+                                        onUnifiedSubmit={handleUnifiedCommit}
                                     />
                                     <CheckUpstreamButton
                                         onClick={() => setShowDiff(true)}
@@ -182,6 +251,9 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                             )}
                             {lastResult && (
                                 <LastResult result={lastResult} />
+                            )}
+                            {unifiedResult && (
+                                <UnifiedResult result={unifiedResult} />
                             )}
                         </>
                     )}
@@ -319,6 +391,9 @@ function CommitForm({
     onPushChange,
     committing,
     onSubmit,
+    unifiedAvailable = false,
+    unifying = false,
+    onUnifiedSubmit,
 }: {
     dirty: boolean;
     message: string;
@@ -327,6 +402,9 @@ function CommitForm({
     onPushChange: (next: boolean) => void;
     committing: boolean;
     onSubmit: () => void;
+    unifiedAvailable?: boolean;
+    unifying?: boolean;
+    onUnifiedSubmit?: () => void;
 }) {
     const { t } = useI18n();
     return (
@@ -395,9 +473,9 @@ function CommitForm({
             <div className="dialog-footer">
                 <button
                     type="button"
-                    className="btn btn-primary"
+                    className={`btn ${unifiedAvailable ? "btn-secondary" : "btn-primary"}`}
                     onClick={onSubmit}
-                    disabled={committing}
+                    disabled={committing || unifying}
                     data-testid="git-sync-commit-btn"
                 >
                     {committing ? (
@@ -407,8 +485,155 @@ function CommitForm({
                     )}
                     {t("ui.git_sync.commit_button", "Commit erstellen")}
                 </button>
+                {unifiedAvailable && onUnifiedSubmit && (
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={onUnifiedSubmit}
+                        disabled={committing || unifying}
+                        data-testid="git-sync-unified-commit-btn"
+                        title={t(
+                            "ui.git_sync.unified_commit_tooltip",
+                            "Commit gleichzeitig in Bibliogon-Git und externem Repo",
+                        )}
+                    >
+                        {unifying ? (
+                            <Loader2 size={14} className="spin" />
+                        ) : (
+                            <GitBranch size={14} />
+                        )}
+                        {t(
+                            "ui.git_sync.unified_commit_button",
+                            "Commit ueberall",
+                        )}
+                    </button>
+                )}
             </div>
         </div>
+    );
+}
+
+
+function UnifiedCommitBanner() {
+    const { t } = useI18n();
+    return (
+        <div
+            data-testid="git-sync-unified-banner"
+            style={{
+                marginTop: 6,
+                padding: 10,
+                background: "var(--accent-light, var(--bg-card))",
+                border: "1px solid var(--accent)",
+                borderRadius: 6,
+                fontSize: "0.8125rem",
+                color: "var(--accent-hover)",
+            }}
+        >
+            <GitBranch
+                size={12}
+                style={{ verticalAlign: -1, marginRight: 4 }}
+            />
+            {t(
+                "ui.git_sync.unified_banner",
+                "Dieses Buch hat zusaetzlich Bibliogon-Git aktiv. 'Commit ueberall' macht beide Commits in einem Schritt.",
+            )}
+        </div>
+    );
+}
+
+
+function UnifiedResult({ result }: { result: GitSyncUnifiedCommitResult }) {
+    const { t } = useI18n();
+    const renderRow = (
+        label: string,
+        sub: GitSyncUnifiedCommitResult["core_git"],
+        testid: string,
+    ) => (
+        <li
+            data-testid={testid}
+            data-status={sub.status}
+            style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                padding: "4px 0",
+            }}
+        >
+            <strong style={{ minWidth: 110 }}>{label}:</strong>
+            <span
+                style={{
+                    fontSize: "0.75rem",
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                    background:
+                        sub.status === "ok"
+                            ? "var(--success-light, var(--bg-card))"
+                            : sub.status === "failed"
+                              ? "var(--accent-light)"
+                              : "var(--bg-card)",
+                    color:
+                        sub.status === "ok"
+                            ? "var(--success, #16a34a)"
+                            : sub.status === "failed"
+                              ? "var(--accent-hover)"
+                              : "var(--text-muted)",
+                    border: "1px solid var(--border)",
+                }}
+            >
+                {sub.status}
+            </span>
+            {sub.commit_sha && (
+                <code
+                    style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontSize: "0.6875rem",
+                        color: "var(--text-muted)",
+                    }}
+                >
+                    {sub.commit_sha.slice(0, 12)}
+                </code>
+            )}
+            {sub.detail && (
+                <span
+                    style={{
+                        fontSize: "0.6875rem",
+                        color: "var(--text-muted)",
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                >
+                    {sub.detail}
+                </span>
+            )}
+        </li>
+    );
+
+    return (
+        <ul
+            data-testid="git-sync-unified-result"
+            style={{
+                listStyle: "none",
+                padding: 10,
+                margin: "12px 0 0 0",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                fontSize: "0.8125rem",
+            }}
+        >
+            {renderRow(
+                t("ui.git_sync.subsystem_core", "Bibliogon-Git"),
+                result.core_git,
+                "git-sync-unified-row-core",
+            )}
+            {renderRow(
+                t("ui.git_sync.subsystem_plugin", "Externes Repo"),
+                result.plugin_git_sync,
+                "git-sync-unified-row-plugin",
+            )}
+        </ul>
     );
 }
 

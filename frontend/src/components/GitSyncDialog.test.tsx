@@ -23,11 +23,16 @@ vi.mock("../hooks/useI18n", () => ({
 const mockStatus = vi.fn();
 const mockCommit = vi.fn();
 
+const mockUnifiedCommit = vi.fn();
+
 vi.mock("../api/client", () => ({
     api: {
         gitSync: {
             status: (...args: unknown[]) => mockStatus(...args),
             commit: (...args: unknown[]) => mockCommit(...args),
+            unifiedCommit: (...args: unknown[]) => mockUnifiedCommit(...args),
+            diff: vi.fn(),
+            resolve: vi.fn(),
         },
     },
     ApiError: class extends Error {
@@ -72,6 +77,12 @@ const mappedClean: GitSyncMappingStatus = {
     local_clone_path: "/tmp/uploads/git-sync/book-1/repo",
     last_committed_at: null,
     dirty: false,
+    core_git_initialized: false,
+};
+
+const mappedCleanWithCoreGit: GitSyncMappingStatus = {
+    ...mappedClean,
+    core_git_initialized: true,
 };
 
 const mappedDirty: GitSyncMappingStatus = {
@@ -92,6 +103,7 @@ const unmapped: GitSyncMappingStatus = {
     local_clone_path: null,
     last_committed_at: null,
     dirty: null,
+    core_git_initialized: false,
 };
 
 describe("GitSyncDialog", () => {
@@ -101,6 +113,7 @@ describe("GitSyncDialog", () => {
         onClose.mockClear();
         mockStatus.mockReset();
         mockCommit.mockReset();
+        mockUnifiedCommit.mockReset();
         mockNotify.error.mockClear();
         mockNotify.success.mockClear();
         mockNotify.warning.mockClear();
@@ -238,5 +251,114 @@ describe("GitSyncDialog", () => {
         fireEvent.click(screen.getByTestId("git-sync-commit-btn"));
 
         await waitFor(() => expect(mockNotify.error).toHaveBeenCalledTimes(1));
+    });
+
+    // --- PGS-05 unified commit ---
+
+    it("hides the unified-commit button when core git is not initialized", async () => {
+        await renderDialog(mappedClean);
+        expect(
+            screen.queryByTestId("git-sync-unified-commit-btn"),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId("git-sync-unified-banner"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the unified-commit button + banner when core git is initialized", async () => {
+        await renderDialog(mappedCleanWithCoreGit);
+        expect(screen.getByTestId("git-sync-unified-banner")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("git-sync-unified-commit-btn"),
+        ).toBeInTheDocument();
+        // Single-subsystem button is still present (user can still pick).
+        expect(screen.getByTestId("git-sync-commit-btn")).toBeInTheDocument();
+    });
+
+    it("unified commit posts the payload + renders per-subsystem result rows", async () => {
+        await renderDialog(mappedCleanWithCoreGit);
+        mockStatus.mockResolvedValueOnce(mappedCleanWithCoreGit);
+        mockUnifiedCommit.mockResolvedValueOnce({
+            core_git: {
+                status: "ok",
+                detail: null,
+                commit_sha: "1".repeat(40),
+                pushed: false,
+            },
+            plugin_git_sync: {
+                status: "ok",
+                detail: null,
+                commit_sha: "2".repeat(40),
+                pushed: false,
+            },
+        });
+        fireEvent.change(screen.getByTestId("git-sync-message"), {
+            target: { value: "merged subject" },
+        });
+        fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
+
+        await waitFor(() =>
+            expect(mockUnifiedCommit).toHaveBeenCalledTimes(1),
+        );
+        const [bookId, payload] = mockUnifiedCommit.mock.calls[0];
+        expect(bookId).toBe("book-1");
+        expect(payload).toEqual({
+            message: "merged subject",
+            push_plugin: false,
+        });
+
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("git-sync-unified-result"),
+            ).toBeInTheDocument(),
+        );
+        const coreRow = screen.getByTestId("git-sync-unified-row-core");
+        const pluginRow = screen.getByTestId("git-sync-unified-row-plugin");
+        expect(coreRow.getAttribute("data-status")).toBe("ok");
+        expect(pluginRow.getAttribute("data-status")).toBe("ok");
+        expect(mockNotify.success).toHaveBeenCalledTimes(1);
+    });
+
+    it("unified commit with one subsystem failed surfaces a notify.warning", async () => {
+        await renderDialog(mappedCleanWithCoreGit);
+        mockStatus.mockResolvedValueOnce(mappedCleanWithCoreGit);
+        mockUnifiedCommit.mockResolvedValueOnce({
+            core_git: { status: "ok", detail: null, commit_sha: "x", pushed: false },
+            plugin_git_sync: {
+                status: "failed",
+                detail: "auth",
+                commit_sha: null,
+                pushed: false,
+            },
+        });
+        fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
+
+        await waitFor(() =>
+            expect(mockUnifiedCommit).toHaveBeenCalledTimes(1),
+        );
+        await waitFor(() =>
+            expect(mockNotify.warning).toHaveBeenCalledTimes(1),
+        );
+        expect(mockNotify.success).not.toHaveBeenCalled();
+    });
+
+    it("unified commit 503 (lock busy) surfaces notify.warning", async () => {
+        await renderDialog(mappedCleanWithCoreGit);
+        const { ApiError } = await import("../api/client");
+        mockUnifiedCommit.mockRejectedValueOnce(
+            new ApiError(
+                503,
+                "lock busy",
+                "/git-sync/x/unified-commit",
+                "POST",
+                "",
+            ),
+        );
+        fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
+
+        await waitFor(() =>
+            expect(mockNotify.warning).toHaveBeenCalledTimes(1),
+        );
+        expect(mockNotify.error).not.toHaveBeenCalled();
     });
 });

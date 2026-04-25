@@ -1306,6 +1306,18 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify({resolutions}),
             }),
+
+        /** PGS-05: fan one user-facing commit out to both core git
+         *  and plugin-git-sync. Skipped subsystems return
+         *  ``status: "skipped"`` rather than failing the whole call. */
+        unifiedCommit: (bookId: string, payload: GitSyncUnifiedCommitRequest) =>
+            request<GitSyncUnifiedCommitResult>(
+                `/git-sync/${bookId}/unified-commit`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                },
+            ),
     },
 
     ssh: {
@@ -1403,6 +1415,12 @@ export interface GitSyncMappingStatus {
     local_clone_path: string | null
     last_committed_at: string | null
     dirty: boolean | null
+    /** PGS-05: True when core git
+     *  (``uploads/{book_id}/.git``) is also initialized for this
+     *  book. The frontend uses this together with ``mapped`` to
+     *  decide whether to render the unified "Commit everywhere"
+     *  button instead of the single-subsystem one. */
+    core_git_initialized: boolean
 }
 
 export interface GitSyncCommitRequest {
@@ -1461,6 +1479,31 @@ export interface GitSyncResolutionEntry {
 
 export interface GitSyncResolveResult {
     counts: Record<"updated" | "created" | "deleted" | "skipped", number>
+}
+
+export interface GitSyncUnifiedCommitRequest {
+    message?: string | null
+    push_core?: boolean
+    push_plugin?: boolean
+}
+
+/** Stable per-subsystem outcome slug. */
+export type GitSyncSubsystemStatus =
+    | "ok"
+    | "skipped"
+    | "nothing_to_commit"
+    | "failed"
+
+export interface GitSyncSubsystemResult {
+    status: GitSyncSubsystemStatus
+    detail: string | null
+    commit_sha: string | null
+    pushed: boolean
+}
+
+export interface GitSyncUnifiedCommitResult {
+    core_git: GitSyncSubsystemResult
+    plugin_git_sync: GitSyncSubsystemResult
 }
 
 /** PGS-04 sibling listing for a book. */
