@@ -99,9 +99,26 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                     )}
 
                     {result && (
-                        <div style={{flex: 1, overflowY: "auto", minHeight: 0}}>
-                            <CompareResultView result={result} />
-                            <div style={{display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)"}}>
+                        <>
+                            <div style={{flex: 1, overflowY: "auto", minHeight: 0}}>
+                                <CompareResultView result={result} />
+                            </div>
+                            <div
+                                data-testid="backup-compare-footer"
+                                style={{
+                                    display: "flex",
+                                    gap: "0.5rem",
+                                    justifyContent: "flex-end",
+                                    marginTop: "0.75rem",
+                                    paddingTop: "0.75rem",
+                                    paddingBottom: "0.25rem",
+                                    borderTop: "1px solid var(--color-border)",
+                                    background: "var(--bg-card)",
+                                    position: "sticky",
+                                    bottom: 0,
+                                    zIndex: 2,
+                                }}
+                            >
                                 <button type="button" onClick={reset} className="btn-secondary">
                                     {t("ui.backup.compare.new_comparison", "Neuer Vergleich")}
                                 </button>
@@ -109,7 +126,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                                     {t("ui.common.close", "Schliessen")}
                                 </button>
                             </div>
-                        </div>
+                        </>
                     )}
                 </Dialog.Content>
             </Dialog.Portal>
