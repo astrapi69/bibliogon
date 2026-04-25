@@ -197,7 +197,7 @@ describe("EnhancedTextarea", () => {
         expect(preview.querySelectorAll("span.hljs-selector-tag, span.hljs-attribute, span.hljs-number, span.hljs-keyword").length).toBeGreaterThan(0);
     });
 
-    it("non-css languages do not render the preview toggle", () => {
+    it("plain language does not render the preview toggle", () => {
         render(
             <EnhancedTextarea
                 value="hello"
@@ -209,5 +209,55 @@ describe("EnhancedTextarea", () => {
         expect(
             screen.queryByTestId("t-preview-toggle"),
         ).not.toBeInTheDocument();
+    });
+
+    it("markdown language reveals markdown preview on toggle", () => {
+        const md = ["# Heading", "", "**bold** text"].join("\n");
+        render(
+            <EnhancedTextarea
+                value={md}
+                onChange={() => {}}
+                language="markdown"
+                testid="t"
+            />,
+        );
+        fireEvent.click(screen.getByTestId("t-preview-toggle"));
+        const preview = screen.getByTestId("textarea-markdown-preview");
+        expect(preview).toBeInTheDocument();
+        expect(preview.querySelector("h1")?.textContent).toBe("Heading");
+        expect(preview.querySelector("strong")?.textContent).toBe("bold");
+    });
+
+    it("html language reveals sanitized html preview on toggle", () => {
+        render(
+            <EnhancedTextarea
+                value="<p>safe</p><script>alert('xss')</script>"
+                onChange={() => {}}
+                language="html"
+                testid="t"
+            />,
+        );
+        fireEvent.click(screen.getByTestId("t-preview-toggle"));
+        const preview = screen.getByTestId("textarea-html-preview");
+        expect(preview).toBeInTheDocument();
+        expect(preview.querySelector("p")?.textContent).toBe("safe");
+        // Script tag stripped by DOMPurify.
+        expect(preview.querySelector("script")).toBeNull();
+        expect(preview.innerHTML).not.toContain("alert");
+    });
+
+    it("html preview strips inline event handlers", () => {
+        render(
+            <EnhancedTextarea
+                value='<p onclick="alert(1)">click</p>'
+                onChange={() => {}}
+                language="html"
+                testid="t"
+            />,
+        );
+        fireEvent.click(screen.getByTestId("t-preview-toggle"));
+        const preview = screen.getByTestId("textarea-html-preview");
+        const p = preview.querySelector("p") as HTMLElement;
+        expect(p?.getAttribute("onclick")).toBeNull();
     });
 });

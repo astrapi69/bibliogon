@@ -24,6 +24,8 @@ import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import { copyToClipboard } from "../../utils/clipboard";
 import { CssPreview } from "./CssPreview";
+import { MarkdownPreview } from "./MarkdownPreview";
+import { HtmlPreview } from "./HtmlPreview";
 
 export type TextareaLanguage = "plain" | "markdown" | "html" | "css";
 
@@ -91,7 +93,8 @@ export function EnhancedTextarea({
     );
     const copyTimerRef = useRef<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
-    const previewable = language === "css";
+    const previewable =
+        language === "css" || language === "markdown" || language === "html";
 
     const isMono =
         mono ?? (language === "css" || language === "html");
@@ -255,7 +258,15 @@ export function EnhancedTextarea({
                     )}
                 </div>
             )}
-            {previewable && showPreview && <CssPreview value={value} />}
+            {previewable && showPreview && language === "css" && (
+                <CssPreview value={value} />
+            )}
+            {previewable && showPreview && language === "markdown" && (
+                <MarkdownPreview value={value} />
+            )}
+            {previewable && showPreview && language === "html" && (
+                <HtmlPreview value={value} />
+            )}
             <textarea
                 ref={ref}
                 id={fallbackId}

@@ -226,7 +226,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             />
                         </Row>
                         <Field label={t("ui.metadata.subtitle", "Untertitel")} value={form.subtitle} onChange={(v) => set("subtitle", v)}/>
-                        <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline/>
+                        <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline language="markdown"/>
                         <Row>
                             <Field label={t("ui.metadata.edition", "Edition")} value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
                             <Field label={t("ui.metadata.publish_date", "Datum")} value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
@@ -493,7 +493,7 @@ function AuthorSelectField({
     );
 }
 
-function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId}: {
+function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId, language}: {
     label: string;
     value: string | null | undefined;
     onChange: (v: string) => void;
@@ -509,6 +509,11 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
      *  ``<datalist>``. Ignored when ``multiline`` is true. */
     datalist?: string[];
     datalistId?: string;
+    /** Override the language tag on the EnhancedTextarea. Default
+     * is ``css`` when ``mono`` is true, ``plain`` otherwise. Pass
+     * ``markdown`` to enable a preview toggle on description-style
+     * fields. */
+    language?: "plain" | "markdown" | "html" | "css";
 }) {
     const {t} = useI18n();
     const inputStyle = mono ? {...styles.input, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"} : styles.input;
@@ -523,7 +528,7 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
                     value={text}
                     onChange={onChange}
                     placeholder={placeholder}
-                    language={mono ? "css" : "plain"}
+                    language={language ?? (mono ? "css" : "plain")}
                     mono={mono}
                     maxChars={maxChars}
                     rows={8}
