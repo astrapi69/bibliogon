@@ -658,6 +658,10 @@ ui:
     html_field_show_source: "Show HTML"
     title: Title
     author: Author
+    author_placeholder: "Select an author"
+    author_unknown_prefix: "[unknown:"
+    author_pen_names_label: "Pen names"
+    author_manage_link: "Manage authors in Settings"
     language: Language
     series_index: Series index
     isbn_ebook: ISBN e-book

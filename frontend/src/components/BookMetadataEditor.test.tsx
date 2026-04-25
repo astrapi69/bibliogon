@@ -38,6 +38,20 @@ vi.mock("../hooks/useAuthorChoices", () => ({
   useAuthorChoices: () => [],
 }))
 
+vi.mock("../hooks/useAuthorProfile", () => ({
+  useAuthorProfile: () => ({
+    name: "Test Author",
+    pen_names: ["Pen One", "Pen Two"],
+  }),
+  profileDisplayNames: (p: {name: string; pen_names: string[]} | null) => {
+    if (!p) return []
+    const out: string[] = []
+    if (p.name) out.push(p.name)
+    out.push(...p.pen_names)
+    return out
+  },
+}))
+
 const assetsListMock = vi.fn().mockResolvedValue([])
 const assetsDeleteMock = vi.fn().mockResolvedValue(undefined)
 
@@ -433,14 +447,14 @@ describe("BookMetadataEditor — author + language fields", () => {
   const onSave = vi.fn()
   const onBack = vi.fn()
 
-  it("renders editable author field seeded from book", () => {
+  it("renders author as a select dropdown (not editable input)", () => {
     render(
       <BookMetadataEditor
         book={{
           id: "b1",
           title: "T",
           subtitle: null,
-          author: "Imported Author",
+          author: "Test Author",
           language: "en",
           created_at: "2026-01-01",
           updated_at: "2026-01-01",
@@ -452,10 +466,111 @@ describe("BookMetadataEditor — author + language fields", () => {
         onBack={onBack}
       />,
     )
-    const authorInput = screen.getByDisplayValue("Imported Author")
-    expect(authorInput).toBeInTheDocument()
-    fireEvent.change(authorInput, {target: {value: "Edited"}})
-    expect((authorInput as HTMLInputElement).value).toBe("Edited")
+    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
+    expect(select.tagName).toBe("SELECT")
+    expect(select.value).toBe("Test Author")
+  })
+
+  it("dropdown lists profile name + all pen names", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b3",
+          title: "T",
+          subtitle: null,
+          author: "Test Author",
+          language: "en",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+    const select = screen.getByTestId("metadata-author-select")
+    const options = select.querySelectorAll("option")
+    const values = Array.from(options).map((o) => (o as HTMLOptionElement).value)
+    expect(values).toContain("Test Author")
+    expect(values).toContain("Pen One")
+    expect(values).toContain("Pen Two")
+  })
+
+  it("unknown author value renders as disabled fallback option", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b4",
+          title: "T",
+          subtitle: null,
+          author: "Stale Author",
+          language: "en",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
+    expect(select.value).toBe("Stale Author")
+    const staleOption = Array.from(
+      select.querySelectorAll("option"),
+    ).find((o) => (o as HTMLOptionElement).value === "Stale Author") as HTMLOptionElement
+    expect(staleOption).toBeDefined()
+    expect(staleOption.disabled).toBe(true)
+    expect(staleOption.textContent).toContain("Stale Author")
+  })
+
+  it("manage-link is rendered next to the author field", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b5",
+          title: "T",
+          subtitle: null,
+          author: "Test Author",
+          language: "en",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId("metadata-author-manage-link")).toBeInTheDocument()
+  })
+
+  it("changing dropdown selection updates form state", () => {
+    render(
+      <BookMetadataEditor
+        book={{
+          id: "b6",
+          title: "T",
+          subtitle: null,
+          author: "Test Author",
+          language: "en",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+          keywords: [],
+          chapters: [],
+          ai_tokens_used: 0,
+        } as unknown as BookDetail}
+        onSave={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
+    fireEvent.change(select, {target: {value: "Pen One"}})
+    expect(select.value).toBe("Pen One")
   })
 
   it("renders language input with current code", () => {

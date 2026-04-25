@@ -4,7 +4,7 @@ import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
-import {useAuthorChoices} from "../hooks/useAuthorChoices";
+import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
 import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
@@ -32,7 +32,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
-    const authorChoices = useAuthorChoices();
+    const authorProfile = useAuthorProfile();
 
     useEffect(() => {
         setForm({
@@ -208,12 +208,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 <Tabs.Content value="general">
                     <div style={styles.tabContent}>
                         <Row>
-                            <Field
+                            <AuthorSelectField
                                 label={t("ui.metadata.author", "Autor")}
-                                value={form.author}
+                                value={form.author || ""}
+                                profile={authorProfile}
                                 onChange={(v) => set("author", v)}
-                                datalist={authorChoices}
-                                datalistId="metadata-author-options"
                             />
                             <Field
                                 label={t("ui.metadata.language", "Sprache")}
@@ -384,6 +383,99 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 
 function Row({children}: {children: React.ReactNode}) {
     return <div style={styles.row}>{children}</div>;
+}
+
+/**
+ * Author field as a selection-only dropdown.
+ *
+ * Author management lives ONLY in Settings; this field never lets
+ * the user create or rename. Options come from the single author
+ * profile (real name + pen names). The current value, if it does
+ * not match any known option, surfaces as a disabled fallback so
+ * stale references stay visible until the user picks a real one.
+ *
+ * Pseudonyms render in an optgroup labeled with the parent real
+ * name; if the user only has pen_names configured (no real name
+ * set), pen_names appear ungrouped under a single placeholder.
+ */
+function AuthorSelectField({
+    label,
+    value,
+    profile,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    profile: AuthorProfile | null;
+    onChange: (v: string) => void;
+}) {
+    const {t} = useI18n();
+    const knownNames = profileDisplayNames(profile);
+    const valueIsKnown = value !== "" && knownNames.includes(value);
+    const valueIsUnknown = value !== "" && !valueIsKnown;
+
+    return (
+        <div className="field" style={{flex: 1}}>
+            <label className="label">{label}</label>
+            <select
+                className="input"
+                style={styles.input}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                data-testid="metadata-author-select"
+            >
+                {value === "" && (
+                    <option value="" disabled>
+                        {t("ui.metadata.author_placeholder", "Autor auswaehlen...")}
+                    </option>
+                )}
+                {valueIsUnknown && (
+                    <option value={value} disabled>
+                        {t("ui.metadata.author_unknown_prefix", "[unbekannt:")} {value}]
+                    </option>
+                )}
+                {profile && profile.name && (
+                    <optgroup label={profile.name}>
+                        <option value={profile.name}>{profile.name}</option>
+                        {profile.pen_names.map((pen) => (
+                            <option key={pen} value={pen}>
+                                {pen}
+                            </option>
+                        ))}
+                    </optgroup>
+                )}
+                {profile && !profile.name && profile.pen_names.length > 0 && (
+                    <optgroup label={t("ui.metadata.author_pen_names_label", "Pen Names")}>
+                        {profile.pen_names.map((pen) => (
+                            <option key={pen} value={pen}>
+                                {pen}
+                            </option>
+                        ))}
+                    </optgroup>
+                )}
+            </select>
+            <a
+                href="#/settings/general"
+                data-testid="metadata-author-manage-link"
+                style={{
+                    display: "inline-block",
+                    marginTop: 4,
+                    fontSize: "0.75rem",
+                    color: "var(--text-muted)",
+                    textDecoration: "underline",
+                }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    window.location.hash = "#/settings/general";
+                }}
+            >
+                {t(
+                    "ui.metadata.author_manage_link",
+                    "Autoren in Einstellungen verwalten",
+                )}
+            </a>
+        </div>
+    );
 }
 
 function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId}: {
