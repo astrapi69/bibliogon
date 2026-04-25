@@ -142,11 +142,19 @@ export function ErrorStep({
                 </pre>
             )}
             <div
+                data-testid="error-step-footer"
                 style={{
                     display: "flex",
                     gap: 8,
                     marginTop: 16,
+                    paddingTop: 12,
+                    paddingBottom: 12,
                     flexWrap: "wrap",
+                    background: "var(--bg-primary)",
+                    position: "sticky",
+                    bottom: 0,
+                    zIndex: 2,
+                    borderTop: "1px solid var(--border)",
                 }}
             >
                 <button

@@ -63,13 +63,20 @@ describe("PreviewMultiBookStep", () => {
             onBack: ReturnType<typeof vi.fn>;
         }> = {},
     ) {
-        const onToggle = overrides.onToggle ?? vi.fn();
-        const onSelectAll = overrides.onSelectAll ?? vi.fn();
-        const onDeselectAll = overrides.onDeselectAll ?? vi.fn();
-        const onSetDuplicateAction =
-            overrides.onSetDuplicateAction ?? vi.fn();
-        const onConfirm = overrides.onConfirm ?? vi.fn();
-        const onBack = overrides.onBack ?? vi.fn();
+        // vi.fn() typings vs callback shape diverge in vitest 4;
+        // cast to the precise callback signature for the JSX prop.
+        const onToggle = (overrides.onToggle ?? vi.fn()) as unknown as (
+            sourceId: string,
+        ) => void;
+        const onSelectAll = (overrides.onSelectAll ?? vi.fn()) as unknown as () => void;
+        const onDeselectAll = (overrides.onDeselectAll ?? vi.fn()) as unknown as () => void;
+        const onSetDuplicateAction = (overrides.onSetDuplicateAction ??
+            vi.fn()) as unknown as (
+            sourceId: string,
+            action: "skip" | "overwrite" | "create_new",
+        ) => void;
+        const onConfirm = (overrides.onConfirm ?? vi.fn()) as unknown as () => void;
+        const onBack = (overrides.onBack ?? vi.fn()) as unknown as () => void;
         render(
             <PreviewMultiBookStep
                 detected={detected()}
@@ -176,5 +183,14 @@ describe("PreviewMultiBookStep", () => {
         const { onConfirm } = renderStep();
         fireEvent.click(screen.getByTestId("multi-book-confirm"));
         expect(onConfirm).toHaveBeenCalled();
+    });
+
+    it("footer is sticky-positioned so action buttons survive long lists", () => {
+        renderStep();
+        const footer = screen.getByTestId("preview-multi-book-step-footer");
+        // Inline style preserves position:sticky so the buttons stay in
+        // view regardless of how long the book list grows.
+        expect(footer.style.position).toBe("sticky");
+        expect(footer.style.bottom).toBe("0px");
     });
 });

@@ -138,13 +138,19 @@ export function PreviewMultiBookStep({
             </ul>
 
             <div
+                data-testid="preview-multi-book-step-footer"
                 style={{
                     display: "flex",
                     gap: 8,
                     justifyContent: "flex-end",
                     marginTop: 16,
                     paddingTop: 12,
+                    paddingBottom: 12,
                     borderTop: "1px solid var(--border)",
+                    background: "var(--bg-primary)",
+                    position: "sticky",
+                    bottom: 0,
+                    zIndex: 2,
                 }}
             >
                 <button

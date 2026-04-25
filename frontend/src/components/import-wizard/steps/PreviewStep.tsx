@@ -67,13 +67,19 @@ export function PreviewStep({
                 onGitAdoptionChange={onGitAdoptionChange}
             />
             <div
+                data-testid="preview-step-footer"
                 style={{
                     display: "flex",
                     justifyContent: "flex-end",
                     gap: 8,
                     marginTop: 20,
                     paddingTop: 16,
+                    paddingBottom: 12,
                     borderTop: "1px solid var(--border)",
+                    background: "var(--bg-primary)",
+                    position: "sticky",
+                    bottom: 0,
+                    zIndex: 2,
                 }}
             >
                 <button
