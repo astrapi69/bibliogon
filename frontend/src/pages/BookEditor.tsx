@@ -7,6 +7,7 @@ import ChapterSidebar from "../components/ChapterSidebar";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import GitBackupDialog from "../components/GitBackupDialog";
+import GitSyncDialog from "../components/GitSyncDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import type {NavigableFindingType} from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
@@ -56,6 +57,8 @@ export default function BookEditor() {
     const [showExport, setShowExport] = useState(false);
     const [showGitBackup, setShowGitBackup] = useState(false);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
+    const [showGitSync, setShowGitSync] = useState(false);
+    const [gitSyncMapped, setGitSyncMapped] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
@@ -119,6 +122,19 @@ export default function BookEditor() {
         }
     }, [bookId]);
 
+    const refreshGitSyncMapping = useCallback(async () => {
+        if (!bookId) return;
+        try {
+            const mapping = await api.gitSync.status(bookId);
+            setGitSyncMapped(mapping.mapped);
+        } catch {
+            // Non-fatal: 200/{mapped:false} is the normal "no mapping"
+            // shape so anything that throws is a server/network blip;
+            // hide the button rather than spam toasts.
+            setGitSyncMapped(false);
+        }
+    }, [bookId]);
+
     const loadBook = useCallback(async () => {
         if (!bookId) return;
         try {
@@ -134,6 +150,7 @@ export default function BookEditor() {
                 setActiveChapterId(null);
             }
             void refreshGitSync();
+            void refreshGitSyncMapping();
         } catch (err) {
             console.error("Failed to load book:", err);
         } finally {
@@ -384,6 +401,8 @@ export default function BookEditor() {
                 onExport={handleExport}
                 onGitBackup={() => setShowGitBackup(true)}
                 gitSyncState={gitSyncState}
+                onGitSync={() => setShowGitSync(true)}
+                gitSyncMapped={gitSyncMapped}
                 onMetadata={() => _setShowMetadata(true)}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
@@ -500,6 +519,17 @@ export default function BookEditor() {
                     onClose={() => {
                         setShowGitBackup(false);
                         void refreshGitSync();
+                    }}
+                />
+            )}
+
+            {bookId && (
+                <GitSyncDialog
+                    open={showGitSync}
+                    bookId={bookId}
+                    onClose={() => {
+                        setShowGitSync(false);
+                        void refreshGitSyncMapping();
                     }}
                 />
             )}

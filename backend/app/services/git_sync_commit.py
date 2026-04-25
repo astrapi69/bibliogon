@@ -13,11 +13,16 @@ Design choices:
   edits since the last import are lost unless the user re-imports
   first. Documented in ``docs/explorations/plugin-git-sync.md``
   Section 6.2.
-- **Async push deferred.** The service supports an inline ``push``
-  flag; the actual remote-push wiring (PAT injection, host-key
-  checks) is shared with :mod:`app.services.git_backup` in a
-  follow-up. For now, push raises :class:`NotImplementedError`
-  if requested.
+- **Push uses ambient git credentials.** When ``push=True`` the
+  service runs ``git push origin <branch>`` and relies on the
+  environment's SSH agent / ``~/.ssh/id_*`` for SSH URLs and the
+  system git credential helper for HTTPS. PAT injection through
+  the Bibliogon credential store is the same shared-credential
+  follow-up work as in :mod:`app.services.git_backup` and is
+  not part of PGS-02. Failures raise :class:`PushFailedError`
+  with a stable ``.reason`` slug ("auth", "rejected", "network",
+  "no_remote", "unknown") so the router can map without parsing
+  git stderr.
 - **Failures surface as typed errors** (``GitSyncCommitError`` and
   subclasses) so the router can map them to HTTP status codes
   without sprinkling ``HTTPException`` calls into the service.
@@ -54,8 +59,17 @@ class NothingToCommitError(GitSyncCommitError):
     """Working tree had no changes after re-scaffolding."""
 
 
-class PushNotImplementedError(GitSyncCommitError):
-    """Push wiring is a follow-up; rejected for now."""
+class PushFailedError(GitSyncCommitError):
+    """Remote rejected the push (auth/diverged/network).
+
+    The .reason attribute carries a short stable string the router
+    can hand to the i18n layer ("auth", "rejected", "network",
+    "unknown"); the message is the underlying git stderr.
+    """
+
+    def __init__(self, reason: str, message: str):
+        super().__init__(message)
+        self.reason = reason
 
 
 def commit_to_repo(
@@ -67,14 +81,17 @@ def commit_to_repo(
 ) -> dict[str, str | bool]:
     """Re-scaffold the book and create one commit on the local clone.
 
+    When ``push`` is True the new commit is also pushed to the
+    ``origin`` remote using the user's ambient git credentials
+    (SSH agent / ``~/.ssh/id_*`` for SSH URLs; system git
+    credential helper for HTTPS). PAT injection through the
+    Bibliogon credential store is **not** wired in PGS-02
+    Session 2 - that is the same shared-credential follow-up
+    work that ``app.services.git_backup`` does for core git.
+
     Returns ``{"commit_sha", "branch", "pushed"}``.
     Raises subclasses of :class:`GitSyncCommitError` on failure.
     """
-    if push:
-        raise PushNotImplementedError(
-            "Push to remote is not yet wired. Use git from the clone directly until PGS-02 part 2."
-        )
-
     mapping = db.get(GitSyncMapping, book_id)
     if mapping is None:
         raise MappingNotFoundError(f"Book {book_id} was not imported via plugin-git-sync.")
@@ -98,11 +115,18 @@ def commit_to_repo(
         message=message or _default_commit_message(),
     )
 
+    pushed = False
+    if push:
+        # Push BEFORE bumping last_committed_at: a push failure
+        # should not look like a successful sync in the UI.
+        _push(clone_path, branch=branch)
+        pushed = True
+
     mapping.last_committed_at = datetime.now(UTC)
     db.add(mapping)
     db.commit()
 
-    return {"commit_sha": commit_sha, "branch": branch, "pushed": False}
+    return {"commit_sha": commit_sha, "branch": branch, "pushed": pushed}
 
 
 # --- helpers ---
@@ -229,3 +253,49 @@ def _commit(clone_path: Path, *, message: str) -> tuple[str, str]:
 
 def _default_commit_message() -> str:
     return f"Sync from Bibliogon at {datetime.now(UTC).isoformat()}"
+
+
+def _push(clone_path: Path, *, branch: str) -> None:
+    """Push ``branch`` to ``origin`` using the user's ambient creds.
+
+    Raises :class:`PushFailedError` with a stable ``.reason`` slug
+    so the router can map it to a useful HTTP status without
+    parsing git stderr in the UI.
+    """
+    from git import GitCommandError, Repo
+
+    repo = Repo(str(clone_path))
+    if "origin" not in [r.name for r in repo.remotes]:
+        raise PushFailedError("no_remote", "Repository has no 'origin' remote configured.")
+    try:
+        info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+    except GitCommandError as exc:
+        stderr = (exc.stderr or "").strip() or str(exc)
+        reason = _classify_push_stderr(stderr)
+        raise PushFailedError(reason, stderr) from exc
+
+    if not info_list:
+        raise PushFailedError("network", "Push returned no information from the remote.")
+    info = info_list[0]
+    # GitPython exposes flag bits for each push result. Treat any
+    # ERROR/REJECTED bit as a failure rather than letting it silently
+    # become a "successful" no-op.
+    from git import PushInfo
+
+    if info.flags & PushInfo.ERROR:
+        summary = (info.summary or "").strip() or "Push failed."
+        if info.flags & (PushInfo.REJECTED | PushInfo.REMOTE_REJECTED):
+            raise PushFailedError("rejected", summary)
+        raise PushFailedError("network", summary)
+
+
+def _classify_push_stderr(stderr: str) -> str:
+    """Map a git stderr blob to one of the stable reason slugs."""
+    s = stderr.lower()
+    if "authentication" in s or "permission denied" in s or "could not read username" in s:
+        return "auth"
+    if "rejected" in s or "non-fast-forward" in s:
+        return "rejected"
+    if "could not resolve host" in s or "network" in s or "timed out" in s:
+        return "network"
+    return "unknown"

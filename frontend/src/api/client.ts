@@ -1245,6 +1245,22 @@ export const api = {
             request<GitMergeResult>(`/books/${bookId}/git/conflict/abort`, {method: "POST"}),
     },
 
+    gitSync: {
+        /** PGS-02: per-book sync state for the plugin-git-sync flow.
+         *  ``mapped=false`` means the book wasn't imported via the
+         *  git-URL wizard - the BookEditor uses that to hide the
+         *  "Commit to Repo" button entirely.
+         */
+        status: (bookId: string) =>
+            request<GitSyncMappingStatus>(`/git-sync/${bookId}`),
+
+        commit: (bookId: string, payload: GitSyncCommitRequest) =>
+            request<GitSyncCommitResult>(`/git-sync/${bookId}/commit`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            }),
+    },
+
     ssh: {
         info: () => request<SshKeyInfo>("/ssh"),
 
@@ -1324,4 +1340,36 @@ export interface SshKeyInfo {
     comment?: string
     created_at?: string
     public_key?: string
+}
+
+/** PGS-02 git-sync mapping snapshot.
+ *  ``mapped=false`` -> the book wasn't imported via plugin-git-sync;
+ *  the rest of the fields are then null. ``dirty=null`` means the
+ *  on-disk clone is missing entirely (not just clean/dirty), so
+ *  the UI can prompt re-import instead of "no changes".
+ */
+export interface GitSyncMappingStatus {
+    mapped: boolean
+    repo_url: string | null
+    branch: string | null
+    last_imported_commit_sha: string | null
+    local_clone_path: string | null
+    last_committed_at: string | null
+    dirty: boolean | null
+}
+
+export interface GitSyncCommitRequest {
+    /** Optional commit subject; backend defaults to
+     *  ``"Sync from Bibliogon at <utc-iso>"`` when null. */
+    message?: string | null
+    /** Push to remote after committing. Currently 501; wired now
+     *  so the form can carry the toggle without a future API
+     *  shape change when push lands. */
+    push?: boolean
+}
+
+export interface GitSyncCommitResult {
+    commit_sha: string
+    branch: string
+    pushed: boolean
 }

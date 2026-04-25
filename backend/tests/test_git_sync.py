@@ -275,12 +275,16 @@ def test_commit_409_on_no_changes(
     assert r2.status_code == 409
 
 
-def test_commit_501_when_push_requested(
+def test_commit_with_push_succeeds_against_local_bare_remote(
     db: Session,
     book: Book,
     repo_clone: Path,
     tmp_path: Path,
 ) -> None:
+    """End-to-end push against the bare remote that ``repo_clone``
+    fixture set up. No PAT, no SSH - the bare repo is local-fs so
+    GitPython pushes through the file:// transport.
+    """
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
@@ -291,8 +295,61 @@ def test_commit_501_when_push_requested(
     )
     db.expire_all()
 
+    db.add(
+        Chapter(
+            book_id=book.id,
+            title="Push Me",
+            content='{"type":"doc","content":[]}',
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
     resp = client.post(f"/api/git-sync/{book.id}/commit", json={"push": True})
-    assert resp.status_code == 501
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["pushed"] is True
+
+
+def test_commit_with_push_returns_409_on_no_remote(
+    db: Session,
+    book: Book,
+    tmp_path: Path,
+) -> None:
+    """A clone without an ``origin`` remote yields PushFailedError
+    with reason='no_remote' -> mapped to 409."""
+    work = tmp_path / "no-remote-work"
+    work.mkdir()
+    (work / "README.md").write_text("# x\n", encoding="utf-8")
+    repo = git.Repo.init(work)
+    repo.index.add(["README.md"])
+    repo.index.commit("initial")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
+    )
+    db.expire_all()
+
+    db.add(
+        Chapter(
+            book_id=book.id,
+            title="x",
+            content='{"type":"doc","content":[]}',
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    resp = client.post(f"/api/git-sync/{book.id}/commit", json={"push": True})
+    assert resp.status_code == 409
+    body = resp.json()
+    assert body["detail"]["reason"] == "no_remote"
 
 
 # --- service direct call (bypasses HTTP) ---

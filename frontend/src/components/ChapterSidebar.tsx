@@ -57,6 +57,10 @@ interface Props {
     onShowVersions?: (chapterId: string) => void;
     onGitBackup?: () => void;
     gitSyncState?: string | null;
+    onGitSync?: () => void;
+    /** When True, the book has a plugin-git-sync mapping; the
+     *  sidebar shows the "Sync zum Repo" button. False/undef -> hide. */
+    gitSyncMapped?: boolean;
     showMetadata: boolean;
     hasToc: boolean;
 }
@@ -311,6 +315,8 @@ export default function ChapterSidebar({
                                            onShowVersions,
                                            onGitBackup,
                                            gitSyncState,
+                                           onGitSync,
+                                           gitSyncMapped,
                                            showMetadata,
                                            hasToc,
                                        }: Props) {
@@ -566,6 +572,19 @@ export default function ChapterSidebar({
                                 data-testid="sidebar-git-sync-dot"
                             />
                         )}
+                    </button>
+                )}
+                {gitSyncMapped && onGitSync && (
+                    <button
+                        style={{...styles.exportBtn, marginBottom: 6}}
+                        onClick={onGitSync}
+                        data-testid="sidebar-git-sync"
+                        title={t(
+                            "ui.git_sync.sidebar_tooltip",
+                            "Buchstand in das verbundene Git-Repository commiten",
+                        )}
+                    >
+                        <GitBranch size={14}/> {t("ui.sidebar.git_sync", "Sync zum Repo")}
                     </button>
                 )}
                 {hasToc && onValidateToc && (

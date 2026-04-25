@@ -25,7 +25,7 @@ from app.services.git_sync_commit import (
     CloneMissingError,
     MappingNotFoundError,
     NothingToCommitError,
-    PushNotImplementedError,
+    PushFailedError,
     commit_to_repo,
 )
 
@@ -113,8 +113,22 @@ def commit(
         raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
     except NothingToCommitError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
-    except PushNotImplementedError as exc:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(exc)) from exc
+    except PushFailedError as exc:
+        # 401 for credential failures, 409 for non-fast-forward
+        # rejection, 502 for network/unknown - chosen so the
+        # frontend can map to a useful toast without parsing
+        # stderr. The .reason slug is also surfaced in the body.
+        status_code = {
+            "auth": status.HTTP_401_UNAUTHORIZED,
+            "rejected": status.HTTP_409_CONFLICT,
+            "network": status.HTTP_502_BAD_GATEWAY,
+            "no_remote": status.HTTP_409_CONFLICT,
+            "unknown": status.HTTP_502_BAD_GATEWAY,
+        }.get(exc.reason, status.HTTP_502_BAD_GATEWAY)
+        raise HTTPException(
+            status_code=status_code,
+            detail={"reason": exc.reason, "message": str(exc)},
+        ) from exc
 
     return CommitResponse(**result)  # type: ignore[arg-type]
 
