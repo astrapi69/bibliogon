@@ -868,6 +868,17 @@ body {
     margin-top: 20px;
 }
 
+.dialog-content-wide .dialog-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
