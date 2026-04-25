@@ -2,6 +2,69 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.23.0] - 2026-04-25
+
+Major workflow milestone for self-publishing authors maintaining multi-language books in external git hosting. Plugin-git-sync ships its full PGS-02..05 rollout: bi-directional sync to a remote write-book-template repo, three-way smart-merge on re-import with a per-chapter conflict UI, branch-driven multi-language detection with auto-linked translation groups, and a unified-commit bridge to core git so authors who run both subsystems on the same book can commit everywhere in one click. PGS-01 (the import-only MVP that landed before v0.22.0) is the foundation the four new phases build on.
+
+The release also surfaces the post-v0.22.0 backend/UI polish that shipped through v0.22.1: multi-book BGB import on an XState v5 state graph, sticky action-button footers across 13 dialog modals, the EnhancedTextarea wrapper (CSS lowlight + Markdown/HTML preview + fullscreen + copy-to-clipboard) on every metadata textarea, and a structured error-reporting path (WizardErrorBoundary + Copy details + Report on GitHub).
+
+### Action required for v0.22.0 users (forwarded from v0.22.1)
+
+If you reached v0.22.0 via `alembic upgrade head` rather than a fresh install, run it again after pulling v0.23.0. The migration `c6d7e8f9a0b1` (added in v0.22.1) backfills `books.tts_speed`; v0.23.0 layers two more on top. All migrations are idempotent.
+
+```bash
+cd backend && poetry run alembic upgrade head
+```
+
+### Known limitation
+
+PAT-via-UI is **not yet wired** for either core git or plugin-git-sync push. Pushing to a remote requires ambient credentials at the OS level: the user's SSH agent / `~/.ssh/id_*` for SSH URLs, or the system git credential helper for HTTPS. PAT integration through Bibliogon's own credential store is the next git-sync follow-up.
+
+### Added
+
+**plugin-git-sync PGS-02 - Commit to Repo.**
+- `app/services/git_sync_mapping.py` lifts the staged clone from the orchestrator's temp dir into a long-lived `uploads/git-sync/{book_id}/repo/` after a successful git import + writes a `git_sync_mappings` row (migration `d7e8f9a0b1c2`).
+- `app/services/git_sync_commit.py` re-scaffolds the book via plugin-export's `scaffold_project`, replaces the working tree (preserves `.git/`), creates one commit, and pushes via the user's ambient git credentials when requested. Typed `PushFailedError` with a stable `.reason` slug ("auth"/"rejected"/"network"/"no_remote"/"unknown") - the router maps to 401/409/502 so the frontend can route to specific toasts.
+- `GET /api/git-sync/{book_id}` returns the mapping snapshot + a cheap dirty-check; `POST /api/git-sync/{book_id}/commit` runs the commit + optional push (404 unmapped / 410 clone missing / 409 nothing-to-commit / 401 push-auth / 502 network).
+- `GitSyncDialog` surfaces the mapping snapshot, dirty-warning, optional commit message + push toggle, and last-commit confirmation; ChapterSidebar conditionally renders the "Sync zum Repo" button when the book has a mapping.
+
+**plugin-git-sync PGS-03 - Smart-Merge on re-import.**
+- `app/services/git_sync_diff.py` runs the three-way comparison: reads base + remote WBT chapters at arbitrary git refs via `git ls-tree` + `git show` (no working-tree checkout), reads local DB chapters, and converts each through `bibliogon_export.tiptap_to_md.tiptap_to_markdown` so what diff sees matches what commit-to-repo would write. Identity is `(section, slug-of-title)`. The pure `_classify` covers every classification: `unchanged`, `remote_changed`, `local_changed`, `both_changed`, `remote_added`, `local_added`, `remote_removed`, `local_removed`, plus the same-edit-on-both-sides not-a-conflict case and a normalize step that tolerates blank-line runs and trailing newlines.
+- `apply_resolutions` walks the user's per-chapter decisions and mutates the DB (overwrite via `md_to_html` + `sanitize_import_markdown` for `take_remote`; create/delete for the add/remove cases), then bumps `last_imported_commit_sha` so the next diff starts fresh.
+- Endpoints `POST /api/git-sync/{book_id}/diff` (classifications + counts) and `POST /api/git-sync/{book_id}/resolve` (apply Keep Bibliogon / Take from repo per chapter).
+- `GitSyncDiffDialog` lists the actionable rows, defaults `remote_changed` -> Take Repo and `both_changed` -> Keep Bibliogon, posts only resolvable rows. Reachable from the existing GitSyncDialog via "Auf Aenderungen vom Repo pruefen". `mark_conflict` (write both versions as a visible conflict block) is intentionally out of MVP.
+
+**plugin-git-sync PGS-04 - Multi-language branch linking.**
+- Migration `e8f9a0b1c2d3` adds `books.translation_group_id` (nullable indexed UUID).
+- `app/services/translation_groups.py` owns the linking primitives: `derive_language(branch, metadata)` resolves `main-XX` -> `XX` and bare `main` -> `metadata.yaml.language` (locale tags like `main-de-AT` are explicitly rejected so the suffix stays unambiguous); `link_books` creates a fresh group or folds members into the lexicographically-smallest existing group (deterministic merge); `unlink_book` clears the row and auto-unlinks the lone survivor of a two-book group; `list_siblings` excludes self + soft-deleted, sorted by language.
+- `app/services/translation_import.py` clones a repo once, enumerates every `main` + `main-XX` branch, runs the WBT importer per checkout, persists a per-book clone under `uploads/git-sync/{book_id}/repo` with its own `GitSyncMapping`, and links the resulting books with one shared group id. Per-branch failures log + skip rather than abort the whole import.
+- Endpoints `GET /api/translations/{book_id}`, `POST /api/translations/link`, `POST /api/translations/{book_id}/unlink`, `POST /api/translations/import-multi-branch`.
+- `TranslationLinks` mounts inside the metadata editor's General tab: linked state shows clickable language badges that navigate to each sibling + an Unlink button; unlinked state shows a Link button that opens a dialog listing every other book with checkboxes. Flat cross-link model - no master/translation hierarchy.
+
+**plugin-git-sync PGS-05 - Core-git bridge with unified commit.**
+- `app/services/git_sync_lock.py` provides a per-book `threading.Lock` with a 30 s default timeout that both core git and plugin-git-sync grab before mutating book state, so concurrent commit requests on the same book serialize cleanly.
+- `app/services/git_sync_unified.py` decides which subsystems are active for a book and fans one call out to both - core git first (smaller blast radius), plugin-git-sync second; per-subsystem failures land in the response payload (`status: ok | skipped | nothing_to_commit | failed`) rather than as a single hard 500. `GET /api/git-sync/{book_id}` extended with `core_git_initialized: bool`; new endpoint `POST /api/git-sync/{book_id}/unified-commit` (503 only when the per-book lock can't be obtained within 30 s).
+- `GitSyncDialog` shows a banner + a primary "Commit ueberall" button next to the existing single-subsystem button when `core_git_initialized && mapped`; per-subsystem outcomes render as a status-coded result list under the form. Toast tier follows the per-subsystem result.
+
+**Multi-book BGB import (forwarded from v0.22.1).** `.bgb` archives carrying multiple books now render a per-book selection list with bulk select-all/deselect-all, per-row duplicate handling (Skip / Overwrite / Create-new), and chapter/cover badges. Backend extends `DetectedProject` with `is_multi_book` + `books: list[DetectedBookSummary]`; the orchestrator dispatches to `execute_multi` on multi-book detect. New `wizardMachine` (XState v5; states: upload / detecting / summary / preview-single / preview-multi / executing / success / error; guards: `isMultiBook`, `hasMultiBookSelection`, `canRetry`) acts as the testable data layer. Pattern documented in `docs/architecture/state-machines.md`.
+
+**EnhancedTextarea (forwarded from v0.22.1).** Universal textarea wrapper with toolbar (copy, word/char counter, autosize, fullscreen) and tab-switchable preview for `css` (lowlight syntax), `markdown` (react-markdown + remark-gfm) and `html` (DOMPurify-sanitized) fields. All metadata textareas (description, backpage, custom CSS, html_description) migrated to the new wrapper.
+
+**Structured wizard error reporting (forwarded from v0.22.1).** `WizardErrorBoundary` + rewritten `ErrorStep` capture render exceptions inside the import wizard and expose **Copy details** (clipboard-ready markdown bundle: cause, stack, status, endpoint, version, browser, route) plus **Report Issue** (pre-filled GitHub Issues URL). Replaces the previous black-hole UX where a failed import left the modal cratered with no actionable message.
+
+**Three-option author picker (forwarded from v0.22.1).** Wizard now handles `.bgp`/`.bgb` with no author by offering: create-new, pick-existing, defer. Defer is gated behind a Settings toggle `Allow books without author` (default OFF). Migration `b5c6d7e8f9a0` makes `Book.author` nullable.
+
+### Changed
+
+- **Sticky modal action-button footers (forwarded from v0.22.1).** Action buttons in long-content modals (ImportWizard, ChapterTemplate, CreateBook, ErrorReport, Export, SaveAsTemplate) now stay visible via a global `.dialog-content-wide .dialog-footer` sticky rule. BackupCompare and GitBackup got bespoke inline sticky on their long-content surfaces. Companion CSS regression test pins the rule against drift.
+- **Wizard reformatted around an XState v5 state graph (forwarded from v0.22.1).** `wizardMachine` is the new testable data layer for the import wizard; the modal still owns the XState integration but the state transitions, guards, and side effects are now declared in one machine. State pattern documented in `docs/architecture/state-machines.md`.
+- **Author field is a real `<select>` dropdown (forwarded from v0.22.1).** The previous datalist-based input was browser-filtered by the current value, silently hiding the rest of the picker once any name was set. Replaced with a `<select>` + optgroup that renders all options unconditionally. New `POST /api/settings/author/pen-name` endpoint.
+
+### Fixed
+
+- **Critical: missing `books.tts_speed` migration (forwarded from v0.22.1).** `Book.tts_speed` was introduced as a `Mapped[float | None]` column but never paired with an Alembic revision. Fresh installs picked it up via `Base.metadata.create_all`; alembic-upgrade-path DBs did not, surfacing as a SQLAlchemy `OperationalError` and HTTP 500 on `/api/import/detect`. Migration `c6d7e8f9a0b1` backfills the column with an idempotent existence check.
+- **i18n duplicate key cleanup (forwarded from v0.22.1).** `error_retry` and `error_cancelled_server_side` were duplicated in all 8 language files - PyYAML last-wins so the runtime was already using the better translation, but ruamel pre-commit forbade duplicates. Deduped, kept the better translation.
+
 ## [0.22.1] - 2026-04-25
 
 Patch release on top of the v0.22.0 import orchestrator. Headline is a critical Alembic fix: a missing migration for `books.tts_speed` (added as a `Mapped` column without a corresponding revision) caused HTTP 500 on `/api/import/detect` for users who reached v0.22.0 via `alembic upgrade head` rather than fresh-install. The release also lands the post-import textarea polish, an error-reporting infrastructure for the wizard, the multi-book BGB import path with an XState v5 state graph, and a sticky-footer pattern across all scrolling dialog modals so action buttons never scroll out of reach.
