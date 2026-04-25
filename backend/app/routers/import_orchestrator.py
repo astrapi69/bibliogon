@@ -429,6 +429,18 @@ def execute_import(
             format_name=detected.format_name,
             overwrote=payload.duplicate_action == "overwrite",
         )
+
+    # PGS-02: if the staged source was a git clone, lift it into
+    # the long-lived uploads/git-sync/{book_id}/repo/ tree and
+    # write the GitSyncMapping row. Failures log + skip - the
+    # book itself is already committed and the user must not
+    # lose it because mapping persistence had a hiccup.
+    if not is_multi_book_path and book_id:
+        from app.services.git_sync_mapping import persist_clone_after_import
+        persist_clone_after_import(
+            db, staging_path=staging_path, book_id=book_id
+        )
+
     _drop_staged(payload.temp_ref)
 
     return ExecuteResponse(

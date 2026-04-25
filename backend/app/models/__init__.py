@@ -245,6 +245,40 @@ class BookImportSource(Base):
         )
 
 
+class GitSyncMapping(Base):
+    """plugin-git-sync per-book sync state (PGS-02).
+
+    Written when the wizard completes a git import that landed in
+    plugin-git-sync's persistent clone area. Read by the
+    "Commit to Repo" path so the plugin can locate the on-disk
+    clone, regenerate the WBT structure into it via the
+    plugin-export scaffolder, and commit + optionally push.
+    """
+
+    __tablename__ = "git_sync_mappings"
+
+    book_id: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("books.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    repo_url: Mapped[str] = mapped_column(String(2000), nullable=False)
+    branch: Mapped[str] = mapped_column(
+        String(200), nullable=False, default="main", server_default="main"
+    )
+    last_imported_commit_sha: Mapped[str] = mapped_column(String(64), nullable=False)
+    local_clone_path: Mapped[str] = mapped_column(String(2000), nullable=False)
+    last_committed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<GitSyncMapping book={self.book_id!r} "
+            f"url={self.repo_url!r} branch={self.branch!r}>"
+        )
+
+
 class BookTemplate(Base):
     """Reusable book structure that pre-fills a new book with chapters.
 
