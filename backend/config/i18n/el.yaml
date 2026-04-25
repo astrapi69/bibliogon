@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (προεπιλογή 'de')
     field_collapse: Σύμπτυξη
     field_expand: Εμφάνιση όλων ({n} χαρακτ.)
+    error_step_failed_at: "Αποτυχία στο: {step}"
+    error_step_show_details: "Εμφάνιση λεπτομερειών"
+    error_step_hide_details: "Απόκρυψη λεπτομερειών"
+    error_step_copy_details: "Αντιγραφή λεπτομερειών"
+    error_step_copy_success: "Αντιγράφηκε!"
+    error_step_copy_failed: "Η αντιγραφή απέτυχε"
+    error_step_report: "Αναφορά στο GitHub"
+    error_retry: "Δοκιμάστε ξανά"
+    error_cancelled_server_side: "Η εισαγωγή ακυρώθηκε από τον διακομιστή."
   textarea:
     copy: "Αντιγραφή"
     copy_success: "Αντιγράφηκε!"

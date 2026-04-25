@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (predefinicao 'de')
     field_collapse: Recolher
     field_expand: Mostrar tudo ({n} carat.)
+    error_step_failed_at: "Falhou em: {step}"
+    error_step_show_details: "Mostrar detalhes"
+    error_step_hide_details: "Ocultar detalhes"
+    error_step_copy_details: "Copiar detalhes"
+    error_step_copy_success: "Copiado!"
+    error_step_copy_failed: "Falha ao copiar"
+    error_step_report: "Reportar no GitHub"
+    error_retry: "Tentar novamente"
+    error_cancelled_server_side: "A importação foi cancelada no servidor."
   textarea:
     copy: "Copiar"
     copy_success: "Copiado!"

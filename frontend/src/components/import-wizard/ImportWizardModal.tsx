@@ -17,6 +17,8 @@ import type {
     GitAdoption,
     Overrides,
 } from "../../api/import";
+import type { WizardError } from "./errorContext";
+import { WizardErrorBoundary } from "./WizardErrorBoundary";
 import { UploadStep } from "./steps/UploadStep";
 import { DetectingStep } from "./steps/DetectingStep";
 import { PreviewStep } from "./steps/PreviewStep";
@@ -66,8 +68,7 @@ export type WizardState =
     | { step: "success"; bookId: string; title: string }
     | {
           step: "error";
-          message: string;
-          canRetry: boolean;
+          error: WizardError;
           retry?: () => void;
       };
 
@@ -169,6 +170,7 @@ export default function ImportWizardModal({
                         ref={bodyRef}
                         style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}
                     >
+                        <WizardErrorBoundary onClose={resetAndClose}>
                         {state.step === "upload" && (
                             <UploadStep
                                 onInputSelected={(selection) =>
@@ -197,11 +199,10 @@ export default function ImportWizardModal({
                                         tempRef,
                                     })
                                 }
-                                onError={(message, retry) =>
+                                onError={(error, retry) =>
                                     setState({
                                         step: "error",
-                                        message,
-                                        canRetry: true,
+                                        error,
                                         retry: () => {
                                             setState({ step: "detecting", input: state.input });
                                             retry?.();
@@ -282,11 +283,10 @@ export default function ImportWizardModal({
                                     setState({ step: "success", bookId, title });
                                     onImported?.(bookId);
                                 }}
-                                onError={(message) =>
+                                onError={(error) =>
                                     setState({
                                         step: "error",
-                                        message,
-                                        canRetry: true,
+                                        error,
                                         retry: () => setState({ ...state }),
                                     })
                                 }
@@ -302,12 +302,12 @@ export default function ImportWizardModal({
                         )}
                         {state.step === "error" && (
                             <ErrorStep
-                                message={state.message}
-                                canRetry={state.canRetry}
+                                error={state.error}
                                 onRetry={state.retry}
                                 onClose={resetAndClose}
                             />
                         )}
+                        </WizardErrorBoundary>
                     </div>
                     <style>{WIZARD_STYLES}</style>
                 </Dialog.Content>

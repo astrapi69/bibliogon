@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (varsayilan 'de')
     field_collapse: Daralt
     field_expand: Tumunu goster ({n} krk.)
+    error_step_failed_at: "{step} asamasinda hata"
+    error_step_show_details: "Ayrintilari goster"
+    error_step_hide_details: "Ayrintilari gizle"
+    error_step_copy_details: "Ayrintilari kopyala"
+    error_step_copy_success: "Kopyalandi!"
+    error_step_copy_failed: "Kopyalama basarisiz"
+    error_step_report: "GitHub'da bildir"
+    error_retry: "Tekrar dene"
+    error_cancelled_server_side: "Ice aktarma sunucu tarafinda iptal edildi."
   textarea:
     copy: "Kopyala"
     copy_success: "Kopyalandi!"

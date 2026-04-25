@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (par defaut 'de')
     field_collapse: Reduire
     field_expand: Tout afficher ({n} car.)
+    error_step_failed_at: "Échec dans : {step}"
+    error_step_show_details: "Afficher les détails"
+    error_step_hide_details: "Masquer les détails"
+    error_step_copy_details: "Copier les détails"
+    error_step_copy_success: "Copié!"
+    error_step_copy_failed: "Échec de la copie"
+    error_step_report: "Signaler sur GitHub"
+    error_retry: "Réessayer"
+    error_cancelled_server_side: "L'importation a été annulée côté serveur."
   textarea:
     copy: "Copier"
     copy_success: "Copie!"

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { ApiError } from "../../../api/client";
 import { detectGitImport, detectImport } from "../../../api/import";
 import type { DetectedProject, DuplicateInfo } from "../../../api/import";
 import { useI18n } from "../../../hooks/useI18n";
+import { toWizardError, type WizardError } from "../errorContext";
 
 const ROTATE_KEYS = [
     ["ui.import_wizard.status_reading", "Reading file..."],
@@ -39,7 +39,7 @@ export function DetectingStep({
         duplicate: DuplicateInfo,
         tempRef: string,
     ) => void;
-    onError: (message: string, retry?: () => void) => void;
+    onError: (error: WizardError, retry?: () => void) => void;
     onCancel: () => void;
 }) {
     const { t } = useI18n();
@@ -88,13 +88,12 @@ export function DetectingStep({
                 // the error step does not flash into view either.
                 await minDelay();
                 if (cancelledRef.current || !mounted) return;
-                const message =
-                    err instanceof ApiError
-                        ? err.detail
-                        : err instanceof Error
-                          ? err.message
-                          : String(err);
-                onError(message);
+                const wizardError = toWizardError(
+                    err,
+                    gitUrl ? "git-clone" : "detect",
+                    /* retryable= */ true,
+                );
+                onError(wizardError);
             });
 
         return () => {

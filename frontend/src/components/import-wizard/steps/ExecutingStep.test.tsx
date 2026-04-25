@@ -112,6 +112,10 @@ describe("ExecutingStep", () => {
                 onError={onError}
             />,
         );
-        await waitFor(() => expect(onError).toHaveBeenCalledWith("Handler blew up"));
+        await waitFor(() => expect(onError).toHaveBeenCalled());
+        const arg = onError.mock.calls[0][0];
+        expect(arg.message).toBe("Handler blew up");
+        expect(arg.context).toBe("execute");
+        expect(arg.retryable).toBe(true);
     });
 });

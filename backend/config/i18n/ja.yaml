@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (既定は 'de')
     field_collapse: 折りたたむ
     field_expand: すべて表示 ({n} 文字)
+    error_step_failed_at: "{step} で失敗"
+    error_step_show_details: "詳細を表示"
+    error_step_hide_details: "詳細を非表示"
+    error_step_copy_details: "詳細をコピー"
+    error_step_copy_success: "コピーしました！"
+    error_step_copy_failed: "コピーに失敗しました"
+    error_step_report: "GitHubで報告"
+    error_retry: "再試行"
+    error_cancelled_server_side: "インポートはサーバー側でキャンセルされました。"
   textarea:
     copy: "コピー"
     copy_success: "コピーしました！"

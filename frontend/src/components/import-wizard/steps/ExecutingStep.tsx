@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
-import { ApiError } from "../../../api/client";
 import { executeImport } from "../../../api/import";
 import type {
     DuplicateAction,
@@ -8,6 +7,7 @@ import type {
     Overrides,
 } from "../../../api/import";
 import { useI18n } from "../../../hooks/useI18n";
+import { toWizardError, type WizardError } from "../errorContext";
 
 export function ExecutingStep({
     tempRef,
@@ -24,7 +24,7 @@ export function ExecutingStep({
     existingBookId: string | null;
     gitAdoption?: GitAdoption | null;
     onSuccess: (bookId: string) => void;
-    onError: (message: string) => void;
+    onError: (error: WizardError) => void;
 }) {
     const { t } = useI18n();
     const fired = useRef(false);
@@ -42,9 +42,15 @@ export function ExecutingStep({
             .then((response) => {
                 if (response.status === "cancelled" || response.book_id === null) {
                     onError(
-                        t(
-                            "ui.import_wizard.error_cancelled_server_side",
-                            "Import was cancelled on the server.",
+                        toWizardError(
+                            new Error(
+                                t(
+                                    "ui.import_wizard.error_cancelled_server_side",
+                                    "Import was cancelled on the server.",
+                                ),
+                            ),
+                            "execute",
+                            /* retryable= */ false,
                         ),
                     );
                     return;
@@ -52,13 +58,9 @@ export function ExecutingStep({
                 onSuccess(response.book_id);
             })
             .catch((err: unknown) => {
-                const message =
-                    err instanceof ApiError
-                        ? err.detail
-                        : err instanceof Error
-                          ? err.message
-                          : String(err);
-                onError(message);
+                onError(
+                    toWizardError(err, "execute", /* retryable= */ true),
+                );
             });
     }, [
         tempRef,

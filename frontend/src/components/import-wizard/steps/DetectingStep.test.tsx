@@ -91,7 +91,10 @@ describe("DetectingStep", () => {
         );
 
         await waitFor(() => expect(onError).toHaveBeenCalled());
-        expect(onError.mock.calls[0][0]).toMatch(/unsupported/i);
+        const arg = onError.mock.calls[0][0];
+        expect(arg.message).toMatch(/unsupported/i);
+        expect(arg.context).toBe("detect");
+        expect(arg.retryable).toBe(true);
     });
 
     it("holds onDetected for at least the minimum visible time on fast detects", async () => {

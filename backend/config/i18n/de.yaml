@@ -1141,6 +1141,15 @@ ui:
     language_default_hint: (Standard 'de' wird verwendet)
     field_collapse: Zuklappen
     field_expand: Alle anzeigen ({n} Zeichen)
+    error_step_failed_at: "Fehler in: {step}"
+    error_step_show_details: "Details anzeigen"
+    error_step_hide_details: "Details ausblenden"
+    error_step_copy_details: "Details kopieren"
+    error_step_copy_success: "Kopiert!"
+    error_step_copy_failed: "Kopieren fehlgeschlagen"
+    error_step_report: "Issue auf GitHub melden"
+    error_retry: "Erneut versuchen"
+    error_cancelled_server_side: "Import wurde serverseitig abgebrochen."
   textarea:
     copy: "Kopieren"
     copy_success: "Kopiert!"
