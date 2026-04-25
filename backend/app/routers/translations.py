@@ -68,18 +68,13 @@ def list_siblings(
     """
     book = db.get(Book, book_id)
     if book is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found.")
     siblings = translation_groups.list_siblings(db, book_id=book_id)
     return SiblingsResponse(
         book_id=book_id,
         translation_group_id=book.translation_group_id,
         siblings=[
-            SiblingEntry(
-                book_id=s.book_id, title=s.title, language=s.language
-            )
-            for s in siblings
+            SiblingEntry(book_id=s.book_id, title=s.title, language=s.language) for s in siblings
         ],
     )
 
@@ -97,16 +92,11 @@ def link(
     valid books survive validation, returns
     ``{translation_group_id: null, linked_book_ids: []}``.
     """
-    valid_ids = [
-        b.id
-        for b in db.query(Book).filter(Book.id.in_(payload.book_ids)).all()
-    ]
+    valid_ids = [b.id for b in db.query(Book).filter(Book.id.in_(payload.book_ids)).all()]
     if len(valid_ids) < 2:
         return LinkResponse(translation_group_id=None, linked_book_ids=[])
     group_id = translation_groups.link_books(db, book_ids=valid_ids)
-    return LinkResponse(
-        translation_group_id=group_id, linked_book_ids=valid_ids
-    )
+    return LinkResponse(translation_group_id=group_id, linked_book_ids=valid_ids)
 
 
 @router.post("/{book_id}/unlink", status_code=status.HTTP_204_NO_CONTENT)

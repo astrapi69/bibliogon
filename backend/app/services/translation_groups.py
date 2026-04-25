@@ -122,9 +122,7 @@ def unlink_book(db: Session, *, book_id: str) -> None:
     db.add(book)
     db.flush()
 
-    remaining = (
-        db.query(Book).filter(Book.translation_group_id == group_id).all()
-    )
+    remaining = db.query(Book).filter(Book.translation_group_id == group_id).all()
     if len(remaining) == 1:
         # The lone survivor isn't part of a translation pair anymore.
         remaining[0].translation_group_id = None
