@@ -261,7 +261,18 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                     style={{maxWidth: 760, maxHeight: "85vh", overflowY: "auto"}}
                     data-testid="git-backup-dialog"
                 >
-                    <div className="dialog-header">
+                    <div
+                        className="dialog-header"
+                        data-testid="git-backup-header"
+                        style={{
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 2,
+                            background: "var(--bg-card)",
+                            paddingBottom: 8,
+                            borderBottom: "1px solid var(--border)",
+                        }}
+                    >
                         <Dialog.Title className="dialog-title">
                             <GitBranch size={18} style={{verticalAlign: -3, marginRight: 8}}/>
                             {t("ui.git.title", "Git-Sicherung")}
