@@ -6,6 +6,7 @@ import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
 import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
+import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
 import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
@@ -518,13 +519,15 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
         <div className="field" style={{flex: 1}}>
             <label className="label">{label}</label>
             {multiline ? (
-                <textarea
-                    className="input"
-                    style={{...inputStyle, ...styles.multilineInput, ...(mono ? {fontFamily: "var(--font-mono)"} : {})}}
-                    rows={8}
+                <EnhancedTextarea
                     value={text}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={onChange}
                     placeholder={placeholder}
+                    language={mono ? "css" : "plain"}
+                    mono={mono}
+                    maxChars={maxChars}
+                    rows={8}
+                    ariaLabel={label}
                 />
             ) : (
                 <>
@@ -539,13 +542,6 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
                         </datalist>
                     )}
                 </>
-            )}
-            {maxChars !== undefined && multiline && (
-                <CharCounter
-                    count={text.length}
-                    max={maxChars}
-                    label={t("ui.metadata.characters", "Zeichen")}
-                />
             )}
         </div>
     );

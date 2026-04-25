@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (既定は 'de')
     field_collapse: 折りたたむ
     field_expand: すべて表示 ({n} 文字)
+  textarea:
+    copy: "コピー"
+    copy_success: "コピーしました！"
+    copy_failed: "コピーに失敗しました"
+    words: "単語"
+    characters: "文字"

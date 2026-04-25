@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (defaults to 'de')
     field_collapse: Collapse
     field_expand: Show all ({n} chars)
+  textarea:
+    copy: "Copy"
+    copy_success: "Copied!"
+    copy_failed: "Copy failed"
+    words: "Words"
+    characters: "characters"

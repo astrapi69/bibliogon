@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (predefinicao 'de')
     field_collapse: Recolher
     field_expand: Mostrar tudo ({n} carat.)
+  textarea:
+    copy: "Copiar"
+    copy_success: "Copiado!"
+    copy_failed: "Falha ao copiar"
+    words: "Palavras"
+    characters: "caracteres"

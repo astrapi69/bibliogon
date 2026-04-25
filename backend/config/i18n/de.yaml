@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (Standard 'de' wird verwendet)
     field_collapse: Zuklappen
     field_expand: Alle anzeigen ({n} Zeichen)
+  textarea:
+    copy: "Kopieren"
+    copy_success: "Kopiert!"
+    copy_failed: "Kopieren fehlgeschlagen"
+    words: "Wörter"
+    characters: "Zeichen"

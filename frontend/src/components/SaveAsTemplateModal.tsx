@@ -8,6 +8,7 @@ import {
 } from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
@@ -162,14 +163,14 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
 
                         <div className="field">
                             <label className="label">{t("ui.save_template.description", "Beschreibung")} *</label>
-                            <textarea
-                                className="input"
-                                rows={2}
+                            <EnhancedTextarea
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={setDescription}
                                 placeholder={t("ui.save_template.description_placeholder", "Wofuer ist diese Vorlage?")}
-                                data-testid="save-template-description"
-                                maxLength={500}
+                                testid="save-template-description"
+                                rows={2}
+                                maxChars={500}
+                                ariaLabel={t("ui.save_template.description", "Beschreibung")}
                             />
                         </div>
 

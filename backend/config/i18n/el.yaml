@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (προεπιλογή 'de')
     field_collapse: Σύμπτυξη
     field_expand: Εμφάνιση όλων ({n} χαρακτ.)
+  textarea:
+    copy: "Αντιγραφή"
+    copy_success: "Αντιγράφηκε!"
+    copy_failed: "Η αντιγραφή απέτυχε"
+    words: "Λέξεις"
+    characters: "χαρακτήρες"

@@ -1141,3 +1141,9 @@ ui:
     language_default_hint: (varsayilan 'de')
     field_collapse: Daralt
     field_expand: Tumunu goster ({n} krk.)
+  textarea:
+    copy: "Kopyala"
+    copy_success: "Kopyalandi!"
+    copy_failed: "Kopyalama basarisiz"
+    words: "Kelimeler"
+    characters: "karakter"

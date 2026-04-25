@@ -3,6 +3,7 @@ import {api, ApiError, BookCreate, BookFromTemplateCreate, BookTemplate} from ".
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
+import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
@@ -390,12 +391,13 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
 
                                     <div className="field">
                                         <label className="label">{t("ui.create_book.description", "Beschreibung")}</label>
-                                        <textarea
-                                            className="input"
-                                            rows={3}
+                                        <EnhancedTextarea
                                             value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
+                                            onChange={setDescription}
                                             placeholder={t("ui.create_book.description_placeholder", "Kurze Beschreibung (optional)")}
+                                            rows={3}
+                                            ariaLabel={t("ui.create_book.description", "Beschreibung")}
+                                            testid="create-book-description"
                                         />
                                     </div>
 
