@@ -1149,3 +1149,5 @@ ui:
     characters: "characters"
     show_preview: "Show preview"
     hide_preview: "Hide preview"
+    fullscreen: "Fullscreen"
+    exit_fullscreen: "Exit fullscreen"

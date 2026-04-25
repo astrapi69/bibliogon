@@ -1149,3 +1149,5 @@ ui:
     characters: "文字"
     show_preview: "プレビューを表示"
     hide_preview: "プレビューを非表示"
+    fullscreen: "フルスクリーン"
+    exit_fullscreen: "フルスクリーンを終了"

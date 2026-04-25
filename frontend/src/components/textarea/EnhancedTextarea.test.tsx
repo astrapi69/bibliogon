@@ -246,6 +246,60 @@ describe("EnhancedTextarea", () => {
         expect(preview.innerHTML).not.toContain("alert");
     });
 
+    it("fullscreen toggle is hidden by default", () => {
+        render(<EnhancedTextarea value="" onChange={() => {}} testid="t"/>);
+        expect(
+            screen.queryByTestId("t-fullscreen"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("fullscreen=true exposes the toggle", () => {
+        render(
+            <EnhancedTextarea
+                value="x"
+                onChange={() => {}}
+                fullscreen
+                testid="t"
+            />,
+        );
+        expect(screen.getByTestId("t-fullscreen")).toBeInTheDocument();
+    });
+
+    it("fullscreen toggle wraps body in a dialog overlay", () => {
+        render(
+            <EnhancedTextarea
+                value="x"
+                onChange={() => {}}
+                fullscreen
+                testid="t"
+            />,
+        );
+        fireEvent.click(screen.getByTestId("t-fullscreen"));
+        const overlay = screen.getByTestId("t-fullscreen-overlay");
+        expect(overlay).toBeInTheDocument();
+        expect(overlay.getAttribute("role")).toBe("dialog");
+        expect(overlay.getAttribute("aria-modal")).toBe("true");
+    });
+
+    it("ESC closes the fullscreen overlay", () => {
+        render(
+            <EnhancedTextarea
+                value="x"
+                onChange={() => {}}
+                fullscreen
+                testid="t"
+            />,
+        );
+        fireEvent.click(screen.getByTestId("t-fullscreen"));
+        expect(
+            screen.getByTestId("t-fullscreen-overlay"),
+        ).toBeInTheDocument();
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(
+            screen.queryByTestId("t-fullscreen-overlay"),
+        ).not.toBeInTheDocument();
+    });
+
     it("html preview strips inline event handlers", () => {
         render(
             <EnhancedTextarea

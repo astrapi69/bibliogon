@@ -1149,3 +1149,5 @@ ui:
     characters: "karakter"
     show_preview: "Onizlemeyi goster"
     hide_preview: "Onizlemeyi gizle"
+    fullscreen: "Tam ekran"
+    exit_fullscreen: "Tam ekrandan cik"

@@ -226,7 +226,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             />
                         </Row>
                         <Field label={t("ui.metadata.subtitle", "Untertitel")} value={form.subtitle} onChange={(v) => set("subtitle", v)}/>
-                        <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline language="markdown"/>
+                        <Field label={t("ui.metadata.description", "Beschreibung")} value={form.description} onChange={(v) => set("description", v)} multiline language="markdown" fullscreen/>
                         <Row>
                             <Field label={t("ui.metadata.edition", "Edition")} value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
                             <Field label={t("ui.metadata.publish_date", "Datum")} value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
@@ -344,7 +344,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                         />
                         <AuthorAssetsPanel bookId={book.id}/>
                         <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
-                            multiline mono/>
+                            multiline mono fullscreen/>
                     </div>
                 </Tabs.Content>
 
@@ -493,7 +493,7 @@ function AuthorSelectField({
     );
 }
 
-function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId, language}: {
+function Field({label, value, onChange, placeholder, multiline, mono, maxChars, datalist, datalistId, language, fullscreen}: {
     label: string;
     value: string | null | undefined;
     onChange: (v: string) => void;
@@ -514,6 +514,8 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
      * ``markdown`` to enable a preview toggle on description-style
      * fields. */
     language?: "plain" | "markdown" | "html" | "css";
+    /** Show a fullscreen toggle (long-form Markdown / CSS). */
+    fullscreen?: boolean;
 }) {
     const {t} = useI18n();
     const inputStyle = mono ? {...styles.input, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"} : styles.input;
@@ -531,6 +533,7 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
                     language={language ?? (mono ? "css" : "plain")}
                     mono={mono}
                     maxChars={maxChars}
+                    fullscreen={fullscreen}
                     rows={8}
                     ariaLabel={label}
                 />

@@ -1149,3 +1149,5 @@ ui:
     characters: "Zeichen"
     show_preview: "Vorschau anzeigen"
     hide_preview: "Vorschau ausblenden"
+    fullscreen: "Vollbild"
+    exit_fullscreen: "Vollbild verlassen"

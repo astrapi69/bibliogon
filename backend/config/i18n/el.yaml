@@ -1149,3 +1149,5 @@ ui:
     characters: "χαρακτήρες"
     show_preview: "Εμφάνιση προεπισκόπησης"
     hide_preview: "Απόκρυψη προεπισκόπησης"
+    fullscreen: "Πλήρης οθόνη"
+    exit_fullscreen: "Έξοδος από πλήρη οθόνη"

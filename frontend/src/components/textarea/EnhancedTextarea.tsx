@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, Copy, Eye, EyeOff } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, Maximize2, Minimize2 } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import { copyToClipboard } from "../../utils/clipboard";
 import { CssPreview } from "./CssPreview";
@@ -50,6 +50,10 @@ export interface EnhancedTextareaProps {
     /** Resize textarea to fit content (capped at viewport / 2).
      * Default ``true``. */
     autosize?: boolean;
+    /** Show a fullscreen toggle in the toolbar. Default
+     * ``false`` — opt-in for long-form fields where editing in
+     * the dialog cramped the user. ESC closes. */
+    fullscreen?: boolean;
     /** Soft character limit. Counter goes red over the threshold;
      * input is NOT capped. */
     maxChars?: number;
@@ -79,6 +83,7 @@ export function EnhancedTextarea({
     wordCount,
     charCount = true,
     autosize = true,
+    fullscreen = false,
     maxChars,
     ariaLabel,
     testid,
@@ -93,8 +98,21 @@ export function EnhancedTextarea({
     );
     const copyTimerRef = useRef<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const previewable =
         language === "css" || language === "markdown" || language === "html";
+
+    useEffect(() => {
+        if (!isFullscreen) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.stopPropagation();
+                setIsFullscreen(false);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [isFullscreen]);
 
     const isMono =
         mono ?? (language === "css" || language === "html");
@@ -138,13 +156,23 @@ export function EnhancedTextarea({
     const charCountValue = value.length;
     const charOver = maxChars !== undefined && charCountValue > maxChars;
 
-    return (
+    const body = (
         <div
             data-testid={testid ? `${testid}-wrapper` : undefined}
             data-language={language}
-            style={{ display: "flex", flexDirection: "column", gap: 4 }}
+            style={
+                isFullscreen
+                    ? {
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                          width: "100%",
+                          height: "100%",
+                      }
+                    : { display: "flex", flexDirection: "column", gap: 4 }
+            }
         >
-            {(copy || previewable) && (
+            {(copy || previewable || fullscreen) && (
                 <div
                     style={{
                         display: "flex",
@@ -152,6 +180,46 @@ export function EnhancedTextarea({
                         gap: 6,
                     }}
                 >
+                    {fullscreen && (
+                        <button
+                            type="button"
+                            onClick={() => setIsFullscreen((p) => !p)}
+                            data-testid={
+                                testid
+                                    ? `${testid}-fullscreen`
+                                    : "textarea-fullscreen"
+                            }
+                            aria-pressed={isFullscreen}
+                            aria-label={
+                                isFullscreen
+                                    ? t("ui.textarea.exit_fullscreen", "Vollbild verlassen")
+                                    : t("ui.textarea.fullscreen", "Vollbild")
+                            }
+                            title={
+                                isFullscreen
+                                    ? t("ui.textarea.exit_fullscreen", "Vollbild verlassen")
+                                    : t("ui.textarea.fullscreen", "Vollbild")
+                            }
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "2px 8px",
+                                fontSize: "0.75rem",
+                                border: "1px solid var(--border)",
+                                borderRadius: 4,
+                                background: "var(--bg-card)",
+                                color: "var(--text-secondary)",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {isFullscreen ? (
+                                <Minimize2 size={12} />
+                            ) : (
+                                <Maximize2 size={12} />
+                            )}
+                        </button>
+                    )}
                     {previewable && value.trim().length > 0 && (
                         <button
                             type="button"
@@ -334,6 +402,29 @@ export function EnhancedTextarea({
             )}
         </div>
     );
+
+    if (isFullscreen) {
+        return (
+            <div
+                data-testid={testid ? `${testid}-fullscreen-overlay` : "textarea-fullscreen-overlay"}
+                role="dialog"
+                aria-modal="true"
+                aria-label={ariaLabel ?? t("ui.textarea.fullscreen", "Vollbild")}
+                style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 9999,
+                    background: "var(--bg-primary)",
+                    padding: 24,
+                    display: "flex",
+                    flexDirection: "column",
+                }}
+            >
+                {body}
+            </div>
+        );
+    }
+    return body;
 }
 
 /** Word counter that mirrors `editor.storage.characterCount`'s

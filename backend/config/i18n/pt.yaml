@@ -1149,3 +1149,5 @@ ui:
     characters: "caracteres"
     show_preview: "Mostrar pre-visualizacao"
     hide_preview: "Ocultar pre-visualizacao"
+    fullscreen: "Tela cheia"
+    exit_fullscreen: "Sair da tela cheia"

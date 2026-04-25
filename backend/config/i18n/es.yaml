@@ -1149,3 +1149,5 @@ ui:
     characters: "caracteres"
     show_preview: "Mostrar vista previa"
     hide_preview: "Ocultar vista previa"
+    fullscreen: "Pantalla completa"
+    exit_fullscreen: "Salir de pantalla completa"

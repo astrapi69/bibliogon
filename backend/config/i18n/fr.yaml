@@ -1149,3 +1149,5 @@ ui:
     characters: "caracteres"
     show_preview: "Afficher l'apercu"
     hide_preview: "Masquer l'apercu"
+    fullscreen: "Plein ecran"
+    exit_fullscreen: "Quitter le plein ecran"

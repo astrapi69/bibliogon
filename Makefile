@@ -1,4 +1,4 @@
-.PHONY: dev dev-bg dev-down dev-backend dev-frontend \
+.PHONY: dev dev-bg dev-down dev-backend dev-frontend stop restart \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync \
@@ -37,6 +37,10 @@ dev-down: ## Stop background dev servers
 	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@pkill -f "vite" 2>/dev/null || true
 	@echo "Done"
+
+stop: dev-down ## Alias for dev-down (stop dev servers)
+
+restart: dev-down dev ## Stop and restart dev servers (use after a hung session)
 
 dev-backend:
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000
