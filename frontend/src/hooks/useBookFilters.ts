@@ -151,7 +151,7 @@ export function useBookFilters(
                 if (q) {
                     const matches =
                         book.title.toLowerCase().includes(q) ||
-                        book.author.toLowerCase().includes(q) ||
+                        (book.author || "").toLowerCase().includes(q) ||
                         (book.genre || "").toLowerCase().includes(q) ||
                         book.language.toLowerCase().includes(q) ||
                         (book.series || "").toLowerCase().includes(q) ||
@@ -169,7 +169,7 @@ export function useBookFilters(
                 if (sortBy === "title") {
                     cmp = a.title.localeCompare(b.title);
                 } else if (sortBy === "author") {
-                    cmp = a.author.localeCompare(b.author);
+                    cmp = (a.author || "").localeCompare(b.author || "");
                 } else {
                     cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
                 }

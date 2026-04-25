@@ -3,6 +3,7 @@ ui:
     title: "My Books"
     new_book: "New Book"
     no_books: "No books yet"
+    book_no_author: "—"
     confirm_delete: "Really delete this book?"
     backup: "Backup"
     restore: "Restore"
@@ -511,6 +512,8 @@ ui:
     enter_license: "Enter license"
     delete_permanently: "Permanently delete books immediately (skip trash)"
     delete_permanently_hint: "When enabled, books are not moved to trash but deleted immediately."
+    allow_books_without_author: "Allow books without author (advanced)"
+    allow_books_without_author_hint: "When enabled, you can import or save books without setting an author. Useful for converting documents to audiobooks where author info is not required."
     ai_title: "AI Assistant"
     ai_enable: "Enable AI features"
     ai_enable_hint: "When disabled, all AI features are hidden."
@@ -661,6 +664,7 @@ ui:
     author_placeholder: "Select an author"
     author_unknown_prefix: "[unknown:"
     author_pen_names_label: "Pen names"
+    author_no_author: "(no author)"
     author_manage_link: "Manage authors in Settings"
     language: Language
     series_index: Series index
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Keep commits, branches and the remote URL. Credentials are stripped before adoption.
     git_adopt_without_remote: Adopt history only
     git_adopt_without_remote_desc: Keep commits and branches. Discard the remote URL so you can wire up a fresh one.
+    author_not_in_settings: 'Author "{name}" is not in your Settings.'
+    author_no_source: "No author detected in source."
+    author_action_create: 'Create "{name}" as a new author profile'
+    author_action_existing: "Use a different existing author"
+    author_action_defer: "Skip - set author later"
+    author_action_defer_hint: "Imports without an author; edit via the metadata editor."
+    author_create_button: "Create"
+    author_create_loading: "Creating..."
+    author_name_required: "Name must not be empty."
     error_title_required: Title is required
     error_author_required: Author is required
     mandatory_tooltip: Title and author are required

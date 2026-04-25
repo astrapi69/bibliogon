@@ -43,7 +43,11 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
             <div style={styles.content}>
                 <h3 style={styles.title}>{book.title}</h3>
                 {book.subtitle && <p style={styles.subtitle}>{book.subtitle}</p>}
-                <p style={styles.author}>{book.author}</p>
+                <p style={styles.author}>
+                    {book.author && book.author.trim()
+                        ? book.author
+                        : t("ui.dashboard.book_no_author", "—")}
+                </p>
                 {book.genre && (
                     <span style={styles.genre}>
                         {t(`ui.genres.${book.genre}`, book.genre)}

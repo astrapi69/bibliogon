@@ -3,6 +3,7 @@ ui:
     title: "Meine Bücher"
     new_book: "Neues Buch"
     no_books: "Noch keine Bücher"
+    book_no_author: "—"
     confirm_delete: "Buch wirklich löschen?"
     backup: "Backup"
     restore: "Restore"
@@ -511,6 +512,8 @@ ui:
     enter_license: "Lizenz eingeben"
     delete_permanently: "Gelöschte Bücher sofort permanent löschen"
     delete_permanently_hint: "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben."
+    allow_books_without_author: "Buecher ohne Autor zulassen (erweitert)"
+    allow_books_without_author_hint: "Aktiviere diese Option, um Buecher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbuechern, bei denen keine Autorinformation noetig ist."
     ai_title: "KI-Assistent"
     ai_enable: "KI-Funktionen aktivieren"
     ai_enable_hint: "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet."
@@ -661,6 +664,7 @@ ui:
     author_placeholder: "Autor auswaehlen"
     author_unknown_prefix: "[unbekannt:"
     author_pen_names_label: "Pen Names"
+    author_no_author: "(kein Autor)"
     author_manage_link: "Autoren in Einstellungen verwalten"
     language: Sprache
     series_index: Band-Nummer
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Commits, Branches und die Remote-URL behalten. Anmeldedaten werden vor der Uebernahme entfernt.
     git_adopt_without_remote: Nur Historie uebernehmen
     git_adopt_without_remote_desc: Commits und Branches behalten. Remote-URL verwerfen, damit du eine neue anbindest.
+    author_not_in_settings: 'Autor "{name}" ist nicht in deinen Einstellungen.'
+    author_no_source: "Kein Autor in der Quelle erkannt."
+    author_action_create: '"{name}" als neuen Autor anlegen'
+    author_action_existing: "Anderen vorhandenen Autor verwenden"
+    author_action_defer: "Spaeter setzen"
+    author_action_defer_hint: "Importiert ohne Autor; spaeter im Metadaten-Editor pflegen."
+    author_create_button: "Anlegen"
+    author_create_loading: "Anlegen..."
+    author_name_required: "Name darf nicht leer sein."
     error_title_required: Titel ist Pflichtfeld
     error_author_required: Autor ist Pflichtfeld
     mandatory_tooltip: Titel und Autor sind Pflichtfelder

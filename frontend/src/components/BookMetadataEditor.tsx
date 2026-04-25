@@ -5,6 +5,7 @@ import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircl
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
+import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
 import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
@@ -33,6 +34,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
     const authorProfile = useAuthorProfile();
+    const allowDeferAuthor = useAllowBooksWithoutAuthor();
 
     useEffect(() => {
         setForm({
@@ -212,6 +214,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                                 label={t("ui.metadata.author", "Autor")}
                                 value={form.author || ""}
                                 profile={authorProfile}
+                                allowEmpty={allowDeferAuthor}
                                 onChange={(v) => set("author", v)}
                             />
                             <Field
@@ -403,11 +406,17 @@ function AuthorSelectField({
     value,
     profile,
     onChange,
+    allowEmpty,
 }: {
     label: string;
     value: string;
     profile: AuthorProfile | null;
     onChange: (v: string) => void;
+    /** When true, an empty selection is a valid "no author" state
+     * (the Settings toggle ``app.allow_books_without_author`` is on).
+     * Adds an explicit "(no author)" option so the user can clear
+     * the field; the placeholder is no longer disabled. */
+    allowEmpty: boolean;
 }) {
     const {t} = useI18n();
     const knownNames = profileDisplayNames(profile);
@@ -424,7 +433,12 @@ function AuthorSelectField({
                 onChange={(e) => onChange(e.target.value)}
                 data-testid="metadata-author-select"
             >
-                {value === "" && (
+                {allowEmpty && (
+                    <option value="">
+                        {t("ui.metadata.author_no_author", "(no author)")}
+                    </option>
+                )}
+                {!allowEmpty && value === "" && (
                     <option value="" disabled>
                         {t("ui.metadata.author_placeholder", "Autor auswaehlen...")}
                     </option>

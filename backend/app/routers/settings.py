@@ -55,6 +55,69 @@ class AppSettingsUpdate(BaseModel):
     editor: dict[str, Any] | None = None
 
 
+class AddPenNameRequest(BaseModel):
+    name: str
+
+
+@router.post("/author/pen-name")
+def add_pen_name(body: AddPenNameRequest) -> dict[str, Any]:
+    """Add a pen name to the user's author profile.
+
+    Used by the import wizard when an imported book references an
+    author that is not in Settings: instead of dragging the user
+    through a Settings detour mid-import, the wizard offers to add
+    the unknown name as a new pen name on the existing profile.
+
+    Behavior:
+    - Empty / whitespace-only name -> 400.
+    - Name equal to existing author.name -> idempotent, returns
+      profile unchanged.
+    - Name already in pen_names -> idempotent.
+    - Otherwise appended to pen_names (preserves order).
+    - When author.name is empty, the new value is set as the real
+      name instead of appended (the schema's single-profile model
+      treats real-name + pen-names as one identity; bootstrapping
+      from zero authors should not leave the profile pen-names-
+      only).
+
+    Returns the updated `author:` block ({name, pen_names}).
+    """
+    cleaned = body.name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="name must be non-empty")
+
+    path = _base_dir / "config" / "app.yaml"
+    current = _read_yaml(path) if path.exists() else {}
+    author = current.setdefault("author", {})
+    name = (author.get("name") or "").strip()
+    pen_names_raw = author.get("pen_names") or []
+    pen_names = [
+        str(n).strip()
+        for n in pen_names_raw
+        if isinstance(n, str) and str(n).strip()
+    ]
+
+    if cleaned == name:
+        return {"name": name, "pen_names": pen_names}
+    if cleaned in pen_names:
+        return {"name": name, "pen_names": pen_names}
+
+    if not name:
+        author["name"] = cleaned
+    else:
+        pen_names.append(cleaned)
+        author["pen_names"] = pen_names
+
+    _write_yaml(path, current)
+    if _manager:
+        _manager.reload_config()
+
+    return {
+        "name": author.get("name", "") or "",
+        "pen_names": author.get("pen_names", []) or [],
+    }
+
+
 @router.patch("/app")
 def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
     """Update app configuration (merges with existing)."""

@@ -28,8 +28,23 @@ vi.mock("../../api/client", () => {
             this.detail = detail;
         }
     }
-    return { ApiError };
+    return {
+        ApiError,
+        api: {
+            settings: {
+                getApp: vi.fn(async () => ({})),
+                addPenName: vi.fn(async (name: string) => ({
+                    name: "Alice",
+                    pen_names: [name],
+                })),
+            },
+        },
+    };
 });
+
+vi.mock("../../hooks/useAllowBooksWithoutAuthor", () => ({
+    useAllowBooksWithoutAuthor: () => false,
+}));
 
 vi.mock("../AppDialog", () => ({
     useDialog: () => ({
@@ -40,6 +55,22 @@ vi.mock("../AppDialog", () => ({
 
 vi.mock("../../hooks/useAuthorChoices", () => ({
     useAuthorChoices: () => [],
+}));
+
+vi.mock("../../hooks/useAuthorProfile", () => ({
+    useAuthorProfile: () => ({
+        name: "Alice",
+        pen_names: [],
+    }),
+    profileDisplayNames: (
+        p: { name: string; pen_names: string[] } | null,
+    ) => {
+        if (!p) return [];
+        const out: string[] = [];
+        if (p.name) out.push(p.name);
+        out.push(...p.pen_names);
+        return out;
+    },
 }));
 
 function renderModal(onClose = vi.fn(), onImported = vi.fn()) {

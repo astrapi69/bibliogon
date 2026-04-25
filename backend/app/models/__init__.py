@@ -56,7 +56,7 @@ class Book(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     subtitle: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    author: Mapped[str] = mapped_column(String(300), nullable=False)
+    author: Mapped[str | None] = mapped_column(String(300), nullable=True)
     language: Mapped[str] = mapped_column(String(10), default="de")
     series: Mapped[str | None] = mapped_column(String(300), nullable=True)
     series_index: Mapped[int | None] = mapped_column(Integer, nullable=True)

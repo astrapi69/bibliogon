@@ -3,6 +3,7 @@ ui:
     title: "Τα βιβλία μου"
     new_book: "Νέο βιβλίο"
     no_books: "Δεν υπάρχουν βιβλία ακόμα"
+    book_no_author: "—"
     confirm_delete: "Θέλετε σίγουρα να διαγράψετε αυτό το βιβλίο;"
     backup: "Αντίγραφο ασφαλείας"
     restore: "Επαναφορά"
@@ -501,6 +502,8 @@ ui:
     enter_license: "Εισαγωγή άδειας"
     delete_permanently: "Οριστική διαγραφή βιβλίων αμέσως"
     delete_permanently_hint: "Τα βιβλία δεν μεταφέρονται στον κάδο αλλά διαγράφονται αμέσως."
+    allow_books_without_author: "Επιτρέπονται βιβλία χωρίς συγγραφέα (προηγμένο)"
+    allow_books_without_author_hint: "Όταν ενεργοποιηθεί, μπορείτε να εισαγάγετε ή να αποθηκεύσετε βιβλία χωρίς ορισμένο συγγραφέα. Χρήσιμο όταν μετατρέπετε έγγραφα σε ηχοβιβλία όπου τα στοιχεία συγγραφέα δεν απαιτούνται."
     ai_title: "Βοηθός AI"
     ai_enable: "Ενεργοποίηση λειτουργιών AI"
     ai_enable_hint: "Όταν είναι απενεργοποιημένο, όλες οι λειτουργίες AI είναι κρυμμένες."
@@ -661,6 +664,7 @@ ui:
     author_placeholder: "Επιλέξτε συγγραφέα"
     author_unknown_prefix: "[άγνωστο:"
     author_pen_names_label: "Ψευδώνυμα"
+    author_no_author: "(χωρίς συγγραφέα)"
     author_manage_link: "Διαχείριση συγγραφέων στις Ρυθμίσεις"
     language: Γλώσσα
     series_index: Αριθμός σειράς
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Διατήρηση commits, κλάδων και URL απομακρυσμένου. Τα διαπιστευτήρια αφαιρούνται πριν την υιοθέτηση.
     git_adopt_without_remote: Υιοθέτηση μόνο ιστορικού
     git_adopt_without_remote_desc: Διατήρηση commits και κλάδων. Απόρριψη του απομακρυσμένου URL ώστε να συνδέσετε νέο.
+    author_not_in_settings: 'Ο συγγραφέας "{name}" δεν βρίσκεται στις Ρυθμίσεις σας.'
+    author_no_source: "Δεν εντοπίστηκε συγγραφέας στην πηγή."
+    author_action_create: 'Δημιουργία του "{name}" ως νέο προφίλ συγγραφέα'
+    author_action_existing: "Χρήση άλλου υπάρχοντος συγγραφέα"
+    author_action_defer: "Παράλειψη - ορισμός συγγραφέα αργότερα"
+    author_action_defer_hint: "Εισάγεται χωρίς συγγραφέα; επεξεργαστείτε από τον επεξεργαστή μεταδεδομένων."
+    author_create_button: "Δημιουργία"
+    author_create_loading: "Δημιουργία..."
+    author_name_required: "Το όνομα δεν μπορεί να είναι κενό."
     error_title_required: Ο τίτλος είναι υποχρεωτικός
     error_author_required: Ο συγγραφέας είναι υποχρεωτικός
     mandatory_tooltip: Τίτλος και συγγραφέας είναι υποχρεωτικοί

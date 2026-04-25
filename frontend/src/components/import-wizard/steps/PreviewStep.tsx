@@ -1,4 +1,5 @@
 import { useI18n } from "../../../hooks/useI18n";
+import { useAllowBooksWithoutAuthor } from "../../../hooks/useAllowBooksWithoutAuthor";
 import type {
     DetectedProject,
     DuplicateInfo,
@@ -8,12 +9,17 @@ import type {
 import { PreviewPanel } from "./PreviewPanel";
 import { DuplicateBanner } from "./DuplicateBanner";
 
-function hasMandatoryValues(overrides: Overrides): boolean {
+function hasMandatoryValues(
+    overrides: Overrides,
+    allowNullAuthor: boolean,
+): boolean {
     const title = overrides.title;
     const author = overrides.author;
     const valid = (v: unknown): boolean =>
         typeof v === "string" && v.trim().length > 0;
-    return valid(title) && valid(author);
+    if (!valid(title)) return false;
+    if (allowNullAuthor) return true;
+    return valid(author);
 }
 
 export function PreviewStep({
@@ -42,7 +48,8 @@ export function PreviewStep({
     onConfirm: () => void;
 }) {
     const { t } = useI18n();
-    const canImport = hasMandatoryValues(overrides);
+    const allowDeferAuthor = useAllowBooksWithoutAuthor();
+    const canImport = hasMandatoryValues(overrides, allowDeferAuthor);
 
     return (
         <div data-testid="preview-step">

@@ -32,7 +32,12 @@ export interface Book {
     id: string;
     title: string;
     subtitle: string | null;
-    author: string;
+    /** Nullable when the user enabled
+     *  ``app.allow_books_without_author`` in Settings and the
+     *  import wizard's defer path was used (or the metadata
+     *  editor cleared the field). UI surfaces an em-dash
+     *  placeholder. */
+    author: string | null;
     language: string;
     genre: string | null;
     series: string | null;
@@ -126,7 +131,7 @@ export interface ChapterMetricsResponse {
 export interface BookCreate {
     title: string;
     subtitle?: string;
-    author: string;
+    author?: string | null;
     language?: string;
     genre?: string;
     series?: string;
@@ -1011,6 +1016,19 @@ export const api = {
                 method: "PATCH",
                 body: JSON.stringify(data),
             }),
+
+        /** Append a name to the user's author profile. The wizard's
+         * AuthorPicker calls this on the "Create new" path when the
+         * imported source references an author not yet in Settings.
+         * Returns the updated `{name, pen_names}` block. */
+        addPenName: (name: string) =>
+            request<{name: string; pen_names: string[]}>(
+                "/settings/author/pen-name",
+                {
+                    method: "POST",
+                    body: JSON.stringify({name}),
+                },
+            ),
 
         listPlugins: () => request<Record<string, unknown>>("/settings/plugins"),
 

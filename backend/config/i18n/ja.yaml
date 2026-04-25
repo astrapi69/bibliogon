@@ -3,6 +3,7 @@ ui:
     title: "マイブック"
     new_book: "新しい本"
     no_books: "まだ本がありません"
+    book_no_author: "—"
     confirm_delete: "この本を本当に削除しますか?"
     backup: "バックアップ"
     restore: "復元"
@@ -511,6 +512,8 @@ ui:
     enter_license: "ライセンスを入力"
     delete_permanently: "書籍をすぐに完全に削除する"
     delete_permanently_hint: "有効にするとゴミ箱を経由せず即座に削除されます。"
+    allow_books_without_author: "著者なしの本を許可（上級）"
+    allow_books_without_author_hint: "有効にすると、著者を設定せずに本をインポートまたは保存できます。著者情報が不要な、ドキュメントからオーディオブックへの変換などに便利です。"
     ai_title: "AIアシスタント"
     ai_enable: "AI機能を有効にする"
     ai_enable_hint: "無効にすると、すべてのAI機能が非表示になります。"
@@ -661,6 +664,7 @@ ui:
     author_placeholder: "著者を選択"
     author_unknown_prefix: "[不明:"
     author_pen_names_label: "ペンネーム"
+    author_no_author: "（著者なし）"
     author_manage_link: "設定で著者を管理"
     language: 言語
     series_index: シリーズ番号
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: コミット、ブランチ、リモート URL を保持します。認証情報は取り込み前に削除されます。
     git_adopt_without_remote: 履歴のみを取り込む
     git_adopt_without_remote_desc: コミットとブランチを保持します。新しいリモートを設定できるよう、リモート URL は破棄します。
+    author_not_in_settings: '著者 "{name}" は設定に存在しません。'
+    author_no_source: "ソースから著者が検出されませんでした。"
+    author_action_create: '"{name}" を新しい著者プロフィールとして作成'
+    author_action_existing: "既存の別の著者を使用"
+    author_action_defer: "スキップ - 後で著者を設定"
+    author_action_defer_hint: "著者なしでインポートします。後でメタデータエディタから編集できます。"
+    author_create_button: "作成"
+    author_create_loading: "作成中..."
+    author_name_required: "名前は空にできません。"
     error_title_required: タイトルは必須です
     error_author_required: 著者は必須です
     mandatory_tooltip: タイトルと著者は必須です

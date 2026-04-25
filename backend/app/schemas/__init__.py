@@ -48,7 +48,7 @@ class ChapterType(str, Enum):
 class BookCreate(BaseModel):
     title: str
     subtitle: str | None = None
-    author: str
+    author: str | None = None
     language: str = "de"
     genre: str | None = None
     series: str | None = None
@@ -161,7 +161,7 @@ class BookOut(BaseModel):
     id: str
     title: str
     subtitle: str | None
-    author: str
+    author: str | None
     language: str
     genre: str | None = None
     series: str | None

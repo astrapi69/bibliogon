@@ -431,7 +431,7 @@ export default function BookEditor() {
                     chapterVersion={activeChapterMeta.version}
                     bookContext={{
                         title: book.title,
-                        author: book.author,
+                        author: book.author || "",
                         language: book.language || "de",
                         genre: book.genre || "",
                         description: book.description || "",

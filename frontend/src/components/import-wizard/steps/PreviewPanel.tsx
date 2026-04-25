@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { BookOpen, ChevronRight, ImageOff, Plus, X } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
-import { useAuthorChoices } from "../../../hooks/useAuthorChoices";
+import { useAllowBooksWithoutAuthor } from "../../../hooks/useAllowBooksWithoutAuthor";
+import {
+    useAuthorProfile,
+    type AuthorProfile,
+} from "../../../hooks/useAuthorProfile";
 import type {
     BookImportOverrideKey,
     DetectedAsset,
@@ -11,6 +15,7 @@ import type {
     GitAdoption,
     Overrides,
 } from "../../../api/import";
+import { AuthorPicker } from "./AuthorPicker";
 
 /**
  * Step 3 Preview — sectioned field selection.
@@ -303,7 +308,12 @@ export function PreviewPanel({
     onGitAdoptionChange?: (choice: GitAdoption) => void;
 }) {
     const { t } = useI18n();
-    const authorChoices = useAuthorChoices();
+    const fetchedProfile = useAuthorProfile();
+    const [profileOverride, setProfileOverride] = useState<
+        AuthorProfile | null
+    >(null);
+    const authorProfile = profileOverride ?? fetchedProfile;
+    const allowDeferAuthor = useAllowBooksWithoutAuthor();
     const [state, setStateRaw] = useState<
         Record<BookImportOverrideKey, FieldState>
     >(() => buildInitialFormState(detected));
@@ -388,7 +398,10 @@ export function PreviewPanel({
         null;
 
     const titleEmpty = formValueEmpty(state.title.value);
-    const authorEmpty = formValueEmpty(state.author.value);
+    const authorBlank = formValueEmpty(state.author.value);
+    // Only flag as "empty -> error" when the toggle is off; when on,
+    // a deliberately empty author is the defer path.
+    const authorEmpty = authorBlank && !allowDeferAuthor;
 
     return (
         <div data-testid="preview-panel" className="preview-panel">
@@ -433,35 +446,20 @@ export function PreviewPanel({
                             {t("ui.metadata.author", "Author")}{" "}
                             <span style={{ color: "var(--danger)" }}>*</span>
                         </label>
-                        <input
-                            data-testid="preview-field-author"
-                            aria-invalid={authorEmpty}
-                            value={state.author.value}
-                            onChange={(e) =>
-                                updateField("author", { value: e.target.value })
-                            }
-                            list={
-                                authorChoices.length > 0
-                                    ? "preview-author-options"
-                                    : undefined
-                            }
-                            style={{
-                                ...inputStyle,
-                                borderColor: authorEmpty
-                                    ? "var(--danger)"
-                                    : "var(--border)",
-                            }}
-                        />
-                        {authorChoices.length > 0 && (
-                            <datalist
-                                id="preview-author-options"
-                                data-testid="preview-author-datalist"
-                            >
-                                {authorChoices.map((name) => (
-                                    <option key={name} value={name} />
-                                ))}
-                            </datalist>
-                        )}
+                        <div data-testid="preview-field-author">
+                            <AuthorPicker
+                                value={state.author.value}
+                                detectedName={detected.author ?? ""}
+                                profile={authorProfile}
+                                onChange={(v) =>
+                                    updateField("author", { value: v })
+                                }
+                                onProfileRefresh={(next) =>
+                                    setProfileOverride(next)
+                                }
+                                invalid={authorEmpty}
+                            />
+                        </div>
                         {authorEmpty && (
                             <p data-testid="preview-author-error" style={errorStyle}>
                                 {t(

@@ -3,6 +3,7 @@ ui:
     title: "Kitaplarim"
     new_book: "Yeni kitap"
     no_books: "Henuz kitap yok"
+    book_no_author: "—"
     confirm_delete: "Bu kitabi silmek istediginizden emin misiniz?"
     backup: "Yedekleme"
     restore: "Geri yukle"
@@ -522,6 +523,8 @@ ui:
     enter_license: "Lisans girin"
     delete_permanently: "Kitaplari hemen kalici olarak sil"
     delete_permanently_hint: "Kitaplar cop kutusuna tasimaz, dogrudan silinir."
+    allow_books_without_author: "Yazarsiz kitaplara izin ver (gelismis)"
+    allow_books_without_author_hint: "Etkinlestirildiginde yazar belirtmeden kitap ice aktarabilir veya kaydedebilirsiniz. Yazar bilgisi gerekmeyen sesli kitap donusumlerinde faydalidir."
     ai_title: "AI Asistani"
     ai_enable: "AI islevlerini etkinlestir"
     ai_enable_hint: "Devre disi birakildiginda tum AI islevleri gizlenir."
@@ -694,6 +697,7 @@ ui:
     author_placeholder: "Bir yazar secin"
     author_unknown_prefix: "[bilinmeyen:"
     author_pen_names_label: "Takma adlar"
+    author_no_author: "(yazar yok)"
     author_manage_link: "Yazarlari Ayarlarda yonet"
     language: Dil
     series_index: Seri numarasi
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Commitleri, dallari ve uzak URL'yi koru. Kimlik bilgileri aktarmadan once kaldirilir.
     git_adopt_without_remote: Sadece gecmisi al
     git_adopt_without_remote_desc: Commitleri ve dallari koru. Yenisini baglamak icin uzak URL'yi at.
+    author_not_in_settings: '"{name}" yazari Ayarlarinizda yok.'
+    author_no_source: "Kaynaktan yazar tespit edilmedi."
+    author_action_create: '"{name}" yi yeni bir yazar profili olarak olustur'
+    author_action_existing: "Farkli mevcut bir yazar kullan"
+    author_action_defer: "Atla - yazari sonra ayarla"
+    author_action_defer_hint: "Yazar olmadan ice aktarilir; meta veri duzenleyicisinden duzenleyin."
+    author_create_button: "Olustur"
+    author_create_loading: "Olusturuluyor..."
+    author_name_required: "Isim bos olamaz."
     error_title_required: Baslik gerekli
     error_author_required: Yazar gerekli
     mandatory_tooltip: Baslik ve yazar gerekli

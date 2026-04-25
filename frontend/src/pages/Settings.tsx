@@ -226,6 +226,9 @@ function AppSettings({config, onSave, saving}: {
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
     const [trashDays, setTrashDays] = useState(String(Number(app.trash_auto_delete_days ?? 30)));
     const [deletePermanently, setDeletePermanently] = useState(Boolean(app.delete_permanently));
+    const [allowBooksWithoutAuthor, setAllowBooksWithoutAuthor] = useState(
+        Boolean(app.allow_books_without_author),
+    );
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [corePlugins, setCorePlugins] = useState<Record<string, boolean>>({
         export: true, help: true, getstarted: true,
@@ -243,6 +246,7 @@ function AppSettings({config, onSave, saving}: {
         setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
         setDeletePermanently(Boolean(app.delete_permanently));
+        setAllowBooksWithoutAuthor(Boolean(app.allow_books_without_author));
         setCorePlugins({
             export: enabledPlugins.includes("export"),
             help: enabledPlugins.includes("help"),
@@ -268,6 +272,7 @@ function AppSettings({config, onSave, saving}: {
                 trash_auto_delete_enabled: trashEnabled,
                 trash_auto_delete_days: Number(trashDays),
                 delete_permanently: deletePermanently,
+                allow_books_without_author: allowBooksWithoutAuthor,
             },
             ui: {title: uiTitle, subtitle: uiSubtitle, theme},
             plugins: {enabled},
@@ -363,6 +368,29 @@ function AppSettings({config, onSave, saving}: {
                     </label>
                     <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
                         {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Buecher nicht in den Papierkorb verschoben.")}
+                    </small>
+                </div>
+                <div className="field">
+                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
+                        <input
+                            type="checkbox"
+                            checked={allowBooksWithoutAuthor}
+                            onChange={(e) => setAllowBooksWithoutAuthor(e.target.checked)}
+                            data-testid="settings-allow-books-without-author"
+                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
+                        />
+                        <span className="label" style={{margin: 0}}>
+                            {t(
+                                "ui.settings.allow_books_without_author",
+                                "Buecher ohne Autor zulassen (erweitert)",
+                            )}
+                        </span>
+                    </label>
+                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                        {t(
+                            "ui.settings.allow_books_without_author_hint",
+                            "Aktiviere diese Option, um Buecher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbuechern, bei denen keine Autorinformation noetig ist.",
+                        )}
                     </small>
                 </div>
                 <button

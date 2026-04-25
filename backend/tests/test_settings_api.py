@@ -418,3 +418,66 @@ def test_enable_then_disable_roundtrip(client, temp_base):
         config = yaml.safe_load(f)
     assert "grammar" not in config["plugins"]["enabled"]
     assert "grammar" in config["plugins"]["disabled"]
+
+
+# --- POST /api/settings/author/pen-name ---
+
+
+def test_add_pen_name_appends_to_existing_profile(client, temp_base):
+    """name set, pen_names empty -> new pen name appended."""
+    resp = client.post(
+        "/api/settings/author/pen-name", json={"name": "New Pen"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "Test Author"
+    assert body["pen_names"] == ["New Pen"]
+    with open(temp_base / "config" / "app.yaml") as f:
+        config = yaml.safe_load(f)
+    assert config["author"]["pen_names"] == ["New Pen"]
+
+
+def test_add_pen_name_idempotent_when_already_present(client, temp_base):
+    """Adding a pen name that already exists is a no-op."""
+    client.post("/api/settings/author/pen-name", json={"name": "Pen A"})
+    resp = client.post(
+        "/api/settings/author/pen-name", json={"name": "Pen A"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["pen_names"] == ["Pen A"]
+
+
+def test_add_pen_name_idempotent_when_matches_real_name(client, temp_base):
+    """Adding the real name does not duplicate it into pen_names."""
+    resp = client.post(
+        "/api/settings/author/pen-name", json={"name": "Test Author"}
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"name": "Test Author", "pen_names": []}
+
+
+def test_add_pen_name_sets_real_name_when_empty(tmp_path, monkeypatch):
+    """Bootstrapping: with empty profile, the first add becomes the
+    real name rather than a lonely pen name."""
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "app.yaml").write_text(yaml.dump({"author": {"name": "", "pen_names": []}}))
+
+    monkeypatch.setattr(settings_module, "_base_dir", tmp_path)
+    monkeypatch.setattr(settings_module, "_manager", None)
+
+    c = TestClient(app)
+    resp = c.post("/api/settings/author/pen-name", json={"name": "First"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "First"
+    assert body["pen_names"] == []
+
+
+def test_add_pen_name_rejects_blank(client):
+    """Empty / whitespace-only name -> 400."""
+    resp = client.post(
+        "/api/settings/author/pen-name", json={"name": "   "}
+    )
+    assert resp.status_code == 400
+

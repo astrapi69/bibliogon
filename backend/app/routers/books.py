@@ -36,6 +36,43 @@ def _is_permanent_delete() -> bool:
         return False
 
 
+def _allow_books_without_author() -> bool:
+    """Check the advanced toggle that gates the NULL-author code path.
+
+    Default off — keeps the historical mandatory-author UX. When the
+    user enables it in Settings, the import wizard's defer option
+    appears and PATCH/POST against ``books`` accept null/empty as
+    'no author yet'.
+    """
+    from pathlib import Path
+
+    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
+    if not config_path.exists():
+        return False
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        return bool(config.get("app", {}).get("allow_books_without_author", False))
+    except Exception:
+        return False
+
+
+def _validate_author(value: str | None, allow_null: bool) -> str | None:
+    """Reject NULL/blank author when the toggle is off; coerce blank
+    to None when on."""
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        if allow_null:
+            return None
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Author is required. Enable 'Allow books without author' "
+                "in Settings to import/save without one."
+            ),
+        )
+    return value.strip() if isinstance(value, str) else value
+
+
 def _get_trash_auto_delete_config() -> tuple[bool, int]:
     """Get trash auto-delete settings: (enabled, days)."""
     from pathlib import Path
@@ -101,7 +138,9 @@ def list_books(db: Session = Depends(get_db)):
 
 @router.post("", response_model=BookOut, status_code=status.HTTP_201_CREATED)
 def create_book(payload: BookCreate, db: Session = Depends(get_db)):
-    book = Book(**payload.model_dump())
+    data = payload.model_dump()
+    data["author"] = _validate_author(data.get("author"), _allow_books_without_author())
+    book = Book(**data)
     db.add(book)
     db.commit()
     db.refresh(book)
@@ -180,7 +219,12 @@ def update_book(book_id: str, payload: BookUpdate, db: Session = Depends(get_db)
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    update_data = payload.model_dump(exclude_unset=True)
+    if "author" in update_data:
+        update_data["author"] = _validate_author(
+            update_data["author"], _allow_books_without_author()
+        )
+    for key, value in update_data.items():
         # ``audiobook_skip_chapter_types`` and ``keywords`` are exposed as
         # list[str] in the API but stored as JSON-encoded Text columns.
         # Encode here so the rest of the loop stays generic.

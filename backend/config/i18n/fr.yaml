@@ -3,6 +3,7 @@ ui:
     title: "Mes livres"
     new_book: "Nouveau livre"
     no_books: "Pas encore de livres"
+    book_no_author: "—"
     confirm_delete: "Voulez-vous vraiment supprimer ce livre?"
     backup: "Sauvegarde"
     restore: "Restaurer"
@@ -512,6 +513,8 @@ ui:
     enter_license: "Entrer la licence"
     delete_permanently: "Supprimer les livres definitivement"
     delete_permanently_hint: "Les livres ne seront pas mis a la corbeille mais supprimes immediatement."
+    allow_books_without_author: "Autoriser les livres sans auteur (avance)"
+    allow_books_without_author_hint: "Une fois active, vous pouvez importer ou enregistrer des livres sans definir d'auteur. Utile pour convertir des documents en livres audio ou l'auteur n'est pas requis."
     ai_title: "Assistant AI"
     ai_enable: "Activer les fonctions AI"
     ai_enable_hint: "Si desactive, toutes les fonctions AI sont masquees."
@@ -694,6 +697,7 @@ ui:
     author_placeholder: "Selectionner un auteur"
     author_unknown_prefix: "[inconnu:"
     author_pen_names_label: "Pseudonymes"
+    author_no_author: "(sans auteur)"
     author_manage_link: "Gerer les auteurs dans Parametres"
     language: Langue
     series_index: Numero dans la serie
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Conserver commits, branches et URL distante. Les identifiants sont supprimes avant adoption.
     git_adopt_without_remote: Adopter l'historique uniquement
     git_adopt_without_remote_desc: Conserver commits et branches. Supprimer l'URL distante pour pouvoir en configurer une nouvelle.
+    author_not_in_settings: 'L''auteur "{name}" n''est pas dans vos Parametres.'
+    author_no_source: "Aucun auteur detecte dans la source."
+    author_action_create: 'Creer "{name}" en tant que nouveau profil d''auteur'
+    author_action_existing: "Utiliser un autre auteur existant"
+    author_action_defer: "Ignorer - definir l'auteur plus tard"
+    author_action_defer_hint: "Importe sans auteur; modifiez via l'editeur de metadonnees."
+    author_create_button: "Creer"
+    author_create_loading: "Creation..."
+    author_name_required: "Le nom ne peut pas etre vide."
     error_title_required: Le titre est requis
     error_author_required: L'auteur est requis
     mandatory_tooltip: Le titre et l'auteur sont requis

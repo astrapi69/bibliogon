@@ -21,11 +21,31 @@ maps to HTTP 400. The validation runs before any DB write.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
+import yaml
 from sqlalchemy.orm import Session
 
 from app.models import Book
+
+
+def _allow_books_without_author_from_yaml() -> bool:
+    """Read the advanced toggle from ``config/app.yaml``.
+
+    Used as the default for ``apply_book_overrides`` so callers that
+    don't thread a flag still respect the Settings switch. Returns
+    False on any read error to preserve the historical behaviour.
+    """
+    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
+    if not config_path.exists():
+        return False
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        return bool(config.get("app", {}).get("allow_books_without_author", False))
+    except Exception:
+        return False
 
 #: All Book columns the wizard can override. Mirrors the Metadata
 #: Editor's field list. Adding a new user-editable column to Book:
@@ -84,7 +104,10 @@ class MandatoryFieldMissing(ValueError):
 
 
 def validate_overrides(
-    overrides: dict[str, Any], *, detected: dict[str, Any] | None = None
+    overrides: dict[str, Any],
+    *,
+    detected: dict[str, Any] | None = None,
+    allow_null_author: bool = False,
 ) -> None:
     """Reject unknown keys and empty mandatory fields.
 
@@ -93,19 +116,30 @@ def validate_overrides(
     case we accept the detected value. Pass ``None`` for
     ``detected`` to require the overrides to carry title + author
     itself.
+
+    ``allow_null_author`` opens the wizard's defer path: when True,
+    explicit null or blank author values pass validation (they later
+    persist as ``Book.author = NULL``). The router reads this flag
+    from the ``app.allow_books_without_author`` Settings toggle.
     """
     allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
     unknown = set(overrides) - allowed
     if unknown:
         raise KeyError(f"Overrides not allowed for Book import: {sorted(unknown)}")
     for field in MANDATORY_FIELDS:
-        # Explicit null or blank string -> reject.
+        nullable = field == "author" and allow_null_author
+        # Explicit null or blank string -> reject (unless nullable).
         if field in overrides:
             value = overrides[field]
-            if value is None or (isinstance(value, str) and not value.strip()):
+            is_blank = value is None or (
+                isinstance(value, str) and not value.strip()
+            )
+            if is_blank and not nullable:
                 raise MandatoryFieldMissing(field)
             continue
         # Field not in overrides: fall back to detected.
+        if nullable:
+            continue
         if detected is None:
             raise MandatoryFieldMissing(field)
         fallback = detected.get(field)
@@ -113,7 +147,13 @@ def validate_overrides(
             raise MandatoryFieldMissing(field)
 
 
-def apply_book_overrides(session: Session, book_id: str, overrides: dict[str, Any]) -> None:
+def apply_book_overrides(
+    session: Session,
+    book_id: str,
+    overrides: dict[str, Any],
+    *,
+    allow_null_author: bool | None = None,
+) -> None:
     """Apply a flat overrides dict to the book row.
 
     Null values are skipped (the user deselected the field; keep
@@ -125,9 +165,17 @@ def apply_book_overrides(session: Session, book_id: str, overrides: dict[str, An
     payload never reaches the handler). The handler runs on the
     assumption that overrides have already been validated against
     the detected project.
+
+    ``allow_null_author`` carries the ``app.allow_books_without_author``
+    Settings toggle. When True, an explicit ``author: null`` or
+    ``author: ""`` override DOES NOT use the null-skip path — it
+    clears the column to NULL so the wizard's "defer author" path
+    survives end to end.
     """
     if not overrides:
         return
+    if allow_null_author is None:
+        allow_null_author = _allow_books_without_author_from_yaml()
     allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
     unknown = set(overrides) - allowed
     if unknown:
@@ -139,6 +187,12 @@ def apply_book_overrides(session: Session, book_id: str, overrides: dict[str, An
         if key in META_OVERRIDE_KEYS:
             # Meta overrides (primary_cover, ...) don't map to Book
             # columns; handlers consume them before calling here.
+            continue
+        if key == "author" and allow_null_author and (
+            value is None or (isinstance(value, str) and not value.strip())
+        ):
+            # Defer path: explicit clear, NOT the null-skip default.
+            book.author = None
             continue
         if value is None:
             # User deselected; keep the handler's value / column default.

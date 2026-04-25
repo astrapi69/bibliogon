@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { PreviewPanel } from "./PreviewPanel";
 import type { DetectedProject, Overrides } from "../../../api/import";
@@ -15,6 +15,55 @@ const mockAuthorChoices = vi.fn(() => [] as string[]);
 vi.mock("../../../hooks/useAuthorChoices", () => ({
     useAuthorChoices: () => mockAuthorChoices(),
 }));
+
+const mockAuthorProfile = vi.fn(
+    () =>
+        ({ name: "Alice", pen_names: [] }) as {
+            name: string;
+            pen_names: string[];
+        } | null,
+);
+vi.mock("../../../hooks/useAuthorProfile", () => ({
+    useAuthorProfile: () => mockAuthorProfile(),
+    profileDisplayNames: (
+        p: { name: string; pen_names: string[] } | null,
+    ) => {
+        if (!p) return [];
+        const out: string[] = [];
+        if (p.name) out.push(p.name);
+        out.push(...p.pen_names);
+        return out;
+    },
+}));
+
+vi.mock("../../../api/client", () => ({
+    api: {
+        settings: {
+            getApp: vi.fn(async () => ({})),
+            addPenName: vi.fn(async (name: string) => ({
+                name: "Alice",
+                pen_names: [name],
+            })),
+        },
+    },
+    ApiError: class extends Error {
+        detail: string;
+        constructor(s: number, d: string) {
+            super(d);
+            this.detail = d;
+        }
+    },
+}));
+
+const mockAllowDefer = vi.fn(() => false);
+vi.mock("../../../hooks/useAllowBooksWithoutAuthor", () => ({
+    useAllowBooksWithoutAuthor: () => mockAllowDefer(),
+}));
+
+beforeEach(() => {
+    mockAllowDefer.mockReset();
+    mockAllowDefer.mockReturnValue(false);
+});
 
 function project(overrides: Partial<DetectedProject> = {}): DetectedProject {
     return {
@@ -67,10 +116,16 @@ function renderPanel(
 }
 
 describe("PreviewPanel — basics section", () => {
-    it("renders title + author as editable, always included", () => {
+    it("renders title input and author picker, always included", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "An Author",
+            pen_names: [],
+        });
         renderPanel(project({title: "A Title", author: "An Author"}));
         expect(screen.getByTestId("preview-field-title")).toHaveValue("A Title");
-        expect(screen.getByTestId("preview-field-author")).toHaveValue(
+        expect(screen.getByTestId("preview-field-author")).toBeInTheDocument();
+        // Matched author -> select dropdown, no banner.
+        expect(screen.getByTestId("preview-author-select")).toHaveValue(
             "An Author",
         );
     });
@@ -479,34 +534,115 @@ describe("PreviewPanel — git adoption", () => {
     });
 });
 
-describe("PreviewPanel — author datalist", () => {
-    it("no datalist and no list attr when settings have no author choices", () => {
-        mockAuthorChoices.mockReturnValueOnce([]);
-        renderPanel();
+describe("PreviewPanel — author picker", () => {
+    it("matched author renders profile select (no banner)", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: ["Pen One", "Pen Two"],
+        });
+        renderPanel(project({author: "Real Name"}));
         expect(
-            screen.queryByTestId("preview-author-datalist"),
+            screen.queryByTestId("preview-author-banner"),
         ).not.toBeInTheDocument();
-        expect(screen.getByTestId("preview-field-author")).not.toHaveAttribute(
-            "list",
+        expect(screen.getByTestId("preview-author-select")).toHaveValue(
+            "Real Name",
         );
     });
 
-    it("renders datalist with pen names when choices present", () => {
-        mockAuthorChoices.mockReturnValueOnce([
-            "Real Name",
-            "Pen Name One",
-            "Pen Name Two",
-        ]);
-        renderPanel();
-        const datalist = screen.getByTestId("preview-author-datalist");
-        expect(datalist).toBeInTheDocument();
-        expect(screen.getByTestId("preview-field-author")).toHaveAttribute(
-            "list",
-            "preview-author-options",
+    it("matched pen name renders profile select with that pen selected", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: ["Pen One"],
+        });
+        renderPanel(project({author: "Pen One"}));
+        expect(screen.getByTestId("preview-author-select")).toHaveValue(
+            "Pen One",
         );
-        const options = datalist.querySelectorAll("option");
-        expect(Array.from(options).map((o) => o.getAttribute("value"))).toEqual(
-            ["Real Name", "Pen Name One", "Pen Name Two"],
+    });
+
+    it("unmatched author surfaces banner with create + existing radios (defer hidden by default)", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: [],
+        });
+        renderPanel(project({author: "Stranger"}));
+        expect(
+            screen.getByTestId("preview-author-banner"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-author-mode-create"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("preview-author-mode-existing"),
+        ).toBeInTheDocument();
+        // Defer hidden when toggle is off (default).
+        expect(
+            screen.queryByTestId("preview-author-mode-defer"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("defer radio appears when allow-books-without-author toggle is on", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: [],
+        });
+        mockAllowDefer.mockReturnValue(true);
+        renderPanel(project({author: "Stranger"}));
+        expect(
+            screen.getByTestId("preview-author-mode-defer"),
+        ).toBeInTheDocument();
+    });
+
+    it("create radio default-fills the proposed name from detected", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: [],
+        });
+        renderPanel(project({author: "Imported Stranger"}));
+        const input = screen.getByTestId(
+            "preview-author-create-input",
+        ) as HTMLInputElement;
+        expect(input.value).toBe("Imported Stranger");
+    });
+
+    it("defer radio (toggle on) sets author value to empty string", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: [],
+        });
+        mockAllowDefer.mockReturnValue(true);
+        const { onOverridesChange } = renderPanel(
+            project({author: "Stranger"}),
         );
+        fireEvent.click(screen.getByTestId("preview-author-mode-defer-radio"));
+        const last = onOverridesChange.mock.calls.at(-1)?.[0] as Overrides;
+        expect(last.author).toBe("");
+    });
+
+    it("empty source shows banner with no-source wording", () => {
+        mockAuthorProfile.mockReturnValueOnce({
+            name: "Real Name",
+            pen_names: [],
+        });
+        renderPanel(project({author: ""}));
+        expect(
+            screen.getByTestId("preview-author-banner"),
+        ).toBeInTheDocument();
+    });
+
+    it("unmatched without a profile still offers create (defer gated by toggle)", () => {
+        mockAuthorProfile.mockReturnValueOnce(null);
+        renderPanel(project({author: "Stranger"}));
+        expect(
+            screen.getByTestId("preview-author-mode-create"),
+        ).toBeInTheDocument();
+        // No existing-author option when profile is empty.
+        expect(
+            screen.queryByTestId("preview-author-mode-existing"),
+        ).not.toBeInTheDocument();
+        // Defer hidden by default toggle off.
+        expect(
+            screen.queryByTestId("preview-author-mode-defer"),
+        ).not.toBeInTheDocument();
     });
 });

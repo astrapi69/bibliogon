@@ -3,6 +3,7 @@ ui:
     title: "Meus livros"
     new_book: "Novo livro"
     no_books: "Nenhum livro ainda"
+    book_no_author: "—"
     confirm_delete: "Deseja realmente excluir este livro?"
     backup: "Backup"
     restore: "Restaurar"
@@ -511,6 +512,8 @@ ui:
     enter_license: "Inserir licenca"
     delete_permanently: "Eliminar livros permanentemente"
     delete_permanently_hint: "Os livros nao vao para a lixeira mas sao eliminados imediatamente."
+    allow_books_without_author: "Permitir livros sem autor (avancado)"
+    allow_books_without_author_hint: "Quando ativado, voce pode importar ou salvar livros sem definir um autor. Util ao converter documentos em audiolivros onde a informacao do autor nao e necessaria."
     ai_title: "Assistente AI"
     ai_enable: "Ativar funcoes AI"
     ai_enable_hint: "Quando desativado, todas as funcoes AI ficam ocultas."
@@ -661,6 +664,7 @@ ui:
     author_placeholder: "Selecione um autor"
     author_unknown_prefix: "[desconhecido:"
     author_pen_names_label: "Pseudonimos"
+    author_no_author: "(sem autor)"
     author_manage_link: "Gerenciar autores em Ajustes"
     language: Idioma
     series_index: Numero na serie
@@ -1119,6 +1123,15 @@ ui:
     git_adopt_with_remote_desc: Manter commits, branches e a URL remota. As credenciais sao removidas antes da adocao.
     git_adopt_without_remote: Adotar apenas o historico
     git_adopt_without_remote_desc: Manter commits e branches. Descartar a URL remota para voce configurar uma nova.
+    author_not_in_settings: 'O autor "{name}" nao esta nos seus Ajustes.'
+    author_no_source: "Nenhum autor detectado na fonte."
+    author_action_create: 'Criar "{name}" como novo perfil de autor'
+    author_action_existing: "Usar outro autor existente"
+    author_action_defer: "Pular - definir autor depois"
+    author_action_defer_hint: "Importado sem autor; edite no editor de metadados."
+    author_create_button: "Criar"
+    author_create_loading: "Criando..."
+    author_name_required: "O nome nao pode ser vazio."
     error_title_required: O titulo e obrigatorio
     error_author_required: O autor e obrigatorio
     mandatory_tooltip: Titulo e autor sao obrigatorios

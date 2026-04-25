@@ -321,8 +321,14 @@ def execute_import(
     )
 
     detected_dict = detected.model_dump()
+    from app.routers.books import _allow_books_without_author
+
     try:
-        validate_overrides(payload.overrides, detected=detected_dict)
+        validate_overrides(
+            payload.overrides,
+            detected=detected_dict,
+            allow_null_author=_allow_books_without_author(),
+        )
     except MandatoryFieldMissing as exc:
         _drop_staged(payload.temp_ref)
         raise HTTPException(

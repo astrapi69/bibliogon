@@ -27,6 +27,12 @@ app:
   - ja
   trash_auto_delete_days: 90
   trash_auto_delete_enabled: true
+  # Advanced: allow importing/saving books without an author. Default
+  # off — the import wizard hides the "defer author" option and the
+  # API rejects POST/PATCH that would clear the author column. Useful
+  # for converting source documents to audiobooks where author info
+  # is genuinely absent.
+  allow_books_without_author: false
   version: 0.11.0
 author:
   name: ''
