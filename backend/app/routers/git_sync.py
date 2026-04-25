@@ -29,6 +29,7 @@ from app.services.git_sync_commit import (
     commit_to_repo,
 )
 from app.services.git_sync_diff import apply_resolutions, diff_book
+from app.services.git_sync_unified import book_subsystems, unified_commit
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,11 @@ class GitSyncStatusResponse(BaseModel):
     #: ``None`` when the clone is missing on disk (so the UI can
     #: surface "clone missing - re-import" rather than "dirty").
     dirty: bool | None = None
+    #: PGS-05: True when the book also has core git enabled
+    #: (``uploads/{book_id}/.git`` exists). Used by the frontend
+    #: to decide whether to show the unified "Commit everywhere"
+    #: button instead of the single-subsystem one.
+    core_git_initialized: bool = False
 
 
 class CommitRequest(BaseModel):
@@ -117,6 +123,27 @@ class ResolveResponse(BaseModel):
     counts: dict[str, int]
 
 
+# --- PGS-05 unified commit ---
+
+
+class UnifiedCommitRequest(BaseModel):
+    message: str | None = Field(default=None, max_length=2000)
+    push_core: bool = False
+    push_plugin: bool = False
+
+
+class SubsystemResultEntry(BaseModel):
+    status: str
+    detail: str | None = None
+    commit_sha: str | None = None
+    pushed: bool = False
+
+
+class UnifiedCommitResponse(BaseModel):
+    core_git: SubsystemResultEntry
+    plugin_git_sync: SubsystemResultEntry
+
+
 # --- endpoints ---
 
 
@@ -132,8 +159,11 @@ def get_status(
     whether to warn the user about uncommitted edits.
     """
     mapping = db.get(GitSyncMapping, book_id)
+    subsystems = book_subsystems(db, book_id=book_id)
+    core_active = subsystems["core_git_initialized"]
+
     if mapping is None:
-        return GitSyncStatusResponse(mapped=False)
+        return GitSyncStatusResponse(mapped=False, core_git_initialized=core_active)
 
     clone_path = Path(mapping.local_clone_path)
     dirty = _is_dirty(clone_path)
@@ -148,6 +178,7 @@ def get_status(
             mapping.last_committed_at.isoformat() if mapping.last_committed_at else None
         ),
         dirty=dirty,
+        core_git_initialized=core_active,
     )
 
 
@@ -262,6 +293,53 @@ def resolve(
     except CloneMissingError as exc:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
     return ResolveResponse(counts=counts)
+
+
+@router.post("/{book_id}/unified-commit", response_model=UnifiedCommitResponse)
+def unified_commit_endpoint(
+    book_id: str,
+    payload: UnifiedCommitRequest,
+    db: Session = Depends(get_db),
+) -> UnifiedCommitResponse:
+    """PGS-05: fan one user-facing commit out to both git subsystems.
+
+    Skips the ones the book has not enabled (no init, no mapping).
+    Per-subsystem failures land in the response payload rather
+    than as a single hard 500 - the user wants visibility into
+    "core succeeded, plugin failed (auth)" rather than "something
+    failed".
+
+    Returns 503 only when the per-book lock can't be acquired
+    within 30 seconds (another commit is in flight).
+    """
+    try:
+        result = unified_commit(
+            db,
+            book_id=book_id,
+            message=payload.message,
+            push_core=payload.push_core,
+            push_plugin=payload.push_plugin,
+        )
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return UnifiedCommitResponse(
+        core_git=SubsystemResultEntry(
+            status=result.core_git.status,
+            detail=result.core_git.detail,
+            commit_sha=result.core_git.commit_sha,
+            pushed=result.core_git.pushed,
+        ),
+        plugin_git_sync=SubsystemResultEntry(
+            status=result.plugin_git_sync.status,
+            detail=result.plugin_git_sync.detail,
+            commit_sha=result.plugin_git_sync.commit_sha,
+            pushed=result.plugin_git_sync.pushed,
+        ),
+    )
 
 
 # --- helpers ---
