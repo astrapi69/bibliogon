@@ -157,7 +157,11 @@ export type BookImportOverrideKey = (typeof BOOK_IMPORT_OVERRIDE_KEYS)[number];
  * ``primary_cover`` names a cover filename to promote onto
  * ``book.cover_image`` when the source project ships multiple
  * covers. */
-export const IMPORT_META_OVERRIDE_KEYS = ["primary_cover"] as const;
+export const IMPORT_META_OVERRIDE_KEYS = [
+    "primary_cover",
+    "selected_books",
+    "per_book_duplicate",
+] as const;
 
 export type ImportMetaOverrideKey =
     (typeof IMPORT_META_OVERRIDE_KEYS)[number];
@@ -200,7 +204,11 @@ export type DuplicateAction = "create" | "overwrite" | "cancel";
 export type Overrides = Partial<
     Record<
         BookImportOverrideKey | ImportMetaOverrideKey,
-        string | number | string[] | null
+        | string
+        | number
+        | string[]
+        | null
+        | Record<string, string>
     >
 >;
 

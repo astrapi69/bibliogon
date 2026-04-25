@@ -26,6 +26,7 @@ import { ExecutingStep } from "./steps/ExecutingStep";
 import { SuccessStep } from "./steps/SuccessStep";
 import { ErrorStep } from "./steps/ErrorStep";
 import { SummaryStep } from "./steps/SummaryStep";
+import { PreviewMultiBookStep } from "./steps/PreviewMultiBookStep";
 
 interface WizardInput {
     files: File[];
@@ -56,6 +57,17 @@ export type WizardState =
           gitAdoption: GitAdoption;
       }
     | {
+          step: "preview-multi";
+          input: WizardInput;
+          detected: DetectedProject;
+          tempRef: string;
+          selectedSourceIds: string[];
+          perBookDuplicateAction: Record<
+              string,
+              "skip" | "overwrite" | "create_new"
+          >;
+      }
+    | {
           step: "executing";
           input: WizardInput;
           detected: DetectedProject;
@@ -83,6 +95,7 @@ const STEP_NUMBERS: Record<WizardState["step"], number | null> = {
     detecting: 2,
     summary: 2,
     preview: 3,
+    "preview-multi": 3,
     executing: 4,
     success: 4,
     error: null,
@@ -216,18 +229,32 @@ export default function ImportWizardModal({
                             <SummaryStep
                                 detected={state.detected}
                                 onBack={() => setState({ step: "upload" })}
-                                onNext={() =>
-                                    setState({
-                                        step: "preview",
-                                        input: state.input,
-                                        detected: state.detected,
-                                        duplicate: state.duplicate,
-                                        tempRef: state.tempRef,
-                                        overrides: {},
-                                        duplicateAction: "create",
-                                        gitAdoption: "start_fresh",
-                                    })
-                                }
+                                onNext={() => {
+                                    if (state.detected.is_multi_book) {
+                                        const sids = (
+                                            state.detected.books ?? []
+                                        ).map((b) => b.source_identifier);
+                                        setState({
+                                            step: "preview-multi",
+                                            input: state.input,
+                                            detected: state.detected,
+                                            tempRef: state.tempRef,
+                                            selectedSourceIds: sids,
+                                            perBookDuplicateAction: {},
+                                        });
+                                    } else {
+                                        setState({
+                                            step: "preview",
+                                            input: state.input,
+                                            detected: state.detected,
+                                            duplicate: state.duplicate,
+                                            tempRef: state.tempRef,
+                                            overrides: {},
+                                            duplicateAction: "create",
+                                            gitAdoption: "start_fresh",
+                                        });
+                                    }
+                                }}
                             />
                         )}
                         {state.step === "preview" && (
@@ -263,6 +290,71 @@ export default function ImportWizardModal({
                                         existingBookId:
                                             state.duplicate.existing_book_id ?? null,
                                         gitAdoption: state.gitAdoption,
+                                    })
+                                }
+                            />
+                        )}
+                        {state.step === "preview-multi" && (
+                            <PreviewMultiBookStep
+                                detected={state.detected}
+                                selection={{
+                                    selectedSourceIds: state.selectedSourceIds,
+                                    perBookDuplicateAction:
+                                        state.perBookDuplicateAction,
+                                }}
+                                onToggle={(sid) =>
+                                    setState({
+                                        ...state,
+                                        selectedSourceIds:
+                                            state.selectedSourceIds.includes(sid)
+                                                ? state.selectedSourceIds.filter(
+                                                      (id) => id !== sid,
+                                                  )
+                                                : [...state.selectedSourceIds, sid],
+                                    })
+                                }
+                                onSelectAll={() =>
+                                    setState({
+                                        ...state,
+                                        selectedSourceIds: (
+                                            state.detected.books ?? []
+                                        ).map((b) => b.source_identifier),
+                                    })
+                                }
+                                onDeselectAll={() =>
+                                    setState({
+                                        ...state,
+                                        selectedSourceIds: [],
+                                    })
+                                }
+                                onSetDuplicateAction={(sid, action) =>
+                                    setState({
+                                        ...state,
+                                        perBookDuplicateAction: {
+                                            ...state.perBookDuplicateAction,
+                                            [sid]: action,
+                                        },
+                                    })
+                                }
+                                onBack={() => setState({ step: "upload" })}
+                                onConfirm={() =>
+                                    setState({
+                                        step: "executing",
+                                        input: state.input,
+                                        detected: state.detected,
+                                        tempRef: state.tempRef,
+                                        overrides: {
+                                            selected_books:
+                                                state.selectedSourceIds,
+                                            per_book_duplicate:
+                                                state.perBookDuplicateAction as unknown as Record<
+                                                    string,
+                                                    string
+                                                >,
+                                        } as unknown as Overrides,
+                                        duplicateAction: "create",
+                                        existingBookId: null,
+                                        gitAdoption: "start_fresh",
                                     })
                                 }
                             />

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import * as React from "react";
 import { WizardErrorBoundary } from "./WizardErrorBoundary";
 
 vi.mock("../../hooks/useI18n", () => ({
@@ -10,7 +11,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-function Boom(): JSX.Element {
+function Boom(): React.ReactElement {
     throw new Error("synthetic render crash");
 }
 
