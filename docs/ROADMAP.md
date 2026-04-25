@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-04-22
-Latest release: v0.21.0 (Git-based backup, full 5-phase plan shipped: local git per book, remote push/pull with encrypted PATs, SSH key generation, 3-way merge with per-file conflict resolution, Markdown side-files for readable diffs; closes SI-01..04. Plus AI fix_issue mode for quality findings, quality-tab navigate-to-first-issue, Settings KI-Assistent tab refactor, CSS zoom fixes (#10, #11), Node 22 -> 24 LTS migration, backend CVE sweep aiohttp/pygments/starlette 13 -> 0.)
+Last updated: 2026-04-25
+Latest release: v0.23.0 (plugin-git-sync PGS-02..05: bi-directional commit-to-repo with ambient-cred push, three-way smart-merge with per-chapter conflict UI, multi-language branch linking via `main-XX` + `Book.translation_group_id`, core-git bridge with unified-commit fan-out under per-book lock. Plus v0.22.x: multi-book BGB import on XState v5, sticky-footer pattern across 13 dialog modals, EnhancedTextarea preview, WizardErrorBoundary, missing `books.tts_speed` Alembic migration backfilled. v0.21.0: full Git-based backup, AI fix_issue mode, Node 22 -> 24 LTS, backend CVE sweep.)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 
@@ -10,7 +10,7 @@ Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived 
 
 ## Current focus
 
-Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Templates theme is complete: book templates (TM-01/02/03/05) and chapter templates (TM-04) all shipped. Next active theme: TBD - likely Git-based backup (SI-01 onward) or deferred DEP-* dependency upgrades.
+Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Templates theme is complete (TM-01..05). Git-based backup theme is complete (Phase 1-5, SI-01..04). plugin-git-sync is complete through PGS-05. Next active theme: TBD - top candidates tracked in [docs/backlog.md](backlog.md). Most pressing: DEP-02 TipTap 2 -> 3 migration (deadline 2026-05-05).
 
 ---
 
