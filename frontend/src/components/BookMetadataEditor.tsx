@@ -15,6 +15,7 @@ import CoverUpload from "./CoverUpload";
 import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
 import QualityTab, {NavigableFindingType} from "./QualityTab";
+import TranslationLinks from "./TranslationLinks";
 
 interface Props {
     book: BookDetail;
@@ -210,6 +211,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 
                 <Tabs.Content value="general">
                     <div style={styles.tabContent}>
+                        <TranslationLinks bookId={book.id} />
                         <Row>
                             <AuthorSelectField
                                 label={t("ui.metadata.author", "Autor")}

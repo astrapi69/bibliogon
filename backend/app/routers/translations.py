@@ -23,6 +23,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Book
 from app.services import translation_groups
+from app.services.translation_import import (
+    CloneFailedError,
+    NoMatchingBranchesError,
+    import_translation_group,
+)
 
 router = APIRouter(prefix="/translations", tags=["translations"])
 
@@ -49,6 +54,22 @@ class LinkRequest(BaseModel):
 class LinkResponse(BaseModel):
     translation_group_id: str | None
     linked_book_ids: list[str]
+
+
+class MultiBranchImportRequest(BaseModel):
+    git_url: str = Field(min_length=1, max_length=2000)
+
+
+class ImportedBookEntry(BaseModel):
+    book_id: str
+    branch: str
+    language: str | None
+    title: str
+
+
+class MultiBranchImportResponse(BaseModel):
+    translation_group_id: str | None
+    books: list[ImportedBookEntry]
 
 
 # --- endpoints ---
@@ -112,3 +133,44 @@ def unlink(
     empty "Translations:" badge.
     """
     translation_groups.unlink_book(db, book_id=book_id)
+
+
+@router.post("/import-multi-branch", response_model=MultiBranchImportResponse)
+def import_multi_branch(
+    payload: MultiBranchImportRequest,
+    db: Session = Depends(get_db),
+) -> MultiBranchImportResponse:
+    """Clone the repo once, import every ``main``/``main-XX`` branch
+    as a Bibliogon book, and link them under one translation group.
+
+    Returns the new ``translation_group_id`` plus a per-book
+    summary the wizard renders post-import. Per-branch failures
+    log + skip (so one broken branch does not lose the others);
+    the whole call only fails when the clone itself fails (502)
+    or no matching branches are found (415).
+    """
+    try:
+        result = import_translation_group(db, git_url=payload.git_url)
+    except CloneFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from exc
+    except NoMatchingBranchesError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=str(exc),
+        ) from exc
+
+    return MultiBranchImportResponse(
+        translation_group_id=result.translation_group_id,
+        books=[
+            ImportedBookEntry(
+                book_id=b.book_id,
+                branch=b.branch,
+                language=b.language,
+                title=b.title,
+            )
+            for b in result.books
+        ],
+    )

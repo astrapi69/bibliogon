@@ -264,3 +264,206 @@ def test_unlink_endpoint_idempotent_returns_204(
     # Second call is a silent no-op.
     resp = client.post(f"/api/translations/{three_books[0].id}/unlink")
     assert resp.status_code == 204
+
+
+# --- multi-branch import ---
+
+
+def _seed_translation_repo(repo_root, branches: dict[str, str]) -> None:
+    """Build a WBT-shaped repo with one branch per (name, language) pair."""
+    import git
+
+    repo_root.mkdir(parents=True, exist_ok=True)
+    repo = git.Repo.init(repo_root)
+    config = repo_root / "config"
+    config.mkdir()
+    manuscript = repo_root / "manuscript" / "chapters"
+    manuscript.mkdir(parents=True)
+
+    # Initial commit on default branch.
+    (config / "metadata.yaml").write_text(
+        "title: Bridge Book\nauthor: Aster\nlanguage: de\n", encoding="utf-8"
+    )
+    (manuscript / "01-intro.md").write_text("# Intro\n\nbase\n", encoding="utf-8")
+    repo.git.add(A=True)
+    repo.index.commit("init")
+    # Rename the default branch to "main" so the matcher catches it.
+    try:
+        repo.git.branch("-M", "main")
+    except git.GitCommandError:
+        pass
+
+    # Build the requested branches.
+    for branch_name, language in branches.items():
+        if branch_name == "main":
+            continue
+        repo.git.checkout("-b", branch_name)
+        (config / "metadata.yaml").write_text(
+            f"title: Bridge Book\nauthor: Aster\nlanguage: {language}\n",
+            encoding="utf-8",
+        )
+        (manuscript / "01-intro.md").write_text(
+            f"# Intro\n\n{language} body\n", encoding="utf-8"
+        )
+        repo.git.add(A=True)
+        repo.index.commit(f"branch {branch_name}")
+        repo.git.checkout("main")
+
+
+def test_import_translation_group_creates_one_book_per_branch(
+    db: Session, tmp_path
+) -> None:
+    """End-to-end: a 3-branch repo (main + main-fr + main-es) yields
+    3 linked books, each with its own persisted clone + GitSyncMapping."""
+    import shutil
+
+    from app.models import GitSyncMapping
+    from app.services.translation_import import import_translation_group
+
+    repo_root = tmp_path / "src-repo"
+    _seed_translation_repo(
+        repo_root,
+        {"main": "de", "main-fr": "fr", "main-es": "es"},
+    )
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    result = import_translation_group(
+        db, git_url=str(repo_root), uploads_dir=uploads,
+    )
+    try:
+        assert result.translation_group_id is not None
+        assert len(result.books) == 3
+        languages = sorted(b.language for b in result.books)
+        assert languages == ["de", "es", "fr"]
+
+        # Each book has its own persisted clone + mapping.
+        for entry in result.books:
+            mapping = db.get(GitSyncMapping, entry.book_id)
+            assert mapping is not None
+            assert mapping.branch == entry.branch
+            assert mapping.last_imported_commit_sha
+            assert (uploads / "git-sync" / entry.book_id / "repo").is_dir()
+
+        # All three books share the SAME translation_group_id.
+        siblings = list_siblings(db, book_id=result.books[0].book_id)
+        assert len(siblings) == 2
+    finally:
+        shutil.rmtree(uploads, ignore_errors=True)
+        for entry in result.books:
+            book = db.get(Book, entry.book_id)
+            mapping = db.get(GitSyncMapping, entry.book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+
+
+def test_import_translation_group_raises_when_no_matching_branches(
+    db: Session, tmp_path
+) -> None:
+    import git
+
+    from app.services.translation_import import (
+        NoMatchingBranchesError,
+        import_translation_group,
+    )
+
+    repo_root = tmp_path / "no-main-repo"
+    repo_root.mkdir()
+    repo = git.Repo.init(repo_root)
+    (repo_root / "README.md").write_text("hi\n", encoding="utf-8")
+    repo.git.add(A=True)
+    repo.index.commit("init")
+    # Rename to a non-matching branch name.
+    repo.git.branch("-M", "develop")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    with pytest.raises(NoMatchingBranchesError):
+        import_translation_group(
+            db, git_url=str(repo_root), uploads_dir=uploads,
+        )
+
+
+def test_import_translation_group_raises_clone_failed_on_bad_url(
+    db: Session,
+) -> None:
+    from app.services.translation_import import (
+        CloneFailedError,
+        import_translation_group,
+    )
+
+    with pytest.raises(CloneFailedError):
+        import_translation_group(db, git_url="/does/not/exist/repo.git")
+
+
+def test_multi_branch_import_endpoint_happy_path(db: Session, tmp_path) -> None:
+    """HTTP layer: 200 + payload echoes the spec shape."""
+    import shutil
+
+    from app.models import GitSyncMapping
+
+    repo_root = tmp_path / "src-repo-http"
+    _seed_translation_repo(
+        repo_root,
+        {"main": "de", "main-en": "en"},
+    )
+
+    resp = client.post(
+        "/api/translations/import-multi-branch",
+        json={"git_url": str(repo_root)},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["translation_group_id"] is not None
+    assert len(body["books"]) == 2
+
+    book_ids = [b["book_id"] for b in body["books"]]
+    try:
+        for book_id in book_ids:
+            assert db.get(GitSyncMapping, book_id) is not None
+    finally:
+        for book_id in book_ids:
+            book = db.get(Book, book_id)
+            mapping = db.get(GitSyncMapping, book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+        # Per-book persisted clones live under the default uploads
+        # tree because the endpoint did not get an override; clean up.
+        from pathlib import Path as _P
+
+        for book_id in book_ids:
+            shutil.rmtree(_P("uploads") / "git-sync" / book_id, ignore_errors=True)
+
+
+def test_multi_branch_import_endpoint_502_on_bad_url() -> None:
+    resp = client.post(
+        "/api/translations/import-multi-branch",
+        json={"git_url": "/does/not/exist/repo.git"},
+    )
+    assert resp.status_code == 502
+
+
+def test_multi_branch_import_endpoint_415_when_no_matching_branches(tmp_path) -> None:
+    import git
+
+    repo_root = tmp_path / "no-main"
+    repo_root.mkdir()
+    repo = git.Repo.init(repo_root)
+    (repo_root / "README.md").write_text("hi\n", encoding="utf-8")
+    repo.git.add(A=True)
+    repo.index.commit("init")
+    repo.git.branch("-M", "develop")
+
+    resp = client.post(
+        "/api/translations/import-multi-branch",
+        json={"git_url": str(repo_root)},
+    )
+    assert resp.status_code == 415

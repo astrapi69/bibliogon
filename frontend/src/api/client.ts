@@ -1245,6 +1245,37 @@ export const api = {
             request<GitMergeResult>(`/books/${bookId}/git/conflict/abort`, {method: "POST"}),
     },
 
+    translations: {
+        /** PGS-04: list translation siblings of a book.
+         *  ``translation_group_id`` is null for unlinked books. */
+        list: (bookId: string) =>
+            request<TranslationSiblingsResponse>(`/translations/${bookId}`),
+
+        /** PGS-04: group two or more books under one
+         *  ``translation_group_id``. Pre-existing groups merge
+         *  deterministically. */
+        link: (bookIds: string[]) =>
+            request<TranslationLinkResult>(`/translations/link`, {
+                method: "POST",
+                body: JSON.stringify({book_ids: bookIds}),
+            }),
+
+        /** PGS-04: remove a single book from its group. Idempotent. */
+        unlink: (bookId: string) =>
+            request<void>(`/translations/${bookId}/unlink`, {method: "POST"}),
+
+        /** PGS-04: clone a multi-language repo and import every
+         *  ``main`` / ``main-XX`` branch as a linked book. */
+        importMultiBranch: (gitUrl: string) =>
+            request<TranslationMultiBranchImportResult>(
+                `/translations/import-multi-branch`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({git_url: gitUrl}),
+                },
+            ),
+    },
+
     gitSync: {
         /** PGS-02: per-book sync state for the plugin-git-sync flow.
          *  ``mapped=false`` means the book wasn't imported via the
@@ -1430,4 +1461,34 @@ export interface GitSyncResolutionEntry {
 
 export interface GitSyncResolveResult {
     counts: Record<"updated" | "created" | "deleted" | "skipped", number>
+}
+
+/** PGS-04 sibling listing for a book. */
+export interface TranslationSibling {
+    book_id: string
+    title: string
+    language: string
+}
+
+export interface TranslationSiblingsResponse {
+    book_id: string
+    translation_group_id: string | null
+    siblings: TranslationSibling[]
+}
+
+export interface TranslationLinkResult {
+    translation_group_id: string | null
+    linked_book_ids: string[]
+}
+
+export interface TranslationImportedBook {
+    book_id: string
+    branch: string
+    language: string | null
+    title: string
+}
+
+export interface TranslationMultiBranchImportResult {
+    translation_group_id: string | null
+    books: TranslationImportedBook[]
 }

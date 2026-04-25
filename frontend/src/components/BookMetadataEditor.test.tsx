@@ -70,6 +70,18 @@ vi.mock("../api/client", () => ({
       list: (...args: unknown[]) => assetsListMock(...args),
       delete: (...args: unknown[]) => assetsDeleteMock(...args),
     },
+    translations: {
+      list: vi.fn().mockResolvedValue({
+        book_id: "book-1",
+        translation_group_id: null,
+        siblings: [],
+      }),
+      link: vi.fn(),
+      unlink: vi.fn(),
+    },
+    books: {
+      list: vi.fn().mockResolvedValue([]),
+    },
   },
   ApiError: class extends Error {
     detail: string
@@ -83,6 +95,13 @@ vi.mock("../api/client", () => ({
 
 vi.mock("../utils/notify", () => ({
   notify: {error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn()},
+}))
+
+// PGS-04 ``TranslationLinks`` (mounted by the General tab) calls
+// ``useNavigate``; without a Router the mount throws and every
+// metadata-editor test fails. Stub the hook here.
+vi.mock("react-router-dom", async () => ({
+  useNavigate: () => vi.fn(),
 }))
 
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
