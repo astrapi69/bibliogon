@@ -110,6 +110,13 @@ class Book(Base):
     # SKIP_TYPES fallback". Same Text-as-JSON pattern as ``keywords``.
     audiobook_skip_chapter_types: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # PGS-04: shared id across translations of the same book. NULL when
+    # the book is not linked to any others. Auto-populated on multi-branch
+    # git imports; user-settable via the Settings link/unlink UI for
+    # books imported separately. Flat cross-link - no master/translation
+    # hierarchy, every book in the group references the same id.
+    translation_group_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+
     # ms-tools per-book threshold overrides. None -> fall back to plugin defaults.
     ms_tools_max_sentence_length: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ms_tools_repetition_window: Mapped[int | None] = mapped_column(Integer, nullable=True)

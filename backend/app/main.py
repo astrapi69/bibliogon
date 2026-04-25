@@ -40,6 +40,7 @@ from app.routers import (
     plugin_install,
     settings,
     templates,
+    translations,
 )
 from app.routers import (
     ssh_keys as ssh_keys_router,
@@ -234,6 +235,7 @@ app.include_router(chapter_templates.router, prefix="/api")
 app.include_router(git_backup.router, prefix="/api")
 app.include_router(git_import_backfill.router, prefix="/api")
 app.include_router(git_sync.router, prefix="/api")
+app.include_router(translations.router, prefix="/api")
 app.include_router(ssh_keys_router.router, prefix="/api")
 
 from app.ai.routes import router as ai_router
