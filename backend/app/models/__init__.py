@@ -274,8 +274,7 @@ class GitSyncMapping(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<GitSyncMapping book={self.book_id!r} "
-            f"url={self.repo_url!r} branch={self.branch!r}>"
+            f"<GitSyncMapping book={self.book_id!r} url={self.repo_url!r} branch={self.branch!r}>"
         )
 
 
