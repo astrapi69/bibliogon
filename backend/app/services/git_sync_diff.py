@@ -102,9 +102,7 @@ def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
 
     mapping = db.get(GitSyncMapping, book_id)
     if mapping is None:
-        raise MappingNotFoundError(
-            f"Book {book_id} was not imported via plugin-git-sync."
-        )
+        raise MappingNotFoundError(f"Book {book_id} was not imported via plugin-git-sync.")
 
     clone_path = Path(mapping.local_clone_path)
     if not clone_path.is_dir() or not (clone_path / ".git").is_dir():
@@ -125,9 +123,7 @@ def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
 _WBT_SECTION_DIRS: tuple[Section, ...] = ("front-matter", "chapters", "back-matter")
 
 
-def _read_wbt_at_ref(
-    clone_path: Path, ref: str
-) -> dict[ChapterIdentity, tuple[str, str]]:
+def _read_wbt_at_ref(clone_path: Path, ref: str) -> dict[ChapterIdentity, tuple[str, str]]:
     """Return ``{identity: (title, markdown)}`` for chapters at ref.
 
     Uses ``git ls-tree`` + ``git show`` to read files without
@@ -219,9 +215,7 @@ def _section_for(chapter_type: str) -> Section:
     return "chapters"
 
 
-def _read_local_chapters(
-    db: Session, book_id: str
-) -> dict[ChapterIdentity, tuple[str, str, str]]:
+def _read_local_chapters(db: Session, book_id: str) -> dict[ChapterIdentity, tuple[str, str, str]]:
     """Return ``{identity: (title, markdown, db_chapter_id)}``.
 
     Conversion to markdown reuses the same path the commit-to-repo
@@ -232,12 +226,7 @@ def _read_local_chapters(
         tiptap_to_markdown,
     )
 
-    rows = (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    rows = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
     out: dict[ChapterIdentity, tuple[str, str, str]] = {}
     for ch in rows:
         try:
@@ -276,9 +265,7 @@ def _classify(
         b = base.get(identity)
         L = local.get(identity)
         r = remote.get(identity)
-        title = (
-            (L[0] if L else None) or (r[0] if r else None) or (b[0] if b else identity.slug)
-        )
+        title = (L[0] if L else None) or (r[0] if r else None) or (b[0] if b else identity.slug)
         base_md = b[1] if b else None
         remote_md = r[1] if r else None
         local_md = L[1] if L else None
@@ -290,9 +277,7 @@ def _classify(
             # may have introduced it.
             if local_md is not None and remote_md is not None:
                 classification = (
-                    "unchanged"
-                    if _normalize(local_md) == _normalize(remote_md)
-                    else "both_changed"
+                    "unchanged" if _normalize(local_md) == _normalize(remote_md) else "both_changed"
                 )
             elif remote_md is not None:
                 classification = "remote_added"
@@ -303,12 +288,8 @@ def _classify(
                 # is impossible by construction; skip defensively.
                 continue
         else:
-            local_changed = (
-                local_md is None or _normalize(local_md) != _normalize(base_md)
-            )
-            remote_changed = (
-                remote_md is None or _normalize(remote_md) != _normalize(base_md)
-            )
+            local_changed = local_md is None or _normalize(local_md) != _normalize(base_md)
+            remote_changed = remote_md is None or _normalize(remote_md) != _normalize(base_md)
             if local_md is None and remote_md is None:
                 # Both sides removed - unchanged in spirit, skip
                 # surfacing. The chapter is gone everywhere.
@@ -319,9 +300,7 @@ def _classify(
                 classification = "remote_removed"
             elif local_changed and remote_changed:
                 classification = (
-                    "unchanged"
-                    if _normalize(local_md) == _normalize(remote_md)
-                    else "both_changed"
+                    "unchanged" if _normalize(local_md) == _normalize(remote_md) else "both_changed"
                 )
             elif local_changed:
                 classification = "local_changed"
