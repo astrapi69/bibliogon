@@ -55,9 +55,7 @@ def book_commit_lock(book_id: str, *, timeout: float = 30.0) -> Iterator[None]:
     lock = _get_lock(book_id)
     acquired = lock.acquire(timeout=timeout)
     if not acquired:
-        raise TimeoutError(
-            f"git commit lock for book {book_id} held by another request"
-        )
+        raise TimeoutError(f"git commit lock for book {book_id} held by another request")
     try:
         yield
     finally:

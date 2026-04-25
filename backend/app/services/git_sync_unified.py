@@ -90,9 +90,7 @@ def unified_commit(
     """
     with book_commit_lock(book_id):
         core_result = _run_core_git(db, book_id=book_id, message=message)
-        plugin_result = _run_plugin_git_sync(
-            db, book_id=book_id, message=message, push=push_plugin
-        )
+        plugin_result = _run_plugin_git_sync(db, book_id=book_id, message=message, push=push_plugin)
         if push_core:
             core_result.detail = (
                 (core_result.detail or "") + " (push deferred to a future session)"
@@ -104,15 +102,11 @@ def unified_commit(
 # --- per-subsystem helpers ---
 
 
-def _run_core_git(
-    db: Session, *, book_id: str, message: str | None
-) -> SubsystemResult:
+def _run_core_git(db: Session, *, book_id: str, message: str | None) -> SubsystemResult:
     if not git_backup.is_initialized(book_id):
         return SubsystemResult(status="skipped", detail="core git not initialized")
     try:
-        commit_info = git_backup.commit(
-            book_id, message=message or f"Update {book_id}", db=db
-        )
+        commit_info = git_backup.commit(book_id, message=message or f"Update {book_id}", db=db)
     except git_backup.NothingToCommitError as exc:
         return SubsystemResult(status="nothing_to_commit", detail=str(exc))
     except git_backup.GitBackupError as exc:
@@ -126,13 +120,9 @@ def _run_plugin_git_sync(
 ) -> SubsystemResult:
     mapping = db.get(GitSyncMapping, book_id)
     if mapping is None:
-        return SubsystemResult(
-            status="skipped", detail="plugin-git-sync mapping not present"
-        )
+        return SubsystemResult(status="skipped", detail="plugin-git-sync mapping not present")
     try:
-        result = git_sync_commit.commit_to_repo(
-            db, book_id=book_id, message=message, push=push
-        )
+        result = git_sync_commit.commit_to_repo(db, book_id=book_id, message=message, push=push)
     except git_sync_commit.NothingToCommitError as exc:
         return SubsystemResult(status="nothing_to_commit", detail=str(exc))
     except (
