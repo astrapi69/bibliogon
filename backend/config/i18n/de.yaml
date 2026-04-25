@@ -1068,7 +1068,6 @@ ui:
     duplicate_overwrite_confirm: Alle Kapitel und Assets von '{title}' werden ersetzt. Die Bearbeitungshistorie geht verloren. Fortfahren?
     status_creating: Buch wird erstellt...
     status_creating_subtle: Kann bei grossen Importen einen Moment dauern.
-    error_cancelled_server_side: Import wurde serverseitig abgebrochen.
     success_title: Import abgeschlossen
     success_book_title: 'Importiert als: {title}'
     success_open_editor: Im Editor oeffnen
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Kopiert!"
     error_step_copy_failed: "Kopieren fehlgeschlagen"
     error_step_report: "Issue auf GitHub melden"
-    error_retry: "Erneut versuchen"
     error_cancelled_server_side: "Import wurde serverseitig abgebrochen."
     multi_book_count: "{count} Bücher in diesem Backup"
     multi_book_select_all: "Alle auswählen"

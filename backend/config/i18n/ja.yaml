@@ -1068,7 +1068,6 @@ ui:
     duplicate_overwrite_confirm: "'{title}' のすべての章とアセットが置き換えられます。編集履歴は失われます。続行しますか？"
     status_creating: 本を作成中...
     status_creating_subtle: 大きなインポートでは少し時間がかかることがあります。
-    error_cancelled_server_side: サーバー側でインポートがキャンセルされました。
     success_title: インポート完了
     success_book_title: 'インポート: {title}'
     success_open_editor: エディタで開く
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "コピーしました！"
     error_step_copy_failed: "コピーに失敗しました"
     error_step_report: "GitHubで報告"
-    error_retry: "再試行"
     error_cancelled_server_side: "インポートはサーバー側でキャンセルされました。"
     multi_book_count: "このバックアップに{count}冊"
     multi_book_select_all: "すべて選択"

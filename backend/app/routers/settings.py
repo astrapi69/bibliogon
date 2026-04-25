@@ -91,11 +91,7 @@ def add_pen_name(body: AddPenNameRequest) -> dict[str, Any]:
     author = current.setdefault("author", {})
     name = (author.get("name") or "").strip()
     pen_names_raw = author.get("pen_names") or []
-    pen_names = [
-        str(n).strip()
-        for n in pen_names_raw
-        if isinstance(n, str) and str(n).strip()
-    ]
+    pen_names = [str(n).strip() for n in pen_names_raw if isinstance(n, str) and str(n).strip()]
 
     if cleaned == name:
         return {"name": name, "pen_names": pen_names}

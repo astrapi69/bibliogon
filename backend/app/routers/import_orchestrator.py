@@ -363,9 +363,7 @@ def execute_import(
             )
 
     is_multi_book_path = bool(
-        detected.is_multi_book
-        and detected.books
-        and hasattr(plugin, "execute_multi")
+        detected.is_multi_book and detected.books and hasattr(plugin, "execute_multi")
     )
 
     try:
@@ -409,9 +407,7 @@ def execute_import(
         # Per-book BookImportSource rows so each book gets its own
         # duplicate identity on next import. Skip when no books were
         # actually written (selected_books filter excluded everything).
-        for created_id, summary in zip(
-            ids, _summaries_in_order(detected, ids)
-        ):
+        for created_id, summary in zip(ids, _summaries_in_order(detected, ids), strict=False):
             _record_import_source(
                 db,
                 book_id=created_id,
@@ -441,9 +437,7 @@ def execute_import(
 # --- Helpers ---
 
 
-def _summaries_in_order(
-    detected: DetectedProject, created_ids: list[str]
-) -> list:
+def _summaries_in_order(detected: DetectedProject, created_ids: list[str]) -> list:
     """Match created book ids back to their DetectedBookSummary entries.
 
     Per-book ``source_identifier`` uses the ``sha256:<hash>::<uuid>``
@@ -453,11 +447,7 @@ def _summaries_in_order(
     out = []
     for book_id in created_ids:
         match = next(
-            (
-                b
-                for b in (detected.books or [])
-                if b.source_identifier.endswith(f"::{book_id}")
-            ),
+            (b for b in (detected.books or []) if b.source_identifier.endswith(f"::{book_id}")),
             None,
         )
         if match is not None:

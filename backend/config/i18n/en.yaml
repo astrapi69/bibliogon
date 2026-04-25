@@ -1068,7 +1068,6 @@ ui:
     duplicate_overwrite_confirm: This will replace all chapters and assets of '{title}'. The existing book's edit history will be lost. Continue?
     status_creating: Creating book...
     status_creating_subtle: This may take a moment for large imports.
-    error_cancelled_server_side: Import was cancelled on the server.
     success_title: Import complete
     success_book_title: 'Imported as: {title}'
     success_open_editor: Open in editor
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Copied!"
     error_step_copy_failed: "Copy failed"
     error_step_report: "Report on GitHub"
-    error_retry: "Retry"
     error_cancelled_server_side: "Import was cancelled on the server."
     multi_book_count: "{count} books in this backup"
     multi_book_select_all: "Select all"

@@ -1068,14 +1068,13 @@ ui:
     duplicate_overwrite_confirm: Θα αντικατασταθούν όλα τα κεφάλαια και οι πόροι του '{title}'. Το ιστορικό επεξεργασίας θα χαθεί. Συνέχεια;
     status_creating: Δημιουργία βιβλίου...
     status_creating_subtle: Μπορεί να πάρει λίγο για μεγάλες εισαγωγές.
-    error_cancelled_server_side: Η εισαγωγή ακυρώθηκε στον διακομιστή.
     success_title: Η εισαγωγή ολοκληρώθηκε
     success_book_title: 'Εισήχθη ως: {title}'
     success_open_editor: Άνοιγμα στον επεξεργαστή
     success_import_another: Εισαγωγή άλλου
     success_auto_redirect: Άνοιγμα επεξεργαστή σε {n}δ...
     error_title: Αποτυχία εισαγωγής
-    error_retry: Επανάληψη
+    error_retry: Δοκιμάστε ξανά
     step_1_pick_folder: Ή επέλεξε φάκελο με αρχεία Markdown
     error_folder_empty: Ο φάκελος δεν περιέχει αρχεία .md/.markdown.
     error_folder_too_many: Πάρα πολλά αρχεία στον φάκελο ({count})· μέγιστο {max}.
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Αντιγράφηκε!"
     error_step_copy_failed: "Η αντιγραφή απέτυχε"
     error_step_report: "Αναφορά στο GitHub"
-    error_retry: "Δοκιμάστε ξανά"
     error_cancelled_server_side: "Η εισαγωγή ακυρώθηκε από τον διακομιστή."
     multi_book_count: "{count} βιβλία σε αυτό το αντίγραφο"
     multi_book_select_all: "Επιλογή όλων"

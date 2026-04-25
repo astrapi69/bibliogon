@@ -47,6 +47,7 @@ def _allow_books_without_author_from_yaml() -> bool:
     except Exception:
         return False
 
+
 #: All Book columns the wizard can override. Mirrors the Metadata
 #: Editor's field list. Adding a new user-editable column to Book:
 #: add it here, add a form row in BookMetadataEditor + PreviewPanel.
@@ -138,9 +139,7 @@ def validate_overrides(
         # Explicit null or blank string -> reject (unless nullable).
         if field in overrides:
             value = overrides[field]
-            is_blank = value is None or (
-                isinstance(value, str) and not value.strip()
-            )
+            is_blank = value is None or (isinstance(value, str) and not value.strip())
             if is_blank and not nullable:
                 raise MandatoryFieldMissing(field)
             continue
@@ -195,8 +194,10 @@ def apply_book_overrides(
             # Meta overrides (primary_cover, ...) don't map to Book
             # columns; handlers consume them before calling here.
             continue
-        if key == "author" and allow_null_author and (
-            value is None or (isinstance(value, str) and not value.strip())
+        if (
+            key == "author"
+            and allow_null_author
+            and (value is None or (isinstance(value, str) and not value.strip()))
         ):
             # Defer path: explicit clear, NOT the null-skip default.
             book.author = None

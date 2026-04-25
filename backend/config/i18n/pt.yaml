@@ -1068,7 +1068,6 @@ ui:
     duplicate_overwrite_confirm: Isto ira substituir todos os capitulos e recursos de '{title}'. O historico de edicao sera perdido. Continuar?
     status_creating: A criar livro...
     status_creating_subtle: Pode demorar um momento em imports grandes.
-    error_cancelled_server_side: A importacao foi cancelada no servidor.
     success_title: Importacao concluida
     success_book_title: 'Importado como: {title}'
     success_open_editor: Abrir no editor
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Copiado!"
     error_step_copy_failed: "Falha ao copiar"
     error_step_report: "Reportar no GitHub"
-    error_retry: "Tentar novamente"
     error_cancelled_server_side: "A importação foi cancelada no servidor."
     multi_book_count: "{count} livros neste backup"
     multi_book_select_all: "Selecionar todos"

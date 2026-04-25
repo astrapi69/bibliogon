@@ -480,4 +480,3 @@ def test_add_pen_name_rejects_blank(client):
         "/api/settings/author/pen-name", json={"name": "   "}
     )
     assert resp.status_code == 400
-

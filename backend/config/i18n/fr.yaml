@@ -1068,14 +1068,13 @@ ui:
     duplicate_overwrite_confirm: Cela remplacera tous les chapitres et ressources de '{title}'. L'historique d'edition sera perdu. Continuer ?
     status_creating: Creation du livre...
     status_creating_subtle: Peut prendre un moment pour les gros imports.
-    error_cancelled_server_side: L'import a ete annule cote serveur.
     success_title: Import termine
     success_book_title: 'Importe comme : {title}'
     success_open_editor: Ouvrir dans l'editeur
     success_import_another: Importer un autre
     success_auto_redirect: Ouverture de l'editeur dans {n}s...
     error_title: Echec de l'import
-    error_retry: Reessayer
+    error_retry: Réessayer
     step_1_pick_folder: Ou choisis un dossier de fichiers Markdown
     error_folder_empty: Le dossier ne contient aucun fichier .md/.markdown.
     error_folder_too_many: Trop de fichiers dans le dossier ({count}) ; maximum {max}.
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Copié!"
     error_step_copy_failed: "Échec de la copie"
     error_step_report: "Signaler sur GitHub"
-    error_retry: "Réessayer"
     error_cancelled_server_side: "L'importation a été annulée côté serveur."
     multi_book_count: "{count} livres dans cette sauvegarde"
     multi_book_select_all: "Tout sélectionner"

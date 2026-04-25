@@ -1068,7 +1068,6 @@ ui:
     duplicate_overwrite_confirm: "'{title}' kitabinin tum bolumleri ve varliklari degistirilecek. Duzenleme gecmisi kaybolur. Devam?"
     status_creating: Kitap olusturuluyor...
     status_creating_subtle: Buyuk ice aktarmalarda biraz surebilir.
-    error_cancelled_server_side: Ice aktarma sunucuda iptal edildi.
     success_title: Ice aktarma tamamlandi
     success_book_title: 'Ice aktarildi: {title}'
     success_open_editor: Duzenleyicide ac
@@ -1148,7 +1147,6 @@ ui:
     error_step_copy_success: "Kopyalandi!"
     error_step_copy_failed: "Kopyalama basarisiz"
     error_step_report: "GitHub'da bildir"
-    error_retry: "Tekrar dene"
     error_cancelled_server_side: "Ice aktarma sunucu tarafinda iptal edildi."
     multi_book_count: "Bu yedeklemede {count} kitap"
     multi_book_select_all: "Tümünü seç"

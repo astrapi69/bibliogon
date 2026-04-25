@@ -76,9 +76,7 @@ class BgbImportHandler:
         # sensible; per-book duplicates are surfaced inside
         # ``books`` below.
         if is_multi_book:
-            source_identifier = _per_book_source_identifier(
-                archive_hash, first_blob
-            )
+            source_identifier = _per_book_source_identifier(archive_hash, first_blob)
         else:
             source_identifier = f"sha256:{archive_hash}"
 
@@ -86,10 +84,7 @@ class BgbImportHandler:
         if is_multi_book:
             session: Session = SessionLocal()
             try:
-                books_summary = [
-                    _book_summary(blob, archive_hash, session)
-                    for blob in blobs
-                ]
+                books_summary = [_book_summary(blob, archive_hash, session) for blob in blobs]
             finally:
                 session.close()
 
@@ -201,14 +196,14 @@ class BgbImportHandler:
             raise ValueError("selected_books must be a list of source ids")
 
         if not selected:
-            raise ValueError(
-                "selected_books is empty; pick at least one book to import"
-            )
+            raise ValueError("selected_books is empty; pick at least one book to import")
 
         per_book_dup_raw = overrides.get("per_book_duplicate") or {}
-        per_book_dup: dict[str, str] = {
-            str(k): str(v) for k, v in per_book_dup_raw.items()
-        } if isinstance(per_book_dup_raw, dict) else {}
+        per_book_dup: dict[str, str] = (
+            {str(k): str(v) for k, v in per_book_dup_raw.items()}
+            if isinstance(per_book_dup_raw, dict)
+            else {}
+        )
 
         path = Path(input_path)
         archive_hash = _sha256_of_file(path)
@@ -239,9 +234,7 @@ class BgbImportHandler:
                     zf.extractall(tmp_dir)
                 books_dir = find_books_dir(tmp_dir)
                 if books_dir is None:
-                    raise _BgbInvalid(
-                        "Backup does not contain a books/ directory."
-                    )
+                    raise _BgbInvalid("Backup does not contain a books/ directory.")
 
                 for child in sorted(books_dir.iterdir()):
                     if not child.is_dir():
@@ -249,9 +242,7 @@ class BgbImportHandler:
                     book_json = child / "book.json"
                     if not book_json.exists():
                         continue
-                    blob = json.loads(
-                        book_json.read_text(encoding="utf-8")
-                    )
+                    blob = json.loads(book_json.read_text(encoding="utf-8"))
                     book_uuid = str(blob.get("id", ""))
                     if not book_uuid or book_uuid not in wanted_uuids:
                         continue
@@ -259,18 +250,10 @@ class BgbImportHandler:
                     sid = _per_book_source_identifier(archive_hash, blob)
                     action = per_book_dup.get(sid, "skip")
                     duplicate_summary = next(
-                        (
-                            b
-                            for b in (detected.books or [])
-                            if b.source_identifier == sid
-                        ),
+                        (b for b in (detected.books or []) if b.source_identifier == sid),
                         None,
                     )
-                    duplicate_id = (
-                        duplicate_summary.duplicate_of
-                        if duplicate_summary
-                        else None
-                    )
+                    duplicate_id = duplicate_summary.duplicate_of if duplicate_summary else None
 
                     if duplicate_id and action == "skip":
                         continue
@@ -377,9 +360,7 @@ def _per_book_source_identifier(archive_hash: str, blob: dict) -> str:
     return f"sha256:{archive_hash}::{book_id}"
 
 
-def _book_summary(
-    blob: dict, archive_hash: str, session: Session
-) -> "DetectedBookSummary":
+def _book_summary(blob: dict, archive_hash: str, session: Session) -> DetectedBookSummary:
     sid = _per_book_source_identifier(archive_hash, blob)
     chapters = blob.get("chapters") or []
     has_cover = bool((blob.get("cover_image") or "").strip())
