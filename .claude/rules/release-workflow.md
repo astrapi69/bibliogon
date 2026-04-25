@@ -95,8 +95,8 @@ Example structure:
 - Important changes to existing features
 ```
 
-Also produce a separate file `CHANGELOG-v0.X.0.md` containing only
-the new entry, for the GitHub release notes.
+Also produce a separate file `changelog/releases/v0.X.0.md`
+containing only the new entry, for the GitHub release notes.
 
 Commit:
 ```
@@ -215,7 +215,7 @@ With the gh CLI (preferred):
 ```bash
 gh release create v0.X.0 \
   --title "Bibliogon v0.X.0" \
-  --notes-file CHANGELOG-v0.X.0.md
+  --notes-file changelog/releases/v0.X.0.md
 ```
 
 If the gh CLI is not available: print instructions for manual
@@ -223,7 +223,7 @@ creation on GitHub:
 - URL: https://github.com/astrapi69/bibliogon/releases/new
 - Tag: select v0.X.0
 - Title: Bibliogon v0.X.0
-- Notes: paste the contents of CHANGELOG-v0.X.0.md
+- Notes: paste the contents of changelog/releases/v0.X.0.md
 - Click "Publish release"
 
 ---
@@ -287,7 +287,7 @@ as "done". Missing items block the release.
 - [ ] Reviewed the commits since the last tag
 - [ ] Version number picked per SemVer and confirmed by the user
 - [ ] CHANGELOG.md with the new entry committed
-- [ ] CHANGELOG-v0.X.0.md created for the GitHub release
+- [ ] changelog/releases/v0.X.0.md created for the GitHub release
 - [ ] Version updated in all pyproject.toml and package.json
 - [ ] Version updated in __version__ and other Python modules
 - [ ] manuscripta and other Bibliogon deps at the current version
