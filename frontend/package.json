@@ -50,6 +50,7 @@
     "@tiptap/react": "^2.11.0",
     "@tiptap/starter-kit": "^2.11.0",
     "@types/dompurify": "3.2.0",
+    "@xstate/react": "^6.1.0",
     "dexie": "4.4.2",
     "dompurify": "^3.4.0",
     "lucide-react": "^1.8.0",
@@ -61,7 +62,8 @@
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "tiptap-footnotes": "2.0.4"
+    "tiptap-footnotes": "2.0.4",
+    "xstate": "^5.30.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
