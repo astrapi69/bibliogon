@@ -68,7 +68,6 @@ frontend/dev-dist/
 /backend/config/app.yaml
 
 # prompt files
-/docs/backlog.md
 /tmp/todo-prompts.md
 
 # Playwright results
