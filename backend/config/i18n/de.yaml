@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "Kopieren fehlgeschlagen"
     words: "Wörter"
     characters: "Zeichen"
+    show_preview: "Vorschau anzeigen"
+    hide_preview: "Vorschau ausblenden"

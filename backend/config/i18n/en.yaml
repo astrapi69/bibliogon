@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "Copy failed"
     words: "Words"
     characters: "characters"
+    show_preview: "Show preview"
+    hide_preview: "Hide preview"

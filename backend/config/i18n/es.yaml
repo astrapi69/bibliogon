@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "Error al copiar"
     words: "Palabras"
     characters: "caracteres"
+    show_preview: "Mostrar vista previa"
+    hide_preview: "Ocultar vista previa"

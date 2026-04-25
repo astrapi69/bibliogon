@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "コピーに失敗しました"
     words: "単語"
     characters: "文字"
+    show_preview: "プレビューを表示"
+    hide_preview: "プレビューを非表示"

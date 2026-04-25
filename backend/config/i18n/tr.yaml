@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "Kopyalama basarisiz"
     words: "Kelimeler"
     characters: "karakter"
+    show_preview: "Onizlemeyi goster"
+    hide_preview: "Onizlemeyi gizle"

@@ -151,4 +151,63 @@ describe("EnhancedTextarea", () => {
             screen.getByTestId("t-wrapper").getAttribute("data-language"),
         ).toBe("markdown");
     });
+
+    it("css language exposes a preview toggle when value is non-empty", () => {
+        render(
+            <EnhancedTextarea
+                value="body { color: red; }"
+                onChange={() => {}}
+                language="css"
+                testid="t"
+            />,
+        );
+        expect(screen.getByTestId("t-preview-toggle")).toBeInTheDocument();
+    });
+
+    it("css preview toggle hidden when value is empty", () => {
+        render(
+            <EnhancedTextarea
+                value=""
+                onChange={() => {}}
+                language="css"
+                testid="t"
+            />,
+        );
+        expect(
+            screen.queryByTestId("t-preview-toggle"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("clicking css preview toggle reveals the highlighted preview", () => {
+        render(
+            <EnhancedTextarea
+                value="body { color: red; }"
+                onChange={() => {}}
+                language="css"
+                testid="t"
+            />,
+        );
+        expect(
+            screen.queryByTestId("textarea-css-preview"),
+        ).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("t-preview-toggle"));
+        const preview = screen.getByTestId("textarea-css-preview");
+        expect(preview).toBeInTheDocument();
+        // Lowlight wraps tokens in <span class="hljs-...">.
+        expect(preview.querySelectorAll("span.hljs-selector-tag, span.hljs-attribute, span.hljs-number, span.hljs-keyword").length).toBeGreaterThan(0);
+    });
+
+    it("non-css languages do not render the preview toggle", () => {
+        render(
+            <EnhancedTextarea
+                value="hello"
+                onChange={() => {}}
+                language="plain"
+                testid="t"
+            />,
+        );
+        expect(
+            screen.queryByTestId("t-preview-toggle"),
+        ).not.toBeInTheDocument();
+    });
 });

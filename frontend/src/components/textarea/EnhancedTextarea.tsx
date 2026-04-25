@@ -20,9 +20,10 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import { copyToClipboard } from "../../utils/clipboard";
+import { CssPreview } from "./CssPreview";
 
 export type TextareaLanguage = "plain" | "markdown" | "html" | "css";
 
@@ -89,6 +90,8 @@ export function EnhancedTextarea({
         "idle",
     );
     const copyTimerRef = useRef<number | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
+    const previewable = language === "css";
 
     const isMono =
         mono ?? (language === "css" || language === "html");
@@ -138,7 +141,7 @@ export function EnhancedTextarea({
             data-language={language}
             style={{ display: "flex", flexDirection: "column", gap: 4 }}
         >
-            {copy && (
+            {(copy || previewable) && (
                 <div
                     style={{
                         display: "flex",
@@ -146,6 +149,59 @@ export function EnhancedTextarea({
                         gap: 6,
                     }}
                 >
+                    {previewable && value.trim().length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowPreview((prev) => !prev)}
+                            data-testid={
+                                testid
+                                    ? `${testid}-preview-toggle`
+                                    : "textarea-preview-toggle"
+                            }
+                            aria-pressed={showPreview}
+                            aria-label={
+                                showPreview
+                                    ? t(
+                                          "ui.textarea.hide_preview",
+                                          "Vorschau ausblenden",
+                                      )
+                                    : t(
+                                          "ui.textarea.show_preview",
+                                          "Vorschau anzeigen",
+                                      )
+                            }
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "2px 8px",
+                                fontSize: "0.75rem",
+                                border: "1px solid var(--border)",
+                                borderRadius: 4,
+                                background: showPreview
+                                    ? "var(--bg-hover)"
+                                    : "var(--bg-card)",
+                                color: "var(--text-secondary)",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {showPreview ? (
+                                <EyeOff size={12} />
+                            ) : (
+                                <Eye size={12} />
+                            )}
+                            {showPreview
+                                ? t(
+                                      "ui.textarea.hide_preview",
+                                      "Vorschau ausblenden",
+                                  )
+                                : t(
+                                      "ui.textarea.show_preview",
+                                      "Vorschau anzeigen",
+                                  )}
+                        </button>
+                    )}
+                    {copy && (
                     <button
                         type="button"
                         onClick={handleCopy}
@@ -196,8 +252,10 @@ export function EnhancedTextarea({
                                 )
                               : t("ui.textarea.copy", "Kopieren")}
                     </button>
+                    )}
                 </div>
             )}
+            {previewable && showPreview && <CssPreview value={value} />}
             <textarea
                 ref={ref}
                 id={fallbackId}

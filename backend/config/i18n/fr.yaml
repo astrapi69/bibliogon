@@ -1147,3 +1147,5 @@ ui:
     copy_failed: "Echec de la copie"
     words: "Mots"
     characters: "caracteres"
+    show_preview: "Afficher l'apercu"
+    hide_preview: "Masquer l'apercu"
