@@ -368,7 +368,11 @@ def execute_import(
 
     try:
         if is_multi_book_path:
-            ids = plugin.execute_multi(
+            # execute_multi is an optional extension method on the
+            # ImportPlugin protocol, opt-in for multi-book handlers
+            # like .bgb. The hasattr() guard above ensures presence;
+            # mypy can't follow that, hence the attr-defined ignore.
+            ids = plugin.execute_multi(  # type: ignore[attr-defined]
                 str(staging_path),
                 detected,
                 overrides=payload.overrides,
