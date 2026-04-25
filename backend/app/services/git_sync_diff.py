@@ -86,6 +86,186 @@ class ChapterDiff:
 # --- public surface ---
 
 
+def apply_resolutions(
+    db: Session,
+    *,
+    book_id: str,
+    resolutions: list[dict],
+) -> dict[str, int]:
+    """Apply per-chapter resolutions and advance the mapping cursor.
+
+    Each resolution is ``{section, slug, action}`` where ``action``
+    is one of:
+    - ``keep_local`` - DB stays as-is. No-op.
+    - ``take_remote`` - DB chapter is overwritten with the remote
+      markdown (converted to HTML via the same path WBT import
+      uses). For ``remote_added`` -> creates a new Chapter row.
+      For ``remote_removed`` -> deletes the local Chapter row.
+
+    After every requested resolution is applied the mapping's
+    ``last_imported_commit_sha`` is bumped to the current branch
+    HEAD so the next diff doesn't re-surface the same set of
+    changes.
+
+    Returns counts ``{"updated", "created", "deleted", "skipped"}``.
+    Raises :class:`MappingNotFoundError` /
+    :class:`CloneMissingError` (re-exported by
+    ``app.services.git_sync_commit``) on the usual preconditions.
+    """
+    from app.models import Book
+    from app.models import Chapter as ChapterModel
+    from app.services.backup.markdown_utils import md_to_html, sanitize_import_markdown
+    from app.services.git_sync_commit import (
+        CloneMissingError,
+        MappingNotFoundError,
+    )
+
+    mapping = db.get(GitSyncMapping, book_id)
+    if mapping is None:
+        raise MappingNotFoundError(f"Book {book_id} was not imported via plugin-git-sync.")
+    clone_path = Path(mapping.local_clone_path)
+    if not clone_path.is_dir() or not (clone_path / ".git").is_dir():
+        raise CloneMissingError(
+            f"Local clone {clone_path} for book {book_id} is missing or invalid."
+        )
+
+    book = db.get(Book, book_id)
+    language = (book.language if book else None) or "de"
+
+    diffs = {(d.identity.section, d.identity.slug): d for d in diff_book(db, book_id=book_id)}
+    counts = {"updated": 0, "created": 0, "deleted": 0, "skipped": 0}
+
+    for raw in resolutions:
+        section_raw = raw.get("section")
+        slug_raw = raw.get("slug")
+        action = raw.get("action")
+        if (
+            not isinstance(section_raw, str)
+            or not isinstance(slug_raw, str)
+            or action not in ("keep_local", "take_remote")
+        ):
+            counts["skipped"] += 1
+            continue
+        section: Section
+        if section_raw == "front-matter":
+            section = "front-matter"
+        elif section_raw == "back-matter":
+            section = "back-matter"
+        elif section_raw == "chapters":
+            section = "chapters"
+        else:
+            counts["skipped"] += 1
+            continue
+        slug = slug_raw
+        if action == "keep_local":
+            counts["skipped"] += 1
+            continue
+
+        diff = diffs.get((section, slug))
+        if diff is None:
+            counts["skipped"] += 1
+            continue
+
+        if diff.classification == "remote_removed":
+            if diff.db_chapter_id:
+                row = db.get(ChapterModel, diff.db_chapter_id)
+                if row is not None:
+                    db.delete(row)
+                    counts["deleted"] += 1
+            continue
+
+        if diff.remote_md is None:
+            counts["skipped"] += 1
+            continue
+
+        body_md, title = _strip_h1(diff.remote_md, fallback_title=diff.title)
+        sanitized = sanitize_import_markdown(body_md.strip(), language)
+        html = md_to_html(sanitized)
+
+        if diff.db_chapter_id:
+            row = db.get(ChapterModel, diff.db_chapter_id)
+            if row is None:
+                counts["skipped"] += 1
+                continue
+            row.title = title
+            row.content = html
+            counts["updated"] += 1
+        else:
+            # remote_added (or local_removed when user took remote).
+            position = _next_position(db, book_id)
+            chapter_type = _chapter_type_from_slug(diff.identity.section, slug)
+            db.add(
+                ChapterModel(
+                    book_id=book_id,
+                    title=title,
+                    content=html,
+                    position=position,
+                    chapter_type=chapter_type,
+                )
+            )
+            counts["created"] += 1
+
+    # Advance the mapping cursor to the current branch HEAD so a
+    # subsequent diff stops re-reporting the same changes.
+    new_head = _resolve_branch_head(clone_path, mapping.branch)
+    if new_head:
+        mapping.last_imported_commit_sha = new_head
+        db.add(mapping)
+    db.commit()
+
+    return counts
+
+
+def _strip_h1(markdown: str, *, fallback_title: str) -> tuple[str, str]:
+    """Split off the first H1 line as the title, return (body, title)."""
+    lines = markdown.splitlines()
+    title = fallback_title
+    body_start = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("# ") and not stripped.startswith("## "):
+            title = stripped[2:].strip() or fallback_title
+            body_start = i + 1
+            break
+        if stripped:
+            break
+    body = "\n".join(lines[body_start:]).lstrip("\n")
+    return body, title
+
+
+def _next_position(db: Session, book_id: str) -> int:
+    from app.models import Chapter as ChapterModel
+
+    rows = db.query(ChapterModel.position).filter(ChapterModel.book_id == book_id).all()
+    return (max((r[0] for r in rows), default=-1)) + 1
+
+
+def _chapter_type_from_slug(section: Section, slug: str) -> str:
+    """Best-effort chapter-type mapping for newly-added chapters.
+
+    Front/back-matter sections use the slug verbatim if it matches
+    a known ChapterType value; otherwise fall back to a sane
+    section-default. Ordinary ``chapters/`` entries always become
+    ``chapter``.
+    """
+    if section == "chapters":
+        return "chapter"
+    if section == "front-matter":
+        return slug if slug in _FRONT_MATTER_TYPES else "preface"
+    return slug if slug in _BACK_MATTER_TYPES else "afterword"
+
+
+def _resolve_branch_head(clone_path: Path, branch: str) -> str | None:
+    import git
+
+    try:
+        repo = git.Repo(str(clone_path))
+        return repo.commit(branch).hexsha
+    except Exception:
+        logger.warning("git-sync apply: branch %r not resolvable in %s", branch, clone_path)
+        return None
+
+
 def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
     """Run the three-way diff for the book's GitSyncMapping.
 

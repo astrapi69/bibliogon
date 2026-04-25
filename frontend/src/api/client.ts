@@ -1259,6 +1259,22 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify(payload),
             }),
+
+        /** PGS-03: three-way diff between Bibliogon, the imported
+         *  base commit, and current branch HEAD. Read-only. */
+        diff: (bookId: string) =>
+            request<GitSyncDiffResponse>(`/git-sync/${bookId}/diff`, {
+                method: "POST",
+            }),
+
+        /** PGS-03: apply per-chapter resolutions. Mutates the local
+         *  DB; bumps ``last_imported_commit_sha`` so the next diff
+         *  starts fresh. Does NOT push. */
+        resolve: (bookId: string, resolutions: GitSyncResolutionEntry[]) =>
+            request<GitSyncResolveResult>(`/git-sync/${bookId}/resolve`, {
+                method: "POST",
+                body: JSON.stringify({resolutions}),
+            }),
     },
 
     ssh: {
@@ -1372,4 +1388,46 @@ export interface GitSyncCommitResult {
     commit_sha: string
     branch: string
     pushed: boolean
+}
+
+/** Stable classification slugs the diff endpoint returns. */
+export type GitSyncDiffClassification =
+    | "unchanged"
+    | "remote_changed"
+    | "local_changed"
+    | "both_changed"
+    | "remote_added"
+    | "local_added"
+    | "remote_removed"
+    | "local_removed"
+
+export interface GitSyncDiffEntry {
+    section: "front-matter" | "chapters" | "back-matter"
+    slug: string
+    title: string
+    classification: GitSyncDiffClassification
+    base_md: string | null
+    local_md: string | null
+    remote_md: string | null
+    db_chapter_id: string | null
+}
+
+export interface GitSyncDiffResponse {
+    book_id: string
+    last_imported_commit_sha: string
+    branch: string
+    chapters: GitSyncDiffEntry[]
+    counts: Record<GitSyncDiffClassification, number>
+}
+
+export interface GitSyncResolutionEntry {
+    section: string
+    slug: string
+    /** PGS-03 MVP supports keep_local + take_remote only. Mark
+     *  conflict (write both versions side-by-side) is a follow-up. */
+    action: "keep_local" | "take_remote"
+}
+
+export interface GitSyncResolveResult {
+    counts: Record<"updated" | "created" | "deleted" | "skipped", number>
 }

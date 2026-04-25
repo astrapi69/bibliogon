@@ -284,6 +284,255 @@ def test_diff_endpoint_410_when_clone_missing(
     assert resp.status_code == 410
 
 
+def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """End-to-end: build a base, advance remote, run apply_resolutions
+    with take_remote, verify DB is updated AND mapping.last_imported_commit_sha
+    moved to the new HEAD so the next diff shows no remote changes."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nbase body\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+    base_sha = mapping.last_imported_commit_sha
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("base body"),
+        )
+    )
+    db.commit()
+
+    # Advance remote.
+    _write_wbt_chapter(persisted, "chapters", "01-foo.md", "# Foo\n\nremote body\n")
+    new_sha = _commit_all(persisted_repo, "remote progress")
+    assert new_sha != base_sha
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "foo", "action": "take_remote"},
+        ],
+    )
+    assert counts == {"updated": 1, "created": 0, "deleted": 0, "skipped": 0}
+
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    assert mapping.last_imported_commit_sha == new_sha
+
+    # The DB chapter content is now the converted remote body.
+    chapter = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one()
+    assert "remote body" in chapter.content
+
+
+def test_apply_resolutions_keep_local_is_noop_but_still_bumps_cursor(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nbase\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted_repo = git.Repo(str(mapping.local_clone_path))
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("local edit"),
+        )
+    )
+    db.commit()
+    original = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one().content
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "foo", "action": "keep_local"},
+        ],
+    )
+    assert counts["updated"] == 0
+    assert counts["skipped"] >= 1
+
+    chapter = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one()
+    assert chapter.content == original
+
+
+def test_apply_resolutions_remote_added_creates_chapter(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nfoo\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("foo"),
+        )
+    )
+    db.commit()
+
+    # Remote adds a new chapter.
+    _write_wbt_chapter(persisted, "chapters", "02-bar.md", "# Bar\n\nbar body\n")
+    _commit_all(persisted_repo, "added bar")
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "bar", "action": "take_remote"},
+        ],
+    )
+    assert counts["created"] == 1
+    bar = db.query(Chapter).filter_by(book_id=book.id, title="Bar").one()
+    assert "bar body" in bar.content
+
+
+def test_apply_resolutions_remote_removed_deletes_chapter(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nfoo\n")
+    _write_wbt_chapter(work, "chapters", "02-bar.md", "# Bar\n\nbar\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("foo"),
+        )
+    )
+    db.add(
+        Chapter(
+            book_id=book.id, title="Bar", chapter_type="chapter", position=1,
+            content=_tiptap_paragraph("bar"),
+        )
+    )
+    db.commit()
+
+    # Remote removes bar.
+    (persisted / "manuscript" / "chapters" / "02-bar.md").unlink()
+    _commit_all(persisted_repo, "removed bar")
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "bar", "action": "take_remote"},
+        ],
+    )
+    assert counts["deleted"] == 1
+    assert db.query(Chapter).filter_by(book_id=book.id, title="Bar").first() is None
+
+
+def test_resolve_endpoint_404_on_unmapped_book(book: Book) -> None:
+    resp = client.post(
+        f"/api/git-sync/{book.id}/resolve",
+        json={"resolutions": []},
+    )
+    assert resp.status_code == 404
+
+
+def test_resolve_endpoint_validates_action_pattern(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """Pydantic-level rejection: action must be keep_local or take_remote."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nfoo\n")
+    _commit_all(repo, "base")
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.commit()
+
+    resp = client.post(
+        f"/api/git-sync/{book.id}/resolve",
+        json={
+            "resolutions": [
+                {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
+            ],
+        },
+    )
+    assert resp.status_code == 422
+
+
 def test_diff_endpoint_returns_payload_with_counts(
     db: Session, book: Book, tmp_path: Path
 ) -> None:

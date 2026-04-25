@@ -7,7 +7,9 @@ import {
     AlertTriangle,
     Check,
     Loader2,
+    GitMerge,
 } from "lucide-react";
+import GitSyncDiffDialog from "./GitSyncDiffDialog";
 import {
     api,
     ApiError,
@@ -44,6 +46,7 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
     const [lastResult, setLastResult] = useState<GitSyncCommitResult | null>(
         null,
     );
+    const [showDiff, setShowDiff] = useState(false);
 
     useEffect(() => {
         if (!open) return;
@@ -162,15 +165,20 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                             {status.dirty === null ? (
                                 <CloneMissingNotice />
                             ) : (
-                                <CommitForm
-                                    dirty={status.dirty}
-                                    message={message}
-                                    onMessageChange={setMessage}
-                                    push={push}
-                                    onPushChange={setPush}
-                                    committing={committing}
-                                    onSubmit={handleCommit}
-                                />
+                                <>
+                                    <CommitForm
+                                        dirty={status.dirty}
+                                        message={message}
+                                        onMessageChange={setMessage}
+                                        push={push}
+                                        onPushChange={setPush}
+                                        committing={committing}
+                                        onSubmit={handleCommit}
+                                    />
+                                    <CheckUpstreamButton
+                                        onClick={() => setShowDiff(true)}
+                                    />
+                                </>
                             )}
                             {lastResult && (
                                 <LastResult result={lastResult} />
@@ -179,6 +187,12 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                     )}
                 </Dialog.Content>
             </Dialog.Portal>
+            <GitSyncDiffDialog
+                open={showDiff}
+                bookId={bookId}
+                onClose={() => setShowDiff(false)}
+                onResolved={() => void refresh()}
+            />
         </Dialog.Root>
     );
 }
@@ -395,6 +409,30 @@ function CommitForm({
                 </button>
             </div>
         </div>
+    );
+}
+
+function CheckUpstreamButton({ onClick }: { onClick: () => void }) {
+    const { t } = useI18n();
+    return (
+        <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={onClick}
+            data-testid="git-sync-check-upstream"
+            style={{
+                marginTop: 8,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+            }}
+        >
+            <GitMerge size={14} />
+            {t(
+                "ui.git_sync.check_upstream",
+                "Auf Aenderungen vom Repo pruefen",
+            )}
+        </button>
     );
 }
 

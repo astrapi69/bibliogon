@@ -28,7 +28,7 @@ from app.services.git_sync_commit import (
     PushFailedError,
     commit_to_repo,
 )
-from app.services.git_sync_diff import diff_book
+from app.services.git_sync_diff import apply_resolutions, diff_book
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,25 @@ class DiffResponse(BaseModel):
     chapters: list[ChapterDiffEntry]
     #: Quick summary so the UI can show a header without
     #: counting chapter-by-chapter.
+    counts: dict[str, int]
+
+
+class ResolutionEntry(BaseModel):
+    section: str
+    slug: str
+    #: ``keep_local`` (no-op) or ``take_remote`` (overwrite DB
+    #: chapter with remote markdown). PGS-03 MVP intentionally
+    #: does NOT support ``mark_conflict`` (which would write
+    #: both versions as a visible conflict block) - that's a
+    #: follow-up.
+    action: str = Field(pattern="^(keep_local|take_remote)$")
+
+
+class ResolveRequest(BaseModel):
+    resolutions: list[ResolutionEntry] = Field(default_factory=list)
+
+
+class ResolveResponse(BaseModel):
     counts: dict[str, int]
 
 
@@ -218,6 +237,31 @@ def diff(
         chapters=entries,
         counts=counts,
     )
+
+
+@router.post("/{book_id}/resolve", response_model=ResolveResponse)
+def resolve(
+    book_id: str,
+    payload: ResolveRequest,
+    db: Session = Depends(get_db),
+) -> ResolveResponse:
+    """Apply per-chapter resolutions and advance the mapping cursor.
+
+    Mutates the local DB only - the remote repository is not
+    touched. Subsequent ``commit_to_repo`` is the user's explicit
+    next step if they also want to publish the resolved state.
+    """
+    try:
+        counts = apply_resolutions(
+            db,
+            book_id=book_id,
+            resolutions=[r.model_dump() for r in payload.resolutions],
+        )
+    except MappingNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except CloneMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+    return ResolveResponse(counts=counts)
 
 
 # --- helpers ---
