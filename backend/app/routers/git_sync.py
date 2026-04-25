@@ -28,6 +28,7 @@ from app.services.git_sync_commit import (
     PushFailedError,
     commit_to_repo,
 )
+from app.services.git_sync_diff import diff_book
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,39 @@ class CommitResponse(BaseModel):
     commit_sha: str
     branch: str
     pushed: bool
+
+
+# --- PGS-03 diff models ---
+
+
+class ChapterDiffEntry(BaseModel):
+    """One row in the three-way diff payload.
+
+    ``classification`` is the stable string the frontend switches
+    on; ``base_md`` / ``local_md`` / ``remote_md`` are nullable so
+    add/remove cases can carry whichever sides exist. ``identity``
+    is the ``(section, slug)`` pair the frontend needs to send back
+    when applying a per-chapter resolution in PGS-03 Session 2.
+    """
+
+    section: str
+    slug: str
+    title: str
+    classification: str
+    base_md: str | None = None
+    local_md: str | None = None
+    remote_md: str | None = None
+    db_chapter_id: str | None = None
+
+
+class DiffResponse(BaseModel):
+    book_id: str
+    last_imported_commit_sha: str
+    branch: str
+    chapters: list[ChapterDiffEntry]
+    #: Quick summary so the UI can show a header without
+    #: counting chapter-by-chapter.
+    counts: dict[str, int]
 
 
 # --- endpoints ---
@@ -131,6 +165,59 @@ def commit(
         ) from exc
 
     return CommitResponse(**result)  # type: ignore[arg-type]
+
+
+@router.post("/{book_id}/diff", response_model=DiffResponse)
+def diff(
+    book_id: str,
+    db: Session = Depends(get_db),
+) -> DiffResponse:
+    """Return the three-way diff (base vs local vs remote) per chapter.
+
+    Read-only: this endpoint runs ``git ls-tree`` + ``git show``
+    against the persisted clone and reads the local DB. It does NOT
+    fetch from the remote - callers must ``git fetch`` first if
+    they want the remote side to reflect upstream changes since
+    the last clone update. PGS-03 Session 2 will add a fetch step
+    inside the re-import flow before invoking diff.
+    """
+    mapping = db.get(GitSyncMapping, book_id)
+    if mapping is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book is not mapped to a git repository.",
+        )
+    try:
+        diffs = diff_book(db, book_id=book_id)
+    except MappingNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except CloneMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+
+    counts: dict[str, int] = {}
+    entries: list[ChapterDiffEntry] = []
+    for d in diffs:
+        counts[d.classification] = counts.get(d.classification, 0) + 1
+        entries.append(
+            ChapterDiffEntry(
+                section=d.identity.section,
+                slug=d.identity.slug,
+                title=d.title,
+                classification=d.classification,
+                base_md=d.base_md,
+                local_md=d.local_md,
+                remote_md=d.remote_md,
+                db_chapter_id=d.db_chapter_id,
+            )
+        )
+
+    return DiffResponse(
+        book_id=book_id,
+        last_imported_commit_sha=mapping.last_imported_commit_sha,
+        branch=mapping.branch,
+        chapters=entries,
+        counts=counts,
+    )
 
 
 # --- helpers ---
