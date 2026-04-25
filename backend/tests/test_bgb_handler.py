@@ -195,3 +195,105 @@ def test_execute_overwrite_replaces_existing(
     row = db.query(Book).filter(Book.id == "dup-1").one()
     assert row.title == "V2"
     assert db.query(Book).filter(Book.id == "dup-1").count() == 1  # no duplicate
+
+
+# --- Multi-book BGB ---
+
+
+def _write_multi_bgb(
+    tmp_path: Path, book_ids: list[str], name: str = "multi.bgb"
+) -> Path:
+    """Build a .bgb that carries N books inside one archive."""
+    manifest = {"format": "bibliogon-backup", "version": 1}
+    bgb = tmp_path / name
+    with zipfile.ZipFile(bgb, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        for idx, bid in enumerate(book_ids):
+            blob = {
+                "id": bid,
+                "title": f"Book {idx + 1}",
+                "author": f"Author {idx + 1}",
+                "language": "en",
+                "chapters": [
+                    {
+                        "id": f"{bid}-ch1",
+                        "title": "Ch 1",
+                        "content": "Body.",
+                        "position": 0,
+                    },
+                ],
+                "assets": [],
+            }
+            zf.writestr(f"books/{bid}/book.json", json.dumps(blob))
+            zf.writestr(
+                f"books/{bid}/chapters/{bid}-ch1.json",
+                json.dumps(blob["chapters"][0]),
+            )
+    return bgb
+
+
+def test_detect_multi_book_surfaces_books_list(
+    handler: BgbImportHandler, tmp_path: Path
+) -> None:
+    bgb = _write_multi_bgb(tmp_path, ["mb-1", "mb-2", "mb-3"])
+    detected = handler.detect(str(bgb))
+    assert detected.is_multi_book is True
+    assert detected.books is not None
+    assert len(detected.books) == 3
+    titles = {b.title for b in detected.books}
+    assert titles == {"Book 1", "Book 2", "Book 3"}
+    # Per-book source_identifier follows sha256:<hash>::<uuid> shape.
+    sids = {b.source_identifier for b in detected.books}
+    assert all("::mb-" in sid for sid in sids)
+    # Scalar title still carries first book for backwards compat.
+    assert detected.title == "Book 1"
+
+
+def test_detect_single_book_keeps_is_multi_book_false(
+    handler: BgbImportHandler, tmp_path: Path
+) -> None:
+    bgb = _write_bgb(tmp_path, book_id="solo")
+    detected = handler.detect(str(bgb))
+    assert detected.is_multi_book is False
+    assert detected.books is None
+
+
+def test_execute_multi_imports_all_books_when_no_filter(
+    handler: BgbImportHandler, tmp_path: Path, db: Session
+) -> None:
+    bgb = _write_multi_bgb(tmp_path, ["mb-a", "mb-b"])
+    detected = handler.detect(str(bgb))
+    ids = handler.execute_multi(str(bgb), detected, overrides={})
+    assert sorted(ids) == ["mb-a", "mb-b"]
+    titles = {b.title for b in db.query(Book).filter(Book.id.in_(ids)).all()}
+    assert titles == {"Book 1", "Book 2"}
+
+
+def test_execute_multi_respects_selected_books(
+    handler: BgbImportHandler, tmp_path: Path, db: Session
+) -> None:
+    bgb = _write_multi_bgb(tmp_path, ["sel-a", "sel-b", "sel-c"])
+    detected = handler.detect(str(bgb))
+    # Only import the second book.
+    target_sid = next(
+        b.source_identifier for b in detected.books if b.title == "Book 2"
+    )
+    ids = handler.execute_multi(
+        str(bgb),
+        detected,
+        overrides={"selected_books": [target_sid]},
+    )
+    assert ids == ["sel-b"]
+    rows = db.query(Book).filter(Book.id.in_(["sel-a", "sel-b", "sel-c"])).all()
+    assert {b.id for b in rows} == {"sel-b"}
+
+
+def test_execute_multi_empty_selection_raises(
+    handler: BgbImportHandler, tmp_path: Path
+) -> None:
+    bgb = _write_multi_bgb(tmp_path, ["x", "y"])
+    detected = handler.detect(str(bgb))
+    with pytest.raises(ValueError, match="selected_books"):
+        handler.execute_multi(
+            str(bgb), detected, overrides={"selected_books": []}
+        )

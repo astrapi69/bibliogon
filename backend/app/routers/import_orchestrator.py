@@ -87,6 +87,13 @@ class ExecuteRequest(BaseModel):
 class ExecuteResponse(BaseModel):
     book_id: str | None = None
     status: Literal["created", "overwritten", "cancelled"]
+    #: List of every book id created by this execute call. For
+    #: single-book imports this is ``[book_id]`` (the single id is
+    #: also surfaced via ``book_id`` for backwards compatibility).
+    #: For multi-book .bgb imports the wizard reads this list to
+    #: navigate to the dashboard or open the first book; ``book_id``
+    #: itself carries the first id.
+    imported_book_ids: list[str] = Field(default_factory=list)
 
 
 # --- Endpoints ---
@@ -355,15 +362,30 @@ def execute_import(
                 ),
             )
 
+    is_multi_book_path = bool(
+        detected.is_multi_book
+        and detected.books
+        and hasattr(plugin, "execute_multi")
+    )
+
     try:
-        book_id = plugin.execute(
-            str(staging_path),
-            detected,
-            payload.overrides,
-            duplicate_action=payload.duplicate_action,
-            existing_book_id=payload.existing_book_id,
-            git_adoption=payload.git_adoption,
-        )
+        if is_multi_book_path:
+            ids = plugin.execute_multi(
+                str(staging_path),
+                detected,
+                overrides=payload.overrides,
+            )
+            book_id = ids[0] if ids else ""
+        else:
+            book_id = plugin.execute(
+                str(staging_path),
+                detected,
+                payload.overrides,
+                duplicate_action=payload.duplicate_action,
+                existing_book_id=payload.existing_book_id,
+                git_adoption=payload.git_adoption,
+            )
+            ids = [book_id] if book_id else []
     except MandatoryFieldMissing as exc:
         _drop_staged(payload.temp_ref)
         raise HTTPException(
@@ -383,23 +405,64 @@ def execute_import(
             detail=f"Import handler failed: {exc}",
         ) from exc
 
-    _record_import_source(
-        db,
-        book_id=book_id,
-        source_identifier=detected.source_identifier,
-        source_type=detected.format_name,
-        format_name=detected.format_name,
-        overwrote=payload.duplicate_action == "overwrite",
-    )
+    if is_multi_book_path:
+        # Per-book BookImportSource rows so each book gets its own
+        # duplicate identity on next import. Skip when no books were
+        # actually written (selected_books filter excluded everything).
+        for created_id, summary in zip(
+            ids, _summaries_in_order(detected, ids)
+        ):
+            _record_import_source(
+                db,
+                book_id=created_id,
+                source_identifier=summary.source_identifier,
+                source_type=detected.format_name,
+                format_name=detected.format_name,
+                overwrote=False,
+            )
+    else:
+        _record_import_source(
+            db,
+            book_id=book_id,
+            source_identifier=detected.source_identifier,
+            source_type=detected.format_name,
+            format_name=detected.format_name,
+            overwrote=payload.duplicate_action == "overwrite",
+        )
     _drop_staged(payload.temp_ref)
 
     return ExecuteResponse(
         book_id=book_id,
         status="overwritten" if payload.duplicate_action == "overwrite" else "created",
+        imported_book_ids=ids,
     )
 
 
 # --- Helpers ---
+
+
+def _summaries_in_order(
+    detected: DetectedProject, created_ids: list[str]
+) -> list:
+    """Match created book ids back to their DetectedBookSummary entries.
+
+    Per-book ``source_identifier`` uses the ``sha256:<hash>::<uuid>``
+    shape; the ``<uuid>`` half equals ``Book.id`` so we can recover
+    the matching summary from each id without a DB roundtrip.
+    """
+    out = []
+    for book_id in created_ids:
+        match = next(
+            (
+                b
+                for b in (detected.books or [])
+                if b.source_identifier.endswith(f"::{book_id}")
+            ),
+            None,
+        )
+        if match is not None:
+            out.append(match)
+    return out
 
 
 def _stage_uploads(files: list[UploadFile], paths: list[str] | None, temp_ref: str) -> Path:

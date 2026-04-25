@@ -38,6 +38,35 @@ class DetectedChapter(BaseModel):
     content_preview: str  # first ~200 chars of plain text
 
 
+class DetectedBookSummary(BaseModel):
+    """Lightweight summary of a single book inside a multi-book
+    archive.
+
+    Populated by handlers whose source file can carry more than one
+    book at once (currently ``.bgb``). Single-book formats leave
+    ``DetectedProject.books`` as ``None`` and surface metadata via
+    the scalar fields instead.
+
+    ``source_identifier`` is the per-book identity used for
+    duplicate detection. The wizard sends back the same string in
+    the ``selected_books`` override to tell the handler which books
+    to restore.
+    """
+
+    title: str
+    author: str | None = None
+    subtitle: str | None = None
+    chapter_count: int = 0
+    has_cover: bool = False
+    #: Per-book identity. Format is handler-defined but stable
+    #: across re-imports of the same archive.
+    source_identifier: str
+    #: When the book matches an existing import, the existing
+    #: ``Book.id``. The wizard renders a per-book duplicate banner
+    #: and offers Skip / Overwrite / Create-new.
+    duplicate_of: str | None = None
+
+
 class DetectedGitRepo(BaseModel):
     """Metadata about a ``.git/`` directory found in an import source.
 
@@ -129,6 +158,14 @@ class DetectedProject(BaseModel):
     #: if the source has no adoptable git repository. Handlers that
     #: don't support git adoption leave this at None.
     git_repo: DetectedGitRepo | None = None
+    #: When the import source carries more than one book (.bgb
+    #: backups), set to True and populate ``books``. The wizard
+    #: branches Step 3 to a list-with-checkboxes view; the scalar
+    #: title/author/etc. fields carry the FIRST book's data for
+    #: backwards compatibility with consumers expecting a single
+    #: project.
+    is_multi_book: bool = False
+    books: list[DetectedBookSummary] | None = None
     plugin_specific_data: dict = Field(default_factory=dict)
 
 

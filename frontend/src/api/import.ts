@@ -73,6 +73,30 @@ export interface DetectedProject {
     // inspection; null/absent when the source has no .git/. The
     // wizard renders a dedicated Step 3 section when present.
     git_repo?: DetectedGitRepo | null;
+
+    // Multi-book archives (``.bgb``): handler exposes the per-book
+    // summary list when the source contains more than one book.
+    // Single-book imports leave both unset — scalar title/author/etc.
+    // remain the source of truth.
+    is_multi_book?: boolean;
+    books?: DetectedBookSummary[] | null;
+}
+
+/** Per-book summary inside a multi-book import archive (``.bgb``).
+ *
+ * Mirrors :class:`DetectedBookSummary` in backend protocol.py. The
+ * wizard's PreviewMultiBookStep renders one row per entry with a
+ * checkbox + duplicate-action dropdown. ``source_identifier`` is
+ * the per-book identity used by ``selected_books`` and
+ * ``per_book_duplicate_action`` overrides on the execute payload. */
+export interface DetectedBookSummary {
+    title: string;
+    author: string | null;
+    subtitle: string | null;
+    chapter_count: number;
+    has_cover: boolean;
+    source_identifier: string;
+    duplicate_of: string | null;
 }
 
 /** Metadata about an adoptable ``.git/`` directory in an import source.
@@ -154,6 +178,10 @@ export interface DetectResponse {
 export interface ExecuteResponse {
     book_id: string | null;
     status: "created" | "overwritten" | "cancelled";
+    /** Every book id created by this execute call. For single-book
+     * imports the same value is also surfaced via ``book_id``;
+     * multi-book ``.bgb`` imports may include several. */
+    imported_book_ids?: string[];
 }
 
 export type DuplicateAction = "create" | "overwrite" | "cancel";

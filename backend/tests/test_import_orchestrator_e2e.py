@@ -106,7 +106,11 @@ def test_execute_creates_book_and_records_source(client: TestClient) -> None:
         json={"temp_ref": temp_ref, "overrides": {}, "duplicate_action": "create"},
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json() == {"book_id": "exec-1", "status": "created"}
+    assert resp.json() == {
+        "book_id": "exec-1",
+        "status": "created",
+        "imported_book_ids": ["exec-1"],
+    }
 
 
 def test_execute_unknown_temp_ref_returns_404(client: TestClient) -> None:
@@ -154,7 +158,11 @@ def test_execute_cancel_does_not_create_book(client: TestClient) -> None:
         },
     )
     assert resp.status_code == 200
-    assert resp.json() == {"book_id": None, "status": "cancelled"}
+    assert resp.json() == {
+        "book_id": None,
+        "status": "cancelled",
+        "imported_book_ids": [],
+    }
 
     # Staging dropped too; second execute with same temp_ref fails.
     second = client.post(

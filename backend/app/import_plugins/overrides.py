@@ -86,6 +86,13 @@ BOOK_IMPORT_OVERRIDE_KEYS: frozenset[str] = frozenset(
 META_OVERRIDE_KEYS: frozenset[str] = frozenset(
     {
         "primary_cover",
+        # Multi-book BGB selection (Part 4): list of per-book
+        # source_identifiers the wizard wants imported.
+        "selected_books",
+        # Multi-book BGB per-book duplicate decision: dict keyed by
+        # per-book source_identifier with values
+        # "skip" | "overwrite" | "create_new".
+        "per_book_duplicate",
     }
 )
 
