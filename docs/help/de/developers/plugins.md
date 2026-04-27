@@ -497,3 +497,209 @@ Konkretes Beispiel fuer alles oben: PGS-01-Commits in Reihenfolge lesen — jede
 | `ced994c` | ROADMAP-Flip + Hilfe-Docs |
 
 Jeden Diff neben dieser Anleitung studieren.
+
+---
+
+## Bidirektionale Sync-Patterns (aus PGS-02..05)
+
+PGS-01 brachte Buecher *in* Bibliogon hinein. Phasen 2-5 schliessen den Round-Trip — Buch neu scaffolden und zurueck zum Remote pushen. Vier Patterns, die jedes Plugin trifft, das externen State veraendert.
+
+### Muster 5: Per-Buch-Lock fuer Cross-Subsystem-Operationen
+
+**Problem.** Klick auf "Commit ueberall" faechert den Aufruf in zwei Subsysteme auf (Core-Git + plugin-git-sync). Ohne Koordination racen zwei gleichzeitige Faechrungen (alter Dialog in anderem Tab, Re-Click waehrend langsamem ersten Versuch) am Working Tree und am `last_committed_at`-Cursor.
+
+**Loesung.** Schluesselter Lock auf `book_id` mit kurzem Timeout. PGS-05 liefert `app.services.git_sync_lock.book_commit_lock(book_id, timeout=30)`:
+
+```python
+from app.services.git_sync_lock import book_commit_lock
+
+with book_commit_lock(book_id, timeout=30):
+    # core git zuerst (kleinerer Blast Radius), plugin-git-sync danach
+    ...
+```
+
+Timeout mappt im Router auf HTTP 503, nie 500. Der Nutzer sieht "anderer Commit laeuft" und versucht es erneut.
+
+**Wann nutzen.** Immer wenn eine User-Aktion auf >=2 mutierende Subsysteme derselben Resource auffaechert. Lock ist per Resource, nicht per Prozess.
+
+**Anti-Pattern.** Implizit auf "niemand klickt zweimal" zu vertrauen ist der Bug; funktioniert in QA, scheitert wenn SSE-Reconnects denselben Aufruf wiederholen, wenn der Toast eines langsamen ersten Versuchs ablaeuft und der Nutzer neu klickt usw. Immer locken.
+
+### Muster 6: Weiche Per-Subsystem-Fehleraggregation
+
+**Problem.** Wenn Core-Git + plugin-git-sync gefaechert werden, ist Teil-Fehlschlag die Norm: eine Seite gelingt, die andere scheitert an Auth, Netzwerk oder "nichts zu committen". Ein hartes `raise HTTPException(500)` verliert den Erfolg und laesst den Nutzer mit generischem Fehler stehen.
+
+**Loesung.** Per-Subsystem-Resultat mit stabilem Status-Enum:
+
+```python
+class SubsystemResult:
+    status: Literal["ok", "skipped", "nothing_to_commit", "failed"]
+    detail: str | None = None
+    commit_sha: str | None = None
+    pushed: bool = False
+```
+
+Beide Subsystem-Resultate landen im Response-Body, auch wenn eines scheiterte. Toast-Stufe (success / warning / error) entscheidet die Client-Seite aus den kombinierten Stati, sodass der Nutzer "Core erfolgreich, Plugin fehlgeschlagen (Auth)" sieht statt "Internal Server Error".
+
+503 bleibt — feuert aber NUR wenn der Per-Buch-Lock nicht zu bekommen ist. Subsystem-Level-Fehler bleiben im 200-Payload.
+
+**Wann nutzen.** Endpoint, der >=2 Subsysteme orchestriert wo Teilerfolg sinnvoll ist. Wenn beide atomar gelingen muessen (z.B. Finanztransaktion), passt das Pattern nicht — Transaction Boundary nutzen.
+
+### Muster 7: One-Shot-Pushurl fuer Credential-Injection
+
+**Problem.** PAT in `origin`-URL via `git remote set-url` einbetten funktioniert fuer HTTPS-Push, aber dann liegt der PAT in `.git/config` auf der Platte. Backup-Read des Repos wuerde den Token leaken.
+
+**Loesung.** Eingebettete URL kurz vor dem Push setzen, Original-URL im `finally` wiederherstellen. PGS-02s `_push`:
+
+```python
+original_url = next(repo.remotes.origin.urls)
+auth_url = git_credentials.inject_pat_into_url(original_url, book_id)
+try:
+    if auth_url != original_url:
+        repo.remotes.origin.set_url(auth_url)
+    info = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+finally:
+    if auth_url != original_url:
+        repo.remotes.origin.set_url(original_url)
+```
+
+Nach Return ist die URL auf Platte wieder original. Regression-Test (`test_commit_push_uses_per_book_pat_without_persisting_to_git_config`) liest `.git/config` nach dem Push und assertet, dass der Token nie auftaucht.
+
+**Wann nutzen.** Immer wenn ein Secret in ein Config-Feld als temporaerer Auth-Carrier eingebettet wird.
+
+**Per-Buch-Credential-Helper.** PGS-02-FU-01 fuegte `app.services.git_credentials` hinzu, sodass mehrere Subsysteme einen einzigen Per-Buch-PAT-Slot teilen. Wenn du Credentials fuer ein neues Subsystem am selben Buch brauchst, diesen Helper wiederverwenden statt parallelen Store bauen. Encrypted-at-rest via Fernet mit Schluessel aus `BIBLIOGON_CREDENTIALS_SECRET`.
+
+### Muster 8: Fehlertolerante Lazy-Imports fuer Side-Effects
+
+**Problem.** Dein Plugin produziert ein Primaer-Artefakt (z.B. einen Commit) und eine "nice to have"-Begleitdatei (z.B. Markdown-Sidefile neben dem kanonischen JSON fuer lesbare Git-Diffs). Der Begleitschreiber haengt via Path-Dep an einem Konverter eines anderen Plugins. Wenn der Begleitschreiber bricht, muss das Primaer-Artefakt trotzdem rausgehen.
+
+**Loesung.** Helper innerhalb `try/except` lazy importieren, im Fehlerfall loggen und weitermachen. PGS-05s Markdown-Sidefile-Emitter:
+
+```python
+def _write_md_side_file(json_path: Path) -> None:
+    try:
+        from bibliogon_export.tiptap_to_md import tiptap_to_markdown  # lazy
+    except Exception:
+        logger.exception("Markdown side-file: import failed; skipping.")
+        return
+    try:
+        # ... convert + write
+    except Exception:
+        logger.exception("Markdown side-file: conversion failed; skipping.")
+```
+
+Der Commit landet trotzdem; das Sidefile vielleicht nicht. Naechster Commit versucht es erneut.
+
+**Wann nutzen.** Immer wenn du ein nicht-kanonisches Begleit-Artefakt produzierst. Wenn das Begleit-Artefakt das einzige Artefakt ist (z.B. EPUB-Output des Export-Plugins), passt das Pattern nicht — Fehler muessen hart hochpoppen.
+
+**Anti-Pattern.** Eager-Import des Helpers oben im Plugin-Modul: ein zukuenftiger Refactor des Helper-Plugins bricht die Lade-Discovery *deines* Plugins, obwohl deine Primaer-Arbeit nichts damit zu tun hat.
+
+---
+
+## Three-Way-Diff-Patterns (aus PGS-03 + PGS-03-FU-01)
+
+Wenn dein Plugin Inhalte aus einer externen Quelle re-importiert, die der Nutzer auch lokal editiert hat, musst du den Diff so aufbereiten, dass der Nutzer aufloesen kann. PGS-03 lieferte einen Three-Way-Diff (base / local / remote) ueber Kapitel; die Patterns generalisieren.
+
+### Muster 9: Git-Refs ohne Working-Tree-Checkout lesen
+
+**Problem.** Base-vs-Remote-Diff erfordert das Lesen von Dateiinhalt an ZWEI Commits. Naives `git checkout <ref>` wechselt den Working Tree und bricht parallele Commit-to-Repo-Flows.
+
+**Loesung.** `git ls-tree -r --name-only <commit> <prefix>` + `git show <commit>:<path>` sind read-only und beruehren den Working Tree nie. PGS-03s `_read_wbt_at_ref(clone_path, ref)`:
+
+```python
+commit = repo.commit(ref)
+tree = repo.git.ls_tree("-r", "--name-only", commit.hexsha, prefix).splitlines()
+for path in tree:
+    if path.endswith(".md"):
+        content = repo.git.show(f"{commit.hexsha}:{path}")
+        # ...
+```
+
+Ref erst zu Commit aufloesen, dann sind die `show`-Aufrufe deterministisch, auch wenn der Branch unter dir wandert.
+
+**Wann nutzen.** Immer wenn du Inhalt an mehreren Refs in derselben logischen Operation brauchst. Working Tree als exklusiv fuer Commit-to-Repo / Merge / Checkout behandeln — nie fuer Read-Only-Inspektion.
+
+### Muster 10: Reine Klassifikation + seiteneffektige Anwendung
+
+**Problem.** Ein Diff hat zwei Verantwortungen: herausfinden *was sich geaendert hat* (Per-Kapitel-Klassifikation) und *Nutzer-Aufloesung anwenden* (DB mutieren). Vermischen ergibt eine 200-Zeilen-Funktion, untestbar ohne reales Git-Repo + DB.
+
+**Loesung.** Zwei getrennte Funktionen:
+
+- `_classify(base, local, remote) -> list[ChapterDiff]`: rein. Drei dicts identity → content rein, Liste von Klassifikationen raus. Kein Git, keine DB. Unit-testbar aus In-Memory-dicts.
+- `apply_resolutions(db, *, book_id, resolutions)`: seiteneffektig. Mutiert DB nach Per-Kapitel-Wahl und bumpt den Cursor.
+
+`diff_book(db, book_id)` ist der duenne Glue, der Inputs liest (via Pattern 9) und in `_classify` einspeist.
+
+**Wann nutzen.** Jede nicht-triviale Entscheidung, die in einer DB-Mutation endet. Die Klassifikations-Haelfte verdient ~10 eigene Unit-Tests fuer Edge-Cases (`unchanged`, beidseitig-entfernt, identische-Edits-beidseitig, Blank-Line-only-Differenzen, ...). Dieselbe Coverage ueber End-to-End-Fixtures zu erreichen ist 5x langsamer und 10x sproeder.
+
+**Normalisierungstolerante Vergleiche.** PGS-03s `_normalize` strippt trailing Whitespace pro Zeile, kollabiert Blank-Line-Runs, trimmt fuehrenden/abschliessenden Whitespace vor Equality. Markdown-Round-Trips ueber TipTap → Markdown → Datei → TipTap fuegen oft einen finalen Newline hinzu oder weg; ohne Normalisierung wuerde jedes "unchanged"-Kapitel als "local_changed" klassifiziert.
+
+### Muster 11: Post-Process-Collapse fuer Rename-Detection
+
+**Problem.** Eine Datei, die von `slug-a` nach `slug-b` mit identischem Body wandert, klassifiziert als `*_removed` fuer den alten Slug UND `*_added` fuer den neuen — zwei verwirrende Zeilen, die der Nutzer mental paaren muss.
+
+**Loesung.** Basis-Klassifizierer bleibt simpel (kennt keine Renames). Rename-Detection als separater Pass `_collapse_renames(diffs)` paart `(removed, added)`-Zeilen mit matchenden normalisierten Bodies in eine einzige `renamed_*`-Zeile. PGS-03-FU-01:
+
+```python
+def _collapse_renames(diffs: list[ChapterDiff]) -> list[ChapterDiff]:
+    # gruppiere nach Klassifikation
+    # fuer (remote_removed, remote_added): match Bodies, ersetze durch renamed_remote
+    # fuer (local_removed, local_added): match Bodies, ersetze durch renamed_local
+    # ungepaarte Zeilen unveraendert lassen
+```
+
+**Nur strikte Body-Matches.** Near-Misses (z.B. kleine Edits im Body waehrend des Renames) bleiben als unabhaengige removed + added stehen, sodass der Nutzer den echten Diff sieht. Fuzzy-Schwellen erzeugen False Positives, die unabhaengige Kapitel falsch paaren.
+
+**Cross-Side-Pairing verboten.** Nie `remote_removed` mit `local_added` paaren, auch bei identischem Body — das ist Zufall, kein Rename, und es als solchen zu behandeln wuerde unabhaengige Arbeit stillschweigend mergen.
+
+**Wann nutzen.** Jede "Rename"-Detection ueber einem Per-Item-Klassifizierer. Klassifizierer dumm halten, Post-Process gezielt.
+
+---
+
+## Multi-Branch / Translation-Group-Patterns (aus PGS-04 + PGS-04-FU-01)
+
+Wenn dein Plugin mehrere Varianten derselben Resource aus einer Quelle importiert (z.B. Uebersetzungen eines Buchs auf verschiedenen Git-Branches), ist Failure-Isolation wichtiger als Erfolg.
+
+### Muster 12: Stabile Reason-Slugs + Payload-driven Skip-Surface
+
+**Problem.** Ueber N Branches iterieren und jeden importieren ist der einfache Teil. Schwer wird's bei den 2 von 5 Branches, die scheitern: WBT-Layout fehlt, Kapitel-Struktur inkompatibel, Metadata invalid. Wenn du `try/except` und nur loggst, sieht der Nutzer 3 importierte Buecher und verliert 2 still.
+
+**Loesung.** Jeden Per-Item-Failure in ein strukturiertes `SkippedItem`-Payload neben den Erfolgen aufs Ergebnisobjekt fangen. PGS-04-FU-01s `MultiBranchResult.skipped: list[SkippedBranch]`:
+
+```python
+@dataclass
+class SkippedBranch:
+    branch: str
+    reason: Literal["no_wbt_layout", "import_failed"]
+    detail: str  # gekuerzte Diagnostik-Zeile
+```
+
+Zwei Failure-Modes mit eigenen Slugs:
+
+- `no_wbt_layout` — strukturelle Vorbedingung scheiterte (config-Dir fehlt). Branch ist im Scope, aber kein Buch.
+- `import_failed` — innerer Importer warf. Inkl. Exception-Klasse + Message, auf 500 Zeichen gekuerzt.
+
+Router echot `skipped[]` im Response (default `[]` bei sauberen Imports), Frontend rendert eine "Aufmerksamkeit erforderlich"-Sektion pro Eintrag.
+
+**Stabile englische Slugs in der API; lokalisierte Labels im Frontend.** Der Slug ist der API-Vertrag — nie ohne Migration aendern. Frontend mappt Slug → User-sichtbarer String pro Sprache. Wenn ein neuer Failure-Mode (vierter Slug) dazukommt, gewinnt die API einen neuen Wert, alte Frontends fallen aufs Rendern des Raw-Slug zurueck statt zu crashen.
+
+**Detail server-side kuerzen.** 5MB-Exception-Payload ist DoS-Vektor und fuer den Nutzer nutzlos. 500 Zeichen reichen fuer Exception-Klasse + ersten Satz von `str(exc)`.
+
+**Wann nutzen.** Jedes Iterate-and-Import-Pattern, wo Teilerfolg realistisch ist. Pattern transferiert auch auf Nicht-Import-Iterationen — Bulk-Export, Bulk-Validation, Batch-Translation.
+
+**Anti-Pattern.** Teil-Failures hinter einem `result.success: bool`-Flag verstecken. Der Nutzer hat keinen Weg zurueck zum Verlorenen.
+
+---
+
+## Referenz: PGS-02..05 Commit-Walkthrough
+
+Jede Phase landete in 1-3 atomaren Commits. In Reihenfolge neben dieser Anleitung lesen:
+
+| Phase | Zustaendigkeit | Commits |
+|-------|----------------|---------|
+| PGS-02 | Commit-to-Repo + Push (Overwrite-MVP) | `aa25d74` (Backend) + `782490e` (Frontend) |
+| PGS-02-FU-01 | Per-Buch-PAT shared across Subsysteme | `32137bb` |
+| PGS-03 | Three-Way-Diff + Per-Kapitel-Aufloesung | `c87b7dd` (Backend) + `1338d87` (Frontend) |
+| PGS-03-FU-01 | mark_conflict + Rename-Detection | `819e571` + `5bfd76a` + `e58d9e1` |
+| PGS-04 | Translation-Group Multi-Branch-Import | `4aa7153` + `9c8eee5` |
+| PGS-04-FU-01 | Skipped-Branch-Surface + reusable Panel | `06c7c1b` + `75046b9` |
+| PGS-05 | Unified-Commit-Fan-Out + Per-Buch-Lock | `6af6f5c` + `b0133ec` |
