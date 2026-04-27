@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (AR-01 Phase 1 shipped; TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
+Last updated: 2026-04-27 (AR-01 Phase 1 + AR-02 Phase 2 shipped; TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,21 @@ release pass.
 
 ## Recently closed
 
+- **AR-02 Phase 2** (Publications + multi-platform tracking +
+  SEO + drift detection): shipped 2026-04-27 in `e70f47b`
+  (backend) + `e09f51e` (frontend) + this commit (help docs).
+  New Publication entity with migration `a0b1c2d3e4f5`, CRUD
+  endpoints under `/api/articles/{id}/publications`, mark-
+  published / verify-live lifecycle helpers. Drift detection
+  compares snapshot against current content on every read.
+  Article gains canonical_url / featured_image_url / excerpt
+  / tags. Platform schemas (8 platforms) ship as YAML loaded
+  by `app.services.platform_schema`. Frontend
+  PublicationsPanel + AddPublicationModal in ArticleEditor
+  sidebar. 30 i18n keys × 8 languages. +21 backend tests +
+  +7 Vitest tests. Backend 1144 → 1165; Frontend 648 → 655.
+  Phase 3+ (platform APIs, scheduled publishing, analytics)
+  out of scope.
 - **AR-01 Phase 1** (Article entity + editor + basic CRUD):
   shipped 2026-04-27 in `3ce27fd` (backend) + `dae36c0`
   (frontend) + this commit (help docs). New Article entity
@@ -185,18 +200,18 @@ user note (line below).
   `docs/explorations/tiptap-3-migration.md`.
 - is still not implemented and v0.24.0 is available. see: https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace
 
-### 2. AR-02+ - Article Phase 2 (multi-platform publication)
+### 2. AR-03+ - Article Phase 3 (platform APIs + automation)
 
-- **ID**: AR-02
-- **Effort**: L (~8-12h)
-- **Why rank 2**: Phase 1 (entity + editor + CRUD) shipped;
-  Phase 2 adds Publications entity, per-platform URL/state
-  tracking, and the cross-post UI. Wait for AR-01 validation
-  log to accumulate 3-5 real workflows before locking the
-  architecture (Option A: extend Article; Option B: separate
-  Publications entity; Option C: plugin-article).
-- **Status**: deferred until validation data justifies it.
-  See `docs/explorations/article-authoring.md` Section 8.
+- **ID**: AR-03
+- **Effort**: XL (~20-30h, multi-session)
+- **Why rank 2**: Phase 2 (Publications + drift detection +
+  manual workflow) shipped; Phase 3 candidates include
+  platform API integration (Medium / Substack / X /
+  LinkedIn), scheduled publishing background jobs, automated
+  cross-posting, analytics fetching, OAuth credential storage.
+- **Status**: deferred. Each platform API has its own auth +
+  rate-limit + maintenance burden; ship only when validation
+  data shows manual workflow is the bottleneck.
 
 ### Article validation (background, no code)
 

@@ -48,14 +48,62 @@ Die Filter-Pills auf der Listenseite engen auf einen Status ein. Die Standard-An
 
 Der **Loeschen**-Button in der Sidebar (rot, unten im Metadaten-Bereich) entfernt den Artikel. Ein Bestaetigungsdialog laesst dich anerkennen, dass die Aktion nicht rueckgaengig gemacht werden kann — Bibliogon legt Artikel derzeit nicht in einen Papierkorb (das ist ein Phase-2-Polish-Punkt, parallel zum Buch-Papierkorb).
 
-## Was als Naechstes kommt (Phase 2+)
+## Publikationen (AR-02 Phase 2)
 
-Die Exploration in `docs/explorations/article-authoring.md` dokumentiert die volle Roadmap. Kandidaten fuer Phase 2:
+Eine Publikation verfolgt ein einzelnes Stueck Inhalt auf einer Plattform: die Hauptpublikation eines Artikels auf Medium / Substack / X / LinkedIn oder ein Promo-Post, der dahin zurueckverlinkt.
 
-- Multi-Plattform-Veroeffentlichung: Denselben Artikel mit einem Klick auf Medium, Substack, X, LinkedIn cross-posten und die Pro-Plattform-URLs verfolgen.
-- Promo-Posts: Kurze Begleitposts (Tweets, Threads, LinkedIn-Ankuendigungen), die auf den Artikel zurueckverlinken.
-- SEO-Metadaten: Pro-Plattform-SEO-Titel, -Beschreibung, kanonische URL, Featured Image, Tags.
-- Drift-Detection: Warnen, wenn ein veroeffentlichter Artikel lokal editiert wurde und die Plattformen noch die aeltere Version ausliefern.
-- Papierkorb + Wiederherstellung (Paritaet mit Buechern).
+### Publikation hinzufuegen
 
-Phase 1 liefert die Datenfundamente — Entitaet, Editor, Liste, einfaches CRUD. Phase 2 landet, wenn Validierungsdaten zeigen, dass der Cross-Posting-Workflow repetitiv genug ist, um automatisiert zu werden.
+1. Artikel im Editor oeffnen.
+2. In der Sidebar zu **Publikationen** scrollen und **Hinzufuegen** klicken.
+3. Plattform aus dem Dropdown waehlen. Das Formular fuellt sich mit den Pflicht- + optionalen Feldern dieser Plattform.
+4. Daten ausfuellen (z.B. Medium braucht Titel + Tags; X braucht Body) und absenden.
+
+Die Publikation startet im Status **Geplant**. Bibliogon kontaktiert keine Plattform-API — es speichert nur, was du veroeffentlichen willst.
+
+### Lebenszyklus
+
+- **Geplant** — angelegt, noch nicht live.
+- **Eingeplant** — hat ein scheduled_at-Datum; noch nicht live.
+- **Veroeffentlicht** — du hast es als veroeffentlicht markiert nachdem der Artikel auf der Plattform online war. Bibliogon snappt den TipTap-Content fuer Drift-Detection.
+- **Nicht synchron** — der Artikel-Content hat sich seit der Markierung geaendert. Bibliogon flaggt die Publikation, damit du nicht vergisst, die Live-Version zu aktualisieren.
+- **Archiviert** — historisch, nicht mehr aktiv.
+
+### Als veroeffentlicht markieren
+
+Wenn du den Artikel auf Medium (oder einer anderen Plattform) eingefuegt hast und die Live-URL steht:
+
+1. **Als veroeffentlicht** auf der Zeile klicken.
+2. Optional die Live-URL angeben (Bibliogon speichert sie unter `platform_metadata.published_url`).
+
+Bibliogon snappt das aktuelle `content_json` als Baseline fuer Drift-Detection.
+
+### Drift-Detection
+
+Jedes Mal wenn du den Artikel nach Markierung als **Veroeffentlicht** editierst, vergleicht Bibliogon beim naechsten View den Snapshot gegen den aktuellen Entwurf. Abweichung kippt die Publikation auf **Nicht synchron** mit Warn-Banner.
+
+### Live bestaetigen
+
+Wenn du die Live-Version aktualisiert hast (oder akzeptierst, dass der lokale Entwurf die neue Baseline ist):
+
+1. **Live bestaetigen** auf der out-of-sync-Zeile klicken.
+2. Bibliogon re-snappt den Artikel und loescht den out-of-sync-Status.
+
+### Promo-Posts
+
+Eine Publikation mit `is_promo=true` ist ein kurzer Begleit-Post — ein Tweet, Thread oder LinkedIn-Ankuendigung, die auf eine Hauptpublikation auf Medium/Substack zurueckverlinkt. Gleicher Lebenszyklus, gleiche Drift-Detection.
+
+### SEO-Metadaten
+
+Die Artikel-Level-SEO-Felder (Canonical URL, Featured Image, Auszug, Tags) liegen ueber dem Publikationen-Panel. Publikationen erben sie als Defaults; pro-Plattform-Overrides gehen in den platform_metadata-Blob beim Hinzufuegen.
+
+### Was weiterhin NICHT im Umfang ist (Phase 3+)
+
+- Plattform-API-Integration (Medium / Substack / X / LinkedIn). Veroeffentlichen bleibt manuell.
+- Geplante Veroeffentlichung als Background-Job.
+- Cross-Posting-Automatisierung.
+- Analytics-Abruf.
+- Tag-Taxonomie (Tags sind Freitext, kein Autocomplete artikeluebergreifend).
+- Papierkorb + Wiederherstellung fuer Artikel.
+
+Wenn dein Cross-Posting-Workflow eine Friction zeigt, die Bibliogon loesen kann, log sie in `docs/journal/article-workflow-observations.md`, damit der Fall konkret ist bevor Phase-3-Prioritaeten gesetzt werden.
