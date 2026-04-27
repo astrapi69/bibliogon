@@ -451,6 +451,10 @@ class ArticleUpdate(BaseModel):
     featured_image_url: str | None = Field(default=None, max_length=500)
     excerpt: str | None = None
     tags: list[str] | None = None
+    # AR-02 Phase 2.1
+    topic: str | None = Field(default=None, max_length=100)
+    seo_title: str | None = Field(default=None, max_length=200)
+    seo_description: str | None = None
 
     @field_validator("status")
     @classmethod
@@ -475,6 +479,9 @@ class ArticleOut(BaseModel):
     featured_image_url: str | None = None
     excerpt: str | None = None
     tags: list[str] = []
+    topic: str | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
     created_at: datetime
     updated_at: datetime
 

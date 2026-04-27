@@ -191,6 +191,58 @@ def test_delete_article_404_on_missing() -> None:
 # --- isolation: Article does NOT touch books ---
 
 
+def test_article_phase2_1_topic_seo_fields_persist() -> None:
+    article = _create("Phase 2.1 Test")
+    resp = client.patch(
+        f"/api/articles/{article['id']}",
+        json={
+            "topic": "Tech",
+            "seo_title": "An SEO-Optimized Title",
+            "seo_description": "Short pitch for search snippets.",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["topic"] == "Tech"
+    assert body["seo_title"] == "An SEO-Optimized Title"
+    assert body["seo_description"] == "Short pitch for search snippets."
+
+
+def test_article_phase2_1_fields_default_null_on_create() -> None:
+    article = _create("Defaults")
+    assert article["topic"] is None
+    assert article["seo_title"] is None
+    assert article["seo_description"] is None
+
+
+def test_settings_topics_round_trip() -> None:
+    """Settings PATCH accepts topics list, dedupes + strips, and
+    reads back through GET."""
+    # Get current state, send a new topics list, verify GET returns it.
+    initial = client.get("/api/settings/app").json()
+    initial_topics = initial.get("topics") or []
+
+    resp = client.patch(
+        "/api/settings/app",
+        json={"topics": ["Tech", "Tech", "  Writing  ", "", "Recipes"]},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["topics"] == ["Tech", "Writing", "Recipes"]
+
+    # GET returns the persisted list.
+    fetched = client.get("/api/settings/app").json()
+    assert fetched["topics"] == ["Tech", "Writing", "Recipes"]
+
+    # Restore (omit topics from the cleanup PATCH so other tests
+    # don't depend on starting state).
+    if initial_topics is not None:
+        client.patch(
+            "/api/settings/app",
+            json={"topics": initial_topics},
+        )
+
+
 def test_article_crud_does_not_create_book_rows() -> None:
     """Sanity: creating articles does not pollute the books table.
     (Article is its own entity, separate from Book.)"""

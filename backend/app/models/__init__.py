@@ -426,6 +426,16 @@ class Article(Base):
     # JSON-encoded list[str]. Mirrors Book.keywords convention.
     tags: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 
+    # AR-02 Phase 2.1: primary category + dedicated SEO title/desc.
+    # ``topic`` is settings-managed (config/app.yaml: topics: list)
+    # and stored as a free string here so legacy values from a deleted
+    # settings entry survive. ``seo_title`` and ``seo_description`` are
+    # the SEO-only versions of ``title`` and ``excerpt`` - they default
+    # to those fields at publish time when left empty.
+    topic: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    seo_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    seo_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow

@@ -53,6 +53,9 @@ class AppSettingsUpdate(BaseModel):
     plugins: dict[str, Any] | None = None
     ai: dict[str, Any] | None = None
     editor: dict[str, Any] | None = None
+    # AR-02 Phase 2.1: settings-managed list of article topics. The
+    # ArticleEditor topic dropdown reads from app.yaml topics: [...].
+    topics: list[str] | None = None
 
 
 class AddPenNameRequest(BaseModel):
@@ -132,6 +135,17 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
         current.setdefault("ai", {}).update(body.ai)
     if body.editor is not None:
         current.setdefault("editor", {}).update(body.editor)
+    if body.topics is not None:
+        # Topics is a list - write whole, dedupe, drop empties.
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for raw in body.topics:
+            t = (raw or "").strip()
+            if not t or t in seen:
+                continue
+            seen.add(t)
+            cleaned.append(t)
+        current["topics"] = cleaned
 
     _write_yaml(path, current)
 
