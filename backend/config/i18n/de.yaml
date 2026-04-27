@@ -475,6 +475,8 @@ ui:
     back_to_list_tooltip: "Zur Artikelliste"
     back_to_dashboard: "Dashboard"
     back_to_dashboard_tooltip: "Zum Dashboard"
+    author_none: "(kein Autor)"
+    author_pen_names: "Pseudonyme"
     delete_failed: "Löschen fehlgeschlagen"
   chapter_template_picker:
     title: "Wähle eine Kapitelvorlage"

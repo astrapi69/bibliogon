@@ -489,6 +489,8 @@ ui:
     back_to_list_tooltip: "Makale listesine don"
     back_to_dashboard: "Panel"
     back_to_dashboard_tooltip: "Panele don"
+    author_none: "(yazar yok)"
+    author_pen_names: "Mahlaslar"
     delete_failed: "Silme basarisiz"
   chapter_template_picker:
     title: "Bolum sablonu sec"

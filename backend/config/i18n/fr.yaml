@@ -489,6 +489,8 @@ ui:
     back_to_list_tooltip: "Retour a la liste des articles"
     back_to_dashboard: "Tableau de bord"
     back_to_dashboard_tooltip: "Retour au tableau de bord"
+    author_none: "(aucun auteur)"
+    author_pen_names: "Pseudonymes"
     delete_failed: "Echec de la suppression"
   chapter_template_picker:
     title: "Choisir un modele de chapitre"

@@ -475,6 +475,8 @@ ui:
     back_to_list_tooltip: "Back to article list"
     back_to_dashboard: "Dashboard"
     back_to_dashboard_tooltip: "Back to dashboard"
+    author_none: "(no author)"
+    author_pen_names: "Pen names"
     delete_failed: "Delete failed"
   chapter_template_picker:
     title: "Choose a chapter template"

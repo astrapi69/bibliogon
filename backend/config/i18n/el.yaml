@@ -475,6 +475,8 @@ ui:
     back_to_list_tooltip: "Πίσω στη λίστα άρθρων"
     back_to_dashboard: "Πίνακας"
     back_to_dashboard_tooltip: "Πίσω στον πίνακα"
+    author_none: "(χωρίς συγγραφέα)"
+    author_pen_names: "Ψευδώνυμα"
     delete_failed: "Η διαγραφή απέτυχε"
   chapter_template_picker:
     title: "Επιλέξτε πρότυπο κεφαλαίου"

@@ -475,6 +475,8 @@ ui:
     back_to_list_tooltip: "記事リストに戻る"
     back_to_dashboard: "ダッシュボード"
     back_to_dashboard_tooltip: "ダッシュボードに戻る"
+    author_none: "(著者なし)"
+    author_pen_names: "ペンネーム"
     delete_failed: "削除に失敗しました"
   chapter_template_picker:
     title: "章テンプレートを選択"

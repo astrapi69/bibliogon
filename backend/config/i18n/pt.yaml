@@ -475,6 +475,8 @@ ui:
     back_to_list_tooltip: "Voltar a lista de artigos"
     back_to_dashboard: "Painel"
     back_to_dashboard_tooltip: "Voltar ao painel"
+    author_none: "(sem autor)"
+    author_pen_names: "Pseudonimos"
     delete_failed: "Falha ao excluir"
   chapter_template_picker:
     title: "Escolha um modelo de capitulo"

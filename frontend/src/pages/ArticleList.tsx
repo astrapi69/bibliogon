@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Home, Plus } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
@@ -97,6 +97,17 @@ export default function ArticleList() {
     return (
         <div data-testid="article-list-page" style={layout.page}>
             <header style={layout.header}>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => navigate("/")}
+                    data-testid="article-list-dashboard"
+                    title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
+                    style={{ marginRight: 8 }}
+                >
+                    <Home size={14} />
+                    {t("ui.articles.back_to_dashboard", "Dashboard")}
+                </button>
                 <h2 style={layout.heading}>
                     <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
                     {t("ui.articles.list_heading", "Artikel")}

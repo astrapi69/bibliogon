@@ -33,7 +33,20 @@ import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
+import { useAuthorProfile } from "../hooks/useAuthorProfile";
 import { notify } from "../utils/notify";
+
+/** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */
+const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
+    { code: "de", label: "Deutsch" },
+    { code: "en", label: "English" },
+    { code: "es", label: "Español" },
+    { code: "fr", label: "Français" },
+    { code: "pt", label: "Português" },
+    { code: "el", label: "Ελληνικά" },
+    { code: "tr", label: "Türkçe" },
+    { code: "ja", label: "日本語" },
+];
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 const STATUSES: ArticleStatus[] = ["draft", "published", "archived"];
@@ -49,6 +62,7 @@ export default function ArticleEditor() {
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+    const authorProfile = useAuthorProfile();
 
     const lastSavedJson = useRef<string>("");
     const lastSavedMeta = useRef<string>("");
@@ -129,22 +143,37 @@ export default function ArticleEditor() {
         [persistContent],
     );
 
-    const editor = useEditor(
-        {
-            extensions: [
-                StarterKit,
-                Link.configure({ openOnClick: false }),
-            ],
-            content: article?.content_json
-                ? safeParse(article.content_json)
-                : "",
-            onUpdate: ({ editor }) => {
-                if (!article) return;
-                debouncedSave(JSON.stringify(editor.getJSON()));
-            },
+    const editor = useEditor({
+        extensions: [StarterKit, Link.configure({ openOnClick: false })],
+        // Explicit editable=true. Default is true but stating it
+        // protects against future TipTap default flips and makes the
+        // contract obvious to readers wondering "why is the editor
+        // read-only" (the smoke-test bug we just fixed).
+        editable: true,
+        // Initial content; subsequent article loads / id swaps go
+        // through editor.commands.setContent in the effect below so
+        // we don't blow away the editor instance + selection state on
+        // every async load.
+        content: "",
+        onUpdate: ({ editor }) => {
+            if (!article) return;
+            debouncedSave(JSON.stringify(editor.getJSON()));
         },
-        [article?.id],
-    );
+    });
+
+    // Push article content into the editor whenever the article id
+    // changes (load, switch from another article, hard reload). Using
+    // setContent keeps the editor instance stable + does not fire
+    // onUpdate (so we don't echo a save back to the server on load).
+    useEffect(() => {
+        if (!editor || !article) return;
+        const parsed = safeParse(article.content_json);
+        // emitUpdate=false avoids round-tripping the load back into a
+        // PATCH save (the second positional arg in TipTap v2's
+        // setContent API).
+        editor.commands.setContent(parsed, false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor, article?.id]);
 
     const persistMeta = useCallback(
         async (patch: Partial<Article>) => {
@@ -304,26 +333,36 @@ export default function ArticleEditor() {
                         }
                         testId="article-editor-subtitle"
                     />
-                    <Field
-                        label={t("ui.articles.author", "Autor")}
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.author", "Autor")}
+                    </label>
+                    <AuthorSelect
                         value={article.author ?? ""}
-                        onChange={(v) =>
-                            setArticle({ ...article, author: v || null })
-                        }
-                        onBlur={() => persistMeta({ author: article.author })}
-                        testId="article-editor-author"
+                        profile={authorProfile}
+                        onChange={(v) => {
+                            setArticle({ ...article, author: v || null });
+                            void persistMeta({ author: v || null });
+                        }}
                     />
-                    <Field
-                        label={t("ui.articles.language", "Sprache")}
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.language", "Sprache")}
+                    </label>
+                    <select
+                        data-testid="article-editor-language"
                         value={article.language}
-                        onChange={(v) =>
-                            setArticle({ ...article, language: v })
-                        }
-                        onBlur={() =>
-                            persistMeta({ language: article.language })
-                        }
-                        testId="article-editor-language"
-                    />
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            setArticle({ ...article, language: v });
+                            void persistMeta({ language: v });
+                        }}
+                        style={layout.fieldInput}
+                    >
+                        {SUPPORTED_LANGUAGES.map((opt) => (
+                            <option key={opt.code} value={opt.code}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
                     <label style={layout.fieldLabel}>
                         {t("ui.articles.status", "Status")}
                     </label>
@@ -499,6 +538,72 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
             <Save size={12} />
             {t("ui.articles.all_saved", "Alle Änderungen gespeichert")}
         </span>
+    );
+}
+
+/** Settings-managed author select: optgroup with real name + pen
+ *  names; "(none)" option when the article has no author or when the
+ *  current value is unknown to settings. Mirrors the BookEditor
+ *  AuthorPicker's matched-state ProfileSelect, simplified for the
+ *  Article editor (Articles allow empty author, no three-mode banner). */
+function AuthorSelect({
+    value,
+    profile,
+    onChange,
+}: {
+    value: string;
+    profile: { name: string; pen_names: string[] } | null;
+    onChange: (next: string) => void;
+}) {
+    const { t } = useI18n();
+    const choices = profile
+        ? [profile.name, ...profile.pen_names].filter(Boolean)
+        : [];
+    const valueIsKnown = value === "" || choices.includes(value);
+    return (
+        <select
+            data-testid="article-editor-author"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            style={{
+                padding: "6px 8px",
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                background: "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontSize: "0.875rem",
+            }}
+        >
+            <option value="">
+                {t("ui.articles.author_none", "(kein Autor)")}
+            </option>
+            {profile && profile.name && (
+                <optgroup label={profile.name}>
+                    <option value={profile.name}>{profile.name}</option>
+                    {profile.pen_names.map((pen) => (
+                        <option key={pen} value={pen}>
+                            {pen}
+                        </option>
+                    ))}
+                </optgroup>
+            )}
+            {profile && !profile.name && profile.pen_names.length > 0 && (
+                <optgroup label={t("ui.articles.author_pen_names", "Pseudonyme")}>
+                    {profile.pen_names.map((pen) => (
+                        <option key={pen} value={pen}>
+                            {pen}
+                        </option>
+                    ))}
+                </optgroup>
+            )}
+            {!valueIsKnown && (
+                // Surface the unknown value so the user sees what is
+                // currently set (e.g. legacy article author from a
+                // pre-AR-02 migration). They can switch to a known
+                // entry; the unknown entry stays selectable.
+                <option value={value}>{value}</option>
+            )}
+        </select>
     );
 }
 
