@@ -154,7 +154,7 @@ Items with external deadlines or recurring cost that deserve planning-view visib
 
 - [x] **Node.js 20 -> 22 LTS:** Dockerfile and CI upgraded from Node 20 to Node 22 (Active LTS until Apr 2027). Node 20 EOL Sep 2026 is no longer a concern.
 - [x] **Coverage moved to CI:** `make test` stays fast and coverage-free for everyday local use. Opt-in `make test-coverage` available for local runs. `.github/workflows/coverage.yml` runs on every push/PR and uploads HTML + XML artifacts (14-day retention) for backend, all 9 plugins (export, grammar, kdp, kinderbuch, ms-tools, audiobook, translation, help, getstarted; audiobook + translation added in `99dd15e`, help + getstarted in `8f36c25`), and frontend. Codecov integration deferred.
-- [ ] **Monitor v0.22.0 -> v0.22.1 upgrade feedback:** `books.tts_speed` Alembic migration was missing in v0.22.0; users on the alembic-upgrade path hit HTTP 500 on `/api/import/detect` until v0.22.1 backfilled it. No telemetry, so drift would surface as bug reports. Review 2026-05-09 — if no reports, close. If reports surface, audit other `Mapped` columns added without revisions.
+- [x] **Monitor v0.22.0 -> v0.22.1 upgrade feedback:** `books.tts_speed` Alembic migration was missing in v0.22.0; users on the alembic-upgrade path hit HTTP 500 on `/api/import/detect` until v0.22.1 backfilled it. Closed 2026-04-27 in `ffb1618` — no GitHub issues touched the v0.22.x migration topic since v0.22.1 shipped 2026-04-25, and the audit in `backend/tests/test_alembic_drift.py` confirms all 42 `Book.Mapped` columns now have a paired Alembic migration (10 regression tests pin the same).
 
 ### Security tracking
 
