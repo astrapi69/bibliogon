@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-25 (TD-01 closed)
+Last updated: 2026-04-25 (TD-01 + PGS-02-FU-01 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,14 @@ release pass.
 
 ## Recently closed
 
+- **PGS-02-FU-01** (per-book PAT credential integration):
+  closed 2026-04-25 in `32137bb`. New shared helper
+  `app/services/git_credentials.py` owns per-book PAT and SSH
+  env. Plugin-git-sync push uses the one-shot pushurl pattern;
+  PAT never lands in `.git/config`. New
+  `PUT/GET/DELETE /api/git-sync/{book_id}/credentials` endpoints
+  + GitSyncDialog `CredentialsSection`. 12 i18n keys × 8
+  languages. +29 tests (20 helper + 5 endpoint + 4 dialog).
 - **TD-01** (order-dependent test fix): closed 2026-04-25 as
   already resolved. Investigation showed the
   `test_detect_surfaces_git_repo_when_zip_has_dot_git` failure
@@ -73,10 +81,11 @@ release pass.
 
 ---
 
-## Top 10 priorities (ranked)
+## Top priorities (ranked)
 
 Ranked by user-value, deadline pressure, follow-up scope from
-recently-shipped work.
+recently-shipped work. PGS-02-FU-01 closed in `32137bb`,
+TD-01 closed (already-resolved); top 9 below renumbered.
 
 ### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
 
@@ -90,32 +99,22 @@ recently-shipped work.
 - **Status**: pre-audit complete in
   `docs/explorations/tiptap-3-migration.md`.
 
-### 2. PAT credential-store integration (PGS-02 follow-up)
-
-- **ID**: PGS-02-FU-01 (new)
-- **Effort**: 2-4h
-- **Why rank 2**: removes the "ambient SSH or git credential
-  helper required" friction for non-developer users. Both
-  `app.services.git_backup` and `plugins/bibliogon-plugin-git-sync`
-  push paths still require ambient creds. Documented as a
-  PGS-02 follow-up in v0.23.0 release notes.
-- **Status**: scoped, not started.
-
-### 3. audiobook + translation plugin coverage in CI
+### 2. audiobook + translation plugin coverage in CI
 
 - **ID**: PS-09-FU-01 (new)
 - **Effort**: S (~1-2h)
-- **Why rank 3**: closes the gap noted in the maintenance section
+- **Why rank 2**: closes the gap noted in the maintenance section
   of ROADMAP. Both plugins run in `make test` but neither in
   `coverage.yml` matrix. Pair with `ci.yml` matrix expansion if
   not already done.
-- **Status**: open.
+- **Status**: open. (Promoted from rank 3 after PGS-02-FU-01
+  shipped.)
 
-### 4. Multi-book wizard finishing work
+### 3. Multi-book wizard finishing work
 
 - **ID**: CIO-08-FU-01 (new, deferred from a809943)
 - **Effort**: 3-4h
-- **Why rank 4**: cleaner UX in the multi-book BGB import path.
+- **Why rank 3**: cleaner UX in the multi-book BGB import path.
   Two sub-items:
   - Full `useMachine` migration of `ImportWizardModal` (currently
     a partial XState v5 graph alongside legacy state).
@@ -123,62 +122,62 @@ recently-shipped work.
     instead of the single "Done" terminal.
 - **Status**: deferred during PGS work.
 
-### 5. PS-13 - "Save as new chapter" in ConflictResolutionDialog
+### 4. PS-13 - "Save as new chapter" in ConflictResolutionDialog
 
 - **ID**: PS-13
 - **Effort**: 2-3h
-- **Why rank 5**: real UX gap in the 409 conflict flow. Needs
+- **Why rank 4**: real UX gap in the 409 conflict flow. Needs
   new endpoint (`POST /api/books/{id}/chapters/fork`), 8-language
   i18n, E2E coverage. Position-ordering scope discussion before
   implementation.
 - **Status**: tracked in ROADMAP, no design pinned.
 
-### 6. PGS-03 follow-up: mark_conflict + rename detection
+### 5. PGS-03 follow-up: mark_conflict + rename detection
 
 - **ID**: PGS-03-FU-01 (new)
 - **Effort**: M (~6-8h split)
-- **Why rank 6**: out-of-MVP-scope items from PGS-03. Useful
+- **Why rank 5**: out-of-MVP-scope items from PGS-03. Useful
   once a real translation workflow exercises the smart-merge
   path. `mark_conflict` writes both versions as a visible
   conflict block in the chapter content; rename detection
   collapses delete+add pairs.
 - **Status**: deferred at MVP cut.
 
-### 7. PGS-04 follow-up: cross-language conflict UI
+### 6. PGS-04 follow-up: cross-language conflict UI
 
 - **ID**: PGS-04-FU-01 (new)
 - **Effort**: M
-- **Why rank 7**: deferred from PGS-04. Two diverging language
+- **Why rank 6**: deferred from PGS-04. Two diverging language
   branches with incompatible chapter structure currently surface
   as silent skip + log. UI needed when first user hits this.
 - **Status**: deferred at MVP cut. Triggered by user report.
 
-### 8. Monitor v0.22.0 → v0.22.1 upgrade feedback
+### 7. Monitor v0.22.0 → v0.22.1 upgrade feedback
 
 - **ID**: MAINT-01
 - **Effort**: 0 code (review only)
-- **Why rank 8**: scheduled review on 2026-05-09 (14 days out).
+- **Why rank 7**: scheduled review on 2026-05-09 (14 days out).
   No telemetry; drift would surface as bug reports. If silent,
   close. If reports, audit other `Mapped` columns added without
   Alembic revisions.
 - **Status**: open, time-bound.
 
-### 9. AR-01 - article authoring validation log
+### 8. AR-01 - article authoring validation log
 
 - **ID**: AR-01
 - **Effort**: 0 new code; observation only
-- **Why rank 9**: validates whether article-publication workflow
+- **Why rank 8**: validates whether article-publication workflow
   warrants a Bibliogon feature at all. 3-5 cross-posting workflows
   logged in `docs/journal/article-workflow-observations.md`. Drives
   AR-02 architecture decision.
 - **Status**: open log file; fill as part of normal release-article
   publication.
 
-### 10. DOC-03 - plugin author docs refresh
+### 9. DOC-03 - plugin author docs refresh
 
 - **ID**: DOC-03
 - **Effort**: M (~3h)
-- **Why rank 10**: `docs/help/{de,en}/developers/plugins.md` covers
+- **Why rank 9**: `docs/help/{de,en}/developers/plugins.md` covers
   the PGS-01 patterns (source adapter, two registries) but not
   PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
   side-files via lazy import). Update before next plugin author
@@ -191,9 +190,8 @@ recently-shipped work.
 
 ### Plugin work
 
-- **PGS-02-FU-01**: PAT credential-store integration. See top-10 #2.
-- **PGS-03-FU-01**: mark_conflict + rename detection. See top-10 #7.
-- **PGS-04-FU-01**: cross-language conflict UI. See top-10 #8.
+- **PGS-03-FU-01**: mark_conflict + rename detection. See top #5.
+- **PGS-04-FU-01**: cross-language conflict UI. See top #6.
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
@@ -201,9 +199,9 @@ recently-shipped work.
 ### Core features
 
 - **PS-13**: "Save as new chapter" in ConflictResolutionDialog.
-  See top-10 #6.
+  See top #4.
 - **PS-14+**: future polish items, surface as found.
-- **CIO-08-FU-01**: multi-book wizard finishing. See top-10 #5.
+- **CIO-08-FU-01**: multi-book wizard finishing. See top #3.
 - **TM-04b sub-items** (chapter-template followups): update
   endpoint exposed in UI, JSON export/import, multi-chapter
   templates. Effort: 4-6h spread across three independent items.
@@ -221,7 +219,7 @@ recently-shipped work.
 ### Quality / Polish
 
 - **PS-09-FU-01**: audiobook + translation plugin CI coverage.
-  See top-10 #3.
+  See top #2.
 - **Modal sticky-footer audit beyond wizard**: v0.22.0 covered
   13 dialog modals. Confirm whether any non-wizard modal still
   scrolls without sticky footer. Effort: S audit + per-modal fix.
@@ -257,7 +255,7 @@ recently-shipped work.
 
 ### Validation tracks
 
-- **AR-01**: article authoring validation log. See top-10 #10.
+- **AR-01**: article authoring validation log. See top #8.
 - **AR-02**: article authoring architecture decision. Blocked on
   AR-01 data.
 - **AR-03+**: article authoring implementation phases. Blocked
@@ -265,7 +263,7 @@ recently-shipped work.
 
 ### Maintenance
 
-- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top-10 #9.
+- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #7.
 
 ---
 
@@ -305,13 +303,13 @@ Recurring upkeep, low priority but worth scheduling:
 
 ## How to use this file
 
-- Pick from the top-10 list when starting a session and there's
+- Pick from the top list when starting a session and there's
   no user-driven priority override.
 - When a session defers a sub-item, add it under the matching
   category with a `*-FU-NN` ID and one-line "why deferred".
 - When an item ships, delete the row (CHANGELOG / ROADMAP record
   the history; this file is forward-looking only).
-- When the top-10 changes, re-rank explicitly in this file
+- When the top changes, re-rank explicitly in this file
   before starting work, not implicitly during a session.
 - Don't grow past 50 items. If it grows, split by category into
   themed files (`docs/backlog/dependencies.md`, etc.).
