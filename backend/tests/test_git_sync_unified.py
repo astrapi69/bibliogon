@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.main import app
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_backup, git_sync_mapping
+from app.services import git_backup, git_credentials, git_sync_mapping
 from app.services.git_sync_lock import book_commit_lock
 from app.services.git_sync_unified import book_subsystems, unified_commit
 
@@ -149,7 +149,7 @@ def isolated_uploads(tmp_path, monkeypatch):
     persistent clone area to the test's tmp dir so we never touch
     the real ``uploads/`` tree."""
     monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
-    monkeypatch.setattr(git_backup, "GIT_CRED_DIR", tmp_path / "credentials")
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "credentials")
     monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs05")
     yield tmp_path
 

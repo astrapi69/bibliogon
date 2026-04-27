@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import GitSyncMapping
+from app.services import git_credentials
 from app.services.git_sync_commit import (
     CloneMissingError,
     MappingNotFoundError,
@@ -55,6 +56,10 @@ class GitSyncStatusResponse(BaseModel):
     #: to decide whether to show the unified "Commit everywhere"
     #: button instead of the single-subsystem one.
     core_git_initialized: bool = False
+    #: PGS-02-FU-01: True when a per-book PAT is stored. Lets the
+    #: GitSyncDialog show "Repo credentials configured" without
+    #: ever returning the PAT itself.
+    has_credential: bool = False
 
 
 class CommitRequest(BaseModel):
@@ -162,8 +167,14 @@ def get_status(
     subsystems = book_subsystems(db, book_id=book_id)
     core_active = subsystems["core_git_initialized"]
 
+    has_credential = git_credentials.has_pat(book_id)
+
     if mapping is None:
-        return GitSyncStatusResponse(mapped=False, core_git_initialized=core_active)
+        return GitSyncStatusResponse(
+            mapped=False,
+            core_git_initialized=core_active,
+            has_credential=has_credential,
+        )
 
     clone_path = Path(mapping.local_clone_path)
     dirty = _is_dirty(clone_path)
@@ -179,6 +190,7 @@ def get_status(
         ),
         dirty=dirty,
         core_git_initialized=core_active,
+        has_credential=has_credential,
     )
 
 
@@ -340,6 +352,45 @@ def unified_commit_endpoint(
             pushed=result.plugin_git_sync.pushed,
         ),
     )
+
+
+# --- credentials (PGS-02-FU-01) ---
+
+
+class CredentialStatus(BaseModel):
+    has_credential: bool
+
+
+class CredentialPayload(BaseModel):
+    pat: str = Field(..., description="Personal Access Token. Empty string clears.")
+
+
+@router.get("/{book_id}/credentials", response_model=CredentialStatus)
+def get_credential_status(book_id: str) -> CredentialStatus:
+    """Return whether a per-book PAT is stored. Never returns the PAT itself."""
+    return CredentialStatus(has_credential=git_credentials.has_pat(book_id))
+
+
+@router.put(
+    "/{book_id}/credentials",
+    response_model=CredentialStatus,
+    status_code=status.HTTP_200_OK,
+)
+def put_credential(book_id: str, payload: CredentialPayload) -> CredentialStatus:
+    """Store (or clear) the per-book PAT.
+
+    The same per-book PAT slot is shared with :mod:`app.services.git_backup`,
+    so a token set here also unblocks the core git push/pull, and vice
+    versa. Empty ``pat`` deletes the stored credential.
+    """
+    git_credentials.save_pat(book_id, payload.pat)
+    return CredentialStatus(has_credential=git_credentials.has_pat(book_id))
+
+
+@router.delete("/{book_id}/credentials", status_code=status.HTTP_204_NO_CONTENT)
+def delete_credential(book_id: str) -> None:
+    """Idempotent secure delete of the per-book PAT."""
+    git_credentials.delete_pat(book_id)
 
 
 # --- helpers ---

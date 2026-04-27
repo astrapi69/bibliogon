@@ -223,6 +223,11 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                     ) : (
                         <>
                             <MappingSummary status={status} />
+                            <CredentialsSection
+                                bookId={bookId}
+                                hasCredential={status.has_credential}
+                                onChanged={() => void refresh()}
+                            />
                             {status.core_git_initialized && (
                                 <UnifiedCommitBanner />
                             )}
@@ -380,6 +385,177 @@ function MappingSummary({ status }: { status: GitSyncMappingStatus }) {
                 </>
             )}
         </dl>
+    );
+}
+
+function CredentialsSection({
+    bookId,
+    hasCredential,
+    onChanged,
+}: {
+    bookId: string;
+    hasCredential: boolean;
+    onChanged: () => void;
+}) {
+    const { t } = useI18n();
+    const [pat, setPat] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    async function save(): Promise<void> {
+        const value = pat.trim();
+        if (!value) return;
+        setBusy(true);
+        try {
+            await api.gitSync.putCredential(bookId, value);
+            setPat("");
+            setOpen(false);
+            notify.success(
+                t("ui.git_sync.credential_saved", "Repo-Token gespeichert"),
+            );
+            onChanged();
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.git_sync.credential_save_error",
+                        "Konnte Repo-Token nicht speichern.",
+                    ),
+                    err,
+                );
+            }
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function remove(): Promise<void> {
+        setBusy(true);
+        try {
+            await api.gitSync.deleteCredential(bookId);
+            notify.success(
+                t("ui.git_sync.credential_removed", "Repo-Token entfernt"),
+            );
+            onChanged();
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.git_sync.credential_delete_error",
+                        "Konnte Repo-Token nicht entfernen.",
+                    ),
+                    err,
+                );
+            }
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    return (
+        <div
+            data-testid="git-sync-credentials"
+            style={{
+                padding: 12,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                marginTop: 12,
+                fontSize: "0.875rem",
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                }}
+            >
+                <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {t("ui.git_sync.credential_heading", "Repo-Zugang (HTTPS)")}
+                    {hasCredential ? (
+                        <span
+                            data-testid="git-sync-credential-status"
+                            style={{ color: "var(--success)", fontWeight: "normal" }}
+                        >
+                            {t("ui.git_sync.credential_set", " konfiguriert")}
+                        </span>
+                    ) : (
+                        <span
+                            data-testid="git-sync-credential-status"
+                            style={{ color: "var(--text-muted)", fontWeight: "normal" }}
+                        >
+                            {t("ui.git_sync.credential_unset", " nicht gesetzt")}
+                        </span>
+                    )}
+                </strong>
+                <div style={{ display: "flex", gap: 6 }}>
+                    {hasCredential && (
+                        <button
+                            type="button"
+                            data-testid="git-sync-credential-remove"
+                            onClick={() => void remove()}
+                            disabled={busy}
+                            className="btn btn-ghost btn-sm"
+                        >
+                            {t("ui.git_sync.credential_remove", "Entfernen")}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        data-testid="git-sync-credential-toggle"
+                        onClick={() => setOpen((v) => !v)}
+                        disabled={busy}
+                        className="btn btn-ghost btn-sm"
+                    >
+                        {open
+                            ? t("ui.common.cancel", "Abbrechen")
+                            : hasCredential
+                              ? t("ui.git_sync.credential_replace", "Aendern")
+                              : t("ui.git_sync.credential_add", "Hinzufuegen")}
+                    </button>
+                </div>
+            </div>
+            {open && (
+                <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+                    <input
+                        data-testid="git-sync-credential-input"
+                        type="password"
+                        value={pat}
+                        onChange={(e) => setPat(e.target.value)}
+                        placeholder={t(
+                            "ui.git_sync.credential_input_placeholder",
+                            "Personal Access Token",
+                        )}
+                        autoComplete="off"
+                        spellCheck={false}
+                        style={{ flex: 1 }}
+                    />
+                    <button
+                        type="button"
+                        data-testid="git-sync-credential-save"
+                        onClick={() => void save()}
+                        disabled={busy || !pat.trim()}
+                        className="btn btn-primary btn-sm"
+                    >
+                        {t("ui.common.save", "Speichern")}
+                    </button>
+                </div>
+            )}
+            <p
+                style={{
+                    margin: "8px 0 0",
+                    color: "var(--text-muted)",
+                    fontSize: "0.75rem",
+                }}
+            >
+                {t(
+                    "ui.git_sync.credential_hint",
+                    "Wird verschluesselt gespeichert und auch fuer das Kern-Git-Backup verwendet. Nur fuer HTTPS-Remotes; SSH nutzt den Bibliogon-SSH-Key.",
+                )}
+            </p>
+        </div>
     );
 }
 

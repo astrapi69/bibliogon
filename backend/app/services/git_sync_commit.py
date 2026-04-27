@@ -13,16 +13,15 @@ Design choices:
   edits since the last import are lost unless the user re-imports
   first. Documented in ``docs/explorations/plugin-git-sync.md``
   Section 6.2.
-- **Push uses ambient git credentials.** When ``push=True`` the
-  service runs ``git push origin <branch>`` and relies on the
-  environment's SSH agent / ``~/.ssh/id_*`` for SSH URLs and the
-  system git credential helper for HTTPS. PAT injection through
-  the Bibliogon credential store is the same shared-credential
-  follow-up work as in :mod:`app.services.git_backup` and is
-  not part of PGS-02. Failures raise :class:`PushFailedError`
-  with a stable ``.reason`` slug ("auth", "rejected", "network",
-  "no_remote", "unknown") so the router can map without parsing
-  git stderr.
+- **Push uses the per-book PAT or SSH key when available.** Both
+  PAT (HTTPS) and SSH key (``ssh://`` / ``git@host:path``) are
+  shared per-book with :mod:`app.services.git_backup` via
+  :mod:`app.services.git_credentials` (PGS-02-FU-01). When neither
+  is configured the push falls back to ambient git credentials
+  (system credential helper / ssh-agent). Failures raise
+  :class:`PushFailedError` with a stable ``.reason`` slug
+  ("auth", "rejected", "network", "no_remote", "unknown") so the
+  router can map without parsing git stderr.
 - **Failures surface as typed errors** (``GitSyncCommitError`` and
   subclasses) so the router can map them to HTTP status codes
   without sprinkling ``HTTPException`` calls into the service.
@@ -39,6 +38,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import Asset, Book, Chapter, GitSyncMapping
+from app.services import git_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ def commit_to_repo(
     if push:
         # Push BEFORE bumping last_committed_at: a push failure
         # should not look like a successful sync in the UI.
-        _push(clone_path, branch=branch)
+        _push(clone_path, branch=branch, book_id=book_id)
         pushed = True
 
     mapping.last_committed_at = datetime.now(UTC)
@@ -255,24 +255,43 @@ def _default_commit_message() -> str:
     return f"Sync from Bibliogon at {datetime.now(UTC).isoformat()}"
 
 
-def _push(clone_path: Path, *, branch: str) -> None:
-    """Push ``branch`` to ``origin`` using the user's ambient creds.
+def _push(clone_path: Path, *, branch: str, book_id: str) -> None:
+    """Push ``branch`` to ``origin``.
 
-    Raises :class:`PushFailedError` with a stable ``.reason`` slug
-    so the router can map it to a useful HTTP status without
-    parsing git stderr in the UI.
+    Uses the per-book PAT (HTTPS) or SSH key when configured via
+    :mod:`app.services.git_credentials`, else falls back to the user's
+    ambient git credentials. Raises :class:`PushFailedError` with a
+    stable ``.reason`` slug so the router can map it to a useful HTTP
+    status without parsing git stderr in the UI.
+
+    PAT injection uses a one-shot pushurl pattern: set the embedded
+    URL, push, restore the original URL in a finally block. The
+    embedded PAT never lands in ``.git/config``.
     """
-    from git import GitCommandError, Repo
+    from git import GitCommandError, PushInfo, Repo
 
     repo = Repo(str(clone_path))
     if "origin" not in [r.name for r in repo.remotes]:
         raise PushFailedError("no_remote", "Repository has no 'origin' remote configured.")
+
+    original_url = next(repo.remotes.origin.urls)
+    auth_url = git_credentials.inject_pat_into_url(original_url, book_id)
+    ssh_env = git_credentials.ssh_env(original_url)
+
     try:
-        info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
-    except GitCommandError as exc:
-        stderr = (exc.stderr or "").strip() or str(exc)
-        reason = _classify_push_stderr(stderr)
-        raise PushFailedError(reason, stderr) from exc
+        if auth_url != original_url:
+            repo.remotes.origin.set_url(auth_url)
+        if ssh_env:
+            repo.git.update_environment(**ssh_env)
+        try:
+            info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+        except GitCommandError as exc:
+            stderr = (exc.stderr or "").strip() or str(exc)
+            reason = _classify_push_stderr(stderr)
+            raise PushFailedError(reason, stderr) from exc
+    finally:
+        if auth_url != original_url:
+            repo.remotes.origin.set_url(original_url)
 
     if not info_list:
         raise PushFailedError("network", "Push returned no information from the remote.")
@@ -280,8 +299,6 @@ def _push(clone_path: Path, *, branch: str) -> None:
     # GitPython exposes flag bits for each push result. Treat any
     # ERROR/REJECTED bit as a failure rather than letting it silently
     # become a "successful" no-op.
-    from git import PushInfo
-
     if info.flags & PushInfo.ERROR:
         summary = (info.summary or "").strip() or "Push failed."
         if info.flags & (PushInfo.REJECTED | PushInfo.REMOTE_REJECTED):

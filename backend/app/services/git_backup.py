@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -23,15 +22,12 @@ import git  # GitPython
 import yaml
 from sqlalchemy.orm import Session
 
-from app import credential_store
 from app.models import Book, Chapter, ChapterType
-from app.services import ssh_keys
+from app.services import git_credentials
 
 # Bibliogon convention: every book's uploads live at ``uploads/{book_id}/``.
 UPLOADS_ROOT = Path("uploads")
 
-# Encrypted PAT storage. One file per book under config/git_credentials/.
-GIT_CRED_DIR = Path("config/git_credentials")
 # Per-book remote URL + metadata. Plain YAML (URL is not secret; PAT is).
 GIT_CONFIG_FILENAME = ".bibliogon-git-config.yaml"
 
@@ -300,16 +296,9 @@ def configure_remote(
         repo.create_remote("origin", url)
 
     if pat:
-        credential_store.save_encrypted(
-            pat.encode("utf-8"),
-            filename=_pat_filename(book_id),
-            credentials_dir=GIT_CRED_DIR,
-        )
+        git_credentials.save_pat(book_id, pat)
     else:
-        credential_store.secure_delete(
-            filename=_pat_filename(book_id),
-            credentials_dir=GIT_CRED_DIR,
-        )
+        git_credentials.delete_pat(book_id)
     return get_remote_config(book_id, db)
 
 
@@ -319,10 +308,7 @@ def get_remote_config(book_id: str, db: Session) -> dict[str, Any]:
     config = _read_remote_config(repo_path(book_id))
     return {
         "url": config.get("url") if config else None,
-        "has_credential": credential_store.is_configured(
-            filename=_pat_filename(book_id),
-            credentials_dir=GIT_CRED_DIR,
-        ),
+        "has_credential": git_credentials.has_pat(book_id),
     }
 
 
@@ -332,10 +318,7 @@ def delete_remote_config(book_id: str, db: Session) -> None:
     repo_dir = repo_path(book_id)
     config_path = repo_dir / GIT_CONFIG_FILENAME
     config_path.unlink(missing_ok=True)
-    credential_store.secure_delete(
-        filename=_pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
-    )
+    git_credentials.delete_pat(book_id)
     if is_initialized(book_id):
         repo = git.Repo(repo_dir)
         if "origin" in [r.name for r in repo.remotes]:
@@ -649,10 +632,6 @@ def abort_merge(book_id: str, db: Session) -> dict[str, Any]:
 # --- Internals ---
 
 
-def _pat_filename(book_id: str) -> str:
-    return f"{book_id}.enc"
-
-
 def _changed_files_between(repo: git.Repo, base_sha: str, tip_sha: str) -> list[str]:
     """Return names of files that differ between two commits."""
     raw = repo.git.diff("--name-only", f"{base_sha}..{tip_sha}")
@@ -710,69 +689,18 @@ def _require_repo_with_remote(book_id: str, db: Session) -> git.Repo:
 
 
 def _authenticated_url(book_id: str, repo: git.Repo) -> str:
-    """Build a one-shot HTTPS URL with the PAT embedded for authenticated push/fetch.
+    """Build a one-shot HTTPS URL with the per-book PAT embedded.
 
-    Only applied to ``http(s)://`` URLs. Everything else (file paths,
-    ssh) is returned unchanged; SSH auth is handled via
-    :func:`_ssh_env` / ``GIT_SSH_COMMAND`` instead.
+    SSH URLs and file paths come back unchanged; SSH auth is handled
+    via :func:`_ssh_env` / ``GIT_SSH_COMMAND`` instead.
     """
     original = next(repo.remotes.origin.urls)
-    scheme = original.split("://", 1)[0] if "://" in original else ""
-    if scheme not in ("http", "https"):
-        return original
-
-    if not credential_store.is_configured(
-        filename=_pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
-    ):
-        return original
-
-    pat = (
-        credential_store.load_decrypted(
-            filename=_pat_filename(book_id),
-            credentials_dir=GIT_CRED_DIR,
-        )
-        .decode("utf-8")
-        .strip()
-    )
-    if not pat:
-        return original
-
-    # GitHub/GitLab/Gitea convention: username can be anything, PAT is
-    # the password. ``x-access-token`` is the standard placeholder.
-    encoded_pat = urllib.parse.quote(pat, safe="")
-    prefix, rest = original.split("://", 1)
-    # Strip any existing credentials in the URL to avoid duplication.
-    if "@" in rest:
-        rest = rest.split("@", 1)[1]
-    return f"{prefix}://x-access-token:{encoded_pat}@{rest}"
-
-
-def _is_ssh_url(url: str) -> bool:
-    """True when ``url`` uses SSH (``git@host:path`` or ``ssh://``)."""
-    if url.startswith("ssh://"):
-        return True
-    # ``git@github.com:user/repo.git`` shape: user@host:path, no scheme.
-    if "://" not in url and "@" in url and ":" in url.split("@", 1)[1]:
-        return True
-    return False
+    return git_credentials.inject_pat_into_url(original, book_id)
 
 
 def _ssh_env(url: str) -> dict[str, str] | None:
-    """Return a GIT_SSH_COMMAND env mapping when the URL is SSH and a
-    Bibliogon-managed key exists. None otherwise.
-
-    ``-i`` points at the stored private key; ``IdentitiesOnly=yes``
-    prevents ssh-agent from trying unrelated keys first;
-    ``StrictHostKeyChecking=accept-new`` lets first-time hosts connect
-    without manual ``known_hosts`` seeding while still pinning on
-    subsequent connects (standard OpenSSH TOFU).
-    """
-    if not _is_ssh_url(url) or not ssh_keys.exists():
-        return None
-    key_path = ssh_keys.private_key_path().resolve()
-    cmd = f'ssh -i "{key_path}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
-    return {"GIT_SSH_COMMAND": cmd}
+    """Return a ``GIT_SSH_COMMAND`` env mapping for SSH URLs."""
+    return git_credentials.ssh_env(url)
 
 
 def _classify_git_error(exc: git.GitCommandError) -> GitBackupError:

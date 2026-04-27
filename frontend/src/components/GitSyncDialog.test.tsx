@@ -24,6 +24,9 @@ const mockStatus = vi.fn();
 const mockCommit = vi.fn();
 
 const mockUnifiedCommit = vi.fn();
+const mockGetCredentialStatus = vi.fn();
+const mockPutCredential = vi.fn();
+const mockDeleteCredential = vi.fn();
 
 vi.mock("../api/client", () => ({
     api: {
@@ -33,6 +36,11 @@ vi.mock("../api/client", () => ({
             unifiedCommit: (...args: unknown[]) => mockUnifiedCommit(...args),
             diff: vi.fn(),
             resolve: vi.fn(),
+            getCredentialStatus: (...args: unknown[]) =>
+                mockGetCredentialStatus(...args),
+            putCredential: (...args: unknown[]) => mockPutCredential(...args),
+            deleteCredential: (...args: unknown[]) =>
+                mockDeleteCredential(...args),
         },
     },
     ApiError: class extends Error {
@@ -78,6 +86,7 @@ const mappedClean: GitSyncMappingStatus = {
     last_committed_at: null,
     dirty: false,
     core_git_initialized: false,
+    has_credential: false,
 };
 
 const mappedCleanWithCoreGit: GitSyncMappingStatus = {
@@ -104,6 +113,7 @@ const unmapped: GitSyncMappingStatus = {
     last_committed_at: null,
     dirty: null,
     core_git_initialized: false,
+    has_credential: false,
 };
 
 describe("GitSyncDialog", () => {
@@ -360,5 +370,84 @@ describe("GitSyncDialog", () => {
             expect(mockNotify.warning).toHaveBeenCalledTimes(1),
         );
         expect(mockNotify.error).not.toHaveBeenCalled();
+    });
+
+    // --- PGS-02-FU-01: per-book PAT credentials section ---
+
+    it("renders 'not set' when has_credential is false", async () => {
+        mockStatus.mockResolvedValue(mappedClean);
+        await act(async () => {
+            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
+        );
+        expect(
+            screen.getByTestId("git-sync-credential-status").textContent,
+        ).toContain("nicht gesetzt");
+    });
+
+    it("renders 'configured' + Remove button when has_credential is true", async () => {
+        mockStatus.mockResolvedValue({ ...mappedClean, has_credential: true });
+        await act(async () => {
+            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
+        );
+        expect(
+            screen.getByTestId("git-sync-credential-status").textContent,
+        ).toContain("konfiguriert");
+        expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy();
+    });
+
+    it("PUTs the PAT and refreshes status on save", async () => {
+        mockStatus
+            .mockResolvedValueOnce(mappedClean)
+            .mockResolvedValueOnce({ ...mappedClean, has_credential: true });
+        mockPutCredential.mockResolvedValue({ has_credential: true });
+
+        await act(async () => {
+            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
+        );
+
+        fireEvent.click(screen.getByTestId("git-sync-credential-toggle"));
+        const input = screen.getByTestId(
+            "git-sync-credential-input",
+        ) as HTMLInputElement;
+        fireEvent.change(input, { target: { value: "ghp_top_secret" } });
+        fireEvent.click(screen.getByTestId("git-sync-credential-save"));
+
+        await waitFor(() =>
+            expect(mockPutCredential).toHaveBeenCalledWith(
+                "book-1",
+                "ghp_top_secret",
+            ),
+        );
+        await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
+    });
+
+    it("DELETEs the credential and refreshes on Remove", async () => {
+        mockStatus
+            .mockResolvedValueOnce({ ...mappedClean, has_credential: true })
+            .mockResolvedValueOnce(mappedClean);
+        mockDeleteCredential.mockResolvedValue(undefined);
+
+        await act(async () => {
+            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy(),
+        );
+
+        fireEvent.click(screen.getByTestId("git-sync-credential-remove"));
+
+        await waitFor(() =>
+            expect(mockDeleteCredential).toHaveBeenCalledWith("book-1"),
+        );
+        await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
     });
 });

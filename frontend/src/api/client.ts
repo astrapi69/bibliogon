@@ -1318,6 +1318,28 @@ export const api = {
                     body: JSON.stringify(payload),
                 },
             ),
+
+        /** PGS-02-FU-01: per-book Personal Access Token used for HTTPS
+         *  push/pull. Shared with core git_backup, so setting here also
+         *  unblocks the core git remote. The PAT is never returned. */
+        getCredentialStatus: (bookId: string) =>
+            request<{has_credential: boolean}>(
+                `/git-sync/${bookId}/credentials`,
+            ),
+
+        putCredential: (bookId: string, pat: string) =>
+            request<{has_credential: boolean}>(
+                `/git-sync/${bookId}/credentials`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({pat}),
+                },
+            ),
+
+        deleteCredential: (bookId: string) =>
+            request<void>(`/git-sync/${bookId}/credentials`, {
+                method: "DELETE",
+            }),
     },
 
     ssh: {
@@ -1421,6 +1443,10 @@ export interface GitSyncMappingStatus {
      *  decide whether to render the unified "Commit everywhere"
      *  button instead of the single-subsystem one. */
     core_git_initialized: boolean
+    /** PGS-02-FU-01: True when a per-book PAT is stored. The
+     *  GitSyncDialog uses this to show "Repo credentials configured"
+     *  without ever rendering the PAT itself. */
+    has_credential: boolean
 }
 
 export interface GitSyncCommitRequest {

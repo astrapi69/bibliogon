@@ -11,15 +11,13 @@ Covers:
 
 from __future__ import annotations
 
-import os
 import stat
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import git_backup, ssh_keys
+from app.services import git_credentials, ssh_keys
 
 client = TestClient(app)
 
@@ -62,9 +60,7 @@ def test_generate_refuses_second_call_without_overwrite():
 
 def test_generate_with_overwrite_replaces_existing():
     first = client.post("/api/ssh/generate", json={}).json()["public_key"]
-    second = client.post(
-        "/api/ssh/generate", json={"overwrite": True}
-    ).json()["public_key"]
+    second = client.post("/api/ssh/generate", json={"overwrite": True}).json()["public_key"]
     assert first != second
 
 
@@ -126,17 +122,17 @@ def test_delete_then_generate_works_again():
     ],
 )
 def test_is_ssh_url_classification(url: str, expected: bool):
-    assert git_backup._is_ssh_url(url) is expected
+    assert git_credentials.is_ssh_url(url) is expected
 
 
 def test_ssh_env_empty_without_key():
     # No key on disk - even an SSH URL yields None.
-    assert git_backup._ssh_env("git@example.com:repo.git") is None
+    assert git_credentials.ssh_env("git@example.com:repo.git") is None
 
 
 def test_ssh_env_present_when_key_exists_and_url_is_ssh():
     client.post("/api/ssh/generate", json={})
-    env = git_backup._ssh_env("git@example.com:repo.git")
+    env = git_credentials.ssh_env("git@example.com:repo.git")
     assert env is not None
     assert "GIT_SSH_COMMAND" in env
     assert str(ssh_keys.private_key_path().resolve()) in env["GIT_SSH_COMMAND"]
@@ -145,4 +141,4 @@ def test_ssh_env_present_when_key_exists_and_url_is_ssh():
 
 def test_ssh_env_ignored_for_https_urls():
     client.post("/api/ssh/generate", json={})
-    assert git_backup._ssh_env("https://github.com/x/y.git") is None
+    assert git_credentials.ssh_env("https://github.com/x/y.git") is None

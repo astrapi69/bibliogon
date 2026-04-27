@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.main import app
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_sync_mapping
+from app.services import git_credentials, git_sync_mapping
 from app.services.git_sync_commit import commit_to_repo
 
 client = TestClient(app)
@@ -393,3 +393,140 @@ def test_commit_to_repo_service_direct(
     persisted = Path(db.get(GitSyncMapping, book.id).local_clone_path)
     repo = git.Repo(str(persisted))
     assert repo.head.commit.message.strip() == "custom msg"
+
+
+# --- PGS-02-FU-01: per-book PAT integration ---
+
+
+def test_commit_push_uses_per_book_pat_without_persisting_to_git_config(
+    db: Session,
+    book: Book,
+    repo_clone: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The per-book PAT (stored via git_credentials) must be embedded
+    into the push URL via the one-shot pushurl pattern: set, push,
+    restore. After a push, ``.git/config`` must NOT contain the PAT.
+
+    Local file:// remote means the embedded credentials are inert,
+    but the assertion is on the persisted ``.git/config`` content,
+    not on transport behavior.
+    """
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs02fu")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db,
+        staging_path=repo_clone,
+        book_id=book.id,
+        uploads_dir=uploads,
+    )
+    db.expire_all()
+
+    persisted = Path(db.get(GitSyncMapping, book.id).local_clone_path)
+    https_remote_url = "https://example.invalid/foo/bar.git"
+    bare_url = next(git.Repo(str(persisted)).remotes.origin.urls)
+    git.Repo(str(persisted)).remotes.origin.set_url(https_remote_url)
+
+    git_credentials.save_pat(book.id, "ghp_secret_token_xyz")
+
+    db.add(
+        Chapter(
+            book_id=book.id,
+            title="Push With PAT",
+            content='{"type":"doc","content":[]}',
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    # Push will fail at network (example.invalid), but failure mode
+    # is irrelevant - the assertion is that the PAT never lands in
+    # .git/config regardless.
+    resp = client.post(f"/api/git-sync/{book.id}/commit", json={"push": True})
+    assert resp.status_code in (502, 409, 500)
+
+    config_text = (persisted / ".git" / "config").read_text(encoding="utf-8")
+    assert "ghp_secret_token_xyz" not in config_text
+    assert "x-access-token" not in config_text
+    # The original (configured) URL must be back after the one-shot push.
+    assert https_remote_url in config_text
+
+    # Restore for any later test that might inspect remotes.
+    git.Repo(str(persisted)).remotes.origin.set_url(bare_url)
+
+
+# --- credentials endpoints (PGS-02-FU-01) ---
+
+
+def test_credentials_default_status_is_false(
+    book: Book,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs02fu")
+    resp = client.get(f"/api/git-sync/{book.id}/credentials")
+    assert resp.status_code == 200
+    assert resp.json() == {"has_credential": False}
+
+
+def test_credentials_put_then_get_then_delete(
+    book: Book,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs02fu")
+
+    put_resp = client.put(
+        f"/api/git-sync/{book.id}/credentials",
+        json={"pat": "ghp_topsecret_zzz"},
+    )
+    assert put_resp.status_code == 200
+    assert put_resp.json() == {"has_credential": True}
+    # PAT must never appear in the response body.
+    assert "ghp_topsecret_zzz" not in put_resp.text
+
+    get_resp = client.get(f"/api/git-sync/{book.id}/credentials")
+    assert get_resp.json() == {"has_credential": True}
+
+    del_resp = client.delete(f"/api/git-sync/{book.id}/credentials")
+    assert del_resp.status_code == 204
+    assert client.get(f"/api/git-sync/{book.id}/credentials").json() == {"has_credential": False}
+
+
+def test_credentials_put_empty_clears(
+    book: Book,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs02fu")
+
+    client.put(f"/api/git-sync/{book.id}/credentials", json={"pat": "x"})
+    assert git_credentials.has_pat(book.id) is True
+
+    resp = client.put(f"/api/git-sync/{book.id}/credentials", json={"pat": ""})
+    assert resp.status_code == 200
+    assert resp.json() == {"has_credential": False}
+
+
+def test_status_endpoint_surfaces_has_credential(
+    book: Book,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs02fu")
+
+    body_before = client.get(f"/api/git-sync/{book.id}").json()
+    assert body_before["has_credential"] is False
+
+    git_credentials.save_pat(book.id, "ghp_zzz")
+    body_after = client.get(f"/api/git-sync/{book.id}").json()
+    assert body_after["has_credential"] is True
