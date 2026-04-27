@@ -58,9 +58,25 @@ export default function ArticleList() {
     async function handleCreate(): Promise<void> {
         setCreating(true);
         try {
+            // Default author from app settings - mirrors CreateBookModal.
+            // Failure is silent: blank-author article is fine, the user
+            // can fill it in the editor sidebar.
+            let defaultAuthor: string | null = null;
+            try {
+                const config = await api.settings.getApp();
+                const authorConfig = (config.author || {}) as Record<
+                    string,
+                    unknown
+                >;
+                const realName = (authorConfig.name as string) || "";
+                if (realName) defaultAuthor = realName;
+            } catch {
+                // ignore; create with empty author
+            }
             const fresh = await api.articles.create({
                 title: t("ui.articles.default_title", "Neuer Artikel"),
                 language: "de",
+                author: defaultAuthor,
             });
             navigate(`/articles/${fresh.id}`);
         } catch (err) {

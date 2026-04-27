@@ -27,7 +27,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import { Loader2, Save, ArrowLeft, Trash2 } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
@@ -245,9 +245,20 @@ export default function ArticleEditor() {
                     className="btn btn-ghost btn-sm"
                     onClick={() => navigate("/articles")}
                     data-testid="article-editor-back"
+                    title={t("ui.articles.back_to_list_tooltip", "Zur Artikelliste")}
                 >
                     <ArrowLeft size={14} />
                     {t("ui.articles.back_to_list", "Zur Liste")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => navigate("/")}
+                    data-testid="article-editor-dashboard"
+                    title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
+                >
+                    <Home size={14} />
+                    {t("ui.articles.back_to_dashboard", "Dashboard")}
                 </button>
                 <input
                     data-testid="article-editor-title"
@@ -429,24 +440,24 @@ function safeParse(raw: string): object | string {
 
 function SaveIndicator({ status }: { status: SaveStatus }) {
     const { t } = useI18n();
+    // Always render something so the user always knows the save state.
+    // Idle baseline = "All changes saved" (gray). Visible at rest, not
+    // hidden after fade-out like the BookEditor's transient pill.
     if (status === "saving") {
         return (
             <span
                 data-testid="article-editor-save-status"
-                style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}
+                data-state="saving"
+                style={{
+                    color: "var(--text-muted)",
+                    fontSize: "0.8125rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                }}
             >
-                <Loader2 size={12} className="spin" />{" "}
+                <Loader2 size={12} className="spin" />
                 {t("ui.articles.saving", "Speichert…")}
-            </span>
-        );
-    }
-    if (status === "saved") {
-        return (
-            <span
-                data-testid="article-editor-save-status"
-                style={{ color: "var(--success, #16a34a)", fontSize: "0.8125rem" }}
-            >
-                <Save size={12} /> {t("ui.articles.saved", "Gespeichert")}
             </span>
         );
     }
@@ -454,13 +465,41 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
         return (
             <span
                 data-testid="article-editor-save-status"
-                style={{ color: "var(--error, #b91c1c)", fontSize: "0.8125rem" }}
+                data-state="error"
+                style={{
+                    color: "var(--error, #b91c1c)",
+                    fontSize: "0.8125rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                }}
             >
+                <AlertCircle size={12} />
                 {t("ui.articles.save_error_label", "Fehler")}
             </span>
         );
     }
-    return null;
+    // idle + saved both render the same "saved" baseline (idle simply
+    // means no edit since last save; the article is on disk either way).
+    return (
+        <span
+            data-testid="article-editor-save-status"
+            data-state={status}
+            style={{
+                color:
+                    status === "saved"
+                        ? "var(--success, #16a34a)"
+                        : "var(--text-muted)",
+                fontSize: "0.8125rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+            }}
+        >
+            <Save size={12} />
+            {t("ui.articles.all_saved", "Alle Änderungen gespeichert")}
+        </span>
+    );
 }
 
 function Field({
