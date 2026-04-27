@@ -333,7 +333,14 @@ def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
             {"section": "chapters", "slug": "foo", "action": "take_remote"},
         ],
     )
-    assert counts == {"updated": 1, "created": 0, "deleted": 0, "marked": 0, "skipped": 0}
+    assert counts == {
+        "updated": 1,
+        "created": 0,
+        "deleted": 0,
+        "marked": 0,
+        "renamed": 0,
+        "skipped": 0,
+    }
 
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -655,6 +662,7 @@ def test_apply_resolutions_mark_conflict_writes_both_versions(
         "created": 0,
         "deleted": 0,
         "marked": 1,
+        "renamed": 0,
         "skipped": 0,
     }
 
@@ -754,3 +762,268 @@ def test_resolve_endpoint_accepts_mark_conflict_action(
     # No actual conflict -> skipped.
     assert body["counts"]["skipped"] >= 1
     assert body["counts"]["marked"] == 0
+
+
+# --- PGS-03-FU-01: rename detection ---
+
+
+def test_collapse_renames_pairs_remote_remove_with_remote_add() -> None:
+    """remote_removed (X, body B) + remote_added (Y, body B) collapse
+    into a single renamed_remote row. Body must match after H1 strip."""
+    from app.services.git_sync_diff import (
+        ChapterDiff,
+        ChapterIdentity,
+        _collapse_renames,
+    )
+
+    old = ChapterIdentity(section="chapters", slug="old-name")
+    new = ChapterIdentity(section="chapters", slug="new-name")
+    diffs = [
+        ChapterDiff(
+            identity=old,
+            title="Old Name",
+            classification="remote_removed",
+            base_md="# Old Name\n\nshared body line\n",
+            local_md="# Old Name\n\nshared body line\n",
+            remote_md=None,
+            db_chapter_id="db-old",
+        ),
+        ChapterDiff(
+            identity=new,
+            title="New Name",
+            classification="remote_added",
+            base_md=None,
+            local_md=None,
+            remote_md="# New Name\n\nshared body line\n",
+            db_chapter_id=None,
+        ),
+    ]
+    out = _collapse_renames(diffs)
+    assert len(out) == 1
+    assert out[0].classification == "renamed_remote"
+    assert out[0].identity == new
+    assert out[0].rename_from == old
+    assert out[0].db_chapter_id == "db-old"
+
+
+def test_collapse_renames_pairs_local_remove_with_local_add() -> None:
+    """local_removed + local_added with matching body -> renamed_local."""
+    from app.services.git_sync_diff import (
+        ChapterDiff,
+        ChapterIdentity,
+        _collapse_renames,
+    )
+
+    old = ChapterIdentity(section="chapters", slug="prelude")
+    new = ChapterIdentity(section="chapters", slug="overture")
+    diffs = [
+        ChapterDiff(
+            identity=old,
+            title="Prelude",
+            classification="local_removed",
+            base_md="# Prelude\n\nbody\n",
+            local_md=None,
+            remote_md="# Prelude\n\nbody\n",
+            db_chapter_id=None,
+        ),
+        ChapterDiff(
+            identity=new,
+            title="Overture",
+            classification="local_added",
+            base_md=None,
+            local_md="# Overture\n\nbody\n",
+            remote_md=None,
+            db_chapter_id="db-new",
+        ),
+    ]
+    out = _collapse_renames(diffs)
+    assert len(out) == 1
+    assert out[0].classification == "renamed_local"
+    assert out[0].rename_from == old
+    assert out[0].is_rename
+
+
+def test_collapse_renames_does_not_pair_when_bodies_differ() -> None:
+    """Non-matching body keeps both rows independent."""
+    from app.services.git_sync_diff import (
+        ChapterDiff,
+        ChapterIdentity,
+        _collapse_renames,
+    )
+
+    diffs = [
+        ChapterDiff(
+            identity=ChapterIdentity(section="chapters", slug="alpha"),
+            title="Alpha",
+            classification="remote_removed",
+            base_md="# Alpha\n\noriginal body\n",
+            local_md="# Alpha\n\noriginal body\n",
+            remote_md=None,
+            db_chapter_id="db-a",
+        ),
+        ChapterDiff(
+            identity=ChapterIdentity(section="chapters", slug="beta"),
+            title="Beta",
+            classification="remote_added",
+            base_md=None,
+            local_md=None,
+            remote_md="# Beta\n\ncompletely different body\n",
+            db_chapter_id=None,
+        ),
+    ]
+    out = _collapse_renames(diffs)
+    assert len(out) == 2
+    assert {d.classification for d in out} == {"remote_removed", "remote_added"}
+
+
+def test_collapse_renames_does_not_cross_pair_local_with_remote() -> None:
+    """remote_removed must NOT pair with local_added (that's not a
+    rename - it's a remote delete + a local create that happen to
+    share body)."""
+    from app.services.git_sync_diff import (
+        ChapterDiff,
+        ChapterIdentity,
+        _collapse_renames,
+    )
+
+    diffs = [
+        ChapterDiff(
+            identity=ChapterIdentity(section="chapters", slug="x"),
+            title="X",
+            classification="remote_removed",
+            base_md="# X\n\nshared\n",
+            local_md="# X\n\nshared\n",
+            remote_md=None,
+            db_chapter_id="db-x",
+        ),
+        ChapterDiff(
+            identity=ChapterIdentity(section="chapters", slug="y"),
+            title="Y",
+            classification="local_added",
+            base_md=None,
+            local_md="# Y\n\nshared\n",
+            remote_md=None,
+            db_chapter_id="db-y",
+        ),
+    ]
+    out = _collapse_renames(diffs)
+    assert len(out) == 2  # no pairing across sides
+
+
+def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """End-to-end: remote renames a chapter file (file deleted at old
+    slug, added at new slug, body identical). User picks take_remote;
+    DB row title updates to the new title, body untouched."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-old-name.md", "# Old Name\n\nbody text\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+
+    # Local DB carries the chapter at the old name.
+    db.add(
+        Chapter(
+            book_id=book.id, title="Old Name", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("body text"),
+        )
+    )
+    db.commit()
+    chapter_id = (
+        db.query(Chapter).filter_by(book_id=book.id, title="Old Name").one().id
+    )
+
+    # Remote renames: delete old file, add new file with same body.
+    (persisted / "manuscript" / "chapters" / "01-old-name.md").unlink()
+    _write_wbt_chapter(persisted, "chapters", "01-new-name.md", "# New Name\n\nbody text\n")
+    _commit_all(persisted_repo, "rename old to new")
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    # Check the diff sees a rename, not remove + add.
+    from app.services.git_sync_diff import apply_resolutions, diff_book
+
+    diffs = diff_book(db, book_id=book.id)
+    classifications = {d.classification for d in diffs}
+    assert "renamed_remote" in classifications
+    assert "remote_removed" not in classifications
+    assert "remote_added" not in classifications
+
+    # take_remote on the renamed row updates title; body untouched.
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "new-name", "action": "take_remote"},
+        ],
+    )
+    assert counts["renamed"] == 1
+    assert counts["updated"] == 0
+
+    chapter = db.query(Chapter).filter_by(id=chapter_id).one()
+    assert chapter.title == "New Name"
+    # Body content stays as it was (TipTap JSON).
+    assert "body text" in chapter.content
+
+
+def test_diff_endpoint_payload_carries_rename_from(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """HTTP smoke: rename_from surfaces in the diff response so the
+    frontend can render 'renamed from X to Y' rows."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-was.md", "# Was\n\nshared body\n")
+    _commit_all(repo, "base")
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Was", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("shared body"),
+        )
+    )
+    db.commit()
+
+    (persisted / "manuscript" / "chapters" / "01-was.md").unlink()
+    _write_wbt_chapter(persisted, "chapters", "01-now.md", "# Now\n\nshared body\n")
+    _commit_all(persisted_repo, "rename")
+    db.commit()
+
+    resp = client.post(f"/api/git-sync/{book.id}/diff")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    rename_rows = [
+        c for c in body["chapters"] if c["classification"] == "renamed_remote"
+    ]
+    assert len(rename_rows) == 1
+    row = rename_rows[0]
+    assert row["slug"] == "now"
+    assert row["rename_from"] == {"section": "chapters", "slug": "was"}

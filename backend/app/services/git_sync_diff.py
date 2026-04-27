@@ -17,8 +17,10 @@ the resolve-conflict UI (PGS-03 Session 2).
 Identity. Each chapter is identified by ``(section, slug)`` where
 ``section`` is one of ``front-matter | chapters | back-matter`` and
 ``slug`` is the lowercase ASCII slug of the H1 (or file stem when
-no H1 present). Renames surface as delete-on-base + add-on-other
-rather than a rename pair; resolving renames is a Phase 4 polish.
+no H1 present). PGS-03-FU-01 collapses removed + added pairs with
+identical bodies into a single ``renamed_remote`` / ``renamed_local``
+row carrying the old identity in ``ChapterDiff.rename_from``; bodies
+must match exactly after H1 strip + ``_normalize`` to pair.
 
 Boundary:
 - Reading WBT chapter files from arbitrary git refs is done with
@@ -56,6 +58,12 @@ Classification = Literal[
     "local_added",
     "remote_removed",
     "local_removed",
+    # PGS-03-FU-01: file moved between identities with the body
+    # unchanged. The new identity is the one shown; ``rename_from``
+    # carries the old identity so the UI can render
+    # "renamed from X to Y" instead of a confusing remove + add pair.
+    "renamed_remote",
+    "renamed_local",
 ]
 
 
@@ -77,10 +85,18 @@ class ChapterDiff:
     local_md: str | None
     remote_md: str | None
     db_chapter_id: str | None  # set when the chapter exists in the local DB
+    # PGS-03-FU-01: when classification is ``renamed_remote`` /
+    # ``renamed_local`` this points at the OLD identity the file
+    # used to live at. None for non-rename rows.
+    rename_from: ChapterIdentity | None = None
 
     @property
     def is_conflict(self) -> bool:
         return self.classification == "both_changed"
+
+    @property
+    def is_rename(self) -> bool:
+        return self.classification in ("renamed_remote", "renamed_local")
 
 
 # --- public surface ---
@@ -140,7 +156,14 @@ def apply_resolutions(
     language = (book.language if book else None) or "de"
 
     diffs = {(d.identity.section, d.identity.slug): d for d in diff_book(db, book_id=book_id)}
-    counts = {"updated": 0, "created": 0, "deleted": 0, "marked": 0, "skipped": 0}
+    counts = {
+        "updated": 0,
+        "created": 0,
+        "deleted": 0,
+        "marked": 0,
+        "renamed": 0,
+        "skipped": 0,
+    }
 
     for raw in resolutions:
         section_raw = raw.get("section")
@@ -171,6 +194,28 @@ def apply_resolutions(
         diff = diffs.get((section, slug))
         if diff is None:
             counts["skipped"] += 1
+            continue
+
+        if diff.is_rename and action == "take_remote":
+            # PGS-03-FU-01: a renamed chapter has identical body on
+            # both sides; the only thing to do is rename the local
+            # title (and let the next commit-to-repo move the file
+            # accordingly). Body is left untouched.
+            if not diff.db_chapter_id:
+                counts["skipped"] += 1
+                continue
+            row = db.get(ChapterModel, diff.db_chapter_id)
+            if row is None:
+                counts["skipped"] += 1
+                continue
+            # Best-effort title recovery from whichever side carries
+            # the new identity's H1.
+            md_for_title = (
+                diff.remote_md if diff.classification == "renamed_remote" else diff.local_md
+            )
+            _, new_title = _strip_h1(md_for_title or "", fallback_title=diff.title)
+            row.title = new_title
+            counts["renamed"] += 1
             continue
 
         if action == "mark_conflict":
@@ -242,6 +287,80 @@ def apply_resolutions(
     db.commit()
 
     return counts
+
+
+def _collapse_renames(diffs: list[ChapterDiff]) -> list[ChapterDiff]:
+    """PGS-03-FU-01: pair ``*_removed`` + ``*_added`` rows with matching
+    bodies into a single ``renamed`` row.
+
+    Two pairing rules:
+    - ``remote_removed`` (file disappeared upstream) + ``remote_added``
+      (file appeared upstream) with identical body == ``renamed_remote``
+      (the remote moved the chapter; local kept the old name).
+    - ``local_removed`` + ``local_added`` with identical body ==
+      ``renamed_local`` (the user renamed locally; remote kept the old
+      name).
+
+    Body comparison uses :func:`_normalize` and STRIPS the H1 line so
+    a renamed chapter still pairs even though its title (and therefore
+    H1) changed. Only exact body matches pair; near-misses stay as
+    independent removed + added rows so the user sees the real diff.
+    """
+    by_class: dict[str, list[ChapterDiff]] = {}
+    for d in diffs:
+        by_class.setdefault(d.classification, []).append(d)
+
+    consumed: set[tuple[Section, str]] = set()
+    renames: list[ChapterDiff] = []
+
+    for removed_kind, added_kind, classification in (
+        ("remote_removed", "remote_added", "renamed_remote"),
+        ("local_removed", "local_added", "renamed_local"),
+    ):
+        removed_pool = by_class.get(removed_kind, [])
+        added_pool = by_class.get(added_kind, [])
+        for removed in removed_pool:
+            removed_body_md = (
+                removed.local_md if removed_kind == "remote_removed" else removed.base_md
+            )
+            removed_body = _strip_h1(removed_body_md or "", fallback_title="")[0]
+            removed_key = _normalize(removed_body)
+            if not removed_key:
+                continue
+            match: ChapterDiff | None = None
+            for candidate in added_pool:
+                if (candidate.identity.section, candidate.identity.slug) in consumed:
+                    continue
+                added_body_md = (
+                    candidate.remote_md if added_kind == "remote_added" else candidate.local_md
+                )
+                added_body = _strip_h1(added_body_md or "", fallback_title="")[0]
+                if _normalize(added_body) == removed_key:
+                    match = candidate
+                    break
+            if match is None:
+                continue
+            consumed.add((removed.identity.section, removed.identity.slug))
+            consumed.add((match.identity.section, match.identity.slug))
+            renames.append(
+                ChapterDiff(
+                    identity=match.identity,
+                    title=match.title,
+                    classification=classification,  # type: ignore[arg-type]
+                    base_md=removed.base_md,
+                    local_md=match.local_md if added_kind == "local_added" else removed.local_md,
+                    remote_md=match.remote_md
+                    if added_kind == "remote_added"
+                    else removed.remote_md,
+                    db_chapter_id=removed.db_chapter_id or match.db_chapter_id,
+                    rename_from=removed.identity,
+                )
+            )
+
+    survivors = [d for d in diffs if (d.identity.section, d.identity.slug) not in consumed]
+    out = survivors + renames
+    out.sort(key=lambda d: d.identity.key())
+    return out
 
 
 def build_conflict_markdown(*, local_body: str, remote_body: str) -> str:
@@ -340,7 +459,7 @@ def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
     remote_chapters = _read_wbt_at_ref(clone_path, mapping.branch)
     local_chapters = _read_local_chapters(db, book_id)
 
-    return _classify(base_chapters, local_chapters, remote_chapters)
+    return _collapse_renames(_classify(base_chapters, local_chapters, remote_chapters))
 
 
 # --- WBT reading at arbitrary git refs ---

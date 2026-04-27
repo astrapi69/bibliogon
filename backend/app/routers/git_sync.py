@@ -97,6 +97,10 @@ class ChapterDiffEntry(BaseModel):
     local_md: str | None = None
     remote_md: str | None = None
     db_chapter_id: str | None = None
+    #: PGS-03-FU-01: when ``classification`` is ``renamed_remote`` or
+    #: ``renamed_local`` this carries the OLD ``(section, slug)``
+    #: identity the chapter used to live at. None for non-rename rows.
+    rename_from: dict[str, str] | None = None
 
 
 class DiffResponse(BaseModel):
@@ -271,6 +275,14 @@ def diff(
                 local_md=d.local_md,
                 remote_md=d.remote_md,
                 db_chapter_id=d.db_chapter_id,
+                rename_from=(
+                    {
+                        "section": d.rename_from.section,
+                        "slug": d.rename_from.slug,
+                    }
+                    if d.rename_from is not None
+                    else None
+                ),
             )
         )
 
