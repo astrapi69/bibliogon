@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-25 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 closed)
+Last updated: 2026-04-25 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,13 @@ release pass.
 
 ## Recently closed
 
+- **CIO-08-FU-01** (multi-book wizard finishing): closed
+  2026-04-25 in `7c97d4f`. ImportWizardModal now uses
+  `useMachine(wizardMachine)` instead of parallel
+  `useState<WizardState>`. New `SuccessMultiStep` terminal lists
+  every imported book with per-book "Open" link (no
+  auto-redirect). ExecutingStep onSuccess signature gains
+  `bookIds`. 4 i18n keys × 8 languages. +5 Vitest tests.
 - **PS-09-FU-01** (audiobook + translation plugin CI coverage):
   closed 2026-04-25 as already-resolved. Audit found both
   plugins already in `ci.yml` plugin-tests matrix (lines 37,
@@ -96,8 +103,8 @@ release pass.
 
 Ranked by user-value, deadline pressure, follow-up scope from
 recently-shipped work. PGS-02-FU-01 closed in `32137bb`,
-TD-01 + PS-09-FU-01 closed (already-resolved); top 8 below
-renumbered.
+CIO-08-FU-01 closed in `7c97d4f`, TD-01 + PS-09-FU-01 closed
+(already-resolved); top 7 below renumbered.
 
 ### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
 
@@ -111,75 +118,61 @@ renumbered.
 - **Status**: pre-audit complete in
   `docs/explorations/tiptap-3-migration.md`.
 
-### 2. Multi-book wizard finishing work
-
-- **ID**: CIO-08-FU-01 (new, deferred from a809943)
-- **Effort**: 3-4h
-- **Why rank 2**: cleaner UX in the multi-book BGB import path.
-  Two sub-items:
-  - Full `useMachine` migration of `ImportWizardModal` (currently
-    a partial XState v5 graph alongside legacy state).
-  - Dedicated `SuccessMultiStep` with per-book navigation links
-    instead of the single "Done" terminal.
-- **Status**: deferred during PGS work. (Promoted from rank 3
-  after PS-09-FU-01 closed as already-resolved.)
-
-### 3. PS-13 - "Save as new chapter" in ConflictResolutionDialog
+### 2. PS-13 - "Save as new chapter" in ConflictResolutionDialog
 
 - **ID**: PS-13
 - **Effort**: 2-3h
-- **Why rank 4**: real UX gap in the 409 conflict flow. Needs
+- **Why rank 2**: real UX gap in the 409 conflict flow. Needs
   new endpoint (`POST /api/books/{id}/chapters/fork`), 8-language
   i18n, E2E coverage. Position-ordering scope discussion before
-  implementation.
-- **Status**: tracked in ROADMAP, no design pinned.
+  implementation. (Promoted after CIO-08-FU-01 shipped.)
 
-### 4. PGS-03 follow-up: mark_conflict + rename detection
+### 3. PGS-03 follow-up: mark_conflict + rename detection
 
 - **ID**: PGS-03-FU-01 (new)
 - **Effort**: M (~6-8h split)
-- **Why rank 4**: out-of-MVP-scope items from PGS-03. Useful
+- **Why rank 3**: out-of-MVP-scope items from PGS-03. Useful
   once a real translation workflow exercises the smart-merge
   path. `mark_conflict` writes both versions as a visible
   conflict block in the chapter content; rename detection
   collapses delete+add pairs.
 - **Status**: deferred at MVP cut.
 
-### 5. PGS-04 follow-up: cross-language conflict UI
+### 4. PGS-04 follow-up: cross-language conflict UI
 
 - **ID**: PGS-04-FU-01 (new)
 - **Effort**: M
-- **Why rank 5**: deferred from PGS-04. Two diverging language
+- **Why rank 4**: deferred from PGS-04. Two diverging language
   branches with incompatible chapter structure currently surface
   as silent skip + log. UI needed when first user hits this.
 - **Status**: deferred at MVP cut. Triggered by user report.
 
-### 6. Monitor v0.22.0 → v0.22.1 upgrade feedback
+### 5. Monitor v0.22.0 → v0.22.1 upgrade feedback
 
 - **ID**: MAINT-01
 - **Effort**: 0 code (review only)
-- **Why rank 6**: scheduled review on 2026-05-09 (14 days out).
+- **Why rank 5**: scheduled review on 2026-05-09 (14 days out).
   No telemetry; drift would surface as bug reports. If silent,
   close. If reports, audit other `Mapped` columns added without
   Alembic revisions.
 - **Status**: open, time-bound.
 
-### 7. AR-01 - article authoring validation log
+### 6. AR-01 - article authoring validation log
 
 - **ID**: AR-01
 - **Effort**: 0 new code; observation only
-- **Why rank 7**: validates whether article-publication workflow
+- **Why rank 6**: validates whether article-publication workflow
   warrants a Bibliogon feature at all. 3-5 cross-posting workflows
   logged in `docs/journal/article-workflow-observations.md`. Drives
   AR-02 architecture decision.
 - **Status**: open log file; fill as part of normal release-article
   publication.
 
-### 8. DOC-03 - plugin author docs refresh
+### 7. DOC-03 - plugin author docs refresh
 
 - **ID**: DOC-03
 - **Effort**: M (~3h)
-- **Why rank 8**: `docs/help/{de,en}/developers/plugins.md` covers
+- **Why rank 7**: `docs/help/{de,en}/developers/plugins.md` covers
   the PGS-01 patterns (source adapter, two registries) but not
   PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
   side-files via lazy import). Update before next plugin author
@@ -192,8 +185,8 @@ renumbered.
 
 ### Plugin work
 
-- **PGS-03-FU-01**: mark_conflict + rename detection. See top #4.
-- **PGS-04-FU-01**: cross-language conflict UI. See top #5.
+- **PGS-03-FU-01**: mark_conflict + rename detection. See top #3.
+- **PGS-04-FU-01**: cross-language conflict UI. See top #4.
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
@@ -201,9 +194,9 @@ renumbered.
 ### Core features
 
 - **PS-13**: "Save as new chapter" in ConflictResolutionDialog.
-  See top #3.
+  See top #2.
 - **PS-14+**: future polish items, surface as found.
-- **CIO-08-FU-01**: multi-book wizard finishing. See top #2.
+- **CIO-08-FU-01**: closed; see Recently closed.
 - **TM-04b sub-items** (chapter-template followups): update
   endpoint exposed in UI, JSON export/import, multi-chapter
   templates. Effort: 4-6h spread across three independent items.
@@ -256,7 +249,7 @@ renumbered.
 
 ### Validation tracks
 
-- **AR-01**: article authoring validation log. See top #7.
+- **AR-01**: article authoring validation log. See top #6.
 - **AR-02**: article authoring architecture decision. Blocked on
   AR-01 data.
 - **AR-03+**: article authoring implementation phases. Blocked
@@ -264,7 +257,7 @@ renumbered.
 
 ### Maintenance
 
-- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #6.
+- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #5.
 
 ---
 
