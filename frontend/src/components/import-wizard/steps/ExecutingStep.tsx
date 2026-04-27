@@ -23,7 +23,7 @@ export function ExecutingStep({
     duplicateAction: DuplicateAction;
     existingBookId: string | null;
     gitAdoption?: GitAdoption | null;
-    onSuccess: (bookId: string) => void;
+    onSuccess: (bookId: string, bookIds: string[]) => void;
     onError: (error: WizardError) => void;
 }) {
     const { t } = useI18n();
@@ -55,7 +55,11 @@ export function ExecutingStep({
                     );
                     return;
                 }
-                onSuccess(response.book_id);
+                const ids =
+                    response.imported_book_ids && response.imported_book_ids.length > 0
+                        ? response.imported_book_ids
+                        : [response.book_id];
+                onSuccess(response.book_id, ids);
             })
             .catch((err: unknown) => {
                 onError(

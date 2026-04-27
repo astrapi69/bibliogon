@@ -1153,6 +1153,10 @@ ui:
     success_title: Η εισαγωγή ολοκληρώθηκε
     success_book_title: 'Εισήχθη ως: {title}'
     success_open_editor: Άνοιγμα στον επεξεργαστή
+    success_multi_title: '{n} βιβλία εισήχθησαν'
+    success_multi_subtitle: Ανοίξτε ένα για επεξεργασία ή κλείστε τον οδηγό για επιστροφή στον πίνακα.
+    success_multi_open: Άνοιγμα
+    success_multi_done: Έτοιμο
     success_import_another: Εισαγωγή άλλου
     success_auto_redirect: Άνοιγμα επεξεργαστή σε {n}δ...
     error_title: Αποτυχία εισαγωγής

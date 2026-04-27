@@ -1153,6 +1153,10 @@ ui:
     success_title: インポート完了
     success_book_title: 'インポート: {title}'
     success_open_editor: エディタで開く
+    success_multi_title: '{n} 冊の本をインポートしました'
+    success_multi_subtitle: 編集する本を開くか、ウィザードを閉じてダッシュボードに戻ります。
+    success_multi_open: 開く
+    success_multi_done: 完了
     success_import_another: 別のものをインポート
     success_auto_redirect: '{n}秒後にエディタを開きます...'
     error_title: インポート失敗

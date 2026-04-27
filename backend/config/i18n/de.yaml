@@ -1155,6 +1155,10 @@ ui:
     success_open_editor: Im Editor oeffnen
     success_import_another: Weiteres importieren
     success_auto_redirect: Oeffne Editor in {n}s...
+    success_multi_title: '{n} Buecher importiert'
+    success_multi_subtitle: Eines oeffnen zum Bearbeiten oder Wizard schliessen, um zum Dashboard zurueckzukehren.
+    success_multi_open: Oeffnen
+    success_multi_done: Fertig
     error_title: Import fehlgeschlagen
     error_retry: Erneut versuchen
     step_1_pick_folder: Oder Markdown-Ordner auswaehlen

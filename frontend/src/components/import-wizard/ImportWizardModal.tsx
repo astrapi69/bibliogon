@@ -5,84 +5,32 @@
  * own 4-step flow (upload -> detect -> preview -> execute) against the
  * new /api/import/* orchestrator endpoints. No existing import code
  * path is modified; the legacy button still uses /api/backup/smart-import.
+ *
+ * State + transitions live in ``machines/wizardMachine.ts`` (XState v5).
+ * This file is a thin renderer that subscribes via ``useMachine`` and
+ * forwards step-component callbacks as machine events. Async network
+ * calls remain inside the per-step components (DetectingStep,
+ * ExecutingStep) which dispatch the resulting events back to the
+ * machine via the callbacks supplied here.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useMachine } from "@xstate/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import type {
-    DetectedProject,
-    DuplicateInfo,
-    GitAdoption,
-    Overrides,
-} from "../../api/import";
-import type { WizardError } from "./errorContext";
+import type { Overrides } from "../../api/import";
+import { wizardMachine } from "./machines/wizardMachine";
 import { WizardErrorBoundary } from "./WizardErrorBoundary";
 import { UploadStep } from "./steps/UploadStep";
 import { DetectingStep } from "./steps/DetectingStep";
 import { PreviewStep } from "./steps/PreviewStep";
 import { ExecutingStep } from "./steps/ExecutingStep";
 import { SuccessStep } from "./steps/SuccessStep";
+import { SuccessMultiStep } from "./steps/SuccessMultiStep";
 import { ErrorStep } from "./steps/ErrorStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { PreviewMultiBookStep } from "./steps/PreviewMultiBookStep";
-
-interface WizardInput {
-    files: File[];
-    paths?: string[];
-    /** Set by the git URL path in Step 1; DetectingStep branches
-     * to the /api/import/detect/git endpoint when present. */
-    gitUrl?: string;
-}
-
-export type WizardState =
-    | { step: "upload" }
-    | { step: "detecting"; input: WizardInput }
-    | {
-          step: "summary";
-          input: WizardInput;
-          detected: DetectedProject;
-          duplicate: DuplicateInfo;
-          tempRef: string;
-      }
-    | {
-          step: "preview";
-          input: WizardInput;
-          detected: DetectedProject;
-          duplicate: DuplicateInfo;
-          tempRef: string;
-          overrides: Overrides;
-          duplicateAction: "create" | "overwrite";
-          gitAdoption: GitAdoption;
-      }
-    | {
-          step: "preview-multi";
-          input: WizardInput;
-          detected: DetectedProject;
-          tempRef: string;
-          selectedSourceIds: string[];
-          perBookDuplicateAction: Record<
-              string,
-              "skip" | "overwrite" | "create_new"
-          >;
-      }
-    | {
-          step: "executing";
-          input: WizardInput;
-          detected: DetectedProject;
-          tempRef: string;
-          overrides: Overrides;
-          duplicateAction: "create" | "overwrite";
-          existingBookId: string | null;
-          gitAdoption: GitAdoption;
-      }
-    | { step: "success"; bookId: string; title: string }
-    | {
-          step: "error";
-          error: WizardError;
-          retry?: () => void;
-      };
 
 export interface ImportWizardModalProps {
     open: boolean;
@@ -90,12 +38,22 @@ export interface ImportWizardModalProps {
     onImported?: (bookId: string) => void;
 }
 
-const STEP_NUMBERS: Record<WizardState["step"], number | null> = {
+type StepName =
+    | "upload"
+    | "detecting"
+    | "summary"
+    | "previewSingleBook"
+    | "previewMultiBook"
+    | "executing"
+    | "success"
+    | "error";
+
+const STEP_NUMBERS: Record<StepName, number | null> = {
     upload: 1,
     detecting: 2,
     summary: 2,
-    preview: 3,
-    "preview-multi": 3,
+    previewSingleBook: 3,
+    previewMultiBook: 3,
     executing: 4,
     success: 4,
     error: null,
@@ -107,8 +65,12 @@ export default function ImportWizardModal({
     onImported,
 }: ImportWizardModalProps) {
     const { t } = useI18n();
-    const [state, setState] = useState<WizardState>({ step: "upload" });
+    const [snapshot, send] = useMachine(wizardMachine);
     const bodyRef = useRef<HTMLDivElement>(null);
+    const importedRef = useRef<string | null>(null);
+
+    const stepName = snapshot.value as StepName;
+    const ctx = snapshot.context;
 
     // Focus the first interactive element in the step body when the
     // step changes. Improves keyboard UX and announces step content
@@ -122,10 +84,24 @@ export default function ImportWizardModal({
             el?.focus();
         });
         return () => window.cancelAnimationFrame(id);
-    }, [state.step, open]);
+    }, [stepName, open]);
+
+    // Fire onImported exactly once per successful execute - the machine
+    // re-enters "success" on RESET-then-import so we keep a ref to the
+    // book id we already announced.
+    useEffect(() => {
+        if (stepName !== "success") {
+            importedRef.current = null;
+            return;
+        }
+        if (ctx.bookId && importedRef.current !== ctx.bookId) {
+            importedRef.current = ctx.bookId;
+            onImported?.(ctx.bookId);
+        }
+    }, [stepName, ctx.bookId, onImported]);
 
     const resetAndClose = () => {
-        setState({ step: "upload" });
+        send({ type: "RESET" });
         onClose();
     };
 
@@ -133,7 +109,7 @@ export default function ImportWizardModal({
         if (!nextOpen) resetAndClose();
     };
 
-    const stepNumber = STEP_NUMBERS[state.step];
+    const stepNumber = STEP_NUMBERS[stepName];
 
     return (
         <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -184,218 +160,192 @@ export default function ImportWizardModal({
                         style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}
                     >
                         <WizardErrorBoundary onClose={resetAndClose}>
-                        {state.step === "upload" && (
+                        {stepName === "upload" && (
                             <UploadStep
-                                onInputSelected={(selection) =>
-                                    setState({
-                                        step: "detecting",
-                                        input: {
+                                onInputSelected={(selection) => {
+                                    if (selection.gitUrl) {
+                                        send({
+                                            type: "SELECT_GIT_URL",
+                                            url: selection.gitUrl,
+                                        });
+                                    } else {
+                                        send({
+                                            type: "SELECT_FILE",
                                             files: selection.files,
                                             paths: selection.paths,
-                                            gitUrl: selection.gitUrl,
-                                        },
-                                    })
-                                }
+                                        });
+                                    }
+                                }}
                             />
                         )}
-                        {state.step === "detecting" && (
+                        {stepName === "detecting" && ctx.input && (
                             <DetectingStep
-                                files={state.input.files}
-                                paths={state.input.paths}
-                                gitUrl={state.input.gitUrl}
+                                files={ctx.input.kind === "file" ? ctx.input.files : []}
+                                paths={
+                                    ctx.input.kind === "file"
+                                        ? ctx.input.paths
+                                        : undefined
+                                }
+                                gitUrl={
+                                    ctx.input.kind === "git-url"
+                                        ? ctx.input.url
+                                        : undefined
+                                }
                                 onDetected={(detected, duplicate, tempRef) =>
-                                    setState({
-                                        step: "summary",
-                                        input: state.input,
+                                    send({
+                                        type: "DETECTION_COMPLETE",
                                         detected,
                                         duplicate,
                                         tempRef,
                                     })
                                 }
-                                onError={(error, retry) =>
-                                    setState({
-                                        step: "error",
-                                        error,
-                                        retry: () => {
-                                            setState({ step: "detecting", input: state.input });
-                                            retry?.();
-                                        },
-                                    })
+                                onError={(error) =>
+                                    send({ type: "DETECTION_FAILED", error })
                                 }
-                                onCancel={() => setState({ step: "upload" })}
+                                onCancel={() => send({ type: "CANCEL" })}
                             />
                         )}
-                        {state.step === "summary" && (
+                        {stepName === "summary" && ctx.detected && (
                             <SummaryStep
-                                detected={state.detected}
-                                onBack={() => setState({ step: "upload" })}
-                                onNext={() => {
-                                    if (state.detected.is_multi_book) {
-                                        const sids = (
-                                            state.detected.books ?? []
-                                        ).map((b) => b.source_identifier);
-                                        setState({
-                                            step: "preview-multi",
-                                            input: state.input,
-                                            detected: state.detected,
-                                            tempRef: state.tempRef,
-                                            selectedSourceIds: sids,
-                                            perBookDuplicateAction: {},
-                                        });
-                                    } else {
-                                        setState({
-                                            step: "preview",
-                                            input: state.input,
-                                            detected: state.detected,
-                                            duplicate: state.duplicate,
-                                            tempRef: state.tempRef,
-                                            overrides: {},
-                                            duplicateAction: "create",
-                                            gitAdoption: "start_fresh",
-                                        });
-                                    }
-                                }}
+                                detected={ctx.detected}
+                                onBack={() => send({ type: "CANCEL" })}
+                                onNext={() => send({ type: "ADVANCE_FROM_SUMMARY" })}
                             />
                         )}
-                        {state.step === "preview" && (
-                            <PreviewStep
-                                detected={state.detected}
-                                duplicate={state.duplicate}
-                                overrides={state.overrides}
-                                duplicateAction={state.duplicateAction}
-                                tempRef={state.tempRef}
-                                gitAdoption={state.gitAdoption}
-                                onOverridesChange={(overrides) =>
-                                    setState({ ...state, overrides })
-                                }
-                                onDuplicateActionChange={(action) => {
-                                    if (action === "cancel") {
-                                        resetAndClose();
-                                        return;
+                        {stepName === "previewSingleBook" &&
+                            ctx.detected &&
+                            ctx.duplicate &&
+                            ctx.tempRef && (
+                                <PreviewStep
+                                    detected={ctx.detected}
+                                    duplicate={ctx.duplicate}
+                                    overrides={ctx.overrides}
+                                    duplicateAction={ctx.duplicateAction}
+                                    tempRef={ctx.tempRef}
+                                    gitAdoption={ctx.gitAdoption}
+                                    onOverridesChange={(overrides) =>
+                                        send({
+                                            type: "OVERRIDES_CHANGE",
+                                            overrides,
+                                        })
                                     }
-                                    setState({ ...state, duplicateAction: action });
-                                }}
-                                onGitAdoptionChange={(gitAdoption) =>
-                                    setState({ ...state, gitAdoption })
-                                }
-                                onBack={() => setState({ step: "upload" })}
-                                onConfirm={() =>
-                                    setState({
-                                        step: "executing",
-                                        input: state.input,
-                                        detected: state.detected,
-                                        tempRef: state.tempRef,
-                                        overrides: state.overrides,
-                                        duplicateAction: state.duplicateAction,
-                                        existingBookId:
-                                            state.duplicate.existing_book_id ?? null,
-                                        gitAdoption: state.gitAdoption,
-                                    })
-                                }
-                            />
-                        )}
-                        {state.step === "preview-multi" && (
+                                    onDuplicateActionChange={(action) => {
+                                        if (action === "cancel") {
+                                            resetAndClose();
+                                            return;
+                                        }
+                                        send({
+                                            type: "DUPLICATE_ACTION_CHANGE",
+                                            action,
+                                        });
+                                    }}
+                                    onGitAdoptionChange={(choice) =>
+                                        send({
+                                            type: "GIT_ADOPTION_CHANGE",
+                                            choice,
+                                        })
+                                    }
+                                    onBack={() => send({ type: "CANCEL" })}
+                                    onConfirm={() => send({ type: "EXECUTE" })}
+                                />
+                            )}
+                        {stepName === "previewMultiBook" && ctx.detected && (
                             <PreviewMultiBookStep
-                                detected={state.detected}
+                                detected={ctx.detected}
                                 selection={{
-                                    selectedSourceIds: state.selectedSourceIds,
+                                    selectedSourceIds:
+                                        ctx.multiBookSelection.selectedSourceIds,
                                     perBookDuplicateAction:
-                                        state.perBookDuplicateAction,
+                                        ctx.multiBookSelection
+                                            .perBookDuplicateAction,
                                 }}
                                 onToggle={(sid) =>
-                                    setState({
-                                        ...state,
-                                        selectedSourceIds:
-                                            state.selectedSourceIds.includes(sid)
-                                                ? state.selectedSourceIds.filter(
-                                                      (id) => id !== sid,
-                                                  )
-                                                : [...state.selectedSourceIds, sid],
+                                    send({
+                                        type: "TOGGLE_BOOK_SELECTION",
+                                        sourceId: sid,
                                     })
                                 }
                                 onSelectAll={() =>
-                                    setState({
-                                        ...state,
-                                        selectedSourceIds: (
-                                            state.detected.books ?? []
-                                        ).map((b) => b.source_identifier),
-                                    })
+                                    send({ type: "SELECT_ALL_BOOKS" })
                                 }
                                 onDeselectAll={() =>
-                                    setState({
-                                        ...state,
-                                        selectedSourceIds: [],
-                                    })
+                                    send({ type: "DESELECT_ALL_BOOKS" })
                                 }
                                 onSetDuplicateAction={(sid, action) =>
-                                    setState({
-                                        ...state,
-                                        perBookDuplicateAction: {
-                                            ...state.perBookDuplicateAction,
-                                            [sid]: action,
-                                        },
+                                    send({
+                                        type: "SET_PER_BOOK_DUPLICATE_ACTION",
+                                        sourceId: sid,
+                                        action,
                                     })
                                 }
-                                onBack={() => setState({ step: "upload" })}
-                                onConfirm={() =>
-                                    setState({
-                                        step: "executing",
-                                        input: state.input,
-                                        detected: state.detected,
-                                        tempRef: state.tempRef,
-                                        overrides: {
-                                            selected_books:
-                                                state.selectedSourceIds,
-                                            per_book_duplicate:
-                                                state.perBookDuplicateAction as unknown as Record<
-                                                    string,
-                                                    string
-                                                >,
-                                        } as unknown as Overrides,
-                                        duplicateAction: "create",
-                                        existingBookId: null,
-                                        gitAdoption: "start_fresh",
-                                    })
-                                }
+                                onBack={() => send({ type: "CANCEL" })}
+                                onConfirm={() => send({ type: "EXECUTE" })}
                             />
                         )}
-                        {state.step === "executing" && (
-                            <ExecutingStep
-                                tempRef={state.tempRef}
-                                overrides={state.overrides}
-                                duplicateAction={state.duplicateAction}
-                                existingBookId={state.existingBookId}
-                                gitAdoption={state.gitAdoption}
-                                onSuccess={(bookId) => {
-                                    const title =
-                                        (typeof state.overrides.title === "string" &&
-                                            state.overrides.title) ||
-                                        state.detected.title ||
-                                        t("ui.import_wizard.untitled_book", "Untitled");
-                                    setState({ step: "success", bookId, title });
-                                    onImported?.(bookId);
-                                }}
-                                onError={(error) =>
-                                    setState({
-                                        step: "error",
-                                        error,
-                                        retry: () => setState({ ...state }),
-                                    })
-                                }
-                            />
-                        )}
-                        {state.step === "success" && (
-                            <SuccessStep
-                                bookId={state.bookId}
-                                title={state.title}
-                                onClose={resetAndClose}
-                                onAnother={() => setState({ step: "upload" })}
-                            />
-                        )}
-                        {state.step === "error" && (
+                        {stepName === "executing" &&
+                            ctx.detected &&
+                            ctx.tempRef && (
+                                <ExecutingStep
+                                    tempRef={ctx.tempRef}
+                                    overrides={buildExecuteOverrides(ctx)}
+                                    duplicateAction={ctx.duplicateAction}
+                                    existingBookId={
+                                        ctx.duplicate?.existing_book_id ?? null
+                                    }
+                                    gitAdoption={ctx.gitAdoption}
+                                    onSuccess={(bookId, bookIds) => {
+                                        const title =
+                                            (typeof ctx.overrides.title ===
+                                                "string" &&
+                                                ctx.overrides.title) ||
+                                            ctx.detected?.title ||
+                                            t(
+                                                "ui.import_wizard.untitled_book",
+                                                "Untitled",
+                                            );
+                                        send({
+                                            type: "EXECUTE_SUCCESS",
+                                            bookId,
+                                            bookIds,
+                                            title,
+                                        });
+                                    }}
+                                    onError={(error) =>
+                                        send({ type: "EXECUTE_FAILED", error })
+                                    }
+                                />
+                            )}
+                        {stepName === "success" &&
+                            (ctx.importedBookIds.length > 1 &&
+                            ctx.detected?.is_multi_book ? (
+                                <SuccessMultiStep
+                                    bookIds={ctx.importedBookIds}
+                                    books={ctx.detected.books ?? []}
+                                    onClose={resetAndClose}
+                                    onAnother={() =>
+                                        send({ type: "RESET" })
+                                    }
+                                />
+                            ) : (
+                                ctx.bookId && (
+                                    <SuccessStep
+                                        bookId={ctx.bookId}
+                                        title={ctx.title}
+                                        onClose={resetAndClose}
+                                        onAnother={() =>
+                                            send({ type: "RESET" })
+                                        }
+                                    />
+                                )
+                            ))}
+                        {stepName === "error" && ctx.error && (
                             <ErrorStep
-                                error={state.error}
-                                onRetry={state.retry}
+                                error={ctx.error}
+                                onRetry={
+                                    ctx.error.retryable
+                                        ? () => send({ type: "RETRY" })
+                                        : undefined
+                                }
                                 onClose={resetAndClose}
                             />
                         )}
@@ -406,6 +356,27 @@ export default function ImportWizardModal({
             </Dialog.Portal>
         </Dialog.Root>
     );
+}
+
+/** Multi-book branch piggybacks on the same Overrides payload by
+ * stuffing ``selected_books`` + ``per_book_duplicate``; the single-book
+ * branch sends the per-field overrides as-is. */
+function buildExecuteOverrides(ctx: {
+    overrides: Overrides;
+    detected: { is_multi_book?: boolean } | null;
+    multiBookSelection: {
+        selectedSourceIds: string[];
+        perBookDuplicateAction: Record<string, string>;
+    };
+}): Overrides {
+    if (!ctx.detected?.is_multi_book) {
+        return ctx.overrides;
+    }
+    return {
+        selected_books: ctx.multiBookSelection.selectedSourceIds,
+        per_book_duplicate:
+            ctx.multiBookSelection.perBookDuplicateAction,
+    } as unknown as Overrides;
 }
 
 const WIZARD_STYLES = `

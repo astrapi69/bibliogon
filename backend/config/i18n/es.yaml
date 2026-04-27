@@ -1153,6 +1153,10 @@ ui:
     success_title: Importacion completa
     success_book_title: 'Importado como: {title}'
     success_open_editor: Abrir en editor
+    success_multi_title: '{n} libros importados'
+    success_multi_subtitle: Abre uno para empezar a editar, o cierra el asistente para volver al panel.
+    success_multi_open: Abrir
+    success_multi_done: Listo
     success_import_another: Importar otro
     success_auto_redirect: Abriendo editor en {n}s...
     error_title: Error de importacion

@@ -1153,6 +1153,10 @@ ui:
     success_title: Import complete
     success_book_title: 'Imported as: {title}'
     success_open_editor: Open in editor
+    success_multi_title: '{n} books imported'
+    success_multi_subtitle: Open one to start editing, or close the wizard to return to the dashboard.
+    success_multi_open: Open
+    success_multi_done: Done
     success_import_another: Import another
     success_auto_redirect: Opening editor in {n}s...
     error_title: Import failed

@@ -46,7 +46,7 @@ describe("ExecutingStep", () => {
                 onError={vi.fn()}
             />,
         );
-        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("new-1"));
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("new-1", ["new-1"]));
         expect(executeImportMock).toHaveBeenCalledWith(
             "imp-1",
             { title: "X" },
@@ -70,7 +70,7 @@ describe("ExecutingStep", () => {
                 onError={vi.fn()}
             />,
         );
-        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("new-2"));
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("new-2", ["new-2"]));
         expect(executeImportMock).toHaveBeenCalledWith(
             "imp-git",
             { title: "X" },

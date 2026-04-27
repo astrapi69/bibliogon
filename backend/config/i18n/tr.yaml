@@ -1153,6 +1153,10 @@ ui:
     success_title: Ice aktarma tamamlandi
     success_book_title: 'Ice aktarildi: {title}'
     success_open_editor: Duzenleyicide ac
+    success_multi_title: '{n} kitap iceri aktarildi'
+    success_multi_subtitle: Birini duzenlemek icin ac veya panele donmek icin sihirbazi kapat.
+    success_multi_open: Ac
+    success_multi_done: Tamam
     success_import_another: Baska ice aktar
     success_auto_redirect: '{n} sn icinde duzenleyici aciliyor...'
     error_title: Ice aktarma basarisiz
