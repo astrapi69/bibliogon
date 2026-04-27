@@ -467,3 +467,239 @@ def test_multi_branch_import_endpoint_415_when_no_matching_branches(tmp_path) ->
         json={"git_url": str(repo_root)},
     )
     assert resp.status_code == 415
+
+
+# --- PGS-04-FU-01: skipped-branch surface ---
+
+
+def _seed_repo_with_broken_branch(repo_root, branches: dict[str, str]) -> None:
+    """Like _seed_translation_repo but the listed broken-* branches
+    are seeded WITHOUT config/metadata.yaml so the importer skips
+    them with the no_wbt_layout reason."""
+    import git
+
+    repo_root.mkdir(parents=True, exist_ok=True)
+    repo = git.Repo.init(repo_root)
+    config = repo_root / "config"
+    config.mkdir()
+    manuscript = repo_root / "manuscript" / "chapters"
+    manuscript.mkdir(parents=True)
+
+    (config / "metadata.yaml").write_text(
+        "title: Bridge\nauthor: A\nlanguage: de\n", encoding="utf-8"
+    )
+    (manuscript / "01-intro.md").write_text("# Intro\n\nbase\n", encoding="utf-8")
+    repo.git.add(A=True)
+    repo.index.commit("init")
+    try:
+        repo.git.branch("-M", "main")
+    except git.GitCommandError:
+        pass
+
+    for branch_name, language in branches.items():
+        if branch_name == "main":
+            continue
+        repo.git.checkout("-b", branch_name)
+        if language == "broken":
+            # Wipe config dir so this branch lacks a WBT layout.
+            (config / "metadata.yaml").unlink()
+            (manuscript / "01-intro.md").write_text(
+                "no metadata!\n", encoding="utf-8"
+            )
+        else:
+            (config / "metadata.yaml").write_text(
+                f"title: Bridge\nauthor: A\nlanguage: {language}\n",
+                encoding="utf-8",
+            )
+            (manuscript / "01-intro.md").write_text(
+                f"# Intro\n\n{language}\n", encoding="utf-8"
+            )
+        repo.git.add(A=True)
+        repo.index.commit(f"branch {branch_name}")
+        repo.git.checkout("main")
+
+
+def test_import_translation_group_records_skipped_no_wbt_layout(
+    db: Session, tmp_path
+) -> None:
+    """Branch without config/metadata.yaml lands in skipped[] with
+    reason='no_wbt_layout', and successful sibling branches still
+    import + link normally."""
+    import shutil
+
+    from app.models import GitSyncMapping
+    from app.services.translation_import import import_translation_group
+
+    repo_root = tmp_path / "mixed-repo"
+    _seed_repo_with_broken_branch(
+        repo_root,
+        {"main": "de", "main-fr": "fr", "main-xx": "broken"},
+    )
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    result = import_translation_group(
+        db, git_url=str(repo_root), uploads_dir=uploads,
+    )
+    try:
+        assert len(result.books) == 2
+        languages = sorted(b.language for b in result.books)
+        assert languages == ["de", "fr"]
+
+        assert len(result.skipped) == 1
+        skip = result.skipped[0]
+        assert skip.branch == "main-xx"
+        assert skip.reason == "no_wbt_layout"
+        assert "metadata.yaml" in skip.detail
+    finally:
+        shutil.rmtree(uploads, ignore_errors=True)
+        for entry in result.books:
+            book = db.get(Book, entry.book_id)
+            mapping = db.get(GitSyncMapping, entry.book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+
+
+def test_import_translation_group_records_skipped_import_failed(
+    db: Session, tmp_path, monkeypatch
+) -> None:
+    """When the inner WBT import raises, the branch is recorded in
+    skipped[] with reason='import_failed' + the exception class name
+    in detail; other branches continue to import."""
+    import shutil
+
+    from app.models import GitSyncMapping
+    from app.services import translation_import as ti
+    from app.services.translation_import import import_translation_group
+
+    repo_root = tmp_path / "broken-import"
+    _seed_translation_repo(
+        repo_root,
+        {"main": "de", "main-fr": "fr"},
+    )
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    # Force the WBT importer to raise for the FR branch only.
+    real_import = ti._import_one_branch
+
+    def patched(db, *, repo, staging, branch, uploads_dir):
+        if branch == "main-fr":
+            raise RuntimeError("incompatible chapter structure")
+        return real_import(
+            db, repo=repo, staging=staging, branch=branch, uploads_dir=uploads_dir,
+        )
+
+    monkeypatch.setattr(ti, "_import_one_branch", patched)
+
+    result = import_translation_group(
+        db, git_url=str(repo_root), uploads_dir=uploads,
+    )
+    try:
+        assert len(result.books) == 1
+        assert result.books[0].language == "de"
+
+        assert len(result.skipped) == 1
+        skip = result.skipped[0]
+        assert skip.branch == "main-fr"
+        assert skip.reason == "import_failed"
+        assert "RuntimeError" in skip.detail
+        assert "incompatible chapter structure" in skip.detail
+    finally:
+        shutil.rmtree(uploads, ignore_errors=True)
+        for entry in result.books:
+            book = db.get(Book, entry.book_id)
+            mapping = db.get(GitSyncMapping, entry.book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+
+
+def test_multi_branch_endpoint_payload_includes_skipped(
+    db: Session, tmp_path
+) -> None:
+    """HTTP smoke: skipped[] surfaces in the response body so the
+    wizard can render it. Default for clean imports is empty list."""
+    import shutil
+
+    from app.models import GitSyncMapping
+
+    repo_root = tmp_path / "endpoint-skip"
+    _seed_repo_with_broken_branch(
+        repo_root,
+        {"main": "de", "main-xx": "broken"},
+    )
+
+    resp = client.post(
+        "/api/translations/import-multi-branch",
+        json={"git_url": str(repo_root)},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert "skipped" in body
+    assert len(body["skipped"]) == 1
+    assert body["skipped"][0]["branch"] == "main-xx"
+    assert body["skipped"][0]["reason"] == "no_wbt_layout"
+
+    # Cleanup the imported book.
+    book_ids = [b["book_id"] for b in body["books"]]
+    try:
+        for book_id in book_ids:
+            mapping = db.get(GitSyncMapping, book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            book = db.get(Book, book_id)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+    finally:
+        from pathlib import Path as _P
+
+        for book_id in book_ids:
+            shutil.rmtree(_P("uploads") / "git-sync" / book_id, ignore_errors=True)
+
+
+def test_multi_branch_endpoint_default_skipped_is_empty_list(
+    db: Session, tmp_path
+) -> None:
+    """Clean import: skipped[] is the empty list, not missing/null."""
+    import shutil
+
+    from app.models import GitSyncMapping
+
+    repo_root = tmp_path / "endpoint-clean"
+    _seed_translation_repo(
+        repo_root,
+        {"main": "de", "main-en": "en"},
+    )
+
+    resp = client.post(
+        "/api/translations/import-multi-branch",
+        json={"git_url": str(repo_root)},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["skipped"] == []
+
+    book_ids = [b["book_id"] for b in body["books"]]
+    try:
+        for book_id in book_ids:
+            mapping = db.get(GitSyncMapping, book_id)
+            if mapping is not None:
+                db.delete(mapping)
+            book = db.get(Book, book_id)
+            if book is not None:
+                db.delete(book)
+        db.commit()
+    finally:
+        from pathlib import Path as _P
+
+        for book_id in book_ids:
+            shutil.rmtree(_P("uploads") / "git-sync" / book_id, ignore_errors=True)

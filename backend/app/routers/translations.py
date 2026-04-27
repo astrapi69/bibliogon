@@ -67,9 +67,28 @@ class ImportedBookEntry(BaseModel):
     title: str
 
 
+class SkippedBranchEntry(BaseModel):
+    """PGS-04-FU-01: per-branch skip surface.
+
+    Lets the wizard render "Branch X could not be imported because Y"
+    instead of swallowing the error in the backend log. ``reason`` is
+    a stable slug the frontend switches on for i18n; ``detail`` is the
+    raw exception message (truncated server-side) for diagnostics +
+    the GitHub-issue body.
+    """
+
+    branch: str
+    reason: str  # "no_wbt_layout" | "import_failed"
+    detail: str
+
+
 class MultiBranchImportResponse(BaseModel):
     translation_group_id: str | None
     books: list[ImportedBookEntry]
+    #: PGS-04-FU-01: branches the importer could not turn into books.
+    #: Empty list means every branch imported cleanly. Wizard renders
+    #: an "Attention required" section per entry.
+    skipped: list[SkippedBranchEntry] = []
 
 
 # --- endpoints ---
@@ -172,5 +191,13 @@ def import_multi_branch(
                 title=b.title,
             )
             for b in result.books
+        ],
+        skipped=[
+            SkippedBranchEntry(
+                branch=s.branch,
+                reason=s.reason,
+                detail=s.detail,
+            )
+            for s in result.skipped
         ],
     )

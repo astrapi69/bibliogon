@@ -58,6 +58,16 @@ class NoMatchingBranchesError(TranslationImportError):
     """Repository has no ``main`` and no ``main-XX`` branches."""
 
 
+class _NoWbtLayoutError(TranslationImportError):
+    """Internal: branch checkout has no ``config/metadata.yaml``.
+
+    Distinguished from a generic import failure so the caller can
+    record it under the ``no_wbt_layout`` reason slug instead of
+    ``import_failed``. Not exported - the public surface uses the
+    ``SkippedBranch`` payload instead.
+    """
+
+
 @dataclass
 class ImportedBook:
     book_id: str
@@ -67,9 +77,29 @@ class ImportedBook:
 
 
 @dataclass
+class SkippedBranch:
+    """PGS-04-FU-01: a branch the importer could not turn into a book.
+
+    Surfaces in the multi-branch import payload so the wizard can
+    show the user which translations need attention instead of
+    silently swallowing them. ``reason`` is a stable slug; ``detail``
+    is the (truncated) human-readable message for diagnostics.
+    """
+
+    branch: str
+    #: Stable slug. ``no_wbt_layout`` = branch lacks
+    #: ``config/metadata.yaml``. ``import_failed`` = the WBT importer
+    #: raised (typically incompatible chapter structure or missing
+    #: required metadata fields).
+    reason: str
+    detail: str
+
+
+@dataclass
 class MultiBranchResult:
     translation_group_id: str | None
     books: list[ImportedBook]
+    skipped: list[SkippedBranch]
 
 
 # --- public surface ---
@@ -83,11 +113,14 @@ def import_translation_group(
 ) -> MultiBranchResult:
     """Clone ``git_url`` once, import every matching branch as a book.
 
-    Returns the new ``translation_group_id`` and a row per imported
-    book. Raises :class:`CloneFailedError` /
-    :class:`NoMatchingBranchesError` on the obvious upstream
-    problems; per-branch failures log + skip rather than abort
-    the whole import (one broken branch must not lose the others).
+    Returns the new ``translation_group_id``, a row per imported
+    book, and a list of branches that could not be imported (with
+    a stable reason slug + diagnostic detail). Raises
+    :class:`CloneFailedError` / :class:`NoMatchingBranchesError` on
+    the obvious upstream problems; per-branch failures land in
+    ``skipped`` rather than aborting the whole import (one broken
+    branch must not lose the others). PGS-04-FU-01: ``skipped`` was
+    previously a silent log; the wizard now surfaces it.
     """
     import git
 
@@ -106,6 +139,7 @@ def import_translation_group(
             )
 
         imported: list[ImportedBook] = []
+        skipped: list[SkippedBranch] = []
         for branch in branches:
             try:
                 book = _import_one_branch(
@@ -115,10 +149,30 @@ def import_translation_group(
                     branch=branch,
                     uploads_dir=uploads_dir,
                 )
-            except Exception:
+            except _NoWbtLayoutError as exc:
+                logger.warning(
+                    "translation-import: branch %r has no WBT layout; skipping.",
+                    branch,
+                )
+                skipped.append(
+                    SkippedBranch(
+                        branch=branch,
+                        reason="no_wbt_layout",
+                        detail=str(exc)[:500],
+                    )
+                )
+                continue
+            except Exception as exc:
                 logger.exception(
                     "translation-import: branch %r failed; continuing.",
                     branch,
+                )
+                skipped.append(
+                    SkippedBranch(
+                        branch=branch,
+                        reason="import_failed",
+                        detail=f"{type(exc).__name__}: {exc}"[:500],
+                    )
                 )
                 continue
             if book is not None:
@@ -128,7 +182,7 @@ def import_translation_group(
     if len(imported) >= 2:
         group_id = link_books(db, book_ids=[b.book_id for b in imported])
 
-    return MultiBranchResult(translation_group_id=group_id, books=imported)
+    return MultiBranchResult(translation_group_id=group_id, books=imported, skipped=skipped)
 
 
 # --- internals ---
@@ -200,14 +254,13 @@ def _import_one_branch(
     repo.git.checkout(branch)
 
     # WBT importer expects a project root (the dir holding
-    # ``config/metadata.yaml``).
+    # ``config/metadata.yaml``). Raised so the caller records this
+    # under the ``no_wbt_layout`` reason instead of as a generic
+    # import_failed (the user wants to see "this branch has no
+    # book in it" distinctly from "the importer crashed").
     project_root = staging
     if not (project_root / "config" / "metadata.yaml").is_file():
-        logger.warning(
-            "translation-import: branch %r has no config/metadata.yaml; skipping.",
-            branch,
-        )
-        return None
+        raise _NoWbtLayoutError(f"branch {branch!r}: missing config/metadata.yaml")
 
     result = _import_project_root(db, project_root)
     book_id = str(result["book_id"])
