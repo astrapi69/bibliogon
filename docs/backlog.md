@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 closed)
+Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,18 @@ release pass.
 
 ## Recently closed
 
+- **DOC-03** (plugin author docs refresh): closed 2026-04-27 in
+  `ef299bc`. `docs/help/{en,de}/developers/plugins.md` gains 3
+  new sections (8 patterns) covering PGS-02..05:
+  bi-directional sync (per-book lock, soft per-subsystem
+  failure aggregation, one-shot pushurl + per-book
+  credential helper, failure-tolerant lazy imports), three-way
+  diff (read git refs without working-tree checkout, pure
+  classification + side-effecting application, post-process
+  collapse for rename detection), multi-branch (stable reason
+  slugs + payload-driven skip surface). EN 616 → 822 lines;
+  DE 499 → 705. Reference table maps each phase to its
+  landing commits.
 - **MAINT-01** (monitor v0.22.0 → v0.22.1 upgrade): closed
   early 2026-04-27 in `ffb1618`. No GitHub issues touched the
   v0.22.x migration topic since v0.22.1 shipped 2026-04-25.
@@ -146,8 +158,9 @@ CIO-08-FU-01 closed in `7c97d4f`, PGS-03-FU-01 closed across
 `819e571 + 5bfd76a + e58d9e1`, PS-13 closed across
 `39927ae + de4638d`, PGS-04-FU-01 closed across
 `06c7c1b + 75046b9`, MAINT-01 closed early in `ffb1618`,
-TD-01 + PS-09-FU-01 closed (already-resolved); top 3 below
-renumbered. DEP-02 deferred per user note (line below).
+DOC-03 closed in `ef299bc`, TD-01 + PS-09-FU-01 closed
+(already-resolved); top 2 below remain. DEP-02 deferred per
+user note (line below).
 
 ### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
 
@@ -173,16 +186,6 @@ renumbered. DEP-02 deferred per user note (line below).
 - **Status**: open log file; fill as part of normal release-article
   publication. (Promoted after MAINT-01 closed early.)
 
-### 3. DOC-03 - plugin author docs refresh
-
-- **ID**: DOC-03
-- **Effort**: M (~3h)
-- **Why rank 3**: `docs/help/{de,en}/developers/plugins.md` covers
-  the PGS-01 patterns (source adapter, two registries) but not
-  PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
-  side-files via lazy import). Update before next plugin author
-  arrives.
-- **Status**: open.
 
 ---
 
@@ -246,10 +249,7 @@ renumbered. DEP-02 deferred per user note (line below).
 - **DOC-02**: ROADMAP header refresh on next release (latest
   release line, last-updated date, "next active theme" line).
   Effort: trivial.
-- **DOC-03**: plugin author docs (`docs/help/{de,en}/developers/plugins.md`)
-  - update with PGS-02..05 patterns (per-book locks,
-  unified-commit fan-out, two-registry source adapters). Effort:
-  M.
+- **DOC-03**: closed; see Recently closed.
 
 ### Validation tracks
 
