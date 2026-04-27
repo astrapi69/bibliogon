@@ -386,3 +386,40 @@ class AudioVoice(Base):
 
     def __repr__(self) -> str:
         return f"<AudioVoice {self.voice_id!r} engine={self.engine} lang={self.language}>"
+
+
+class Article(Base):
+    """Standalone long-form article (AR-01 Phase 1).
+
+    Distinct from Book: no chapters, no front-matter, no ISBN. A
+    single TipTap document plus minimal metadata. Lifecycle is
+    `draft -> published -> archived`; per-platform publication
+    state, promo posts, SEO metadata, and drift detection are
+    explicitly Phase 2+ and not represented here.
+
+    `content_type` defaults to `"article"`; the column exists so a
+    future Blogpost / Tweet differentiation can land without a
+    schema change. Phase 1 only writes `"article"`.
+    """
+
+    __tablename__ = "articles"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    subtitle: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    author: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    content_type: Mapped[str] = mapped_column(String(20), nullable=False, default="article")
+    # TipTap JSON serialised to a string. Matches the Chapter.content
+    # convention (Bibliogon stores TipTap JSON as Text rather than the
+    # SQLAlchemy JSON type so the diff/version-history paths work the
+    # same way for both entities).
+    content_json: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return f"<Article {self.id!r} title={self.title!r} status={self.status}>"

@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # --- Enums ---
 
@@ -419,5 +419,51 @@ class ChapterTemplateRead(BaseModel):
     content: str | None
     language: str
     is_builtin: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+# --- Article schemas (AR-01 Phase 1) ---
+
+
+_ARTICLE_STATUSES = ("draft", "published", "archived")
+
+
+class ArticleCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=500)
+    subtitle: str | None = Field(default=None, max_length=500)
+    author: str | None = Field(default=None, max_length=300)
+    language: str = Field(default="en", min_length=2, max_length=10)
+
+
+class ArticleUpdate(BaseModel):
+    """PATCH body. All fields optional; only provided fields update."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    subtitle: str | None = Field(default=None, max_length=500)
+    author: str | None = Field(default=None, max_length=300)
+    language: str | None = Field(default=None, min_length=2, max_length=10)
+    content_json: str | None = None
+    status: str | None = None
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in _ARTICLE_STATUSES:
+            raise ValueError(f"status must be one of {_ARTICLE_STATUSES}, got {v!r}")
+        return v
+
+
+class ArticleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    subtitle: str | None
+    author: str | None
+    language: str
+    content_type: str
+    content_json: str
+    status: str
     created_at: datetime
     updated_at: datetime

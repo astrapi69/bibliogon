@@ -25,6 +25,7 @@ from app.hookspecs import BibliogonHookSpec
 from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F401, E402
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import (
+    articles,
     assets,
     audiobook,
     backup,
@@ -221,6 +222,7 @@ app.add_middleware(
 )
 
 app.include_router(books.router, prefix="/api")
+app.include_router(articles.router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")
