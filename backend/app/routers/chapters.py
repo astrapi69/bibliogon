@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import Book, Chapter, ChapterVersion
 from app.schemas import (
     ChapterCreate,
+    ChapterFork,
     ChapterOut,
     ChapterReorder,
     ChapterUpdate,
@@ -226,6 +227,58 @@ def restore_chapter_version(
     db.commit()
 
     return chapter
+
+
+@router.post(
+    "/{chapter_id}/fork",
+    response_model=ChapterOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def fork_chapter(
+    book_id: str,
+    chapter_id: str,
+    payload: ChapterFork,
+    db: Session = Depends(get_db),
+):
+    """PS-13: clone the user's local edit into a NEW chapter inserted
+    after the source chapter.
+
+    Used by the conflict-resolution dialog as a third option alongside
+    Keep / Discard. The source chapter is left untouched (it keeps the
+    server's current content); the new chapter holds the user's
+    unsaved draft so nothing is lost. Position of every chapter after
+    the source bumps by 1 to make room.
+
+    Returns the newly created chapter, ready for the frontend to
+    refresh its list and (optionally) navigate to.
+    """
+    _get_book_or_404(book_id, db)
+    source = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    if not source:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    new_position = source.position + 1
+    # Bump positions of everything below the source to keep the list
+    # gap-free + the insert deterministic. SQLAlchemy emits an
+    # UPDATE ... WHERE ... so this is one round-trip regardless of
+    # chapter count.
+    db.query(Chapter).filter(
+        Chapter.book_id == book_id,
+        Chapter.position >= new_position,
+    ).update({Chapter.position: Chapter.position + 1}, synchronize_session=False)
+
+    new_title = (payload.title or "").strip() or f"{source.title} (Local Draft)"
+    new_chapter = Chapter(
+        book_id=book_id,
+        title=new_title,
+        content=payload.content,
+        position=new_position,
+        chapter_type=source.chapter_type,
+    )
+    db.add(new_chapter)
+    db.commit()
+    db.refresh(new_chapter)
+    return new_chapter
 
 
 @router.delete("/{chapter_id}", status_code=status.HTTP_204_NO_CONTENT)

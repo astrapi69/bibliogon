@@ -253,6 +253,25 @@ class ChapterUpdate(BaseModel):
     chapter_type: ChapterType | None = None
 
 
+class ChapterFork(BaseModel):
+    """PS-13 body for ``POST /chapters/{id}/fork``.
+
+    Clones the user's local edit into a NEW chapter inserted directly
+    after the source chapter; the source chapter is left untouched (it
+    keeps whatever content the server already has). Used by
+    ConflictResolutionDialog as a third option alongside Keep/Discard:
+    the user preserves their unsaved work without overwriting the
+    server's version.
+    """
+
+    #: TipTap JSON the editor was about to save (string-serialised).
+    content: str
+    #: Optional title for the new chapter. When omitted the backend
+    #: appends a localisation-neutral suffix to the source title (the
+    #: frontend translates it before sending in practice).
+    title: str | None = None
+
+
 class ChapterSummary(BaseModel):
     """Chapter metadata without content (for book detail listings)."""
 

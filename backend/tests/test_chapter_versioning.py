@@ -206,3 +206,116 @@ def test_list_versions_for_nonexistent_chapter_returns_404():
     r = client.get(f"/api/books/{book_id}/chapters/ghost/versions")
     assert r.status_code == 404
     _cleanup(book_id)
+
+
+# --- PS-13: fork (Save as new chapter) ---
+
+
+def test_fork_creates_new_chapter_after_source_with_supplied_content():
+    """Fork inserts a new chapter at source.position + 1 with the
+    supplied content; source chapter is left untouched."""
+    book_id = _create_book()
+    source = _create_chapter(book_id, title="Original", content="server text")
+
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{source['id']}/fork",
+        json={"content": "my unsaved draft", "title": "My Draft"},
+    )
+    assert r.status_code == 201, r.text
+    new_chapter = r.json()
+    assert new_chapter["title"] == "My Draft"
+    assert new_chapter["content"] == "my unsaved draft"
+    assert new_chapter["position"] == source["position"] + 1
+    assert new_chapter["chapter_type"] == source["chapter_type"]
+    assert new_chapter["id"] != source["id"]
+
+    # Source chapter is untouched.
+    fresh_source = client.get(
+        f"/api/books/{book_id}/chapters/{source['id']}"
+    ).json()
+    assert fresh_source["content"] == "server text"
+    assert fresh_source["title"] == "Original"
+
+    _cleanup(book_id)
+
+
+def test_fork_default_title_appends_local_draft_suffix():
+    """When title is omitted the backend uses a neutral suffix."""
+    book_id = _create_book()
+    source = _create_chapter(book_id, title="Chapter One", content="x")
+
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{source['id']}/fork",
+        json={"content": "draft body"},
+    )
+    assert r.status_code == 201
+    assert r.json()["title"] == "Chapter One (Local Draft)"
+
+    _cleanup(book_id)
+
+
+def test_fork_bumps_positions_of_chapters_after_source():
+    """Inserting a forked chapter at position N shifts every subsequent
+    chapter by 1 so the list stays gap-free + the forked chapter sits
+    directly after its source."""
+    book_id = _create_book()
+    a = _create_chapter(book_id, title="A", content="a")
+    b = _create_chapter(book_id, title="B", content="b")
+    c = _create_chapter(book_id, title="C", content="c")
+    assert (a["position"], b["position"], c["position"]) == (0, 1, 2)
+
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{a['id']}/fork",
+        json={"content": "forked"},
+    )
+    assert r.status_code == 201
+    forked = r.json()
+    assert forked["position"] == 1
+
+    chapters = client.get(f"/api/books/{book_id}/chapters").json()
+    by_id = {ch["id"]: ch["position"] for ch in chapters}
+    assert by_id[a["id"]] == 0
+    assert by_id[forked["id"]] == 1
+    assert by_id[b["id"]] == 2
+    assert by_id[c["id"]] == 3
+
+    _cleanup(book_id)
+
+
+def test_fork_404_when_source_chapter_missing():
+    book_id = _create_book()
+    r = client.post(
+        f"/api/books/{book_id}/chapters/ghost/fork",
+        json={"content": "draft"},
+    )
+    assert r.status_code == 404
+    _cleanup(book_id)
+
+
+def test_fork_404_when_book_missing():
+    r = client.post(
+        "/api/books/ghost-book/chapters/ghost-chap/fork",
+        json={"content": "draft"},
+    )
+    assert r.status_code == 404
+
+
+def test_fork_inherits_source_chapter_type():
+    """Fork preserves chapter_type so a forked preface stays a preface
+    in the new row."""
+    book_id = _create_book()
+    r = client.post(
+        f"/api/books/{book_id}/chapters",
+        json={"title": "P", "content": "p", "chapter_type": "preface"},
+    )
+    source = r.json()
+    assert source["chapter_type"] == "preface"
+
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{source['id']}/fork",
+        json={"content": "draft"},
+    )
+    assert r.status_code == 201
+    assert r.json()["chapter_type"] == "preface"
+
+    _cleanup(book_id)
