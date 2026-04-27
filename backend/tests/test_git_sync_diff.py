@@ -333,7 +333,7 @@ def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
             {"section": "chapters", "slug": "foo", "action": "take_remote"},
         ],
     )
-    assert counts == {"updated": 1, "created": 0, "deleted": 0, "skipped": 0}
+    assert counts == {"updated": 1, "created": 0, "deleted": 0, "marked": 0, "skipped": 0}
 
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -506,7 +506,9 @@ def test_resolve_endpoint_404_on_unmapped_book(book: Book) -> None:
 def test_resolve_endpoint_validates_action_pattern(
     db: Session, book: Book, tmp_path: Path
 ) -> None:
-    """Pydantic-level rejection: action must be keep_local or take_remote."""
+    """Pydantic-level rejection: action must be keep_local, take_remote,
+    or mark_conflict. PGS-03-FU-01 promoted mark_conflict from a
+    follow-up to a real action; bogus values still 422."""
     bare = tmp_path / "remote.git"
     git.Repo.init(bare, bare=True)
     work = tmp_path / "work"
@@ -526,7 +528,7 @@ def test_resolve_endpoint_validates_action_pattern(
         f"/api/git-sync/{book.id}/resolve",
         json={
             "resolutions": [
-                {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
+                {"section": "chapters", "slug": "foo", "action": "delete_everything"},
             ],
         },
     )
@@ -570,3 +572,185 @@ def test_diff_endpoint_returns_payload_with_counts(
     assert entry["section"] == "chapters"
     assert entry["slug"] == "foo"
     assert entry["classification"] == "unchanged"
+
+
+# --- PGS-03-FU-01: mark_conflict ---
+
+
+def test_build_conflict_markdown_emits_git_style_block() -> None:
+    from app.services.git_sync_diff import build_conflict_markdown
+
+    out = build_conflict_markdown(
+        local_body="local body line\nsecond local",
+        remote_body="remote body line",
+    )
+    assert out == (
+        "<<<<<<< Bibliogon\n"
+        "local body line\nsecond local\n"
+        "=======\n"
+        "remote body line\n"
+        ">>>>>>> Repository\n"
+    )
+
+
+def test_build_conflict_markdown_strips_leading_trailing_newlines() -> None:
+    from app.services.git_sync_diff import build_conflict_markdown
+
+    out = build_conflict_markdown(
+        local_body="\n\nlocal\n\n", remote_body="\nremote\n"
+    )
+    assert "<<<<<<< Bibliogon\nlocal\n=======\nremote\n>>>>>>> Repository\n" == out
+
+
+def test_apply_resolutions_mark_conflict_writes_both_versions(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """End-to-end: build a both_changed conflict, apply mark_conflict,
+    verify the DB chapter content carries both bodies inside git-style
+    markers and the cursor advances."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nbase body\n")
+    base_sha = _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted = Path(mapping.local_clone_path)
+    persisted_repo = git.Repo(str(persisted))
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("local edit"),
+        )
+    )
+    db.commit()
+
+    # Remote diverges too.
+    _write_wbt_chapter(persisted, "chapters", "01-foo.md", "# Foo\n\nremote edit\n")
+    new_sha = _commit_all(persisted_repo, "remote progress")
+    assert new_sha != base_sha
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
+        ],
+    )
+    assert counts == {
+        "updated": 0,
+        "created": 0,
+        "deleted": 0,
+        "marked": 1,
+        "skipped": 0,
+    }
+
+    chapter = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one()
+    # Markers survive md_to_html as plain text in <p> tags.
+    assert "&lt;&lt;&lt;&lt;&lt;&lt;&lt; Bibliogon" in chapter.content or (
+        "<<<<<<< Bibliogon" in chapter.content
+    )
+    assert "local edit" in chapter.content
+    assert "remote edit" in chapter.content
+
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    assert mapping.last_imported_commit_sha == new_sha
+
+
+def test_apply_resolutions_mark_conflict_skips_non_both_changed(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """mark_conflict on a chapter that is not classified as both_changed
+    must be a no-op + counted as skipped, never destroying state."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nbase\n")
+    _commit_all(repo, "base")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.expire_all()
+    mapping = db.get(GitSyncMapping, book.id)
+    persisted_repo = git.Repo(str(mapping.local_clone_path))
+    mapping.branch = persisted_repo.active_branch.name
+    db.commit()
+
+    db.add(
+        Chapter(
+            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            content=_tiptap_paragraph("base"),
+        )
+    )
+    db.commit()
+    original = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one().content
+
+    from app.services.git_sync_diff import apply_resolutions
+
+    counts = apply_resolutions(
+        db, book_id=book.id,
+        resolutions=[
+            {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
+        ],
+    )
+    assert counts["marked"] == 0
+    assert counts["skipped"] == 1
+
+    chapter = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one()
+    assert chapter.content == original
+
+
+def test_resolve_endpoint_accepts_mark_conflict_action(
+    db: Session, book: Book, tmp_path: Path
+) -> None:
+    """HTTP smoke: the action enum now includes mark_conflict; payload
+    passes Pydantic and the call returns 200 even when the chapter
+    isn't actually a conflict (skipped, but no validation error)."""
+    bare = tmp_path / "remote.git"
+    git.Repo.init(bare, bare=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    repo = git.Repo.init(work)
+    repo.create_remote("origin", str(bare))
+    _write_wbt_chapter(work, "chapters", "01-foo.md", "# Foo\n\nfoo\n")
+    _commit_all(repo, "base")
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    git_sync_mapping.persist_clone_after_import(
+        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+    )
+    db.commit()
+
+    resp = client.post(
+        f"/api/git-sync/{book.id}/resolve",
+        json={
+            "resolutions": [
+                {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
+            ],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    # No actual conflict -> skipped.
+    assert body["counts"]["skipped"] >= 1
+    assert body["counts"]["marked"] == 0

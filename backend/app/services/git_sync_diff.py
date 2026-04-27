@@ -101,13 +101,20 @@ def apply_resolutions(
       markdown (converted to HTML via the same path WBT import
       uses). For ``remote_added`` -> creates a new Chapter row.
       For ``remote_removed`` -> deletes the local Chapter row.
+    - ``mark_conflict`` - PGS-03-FU-01: only valid for chapters
+      classified as ``both_changed``. The DB chapter is rewritten
+      with both versions inside git-style conflict markers
+      (``<<<<<<< Bibliogon`` / ``=======`` / ``>>>>>>> Repository``)
+      so the user can resolve in the editor by hand. Other
+      classifications fall through to ``skipped``.
 
     After every requested resolution is applied the mapping's
     ``last_imported_commit_sha`` is bumped to the current branch
     HEAD so the next diff doesn't re-surface the same set of
     changes.
 
-    Returns counts ``{"updated", "created", "deleted", "skipped"}``.
+    Returns counts ``{"updated", "created", "deleted", "marked",
+    "skipped"}``.
     Raises :class:`MappingNotFoundError` /
     :class:`CloneMissingError` (re-exported by
     ``app.services.git_sync_commit``) on the usual preconditions.
@@ -133,7 +140,7 @@ def apply_resolutions(
     language = (book.language if book else None) or "de"
 
     diffs = {(d.identity.section, d.identity.slug): d for d in diff_book(db, book_id=book_id)}
-    counts = {"updated": 0, "created": 0, "deleted": 0, "skipped": 0}
+    counts = {"updated": 0, "created": 0, "deleted": 0, "marked": 0, "skipped": 0}
 
     for raw in resolutions:
         section_raw = raw.get("section")
@@ -142,7 +149,7 @@ def apply_resolutions(
         if (
             not isinstance(section_raw, str)
             or not isinstance(slug_raw, str)
-            or action not in ("keep_local", "take_remote")
+            or action not in ("keep_local", "take_remote", "mark_conflict")
         ):
             counts["skipped"] += 1
             continue
@@ -164,6 +171,27 @@ def apply_resolutions(
         diff = diffs.get((section, slug))
         if diff is None:
             counts["skipped"] += 1
+            continue
+
+        if action == "mark_conflict":
+            if (
+                diff.classification != "both_changed"
+                or not diff.db_chapter_id
+                or diff.local_md is None
+                or diff.remote_md is None
+            ):
+                counts["skipped"] += 1
+                continue
+            row = db.get(ChapterModel, diff.db_chapter_id)
+            if row is None:
+                counts["skipped"] += 1
+                continue
+            local_body, _ = _strip_h1(diff.local_md, fallback_title=diff.title)
+            remote_body, _ = _strip_h1(diff.remote_md, fallback_title=diff.title)
+            merged = build_conflict_markdown(local_body=local_body, remote_body=remote_body)
+            sanitized = sanitize_import_markdown(merged.strip(), language)
+            row.content = md_to_html(sanitized)
+            counts["marked"] += 1
             continue
 
         if diff.classification == "remote_removed":
@@ -214,6 +242,24 @@ def apply_resolutions(
     db.commit()
 
     return counts
+
+
+def build_conflict_markdown(*, local_body: str, remote_body: str) -> str:
+    """PGS-03-FU-01: build a git-style conflict block from two bodies.
+
+    The block uses standard git conflict markers with explicit
+    side labels (``Bibliogon`` / ``Repository``) so editors that
+    syntax-highlight diffs render the chapter in conflict form.
+    The user resolves by editing the chapter content and removing
+    the markers manually.
+
+    Pure function - bodies must already be H1-stripped (the
+    caller knows the chapter title and prepends it separately if
+    needed).
+    """
+    local_clean = (local_body or "").strip("\n")
+    remote_clean = (remote_body or "").strip("\n")
+    return f"<<<<<<< Bibliogon\n{local_clean}\n=======\n{remote_clean}\n>>>>>>> Repository\n"
 
 
 def _strip_h1(markdown: str, *, fallback_title: str) -> tuple[str, str]:

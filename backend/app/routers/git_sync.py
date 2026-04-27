@@ -112,12 +112,13 @@ class DiffResponse(BaseModel):
 class ResolutionEntry(BaseModel):
     section: str
     slug: str
-    #: ``keep_local`` (no-op) or ``take_remote`` (overwrite DB
-    #: chapter with remote markdown). PGS-03 MVP intentionally
-    #: does NOT support ``mark_conflict`` (which would write
-    #: both versions as a visible conflict block) - that's a
-    #: follow-up.
-    action: str = Field(pattern="^(keep_local|take_remote)$")
+    #: One of:
+    #: - ``keep_local`` (no-op).
+    #: - ``take_remote`` overwrite DB chapter with remote markdown.
+    #: - ``mark_conflict`` (PGS-03-FU-01) write both versions into
+    #:   the chapter content with git-style conflict markers; only
+    #:   valid for ``both_changed`` chapters, otherwise skipped.
+    action: str = Field(pattern="^(keep_local|take_remote|mark_conflict)$")
 
 
 class ResolveRequest(BaseModel):
