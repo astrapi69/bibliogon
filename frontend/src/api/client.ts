@@ -128,6 +128,45 @@ export interface ChapterMetricsResponse {
     averages: Record<string, number>;
 }
 
+// --- Article (AR-01 Phase 1) ---
+
+export type ArticleStatus = "draft" | "published" | "archived"
+
+/** Standalone long-form article. Distinct from Book: no chapters,
+ *  no front-matter, no ISBN. Single TipTap document plus minimal
+ *  metadata. ``content_json`` is a string-serialised TipTap doc
+ *  (matches the Chapter.content convention). */
+export interface Article {
+    id: string
+    title: string
+    subtitle: string | null
+    author: string | null
+    language: string
+    /** Phase 1 always emits ``"article"``. The column exists for a
+     *  future Blogpost / Tweet differentiation. */
+    content_type: string
+    content_json: string
+    status: ArticleStatus
+    created_at: string
+    updated_at: string
+}
+
+export interface ArticleCreate {
+    title: string
+    subtitle?: string | null
+    author?: string | null
+    language?: string
+}
+
+export interface ArticleUpdate {
+    title?: string
+    subtitle?: string | null
+    author?: string | null
+    language?: string
+    content_json?: string
+    status?: ArticleStatus
+}
+
 export interface BookCreate {
     title: string;
     subtitle?: string;
@@ -586,6 +625,33 @@ export const api = {
 
         emptyTrash: () =>
             request<void>("/books/trash/empty", {method: "DELETE"}),
+    },
+
+    /** AR-01 Phase 1: standalone Article CRUD. Article is its own
+     *  entity, NOT a Book - no chapters, no front-matter, no ISBN.
+     *  Phase 2+ adds Publications / Promo Posts / SEO metadata. */
+    articles: {
+        list: (status?: ArticleStatus) => {
+            const qs = status ? `?status=${status}` : ""
+            return request<Article[]>(`/articles${qs}`)
+        },
+
+        get: (id: string) => request<Article>(`/articles/${id}`),
+
+        create: (data: ArticleCreate) =>
+            request<Article>("/articles", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        update: (id: string, data: ArticleUpdate) =>
+            request<Article>(`/articles/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify(data),
+            }),
+
+        delete: (id: string) =>
+            request<void>(`/articles/${id}`, {method: "DELETE"}),
     },
 
     chapters: {

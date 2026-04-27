@@ -1,0 +1,498 @@
+/**
+ * AR-01 Phase 1 ArticleEditor.
+ *
+ * Standalone TipTap editor for long-form articles. Differs from the
+ * BookEditor:
+ * - No chapter sidebar (articles are single documents).
+ * - No front-matter tabs.
+ * - Simpler header (title + status + save indicator).
+ * - Sidebar shows: subtitle, author, language, status, word count.
+ *
+ * Phase 1 explicitly skips:
+ * - AI review extension wiring (chapter-id-coupled; Phase 1.5).
+ * - Multi-platform publication state.
+ * - SEO metadata fields (seo_title, tags, canonical URL, ...).
+ *
+ * Auto-save: debounced 1 s on every TipTap update. Same pattern as
+ * BookEditor's chapter save but simpler (single document, no
+ * optimistic-lock version counter — Phase 1 articles don't need it
+ * because the only writer is the local editor).
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import { Loader2, Save, ArrowLeft, Trash2 } from "lucide-react";
+
+import { api, ApiError, Article, ArticleStatus } from "../api/client";
+import { useDialog } from "../components/AppDialog";
+import { useI18n } from "../hooks/useI18n";
+import { notify } from "../utils/notify";
+
+const AUTOSAVE_DEBOUNCE_MS = 1000;
+const STATUSES: ArticleStatus[] = ["draft", "published", "archived"];
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+export default function ArticleEditor() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const { t } = useI18n();
+    const { confirm } = useDialog();
+
+    const [article, setArticle] = useState<Article | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+    const lastSavedJson = useRef<string>("");
+    const lastSavedMeta = useRef<string>("");
+    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Load article + initial content.
+    useEffect(() => {
+        if (!id) return;
+        let cancelled = false;
+        setLoading(true);
+        api.articles
+            .get(id)
+            .then((a) => {
+                if (cancelled) return;
+                setArticle(a);
+                lastSavedJson.current = a.content_json;
+                lastSavedMeta.current = JSON.stringify({
+                    title: a.title,
+                    subtitle: a.subtitle,
+                    author: a.author,
+                    language: a.language,
+                    status: a.status,
+                });
+            })
+            .catch((err) => {
+                if (err instanceof ApiError) {
+                    notify.error(
+                        t(
+                            "ui.articles.load_error",
+                            "Konnte Artikel nicht laden.",
+                        ),
+                        err,
+                    );
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [id, t]);
+
+    const persistContent = useCallback(
+        async (json: string) => {
+            if (!id || json === lastSavedJson.current) return;
+            setSaveStatus("saving");
+            try {
+                await api.articles.update(id, { content_json: json });
+                lastSavedJson.current = json;
+                setSaveStatus("saved");
+                setTimeout(() => setSaveStatus("idle"), 2000);
+            } catch (err) {
+                if (err instanceof ApiError) {
+                    setSaveStatus("error");
+                    notify.error(
+                        t(
+                            "ui.articles.save_failed",
+                            "Speichern fehlgeschlagen.",
+                        ),
+                        err,
+                    );
+                }
+            }
+        },
+        [id, t],
+    );
+
+    const debouncedSave = useCallback(
+        (json: string) => {
+            if (saveTimer.current) clearTimeout(saveTimer.current);
+            setSaveStatus("saving");
+            saveTimer.current = setTimeout(
+                () => void persistContent(json),
+                AUTOSAVE_DEBOUNCE_MS,
+            );
+        },
+        [persistContent],
+    );
+
+    const editor = useEditor(
+        {
+            extensions: [
+                StarterKit,
+                Link.configure({ openOnClick: false }),
+            ],
+            content: article?.content_json
+                ? safeParse(article.content_json)
+                : "",
+            onUpdate: ({ editor }) => {
+                if (!article) return;
+                debouncedSave(JSON.stringify(editor.getJSON()));
+            },
+        },
+        [article?.id],
+    );
+
+    const persistMeta = useCallback(
+        async (patch: Partial<Article>) => {
+            if (!id || !article) return;
+            const next = { ...article, ...patch };
+            setArticle(next);
+            const meta = JSON.stringify({
+                title: next.title,
+                subtitle: next.subtitle,
+                author: next.author,
+                language: next.language,
+                status: next.status,
+            });
+            if (meta === lastSavedMeta.current) return;
+            try {
+                const saved = await api.articles.update(id, {
+                    title: patch.title,
+                    subtitle: patch.subtitle as string | null | undefined,
+                    author: patch.author as string | null | undefined,
+                    language: patch.language,
+                    status: patch.status as ArticleStatus | undefined,
+                });
+                setArticle(saved);
+                lastSavedMeta.current = meta;
+            } catch (err) {
+                if (err instanceof ApiError) {
+                    notify.error(
+                        t(
+                            "ui.articles.save_failed",
+                            "Speichern fehlgeschlagen.",
+                        ),
+                        err,
+                    );
+                }
+            }
+        },
+        [id, article, t],
+    );
+
+    async function handleDelete(): Promise<void> {
+        if (!article) return;
+        const ok = await confirm(
+            t("ui.articles.delete_title", "Artikel löschen?"),
+            t(
+                "ui.articles.delete_body",
+                "Dieser Artikel wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+            ),
+            "danger",
+            { confirmLabel: t("ui.articles.delete_confirm", "Löschen") },
+        );
+        if (!ok) return;
+        try {
+            await api.articles.delete(article.id);
+            notify.success(
+                t("ui.articles.deleted", "Artikel gelöscht."),
+            );
+            navigate("/articles");
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.articles.delete_failed",
+                        "Löschen fehlgeschlagen.",
+                    ),
+                    err,
+                );
+            }
+        }
+    }
+
+    if (loading || !article || !editor) {
+        return (
+            <div data-testid="article-editor-loading" style={layout.loading}>
+                <Loader2 size={20} className="spin" />
+                {t("ui.common.loading", "Laedt...")}
+            </div>
+        );
+    }
+
+    const wordCount = editor.getText().trim().split(/\s+/).filter(Boolean).length;
+
+    return (
+        <div data-testid="article-editor" style={layout.page}>
+            <header style={layout.header}>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => navigate("/articles")}
+                    data-testid="article-editor-back"
+                >
+                    <ArrowLeft size={14} />
+                    {t("ui.articles.back_to_list", "Zur Liste")}
+                </button>
+                <input
+                    data-testid="article-editor-title"
+                    style={layout.titleInput}
+                    value={article.title}
+                    onChange={(e) =>
+                        setArticle({ ...article, title: e.target.value })
+                    }
+                    onBlur={() => persistMeta({ title: article.title })}
+                    placeholder={t(
+                        "ui.articles.title_placeholder",
+                        "Artikelüberschrift",
+                    )}
+                />
+                <SaveIndicator status={saveStatus} />
+            </header>
+
+            <main style={layout.body}>
+                <div style={layout.editorPane}>
+                    <EditorContent editor={editor} />
+                    <p
+                        data-testid="article-editor-word-count"
+                        style={layout.wordCount}
+                    >
+                        {t("ui.articles.word_count", "{count} Wörter").replace(
+                            "{count}",
+                            String(wordCount),
+                        )}
+                    </p>
+                </div>
+                <aside style={layout.sidebar}>
+                    <h3 style={layout.sidebarHeading}>
+                        {t("ui.articles.metadata_heading", "Metadaten")}
+                    </h3>
+                    <Field
+                        label={t("ui.articles.subtitle", "Untertitel")}
+                        value={article.subtitle ?? ""}
+                        onChange={(v) =>
+                            setArticle({ ...article, subtitle: v || null })
+                        }
+                        onBlur={() =>
+                            persistMeta({ subtitle: article.subtitle })
+                        }
+                        testId="article-editor-subtitle"
+                    />
+                    <Field
+                        label={t("ui.articles.author", "Autor")}
+                        value={article.author ?? ""}
+                        onChange={(v) =>
+                            setArticle({ ...article, author: v || null })
+                        }
+                        onBlur={() => persistMeta({ author: article.author })}
+                        testId="article-editor-author"
+                    />
+                    <Field
+                        label={t("ui.articles.language", "Sprache")}
+                        value={article.language}
+                        onChange={(v) =>
+                            setArticle({ ...article, language: v })
+                        }
+                        onBlur={() =>
+                            persistMeta({ language: article.language })
+                        }
+                        testId="article-editor-language"
+                    />
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.status", "Status")}
+                    </label>
+                    <select
+                        data-testid="article-editor-status"
+                        value={article.status}
+                        onChange={(e) =>
+                            persistMeta({
+                                status: e.target.value as ArticleStatus,
+                            })
+                        }
+                        style={layout.fieldInput}
+                    >
+                        {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                                {t(
+                                    `ui.articles.status_${s}`,
+                                    s.charAt(0).toUpperCase() + s.slice(1),
+                                )}
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void handleDelete()}
+                        data-testid="article-editor-delete"
+                        style={layout.deleteBtn}
+                    >
+                        <Trash2 size={12} />
+                        {t("ui.articles.delete", "Löschen")}
+                    </button>
+                </aside>
+            </main>
+        </div>
+    );
+}
+
+// TipTap Content can be a JSON object or string; both are accepted by
+// the editor. Returning a parsed JSON object preserves doc structure;
+// falling back to an empty string lets the editor start with a blank
+// doc when content_json is empty or malformed.
+function safeParse(raw: string): object | string {
+    try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed === "object" && parsed !== null ? parsed : "";
+    } catch {
+        return "";
+    }
+}
+
+function SaveIndicator({ status }: { status: SaveStatus }) {
+    const { t } = useI18n();
+    if (status === "saving") {
+        return (
+            <span
+                data-testid="article-editor-save-status"
+                style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}
+            >
+                <Loader2 size={12} className="spin" />{" "}
+                {t("ui.articles.saving", "Speichert…")}
+            </span>
+        );
+    }
+    if (status === "saved") {
+        return (
+            <span
+                data-testid="article-editor-save-status"
+                style={{ color: "var(--success, #16a34a)", fontSize: "0.8125rem" }}
+            >
+                <Save size={12} /> {t("ui.articles.saved", "Gespeichert")}
+            </span>
+        );
+    }
+    if (status === "error") {
+        return (
+            <span
+                data-testid="article-editor-save-status"
+                style={{ color: "var(--error, #b91c1c)", fontSize: "0.8125rem" }}
+            >
+                {t("ui.articles.save_error_label", "Fehler")}
+            </span>
+        );
+    }
+    return null;
+}
+
+function Field({
+    label,
+    value,
+    onChange,
+    onBlur,
+    testId,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    onBlur: () => void;
+    testId: string;
+}) {
+    return (
+        <>
+            <label style={layout.fieldLabel}>{label}</label>
+            <input
+                data-testid={testId}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onBlur={onBlur}
+                style={layout.fieldInput}
+            />
+        </>
+    );
+}
+
+const layout: Record<string, React.CSSProperties> = {
+    page: {
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--bg-primary)",
+    },
+    header: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 20px",
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-card)",
+    },
+    titleInput: {
+        flex: 1,
+        fontSize: "1.25rem",
+        fontWeight: 600,
+        border: "none",
+        background: "transparent",
+        outline: "none",
+        color: "var(--text-primary)",
+    },
+    body: {
+        flex: 1,
+        display: "grid",
+        gridTemplateColumns: "1fr 280px",
+        minHeight: 0,
+    },
+    editorPane: {
+        overflowY: "auto",
+        padding: "24px 32px",
+    },
+    wordCount: {
+        marginTop: 16,
+        fontSize: "0.75rem",
+        color: "var(--text-muted)",
+    },
+    sidebar: {
+        borderLeft: "1px solid var(--border)",
+        background: "var(--bg-card)",
+        padding: "16px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        overflowY: "auto",
+    },
+    sidebarHeading: {
+        margin: 0,
+        marginBottom: 8,
+        fontSize: "0.875rem",
+        fontWeight: 600,
+        color: "var(--text-secondary)",
+    },
+    fieldLabel: {
+        fontSize: "0.75rem",
+        color: "var(--text-muted)",
+        marginTop: 8,
+    },
+    fieldInput: {
+        padding: "6px 8px",
+        border: "1px solid var(--border)",
+        borderRadius: 4,
+        background: "var(--bg-primary)",
+        color: "var(--text-primary)",
+        fontSize: "0.875rem",
+    },
+    deleteBtn: {
+        marginTop: 16,
+        alignSelf: "flex-start",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        color: "var(--error, #b91c1c)",
+    },
+    loading: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: 32,
+        color: "var(--text-muted)",
+    },
+};

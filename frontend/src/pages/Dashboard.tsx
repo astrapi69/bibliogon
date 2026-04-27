@@ -164,6 +164,14 @@ export default function Dashboard() {
                         <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
                             <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
                         </button>
+                        <button
+                            className="btn btn-secondary btn-sm hide-mobile"
+                            data-testid="articles-nav-btn"
+                            onClick={() => navigate("/articles")}
+                            title={t("ui.dashboard.articles_nav_tooltip", "Artikel verwalten")}
+                        >
+                            {t("ui.dashboard.articles_nav", "Artikel")}
+                        </button>
 
                         {/* Desktop: inline buttons */}
                         <div className="hide-mobile" style={{display: "flex", alignItems: "center", gap: 6}}>
