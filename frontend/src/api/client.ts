@@ -158,6 +158,12 @@ export interface Article {
     featured_image_url: string | null
     excerpt: string | null
     tags: string[]
+    /** AR-02 Phase 2.1: primary category (settings-managed) +
+     *  dedicated SEO title/description. SEO fields default to
+     *  title/excerpt at publish time when empty. */
+    topic: string | null
+    seo_title: string | null
+    seo_description: string | null
     created_at: string
     updated_at: string
 }
@@ -180,6 +186,9 @@ export interface ArticleUpdate {
     featured_image_url?: string | null
     excerpt?: string | null
     tags?: string[]
+    topic?: string | null
+    seo_title?: string | null
+    seo_description?: string | null
 }
 
 // --- Publication (AR-02 Phase 2) ---
