@@ -96,6 +96,8 @@ function makeDiffResponse(entries: GitSyncDiffEntry[]): GitSyncDiffResponse {
         local_added: 0,
         remote_removed: 0,
         local_removed: 0,
+        renamed_remote: 0,
+        renamed_local: 0,
     };
     for (const e of entries) counts[e.classification] += 1;
     return {
@@ -235,5 +237,115 @@ describe("GitSyncDiffDialog", () => {
         await waitFor(() => expect(mockNotify.error).toHaveBeenCalledTimes(1));
         expect(onClose).not.toHaveBeenCalled();
         expect(onResolved).not.toHaveBeenCalled();
+    });
+
+    // --- PGS-03-FU-01: mark_conflict + rename UX ---
+
+    it("Mark Conflict button renders only on both_changed rows", async () => {
+        mockDiff.mockResolvedValue(
+            makeDiffResponse([
+                makeEntry({
+                    slug: "conflict",
+                    classification: "both_changed",
+                    base_md: "base",
+                    local_md: "local",
+                    remote_md: "remote",
+                }),
+                makeEntry({
+                    slug: "remoteonly",
+                    classification: "remote_changed",
+                }),
+            ]),
+        );
+        await act(async () => {
+            render(
+                <GitSyncDiffDialog open bookId="b" onClose={vi.fn()} />,
+            );
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-diff-list")).toBeInTheDocument(),
+        );
+        expect(
+            screen.getByTestId("git-sync-diff-mark-conflict-conflict"),
+        ).toBeTruthy();
+        expect(
+            screen.queryByTestId("git-sync-diff-mark-conflict-remoteonly"),
+        ).toBeNull();
+    });
+
+    it("clicking Mark Conflict sends mark_conflict in resolve payload", async () => {
+        mockDiff.mockResolvedValue(
+            makeDiffResponse([
+                makeEntry({
+                    slug: "conflict",
+                    classification: "both_changed",
+                    base_md: "base",
+                    local_md: "local",
+                    remote_md: "remote",
+                }),
+            ]),
+        );
+        mockResolve.mockResolvedValue({
+            counts: {
+                updated: 0,
+                created: 0,
+                deleted: 0,
+                marked: 1,
+                renamed: 0,
+                skipped: 0,
+            },
+        });
+        await act(async () => {
+            render(
+                <GitSyncDiffDialog open bookId="b" onClose={vi.fn()} />,
+            );
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-diff-list")).toBeInTheDocument(),
+        );
+
+        fireEvent.click(
+            screen.getByTestId("git-sync-diff-mark-conflict-conflict"),
+        );
+        fireEvent.click(screen.getByTestId("git-sync-diff-apply"));
+
+        await waitFor(() => expect(mockResolve).toHaveBeenCalledTimes(1));
+        const [, resolutions] = mockResolve.mock.calls[0];
+        expect(resolutions).toEqual([
+            { section: "chapters", slug: "conflict", action: "mark_conflict" },
+        ]);
+    });
+
+    it("renamed_remote row defaults to take_remote and shows rename_from line", async () => {
+        mockDiff.mockResolvedValue(
+            makeDiffResponse([
+                makeEntry({
+                    slug: "newname",
+                    title: "New Name",
+                    classification: "renamed_remote",
+                    base_md: "# Old Name\n\nbody\n",
+                    local_md: "# Old Name\n\nbody\n",
+                    remote_md: "# New Name\n\nbody\n",
+                    rename_from: { section: "chapters", slug: "oldname" },
+                }),
+            ]),
+        );
+        await act(async () => {
+            render(
+                <GitSyncDiffDialog open bookId="b" onClose={vi.fn()} />,
+            );
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("git-sync-diff-list")).toBeInTheDocument(),
+        );
+
+        const renameFromLine = screen.getByTestId(
+            "git-sync-diff-rename-from-newname",
+        );
+        expect(renameFromLine.textContent).toContain("oldname");
+
+        // Take Repo is the default for renames -> btn-primary class.
+        const takeBtn = screen.getByTestId("git-sync-diff-take-newname");
+        expect(takeBtn.className).toContain("btn-primary");
     });
 });

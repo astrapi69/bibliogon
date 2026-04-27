@@ -1475,6 +1475,10 @@ export type GitSyncDiffClassification =
     | "local_added"
     | "remote_removed"
     | "local_removed"
+    /** PGS-03-FU-01: chapter file moved between identities with body
+     *  unchanged. ``rename_from`` carries the old (section, slug). */
+    | "renamed_remote"
+    | "renamed_local"
 
 export interface GitSyncDiffEntry {
     section: "front-matter" | "chapters" | "back-matter"
@@ -1485,6 +1489,8 @@ export interface GitSyncDiffEntry {
     local_md: string | null
     remote_md: string | null
     db_chapter_id: string | null
+    /** PGS-03-FU-01: old identity for renamed_* rows. */
+    rename_from?: {section: string; slug: string} | null
 }
 
 export interface GitSyncDiffResponse {
@@ -1498,13 +1504,18 @@ export interface GitSyncDiffResponse {
 export interface GitSyncResolutionEntry {
     section: string
     slug: string
-    /** PGS-03 MVP supports keep_local + take_remote only. Mark
-     *  conflict (write both versions side-by-side) is a follow-up. */
-    action: "keep_local" | "take_remote"
+    /** PGS-03-FU-01 promoted ``mark_conflict`` (write both versions
+     *  inside git-style conflict markers) from a follow-up to a real
+     *  action. Only valid for ``both_changed`` chapters; the backend
+     *  silently skips it for any other classification. */
+    action: "keep_local" | "take_remote" | "mark_conflict"
 }
 
 export interface GitSyncResolveResult {
-    counts: Record<"updated" | "created" | "deleted" | "skipped", number>
+    counts: Record<
+        "updated" | "created" | "deleted" | "marked" | "renamed" | "skipped",
+        number
+    >
 }
 
 export interface GitSyncUnifiedCommitRequest {

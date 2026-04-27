@@ -8,6 +8,7 @@ import {
     Minus,
     GitBranch,
     Loader2,
+    ArrowRight,
 } from "lucide-react";
 import {
     api,
@@ -23,14 +24,16 @@ import { notify } from "../utils/notify";
 /**
  * PGS-03 conflict resolution dialog.
  *
- * Per chapter the user chooses Keep Bibliogon (DB unchanged) or
- * Take from Repo (DB overwritten with the remote markdown).
- * MVP scope; "Mark conflict" (write both as visible variants)
- * is intentionally out for now.
+ * Per chapter the user chooses Keep Bibliogon (DB unchanged),
+ * Take from Repo (DB overwritten with the remote markdown), or
+ * Mark Conflict (PGS-03-FU-01 - rewrites the chapter content with
+ * git-style conflict markers so the user can resolve in the editor;
+ * only offered on ``both_changed`` rows).
  *
  * Default action per row mirrors the classification:
  * - unchanged / *_added / *_removed - keep_local (safest default)
  * - remote_changed - take_remote (clearly the user wants the upstream)
+ * - renamed_remote - take_remote (accept the rename; body identical)
  * - local_changed / both_changed - keep_local (no surprise data loss)
  */
 interface Props {
@@ -45,7 +48,10 @@ interface Props {
 type Action = GitSyncResolutionEntry["action"];
 
 function defaultAction(c: GitSyncDiffClassification): Action {
-    return c === "remote_changed" || c === "remote_added" ? "take_remote" : "keep_local";
+    if (c === "remote_changed" || c === "remote_added" || c === "renamed_remote") {
+        return "take_remote";
+    }
+    return "keep_local";
 }
 
 function isResolvable(c: GitSyncDiffClassification): boolean {
@@ -105,12 +111,14 @@ export default function GitSyncDiffDialog({
             const result = await api.gitSync.resolve(bookId, resolutions);
             notify.success(
                 t(
-                    "ui.git_sync.resolve_success",
-                    "Aktualisiert {updated}, neu {created}, geloescht {deleted}",
+                    "ui.git_sync.resolve_success_v2",
+                    "Aktualisiert {updated}, neu {created}, geloescht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}",
                 )
                     .replace("{updated}", String(result.counts.updated))
                     .replace("{created}", String(result.counts.created))
-                    .replace("{deleted}", String(result.counts.deleted)),
+                    .replace("{deleted}", String(result.counts.deleted))
+                    .replace("{renamed}", String(result.counts.renamed))
+                    .replace("{marked}", String(result.counts.marked)),
             );
             onResolved?.();
             onClose();
@@ -318,6 +326,24 @@ function DiffRow({
                 >
                     {chapter.section}/{chapter.slug}
                 </div>
+                {chapter.rename_from && (
+                    <div
+                        data-testid={`git-sync-diff-rename-from-${chapter.slug}`}
+                        style={{
+                            fontSize: "0.75rem",
+                            color: "var(--text-muted)",
+                            marginTop: 4,
+                            fontStyle: "italic",
+                        }}
+                    >
+                        {t(
+                            "ui.git_sync.diff_renamed_from",
+                            "Umbenannt von {section}/{slug}",
+                        )
+                            .replace("{section}", chapter.rename_from.section)
+                            .replace("{slug}", chapter.rename_from.slug)}
+                    </div>
+                )}
             </div>
             <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button
@@ -348,6 +374,24 @@ function DiffRow({
                 >
                     {t("ui.git_sync.diff_take_remote", "Repo")}
                 </button>
+                {chapter.classification === "both_changed" && (
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${
+                            action === "mark_conflict"
+                                ? "btn-primary"
+                                : "btn-secondary"
+                        }`}
+                        onClick={() => onActionChange("mark_conflict")}
+                        data-testid={`git-sync-diff-mark-conflict-${chapter.slug}`}
+                        title={t(
+                            "ui.git_sync.diff_mark_conflict_tooltip",
+                            "Beide Versionen mit Konflikt-Markern in das Kapitel schreiben (manuell aufloesen)",
+                        )}
+                    >
+                        {t("ui.git_sync.diff_mark_conflict", "Konflikt")}
+                    </button>
+                )}
             </div>
         </li>
     );
@@ -387,6 +431,16 @@ function ClassificationBadge({
                     "ui.git_sync.diff_label_local_removed",
                     "In Bibliogon geloescht",
                 );
+            case "renamed_remote":
+                return t(
+                    "ui.git_sync.diff_label_renamed_remote",
+                    "Im Repo umbenannt",
+                );
+            case "renamed_local":
+                return t(
+                    "ui.git_sync.diff_label_renamed_local",
+                    "In Bibliogon umbenannt",
+                );
             case "unchanged":
                 return t("ui.git_sync.diff_label_unchanged", "Unveraendert");
         }
@@ -401,6 +455,9 @@ function ClassificationBadge({
             case "remote_removed":
             case "local_removed":
                 return <Minus size={12} />;
+            case "renamed_remote":
+            case "renamed_local":
+                return <ArrowRight size={12} />;
             default:
                 return <GitBranch size={12} />;
         }
