@@ -78,6 +78,7 @@ export default function Settings() {
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="ai" className="radix-tab-trigger" data-testid="settings-tab-ai">{t("ui.settings.tab_ai", "KI-Assistent")}</Tabs.Trigger>
                     <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
+                    <Tabs.Trigger value="topics" className="radix-tab-trigger" data-testid="settings-tab-topics">{t("ui.settings.tab_topics", "Themen")}</Tabs.Trigger>
                     <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
                     {getDonationsConfig(appConfig) ? (
                         <Tabs.Trigger value="support" className="radix-tab-trigger" data-testid="settings-tab-support">{t("ui.donations.tab", "Unterstützen")}</Tabs.Trigger>
@@ -131,6 +132,23 @@ export default function Settings() {
                                 const updated = await api.settings.updateApp(data);
                                 setAppConfig(updated);
                                 showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
+                            } catch {
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                            }
+                            setSaving(false);
+                        }}
+                        saving={saving}
+                    />
+                </Tabs.Content>
+                <Tabs.Content value="topics">
+                    <TopicsSettings
+                        config={appConfig}
+                        onSave={async (data) => {
+                            setSaving(true);
+                            try {
+                                const updated = await api.settings.updateApp(data);
+                                setAppConfig(updated);
+                                showMessage(t("ui.settings.topics_saved", "Themen gespeichert"));
                             } catch {
                                 showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
                             }
@@ -1930,6 +1948,106 @@ function AuthorSettings({config, onSave, saving}: {
                     style={{marginTop: 16}}
                     disabled={saving}
                     onClick={() => onSave({author: {name, pen_names: penNames}})}
+                >
+                    <Save size={14}/> {t("ui.common.save", "Speichern")}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function TopicsSettings({config, onSave, saving}: {
+    config: Record<string, unknown>;
+    onSave: (data: Record<string, unknown>) => void;
+    saving: boolean;
+}) {
+    const {t} = useI18n();
+    const initialTopics = Array.isArray(config.topics)
+        ? (config.topics as unknown[]).filter((v): v is string => typeof v === "string")
+        : [];
+    const [topics, setTopics] = useState<string[]>(initialTopics);
+    const [newTopic, setNewTopic] = useState("");
+
+    useEffect(() => {
+        setTopics(
+            Array.isArray(config.topics)
+                ? (config.topics as unknown[]).filter((v): v is string => typeof v === "string")
+                : [],
+        );
+    }, [config]);
+
+    const addTopic = () => {
+        const trimmed = newTopic.trim();
+        if (!trimmed || topics.includes(trimmed)) return;
+        setTopics([...topics, trimmed]);
+        setNewTopic("");
+    };
+
+    const removeTopic = (index: number) => {
+        setTopics(topics.filter((_, i) => i !== index));
+    };
+
+    return (
+        <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>{t("ui.settings.topics_title", "Artikel-Themen")}</h2>
+            <div style={styles.card}>
+                <div className="field">
+                    <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
+                        {t("ui.settings.topics_hint", "Themen erscheinen als Auswahl im Artikel-Editor. Ein Thema ist die primaere Kategorie eines Artikels.")}
+                    </p>
+                    {topics.length > 0 && (
+                        <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}>
+                            {topics.map((topic, i) => (
+                                <div
+                                    key={i}
+                                    data-testid={`topic-row-${i}`}
+                                    style={{
+                                        display: "flex", alignItems: "center", gap: 8,
+                                        padding: "6px 10px", background: "var(--bg-secondary)",
+                                        borderRadius: "var(--radius-sm)",
+                                    }}
+                                >
+                                    <span style={{flex: 1, fontSize: "0.875rem"}}>{topic}</span>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => removeTopic(i)}
+                                        style={{padding: "2px 6px", color: "var(--danger)"}}
+                                        data-testid={`topic-remove-${i}`}
+                                        aria-label={t("ui.settings.topics_remove", "Thema entfernen")}
+                                    >
+                                        <X size={12}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div style={{display: "flex", gap: 8}}>
+                        <input
+                            className="input"
+                            value={newTopic}
+                            onChange={(e) => setNewTopic(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && addTopic()}
+                            placeholder={t("ui.settings.topics_add_placeholder", "Neues Thema hinzufuegen")}
+                            data-testid="topic-add-input"
+                            style={{flex: 1}}
+                        />
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={addTopic}
+                            disabled={!newTopic.trim()}
+                            data-testid="topic-add-btn"
+                        >
+                            <Plus size={14}/> {t("ui.settings.topics_add", "Hinzufuegen")}
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    className="btn btn-primary"
+                    style={{marginTop: 16}}
+                    disabled={saving}
+                    onClick={() => onSave({topics})}
+                    data-testid="topics-save-btn"
                 >
                     <Save size={14}/> {t("ui.common.save", "Speichern")}
                 </button>
