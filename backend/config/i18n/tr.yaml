@@ -731,6 +731,13 @@ ui:
     link_error: "Baglama basarisiz."
     list_books_error: "Kitap listesi yuklenemedi."
     no_other_books: "Baglanacak baska kitap yok."
+    import_result_imported_heading: "{n} kitap iceri aktarildi"
+    import_result_open: "Ac"
+    import_result_empty: "Hicbir kitap iceri aktarilmadi."
+    import_result_skipped_heading: "{n} dal dikkat gerektiriyor"
+    import_result_skipped_hint: "Bu dallar atlandi. Sorunu repoda gider ve ceviri grubunu yeniden iceri aktar."
+    import_result_reason_no_wbt_layout: "Kitap duzeni yok (config/metadata.yaml eksik)"
+    import_result_reason_import_failed: "Iceri aktarma basarisiz (uyumsuz yapi)"
   metadata:
     tab_general: "Genel"
     tab_publisher: "Yayinevi"

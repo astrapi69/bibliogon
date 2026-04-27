@@ -695,6 +695,13 @@ ui:
     link_error: "Linking failed."
     list_books_error: "Could not load book list."
     no_other_books: "No other books available to link."
+    import_result_imported_heading: "{n} book(s) imported"
+    import_result_open: "Open"
+    import_result_empty: "No books were imported."
+    import_result_skipped_heading: "{n} branch(es) need attention"
+    import_result_skipped_hint: "These branches were skipped. Fix the problem in the repository and re-import the translation group."
+    import_result_reason_no_wbt_layout: "No book layout (config/metadata.yaml missing)"
+    import_result_reason_import_failed: "Import failed (incompatible structure)"
   metadata:
     tab_general: "General"
     tab_publisher: "Publisher"

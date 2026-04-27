@@ -695,6 +695,13 @@ ui:
     link_error: "Verknuepfen fehlgeschlagen."
     list_books_error: "Konnte Buchliste nicht laden."
     no_other_books: "Keine weiteren Buecher zum Verknuepfen vorhanden."
+    import_result_imported_heading: "{n} Buch/Buecher importiert"
+    import_result_open: "Oeffnen"
+    import_result_empty: "Es wurden keine Buecher importiert."
+    import_result_skipped_heading: "{n} Branch/Branches benoetigen Aufmerksamkeit"
+    import_result_skipped_hint: "Diese Branches wurden uebersprungen. Behebe das Problem im Repository und importiere die Uebersetzungsgruppe danach erneut."
+    import_result_reason_no_wbt_layout: "Kein Buch-Layout (config/metadata.yaml fehlt)"
+    import_result_reason_import_failed: "Import fehlgeschlagen (inkompatible Struktur)"
   metadata:
     tab_general: "Allgemein"
     tab_publisher: "Verlag"

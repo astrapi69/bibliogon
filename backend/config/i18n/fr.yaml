@@ -731,6 +731,13 @@ ui:
     link_error: "Liaison échouée."
     list_books_error: "Impossible de charger la liste des livres."
     no_other_books: "Aucun autre livre disponible pour la liaison."
+    import_result_imported_heading: "{n} livre(s) importe(s)"
+    import_result_open: "Ouvrir"
+    import_result_empty: "Aucun livre n'a ete importe."
+    import_result_skipped_heading: "{n} branche(s) necessitent attention"
+    import_result_skipped_hint: "Ces branches ont ete ignorees. Corrigez le probleme dans le depot et reimportez le groupe de traductions."
+    import_result_reason_no_wbt_layout: "Pas de structure livre (config/metadata.yaml manquant)"
+    import_result_reason_import_failed: "Echec de l'import (structure incompatible)"
   metadata:
     tab_general: "General"
     tab_publisher: "Editeur"

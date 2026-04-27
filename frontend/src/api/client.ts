@@ -1583,7 +1583,25 @@ export interface TranslationImportedBook {
     title: string
 }
 
+/** PGS-04-FU-01: a branch the multi-branch importer could not turn
+ *  into a book. The wizard renders a per-entry "Attention required"
+ *  row so silent skips never happen again. */
+export interface TranslationSkippedBranch {
+    branch: string
+    /** Stable slug; the frontend switches on it for the i18n label.
+     *  - ``no_wbt_layout`` - branch lacks ``config/metadata.yaml``
+     *  - ``import_failed`` - the WBT importer raised
+     *    (typically incompatible chapter structure) */
+    reason: "no_wbt_layout" | "import_failed" | string
+    /** Backend-truncated diagnostic (exception class + message). Safe
+     *  to render verbatim; useful in a "Report issue" body. */
+    detail: string
+}
+
 export interface TranslationMultiBranchImportResult {
     translation_group_id: string | null
     books: TranslationImportedBook[]
+    /** PGS-04-FU-01: empty list on a clean import; non-empty when
+     *  some branches could not be imported. */
+    skipped: TranslationSkippedBranch[]
 }

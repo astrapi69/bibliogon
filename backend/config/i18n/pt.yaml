@@ -695,6 +695,13 @@ ui:
     link_error: "Vinculação falhou."
     list_books_error: "Não foi possível carregar a lista de livros."
     no_other_books: "Nenhum outro livro disponível para vincular."
+    import_result_imported_heading: "{n} livro(s) importado(s)"
+    import_result_open: "Abrir"
+    import_result_empty: "Nenhum livro foi importado."
+    import_result_skipped_heading: "{n} branch(es) precisam de atencao"
+    import_result_skipped_hint: "Estas branches foram ignoradas. Corrija o problema no repositorio e reimporte o grupo de traducoes."
+    import_result_reason_no_wbt_layout: "Sem estrutura de livro (falta config/metadata.yaml)"
+    import_result_reason_import_failed: "Falha ao importar (estrutura incompativel)"
   metadata:
     tab_general: "Geral"
     tab_publisher: "Editora"

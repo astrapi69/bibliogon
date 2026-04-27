@@ -695,6 +695,13 @@ ui:
     link_error: "リンクに失敗しました。"
     list_books_error: "本のリストを読み込めませんでした。"
     no_other_books: "リンク可能な他の本がありません。"
+    import_result_imported_heading: "{n} 冊の本をインポートしました"
+    import_result_open: "開く"
+    import_result_empty: "本はインポートされませんでした。"
+    import_result_skipped_heading: "{n} 個のブランチに注意が必要"
+    import_result_skipped_hint: "これらのブランチはスキップされました。リポジトリで問題を修正し、翻訳グループを再インポートしてください。"
+    import_result_reason_no_wbt_layout: "本のレイアウトなし (config/metadata.yaml がありません)"
+    import_result_reason_import_failed: "インポート失敗 (互換性のない構造)"
   metadata:
     tab_general: "一般"
     tab_publisher: "出版社"
