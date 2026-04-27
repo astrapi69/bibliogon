@@ -763,6 +763,7 @@ ui:
     seo_title_placeholder: "空欄時はタイトル"
     seo_description: "SEOディスクリプション"
     seo_description_placeholder: "空欄時は抜粋"
+    editor_placeholder: "書き始めてください..."
   publications:
     title: "公開先"
     add: "追加"

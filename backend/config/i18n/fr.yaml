@@ -799,6 +799,7 @@ ui:
     seo_title_placeholder: "Vide: utilise le titre"
     seo_description: "Description SEO"
     seo_description_placeholder: "Vide: utilise l'extrait"
+    editor_placeholder: "Commencez a ecrire..."
   publications:
     title: "Publications"
     add: "Ajouter"

@@ -799,6 +799,7 @@ ui:
     seo_title_placeholder: "Vacio: usa el titulo"
     seo_description: "Descripcion SEO"
     seo_description_placeholder: "Vacio: usa el extracto"
+    editor_placeholder: "Empieza a escribir..."
   publications:
     title: "Publicaciones"
     add: "Anadir"

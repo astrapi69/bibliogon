@@ -763,6 +763,7 @@ ui:
     seo_title_placeholder: "Fällt leer auf Titel zurück"
     seo_description: "SEO-Beschreibung"
     seo_description_placeholder: "Fällt leer auf Excerpt zurück"
+    editor_placeholder: "Beginne zu schreiben..."
   publications:
     title: "Publikationen"
     add: "Hinzufuegen"

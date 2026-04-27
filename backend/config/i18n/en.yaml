@@ -763,6 +763,7 @@ ui:
     seo_title_placeholder: "Falls back to title when empty"
     seo_description: "SEO Description"
     seo_description_placeholder: "Falls back to excerpt when empty"
+    editor_placeholder: "Start writing..."
   publications:
     title: "Publications"
     add: "Add"

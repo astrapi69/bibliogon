@@ -763,6 +763,7 @@ ui:
     seo_title_placeholder: "Άδειο: χρησιμοποιείται ο τίτλος"
     seo_description: "Περιγραφή SEO"
     seo_description_placeholder: "Άδειο: χρησιμοποιείται το απόσπασμα"
+    editor_placeholder: "Αρχίστε να γράφετε..."
   publications:
     title: "Δημοσιεύσεις"
     add: "Προσθήκη"

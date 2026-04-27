@@ -27,6 +27,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
 import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
@@ -153,7 +154,16 @@ export default function ArticleEditor() {
     );
 
     const editor = useEditor({
-        extensions: [StarterKit, Link.configure({ openOnClick: false })],
+        extensions: [
+            StarterKit,
+            Link.configure({ openOnClick: false }),
+            Placeholder.configure({
+                placeholder: t(
+                    "ui.articles.editor_placeholder",
+                    "Beginne zu schreiben...",
+                ),
+            }),
+        ],
         // Explicit editable=true. Default is true but stating it
         // protects against future TipTap default flips and makes the
         // contract obvious to readers wondering "why is the editor
@@ -167,6 +177,17 @@ export default function ArticleEditor() {
         onUpdate: ({ editor }) => {
             if (!article) return;
             debouncedSave(JSON.stringify(editor.getJSON()));
+        },
+        // Apply the .tiptap-editor class so global CSS rules
+        // (min-height: 400px, padding: 2rem, font-display, line-
+        // height) attach. Without this class the .ProseMirror node
+        // has zero base styling and an empty article renders as a
+        // 0-height invisible target - the "editor disabled"
+        // regression after the sidebar moved left in ac25cc8.
+        editorProps: {
+            attributes: {
+                class: "tiptap-editor",
+            },
         },
     });
 

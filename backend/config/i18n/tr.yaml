@@ -799,6 +799,7 @@ ui:
     seo_title_placeholder: "Bos: baslik kullanilir"
     seo_description: "SEO Aciklamasi"
     seo_description_placeholder: "Bos: ozet kullanilir"
+    editor_placeholder: "Yazmaya basla..."
   publications:
     title: "Yayinlar"
     add: "Ekle"
