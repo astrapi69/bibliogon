@@ -36,6 +36,19 @@ Article editor differs from the book editor by design:
 
 Title is editable inline at the top of the page. Click the title text and start typing.
 
+## Topic and SEO
+
+Each article has a **Topic** dropdown in the metadata sidebar. Topics are the article's primary category and come from a single list managed in **Settings → Topics**. The dropdown is disabled until you've defined at least one topic; an empty hint links you to the right Settings tab.
+
+Topic is single-value (an article belongs to one topic). Tags remain a separate, multi-value field for finer cross-cutting labels.
+
+The **SEO** section (below Status) collects two dedicated fields:
+
+- **SEO Title** — overrides the article title in search snippets. Falls back to the article title when left empty.
+- **SEO Description** — overrides the excerpt in search snippets. Falls back to the article excerpt when left empty.
+
+These are article-level defaults. Publications (Medium, Substack, X, LinkedIn) inherit them; per-platform overrides go in the platform_metadata blob.
+
 ## Status
 
 - **Draft** — work in progress. Default for new articles.
@@ -95,7 +108,9 @@ A Publication with `is_promo` true is a short companion piece — a tweet, threa
 
 ### SEO metadata
 
-The article-level SEO fields (canonical URL, featured image, excerpt, tags) live above the Publications panel. Publications inherit them as defaults; per-platform overrides go in the platform_metadata blob you fill out on Add.
+The article-level SEO fields (SEO Title, SEO Description, canonical URL, featured image, excerpt, tags) live above the Publications panel. Publications inherit them as defaults; per-platform overrides go in the platform_metadata blob you fill out on Add.
+
+SEO Title and SEO Description fall back to the article title and excerpt at publish time when empty, so leaving them blank is fine for most articles.
 
 ### What's still NOT in scope (Phase 3+)
 

@@ -36,6 +36,19 @@ Der Artikel-Editor unterscheidet sich bewusst vom Buch-Editor:
 
 Der Titel laesst sich oben auf der Seite inline editieren. Auf den Titel klicken und tippen.
 
+## Thema und SEO
+
+Jeder Artikel hat ein **Thema**-Dropdown in der Metadaten-Sidebar. Themen sind die primaere Kategorie eines Artikels und kommen aus einer einzigen Liste, die unter **Einstellungen → Themen** verwaltet wird. Das Dropdown ist deaktiviert, solange noch kein Thema definiert ist; ein Hinweis verlinkt auf den passenden Einstellungs-Tab.
+
+Thema ist einwertig (ein Artikel gehoert zu genau einem Thema). Tags bleiben ein separates, mehrwertiges Feld fuer feinere Quer-Etiketten.
+
+Die **SEO**-Sektion (unter Status) sammelt zwei dedizierte Felder:
+
+- **SEO-Titel** — uebersteuert den Artikeltitel in Such-Snippets. Faellt bei leerem Wert auf den Artikeltitel zurueck.
+- **SEO-Beschreibung** — uebersteuert den Auszug in Such-Snippets. Faellt bei leerem Wert auf den Artikel-Auszug zurueck.
+
+Das sind Artikel-Level-Defaults. Publikationen (Medium, Substack, X, LinkedIn) erben sie; pro-Plattform-Overrides gehen in den platform_metadata-Blob.
+
 ## Status
 
 - **Entwurf** — in Arbeit. Standard fuer neue Artikel.
@@ -95,7 +108,9 @@ Eine Publikation mit `is_promo=true` ist ein kurzer Begleit-Post — ein Tweet, 
 
 ### SEO-Metadaten
 
-Die Artikel-Level-SEO-Felder (Canonical URL, Featured Image, Auszug, Tags) liegen ueber dem Publikationen-Panel. Publikationen erben sie als Defaults; pro-Plattform-Overrides gehen in den platform_metadata-Blob beim Hinzufuegen.
+Die Artikel-Level-SEO-Felder (SEO-Titel, SEO-Beschreibung, Canonical URL, Featured Image, Auszug, Tags) liegen ueber dem Publikationen-Panel. Publikationen erben sie als Defaults; pro-Plattform-Overrides gehen in den platform_metadata-Blob beim Hinzufuegen.
+
+SEO-Titel und SEO-Beschreibung fallen bei leerem Wert zur Veroeffentlichung auf Titel und Auszug des Artikels zurueck — leer lassen ist fuer die meisten Artikel ok.
 
 ### Was weiterhin NICHT im Umfang ist (Phase 3+)
 
