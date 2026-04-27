@@ -34,6 +34,7 @@ import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useAuthorProfile } from "../hooks/useAuthorProfile";
+import { useTopics } from "../hooks/useTopics";
 import { notify } from "../utils/notify";
 
 /** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */
@@ -63,6 +64,7 @@ export default function ArticleEditor() {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const authorProfile = useAuthorProfile();
+    const topics = useTopics();
 
     const lastSavedJson = useRef<string>("");
     const lastSavedMeta = useRef<string>("");
@@ -85,6 +87,13 @@ export default function ArticleEditor() {
                     author: a.author,
                     language: a.language,
                     status: a.status,
+                    canonical_url: a.canonical_url,
+                    featured_image_url: a.featured_image_url,
+                    excerpt: a.excerpt,
+                    tags: a.tags,
+                    topic: a.topic,
+                    seo_title: a.seo_title,
+                    seo_description: a.seo_description,
                 });
             })
             .catch((err) => {
@@ -190,6 +199,9 @@ export default function ArticleEditor() {
                 featured_image_url: next.featured_image_url,
                 excerpt: next.excerpt,
                 tags: next.tags,
+                topic: next.topic,
+                seo_title: next.seo_title,
+                seo_description: next.seo_description,
             });
             if (meta === lastSavedMeta.current) return;
             try {
@@ -206,6 +218,12 @@ export default function ArticleEditor() {
                         | undefined,
                     excerpt: patch.excerpt as string | null | undefined,
                     tags: patch.tags,
+                    topic: patch.topic as string | null | undefined,
+                    seo_title: patch.seo_title as string | null | undefined,
+                    seo_description: patch.seo_description as
+                        | string
+                        | null
+                        | undefined,
                 });
                 setArticle(saved);
                 lastSavedMeta.current = meta;
@@ -306,19 +324,7 @@ export default function ArticleEditor() {
             </header>
 
             <main style={layout.body}>
-                <div style={layout.editorPane}>
-                    <EditorContent editor={editor} />
-                    <p
-                        data-testid="article-editor-word-count"
-                        style={layout.wordCount}
-                    >
-                        {t("ui.articles.word_count", "{count} Wörter").replace(
-                            "{count}",
-                            String(wordCount),
-                        )}
-                    </p>
-                </div>
-                <aside style={layout.sidebar}>
+                <aside style={layout.sidebar} data-testid="article-editor-sidebar">
                     <h3 style={layout.sidebarHeading}>
                         {t("ui.articles.metadata_heading", "Metadaten")}
                     </h3>
@@ -342,6 +348,17 @@ export default function ArticleEditor() {
                         onChange={(v) => {
                             setArticle({ ...article, author: v || null });
                             void persistMeta({ author: v || null });
+                        }}
+                    />
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.topic", "Thema")}
+                    </label>
+                    <TopicSelect
+                        value={article.topic ?? ""}
+                        topics={topics}
+                        onChange={(v) => {
+                            setArticle({ ...article, topic: v || null });
+                            void persistMeta({ topic: v || null });
                         }}
                     />
                     <label style={layout.fieldLabel}>
@@ -385,6 +402,53 @@ export default function ArticleEditor() {
                             </option>
                         ))}
                     </select>
+
+                    <h4 style={layout.sectionHeading}>
+                        {t("ui.articles.seo_section", "SEO")}
+                    </h4>
+                    <Field
+                        label={t("ui.articles.seo_title", "SEO-Titel")}
+                        value={article.seo_title ?? ""}
+                        onChange={(v) =>
+                            setArticle({ ...article, seo_title: v || null })
+                        }
+                        onBlur={() =>
+                            persistMeta({ seo_title: article.seo_title })
+                        }
+                        testId="article-editor-seo-title"
+                        placeholder={t(
+                            "ui.articles.seo_title_placeholder",
+                            "Faellt leer auf Titel zurueck",
+                        )}
+                    />
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.seo_description", "SEO-Beschreibung")}
+                    </label>
+                    <textarea
+                        data-testid="article-editor-seo-description"
+                        value={article.seo_description ?? ""}
+                        onChange={(e) =>
+                            setArticle({
+                                ...article,
+                                seo_description: e.target.value || null,
+                            })
+                        }
+                        onBlur={() =>
+                            persistMeta({
+                                seo_description: article.seo_description,
+                            })
+                        }
+                        rows={3}
+                        placeholder={t(
+                            "ui.articles.seo_description_placeholder",
+                            "Faellt leer auf Excerpt zurueck",
+                        )}
+                        style={{
+                            ...layout.fieldInput,
+                            resize: "vertical",
+                            fontFamily: "inherit",
+                        }}
+                    />
                     <Field
                         label={t("ui.articles.canonical_url", "Canonical URL")}
                         value={article.canonical_url ?? ""}
@@ -459,6 +523,18 @@ export default function ArticleEditor() {
                         {t("ui.articles.delete", "Löschen")}
                     </button>
                 </aside>
+                <div style={layout.editorPane}>
+                    <EditorContent editor={editor} />
+                    <p
+                        data-testid="article-editor-word-count"
+                        style={layout.wordCount}
+                    >
+                        {t("ui.articles.word_count", "{count} Wörter").replace(
+                            "{count}",
+                            String(wordCount),
+                        )}
+                    </p>
+                </div>
             </main>
         </div>
     );
@@ -613,12 +689,14 @@ function Field({
     onChange,
     onBlur,
     testId,
+    placeholder,
 }: {
     label: string;
     value: string;
     onChange: (v: string) => void;
     onBlur: () => void;
     testId: string;
+    placeholder?: string;
 }) {
     return (
         <>
@@ -628,8 +706,66 @@ function Field({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onBlur={onBlur}
+                placeholder={placeholder}
                 style={layout.fieldInput}
             />
+        </>
+    );
+}
+
+/** Settings-managed topic select. Empty array (settings has no topics
+ *  configured yet) renders a hint + disabled select; null (loading)
+ *  renders a disabled select without the hint. Unknown current value
+ *  is preserved as a one-off option so legacy data survives. */
+function TopicSelect({
+    value,
+    topics,
+    onChange,
+}: {
+    value: string;
+    topics: string[] | null;
+    onChange: (next: string) => void;
+}) {
+    const { t } = useI18n();
+    const list = topics ?? [];
+    const valueIsKnown = value === "" || list.includes(value);
+    const noTopicsConfigured = topics !== null && list.length === 0;
+    return (
+        <>
+            <select
+                data-testid="article-editor-topic"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={layout.fieldInput}
+                disabled={topics === null}
+            >
+                <option value="">
+                    {t("ui.articles.topic_none", "(kein Thema)")}
+                </option>
+                {list.map((topic) => (
+                    <option key={topic} value={topic}>
+                        {topic}
+                    </option>
+                ))}
+                {!valueIsKnown && (
+                    <option value={value}>{value}</option>
+                )}
+            </select>
+            {noTopicsConfigured && (
+                <p
+                    data-testid="article-editor-topic-empty-hint"
+                    style={{
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                        marginTop: 4,
+                    }}
+                >
+                    {t(
+                        "ui.articles.topic_empty_hint",
+                        "Themen in den Einstellungen verwalten.",
+                    )}
+                </p>
+            )}
         </>
     );
 }
@@ -661,7 +797,9 @@ const layout: Record<string, React.CSSProperties> = {
     body: {
         flex: 1,
         display: "grid",
-        gridTemplateColumns: "1fr 280px",
+        // Sidebar on the left to mirror BookEditor's sidebar position
+        // (UX consistency between Book + Article editors).
+        gridTemplateColumns: "300px 1fr",
         minHeight: 0,
     },
     editorPane: {
@@ -674,7 +812,7 @@ const layout: Record<string, React.CSSProperties> = {
         color: "var(--text-muted)",
     },
     sidebar: {
-        borderLeft: "1px solid var(--border)",
+        borderRight: "1px solid var(--border)",
         background: "var(--bg-card)",
         padding: "16px 20px",
         display: "flex",
@@ -688,6 +826,16 @@ const layout: Record<string, React.CSSProperties> = {
         fontSize: "0.875rem",
         fontWeight: 600,
         color: "var(--text-secondary)",
+    },
+    sectionHeading: {
+        margin: 0,
+        marginTop: 16,
+        marginBottom: 4,
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        color: "var(--text-secondary)",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
     },
     fieldLabel: {
         fontSize: "0.75rem",
