@@ -128,14 +128,19 @@ export interface ChapterMetricsResponse {
     averages: Record<string, number>;
 }
 
-// --- Article (AR-01 Phase 1) ---
+// --- Article (AR-01 Phase 1 + AR-02 Phase 2) ---
 
 export type ArticleStatus = "draft" | "published" | "archived"
 
 /** Standalone long-form article. Distinct from Book: no chapters,
  *  no front-matter, no ISBN. Single TipTap document plus minimal
  *  metadata. ``content_json`` is a string-serialised TipTap doc
- *  (matches the Chapter.content convention). */
+ *  (matches the Chapter.content convention).
+ *
+ *  Phase 2 adds canonical SEO fields (canonical_url,
+ *  featured_image_url, excerpt, tags) and a one-to-many
+ *  relationship to Publication (fetched separately via
+ *  ``api.publications.list``). */
 export interface Article {
     id: string
     title: string
@@ -147,6 +152,12 @@ export interface Article {
     content_type: string
     content_json: string
     status: ArticleStatus
+    /** AR-02 Phase 2 SEO defaults. Publications inherit these unless
+     *  the per-platform metadata blob overrides. */
+    canonical_url: string | null
+    featured_image_url: string | null
+    excerpt: string | null
+    tags: string[]
     created_at: string
     updated_at: string
 }
@@ -165,6 +176,69 @@ export interface ArticleUpdate {
     language?: string
     content_json?: string
     status?: ArticleStatus
+    canonical_url?: string | null
+    featured_image_url?: string | null
+    excerpt?: string | null
+    tags?: string[]
+}
+
+// --- Publication (AR-02 Phase 2) ---
+
+export type PublicationStatus =
+    | "planned"
+    | "scheduled"
+    | "published"
+    | "out_of_sync"
+    | "archived"
+
+export interface Publication {
+    id: string
+    article_id: string
+    platform: string
+    is_promo: boolean
+    status: PublicationStatus
+    platform_metadata: Record<string, unknown>
+    content_snapshot_at_publish: string | null
+    scheduled_at: string | null
+    published_at: string | null
+    last_verified_at: string | null
+    notes: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface PublicationCreate {
+    platform: string
+    is_promo?: boolean
+    platform_metadata?: Record<string, unknown>
+    notes?: string | null
+    scheduled_at?: string | null
+}
+
+export interface PublicationUpdate {
+    status?: PublicationStatus
+    platform_metadata?: Record<string, unknown>
+    scheduled_at?: string | null
+    published_at?: string | null
+    notes?: string | null
+}
+
+export interface MarkPublishedRequest {
+    published_url?: string | null
+    published_at?: string | null
+}
+
+/** Per-platform metadata schema (loaded from
+ *  backend/app/data/platform_schemas.yaml). The frontend renders
+ *  add-publication forms from this data. */
+export interface PlatformSchema {
+    display_name: string
+    required_metadata: string[]
+    optional_metadata: string[]
+    max_tags?: number | null
+    max_chars_per_post?: number | null
+    publishing_method: string
+    notes?: string | null
 }
 
 export interface BookCreate {
@@ -627,9 +701,73 @@ export const api = {
             request<void>("/books/trash/empty", {method: "DELETE"}),
     },
 
+    /** AR-02 Phase 2: per-Article publications + drift detection. */
+    publications: {
+        list: (articleId: string) =>
+            request<Publication[]>(`/articles/${articleId}/publications`),
+
+        get: (articleId: string, pubId: string) =>
+            request<Publication>(
+                `/articles/${articleId}/publications/${pubId}`,
+            ),
+
+        create: (articleId: string, data: PublicationCreate) =>
+            request<Publication>(`/articles/${articleId}/publications`, {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        update: (
+            articleId: string,
+            pubId: string,
+            data: PublicationUpdate,
+        ) =>
+            request<Publication>(
+                `/articles/${articleId}/publications/${pubId}`,
+                {
+                    method: "PATCH",
+                    body: JSON.stringify(data),
+                },
+            ),
+
+        delete: (articleId: string, pubId: string) =>
+            request<void>(
+                `/articles/${articleId}/publications/${pubId}`,
+                {method: "DELETE"},
+            ),
+
+        markPublished: (
+            articleId: string,
+            pubId: string,
+            data: MarkPublishedRequest,
+        ) =>
+            request<Publication>(
+                `/articles/${articleId}/publications/${pubId}/mark-published`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(data),
+                },
+            ),
+
+        verifyLive: (articleId: string, pubId: string) =>
+            request<Publication>(
+                `/articles/${articleId}/publications/${pubId}/verify-live`,
+                {method: "POST"},
+            ),
+    },
+
+    /** AR-02 Phase 2: platform schemas loaded from
+     *  backend/app/data/platform_schemas.yaml. Top-level path so it
+     *  doesn't collide with /articles/{article_id}. */
+    articlePlatforms: {
+        list: () =>
+            request<Record<string, PlatformSchema>>("/article-platforms"),
+    },
+
     /** AR-01 Phase 1: standalone Article CRUD. Article is its own
      *  entity, NOT a Book - no chapters, no front-matter, no ISBN.
-     *  Phase 2+ adds Publications / Promo Posts / SEO metadata. */
+     *  Phase 2 layers on Publications + drift detection (see
+     *  api.publications) and SEO fields on Article itself. */
     articles: {
         list: (status?: ArticleStatus) => {
             const qs = status ? `?status=${status}` : ""

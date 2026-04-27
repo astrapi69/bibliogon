@@ -1,21 +1,24 @@
 /**
- * AR-01 Phase 1 ArticleEditor.
+ * AR-01 Phase 1 + AR-02 Phase 2 ArticleEditor.
  *
  * Standalone TipTap editor for long-form articles. Differs from the
  * BookEditor:
  * - No chapter sidebar (articles are single documents).
  * - No front-matter tabs.
  * - Simpler header (title + status + save indicator).
- * - Sidebar shows: subtitle, author, language, status, word count.
+ * - Sidebar shows: subtitle, author, language, status, word count,
+ *   canonical SEO fields (Phase 2), and the per-platform
+ *   PublicationsPanel (Phase 2).
  *
- * Phase 1 explicitly skips:
- * - AI review extension wiring (chapter-id-coupled; Phase 1.5).
- * - Multi-platform publication state.
- * - SEO metadata fields (seo_title, tags, canonical URL, ...).
+ * Phase 1 explicitly skips: AI review extension wiring (chapter-id
+ * coupled; Phase 1.5).
+ *
+ * Phase 2 explicitly skips: platform API integration, scheduled
+ * publishing, analytics, plugin extraction.
  *
  * Auto-save: debounced 1 s on every TipTap update. Same pattern as
  * BookEditor's chapter save but simpler (single document, no
- * optimistic-lock version counter — Phase 1 articles don't need it
+ * optimistic-lock version counter - Phase 1 articles don't need it
  * because the only writer is the local editor).
  */
 
@@ -27,6 +30,7 @@ import Link from "@tiptap/extension-link";
 import { Loader2, Save, ArrowLeft, Trash2 } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
+import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
@@ -153,6 +157,10 @@ export default function ArticleEditor() {
                 author: next.author,
                 language: next.language,
                 status: next.status,
+                canonical_url: next.canonical_url,
+                featured_image_url: next.featured_image_url,
+                excerpt: next.excerpt,
+                tags: next.tags,
             });
             if (meta === lastSavedMeta.current) return;
             try {
@@ -162,6 +170,13 @@ export default function ArticleEditor() {
                     author: patch.author as string | null | undefined,
                     language: patch.language,
                     status: patch.status as ArticleStatus | undefined,
+                    canonical_url: patch.canonical_url as string | null | undefined,
+                    featured_image_url: patch.featured_image_url as
+                        | string
+                        | null
+                        | undefined,
+                    excerpt: patch.excerpt as string | null | undefined,
+                    tags: patch.tags,
                 });
                 setArticle(saved);
                 lastSavedMeta.current = meta;
@@ -320,6 +335,69 @@ export default function ArticleEditor() {
                             </option>
                         ))}
                     </select>
+                    <Field
+                        label={t("ui.articles.canonical_url", "Canonical URL")}
+                        value={article.canonical_url ?? ""}
+                        onChange={(v) =>
+                            setArticle({
+                                ...article,
+                                canonical_url: v || null,
+                            })
+                        }
+                        onBlur={() =>
+                            persistMeta({
+                                canonical_url: article.canonical_url,
+                            })
+                        }
+                        testId="article-editor-canonical-url"
+                    />
+                    <Field
+                        label={t(
+                            "ui.articles.featured_image_url",
+                            "Featured Image URL",
+                        )}
+                        value={article.featured_image_url ?? ""}
+                        onChange={(v) =>
+                            setArticle({
+                                ...article,
+                                featured_image_url: v || null,
+                            })
+                        }
+                        onBlur={() =>
+                            persistMeta({
+                                featured_image_url: article.featured_image_url,
+                            })
+                        }
+                        testId="article-editor-featured-image"
+                    />
+                    <Field
+                        label={t("ui.articles.excerpt", "Excerpt")}
+                        value={article.excerpt ?? ""}
+                        onChange={(v) =>
+                            setArticle({
+                                ...article,
+                                excerpt: v || null,
+                            })
+                        }
+                        onBlur={() => persistMeta({ excerpt: article.excerpt })}
+                        testId="article-editor-excerpt"
+                    />
+                    <Field
+                        label={t("ui.articles.tags_label", "Tags (comma-separated)")}
+                        value={(article.tags ?? []).join(", ")}
+                        onChange={(v) =>
+                            setArticle({
+                                ...article,
+                                tags: v
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter(Boolean),
+                            })
+                        }
+                        onBlur={() => persistMeta({ tags: article.tags })}
+                        testId="article-editor-tags"
+                    />
+                    <PublicationsPanel articleId={article.id} />
                     <button
                         type="button"
                         className="btn btn-secondary btn-sm"
