@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 closed)
+Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,15 @@ release pass.
 
 ## Recently closed
 
+- **PS-13** ("Save as new chapter" in ConflictResolutionDialog):
+  closed 2026-04-27 in `39927ae` (backend fork endpoint) +
+  `de4638d` (frontend wiring + i18n). New
+  `POST /api/books/{id}/chapters/{cid}/fork` clones local
+  edits into a chapter inserted at `source.position+1`,
+  bumping subsequent positions; source chapter untouched.
+  ConflictResolutionDialog gains optional
+  `onSaveAsNewChapter` prop + third button. 5 i18n keys × 8
+  languages. +6 backend tests + +3 Vitest tests.
 - **PGS-03-FU-01** (mark_conflict + rename detection): closed
   2026-04-25 in `819e571` (mark_conflict backend),
   `5bfd76a` (rename detection backend), `e58d9e1` (frontend
@@ -115,8 +124,9 @@ release pass.
 Ranked by user-value, deadline pressure, follow-up scope from
 recently-shipped work. PGS-02-FU-01 closed in `32137bb`,
 CIO-08-FU-01 closed in `7c97d4f`, PGS-03-FU-01 closed across
-`819e571 + 5bfd76a + e58d9e1`, TD-01 + PS-09-FU-01 closed
-(already-resolved); top 6 below renumbered. DEP-02 deferred
+`819e571 + 5bfd76a + e58d9e1`, PS-13 closed across
+`39927ae + de4638d`, TD-01 + PS-09-FU-01 closed
+(already-resolved); top 5 below renumbered. DEP-02 deferred
 per user note (line below).
 
 ### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
@@ -132,51 +142,42 @@ per user note (line below).
   `docs/explorations/tiptap-3-migration.md`.
 - is still not implemented and v0.24.0 is available. see: https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace
 
-### 2. PS-13 - "Save as new chapter" in ConflictResolutionDialog
-
-- **ID**: PS-13
-- **Effort**: 2-3h
-- **Why rank 2**: real UX gap in the 409 conflict flow. Needs
-  new endpoint (`POST /api/books/{id}/chapters/fork`), 8-language
-  i18n, E2E coverage. Position-ordering scope discussion before
-  implementation. (Promoted after CIO-08-FU-01 shipped.)
-
-### 3. PGS-04 follow-up: cross-language conflict UI
+### 2. PGS-04 follow-up: cross-language conflict UI
 
 - **ID**: PGS-04-FU-01 (new)
 - **Effort**: M
-- **Why rank 3**: deferred from PGS-04. Two diverging language
+- **Why rank 2**: deferred from PGS-04. Two diverging language
   branches with incompatible chapter structure currently surface
   as silent skip + log. UI needed when first user hits this.
 - **Status**: deferred at MVP cut. Triggered by user report.
-  (Promoted from rank 4 after PGS-03-FU-01 closed.)
+  (Promoted after PS-13 shipped.)
 
-### 4. Monitor v0.22.0 → v0.22.1 upgrade feedback
+### 3. Monitor v0.22.0 → v0.22.1 upgrade feedback
 
 - **ID**: MAINT-01
 - **Effort**: 0 code (review only)
-- **Why rank 4**: scheduled review on 2026-05-09 (14 days out).
+- **Why rank 3**: scheduled review on 2026-05-09 (14 days out).
   No telemetry; drift would surface as bug reports. If silent,
   close. If reports, audit other `Mapped` columns added without
   Alembic revisions.
 - **Status**: open, time-bound.
 
-### 5. AR-01 - article authoring validation log
+### 4. AR-01 - article authoring validation log
 
 - **ID**: AR-01
 - **Effort**: 0 new code; observation only
-- **Why rank 5**: validates whether article-publication workflow
+- **Why rank 4**: validates whether article-publication workflow
   warrants a Bibliogon feature at all. 3-5 cross-posting workflows
   logged in `docs/journal/article-workflow-observations.md`. Drives
   AR-02 architecture decision.
 - **Status**: open log file; fill as part of normal release-article
   publication.
 
-### 6. DOC-03 - plugin author docs refresh
+### 5. DOC-03 - plugin author docs refresh
 
 - **ID**: DOC-03
 - **Effort**: M (~3h)
-- **Why rank 6**: `docs/help/{de,en}/developers/plugins.md` covers
+- **Why rank 5**: `docs/help/{de,en}/developers/plugins.md` covers
   the PGS-01 patterns (source adapter, two registries) but not
   PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
   side-files via lazy import). Update before next plugin author
@@ -190,15 +191,14 @@ per user note (line below).
 ### Plugin work
 
 - **PGS-03-FU-01**: closed; see Recently closed.
-- **PGS-04-FU-01**: cross-language conflict UI. See top #3.
+- **PGS-04-FU-01**: cross-language conflict UI. See top #2.
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
 
 ### Core features
 
-- **PS-13**: "Save as new chapter" in ConflictResolutionDialog.
-  See top #2.
+- **PS-13**: closed; see Recently closed.
 - **PS-14+**: future polish items, surface as found.
 - **CIO-08-FU-01**: closed; see Recently closed.
 - **TM-04b sub-items** (chapter-template followups): update
@@ -253,7 +253,7 @@ per user note (line below).
 
 ### Validation tracks
 
-- **AR-01**: article authoring validation log. See top #5.
+- **AR-01**: article authoring validation log. See top #4.
 - **AR-02**: article authoring architecture decision. Blocked on
   AR-01 data.
 - **AR-03+**: article authoring implementation phases. Blocked
@@ -261,7 +261,7 @@ per user note (line below).
 
 ### Maintenance
 
-- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #4.
+- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #3.
 
 ---
 
