@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 closed)
+Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,18 @@ release pass.
 
 ## Recently closed
 
+- **PGS-04-FU-01** (cross-language conflict UI / skipped-branch
+  surface): closed 2026-04-27 in `06c7c1b` (backend skipped
+  payload) + `75046b9` (frontend reusable result panel +
+  i18n). `MultiBranchResult.skipped: list[SkippedBranch]`
+  with stable reasons (`no_wbt_layout`, `import_failed`).
+  HTTP `MultiBranchImportResponse.skipped` defaults to `[]`.
+  New `TranslationImportResultPanel` is a pure presentational
+  component that any future entry point embeds. 7 i18n keys
+  × 8 languages. +4 backend tests + +6 Vitest tests. Wiring
+  the actual entry point that calls
+  `api.translations.importMultiBranch` is separate PGS-04
+  wizard work.
 - **PS-13** ("Save as new chapter" in ConflictResolutionDialog):
   closed 2026-04-27 in `39927ae` (backend fork endpoint) +
   `de4638d` (frontend wiring + i18n). New
@@ -125,8 +137,9 @@ Ranked by user-value, deadline pressure, follow-up scope from
 recently-shipped work. PGS-02-FU-01 closed in `32137bb`,
 CIO-08-FU-01 closed in `7c97d4f`, PGS-03-FU-01 closed across
 `819e571 + 5bfd76a + e58d9e1`, PS-13 closed across
-`39927ae + de4638d`, TD-01 + PS-09-FU-01 closed
-(already-resolved); top 5 below renumbered. DEP-02 deferred
+`39927ae + de4638d`, PGS-04-FU-01 closed across
+`06c7c1b + 75046b9`, TD-01 + PS-09-FU-01 closed
+(already-resolved); top 4 below renumbered. DEP-02 deferred
 per user note (line below).
 
 ### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
@@ -142,42 +155,33 @@ per user note (line below).
   `docs/explorations/tiptap-3-migration.md`.
 - is still not implemented and v0.24.0 is available. see: https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace
 
-### 2. PGS-04 follow-up: cross-language conflict UI
-
-- **ID**: PGS-04-FU-01 (new)
-- **Effort**: M
-- **Why rank 2**: deferred from PGS-04. Two diverging language
-  branches with incompatible chapter structure currently surface
-  as silent skip + log. UI needed when first user hits this.
-- **Status**: deferred at MVP cut. Triggered by user report.
-  (Promoted after PS-13 shipped.)
-
-### 3. Monitor v0.22.0 → v0.22.1 upgrade feedback
+### 2. Monitor v0.22.0 → v0.22.1 upgrade feedback
 
 - **ID**: MAINT-01
 - **Effort**: 0 code (review only)
-- **Why rank 3**: scheduled review on 2026-05-09 (14 days out).
+- **Why rank 2**: scheduled review on 2026-05-09 (12 days out).
   No telemetry; drift would surface as bug reports. If silent,
   close. If reports, audit other `Mapped` columns added without
   Alembic revisions.
-- **Status**: open, time-bound.
+- **Status**: open, time-bound. (Promoted after PGS-04-FU-01
+  shipped.)
 
-### 4. AR-01 - article authoring validation log
+### 3. AR-01 - article authoring validation log
 
 - **ID**: AR-01
 - **Effort**: 0 new code; observation only
-- **Why rank 4**: validates whether article-publication workflow
+- **Why rank 3**: validates whether article-publication workflow
   warrants a Bibliogon feature at all. 3-5 cross-posting workflows
   logged in `docs/journal/article-workflow-observations.md`. Drives
   AR-02 architecture decision.
 - **Status**: open log file; fill as part of normal release-article
   publication.
 
-### 5. DOC-03 - plugin author docs refresh
+### 4. DOC-03 - plugin author docs refresh
 
 - **ID**: DOC-03
 - **Effort**: M (~3h)
-- **Why rank 5**: `docs/help/{de,en}/developers/plugins.md` covers
+- **Why rank 4**: `docs/help/{de,en}/developers/plugins.md` covers
   the PGS-01 patterns (source adapter, two registries) but not
   PGS-02..05 (per-book locks, unified-commit fan-out, Markdown
   side-files via lazy import). Update before next plugin author
@@ -191,7 +195,7 @@ per user note (line below).
 ### Plugin work
 
 - **PGS-03-FU-01**: closed; see Recently closed.
-- **PGS-04-FU-01**: cross-language conflict UI. See top #2.
+- **PGS-04-FU-01**: closed; see Recently closed.
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
@@ -253,7 +257,7 @@ per user note (line below).
 
 ### Validation tracks
 
-- **AR-01**: article authoring validation log. See top #4.
+- **AR-01**: article authoring validation log. See top #3.
 - **AR-02**: article authoring architecture decision. Blocked on
   AR-01 data.
 - **AR-03+**: article authoring implementation phases. Blocked
@@ -261,7 +265,7 @@ per user note (line below).
 
 ### Maintenance
 
-- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #3.
+- **MAINT-01**: monitor v0.22.0 → v0.22.1 upgrade. See top #2.
 
 ---
 
