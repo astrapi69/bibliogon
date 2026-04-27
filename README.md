@@ -1,10 +1,10 @@
 # Bibliogon
 
-Open-source book authoring platform. Write, organize, and export books as EPUB, PDF, or audiobook - offline-first, plugin-based, with Dark Mode.
+Open-source self-publishing toolkit for authors. Books, articles, and multi-platform content workflows. Offline-first, plugin-based, EPUB / PDF / audiobook export.
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.23.0**
 
 ## Features
 
@@ -27,6 +27,33 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - 6 themes (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) x Light/Dark
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
 - Responsive layout with hamburger menu on mobile
+
+## Article Authoring (Phase 2 - beta)
+
+Beyond books, Bibliogon supports article authoring with multi-platform publication tracking.
+
+- Dedicated article editor with TipTap (separate from the book editor, single-document, no chapter sidebar)
+- Article-level metadata: topic (settings-managed), SEO title / description, tags, excerpt, canonical URL, featured image
+- Per-platform publication tracking (Medium, Substack, X, LinkedIn, dev.to, Mastodon, Bluesky, custom)
+- Drift detection: the editor flags out-of-sync publications when article content changes after publish; a "Verify live" action re-snapshots the baseline
+- Promo posts modeled as publications with the `is_promo` flag (short companion piece linking back to a main publication)
+- Manual publishing workflow - no platform API integration yet (Phase 3 scope)
+
+## Git Sync for Books
+
+Books can be synchronized with external git repositories for collaboration, backup, and version control.
+
+- **Import:** clone a public git repo containing a book in Bibliogon's WBT layout
+- **Commit + Push:** save book changes back to the repo via SSH agent, system credential helper, or per-book PAT
+- **Smart-Merge:** three-way diff with per-chapter conflict resolution UI for chapters edited both locally and remotely
+- **Multi-Language:** repos with `main-XX` branches (e.g. `main-de`, `main-fr`) import as linked translations via `Book.translation_group_id`
+- **Core-Git Bridge:** unified commit fans out to both core git history and the plugin-git-sync subsystem under a per-book lock
+
+PAT-via-UI is partially deferred. SSH and the system credential helper work today; PAT input through the UI lands in v0.24.x.
+
+## Multi-Book Backup Import
+
+`.bgb` backup files containing multiple books can be imported with per-book selection (default-all-on) and per-book duplicate detection. The import wizard uses an XState v5 state machine to manage the multi-step flow with single-book and multi-book branches and a shared error boundary that reports details + opens a GitHub Issue on failure.
 
 ## Install and Run
 
@@ -113,6 +140,7 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | grammar | MIT | LanguageTool grammar checking |
 | kinderbuch | MIT | Children's book page layout |
 | kdp | MIT | Amazon KDP metadata, cover validation |
+| git-sync | MIT | Book-as-git-repo: import, commit, smart-merge, multi-language linking |
 
 Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
