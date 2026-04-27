@@ -601,6 +601,21 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
+        /** PS-13: clone the user's local edit into a NEW chapter
+         *  inserted directly after the source. Used by the
+         *  ConflictResolutionDialog "Save as new chapter" action so the
+         *  user preserves their unsaved draft without overwriting the
+         *  server's copy of the source chapter. */
+        fork: (
+            bookId: string,
+            chapterId: string,
+            data: {content: string; title?: string},
+        ) =>
+            request<Chapter>(`/books/${bookId}/chapters/${chapterId}/fork`, {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
         update: async (bookId: string, chapterId: string, data: ChapterUpdatePayload): Promise<Chapter> => {
             // Per-chapter abort: if a save for this chapter is already
             // in flight when a new one starts, cancel the old one. The

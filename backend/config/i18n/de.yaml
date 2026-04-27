@@ -1091,6 +1091,11 @@ ui:
     saved_local: "Deine Änderungen wurden gespeichert."
     server_restored: "Server-Version geladen."
     save_failed_again: "Speichern fehlgeschlagen. Bitte erneut versuchen."
+    save_as_new_chapter: "Als neues Kapitel speichern"
+    save_as_new_chapter_tooltip: "Lokale Änderungen als neues Kapitel direkt nach diesem speichern; das aktuelle Kapitel behält die Server-Version."
+    local_draft_suffix: "(Lokaler Entwurf)"
+    saved_as_new_chapter: "Lokale Änderungen wurden als neues Kapitel \"{title}\" gespeichert."
+    save_as_new_failed: "Speichern als neues Kapitel fehlgeschlagen."
   donations:
     tab: "Unterstützen"
     section_title: "Bibliogon unterstützen"

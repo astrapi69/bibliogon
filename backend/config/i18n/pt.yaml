@@ -1091,6 +1091,11 @@ ui:
     saved_local: "Tuas alteracoes foram salvas."
     server_restored: "Versao do servidor carregada."
     save_failed_again: "Falha ao salvar. Tenta novamente."
+    save_as_new_chapter: "Salvar como novo capitulo"
+    save_as_new_chapter_tooltip: "Salve as edicoes locais como um novo capitulo inserido logo apos este; o capitulo atual mantem a versao do servidor."
+    local_draft_suffix: "(Rascunho local)"
+    saved_as_new_chapter: "Edicoes locais salvas como novo capitulo \"{title}\"."
+    save_as_new_failed: "Falha ao salvar como novo capitulo."
   donations:
     tab: "Apoiar"
     section_title: "Apoiar o Bibliogon"

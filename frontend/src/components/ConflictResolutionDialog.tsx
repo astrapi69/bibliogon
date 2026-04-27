@@ -11,7 +11,7 @@
  * later; the critical thing is that no content is silently lost.
  */
 import * as Dialog from "@radix-ui/react-dialog";
-import {AlertTriangle, Save, X, RotateCcw} from "lucide-react";
+import {AlertTriangle, Save, RotateCcw, FilePlus} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 
 export interface ConflictInfo {
@@ -27,6 +27,12 @@ interface Props {
   conflict: ConflictInfo | null;
   onKeepLocal: (info: ConflictInfo) => void | Promise<void>;
   onDiscardLocal: (info: ConflictInfo) => void | Promise<void>;
+  /** PS-13 third option: fork the local edit into a NEW chapter
+   *  inserted after the current one, then load the server content
+   *  into the editor. Optional so existing tests + callers stay
+   *  backward-compatible; the button is hidden when this prop is
+   *  not supplied. */
+  onSaveAsNewChapter?: (info: ConflictInfo) => void | Promise<void>;
 }
 
 /** Extract the visible text of a TipTap JSON doc for a rough preview.
@@ -49,7 +55,7 @@ function previewText(content: string): string {
   }
 }
 
-export default function ConflictResolutionDialog({conflict, onKeepLocal, onDiscardLocal}: Props) {
+export default function ConflictResolutionDialog({conflict, onKeepLocal, onDiscardLocal, onSaveAsNewChapter}: Props) {
   const {t} = useI18n();
   if (!conflict) return null;
 
@@ -111,6 +117,20 @@ export default function ConflictResolutionDialog({conflict, onKeepLocal, onDisca
               <RotateCcw size={14} aria-hidden />
               {t("ui.conflict.discard_local", "Meine Änderungen verwerfen")}
             </button>
+            {onSaveAsNewChapter && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => void onSaveAsNewChapter(conflict)}
+                data-testid="conflict-save-as-new"
+                title={t(
+                  "ui.conflict.save_as_new_chapter_tooltip",
+                  "Lokale Änderungen als neues Kapitel direkt nach diesem speichern; das aktuelle Kapitel behält die Server-Version.",
+                )}
+              >
+                <FilePlus size={14} aria-hidden />
+                {t("ui.conflict.save_as_new_chapter", "Als neues Kapitel speichern")}
+              </button>
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -1091,6 +1091,11 @@ ui:
     saved_local: "Degisiklikleriniz kaydedildi."
     server_restored: "Sunucu surumu yuklendi."
     save_failed_again: "Kaydedilemedi. Lutfen tekrar deneyin."
+    save_as_new_chapter: "Yeni bolum olarak kaydet"
+    save_as_new_chapter_tooltip: "Yerel duzenlemeleri bu bolumun hemen ardina yeni bir bolum olarak kaydet; mevcut bolum sunucu surumunu korur."
+    local_draft_suffix: "(Yerel taslak)"
+    saved_as_new_chapter: "Yerel duzenlemeler yeni bolum \"{title}\" olarak kaydedildi."
+    save_as_new_failed: "Yeni bolum olarak kaydedilemedi."
   donations:
     tab: "Destekle"
     section_title: "Bibliogon'u destekleyin"

@@ -343,6 +343,45 @@ export default function BookEditor() {
         notify.info(t("ui.conflict.server_restored", "Server-Version geladen."));
     };
 
+    const resolveConflictSaveAsNew = async (info: ConflictInfo) => {
+        if (!bookId) return;
+        try {
+            const sourceTitle = info.serverTitle ?? "";
+            const draftSuffix = t("ui.conflict.local_draft_suffix", "(Lokaler Entwurf)");
+            const forkedTitle = sourceTitle
+                ? `${sourceTitle} ${draftSuffix}`.trim()
+                : undefined;
+            const newChapter = await api.chapters.fork(bookId, info.chapterId, {
+                content: info.localContent,
+                title: forkedTitle,
+            });
+            // Reload the book so the new chapter shows up + every
+            // position bumped on the server is reflected in state.
+            const fresh = await api.books.get(bookId);
+            setBook(fresh);
+            // Source chapter keeps the server's content; load that
+            // into the editor so the user sees the canonical version.
+            setLoadedContent({id: info.chapterId, content: info.serverContent});
+            setConflict(null);
+            notify.success(
+                t(
+                    "ui.conflict.saved_as_new_chapter",
+                    "Lokale Änderungen wurden als neues Kapitel \"{title}\" gespeichert.",
+                ).replace("{title}", newChapter.title),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.conflict.save_as_new_failed",
+                        "Speichern als neues Kapitel fehlgeschlagen.",
+                    ),
+                    err,
+                );
+            }
+        }
+    };
+
     const handleReorder = async (chapterIds: string[]) => {
         if (!bookId) return;
         try {
@@ -562,6 +601,7 @@ export default function BookEditor() {
                 conflict={conflict}
                 onKeepLocal={resolveConflictKeepLocal}
                 onDiscardLocal={resolveConflictDiscardLocal}
+                onSaveAsNewChapter={resolveConflictSaveAsNew}
             />
             {bookId ? (
                 <ChapterVersionsModal

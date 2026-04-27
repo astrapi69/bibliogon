@@ -1091,6 +1091,11 @@ ui:
     saved_local: "変更を保存しました。"
     server_restored: "サーバー版を読み込みました。"
     save_failed_again: "保存に失敗しました。再度お試しください。"
+    save_as_new_chapter: "新しい章として保存"
+    save_as_new_chapter_tooltip: "ローカルの編集をこの章の直後に新しい章として保存します。現在の章はサーバーのバージョンを保持します。"
+    local_draft_suffix: "(ローカル草稿)"
+    saved_as_new_chapter: "ローカル編集を新しい章 \"{title}\" として保存しました。"
+    save_as_new_failed: "新しい章として保存できませんでした。"
   donations:
     tab: "サポート"
     section_title: "Bibliogon をサポートする"

@@ -1091,6 +1091,11 @@ ui:
     saved_local: "Your changes were saved."
     server_restored: "Server version loaded."
     save_failed_again: "Save failed. Please try again."
+    save_as_new_chapter: "Save as new chapter"
+    save_as_new_chapter_tooltip: "Save the local edits as a new chapter inserted directly after this one; the current chapter keeps the server version."
+    local_draft_suffix: "(Local Draft)"
+    saved_as_new_chapter: "Local edits saved as new chapter \"{title}\"."
+    save_as_new_failed: "Saving as a new chapter failed."
   donations:
     tab: "Support"
     section_title: "Support Bibliogon"

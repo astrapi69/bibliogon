@@ -1091,6 +1091,11 @@ ui:
     saved_local: "Vos modifications ont ete enregistrees."
     server_restored: "Version du serveur chargee."
     save_failed_again: "Echec de l'enregistrement. Reessayez."
+    save_as_new_chapter: "Enregistrer comme nouveau chapitre"
+    save_as_new_chapter_tooltip: "Enregistrer les modifications locales comme un nouveau chapitre insere juste apres celui-ci ; le chapitre actuel conserve la version du serveur."
+    local_draft_suffix: "(Brouillon local)"
+    saved_as_new_chapter: "Modifications locales enregistrees comme nouveau chapitre \"{title}\"."
+    save_as_new_failed: "Echec de l'enregistrement comme nouveau chapitre."
   donations:
     tab: "Soutenir"
     section_title: "Soutenir Bibliogon"

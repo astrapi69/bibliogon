@@ -59,4 +59,37 @@ describe("ConflictResolutionDialog", () => {
     render(<ConflictResolutionDialog conflict={raw} onKeepLocal={vi.fn()} onDiscardLocal={vi.fn()} />);
     expect(screen.getByTestId("conflict-local-preview").textContent).toContain("not JSON");
   });
+
+  // --- PS-13: Save as new chapter ---
+
+  it("does not render Save-as-new when onSaveAsNewChapter is omitted", () => {
+    render(<ConflictResolutionDialog conflict={info} onKeepLocal={vi.fn()} onDiscardLocal={vi.fn()} />);
+    expect(screen.queryByTestId("conflict-save-as-new")).toBeNull();
+  });
+
+  it("renders Save-as-new when onSaveAsNewChapter is supplied", () => {
+    render(
+      <ConflictResolutionDialog
+        conflict={info}
+        onKeepLocal={vi.fn()}
+        onDiscardLocal={vi.fn()}
+        onSaveAsNewChapter={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("conflict-save-as-new")).toBeTruthy();
+  });
+
+  it("Save-as-new button invokes onSaveAsNewChapter with the conflict info", () => {
+    const onSaveAsNewChapter = vi.fn();
+    render(
+      <ConflictResolutionDialog
+        conflict={info}
+        onKeepLocal={vi.fn()}
+        onDiscardLocal={vi.fn()}
+        onSaveAsNewChapter={onSaveAsNewChapter}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("conflict-save-as-new"));
+    expect(onSaveAsNewChapter).toHaveBeenCalledWith(info);
+  });
 });
