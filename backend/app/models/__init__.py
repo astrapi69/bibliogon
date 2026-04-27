@@ -389,17 +389,18 @@ class AudioVoice(Base):
 
 
 class Article(Base):
-    """Standalone long-form article (AR-01 Phase 1).
+    """Standalone long-form article.
 
-    Distinct from Book: no chapters, no front-matter, no ISBN. A
-    single TipTap document plus minimal metadata. Lifecycle is
-    `draft -> published -> archived`; per-platform publication
-    state, promo posts, SEO metadata, and drift detection are
-    explicitly Phase 2+ and not represented here.
+    Phase 1 (shipped): single TipTap document + minimal metadata +
+    draft/published/archived lifecycle.
+
+    Phase 2 (this revision): canonical SEO fields used as defaults
+    inherited by per-platform Publications, plus a one-to-many
+    relationship to Publication.
 
     `content_type` defaults to `"article"`; the column exists so a
     future Blogpost / Tweet differentiation can land without a
-    schema change. Phase 1 only writes `"article"`.
+    schema change. Phase 1+2 only writes `"article"`.
     """
 
     __tablename__ = "articles"
@@ -416,10 +417,80 @@ class Article(Base):
     # same way for both entities).
     content_json: Mapped[str] = mapped_column(Text, nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+
+    # AR-02 Phase 2 SEO defaults. Publications inherit these unless
+    # the platform_metadata blob overrides per-platform.
+    canonical_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    featured_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # JSON-encoded list[str]. Mirrors Book.keywords convention.
+    tags: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
 
+    publications: Mapped[list["Publication"]] = relationship(
+        back_populates="article",
+        cascade="all, delete-orphan",
+        order_by="Publication.created_at",
+    )
+
     def __repr__(self) -> str:
         return f"<Article {self.id!r} title={self.title!r} status={self.status}>"
+
+
+class Publication(Base):
+    """Per-platform outbound piece linked to an :class:`Article`.
+
+    Each row is one publication on one platform: either the main
+    article publication or a promo post (``is_promo=True``) that
+    links back to a primary publication.
+
+    Drift detection. ``content_snapshot_at_publish`` records the
+    article's ``content_json`` at the moment the user marked the
+    publication ``published``. The drift check compares the snapshot
+    against the article's current ``content_json``; mismatch flips
+    the effective status to ``out_of_sync`` until the user runs
+    "verify live" (which refreshes ``last_verified_at``) or
+    re-snapshots via mark-published.
+
+    Platform metadata. Stored as JSON-serialised string for forward
+    compatibility with new platforms; validated against
+    ``platform_schemas.yaml`` at the API layer (AR-02 Part 3).
+    """
+
+    __tablename__ = "publications"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    article_id: Mapped[str] = mapped_column(
+        ForeignKey("articles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    platform: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_promo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="planned")
+    # JSON-encoded dict per platform_schemas.yaml. Stored as Text for
+    # the same reason content_json is - keeps the diff path simple.
+    platform_metadata: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    # JSON-encoded TipTap doc snapshot at the moment of publish. Null
+    # until status first hits ``published``.
+    content_snapshot_at_publish: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    article: Mapped["Article"] = relationship(back_populates="publications")
+
+    def __repr__(self) -> str:
+        return (
+            f"<Publication {self.id!r} article={self.article_id} "
+            f"platform={self.platform} status={self.status}>"
+        )

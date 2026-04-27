@@ -445,6 +445,12 @@ class ArticleUpdate(BaseModel):
     language: str | None = Field(default=None, min_length=2, max_length=10)
     content_json: str | None = None
     status: str | None = None
+    # AR-02 Phase 2 SEO fields. ArticleEditor sidebar PATCHes these
+    # through the same endpoint as content_json + title.
+    canonical_url: str | None = Field(default=None, max_length=500)
+    featured_image_url: str | None = Field(default=None, max_length=500)
+    excerpt: str | None = None
+    tags: list[str] | None = None
 
     @field_validator("status")
     @classmethod
@@ -465,5 +471,134 @@ class ArticleOut(BaseModel):
     content_type: str
     content_json: str
     status: str
+    canonical_url: str | None = None
+    featured_image_url: str | None = None
+    excerpt: str | None = None
+    tags: list[str] = []
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _decode_tags(cls, value: Any) -> list[str]:
+        """Tags column is JSON-text. Decode to list[str] for the API."""
+        if value is None or value == "":
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+            if isinstance(parsed, list):
+                return [str(v) for v in parsed]
+            return []
+        return []
+
+
+# AR-02 Phase 2 SEO update payload. Patches the canonical SEO fields
+# on the Article itself (publications inherit unless overridden in
+# their own platform_metadata blob).
+class ArticleSeoUpdate(BaseModel):
+    canonical_url: str | None = Field(default=None, max_length=500)
+    featured_image_url: str | None = Field(default=None, max_length=500)
+    excerpt: str | None = None
+    tags: list[str] | None = None
+
+
+# --- Publication schemas (AR-02 Phase 2) ---
+
+
+_PUBLICATION_STATUSES = (
+    "planned",
+    "scheduled",
+    "published",
+    "out_of_sync",
+    "archived",
+)
+
+
+class PublicationCreate(BaseModel):
+    platform: str = Field(min_length=1, max_length=50)
+    is_promo: bool = False
+    platform_metadata: dict[str, Any] = Field(default_factory=dict)
+    notes: str | None = None
+    scheduled_at: datetime | None = None
+
+
+class PublicationUpdate(BaseModel):
+    """PATCH body. All fields optional."""
+
+    status: str | None = None
+    platform_metadata: dict[str, Any] | None = None
+    scheduled_at: datetime | None = None
+    published_at: datetime | None = None
+    notes: str | None = None
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in _PUBLICATION_STATUSES:
+            raise ValueError(f"status must be one of {_PUBLICATION_STATUSES}, got {v!r}")
+        return v
+
+
+class MarkPublishedRequest(BaseModel):
+    """Body for ``POST /publications/{id}/mark-published``.
+
+    The router snapshots Article.content_json into
+    Publication.content_snapshot_at_publish, sets status='published',
+    and stores published_at + the platform-side URL (via
+    platform_metadata.published_url).
+    """
+
+    published_url: str | None = None
+    published_at: datetime | None = None
+
+
+class PublicationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    article_id: str
+    platform: str
+    is_promo: bool
+    status: str
+    platform_metadata: dict[str, Any] = {}
+    content_snapshot_at_publish: str | None
+    scheduled_at: datetime | None
+    published_at: datetime | None
+    last_verified_at: datetime | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("platform_metadata", mode="before")
+    @classmethod
+    def _decode_metadata(cls, value: Any) -> dict[str, Any]:
+        """platform_metadata column is JSON-text. Decode to dict."""
+        if value is None or value == "":
+            return {}
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+
+class PlatformSchemaOut(BaseModel):
+    """Per-platform schema as exposed via the API. Mirrors the YAML
+    shape so the frontend can render forms directly."""
+
+    display_name: str
+    required_metadata: list[str] = []
+    optional_metadata: list[str] = []
+    max_tags: int | None = None
+    max_chars_per_post: int | None = None
+    publishing_method: str = "manual"
+    notes: str | None = None

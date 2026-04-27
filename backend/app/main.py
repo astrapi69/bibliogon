@@ -39,6 +39,7 @@ from app.routers import (
     import_orchestrator,
     licenses,
     plugin_install,
+    publications,
     settings,
     templates,
     translations,
@@ -223,6 +224,8 @@ app.add_middleware(
 
 app.include_router(books.router, prefix="/api")
 app.include_router(articles.router, prefix="/api")
+app.include_router(publications.publications_router, prefix="/api")
+app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")

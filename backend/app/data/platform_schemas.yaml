@@ -1,0 +1,126 @@
+# AR-02 Phase 2 platform metadata reference.
+#
+# Each entry describes a target platform an Article can be published
+# to. The frontend renders the per-platform form from this data; the
+# backend validates the platform_metadata blob against the listed
+# required fields. Adding a new platform is a YAML-only change - no
+# Python touched.
+#
+# Schema:
+#   <platform_slug>:
+#     display_name: human label
+#     required_metadata: list of field names that MUST be set
+#     optional_metadata: list of field names the form should expose
+#     max_tags: optional cap on tag count
+#     max_chars_per_post: optional cap (X/Twitter, Mastodon)
+#     publishing_method: "manual" or "api"
+#     notes: free-form note shown in the help panel
+#
+# Note: per AR-02 scope the publishing_method is always "manual" for
+# Phase 2. Real API integration is out of scope.
+
+medium:
+  display_name: "Medium"
+  required_metadata:
+    - title
+    - tags
+  optional_metadata:
+    - subtitle
+    - seo_title
+    - seo_description
+    - canonical_url
+    - featured_image
+    - friend_link
+    - published_url
+  max_tags: 5
+  publishing_method: "manual"
+  notes: "Public API deprecated for new apps; cross-post manually."
+
+substack:
+  display_name: "Substack"
+  required_metadata:
+    - title
+    - section
+  optional_metadata:
+    - subtitle
+    - preview_text
+    - featured_image
+    - canonical_url
+    - published_url
+  publishing_method: "manual"
+  notes: "Publishing API requires paid tier + partner approval."
+
+x:
+  display_name: "X (Twitter)"
+  required_metadata:
+    - body
+  optional_metadata:
+    - hashtags
+    - media
+    - reply_to
+    - thread_position
+    - published_url
+  max_chars_per_post: 280
+  publishing_method: "manual"
+  notes: "Threads tracked via thread_position (1, 2, 3, ...)."
+
+linkedin:
+  display_name: "LinkedIn"
+  required_metadata:
+    - body
+  optional_metadata:
+    - tags
+    - industry
+    - media
+    - published_url
+  publishing_method: "manual"
+
+devto:
+  display_name: "DEV Community"
+  required_metadata:
+    - title
+  optional_metadata:
+    - tags
+    - canonical_url
+    - cover_image
+    - published_url
+  max_tags: 4
+  publishing_method: "manual"
+  notes: "DEV.to has a public API; integration deferred."
+
+mastodon:
+  display_name: "Mastodon"
+  required_metadata:
+    - body
+  optional_metadata:
+    - hashtags
+    - media
+    - reply_to
+    - published_url
+  max_chars_per_post: 500
+  publishing_method: "manual"
+  notes: "Char limit varies per instance; 500 is the Mastodon default."
+
+bluesky:
+  display_name: "Bluesky"
+  required_metadata:
+    - body
+  optional_metadata:
+    - hashtags
+    - media
+    - reply_to
+    - published_url
+  max_chars_per_post: 300
+  publishing_method: "manual"
+
+custom:
+  display_name: "Custom / Other"
+  required_metadata: []
+  optional_metadata:
+    - title
+    - body
+    - canonical_url
+    - published_url
+    - notes
+  publishing_method: "manual"
+  notes: "Catch-all for platforms not listed above."

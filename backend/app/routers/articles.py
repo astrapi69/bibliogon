@@ -1,12 +1,13 @@
-"""AR-01 Phase 1: standalone Article CRUD.
+"""AR-01 Phase 1 + AR-02 Phase 2: standalone Article CRUD.
 
 Articles are long-form content distinct from Books. Single TipTap
 document, minimal metadata, simple draft/published/archived
-lifecycle. Per-platform publication state, promo posts, SEO
-metadata, and drift detection are explicitly Phase 2+ and not
-represented in this router.
+lifecycle. Phase 2 (AR-02) layered on canonical SEO fields and a
+one-to-many relationship to :class:`Publication`; per-platform
+publication CRUD lives in ``publications.py``.
 """
 
+import json
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -82,6 +83,11 @@ def update_article(
         raise HTTPException(status_code=404, detail="Article not found")
 
     updates = payload.model_dump(exclude_unset=True)
+    # tags is exposed as list[str] on the API but stored as JSON-text
+    # to match Article.content_json + Book.keywords convention. Encode
+    # before assignment.
+    if "tags" in updates and updates["tags"] is not None:
+        updates["tags"] = json.dumps(updates["tags"])
     for key, value in updates.items():
         setattr(article, key, value)
     db.commit()
