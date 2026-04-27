@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
+Last updated: 2026-04-27 (AR-01 Phase 1 shipped; TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
 Current version: v0.23.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -61,6 +61,16 @@ release pass.
 
 ## Recently closed
 
+- **AR-01 Phase 1** (Article entity + editor + basic CRUD):
+  shipped 2026-04-27 in `3ce27fd` (backend) + `dae36c0`
+  (frontend) + this commit (help docs). New Article entity
+  with migration `f9a0b1c2d3e4`; CRUD endpoints at
+  `/api/articles`; standalone ArticleList + ArticleEditor
+  pages; dashboard "Articles" nav button. 32 i18n keys × 8
+  languages. +19 backend tests + +6 Vitest tests. Phase 1
+  scope confirmed: long-form Article only; no Publications,
+  Promo Posts, SEO metadata, drift detection, or platform
+  APIs (Phase 2+, tracked as AR-02..AR-NN below).
 - **DOC-03** (plugin author docs refresh): closed 2026-04-27 in
   `ef299bc`. `docs/help/{en,de}/developers/plugins.md` gains 3
   new sections (8 patterns) covering PGS-02..05:
@@ -175,16 +185,25 @@ user note (line below).
   `docs/explorations/tiptap-3-migration.md`.
 - is still not implemented and v0.24.0 is available. see: https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace
 
-### 2. AR-01 - article authoring validation log
+### 2. AR-02+ - Article Phase 2 (multi-platform publication)
 
-- **ID**: AR-01
-- **Effort**: 0 new code; observation only
-- **Why rank 2**: validates whether article-publication workflow
-  warrants a Bibliogon feature at all. 3-5 cross-posting workflows
-  logged in `docs/journal/article-workflow-observations.md`. Drives
-  AR-02 architecture decision.
-- **Status**: open log file; fill as part of normal release-article
-  publication. (Promoted after MAINT-01 closed early.)
+- **ID**: AR-02
+- **Effort**: L (~8-12h)
+- **Why rank 2**: Phase 1 (entity + editor + CRUD) shipped;
+  Phase 2 adds Publications entity, per-platform URL/state
+  tracking, and the cross-post UI. Wait for AR-01 validation
+  log to accumulate 3-5 real workflows before locking the
+  architecture (Option A: extend Article; Option B: separate
+  Publications entity; Option C: plugin-article).
+- **Status**: deferred until validation data justifies it.
+  See `docs/explorations/article-authoring.md` Section 8.
+
+### Article validation (background, no code)
+
+- **AR-01 validation log**: still open. Long-running passive
+  task — fill `docs/journal/article-workflow-observations.md`
+  during normal cross-posting work. Drives AR-02 architecture
+  decision.
 
 
 ---

@@ -13,6 +13,12 @@ navigation:
     icon: rocket
 
   - title:
+      de: Artikel
+      en: Articles
+    slug: articles
+    icon: file-text
+
+  - title:
       de: Editor
       en: Editor
     slug: editor
