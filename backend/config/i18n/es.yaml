@@ -485,6 +485,10 @@ ui:
     featured_image_url: "URL de imagen destacada"
     excerpt: "Extracto"
     tags_label: "Etiquetas (separadas por comas)"
+    all_saved: "Todos los cambios guardados"
+    back_to_list_tooltip: "Volver a la lista de articulos"
+    back_to_dashboard: "Panel"
+    back_to_dashboard_tooltip: "Volver al panel"
     delete_failed: "Error al eliminar"
   chapter_template_picker:
     title: "Elige una plantilla de capitulo"

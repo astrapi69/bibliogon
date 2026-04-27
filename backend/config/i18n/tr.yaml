@@ -485,6 +485,10 @@ ui:
     featured_image_url: "One cikan gorsel URL"
     excerpt: "Ozet"
     tags_label: "Etiketler (virgulle ayrilmis)"
+    all_saved: "Tum degisiklikler kaydedildi"
+    back_to_list_tooltip: "Makale listesine don"
+    back_to_dashboard: "Panel"
+    back_to_dashboard_tooltip: "Panele don"
     delete_failed: "Silme basarisiz"
   chapter_template_picker:
     title: "Bolum sablonu sec"

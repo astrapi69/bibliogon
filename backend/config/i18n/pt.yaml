@@ -471,6 +471,10 @@ ui:
     featured_image_url: "URL da imagem em destaque"
     excerpt: "Resumo"
     tags_label: "Tags (separadas por virgulas)"
+    all_saved: "Todas as alteracoes salvas"
+    back_to_list_tooltip: "Voltar a lista de artigos"
+    back_to_dashboard: "Painel"
+    back_to_dashboard_tooltip: "Voltar ao painel"
     delete_failed: "Falha ao excluir"
   chapter_template_picker:
     title: "Escolha um modelo de capitulo"

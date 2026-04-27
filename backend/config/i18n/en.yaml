@@ -471,6 +471,10 @@ ui:
     featured_image_url: "Featured image URL"
     excerpt: "Excerpt"
     tags_label: "Tags (comma-separated)"
+    all_saved: "All changes saved"
+    back_to_list_tooltip: "Back to article list"
+    back_to_dashboard: "Dashboard"
+    back_to_dashboard_tooltip: "Back to dashboard"
     delete_failed: "Delete failed"
   chapter_template_picker:
     title: "Choose a chapter template"

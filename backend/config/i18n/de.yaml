@@ -471,6 +471,10 @@ ui:
     featured_image_url: "Featured Image URL"
     excerpt: "Auszug"
     tags_label: "Tags (kommagetrennt)"
+    all_saved: "Alle Änderungen gespeichert"
+    back_to_list_tooltip: "Zur Artikelliste"
+    back_to_dashboard: "Dashboard"
+    back_to_dashboard_tooltip: "Zum Dashboard"
     delete_failed: "Löschen fehlgeschlagen"
   chapter_template_picker:
     title: "Wähle eine Kapitelvorlage"

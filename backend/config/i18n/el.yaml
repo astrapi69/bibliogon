@@ -471,6 +471,10 @@ ui:
     featured_image_url: "URL προτεινόμενης εικόνας"
     excerpt: "Απόσπασμα"
     tags_label: "Ετικέτες (διαχωρισμένες με κόμμα)"
+    all_saved: "Όλες οι αλλαγές αποθηκεύτηκαν"
+    back_to_list_tooltip: "Πίσω στη λίστα άρθρων"
+    back_to_dashboard: "Πίνακας"
+    back_to_dashboard_tooltip: "Πίσω στον πίνακα"
     delete_failed: "Η διαγραφή απέτυχε"
   chapter_template_picker:
     title: "Επιλέξτε πρότυπο κεφαλαίου"

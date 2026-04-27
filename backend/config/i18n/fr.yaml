@@ -485,6 +485,10 @@ ui:
     featured_image_url: "URL de l image en avant"
     excerpt: "Extrait"
     tags_label: "Tags (separes par des virgules)"
+    all_saved: "Toutes les modifications enregistrees"
+    back_to_list_tooltip: "Retour a la liste des articles"
+    back_to_dashboard: "Tableau de bord"
+    back_to_dashboard_tooltip: "Retour au tableau de bord"
     delete_failed: "Echec de la suppression"
   chapter_template_picker:
     title: "Choisir un modele de chapitre"

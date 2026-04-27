@@ -471,6 +471,10 @@ ui:
     featured_image_url: "Featured image URL"
     excerpt: "抜粋"
     tags_label: "タグ (カンマ区切り)"
+    all_saved: "すべての変更を保存しました"
+    back_to_list_tooltip: "記事リストに戻る"
+    back_to_dashboard: "ダッシュボード"
+    back_to_dashboard_tooltip: "ダッシュボードに戻る"
     delete_failed: "削除に失敗しました"
   chapter_template_picker:
     title: "章テンプレートを選択"
