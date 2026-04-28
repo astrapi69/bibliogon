@@ -339,6 +339,7 @@ class AssetOut(BaseModel):
 
 class ArticleAssetOut(BaseModel):
     """UX-FU-02: parallel of AssetOut for article-scoped uploads."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str

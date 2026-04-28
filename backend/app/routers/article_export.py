@@ -141,7 +141,9 @@ def _run_pandoc(markdown: str, target: str) -> bytes:
             stderr = result.stderr.decode("utf-8", errors="replace").strip()
             logger.error(
                 "article-export pandoc failed: target=%s rc=%s stderr=%s",
-                target, result.returncode, stderr[-500:],
+                target,
+                result.returncode,
+                stderr[-500:],
             )
             raise HTTPException(
                 status_code=502,
@@ -168,8 +170,7 @@ def export_article(article_id: str, fmt: str, db: Session = Depends(get_db)) -> 
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Unsupported format {fmt!r}. "
-                f"Allowed: {', '.join(sorted(set(_SUPPORTED_FORMATS)))}"
+                f"Unsupported format {fmt!r}. Allowed: {', '.join(sorted(set(_SUPPORTED_FORMATS)))}"
             ),
         )
     target = _FORMAT_ALIASES.get(fmt_lower, fmt_lower)

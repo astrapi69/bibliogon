@@ -481,10 +481,7 @@ class ArticleAsset(Base):
     article: Mapped["Article"] = relationship(back_populates="assets")
 
     def __repr__(self) -> str:
-        return (
-            f"<ArticleAsset {self.id!r} filename={self.filename!r} "
-            f"type={self.asset_type}>"
-        )
+        return f"<ArticleAsset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
 
 
 class Publication(Base):
