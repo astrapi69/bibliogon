@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
-_ALLOWED_STATUSES = ("draft", "published", "archived")
+_ALLOWED_STATUSES = ("draft", "ready", "published", "archived")
 
 
 @router.post("", response_model=ArticleOut, status_code=status.HTTP_201_CREATED)

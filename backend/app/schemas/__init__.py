@@ -426,7 +426,7 @@ class ChapterTemplateRead(BaseModel):
 # --- Article schemas (AR-01 Phase 1) ---
 
 
-_ARTICLE_STATUSES = ("draft", "published", "archived")
+_ARTICLE_STATUSES = ("draft", "ready", "published", "archived")
 
 
 class ArticleCreate(BaseModel):

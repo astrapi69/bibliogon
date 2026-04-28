@@ -146,10 +146,21 @@ def test_patch_article_persists_content_json() -> None:
 
 def test_patch_article_status_transitions() -> None:
     article = _create("Lifecycle")
-    for new_status in ("published", "archived", "draft"):
+    for new_status in ("ready", "published", "archived", "draft"):
         resp = client.patch(f"/api/articles/{article['id']}", json={"status": new_status})
         assert resp.status_code == 200, resp.text
         assert resp.json()["status"] == new_status
+
+
+def test_patch_article_ready_status_persists() -> None:
+    """``ready`` is the new state between draft and published.
+    Smoke check that it round-trips through GET."""
+    article = _create("Ready Test")
+    resp = client.patch(f"/api/articles/{article['id']}", json={"status": "ready"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "ready"
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["status"] == "ready"
 
 
 def test_patch_article_rejects_invalid_status() -> None:
