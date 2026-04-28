@@ -161,6 +161,21 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 **Last verified:** Backend tests pass (1180/1181); browser flow not re-verified post-AR-02
 **Related:** AR-02 Publication cascade-delete + UX-FU-02 ArticleAsset cascade
 
+### AE-13: Translate this article (editor-parity Phase 2)
+**Steps:**
+1. Open article in source language
+2. Sidebar → "Übersetzen" → "Diesen Artikel übersetzen"
+3. Pick target language (source language excluded from list)
+4. Submit → progress spinner → toast "Übersetzung erstellt"
+5. Navigates to new draft article in target language
+6. Title, subtitle, excerpt, SEO fields, body translated
+7. Topic, tags, canonical_url copied verbatim
+8. Same target language as source rejected with toast
+
+**Severity:** Medium (paid API + correctness)
+**Last verified:** 2026-04-28 (this commit)
+**Limitation:** inline marks (bold/italic) lost across translation; block structure preserved.
+
 ### AE-12: Multi-platform Publications panel
 **Steps:**
 1. Sidebar → Publikationen → Hinzufügen
