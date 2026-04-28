@@ -261,6 +261,14 @@ user note (line below).
   Status: confirm-or-close.
 - **ImportWizardModal full useMachine migration**: covered
   under CIO-08-FU-01 above.
+- **UX-FU-01**: TopicSelect silent fallback when settings API
+  fails. ArticleEditor's TopicSelect uses
+  `disabled={topics === null}`; if `useTopics` rejects
+  (network/server error), the dropdown stays disabled forever
+  with no hint. Effort: S. Priority: low (minimal real risk on
+  localhost-only deploys; anti-pattern for hosted setups). Fix:
+  surface the error state with a retry hint, OR fall back to an
+  enabled dropdown with the loaded value preserved.
 
 ### Dependencies (DEP / SEC)
 
