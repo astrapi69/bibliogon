@@ -24,7 +24,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle, Languages } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle, Languages, Download } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
@@ -322,6 +322,32 @@ export default function ArticleEditor() {
             }
         } finally {
             setTranslating(false);
+        }
+    };
+
+    // AR editor-parity Phase 3: export this article. Single-button-
+    // per-format row (no modal) - the format set is small (4) and
+    // each button kicks off a download immediately.
+    type ExportFormat = "markdown" | "html" | "pdf" | "docx";
+    const [exporting, setExporting] = useState<ExportFormat | null>(null);
+
+    const handleExport = async (fmt: ExportFormat) => {
+        if (!article || exporting) return;
+        setExporting(fmt);
+        try {
+            await api.articleExport.download(article.id, fmt);
+            notify.success(
+                t("ui.articles.export_success", "Export gestartet."),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.export_failed", "Export fehlgeschlagen."),
+                    err,
+                );
+            }
+        } finally {
+            setExporting(null);
         }
     };
 
@@ -669,6 +695,30 @@ export default function ArticleEditor() {
                         }}
                     />
                     <PublicationsPanel articleId={article.id} />
+
+                    <h4 style={layout.sectionHeading}>
+                        {t("ui.articles.export_section", "Exportieren")}
+                    </h4>
+                    <div
+                        data-testid="article-editor-export-panel"
+                        style={{ display: "flex", flexWrap: "wrap", gap: 6 }}
+                    >
+                        {(["markdown", "html", "pdf", "docx"] as const).map((fmt) => (
+                            <button
+                                key={fmt}
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                disabled={exporting !== null}
+                                onClick={() => void handleExport(fmt)}
+                                data-testid={`article-editor-export-${fmt}`}
+                                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                                {exporting === fmt
+                                    ? t("ui.articles.export_running", "Exportiere…")
+                                    : t(`ui.articles.export_${fmt}`, fmt.toUpperCase())}
+                            </button>
+                        ))}
+                    </div>
 
                     <h4 style={layout.sectionHeading}>
                         {t("ui.articles.translate_section", "Übersetzen")}

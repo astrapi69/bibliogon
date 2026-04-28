@@ -858,6 +858,51 @@ export const api = {
             ),
     },
 
+    /** AR editor-parity Phase 3: download an article as
+     *  Markdown / HTML / PDF / DOCX. Triggers a browser download
+     *  via fetch + Blob (instead of a plain link click) so the
+     *  caller can show progress and surface backend errors via
+     *  the standard ApiError toast path. */
+    articleExport: {
+        download: async (
+            articleId: string,
+            fmt: "markdown" | "html" | "pdf" | "docx",
+        ): Promise<void> => {
+            const url = `${BASE}/articles/${articleId}/export/${fmt}`;
+            const res = await fetch(url, {method: "GET"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Article export failed",
+                    url,
+                    "GET",
+                    err.stacktrace || "",
+                );
+            }
+            // Filename comes from Content-Disposition; fall back to
+            // a generic article.{ext} when missing.
+            const cd = res.headers.get("content-disposition") ?? "";
+            const match = cd.match(/filename="?([^";]+)"?/i);
+            const ext = fmt === "markdown" ? "md" : fmt;
+            const filename = match ? match[1] : `article.${ext}`;
+            const blob = await res.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = objectUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objectUrl);
+        },
+
+        formats: (articleId: string) =>
+            request<{formats: string[]; pandoc_required: string[]}>(
+                `/articles/${articleId}/export`,
+            ),
+    },
+
     /** UX-FU-02: per-article asset uploads (currently
      *  ``featured_image``). Mirrors ``api.covers`` for books. */
     articleAssets: {
