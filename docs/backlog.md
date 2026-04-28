@@ -269,14 +269,11 @@ user note (line below).
   localhost-only deploys; anti-pattern for hosted setups). Fix:
   surface the error state with a retry hint, OR fall back to an
   enabled dropdown with the loaded value preserved.
-- **UX-FU-02**: Article featured image upload (was Finding 5
-  in the 8-defect smoke). ArticleEditor's featured image is
-  URL-only today. CoverUpload component is book-coupled
-  (`bookId` + `/api/books/{id}/assets/file/`). Needs either a
-  generic `/api/uploads/` endpoint or an article-asset route
-  + AssetForArticle table. Effort: M (4-12h, mostly backend +
-  one new component). Priority: medium - URL paste works as a
-  fallback; upload is an ergonomics win, not a blocker.
+- **UX-FU-02**: closed. Shipped via new ``ArticleAsset`` model +
+  ``/api/articles/{id}/assets`` router + ``ArticleImageUpload``
+  component (drag-drop + click-to-pick + remove). URL field stays
+  as fallback alongside the upload widget. 11 backend tests + 12
+  i18n keys x 8 langs.
 
 ### Dependencies (DEP / SEC)
 
