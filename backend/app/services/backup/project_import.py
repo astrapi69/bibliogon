@@ -136,9 +136,17 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         asin_hardcover=asin_hc,
         keywords=_parse_keywords(metadata),
         html_description=read_file_if_exists(config_dir / "book-description.html"),
-        backpage_description=read_file_if_exists(config_dir / "cover-back-page-description.md"),
-        backpage_author_bio=read_file_if_exists(
-            config_dir / "cover-back-page-author-introduction.md"
+        # write-book-template renamed these sidecars from the legacy
+        # ``cover-back-page-*`` form to ``backpage-*``. Try the current
+        # convention first; fall back to the legacy form so older
+        # exports still import cleanly. See GH#17.
+        backpage_description=(
+            read_file_if_exists(config_dir / "backpage-description.md")
+            or read_file_if_exists(config_dir / "cover-back-page-description.md")
+        ),
+        backpage_author_bio=(
+            read_file_if_exists(config_dir / "backpage-author-description.md")
+            or read_file_if_exists(config_dir / "cover-back-page-author-introduction.md")
         ),
         # write-book-template / Pandoc ship this under the hyphenated
         # ``cover-image`` key; older Bibliogon exports and custom YAMLs

@@ -127,6 +127,50 @@ def test_backpage_author_bio_lands_on_book_row(tmp_path: Path) -> None:
     assert "Short author bio" in (book.backpage_author_bio or "")
 
 
+def _wbt_zip_with_current_backpage_filenames(tmp_dir: Path) -> Path:
+    """Pins the current write-book-template filename convention.
+
+    Older exports use ``cover-back-page-*.md`` (covered by
+    ``_wbt_zip_with_all_metadata``); new exports use ``backpage-*.md``.
+    Both must populate Book.backpage_description /
+    Book.backpage_author_bio. See GH#17.
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "book/config/metadata.yaml",
+            "title: New Convention Book\nauthor: T\nlang: en\n",
+        )
+        zf.writestr(
+            "book/config/backpage-description.md",
+            "Modern back-cover teaser.",
+        )
+        zf.writestr(
+            "book/config/backpage-author-description.md",
+            "Modern author bio.",
+        )
+        zf.writestr(
+            "book/manuscript/chapters/01-ch.md", "# Chapter\n\nBody.\n"
+        )
+    path = tmp_dir / "book-new-convention.zip"
+    path.write_bytes(buf.getvalue())
+    return path
+
+
+def test_backpage_description_reads_new_filename_convention(tmp_path: Path) -> None:
+    """``backpage-description.md`` (current write-book-template
+    convention) populates ``Book.backpage_description``."""
+    book = _execute_and_read_book(_wbt_zip_with_current_backpage_filenames(tmp_path))
+    assert "Modern back-cover teaser" in (book.backpage_description or "")
+
+
+def test_backpage_author_bio_reads_new_filename_convention(tmp_path: Path) -> None:
+    """``backpage-author-description.md`` (current write-book-template
+    convention) populates ``Book.backpage_author_bio``."""
+    book = _execute_and_read_book(_wbt_zip_with_current_backpage_filenames(tmp_path))
+    assert "Modern author bio" in (book.backpage_author_bio or "")
+
+
 def test_custom_css_lands_on_book_row(tmp_path: Path) -> None:
     book = _execute_and_read_book(_wbt_zip_with_all_metadata(tmp_path))
     assert "color: red" in (book.custom_css or "")

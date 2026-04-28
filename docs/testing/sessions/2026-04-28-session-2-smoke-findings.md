@@ -40,6 +40,59 @@ In scope this slot:
   with DB-string fallback. Effort: M.
 - **Tracking:** `docs/backlog.md` TPL-I18N-01.
 
+### F-3: WBT ZIP import drops every non-checked-out language branch
+
+- **Severity:** High
+- **Reproduction:**
+  1. WBT git repo with multiple language branches (`main`,
+     `main-de`, `main-es`, `main-fr`).
+  2. ZIP it (including `.git/`).
+  3. Dashboard → Import Book → upload the ZIP.
+  4. Complete wizard.
+- **Expected:** All four language branches imported as linked
+  books with one shared `translation_group_id` (per PGS-04).
+- **Actual:** Only the working-tree language imported; other
+  three branches sit unused in the adopted `.git/`.
+- **Root cause:** The ZIP-upload path goes through
+  `WbtImportHandler` which only inspects the working tree.
+  PGS-04 multi-branch logic (`translation_import.py`) is only
+  reachable via `POST /api/translations/import-multi-branch`
+  which takes a **git URL**. The two paths are not unified; the
+  wizard has no UI to invoke multi-branch on a ZIP.
+- **Test data:** `tmp/eternity-ebook.zip` has `main`/`main-de`/`main-es`/`main-fr`.
+- **Disposition:** **GH#16 opened**, fix deferred. Larger scope
+  (orchestrator extension + new fixture + E2E). Workaround
+  documented in the issue: clone the repo locally, push to a
+  git host, and use the Git-URL multi-branch path.
+- **Tracking:** GH#16.
+
+### F-4: WBT import drops `backpage_description` + `backpage_author_bio`
+
+- **Severity:** High
+- **Reproduction:**
+  1. Import any current write-book-template project.
+  2. Open the imported book.
+  3. Metadata → General.
+- **Expected:** `Rückseitenbeschreibung` and `Über den Autor`
+  populated.
+- **Actual:** Both empty. No backend warning.
+- **Root cause:**
+  [`backend/app/services/backup/project_import.py:139-141`](backend/app/services/backup/project_import.py#L139-L141)
+  read the legacy filenames `cover-back-page-description.md` and
+  `cover-back-page-author-introduction.md`. Current
+  write-book-template convention is `backpage-description.md` and
+  `backpage-author-description.md` — the importer matched neither
+  shape against current exports.
+- **Test data:** `tmp/eternity-ebook.zip` ships
+  `config/backpage-description.md` + `config/backpage-author-description.md`,
+  both lost on import.
+- **Fix shipped:** `project_import.py` tries the new convention
+  first, falls back to the legacy form. Both old and new exports
+  import cleanly. Two new pytest cases in
+  `test_wbt_metadata_propagation.py` pin the new convention; full
+  file 14/14 green.
+- **Tracking:** GH#17 (auto-closed via this commit's `Closes #17`).
+
 ### F-2: "Autoren in Einstellungen verwalten" link does nothing
 
 - **Severity:** High
