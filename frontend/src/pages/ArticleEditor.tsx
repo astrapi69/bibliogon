@@ -24,7 +24,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle, Languages } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
@@ -228,6 +228,51 @@ export default function ArticleEditor() {
         },
         [id, article, t],
     );
+
+    // AR editor-parity Phase 2: translate this article into a new
+     // target-language Article. The source stays untouched; the new
+     // article opens in draft for review.
+    const [translateOpen, setTranslateOpen] = useState(false);
+    const [translateLang, setTranslateLang] = useState("en");
+    const [translating, setTranslating] = useState(false);
+
+    const handleTranslate = async () => {
+        if (!article || translating) return;
+        if (translateLang === article.language) {
+            notify.error(
+                t(
+                    "ui.articles.translate_same_language",
+                    "Zielsprache muss von der Quellsprache abweichen.",
+                ),
+            );
+            return;
+        }
+        setTranslating(true);
+        try {
+            const result = await api.articleTranslation.translate(
+                article.id,
+                translateLang,
+                {sourceLang: article.language},
+            );
+            notify.success(
+                t("ui.articles.translate_success", "Übersetzung erstellt."),
+            );
+            setTranslateOpen(false);
+            navigate(`/articles/${result.article_id}`);
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.articles.translate_failed",
+                        "Übersetzung fehlgeschlagen.",
+                    ),
+                    err,
+                );
+            }
+        } finally {
+            setTranslating(false);
+        }
+    };
 
     async function handleDelete(): Promise<void> {
         if (!article) return;
@@ -573,6 +618,82 @@ export default function ArticleEditor() {
                         }}
                     />
                     <PublicationsPanel articleId={article.id} />
+
+                    <h4 style={layout.sectionHeading}>
+                        {t("ui.articles.translate_section", "Übersetzen")}
+                    </h4>
+                    {!translateOpen ? (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setTranslateOpen(true)}
+                            data-testid="article-editor-translate-open"
+                            style={{
+                                alignSelf: "flex-start",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                            }}
+                        >
+                            <Languages size={12} />
+                            {t("ui.articles.translate_open", "Diesen Artikel übersetzen")}
+                        </button>
+                    ) : (
+                        <div
+                            data-testid="article-editor-translate-panel"
+                            style={{display: "flex", flexDirection: "column", gap: 6}}
+                        >
+                            <p style={{fontSize: "0.75rem", color: "var(--text-muted)", margin: 0}}>
+                                {t(
+                                    "ui.articles.translate_hint",
+                                    "Erstellt einen neuen Artikel-Entwurf in der Zielsprache. Inline-Formatierung (fett/kursiv) geht beim Übersetzen verloren.",
+                                )}
+                            </p>
+                            <select
+                                data-testid="article-editor-translate-lang"
+                                value={translateLang}
+                                onChange={(e) => setTranslateLang(e.target.value)}
+                                disabled={translating}
+                                style={layout.fieldInput}
+                            >
+                                {SUPPORTED_LANGUAGES.filter((l) => l.code !== article.language).map(
+                                    (opt) => (
+                                        <option key={opt.code} value={opt.code}>
+                                            {opt.label}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                            <div style={{display: "flex", gap: 6}}>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => void handleTranslate()}
+                                    disabled={translating}
+                                    data-testid="article-editor-translate-submit"
+                                >
+                                    {translating ? (
+                                        <>
+                                            <Loader2 size={12} className="spin" />{" "}
+                                            {t("ui.articles.translate_running", "Übersetzt…")}
+                                        </>
+                                    ) : (
+                                        t("ui.articles.translate_submit", "Übersetzen")
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => setTranslateOpen(false)}
+                                    disabled={translating}
+                                    data-testid="article-editor-translate-cancel"
+                                >
+                                    {t("ui.common.cancel", "Abbrechen")}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         type="button"
                         className="btn btn-secondary btn-sm"

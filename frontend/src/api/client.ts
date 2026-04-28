@@ -812,6 +812,34 @@ export const api = {
             request<void>(`/articles/${id}`, {method: "DELETE"}),
     },
 
+    /** AR editor-parity Phase 2: translate an Article into a new
+     *  target-language Article. Backend route lives in the
+     *  translation plugin (POST /api/translation/translate-article).
+     *  Returns the new article id; caller navigates to it. */
+    articleTranslation: {
+        translate: (
+            articleId: string,
+            targetLang: string,
+            opts: {sourceLang?: string; provider?: "deepl" | "lmstudio"; titleSuffix?: string} = {},
+        ) =>
+            request<{
+                article_id: string;
+                title: string;
+                language: string;
+                original_article_id: string;
+                provider: string;
+            }>("/translation/translate-article", {
+                method: "POST",
+                body: JSON.stringify({
+                    article_id: articleId,
+                    target_lang: targetLang,
+                    source_lang: opts.sourceLang,
+                    provider: opts.provider ?? "deepl",
+                    title_suffix: opts.titleSuffix ?? "",
+                }),
+            }),
+    },
+
     /** UX-FU-02: per-article asset uploads (currently
      *  ``featured_image``). Mirrors ``api.covers`` for books. */
     articleAssets: {
