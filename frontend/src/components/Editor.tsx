@@ -53,10 +53,59 @@ export interface BookContext {
     description: string;
 }
 
+/** What kind of content the editor is editing. Drives plugin
+ *  gating (audiobook hidden for articles), AI prompt tone (book
+ *  vs article), and which Book/Chapter-coupled features run.
+ *  See docs/explorations/article-editor-parity.md (Path D). */
+export type ContentKind = "book-chapter" | "article";
+
+/** Per-content-kind plugin enable matrix. Returned as plain
+ *  booleans so the JSX gating reads as a simple AND with the
+ *  existing isPluginAvailable() license/runtime check. */
+export interface PluginGates {
+    showAudiobook: boolean;
+    showGrammar: boolean;
+    showStyleCheck: boolean;
+    showAiPanel: boolean;
+    showSearch: boolean;
+    showFocus: boolean;
+    showMarkdownMode: boolean;
+}
+
+export function pluginsForContentKind(kind: ContentKind): PluginGates {
+    if (kind === "article") {
+        return {
+            // Audiobook is multi-chapter merge with chapter_type
+            // skip-list; semantics do not apply to a single-doc
+            // article. See parity analysis section 3.
+            showAudiobook: false,
+            showGrammar: true,
+            showStyleCheck: true,
+            showAiPanel: true,
+            showSearch: true,
+            showFocus: true,
+            showMarkdownMode: true,
+        };
+    }
+    return {
+        showAudiobook: true,
+        showGrammar: true,
+        showStyleCheck: true,
+        showAiPanel: true,
+        showSearch: true,
+        showFocus: true,
+        showMarkdownMode: true,
+    };
+}
+
 interface Props {
     content: string;
     onSave: (json: string) => void | Promise<void>;
     placeholder?: string;
+    /** What this editor instance is editing. Defaults to
+     *  "book-chapter" so existing BookEditor consumers stay
+     *  unchanged. ArticleEditor passes "article". */
+    contentKind?: ContentKind;
     bookId?: string;
     chapterId?: string;
     chapterTitle?: string;
@@ -81,7 +130,8 @@ interface Props {
     initialFocus?: {type: string; seq: number};
 }
 
-export default function Editor({content, onSave, placeholder, bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
+export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
+    const gates = pluginsForContentKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -738,28 +788,47 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
         setAiLoading(true);
         setAiSuggestion("");
 
-        // Build context-aware system prompt with book metadata
+        // Build context-aware system prompt. Article + book-chapter
+        // contexts diverge: article tone targets online-publication
+        // (engaging, accessible, SEO-aware), book-chapter tone matches
+        // genre + book identity. See parity analysis Open Question 3.
         const ctx = bookContext;
         const contextLines: string[] = [];
         if (ctx?.language) contextLines.push(`Language: ${ctx.language}`);
-        if (ctx?.genre) contextLines.push(`Genre: ${ctx.genre}`);
-        if (ctx?.title) contextLines.push(`Book: ${ctx.title}`);
-        if (chapterTitle) contextLines.push(`Chapter: ${chapterTitle}`);
+        if (contentKind === "book-chapter") {
+            if (ctx?.genre) contextLines.push(`Genre: ${ctx.genre}`);
+            if (ctx?.title) contextLines.push(`Book: ${ctx.title}`);
+            if (chapterTitle) contextLines.push(`Chapter: ${chapterTitle}`);
+        } else {
+            // Article: chapterTitle slot holds the article title.
+            if (chapterTitle) contextLines.push(`Article: ${chapterTitle}`);
+        }
+        const toneHint = contentKind === "article"
+            ? "Match an engaging, accessible online-publication tone. The output should read well as a standalone article."
+            : "Match the tone and style appropriate for this genre and language.";
         const contextBlock = contextLines.length > 0
-            ? `\n\nContext:\n${contextLines.join("\n")}\n\nMatch the tone and style appropriate for this genre and language.`
+            ? `\n\nContext:\n${contextLines.join("\n")}\n\n${toneHint}`
             : "";
 
         const fixIssuePrompt = activeIssue
             ? FIX_ISSUE_PROMPTS[activeIssue.type] + contextBlock
             : "";
 
-        const basePrompts: Record<string, string> = {
-            improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
-            shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
-            expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
-            custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
-            fix_issue: fixIssuePrompt,
-        };
+        const basePrompts: Record<string, string> = contentKind === "article"
+            ? {
+                improve: `You are a professional editor for online publications. Improve the following article excerpt: fix grammar, improve clarity, sharpen voice for online readers. Return only the improved text.${contextBlock}`,
+                shorten: `You are a professional editor. Tighten the following article excerpt without losing meaning. Favor punchy phrasing suitable for online reading. Return only the shortened text.${contextBlock}`,
+                expand: `You are a professional writer for online publications. Expand the following article excerpt with concrete detail and examples. Keep the tone engaging. Return only the expanded text.${contextBlock}`,
+                custom: (aiCustomPrompt || "Improve this article excerpt.") + contextBlock,
+                fix_issue: fixIssuePrompt,
+            }
+            : {
+                improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
+                shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
+                expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
+                custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
+                fix_issue: fixIssuePrompt,
+            };
 
         try {
             const res = await fetch("/api/ai/generate", {
@@ -953,9 +1022,9 @@ export default function Editor({content, onSave, placeholder, bookId, chapterId,
                 onToggleFocus={() => setFocusMode(!focusMode)}
                 spellcheckActive={showSpellcheck}
                 onToggleSpellcheck={isPluginAvailable(pluginStatus, "grammar") ? handleToggleSpellcheck : undefined}
-                onPreviewAudio={isPluginAvailable(pluginStatus, "audiobook") ? handlePreviewAudio : undefined}
+                onPreviewAudio={gates.showAudiobook && isPluginAvailable(pluginStatus, "audiobook") ? handlePreviewAudio : undefined}
                 previewLoading={previewLoading}
-                previewDisabledReason={!isPluginAvailable(pluginStatus, "audiobook") ? pluginDisabledMessage(pluginStatus, "audiobook") : undefined}
+                previewDisabledReason={gates.showAudiobook && !isPluginAvailable(pluginStatus, "audiobook") ? pluginDisabledMessage(pluginStatus, "audiobook") : undefined}
                 aiPanelActive={showAiPanel}
                 onToggleAi={isPluginAvailable(pluginStatus, "ai") ? () => setShowAiPanel(!showAiPanel) : undefined}
                 aiDisabledReason={!isPluginAvailable(pluginStatus, "ai") ? pluginDisabledMessage(pluginStatus, "ai") : undefined}
