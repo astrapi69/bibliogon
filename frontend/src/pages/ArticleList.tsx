@@ -338,8 +338,12 @@ const layout: Record<string, React.CSSProperties> = {
         gap: 8,
     },
     grid: {
+        // ``gridAutoRows: 1fr`` keeps row heights uniform across the
+        // whole grid (matches the books-dashboard fix in F-8). Cards
+        // ``height: 100%`` stretch to the row height.
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gridAutoRows: "1fr",
         gap: 16,
     },
     row: {

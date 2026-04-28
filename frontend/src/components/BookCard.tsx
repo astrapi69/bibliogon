@@ -125,6 +125,9 @@ const styles: Record<string, React.CSSProperties> = {
         transition: "all 180ms ease",
         display: "flex",
         flexDirection: "column",
+        // Stretch to the parent grid row height so all cards in a row
+        // (and across rows when ``grid-auto-rows: 1fr`` is set) match.
+        height: "100%",
     },
     coverImage: {
         width: "100%",

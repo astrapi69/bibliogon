@@ -83,6 +83,8 @@ const styles: Record<string, React.CSSProperties> = {
         display: "flex",
         flexDirection: "column",
         transition: "all 180ms ease",
+        // Stretch to the grid row height so all cards match.
+        height: "100%",
     },
     coverImage: {
         width: "100%",

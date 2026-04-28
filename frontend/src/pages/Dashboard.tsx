@@ -533,7 +533,17 @@ const styles: Record<string, React.CSSProperties> = {
     },
     bookCount: {fontSize: "0.875rem", color: "var(--text-muted)"},
     grid: {
-        display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20,
+        // ``gridAutoRows: 1fr`` forces every row to the same height
+        // (= height of the tallest card across the entire grid). Without
+        // it CSS Grid sizes each row to the tallest item IN THAT ROW so
+        // a row with long titles + genre + series renders visibly taller
+        // than the next row with shorter cards. The card flex column
+        // (``display: flex; flex-direction: column``) plus ``height: 100%``
+        // on the card itself stretches each tile to the row height.
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+        gridAutoRows: "1fr",
+        gap: 20,
     },
     empty: {textAlign: "center" as const, color: "var(--text-muted)", marginTop: 80},
     emptyState: {
