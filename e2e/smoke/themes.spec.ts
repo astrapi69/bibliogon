@@ -1,7 +1,7 @@
 /**
  * Smoke tests for the theme system.
  *
- * Converts section 2 of ``docs/manual-smoke-tests.md`` into
+ * Converts section 2 of ``docs/manual-tests/manual-smoke-tests.md`` into
  * automated coverage. Pins:
  *
  * - Palette state machine: fresh localStorage defaults to

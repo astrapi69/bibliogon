@@ -2,7 +2,7 @@
  * Smoke tests for the keywords editor in BookEditor > Metadata > Marketing.
  *
  * Converts the 10-step manual smoke test from
- * ``docs/manual-smoke-tests.md`` section 1 into automated coverage.
+ * ``docs/manual-tests/manual-smoke-tests.md`` section 1 into automated coverage.
  * Pins the behaviors that were flagged there as human-only:
  *
  * - Add via Enter

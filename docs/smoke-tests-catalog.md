@@ -3,7 +3,7 @@
 Structured per-feature catalog of manual smoke checks. Each entry has reproducible steps, severity, last-verified date, and a pointer to the related commit / backlog item / automated spec when one exists.
 
 **Companion files:**
-- `docs/manual-smoke-tests.md` — checklist of items genuinely out of Playwright's reach (subjective visuals, real third-party APIs, hardware drag-drop, cross-browser, real-zoom rendering). That file shrinks over time.
+- `docs/manual-tests/manual-smoke-tests.md` — checklist of items genuinely out of Playwright's reach (subjective visuals, real third-party APIs, hardware drag-drop, cross-browser, real-zoom rendering). That file shrinks over time.
 - `e2e/smoke/` — Playwright specs that automate what's automatable. This catalog references them when an entry is fully covered.
 
 **This file's purpose:** a living inventory across all major features so the user can scan severity, pick the highest-value gaps, and promote them to GitHub issues for tracking.
@@ -181,7 +181,7 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 ### BE-01: ChapterSidebar drag reorder
 **Steps:** drag chapter to new position; reload; position persists.
 **Severity:** Medium
-**Auto-coverage:** chapter reorder in `e2e/smoke/chapter-reorder.spec.ts` (partial); real drag-drop is in `manual-smoke-tests.md` section 3.
+**Auto-coverage:** chapter reorder in `e2e/smoke/chapter-reorder.spec.ts` (partial); real drag-drop is in `manual-tests/manual-smoke-tests.md` section 3.
 
 ### BE-02: Auto-save in chapter
 **Steps:** type → "Speichert..." → "Gespeichert" within 1s; reload preserves content.
@@ -201,7 +201,7 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 ### BE-05: Export to EPUB
 **Steps:** sidebar Export → EPUB → download → epubcheck passes.
 **Severity:** High (primary user output)
-**Auto-coverage:** scaffolder unit tests; full Pandoc roundtrip in `manual-smoke-tests.md` section 2.
+**Auto-coverage:** scaffolder unit tests; full Pandoc roundtrip in `manual-tests/manual-smoke-tests.md` section 2.
 **Last verified:** Last release.
 
 ### BE-06: Export batch (all formats)
@@ -240,7 +240,7 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 ### BE-13: Image upload via drag-and-drop
 **Steps:** drag PNG into editor → uploads to book assets → renders inline.
 **Severity:** Medium
-**Manual:** in `manual-smoke-tests.md` section 3 (hardware drag-drop).
+**Manual:** in `manual-tests/manual-smoke-tests.md` section 3 (hardware drag-drop).
 
 ### BE-14: BookMetadataEditor full save
 **Steps:** edit ISBN, ASIN, publisher, keywords, cover upload, custom CSS → Save → reload preserves all fields.
@@ -328,7 +328,7 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 ### SE-04: AI provider configuration
 **Steps:** Settings → KI → enter API key per provider → save → AI panel uses configured provider.
 **Severity:** High (paid services)
-**Manual:** real-API verification covered by `manual-smoke-tests.md` section 2.
+**Manual:** real-API verification covered by `manual-tests/manual-smoke-tests.md` section 2.
 
 ---
 
@@ -352,7 +352,7 @@ After issue creation, append `**Issue:** #<num>` under the test entry.
 **Steps:** cycle 6 palettes (Warm Literary / Cool Modern / Nord / Classic / Studio / Notebook) × dark/light. No visible regressions.
 **Severity:** Medium
 **Auto-coverage:** `e2e/smoke/themes.spec.ts` (state-machine + key rules).
-**Manual:** subjective contrast in `manual-smoke-tests.md` section 1.
+**Manual:** subjective contrast in `manual-tests/manual-smoke-tests.md` section 1.
 
 ### CC-02: i18n switching (8 languages)
 **Steps:** Settings → Sprache → switch DE/EN/ES/FR/PT/EL/TR/JA → all labels update without reload.
