@@ -53,50 +53,13 @@ export interface BookContext {
     description: string;
 }
 
-/** What kind of content the editor is editing. Drives plugin
- *  gating (audiobook hidden for articles), AI prompt tone (book
- *  vs article), and which Book/Chapter-coupled features run.
- *  See docs/explorations/article-editor-parity.md (Path D). */
-export type ContentKind = "book-chapter" | "article";
-
-/** Per-content-kind plugin enable matrix. Returned as plain
- *  booleans so the JSX gating reads as a simple AND with the
- *  existing isPluginAvailable() license/runtime check. */
-export interface PluginGates {
-    showAudiobook: boolean;
-    showGrammar: boolean;
-    showStyleCheck: boolean;
-    showAiPanel: boolean;
-    showSearch: boolean;
-    showFocus: boolean;
-    showMarkdownMode: boolean;
-}
-
-export function pluginsForContentKind(kind: ContentKind): PluginGates {
-    if (kind === "article") {
-        return {
-            // Audiobook is multi-chapter merge with chapter_type
-            // skip-list; semantics do not apply to a single-doc
-            // article. See parity analysis section 3.
-            showAudiobook: false,
-            showGrammar: true,
-            showStyleCheck: true,
-            showAiPanel: true,
-            showSearch: true,
-            showFocus: true,
-            showMarkdownMode: true,
-        };
-    }
-    return {
-        showAudiobook: true,
-        showGrammar: true,
-        showStyleCheck: true,
-        showAiPanel: true,
-        showSearch: true,
-        showFocus: true,
-        showMarkdownMode: true,
-    };
-}
+// ContentKind + pluginsForContentKind live in editor-gates.ts so
+// they can be imported from non-DOM unit tests without pulling in
+// the entire TipTap extension graph.
+export {pluginsForContentKind} from "./editor-gates";
+export type {ContentKind, PluginGates} from "./editor-gates";
+import type {ContentKind} from "./editor-gates";
+import {pluginsForContentKind as pluginsForKind} from "./editor-gates";
 
 interface Props {
     content: string;
@@ -131,7 +94,7 @@ interface Props {
 }
 
 export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
-    const gates = pluginsForContentKind(contentKind);
+    const gates = pluginsForKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
