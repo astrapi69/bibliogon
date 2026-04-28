@@ -2,6 +2,67 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.24.0] - 2026-04-28
+
+Article authoring lands as a first-class feature alongside book authoring. Articles are standalone documents (not book chapters) intended for blog posts, newsletter pieces, and online publication. The release ships AR-01 (entity + CRUD + editor), AR-02 (publications + drift detection across 8 platforms), AR-02 Phase 2.1 (topics + SEO), and three editor-parity phases that bring articles to feature parity with the book editor: a shared `RichTextEditor` with content-kind-aware plugin gating, per-article ms-tools quality checks, translate-article via the existing translation provider abstraction, and Markdown / HTML / PDF / DOCX export. Plus PS-13 "Save as new chapter" in the chapter conflict dialog, UX-FU-02 featured image upload, follow-ups for PGS-02..04 (per-book PAT credential integration, mark_conflict + rename detection in the smart-merge diff, surface skipped branches in multi-language import), and a refreshed README + UX conventions guide + plugin author patterns.
+
+### Action required
+
+Four new Alembic migrations (`f9a0b1c2d3e4`, `a0b1c2d3e4f5`, `b1c2d3e4f5a6`, `c2d3e4f5a6b7`) for the new `articles`, `publications`, `article_assets` tables plus topic/SEO columns. If you reach v0.24.0 via `alembic upgrade head` rather than fresh install, run it again after pulling. All migrations are idempotent.
+
+```bash
+cd backend && poetry run alembic upgrade head
+```
+
+### Added
+
+**Article authoring (AR-01 Phase 1).** New `Article` model with status lifecycle (`draft -> ready -> published -> archived`), title, content (TipTap JSON), language, tags, author. `/api/articles/` CRUD. New `ArticleEditor` page with article-specific sidebar (status, language, author, tags, SEO, featured image, topic). Dashboard gains a "New Article" entry alongside book creation; article list view at `/articles/`.
+
+**Publications + drift detection (AR-02 Phase 2).** New `Publication` entity tracks where an article was published (platform, URL, timestamp, content snapshot). 8 platform schemas as YAML data (Medium, Substack, X, LinkedIn, dev.to, Mastodon, Bluesky, Generic) - the frontend renders the form schema-driven so new platforms are a YAML edit. Drift detection compares the snapshot against the live article body and surfaces `out_of_sync` publications. Article-level SEO fields (`canonical_url`, `featured_image_url`, `excerpt`, `tags`).
+
+**Topics, SEO, sidebar layout (AR-02 Phase 2.1).** New Topics tab in Settings manages the topic list applied across articles. Topic dropdown in the editor with inline-add. SEO Title / SEO Description three-row textareas. Sidebar-left layout matching BookEditor convention. New `useTopics` hook with API fallback.
+
+**Editor-Parity Phase 1.** Shared `RichTextEditor` with `contentKind: "book-chapter" | "article"` prop gates which TipTap extensions + AI prompt set it activates. New `editor-gates` module centralises the gating. Article-specific AI prompts pivot from "your novel chapter" to "your article" wording.
+
+**Editor-Parity Phase 2.** ms-tools per-article (no code change required - existing endpoint accepts `article_id`). New `POST /api/articles/{id}/translate` endpoint runs `content_json` through the existing translation provider abstraction (DeepL, LMStudio) and creates a draft in the target language. Translate panel mirrors the book translate UI. Provider gating filters out unconfigured + unhealthy providers; provider errors surface as HTTP 502 with provider name + reason.
+
+**Editor-Parity Phase 3.** Article export to Markdown / HTML / PDF / DOCX. New router `app/routers/article_export.py` reuses `bibliogon_export.tiptap_to_md.tiptap_to_markdown` for the JSON-to-Markdown conversion + shells out to Pandoc for PDF and DOCX. Sidebar Export panel with one button per format. 11 backend pytest tests cover converter reuse, Pandoc invocation (mocked), and content-disposition header.
+
+**UX-FU-02: Article featured image upload.** Per-article asset uploads (mirrors `api.covers` for books). New `POST /api/articles/{id}/featured-image` endpoint + migration `c2d3e4f5a6b7`. New `ArticleImageUpload` widget combines URL input with drag-and-drop / click-to-upload.
+
+**PS-13: Save as new chapter.** Third option in `ConflictResolutionDialog` alongside Keep Local / Discard. New `POST /api/books/{id}/chapters/{cid}/fork` clones the unsaved local edit into a fresh chapter inserted at `source.position + 1`; subsequent positions bump by 1. Source chapter untouched. Inherits `chapter_type`. 5 i18n keys × 8 languages. 6 backend pytest tests + 3 Vitest tests.
+
+**plugin-git-sync follow-ups.**
+- PGS-02-FU-01: per-book PAT credential integration via shared `app/services/git_credentials.py`. PAT never lands in `.git/config`. New `PUT/GET/DELETE /api/git-sync/{book_id}/credentials` endpoints + `CredentialsSection` in `GitSyncDialog`. +29 tests.
+- PGS-03-FU-01: `mark_conflict` resolution action (rewrites `both_changed` chapters with git-style conflict markers) + rename detection (`_collapse_renames` pairs `*_removed` + `*_added` rows with matching bodies into `renamed_remote` / `renamed_local`). Counts payload gains `marked` + `renamed`. +9 backend tests + 3 Vitest tests.
+- PGS-04-FU-01: surface skipped branches in multi-language import with a reusable result panel.
+
+**Multi-book wizard finishing (CIO-08-FU-01).** ImportWizardModal switches from parallel `useState<WizardState>` to `useMachine(wizardMachine)`. New `SuccessMultiStep` terminal lists every imported book with per-book "Open" link.
+
+### Changed
+
+- **README rewritten + README-DE synced.** Both reflect articles, git-sync, and multi-book import as first-class features.
+- **UX conventions guide** (`docs/ux-conventions.md`) collects the recurring UX patterns so future feature work has a written rule set.
+- **Plugin author guide** gains the PGS-02..05 patterns (source adapter, two registries, plugin-to-plugin path dep, PluginForge-activation bridge).
+- **Smoke test catalog consolidated** under `docs/manual-tests/`.
+- **`mobile-web-app-capable` meta tag** in `frontend/index.html` for modern browsers (deprecated `apple-mobile-web-app-capable` kept for legacy iOS).
+
+### Fixed
+
+- **Translate panel crashed on empty provider list.** Now shows a config gate linking to Settings > Plugins > Translation.
+- **Translate dropdown ignored provider config / health.** Now filters to providers that are configured and healthy.
+- **Translate-article 500 on provider failure.** Now surfaces as 502 with provider name + reason; rebuild fallback + diagnostic logs.
+- **Editor invisible after sidebar-left layout move.** Layout fix restores click-target + visibility.
+- **Three smoke-test UX defects + four follow-up smoke-test UX defects** in ArticleEditor (status dropdown, topic input, featured image hint, tooltip copy).
+- **CI: ruff format + mypy on article-export.** Three files needed ruff format pass; `bibliogon_export` import in article-export router needed an entry in `[[tool.mypy.overrides]]`.
+
+### Maintenance
+
+- **MAINT-01 closed early** in `ffb1618` (v0.22.x migration topic clean per `test_alembic_drift.py`).
+- **DOC-03 closed** in `ef299bc` (PGS-02..05 plugin patterns added to plugin author guide).
+- **DEP-02 (TipTap 2 -> 3) deferred.** Upstream `@sereneinserenade/tiptap-search-and-replace` v0.24.0 still not on npm; vite-plugin-pwa peer deps still cap at Vite 7. Hard fallback deadline 2026-05-05; `prosemirror-search` adapter (~50-80 LOC) ready as fallback. A scheduled GitHub Actions workflow polls weekly and opens an issue on unblock.
+- **SEC-01** vite-plugin-pwa CVE chain: dev-only exposure (production bundle clean). Same upstream blocker as DEP-09.
+
 ## [0.23.0] - 2026-04-25
 
 Major workflow milestone for self-publishing authors maintaining multi-language books in external git hosting. Plugin-git-sync ships its full PGS-02..05 rollout: bi-directional sync to a remote write-book-template repo, three-way smart-merge on re-import with a per-chapter conflict UI, branch-driven multi-language detection with auto-linked translation groups, and a unified-commit bridge to core git so authors who run both subsystems on the same book can commit everywhere in one click. PGS-01 (the import-only MVP that landed before v0.22.0) is the foundation the four new phases build on.
