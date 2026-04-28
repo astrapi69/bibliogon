@@ -1,4 +1,4 @@
-.PHONY: dev dev-bg dev-down dev-backend dev-frontend stop restart \
+.PHONY: dev dev-bg dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync \
@@ -13,6 +13,14 @@
 # --- Development ---
 
 dev: ## Start backend + frontend (backend first, then frontend)
+	@if [ -r /proc/sys/fs/inotify/max_user_watches ]; then \
+		watches=$$(cat /proc/sys/fs/inotify/max_user_watches); \
+		if [ "$$watches" -lt 100000 ]; then \
+			echo "WARNING: fs.inotify.max_user_watches=$$watches is low (< 100000)."; \
+			echo "         vite dev will likely fail with ENOSPC."; \
+			echo "         Run 'make fix-watchers' for the persistent fix."; \
+		fi; \
+	fi
 	@echo "Starting Bibliogon..."
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000 &
 	@echo "Waiting for backend..."
@@ -41,6 +49,18 @@ dev-down: ## Stop background dev servers
 stop: dev-down ## Alias for dev-down (stop dev servers)
 
 restart: dev-down dev ## Stop and restart dev servers (use after a hung session)
+
+fix-watchers: ## Persist Linux inotify limits for vite dev (sudo required, runs once)
+	@echo "Bibliogon: persist inotify limits for vite dev mode."
+	@echo "Sudo prompt is for the sysctl write to /etc/sysctl.d/."
+	@echo ""
+	@echo "fs.inotify.max_user_watches=524288" | sudo tee /etc/sysctl.d/99-bibliogon-watchers.conf > /dev/null
+	@echo "fs.inotify.max_user_instances=512" | sudo tee -a /etc/sysctl.d/99-bibliogon-watchers.conf > /dev/null
+	@sudo sysctl --system > /dev/null
+	@echo "Wrote /etc/sysctl.d/99-bibliogon-watchers.conf and applied:"
+	@echo "  fs.inotify.max_user_watches    = $$(cat /proc/sys/fs/inotify/max_user_watches)"
+	@echo "  fs.inotify.max_user_instances  = $$(cat /proc/sys/fs/inotify/max_user_instances)"
+	@echo "Persistent across reboots."
 
 dev-backend:
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000

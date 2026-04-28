@@ -44,6 +44,7 @@ plugins:
       build: true
       nav_translations:
         Erste Schritte: Getting Started
+        Artikel: Articles
         Uebersicht: Overview
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
@@ -64,6 +65,7 @@ plugins:
         Glossar: Glossary
         Fehlerbehebung: Troubleshooting
         Plugin-Entwicklung: Plugin Development
+        Entwickler-Fehlerbehebung: Developer Troubleshooting
         Home: Home
 - git-revision-date-localized:
     enable_creation_date: true
@@ -86,6 +88,7 @@ extra:
 nav:
 - Home: de/index.md
 - Erste Schritte: de/getting-started.md
+- Artikel: de/articles.md
 - Editor:
   - Uebersicht: de/editor/uebersicht.md
   - Formatierung: de/editor/formatierung.md
@@ -119,3 +122,4 @@ nav:
 - Glossar: de/glossary.md
 - Fehlerbehebung: de/troubleshooting.md
 - Plugin-Entwicklung: de/developers/plugins.md
+- Entwickler-Fehlerbehebung: de/developers/troubleshooting.md

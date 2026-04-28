@@ -185,3 +185,9 @@ navigation:
       en: Plugin Development
     slug: developers/plugins
     icon: code
+
+  - title:
+      de: Entwickler-Fehlerbehebung
+      en: Developer Troubleshooting
+    slug: developers/troubleshooting
+    icon: terminal
