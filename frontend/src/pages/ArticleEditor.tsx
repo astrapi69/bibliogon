@@ -234,7 +234,38 @@ export default function ArticleEditor() {
      // article opens in draft for review.
     const [translateOpen, setTranslateOpen] = useState(false);
     const [translateLang, setTranslateLang] = useState("en");
+    const [translateProvider, setTranslateProvider] = useState<"deepl" | "lmstudio">("deepl");
     const [translating, setTranslating] = useState(false);
+    type ProviderInfo = {id: string; name: string; configured: boolean; description: string};
+    const [providers, setProviders] = useState<ProviderInfo[] | null>(null);
+
+    // Fetch provider config when the user opens the panel so the
+    // submit button can be disabled (and a "configure in Settings"
+    // hint shown) before the request fires. Avoids the 400
+    // "No DeepL API key configured" surprise.
+    useEffect(() => {
+        if (!translateOpen || providers !== null) return;
+        let cancelled = false;
+        api.articleTranslation
+            .providers()
+            .then((list) => {
+                if (cancelled) return;
+                setProviders(list);
+                // Default to the first configured provider so submit
+                // is enabled out of the gate when at least one works.
+                const firstConfigured = list.find((p) => p.configured);
+                if (firstConfigured && (firstConfigured.id === "deepl" || firstConfigured.id === "lmstudio")) {
+                    setTranslateProvider(firstConfigured.id);
+                }
+            })
+            .catch(() => setProviders([]));
+        return () => {
+            cancelled = true;
+        };
+    }, [translateOpen, providers]);
+
+    const currentProvider = providers?.find((p) => p.id === translateProvider);
+    const providerConfigured = currentProvider?.configured ?? true;
 
     const handleTranslate = async () => {
         if (!article || translating) return;
@@ -252,7 +283,7 @@ export default function ArticleEditor() {
             const result = await api.articleTranslation.translate(
                 article.id,
                 translateLang,
-                {sourceLang: article.language},
+                {sourceLang: article.language, provider: translateProvider},
             );
             notify.success(
                 t("ui.articles.translate_success", "Übersetzung erstellt."),
@@ -261,6 +292,9 @@ export default function ArticleEditor() {
             navigate(`/articles/${result.article_id}`);
         } catch (err) {
             if (err instanceof ApiError) {
+                // Surface the backend detail (e.g. "No DeepL API key
+                // configured...") via notify's ApiError content - the
+                // generic title alone wasn't actionable.
                 notify.error(
                     t(
                         "ui.articles.translate_failed",
@@ -649,6 +683,46 @@ export default function ArticleEditor() {
                                     "Erstellt einen neuen Artikel-Entwurf in der Zielsprache. Inline-Formatierung (fett/kursiv) geht beim Übersetzen verloren.",
                                 )}
                             </p>
+                            <label style={layout.fieldLabel}>
+                                {t("ui.articles.translate_provider", "Anbieter")}
+                            </label>
+                            <select
+                                data-testid="article-editor-translate-provider"
+                                value={translateProvider}
+                                onChange={(e) =>
+                                    setTranslateProvider(e.target.value as "deepl" | "lmstudio")
+                                }
+                                disabled={translating || providers === null}
+                                style={layout.fieldInput}
+                            >
+                                {(providers ?? [
+                                    {id: "deepl", name: "DeepL", configured: true},
+                                    {id: "lmstudio", name: "LMStudio", configured: true},
+                                ]).map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name}
+                                        {!p.configured ? " ⚠" : ""}
+                                    </option>
+                                ))}
+                            </select>
+                            {!providerConfigured && (
+                                <p
+                                    data-testid="article-editor-translate-provider-warning"
+                                    style={{
+                                        fontSize: "0.75rem",
+                                        color: "var(--error, #b91c1c)",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {t(
+                                        "ui.articles.translate_provider_unconfigured",
+                                        "Anbieter nicht konfiguriert. Einstellungen > Plugins > Translation öffnen, um einen API-Key zu hinterlegen.",
+                                    )}
+                                </p>
+                            )}
+                            <label style={layout.fieldLabel}>
+                                {t("ui.articles.translate_target_lang", "Zielsprache")}
+                            </label>
                             <select
                                 data-testid="article-editor-translate-lang"
                                 value={translateLang}
@@ -669,7 +743,7 @@ export default function ArticleEditor() {
                                     type="button"
                                     className="btn btn-primary btn-sm"
                                     onClick={() => void handleTranslate()}
-                                    disabled={translating}
+                                    disabled={translating || !providerConfigured || providers === null}
                                     data-testid="article-editor-translate-submit"
                                 >
                                     {translating ? (

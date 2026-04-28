@@ -838,6 +838,14 @@ export const api = {
                     title_suffix: opts.titleSuffix ?? "",
                 }),
             }),
+
+        /** Available providers + their configured/health state.
+         *  Read this before showing the translate panel so the user
+         *  is not surprised by a 400 "No API key configured". */
+        providers: () =>
+            request<Array<{id: string; name: string; configured: boolean; description: string}>>(
+                "/translation/providers",
+            ),
     },
 
     /** UX-FU-02: per-article asset uploads (currently
