@@ -44,6 +44,15 @@ vi.mock("../api/client", () => ({
             list: (...args: unknown[]) => mockList(...args),
             create: (...args: unknown[]) => mockCreate(...args),
         },
+        settings: {
+            // Existing row-based assertions assume the list view is
+            // active. Default the dashboard preference to "list" in
+            // the mock so useViewMode resolves the same way.
+            getApp: vi.fn().mockResolvedValue({
+                ui: { dashboard: { articles_view: "list" } },
+            }),
+            updateApp: vi.fn().mockResolvedValue({}),
+        },
     },
     ApiError: class extends Error {
         status: number;

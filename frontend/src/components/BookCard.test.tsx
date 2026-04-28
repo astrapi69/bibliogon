@@ -43,7 +43,9 @@ describe("BookCard", () => {
 
   it("renders title and author", () => {
     render(<BookCard book={makeBook()} onClick={onClick} onDelete={onDelete} />)
-    expect(screen.getByText("Test Book")).toBeTruthy()
+    // Title appears in both the card's <h3> and the cover placeholder when
+    // there is no cover_image - both are valid renderings of the same book.
+    expect(screen.getAllByText("Test Book").length).toBeGreaterThan(0)
     expect(screen.getByText("Test Author")).toBeTruthy()
   })
 
@@ -95,7 +97,9 @@ describe("BookCard", () => {
         onDelete={onDelete}
       />,
     )
-    expect(screen.getByText("A Subtitle")).toBeTruthy()
+    // Subtitle appears in both the card's <p> and the cover placeholder when
+    // no cover_image is set; both are valid renderings.
+    expect(screen.getAllByText("A Subtitle").length).toBeGreaterThan(0)
   })
 
   it("renders accent bar when no cover image", () => {

@@ -3,6 +3,9 @@ import {useNavigate} from "react-router-dom";
 import {api, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
+import BookListView from "../components/BookListView";
+import ViewToggle from "../components/ViewToggle";
+import { useViewMode } from "../hooks/useViewMode";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
@@ -45,6 +48,7 @@ export default function Dashboard() {
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
+    const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
 
     const loadBooks = async () => {
         try {
@@ -348,6 +352,7 @@ export default function Dashboard() {
                         <div style={styles.mainHeader}>
                             <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
                             <span style={styles.bookCount}>{books.length} {books.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
+                            <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (
                             <>
@@ -385,17 +390,26 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         ) : (
-                            <div style={styles.grid}>
-                                {filters.filteredBooks.map((book) => (
-                                    <BookCard
-                                        key={book.id}
-                                        book={book}
-                                        onClick={() => navigate(`/book/${book.id}`)}
-                                        onDelete={() => handleDelete(book.id)}
-                                        onDeletePermanent={() => handleDeletePermanent(book.id)}
-                                    />
-                                ))}
-                            </div>
+                            viewMode === "list" ? (
+                                <BookListView
+                                    books={filters.filteredBooks}
+                                    onClick={(book) => navigate(`/book/${book.id}`)}
+                                    onDelete={(book) => handleDelete(book.id)}
+                                    onDeletePermanent={(book) => handleDeletePermanent(book.id)}
+                                />
+                            ) : (
+                                <div style={styles.grid}>
+                                    {filters.filteredBooks.map((book) => (
+                                        <BookCard
+                                            key={book.id}
+                                            book={book}
+                                            onClick={() => navigate(`/book/${book.id}`)}
+                                            onDelete={() => handleDelete(book.id)}
+                                            onDeletePermanent={() => handleDeletePermanent(book.id)}
+                                        />
+                                    ))}
+                                </div>
+                            )
                         )}
                     </>
                 )}

@@ -14,6 +14,9 @@ import { FileText, Home, Plus } from "lucide-react";
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
+import ViewToggle from "../components/ViewToggle";
+import ArticleCard from "../components/articles/ArticleCard";
+import { useViewMode } from "../hooks/useViewMode";
 
 const STATUS_FILTERS: (ArticleStatus | "all")[] = [
     "all",
@@ -29,6 +32,7 @@ export default function ArticleList() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<ArticleStatus | "all">("all");
     const [creating, setCreating] = useState(false);
+    const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
 
     useEffect(() => {
         let cancelled = false;
@@ -112,16 +116,19 @@ export default function ArticleList() {
                     <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
                     {t("ui.articles.list_heading", "Artikel")}
                 </h2>
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => void handleCreate()}
-                    disabled={creating}
-                    data-testid="article-list-new"
-                >
-                    <Plus size={14} />
-                    {t("ui.articles.new", "Neuer Artikel")}
-                </button>
+                <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                    <ViewToggle mode={viewMode} onChange={setViewMode} />
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => void handleCreate()}
+                        disabled={creating}
+                        data-testid="article-list-new"
+                    >
+                        <Plus size={14} />
+                        {t("ui.articles.new", "Neuer Artikel")}
+                    </button>
+                </div>
             </header>
 
             <FilterBar value={filter} onChange={setFilter} />
@@ -135,6 +142,16 @@ export default function ArticleList() {
                 </p>
             ) : articles.length === 0 ? (
                 <EmptyState onCreate={() => void handleCreate()} />
+            ) : viewMode === "grid" ? (
+                <div style={layout.grid} data-testid="article-list">
+                    {articles.map((a) => (
+                        <ArticleCard
+                            key={a.id}
+                            article={a}
+                            onClick={() => navigate(`/articles/${a.id}`)}
+                        />
+                    ))}
+                </div>
             ) : (
                 <ul style={layout.list} data-testid="article-list">
                     {articles.map((a) => (
@@ -319,6 +336,11 @@ const layout: Record<string, React.CSSProperties> = {
         display: "flex",
         flexDirection: "column",
         gap: 8,
+    },
+    grid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gap: 16,
     },
     row: {
         padding: "12px 16px",

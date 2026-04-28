@@ -3,6 +3,7 @@ import {Book} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import CoverPlaceholder from "./CoverPlaceholder";
 
 interface Props {
     book: Book;
@@ -38,7 +39,13 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
             ) : (
-                <div style={styles.accent}/>
+                <div style={styles.coverImage}>
+                    <CoverPlaceholder
+                        title={book.title}
+                        subtitle={book.subtitle}
+                        data-testid={`book-card-placeholder-${book.id}`}
+                    />
+                </div>
             )}
             <div style={styles.content}>
                 <h3 style={styles.title}>{book.title}</h3>
