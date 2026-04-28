@@ -130,7 +130,7 @@ export interface ChapterMetricsResponse {
 
 // --- Article (AR-01 Phase 1 + AR-02 Phase 2) ---
 
-export type ArticleStatus = "draft" | "published" | "archived"
+export type ArticleStatus = "draft" | "ready" | "published" | "archived"
 
 /** Standalone long-form article. Distinct from Book: no chapters,
  *  no front-matter, no ISBN. Single TipTap document plus minimal

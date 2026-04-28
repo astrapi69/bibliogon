@@ -28,6 +28,8 @@ import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-reac
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
+import KeywordInput from "../components/KeywordInput";
+import ThemeToggle from "../components/ThemeToggle";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
@@ -48,7 +50,7 @@ const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
 ];
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
-const STATUSES: ArticleStatus[] = ["draft", "published", "archived"];
+const STATUSES: ArticleStatus[] = ["draft", "ready", "published", "archived"];
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -62,7 +64,38 @@ export default function ArticleEditor() {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const authorProfile = useAuthorProfile();
-    const topics = useTopics();
+    const topicsFromHook = useTopics();
+    // Local mirror of the settings topics list so inline-add via the
+    // TopicSelect dropdown can append without waiting on a re-mount of
+    // the hook. Synced from useTopics on every change.
+    const [topics, setTopics] = useState<string[] | null>(topicsFromHook);
+    useEffect(() => {
+        setTopics(topicsFromHook);
+    }, [topicsFromHook]);
+
+    const handleAddTopic = useCallback(async (name: string): Promise<boolean> => {
+        const trimmed = name.trim();
+        if (!trimmed) return false;
+        const current = topics ?? [];
+        if (current.some((t) => t.toLowerCase() === trimmed.toLowerCase())) {
+            // Already exists - just select it without a redundant PATCH.
+            return true;
+        }
+        const next = [...current, trimmed];
+        try {
+            await api.settings.updateApp({ topics: next });
+            setTopics(next);
+            return true;
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.topic_add_failed", "Thema konnte nicht angelegt werden."),
+                    err,
+                );
+            }
+            return false;
+        }
+    }, [topics, t]);
 
     const lastSavedMeta = useRef<string>("");
 
@@ -271,6 +304,7 @@ export default function ArticleEditor() {
                     )}
                 />
                 <SaveIndicator status={saveStatus} />
+                <ThemeToggle />
             </header>
 
             <main style={layout.body}>
@@ -310,6 +344,7 @@ export default function ArticleEditor() {
                             setArticle({ ...article, topic: v || null });
                             void persistMeta({ topic: v || null });
                         }}
+                        onAddTopic={handleAddTopic}
                     />
                     <label style={layout.fieldLabel}>
                         {t("ui.articles.language", "Sprache")}
@@ -397,6 +432,8 @@ export default function ArticleEditor() {
                             ...layout.fieldInput,
                             resize: "vertical",
                             fontFamily: "inherit",
+                            minHeight: "5em",
+                            lineHeight: 1.4,
                         }}
                     />
                     <Field
@@ -434,32 +471,41 @@ export default function ArticleEditor() {
                         }
                         testId="article-editor-featured-image"
                     />
-                    <Field
-                        label={t("ui.articles.excerpt", "Excerpt")}
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.excerpt", "Excerpt")}
+                    </label>
+                    <textarea
+                        data-testid="article-editor-excerpt"
                         value={article.excerpt ?? ""}
-                        onChange={(v) =>
+                        onChange={(e) =>
                             setArticle({
                                 ...article,
-                                excerpt: v || null,
+                                excerpt: e.target.value || null,
                             })
                         }
                         onBlur={() => persistMeta({ excerpt: article.excerpt })}
-                        testId="article-editor-excerpt"
+                        rows={3}
+                        placeholder={t(
+                            "ui.articles.excerpt_placeholder",
+                            "Kurze Zusammenfassung fuer Newsletter und SEO-Snippets.",
+                        )}
+                        style={{
+                            ...layout.fieldInput,
+                            resize: "vertical",
+                            fontFamily: "inherit",
+                            minHeight: "5em",
+                            lineHeight: 1.4,
+                        }}
                     />
-                    <Field
-                        label={t("ui.articles.tags_label", "Tags (comma-separated)")}
-                        value={(article.tags ?? []).join(", ")}
-                        onChange={(v) =>
-                            setArticle({
-                                ...article,
-                                tags: v
-                                    .split(",")
-                                    .map((s) => s.trim())
-                                    .filter(Boolean),
-                            })
-                        }
-                        onBlur={() => persistMeta({ tags: article.tags })}
-                        testId="article-editor-tags"
+                    <label style={layout.fieldLabel}>
+                        {t("ui.articles.tags_label", "Tags")}
+                    </label>
+                    <KeywordInput
+                        keywords={article.tags ?? []}
+                        onChange={(next) => {
+                            setArticle({ ...article, tags: next });
+                            void persistMeta({ tags: next });
+                        }}
                     />
                     <PublicationsPanel articleId={article.id} />
                     <button
@@ -664,26 +710,54 @@ function Field({
 /** Settings-managed topic select. Empty array (settings has no topics
  *  configured yet) renders a hint + disabled select; null (loading)
  *  renders a disabled select without the hint. Unknown current value
- *  is preserved as a one-off option so legacy data survives. */
+ *  is preserved as a one-off option so legacy data survives.
+ *
+ *  Includes a sentinel "+ Add new topic" option that prompts the user
+ *  for a new topic name, persists it via onAddTopic (PATCH settings),
+ *  then selects it. Saves a context-switch to the Settings page for
+ *  the common "I want this topic right now" case. */
+const ADD_TOPIC_SENTINEL = "__add_new_topic__";
+
 function TopicSelect({
     value,
     topics,
     onChange,
+    onAddTopic,
 }: {
     value: string;
     topics: string[] | null;
     onChange: (next: string) => void;
+    onAddTopic: (name: string) => Promise<boolean>;
 }) {
     const { t } = useI18n();
     const list = topics ?? [];
     const valueIsKnown = value === "" || list.includes(value);
     const noTopicsConfigured = topics !== null && list.length === 0;
+
+    const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const next = e.target.value;
+        if (next !== ADD_TOPIC_SENTINEL) {
+            onChange(next);
+            return;
+        }
+        // Reset the visible select back to current value while we
+        // prompt - the sentinel is a transient action, not a state.
+        e.target.value = value;
+        const name = window.prompt(
+            t("ui.articles.topic_add_new_prompt", "Neues Thema:"),
+            "",
+        );
+        if (!name || !name.trim()) return;
+        const ok = await onAddTopic(name);
+        if (ok) onChange(name.trim());
+    };
+
     return (
         <>
             <select
                 data-testid="article-editor-topic"
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={handleSelectChange}
                 style={layout.fieldInput}
                 disabled={topics === null}
             >
@@ -698,6 +772,9 @@ function TopicSelect({
                 {!valueIsKnown && (
                     <option value={value}>{value}</option>
                 )}
+                <option value={ADD_TOPIC_SENTINEL} data-testid="article-editor-topic-add-new">
+                    {t("ui.articles.topic_add_new", "+ Neues Thema hinzufuegen")}
+                </option>
             </select>
             {noTopicsConfigured && (
                 <p
