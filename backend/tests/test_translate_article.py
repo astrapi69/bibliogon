@@ -112,6 +112,54 @@ def test_translate_article_404_on_missing_id(patched_translator) -> None:
         assert resp.status_code == 404
 
 
+def test_translate_article_falls_back_to_single_paragraph_on_rebuild_mismatch() -> None:
+    """When the provider returns text that the rebuild logic can't
+    map onto the source TipTap text-node structure (text-node count
+    mismatch leaves the doc byte-identical), the fallback wraps the
+    full translation in a single paragraph so the user at least sees
+    the translated text."""
+    async def _passthrough(text, target_lang, source_lang, provider, deepl_client, lmstudio_client):
+        # Force a single-line response with no \n separators - the
+        # rebuild splits by \n and runs out of segments after the
+        # first text node, leaving subsequent nodes untouched.
+        return f"FULL TRANSLATION OF: {text.strip()}"
+
+    with patch(
+        "bibliogon_translation.routes.translate_chapter_content",
+        side_effect=_passthrough,
+    ), patch(
+        "bibliogon_translation.routes._build_translation_clients",
+        return_value=(None, object()),
+    ), TestClient(app) as client:
+        source = _create_article(client, "Multi para")
+        # Source with TWO paragraphs - so the rebuild needs at least
+        # two segments, but our fake returns one big string. Old code
+        # would produce a doc identical to source. New code falls back.
+        _patch_article(
+            client,
+            source["id"],
+            content_json=json.dumps({
+                "type": "doc",
+                "content": [
+                    {"type": "paragraph", "content": [{"type": "text", "text": "First."}]},
+                    {"type": "paragraph", "content": [{"type": "text", "text": "Second."}]},
+                ],
+            }),
+        )
+        resp = client.post(
+            "/api/translation/translate-article",
+            json={"article_id": source["id"], "target_lang": "EN", "provider": "lmstudio"},
+        )
+        assert resp.status_code == 200, resp.text
+        new_id = resp.json()["article_id"]
+        new = client.get(f"/api/articles/{new_id}").json()
+        # The translated body must show up in the new article's
+        # content_json. The exact shape (single paragraph vs preserved
+        # structure) is implementation detail; user-visible contract
+        # is just that the translation is present.
+        assert "FULL TRANSLATION OF" in new["content_json"]
+
+
 def test_translate_article_returns_502_on_lmstudio_unreachable() -> None:
     """LMStudio default endpoint (localhost:1234) often unavailable.
     Raw httpx ConnectError must surface as a clean 502 with a

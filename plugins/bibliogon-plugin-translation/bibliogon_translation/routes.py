@@ -401,8 +401,11 @@ def _load_article(db, article_id: str):
 
 async def _create_translated_article(db, source, req: TranslateArticleRequest, deepl_client, lmstudio_client):
     """Create + persist the destination Article row with translated fields."""
+    import logging
+
     from app.models import Article
 
+    log = logging.getLogger(__name__)
     lang_code = req.target_lang.split("-")[0].lower()
     suffix = req.title_suffix or f"({req.target_lang.upper()})"
 
@@ -435,10 +438,46 @@ async def _create_translated_article(db, source, req: TranslateArticleRequest, d
             deepl_client=deepl_client,
             lmstudio_client=lmstudio_client,
         )
+        # Diagnostic: log a preview of source vs translation so we
+        # can tell from backend logs whether the provider actually
+        # translated (vs passthrough, prefix-wrapping, etc.). Only
+        # first 200 chars to keep logs small.
+        log.info(
+            "translate-article: provider=%s source.id=%s source_lang=%s target=%s "
+            "src_chars=%d translated_chars=%d src_preview=%r translated_preview=%r",
+            req.provider, source.id, source.language, req.target_lang,
+            len(plain_body), len(translated_body_text),
+            plain_body[:200], translated_body_text[:200],
+        )
         translated_content_json = rebuild_tiptap_with_translation(
             source.content_json or "",
             translated_body_text,
         )
+        # Sanity guard: if rebuild produced byte-identical JSON to
+        # source AND the translated text differed from source plain
+        # text, the rebuild dropped the translation on the floor (text
+        # node count mismatch). Fall back to a single-paragraph doc
+        # holding the full translated text so the user at least sees
+        # the translation - block structure is forfeit.
+        if (
+            translated_content_json == (source.content_json or "")
+            and translated_body_text.strip()
+            and translated_body_text.strip() != plain_body.strip()
+        ):
+            import json as _json
+            log.warning(
+                "translate-article: rebuild returned source-identical doc "
+                "for source.id=%s; falling back to single-paragraph doc",
+                source.id,
+            )
+            translated_content_json = _json.dumps({
+                "type": "doc",
+                "content": [
+                    {"type": "paragraph", "content": [
+                        {"type": "text", "text": translated_body_text}
+                    ]}
+                ],
+            }, ensure_ascii=False)
     else:
         translated_content_json = source.content_json or ""
 
