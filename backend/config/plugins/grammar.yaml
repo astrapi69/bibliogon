@@ -1,10 +1,10 @@
 plugin:
   name: "grammar"
   display_name:
-    de: "Grammatikpruefung"
+    de: "Grammatikprüfung"
     en: "Grammar Check"
   description:
-    de: "Grammatik- und Rechtschreibpruefung via LanguageTool"
+    de: "Grammatik- und Rechtschreibprüfung via LanguageTool"
     en: "Grammar and spell checking via LanguageTool"
   version: "1.0.0"
   license: "MIT"

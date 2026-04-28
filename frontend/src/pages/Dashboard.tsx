@@ -118,14 +118,14 @@ export default function Dashboard() {
 
     const handleDeletePermanent = async (id: string) => {
         if (!await dialog.confirm(
-            t("ui.dashboard.delete_permanent_title", "Endgueltig loeschen"),
-            t("ui.dashboard.delete_permanent_warning", "Das Buch wird unwiderruflich geloescht. Diese Aktion kann NICHT rueckgaengig gemacht werden. Nur fuer erfahrene Benutzer."),
+            t("ui.dashboard.delete_permanent_title", "Endgültig löschen"),
+            t("ui.dashboard.delete_permanent_warning", "Das Buch wird unwiderruflich gelöscht. Diese Aktion kann NICHT rückgaengig gemacht werden. Nur für erfahrene Benutzer."),
             "danger",
         )) return;
         await api.books.delete(id);
         try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
         setBooks((prev) => prev.filter((b) => b.id !== id));
-        notify.success(t("ui.dashboard.deleted_permanently", "Buch endgueltig geloescht"));
+        notify.success(t("ui.dashboard.deleted_permanently", "Buch endgültig gelöscht"));
     };
 
     const handleRestore = async (id: string) => {
@@ -135,13 +135,13 @@ export default function Dashboard() {
     };
 
     const handlePermanentDelete = async (id: string) => {
-        if (!await dialog.confirm(t("ui.dashboard.delete_permanent_title", "Endgueltig loeschen"), t("ui.dashboard.delete_permanent_warning", "Buch endgueltig loeschen? Dies kann nicht rueckgaengig gemacht werden."), "danger")) return;
+        if (!await dialog.confirm(t("ui.dashboard.delete_permanent_title", "Endgültig löschen"), t("ui.dashboard.delete_permanent_warning", "Buch endgültig löschen? Dies kann nicht rückgaengig gemacht werden."), "danger")) return;
         await api.books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
     };
 
     const handleEmptyTrash = async () => {
-        if (!await dialog.confirm(t("ui.dashboard.empty_trash_title", "Papierkorb leeren"), t("ui.dashboard.empty_trash_warning", "Alle Buecher im Papierkorb werden unwiderruflich geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden."), "danger")) return;
+        if (!await dialog.confirm(t("ui.dashboard.empty_trash_title", "Papierkorb leeren"), t("ui.dashboard.empty_trash_warning", "Alle Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgaengig gemacht werden."), "danger")) return;
         await api.books.emptyTrash();
         setTrash([]);
     };
@@ -314,7 +314,7 @@ export default function Dashboard() {
                                                 data-testid={`trash-delete-permanent-${book.id}`}
                                                 onClick={() => handlePermanentDelete(book.id)}
                                             >
-                                                <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgueltig loeschen")}
+                                                <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgültig löschen")}
                                             </button>
                                         </div>
                                     </div>
@@ -446,7 +446,7 @@ export default function Dashboard() {
                                             <span style={{color: "var(--text-secondary)"}}>
                                                 {new Date(entry.timestamp).toLocaleString()}
                                             </span>
-                                            <span>{entry.book_count} {t("ui.dashboard.book_plural", "Buecher")}</span>
+                                            <span>{entry.book_count} {t("ui.dashboard.book_plural", "Bücher")}</span>
                                             {entry.filename && (
                                                 <span style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
                                                     {entry.filename}

@@ -66,7 +66,7 @@ describe("CoverUpload", () => {
   it("shows empty state when no cover is set", () => {
     renderUpload()
     expect(screen.getByText("Bild hierher ziehen oder klicken")).toBeTruthy()
-    expect(screen.getByText("Datei waehlen")).toBeTruthy()
+    expect(screen.getByText("Datei wählen")).toBeTruthy()
   })
 
   it("shows help text with format info", () => {
@@ -141,6 +141,6 @@ describe("CoverUpload", () => {
 
   it("does not show choose-file button when cover exists", () => {
     renderUpload("covers/existing.jpg")
-    expect(screen.queryByText("Datei waehlen")).toBeNull()
+    expect(screen.queryByText("Datei wählen")).toBeNull()
   })
 })

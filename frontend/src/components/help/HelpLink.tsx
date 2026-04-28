@@ -17,7 +17,7 @@ export default function HelpLink({slug, size = 14}: {slug: string; size?: number
             type="button"
             onClick={() => openHelp(slug)}
             className="btn-icon"
-            title={t("ui.help.open", "Hilfe oeffnen")}
+            title={t("ui.help.open", "Hilfe öffnen")}
             style={{opacity: 0.5, padding: 2}}
         >
             <HelpCircle size={size}/>

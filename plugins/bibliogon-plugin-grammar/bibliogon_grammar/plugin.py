@@ -43,7 +43,7 @@ class GrammarPlugin(BasePlugin):
             "sidebar_actions": [
                 {
                     "id": "grammar_check",
-                    "label": {"de": "Grammatik pruefen", "en": "Check Grammar"},
+                    "label": {"de": "Grammatik prüfen", "en": "Check Grammar"},
                     "icon": "spell-check",
                 },
             ],

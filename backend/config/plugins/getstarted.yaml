@@ -72,7 +72,7 @@ guide:
         de: "Sichern und Importieren"
         en: "Backup and Import"
       description:
-        de: "Erstelle Backups deiner Buecher oder importiere bestehende write-book-template Projekte."
+        de: "Erstelle Backups deiner Bücher oder importiere bestehende write-book-template Projekte."
         en: "Create backups of your books or import existing write-book-template projects."
       icon: "archive"
 
@@ -96,7 +96,7 @@ sample_book:
         de: "Kapitelstruktur"
         en: "Chapter Structure"
       content:
-        de: "Bibliogon unterstuetzt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Über den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
+        de: "Bibliogon unterstützt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Über den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
         en: "Bibliogon supports different chapter types:\n\n- Regular chapters\n- Preface\n- Foreword\n- Acknowledgments\n- About the Author\n- Appendix, Glossary, Bibliography\n\nThese appear in the sidebar in their own sections."
     - title:
         de: "Export und Weiterverarbeitung"

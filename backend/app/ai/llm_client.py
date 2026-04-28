@@ -109,7 +109,7 @@ class LLMClient:
                 ) from e
 
             if response.status_code == 401:
-                raise LLMError("API-Schluessel ungueltig oder fehlend.")
+                raise LLMError("API-Schlüssel ungültig oder fehlend.")
             if response.status_code == 429:
                 raise LLMError("Rate Limit erreicht. Bitte warten.")
             if not response.is_success:
@@ -182,11 +182,11 @@ class LLMClient:
             except httpx.ConnectError as e:
                 raise LLMError(
                     f"KI-Server nicht erreichbar ({self.base_url}). "
-                    "Pruefe die Anthropic API-Verbindung."
+                    "Prüfe die Anthropic API-Verbindung."
                 ) from e
 
             if response.status_code == 401:
-                raise LLMError("API-Schluessel ungueltig oder fehlend.")
+                raise LLMError("API-Schlüssel ungültig oder fehlend.")
             if response.status_code == 429:
                 raise LLMError("Rate Limit erreicht. Bitte warten.")
             if not response.is_success:
@@ -300,7 +300,7 @@ class LLMClient:
     async def _health_anthropic(self) -> dict[str, Any]:
         """Health check for Anthropic using a minimal messages request."""
         if not self.api_key:
-            return {"status": "auth_error", "error": "Kein API-Schluessel konfiguriert"}
+            return {"status": "auth_error", "error": "Kein API-Schlüssel konfiguriert"}
 
         headers: dict[str, str] = {
             "Content-Type": "application/json",

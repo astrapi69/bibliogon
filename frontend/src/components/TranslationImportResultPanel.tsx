@@ -60,7 +60,7 @@ function ImportedSection({
             >
                 {t(
                     "ui.translations.import_result_empty",
-                    "Es wurden keine Buecher importiert.",
+                    "Es wurden keine Bücher importiert.",
                 )}
             </div>
         );
@@ -72,7 +72,7 @@ function ImportedSection({
                 <Check size={14} style={{ color: "var(--success, #16a34a)" }} />
                 {t(
                     "ui.translations.import_result_imported_heading",
-                    "{n} Buch/Buecher importiert",
+                    "{n} Buch/Bücher importiert",
                 ).replace("{n}", String(books.length))}
             </h4>
             <ul style={panelStyles.list}>
@@ -97,7 +97,7 @@ function ImportedSection({
                             style={panelStyles.openBtn}
                         >
                             <BookOpen size={12} />
-                            {t("ui.translations.import_result_open", "Oeffnen")}
+                            {t("ui.translations.import_result_open", "Öffnen")}
                         </button>
                     </li>
                 ))}
@@ -139,13 +139,13 @@ function SkippedSection({
                 <AlertTriangle size={14} style={{ color: "var(--warning, #b45309)" }} />
                 {t(
                     "ui.translations.import_result_skipped_heading",
-                    "{n} Branch/Branches benoetigen Aufmerksamkeit",
+                    "{n} Branch/Branches benötigen Aufmerksamkeit",
                 ).replace("{n}", String(skipped.length))}
             </h4>
             <p style={panelStyles.skippedHint}>
                 {t(
                     "ui.translations.import_result_skipped_hint",
-                    "Diese Branches wurden uebersprungen. Behebe das Problem im Repository und importiere die Uebersetzungsgruppe danach erneut.",
+                    "Diese Branches wurden übersprungen. Behebe das Problem im Repository und importiere die Übersetzungsgruppe danach erneut.",
                 )}
             </p>
             <ul style={panelStyles.list}>

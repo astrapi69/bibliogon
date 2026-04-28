@@ -60,7 +60,7 @@ describe("BackupCompareDialog", () => {
   it("renders title and file inputs when open", () => {
     renderDialog()
     expect(screen.getByText("Backups vergleichen")).toBeTruthy()
-    expect(screen.getByText("Backup A (aelterer Stand)")).toBeTruthy()
+    expect(screen.getByText("Backup A (älterer Stand)")).toBeTruthy()
     expect(screen.getByText("Backup B (neuerer Stand)")).toBeTruthy()
     const fileInputs = document.querySelectorAll('input[type="file"]')
     expect(fileInputs).toHaveLength(2)
@@ -112,7 +112,7 @@ describe("BackupCompareDialog", () => {
     fireEvent.click(screen.getByText("Vergleichen"))
 
     await waitFor(() => {
-      expect(screen.getByText("Uebersicht")).toBeTruthy()
+      expect(screen.getByText("Übersicht")).toBeTruthy()
     })
 
     // "New comparison" button should appear in result view
@@ -140,7 +140,7 @@ describe("BackupCompareDialog", () => {
 
     await waitFor(() => {
       // File picker labels should be back
-      expect(screen.getByText("Backup A (aelterer Stand)")).toBeTruthy()
+      expect(screen.getByText("Backup A (älterer Stand)")).toBeTruthy()
     })
   })
 

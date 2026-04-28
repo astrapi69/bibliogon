@@ -213,7 +213,7 @@ export default function Settings() {
                                 await api.settings.createPlugin(data);
                                 const plugins = await api.settings.listPlugins();
                                 setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
-                                showMessage(`${data.name} hinzugefuegt`);
+                                showMessage(`${data.name} hinzugefügt`);
                             } catch (err) {
                                 showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
                             }
@@ -371,11 +371,11 @@ function AppSettings({config, onSave, saving}: {
                             onChange={(e) => setTrashEnabled(e.target.checked)}
                             style={{width: 16, height: 16, accentColor: "var(--accent)"}}
                         />
-                        <span className="label" style={{margin: 0}}>{t("ui.settings.trash_checkbox", "Geloeschte Buecher automatisch entfernen")}</span>
+                        <span className="label" style={{margin: 0}}>{t("ui.settings.trash_checkbox", "Gelöschte Bücher automatisch entfernen")}</span>
                     </label>
                     {trashEnabled && (
                         <div style={{marginTop: 8, marginLeft: 24}}>
-                            <label className="label">{t("ui.settings.trash_delete_after", "Endgueltig loeschen nach")}</label>
+                            <label className="label">{t("ui.settings.trash_delete_after", "Endgültig löschen nach")}</label>
                             <RadixSelect
                                 value={trashDays}
                                 onValueChange={setTrashDays}
@@ -393,8 +393,8 @@ function AppSettings({config, onSave, saving}: {
                     )}
                     <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
                         {trashEnabled
-                            ? t("ui.settings.trash_info", "Buecher im Papierkorb werden nach {days} Tagen automatisch geloescht").replace("{days}", trashDays)
-                            : t("ui.settings.trash_disabled", "Deaktiviert (manuell loeschen)")}
+                            ? t("ui.settings.trash_info", "Bücher im Papierkorb werden nach {days} Tagen automatisch gelöscht").replace("{days}", trashDays)
+                            : t("ui.settings.trash_disabled", "Deaktiviert (manuell löschen)")}
                     </small>
                 </div>
                 <div className="field">
@@ -405,10 +405,10 @@ function AppSettings({config, onSave, saving}: {
                             onChange={(e) => setDeletePermanently(e.target.checked)}
                             style={{width: 16, height: 16, accentColor: "var(--accent)"}}
                         />
-                        <span className="label" style={{margin: 0}}>{t("ui.settings.delete_permanently", "Geloeschte Buecher sofort permanent loeschen")}</span>
+                        <span className="label" style={{margin: 0}}>{t("ui.settings.delete_permanently", "Gelöschte Bücher sofort permanent löschen")}</span>
                     </label>
                     <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
-                        {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Buecher nicht in den Papierkorb verschoben.")}
+                        {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben.")}
                     </small>
                 </div>
                 <div className="field">
@@ -423,14 +423,14 @@ function AppSettings({config, onSave, saving}: {
                         <span className="label" style={{margin: 0}}>
                             {t(
                                 "ui.settings.allow_books_without_author",
-                                "Buecher ohne Autor zulassen (erweitert)",
+                                "Bücher ohne Autor zulassen (erweitert)",
                             )}
                         </span>
                     </label>
                     <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
                         {t(
                             "ui.settings.allow_books_without_author_hint",
-                            "Aktiviere diese Option, um Buecher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbuechern, bei denen keine Autorinformation noetig ist.",
+                            "Aktiviere diese Option, um Bücher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbüchern, bei denen keine Autorinformation nötig ist.",
                         )}
                     </small>
                 </div>
@@ -468,13 +468,13 @@ function AppSettings({config, onSave, saving}: {
                             <label className="label">{t("ui.settings.editor_draft_age", "Entwurf-Alter (Tage)")}</label>
                             <input className="input" type="number" min="1" max="365" step="1"
                                 value={edDraftAge} onChange={(e) => setEdDraftAge(e.target.value)}/>
-                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe aelter als dieser Wert werden geloescht")}</small>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe älter als dieser Wert werden gelöscht")}</small>
                         </div>
                         <div className="field" style={{flex: 1, minWidth: 140}}>
                             <label className="label">{t("ui.settings.editor_ai_chars", "KI-Kontext (Zeichen)")}</label>
                             <input className="input" type="number" min="500" max="32000" step="500"
                                 value={edAiChars} onChange={(e) => setEdAiChars(e.target.value)}/>
-                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl fuer KI-Vorschlaege")}</small>
+                            <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl für KI-Vorschläge")}</small>
                         </div>
                     </div>
                 </div>
@@ -536,7 +536,7 @@ function AppSettings({config, onSave, saving}: {
                             </label>
                         ))}
                         <p style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 12}}>
-                            {t("ui.settings.restart_hint", "Aenderungen werden beim naechsten \"Speichern\" uebernommen. Neustart erforderlich.")}
+                            {t("ui.settings.restart_hint", "Änderungen werden beim nächsten \"Speichern\" übernommen. Neustart erforderlich.")}
                         </p>
                     </div>
                 )}
@@ -669,12 +669,12 @@ function AiAssistantSettings({config, onSave, saving}: {
                                 </button>
                             </div>
                             <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
-                                {t("ui.settings.ai_key_hint", "Der API-Schluessel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst uebertragen.")}
+                                {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.")}
                             </small>
                         </div>
                         {aiProvider === "lmstudio" && (
                             <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
-                                {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schluessel noetig. Modelle werden vom LM Studio Server bereitgestellt.")}
+                                {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.")}
                             </small>
                         )}
                         <div style={{display: "flex", gap: 8, alignItems: "center", marginTop: 8}}>
@@ -705,12 +705,12 @@ function AiAssistantSettings({config, onSave, saving}: {
                                                 const detail = data.error_detail || "";
                                                 setAiTestStatus("fail");
                                                 const errorMessages: Record<string, string> = {
-                                                    auth_error: t("ui.settings.ai_err_auth", "API-Schluessel ungueltig"),
-                                                    rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte spaeter erneut versuchen."),
+                                                    auth_error: t("ui.settings.ai_err_auth", "API-Schlüssel ungültig"),
+                                                    rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte später erneut versuchen."),
                                                     offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
-                                                    timeout: t("ui.settings.ai_err_timeout", "Zeitueberschreitung"),
-                                                    model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfuegbar"),
-                                                    invalid_request: t("ui.settings.ai_err_invalid", "Ungueltige Anfrage"),
+                                                    timeout: t("ui.settings.ai_err_timeout", "Zeitüberschreitung"),
+                                                    model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfügbar"),
+                                                    invalid_request: t("ui.settings.ai_err_invalid", "Ungültige Anfrage"),
                                                     server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
                                                     disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent."),
                                                 };
@@ -828,7 +828,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                     </button>
                     {inactivePlugins.length > 0 && (
                         <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(!showAdd)}>
-                            <Plus size={14}/> {t("ui.settings.add_plugin", "Plugin hinzufuegen")}
+                            <Plus size={14}/> {t("ui.settings.add_plugin", "Plugin hinzufügen")}
                         </button>
                     )}
                 </div>
@@ -836,7 +836,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
 
             {showAdd && inactivePlugins.length > 0 && (
                 <div style={styles.card}>
-                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.available_plugins", "Verfuegbare Plugins")}</h3>
+                    <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.available_plugins", "Verfügbare Plugins")}</h3>
                     <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
                         {t("ui.settings.available_plugins_hint", "Diese Plugins sind installiert aber noch nicht aktiviert:")}
                     </p>
@@ -866,7 +866,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                     })}
                     <div style={{marginTop: 12}}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setShowAdd(false)}>
-                            {t("ui.common.close", "Schliessen")}
+                            {t("ui.common.close", "Schließen")}
                         </button>
                     </div>
                 </div>
@@ -892,7 +892,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
                         onRemove={async () => {
-                            if (await pluginDialog.confirm(t("ui.settings.remove_plugin", "Plugin entfernen"), `"${displayName}" ${t("ui.settings.remove_confirm", "wirklich entfernen? Die Konfiguration wird geloescht.")}`, "danger")) {
+                            if (await pluginDialog.confirm(t("ui.settings.remove_plugin", "Plugin entfernen"), `"${displayName}" ${t("ui.settings.remove_confirm", "wirklich entfernen? Die Konfiguration wird gelöscht.")}`, "danger")) {
                                 onRemovePlugin(name);
                             }
                         }}
@@ -900,7 +900,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 );
             })}
             {Object.entries(configs).filter(([name]) => enabled.has(name) && !disabled.has(name)).length === 0 && (
-                <p style={{color: "var(--text-muted)"}}>{t("ui.settings.no_active_plugins", "Keine aktiven Plugins. Klicke \"Plugin hinzufuegen\" um verfuegbare Plugins zu aktivieren.")}</p>
+                <p style={{color: "var(--text-muted)"}}>{t("ui.settings.no_active_plugins", "Keine aktiven Plugins. Klicke \"Plugin hinzufügen\" um verfügbare Plugins zu aktivieren.")}</p>
             )}
         </div>
     );
@@ -1020,7 +1020,7 @@ function ComplexSettingField({
             <label className="label">
                 {settingKey}{" "}
                 <span style={{fontWeight: 400, fontSize: "0.75rem", color: "var(--text-muted)"}}>
-                    ({t("ui.settings.advanced_hint", "JSON, nur fuer fortgeschrittene User")})
+                    ({t("ui.settings.advanced_hint", "JSON, nur für fortgeschrittene User")})
                 </span>
             </label>
             <textarea
@@ -1037,7 +1037,7 @@ function ComplexSettingField({
             />
             {error && (
                 <small style={{color: "var(--danger, #ef4444)", fontSize: "0.75rem"}}>
-                    {t("ui.settings.invalid_json", "Ungueltiges JSON")}: {error}
+                    {t("ui.settings.invalid_json", "Ungültiges JSON")}: {error}
                 </small>
             )}
         </div>
@@ -1102,7 +1102,7 @@ function TranslationSettingsPanel({settings, onSave}: {
                     <RadixSelect value={provider} onValueChange={setProvider} options={providerOptions} />
                 </div>
                 <div className="field">
-                    <label className="label">{t("ui.translation.deepl_api_key", "DeepL API-Schluessel")}</label>
+                    <label className="label">{t("ui.translation.deepl_api_key", "DeepL API-Schlüssel")}</label>
                     <div style={{display: "flex", gap: 4}}>
                         <input
                             className="input"
@@ -1279,7 +1279,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
 
     const mergeOptions = [
         {value: "separate", label: t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")},
-        {value: "merged", label: t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfuegen")},
+        {value: "merged", label: t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfügen")},
         {value: "both", label: t("ui.audiobook.merge_both", "Beides")},
     ];
 
@@ -1313,14 +1313,14 @@ function AudiobookSettingsPanel({settings, onSave}: {
                         <RadixSelect value={voice} onValueChange={setVoice} options={voiceOptions} />
                     ) : (
                         <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
-                            {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen fuer {engine} in {language} verfuegbar")
+                            {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen für {engine} in {language} verfügbar")
                                 .replace("{engine}", engine)
                                 .replace("{language}", language.toUpperCase())}
                         </div>
                     )}
                 </div>
                 <div className="field">
-                    <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
+                    <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfügen")}</label>
                     <RadixSelect value={merge} onValueChange={setMerge} options={mergeOptions} />
                 </div>
             </div>
@@ -1334,7 +1334,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
                     {t("ui.audiobook.read_chapter_number_label", "Kapitel-Nummer ansagen")}
                 </label>
                 <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 4}}>
-                    {t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Buecher keine gesprochenen Kapitelmarken wollen.")}
+                    {t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Bücher keine gesprochenen Kapitelmarken wollen.")}
                 </small>
             </div>
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
@@ -1370,11 +1370,11 @@ function ElevenLabsKeyPanel() {
             setKeyInput("");
             const tier = r.tier ? ` (${r.tier})` : "";
             notify.success(
-                t("ui.audiobook.elevenlabs_saved", "ElevenLabs-Schluessel gespeichert") + tier,
+                t("ui.audiobook.elevenlabs_saved", "ElevenLabs-Schlüssel gespeichert") + tier,
             );
         } catch (err) {
             notify.error(
-                t("ui.audiobook.elevenlabs_save_failed", "ElevenLabs-Schluessel konnte nicht gespeichert werden"),
+                t("ui.audiobook.elevenlabs_save_failed", "ElevenLabs-Schlüssel konnte nicht gespeichert werden"),
                 err,
             );
         }
@@ -1390,13 +1390,13 @@ function ElevenLabsKeyPanel() {
         try {
             const r = await api.audiobook.setElevenLabsKey(keyInput.trim());
             notify.success(
-                t("ui.audiobook.elevenlabs_test_ok", "API-Key gueltig") +
+                t("ui.audiobook.elevenlabs_test_ok", "API-Key gültig") +
                     (r.tier ? ` (${r.tier})` : ""),
             );
             setConfigured(true);
             setKeyInput("");
         } catch (err) {
-            notify.error(t("ui.audiobook.elevenlabs_test_failed", "API-Key ungueltig"), err);
+            notify.error(t("ui.audiobook.elevenlabs_test_failed", "API-Key ungültig"), err);
         }
         setBusy(false);
     };
@@ -1406,10 +1406,10 @@ function ElevenLabsKeyPanel() {
         try {
             await api.audiobook.deleteElevenLabsKey();
             setConfigured(false);
-            notify.success(t("ui.audiobook.elevenlabs_removed", "ElevenLabs-Schluessel entfernt"));
+            notify.success(t("ui.audiobook.elevenlabs_removed", "ElevenLabs-Schlüssel entfernt"));
         } catch (err) {
             notify.error(
-                t("ui.audiobook.elevenlabs_remove_failed", "Schluessel konnte nicht entfernt werden"),
+                t("ui.audiobook.elevenlabs_remove_failed", "Schlüssel konnte nicht entfernt werden"),
                 err,
             );
         }
@@ -1453,12 +1453,12 @@ function ElevenLabsKeyPanel() {
                 <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
                     {t(
                         "ui.audiobook.elevenlabs_hint",
-                        "Nur noetig fuer ElevenLabs Engine. Kostenloses Konto auf elevenlabs.io, API-Key im Profil generieren.",
+                        "Nur nötig für ElevenLabs Engine. Kostenloses Konto auf elevenlabs.io, API-Key im Profil generieren.",
                     )}
                 </small>
                 {configured === true && (
                     <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 4}}>
-                        {t("ui.audiobook.elevenlabs_configured", "Schluessel hinterlegt.")}
+                        {t("ui.audiobook.elevenlabs_configured", "Schlüssel hinterlegt.")}
                     </div>
                 )}
             </div>
@@ -1614,7 +1614,7 @@ function GoogleCloudTTSPanel() {
                     )}
                     {config.voice_count && config.voice_count > 0 && (
                         <div style={{fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: 8}}>
-                            {config.voice_count} {t("ui.audiobook.google_voices_count", "Stimmen verfuegbar")}
+                            {config.voice_count} {t("ui.audiobook.google_voices_count", "Stimmen verfügbar")}
                         </div>
                     )}
                     <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
@@ -1925,7 +1925,7 @@ function AuthorSettings({config, onSave, saving}: {
                 <div className="field" style={{marginTop: 16}}>
                     <label className="label">{t("ui.settings.pen_names", "Pseudonyme (Pen Names)")}</label>
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
-                        {t("ui.settings.pen_names_hint", "Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen waehlen.")}
+                        {t("ui.settings.pen_names_hint", "Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen wählen.")}
                     </p>
                     {penNames.length > 0 && (
                         <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}>
@@ -1953,7 +1953,7 @@ function AuthorSettings({config, onSave, saving}: {
                             value={newPenName}
                             onChange={(e) => setNewPenName(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && addPenName()}
-                            placeholder={t("ui.settings.add_pen_name_placeholder", "Neues Pseudonym hinzufuegen")}
+                            placeholder={t("ui.settings.add_pen_name_placeholder", "Neues Pseudonym hinzufügen")}
                             style={{flex: 1}}
                         />
                         <button
@@ -1961,7 +1961,7 @@ function AuthorSettings({config, onSave, saving}: {
                             onClick={addPenName}
                             disabled={!newPenName.trim()}
                         >
-                            <Plus size={14}/> {t("ui.settings.add_pen_name", "Hinzufuegen")}
+                            <Plus size={14}/> {t("ui.settings.add_pen_name", "Hinzufügen")}
                         </button>
                     </div>
                 </div>
@@ -2050,7 +2050,7 @@ function TopicsSettings({config, onSave, saving}: {
                             value={newTopic}
                             onChange={(e) => setNewTopic(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && addTopic()}
-                            placeholder={t("ui.settings.topics_add_placeholder", "Neues Thema hinzufuegen")}
+                            placeholder={t("ui.settings.topics_add_placeholder", "Neues Thema hinzufügen")}
                             data-testid="topic-add-input"
                             style={{flex: 1}}
                         />
@@ -2060,7 +2060,7 @@ function TopicsSettings({config, onSave, saving}: {
                             disabled={!newTopic.trim()}
                             data-testid="topic-add-btn"
                         >
-                            <Plus size={14}/> {t("ui.settings.topics_add", "Hinzufuegen")}
+                            <Plus size={14}/> {t("ui.settings.topics_add", "Hinzufügen")}
                         </button>
                     </div>
                 </div>

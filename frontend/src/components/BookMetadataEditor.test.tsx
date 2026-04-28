@@ -179,7 +179,7 @@ describe("BookMetadataEditor", () => {
 
   it("back button calls onBack", () => {
     renderEditor()
-    fireEvent.click(screen.getByTitle("Zurueck"))
+    fireEvent.click(screen.getByTitle("Zurück"))
     expect(onBack).toHaveBeenCalled()
   })
 
@@ -302,12 +302,12 @@ describe("BookMetadataEditor", () => {
       makeBook({id: "book-2", title: "Other Book", author: "Other Author"}),
     ]
     renderEditor({}, otherBooks)
-    expect(screen.getByText("Von Buch uebernehmen")).toBeTruthy()
+    expect(screen.getByText("Von Buch übernehmen")).toBeTruthy()
   })
 
   it("hides copy button when no other books", () => {
     renderEditor()
-    expect(screen.queryByText("Von Buch uebernehmen")).toBeNull()
+    expect(screen.queryByText("Von Buch übernehmen")).toBeNull()
   })
 
   it("copy dialog shows other books when clicked", () => {
@@ -320,7 +320,7 @@ describe("BookMetadataEditor", () => {
       }),
     ]
     renderEditor({}, otherBooks)
-    fireEvent.click(screen.getByText("Von Buch uebernehmen"))
+    fireEvent.click(screen.getByText("Von Buch übernehmen"))
     expect(screen.getByText(/Source Book/)).toBeTruthy()
   })
 

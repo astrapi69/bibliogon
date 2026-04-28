@@ -137,7 +137,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Heading1 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 1}).run(),
             active: editor.isActive("heading", {level: 1}),
-            title: t("ui.toolbar.heading1", "Ueberschrift 1"),
+            title: t("ui.toolbar.heading1", "Überschrift 1"),
             testId: "toolbar-h1",
             hidden: markdownMode,
         },
@@ -145,7 +145,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Heading2 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 2}).run(),
             active: editor.isActive("heading", {level: 2}),
-            title: t("ui.toolbar.heading2", "Ueberschrift 2"),
+            title: t("ui.toolbar.heading2", "Überschrift 2"),
             testId: "toolbar-h2",
             hidden: markdownMode,
         },
@@ -153,7 +153,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Heading3 size={16}/>,
             action: () => editor.chain().focus().toggleHeading({level: 3}).run(),
             active: editor.isActive("heading", {level: 3}),
-            title: t("ui.toolbar.heading3", "Ueberschrift 3"),
+            title: t("ui.toolbar.heading3", "Überschrift 3"),
             testId: "toolbar-h3",
             hidden: markdownMode,
         },
@@ -231,7 +231,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <TableIcon size={16}/>,
             action: () => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
             active: editor.isActive("table"),
-            title: t("ui.toolbar.insert_table", "Tabelle einfuegen"),
+            title: t("ui.toolbar.insert_table", "Tabelle einfügen"),
             testId: "toolbar-table",
             hidden: markdownMode,
         },
@@ -266,7 +266,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             icon: <Undo size={16}/>,
             action: () => editor.chain().focus().undo().run(),
             active: false,
-            title: t("ui.toolbar.undo", "Rueckgaengig") + " (Ctrl+Z)",
+            title: t("ui.toolbar.undo", "Rückgaengig") + " (Ctrl+Z)",
             testId: "toolbar-undo",
             hidden: markdownMode,
         },
@@ -348,8 +348,8 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleStyleCheck}
                     disabled={styleCheckLoading}
-                    title={t("ui.toolbar.style_check", "Stilpruefung")}
-                    aria-label={t("ui.toolbar.style_check", "Stilpruefung")}
+                    title={t("ui.toolbar.style_check", "Stilprüfung")}
+                    aria-label={t("ui.toolbar.style_check", "Stilprüfung")}
                     data-testid="toolbar-style-check"
                     style={{
                         ...styles.button,
@@ -366,8 +366,8 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onToggleSpellcheck || undefined}
                     disabled={!onToggleSpellcheck || !!spellcheckDisabledReason}
-                    title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibpruefung (LanguageTool)")}
-                    aria-label={t("ui.toolbar.spellcheck", "Rechtschreibpruefung")}
+                    title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibprüfung (LanguageTool)")}
+                    aria-label={t("ui.toolbar.spellcheck", "Rechtschreibprüfung")}
                     data-testid="toolbar-spellcheck"
                     style={{
                         ...styles.button,
@@ -384,8 +384,8 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 <button
                     onClick={onPreviewAudio || undefined}
                     disabled={!onPreviewAudio || previewLoading || !!previewDisabledReason}
-                    title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhoeren (TTS)")}
-                    aria-label={t("ui.toolbar.tts_preview", "Vorhoeren")}
+                    title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhören (TTS)")}
+                    aria-label={t("ui.toolbar.tts_preview", "Vorhören")}
                     data-testid="toolbar-tts-preview"
                     style={{
                         ...styles.button,

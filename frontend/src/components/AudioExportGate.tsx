@@ -15,7 +15,7 @@ import AudioExportProgress from "./AudioExportProgress";
  *
  * The badge is the user's hand-off point when they minimize the
  * dialog: it shows live progress (current/total) and clicks open
- * a popover with the current chapter, "Dialog oeffnen" and
+ * a popover with the current chapter, "Dialog öffnen" and
  * "Abbrechen" buttons. After completion the badge stays around
  * for 10 seconds with a green/red status, then auto-dismisses;
  * a click on the completed badge navigates to the metadata tab.
@@ -36,7 +36,7 @@ export default function AudioExportGate() {
         if (lastPhase.current !== "completed" && job.phase === "completed") {
             const message = t(
                 "ui.audio_progress.completion_toast",
-                "Audiobook fertig. Jetzt unter Metadaten > Audiobook verfuegbar.",
+                "Audiobook fertig. Jetzt unter Metadaten > Audiobook verfügbar.",
             );
             // Toast that, on click, jumps the user to the metadata tab.
             notify.success(message);
@@ -218,7 +218,7 @@ export default function AudioExportGate() {
                                 job.expand();
                             }}
                         >
-                            {t("ui.audio_progress.popover_open", "Dialog oeffnen")}
+                            {t("ui.audio_progress.popover_open", "Dialog öffnen")}
                         </button>
                         <button
                             type="button"

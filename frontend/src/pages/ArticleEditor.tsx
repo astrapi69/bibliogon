@@ -509,7 +509,7 @@ export default function ArticleEditor() {
                         label={t("ui.articles.status", "Status")}
                         tooltip={t(
                             "ui.articles.status_tooltip",
-                            "Lebenszyklus: Entwurf > Bereit > Veroeffentlicht > Archiviert.",
+                            "Lebenszyklus: Entwurf > Bereit > Veröffentlicht > Archiviert.",
                         )}
                     />
                     <select
@@ -539,7 +539,7 @@ export default function ArticleEditor() {
                         label={t("ui.articles.seo_title", "SEO-Titel")}
                         tooltip={t(
                             "ui.articles.seo_title_tooltip",
-                            "Suchmaschinen-optimierter Titel. Faellt leer auf den Artikeltitel zurueck.",
+                            "Suchmaschinen-optimierter Titel. Faellt leer auf den Artikeltitel zurück.",
                         )}
                         value={article.seo_title ?? ""}
                         onChange={(v) =>
@@ -551,14 +551,14 @@ export default function ArticleEditor() {
                         testId="article-editor-seo-title"
                         placeholder={t(
                             "ui.articles.seo_title_placeholder",
-                            "Faellt leer auf Titel zurueck",
+                            "Faellt leer auf Titel zurück",
                         )}
                     />
                     <FieldLabel
                         label={t("ui.articles.seo_description", "SEO-Beschreibung")}
                         tooltip={t(
                             "ui.articles.seo_description_tooltip",
-                            "Suchmaschinen-Beschreibung. Faellt leer auf den Excerpt zurueck.",
+                            "Suchmaschinen-Beschreibung. Faellt leer auf den Excerpt zurück.",
                         )}
                     />
                     <textarea
@@ -578,7 +578,7 @@ export default function ArticleEditor() {
                         rows={3}
                         placeholder={t(
                             "ui.articles.seo_description_placeholder",
-                            "Faellt leer auf Excerpt zurueck",
+                            "Faellt leer auf Excerpt zurück",
                         )}
                         style={{
                             ...layout.fieldInput,
@@ -592,7 +592,7 @@ export default function ArticleEditor() {
                         label={t("ui.articles.canonical_url", "Canonical URL")}
                         tooltip={t(
                             "ui.articles.canonical_url_tooltip",
-                            "Wenn der Artikel anderswo zuerst veroeffentlicht wurde, hier dessen URL eintragen. Verhindert Duplicate-Content-Probleme bei SEO.",
+                            "Wenn der Artikel anderswo zuerst veröffentlicht wurde, hier dessen URL eintragen. Verhindert Duplicate-Content-Probleme bei SEO.",
                         )}
                         value={article.canonical_url ?? ""}
                         onChange={(v) =>
@@ -654,7 +654,7 @@ export default function ArticleEditor() {
                         label={t("ui.articles.excerpt", "Excerpt")}
                         tooltip={t(
                             "ui.articles.excerpt_tooltip",
-                            "Kurze Zusammenfassung. Wird fuer Newsletter-Vorschauen und SEO-Beschreibungen als Fallback verwendet.",
+                            "Kurze Zusammenfassung. Wird für Newsletter-Vorschauen und SEO-Beschreibungen als Fallback verwendet.",
                         )}
                     />
                     <textarea
@@ -670,7 +670,7 @@ export default function ArticleEditor() {
                         rows={3}
                         placeholder={t(
                             "ui.articles.excerpt_placeholder",
-                            "Kurze Zusammenfassung fuer Newsletter und SEO-Snippets.",
+                            "Kurze Zusammenfassung für Newsletter und SEO-Snippets.",
                         )}
                         style={{
                             ...layout.fieldInput,
@@ -684,7 +684,7 @@ export default function ArticleEditor() {
                         label={t("ui.articles.tags_label", "Tags")}
                         tooltip={t(
                             "ui.articles.tags_tooltip",
-                            "Stichwoerter zur Kategorisierung und Suche. Mehrere Eintraege moeglich (Enter zum Hinzufuegen).",
+                            "Stichwoerter zur Kategorisierung und Suche. Mehrere Eintraege möglich (Enter zum Hinzufügen).",
                         )}
                     />
                     <KeywordInput
@@ -1207,7 +1207,7 @@ function TopicSelect({
                     <option value={value}>{value}</option>
                 )}
                 <option value={ADD_TOPIC_SENTINEL} data-testid="article-editor-topic-add-new">
-                    {t("ui.articles.topic_add_new", "+ Neues Thema hinzufuegen")}
+                    {t("ui.articles.topic_add_new", "+ Neues Thema hinzufügen")}
                 </option>
             </select>
             {noTopicsConfigured && (

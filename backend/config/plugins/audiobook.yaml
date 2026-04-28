@@ -38,7 +38,7 @@ settings:
   read_chapter_number: false
   # NOTE: the former ``overwrite_existing`` plugin-global flag moved to
   # Book.audiobook_overwrite_existing. The flag now lives per book and is
-  # set via the "Bestehende Dateien ueberschreiben" checkbox in the
+  # set via the "Bestehende Dateien überschreiben" checkbox in the
   # audiobook metadata tab. The Alembic migration e5f6a7b8c9d0 seeds the
   # per-book column once from the legacy YAML value on upgrade.
 elevenlabs:

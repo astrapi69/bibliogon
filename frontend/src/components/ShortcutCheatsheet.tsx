@@ -55,7 +55,7 @@ export default function ShortcutCheatsheet({open, onClose}: Props) {
           ))}
 
           <div style={styles.hint}>
-            {t("ui.shortcuts.hint", "Tipp: Druecke Ctrl+/ um diese Uebersicht jederzeit zu oeffnen.")}
+            {t("ui.shortcuts.hint", "Tipp: Drücke Ctrl+/ um diese Übersicht jederzeit zu öffnen.")}
           </div>
 
           <Dialog.Close asChild>

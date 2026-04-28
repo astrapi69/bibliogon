@@ -4,7 +4,7 @@ plugin:
     de: "Erste Schritte"
     en: "Get Started"
   description:
-    de: "Einfuehrung und Beispielbuch fuer neue Benutzer"
+    de: "Einfuehrung und Beispielbuch für neue Benutzer"
     en: "Onboarding guide and sample book for new users"
   version: "1.0.0"
   license: "MIT"
@@ -24,7 +24,7 @@ guide:
 
     - id: "add-chapters"
       title:
-        de: "Kapitel hinzufuegen"
+        de: "Kapitel hinzufügen"
         en: "Add Chapters"
       description:
         de: "Oeffne dein Buch und klicke das '+' neben 'Kapitel' in der Sidebar."
@@ -36,7 +36,7 @@ guide:
         de: "Schreiben"
         en: "Write Content"
       description:
-        de: "Nutze den WYSIWYG-Editor oder wechsle in den Markdown-Modus. Deine Aenderungen werden automatisch gespeichert."
+        de: "Nutze den WYSIWYG-Editor oder wechsle in den Markdown-Modus. Deine Änderungen werden automatisch gespeichert."
         en: "Use the WYSIWYG editor or switch to Markdown mode. Your changes are saved automatically."
       icon: "pen-tool"
 
@@ -54,7 +54,7 @@ guide:
         de: "Exportieren"
         en: "Export"
       description:
-        de: "Exportiere dein Buch als EPUB, PDF oder ZIP-Projektstruktur ueber die Buttons in der Sidebar."
+        de: "Exportiere dein Buch als EPUB, PDF oder ZIP-Projektstruktur über die Buttons in der Sidebar."
         en: "Export your book as EPUB, PDF, or ZIP project structure via the sidebar buttons."
       icon: "download"
 
@@ -72,7 +72,7 @@ guide:
         de: "Sichern und Importieren"
         en: "Backup and Import"
       description:
-        de: "Erstelle Backups deiner Buecher oder importiere bestehende write-book-template Projekte."
+        de: "Erstelle Backups deiner Bücher oder importiere bestehende write-book-template Projekte."
         en: "Create backups of your books or import existing write-book-template projects."
       icon: "archive"
 
@@ -90,17 +90,17 @@ sample_book:
         de: "Willkommen"
         en: "Welcome"
       content:
-        de: "Willkommen bei Bibliogon! Dies ist ein Beispielkapitel. Du kannst es bearbeiten oder loeschen und mit deinem eigenen Buch beginnen.\n\nNutze die Toolbar oben fuer Formatierung, oder wechsle in den Markdown-Modus."
+        de: "Willkommen bei Bibliogon! Dies ist ein Beispielkapitel. Du kannst es bearbeiten oder löschen und mit deinem eigenen Buch beginnen.\n\nNutze die Toolbar oben für Formatierung, oder wechsle in den Markdown-Modus."
         en: "Welcome to Bibliogon! This is a sample chapter. You can edit or delete it and start your own book.\n\nUse the toolbar above for formatting, or switch to Markdown mode."
     - title:
         de: "Kapitelstruktur"
         en: "Chapter Structure"
       content:
-        de: "Bibliogon unterstuetzt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Ueber den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
+        de: "Bibliogon unterstützt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Über den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
         en: "Bibliogon supports different chapter types:\n\n- Regular chapters\n- Preface\n- Foreword\n- Acknowledgments\n- About the Author\n- Appendix, Glossary, Bibliography\n\nThese appear in the sidebar in their own sections."
     - title:
         de: "Export und Weiterverarbeitung"
         en: "Export and Processing"
       content:
-        de: "Dein Buch kann in drei Formaten exportiert werden:\n\n1. **EPUB** - Fuer E-Reader und digitale Veroeffentlichung\n2. **PDF** - Fuer Druck und Weitergabe\n3. **ZIP** - Projektstruktur im write-book-template Format, kompatibel mit Pandoc"
+        de: "Dein Buch kann in drei Formaten exportiert werden:\n\n1. **EPUB** - Für E-Reader und digitale Veröffentlichung\n2. **PDF** - Für Druck und Weitergabe\n3. **ZIP** - Projektstruktur im write-book-template Format, kompatibel mit Pandoc"
         en: "Your book can be exported in three formats:\n\n1. **EPUB** - For e-readers and digital publishing\n2. **PDF** - For printing and sharing\n3. **ZIP** - Project structure in write-book-template format, compatible with Pandoc"

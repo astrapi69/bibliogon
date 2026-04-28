@@ -186,4 +186,4 @@ def test_compare_rejects_corrupt_zip():
             },
         )
         assert r.status_code == 400
-        assert "beschaedigt" in r.json()["detail"].lower()
+        assert "beschädigt" in r.json()["detail"].lower()

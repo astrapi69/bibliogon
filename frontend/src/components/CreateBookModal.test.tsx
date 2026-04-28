@@ -146,7 +146,7 @@ describe("CreateBookModal", () => {
   it("optional fields are collapsed by default", async () => {
     renderModal()
     // Genre placeholder should not be visible when collapsed
-    expect(screen.queryByPlaceholderText("Genre waehlen oder eingeben...")).toBeNull()
+    expect(screen.queryByPlaceholderText("Genre wählen oder eingeben...")).toBeNull()
     // The toggle button should be visible
     expect(screen.getByText("Weitere Details")).toBeTruthy()
   })
@@ -157,7 +157,7 @@ describe("CreateBookModal", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText("Genre waehlen oder eingeben..."),
+        screen.getByPlaceholderText("Genre wählen oder eingeben..."),
       ).toBeTruthy()
     })
     expect(screen.getByPlaceholderText("Optional")).toBeTruthy()
@@ -200,12 +200,12 @@ describe("CreateBookModal", () => {
     fireEvent.click(screen.getByText("Weitere Details"))
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText("Genre waehlen oder eingeben..."),
+        screen.getByPlaceholderText("Genre wählen oder eingeben..."),
       ).toBeTruthy()
     })
 
     fireEvent.change(
-      screen.getByPlaceholderText("Genre waehlen oder eingeben..."),
+      screen.getByPlaceholderText("Genre wählen oder eingeben..."),
       {target: {value: "Fantasy"}},
     )
     fireEvent.change(screen.getByPlaceholderText("Optional"), {
@@ -369,7 +369,7 @@ describe("CreateBookModal", () => {
       expect(mockListTemplates).toHaveBeenCalled()
     })
     await waitFor(() => {
-      // Fallback text from t("ui.create_book.template_empty", "Keine Vorlagen verfuegbar")
+      // Fallback text from t("ui.create_book.template_empty", "Keine Vorlagen verfügbar")
       expect(screen.getByText(/Keine Vorlagen/i)).toBeTruthy()
     })
   })

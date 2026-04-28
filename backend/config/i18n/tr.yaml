@@ -452,6 +452,22 @@ ui:
     nonfiction: "Kurgu disi"
     philosophy: "Felsefe"
     memoir: "Anilar"
+  builtin_templates:
+    childrens_picture_book:
+      name: "Cocuk resimli kitap"
+      description: "Genc okuyucular icin kisa resimli bir hikaye. On bilgiler asgari duzeyde, bes hikaye sayfasi ve yazar hakkinda bir sayfa."
+    sci_fi_novel:
+      name: "Bilim kurgu romani"
+      description: "Onsoz, on bolum ve sonsoz iceren tam uzunlukta bir bilim kurgu romani. Standart kurgu duzeni."
+    non_fiction_how_to:
+      name: "Kurgu disi / Rehber"
+      description: "Onsoz, giris, yedi ders, ek ve kaynakca iceren pratik bir kurgu disi rehber."
+    philosophy:
+      name: "Felsefe"
+      description: "Onsoz, giris, alti numarali bolum, sonuc ve kaynakca iceren felsefi bir eser."
+    memoir:
+      name: "Anilar"
+      description: "Onsoz ve sonsoz ile cercevelenmis kisisel anilar; sekiz anlatimsal bolum ve tesekkur."
   save_template:
     title: "Sablon olarak kaydet"
     name: "Ad"

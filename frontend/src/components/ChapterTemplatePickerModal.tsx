@@ -45,8 +45,8 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
     const handleDelete = async (tpl: ChapterTemplate) => {
         if (tpl.is_builtin) return;
         const ok = await dialog.confirm(
-            t("ui.chapter_template_picker.delete_title", "Kapitelvorlage loeschen"),
-            t("ui.chapter_template_picker.delete_confirm", "Vorlage '{name}' wirklich loeschen? Dies kann nicht rueckgaengig gemacht werden.")
+            t("ui.chapter_template_picker.delete_title", "Kapitelvorlage löschen"),
+            t("ui.chapter_template_picker.delete_confirm", "Vorlage '{name}' wirklich löschen? Dies kann nicht rückgaengig gemacht werden.")
                 .replace("{name}", tpl.name),
             "danger",
         );
@@ -55,12 +55,12 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
             await api.chapterTemplates.delete(tpl.id);
             setTemplates((prev) => (prev ? prev.filter((t) => t.id !== tpl.id) : prev));
             if (selectedId === tpl.id) setSelectedId(null);
-            notify.success(t("ui.chapter_template_picker.deleted", "Vorlage geloescht"));
+            notify.success(t("ui.chapter_template_picker.deleted", "Vorlage gelöscht"));
         } catch (err) {
             notify.error(
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.chapter_template_picker.delete_failed", "Loeschen fehlgeschlagen"),
+                    : t("ui.chapter_template_picker.delete_failed", "Löschen fehlgeschlagen"),
             );
         }
     };
@@ -72,7 +72,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                 <Dialog.Content className="dialog-content dialog-content-wide" data-testid="chapter-template-picker">
                     <div className="dialog-header">
                         <Dialog.Title className="dialog-title">
-                            {t("ui.chapter_template_picker.title", "Waehle eine Kapitelvorlage")}
+                            {t("ui.chapter_template_picker.title", "Wähle eine Kapitelvorlage")}
                         </Dialog.Title>
                     </div>
 
@@ -86,7 +86,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                             <div style={styles.emptyState}>
                                 {templatesError
                                     ? t("ui.chapter_template_picker.load_error", "Vorlagen konnten nicht geladen werden")
-                                    : t("ui.chapter_template_picker.empty", "Keine Kapitelvorlagen verfuegbar")}
+                                    : t("ui.chapter_template_picker.empty", "Keine Kapitelvorlagen verfügbar")}
                             </div>
                         )}
                         {templates !== null && templates.length > 0 && (
@@ -131,7 +131,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                             type="button"
                                                             className="btn-icon"
                                                             style={styles.deleteBtn}
-                                                            aria-label={t("ui.chapter_template_picker.delete", "Loeschen")}
+                                                            aria-label={t("ui.chapter_template_picker.delete", "Löschen")}
                                                             data-testid={`chapter-template-delete-${tpl.id}`}
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(tpl); }}
                                                         >
@@ -158,7 +158,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                             disabled={!selectedId}
                             data-testid="chapter-template-insert"
                         >
-                            {t("ui.chapter_template_picker.insert", "Einfuegen")}
+                            {t("ui.chapter_template_picker.insert", "Einfügen")}
                         </button>
                     </div>
                 </Dialog.Content>

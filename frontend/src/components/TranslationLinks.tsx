@@ -45,7 +45,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
                 notify.error(
                     t(
                         "ui.translations.load_error",
-                        "Konnte Uebersetzungen nicht laden.",
+                        "Konnte Übersetzungen nicht laden.",
                     ),
                     err,
                 );
@@ -62,7 +62,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
             notify.success(
                 t(
                     "ui.translations.unlink_success",
-                    "Buch aus der Uebersetzungsgruppe entfernt.",
+                    "Buch aus der Übersetzungsgruppe entfernt.",
                 ),
             );
             await load();
@@ -104,7 +104,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
                     <span style={{ flex: 1 }}>
                         {t(
                             "ui.translations.unlinked_hint",
-                            "Keine Uebersetzungen verknuepft.",
+                            "Keine Übersetzungen verknüpft.",
                         )}
                     </span>
                     <button
@@ -119,7 +119,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
                         }}
                     >
                         <Plus size={12} />
-                        {t("ui.translations.link", "Verknuepfen")}
+                        {t("ui.translations.link", "Verknüpfen")}
                     </button>
                 </div>
                 <LinkPickerDialog
@@ -154,7 +154,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
         >
             <Globe size={14} style={{ color: "var(--text-muted)" }} />
             <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
-                {t("ui.translations.label", "Uebersetzungen")}:
+                {t("ui.translations.label", "Übersetzungen")}:
             </span>
             <div
                 style={{
@@ -277,7 +277,7 @@ function LinkPickerDialog({
             notify.success(
                 t(
                     "ui.translations.link_success",
-                    "Buecher als Uebersetzungen verknuepft.",
+                    "Bücher als Übersetzungen verknüpft.",
                 ),
             );
             onLinked();
@@ -286,7 +286,7 @@ function LinkPickerDialog({
                 notify.error(
                     t(
                         "ui.translations.link_error",
-                        "Verknuepfen fehlgeschlagen.",
+                        "Verknüpfen fehlgeschlagen.",
                     ),
                     err,
                 );
@@ -308,12 +308,12 @@ function LinkPickerDialog({
                         <Dialog.Title className="dialog-title">
                             {t(
                                 "ui.translations.link_dialog_title",
-                                "Buecher als Uebersetzungen verknuepfen",
+                                "Bücher als Übersetzungen verknüpfen",
                             )}
                         </Dialog.Title>
                         <Dialog.Close
                             className="dialog-close"
-                            aria-label={t("ui.common.close", "Schliessen")}
+                            aria-label={t("ui.common.close", "Schließen")}
                         >
                             <X size={18} />
                         </Dialog.Close>
@@ -329,7 +329,7 @@ function LinkPickerDialog({
                         <p style={{ padding: 16, color: "var(--text-muted)" }}>
                             {t(
                                 "ui.translations.no_other_books",
-                                "Keine weiteren Buecher zum Verknuepfen vorhanden.",
+                                "Keine weiteren Bücher zum Verknüpfen vorhanden.",
                             )}
                         </p>
                     ) : (
@@ -394,7 +394,7 @@ function LinkPickerDialog({
                             ) : (
                                 <Link2 size={14} />
                             )}
-                            {t("ui.translations.link_confirm", "Verknuepfen")}
+                            {t("ui.translations.link_confirm", "Verknüpfen")}
                         </button>
                     </div>
                 </Dialog.Content>

@@ -112,7 +112,7 @@ export default function GitSyncDiffDialog({
             notify.success(
                 t(
                     "ui.git_sync.resolve_success_v2",
-                    "Aktualisiert {updated}, neu {created}, geloescht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}",
+                    "Aktualisiert {updated}, neu {created}, gelöscht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}",
                 )
                     .replace("{updated}", String(result.counts.updated))
                     .replace("{created}", String(result.counts.created))
@@ -154,11 +154,11 @@ export default function GitSyncDiffDialog({
                                 size={18}
                                 style={{ verticalAlign: -3, marginRight: 8 }}
                             />
-                            {t("ui.git_sync.diff_title", "Aenderungen vom Repo zusammenfuehren")}
+                            {t("ui.git_sync.diff_title", "Änderungen vom Repo zusammenführen")}
                         </Dialog.Title>
                         <Dialog.Close
                             className="dialog-close"
-                            aria-label={t("ui.common.close", "Schliessen")}
+                            aria-label={t("ui.common.close", "Schließen")}
                         >
                             <X size={18} />
                         </Dialog.Close>
@@ -185,7 +185,7 @@ export default function GitSyncDiffDialog({
                             >
                                 {t(
                                     "ui.git_sync.diff_summary",
-                                    "{count} Kapitel mit Aenderungen, {unchanged} unveraendert.",
+                                    "{count} Kapitel mit Änderungen, {unchanged} unveraendert.",
                                 )
                                     .replace("{count}", String(actionable.length))
                                     .replace("{unchanged}", String(unchangedCount))}
@@ -282,7 +282,7 @@ function NothingToResolveNotice({
             />
             {t(
                 "ui.git_sync.diff_empty",
-                "Keine Aenderungen zwischen Bibliogon und Repo. {count} Kapitel unveraendert.",
+                "Keine Änderungen zwischen Bibliogon und Repo. {count} Kapitel unveraendert.",
             ).replace("{count}", String(unchangedCount))}
         </div>
     );
@@ -369,7 +369,7 @@ function DiffRow({
                     data-testid={`git-sync-diff-take-${chapter.slug}`}
                     title={t(
                         "ui.git_sync.diff_take_tooltip",
-                        "Repo-Stand uebernehmen (DB wird ueberschrieben)",
+                        "Repo-Stand übernehmen (DB wird überschrieben)",
                     )}
                 >
                     {t("ui.git_sync.diff_take_remote", "Repo")}
@@ -406,11 +406,11 @@ function ClassificationBadge({
     const label = (() => {
         switch (classification) {
             case "remote_changed":
-                return t("ui.git_sync.diff_label_remote_changed", "Repo geaendert");
+                return t("ui.git_sync.diff_label_remote_changed", "Repo geändert");
             case "local_changed":
                 return t(
                     "ui.git_sync.diff_label_local_changed",
-                    "Bibliogon geaendert",
+                    "Bibliogon geändert",
                 );
             case "both_changed":
                 return t("ui.git_sync.diff_label_both_changed", "Konflikt");
@@ -424,12 +424,12 @@ function ClassificationBadge({
             case "remote_removed":
                 return t(
                     "ui.git_sync.diff_label_remote_removed",
-                    "Im Repo geloescht",
+                    "Im Repo gelöscht",
                 );
             case "local_removed":
                 return t(
                     "ui.git_sync.diff_label_local_removed",
-                    "In Bibliogon geloescht",
+                    "In Bibliogon gelöscht",
                 );
             case "renamed_remote":
                 return t(
@@ -442,7 +442,7 @@ function ClassificationBadge({
                     "In Bibliogon umbenannt",
                 );
             case "unchanged":
-                return t("ui.git_sync.diff_label_unchanged", "Unveraendert");
+                return t("ui.git_sync.diff_label_unchanged", "Unverändert");
         }
     })();
     const icon = (() => {

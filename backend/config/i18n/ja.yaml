@@ -438,6 +438,22 @@ ui:
     nonfiction: "ノンフィクション"
     philosophy: "哲学"
     memoir: "回想録"
+  builtin_templates:
+    childrens_picture_book:
+      name: "児童向け絵本"
+      description: "若い読者向けの短いイラスト付き物語。前付けは最小限、ストーリー5ページ、著者紹介ページ1ページ。"
+    sci_fi_novel:
+      name: "SF小説"
+      description: "プロローグ、10章、エピローグを含む長編SF小説。標準的なフィクションのレイアウト。"
+    non_fiction_how_to:
+      name: "ノンフィクション / How-To"
+      description: "序文、はしがき、序論、7つのレッスン、付録、参考文献を含む実践的なノンフィクションガイド。"
+    philosophy:
+      name: "哲学"
+      description: "序文、序論、6つの番号付き章、結論、参考文献を含む哲学書。"
+    memoir:
+      name: "回想録"
+      description: "プロローグとエピローグで枠取られた個人的な回想録。8つの物語章と謝辞を含む。"
   save_template:
     title: "テンプレートとして保存"
     name: "名前"

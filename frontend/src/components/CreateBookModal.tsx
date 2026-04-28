@@ -12,6 +12,22 @@ import {ChevronDown, ChevronRight, Lock, Trash2} from "lucide-react";
 
 type Mode = "blank" | "template";
 
+/** TPL-I18N-01: derive an i18n key suffix from a builtin template's
+ *  English name. Stable across languages because the key is built
+ *  from the canonical (English) name stored in the DB. Lowercase +
+ *  ASCII alphanum + underscore so YAML keys stay simple.
+ *
+ *  ``Children's Picture Book`` -> ``childrens_picture_book``
+ *  ``Sci-Fi Novel``           -> ``sci_fi_novel``
+ *  ``Non-Fiction / How-To``   -> ``non_fiction_how_to``
+ */
+function slugifyTemplateName(name: string): string {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
 interface Props {
     open: boolean;
     onClose: () => void;
@@ -53,8 +69,8 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
     const handleDeleteTemplate = async (tpl: BookTemplate) => {
         if (tpl.is_builtin) return;
         const ok = await dialog.confirm(
-            t("ui.template_picker.delete_title", "Vorlage loeschen"),
-            t("ui.template_picker.delete_confirm", "Vorlage '{name}' wirklich loeschen? Dies kann nicht rueckgaengig gemacht werden.")
+            t("ui.template_picker.delete_title", "Vorlage löschen"),
+            t("ui.template_picker.delete_confirm", "Vorlage '{name}' wirklich löschen? Dies kann nicht rückgaengig gemacht werden.")
                 .replace("{name}", tpl.name),
             "danger",
         );
@@ -63,12 +79,12 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
             await api.templates.delete(tpl.id);
             setTemplates((prev) => (prev ? prev.filter((t) => t.id !== tpl.id) : prev));
             if (selectedTemplateId === tpl.id) setSelectedTemplateId(null);
-            notify.success(t("ui.template_picker.deleted", "Vorlage geloescht"));
+            notify.success(t("ui.template_picker.deleted", "Vorlage gelöscht"));
         } catch (err) {
             notify.error(
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.template_picker.delete_failed", "Loeschen fehlgeschlagen"),
+                    : t("ui.template_picker.delete_failed", "Löschen fehlgeschlagen"),
             );
         }
     };
@@ -202,7 +218,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
 
                         <Tabs.Content value="template">
                             <div style={styles.templatePickerHeader}>
-                                <div className="label">{t("ui.create_book.template_picker_title", "Waehle eine Vorlage")}</div>
+                                <div className="label">{t("ui.create_book.template_picker_title", "Wähle eine Vorlage")}</div>
                             </div>
                             {templates === null && (
                                 <div style={styles.templatesEmpty}>
@@ -213,7 +229,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                 <div style={styles.templatesEmpty}>
                                     {templatesError
                                         ? t("ui.create_book.template_load_error", "Vorlagen konnten nicht geladen werden")
-                                        : t("ui.create_book.template_empty", "Keine Vorlagen verfuegbar")}
+                                        : t("ui.create_book.template_empty", "Keine Vorlagen verfügbar")}
                                 </div>
                             )}
                             {templates !== null && templates.length > 0 && (
@@ -245,7 +261,14 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                 }}
                                             >
                                                 <div style={styles.templateCardHeader}>
-                                                    <span style={styles.templateName}>{tpl.name}</span>
+                                                    <span style={styles.templateName}>
+                                                        {tpl.is_builtin
+                                                            ? t(
+                                                                  `ui.builtin_templates.${slugifyTemplateName(tpl.name)}.name`,
+                                                                  tpl.name,
+                                                              )
+                                                            : tpl.name}
+                                                    </span>
                                                     <div style={styles.templateCardBadges}>
                                                         <span style={styles.templateBadge}>{genreLabel}</span>
                                                         {tpl.is_builtin ? (
@@ -262,7 +285,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                                 type="button"
                                                                 className="btn-icon"
                                                                 style={styles.deleteBtn}
-                                                                aria-label={t("ui.template_picker.delete", "Loeschen")}
+                                                                aria-label={t("ui.template_picker.delete", "Löschen")}
                                                                 data-testid={`template-delete-${tpl.id}`}
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl); }}
                                                             >
@@ -271,7 +294,14 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div style={styles.templateDescription}>{tpl.description}</div>
+                                                <div style={styles.templateDescription}>
+                                                    {tpl.is_builtin
+                                                        ? t(
+                                                              `ui.builtin_templates.${slugifyTemplateName(tpl.name)}.description`,
+                                                              tpl.description,
+                                                          )
+                                                        : tpl.description}
+                                                </div>
                                                 <div style={styles.templateMeta}>
                                                     {t("ui.create_book.template_chapter_count", "{count} Kapitel")
                                                         .replace("{count}", String(tpl.chapters.length))}
@@ -310,7 +340,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                         className="radix-select-trigger"
                                         data-testid="create-book-author-select"
                                     >
-                                        <Select.Value placeholder={t("ui.create_book.author_select", "Autor waehlen...")}/>
+                                        <Select.Value placeholder={t("ui.create_book.author_select", "Autor wählen...")}/>
                                         <Select.Icon><ChevronDown size={14}/></Select.Icon>
                                     </Select.Trigger>
                                     <Select.Portal>
@@ -354,7 +384,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                             list="genre-suggestions"
                                             value={genre}
                                             onChange={(e) => setGenre(e.target.value)}
-                                            placeholder={t("ui.create_book.genre_placeholder", "Genre waehlen oder eingeben...")}
+                                            placeholder={t("ui.create_book.genre_placeholder", "Genre wählen oder eingeben...")}
                                         />
                                         <datalist id="genre-suggestions">
                                             {[

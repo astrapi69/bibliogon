@@ -213,10 +213,10 @@ export default function BookEditor() {
                 return {...prev, chapters: [...prev.chapters, chapter]};
             });
             setActiveChapterId(chapter.id);
-            notify.success(t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefuegt"));
+            notify.success(t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefügt"));
         } catch (err) {
             notify.error(
-                t("ui.chapter_template_picker.insert_failed", "Einfuegen fehlgeschlagen"),
+                t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"),
             );
             throw err;
         }

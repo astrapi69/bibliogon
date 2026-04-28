@@ -64,7 +64,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                         <div style={{display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px", marginBottom: "1rem"}}>
                             <Info size={16} style={{marginTop: "2px", flexShrink: 0}} />
                             <span style={{fontSize: "0.9em"}}>
-                                {t("ui.backup.compare.transition_note", "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Fuer jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen.")}
+                                {t("ui.backup.compare.transition_note", "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Für jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen.")}
                             </span>
                         </div>
                     </Dialog.Description>
@@ -72,7 +72,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                     {!result && (
                         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
                             <FilePickerRow
-                                label={t("ui.backup.compare.file_a_label", "Backup A (aelterer Stand)")}
+                                label={t("ui.backup.compare.file_a_label", "Backup A (älterer Stand)")}
                                 file={fileA}
                                 onChange={setFileA}
                             />
@@ -123,7 +123,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                                     {t("ui.backup.compare.new_comparison", "Neuer Vergleich")}
                                 </button>
                                 <button type="button" onClick={handleClose} className="btn-primary">
-                                    {t("ui.common.close", "Schliessen")}
+                                    {t("ui.common.close", "Schließen")}
                                 </button>
                             </div>
                         </>
@@ -162,10 +162,10 @@ function CompareResultView({result}: {result: BackupCompareResult}) {
         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
             <div style={{padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px"}}>
                 <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>
-                    {t("ui.backup.compare.summary_title", "Uebersicht")}
+                    {t("ui.backup.compare.summary_title", "Übersicht")}
                 </div>
                 <div style={{fontSize: "0.9em", color: "var(--color-text-muted)"}}>
-                    {t("ui.backup.compare.summary_books", "Gemeinsame Buecher:")} {summary.books_in_both}
+                    {t("ui.backup.compare.summary_books", "Gemeinsame Bücher:")} {summary.books_in_both}
                     {summary.books_only_in_a.length > 0 && (
                         <> &middot; {t("ui.backup.compare.only_in_a", "Nur in A:")} {summary.books_only_in_a.length}</>
                     )}
@@ -206,7 +206,7 @@ function BookDiffView({book}: {book: {
 
             {noChanges && (
                 <div style={{padding: "0.5rem", color: "var(--color-text-muted)", fontStyle: "italic"}}>
-                    {t("ui.backup.compare.no_changes", "Keine Aenderungen")}
+                    {t("ui.backup.compare.no_changes", "Keine Änderungen")}
                 </div>
             )}
 
@@ -245,9 +245,9 @@ function BookDiffView({book}: {book: {
 function ChapterDiffView({chapter}: {chapter: BackupChapterDiff}) {
     const {t} = useI18n();
     const badge = {
-        added: {label: t("ui.backup.compare.badge_added", "Hinzugefuegt"), color: "#16a34a"},
+        added: {label: t("ui.backup.compare.badge_added", "Hinzugefügt"), color: "#16a34a"},
         removed: {label: t("ui.backup.compare.badge_removed", "Entfernt"), color: "#dc2626"},
-        changed: {label: t("ui.backup.compare.badge_changed", "Geaendert"), color: "#d97706"},
+        changed: {label: t("ui.backup.compare.badge_changed", "Geändert"), color: "#d97706"},
     }[chapter.change_type];
 
     return (

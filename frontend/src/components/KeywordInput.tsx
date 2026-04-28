@@ -180,13 +180,13 @@ export default function KeywordInput({keywords, onChange}: Props) {
         if (error === "empty") return;
         if (error === "too_long") {
             notify.warning(
-                t("ui.keywords.too_long", `Schluesselwort darf maximal ${MAX_LENGTH} Zeichen lang sein`)
+                t("ui.keywords.too_long", `Schlüsselwort darf maximal ${MAX_LENGTH} Zeichen lang sein`)
                     .replace("{max}", String(MAX_LENGTH)),
             );
         } else if (error === "no_comma") {
-            notify.warning(t("ui.keywords.no_comma", "Schluesselwort darf kein Komma enthalten"));
+            notify.warning(t("ui.keywords.no_comma", "Schlüsselwort darf kein Komma enthalten"));
         } else if (error === "duplicate") {
-            notify.info(t("ui.keywords.duplicate", "Schluesselwort existiert bereits"));
+            notify.info(t("ui.keywords.duplicate", "Schlüsselwort existiert bereits"));
         }
     };
 
@@ -216,7 +216,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
         // entry instead of restoring it.
         const toastId = toast.info(
             <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                <span>{t("ui.keywords.removed", "Schluesselwort entfernt")}: {removed}</span>
+                <span>{t("ui.keywords.removed", "Schlüsselwort entfernt")}: {removed}</span>
                 <button
                     type="button"
                     data-testid="keyword-undo-button"
@@ -228,7 +228,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                     }}
                     style={styles.undoButton}
                 >
-                    {t("ui.keywords.undo", "Rueckgaengig")}
+                    {t("ui.keywords.undo", "Rückgaengig")}
                 </button>
             </div>,
             {autoClose: 5000},
@@ -309,7 +309,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                     onKeyDown={handleKeyDown}
                     onBlur={() => { if (input.trim()) addKeyword(input); }}
                     placeholder={keywords.length === 0
-                        ? t("ui.keywords.placeholder", "Schluesselwort eingeben...")
+                        ? t("ui.keywords.placeholder", "Schlüsselwort eingeben...")
                         : ""
                     }
                     disabled={atHardLimit}
@@ -321,13 +321,13 @@ export default function KeywordInput({keywords, onChange}: Props) {
                 data-at-hard-limit={atHardLimit ? "true" : "false"}
                 style={{...styles.counter, color: counterColor}}
             >
-                {keywords.length} / {RECOMMENDED_MAX} {t("ui.keywords.counter", "Schluesselwoerter")}
+                {keywords.length} / {RECOMMENDED_MAX} {t("ui.keywords.counter", "Schlüsselwoerter")}
                 {atHardLimit ? (
                     <>
                         {" - "}
                         {t(
                             "ui.keywords.hard_limit",
-                            `Maximum von ${HARD_LIMIT} Schluesselwoertern erreicht. Loesche einen Eintrag um weitere hinzuzufuegen.`,
+                            `Maximum von ${HARD_LIMIT} Schlüsselwoertern erreicht. Lösche einen Eintrag um weitere hinzuzufügen.`,
                         ).replace("{max}", String(HARD_LIMIT))}
                     </>
                 ) : overRecommended ? (
@@ -335,7 +335,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                         {" - "}
                         {t(
                             "ui.keywords.over_limit",
-                            "Amazon KDP empfiehlt maximal 7 Schluesselwoerter. Andere Plattformen erlauben mehr.",
+                            "Amazon KDP empfiehlt maximal 7 Schlüsselwoerter. Andere Plattformen erlauben mehr.",
                         )}
                     </>
                 ) : null}

@@ -63,7 +63,7 @@ PROVIDER_PRESETS: dict[str, ProviderPreset] = {
         default_model="",
         model_suggestions=[],
         requires_api_key=False,
-        note="Lokal laufend, kein API-Schluessel noetig. Modelle werden vom LM Studio Server bereitgestellt.",
+        note="Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.",
     ),
 }
 

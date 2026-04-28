@@ -28,11 +28,11 @@ interface FormatDef {
 const FORMATS: FormatDef[] = [
     {id: "epub", labelKey: "ui.formats.epub", labelFallback: "EPUB", descKey: "ui.formats.epub_desc", descFallback: "E-Book Format"},
     {id: "pdf", labelKey: "ui.formats.pdf", labelFallback: "PDF", descKey: "ui.formats.pdf_desc", descFallback: "Druckfertig"},
-    {id: "docx", labelKey: "ui.formats.docx", labelFallback: "Word", descKey: "ui.formats.docx_desc", descFallback: "Fuer Lektorate"},
+    {id: "docx", labelKey: "ui.formats.docx", labelFallback: "Word", descKey: "ui.formats.docx_desc", descFallback: "Für Lektorate"},
     {id: "html", labelKey: "ui.formats.html", labelFallback: "HTML", descKey: "ui.formats.html_desc", descFallback: "Web-Version"},
     {id: "markdown", labelKey: "ui.formats.markdown", labelFallback: "Markdown", descKey: "ui.formats.markdown_desc", descFallback: "Rohtext"},
     {id: "project", labelKey: "ui.formats.project", labelFallback: "Projekt (ZIP)", descKey: "ui.formats.project_desc", descFallback: "Manuscripta-Projektstruktur"},
-    {id: "audiobook", labelKey: "ui.formats.audiobook", labelFallback: "Audiobook (MP3)", descKey: "ui.formats.audiobook_desc", descFallback: "TTS-generiertes Hoerbuch"},
+    {id: "audiobook", labelKey: "ui.formats.audiobook", labelFallback: "Audiobook (MP3)", descKey: "ui.formats.audiobook_desc", descFallback: "TTS-generiertes Hörbuch"},
 ];
 
 interface BookTypeDef {
@@ -351,7 +351,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                 </strong>
                             </div>
                             <p style={{fontSize: "0.75rem", color: "var(--text-muted)", margin: "0 0 8px 0"}}>
-                                {t("ui.export_dialog.dry_run_hint", "Generiert nur den ersten Absatz des ersten Kapitels. Prueft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.")}
+                                {t("ui.export_dialog.dry_run_hint", "Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.")}
                             </p>
                             {dryRunResult ? (
                                 <div style={{display: "flex", flexDirection: "column", gap: 8}}>
@@ -377,7 +377,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                     <Headphones size={12}/>
                                     {dryRunLoading
                                         ? t("ui.export_dialog.dry_run_loading", "Generiert Probe...")
-                                        : t("ui.export_dialog.dry_run_button", "Probe hoeren")}
+                                        : t("ui.export_dialog.dry_run_button", "Probe hören")}
                                 </button>
                             )}
                         </div>

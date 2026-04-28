@@ -30,7 +30,7 @@ class KdpPlugin(BasePlugin):
                 },
                 {
                     "id": "kdp_cover_check",
-                    "label": {"de": "Cover pruefen", "en": "Check Cover"},
+                    "label": {"de": "Cover prüfen", "en": "Check Cover"},
                     "icon": "image-check",
                 },
             ],

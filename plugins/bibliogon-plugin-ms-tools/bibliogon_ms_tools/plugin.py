@@ -55,7 +55,7 @@ class MsToolsPlugin(BasePlugin):
             "sidebar_actions": [
                 {
                     "id": "ms_style_check",
-                    "label": {"de": "Stil pruefen", "en": "Check Style"},
+                    "label": {"de": "Stil prüfen", "en": "Check Style"},
                     "icon": "text-search",
                 },
                 {

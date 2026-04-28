@@ -79,7 +79,7 @@ async def test_chat_auth_error(client):
     mock_response.text = "Unauthorized"
 
     with patch("httpx.AsyncClient", return_value=_mock_http(post_return=mock_response)):
-        with pytest.raises(LLMError, match="ungueltig"):
+        with pytest.raises(LLMError, match="ungültig"):
             await client.chat([{"role": "user", "content": "Hi"}])
 
 
@@ -210,7 +210,7 @@ async def test_anthropic_auth_error(anthropic_client):
     mock_response.text = "Invalid API key"
 
     with patch("httpx.AsyncClient", return_value=_mock_http(post_return=mock_response)):
-        with pytest.raises(LLMError, match="ungueltig"):
+        with pytest.raises(LLMError, match="ungültig"):
             await anthropic_client.chat([{"role": "user", "content": "Hi"}])
 
 

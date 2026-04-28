@@ -195,7 +195,7 @@ describe("ExportDialog", () => {
     renderDialog()
     fireEvent.click(screen.getByText("Audiobook (MP3)"))
     expect(screen.getByText("Test-Export")).toBeTruthy()
-    expect(screen.getByText("Probe hoeren")).toBeTruthy()
+    expect(screen.getByText("Probe hören")).toBeTruthy()
   })
 
   it("hides dry-run section for non-audiobook formats", () => {

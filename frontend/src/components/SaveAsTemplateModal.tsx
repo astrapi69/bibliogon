@@ -166,7 +166,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                             <EnhancedTextarea
                                 value={description}
                                 onChange={setDescription}
-                                placeholder={t("ui.save_template.description_placeholder", "Wofuer ist diese Vorlage?")}
+                                placeholder={t("ui.save_template.description_placeholder", "Wofür ist diese Vorlage?")}
                                 testid="save-template-description"
                                 rows={2}
                                 maxChars={500}
@@ -231,7 +231,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                                 />
                                 <div>
                                     <div>{t("ui.save_template.content_empty", "Leere Platzhalter")}</div>
-                                    <div style={styles.hint}>{t("ui.save_template.content_empty_hint", "Empfohlen fuer wiederverwendbare Vorlagen")}</div>
+                                    <div style={styles.hint}>{t("ui.save_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
                                 </div>
                             </label>
                             <label style={styles.radioRow}>
@@ -245,7 +245,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                                     style={{accentColor: "var(--accent)"}}
                                 />
                                 <div>
-                                    <div>{t("ui.save_template.content_preserve", "Inhalt uebernehmen")}</div>
+                                    <div>{t("ui.save_template.content_preserve", "Inhalt übernehmen")}</div>
                                     <div style={styles.hint}>{t("ui.save_template.content_preserve_hint", "Kopiert den Kapiteltext in die Vorlage")}</div>
                                 </div>
                             </label>

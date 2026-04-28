@@ -49,8 +49,8 @@ def compare_backups(file_a: UploadFile, file_b: UploadFile) -> dict[str, Any]:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Die beiden Backups enthalten keine gemeinsamen Buecher. "
-                    "Ein Vergleich ist nur moeglich wenn dasselbe Buch in beiden "
+                    "Die beiden Backups enthalten keine gemeinsamen Bücher. "
+                    "Ein Vergleich ist nur möglich wenn dasselbe Buch in beiden "
                     "Dateien vorkommt."
                 ),
             )
@@ -96,7 +96,7 @@ def _extract_upload(file: UploadFile, dest: Path, label: str) -> Path:
     except zipfile.BadZipFile as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Backup {label}: Datei ist beschaedigt und kann nicht gelesen werden",
+            detail=f"Backup {label}: Datei ist beschädigt und kann nicht gelesen werden",
         ) from e
 
     manifest = find_manifest(extracted)
@@ -105,7 +105,7 @@ def _extract_upload(file: UploadFile, dest: Path, label: str) -> Path:
         if manifest_data.get("format") != "bibliogon-backup":
             raise HTTPException(
                 status_code=400,
-                detail=f"Backup {label}: kein gueltiges Bibliogon-Backup-Format",
+                detail=f"Backup {label}: kein gültiges Bibliogon-Backup-Format",
             )
 
     books_dir = find_books_dir(extracted)

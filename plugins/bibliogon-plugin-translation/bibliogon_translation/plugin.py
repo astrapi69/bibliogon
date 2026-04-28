@@ -34,7 +34,7 @@ class TranslationPlugin(BasePlugin):
             "sidebar_actions": [
                 {
                     "id": "translate_chapter",
-                    "label": {"de": "Kapitel uebersetzen", "en": "Translate Chapter"},
+                    "label": {"de": "Kapitel übersetzen", "en": "Translate Chapter"},
                     "icon": "languages",
                 },
             ],

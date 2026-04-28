@@ -91,7 +91,7 @@ export function PublicationsPanel({
                     onClick={() => setShowAdd(true)}
                 >
                     <Plus size={12} />
-                    {t("ui.publications.add", "Hinzufuegen")}
+                    {t("ui.publications.add", "Hinzufügen")}
                 </button>
             </header>
             {loading && publications.length === 0 ? (
@@ -105,7 +105,7 @@ export function PublicationsPanel({
                 >
                     {t(
                         "ui.publications.empty",
-                        "Noch nicht veroeffentlicht.",
+                        "Noch nicht veröffentlicht.",
                     )}
                 </p>
             ) : (
@@ -164,7 +164,7 @@ function PublicationRow({
             notify.success(
                 t(
                     "ui.publications.mark_published_success",
-                    "Als veroeffentlicht markiert.",
+                    "Als veröffentlicht markiert.",
                 ),
             );
             onChanged();
@@ -187,7 +187,7 @@ function PublicationRow({
             notify.success(
                 t(
                     "ui.publications.verify_live_success",
-                    "Live-Version bestaetigt.",
+                    "Live-Version bestätigt.",
                 ),
             );
             onChanged();
@@ -196,7 +196,7 @@ function PublicationRow({
                 notify.error(
                     t(
                         "ui.publications.verify_live_error",
-                        "Konnte Live-Version nicht bestaetigen.",
+                        "Konnte Live-Version nicht bestätigen.",
                     ),
                     err,
                 );
@@ -206,13 +206,13 @@ function PublicationRow({
 
     async function handleDelete(): Promise<void> {
         const ok = await confirm(
-            t("ui.publications.delete_title", "Publikation loeschen?"),
+            t("ui.publications.delete_title", "Publikation löschen?"),
             t(
                 "ui.publications.delete_body",
                 "Diese Publikation wird entfernt. Der Artikel selbst bleibt unveraendert.",
             ),
             "danger",
-            { confirmLabel: t("ui.publications.delete_confirm", "Loeschen") },
+            { confirmLabel: t("ui.publications.delete_confirm", "Löschen") },
         );
         if (!ok) return;
         try {
@@ -223,7 +223,7 @@ function PublicationRow({
                 notify.error(
                     t(
                         "ui.publications.delete_error",
-                        "Loeschen fehlgeschlagen.",
+                        "Löschen fehlgeschlagen.",
                     ),
                     err,
                 );
@@ -276,7 +276,7 @@ function PublicationRow({
                 >
                     {t(
                         "ui.publications.drift_warning",
-                        "Live-Version koennte nicht mit dem aktuellen Entwurf uebereinstimmen.",
+                        "Live-Version könnte nicht mit dem aktuellen Entwurf übereinstimmen.",
                     )}
                 </p>
             )}
@@ -303,7 +303,7 @@ function PublicationRow({
                         >
                             {t(
                                 "ui.publications.mark_published",
-                                "Als veroeffentlicht",
+                                "Als veröffentlicht",
                             )}
                         </button>
                     )}
@@ -317,7 +317,7 @@ function PublicationRow({
                     >
                         {t(
                             "ui.publications.verify_live",
-                            "Live bestaetigen",
+                            "Live bestätigen",
                         )}
                     </button>
                 )}
@@ -384,7 +384,7 @@ function AddPublicationModal({
                 platform_metadata: meta,
             });
             notify.success(
-                t("ui.publications.added", "Publikation hinzugefuegt."),
+                t("ui.publications.added", "Publikation hinzugefügt."),
             );
             onCreated();
         } catch (err) {
@@ -396,7 +396,7 @@ function AddPublicationModal({
                     setErrors(detail?.errors ?? [t("ui.publications.add_failed", "Validierung fehlgeschlagen.")]);
                 } else {
                     notify.error(
-                        t("ui.publications.add_failed", "Konnte nicht hinzufuegen."),
+                        t("ui.publications.add_failed", "Konnte nicht hinzufügen."),
                         err,
                     );
                 }
@@ -415,7 +415,7 @@ function AddPublicationModal({
         >
             <div style={modalStyles.content} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{ margin: 0, marginBottom: 12 }}>
-                    {t("ui.publications.add_title", "Publikation hinzufuegen")}
+                    {t("ui.publications.add_title", "Publikation hinzufügen")}
                 </h3>
                 <label style={modalStyles.fieldLabel}>
                     {t("ui.publications.platform", "Plattform")}
@@ -503,7 +503,7 @@ function AddPublicationModal({
                         onClick={() => void submit()}
                         data-testid="publications-add-submit"
                     >
-                        {t("ui.publications.add_submit", "Hinzufuegen")}
+                        {t("ui.publications.add_submit", "Hinzufügen")}
                     </button>
                 </div>
             </div>

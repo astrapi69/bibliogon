@@ -23,10 +23,10 @@ ui:
     reset_filters: "Filter zurücksetzen"
     empty_filtered: "Keine Treffer"
     empty_filtered_hint: "Es gibt keine Bücher die zu den aktuellen Filtern passen."
-    delete_permanent_title: "Endgueltig löschen"
-    delete_permanent_warning: "Buch endgueltig löschen? Dies kann nicht rückgängig gemacht werden."
+    delete_permanent_title: "Endgültig löschen"
+    delete_permanent_warning: "Buch endgültig löschen? Dies kann nicht rückgängig gemacht werden."
     empty_trash_title: "Papierkorb leeren"
-    empty_trash_warning: "Alle Buecher im Papierkorb werden unwiderruflich gelöscht."
+    empty_trash_warning: "Alle Bücher im Papierkorb werden unwiderruflich gelöscht."
     backup_imported: "Bücher importiert"
     import_failed: "Import fehlgeschlagen"
     chapters_imported: "Kapitel importiert"
@@ -37,13 +37,13 @@ ui:
     empty_trash: "Papierkorb leeren"
     trash_empty: "Papierkorb ist leer"
     restore_book: "Wiederherstellen"
-    delete_permanent: "Endgueltig löschen"
+    delete_permanent: "Endgültig löschen"
     welcome: "Willkommen bei Bibliogon"
     welcome_text: "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an."
     create_book: "Buch erstellen"
     import_project: "Projekt importieren"
     moved_to_trash: "In den Papierkorb verschoben"
-    deleted_permanently: "Buch endgueltig gelöscht"
+    deleted_permanently: "Buch endgültig gelöscht"
     version_history: "Versionsgeschichte"
     no_history: "Noch keine Backups erstellt."
     compare_backups: "Backups vergleichen"
@@ -54,13 +54,13 @@ ui:
   backup:
     compare:
       title: "Backups vergleichen"
-      transition_note: "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Fuer jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen."
-      file_a_label: "Backup A (aelterer Stand)"
+      transition_note: "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Für jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen."
+      file_a_label: "Backup A (älterer Stand)"
       file_b_label: "Backup B (neuerer Stand)"
       compare_button: "Vergleichen"
       new_comparison: "Neuer Vergleich"
-      summary_title: "Uebersicht"
-      summary_books: "Gemeinsame Buecher:"
+      summary_title: "Übersicht"
+      summary_books: "Gemeinsame Bücher:"
       only_in_a: "Nur in A:"
       only_in_b: "Nur in B:"
       chapters_count: "Kapitel:"
@@ -68,10 +68,10 @@ ui:
       field: "Feld"
       before: "Vorher"
       after: "Nachher"
-      no_changes: "Keine Aenderungen"
-      badge_added: "Hinzugefuegt"
+      no_changes: "Keine Änderungen"
+      badge_added: "Hinzugefügt"
       badge_removed: "Entfernt"
-      badge_changed: "Geaendert"
+      badge_changed: "Geändert"
       version_a: "Version A"
       version_b: "Version B"
       error_generic: "Vergleich fehlgeschlagen"
@@ -100,14 +100,14 @@ ui:
     spellcheck: "Rechtschreibprüfung"
     spellcheck_ok: "Keine Fehler gefunden"
     spellcheck_error: "Rechtschreibprüfung fehlgeschlagen"
-    checking: "Pruefe..."
+    checking: "Prüfe..."
     issues: "Probleme"
-    suggestions: "Vorschlaege"
+    suggestions: "Vorschläge"
     preview_no_text: "Kein Text zum Vorlesen"
     preview_error: "Vorschau fehlgeschlagen"
     ai_assistant: "AI-Assistent"
     ai_improve: "Verbessern"
-    ai_shorten: "Kuerzen"
+    ai_shorten: "Kürzen"
     ai_expand: "Erweitern"
     ai_custom: "Eigener Prompt"
     ai_custom_placeholder: "z.B. Mache den Ton formeller..."
@@ -175,14 +175,14 @@ ui:
     title: "Sync zum Git-Repository"
     sidebar_tooltip: "Buchstand in das verbundene Git-Repository commiten"
     status_error: "Konnte Git-Sync-Status nicht laden."
-    unmapped_body: "Dieses Buch wurde nicht ueber die Git-URL-Importfunktion erstellt. Es gibt kein verbundenes Repository fuer den Sync."
+    unmapped_body: "Dieses Buch wurde nicht über die Git-URL-Importfunktion erstellt. Es gibt kein verbundenes Repository für den Sync."
     clone_missing_heading: "Lokaler Klon nicht gefunden"
-    clone_missing_body: "Der zuvor geklonte Repository-Pfad existiert nicht mehr. Bitte das Buch ueber die Git-URL-Importfunktion erneut importieren, um die Verbindung herzustellen."
+    clone_missing_body: "Der zuvor geklonte Repository-Pfad existiert nicht mehr. Bitte das Buch über die Git-URL-Importfunktion erneut importieren, um die Verbindung herzustellen."
     repo_url_label: "Repository"
     branch_label: "Branch"
     last_imported_label: "Zuletzt importiert (SHA)"
     last_committed_label: "Letzter Sync-Commit"
-    dirty_warning: "Im lokalen Klon liegen unversionierte Aenderungen. Sie werden vom Sync ueberschrieben."
+    dirty_warning: "Im lokalen Klon liegen unversionierte Änderungen. Sie werden vom Sync überschrieben."
     message_label: "Commit-Nachricht (optional)"
     message_placeholder: "Sync from Bibliogon at <utc-iso>"
     push_toggle: "Push ins Remote"
@@ -191,58 +191,58 @@ ui:
     commit_success_detail: "Commit {sha} auf {branch}"
     commit_pushed: "(gepusht)"
     commit_error: "Commit fehlgeschlagen."
-    no_changes: "Keine Aenderungen zu committen."
+    no_changes: "Keine Änderungen zu committen."
     clone_missing: "Lokaler Klon fehlt. Bitte das Buch erneut aus dem Repo importieren."
-    push_auth_failed: "Push fehlgeschlagen: keine Berechtigung. Bitte SSH-Key oder Credentials pruefen."
+    push_auth_failed: "Push fehlgeschlagen: keine Berechtigung. Bitte SSH-Key oder Credentials prüfen."
     push_network_failed: "Push fehlgeschlagen: Remote nicht erreichbar."
-    push_unavailable: "Push ins Remote ist noch nicht verfuegbar. Der Commit ist lokal gelandet."
-    diff_title: "Aenderungen vom Repo zusammenfuehren"
+    push_unavailable: "Push ins Remote ist noch nicht verfügbar. Der Commit ist lokal gelandet."
+    diff_title: "Änderungen vom Repo zusammenführen"
     diff_error: "Konnte Diff nicht laden."
-    diff_summary: "{count} Kapitel mit Aenderungen, {unchanged} unveraendert."
-    diff_empty: "Keine Aenderungen zwischen Bibliogon und Repo. {count} Kapitel unveraendert."
+    diff_summary: "{count} Kapitel mit Änderungen, {unchanged} unverändert."
+    diff_empty: "Keine Änderungen zwischen Bibliogon und Repo. {count} Kapitel unverändert."
     diff_apply: "Auflösungen anwenden"
     diff_keep_local: "Bibliogon"
     diff_take_remote: "Repo"
     diff_keep_tooltip: "Bibliogon-Stand behalten (kein DB-Update)"
-    diff_take_tooltip: "Repo-Stand uebernehmen (DB wird ueberschrieben)"
-    diff_label_remote_changed: "Repo geaendert"
-    diff_label_local_changed: "Bibliogon geaendert"
+    diff_take_tooltip: "Repo-Stand übernehmen (DB wird überschrieben)"
+    diff_label_remote_changed: "Repo geändert"
+    diff_label_local_changed: "Bibliogon geändert"
     diff_label_both_changed: "Konflikt"
     diff_label_remote_added: "Repo neu"
     diff_label_local_added: "Bibliogon neu"
-    diff_label_remote_removed: "Im Repo geloescht"
-    diff_label_local_removed: "In Bibliogon geloescht"
+    diff_label_remote_removed: "Im Repo gelöscht"
+    diff_label_local_removed: "In Bibliogon gelöscht"
     diff_label_renamed_remote: "Im Repo umbenannt"
     diff_label_renamed_local: "In Bibliogon umbenannt"
     diff_renamed_from: "Umbenannt von {section}/{slug}"
     diff_mark_conflict: "Konflikt"
     diff_mark_conflict_tooltip: "Beide Versionen mit Konflikt-Markern in das Kapitel schreiben (manuell aufloesen)"
-    resolve_success_v2: "Aktualisiert {updated}, neu {created}, geloescht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}"
-    diff_label_unchanged: "Unveraendert"
-    check_upstream: "Auf Aenderungen vom Repo pruefen"
-    resolve_success: "Aktualisiert {updated}, neu {created}, geloescht {deleted}"
+    resolve_success_v2: "Aktualisiert {updated}, neu {created}, gelöscht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}"
+    diff_label_unchanged: "Unverändert"
+    check_upstream: "Auf Änderungen vom Repo prüfen"
+    resolve_success: "Aktualisiert {updated}, neu {created}, gelöscht {deleted}"
     resolve_error: "Auflösung fehlgeschlagen."
-    unified_banner: "Dieses Buch hat zusaetzlich Bibliogon-Git aktiv. 'Commit ueberall' macht beide Commits in einem Schritt."
-    unified_commit_button: "Commit ueberall"
+    unified_banner: "Dieses Buch hat zusätzlich Bibliogon-Git aktiv. 'Commit überall' macht beide Commits in einem Schritt."
+    unified_commit_button: "Commit überall"
     unified_commit_tooltip: "Commit gleichzeitig in Bibliogon-Git und externem Repo"
     unified_success: "Commit auf beiden Seiten erstellt."
     unified_partial: "Commit teils erfolgreich. Details unten."
-    unified_lock_busy: "Anderer Commit laeuft gerade. Bitte kurz warten."
+    unified_lock_busy: "Anderer Commit läuft gerade. Bitte kurz warten."
     unified_error: "Unified-Commit fehlgeschlagen."
     subsystem_core: "Bibliogon-Git"
     subsystem_plugin: "Externes Repo"
     credential_heading: "Repo-Zugang (HTTPS)"
     credential_set: " konfiguriert"
     credential_unset: " nicht gesetzt"
-    credential_add: "Hinzufuegen"
-    credential_replace: "Aendern"
+    credential_add: "Hinzufügen"
+    credential_replace: "Ändern"
     credential_remove: "Entfernen"
     credential_input_placeholder: "Personal Access Token"
     credential_saved: "Repo-Token gespeichert"
     credential_removed: "Repo-Token entfernt"
     credential_save_error: "Konnte Repo-Token nicht speichern."
     credential_delete_error: "Konnte Repo-Token nicht entfernen."
-    credential_hint: "Wird verschluesselt gespeichert und auch fuer das Kern-Git-Backup verwendet. Nur fuer HTTPS-Remotes; SSH nutzt den Bibliogon-SSH-Key."
+    credential_hint: "Wird verschlüsselt gespeichert und auch für das Kern-Git-Backup verwendet. Nur für HTTPS-Remotes; SSH nutzt den Bibliogon-SSH-Key."
   git:
     title: "Git-Sicherung"
     not_initialized: "Für dieses Buch ist noch kein Repository vorhanden. Initialisiere es, um Commits zu erstellen."
@@ -294,11 +294,11 @@ ui:
     accept_local: Lokal erzwingen (Force Push)
     conflict_diverged_title: Divergierte Historie
     conflict_push_rejected_title: Push abgelehnt
-    force_push_ok: Force Push erfolgreich - Remote ueberschrieben
+    force_push_ok: Force Push erfolgreich - Remote überschrieben
     local_ahead: lokal vorne
-    remote_ahead: Remote hat Aenderungen
-    confirm_accept_local: Lokale Version auf Remote erzwingen? Die Remote-Commits werden ueberschrieben und sind danach weg.
-    conflict_diverged_body: 'Beide Seiten haben eigene Commits. Waehle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.'
+    remote_ahead: Remote hat Änderungen
+    confirm_accept_local: Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.
+    conflict_diverged_body: 'Beide Seiten haben eigene Commits. Wähle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.'
     conflict_push_rejected_body: 'Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:'
   ssh:
     title: "SSH-Schlüssel für Git"
@@ -366,10 +366,10 @@ ui:
     audiobook_generating: "Audiobook wird generiert..."
     audiobook_done: "Audiobook fertig! Download startet..."
     missing_images: "Fehlende Bilder: {files}"
-    missing_images_hint: "Bitte ueberpruefe, ob die genannten Bilddateien noch im Buch vorhanden sind."
-    dry_run_button: Probe hoeren
+    missing_images_hint: "Bitte überprüfe, ob die genannten Bilddateien noch im Buch vorhanden sind."
+    dry_run_button: Probe hören
     dry_run_failed: Test-Export fehlgeschlagen
-    dry_run_hint: Generiert nur den ersten Absatz des ersten Kapitels. Prueft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.
+    dry_run_hint: Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.
     dry_run_loading: Generiert Probe...
     dry_run_title: Test-Export
     free: kostenlos
@@ -387,7 +387,7 @@ ui:
     project: "Projekt (ZIP)"
     project_desc: "Manuscripta-Projektstruktur"
     audiobook: "Audiobook (MP3)"
-    audiobook_desc: "TTS-generiertes Hoerbuch"
+    audiobook_desc: "TTS-generiertes Hörbuch"
   create_book:
     title: "Neues Buch"
     book_title: "Titel"
@@ -438,6 +438,22 @@ ui:
     nonfiction: "Sachbuch"
     philosophy: "Philosophie"
     memoir: "Memoiren"
+  builtin_templates:
+    childrens_picture_book:
+      name: "Kinder-Bilderbuch"
+      description: "Eine kurze illustrierte Geschichte für junge Leser. Front-Matter minimal, fünf Story-Seiten und eine Über-den-Autor-Seite."
+    sci_fi_novel:
+      name: "Sci-Fi-Roman"
+      description: "Ein Science-Fiction-Roman in voller Länge mit Prolog, zehn Kapiteln und Epilog. Standard-Belletristik-Layout."
+    non_fiction_how_to:
+      name: "Sachbuch / How-To"
+      description: "Ein praktischer Sachbuch-Ratgeber mit Vorwort, Einleitung, sieben Lektionen, Anhang und Quellenverzeichnis."
+    philosophy:
+      name: "Philosophie"
+      description: "Ein philosophisches Werk mit Vorwort, Einleitung, sechs nummerierten Kapiteln, Schlussbetrachtung und Bibliographie."
+    memoir:
+      name: "Memoiren"
+      description: "Eine persönliche Lebenserinnerung gerahmt von Prolog und Epilog mit acht erzählerischen Kapiteln und Danksagung."
   save_template:
     title: "Als Vorlage speichern"
     name: "Name"
@@ -589,8 +605,8 @@ ui:
     plugin_help_desc: "FAQ, Tastenkürzel, About"
     plugin_getstarted: "Erste Schritte"
     plugin_getstarted_desc: "Onboarding-Wizard, Beispielbuch"
-    trash_checkbox: "Geloeschte Buecher automatisch entfernen"
-    trash_delete_after: "Endgueltig löschen nach"
+    trash_checkbox: "Gelöschte Bücher automatisch entfernen"
+    trash_delete_after: "Endgültig löschen nach"
     trash_days_7: "7 Tage"
     trash_days_14: "14 Tage"
     trash_days_30: "30 Tage"
@@ -599,13 +615,13 @@ ui:
     trash_days_180: "180 Tage"
     trash_days_365: "365 Tage"
     trash_disabled: "Deaktiviert (manuell löschen)"
-    trash_info: "Buecher im Papierkorb werden nach {days} Tagen automatisch gelöscht"
+    trash_info: "Bücher im Papierkorb werden nach {days} Tagen automatisch gelöscht"
     license_required: "Lizenz erforderlich"
     enter_license: "Lizenz eingeben"
     delete_permanently: "Gelöschte Bücher sofort permanent löschen"
     delete_permanently_hint: "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben."
-    allow_books_without_author: "Buecher ohne Autor zulassen (erweitert)"
-    allow_books_without_author_hint: "Aktiviere diese Option, um Buecher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbuechern, bei denen keine Autorinformation noetig ist."
+    allow_books_without_author: "Bücher ohne Autor zulassen (erweitert)"
+    allow_books_without_author_hint: "Aktiviere diese Option, um Bücher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hörbüchern, bei denen keine Autorinformation nötig ist."
     ai_title: "KI-Assistent"
     ai_enable: "KI-Funktionen aktivieren"
     ai_enable_hint: "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet."
@@ -700,25 +716,25 @@ ui:
     help_backup_3: "\"Restore\" stellt ein Backup wieder her"
     help_backup_4: "Externe Projekte (.zip, .bgp) können über \"Import\" geladen werden"
   translations:
-    label: "Uebersetzungen"
-    unlinked_hint: "Keine Uebersetzungen verknuepft."
-    link: "Verknuepfen"
+    label: "Übersetzungen"
+    unlinked_hint: "Keine Übersetzungen verknüpft."
+    link: "Verknüpfen"
     unlink: "Trennen"
     unlink_tooltip: "Dieses Buch aus der Gruppe entfernen"
-    unlink_success: "Buch aus der Uebersetzungsgruppe entfernt."
+    unlink_success: "Buch aus der Übersetzungsgruppe entfernt."
     unlink_error: "Entfernen fehlgeschlagen."
-    load_error: "Konnte Uebersetzungen nicht laden."
-    link_dialog_title: "Buecher als Uebersetzungen verknuepfen"
-    link_confirm: "Verknuepfen"
-    link_success: "Buecher als Uebersetzungen verknuepft."
-    link_error: "Verknuepfen fehlgeschlagen."
+    load_error: "Konnte Übersetzungen nicht laden."
+    link_dialog_title: "Bücher als Übersetzungen verknüpfen"
+    link_confirm: "Verknüpfen"
+    link_success: "Bücher als Übersetzungen verknüpft."
+    link_error: "Verknüpfen fehlgeschlagen."
     list_books_error: "Konnte Buchliste nicht laden."
-    no_other_books: "Keine weiteren Buecher zum Verknuepfen vorhanden."
-    import_result_imported_heading: "{n} Buch/Buecher importiert"
-    import_result_open: "Oeffnen"
-    import_result_empty: "Es wurden keine Buecher importiert."
-    import_result_skipped_heading: "{n} Branch/Branches benoetigen Aufmerksamkeit"
-    import_result_skipped_hint: "Diese Branches wurden uebersprungen. Behebe das Problem im Repository und importiere die Uebersetzungsgruppe danach erneut."
+    no_other_books: "Keine weiteren Bücher zum Verknüpfen vorhanden."
+    import_result_imported_heading: "{n} Buch/Bücher importiert"
+    import_result_open: "Öffnen"
+    import_result_empty: "Es wurden keine Bücher importiert."
+    import_result_skipped_heading: "{n} Branch/Branches benötigen Aufmerksamkeit"
+    import_result_skipped_hint: "Diese Branches wurden übersprungen. Behebe das Problem im Repository und importiere die Übersetzungsgruppe danach erneut."
     import_result_reason_no_wbt_layout: "Kein Buch-Layout (config/metadata.yaml fehlt)"
     import_result_reason_import_failed: "Import fehlgeschlagen (inkompatible Struktur)"
   articles:
@@ -815,32 +831,32 @@ ui:
     editor_placeholder: "Beginne zu schreiben..."
   publications:
     title: "Publikationen"
-    add: "Hinzufuegen"
-    empty: "Noch nicht veroeffentlicht."
+    add: "Hinzufügen"
+    empty: "Noch nicht veröffentlicht."
     load_error: "Konnte Publikationen nicht laden."
-    add_title: "Publikation hinzufuegen"
-    add_submit: "Hinzufuegen"
-    added: "Publikation hinzugefuegt."
-    add_failed: "Konnte nicht hinzufuegen."
+    add_title: "Publikation hinzufügen"
+    add_submit: "Hinzufügen"
+    added: "Publikation hinzugefügt."
+    add_failed: "Konnte nicht hinzufügen."
     platform: "Plattform"
     is_promo: "Promo-Post (verlinkt auf eine Hauptpublikation)"
     promo_badge: "Promo"
     status_planned: "Geplant"
     status_scheduled: "Eingeplant"
-    status_published: "Veroeffentlicht"
+    status_published: "Veröffentlicht"
     status_out_of_sync: "Nicht synchron"
     status_archived: "Archiviert"
-    drift_warning: "Live-Version koennte nicht mit dem aktuellen Entwurf uebereinstimmen."
-    mark_published: "Als veroeffentlicht"
-    mark_published_success: "Als veroeffentlicht markiert."
+    drift_warning: "Live-Version könnte nicht mit dem aktuellen Entwurf übereinstimmen."
+    mark_published: "Als veröffentlicht"
+    mark_published_success: "Als veröffentlicht markiert."
     mark_published_error: "Konnte nicht markiert werden."
-    verify_live: "Live bestaetigen"
-    verify_live_success: "Live-Version bestaetigt."
-    verify_live_error: "Konnte Live-Version nicht bestaetigen."
-    delete_title: "Publikation loeschen?"
-    delete_body: "Diese Publikation wird entfernt. Der Artikel selbst bleibt unveraendert."
-    delete_confirm: "Loeschen"
-    delete_error: "Loeschen fehlgeschlagen."
+    verify_live: "Live bestätigen"
+    verify_live_success: "Live-Version bestätigt."
+    verify_live_error: "Konnte Live-Version nicht bestätigen."
+    delete_title: "Publikation löschen?"
+    delete_body: "Diese Publikation wird entfernt. Der Artikel selbst bleibt unverändert."
+    delete_confirm: "Löschen"
+    delete_error: "Löschen fehlgeschlagen."
   metadata:
     tab_general: "Allgemein"
     tab_publisher: "Verlag"
@@ -876,7 +892,7 @@ ui:
     publisher_city: "Stadt"
     keywords: "Schlüsselwörter"
     html_description: "Buch-Beschreibung (HTML für Amazon)"
-    backpage_description: "Rueckseitenbeschreibung"
+    backpage_description: "Rückseitenbeschreibung"
     author_bio: "Autoren-Kurzbiographie"
     cover_image: "Cover"
     characters: "Zeichen"
@@ -895,7 +911,7 @@ ui:
     html_field_show_source: "HTML anzeigen"
     title: Titel
     author: Autor
-    author_placeholder: "Autor auswaehlen"
+    author_placeholder: "Autor auswählen"
     author_unknown_prefix: "[unbekannt:"
     author_pen_names_label: "Pen Names"
     author_no_author: "(kein Autor)"
@@ -908,7 +924,7 @@ ui:
     asin_ebook: ASIN E-Book
     asin_paperback: ASIN Taschenbuch
     asin_hardcover: ASIN Hardcover
-    backpage_author_bio: Ueber den Autor
+    backpage_author_bio: Über den Autor
   cover:
     choose_file: "Datei wählen"
     uploading: "Wird hochgeladen..."
@@ -937,7 +953,7 @@ ui:
     event_done: "fertig"
     event_skipped: "übersprungen"
     event_error: "Fehler"
-    event_merge_start: "Kapitel werden zusammengefuegt..."
+    event_merge_start: "Kapitel werden zusammengefügt..."
     event_merge_done: "Zusammenfügen fertig"
     event_merge_error: "Fehler beim Zusammenfügen"
     event_ready: "Datei bereit zum Download"
@@ -952,7 +968,7 @@ ui:
     download_zip: "ZIP herunterladen"
     individual_files: "Einzelne Kapitel"
     expand_hint: "Audiobook-Export anzeigen"
-    badge_label: "Audiobook laeuft"
+    badge_label: "Audiobook läuft"
     saved_hint: "Audiobook erfolgreich generiert. Die Dateien sind jetzt unter Metadaten > Audiobook verfügbar."
     event_generating: "generiert..."
     event_reused: "wiederverwendet (Cache)"
@@ -960,19 +976,19 @@ ui:
     event_cost: "Kosten"
     event_saved: "Gespart"
     dry_run_title: "Test-Export"
-    dry_run_hint: "Generiert nur den ersten Absatz des ersten Kapitels. Prueft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten."
+    dry_run_hint: "Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten."
     dry_run_button: "Probe hören"
     dry_run_loading: "Generiert Probe..."
     dry_run_failed: "Test-Export fehlgeschlagen"
     free: "kostenlos"
     badge_done: Audiobook fertig
     badge_failed: Audiobook fehlgeschlagen
-    completed_hint: Audiobook fertig - klicken oeffnet Metadaten
+    completed_hint: Audiobook fertig - klicken öffnet Metadaten
     popover_chapter_count: '{current} von {total} Kapiteln'
     popover_current: Aktuell
-    popover_open: Dialog oeffnen
+    popover_open: Dialog öffnen
     popover_title: Audiobook Export
-    completion_toast: Audiobook fertig. Jetzt unter Metadaten > Audiobook verfuegbar.
+    completion_toast: Audiobook fertig. Jetzt unter Metadaten > Audiobook verfügbar.
   error_report:
     title: "Issue-Report erstellen"
     intro: "Bibliogon hat einen Fehler erkannt und kann einen Bug-Report für den Entwickler vorbereiten."
@@ -1092,8 +1108,8 @@ ui:
     elevenlabs_remove: "Entfernen"
     elevenlabs_saved: "ElevenLabs-Schlüssel gespeichert"
     elevenlabs_save_failed: "ElevenLabs-Schlüssel konnte nicht gespeichert werden"
-    elevenlabs_test_ok: "API-Key gueltig"
-    elevenlabs_test_failed: "API-Key ungueltig"
+    elevenlabs_test_ok: "API-Key gültig"
+    elevenlabs_test_failed: "API-Key ungültig"
     elevenlabs_empty: "Bitte API-Key eingeben"
     elevenlabs_removed: "ElevenLabs-Schlüssel entfernt"
     elevenlabs_remove_failed: "Schlüssel konnte nicht entfernt werden"
@@ -1144,10 +1160,10 @@ ui:
       close: "Player schließen"
     status_partial: "Export unvollständig. Einige Kapitel wurden noch nicht generiert."
     chapter_not_generated: "Nicht generiert"
-    delete_all_previews: Alle loeschen
-    delete_previews: Alle Previews loeschen
-    delete_previews_confirm: Alle Vorhoer-Dateien loeschen?
-    previews_empty: Keine Previews vorhanden. Nutze den Vorhoeren-Button im Editor um eine Vorschau zu erstellen.
+    delete_all_previews: Alle löschen
+    delete_previews: Alle Previews löschen
+    delete_previews_confirm: Alle Vorhoer-Dateien löschen?
+    previews_empty: Keine Previews vorhanden. Nutze den Vorhören-Button im Editor um eine Vorschau zu erstellen.
     speed: Geschwindigkeit
   languages:
     de: "Deutsch"
@@ -1275,17 +1291,17 @@ ui:
     unknown_author: Unbekannter Autor
     language_label: Sprache
     warnings_heading: Warnungen
-    button_back: Zurueck
+    button_back: Zurück
     button_import: Importieren
     step_1_drop_zone: Datei hier ablegen oder zum Durchsuchen klicken
     step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
-    error_unsupported_format: 'Dateiformat nicht unterstuetzt. Akzeptiert: {formats}'
+    error_unsupported_format: 'Dateiformat nicht unterstützt. Akzeptiert: {formats}'
     error_file_too_large: Datei zu gross (>{max} MB).
-    warn_large_file: Grosse Datei ({size}); Erkennung dauert einen Moment.
+    warn_large_file: Große Datei ({size}); Erkennung dauert einen Moment.
     status_reading: Lese Datei...
     status_detecting: Erkenne Format...
     status_parsing: Analysiere Struktur...
-    status_checking: Pruefe auf Duplikate...
+    status_checking: Prüfe auf Duplikate...
     chapters_count: '{count} Kapitel erkannt'
     assets_count: '{count} Assets erkannt'
     no_chapters_detected: Keine Kapitel erkannt.
@@ -1301,34 +1317,34 @@ ui:
     duplicate_banner_title: Buch bereits importiert
     duplicate_banner_existing: 'Vorhanden: {title} (importiert {date})'
     duplicate_action_cancel: Abbrechen
-    duplicate_action_overwrite: Vorhandenes ueberschreiben
+    duplicate_action_overwrite: Vorhandenes überschreiben
     duplicate_action_copy: Als neue Kopie erstellen
-    duplicate_overwrite_title: Vorhandenes ueberschreiben
+    duplicate_overwrite_title: Vorhandenes überschreiben
     duplicate_overwrite_confirm: Alle Kapitel und Assets von '{title}' werden ersetzt. Die Bearbeitungshistorie geht verloren. Fortfahren?
     status_creating: Buch wird erstellt...
-    status_creating_subtle: Kann bei grossen Importen einen Moment dauern.
+    status_creating_subtle: Kann bei großen Importen einen Moment dauern.
     success_title: Import abgeschlossen
     success_book_title: 'Importiert als: {title}'
-    success_open_editor: Im Editor oeffnen
+    success_open_editor: Im Editor öffnen
     success_import_another: Weiteres importieren
-    success_auto_redirect: Oeffne Editor in {n}s...
-    success_multi_title: '{n} Buecher importiert'
-    success_multi_subtitle: Eines oeffnen zum Bearbeiten oder Wizard schliessen, um zum Dashboard zurueckzukehren.
-    success_multi_open: Oeffnen
+    success_auto_redirect: Öffne Editor in {n}s...
+    success_multi_title: '{n} Bücher importiert'
+    success_multi_subtitle: Eines öffnen zum Bearbeiten oder Wizard schließen, um zum Dashboard zurückzukehren.
+    success_multi_open: Öffnen
     success_multi_done: Fertig
     error_title: Import fehlgeschlagen
     error_retry: Erneut versuchen
-    step_1_pick_folder: Oder Markdown-Ordner auswaehlen
-    error_folder_empty: Ordner enthaelt keine .md/.markdown-Dateien.
+    step_1_pick_folder: Oder Markdown-Ordner auswählen
+    error_folder_empty: Ordner enthält keine .md/.markdown-Dateien.
     error_folder_too_many: Zu viele Dateien im Ordner ({count}); Maximum {max}.
     step_1_git_url_label: "Import aus einer Git-URL"
     step_1_git_url_placeholder: "https://github.com/user/write-book-template-fork"
     step_1_git_url_submit: "Klonen + Importieren"
-    step_1_git_url_hint: "Nur oeffentliche HTTPS-URLs in dieser Version. Das Ziel-Repository muss der write-book-template-Struktur folgen."
-    error_git_url_empty: "Bitte eine Git-URL einfuegen."
-    error_git_url_invalid: "Keine gueltige Git-URL. Erwartet https://, git@ oder ssh://git@."
+    step_1_git_url_hint: "Nur öffentliche HTTPS-URLs in dieser Version. Das Ziel-Repository muss der write-book-template-Struktur folgen."
+    error_git_url_empty: "Bitte eine Git-URL einfügen."
+    error_git_url_invalid: "Keine gültige Git-URL. Erwartet https://, git@ oder ssh://git@."
     badge_html_description: "HTML-Beschreibung"
-    badge_backpage_description: "Rueckseitentext"
+    badge_backpage_description: "Rückseitentext"
     badge_backpage_author_bio: "Autoren-Bio"
     badge_custom_css: "Eigenes CSS"
     badge_tooltip: "Wird importiert; nach dem Import im Metadaten-Panel bearbeitbar."
@@ -1338,42 +1354,42 @@ ui:
     summary_assets: Assets
     summary_cover: Cover
     summary_css: Eigenes CSS
-    summary_next: 'Weiter: Pruefen & Konfigurieren'
+    summary_next: 'Weiter: Prüfen & Konfigurieren'
     section_basics: Grunddaten
     section_metadata: Metadaten
     section_publishing: Publikation
     section_longform: Langformige Inhalte
     section_styling: Gestaltung
     section_covers: Cover
-    covers_hint: Mehrere Cover erkannt. Waehle das Hauptcover fuer book.cover_image. Alle Dateien werden als Cover-Assets importiert und koennen spaeter im Metadaten-Editor ausgetauscht werden.
+    covers_hint: Mehrere Cover erkannt. Wähle das Hauptcover für book.cover_image. Alle Dateien werden als Cover-Assets importiert und können später im Metadaten-Editor ausgetauscht werden.
     section_author_assets: Autor-Assets
-    author_assets_hint: Portrait-, Signatur- oder Bio-Bilder fuer den Design-Tab des Metadaten-Editors.
+    author_assets_hint: Portrait-, Signatur- oder Bio-Bilder für den Design-Tab des Metadaten-Editors.
     purpose_author-asset: Autor-Assets
-    section_overview: Inhalts-Uebersicht
-    section_show_empty: Felder hinzufuegen
+    section_overview: Inhalts-Übersicht
+    section_show_empty: Felder hinzufügen
     section_hide_empty: Leere Felder ausblenden
     section_git: Git-Historie
-    git_detected_hint: Der Import enthaelt ein .git/-Verzeichnis. Waehle, ob die Historie ins neue Buch uebernommen werden soll.
+    git_detected_hint: Der Import enthält ein .git/-Verzeichnis. Wähle, ob die Historie ins neue Buch übernommen werden soll.
     git_branch: Branch
     git_commits: Commits
     git_remote: Remote
-    git_size: Groesse
+    git_size: Größe
     git_has_lfs: LFS erkannt
-    git_has_submodules: Submodule vorhanden (nicht uebernommen)
+    git_has_submodules: Submodule vorhanden (nicht übernommen)
     git_is_shallow: Shallow-Clone
-    git_is_corrupted: Repository wirkt beschaedigt (fsck fehlgeschlagen)
+    git_is_corrupted: Repository wirkt beschädigt (fsck fehlgeschlagen)
     git_start_fresh: Neu anfangen
     git_start_fresh_desc: Das importierte .git/-Verzeichnis ignorieren. Beim ersten lokalen Edit wird ein neues Repo angelegt.
-    git_adopt_with_remote: Historie + Remote uebernehmen
-    git_adopt_with_remote_desc: Commits, Branches und die Remote-URL behalten. Anmeldedaten werden vor der Uebernahme entfernt.
-    git_adopt_without_remote: Nur Historie uebernehmen
+    git_adopt_with_remote: Historie + Remote übernehmen
+    git_adopt_with_remote_desc: Commits, Branches und die Remote-URL behalten. Anmeldedaten werden vor der Übernahme entfernt.
+    git_adopt_without_remote: Nur Historie übernehmen
     git_adopt_without_remote_desc: Commits und Branches behalten. Remote-URL verwerfen, damit du eine neue anbindest.
     author_not_in_settings: 'Autor "{name}" ist nicht in deinen Einstellungen.'
     author_no_source: "Kein Autor in der Quelle erkannt."
     author_action_create: '"{name}" als neuen Autor anlegen'
     author_action_existing: "Anderen vorhandenen Autor verwenden"
-    author_action_defer: "Spaeter setzen"
-    author_action_defer_hint: "Importiert ohne Autor; spaeter im Metadaten-Editor pflegen."
+    author_action_defer: "Später setzen"
+    author_action_defer_hint: "Importiert ohne Autor; später im Metadaten-Editor pflegen."
     author_create_button: "Anlegen"
     author_create_loading: "Anlegen..."
     author_name_required: "Name darf nicht leer sein."

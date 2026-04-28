@@ -204,7 +204,7 @@ export function ErrorStep({
                     data-testid="error-close"
                     onClick={onClose}
                 >
-                    {t("ui.common.close", "Schliessen")}
+                    {t("ui.common.close", "Schließen")}
                 </button>
             </div>
         </div>

@@ -118,7 +118,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                             <EnhancedTextarea
                                 value={description}
                                 onChange={setDescription}
-                                placeholder={t("ui.save_chapter_template.description_placeholder", "Wofuer ist diese Vorlage?")}
+                                placeholder={t("ui.save_chapter_template.description_placeholder", "Wofür ist diese Vorlage?")}
                                 testid="save-chapter-template-description"
                                 rows={2}
                                 maxChars={500}
@@ -140,7 +140,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                 />
                                 <div>
                                     <div>{t("ui.save_chapter_template.content_empty", "Leerer Platzhalter")}</div>
-                                    <div style={styles.hint}>{t("ui.save_chapter_template.content_empty_hint", "Empfohlen fuer wiederverwendbare Vorlagen")}</div>
+                                    <div style={styles.hint}>{t("ui.save_chapter_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
                                 </div>
                             </label>
                             <label style={styles.radioRow}>
@@ -154,7 +154,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                     style={{accentColor: "var(--accent)"}}
                                 />
                                 <div>
-                                    <div>{t("ui.save_chapter_template.content_preserve", "Inhalt uebernehmen")}</div>
+                                    <div>{t("ui.save_chapter_template.content_preserve", "Inhalt übernehmen")}</div>
                                     <div style={styles.hint}>{t("ui.save_chapter_template.content_preserve_hint", "Kopiert den aktuellen Kapitelinhalt in die Vorlage")}</div>
                                 </div>
                             </label>

@@ -57,8 +57,8 @@ def _validate_bgb_filename(filename: str | None) -> None:
     if filename.endswith(".zip"):
         raise HTTPException(
             status_code=400,
-            detail="Das ist eine ZIP-Datei. Fuer Projekt-Import nutze den 'Import'-Button. "
-            "Fuer Backup-Restore wird eine .bgb-Datei erwartet (erstellt ueber 'Backup').",
+            detail="Das ist eine ZIP-Datei. Für Projekt-Import nutze den 'Import'-Button. "
+            "Für Backup-Restore wird eine .bgb-Datei erwartet (erstellt über 'Backup').",
         )
     raise HTTPException(
         status_code=400,
@@ -88,7 +88,7 @@ def _validate_backup_manifest(extracted: Path) -> None:
     if manifest_data.get("format") != "bibliogon-backup":
         raise HTTPException(
             status_code=400,
-            detail="Ungueltige Backup-Datei. Die Datei hat kein gueltiges Bibliogon-Backup-Format.",
+            detail="Ungültige Backup-Datei. Die Datei hat kein gültiges Bibliogon-Backup-Format.",
         )
 
 
@@ -97,7 +97,7 @@ def _require_books_dir(extracted: Path) -> Path:
     if not books_dir:
         raise HTTPException(
             status_code=400,
-            detail="Ungueltige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
+            detail="Ungültige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
             "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button.",
         )
     return books_dir

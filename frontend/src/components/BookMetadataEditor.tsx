@@ -162,7 +162,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             {/* Header */}
             <div style={styles.header}>
                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                    <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurueck")}>
+                    <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurück")}>
                         <ChevronLeft size={18}/>
                     </button>
                     <h2 style={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>
@@ -170,7 +170,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 <div style={{display: "flex", gap: 8}}>
                     {otherBooks.length > 0 && (
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowCopyDialog(!showCopyDialog)}>
-                            <Copy size={14}/> {t("ui.metadata.copy_from", "Von Buch uebernehmen")}
+                            <Copy size={14}/> {t("ui.metadata.copy_from", "Von Buch übernehmen")}
                         </button>
                     )}
                     <button
@@ -187,7 +187,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             {showCopyDialog && (
                 <div style={styles.copyDialog}>
                     <p style={{fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: 8}}>
-                        {t("ui.metadata.copy_hint", "Uebernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:")}
+                        {t("ui.metadata.copy_hint", "Übernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:")}
                     </p>
                     {otherBooks.map((b) => (
                         <button key={b.id} className="btn btn-ghost btn-sm" onClick={() => handleCopyFrom(b)}
@@ -284,7 +284,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                         )}
                         <div className="field">
                             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4}}>
-                                <label className="label" style={{marginBottom: 0}}>{t("ui.metadata.keywords", "Schluesselwoerter")}</label>
+                                <label className="label" style={{marginBottom: 0}}>{t("ui.metadata.keywords", "Schlüsselwoerter")}</label>
                                 {aiAvailable && (
                                     <button
                                         type="button"
@@ -302,7 +302,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <KeywordInput keywords={keywords} onChange={setKeywords}/>
                         </div>
                         <HtmlFieldWithPreview
-                            label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML fuer Amazon)")}
+                            label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML für Amazon)")}
                             value={form.html_description}
                             onChange={(v) => set("html_description", v)}
                             maxChars={4000}
@@ -313,7 +313,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             } : undefined}
                         />
                         <HtmlFieldWithPreview
-                            label={t("ui.metadata.backpage_description", "Rueckseitenbeschreibung")}
+                            label={t("ui.metadata.backpage_description", "Rückseitenbeschreibung")}
                             value={form.backpage_description}
                             onChange={(v) => set("backpage_description", v)}
                             maxChars={600}
@@ -325,7 +325,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             } : undefined}
                         />
                         <HtmlFieldWithPreview
-                            label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rueckseite)")}
+                            label={t("ui.metadata.author_bio", "Autoren-Kurzbiographie (Rückseite)")}
                             value={form.backpage_author_bio}
                             onChange={(v) => set("backpage_author_bio", v)}
                             maxChars={2000}
@@ -445,7 +445,7 @@ function AuthorSelectField({
                 )}
                 {!allowEmpty && value === "" && (
                     <option value="" disabled>
-                        {t("ui.metadata.author_placeholder", "Autor auswaehlen...")}
+                        {t("ui.metadata.author_placeholder", "Autor auswählen...")}
                     </option>
                 )}
                 {valueIsUnknown && (
@@ -599,9 +599,9 @@ export function AuthorAssetsPanel({bookId}: {bookId: string}) {
         try {
             await api.assets.delete(bookId, assetId);
             setAssets((prev) => prev.filter((a) => a.id !== assetId));
-            notify.success(t("ui.metadata.author_asset_deleted", "Autor-Asset geloescht"));
+            notify.success(t("ui.metadata.author_asset_deleted", "Autor-Asset gelöscht"));
         } catch (err) {
-            notify.error(t("ui.metadata.author_asset_delete_failed", "Loeschen fehlgeschlagen"), err);
+            notify.error(t("ui.metadata.author_asset_delete_failed", "Löschen fehlgeschlagen"), err);
         }
     };
 
@@ -678,7 +678,7 @@ export function AuthorAssetsPanel({bookId}: {bookId: string}) {
                             type="button"
                             data-testid={`author-asset-delete-${asset.filename}`}
                             onClick={() => handleDelete(asset.id)}
-                            aria-label={t("ui.metadata.author_asset_delete", "Loeschen")}
+                            aria-label={t("ui.metadata.author_asset_delete", "Löschen")}
                             style={{
                                 position: "absolute",
                                 top: 4,
@@ -871,7 +871,7 @@ function AudiobookBookConfig({
                 <label className="label">{t("ui.audiobook.language", "Sprache")}</label>
                 <input className="input" value={bookLanguage.toUpperCase()} disabled style={{opacity: 0.6}}/>
                 <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                    {t("ui.audiobook.language_from_book", "Wird aus den Buch-Einstellungen uebernommen.")}
+                    {t("ui.audiobook.language_from_book", "Wird aus den Buch-Einstellungen übernommen.")}
                 </small>
             </div>
             <div className="field">
@@ -904,7 +904,7 @@ function AudiobookBookConfig({
                     </select>
                 ) : (
                     <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
-                        {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen fuer {engine} in {language} verfuegbar")
+                        {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen für {engine} in {language} verfügbar")
                             .replace("{engine}", currentEngine)
                             .replace("{language}", bookLanguage.toUpperCase())}
                     </div>
@@ -921,10 +921,10 @@ function AudiobookBookConfig({
                 </select>
             </div>
             <div className="field">
-                <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfuegen")}</label>
+                <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfügen")}</label>
                 <select className="input" value={merge} onChange={(e) => onMergeChange(e.target.value)}>
                     <option value="separate">{t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")}</option>
-                    <option value="merged">{t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfuegen")}</option>
+                    <option value="merged">{t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfügen")}</option>
                     <option value="both">{t("ui.audiobook.merge_both", "Beides")}</option>
                 </select>
             </div>
@@ -1140,18 +1140,18 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
 
     const handleDelete = async () => {
         const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete", "Audiobook loeschen"),
-            t("ui.audiobook.delete_confirm", "Audiobook wirklich loeschen? Die Dateien sind danach weg."),
+            t("ui.audiobook.delete", "Audiobook löschen"),
+            t("ui.audiobook.delete_confirm", "Audiobook wirklich löschen? Die Dateien sind danach weg."),
             "danger",
         );
         if (!confirmed) return;
         setBusy(true);
         try {
             await api.bookAudiobook.delete(bookId);
-            notify.success(t("ui.audiobook.deleted", "Audiobook geloescht"));
+            notify.success(t("ui.audiobook.deleted", "Audiobook gelöscht"));
             await load();
         } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
         }
         setBusy(false);
     };
@@ -1168,7 +1168,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
             await api.bookAudiobook.deleteChapter(bookId, filename);
             await load();
         } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
         }
         setBusy(false);
     };
@@ -1185,15 +1185,15 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
             await api.bookAudiobook.deletePreview(bookId, filename);
             setPreviews((prev) => prev.filter((p) => p.filename !== filename));
         } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
         }
         setBusy(false);
     };
 
     const handleDeleteAllPreviews = async () => {
         const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete_previews", "Alle Previews loeschen"),
-            t("ui.audiobook.delete_previews_confirm", "Alle Vorhoer-Dateien loeschen?"),
+            t("ui.audiobook.delete_previews", "Alle Previews löschen"),
+            t("ui.audiobook.delete_previews_confirm", "Alle Vorhoer-Dateien löschen?"),
             "danger",
         );
         if (!confirmed) return;
@@ -1202,7 +1202,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
             await api.bookAudiobook.deleteAllPreviews(bookId);
             setPreviews([]);
         } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Loeschen fehlgeschlagen"), err);
+            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
         }
         setBusy(false);
     };
@@ -1238,7 +1238,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                         fontFamily: "var(--font-body)",
                     }}
                 >
-                    {t("ui.audiobook.downloads_title", "Verfuegbare Downloads")}
+                    {t("ui.audiobook.downloads_title", "Verfügbare Downloads")}
                     {hasDownloads && data.chapters && ` (${data.chapters.length})`}
                 </button>
                 <button
@@ -1390,13 +1390,13 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                 <>
                     {!hasPreviews ? (
                         <div style={audiobookStyles.muted}>
-                            {t("ui.audiobook.previews_empty", "Keine Previews vorhanden. Nutze den Vorhoeren-Button im Editor um eine Vorschau zu erstellen.")}
+                            {t("ui.audiobook.previews_empty", "Keine Previews vorhanden. Nutze den Vorhören-Button im Editor um eine Vorschau zu erstellen.")}
                         </div>
                     ) : (
                         <>
                             <div style={{display: "flex", justifyContent: "flex-end", marginBottom: 8}}>
                                 <button className="btn btn-ghost btn-sm" onClick={handleDeleteAllPreviews} disabled={busy} style={{color: "var(--danger, #c0392b)", fontSize: "0.75rem"}}>
-                                    <Trash2 size={10}/> {t("ui.audiobook.delete_all_previews", "Alle loeschen")}
+                                    <Trash2 size={10}/> {t("ui.audiobook.delete_all_previews", "Alle löschen")}
                                 </button>
                             </div>
                             <ul style={audiobookStyles.chapterList}>
@@ -1406,7 +1406,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                             <span style={{flex: 1, fontSize: "0.75rem", wordBreak: "break-all"}}>{p.filename}</span>
                                             <span style={audiobookStyles.muted}>{formatBytes(p.size_bytes)}</span>
                                             <a href={p.url} download className="btn-icon" title="Download"><Download size={12}/></a>
-                                            <button className="btn-icon" onClick={() => handleDeletePreview(p.filename)} disabled={busy} title={t("ui.common.delete", "Loeschen")} style={{color: "var(--danger, #c0392b)"}}>
+                                            <button className="btn-icon" onClick={() => handleDeletePreview(p.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
                                                 <Trash2 size={12}/>
                                             </button>
                                         </div>

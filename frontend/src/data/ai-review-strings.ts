@@ -14,7 +14,7 @@ type StringsByLang = Record<string, Record<ReviewStringKey, string>>
 const STRINGS: StringsByLang = {
   de: {
     non_prose_warning:
-      "Dieser Abschnitt ist kein typischer Prosa-Text. Das Review koennte eingeschraenkt sein.",
+      "Dieser Abschnitt ist kein typischer Prosa-Text. Das Review könnte eingeschraenkt sein.",
     status_preparing: "Review wird vorbereitet...",
     status_analyzing: "Text wird analysiert...",
     status_generating: "Bericht wird erstellt...",

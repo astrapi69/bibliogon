@@ -159,7 +159,7 @@ function ChapterRow({ch, avg, onNavigate}: {
                 value={ch.filler_ratio}
                 display={`${(ch.filler_ratio * 100).toFixed(1)}`}
                 avg={avg.filler_ratio}
-                tooltip={t("ui.metadata.quality_tip_filler", "Fuellwortanteil ueber dem Buchdurchschnitt ({avg}%). Fuellwoerter reduzieren.")
+                tooltip={t("ui.metadata.quality_tip_filler", "Fuellwortanteil über dem Buchdurchschnitt ({avg}%). Fuellwoerter reduzieren.")
                     .replace("{avg}", ((avg.filler_ratio || 0) * 100).toFixed(1))}
                 ariaLabel={navLabel(t("ui.metadata.quality_col_filler", "Fuell %"))}
                 onClick={onNavigate ? () => onNavigate(ch.chapter_id, "filler_word") : undefined}
@@ -168,7 +168,7 @@ function ChapterRow({ch, avg, onNavigate}: {
                 value={ch.passive_ratio}
                 display={`${(ch.passive_ratio * 100).toFixed(1)}`}
                 avg={avg.passive_ratio}
-                tooltip={t("ui.metadata.quality_tip_passive", "Passivanteil ueber dem Buchdurchschnitt ({avg}%). Aktive Formulierungen bevorzugen.")
+                tooltip={t("ui.metadata.quality_tip_passive", "Passivanteil über dem Buchdurchschnitt ({avg}%). Aktive Formulierungen bevorzugen.")
                     .replace("{avg}", ((avg.passive_ratio || 0) * 100).toFixed(1))}
                 ariaLabel={navLabel(t("ui.metadata.quality_col_passive", "Passiv %"))}
                 onClick={onNavigate ? () => onNavigate(ch.chapter_id, "passive_voice") : undefined}
@@ -177,7 +177,7 @@ function ChapterRow({ch, avg, onNavigate}: {
                 value={ch.adverb_ratio}
                 display={`${(ch.adverb_ratio * 100).toFixed(1)}`}
                 avg={avg.adverb_ratio}
-                tooltip={t("ui.metadata.quality_tip_adverb", "Adverbanteil ueber dem Buchdurchschnitt ({avg}%). Staerkere Verben statt Adverb+schwaches Verb.")
+                tooltip={t("ui.metadata.quality_tip_adverb", "Adverbanteil über dem Buchdurchschnitt ({avg}%). Staerkere Verben statt Adverb+schwaches Verb.")
                     .replace("{avg}", ((avg.adverb_ratio || 0) * 100).toFixed(1))}
                 ariaLabel={navLabel(t("ui.metadata.quality_col_adverb", "Adv %"))}
                 onClick={onNavigate ? () => onNavigate(ch.chapter_id, "adverb") : undefined}

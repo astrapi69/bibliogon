@@ -148,7 +148,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                     <Upload size={14} />{" "}
                     {uploading
                         ? t("ui.cover.uploading", "Wird hochgeladen...")
-                        : t("ui.cover.choose_file", "Datei waehlen")}
+                        : t("ui.cover.choose_file", "Datei wählen")}
                 </button>
             )}
 
@@ -246,7 +246,7 @@ function KdpHint({info}: {info: CoverInfo}) {
         >
             {t(
                 "ui.cover.kdp_warning",
-                "Empfohlen fuer KDP: 1600x2560 Pixel (aktuell: {w}x{h})",
+                "Empfohlen für KDP: 1600x2560 Pixel (aktuell: {w}x{h})",
             )
                 .replace("{w}", String(info.width))
                 .replace("{h}", String(info.height))}

@@ -452,6 +452,22 @@ ui:
     nonfiction: "No ficcion"
     philosophy: "Filosofia"
     memoir: "Memorias"
+  builtin_templates:
+    childrens_picture_book:
+      name: "Libro ilustrado infantil"
+      description: "Una historia ilustrada corta para lectores jovenes. Material preliminar minimo, cinco paginas de historia y una pagina sobre el autor."
+    sci_fi_novel:
+      name: "Novela de ciencia ficcion"
+      description: "Una novela de ciencia ficcion de extension completa con prologo, diez capitulos y epilogo. Diseno estandar de ficcion."
+    non_fiction_how_to:
+      name: "No ficcion / Guia practica"
+      description: "Una guia practica de no ficcion con prefacio, prologo, introduccion, siete lecciones, anexo y bibliografia."
+    philosophy:
+      name: "Filosofia"
+      description: "Una obra filosofica con prefacio, introduccion, seis capitulos numerados, conclusion y bibliografia."
+    memoir:
+      name: "Memorias"
+      description: "Memorias personales enmarcadas por un prologo y un epilogo, con ocho capitulos narrativos y agradecimientos."
   save_template:
     title: "Guardar como plantilla"
     name: "Nombre"

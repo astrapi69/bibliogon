@@ -600,7 +600,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({detail: "Grammar check failed"}));
-                notify.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+                notify.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
                 setSpellcheckResults([]);
             } else {
                 const data = await res.json();
@@ -610,7 +610,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 }
             }
         } catch {
-            notify.error(t("ui.editor.spellcheck_error", "Rechtschreibpruefung fehlgeschlagen"));
+            notify.error(t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
             setSpellcheckResults([]);
         }
         setSpellcheckLoading(false);
@@ -635,7 +635,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             const result = await api.msTools.check(text, "de", bookId);
             editor.commands.setStyleFindings(result.findings);
         } catch {
-            notify.error(t("ui.editor.spellcheck_error", "Stilpruefung fehlgeschlagen"));
+            notify.error(t("ui.editor.spellcheck_error", "Stilprüfung fehlgeschlagen"));
             setStyleCheckActive(false);
         }
         setStyleCheckLoading(false);
@@ -730,12 +730,12 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         // (filler_word, adverb) still get useful rewrite context.
         if (aiPromptType === "fix_issue") {
             if (!activeIssue) {
-                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewaehlt"));
+                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewählt"));
                 return;
             }
             const range = expandToSentenceRange(editor, activeIssue.offset, activeIssue.length);
             if (!range) {
-                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewaehlt"));
+                notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewählt"));
                 return;
             }
             editor.chain().focus().setTextSelection({from: range.from, to: range.to}).run();
@@ -744,7 +744,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         const {from, to} = editor.state.selection;
         const selectedText = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
         if (!selectedText.trim()) {
-            notify.info(t("ui.editor.ai_select_text", "Markiere zuerst einen Text fuer AI-Vorschlaege"));
+            notify.info(t("ui.editor.ai_select_text", "Markiere zuerst einen Text für AI-Vorschläge"));
             return;
         }
         setShowAiPanel(true);
@@ -822,7 +822,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         const {from, to} = editor.state.selection;
         if (from !== to) {
             editor.chain().focus().deleteRange({from, to}).insertContentAt(from, aiSuggestion).run();
-            notify.success(t("ui.editor.ai_applied", "AI-Vorschlag uebernommen"));
+            notify.success(t("ui.editor.ai_applied", "AI-Vorschlag übernommen"));
         }
         setShowAiPanel(false);
         setAiSuggestion("");
@@ -959,9 +959,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             {recoveryDraft && (
                 <div style={styles.recoveryBanner} data-testid="recovery-banner">
                     <div style={{flex: 1}}>
-                        <strong>{t("ui.editor.recovery_title", "Ungespeicherte Aenderungen gefunden")}</strong>
+                        <strong>{t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}</strong>
                         <p style={{margin: "4px 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)"}}>
-                            {t("ui.editor.recovery_desc", "Aenderungen vom {timestamp} gefunden, die nicht gespeichert wurden.")
+                            {t("ui.editor.recovery_desc", "Änderungen vom {timestamp} gefunden, die nicht gespeichert wurden.")
                                 .replace("{timestamp}", new Date(recoveryDraft.savedAt).toLocaleString())}
                         </p>
                     </div>
@@ -1022,7 +1022,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             URL.revokeObjectURL(previewAudioUrl);
                             setPreviewAudioUrl(null);
                         }}
-                        title={t("ui.common.close", "Schliessen")}
+                        title={t("ui.common.close", "Schließen")}
                         style={{padding: 4, fontSize: "1rem", lineHeight: 1}}
                     >
                         &#x2715;
@@ -1055,7 +1055,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     style={{padding: "2px 8px", fontSize: "0.75rem"}}
                                 >
                                     {type === "improve" ? t("ui.editor.ai_improve", "Verbessern")
-                                        : type === "shorten" ? t("ui.editor.ai_shorten", "Kuerzen")
+                                        : type === "shorten" ? t("ui.editor.ai_shorten", "Kürzen")
                                         : type === "expand" ? t("ui.editor.ai_expand", "Erweitern")
                                         : type === "custom" ? t("ui.editor.ai_custom", "Eigener Prompt")
                                         : t("ui.editor.ai_review", "Review")}
@@ -1155,7 +1155,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                             </a>
                                         )}
                                         <button className="btn btn-ghost btn-sm" onClick={() => { setAiReview(""); setReviewDownloadUrl(null); }}>
-                                            {t("ui.editor.ai_review_close", "Schliessen")}
+                                            {t("ui.editor.ai_review_close", "Schließen")}
                                         </button>
                                     </div>
                                 </div>
@@ -1193,7 +1193,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     </div>
                                     <div style={{display: "flex", gap: 8, marginTop: 8}}>
                                         <button className="btn btn-primary btn-sm" onClick={handleAiApply}>
-                                            {t("ui.editor.ai_apply", "Uebernehmen")}
+                                            {t("ui.editor.ai_apply", "Übernehmen")}
                                         </button>
                                         <button className="btn btn-ghost btn-sm" onClick={() => setAiSuggestion("")}>
                                             {t("ui.editor.ai_discard", "Verwerfen")}
@@ -1257,8 +1257,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             {showSpellcheck && !markdownMode && (
                 <div style={styles.spellcheckPanel}>
                     <div style={styles.spellcheckHeader}>
-                        <strong>{t("ui.editor.spellcheck", "Rechtschreibpruefung")}</strong>
-                        {spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{t("ui.editor.checking", "Pruefe...")}</span>}
+                        <strong>{t("ui.editor.spellcheck", "Rechtschreibprüfung")}</strong>
+                        {spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{t("ui.editor.checking", "Prüfe...")}</span>}
                         {!spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{spellcheckResults.length} {t("ui.editor.issues", "Probleme")}</span>}
                         <button className="btn btn-ghost btn-sm" style={{marginLeft: "auto"}} onClick={handleToggleSpellcheck}>&times;</button>
                     </div>
@@ -1271,7 +1271,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     </div>
                                     {issue.replacements.length > 0 && (
                                         <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 2}}>
-                                            {t("ui.editor.suggestions", "Vorschlaege")}: {issue.replacements.join(", ")}
+                                            {t("ui.editor.suggestions", "Vorschläge")}: {issue.replacements.join(", ")}
                                         </div>
                                     )}
                                     <div style={{fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: 2}}>

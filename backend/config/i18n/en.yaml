@@ -438,6 +438,22 @@ ui:
     nonfiction: "Non-fiction"
     philosophy: "Philosophy"
     memoir: "Memoir"
+  builtin_templates:
+    childrens_picture_book:
+      name: "Children's Picture Book"
+      description: "A short illustrated story for young readers. Front matter kept minimal, five story pages, and an about-the-author page."
+    sci_fi_novel:
+      name: "Sci-Fi Novel"
+      description: "A novel-length science fiction story with a prologue, ten chapters, and an epilogue. Standard fiction layout."
+    non_fiction_how_to:
+      name: "Non-Fiction / How-To"
+      description: "A practical non-fiction guide with foreword, preface, introduction, seven lessons, appendix, and bibliography."
+    philosophy:
+      name: "Philosophy"
+      description: "A philosophical work with preface, introduction, six numbered chapters, conclusion, and bibliography."
+    memoir:
+      name: "Memoir"
+      description: "A personal memoir framed by a prologue and epilogue, with eight narrative chapters and acknowledgments."
   save_template:
     title: "Save as template"
     name: "Name"

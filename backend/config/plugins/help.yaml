@@ -147,7 +147,7 @@ faq:
       de: "Wie funktioniert der Papierkorb?"
       en: "How does the trash work?"
     answer:
-      de: "Gelöschte Bücher werden standardmäßig in den Papierkorb verschoben (Soft-Delete). Klicke das Papierkorb-Icon im Dashboard um gelöschte Bücher zu sehen. Dort kannst du einzelne Bücher wiederherstellen oder endgültig löschen. 'Papierkorb leeren' loescht alle Bücher endgültig. In den Einstellungen kannst du unter 'delete_permanently' auch direktes Löschen ohne Papierkorb aktivieren."
+      de: "Gelöschte Bücher werden standardmäßig in den Papierkorb verschoben (Soft-Delete). Klicke das Papierkorb-Icon im Dashboard um gelöschte Bücher zu sehen. Dort kannst du einzelne Bücher wiederherstellen oder endgültig löschen. 'Papierkorb leeren' löscht alle Bücher endgültig. In den Einstellungen kannst du unter 'delete_permanently' auch direktes Löschen ohne Papierkorb aktivieren."
       en: "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
 
   # === Einstellungen ===
@@ -169,7 +169,7 @@ faq:
       de: "Welche Plugins sind verfügbar?"
       en: "Which plugins are available?"
     answer:
-      de: "9 Plugins: Export (EPUB/PDF/DOCX/HTML), Hilfe (In-App Hilfe), Erste Schritte (Onboarding), Grammatik (LanguageTool), Kinderbuch (Bild-Layout), KDP (Amazon-Metadaten), Audiobook (TTS), Uebersetzung (DeepL/LLM), Manuskript-Tools (Stilpruefung). Alle Plugins sind kostenlos und koennen unter Einstellungen > Plugins aktiviert werden."
+      de: "9 Plugins: Export (EPUB/PDF/DOCX/HTML), Hilfe (In-App Hilfe), Erste Schritte (Onboarding), Grammatik (LanguageTool), Kinderbuch (Bild-Layout), KDP (Amazon-Metadaten), Audiobook (TTS), Übersetzung (DeepL/LLM), Manuskript-Tools (Stilprüfung). Alle Plugins sind kostenlos und können unter Einstellungen > Plugins aktiviert werden."
       en: "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
   - question:
       de: "Kann ich eigene Plugins hinzufügen?"
@@ -205,7 +205,7 @@ faq:
       de: "Kann ich Metadaten von einem anderen Buch übernehmen?"
       en: "Can I copy metadata from another book?"
     answer:
-      de: "Ja. Im Metadaten-Editor klicke 'Von Buch übernehmen'. Es werden Verlag, Stadt, Autoren-Bio und Custom CSS vom gewaehlten Buch kopiert. Buchspezifische Felder (ISBN, Cover, Beschreibung) bleiben unverändert."
+      de: "Ja. Im Metadaten-Editor klicke 'Von Buch übernehmen'. Es werden Verlag, Stadt, Autoren-Bio und Custom CSS vom gewählten Buch kopiert. Buchspezifische Felder (ISBN, Cover, Beschreibung) bleiben unverändert."
       en: "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
   - question:
       de: "Welche Kapiteltypen gibt es jetzt?"
@@ -224,13 +224,13 @@ faq:
       de: "Wie deinstalliere ich ein Plugin?"
       en: "How do I uninstall a plugin?"
     answer:
-      de: "Installierte Plugins koennen über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration gelöscht."
+      de: "Installierte Plugins können über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration gelöscht."
       en: "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
   - question:
-      de: "Koennen Plugins eigene UI-Komponenten mitbringen?"
+      de: "Können Plugins eigene UI-Komponenten mitbringen?"
       en: "Can plugins provide their own UI components?"
     answer:
-      de: "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs koennen Plugins Web Components als Custom Elements liefern."
+      de: "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs können Plugins Web Components als Custom Elements liefern."
       en: "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
   # --- Deployment ---
   - question:
@@ -244,47 +244,47 @@ faq:
       de: "Was sind Vorlagen und welche sind mitgeliefert?"
       en: "What are templates and which ones ship with Bibliogon?"
     answer:
-      de: "Vorlagen sind wiederverwendbare Strukturen. Buchvorlagen fuellen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge); 5 Genres sind mitgeliefert: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie, Memoiren. Kapitelvorlagen fuellen ein einzelnes Kapitel mit einer TipTap-JSON-Gliederung; 4 sind mitgeliefert: Interview, FAQ, Rezept, Fotoreportage. Mitgelieferte Vorlagen sind schreibgeschuetzt (Schloss-Badge), eigene Vorlagen kann man per Muelleimer-Button loeschen."
+      de: "Vorlagen sind wiederverwendbare Strukturen. Buchvorlagen fuellen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge); 5 Genres sind mitgeliefert: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie, Memoiren. Kapitelvorlagen fuellen ein einzelnes Kapitel mit einer TipTap-JSON-Gliederung; 4 sind mitgeliefert: Interview, FAQ, Rezept, Fotoreportage. Mitgelieferte Vorlagen sind schreibgeschuetzt (Schloss-Badge), eigene Vorlagen kann man per Muelleimer-Button löschen."
       en: "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
   - question:
       de: "Wie erstelle ich ein Buch aus einer Vorlage?"
       en: "How do I create a book from a template?"
     answer:
-      de: "Im Dashboard auf 'Neues Buch' klicken, am oberen Rand des Dialogs auf den Tab 'Aus Vorlage' wechseln, eine Karte auswaehlen, Titel und Autor eintragen und 'Erstellen' klicken. Sprache und Beschreibung sind aus der Vorlage vorbelegt, aber editierbar. Das Buch wird mit allen Kapiteln in einem einzigen Datenbank-Commit erstellt."
+      de: "Im Dashboard auf 'Neues Buch' klicken, am oberen Rand des Dialogs auf den Tab 'Aus Vorlage' wechseln, eine Karte auswählen, Titel und Autor eintragen und 'Erstellen' klicken. Sprache und Beschreibung sind aus der Vorlage vorbelegt, aber editierbar. Das Buch wird mit allen Kapiteln in einem einzigen Datenbank-Commit erstellt."
       en: "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
   - question:
       de: "Wie speichere ich ein Buch als eigene Vorlage?"
       en: "How do I save a book as my own template?"
     answer:
-      de: "Buch im Editor oeffnen, in der Sidebar-Fusszeile 'Als Vorlage speichern' anklicken. Name (Pflicht, eindeutig) und Beschreibung eintragen. Beim Content-Modus zwischen 'Leere Platzhalter' (nur Struktur, empfohlen) und 'Inhalt uebernehmen' (voller Kapiteltext) waehlen. 'Kapitelvorschau' ausklappen, um die Liste vor dem Speichern zu pruefen. Bei Namenskonflikt (409) zeigt das Namensfeld einen Inline-Fehler."
+      de: "Buch im Editor öffnen, in der Sidebar-Fusszeile 'Als Vorlage speichern' anklicken. Name (Pflicht, eindeutig) und Beschreibung eintragen. Beim Content-Modus zwischen 'Leere Platzhalter' (nur Struktur, empfohlen) und 'Inhalt übernehmen' (voller Kapiteltext) wählen. 'Kapitelvorschau' ausklappen, um die Liste vor dem Speichern zu prüfen. Bei Namenskonflikt (409) zeigt das Namensfeld einen Inline-Fehler."
       en: "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
   - question:
       de: "Wie erstelle ich ein Kapitel aus einer Vorlage?"
       en: "How do I create a chapter from a template?"
     answer:
-      de: "In der Editor-Sidebar auf das '+'-Icon klicken, in der Gruppe 'Kapitel' auf 'Aus Vorlage...' klicken. Eine Karte auswaehlen und auf 'Einfuegen' klicken. Das Kapitel wird am Ende der Liste angehaengt, mit Titel, Kapiteltyp und Inhalt aus der Vorlage. Den Titel kannst du per Doppelklick inline umbenennen."
+      de: "In der Editor-Sidebar auf das '+'-Icon klicken, in der Gruppe 'Kapitel' auf 'Aus Vorlage...' klicken. Eine Karte auswählen und auf 'Einfügen' klicken. Das Kapitel wird am Ende der Liste angehaengt, mit Titel, Kapiteltyp und Inhalt aus der Vorlage. Den Titel kannst du per Doppelklick inline umbenennen."
       en: "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
   - question:
       de: "Wie speichere ich ein Kapitel als eigene Vorlage?"
       en: "How do I save a chapter as my own template?"
     answer:
-      de: "Rechtsklick auf das Kapitel in der Sidebar, 'Als Vorlage speichern' aus dem Kontextmenue. Name (vorbelegt mit Kapiteltitel) und Beschreibung eintragen. 'Leerer Platzhalter' speichert nur die Struktur, 'Inhalt uebernehmen' kopiert den aktuellen Kapiteltext in die Vorlage."
+      de: "Rechtsklick auf das Kapitel in der Sidebar, 'Als Vorlage speichern' aus dem Kontextmenue. Name (vorbelegt mit Kapiteltitel) und Beschreibung eintragen. 'Leerer Platzhalter' speichert nur die Struktur, 'Inhalt übernehmen' kopiert den aktuellen Kapiteltext in die Vorlage."
       en: "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
   - question:
-      de: "Wie loesche ich eine eigene Vorlage?"
+      de: "Wie lösche ich eine eigene Vorlage?"
       en: "How do I delete a user template?"
     answer:
-      de: "Den Vorlagen-Picker oeffnen (Buch oder Kapitel). Eigene Vorlagen haben einen Muelleimer-Button in der Kartenkopfzeile. Klick darauf, Bestaetigungsdialog, fertig. Mitgelieferte Vorlagen (mit Schloss-Badge) haben diesen Button nicht und koennen nicht geloescht werden; der Server antwortet mit 403."
+      de: "Den Vorlagen-Picker öffnen (Buch oder Kapitel). Eigene Vorlagen haben einen Muelleimer-Button in der Kartenkopfzeile. Klick darauf, Bestätigungsdialog, fertig. Mitgelieferte Vorlagen (mit Schloss-Badge) haben diesen Button nicht und können nicht gelöscht werden; der Server antwortet mit 403."
       en: "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
   - question:
       de: "Wie importiere ich ein Buch aus einem Git-Repository?"
       en: "How do I import a book from a git repository?"
     answer:
-      de: "Dashboard -> Importieren. Oben im Assistenten gibt es ein Feld 'Import aus einer Git-URL': URL einfuegen, 'Klonen + Importieren' klicken. Bibliogon klont das Repo in ein temporaeres Verzeichnis und importiert es wie ein write-book-template-Projekt. Aktuell nur oeffentliche HTTPS-Repos; Authentifizierung, Branch-Auswahl und Smart-Merge folgen in spaeteren Phasen."
+      de: "Dashboard -> Importieren. Oben im Assistenten gibt es ein Feld 'Import aus einer Git-URL': URL einfügen, 'Klonen + Importieren' klicken. Bibliogon klont das Repo in ein temporaeres Verzeichnis und importiert es wie ein write-book-template-Projekt. Aktuell nur öffentliche HTTPS-Repos; Authentifizierung, Branch-Auswahl und Smart-Merge folgen in späteren Phasen."
       en: "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
   - question:
       de: "Wie kontrolliere ich, welche Metadaten-Felder importiert werden?"
       en: "How do I control which metadata fields get imported?"
     answer:
-      de: "Ab v0.22 zeigt Schritt 3 des Import-Assistenten jedes Feld des Buch-Metadaten-Editors als eigene Zeile mit Checkbox + editierbarem Wert. Titel und Autor sind Pflichtfelder. Jede andere Zeile kannst du abwaehlen (dann bleibt die Spalte leer) oder den Wert vor dem Import editieren. Langformige Felder (CSS, Rueckseitentext, Autoren-Bio) sind zuklappbar. Abschnitte, deren Felder alle leer sind, verbergen sich hinter 'Felder hinzufuegen'."
+      de: "Ab v0.22 zeigt Schritt 3 des Import-Assistenten jedes Feld des Buch-Metadaten-Editors als eigene Zeile mit Checkbox + editierbarem Wert. Titel und Autor sind Pflichtfelder. Jede andere Zeile kannst du abwählen (dann bleibt die Spalte leer) oder den Wert vor dem Import editieren. Langformige Felder (CSS, Rückseitentext, Autoren-Bio) sind zuklappbar. Abschnitte, deren Felder alle leer sind, verbergen sich hinter 'Felder hinzufügen'."
       en: "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."

@@ -21,11 +21,11 @@ shortcuts:
   - keys: "Ctrl+E"
     action: {de: "Inline-Code", en: "Inline code"}
   - keys: "Ctrl+Shift+1"
-    action: {de: "Ueberschrift 1", en: "Heading 1"}
+    action: {de: "Überschrift 1", en: "Heading 1"}
   - keys: "Ctrl+Shift+2"
-    action: {de: "Ueberschrift 2", en: "Heading 2"}
+    action: {de: "Überschrift 2", en: "Heading 2"}
   - keys: "Ctrl+Shift+3"
-    action: {de: "Ueberschrift 3", en: "Heading 3"}
+    action: {de: "Überschrift 3", en: "Heading 3"}
   - keys: "Ctrl+Shift+8"
     action: {de: "Aufzaehlung", en: "Bullet list"}
   - keys: "Ctrl+Shift+9"
@@ -33,7 +33,7 @@ shortcuts:
   - keys: "Ctrl+Shift+B"
     action: {de: "Zitat", en: "Blockquote"}
   - keys: "Ctrl+Z"
-    action: {de: "Rueckgaengig", en: "Undo"}
+    action: {de: "Rückgaengig", en: "Undo"}
   - keys: "Ctrl+Shift+Z"
     action: {de: "Wiederholen", en: "Redo"}
 
@@ -48,19 +48,19 @@ faq:
       de: "Wie exportiere ich mein Buch?"
       en: "How do I export my book?"
     answer:
-      de: "Oeffne dein Buch im Editor. In der Sidebar unten findest du Export-Buttons fuer EPUB, PDF und ZIP (Projektstruktur)."
+      de: "Oeffne dein Buch im Editor. In der Sidebar unten findest du Export-Buttons für EPUB, PDF und ZIP (Projektstruktur)."
       en: "Open your book in the editor. At the bottom of the sidebar you will find export buttons for EPUB, PDF, and ZIP (project structure)."
   - question:
       de: "Kann ich ein bestehendes Projekt importieren?"
       en: "Can I import an existing project?"
     answer:
-      de: "Ja. Auf dem Dashboard klicke 'Projekt importieren' und waehle eine ZIP-Datei im write-book-template Format."
+      de: "Ja. Auf dem Dashboard klicke 'Projekt importieren' und wähle eine ZIP-Datei im write-book-template Format."
       en: "Yes. On the dashboard click 'Import Project' and select a ZIP file in write-book-template format."
   - question:
       de: "Wie funktioniert das Backup?"
       en: "How does backup work?"
     answer:
-      de: "Klicke 'Backup' im Dashboard. Alle Buecher, Kapitel und Assets werden als ZIP exportiert. Zum Wiederherstellen nutze 'Restore'."
+      de: "Klicke 'Backup' im Dashboard. Alle Bücher, Kapitel und Assets werden als ZIP exportiert. Zum Wiederherstellen nutze 'Restore'."
       en: "Click 'Backup' on the dashboard. All books, chapters, and assets are exported as ZIP. To restore, use 'Restore'."
   - question:
       de: "Was ist der Markdown-Modus?"
@@ -72,7 +72,7 @@ faq:
       de: "Wie aktiviere ich ein Premium-Plugin?"
       en: "How do I activate a premium plugin?"
     answer:
-      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen und deinen Lizenzschluessel ein."
+      de: "Gehe zu Einstellungen > Lizenzen. Gib den Plugin-Namen und deinen Lizenzschlüssel ein."
       en: "Go to Settings > Licenses. Enter the plugin name and your license key."
   - question:
       de: "Funktioniert Bibliogon offline?"

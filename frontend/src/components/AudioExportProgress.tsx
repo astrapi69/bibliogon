@@ -149,14 +149,14 @@ export default function AudioExportProgress() {
                                         notify.info(
                                             t(
                                                 "ui.audio_progress.saved_hint",
-                                                "Audiobook erfolgreich generiert. Die Dateien sind jetzt unter Metadaten > Audiobook verfuegbar.",
+                                                "Audiobook erfolgreich generiert. Die Dateien sind jetzt unter Metadaten > Audiobook verfügbar.",
                                             ),
                                         );
                                     }
                                     clear();
                                 }}
                             >
-                                <X size={14} /> {t("ui.common.close", "Schliessen")}
+                                <X size={14} /> {t("ui.common.close", "Schließen")}
                             </button>
                         )}
                     </div>
@@ -289,15 +289,15 @@ export function eventLabel(
         case "chapter_reused":
             return `${prefix} ${t("ui.audio_progress.event_reused", "wiederverwendet (Cache)")}`;
         case "chapter_skipped":
-            return `${prefix} ${t("ui.audio_progress.event_skipped", "uebersprungen")} (${d.reason || ""})`;
+            return `${prefix} ${t("ui.audio_progress.event_skipped", "übersprungen")} (${d.reason || ""})`;
         case "chapter_error":
             return `${prefix} ${t("ui.audio_progress.event_error", "Fehler")}: ${d.error || ""}`;
         case "merge_start":
-            return t("ui.audio_progress.event_merge_start", "Kapitel werden zusammengefuegt...");
+            return t("ui.audio_progress.event_merge_start", "Kapitel werden zusammengefügt...");
         case "merge_done":
-            return `${t("ui.audio_progress.event_merge_done", "Zusammenfuegen fertig")}: ${d.filename || ""}`;
+            return `${t("ui.audio_progress.event_merge_done", "Zusammenfügen fertig")}: ${d.filename || ""}`;
         case "merge_error":
-            return `${t("ui.audio_progress.event_merge_error", "Fehler beim Zusammenfuegen")}: ${d.error || ""}`;
+            return `${t("ui.audio_progress.event_merge_error", "Fehler beim Zusammenfügen")}: ${d.error || ""}`;
         case "ready":
             return t("ui.audio_progress.event_ready", "Datei bereit zum Download");
         case "done": {

@@ -219,7 +219,7 @@ def get_elevenlabs_config() -> dict[str, Any]:
     """Report whether an ElevenLabs API key is currently configured.
 
     The key itself is never returned. The frontend uses ``configured``
-    to decide whether to show "Schluessel hinterlegt" or the empty input.
+    to decide whether to show "Schlüssel hinterlegt" or the empty input.
     """
     return {"configured": bool(_get_engine_key())}
 
@@ -442,7 +442,7 @@ def delete_google_credentials(db: Session = Depends(get_db)) -> None:
 async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> FileResponse:
     """Generate a short audio sample from the first paragraph of the
     first non-skipped chapter. Returns the MP3 file plus cost-estimate
-    headers so the frontend can show a "Probe hoeren" player and an
+    headers so the frontend can show a "Probe hören" player and an
     estimated total cost before the user commits to a full export.
 
     Custom headers on the response:

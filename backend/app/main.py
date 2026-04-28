@@ -349,12 +349,12 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
             "health_endpoint": "/api/grammar/languages",
         },
         "translation": {
-            "label": "Uebersetzung",
+            "label": "Übersetzung",
             "needs_service": True,
             "health_endpoint": "/api/translation/health",
         },
         "audiobook": {
-            "label": "Audiobook Vorhoeren",
+            "label": "Audiobook Vorhören",
             "needs_service": False,
         },
         "ai": {

@@ -93,7 +93,7 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
             if (err instanceof ApiError) {
                 if (err.status === 409) {
                     notify.warning(
-                        t("ui.git_sync.no_changes", "Keine Aenderungen zu committen."),
+                        t("ui.git_sync.no_changes", "Keine Änderungen zu committen."),
                     );
                 } else if (err.status === 410) {
                     notify.warning(
@@ -106,7 +106,7 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                     notify.error(
                         t(
                             "ui.git_sync.push_auth_failed",
-                            "Push fehlgeschlagen: keine Berechtigung. Bitte SSH-Key oder Credentials pruefen.",
+                            "Push fehlgeschlagen: keine Berechtigung. Bitte SSH-Key oder Credentials prüfen.",
                         ),
                         err,
                     );
@@ -169,7 +169,7 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                     notify.warning(
                         t(
                             "ui.git_sync.unified_lock_busy",
-                            "Anderer Commit laeuft gerade. Bitte kurz warten.",
+                            "Anderer Commit läuft gerade. Bitte kurz warten.",
                         ),
                     );
                 } else {
@@ -205,7 +205,7 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
                         </Dialog.Title>
                         <Dialog.Close
                             className="dialog-close"
-                            aria-label={t("ui.common.close", "Schliessen")}
+                            aria-label={t("ui.common.close", "Schließen")}
                         >
                             <X size={18} />
                         </Dialog.Close>
@@ -290,7 +290,7 @@ function UnmappedNotice() {
             <p style={{ margin: 0, color: "var(--text-muted)" }}>
                 {t(
                     "ui.git_sync.unmapped_body",
-                    "Dieses Buch wurde nicht ueber die Git-URL-Importfunktion erstellt. Es gibt kein verbundenes Repository fuer den Sync.",
+                    "Dieses Buch wurde nicht über die Git-URL-Importfunktion erstellt. Es gibt kein verbundenes Repository für den Sync.",
                 )}
             </p>
         </div>
@@ -333,7 +333,7 @@ function CloneMissingNotice() {
             >
                 {t(
                     "ui.git_sync.clone_missing_body",
-                    "Der zuvor geklonte Repository-Pfad existiert nicht mehr. Bitte das Buch ueber die Git-URL-Importfunktion erneut importieren, um die Verbindung herzustellen.",
+                    "Der zuvor geklonte Repository-Pfad existiert nicht mehr. Bitte das Buch über die Git-URL-Importfunktion erneut importieren, um die Verbindung herzustellen.",
                 )}
             </p>
         </div>
@@ -512,8 +512,8 @@ function CredentialsSection({
                         {open
                             ? t("ui.common.cancel", "Abbrechen")
                             : hasCredential
-                              ? t("ui.git_sync.credential_replace", "Aendern")
-                              : t("ui.git_sync.credential_add", "Hinzufuegen")}
+                              ? t("ui.git_sync.credential_replace", "Ändern")
+                              : t("ui.git_sync.credential_add", "Hinzufügen")}
                     </button>
                 </div>
             </div>
@@ -552,7 +552,7 @@ function CredentialsSection({
             >
                 {t(
                     "ui.git_sync.credential_hint",
-                    "Wird verschluesselt gespeichert und auch fuer das Kern-Git-Backup verwendet. Nur fuer HTTPS-Remotes; SSH nutzt den Bibliogon-SSH-Key.",
+                    "Wird verschlüsselt gespeichert und auch für das Kern-Git-Backup verwendet. Nur für HTTPS-Remotes; SSH nutzt den Bibliogon-SSH-Key.",
                 )}
             </p>
         </div>
@@ -604,7 +604,7 @@ function CommitForm({
                     />
                     {t(
                         "ui.git_sync.dirty_warning",
-                        "Im lokalen Klon liegen unversionierte Aenderungen. Sie werden vom Sync ueberschrieben.",
+                        "Im lokalen Klon liegen unversionierte Änderungen. Sie werden vom Sync überschrieben.",
                     )}
                 </div>
             )}
@@ -680,7 +680,7 @@ function CommitForm({
                         )}
                         {t(
                             "ui.git_sync.unified_commit_button",
-                            "Commit ueberall",
+                            "Commit überall",
                         )}
                     </button>
                 )}
@@ -711,7 +711,7 @@ function UnifiedCommitBanner() {
             />
             {t(
                 "ui.git_sync.unified_banner",
-                "Dieses Buch hat zusaetzlich Bibliogon-Git aktiv. 'Commit ueberall' macht beide Commits in einem Schritt.",
+                "Dieses Buch hat zusaetzlich Bibliogon-Git aktiv. 'Commit überall' macht beide Commits in einem Schritt.",
             )}
         </div>
     );
@@ -831,7 +831,7 @@ function CheckUpstreamButton({ onClick }: { onClick: () => void }) {
             <GitMerge size={14} />
             {t(
                 "ui.git_sync.check_upstream",
-                "Auf Aenderungen vom Repo pruefen",
+                "Auf Änderungen vom Repo prüfen",
             )}
         </button>
     );

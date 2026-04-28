@@ -136,7 +136,7 @@ export default function HelpPanel() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn-icon"
-                                title={t("ui.help.open_online", "Online oeffnen")}
+                                title={t("ui.help.open_online", "Online öffnen")}
                             >
                                 <ExternalLink size={16}/>
                             </a>

@@ -61,7 +61,7 @@ async def install_plugin(file: UploadFile) -> dict[str, Any]:
     try:
         zf = zipfile.ZipFile(file=__import__("io").BytesIO(content))
     except zipfile.BadZipFile as e:
-        raise HTTPException(status_code=400, detail="Ungueltige ZIP-Datei.") from e
+        raise HTTPException(status_code=400, detail="Ungültige ZIP-Datei.") from e
 
     plugin_name, package_name, plugin_config = _validate_plugin_zip(zf)
     install_path = _extract_plugin(zf, plugin_name)
@@ -101,7 +101,7 @@ def _validate_plugin_zip(zf: zipfile.ZipFile) -> tuple[str, str, dict]:
     try:
         config = yaml.safe_load(zf.read(yaml_path))
     except Exception as e:
-        raise HTTPException(status_code=400, detail="plugin.yaml ist ungueltig.") from e
+        raise HTTPException(status_code=400, detail="plugin.yaml ist ungültig.") from e
 
     plugin_name = config.get("plugin", {}).get("name", "")
     _validate_plugin_name(plugin_name)

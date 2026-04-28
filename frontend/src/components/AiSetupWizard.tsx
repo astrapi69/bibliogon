@@ -144,7 +144,7 @@ export default function AiSetupWizard({open, onClose}: Props) {
           {/* Step 0: Pick provider */}
           {step === 0 && (
             <div style={styles.stepContent}>
-              <p style={styles.hint}>{t("ui.ai_wizard.step1_hint", "Waehle deinen KI-Anbieter. Du kannst dies spaeter in den Einstellungen aendern.")}</p>
+              <p style={styles.hint}>{t("ui.ai_wizard.step1_hint", "Wähle deinen KI-Anbieter. Du kannst dies später in den Einstellungen aendern.")}</p>
               <div style={styles.providerGrid}>
                 {AI_PROVIDER_IDS.map((pid) => {
                   const p = AI_PROVIDER_PRESETS[pid]
@@ -185,12 +185,12 @@ export default function AiSetupWizard({open, onClose}: Props) {
                       </button>
                     </div>
                     <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
-                      {t("ui.settings.ai_key_hint", "Der API-Schluessel wird nur lokal gespeichert.")}
+                      {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert.")}
                     </small>
                   </div>
                 </>
               ) : (
-                <p style={styles.hint}>{t("ui.ai_wizard.no_key_needed", "LM Studio benoetigt keinen API-Schluessel. Stelle sicher, dass der Server laeuft.")}</p>
+                <p style={styles.hint}>{t("ui.ai_wizard.no_key_needed", "LM Studio benötigt keinen API-Schlüssel. Stelle sicher, dass der Server läuft.")}</p>
               )}
               <div className="field">
                 <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
@@ -232,12 +232,12 @@ export default function AiSetupWizard({open, onClose}: Props) {
           {/* Navigation */}
           <div style={styles.nav}>
             <button className="btn btn-ghost btn-sm" onClick={handleSkip}>
-              {t("ui.ai_wizard.skip", "Ueberspringen")}
+              {t("ui.ai_wizard.skip", "Überspringen")}
             </button>
             <div style={{display: "flex", gap: 8}}>
               {step > 0 && (
                 <button className="btn btn-ghost btn-sm" onClick={() => setStep(step - 1)}>
-                  <ChevronLeft size={14}/> {t("ui.common.back", "Zurueck")}
+                  <ChevronLeft size={14}/> {t("ui.common.back", "Zurück")}
                 </button>
               )}
               {step < 2 ? (
