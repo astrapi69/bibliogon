@@ -772,6 +772,7 @@ ui:
     translate_provider: "Anbieter"
     translate_target_lang: "Zielsprache"
     translate_provider_unconfigured: "Anbieter nicht konfiguriert. Einstellungen > Plugins > Translation öffnen, um einen API-Key zu hinterlegen."
+    translate_no_providers: "Kein Übersetzungs-Anbieter konfiguriert. Einstellungen > Plugins > Translation öffnen, um DeepL oder LMStudio einzurichten."
     featured_image_hint: "Hero-Bild für Social-Media-Vorschauen. Upload folgt - bis dahin URL einfügen."
     excerpt_tooltip: "Kurze Zusammenfassung. Wird für Newsletter-Vorschauen und SEO-Beschreibungen als Fallback verwendet."
     tags_tooltip: "Stichwörter zur Kategorisierung und Suche. Mehrere Einträge möglich (Enter zum Hinzufügen)."

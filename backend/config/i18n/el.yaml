@@ -772,6 +772,7 @@ ui:
     translate_provider: "Πάροχος"
     translate_target_lang: "Γλώσσα-στόχος"
     translate_provider_unconfigured: "Ο πάροχος δεν είναι διαμορφωμένος. Άνοιξε Ρυθμίσεις > Plugins > Translation για να προσθέσεις ένα κλειδί API."
+    translate_no_providers: "Δεν έχει ρυθμιστεί κανένας πάροχος μετάφρασης. Άνοιξε Ρυθμίσεις > Plugins > Translation για να ρυθμίσεις DeepL ή LMStudio."
     featured_image_hint: "Hero εικόνα για προεπισκοπήσεις στα social media. Ανέβασμα σύντομα - μέχρι τότε επικόλλησε μια URL."
     excerpt_tooltip: "Σύντομη περίληψη. Χρησιμοποιείται ως fallback για newsletters και περιγραφές SEO."
     tags_tooltip: "Λέξεις-κλειδιά για κατηγοριοποίηση και αναζήτηση. Πολλαπλές εγγραφές (Enter για προσθήκη)."

@@ -808,6 +808,7 @@ ui:
     translate_provider: "Saglayici"
     translate_target_lang: "Hedef dil"
     translate_provider_unconfigured: "Saglayici yapilandirilmamis. Bir API anahtari eklemek icin Ayarlar > Plugins > Translation sekmesini ac."
+    translate_no_providers: "Hicbir ceviri saglayicisi yapilandirilmamis. DeepL veya LMStudio kurmak icin Ayarlar > Plugins > Translation sekmesini ac."
     featured_image_hint: "Sosyal medya onizlemeleri icin hero gorsel. Yukleme yakinda - simdilik URL yapistir."
     excerpt_tooltip: "Kisa ozet. Bultenler ve SEO aciklamalari icin yedek olarak kullanilir."
     tags_tooltip: "Kategorilendirme ve arama icin anahtar kelimeler. Birden fazla giris (Enter ile ekle)."

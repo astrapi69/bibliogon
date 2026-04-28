@@ -808,6 +808,7 @@ ui:
     translate_provider: "Fournisseur"
     translate_target_lang: "Langue cible"
     translate_provider_unconfigured: "Fournisseur non configure. Ouvre Parametres > Plugins > Translation pour ajouter une cle API."
+    translate_no_providers: "Aucun fournisseur de traduction configure. Ouvre Parametres > Plugins > Translation pour configurer DeepL ou LMStudio."
     featured_image_hint: "Image principale pour les apercus reseaux sociaux. Upload bientot - colle une URL pour le moment."
     excerpt_tooltip: "Resume court. Utilise comme repli pour les newsletters et descriptions SEO."
     tags_tooltip: "Mots-cles pour categorisation et recherche. Plusieurs entrees (Entree pour ajouter)."

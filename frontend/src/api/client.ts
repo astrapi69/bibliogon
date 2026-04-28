@@ -846,6 +846,16 @@ export const api = {
             request<Array<{id: string; name: string; configured: boolean; description: string}>>(
                 "/translation/providers",
             ),
+
+        /** Live health check for each provider (DeepL: validates the
+         *  API key with a usage call; LMStudio: pings /models on the
+         *  configured base_url). Use this to filter the translate
+         *  dropdown so the user does not pick a provider that will
+         *  120s-timeout on submit. */
+        health: () =>
+            request<Record<string, {status: "ok" | "error" | "not_configured"; error?: string}>>(
+                "/translation/health",
+            ),
     },
 
     /** UX-FU-02: per-article asset uploads (currently

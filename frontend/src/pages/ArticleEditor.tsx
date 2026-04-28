@@ -236,26 +236,39 @@ export default function ArticleEditor() {
     const [translateLang, setTranslateLang] = useState("en");
     const [translateProvider, setTranslateProvider] = useState<"deepl" | "lmstudio">("deepl");
     const [translating, setTranslating] = useState(false);
-    type ProviderInfo = {id: string; name: string; configured: boolean; description: string};
+    type ProviderInfo = {
+        id: string;
+        name: string;
+        configured: boolean;
+        healthy: boolean;
+        description: string;
+    };
     const [providers, setProviders] = useState<ProviderInfo[] | null>(null);
 
-    // Fetch provider config when the user opens the panel so the
-    // submit button can be disabled (and a "configure in Settings"
-    // hint shown) before the request fires. Avoids the 400
-    // "No DeepL API key configured" surprise.
+    // Fetch provider config + live health when the user opens the
+    // panel. Combines /providers (config check, fast) with /health
+    // (live ping; LMStudio ping has 5s timeout per the client).
+    // Filtering by both means the dropdown only lists providers
+    // that will actually translate - no 400s, no 120s timeouts.
     useEffect(() => {
         if (!translateOpen || providers !== null) return;
         let cancelled = false;
-        api.articleTranslation
-            .providers()
-            .then((list) => {
+        Promise.all([
+            api.articleTranslation.providers(),
+            api.articleTranslation.health(),
+        ])
+            .then(([list, health]) => {
                 if (cancelled) return;
-                setProviders(list);
-                // Default to the first configured provider so submit
-                // is enabled out of the gate when at least one works.
-                const firstConfigured = list.find((p) => p.configured);
-                if (firstConfigured && (firstConfigured.id === "deepl" || firstConfigured.id === "lmstudio")) {
-                    setTranslateProvider(firstConfigured.id);
+                const enriched: ProviderInfo[] = list.map((p) => ({
+                    ...p,
+                    healthy: health[p.id]?.status === "ok",
+                }));
+                setProviders(enriched);
+                // Default to the first available (configured AND
+                // healthy) provider.
+                const firstAvailable = enriched.find((p) => p.configured && p.healthy);
+                if (firstAvailable && (firstAvailable.id === "deepl" || firstAvailable.id === "lmstudio")) {
+                    setTranslateProvider(firstAvailable.id);
                 }
             })
             .catch(() => setProviders([]));
@@ -265,7 +278,11 @@ export default function ArticleEditor() {
     }, [translateOpen, providers]);
 
     const currentProvider = providers?.find((p) => p.id === translateProvider);
-    const providerConfigured = currentProvider?.configured ?? true;
+    const providerAvailable = currentProvider
+        ? currentProvider.configured && currentProvider.healthy
+        : true;
+    const noProvidersAvailable =
+        providers !== null && providers.every((p) => !p.configured || !p.healthy);
 
     const handleTranslate = async () => {
         if (!article || translating) return;
@@ -686,40 +703,45 @@ export default function ArticleEditor() {
                             <label style={layout.fieldLabel}>
                                 {t("ui.articles.translate_provider", "Anbieter")}
                             </label>
-                            <select
-                                data-testid="article-editor-translate-provider"
-                                value={translateProvider}
-                                onChange={(e) =>
-                                    setTranslateProvider(e.target.value as "deepl" | "lmstudio")
+                            {(() => {
+                                const visibleProviders = (providers ?? []).filter(
+                                    (p) => p.configured && p.healthy,
+                                );
+                                if (providers !== null && visibleProviders.length === 0) {
+                                    return (
+                                        <p
+                                            data-testid="article-editor-translate-no-providers"
+                                            style={{
+                                                fontSize: "0.75rem",
+                                                color: "var(--error, #b91c1c)",
+                                                margin: 0,
+                                            }}
+                                        >
+                                            {t(
+                                                "ui.articles.translate_no_providers",
+                                                "Kein Übersetzungs-Anbieter konfiguriert. Einstellungen > Plugins > Translation öffnen, um DeepL oder LMStudio einzurichten.",
+                                            )}
+                                        </p>
+                                    );
                                 }
-                                disabled={translating || providers === null}
-                                style={layout.fieldInput}
-                            >
-                                {(providers ?? [
-                                    {id: "deepl", name: "DeepL", configured: true},
-                                    {id: "lmstudio", name: "LMStudio", configured: true},
-                                ]).map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.name}
-                                        {!p.configured ? " ⚠" : ""}
-                                    </option>
-                                ))}
-                            </select>
-                            {!providerConfigured && (
-                                <p
-                                    data-testid="article-editor-translate-provider-warning"
-                                    style={{
-                                        fontSize: "0.75rem",
-                                        color: "var(--error, #b91c1c)",
-                                        margin: 0,
-                                    }}
-                                >
-                                    {t(
-                                        "ui.articles.translate_provider_unconfigured",
-                                        "Anbieter nicht konfiguriert. Einstellungen > Plugins > Translation öffnen, um einen API-Key zu hinterlegen.",
-                                    )}
-                                </p>
-                            )}
+                                return (
+                                    <select
+                                        data-testid="article-editor-translate-provider"
+                                        value={translateProvider}
+                                        onChange={(e) =>
+                                            setTranslateProvider(e.target.value as "deepl" | "lmstudio")
+                                        }
+                                        disabled={translating || providers === null}
+                                        style={layout.fieldInput}
+                                    >
+                                        {visibleProviders.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                );
+                            })()}
                             <label style={layout.fieldLabel}>
                                 {t("ui.articles.translate_target_lang", "Zielsprache")}
                             </label>
@@ -743,7 +765,12 @@ export default function ArticleEditor() {
                                     type="button"
                                     className="btn btn-primary btn-sm"
                                     onClick={() => void handleTranslate()}
-                                    disabled={translating || !providerConfigured || providers === null}
+                                    disabled={
+                                        translating ||
+                                        !providerAvailable ||
+                                        providers === null ||
+                                        noProvidersAvailable
+                                    }
                                     data-testid="article-editor-translate-submit"
                                 >
                                     {translating ? (

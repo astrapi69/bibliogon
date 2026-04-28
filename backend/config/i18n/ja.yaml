@@ -772,6 +772,7 @@ ui:
     translate_provider: "プロバイダー"
     translate_target_lang: "ターゲット言語"
     translate_provider_unconfigured: "プロバイダーが未設定です。設定 > Plugins > Translation を開いてAPIキーを追加してください。"
+    translate_no_providers: "翻訳プロバイダーが設定されていません。設定 > Plugins > Translation を開いて DeepL または LMStudio を設定してください。"
     featured_image_hint: "ソーシャルメディアプレビュー用のヒーロー画像。アップロードは近日公開 - 当面はURLを貼り付け。"
     excerpt_tooltip: "短い要約。ニュースレターのプレビューとSEO説明のフォールバックとして使用。"
     tags_tooltip: "分類と検索用のキーワード。複数エントリ（Enterで追加）。"
