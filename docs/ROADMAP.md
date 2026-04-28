@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-04-25
+Last updated: 2026-04-28
 Latest release: v0.23.0 (plugin-git-sync PGS-02..05: bi-directional commit-to-repo with ambient-cred push, three-way smart-merge with per-chapter conflict UI, multi-language branch linking via `main-XX` + `Book.translation_group_id`, core-git bridge with unified-commit fan-out under per-book lock. Plus v0.22.x: multi-book BGB import on XState v5, sticky-footer pattern across 13 dialog modals, EnhancedTextarea preview, WizardErrorBoundary, missing `books.tts_speed` Alembic migration backfilled. v0.21.0: full Git-based backup, AI fix_issue mode, Node 22 -> 24 LTS, backend CVE sweep.)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
@@ -134,17 +134,95 @@ Bi-directional git sync for Bibliogon books: import existing git-based book proj
 
 ---
 
-## Validation tracks
+## Article authoring
 
-Exploration items in the data-collection phase. Not implementation work; observation logs that drive a later architecture decision.
+Publication workflow for articles, blogposts, tweets. Architecture
+decision (formerly AR-02) resolved as Option B: a separate `Article`
+entity alongside `Book`, with article-specific routes, sidebar, and
+editor that share the underlying TipTap RichTextEditor and selected
+plugins (export, ms-tools, translation). The exploration document at
+[docs/explorations/article-authoring.md](explorations/article-authoring.md)
+captures the decision history; the editor-parity audit at
+[docs/explorations/article-editor-parity.md](explorations/article-editor-parity.md)
+drove the three editor-parity phases.
 
-### Article authoring
+Articles are standalone documents (not book chapters). Drafts move
+through a status lifecycle (draft -> ready -> published -> archived)
+and can be tracked across multiple external publishing platforms via
+the Publications panel, with content-snapshot drift detection.
 
-Publication workflow for articles, blogposts, tweets. Exploration in [docs/explorations/article-authoring.md](explorations/article-authoring.md). No architecture committed; validation data required before picking Option A/B/C.
+### Shipped (unreleased; rolling up into the next minor)
 
-- [ ] **AR-01:** validation log. Track 3-5 real cross-posting workflows in [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md) before committing to architecture. Monthly review classifies pain points as tool- vs workflow-solvable, counts platforms actually used, identifies patterns across articles. Closes when validation data supports an architecture pick OR triggers from exploration Section 13 fire. Effort: zero new code, log filled as part of normal publication work.
-- [ ] **AR-02:** architecture decision. After AR-01 data is in, pick Option A (extend Book with content_type), B (new Article entity + plugin-article), or C (sister project) — or archive the exploration as "investigated and deferred". Blocks AR-03+.
-- [ ] **AR-03+:** implementation phases. Scope defined once AR-02 resolves.
+- [x] **AR-01 Phase 1:** Article entity + Alembic migration, CRUD
+  endpoints, ArticleEditor (basic), Dashboard "New Article" + list
+  view, status lifecycle, author dropdown (settings-managed),
+  language dropdown (8 supported), KeywordInput tags, Featured Image
+  (URL + upload), Topic dropdown with inline-add, SEO Title + SEO
+  Description, Excerpt, tooltips on every metadata field, theme
+  toggle, back-to-dashboard nav. Commits: `3ce27fd`, `dae36c0`,
+  `54426df` (+ UX iteration).
+- [x] **AR-02 Phase 2:** Publication entity + cascade migration, 8
+  platform schemas (YAML), Publication CRUD, mark-as-published with
+  content snapshot, drift detection (out-of-sync status), verify-live
+  timestamp, PublicationsPanel in editor sidebar, AddPublicationModal
+  with schema-driven form, article-level SEO fields (canonical_url,
+  featured_image_url, excerpt, tags). Commits: `e70f47b`, `e09f51e`,
+  `bbe28ab`.
+- [x] **AR-02 Phase 2.1:** Topic + SEO + sidebar-left layout,
+  settings-managed topics. Commits: `d6a415b`, `2c6f275`, `68a9686`,
+  `ac25cc8`, `e8249fe`, `3fb0a33`.
+- [x] **Editor-Parity Phase 1:** RichTextEditor extraction with
+  `contentKind` prop, plugin gating per content type, AI-prompt
+  branching for articles. Commits: `db44cd3`, `ab15131`, `fcfe14c`.
+- [x] **Editor-Parity Phase 2:** ms-tools per-article (no code change
+  required - endpoint already accepts an optional `book_id`),
+  translate-article endpoint with `content_json` translation through
+  the existing translation provider abstraction. Commits: `8c338ce`,
+  `64938f4`, `8bd19ea`. Plus translate-panel hardening:
+  unconfigured/unhealthy provider gating, 502 surfacing, rebuild
+  fallback (`0ed1c30`, `54ae8af`, `89de150`, `68f1d71`).
+- [x] **Editor-Parity Phase 3:** Article export to Markdown / HTML /
+  PDF / DOCX. Reuses `tiptap_to_markdown` from plugin-export and
+  shells out to Pandoc for PDF/DOCX. Sidebar Export panel with one
+  button per format; backend unit tests cover all four formats.
+  Commits: `8686031` (backend, 11 tests), `5b471f3` (frontend +
+  smoke + i18n).
+- [x] **UX-FU-02:** Featured image upload (per-article, mirrors
+  `api.covers` for books). Commits: `335cf04`, `ebb568b`, `9600ce2`.
+
+### In progress
+
+- [ ] **AR-01 validation log:** Capture real cross-posting workflow
+  data in
+  [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
+  during normal publication work. Target 3-5 entries before any
+  AR-03+ platform-API commitment. Passive task - fills as the
+  feature is used in anger, not via dedicated sessions.
+
+### Open / deferred
+
+- [ ] **AR-03+ Platform APIs:** OAuth + scheduled publish + analytics
+  + cross-post automation for Medium, Substack, X, LinkedIn, dev.to,
+  Mastodon, Bluesky. Blocked on AR-01 validation log showing which
+  platforms are actually used and where the manual workflow hurts.
+  XL effort, multi-session.
+- [ ] **Phase 4 article-as-WBT git-sync:** Article version control
+  via plugin-git-sync, parallel to the book path. Deferred - only on
+  user demand.
+- [ ] **Phase 4 kinderbuch single-page article variant:** Single-page
+  layout for the kinderbuch use case. Deferred - only on user
+  demand.
+- [ ] **UX-FU-01:** Silent fallback in TopicSelect when the settings
+  API fails. Low priority; current behaviour surfaces an empty
+  dropdown rather than a hardcoded list.
+
+### Reference
+
+- Architecture exploration: [docs/explorations/article-authoring.md](explorations/article-authoring.md)
+- Editor-parity audit: [docs/explorations/article-editor-parity.md](explorations/article-editor-parity.md)
+- Validation log: [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
+- UX conventions: [docs/ux-conventions.md](ux-conventions.md)
+- Help docs: [docs/help/en/articles.md](help/en/articles.md), [docs/help/de/articles.md](help/de/articles.md)
 
 ---
 
