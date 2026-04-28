@@ -147,6 +147,23 @@ class WbtImportHandler:
             if duplicate_action == "overwrite" and existing_book_id:
                 _hard_delete_book(session, existing_book_id)
 
+            # PGS-04 multi-branch import for ZIP/folder uploads:
+            # when the user opted into git adoption AND the adopted
+            # .git/ has multiple ``main`` / ``main-XX`` branches,
+            # import every matching branch as a separate Book and
+            # link them via ``translation_group_id``. Falls back to
+            # the single-branch path when only one (or no) matching
+            # branch is detected. See GH#16.
+            if git_adoption in ("adopt_with_remote", "adopt_without_remote"):
+                primary_id = _try_multi_branch_import(
+                    project_root=project_root,
+                    git_adoption=git_adoption,
+                    session=session,
+                    overrides=overrides,
+                )
+                if primary_id is not None:
+                    return primary_id
+
             result = _import_project_root(session, project_root)
             book_id = str(result["book_id"])
 
@@ -203,6 +220,148 @@ def _apply_primary_cover(session: Session, book_id: str, cover_filename: str) ->
     book = session.query(Book).filter(Book.id == book_id).first()
     if book is not None:
         book.cover_image = match.path
+
+
+def _try_multi_branch_import(
+    *,
+    project_root: Path,
+    git_adoption: str,
+    session: Session,
+    overrides: dict,
+) -> str | None:
+    """PGS-04 multi-branch path for ZIP / folder WBT imports.
+
+    Inspect the project's ``.git/`` for ``main`` + ``main-XX``
+    branches. With two or more matches, run
+    :func:`import_translation_group` against the local repo so every
+    branch lands as its own Book + GitSyncMapping, linked by a shared
+    ``translation_group_id``. Returns the **primary** book ID
+    (matching the original HEAD branch when possible, else the first
+    imported book) so the orchestrator's ``execute`` contract still
+    yields a single ID. Returns ``None`` when multi-branch does not
+    apply, and the caller falls back to the single-branch path.
+
+    Side effects on success:
+
+    - Creates one Book + one GitSyncMapping per matching branch.
+    - Links siblings via ``translation_group_id`` (handled inside
+      ``import_translation_group``).
+    - Applies ``overrides`` to the primary book only; sibling books
+      keep their own metadata.
+
+    No-op on failure to open the repo, missing ``.git/``, or fewer
+    than two matching branches; the caller resumes single-branch
+    import. ``adopt_with_remote`` vs ``adopt_without_remote`` is
+    honoured by stripping ``origin`` from each per-book clone when
+    the user picked ``adopt_without_remote``.
+    """
+    git_dir = project_root / ".git"
+    if not git_dir.is_dir():
+        return None
+
+    try:
+        import git as gitpython
+    except Exception:  # pragma: no cover - GitPython missing
+        logger = _logger()
+        logger.warning("multi-branch WBT import skipped: GitPython unavailable")
+        return None
+
+    try:
+        repo = gitpython.Repo(str(project_root))
+    except Exception as exc:
+        _logger().warning("multi-branch WBT import skipped: cannot open .git/: %s", exc)
+        return None
+
+    from app.services.translation_import import _enumerate_translation_branches
+
+    branches = _enumerate_translation_branches(repo)
+    if len(branches) < 2:
+        return None
+
+    # Snapshot the working-tree HEAD so the caller knows which book
+    # to treat as the primary (overrides + return value).
+    try:
+        head_branch = repo.active_branch.name
+    except TypeError:
+        # Detached HEAD: pick "main" if present, else first.
+        head_branch = "main" if "main" in branches else branches[0]
+
+    from app.services.translation_import import import_translation_group
+
+    result = import_translation_group(session, git_url=str(project_root))
+    if not result.books:
+        return None
+
+    primary = next((b for b in result.books if b.branch == head_branch), result.books[0])
+
+    if overrides:
+        from app.import_plugins.overrides import apply_book_overrides
+
+        apply_book_overrides(session, primary.book_id, overrides)
+        session.commit()
+
+    if git_adoption == "adopt_without_remote":
+        _strip_remote_from_translation_group(result, session)
+
+    _logger().info(
+        "WBT multi-branch import: %d books linked, primary=%s (branch=%s)",
+        len(result.books),
+        primary.book_id,
+        primary.branch,
+    )
+    return primary.book_id
+
+
+def _strip_remote_from_translation_group(result, session: Session) -> None:
+    """Honour ``adopt_without_remote`` by removing the ``origin``
+    remote from every per-book clone created by
+    :func:`import_translation_group`.
+
+    ``import_translation_group`` always preserves the source URL on
+    each ``GitSyncMapping`` and the underlying clone; the adopt-
+    without-remote choice is a user request to wipe that. Best-
+    effort: missing clone or remote is a no-op, never blocks the
+    import.
+    """
+    try:
+        import git as gitpython
+    except Exception:  # pragma: no cover
+        return
+
+    from app.models import GitSyncMapping
+
+    for imported in result.books:
+        mapping = (
+            session.query(GitSyncMapping).filter(GitSyncMapping.book_id == imported.book_id).first()
+        )
+        if mapping is None or not mapping.local_clone_path:
+            continue
+        clone_path = Path(mapping.local_clone_path)
+        if not (clone_path / ".git").is_dir() and not (clone_path / "HEAD").is_file():
+            continue
+        try:
+            sibling_repo = gitpython.Repo(str(clone_path))
+            origin = next((r for r in sibling_repo.remotes if r.name == "origin"), None)
+            if origin is not None:
+                sibling_repo.delete_remote(origin)
+        except Exception as exc:
+            _logger().warning(
+                "adopt_without_remote: could not strip origin from %s: %s",
+                clone_path,
+                exc,
+            )
+            continue
+        mapping.repo_url = ""
+        session.add(mapping)
+    session.commit()
+
+
+def _logger():
+    """Module logger access. Late import keeps the helper testable
+    without forcing logging setup at import time."""
+    import logging
+
+    return logging.getLogger(__name__)
 
 
 def _maybe_adopt_git(

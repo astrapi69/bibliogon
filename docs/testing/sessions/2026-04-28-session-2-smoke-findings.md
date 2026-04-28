@@ -60,11 +60,23 @@ In scope this slot:
   which takes a **git URL**. The two paths are not unified; the
   wizard has no UI to invoke multi-branch on a ZIP.
 - **Test data:** `tmp/eternity-ebook.zip` has `main`/`main-de`/`main-es`/`main-fr`.
-- **Disposition:** **GH#16 opened**, fix deferred. Larger scope
-  (orchestrator extension + new fixture + E2E). Workaround
-  documented in the issue: clone the repo locally, push to a
-  git host, and use the Git-URL multi-branch path.
-- **Tracking:** GH#16.
+- **Fix shipped:** `WbtImportHandler.execute` now branches when
+  `git_adoption ∈ {adopt_with_remote, adopt_without_remote}` and
+  the project's `.git/` exposes ≥2 `main` / `main-XX` branches.
+  Reuses `import_translation_group` for the heavy lifting (clone
+  → enumerate → per-branch checkout + import → link via
+  `translation_group_id`). Returns the **primary** book ID
+  (matching the working-tree HEAD branch when possible) so the
+  orchestrator's single-ID `execute` contract is preserved.
+  `adopt_without_remote` strips `origin` from each per-book clone
+  + clears `GitSyncMapping.repo_url`. Single-branch repos and
+  legacy ZIPs (no `.git/`) keep the existing single-Book path.
+  5 new tests in `test_wbt_multi_branch_import.py` cover
+  multi-branch happy path, adopt-without-remote remote-strip,
+  single-branch fallback, `start_fresh` opt-out, and no-`.git/`
+  fallback. Full backend suite 1204/1 (was 1198 pre-Session 2);
+  ruff + mypy clean.
+- **Tracking:** GH#16 (auto-closed via this commit's `Closes #16`).
 
 ### F-4: WBT import drops `backpage_description` + `backpage_author_bio`
 
