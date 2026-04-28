@@ -447,8 +447,44 @@ class Article(Base):
         order_by="Publication.created_at",
     )
 
+    assets: Mapped[list["ArticleAsset"]] = relationship(
+        back_populates="article",
+        cascade="all, delete-orphan",
+        order_by="ArticleAsset.uploaded_at",
+    )
+
     def __repr__(self) -> str:
         return f"<Article {self.id!r} title={self.title!r} status={self.status}>"
+
+
+class ArticleAsset(Base):
+    """Uploaded asset attached to an :class:`Article`.
+
+    UX-FU-02: parallel of :class:`Asset` for articles. Featured-image
+    uploads land here; the article's ``featured_image_url`` column
+    points at the served path so existing downstream consumers
+    (Open-Graph snippets, platform_metadata fallbacks) keep working.
+    """
+
+    __tablename__ = "article_assets"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    article_id: Mapped[str] = mapped_column(
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    asset_type: Mapped[str] = mapped_column(String(50), nullable=False, default="featured_image")
+    path: Mapped[str] = mapped_column(String(1000), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    article: Mapped["Article"] = relationship(back_populates="assets")
+
+    def __repr__(self) -> str:
+        return (
+            f"<ArticleAsset {self.id!r} filename={self.filename!r} "
+            f"type={self.asset_type}>"
+        )
 
 
 class Publication(Base):

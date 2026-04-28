@@ -337,6 +337,18 @@ class AssetOut(BaseModel):
     uploaded_at: datetime
 
 
+class ArticleAssetOut(BaseModel):
+    """UX-FU-02: parallel of AssetOut for article-scoped uploads."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    article_id: str
+    filename: str
+    asset_type: str
+    path: str
+    uploaded_at: datetime
+
+
 # --- Book template schemas ---
 
 
