@@ -7,6 +7,10 @@ be automated has been moved to `e2e/smoke/` and is listed in the
 genuinely out of reach for Playwright: subjective visual judgment,
 real third-party integrations, and hardware-input flakiness zones.
 
+> **See also:** `docs/smoke-tests-catalog.md` is the structured
+> per-feature catalog (severity-rated, GitHub-issue-promotable). This
+> file complements it with the items that intentionally stay manual.
+
 **How to use this file:** run the smoke suite first, then work
 through this checklist for anything the suite cannot cover. When a
 manual item is fully green, delete it or move it to "Verified".
