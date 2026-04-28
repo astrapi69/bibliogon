@@ -175,6 +175,17 @@ export interface ArticleCreate {
     language?: string
 }
 
+/** UX-FU-02: a file uploaded against an Article (currently only
+ *  featured_image). Mirrors the Asset type but article-scoped. */
+export interface ArticleAsset {
+    id: string
+    article_id: string
+    filename: string
+    asset_type: string
+    path: string
+    uploaded_at: string
+}
+
 export interface ArticleUpdate {
     title?: string
     subtitle?: string | null
@@ -799,6 +810,45 @@ export const api = {
 
         delete: (id: string) =>
             request<void>(`/articles/${id}`, {method: "DELETE"}),
+    },
+
+    /** UX-FU-02: per-article asset uploads (currently
+     *  ``featured_image``). Mirrors ``api.covers`` for books. */
+    articleAssets: {
+        upload: async (
+            articleId: string,
+            file: File,
+            assetType: string = "featured_image",
+        ): Promise<ArticleAsset> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const url = `${BASE}/articles/${articleId}/assets?asset_type=${encodeURIComponent(assetType)}`;
+            const res = await fetch(url, {method: "POST", body: formData});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Article asset upload failed",
+                    url,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.json();
+        },
+
+        list: (articleId: string) =>
+            request<ArticleAsset[]>(`/articles/${articleId}/assets`),
+
+        delete: (articleId: string, assetId: string) =>
+            request<void>(`/articles/${articleId}/assets/${assetId}`, {
+                method: "DELETE",
+            }),
+
+        /** Build the served URL for an uploaded asset. The backend
+         *  serves files by filename via ``GET /file/{filename}``. */
+        urlFor: (articleId: string, filename: string): string =>
+            `/api/articles/${articleId}/assets/file/${encodeURIComponent(filename)}`,
     },
 
     chapters: {

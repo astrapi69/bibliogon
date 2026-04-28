@@ -28,6 +28,7 @@ import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-reac
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
+import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
 import ThemeToggle from "../components/ThemeToggle";
 import Tooltip from "../components/Tooltip";
@@ -485,14 +486,32 @@ export default function ArticleEditor() {
                         }
                         testId="article-editor-canonical-url"
                     />
-                    <Field
+                    <FieldLabel
                         label={t(
-                            "ui.articles.featured_image_url",
-                            "Featured Image URL",
+                            "ui.articles.featured_image_label",
+                            "Beitragsbild",
                         )}
                         tooltip={t(
                             "ui.articles.featured_image_tooltip",
-                            "Hero-Bild fuer Social-Media-Vorschauen (Open Graph / Twitter Card). URL eines Bildes - Upload kommt spaeter.",
+                            "Hero-Bild für Social-Media-Vorschauen (Open Graph / Twitter Card). Ablegen, klicken oder URL einfügen.",
+                        )}
+                    />
+                    <ArticleImageUpload
+                        articleId={article.id}
+                        value={article.featured_image_url}
+                        onChange={(v) => {
+                            setArticle({...article, featured_image_url: v});
+                            void persistMeta({featured_image_url: v});
+                        }}
+                    />
+                    <Field
+                        label={t(
+                            "ui.articles.featured_image_url_label",
+                            "...oder URL",
+                        )}
+                        tooltip={t(
+                            "ui.articles.featured_image_url_tooltip",
+                            "Alternative: Adresse eines bereits gehosteten Bildes einfügen.",
                         )}
                         value={article.featured_image_url ?? ""}
                         onChange={(v) =>
@@ -509,20 +528,6 @@ export default function ArticleEditor() {
                         testId="article-editor-featured-image"
                         placeholder="https://..."
                     />
-                    <p
-                        data-testid="article-editor-featured-image-hint"
-                        style={{
-                            fontSize: "0.75rem",
-                            color: "var(--text-muted)",
-                            marginTop: 4,
-                            marginBottom: 0,
-                        }}
-                    >
-                        {t(
-                            "ui.articles.featured_image_hint",
-                            "Hero-Bild fuer Social-Media-Vorschauen. Upload folgt - bis dahin URL einfuegen.",
-                        )}
-                    </p>
                     <FieldLabel
                         label={t("ui.articles.excerpt", "Excerpt")}
                         tooltip={t(
