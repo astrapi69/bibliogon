@@ -24,13 +24,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
 import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
+import Editor from "../components/Editor";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
@@ -67,9 +64,7 @@ export default function ArticleEditor() {
     const authorProfile = useAuthorProfile();
     const topics = useTopics();
 
-    const lastSavedJson = useRef<string>("");
     const lastSavedMeta = useRef<string>("");
-    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Load article + initial content.
     useEffect(() => {
@@ -81,7 +76,6 @@ export default function ArticleEditor() {
             .then((a) => {
                 if (cancelled) return;
                 setArticle(a);
-                lastSavedJson.current = a.content_json;
                 lastSavedMeta.current = JSON.stringify({
                     title: a.title,
                     subtitle: a.subtitle,
@@ -116,13 +110,14 @@ export default function ArticleEditor() {
         };
     }, [id, t]);
 
+    // Editor handles content persistence via its onSave callback.
+    // ArticleEditor still owns metadata persistence (persistMeta).
     const persistContent = useCallback(
         async (json: string) => {
-            if (!id || json === lastSavedJson.current) return;
+            if (!id) return;
             setSaveStatus("saving");
             try {
                 await api.articles.update(id, { content_json: json });
-                lastSavedJson.current = json;
                 setSaveStatus("saved");
                 setTimeout(() => setSaveStatus("idle"), 2000);
             } catch (err) {
@@ -140,70 +135,6 @@ export default function ArticleEditor() {
         },
         [id, t],
     );
-
-    const debouncedSave = useCallback(
-        (json: string) => {
-            if (saveTimer.current) clearTimeout(saveTimer.current);
-            setSaveStatus("saving");
-            saveTimer.current = setTimeout(
-                () => void persistContent(json),
-                AUTOSAVE_DEBOUNCE_MS,
-            );
-        },
-        [persistContent],
-    );
-
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Link.configure({ openOnClick: false }),
-            Placeholder.configure({
-                placeholder: t(
-                    "ui.articles.editor_placeholder",
-                    "Beginne zu schreiben...",
-                ),
-            }),
-        ],
-        // Explicit editable=true. Default is true but stating it
-        // protects against future TipTap default flips and makes the
-        // contract obvious to readers wondering "why is the editor
-        // read-only" (the smoke-test bug we just fixed).
-        editable: true,
-        // Initial content; subsequent article loads / id swaps go
-        // through editor.commands.setContent in the effect below so
-        // we don't blow away the editor instance + selection state on
-        // every async load.
-        content: "",
-        onUpdate: ({ editor }) => {
-            if (!article) return;
-            debouncedSave(JSON.stringify(editor.getJSON()));
-        },
-        // Apply the .tiptap-editor class so global CSS rules
-        // (min-height: 400px, padding: 2rem, font-display, line-
-        // height) attach. Without this class the .ProseMirror node
-        // has zero base styling and an empty article renders as a
-        // 0-height invisible target - the "editor disabled"
-        // regression after the sidebar moved left in ac25cc8.
-        editorProps: {
-            attributes: {
-                class: "tiptap-editor",
-            },
-        },
-    });
-
-    // Push article content into the editor whenever the article id
-    // changes (load, switch from another article, hard reload). Using
-    // setContent keeps the editor instance stable + does not fire
-    // onUpdate (so we don't echo a save back to the server on load).
-    useEffect(() => {
-        if (!editor || !article) return;
-        const parsed = safeParse(article.content_json);
-        // emitUpdate=false avoids round-tripping the load back into a
-        // PATCH save (the second positional arg in TipTap v2's
-        // setContent API).
-        editor.commands.setContent(parsed, false);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor, article?.id]);
 
     const persistMeta = useCallback(
         async (patch: Partial<Article>) => {
@@ -294,7 +225,7 @@ export default function ArticleEditor() {
         }
     }
 
-    if (loading || !article || !editor) {
+    if (loading || !article) {
         return (
             <div data-testid="article-editor-loading" style={layout.loading}>
                 <Loader2 size={20} className="spin" />
@@ -302,8 +233,6 @@ export default function ArticleEditor() {
             </div>
         );
     }
-
-    const wordCount = editor.getText().trim().split(/\s+/).filter(Boolean).length;
 
     return (
         <div data-testid="article-editor" style={layout.page}>
@@ -545,33 +474,31 @@ export default function ArticleEditor() {
                     </button>
                 </aside>
                 <div style={layout.editorPane}>
-                    <EditorContent editor={editor} />
-                    <p
-                        data-testid="article-editor-word-count"
-                        style={layout.wordCount}
-                    >
-                        {t("ui.articles.word_count", "{count} Wörter").replace(
-                            "{count}",
-                            String(wordCount),
+                    <Editor
+                        contentKind="article"
+                        content={article.content_json}
+                        onSave={persistContent}
+                        chapterId={article.id}
+                        chapterTitle={article.title}
+                        bookContext={{
+                            title: article.title,
+                            author: article.author ?? "",
+                            language: article.language,
+                            // Topic doubles as a coarse "genre" for the
+                            // AI prompt context block. Empty when not set.
+                            genre: article.topic ?? "",
+                            description: article.excerpt ?? "",
+                        }}
+                        autosaveDebounceMs={AUTOSAVE_DEBOUNCE_MS}
+                        placeholder={t(
+                            "ui.articles.editor_placeholder",
+                            "Beginne zu schreiben...",
                         )}
-                    </p>
+                    />
                 </div>
             </main>
         </div>
     );
-}
-
-// TipTap Content can be a JSON object or string; both are accepted by
-// the editor. Returning a parsed JSON object preserves doc structure;
-// falling back to an empty string lets the editor start with a blank
-// doc when content_json is empty or malformed.
-function safeParse(raw: string): object | string {
-    try {
-        const parsed = JSON.parse(raw);
-        return typeof parsed === "object" && parsed !== null ? parsed : "";
-    } catch {
-        return "";
-    }
 }
 
 function SaveIndicator({ status }: { status: SaveStatus }) {

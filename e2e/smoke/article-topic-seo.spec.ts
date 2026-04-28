@@ -68,16 +68,17 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         await page.goto(`/articles/${article.id}`);
 
         const sidebar = page.getByTestId("article-editor-sidebar");
-        const wordCount = page.getByTestId("article-editor-word-count");
+        // The shared Editor renders ProseMirror inside the pane.
+        // Compare its position to the sidebar's to confirm the
+        // sidebar is on the left.
+        const editor = page.locator(".ProseMirror").first();
         await expect(sidebar).toBeVisible();
-        await expect(wordCount).toBeVisible();
+        await expect(editor).toBeVisible();
 
         const sidebarBox = await sidebar.boundingBox();
-        const wordCountBox = await wordCount.boundingBox();
-        if (!sidebarBox || !wordCountBox) throw new Error("missing bounding boxes");
-        // Sidebar must be to the left of the editor (its right edge is
-        // left of the editor pane's word-count footer).
-        expect(sidebarBox.x).toBeLessThan(wordCountBox.x);
+        const editorBox = await editor.boundingBox();
+        if (!sidebarBox || !editorBox) throw new Error("missing bounding boxes");
+        expect(sidebarBox.x).toBeLessThan(editorBox.x);
     });
 
     test("SEO Title and SEO Description persist", async ({page}) => {
