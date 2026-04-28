@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -355,9 +356,26 @@ async def translate_article(req: TranslateArticleRequest) -> dict[str, Any]:
         article = _load_article(db, req.article_id)
         deepl_client, lmstudio_client = _build_translation_clients(req.provider)
 
-        new_article = await _create_translated_article(
-            db, article, req, deepl_client, lmstudio_client,
-        )
+        try:
+            new_article = await _create_translated_article(
+                db, article, req, deepl_client, lmstudio_client,
+            )
+        except DeepLError as e:
+            db.rollback()
+            raise HTTPException(status_code=502, detail=f"DeepL error: {e}") from e
+        except LMStudioError as e:
+            db.rollback()
+            raise HTTPException(status_code=502, detail=f"LMStudio error: {e}") from e
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as e:
+            # LMStudio default endpoint is http://localhost:1234 - if
+            # the user picked LMStudio without a running server, the
+            # raw httpx error bubbles past the *Error wrappers above.
+            db.rollback()
+            provider_label = "LMStudio" if req.provider == "lmstudio" else "DeepL"
+            raise HTTPException(
+                status_code=502,
+                detail=f"{provider_label} not reachable: {e}",
+            ) from e
         db.commit()
 
         return {

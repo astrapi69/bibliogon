@@ -112,6 +112,33 @@ def test_translate_article_404_on_missing_id(patched_translator) -> None:
         assert resp.status_code == 404
 
 
+def test_translate_article_returns_502_on_lmstudio_unreachable() -> None:
+    """LMStudio default endpoint (localhost:1234) often unavailable.
+    Raw httpx ConnectError must surface as a clean 502 with a
+    pointer to the unreachable provider, not a 500 with stack trace."""
+    import httpx
+
+    async def _raise_connect(*_a, **_kw):
+        raise httpx.ConnectError("Connection refused")
+
+    with patch(
+        "bibliogon_translation.routes.translate_chapter_content",
+        side_effect=_raise_connect,
+    ), patch(
+        "bibliogon_translation.routes._build_translation_clients",
+        return_value=(None, object()),
+    ), TestClient(app) as client:
+        source = _create_article(client, "Net failure")
+        resp = client.post(
+            "/api/translation/translate-article",
+            json={"article_id": source["id"], "target_lang": "EN", "provider": "lmstudio"},
+        )
+        assert resp.status_code == 502, resp.text
+        detail = resp.json()["detail"]
+        assert "LMStudio" in detail
+        assert "not reachable" in detail
+
+
 def test_translate_article_preserves_topic_tags_canonical(patched_translator) -> None:
     """Settings-managed values + identity fields copy verbatim."""
     with TestClient(app) as client:
