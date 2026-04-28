@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {api, AudiobookVoice, formatVoiceLabel} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Save, Check, X, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
@@ -15,15 +15,38 @@ import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import SshKeySection from "../components/SshKeySection";
 
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "topics", "plugins", "support"] as const;
+type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+    return value !== null && (VALID_SETTINGS_TABS as readonly string[]).includes(value);
+}
+
 export default function Settings() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const {setLang: setGlobalLang} = useI18n();
     const {t} = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
-    const [activeTab, setActiveTab] = useState("app");
+
+    // Deep-link tab via ?tab=author. Falls back to "app" for unknown
+    // values so a stale URL never lands on an invalid Radix tab.
+    const initialTab: SettingsTab = isSettingsTab(searchParams.get("tab")) ? (searchParams.get("tab") as SettingsTab) : "app";
+    const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+
+    const handleTabChange = (next: string) => {
+        if (!isSettingsTab(next)) return;
+        setActiveTab(next);
+        // Mirror the active tab back into the URL so reload + back-
+        // button keep state. ``replace`` avoids polluting history
+        // with one entry per tab click.
+        const params = new URLSearchParams(searchParams);
+        params.set("tab", next);
+        setSearchParams(params, {replace: true});
+    };
 
     useEffect(() => {
         loadData();
@@ -73,7 +96,7 @@ export default function Settings() {
                 </div>
             </header>
 
-            <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
+            <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
                 <Tabs.List className="radix-tabs-list">
                     <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
                     <Tabs.Trigger value="ai" className="radix-tab-trigger" data-testid="settings-tab-ai">{t("ui.settings.tab_ai", "KI-Assistent")}</Tabs.Trigger>

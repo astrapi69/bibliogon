@@ -1,4 +1,5 @@
 import {useState, useEffect, useCallback} from "react";
+import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, Chapter, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
@@ -422,6 +423,7 @@ function AuthorSelectField({
     allowEmpty: boolean;
 }) {
     const {t} = useI18n();
+    const navigate = useNavigate();
     const knownNames = profileDisplayNames(profile);
     const valueIsKnown = value !== "" && knownNames.includes(value);
     const valueIsUnknown = value !== "" && !valueIsKnown;
@@ -472,7 +474,7 @@ function AuthorSelectField({
                 )}
             </select>
             <a
-                href="#/settings/general"
+                href="/settings?tab=author"
                 data-testid="metadata-author-manage-link"
                 style={{
                     display: "inline-block",
@@ -483,7 +485,7 @@ function AuthorSelectField({
                 }}
                 onClick={(e) => {
                     e.preventDefault();
-                    window.location.hash = "#/settings/general";
+                    navigate("/settings?tab=author");
                 }}
             >
                 {t(

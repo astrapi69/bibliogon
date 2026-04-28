@@ -269,6 +269,21 @@ user note (line below).
   localhost-only deploys; anti-pattern for hosted setups). Fix:
   surface the error state with a retry hint, OR fall back to an
   enabled dropdown with the loaded value preserved.
+- **TPL-I18N-01**: builtin book templates display name +
+  description in English regardless of UI language. Found in
+  Test Phase Session 2 (2026-04-28) when the user switched to DE
+  and opened "Aus Vorlage". Severity: Medium (workable but
+  inconsistent). Cause: ``backend/app/data/builtin_templates.py``
+  hardcodes English ``name`` + ``description`` strings, seeded
+  once into the DB at startup and served as-is. Three options:
+  (a) add ``name_de`` / ``description_de`` columns + serve based
+  on UI language (heaviest, schema migration); (b) treat
+  name/description as i18n keys + lookup at runtime in the
+  frontend (medium, requires every template to declare keys);
+  (c) frontend translation map keyed by template ``name`` slug,
+  fallback to the DB string (lightest, no backend change). User
+  templates stay in their original language. Recommend (c).
+  Effort: M.
 - **UX-FU-02**: closed. Shipped via new ``ArticleAsset`` model +
   ``/api/articles/{id}/assets`` router + ``ArticleImageUpload``
   component (drag-drop + click-to-pick + remove). URL field stays
