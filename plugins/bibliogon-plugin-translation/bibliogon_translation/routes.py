@@ -317,3 +317,129 @@ async def _translate_one_chapter(
         return translated_title, translated_text, None
     except Exception as e:
         return ch.title, plain_text, {"chapter": ch.title, "error": str(e)}
+
+
+# --- AR editor-parity Phase 2: article translation ---
+
+
+class TranslateArticleRequest(BaseModel):
+    """Request to translate an article into a new target-language Article."""
+
+    article_id: str = Field(..., min_length=1)
+    target_lang: str = Field(..., pattern="^[a-zA-Z]{2}(-[a-zA-Z]{2})?$")
+    source_lang: str | None = Field(default=None, pattern="^[a-zA-Z]{2}(-[a-zA-Z]{2})?$")
+    provider: str = Field(default="deepl", pattern="^(deepl|lmstudio)$")
+    title_suffix: str = Field(
+        default="",
+        description="Suffix for the new article title, e.g. '(EN)'. Empty -> derived from target_lang.",
+    )
+
+
+@router.post("/translate-article")
+async def translate_article(req: TranslateArticleRequest) -> dict[str, Any]:
+    """Translate one Article into a new target-language Article.
+
+    Mirrors :func:`translate_book` but for the standalone Article
+    entity (AR-01 Phase 1 + AR-02). Body translation reuses the
+    chapter-translation helpers (extract plain text from TipTap +
+    rebuild TipTap with translated text) so inline marks are lost
+    but block structure is preserved.
+
+    Translates: title, subtitle, excerpt, seo_title, seo_description
+    plus the body content_json. Tags + topic + canonical_url are
+    copied verbatim (not translated). The new Article starts in
+    ``draft`` status; user can promote to ``ready`` after review.
+    """
+    db = _open_db_session_or_500()
+    try:
+        article = _load_article(db, req.article_id)
+        deepl_client, lmstudio_client = _build_translation_clients(req.provider)
+
+        new_article = await _create_translated_article(
+            db, article, req, deepl_client, lmstudio_client,
+        )
+        db.commit()
+
+        return {
+            "article_id": new_article.id,
+            "title": new_article.title,
+            "language": new_article.language,
+            "original_article_id": req.article_id,
+            "provider": req.provider,
+        }
+    finally:
+        db.close()
+
+
+def _load_article(db, article_id: str):
+    """Fetch the article or raise 404."""
+    from app.models import Article
+
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
+
+
+async def _create_translated_article(db, source, req: TranslateArticleRequest, deepl_client, lmstudio_client):
+    """Create + persist the destination Article row with translated fields."""
+    from app.models import Article
+
+    lang_code = req.target_lang.split("-")[0].lower()
+    suffix = req.title_suffix or f"({req.target_lang.upper()})"
+
+    async def _t(text: str | None) -> str | None:
+        # Skip empty / None to avoid spending API budget on no-ops.
+        if not text or not text.strip():
+            return text
+        return await translate_chapter_content(
+            text=text,
+            target_lang=req.target_lang,
+            source_lang=req.source_lang,
+            provider=req.provider,
+            deepl_client=deepl_client,
+            lmstudio_client=lmstudio_client,
+        )
+
+    translated_title = await _t(source.title) or source.title
+    translated_subtitle = await _t(source.subtitle)
+    translated_excerpt = await _t(source.excerpt)
+    translated_seo_title = await _t(source.seo_title)
+    translated_seo_description = await _t(source.seo_description)
+
+    plain_body = extract_plain_text_from_tiptap(source.content_json or "")
+    if plain_body.strip():
+        translated_body_text = await translate_chapter_content(
+            text=plain_body,
+            target_lang=req.target_lang,
+            source_lang=req.source_lang,
+            provider=req.provider,
+            deepl_client=deepl_client,
+            lmstudio_client=lmstudio_client,
+        )
+        translated_content_json = rebuild_tiptap_with_translation(
+            source.content_json or "",
+            translated_body_text,
+        )
+    else:
+        translated_content_json = source.content_json or ""
+
+    new_article = Article(
+        title=f"{translated_title} {suffix}".strip(),
+        subtitle=translated_subtitle,
+        author=source.author,
+        language=lang_code,
+        content_type=source.content_type,
+        content_json=translated_content_json,
+        status="draft",
+        canonical_url=source.canonical_url,
+        featured_image_url=source.featured_image_url,
+        excerpt=translated_excerpt,
+        tags=source.tags,
+        topic=source.topic,
+        seo_title=translated_seo_title,
+        seo_description=translated_seo_description,
+    )
+    db.add(new_article)
+    db.flush()
+    return new_article
