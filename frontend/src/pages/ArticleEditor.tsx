@@ -30,6 +30,7 @@ import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
 import KeywordInput from "../components/KeywordInput";
 import ThemeToggle from "../components/ThemeToggle";
+import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
@@ -314,6 +315,10 @@ export default function ArticleEditor() {
                     </h3>
                     <Field
                         label={t("ui.articles.subtitle", "Untertitel")}
+                        tooltip={t(
+                            "ui.articles.subtitle_tooltip",
+                            "Optionaler Untertitel. Manche Plattformen rendern ihn unter dem Titel.",
+                        )}
                         value={article.subtitle ?? ""}
                         onChange={(v) =>
                             setArticle({ ...article, subtitle: v || null })
@@ -323,9 +328,13 @@ export default function ArticleEditor() {
                         }
                         testId="article-editor-subtitle"
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.author", "Autor")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.author", "Autor")}
+                        tooltip={t(
+                            "ui.articles.author_tooltip",
+                            "Autor des Artikels. Auswahl aus Echtnamen + Pseudonymen aus den Einstellungen.",
+                        )}
+                    />
                     <AuthorSelect
                         value={article.author ?? ""}
                         profile={authorProfile}
@@ -334,9 +343,13 @@ export default function ArticleEditor() {
                             void persistMeta({ author: v || null });
                         }}
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.topic", "Thema")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.topic", "Thema")}
+                        tooltip={t(
+                            "ui.articles.topic_tooltip",
+                            "Primaere Kategorie des Artikels. Verwaltet unter Einstellungen > Themen.",
+                        )}
+                    />
                     <TopicSelect
                         value={article.topic ?? ""}
                         topics={topics}
@@ -346,9 +359,13 @@ export default function ArticleEditor() {
                         }}
                         onAddTopic={handleAddTopic}
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.language", "Sprache")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.language", "Sprache")}
+                        tooltip={t(
+                            "ui.articles.language_tooltip",
+                            "Sprache des Artikelinhalts.",
+                        )}
+                    />
                     <select
                         data-testid="article-editor-language"
                         value={article.language}
@@ -365,9 +382,13 @@ export default function ArticleEditor() {
                             </option>
                         ))}
                     </select>
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.status", "Status")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.status", "Status")}
+                        tooltip={t(
+                            "ui.articles.status_tooltip",
+                            "Lebenszyklus: Entwurf > Bereit > Veroeffentlicht > Archiviert.",
+                        )}
+                    />
                     <select
                         data-testid="article-editor-status"
                         value={article.status}
@@ -393,6 +414,10 @@ export default function ArticleEditor() {
                     </h4>
                     <Field
                         label={t("ui.articles.seo_title", "SEO-Titel")}
+                        tooltip={t(
+                            "ui.articles.seo_title_tooltip",
+                            "Suchmaschinen-optimierter Titel. Faellt leer auf den Artikeltitel zurueck.",
+                        )}
                         value={article.seo_title ?? ""}
                         onChange={(v) =>
                             setArticle({ ...article, seo_title: v || null })
@@ -406,9 +431,13 @@ export default function ArticleEditor() {
                             "Faellt leer auf Titel zurueck",
                         )}
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.seo_description", "SEO-Beschreibung")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.seo_description", "SEO-Beschreibung")}
+                        tooltip={t(
+                            "ui.articles.seo_description_tooltip",
+                            "Suchmaschinen-Beschreibung. Faellt leer auf den Excerpt zurueck.",
+                        )}
+                    />
                     <textarea
                         data-testid="article-editor-seo-description"
                         value={article.seo_description ?? ""}
@@ -438,6 +467,10 @@ export default function ArticleEditor() {
                     />
                     <Field
                         label={t("ui.articles.canonical_url", "Canonical URL")}
+                        tooltip={t(
+                            "ui.articles.canonical_url_tooltip",
+                            "Wenn der Artikel anderswo zuerst veroeffentlicht wurde, hier dessen URL eintragen. Verhindert Duplicate-Content-Probleme bei SEO.",
+                        )}
                         value={article.canonical_url ?? ""}
                         onChange={(v) =>
                             setArticle({
@@ -457,6 +490,10 @@ export default function ArticleEditor() {
                             "ui.articles.featured_image_url",
                             "Featured Image URL",
                         )}
+                        tooltip={t(
+                            "ui.articles.featured_image_tooltip",
+                            "Hero-Bild fuer Social-Media-Vorschauen (Open Graph / Twitter Card). URL eines Bildes - Upload kommt spaeter.",
+                        )}
                         value={article.featured_image_url ?? ""}
                         onChange={(v) =>
                             setArticle({
@@ -470,10 +507,29 @@ export default function ArticleEditor() {
                             })
                         }
                         testId="article-editor-featured-image"
+                        placeholder="https://..."
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.excerpt", "Excerpt")}
-                    </label>
+                    <p
+                        data-testid="article-editor-featured-image-hint"
+                        style={{
+                            fontSize: "0.75rem",
+                            color: "var(--text-muted)",
+                            marginTop: 4,
+                            marginBottom: 0,
+                        }}
+                    >
+                        {t(
+                            "ui.articles.featured_image_hint",
+                            "Hero-Bild fuer Social-Media-Vorschauen. Upload folgt - bis dahin URL einfuegen.",
+                        )}
+                    </p>
+                    <FieldLabel
+                        label={t("ui.articles.excerpt", "Excerpt")}
+                        tooltip={t(
+                            "ui.articles.excerpt_tooltip",
+                            "Kurze Zusammenfassung. Wird fuer Newsletter-Vorschauen und SEO-Beschreibungen als Fallback verwendet.",
+                        )}
+                    />
                     <textarea
                         data-testid="article-editor-excerpt"
                         value={article.excerpt ?? ""}
@@ -497,9 +553,13 @@ export default function ArticleEditor() {
                             lineHeight: 1.4,
                         }}
                     />
-                    <label style={layout.fieldLabel}>
-                        {t("ui.articles.tags_label", "Tags")}
-                    </label>
+                    <FieldLabel
+                        label={t("ui.articles.tags_label", "Tags")}
+                        tooltip={t(
+                            "ui.articles.tags_tooltip",
+                            "Stichwoerter zur Kategorisierung und Suche. Mehrere Eintraege moeglich (Enter zum Hinzufuegen).",
+                        )}
+                    />
                     <KeywordInput
                         keywords={article.tags ?? []}
                         onChange={(next) => {
@@ -684,6 +744,7 @@ function Field({
     onBlur,
     testId,
     placeholder,
+    tooltip,
 }: {
     label: string;
     value: string;
@@ -691,10 +752,11 @@ function Field({
     onBlur: () => void;
     testId: string;
     placeholder?: string;
+    tooltip?: string;
 }) {
     return (
         <>
-            <label style={layout.fieldLabel}>{label}</label>
+            <FieldLabel label={label} tooltip={tooltip} />
             <input
                 data-testid={testId}
                 value={value}
@@ -704,6 +766,30 @@ function Field({
                 style={layout.fieldInput}
             />
         </>
+    );
+}
+
+/** Sidebar label with optional Radix tooltip. The label text stays
+ *  fully visible; when ``tooltip`` is set, the label becomes the
+ *  hover trigger and renders the explanatory string on dwell. */
+function FieldLabel({label, tooltip}: {label: string; tooltip?: string}) {
+    if (!tooltip) {
+        return <label style={layout.fieldLabel}>{label}</label>;
+    }
+    return (
+        <Tooltip content={tooltip}>
+            <label
+                style={{
+                    ...layout.fieldLabel,
+                    cursor: "help",
+                    textDecoration: "underline dotted",
+                    textDecorationColor: "var(--text-muted)",
+                    textUnderlineOffset: "3px",
+                }}
+            >
+                {label}
+            </label>
+        </Tooltip>
     );
 }
 
@@ -734,23 +820,94 @@ function TopicSelect({
     const valueIsKnown = value === "" || list.includes(value);
     const noTopicsConfigured = topics !== null && list.length === 0;
 
-    const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // Inline-add state. When the user picks the "+ Add new topic"
+    // sentinel, we hide the select, show a small input row, and let
+    // them type + Enter to save (Escape cancels). Avoids the browser
+    // default prompt() which doesn't match app conventions.
+    const [adding, setAdding] = useState(false);
+    const [draft, setDraft] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (adding) inputRef.current?.focus();
+    }, [adding]);
+
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const next = e.target.value;
-        if (next !== ADD_TOPIC_SENTINEL) {
-            onChange(next);
+        if (next === ADD_TOPIC_SENTINEL) {
+            // Reset the select to the current value so closing the
+            // inline input via Escape leaves the dropdown sane.
+            e.target.value = value;
+            setDraft("");
+            setAdding(true);
             return;
         }
-        // Reset the visible select back to current value while we
-        // prompt - the sentinel is a transient action, not a state.
-        e.target.value = value;
-        const name = window.prompt(
-            t("ui.articles.topic_add_new_prompt", "Neues Thema:"),
-            "",
-        );
-        if (!name || !name.trim()) return;
-        const ok = await onAddTopic(name);
-        if (ok) onChange(name.trim());
+        onChange(next);
     };
+
+    const commitDraft = async () => {
+        const name = draft.trim();
+        if (!name) {
+            setAdding(false);
+            return;
+        }
+        const ok = await onAddTopic(name);
+        if (ok) onChange(name);
+        setAdding(false);
+        setDraft("");
+    };
+
+    const cancelDraft = () => {
+        setAdding(false);
+        setDraft("");
+    };
+
+    if (adding) {
+        return (
+            <div
+                data-testid="article-editor-topic-add-row"
+                style={{display: "flex", gap: 6, alignItems: "stretch"}}
+            >
+                <input
+                    ref={inputRef}
+                    data-testid="article-editor-topic-add-input"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            void commitDraft();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            cancelDraft();
+                        }
+                    }}
+                    placeholder={t(
+                        "ui.articles.topic_add_new_placeholder",
+                        "Themenname",
+                    )}
+                    style={{...layout.fieldInput, flex: 1}}
+                />
+                <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => void commitDraft()}
+                    disabled={!draft.trim()}
+                    data-testid="article-editor-topic-add-save"
+                >
+                    {t("ui.common.save", "Speichern")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={cancelDraft}
+                    data-testid="article-editor-topic-add-cancel"
+                >
+                    {t("ui.common.cancel", "Abbrechen")}
+                </button>
+            </div>
+        );
+    }
 
     return (
         <>
