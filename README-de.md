@@ -4,7 +4,7 @@ Open-Source-Toolkit fuer Self-Publishing-Autorinnen und -Autoren. Buecher, Artik
 
 Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wiederverwendbaren Plugin-Framework auf Basis von [pluggy](https://pluggy.readthedocs.io/).
 
-**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.23.0**
+**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.24.0**
 
 ## Funktionen
 

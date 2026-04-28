@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-04-28
-Latest release: v0.23.0 (plugin-git-sync PGS-02..05: bi-directional commit-to-repo with ambient-cred push, three-way smart-merge with per-chapter conflict UI, multi-language branch linking via `main-XX` + `Book.translation_group_id`, core-git bridge with unified-commit fan-out under per-book lock. Plus v0.22.x: multi-book BGB import on XState v5, sticky-footer pattern across 13 dialog modals, EnhancedTextarea preview, WizardErrorBoundary, missing `books.tts_speed` Alembic migration backfilled. v0.21.0: full Git-based backup, AI fix_issue mode, Node 22 -> 24 LTS, backend CVE sweep.)
+Latest release: v0.24.0 (article authoring as first-class feature: AR-01 Article entity + CRUD + ArticleEditor, AR-02 Publications + drift detection across 8 platforms, AR-02 Phase 2.1 Topics + SEO + sidebar-left, Editor-Parity Phases 1-3 with shared RichTextEditor + contentKind plugin gating + per-article ms-tools + translate-article + export to Markdown/HTML/PDF/DOCX. Plus PS-13 "Save as new chapter" in conflict dialog, UX-FU-02 featured image upload, plugin-git-sync follow-ups, CIO-08-FU-01 multi-book wizard finishing, README rewrite + UX conventions doc + plugin author patterns.)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 

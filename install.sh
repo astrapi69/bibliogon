@@ -12,7 +12,7 @@ set -e
 #    chmod +x install.sh && ./install.sh
 # ============================================================
 
-VERSION="${BIBLIOGON_VERSION:-v0.23.0}"
+VERSION="${BIBLIOGON_VERSION:-v0.24.0}"
 REPO="astrapi69/bibliogon"
 INSTALL_DIR="${BIBLIOGON_DIR:-$HOME/bibliogon}"
 
