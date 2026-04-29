@@ -312,3 +312,91 @@ Pre-Hook untersuchen, der Manifest neu schreibt.
 Nichts implementieren bis:
 1. Output 1-3 von oben nachgereicht
 2. Eines der Szenarien A-D bestaetigt
+
+---
+
+## Phase 1 — Conclusion (nach Aster's Outputs)
+
+Datum: 2026-04-29 (gleiche Session, nach Output-Lieferung).
+
+### Aster's Outputs
+
+```
+$ git log --oneline | head -3
+f0139a6 docs(explorations): debug articles-backup user-flow gap (Phase 1)
+ed2e3ec feat(backup): articles + publications + article-assets in .bgb (manifest 2.0)
+faf3f9c docs(explorations): backup/restore articles audit (Phase 1)
+
+$ unzip -l ~/Downloads/bibliogon-backup-2026-04-29.bgb | head -30
+   Length    Date      Time    Name
+        0    2026-04-29 18:54  articles/
+        0    2026-04-29 18:54  books/
+      232    2026-04-29 18:54  manifest.json
+        0    2026-04-29 18:54  articles/c1942c352cee434aa6f1c062d259645d/
+    25436    2026-04-29 18:54  articles/c1942c352cee434aa6f1c062d259645d/article.json
+                                5 files
+```
+
+Warnung im UI: **"No book.json inside the backup."**
+
+### Befund — Szenarien A/B/C/D ALLE falsch
+
+H1 (alter Prozess) ausgeschlossen: HEAD = f0139a6, Backend nach
+`make dev-down && make dev` neu gestartet.
+
+H3 (altes Backup) ausgeschlossen: ZIP-Datum 2026-04-29 18:54.
+
+Export funktioniert: `articles/c1942c.../article.json` ist da,
+`books/` leer (korrekt — Aster hat 0 Books).
+
+**Die Warnung kommt vom Restore-Pfad, nicht vom Export.** Aster
+hat den Import-Button geklickt. Der CIO-Handler
+`backend/app/import_plugins/handlers/bgb.py` ist article-blind.
+
+### Echter Bug — Szenario E
+
+CIO `BgbImportHandler` kennt nur Books:
+
+| Code-Pfad | Verhalten |
+|-----------|-----------|
+| `bgb.py:54` `detect()` | Scant nur `book.json` via `_book_blobs` |
+| `bgb.py:64` | Wirft Warnung `"No book.json inside the backup."` wenn `_book_blobs == []` |
+| `bgb.py:329` `_book_blobs(zf)` | `for name in namelist(): if name.endswith("/book.json")` — keine Article-Erkennung |
+| `bgb.py:387` `_book_count(path)` | Identische Filterlogik |
+| `bgb.py:436` `_restore_single_book` | Wirft `_BgbInvalid("Backup has no restorable book.json.")` (Zeile 464) wenn 0 Books |
+| `bgb.py:172` `execute_multi` | Iteriert nur `books_dir`, ignoriert `articles_dir` |
+
+Es gibt zwei Import-Pfade in der Codebase:
+
+1. **Legacy** `POST /api/backup/import` →
+   `backup_import.import_backup_archive` — restauriert Articles
+   (commit `ed2e3ec`).
+2. **CIO** `POST /api/import/...` →
+   `BgbImportHandler` — restauriert NUR Books.
+
+`ed2e3ec` hat nur Pfad 1 erweitert. Der UI-Import-Button geht
+durch Pfad 2.
+
+### Phase 2 — Scope
+
+**Pflicht (laut User-Auftrag):**
+
+1. `bgb.py` article-aware machen:
+   - `detect()` zaehlt Articles + Books, Warnung nur wenn beide 0
+   - `execute()` / `execute_multi()` ruft Article-Restore-Helpers
+     aus `backup_import.py` auf
+   - Neue Felder im `DetectedProject` fuer Article-Counts (oder
+     `plugin_specific_data`)
+2. HTTP-User-Pfad-Test:
+   `TestClient.post("/api/import/upload", files=...)` mit
+   articles-only `.bgb` — verifiziert dass Articles via CIO
+   restauriert werden.
+3. Forward-Compat-Version-Check: warning-only, additiv.
+
+**Optional (auf separaten Commit verschieben):**
+
+- Wizard-UI fuer Articles-Preview (`DetectedBookSummary` →
+  `DetectedArticleSummary` o.ae.). Erstmal nur Restore
+  funktional kriegen.
+
+Phase 2 wartet auf explizites Go.
