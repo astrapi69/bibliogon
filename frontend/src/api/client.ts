@@ -1383,7 +1383,9 @@ export const api = {
         history: (limit = 50) =>
             request<{timestamp: string; action: string; book_count: number; chapter_count: number; file_size_bytes: number; filename: string; details: string}[]>(`/backup/history?limit=${limit}`),
 
-        import: async (file: File): Promise<{imported_books: number}> => {
+        import: async (
+            file: File,
+        ): Promise<{imported_books: number; imported_articles?: number}> => {
             const formData = new FormData();
             formData.append("file", file);
             const res = await fetch(`${BASE}/backup/import`, {

@@ -11,9 +11,13 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.backup_history import BackupHistory
-from app.models import Asset, Book, Chapter, ChapterType
-from app.services.backup.archive_utils import find_books_dir, find_manifest
-from app.services.backup.serializer import restore_book_from_data
+from app.models import Article, ArticleAsset, Asset, Book, Chapter, ChapterType, Publication
+from app.services.backup.archive_utils import find_articles_dir, find_books_dir, find_manifest
+from app.services.backup.serializer import (
+    restore_article_from_data,
+    restore_book_from_data,
+    restore_publication_from_data,
+)
 
 _history = BackupHistory()
 
@@ -21,7 +25,12 @@ _history = BackupHistory()
 def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
     """Restore a .bgb backup file into the DB.
 
-    Returns ``{"imported_books": N}``.
+    Returns ``{"imported_books": N, "imported_articles": M}``.
+
+    Backwards-compat: legacy backups (manifest version 1.0) have no
+    ``articles/`` segment. Their absence is silently treated as
+    "0 articles imported"; restore proceeds for the books segment as
+    before. Manifest ``version`` 1.0 and 2.0 are both accepted.
     """
     _validate_bgb_filename(file.filename)
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_restore_"))
@@ -30,18 +39,30 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
         _validate_backup_manifest(extracted)
         books_dir = _require_books_dir(extracted)
 
-        imported_count = 0
+        imported_books = 0
         for book_dir in sorted(books_dir.iterdir()):
             if _restore_book_from_dir(db, book_dir):
-                imported_count += 1
+                imported_books += 1
+
+        # Articles segment (manifest version 2.0+). Missing directory is
+        # the legacy 1.0 case - treat as zero articles, do not raise.
+        imported_articles = 0
+        articles_dir = find_articles_dir(extracted)
+        if articles_dir is not None:
+            for article_dir in sorted(articles_dir.iterdir()):
+                if _restore_article_from_dir(db, article_dir):
+                    imported_articles += 1
 
         db.commit()
         _history.add(
             action="restore",
-            book_count=imported_count,
+            book_count=imported_books,
             filename=file.filename or "backup.bgb",
         )
-        return {"imported_books": imported_count}
+        return {
+            "imported_books": imported_books,
+            "imported_articles": imported_articles,
+        }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -152,6 +173,94 @@ def _restore_book_from_dir(db: Session, book_dir: Path) -> bool:
     _restore_chapters(db, book_dir / "chapters", book_data["id"])
     _restore_assets(db, book_dir, book_data["id"])
     return True
+
+
+def _restore_article_from_dir(db: Session, article_dir: Path) -> bool:
+    """Restore one article directory. Returns True if an article was
+    added or revived from the trash.
+
+    Mirrors :func:`_restore_book_from_dir` semantics:
+    - Directory malformed or no article.json: return False.
+    - Article id exists and is NOT soft-deleted: skip (idempotent).
+    - Article id exists and IS soft-deleted: hard-delete the stale
+      row + cascading children, then re-insert from the backup
+      snapshot. Same shape as the books revive path.
+    - Article id does not exist: insert fresh.
+
+    On insertion the publications and article-assets travel with the
+    article via ``_restore_publications`` + ``_restore_article_assets``.
+    """
+    if not article_dir.is_dir():
+        return False
+    article_json = article_dir / "article.json"
+    if not article_json.exists():
+        return False
+
+    article_data = json.loads(article_json.read_text(encoding="utf-8"))
+    existing = db.query(Article).filter(Article.id == article_data["id"]).first()
+    if existing is not None and existing.deleted_at is None:
+        return False
+    if existing is not None and existing.deleted_at is not None:
+        db.query(Publication).filter(Publication.article_id == article_data["id"]).delete()
+        db.query(ArticleAsset).filter(ArticleAsset.article_id == article_data["id"]).delete()
+        db.delete(existing)
+        db.flush()
+
+    article = restore_article_from_data(article_data)
+    db.add(article)
+    db.flush()
+    _restore_publications(db, article_dir, article_data["id"])
+    _restore_article_assets(db, article_dir, article_data["id"])
+    return True
+
+
+def _restore_publications(db: Session, article_dir: Path, article_id: str) -> None:
+    pubs_json = article_dir / "publications.json"
+    if not pubs_json.exists():
+        return
+    payload = json.loads(pubs_json.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return
+    for pub_data in payload:
+        # Coerce article_id to the row we just (re-)inserted to defend
+        # against a backup whose article id was edited by hand.
+        pub_data["article_id"] = article_id
+        db.add(restore_publication_from_data(pub_data))
+
+
+def _restore_article_assets(db: Session, article_dir: Path, article_id: str) -> None:
+    """Recreate ArticleAsset rows + copy files into ``uploads/articles/{id}/``.
+
+    Asset paths in the manifest are informational; the destination is
+    regenerated from the canonical ``uploads/articles/`` layout used
+    by ``article_assets.py``. Mirrors how ``_restore_assets`` rebuilds
+    book asset paths.
+    """
+    assets_json = article_dir / "assets.json"
+    if not assets_json.exists():
+        return
+
+    base_uploads = Path("uploads") / "articles" / article_id
+    assets_src_dir = article_dir / "assets"
+    assets_meta: list[dict[str, Any]] = json.loads(assets_json.read_text(encoding="utf-8"))
+    for meta in assets_meta:
+        asset_type = meta.get("asset_type", "featured_image")
+        dest_dir = base_uploads / asset_type
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / meta["filename"]
+
+        src_file = assets_src_dir / meta["filename"]
+        if src_file.exists():
+            shutil.copy2(src_file, dest_path)
+
+        db.add(
+            ArticleAsset(
+                article_id=article_id,
+                filename=meta["filename"],
+                asset_type=asset_type,
+                path=str(dest_path),
+            )
+        )
 
 
 def _restore_chapters(db: Session, chapters_dir: Path, book_id: str) -> None:

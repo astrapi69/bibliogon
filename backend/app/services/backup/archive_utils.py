@@ -26,6 +26,21 @@ def find_books_dir(extracted: Path) -> Path | None:
     return None
 
 
+def find_articles_dir(extracted: Path) -> Path | None:
+    """Find the ``articles/`` directory inside an extracted backup.
+
+    Returns ``None`` when missing - legacy backups (manifest version
+    1.0) have no articles segment and the restore path treats the
+    absence as "0 articles imported".
+    """
+    if (extracted / "articles").is_dir():
+        return extracted / "articles"
+    for child in extracted.iterdir():
+        if child.is_dir() and (child / "articles").is_dir():
+            return child / "articles"
+    return None
+
+
 def find_project_root(extracted: Path) -> Path | None:
     """Find the write-book-template project root (root or one level deep)."""
     if (extracted / "manuscript").is_dir():
