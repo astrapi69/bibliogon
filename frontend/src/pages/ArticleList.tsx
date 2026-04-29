@@ -9,15 +9,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Home, Plus, RotateCcw, Trash, Trash2 } from "lucide-react";
+import {
+    AlertTriangle,
+    BookOpen,
+    FileText,
+    HelpCircle,
+    MoreVertical,
+    Plus,
+    Rocket,
+    RotateCcw,
+    Settings,
+    Trash,
+    Trash2,
+} from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
+import ThemeToggle from "../components/ThemeToggle";
 import { useViewMode } from "../hooks/useViewMode";
 import { useDialog } from "../components/AppDialog";
+import { useHelp } from "../contexts/HelpContext";
 
 const STATUS_FILTERS: (ArticleStatus | "all")[] = [
     "all",
@@ -37,6 +52,7 @@ export default function ArticleList() {
     const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
     const { confirm } = useDialog();
+    const { openHelp } = useHelp();
 
     const loadTrash = async () => {
         try {
@@ -63,6 +79,44 @@ export default function ArticleList() {
             void loadTrash();
             notify.info(
                 t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
+                    err,
+                );
+            }
+        }
+    }
+
+    /** Permanent-delete shortcut from the live list (T-10/L-6). Mirrors
+     *  Dashboard.handleDeletePermanent: confirm → soft-delete → permanent-
+     *  delete from trash → drop from state. The double call is intentional;
+     *  it matches the books behaviour and keeps the trash auto-purge code
+     *  path (cascade + on-disk asset cleanup) as the single source of
+     *  truth for hard delete. */
+    async function handleDeletePermanentFromList(article: Article): Promise<void> {
+        const ok = await confirm(
+            t("ui.articles.delete_permanent_title", "Endgültig löschen"),
+            t(
+                "ui.articles.delete_permanent_warning",
+                "Artikel endgültig löschen? Alle Publikationen und hochgeladenen Bilder gehen verloren. Dies kann nicht rückgängig gemacht werden.",
+            ),
+            "danger",
+        );
+        if (!ok) return;
+        try {
+            await api.articles.delete(article.id);
+            try {
+                await api.articles.permanentDelete(article.id);
+            } catch {
+                /* already in trash or already gone */
+            }
+            setArticles((prev) => prev.filter((a) => a.id !== article.id));
+            void loadTrash();
+            notify.success(
+                t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
             );
         } catch (err) {
             if (err instanceof ApiError) {
@@ -212,48 +266,83 @@ export default function ArticleList() {
 
     return (
         <div data-testid="article-list-page" style={layout.page}>
-            <header style={layout.header}>
-                <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => navigate("/")}
-                    data-testid="article-list-dashboard"
-                    title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
-                    style={{ marginRight: 8 }}
-                >
-                    <Home size={14} />
-                    {t("ui.articles.back_to_dashboard", "Dashboard")}
-                </button>
-                <h2 style={layout.heading}>
-                    <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
-                    {t("ui.articles.list_heading", "Artikel")}
-                </h2>
-                <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                    <button
-                        type="button"
-                        className={`btn btn-sm ${showTrash ? "btn-primary" : "btn-ghost"}`}
-                        onClick={() => setShowTrash((v) => !v)}
-                        data-testid="article-list-trash-toggle"
-                        title={t("ui.articles.trash_title", "Papierkorb")}
-                        aria-pressed={showTrash}
+            <header style={layout.appHeader}>
+                <div style={layout.appHeaderInner}>
+                    <div
+                        style={layout.logo}
+                        onClick={() => navigate("/")}
+                        role="button"
+                        title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
+                        data-testid="article-list-dashboard"
                     >
-                        <Trash size={14} />
-                        {t("ui.articles.trash_title", "Papierkorb")}
-                        {trash.length > 0 ? ` (${trash.length})` : ""}
-                    </button>
-                    <ViewToggle mode={viewMode} onChange={setViewMode} />
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => void handleCreate()}
-                        disabled={creating}
-                        data-testid="article-list-new"
-                    >
-                        <Plus size={14} />
-                        {t("ui.articles.new", "Neuer Artikel")}
-                    </button>
+                        <BookOpen size={28} strokeWidth={1.5} />
+                        <h1 style={layout.logoText}>Bibliogon</h1>
+                    </div>
+                    <div style={layout.headerActions}>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => void handleCreate()}
+                            disabled={creating}
+                            data-testid="article-list-new"
+                        >
+                            <Plus size={16} />
+                            <span className="hide-mobile">
+                                {t("ui.articles.new", "Neuer Artikel")}
+                            </span>
+                        </button>
+                        <div className="hide-mobile" style={layout.headerSeparator} />
+                        <ViewToggle mode={viewMode} onChange={setViewMode} />
+                        <button
+                            className="btn-icon"
+                            onClick={() => navigate("/get-started")}
+                            title={t("ui.get_started.title", "Erste Schritte")}
+                            data-testid="article-list-get-started"
+                        >
+                            <Rocket size={18} />
+                        </button>
+                        <button
+                            className="btn-icon"
+                            onClick={() => openHelp()}
+                            title={t("ui.dashboard.help", "Hilfe")}
+                            data-testid="article-list-help"
+                        >
+                            <HelpCircle size={18} />
+                        </button>
+                        <button
+                            className="btn-icon"
+                            onClick={() => navigate("/settings")}
+                            title={t("ui.settings.title", "Einstellungen")}
+                            data-testid="article-list-settings"
+                        >
+                            <Settings size={18} />
+                        </button>
+                        <button
+                            className="btn-icon"
+                            data-testid="article-list-trash-toggle"
+                            onClick={() => setShowTrash(!showTrash)}
+                            style={showTrash ? { color: "var(--accent)", position: "relative" } : { position: "relative" }}
+                            title={t("ui.articles.trash_title", "Papierkorb")}
+                            aria-pressed={showTrash}
+                        >
+                            <Trash size={18} />
+                            {trash.length > 0 && (
+                                <span
+                                    style={layout.trashBadge}
+                                    data-testid="article-trash-badge"
+                                >
+                                    {trash.length}
+                                </span>
+                            )}
+                        </button>
+                        <ThemeToggle />
+                    </div>
                 </div>
             </header>
+            <main style={layout.main}>
+            <h2 style={layout.heading}>
+                <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
+                {t("ui.articles.list_heading", "Artikel")}
+            </h2>
 
             {showTrash ? (
                 <TrashPanel
@@ -283,6 +372,7 @@ export default function ArticleList() {
                             article={a}
                             onClick={() => navigate(`/articles/${a.id}`)}
                             onDelete={() => void handleDelete(a)}
+                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
                         />
                     ))}
                 </div>
@@ -294,10 +384,12 @@ export default function ArticleList() {
                             article={a}
                             onOpen={() => navigate(`/articles/${a.id}`)}
                             onDelete={() => void handleDelete(a)}
+                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
                         />
                     ))}
                 </ul>
             )}
+            </main>
         </div>
     );
 }
@@ -467,12 +559,15 @@ function ArticleRow({
     article,
     onOpen,
     onDelete,
+    onDeletePermanent,
 }: {
     article: Article;
     onOpen: () => void;
     onDelete?: () => void;
+    onDeletePermanent?: () => void;
 }) {
     const { t } = useI18n();
+    const [menuOpen, setMenuOpen] = useState(false);
     const subtitle = article.subtitle?.trim() || article.author?.trim() || "";
     const updated = useMemo(() => {
         try {
@@ -486,7 +581,9 @@ function ArticleRow({
         <li
             data-testid={`article-list-row-${article.id}`}
             style={layout.row}
-            onClick={onOpen}
+            onClick={() => {
+                if (!menuOpen) onOpen();
+            }}
         >
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={layout.rowTitle}>{article.title}</div>
@@ -494,25 +591,63 @@ function ArticleRow({
                     <div style={layout.rowSubtitle}>{subtitle}</div>
                 )}
                 {onDelete ? (
-                    <button
-                        type="button"
-                        className="btn-icon"
-                        data-testid={`article-list-row-delete-${article.id}`}
-                        aria-label={t("ui.articles.delete", "Löschen")}
-                        title={t("ui.articles.delete", "Löschen")}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete();
-                        }}
-                        style={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            color: "var(--danger)",
-                        }}
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                type="button"
+                                className="btn-icon"
+                                data-testid={`article-list-row-menu-${article.id}`}
+                                aria-label={t("ui.articles.actions_menu", "Aktionen")}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    right: 8,
+                                }}
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                className="hamburger-menu-content"
+                                align="end"
+                                sideOffset={4}
+                            >
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    data-testid={`article-list-row-menu-delete-${article.id}`}
+                                    onSelect={(e) => {
+                                        e.preventDefault();
+                                        onDelete();
+                                    }}
+                                >
+                                    <Trash2 size={14} />{" "}
+                                    {t("ui.articles.move_to_trash", "In den Papierkorb")}
+                                </DropdownMenu.Item>
+                                {onDeletePermanent ? (
+                                    <>
+                                        <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            data-testid={`article-list-row-menu-delete-permanent-${article.id}`}
+                                            onSelect={(e) => {
+                                                e.preventDefault();
+                                                onDeletePermanent();
+                                            }}
+                                            style={{ color: "var(--danger)" }}
+                                        >
+                                            <AlertTriangle size={14} />{" "}
+                                            {t(
+                                                "ui.articles.delete_permanent",
+                                                "Endgültig löschen",
+                                            )}
+                                        </DropdownMenu.Item>
+                                    </>
+                                ) : null}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
                 ) : null}
                 <div style={layout.rowMeta}>
                     <span
@@ -562,18 +697,75 @@ function badgeFg(status: ArticleStatus): string {
 
 const layout: Record<string, React.CSSProperties> = {
     page: {
-        padding: "24px 32px",
-        maxWidth: 960,
-        margin: "0 auto",
+        padding: 0,
+        margin: 0,
+        minHeight: "100vh",
+        background: "var(--bg-primary)",
     },
-    header: {
+    appHeader: {
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-card)",
+    },
+    appHeaderInner: {
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "12px 24px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 16,
+        gap: 16,
+    },
+    logo: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        color: "var(--accent)",
+        flexShrink: 0,
+        cursor: "pointer",
+    },
+    logoText: {
+        fontFamily: "var(--font-display)",
+        fontSize: "1.5rem",
+        fontWeight: 600,
+        color: "var(--text-primary)",
+        letterSpacing: "-0.02em",
+        margin: 0,
+    },
+    headerActions: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap",
+        justifyContent: "flex-end",
+    },
+    headerSeparator: {
+        width: 1,
+        height: 24,
+        background: "var(--border)",
+        margin: "0 4px",
+    },
+    trashBadge: {
+        position: "absolute",
+        top: -4,
+        right: -4,
+        background: "var(--danger)",
+        color: "white",
+        fontSize: "0.625rem",
+        fontWeight: 700,
+        width: 16,
+        height: 16,
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    main: {
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "32px 24px",
     },
     heading: {
-        margin: 0,
+        margin: "0 0 20px 0",
         fontSize: "1.5rem",
         fontWeight: 600,
     },

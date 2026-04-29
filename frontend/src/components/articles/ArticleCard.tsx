@@ -6,7 +6,7 @@
  * (parity with BookCard's recent additions can come later).
  */
 import { useState } from "react";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { AlertTriangle, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
@@ -18,9 +18,15 @@ interface Props {
     /** Optional - when omitted, the actions menu is hidden so callers
      *  that have no delete authority (rare) keep a clean tile. */
     onDelete?: () => void;
+    /** Optional - when supplied, the actions menu also exposes a
+     *  red "Endgültig löschen" item that mirrors the BookCard
+     *  permanent-delete shortcut. Calls ``permanentDelete`` directly
+     *  on a still-live article (the parent flow soft-deletes first
+     *  then permanent-deletes from trash, matching books). */
+    onDeletePermanent?: () => void;
 }
 
-export default function ArticleCard({ article, onClick, onDelete }: Props) {
+export default function ArticleCard({ article, onClick, onDelete, onDeletePermanent }: Props) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const updated = (() => {
@@ -101,10 +107,30 @@ export default function ArticleCard({ article, onClick, onDelete }: Props) {
                                             e.preventDefault();
                                             onDelete();
                                         }}
-                                        style={{ color: "var(--danger)" }}
                                     >
-                                        <Trash2 size={14} /> {t("ui.articles.delete", "Löschen")}
+                                        <Trash2 size={14} />{" "}
+                                        {t("ui.articles.move_to_trash", "In den Papierkorb")}
                                     </DropdownMenu.Item>
+                                    {onDeletePermanent ? (
+                                        <>
+                                            <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                data-testid={`article-card-menu-delete-permanent-${article.id}`}
+                                                onSelect={(e) => {
+                                                    e.preventDefault();
+                                                    onDeletePermanent();
+                                                }}
+                                                style={{ color: "var(--danger)" }}
+                                            >
+                                                <AlertTriangle size={14} />{" "}
+                                                {t(
+                                                    "ui.articles.delete_permanent",
+                                                    "Endgültig löschen",
+                                                )}
+                                            </DropdownMenu.Item>
+                                        </>
+                                    ) : null}
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>

@@ -78,6 +78,17 @@ vi.mock("../components/AppDialog", () => ({
     }),
 }));
 
+vi.mock("../contexts/HelpContext", () => ({
+    useHelp: () => ({
+        openHelp: vi.fn(),
+        closeHelp: vi.fn(),
+    }),
+}));
+
+vi.mock("../components/ThemeToggle", () => ({
+    default: () => null,
+}));
+
 vi.mock("../utils/notify", () => ({
     notify: {
         error: vi.fn(),
