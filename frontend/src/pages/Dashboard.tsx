@@ -205,7 +205,11 @@ export default function Dashboard() {
                                 className="btn-icon"
                                 data-testid="trash-toggle"
                                 onClick={() => setShowTrash(!showTrash)}
-                                style={showTrash ? {color: "var(--accent)"} : undefined}
+                                style={
+                                    showTrash
+                                        ? {color: "var(--accent)", position: "relative"}
+                                        : {position: "relative"}
+                                }
                             >
                                 <Trash2 size={18}/>
                                 {trash.length > 0 && (
