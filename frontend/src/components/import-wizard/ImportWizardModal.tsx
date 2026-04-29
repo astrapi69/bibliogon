@@ -101,7 +101,7 @@ export default function ImportWizardModal({
         const announceKey = ctx.bookId || "__articles_only__";
         if (importedRef.current !== announceKey) {
             importedRef.current = announceKey;
-            onImported?.(ctx.bookId);
+            onImported?.(ctx.bookId ?? "");
         }
     }, [stepName, ctx.bookId, onImported]);
 

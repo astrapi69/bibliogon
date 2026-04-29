@@ -216,6 +216,28 @@ export default function ArticleList() {
         }
     }
 
+    // Centralized refresh used by mount + visibility/pageshow listeners.
+    // Wrapping it in useCallback would change identity per render only
+    // if dependencies change; here the deps are state setters
+    // (setArticles, setLoading) which are stable, so the function is
+    // effectively stable.
+    const refreshArticles = (showSpinner = false) => {
+        if (showSpinner) setLoading(true);
+        return api.articles
+            .list()
+            .then((rows) => {
+                setArticles(rows);
+            })
+            .catch((err) => {
+                if (err instanceof ApiError) {
+                    notify.error("Konnte Artikelliste nicht laden.", err);
+                }
+            })
+            .finally(() => {
+                if (showSpinner) setLoading(false);
+            });
+    };
+
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
@@ -238,6 +260,32 @@ export default function ArticleList() {
         return () => {
             cancelled = true;
         };
+    }, []);
+
+    // Re-fetch when the page becomes visible again. Catches the
+    // browser bfcache restore path (back-button after import) and
+    // the tab-focus case so a freshly-imported article never stays
+    // hidden until the user hits F5.
+    useEffect(() => {
+        const onPageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                void refreshArticles();
+                void loadTrash();
+            }
+        };
+        const onVisibility = () => {
+            if (document.visibilityState === "visible") {
+                void refreshArticles();
+                void loadTrash();
+            }
+        };
+        window.addEventListener("pageshow", onPageShow);
+        document.addEventListener("visibilitychange", onVisibility);
+        return () => {
+            window.removeEventListener("pageshow", onPageShow);
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     async function handleCreate(): Promise<void> {
@@ -550,11 +598,12 @@ export default function ArticleList() {
                 open={importWizardOpen}
                 onClose={() => setImportWizardOpen(false)}
                 onImported={() => {
-                    // Project-import lands books, not articles. Reload
-                    // the live list so a freshly-imported book project
-                    // does not stale the trash badge counts; articles
-                    // themselves are not touched by the import path.
-                    void api.articles.list().then(setArticles).catch(() => {});
+                    // .bgb imports may carry articles + their trash
+                    // siblings (deleted_at preserved). Refresh both
+                    // lists so the live grid AND the trash badge
+                    // surface freshly-imported rows immediately.
+                    void refreshArticles();
+                    void loadTrash();
                 }}
             />
         </div>
