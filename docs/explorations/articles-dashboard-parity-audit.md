@@ -1,5 +1,13 @@
 # Articles dashboard parity audit (vs Books dashboard)
 
+> **Status: closed.** Phase 1 audit + Phase 2 Clusters A-F shipped
+> across `aa1fcbf` (Clusters A + B) and the follow-up commit
+> referenced in this section's footer. All 24 gaps either
+> resolved or explicitly deferred under `I18N-DIACRITICS-01`
+> (cosmetic-only) below.
+
+
+
 Date: 2026-04-29.
 Author: Claude (CC), under user-supplied audit prompt.
 Scope: ArticleList (`frontend/src/pages/ArticleList.tsx`)

@@ -14,6 +14,7 @@ import {
     BookOpen,
     FileText,
     HelpCircle,
+    Menu,
     MoreVertical,
     Plus,
     Rocket,
@@ -29,10 +30,13 @@ import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
+import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import { useViewMode } from "../hooks/useViewMode";
+import { useArticleFilters } from "../hooks/useArticleFilters";
 import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
+import { Search, X as XIcon, ArrowUp, ArrowDown } from "lucide-react";
 
 const STATUS_FILTERS: (ArticleStatus | "all")[] = [
     "all",
@@ -48,11 +52,11 @@ export default function ArticleList() {
     const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<ArticleStatus | "all">("all");
     const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
+    const filters = useArticleFilters(articles, t);
 
     const loadTrash = async () => {
         try {
@@ -133,10 +137,9 @@ export default function ArticleList() {
             await api.articles.restore(article.id);
             setTrash((prev) => prev.filter((a) => a.id !== article.id));
             // Reload the live list so the restored article appears
-            // immediately respecting the current filter.
-            const fresh = await api.articles.list(
-                filter === "all" ? undefined : filter,
-            );
+            // immediately. useArticleFilters re-derives from
+            // ``articles`` so filters keep applying without a refetch.
+            const fresh = await api.articles.list();
             setArticles(fresh);
             notify.success(
                 t("ui.articles.restored", "Artikel wiederhergestellt."),
@@ -203,17 +206,17 @@ export default function ArticleList() {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
+        // Server-side status filter retired - useArticleFilters now
+        // owns every facet (status / topic / language / search / sort)
+        // client-side, matching the books pattern via useBookFilters.
         api.articles
-            .list(filter === "all" ? undefined : filter)
+            .list()
             .then((rows) => {
                 if (!cancelled) setArticles(rows);
             })
             .catch((err) => {
                 if (err instanceof ApiError) {
-                    notify.error(
-                        "Konnte Artikelliste nicht laden.",
-                        err,
-                    );
+                    notify.error("Konnte Artikelliste nicht laden.", err);
                 }
             })
             .finally(() => {
@@ -222,8 +225,7 @@ export default function ArticleList() {
         return () => {
             cancelled = true;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filter]);
+    }, []);
 
     async function handleCreate(): Promise<void> {
         setCreating(true);
@@ -290,51 +292,114 @@ export default function ArticleList() {
                                 {t("ui.articles.new", "Neuer Artikel")}
                             </span>
                         </button>
-                        <div className="hide-mobile" style={layout.headerSeparator} />
-                        <ViewToggle mode={viewMode} onChange={setViewMode} />
-                        <button
-                            className="btn-icon"
-                            onClick={() => navigate("/get-started")}
-                            title={t("ui.get_started.title", "Erste Schritte")}
-                            data-testid="article-list-get-started"
+
+                        {/* Desktop chrome: every icon button + ThemeToggle.
+                            Hidden under 768px; the hamburger menu below
+                            takes over on mobile. */}
+                        <div
+                            className="hide-mobile"
+                            style={{ display: "flex", alignItems: "center", gap: 6 }}
                         >
-                            <Rocket size={18} />
-                        </button>
-                        <button
-                            className="btn-icon"
-                            onClick={() => openHelp()}
-                            title={t("ui.dashboard.help", "Hilfe")}
-                            data-testid="article-list-help"
-                        >
-                            <HelpCircle size={18} />
-                        </button>
-                        <button
-                            className="btn-icon"
-                            onClick={() => navigate("/settings")}
-                            title={t("ui.settings.title", "Einstellungen")}
-                            data-testid="article-list-settings"
-                        >
-                            <Settings size={18} />
-                        </button>
-                        <button
-                            className="btn-icon"
-                            data-testid="article-list-trash-toggle"
-                            onClick={() => setShowTrash(!showTrash)}
-                            style={showTrash ? { color: "var(--accent)", position: "relative" } : { position: "relative" }}
-                            title={t("ui.articles.trash_title", "Papierkorb")}
-                            aria-pressed={showTrash}
-                        >
-                            <Trash size={18} />
-                            {trash.length > 0 && (
-                                <span
-                                    style={layout.trashBadge}
-                                    data-testid="article-trash-badge"
+                            <div style={layout.headerSeparator} />
+                            <ViewToggle mode={viewMode} onChange={setViewMode} />
+                            <button
+                                className="btn-icon"
+                                onClick={() => navigate("/get-started")}
+                                title={t("ui.get_started.title", "Erste Schritte")}
+                                data-testid="article-list-get-started"
+                            >
+                                <Rocket size={18} />
+                            </button>
+                            <button
+                                className="btn-icon"
+                                onClick={() => openHelp()}
+                                title={t("ui.dashboard.help", "Hilfe")}
+                                data-testid="article-list-help"
+                            >
+                                <HelpCircle size={18} />
+                            </button>
+                            <button
+                                className="btn-icon"
+                                onClick={() => navigate("/settings")}
+                                title={t("ui.settings.title", "Einstellungen")}
+                                data-testid="article-list-settings"
+                            >
+                                <Settings size={18} />
+                            </button>
+                            <button
+                                className="btn-icon"
+                                data-testid="article-list-trash-toggle"
+                                onClick={() => setShowTrash(!showTrash)}
+                                style={
+                                    showTrash
+                                        ? { color: "var(--accent)", position: "relative" }
+                                        : { position: "relative" }
+                                }
+                                title={t("ui.articles.trash_title", "Papierkorb")}
+                                aria-pressed={showTrash}
+                            >
+                                <Trash size={18} />
+                                {trash.length > 0 && (
+                                    <span
+                                        style={layout.trashBadge}
+                                        data-testid="article-trash-badge"
+                                    >
+                                        {trash.length}
+                                    </span>
+                                )}
+                            </button>
+                            <ThemeToggle />
+                        </div>
+
+                        {/* Mobile: hamburger menu collapses every desktop
+                            icon button into one Radix DropdownMenu so the
+                            Articles header degrades like the Dashboard
+                            does at <=768px. */}
+                        <DropdownMenu.Root>
+                            <DropdownMenu.Trigger asChild>
+                                <button
+                                    className="btn-icon show-mobile-only"
+                                    data-testid="article-list-mobile-menu"
+                                    aria-label={t("ui.dashboard.menu", "Menü")}
                                 >
-                                    {trash.length}
-                                </span>
-                            )}
-                        </button>
-                        <ThemeToggle />
+                                    <Menu size={20} />
+                                </button>
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                    className="hamburger-menu-content"
+                                    align="end"
+                                    sideOffset={4}
+                                >
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        onSelect={() => setShowTrash(!showTrash)}
+                                    >
+                                        <Trash size={16} /> {t("ui.articles.trash_title", "Papierkorb")}
+                                        {trash.length > 0 ? ` (${trash.length})` : ""}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        onSelect={() => navigate("/get-started")}
+                                    >
+                                        <Rocket size={16} /> {t("ui.get_started.title", "Erste Schritte")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        onSelect={() => openHelp()}
+                                    >
+                                        <HelpCircle size={16} /> {t("ui.dashboard.help", "Hilfe")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        onSelect={() => navigate("/settings")}
+                                    >
+                                        <Settings size={16} /> {t("ui.settings.title", "Einstellungen")}
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
                     </div>
                 </div>
             </header>
@@ -353,7 +418,7 @@ export default function ArticleList() {
                 />
             ) : null}
 
-            {!showTrash ? <FilterBar value={filter} onChange={setFilter} /> : null}
+            {!showTrash ? <ArticleFilterBar filters={filters} /> : null}
 
             {showTrash ? null : loading ? (
                 <p
@@ -364,9 +429,27 @@ export default function ArticleList() {
                 </p>
             ) : articles.length === 0 ? (
                 <EmptyState onCreate={() => void handleCreate()} />
+            ) : filters.filteredArticles.length === 0 ? (
+                <div data-testid="article-list-filter-empty" style={layout.empty}>
+                    <Search size={32} style={{ color: "var(--text-muted)" }} />
+                    <p style={{ color: "var(--text-muted)", margin: 0 }}>
+                        {t(
+                            "ui.articles.empty_filtered",
+                            "Keine Artikel passen zu den aktuellen Filtern.",
+                        )}
+                    </p>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={filters.resetFilters}
+                        data-testid="article-list-filter-reset"
+                    >
+                        {t("ui.articles.reset_filters", "Filter zurücksetzen")}
+                    </button>
+                </div>
             ) : viewMode === "grid" ? (
                 <div style={layout.grid} data-testid="article-list">
-                    {articles.map((a) => (
+                    {filters.filteredArticles.map((a) => (
                         <ArticleCard
                             key={a.id}
                             article={a}
@@ -378,7 +461,7 @@ export default function ArticleList() {
                 </div>
             ) : (
                 <ul style={layout.list} data-testid="article-list">
-                    {articles.map((a) => (
+                    {filters.filteredArticles.map((a) => (
                         <ArticleRow
                             key={a.id}
                             article={a}
@@ -490,24 +573,45 @@ function TrashPanel({
 }
 
 
-function FilterBar({
-    value,
-    onChange,
-}: {
-    value: ArticleStatus | "all";
-    onChange: (v: ArticleStatus | "all") => void;
-}) {
+function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFilters> }) {
     const { t } = useI18n();
+
     return (
         <div data-testid="article-list-filter" style={layout.filterBar}>
+            <div style={layout.searchInputWrapper}>
+                <Search size={14} style={layout.searchIcon} aria-hidden />
+                <input
+                    type="search"
+                    value={filters.searchQuery}
+                    onChange={(e) => filters.setSearchQuery(e.target.value)}
+                    placeholder={t("ui.articles.search_placeholder", "Suche...")}
+                    data-testid="article-list-search"
+                    style={layout.searchInput}
+                />
+                {filters.searchQuery ? (
+                    <button
+                        type="button"
+                        className="btn-icon"
+                        aria-label={t("ui.common.clear", "Löschen")}
+                        onClick={() => filters.setSearchQuery("")}
+                        style={layout.searchClear}
+                    >
+                        <XIcon size={12} />
+                    </button>
+                ) : null}
+            </div>
+
+            {/* Status: button row, mirrors the previous quick filter so
+                the existing testid contract for ``filter_${s}`` keeps
+                working in smoke specs. */}
             {STATUS_FILTERS.map((s) => (
                 <button
                     key={s}
                     type="button"
                     className={`btn btn-sm ${
-                        s === value ? "btn-primary" : "btn-ghost"
+                        s === filters.status ? "btn-primary" : "btn-ghost"
                     }`}
-                    onClick={() => onChange(s)}
+                    onClick={() => filters.setStatus(s)}
                     data-testid={`article-list-filter-${s}`}
                 >
                     {t(
@@ -518,12 +622,86 @@ function FilterBar({
                     )}
                 </button>
             ))}
+
+            {filters.availableTopics.length > 0 ? (
+                <select
+                    value={filters.topic}
+                    onChange={(e) => filters.setTopic(e.target.value)}
+                    data-testid="article-list-filter-topic"
+                    style={layout.filterSelect}
+                    aria-label={t("ui.articles.filter_topic", "Thema")}
+                >
+                    <option value="">
+                        {t("ui.articles.filter_topic_any", "Alle Themen")}
+                    </option>
+                    {filters.availableTopics.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            ) : null}
+
+            {filters.availableLanguages.length > 1 ? (
+                <select
+                    value={filters.language}
+                    onChange={(e) => filters.setLanguage(e.target.value)}
+                    data-testid="article-list-filter-language"
+                    style={layout.filterSelect}
+                    aria-label={t("ui.articles.filter_language", "Sprache")}
+                >
+                    <option value="">
+                        {t("ui.articles.filter_language_any", "Alle Sprachen")}
+                    </option>
+                    {filters.availableLanguages.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            ) : null}
+
+            <select
+                value={filters.sortBy}
+                onChange={(e) =>
+                    filters.setSortBy(e.target.value as "date" | "title" | "author")
+                }
+                data-testid="article-list-sort-by"
+                style={layout.filterSelect}
+                aria-label={t("ui.articles.sort_by", "Sortieren nach")}
+            >
+                <option value="date">{t("ui.articles.sort_date", "Datum")}</option>
+                <option value="title">{t("ui.articles.sort_title", "Titel")}</option>
+                <option value="author">{t("ui.articles.sort_author", "Autor")}</option>
+            </select>
+            <button
+                type="button"
+                className="btn-icon"
+                onClick={filters.toggleSortOrder}
+                data-testid="article-list-sort-order"
+                aria-label={t("ui.articles.sort_order", "Sortierreihenfolge")}
+                title={t("ui.articles.sort_order", "Sortierreihenfolge")}
+            >
+                {filters.sortOrder === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+            </button>
+
+            {filters.hasActiveFilters ? (
+                <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={filters.resetFilters}
+                    data-testid="article-list-filter-clear"
+                >
+                    {t("ui.articles.reset_filters", "Filter zurücksetzen")}
+                </button>
+            ) : null}
         </div>
     );
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
     const { t } = useI18n();
+    const navigate = useNavigate();
     return (
         <div data-testid="article-list-empty" style={layout.empty}>
             <FileText size={32} style={{ color: "var(--text-muted)" }} />
@@ -542,15 +720,26 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
                     "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen.",
                 )}
             </p>
-            <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onCreate}
-                data-testid="article-list-empty-cta"
-            >
-                <Plus size={14} />
-                {t("ui.articles.new", "Neuer Artikel")}
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+                <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={onCreate}
+                    data-testid="article-list-empty-cta"
+                >
+                    <Plus size={14} />
+                    {t("ui.articles.new", "Neuer Artikel")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => navigate("/get-started")}
+                    data-testid="article-list-empty-get-started"
+                >
+                    <Rocket size={14} />
+                    {t("ui.get_started.title", "Erste Schritte")}
+                </button>
+            </div>
         </div>
     );
 }
@@ -568,10 +757,13 @@ function ArticleRow({
 }) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
-    const subtitle = article.subtitle?.trim() || article.author?.trim() || "";
     const updated = useMemo(() => {
         try {
-            return new Date(article.updated_at).toLocaleString();
+            return new Date(article.updated_at).toLocaleDateString("de-DE", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+            });
         } catch {
             return article.updated_at;
         }
@@ -580,16 +772,60 @@ function ArticleRow({
     return (
         <li
             data-testid={`article-list-row-${article.id}`}
-            style={layout.row}
+            style={layout.gridRow}
             onClick={() => {
                 if (!menuOpen) onOpen();
             }}
         >
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={layout.rowTitle}>{article.title}</div>
-                {subtitle && (
-                    <div style={layout.rowSubtitle}>{subtitle}</div>
-                )}
+            <div style={layout.gridCellCover}>
+                <div style={layout.coverThumb}>
+                    {article.featured_image_url ? (
+                        <img
+                            src={article.featured_image_url}
+                            alt={`${article.title} cover`}
+                            style={layout.coverThumbImg}
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                        />
+                    ) : (
+                        <CoverPlaceholder title={article.title} compact />
+                    )}
+                </div>
+            </div>
+            <div style={layout.gridCellMain}>
+                <div style={layout.titleCell}>
+                    <span style={layout.title}>{article.title}</span>
+                    {article.subtitle ? (
+                        <span style={layout.subtitle}>{article.subtitle}</span>
+                    ) : null}
+                </div>
+            </div>
+            <div style={layout.gridCellAuthor}>
+                {article.author?.trim()
+                    ? article.author
+                    : t("ui.articles.no_author", "—")}
+            </div>
+            <div style={layout.gridCellTopic}>
+                {article.topic ?? "—"}
+            </div>
+            <div style={layout.gridCellStatus}>
+                <span
+                    data-testid={`article-list-row-status-${article.id}`}
+                    style={{
+                        ...layout.statusBadge,
+                        background: badgeBg(article.status),
+                        color: badgeFg(article.status),
+                    }}
+                >
+                    {t(`ui.articles.status_${article.status}`, article.status)}
+                </span>
+            </div>
+            <div style={layout.gridCellLang}>
+                {(article.language || "??").toUpperCase()}
+            </div>
+            <div style={layout.gridCellDate}>{updated}</div>
+            <div style={layout.gridCellActions}>
                 {onDelete ? (
                     <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                         <DropdownMenu.Trigger asChild>
@@ -599,11 +835,6 @@ function ArticleRow({
                                 data-testid={`article-list-row-menu-${article.id}`}
                                 aria-label={t("ui.articles.actions_menu", "Aktionen")}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{
-                                    position: "absolute",
-                                    top: 8,
-                                    right: 8,
-                                }}
                             >
                                 <MoreVertical size={16} />
                             </button>
@@ -649,25 +880,6 @@ function ArticleRow({
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
                 ) : null}
-                <div style={layout.rowMeta}>
-                    <span
-                        data-testid={`article-list-row-status-${article.id}`}
-                        style={{
-                            ...layout.statusBadge,
-                            background: badgeBg(article.status),
-                            color: badgeFg(article.status),
-                        }}
-                    >
-                        {t(
-                            `ui.articles.status_${article.status}`,
-                            article.status,
-                        )}
-                    </span>
-                    <span style={layout.rowLanguage}>
-                        {(article.language || "??").toUpperCase()}
-                    </span>
-                    <span style={layout.rowUpdated}>{updated}</span>
-                </div>
             </div>
         </li>
     );
@@ -774,6 +986,43 @@ const layout: Record<string, React.CSSProperties> = {
         gap: 8,
         marginBottom: 16,
         flexWrap: "wrap",
+        alignItems: "center",
+    },
+    searchInputWrapper: {
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        flex: "1 1 240px",
+        minWidth: 200,
+        maxWidth: 360,
+    },
+    searchIcon: {
+        position: "absolute",
+        left: 10,
+        color: "var(--text-muted)",
+        pointerEvents: "none",
+    },
+    searchInput: {
+        width: "100%",
+        padding: "6px 28px 6px 30px",
+        fontSize: "0.875rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-sm)",
+        color: "var(--text-primary)",
+    },
+    searchClear: {
+        position: "absolute",
+        right: 4,
+        padding: 4,
+    },
+    filterSelect: {
+        padding: "6px 8px",
+        fontSize: "0.8125rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-sm)",
+        color: "var(--text-primary)",
     },
     list: {
         listStyle: "none",
@@ -801,6 +1050,70 @@ const layout: Record<string, React.CSSProperties> = {
         display: "flex",
         gap: 12,
         position: "relative",
+    },
+    // Grid-row layout for the per-article list view. Mirrors
+    // ``BookListView`` columns + adds a topic column. Same column
+    // template applies to the header row + every body row so cells
+    // align across the whole table.
+    gridRow: {
+        display: "grid",
+        gridTemplateColumns: "50px 1fr 160px 120px 100px 60px 130px 50px",
+        gap: 12,
+        alignItems: "center",
+        padding: "10px 16px",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        cursor: "pointer",
+        listStyle: "none",
+    },
+    gridCellCover: { width: 50 },
+    gridCellMain: { minWidth: 0 },
+    gridCellAuthor: {
+        color: "var(--text-muted)",
+        fontSize: "0.875rem",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+    },
+    gridCellTopic: {
+        color: "var(--text-muted)",
+        fontSize: "0.875rem",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+    },
+    gridCellStatus: {},
+    gridCellLang: { fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-muted)" },
+    gridCellDate: { fontSize: "0.8125rem", color: "var(--text-muted)" },
+    gridCellActions: { textAlign: "right" },
+    coverThumb: {
+        width: 40,
+        height: 60,
+        borderRadius: 2,
+        overflow: "hidden",
+        background: "var(--bg-secondary)",
+    },
+    coverThumbImg: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+    },
+    titleCell: { display: "flex", flexDirection: "column", gap: 2, minWidth: 0 },
+    title: {
+        fontWeight: 600,
+        fontSize: "0.9375rem",
+        color: "var(--text)",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+    },
+    subtitle: {
+        fontSize: "0.8125rem",
+        color: "var(--text-muted)",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
     },
     rowTitle: {
         fontSize: "1rem",

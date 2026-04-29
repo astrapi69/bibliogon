@@ -177,18 +177,28 @@ describe("ArticleList", () => {
         expect(navigateMock).toHaveBeenCalledWith("/articles/a-99");
     });
 
-    it("status filter swaps the API call", async () => {
-        await renderList([makeArticle()]);
-        await waitFor(() => expect(mockList).toHaveBeenCalledTimes(1));
-        expect(mockList).toHaveBeenLastCalledWith(undefined);
-
-        mockList.mockResolvedValue([
-            makeArticle({ id: "p", status: "published" }),
+    it("status filter narrows the rendered list (client-side)", async () => {
+        // Cluster E: filtering moved from server-side query to client-side
+        // ``useArticleFilters``. Seed two rows with different statuses,
+        // click the Published filter, assert only the published row
+        // remains rendered and the API was NOT called again.
+        await renderList([
+            makeArticle({ id: "draft-1", status: "draft" }),
+            makeArticle({ id: "pub-1", status: "published" }),
         ]);
+        await waitFor(() =>
+            expect(screen.getByTestId("article-list-row-draft-1")).toBeInTheDocument(),
+        );
+        expect(mockList).toHaveBeenCalledTimes(1);
+        expect(mockList).toHaveBeenLastCalledWith();
+
         fireEvent.click(screen.getByTestId("article-list-filter-published"));
         await waitFor(() =>
-            expect(mockList).toHaveBeenLastCalledWith("published"),
+            expect(screen.queryByTestId("article-list-row-draft-1")).not.toBeInTheDocument(),
         );
+        expect(screen.getByTestId("article-list-row-pub-1")).toBeInTheDocument();
+        // Filter is client-side; no second API call.
+        expect(mockList).toHaveBeenCalledTimes(1);
     });
 
     it("New Article creates and navigates to the new editor", async () => {

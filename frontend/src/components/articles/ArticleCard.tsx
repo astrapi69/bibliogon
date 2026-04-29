@@ -6,7 +6,7 @@
  * (parity with BookCard's recent additions can come later).
  */
 import { useState } from "react";
-import { AlertTriangle, MoreVertical, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
@@ -72,6 +72,11 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                 {article.subtitle ? (
                     <p style={styles.subtitle}>{article.subtitle}</p>
                 ) : null}
+                <p style={styles.author}>
+                    {article.author?.trim()
+                        ? article.author
+                        : t("ui.articles.no_author", "—")}
+                </p>
                 {article.topic ? (
                     <span style={styles.topic}>{article.topic}</span>
                 ) : null}
@@ -80,7 +85,10 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                         {t(`ui.articles.status_${article.status}`, article.status)}
                     </span>
                     <span style={styles.lang}>{(article.language || "??").toUpperCase()}</span>
-                    <span style={styles.date}>{updated}</span>
+                    <span style={styles.date}>
+                        <Clock size={12} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />
+                        {updated}
+                    </span>
                     {onDelete ? (
                         <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                             <DropdownMenu.Trigger asChild>
@@ -180,6 +188,11 @@ const styles: Record<string, React.CSSProperties> = {
         lineHeight: 1.3,
     },
     subtitle: {
+        margin: "4px 0 0 0",
+        fontSize: "0.875rem",
+        color: "var(--text-muted)",
+    },
+    author: {
         margin: "4px 0 0 0",
         fontSize: "0.875rem",
         color: "var(--text-muted)",
