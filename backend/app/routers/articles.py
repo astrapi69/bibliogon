@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
@@ -253,6 +254,138 @@ def update_article(
     db.commit()
     db.refresh(article)
     return article
+
+
+# --- AI metadata generation (SEO title / SEO description / tags) ---
+
+
+def _extract_plain_text(tiptap_json: str | None) -> str:
+    """Walk a serialised TipTap doc string-tree and return concatenated
+    plain text. Mirrors what the audiobook generator's
+    ``extract_plain_text`` helper does but stays local to avoid a
+    plugin import inside core. Returns ``""`` on parse failure so the
+    caller can decide what "empty" means."""
+    if not tiptap_json:
+        return ""
+    try:
+        doc = json.loads(tiptap_json)
+    except (ValueError, TypeError):
+        return ""
+
+    parts: list[str] = []
+
+    def walk(node: object) -> None:
+        if not isinstance(node, dict):
+            return
+        text = node.get("text")
+        if isinstance(text, str):
+            parts.append(text)
+        children = node.get("content")
+        if isinstance(children, list):
+            for child in children:
+                walk(child)
+
+    walk(doc)
+    return "\n".join(p for p in parts if p).strip()
+
+
+_AI_META_FIELDS = ("seo_title", "seo_description", "tags")
+
+
+class _GenerateMetaRequest(BaseModel):
+    field: str = Field(..., description="One of: seo_title, seo_description, tags")
+    provider: str | None = None
+
+
+@router.post("/{article_id}/ai/generate-meta")
+async def generate_article_meta(
+    article_id: str,
+    request: _GenerateMetaRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Single-shot AI generation for SEO title / description / tags.
+
+    Reuses the existing ``app.ai.llm_client`` infrastructure so the
+    user's configured provider, model, and API key apply unchanged.
+    Article body is extracted from TipTap JSON, metadata header
+    (title / subtitle / topic / author) is included in the prompt
+    for context.
+
+    Tokens consumed bump ``Article.ai_tokens_used`` for the
+    per-article cost dashboard.
+    """
+    from app.ai.llm_client import LLMError
+    from app.ai.routes import _get_client, _is_ai_enabled
+    from app.ai.seo_prompts import (
+        build_seo_description_prompt,
+        build_seo_title_prompt,
+        build_tags_prompt,
+        parse_tags_from_ai_output,
+    )
+
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    if request.field not in _AI_META_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"field must be one of {_AI_META_FIELDS}",
+        )
+
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    body_text = _extract_plain_text(article.content_json)
+    if not body_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Article has no content to generate from",
+        )
+
+    if request.field == "seo_title":
+        prompt = build_seo_title_prompt(article, body_text)
+        max_length = 60
+        result_format = "string"
+    elif request.field == "seo_description":
+        prompt = build_seo_description_prompt(article, body_text)
+        max_length = 160
+        result_format = "string"
+    else:  # tags
+        prompt = build_tags_prompt(article, body_text)
+        max_length = None
+        result_format = "list"
+
+    client = _get_client()
+    try:
+        result = await client.chat(
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6,
+        )
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    raw_text = (result.get("content") or "").strip()
+    usage = result.get("usage", {}) or {}
+    tokens_used = int(usage.get("total_tokens", 0) or 0)
+
+    if tokens_used:
+        article.ai_tokens_used = (article.ai_tokens_used or 0) + tokens_used
+        db.add(article)
+        db.commit()
+
+    if result_format == "string":
+        # Strip enclosing quotes the model often adds despite the
+        # "no quotes" instruction.
+        generated = raw_text.strip('"').strip("'").strip()
+        if max_length:
+            generated = generated[:max_length]
+        return {"generated_text": generated, "tokens_used": tokens_used}
+
+    return {
+        "generated_tags": parse_tags_from_ai_output(raw_text),
+        "tokens_used": tokens_used,
+    }
 
 
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)

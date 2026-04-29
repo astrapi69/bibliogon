@@ -30,6 +30,7 @@ import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
 import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
+import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
@@ -331,6 +332,83 @@ export default function ArticleEditor() {
     type ExportFormat = "markdown" | "html" | "pdf" | "docx";
     const [exporting, setExporting] = useState<ExportFormat | null>(null);
 
+    // AI metadata generation: SEO title / SEO description / tags.
+    // ``aiGenerating`` holds the field currently in flight so the
+    // matching button shows a spinner; other buttons stay clickable
+    // (one-at-a-time semantic mirrors the export buttons above).
+    type AiMetaField = "seo_title" | "seo_description" | "tags";
+    const [aiGenerating, setAiGenerating] = useState<AiMetaField | null>(null);
+
+    const articleHasContent = ((): boolean => {
+        const json = article?.content_json?.trim();
+        if (!json) return false;
+        try {
+            const parsed = JSON.parse(json);
+            const stack: unknown[] = [parsed];
+            while (stack.length) {
+                const node = stack.pop();
+                if (node && typeof node === "object") {
+                    const text = (node as { text?: unknown }).text;
+                    if (typeof text === "string" && text.trim()) return true;
+                    const children = (node as { content?: unknown }).content;
+                    if (Array.isArray(children)) stack.push(...children);
+                }
+            }
+            return false;
+        } catch {
+            return Boolean(json);
+        }
+    })();
+
+    async function handleAiGenerate(field: AiMetaField): Promise<void> {
+        if (!article || aiGenerating) return;
+        setAiGenerating(field);
+        try {
+            const result = await api.articles.generateMeta(article.id, field);
+            if (field === "tags") {
+                const next = result.generated_tags ?? [];
+                setArticle({ ...article, tags: next });
+                void persistMeta({ tags: next });
+                notify.success(
+                    t("ui.articles.tags_generated", "{count} Tags generiert.").replace(
+                        "{count}",
+                        String(next.length),
+                    ),
+                );
+            } else {
+                const text = result.generated_text ?? "";
+                if (field === "seo_title") {
+                    setArticle({ ...article, seo_title: text || null });
+                    void persistMeta({ seo_title: text || null });
+                    notify.success(
+                        t("ui.articles.seo_title_generated", "SEO-Titel generiert."),
+                    );
+                } else {
+                    setArticle({ ...article, seo_description: text || null });
+                    void persistMeta({ seo_description: text || null });
+                    notify.success(
+                        t(
+                            "ui.articles.seo_description_generated",
+                            "SEO-Beschreibung generiert.",
+                        ),
+                    );
+                }
+            }
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.articles.ai_generation_failed",
+                        "KI-Generierung fehlgeschlagen.",
+                    ),
+                    err,
+                );
+            }
+        } finally {
+            setAiGenerating(null);
+        }
+    }
+
     const handleExport = async (fmt: ExportFormat) => {
         if (!article || exporting) return;
         setExporting(fmt);
@@ -535,32 +613,72 @@ export default function ArticleEditor() {
                     <h4 style={layout.sectionHeading}>
                         {t("ui.articles.seo_section", "SEO")}
                     </h4>
-                    <Field
-                        label={t("ui.articles.seo_title", "SEO-Titel")}
-                        tooltip={t(
-                            "ui.articles.seo_title_tooltip",
-                            "Suchmaschinen-optimierter Titel. Faellt leer auf den Artikeltitel zurück.",
-                        )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <FieldLabel
+                            label={t("ui.articles.seo_title", "SEO-Titel")}
+                            tooltip={t(
+                                "ui.articles.seo_title_tooltip",
+                                "Suchmaschinen-optimierter Titel. Faellt leer auf den Artikeltitel zurück.",
+                            )}
+                        />
+                        <AiGenerateButton
+                            onClick={() => void handleAiGenerate("seo_title")}
+                            generating={aiGenerating === "seo_title"}
+                            disabled={!articleHasContent}
+                            tooltip={t(
+                                "ui.articles.seo_title_generate_tooltip",
+                                "SEO-Titel aus Artikelinhalt generieren (nutzt KI).",
+                            )}
+                            disabledReason={t(
+                                "ui.articles.ai_generate_needs_content",
+                                "Artikel braucht Inhalt, bevor KI generieren kann.",
+                            )}
+                            data-testid="article-editor-ai-seo-title"
+                        />
+                    </div>
+                    <input
+                        type="text"
+                        data-testid="article-editor-seo-title"
                         value={article.seo_title ?? ""}
-                        onChange={(v) =>
-                            setArticle({ ...article, seo_title: v || null })
+                        maxLength={60}
+                        onChange={(e) =>
+                            setArticle({
+                                ...article,
+                                seo_title: e.target.value || null,
+                            })
                         }
                         onBlur={() =>
                             persistMeta({ seo_title: article.seo_title })
                         }
-                        testId="article-editor-seo-title"
                         placeholder={t(
                             "ui.articles.seo_title_placeholder",
                             "Faellt leer auf Titel zurück",
                         )}
+                        style={layout.fieldInput}
                     />
-                    <FieldLabel
-                        label={t("ui.articles.seo_description", "SEO-Beschreibung")}
-                        tooltip={t(
-                            "ui.articles.seo_description_tooltip",
-                            "Suchmaschinen-Beschreibung. Faellt leer auf den Excerpt zurück.",
-                        )}
-                    />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <FieldLabel
+                            label={t("ui.articles.seo_description", "SEO-Beschreibung")}
+                            tooltip={t(
+                                "ui.articles.seo_description_tooltip",
+                                "Suchmaschinen-Beschreibung. Faellt leer auf den Excerpt zurück.",
+                            )}
+                        />
+                        <AiGenerateButton
+                            onClick={() => void handleAiGenerate("seo_description")}
+                            generating={aiGenerating === "seo_description"}
+                            disabled={!articleHasContent}
+                            tooltip={t(
+                                "ui.articles.seo_description_generate_tooltip",
+                                "SEO-Beschreibung aus Artikelinhalt generieren (nutzt KI).",
+                            )}
+                            disabledReason={t(
+                                "ui.articles.ai_generate_needs_content",
+                                "Artikel braucht Inhalt, bevor KI generieren kann.",
+                            )}
+                            data-testid="article-editor-ai-seo-description"
+                        />
+                    </div>
                     <textarea
                         data-testid="article-editor-seo-description"
                         value={article.seo_description ?? ""}
@@ -680,13 +798,29 @@ export default function ArticleEditor() {
                             lineHeight: 1.4,
                         }}
                     />
-                    <FieldLabel
-                        label={t("ui.articles.tags_label", "Tags")}
-                        tooltip={t(
-                            "ui.articles.tags_tooltip",
-                            "Stichwoerter zur Kategorisierung und Suche. Mehrere Eintraege möglich (Enter zum Hinzufügen).",
-                        )}
-                    />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <FieldLabel
+                            label={t("ui.articles.tags_label", "Tags")}
+                            tooltip={t(
+                                "ui.articles.tags_tooltip",
+                                "Stichwoerter zur Kategorisierung und Suche. Mehrere Eintraege möglich (Enter zum Hinzufügen).",
+                            )}
+                        />
+                        <AiGenerateButton
+                            onClick={() => void handleAiGenerate("tags")}
+                            generating={aiGenerating === "tags"}
+                            disabled={!articleHasContent}
+                            tooltip={t(
+                                "ui.articles.tags_generate_tooltip",
+                                "Tags aus Artikelinhalt generieren (nutzt KI). Ersetzt aktuelle Tags.",
+                            )}
+                            disabledReason={t(
+                                "ui.articles.ai_generate_needs_content",
+                                "Artikel braucht Inhalt, bevor KI generieren kann.",
+                            )}
+                            data-testid="article-editor-ai-tags"
+                        />
+                    </div>
                     <KeywordInput
                         keywords={article.tags ?? []}
                         onChange={(next) => {

@@ -815,6 +815,26 @@ export const api = {
         delete: (id: string) =>
             request<void>(`/articles/${id}`, {method: "DELETE"}),
 
+        /** Single-shot AI generation for SEO title / description /
+         *  tags. Backend extracts plain text from the article body,
+         *  builds a language-aware prompt, calls the configured AI
+         *  provider, and returns either ``generated_text`` (string
+         *  fields) or ``generated_tags`` (list). Tokens used bump
+         *  ``Article.ai_tokens_used`` for the per-article cost
+         *  dashboard. */
+        generateMeta: (
+            id: string,
+            field: "seo_title" | "seo_description" | "tags",
+        ) =>
+            request<{
+                generated_text?: string
+                generated_tags?: string[]
+                tokens_used: number
+            }>(`/articles/${id}/ai/generate-meta`, {
+                method: "POST",
+                body: JSON.stringify({field}),
+            }),
+
         // Trash bin parity with books. ``delete`` above moves to
         // trash by default (or hard-deletes when
         // ``app.delete_permanently`` is true in app.yaml). The trash

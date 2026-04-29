@@ -447,6 +447,12 @@ class Article(Base):
     # restores or permanently deletes it.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Cumulative AI token usage attributable to this article. Mirrors
+    # ``Book.ai_tokens_used``; bumped from each AI generation call
+    # (SEO meta, tags, future article-level AI features) so the
+    # per-article cost dashboard can sum it up.
+    ai_tokens_used: Mapped[int] = mapped_column(default=0)
+
     publications: Mapped[list["Publication"]] = relationship(
         back_populates="article",
         cascade="all, delete-orphan",

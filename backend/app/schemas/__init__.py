@@ -497,6 +497,11 @@ class ArticleOut(BaseModel):
     seo_description: str | None = None
     created_at: datetime
     updated_at: datetime
+    deleted_at: datetime | None = None
+    # Cumulative AI token usage attributable to this article. Default
+    # 0 keeps backwards compatibility with rows seeded before the
+    # column existed.
+    ai_tokens_used: int = 0
 
     @field_validator("tags", mode="before")
     @classmethod
