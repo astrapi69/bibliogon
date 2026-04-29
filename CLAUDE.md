@@ -154,3 +154,7 @@ Config in `.pre-commit-config.yaml` at repo root. Current hooks: trailing-whites
 - [pluginforge](https://github.com/astrapi69/pluginforge) - plugin framework (PyPI)
 - [manuscripta](https://github.com/astrapi69/manuscripta) - book export pipeline (PyPI)
 - [write-book-template](https://github.com/astrapi69/write-book-template) - target directory structure for export
+
+# Reviews
+
+OpenAI Codex will review your output once you are done
