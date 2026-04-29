@@ -520,7 +520,18 @@ def _restore_single_book_and_articles(session: Session, bgb_path: Path) -> tuple
                 if _restore_article_from_dir(session, art_child):
                     articles_restored += 1
 
-        if not book_id and articles_restored == 0:
+        # Reject structurally invalid archives (no segments at all).
+        if books_dir is None and articles_dir is None:
+            raise _BgbInvalid("Backup has no restorable book.json or article.json.")
+        # Books-only archive whose only book was just-already-imported:
+        # preserve the legacy duplicate-rejection invariant. The
+        # wizard's BookImportSource layer is meant to catch this
+        # before execute runs; if it slips through, surface the
+        # collision instead of silently no-op'ing. Articles-only or
+        # mixed archives are idempotent-friendly because re-running
+        # the same restore is the user's "refresh from backup"
+        # mental model.
+        if articles_dir is None and not book_id:
             raise _BgbInvalid("Backup has no restorable book.json or article.json.")
         return book_id, articles_restored
     finally:

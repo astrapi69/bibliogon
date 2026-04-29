@@ -40,4 +40,5 @@ export async function fillPrompt(page: Page, value: string) {
 }
 
 export {createBook, createChapter, resetDb};
+export {createArticle, deleteArticle, getArticles} from "../helpers/api";
 export {expect} from "@playwright/test";

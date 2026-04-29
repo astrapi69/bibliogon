@@ -332,16 +332,17 @@ export default function ImportWizardModal({
                                     }
                                 />
                             ) : (
-                                ctx.bookId && (
-                                    <SuccessStep
-                                        bookId={ctx.bookId}
-                                        title={ctx.title}
-                                        onClose={resetAndClose}
-                                        onAnother={() =>
-                                            send({ type: "RESET" })
-                                        }
-                                    />
-                                )
+                                // bookId may be empty for articles-only
+                                // restores; SuccessStep handles the
+                                // empty case by routing to /articles.
+                                <SuccessStep
+                                    bookId={ctx.bookId ?? ""}
+                                    title={ctx.title}
+                                    onClose={resetAndClose}
+                                    onAnother={() =>
+                                        send({ type: "RESET" })
+                                    }
+                                />
                             ))}
                         {stepName === "error" && ctx.error && (
                             <ErrorStep

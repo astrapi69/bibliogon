@@ -439,6 +439,296 @@ def test_cio_detect_emits_no_book_json_warning_only_when_archive_is_empty(
     assert "No book.json inside the backup." not in detected_articles.warnings
 
 
+# --- CIO HTTP path: extended scenarios (idempotency, soft-delete, multi-book) ---
+
+
+def test_cio_articles_only_bgb_idempotent_on_reimport() -> None:
+    """Re-importing the same articles-only archive must not duplicate
+    rows. Mirrors the books-side BookImportSource dedup contract: an
+    already-restored article id is skipped on the second pass."""
+    db = SessionLocal()
+    try:
+        _purge_articles(db)
+    finally:
+        db.close()
+
+    payload = _articles_only_bgb_bytes(article_id="idem-art-1")
+
+    for _ in range(2):
+        detect_resp = client.post(
+            "/api/import/detect",
+            files=[("files", ("idem.bgb", payload, "application/octet-stream"))],
+        )
+        assert detect_resp.status_code == 200, detect_resp.text
+        execute_resp = client.post(
+            "/api/import/execute",
+            json={
+                "temp_ref": detect_resp.json()["temp_ref"],
+                "overrides": {},
+                "duplicate_action": "create",
+            },
+        )
+        assert execute_resp.status_code == 200, execute_resp.text
+
+    db = SessionLocal()
+    try:
+        rows = db.query(Article).filter(Article.id == "idem-art-1").all()
+        assert len(rows) == 1
+    finally:
+        db.close()
+
+
+def test_cio_articles_only_bgb_revives_soft_deleted_article() -> None:
+    """A trashed article whose id matches the backup must be revived
+    (hard-delete + re-insert), not skipped. Mirrors the soft-delete
+    revive path on the books side."""
+    db = SessionLocal()
+    try:
+        _purge_articles(db)
+        from datetime import UTC, datetime
+
+        revived = Article(
+            id="revive-art-1",
+            title="Old title",
+            language="en",
+            content_type="article",
+            content_json="{}",
+            status="draft",
+            tags="[]",
+            deleted_at=datetime.now(UTC),
+        )
+        db.add(revived)
+        db.commit()
+    finally:
+        db.close()
+
+    # Build a backup carrying the same id with a fresh title; the
+    # restore must replace the trashed row with the live one.
+    buf = BytesIO()
+    article_blob = {
+        "id": "revive-art-1",
+        "title": "Restored title",
+        "language": "en",
+        "content_type": "article",
+        "content_json": '{"type":"doc","content":[]}',
+        "status": "draft",
+        "tags": "[]",
+        "ai_tokens_used": 0,
+        "deleted_at": None,
+        "created_at": "2026-04-29T00:00:00+00:00",
+        "updated_at": "2026-04-29T00:00:00+00:00",
+    }
+    manifest = {"format": "bibliogon-backup", "version": "2.0"}
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        zf.writestr("books/", "")
+        zf.writestr("articles/revive-art-1/article.json", json.dumps(article_blob))
+
+    detect_resp = client.post(
+        "/api/import/detect",
+        files=[("files", ("revive.bgb", buf.getvalue(), "application/octet-stream"))],
+    )
+    assert detect_resp.status_code == 200, detect_resp.text
+    execute_resp = client.post(
+        "/api/import/execute",
+        json={
+            "temp_ref": detect_resp.json()["temp_ref"],
+            "overrides": {},
+            "duplicate_action": "create",
+        },
+    )
+    assert execute_resp.status_code == 200, execute_resp.text
+
+    db = SessionLocal()
+    try:
+        restored = db.get(Article, "revive-art-1")
+        assert restored is not None
+        assert restored.title == "Restored title"
+        assert restored.deleted_at is None
+    finally:
+        db.close()
+
+
+def test_cio_multi_book_with_articles_restores_both_segments() -> None:
+    """A .bgb with two books AND one article must restore all three
+    via the CIO multi-book wizard path. Articles travel as a batch
+    alongside the per-book selection list."""
+    db = SessionLocal()
+    try:
+        _purge_articles(db)
+        _purge_books(db)
+    finally:
+        db.close()
+
+    book_a_id = "multi-book-a"
+    book_b_id = "multi-book-b"
+    article_id = "multi-art-1"
+    book_blob = {
+        "id": book_a_id,
+        "title": "Book A",
+        "author": "A",
+        "language": "en",
+        "chapters": [],
+        "assets": [],
+    }
+    book_b_blob = dict(book_blob, id=book_b_id, title="Book B")
+    article_blob = {
+        "id": article_id,
+        "title": "Multi-segment Article",
+        "language": "en",
+        "content_type": "article",
+        "content_json": "{}",
+        "status": "draft",
+        "tags": "[]",
+        "ai_tokens_used": 0,
+        "deleted_at": None,
+        "created_at": "2026-04-29T00:00:00+00:00",
+        "updated_at": "2026-04-29T00:00:00+00:00",
+    }
+    manifest = {"format": "bibliogon-backup", "version": "2.0"}
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        zf.writestr(f"books/{book_a_id}/book.json", json.dumps(book_blob))
+        zf.writestr(f"books/{book_b_id}/book.json", json.dumps(book_b_blob))
+        zf.writestr(f"articles/{article_id}/article.json", json.dumps(article_blob))
+
+    detect_resp = client.post(
+        "/api/import/detect",
+        files=[("files", ("multi.bgb", buf.getvalue(), "application/octet-stream"))],
+    )
+    assert detect_resp.status_code == 200, detect_resp.text
+    detected = detect_resp.json()["detected"]
+    assert detected["is_multi_book"] is True
+    assert detected["plugin_specific_data"]["article_count"] == 1
+    assert detected["plugin_specific_data"]["articles_only"] is False
+    selected = [b["source_identifier"] for b in detected["books"]]
+
+    execute_resp = client.post(
+        "/api/import/execute",
+        json={
+            "temp_ref": detect_resp.json()["temp_ref"],
+            "overrides": {"selected_books": selected},
+            "duplicate_action": "create",
+        },
+    )
+    assert execute_resp.status_code == 200, execute_resp.text
+    body = execute_resp.json()
+    assert sorted(body["imported_book_ids"]) == sorted([book_a_id, book_b_id])
+
+    db = SessionLocal()
+    try:
+        assert db.get(Book, book_a_id) is not None
+        assert db.get(Book, book_b_id) is not None
+        assert db.get(Article, article_id) is not None
+    finally:
+        db.close()
+
+
+def test_cio_legacy_v1_bgb_still_imports_books_through_http() -> None:
+    """Manifest 1.0 (no articles segment) must keep working through
+    the CIO HTTP path. Defends the upgrade path the same way
+    test_legacy_manifest_v1_restores_books_only_no_crash does for
+    the legacy /api/backup/import endpoint."""
+    db = SessionLocal()
+    try:
+        _purge_books(db)
+    finally:
+        db.close()
+
+    book_id = "legacy-cio-book-1"
+    book_blob = {
+        "id": book_id,
+        "title": "Legacy CIO Book",
+        "author": "L",
+        "language": "en",
+        "chapters": [],
+        "assets": [],
+    }
+    manifest = {
+        "format": "bibliogon-backup",
+        "version": "1.0",
+        "book_count": 1,
+        "includes_audiobook": False,
+    }
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        zf.writestr(f"books/{book_id}/book.json", json.dumps(book_blob))
+
+    detect_resp = client.post(
+        "/api/import/detect",
+        files=[("files", ("legacy.bgb", buf.getvalue(), "application/octet-stream"))],
+    )
+    assert detect_resp.status_code == 200, detect_resp.text
+    detected = detect_resp.json()["detected"]
+    assert detected["plugin_specific_data"]["article_count"] == 0
+    assert detected["plugin_specific_data"]["articles_only"] is False
+
+    execute_resp = client.post(
+        "/api/import/execute",
+        json={
+            "temp_ref": detect_resp.json()["temp_ref"],
+            "overrides": {},
+            "duplicate_action": "create",
+        },
+    )
+    assert execute_resp.status_code == 200, execute_resp.text
+    db = SessionLocal()
+    try:
+        assert db.get(Book, book_id) is not None
+    finally:
+        db.close()
+
+
+def test_forward_compat_unknown_manifest_version_logs_warning(tmp_path, monkeypatch) -> None:
+    """Manifest version 9.9 must restore best-effort with a logger
+    warning - never reject. Defends future major bumps that only add
+    segments this reader does not know about."""
+    from app.services.backup import backup_import as backup_import_module
+
+    book_id = "future-book-1"
+    book_blob = {
+        "id": book_id,
+        "title": "From the Future",
+        "author": "F",
+        "language": "en",
+        "chapters": [],
+        "assets": [],
+    }
+    manifest = {"format": "bibliogon-backup", "version": "9.9"}
+
+    bgb = tmp_path / "future.bgb"
+    with zipfile.ZipFile(bgb, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        zf.writestr(f"books/{book_id}/book.json", json.dumps(book_blob))
+
+    db = SessionLocal()
+    try:
+        _purge_books(db)
+    finally:
+        db.close()
+
+    captured: list[str] = []
+    original_warning = backup_import_module.logger.warning
+
+    def spy(msg, *args, **kwargs):
+        captured.append(msg % args if args else msg)
+        return original_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(backup_import_module.logger, "warning", spy)
+
+    upload = _file_upload_from_path(bgb)
+    db = SessionLocal()
+    try:
+        result = backup_import_module.import_backup_archive(upload, db)
+    finally:
+        db.close()
+
+    assert result["imported_books"] == 1
+    assert any("newer than this build" in msg for msg in captured), captured
+
+
 # --- helper kept module-clean for IDE; silences unused-import lint ---
 
 _ = BytesIO  # type: ignore[unused-ignore]

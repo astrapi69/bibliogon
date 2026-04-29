@@ -47,3 +47,21 @@ export async function deleteBook(id: string): Promise<void> {
 export async function getBooks(): Promise<{id: string; title: string}[]> {
     return request("/books");
 }
+
+export async function createArticle(
+    title: string,
+    language: string = "en",
+): Promise<{id: string; title: string}> {
+    return request("/articles", {
+        method: "POST",
+        body: JSON.stringify({title, language}),
+    });
+}
+
+export async function deleteArticle(id: string): Promise<void> {
+    await request(`/articles/${id}`, {method: "DELETE"});
+}
+
+export async function getArticles(): Promise<{id: string; title: string}[]> {
+    return request("/articles");
+}

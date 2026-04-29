@@ -28,7 +28,11 @@ export function SuccessStep({
             setRemaining((prev) => {
                 if (prev <= 1) {
                     onClose();
-                    navigate(`/book/${bookId}`);
+                    // Articles-only restores have no bookId; route the
+                    // user to /articles instead of /book/ which would
+                    // 404. The articles dashboard is where the freshly
+                    // restored rows appear.
+                    navigate(bookId ? `/book/${bookId}` : "/articles");
                     return 0;
                 }
                 return prev - 1;

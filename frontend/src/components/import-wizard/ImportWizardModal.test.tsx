@@ -342,4 +342,55 @@ describe("ImportWizardModal state machine", () => {
         fireEvent.click(screen.getByTestId("summary-back"));
         expect(screen.getByTestId("upload-step")).toBeInTheDocument();
     });
+
+    it("articles-only .bgb shows articles-only panel and enables Confirm without title/author", async () => {
+        const articlesOnlyDetect = {
+            ...SUCCESS_DETECT,
+            detected: {
+                ...SUCCESS_DETECT.detected,
+                format_name: "bgb",
+                title: null,
+                author: null,
+                plugin_specific_data: {
+                    book_count: 0,
+                    article_count: 3,
+                    articles_only: true,
+                },
+            },
+            temp_ref: "imp-articles-only",
+        };
+        detectImportMock.mockResolvedValue(articlesOnlyDetect);
+        executeImportMock.mockResolvedValue({
+            book_id: "",
+            status: "created",
+        });
+        const onImported = vi.fn();
+        renderModal(vi.fn(), onImported);
+
+        dropFile(makeFile("articles.bgb"));
+
+        await waitFor(() =>
+            expect(screen.getByTestId("summary-step")).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("summary-next"));
+
+        await waitFor(() =>
+            expect(screen.getByTestId("preview-step")).toBeInTheDocument(),
+        );
+        // Articles-only branch: PreviewPanel hidden, dedicated panel shown.
+        expect(screen.getByTestId("preview-articles-only")).toBeInTheDocument();
+        expect(screen.queryByTestId("preview-field-title")).not.toBeInTheDocument();
+
+        // Confirm enabled despite null title + author.
+        const confirm = screen.getByTestId("preview-confirm");
+        expect(confirm).not.toBeDisabled();
+        fireEvent.click(confirm);
+
+        await waitFor(() =>
+            expect(screen.getByTestId("success-step")).toBeInTheDocument(),
+        );
+        // onImported still fires; bookId is empty for articles-only restore
+        // so caller refreshes its list via api.articles.list().
+        expect(onImported).toHaveBeenCalledWith("");
+    });
 });
