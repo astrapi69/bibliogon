@@ -264,6 +264,13 @@ function AppSettings({config, onSave, saving}: {
     const [uiTitle, setUiTitle] = useState((ui.title as string) || "Bibliogon");
     const [uiSubtitle, setUiSubtitle] = useState((ui.subtitle as string) || "");
     const [theme, setTheme] = useState((ui.theme as string) || "warm-literary");
+    const uiDashboard = (ui.dashboard || {}) as Record<string, unknown>;
+    const [booksView, setBooksView] = useState(
+        (uiDashboard.books_view as string) === "list" ? "list" : "grid",
+    );
+    const [articlesView, setArticlesView] = useState(
+        (uiDashboard.articles_view as string) === "list" ? "list" : "grid",
+    );
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
     const [trashDays, setTrashDays] = useState(String(Number(app.trash_auto_delete_days ?? 30)));
     const [deletePermanently, setDeletePermanently] = useState(Boolean(app.delete_permanently));
@@ -284,6 +291,9 @@ function AppSettings({config, onSave, saving}: {
         setUiTitle((ui.title as string) || "Bibliogon");
         setUiSubtitle((ui.subtitle as string) || "");
         setTheme((ui.theme as string) || "warm-literary");
+        const dashboardCfg = (ui.dashboard || {}) as Record<string, unknown>;
+        setBooksView((dashboardCfg.books_view as string) === "list" ? "list" : "grid");
+        setArticlesView((dashboardCfg.articles_view as string) === "list" ? "list" : "grid");
         setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
         setDeletePermanently(Boolean(app.delete_permanently));
@@ -315,7 +325,19 @@ function AppSettings({config, onSave, saving}: {
                 delete_permanently: deletePermanently,
                 allow_books_without_author: allowBooksWithoutAuthor,
             },
-            ui: {title: uiTitle, subtitle: uiSubtitle, theme},
+            ui: {
+                title: uiTitle,
+                subtitle: uiSubtitle,
+                theme,
+                // Dashboard view defaults. Same keys the in-dashboard
+                // ViewToggle writes through ``useViewMode``; both
+                // entry points stay synchronized via the shared
+                // ``ui.dashboard.*_view`` setting.
+                dashboard: {
+                    books_view: booksView,
+                    articles_view: articlesView,
+                },
+            },
             plugins: {enabled},
             editor: {
                 autosave_debounce_ms: parseInt(edAutosave) || 800,
@@ -361,6 +383,34 @@ function AppSettings({config, onSave, saving}: {
                             value: p.id,
                             label: t(`ui.themes.${p.id.replace(/-/g, "_")}`, p.label),
                         }))}
+                    />
+                </div>
+                <div className="field">
+                    <label className="label" title={t("ui.settings.dashboard_books_view_tooltip", "Standard-Ansicht beim Öffnen des Bücher-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
+                        {t("ui.settings.dashboard_books_view_label", "Bücher-Dashboard: Standard-Ansicht")}
+                    </label>
+                    <RadixSelect
+                        value={booksView}
+                        onValueChange={setBooksView}
+                        testId="settings-books-view"
+                        options={[
+                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                        ]}
+                    />
+                </div>
+                <div className="field">
+                    <label className="label" title={t("ui.settings.dashboard_articles_view_tooltip", "Standard-Ansicht beim Öffnen des Artikel-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
+                        {t("ui.settings.dashboard_articles_view_label", "Artikel-Dashboard: Standard-Ansicht")}
+                    </label>
+                    <RadixSelect
+                        value={articlesView}
+                        onValueChange={setArticlesView}
+                        testId="settings-articles-view"
+                        options={[
+                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                        ]}
                     />
                 </div>
                 <div className="field">
