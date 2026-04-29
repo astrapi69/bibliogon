@@ -166,6 +166,10 @@ export interface Article {
     seo_description: string | null
     created_at: string
     updated_at: string
+    /** Trash-bin parity with Book. ISO timestamp when the article
+     *  was soft-deleted; null while live. The default list endpoint
+     *  filters trashed entries out so the dashboard never sees them. */
+    deleted_at?: string | null
 }
 
 export interface ArticleCreate {
@@ -810,6 +814,18 @@ export const api = {
 
         delete: (id: string) =>
             request<void>(`/articles/${id}`, {method: "DELETE"}),
+
+        // Trash bin parity with books. ``delete`` above moves to
+        // trash by default (or hard-deletes when
+        // ``app.delete_permanently`` is true in app.yaml). The trash
+        // endpoints below are dedicated to managing trashed rows.
+        listTrash: () => request<Article[]>("/articles/trash/list"),
+        restore: (id: string) =>
+            request<Article>(`/articles/trash/${id}/restore`, {method: "POST"}),
+        permanentDelete: (id: string) =>
+            request<void>(`/articles/trash/${id}`, {method: "DELETE"}),
+        emptyTrash: () =>
+            request<void>("/articles/trash/empty", {method: "DELETE"}),
     },
 
     /** AR editor-parity Phase 2: translate an Article into a new

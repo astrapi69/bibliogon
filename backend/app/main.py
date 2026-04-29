@@ -168,9 +168,11 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Bibliogon (debug=%s)", DEBUG)
     init_db()
     # Auto-delete expired trash items on startup
+    from app.routers.articles import cleanup_expired_article_trash
     from app.routers.books import cleanup_expired_trash
 
     cleanup_expired_trash()
+    cleanup_expired_article_trash()
     # Seed voices if table is empty
     from app.database import SessionLocal
     from app.voice_store import sync_edge_tts_voices, voice_count

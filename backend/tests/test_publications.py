@@ -169,13 +169,16 @@ def test_delete_publication() -> None:
     assert client.get(f"/api/articles/{article['id']}/publications/{pub['id']}").status_code == 404
 
 
-def test_cascade_delete_publications_when_article_deleted() -> None:
+def test_cascade_delete_publications_when_article_permanently_deleted() -> None:
+    """After the trash-bin migration ``DELETE /api/articles/{id}`` is
+    a soft delete - the cascade only fires on permanent delete via
+    the trash endpoint, which is what we exercise here."""
     article = _create_article()
     pub = _create_pub(article["id"])
     client.delete(f"/api/articles/{article['id']}")
+    client.delete(f"/api/articles/trash/{article['id']}")
     # Article + publication both gone.
     assert client.get(f"/api/articles/{article['id']}").status_code == 404
-    # Direct publication get also 404 (article gone).
     assert client.get(f"/api/articles/{article['id']}/publications/{pub['id']}").status_code == 404
 
 

@@ -441,6 +441,12 @@ class Article(Base):
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
 
+    # Soft-delete timestamp; mirrors ``Book.deleted_at``. NULL means
+    # the article is live; non-NULL means it lives in the trash and
+    # is excluded from the default list endpoint until the user
+    # restores or permanently deletes it.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     publications: Mapped[list["Publication"]] = relationship(
         back_populates="article",
         cascade="all, delete-orphan",

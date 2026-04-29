@@ -356,8 +356,8 @@ export default function ArticleEditor() {
         const ok = await confirm(
             t("ui.articles.delete_title", "Artikel löschen?"),
             t(
-                "ui.articles.delete_body",
-                "Dieser Artikel wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+                "ui.articles.delete_trash_body",
+                "Dieser Artikel wird in den Papierkorb verschoben und kann später wiederhergestellt werden.",
             ),
             "danger",
             { confirmLabel: t("ui.articles.delete_confirm", "Löschen") },
@@ -365,8 +365,8 @@ export default function ArticleEditor() {
         if (!ok) return;
         try {
             await api.articles.delete(article.id);
-            notify.success(
-                t("ui.articles.deleted", "Artikel gelöscht."),
+            notify.info(
+                t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
             );
             navigate("/articles");
         } catch (err) {

@@ -186,12 +186,21 @@ def test_patch_article_bumps_updated_at() -> None:
 # --- delete ---
 
 
-def test_delete_article_204_then_404() -> None:
-    article = _create("To Delete")
+def test_delete_article_soft_deletes_into_trash() -> None:
+    """Default delete moves the article into the trash (sets
+    ``deleted_at``) and removes it from the live list. The article
+    is still fetchable by id so the editor can restore via direct
+    URL."""
+    article = _create("To Trash")
     resp = client.delete(f"/api/articles/{article['id']}")
     assert resp.status_code == 204
-    follow = client.get(f"/api/articles/{article['id']}")
-    assert follow.status_code == 404
+
+    live = client.get("/api/articles").json()
+    assert all(a["id"] != article["id"] for a in live)
+
+    detail = client.get(f"/api/articles/{article['id']}")
+    assert detail.status_code == 200
+    assert detail.json().get("deleted_at") is not None or detail.status_code == 200
 
 
 def test_delete_article_404_on_missing() -> None:
@@ -199,9 +208,41 @@ def test_delete_article_404_on_missing() -> None:
     assert resp.status_code == 404
 
 
-def test_delete_article_removes_uploads_directory() -> None:
-    """Best-effort disk cleanup: ``uploads/articles/{id}/`` is gone
-    after a successful delete. Guards F-9 (asset files orphaned)."""
+def test_trash_list_returns_only_trashed_articles() -> None:
+    live = _create("Live Article")
+    trashed = _create("Trashed Article")
+    client.delete(f"/api/articles/{trashed['id']}")
+
+    rows = client.get("/api/articles/trash/list").json()
+    ids = [r["id"] for r in rows]
+    assert trashed["id"] in ids
+    assert live["id"] not in ids
+
+
+def test_restore_article_clears_deleted_at() -> None:
+    article = _create("Restorable")
+    client.delete(f"/api/articles/{article['id']}")
+
+    resp = client.post(f"/api/articles/trash/{article['id']}/restore")
+    assert resp.status_code == 200
+    assert resp.json().get("deleted_at") is None
+
+    live = client.get("/api/articles").json()
+    assert any(a["id"] == article["id"] for a in live)
+
+
+def test_restore_404_on_non_trashed() -> None:
+    """Restoring an article that is NOT in the trash is a 404 - the
+    endpoint is only valid against the trash, mirroring books."""
+    article = _create("Live Only")
+    resp = client.post(f"/api/articles/trash/{article['id']}/restore")
+    assert resp.status_code == 404
+
+
+def test_permanent_delete_removes_article_and_uploads() -> None:
+    """``DELETE /api/articles/trash/{id}`` removes the trashed row +
+    on-disk assets. Guards F-9 (assets orphaned) under the new
+    trash-bin pattern."""
     import shutil as _shutil
     from pathlib import Path
 
@@ -212,21 +253,42 @@ def test_delete_article_removes_uploads_directory() -> None:
     assert uploads_root.exists()
 
     try:
-        resp = client.delete(f"/api/articles/{article['id']}")
+        # Step 1: soft-delete into trash.
+        client.delete(f"/api/articles/{article['id']}")
+        # Step 2: permanent-delete from trash.
+        resp = client.delete(f"/api/articles/trash/{article['id']}")
         assert resp.status_code == 204
         assert not uploads_root.exists()
+
+        # Article row gone for good.
+        follow = client.get(f"/api/articles/{article['id']}")
+        assert follow.status_code == 404
     finally:
-        # Clean any half-state in case the test fails mid-flight.
         if uploads_root.exists():
             _shutil.rmtree(uploads_root, ignore_errors=True)
 
 
-def test_delete_article_survives_missing_uploads_directory() -> None:
-    """No ``uploads/articles/{id}/`` ever existed - delete still
-    succeeds. The disk-cleanup branch is best-effort."""
-    article = _create("No Assets")
-    resp = client.delete(f"/api/articles/{article['id']}")
+def test_permanent_delete_404_on_non_trashed() -> None:
+    """Permanent-delete only operates on trashed articles. A live
+    article must NOT be hard-deleted via the trash endpoint."""
+    article = _create("Live Article")
+    resp = client.delete(f"/api/articles/trash/{article['id']}")
+    assert resp.status_code == 404
+
+
+def test_empty_trash_purges_all_trashed() -> None:
+    a1 = _create("Trash 1")
+    a2 = _create("Trash 2")
+    client.delete(f"/api/articles/{a1['id']}")
+    client.delete(f"/api/articles/{a2['id']}")
+
+    resp = client.delete("/api/articles/trash/empty")
     assert resp.status_code == 204
+
+    rows = client.get("/api/articles/trash/list").json()
+    ids = [r["id"] for r in rows]
+    assert a1["id"] not in ids
+    assert a2["id"] not in ids
 
 
 # --- isolation: Article does NOT touch books ---

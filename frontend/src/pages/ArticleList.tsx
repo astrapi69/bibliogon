@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Home, Plus, Trash2 } from "lucide-react";
+import { FileText, Home, Plus, RotateCcw, Trash, Trash2 } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
@@ -30,27 +30,112 @@ export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const [articles, setArticles] = useState<Article[]>([]);
+    const [trash, setTrash] = useState<Article[]>([]);
+    const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<ArticleStatus | "all">("all");
     const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
     const { confirm } = useDialog();
 
+    const loadTrash = async () => {
+        try {
+            const rows = await api.articles.listTrash();
+            setTrash(rows);
+        } catch (err) {
+            if (err instanceof ApiError) {
+                console.error("Failed to load article trash:", err);
+            }
+        }
+    };
+
+    useEffect(() => {
+        void loadTrash();
+    }, []);
+
+    /** Soft-delete: moves the article to the trash. Mirrors books'
+     *  ``handleDelete`` - no confirm dialog, matching the
+     *  Dashboard pattern; the Trash panel is the safety net. */
     async function handleDelete(article: Article): Promise<void> {
-        const ok = await confirm(
-            t("ui.articles.delete_title", "Artikel löschen?"),
-            t(
-                "ui.articles.delete_body",
-                "Dieser Artikel wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-            ),
-            "danger",
-            { confirmLabel: t("ui.articles.delete_confirm", "Löschen") },
-        );
-        if (!ok) return;
         try {
             await api.articles.delete(article.id);
             setArticles((prev) => prev.filter((a) => a.id !== article.id));
-            notify.success(t("ui.articles.deleted", "Artikel gelöscht."));
+            void loadTrash();
+            notify.info(
+                t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
+                    err,
+                );
+            }
+        }
+    }
+
+    async function handleRestore(article: Article): Promise<void> {
+        try {
+            await api.articles.restore(article.id);
+            setTrash((prev) => prev.filter((a) => a.id !== article.id));
+            // Reload the live list so the restored article appears
+            // immediately respecting the current filter.
+            const fresh = await api.articles.list(
+                filter === "all" ? undefined : filter,
+            );
+            setArticles(fresh);
+            notify.success(
+                t("ui.articles.restored", "Artikel wiederhergestellt."),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."),
+                    err,
+                );
+            }
+        }
+    }
+
+    async function handlePermanentDelete(article: Article): Promise<void> {
+        const ok = await confirm(
+            t("ui.articles.delete_permanent_title", "Endgültig löschen"),
+            t(
+                "ui.articles.delete_permanent_warning",
+                "Artikel endgültig löschen? Alle Publikationen und hochgeladenen Bilder gehen verloren. Dies kann nicht rückgängig gemacht werden.",
+            ),
+            "danger",
+        );
+        if (!ok) return;
+        try {
+            await api.articles.permanentDelete(article.id);
+            setTrash((prev) => prev.filter((a) => a.id !== article.id));
+            notify.success(
+                t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
+                    err,
+                );
+            }
+        }
+    }
+
+    async function handleEmptyTrash(): Promise<void> {
+        const ok = await confirm(
+            t("ui.articles.empty_trash_title", "Papierkorb leeren"),
+            t(
+                "ui.articles.empty_trash_warning",
+                "Alle Artikel im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+            ),
+            "danger",
+        );
+        if (!ok) return;
+        try {
+            await api.articles.emptyTrash();
+            setTrash([]);
         } catch (err) {
             if (err instanceof ApiError) {
                 notify.error(
@@ -144,6 +229,18 @@ export default function ArticleList() {
                     {t("ui.articles.list_heading", "Artikel")}
                 </h2>
                 <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${showTrash ? "btn-primary" : "btn-ghost"}`}
+                        onClick={() => setShowTrash((v) => !v)}
+                        data-testid="article-list-trash-toggle"
+                        title={t("ui.articles.trash_title", "Papierkorb")}
+                        aria-pressed={showTrash}
+                    >
+                        <Trash size={14} />
+                        {t("ui.articles.trash_title", "Papierkorb")}
+                        {trash.length > 0 ? ` (${trash.length})` : ""}
+                    </button>
                     <ViewToggle mode={viewMode} onChange={setViewMode} />
                     <button
                         type="button"
@@ -158,9 +255,18 @@ export default function ArticleList() {
                 </div>
             </header>
 
-            <FilterBar value={filter} onChange={setFilter} />
+            {showTrash ? (
+                <TrashPanel
+                    trash={trash}
+                    onRestore={(a) => void handleRestore(a)}
+                    onPermanentDelete={(a) => void handlePermanentDelete(a)}
+                    onEmptyTrash={() => void handleEmptyTrash()}
+                />
+            ) : null}
 
-            {loading ? (
+            {!showTrash ? <FilterBar value={filter} onChange={setFilter} /> : null}
+
+            {showTrash ? null : loading ? (
                 <p
                     data-testid="article-list-loading"
                     style={{ padding: 16, color: "var(--text-muted)" }}
@@ -195,6 +301,102 @@ export default function ArticleList() {
         </div>
     );
 }
+
+function TrashPanel({
+    trash,
+    onRestore,
+    onPermanentDelete,
+    onEmptyTrash,
+}: {
+    trash: Article[];
+    onRestore: (a: Article) => void;
+    onPermanentDelete: (a: Article) => void;
+    onEmptyTrash: () => void;
+}) {
+    const { t } = useI18n();
+    if (trash.length === 0) {
+        return (
+            <div
+                data-testid="article-trash-empty"
+                style={{ ...layout.empty, marginBottom: 16 }}
+            >
+                <Trash size={28} style={{ color: "var(--text-muted)" }} />
+                <p style={{ color: "var(--text-muted)", margin: 0 }}>
+                    {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
+                </p>
+            </div>
+        );
+    }
+    return (
+        <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 8,
+                }}
+            >
+                <h3 style={{ margin: 0, fontSize: "1rem" }}>
+                    {t("ui.articles.trash_title", "Papierkorb")} ({trash.length})
+                </h3>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={onEmptyTrash}
+                    data-testid="article-trash-empty-all"
+                    style={{ color: "var(--danger)" }}
+                >
+                    <Trash2 size={14} />
+                    {t("ui.articles.empty_trash", "Papierkorb leeren")}
+                </button>
+            </div>
+            <ul style={layout.list}>
+                {trash.map((a) => (
+                    <li
+                        key={a.id}
+                        data-testid={`article-trash-row-${a.id}`}
+                        style={{ ...layout.row, position: "relative" }}
+                    >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={layout.rowTitle}>{a.title}</div>
+                            <div style={layout.rowMeta}>
+                                {a.deleted_at ? (
+                                    <span>
+                                        {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
+                                        {new Date(a.deleted_at).toLocaleString()}
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => onRestore(a)}
+                            data-testid={`article-trash-restore-${a.id}`}
+                            title={t("ui.articles.restore", "Wiederherstellen")}
+                        >
+                            <RotateCcw size={14} />
+                            {t("ui.articles.restore", "Wiederherstellen")}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => onPermanentDelete(a)}
+                            data-testid={`article-trash-permanent-${a.id}`}
+                            title={t("ui.articles.delete_permanent", "Endgültig löschen")}
+                            style={{ color: "var(--danger)" }}
+                        >
+                            <Trash2 size={14} />
+                            {t("ui.articles.delete_permanent", "Endgültig löschen")}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 
 function FilterBar({
     value,

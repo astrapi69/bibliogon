@@ -107,16 +107,22 @@ def test_delete_asset_404_on_missing() -> None:
 
 
 def test_assets_cascade_delete_with_article() -> None:
-    """Deleting the parent article removes its assets via CASCADE."""
+    """Permanently deleting the parent article removes its assets via
+    DB cascade. After the trash-bin migration, ``DELETE /api/articles
+    /{id}`` is a soft delete; the cascade only fires on permanent
+    delete via the trash endpoint, plus the permanent-delete handler
+    now also wipes the on-disk uploads directory.
+    """
     article = _create_article("Cascade Host")
     asset = _upload(article["id"])
     asset_path = Path(asset["path"])
-    resp = client.delete(f"/api/articles/{article['id']}")
+    # Soft-delete then permanent-delete from trash.
+    client.delete(f"/api/articles/{article['id']}")
+    resp = client.delete(f"/api/articles/trash/{article['id']}")
     assert resp.status_code == 204
     # The article is gone; an asset list under that article id 404s.
     follow = client.get(f"/api/articles/{article['id']}/assets")
     assert follow.status_code == 404
-    # File on disk is left orphaned (cascade is DB-only); cleanup is
-    # the upload-dir housekeeping task's responsibility, not the
-    # delete handler. Pin this contract so it stays explicit.
-    assert asset_path.exists()
+    # ``permanent_delete_article`` runs ``shutil.rmtree`` on
+    # ``uploads/articles/{id}/`` so the on-disk asset is gone too.
+    assert not asset_path.exists()
