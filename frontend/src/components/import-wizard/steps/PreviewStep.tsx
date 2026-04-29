@@ -95,14 +95,34 @@ export function PreviewStep({
                     </p>
                 </div>
             ) : (
-                <PreviewPanel
-                    detected={detected}
-                    overrides={overrides}
-                    onOverridesChange={onOverridesChange}
-                    tempRef={tempRef}
-                    gitAdoption={gitAdoption}
-                    onGitAdoptionChange={onGitAdoptionChange}
-                />
+                <>
+                    {articleCount > 0 && (
+                        <p
+                            data-testid="preview-article-companion"
+                            style={{
+                                margin: "0 0 12px 0",
+                                fontSize: "0.8125rem",
+                                color: "var(--text-secondary)",
+                                padding: "6px 10px",
+                                background: "var(--bg-secondary)",
+                                borderRadius: 4,
+                            }}
+                        >
+                            {t(
+                                "ui.import_wizard.preview_articles_note",
+                                "{count} article(s) will also be restored.",
+                            ).replace("{count}", String(articleCount))}
+                        </p>
+                    )}
+                    <PreviewPanel
+                        detected={detected}
+                        overrides={overrides}
+                        onOverridesChange={onOverridesChange}
+                        tempRef={tempRef}
+                        gitAdoption={gitAdoption}
+                        onGitAdoptionChange={onGitAdoptionChange}
+                    />
+                </>
             )}
             <div
                 data-testid="preview-step-footer"

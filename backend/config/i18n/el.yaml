@@ -1351,6 +1351,10 @@ ui:
     button_import: Εισαγωγή
     articles_only_heading: Αντίγραφο ασφαλείας άρθρων
     articles_only_body: 'Αυτό το αντίγραφο περιέχει {count} άρθρο(α) και κανένα βιβλίο. Κάνε κλικ στην Εισαγωγή για να τα επαναφέρεις.'
+    summary_books: Βιβλία
+    summary_articles: Άρθρα
+    multi_book_articles_note: 'Θα επαναφερθούν επίσης {count} άρθρο(α).'
+    preview_articles_note: 'Θα επαναφερθούν επίσης {count} άρθρο(α).'
     step_1_drop_zone: Σύρε το αρχείο εδώ ή κάνε κλικ για περιήγηση
     step_1_accepted_formats: 'Δέχεται: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Μη υποστηριζόμενη μορφή αρχείου. Δέχεται: {formats}'

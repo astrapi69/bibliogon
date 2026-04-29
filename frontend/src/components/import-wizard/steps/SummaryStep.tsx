@@ -26,6 +26,10 @@ export function SummaryStep({
         (a) => a.purpose === "cover" || a.purpose === "covers",
     );
     const cssAsset = detected.assets.find((a) => a.purpose === "css");
+    const articleCount = Number(
+        detected.plugin_specific_data?.article_count ?? 0,
+    );
+    const bookCount = Number(detected.plugin_specific_data?.book_count ?? 0);
 
     return (
         <div data-testid="summary-step" style={{ padding: "4px 0" }}>
@@ -67,6 +71,28 @@ export function SummaryStep({
                 <dd data-testid="summary-chapters" style={ddStyle}>
                     {detected.chapters.length}
                 </dd>
+
+                {bookCount > 0 && (
+                    <>
+                        <dt style={dtStyle}>
+                            {t("ui.import_wizard.summary_books", "Books")}
+                        </dt>
+                        <dd data-testid="summary-books" style={ddStyle}>
+                            {bookCount}
+                        </dd>
+                    </>
+                )}
+
+                {articleCount > 0 && (
+                    <>
+                        <dt style={dtStyle}>
+                            {t("ui.import_wizard.summary_articles", "Articles")}
+                        </dt>
+                        <dd data-testid="summary-articles" style={ddStyle}>
+                            {articleCount}
+                        </dd>
+                    </>
+                )}
 
                 <dt style={dtStyle}>
                     <Tag size={12} style={{ verticalAlign: "-1px" }} />{" "}

@@ -1351,6 +1351,10 @@ ui:
     button_import: Importer
     articles_only_heading: Sauvegarde d''articles
     articles_only_body: 'Cette sauvegarde contient {count} article(s) et aucun livre. Cliquez sur Importer pour les restaurer.'
+    summary_books: Livres
+    summary_articles: Articles
+    multi_book_articles_note: '{count} article(s) seront egalement restaures.'
+    preview_articles_note: '{count} article(s) seront egalement restaures.'
     step_1_drop_zone: Deposez un fichier ici ou cliquez pour parcourir
     step_1_accepted_formats: 'Accepte : .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Format de fichier non pris en charge. Accepte : {formats}'

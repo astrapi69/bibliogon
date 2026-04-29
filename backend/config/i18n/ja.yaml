@@ -1351,6 +1351,10 @@ ui:
     button_import: インポート
     articles_only_heading: 記事バックアップ
     articles_only_body: 'このバックアップには{count}件の記事が含まれ、書籍はありません。インポートをクリックして復元してください。'
+    summary_books: 書籍
+    summary_articles: 記事
+    multi_book_articles_note: '{count}件の記事も復元されます。'
+    preview_articles_note: '{count}件の記事も復元されます。'
     step_1_drop_zone: ファイルをここにドロップ、またはクリックして選択
     step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'サポートされていない形式です。対応: {formats}'

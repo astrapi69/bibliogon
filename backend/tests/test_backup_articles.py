@@ -549,6 +549,91 @@ def test_cio_articles_only_bgb_revives_soft_deleted_article() -> None:
         db.close()
 
 
+def test_cio_single_book_with_articles_restores_both_segments() -> None:
+    """Single-book .bgb that ALSO carries articles must restore both
+    segments via the CIO single-execute path. Regression guard:
+    the wizard renders the books-style preview for this archive
+    shape, so it is easy to overlook that the articles segment
+    needs the same restore treatment as the multi-book path."""
+    db = SessionLocal()
+    try:
+        _purge_articles(db)
+        _purge_books(db)
+    finally:
+        db.close()
+
+    book_id = "single-book-with-articles"
+    article_id_a = "single-art-a"
+    article_id_b = "single-art-b"
+    book_blob = {
+        "id": book_id,
+        "title": "Companion Book",
+        "author": "C",
+        "language": "en",
+        "chapters": [],
+        "assets": [],
+    }
+
+    def _article_blob(art_id: str, title: str) -> dict:
+        return {
+            "id": art_id,
+            "title": title,
+            "language": "en",
+            "content_type": "article",
+            "content_json": "{}",
+            "status": "draft",
+            "tags": "[]",
+            "ai_tokens_used": 0,
+            "deleted_at": None,
+            "created_at": "2026-04-29T00:00:00+00:00",
+            "updated_at": "2026-04-29T00:00:00+00:00",
+        }
+
+    manifest = {"format": "bibliogon-backup", "version": "2.0"}
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        zf.writestr(f"books/{book_id}/book.json", json.dumps(book_blob))
+        zf.writestr(
+            f"articles/{article_id_a}/article.json",
+            json.dumps(_article_blob(article_id_a, "Companion A")),
+        )
+        zf.writestr(
+            f"articles/{article_id_b}/article.json",
+            json.dumps(_article_blob(article_id_b, "Companion B")),
+        )
+
+    detect_resp = client.post(
+        "/api/import/detect",
+        files=[("files", ("single.bgb", buf.getvalue(), "application/octet-stream"))],
+    )
+    assert detect_resp.status_code == 200, detect_resp.text
+    detected = detect_resp.json()["detected"]
+    assert detected["is_multi_book"] is False
+    assert detected["plugin_specific_data"]["article_count"] == 2
+    assert detected["plugin_specific_data"]["articles_only"] is False
+
+    execute_resp = client.post(
+        "/api/import/execute",
+        json={
+            "temp_ref": detect_resp.json()["temp_ref"],
+            "overrides": {},
+            "duplicate_action": "create",
+        },
+    )
+    assert execute_resp.status_code == 200, execute_resp.text
+    body = execute_resp.json()
+    assert body["book_id"] == book_id
+
+    db = SessionLocal()
+    try:
+        assert db.get(Book, book_id) is not None
+        assert db.get(Article, article_id_a) is not None
+        assert db.get(Article, article_id_b) is not None
+    finally:
+        db.close()
+
+
 def test_cio_multi_book_with_articles_restores_both_segments() -> None:
     """A .bgb with two books AND one article must restore all three
     via the CIO multi-book wizard path. Articles travel as a batch

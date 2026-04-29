@@ -1351,6 +1351,10 @@ ui:
     button_import: Importar
     articles_only_heading: Backup de artigos
     articles_only_body: 'Este backup contem {count} artigo(s) e nenhum livro. Clica em Importar para os restaurar.'
+    summary_books: Livros
+    summary_articles: Artigos
+    multi_book_articles_note: '{count} artigo(s) tambem serao restaurados.'
+    preview_articles_note: '{count} artigo(s) tambem serao restaurados.'
     step_1_drop_zone: Arrasta o ficheiro aqui ou clica para procurar
     step_1_accepted_formats: 'Aceita: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Formato de ficheiro nao suportado. Aceita: {formats}'

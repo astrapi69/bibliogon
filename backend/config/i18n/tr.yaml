@@ -1351,6 +1351,10 @@ ui:
     button_import: Ice aktar
     articles_only_heading: Makale yedegi
     articles_only_body: 'Bu yedek {count} makale icerir ve kitap yoktur. Geri yuklemek icin Ice aktara tikla.'
+    summary_books: Kitaplar
+    summary_articles: Makaleler
+    multi_book_articles_note: '{count} makale de geri yuklenecek.'
+    preview_articles_note: '{count} makale de geri yuklenecek.'
     step_1_drop_zone: Dosyayi buraya surukle veya goz atmak icin tikla
     step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Desteklenmeyen dosya bicimi. Kabul eder: {formats}'

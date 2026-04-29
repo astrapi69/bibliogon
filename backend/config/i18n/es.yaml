@@ -1351,6 +1351,10 @@ ui:
     button_import: Importar
     articles_only_heading: Copia de seguridad de articulos
     articles_only_body: 'Esta copia contiene {count} articulo(s) y ningun libro. Haz clic en Importar para restaurarlos.'
+    summary_books: Libros
+    summary_articles: Articulos
+    multi_book_articles_note: 'Tambien se restauraran {count} articulo(s).'
+    preview_articles_note: 'Tambien se restauraran {count} articulo(s).'
     step_1_drop_zone: Arrastra el archivo aqui o haz clic para buscar
     step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Formato de archivo no admitido. Acepta: {formats}'

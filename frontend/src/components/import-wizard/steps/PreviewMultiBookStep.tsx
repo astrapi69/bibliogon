@@ -52,6 +52,9 @@ export function PreviewMultiBookStep({
     const books = detected.books ?? [];
     const total = books.length;
     const selectedCount = selection.selectedSourceIds.length;
+    const articleCount = Number(
+        detected.plugin_specific_data?.article_count ?? 0,
+    );
 
     return (
         <div data-testid="preview-multi-book-step">
@@ -62,6 +65,21 @@ export function PreviewMultiBookStep({
                         "{count} books in this backup",
                     ).replace("{count}", String(total))}
                 </h3>
+                {articleCount > 0 && (
+                    <p
+                        data-testid="multi-book-article-companion"
+                        style={{
+                            margin: "6px 0 0 0",
+                            fontSize: "0.8125rem",
+                            color: "var(--text-secondary)",
+                        }}
+                    >
+                        {t(
+                            "ui.import_wizard.multi_book_articles_note",
+                            "{count} article(s) will also be restored.",
+                        ).replace("{count}", String(articleCount))}
+                    </p>
+                )}
                 <div
                     style={{
                         display: "flex",
