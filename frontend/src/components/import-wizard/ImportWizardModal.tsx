@@ -88,14 +88,19 @@ export default function ImportWizardModal({
 
     // Fire onImported exactly once per successful execute - the machine
     // re-enters "success" on RESET-then-import so we keep a ref to the
-    // book id we already announced.
+    // run we already announced. ``ctx.bookId`` is empty for articles-only
+    // .bgb restores; use the step transition itself as the trigger and
+    // pass an empty string so the caller can refresh its list either
+    // way (book lists call loadBooks(); article list reloads via
+    // api.articles.list()).
     useEffect(() => {
         if (stepName !== "success") {
             importedRef.current = null;
             return;
         }
-        if (ctx.bookId && importedRef.current !== ctx.bookId) {
-            importedRef.current = ctx.bookId;
+        const announceKey = ctx.bookId || "__articles_only__";
+        if (importedRef.current !== announceKey) {
+            importedRef.current = announceKey;
             onImported?.(ctx.bookId);
         }
     }, [stepName, ctx.bookId, onImported]);
