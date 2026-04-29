@@ -59,8 +59,14 @@ class BgbImportHandler:
         with zipfile.ZipFile(path, "r") as zf:
             _validate_manifest(zf, warnings)
             blobs = _book_blobs(zf)
+            article_count = _article_count(zf)
 
-        if not blobs:
+        # Articles travel with the backup but are not selectable in
+        # the wizard. Surface the count so the UI can confirm what
+        # will be restored alongside the books. The "no book.json"
+        # warning is only meaningful when nothing at all is in the
+        # archive; an articles-only .bgb is a valid Bibliogon backup.
+        if not blobs and article_count == 0:
             warnings.append("No book.json inside the backup.")
 
         is_multi_book = len(blobs) > 1
@@ -87,6 +93,12 @@ class BgbImportHandler:
                 books_summary = [_book_summary(blob, archive_hash, session) for blob in blobs]
             finally:
                 session.close()
+
+        # Articles-only .bgb has no book metadata; surface a stable
+        # source_identifier built from the archive hash so the
+        # orchestrator's duplicate detection still works.
+        if not blobs and article_count > 0:
+            source_identifier = f"sha256:{archive_hash}"
 
         return DetectedProject(
             format_name=self.format_name,
@@ -120,7 +132,11 @@ class BgbImportHandler:
             warnings=warnings,
             is_multi_book=is_multi_book,
             books=books_summary,
-            plugin_specific_data={"book_count": len(blobs)},
+            plugin_specific_data={
+                "book_count": len(blobs),
+                "article_count": article_count,
+                "articles_only": not blobs and article_count > 0,
+            },
         )
 
     def execute(
@@ -154,12 +170,14 @@ class BgbImportHandler:
             if duplicate_action == "overwrite" and existing_book_id:
                 _hard_delete_book(session, existing_book_id)
 
-            book_id = _restore_single_book(session, path)
+            book_id, articles_restored = _restore_single_book_and_articles(session, path)
             # SessionLocal is autoflush=False; force the pending Book
             # INSERT before _apply_overrides reads the row back.
             session.flush()
-            _apply_overrides(session, book_id, overrides)
+            if book_id:
+                _apply_overrides(session, book_id, overrides)
             session.commit()
+            del articles_restored  # surfaced via DetectedProject for ops
             return book_id
         except Exception:
             session.rollback()
@@ -223,8 +241,12 @@ class BgbImportHandler:
         imported: list[str] = []
         session: Session = SessionLocal()
         try:
-            from app.services.backup.archive_utils import find_books_dir
+            from app.services.backup.archive_utils import (
+                find_articles_dir,
+                find_books_dir,
+            )
             from app.services.backup.backup_import import (
+                _restore_article_from_dir,
                 _restore_book_from_dir,
             )
 
@@ -266,6 +288,15 @@ class BgbImportHandler:
 
                     if _restore_book_from_dir(session, child):
                         imported.append(book_uuid)
+
+                # Articles travel with the multi-book .bgb but are
+                # not selectable in the wizard; always restore the
+                # full set when the user confirms the import.
+                articles_dir = find_articles_dir(tmp_dir)
+                if articles_dir is not None:
+                    for art_child in sorted(articles_dir.iterdir()):
+                        _restore_article_from_dir(session, art_child)
+
                 session.flush()
                 session.commit()
             finally:
@@ -335,6 +366,17 @@ def _book_blobs(zf: zipfile.ZipFile) -> list[dict]:
             except (json.JSONDecodeError, UnicodeDecodeError):
                 continue
     return out
+
+
+def _article_count(zf: zipfile.ZipFile) -> int:
+    """Count restorable articles in the archive.
+
+    A .bgb produced by ``backup_export.export_backup_archive`` writes
+    one ``article.json`` per article under ``articles/<id>/``.
+    Manifest version 1.0 backups have none. Version 2.0+ may have
+    zero, some, or all of the install's articles.
+    """
+    return sum(1 for n in zf.namelist() if n.endswith("/article.json"))
 
 
 def _first_book_blob(zf: zipfile.ZipFile, warnings: list[str]) -> dict | None:
@@ -433,35 +475,54 @@ def _hard_delete_book(session: Session, book_id: str) -> None:
     session.flush()
 
 
-def _restore_single_book(session: Session, bgb_path: Path) -> str:
-    """Extract the ``.bgb`` and restore its first book. Returns book_id.
+def _restore_single_book_and_articles(session: Session, bgb_path: Path) -> tuple[str, int]:
+    """Extract the ``.bgb`` and restore its first book + every article.
+
+    Returns ``(book_id, articles_restored)``.
+
+    For articles-only backups (manifest 2.0 with zero books) returns
+    ``("", N)`` where N is the count of restored articles.
 
     Reuses :func:`app.services.backup.backup_import._restore_book_from_dir`
-    to avoid logic duplication. That function skips existing non-trashed
-    books; for the orchestrator we handle the overwrite case outside by
-    hard-deleting first.
+    and :func:`_restore_article_from_dir`. Those skip existing
+    non-trashed entities; for the orchestrator the overwrite case is
+    handled outside by hard-deleting first.
     """
-    from app.services.backup.archive_utils import find_books_dir
-    from app.services.backup.backup_import import _restore_book_from_dir
+    from app.services.backup.archive_utils import find_articles_dir, find_books_dir
+    from app.services.backup.backup_import import (
+        _restore_article_from_dir,
+        _restore_book_from_dir,
+    )
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_bgb_handler_"))
     try:
         with zipfile.ZipFile(bgb_path, "r") as zf:
             zf.extractall(tmp_dir)
-        books_dir = find_books_dir(tmp_dir)
-        if books_dir is None:
-            raise _BgbInvalid("Backup does not contain a books/ directory.")
 
-        for child in sorted(books_dir.iterdir()):
-            if not child.is_dir():
-                continue
-            book_json = child / "book.json"
-            if not book_json.exists():
-                continue
-            book_id = str(json.loads(book_json.read_text(encoding="utf-8"))["id"])
-            if _restore_book_from_dir(session, child):
-                return book_id
-        raise _BgbInvalid("Backup has no restorable book.json.")
+        book_id = ""
+        books_dir = find_books_dir(tmp_dir)
+        if books_dir is not None:
+            for child in sorted(books_dir.iterdir()):
+                if not child.is_dir():
+                    continue
+                book_json = child / "book.json"
+                if not book_json.exists():
+                    continue
+                candidate_id = str(json.loads(book_json.read_text(encoding="utf-8"))["id"])
+                if _restore_book_from_dir(session, child):
+                    book_id = candidate_id
+                    break
+
+        articles_restored = 0
+        articles_dir = find_articles_dir(tmp_dir)
+        if articles_dir is not None:
+            for art_child in sorted(articles_dir.iterdir()):
+                if _restore_article_from_dir(session, art_child):
+                    articles_restored += 1
+
+        if not book_id and articles_restored == 0:
+            raise _BgbInvalid("Backup has no restorable book.json or article.json.")
+        return book_id, articles_restored
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

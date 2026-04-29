@@ -333,6 +333,112 @@ def test_restore_skips_live_article_with_same_id() -> None:
     assert result["imported_articles"] >= 0
 
 
+# --- HTTP user-path: CIO orchestrator restores articles ---
+
+
+def _articles_only_bgb_bytes(article_id: str = "user-path-art-1") -> bytes:
+    """Build a manifest-2.0 .bgb that has zero books and one article.
+    Mirrors the shape ``backup_export.export_backup_archive`` produces
+    when the install has only articles."""
+    buf = BytesIO()
+    article_blob = {
+        "id": article_id,
+        "title": "User-Path Article",
+        "language": "en",
+        "content_type": "article",
+        "content_json": '{"type":"doc","content":[]}',
+        "status": "draft",
+        "tags": "[]",
+        "ai_tokens_used": 0,
+        "deleted_at": None,
+        "created_at": "2026-04-29T00:00:00+00:00",
+        "updated_at": "2026-04-29T00:00:00+00:00",
+    }
+    manifest = {
+        "format": "bibliogon-backup",
+        "version": "2.0",
+        "article_count": 1,
+        "publication_count": 0,
+        "article_asset_count": 0,
+        "book_count": 0,
+        "includes_audiobook": False,
+    }
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("manifest.json", json.dumps(manifest))
+        # backup_export always materializes books/ for the
+        # ``_require_books_dir`` validator, so emit it even though
+        # there are no books in this fixture.
+        zf.writestr("books/", "")
+        zf.writestr(f"articles/{article_id}/article.json", json.dumps(article_blob))
+    return buf.getvalue()
+
+
+def test_cio_articles_only_bgb_restores_through_http_user_path() -> None:
+    """The user-flow Import button posts to ``/api/import/detect`` +
+    ``/api/import/execute`` (CIO), not directly to
+    ``/api/backup/import``. Pin that articles-only .bgb survives that
+    HTTP path: detect emits no false 'no book.json' warning, execute
+    creates the article row, response shape stays valid."""
+    db = SessionLocal()
+    try:
+        _purge_articles(db)
+    finally:
+        db.close()
+
+    payload = _articles_only_bgb_bytes()
+    detect_resp = client.post(
+        "/api/import/detect",
+        files=[("files", ("articles-only.bgb", payload, "application/octet-stream"))],
+    )
+    assert detect_resp.status_code == 200, detect_resp.text
+    detected = detect_resp.json()
+    assert detected["detected"]["format_name"] == "bgb"
+    # The articles-only archive must NOT trigger the legacy warning.
+    assert "No book.json inside the backup." not in detected["detected"]["warnings"]
+    temp_ref = detected["temp_ref"]
+
+    execute_resp = client.post(
+        "/api/import/execute",
+        json={"temp_ref": temp_ref, "overrides": {}, "duplicate_action": "create"},
+    )
+    assert execute_resp.status_code == 200, execute_resp.text
+    body = execute_resp.json()
+    # Articles-only archive yields no Book row; status still 'created'.
+    assert body["status"] == "created"
+    assert body["book_id"] in ("", None)
+
+    db = SessionLocal()
+    try:
+        restored = db.get(Article, "user-path-art-1")
+        assert restored is not None
+        assert restored.title == "User-Path Article"
+    finally:
+        db.close()
+
+
+def test_cio_detect_emits_no_book_json_warning_only_when_archive_is_empty(
+    tmp_path,
+) -> None:
+    """The 'no book.json' warning is reserved for genuinely empty
+    archives. Articles-only and books-only must both pass cleanly."""
+    from app.import_plugins.handlers.bgb import BgbImportHandler
+
+    handler = BgbImportHandler()
+    empty = tmp_path / "empty.bgb"
+    with zipfile.ZipFile(empty, "w") as zf:
+        zf.writestr(
+            "manifest.json",
+            json.dumps({"format": "bibliogon-backup", "version": "2.0"}),
+        )
+    detected_empty = handler.detect(str(empty))
+    assert "No book.json inside the backup." in detected_empty.warnings
+
+    articles_only = tmp_path / "articles-only.bgb"
+    articles_only.write_bytes(_articles_only_bgb_bytes(article_id="warn-test-art"))
+    detected_articles = handler.detect(str(articles_only))
+    assert "No book.json inside the backup." not in detected_articles.warnings
+
+
 # --- helper kept module-clean for IDE; silences unused-import lint ---
 
 _ = BytesIO  # type: ignore[unused-ignore]

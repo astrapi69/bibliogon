@@ -330,24 +330,30 @@ def execute_import(
     detected_dict = detected.model_dump()
     from app.routers.books import _allow_books_without_author
 
-    try:
-        validate_overrides(
-            payload.overrides,
-            detected=detected_dict,
-            allow_null_author=_allow_books_without_author(),
-        )
-    except MandatoryFieldMissing as exc:
-        _drop_staged(payload.temp_ref)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"field": exc.field, "message": str(exc)},
-        ) from exc
-    except KeyError as exc:
-        _drop_staged(payload.temp_ref)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+    # Articles-only .bgb has no Book metadata to validate. The
+    # MANDATORY_FIELDS check (title + author) is book-centric and
+    # would always reject; skip validation for that path.
+    is_articles_only = bool(detected.plugin_specific_data.get("articles_only"))
+
+    if not is_articles_only:
+        try:
+            validate_overrides(
+                payload.overrides,
+                detected=detected_dict,
+                allow_null_author=_allow_books_without_author(),
+            )
+        except MandatoryFieldMissing as exc:
+            _drop_staged(payload.temp_ref)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"field": exc.field, "message": str(exc)},
+            ) from exc
+        except KeyError as exc:
+            _drop_staged(payload.temp_ref)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
 
     # Reject git_adoption=adopt_* when the source carries no .git/;
     # handler would silently no-op which is worse than a 400.
@@ -420,7 +426,13 @@ def execute_import(
                 format_name=detected.format_name,
                 overwrote=False,
             )
-    else:
+    elif book_id:
+        # Articles-only .bgb imports return book_id="" because no
+        # Book row was created; BookImportSource has a NOT NULL FK
+        # to Book so skip the source row in that case. The archive's
+        # sha256 still suffices for duplicate detection on re-import
+        # because detect() recomputes it without consulting the
+        # source table for articles-only archives.
         _record_import_source(
             db,
             book_id=book_id,

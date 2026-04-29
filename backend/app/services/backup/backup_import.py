@@ -1,6 +1,7 @@
 """Restore a .bgb full-data backup archive into the database."""
 
 import json
+import logging
 import shutil
 import tempfile
 import zipfile
@@ -19,7 +20,15 @@ from app.services.backup.serializer import (
     restore_publication_from_data,
 )
 
+logger = logging.getLogger(__name__)
 _history = BackupHistory()
+
+# Manifest versions this build understands end-to-end. Newer values are
+# accepted with a warning; the additive segment-discovery (books/,
+# articles/, ...) keeps a 1.0 reader compatible with a 2.0 writer and
+# a 2.0 reader compatible with a hypothetical 3.0 writer that only
+# adds segments.
+_KNOWN_MANIFEST_VERSIONS = {"1.0", "2.0"}
 
 
 def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
@@ -110,6 +119,19 @@ def _validate_backup_manifest(extracted: Path) -> None:
         raise HTTPException(
             status_code=400,
             detail="Ungültige Backup-Datei. Die Datei hat kein gültiges Bibliogon-Backup-Format.",
+        )
+    version = str(manifest_data.get("version", "1.0"))
+    if version not in _KNOWN_MANIFEST_VERSIONS:
+        # Forward-compat: don't reject. Future major bumps may add
+        # new segments this reader does not know about; the additive
+        # find_*_dir() helpers will simply not see them and the
+        # restore proceeds with the segments we do recognize.
+        logger.warning(
+            "Backup manifest version %r is newer than this build "
+            "supports (%s). Restoring known segments only; please "
+            "upgrade Bibliogon to read the full archive.",
+            version,
+            sorted(_KNOWN_MANIFEST_VERSIONS),
         )
 
 
