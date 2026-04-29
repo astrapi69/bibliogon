@@ -292,6 +292,18 @@ export default function ArticleList() {
                                 {t("ui.articles.new", "Neuer Artikel")}
                             </span>
                         </button>
+                        {/* Symmetric cross-nav to Books dashboard.
+                            Mirrors the ``articles-nav-btn`` button in
+                            Dashboard.tsx (text-only, hide-mobile,
+                            secondary). */}
+                        <button
+                            className="btn btn-secondary btn-sm hide-mobile"
+                            data-testid="books-nav-btn"
+                            onClick={() => navigate("/")}
+                            title={t("ui.dashboard.books_nav_tooltip", "Bücher verwalten")}
+                        >
+                            {t("ui.dashboard.books_nav", "Bücher")}
+                        </button>
 
                         {/* Desktop chrome: every icon button + ThemeToggle.
                             Hidden under 768px; the hamburger menu below
@@ -371,6 +383,14 @@ export default function ArticleList() {
                                     align="end"
                                     sideOffset={4}
                                 >
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        data-testid="article-list-mobile-menu-books"
+                                        onSelect={() => navigate("/")}
+                                    >
+                                        <BookOpen size={16} /> {t("ui.dashboard.books_nav", "Bücher")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
                                         onSelect={() => setShowTrash(!showTrash)}

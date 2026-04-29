@@ -15,6 +15,8 @@ ui:
     col_last_edit: "Son duzenleme"
     col_actions: "Eylemler"
     articles_nav_tooltip: "Makaleleri yonet"
+    books_nav: "Kitaplar"
+    books_nav_tooltip: "Kitaplari yonet"
     new_book: "Yeni kitap"
     no_books: "Henuz kitap yok"
     book_no_author: "—"

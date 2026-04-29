@@ -15,6 +15,8 @@ ui:
     col_last_edit: "Derniere modification"
     col_actions: "Actions"
     articles_nav_tooltip: "Gerer les articles"
+    books_nav: "Livres"
+    books_nav_tooltip: "Gerer les livres"
     new_book: "Nouveau livre"
     no_books: "Pas encore de livres"
     book_no_author: "—"
