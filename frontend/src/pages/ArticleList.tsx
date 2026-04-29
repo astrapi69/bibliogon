@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import {
     AlertTriangle,
     BookOpen,
+    Download,
     FileText,
     HelpCircle,
     Menu,
@@ -22,6 +23,7 @@ import {
     Settings,
     Trash,
     Trash2,
+    Upload,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
@@ -37,6 +39,7 @@ import { useArticleFilters } from "../hooks/useArticleFilters";
 import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search, X as XIcon, ArrowUp, ArrowDown } from "lucide-react";
+import { ImportWizardModal } from "../components/import-wizard";
 
 const STATUS_FILTERS: (ArticleStatus | "all")[] = [
     "all",
@@ -57,6 +60,16 @@ export default function ArticleList() {
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
+    const [importWizardOpen, setImportWizardOpen] = useState(false);
+
+    /** Project-wide backup export. Same handler as Dashboard.tsx
+     *  surfaces; the .bgb is project-scoped (currently books-only,
+     *  articles join when the backup pipeline supports them - tracked
+     *  separately). Articles dashboard exposes the action so users
+     *  do not have to navigate to the books dashboard to trigger it. */
+    const handleBackupExport = () => {
+        window.open(api.backup.exportUrl(), "_blank");
+    };
 
     const loadTrash = async () => {
         try {
@@ -312,8 +325,24 @@ export default function ArticleList() {
                             className="hide-mobile"
                             style={{ display: "flex", alignItems: "center", gap: 6 }}
                         >
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="article-backup-export-btn"
+                                onClick={handleBackupExport}
+                                disabled={articles.length === 0}
+                                title={t("ui.dashboard.backup", "Backup")}
+                            >
+                                <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="article-import-wizard-btn"
+                                onClick={() => setImportWizardOpen(true)}
+                                title={t("ui.dashboard.import", "Importieren")}
+                            >
+                                <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
+                            </button>
                             <div style={layout.headerSeparator} />
-                            <ViewToggle mode={viewMode} onChange={setViewMode} />
                             <button
                                 className="btn-icon"
                                 onClick={() => navigate("/get-started")}
@@ -393,6 +422,19 @@ export default function ArticleList() {
                                     <DropdownMenu.Separator className="hamburger-menu-separator" />
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
+                                        onSelect={handleBackupExport}
+                                    >
+                                        <Download size={16} /> {t("ui.dashboard.backup", "Backup")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        onSelect={() => setImportWizardOpen(true)}
+                                    >
+                                        <Upload size={16} /> {t("ui.dashboard.import", "Importieren")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
                                         onSelect={() => setShowTrash(!showTrash)}
                                     >
                                         <Trash size={16} /> {t("ui.articles.trash_title", "Papierkorb")}
@@ -424,10 +466,21 @@ export default function ArticleList() {
                 </div>
             </header>
             <main style={layout.main}>
-            <h2 style={layout.heading}>
-                <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
-                {t("ui.articles.list_heading", "Artikel")}
-            </h2>
+            {/* Page title row mirrors the books-dashboard ``mainHeader``
+                shape: heading + count + ViewToggle inline. */}
+            <div style={layout.mainHeader}>
+                <h2 style={layout.heading}>
+                    <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
+                    {t("ui.articles.list_heading", "Artikel")}
+                </h2>
+                <span style={layout.articleCount}>
+                    {articles.length}{" "}
+                    {articles.length === 1
+                        ? t("ui.articles.count_singular", "Artikel")
+                        : t("ui.articles.count_plural", "Artikel")}
+                </span>
+                <ViewToggle mode={viewMode} onChange={setViewMode} />
+            </div>
 
             {showTrash ? (
                 <TrashPanel
@@ -493,6 +546,17 @@ export default function ArticleList() {
                 </ul>
             )}
             </main>
+            <ImportWizardModal
+                open={importWizardOpen}
+                onClose={() => setImportWizardOpen(false)}
+                onImported={() => {
+                    // Project-import lands books, not articles. Reload
+                    // the live list so a freshly-imported book project
+                    // does not stale the trash badge counts; articles
+                    // themselves are not touched by the import path.
+                    void api.articles.list().then(setArticles).catch(() => {});
+                }}
+            />
         </div>
     );
 }
@@ -996,10 +1060,20 @@ const layout: Record<string, React.CSSProperties> = {
         margin: "0 auto",
         padding: "32px 24px",
     },
+    mainHeader: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 20,
+    },
     heading: {
-        margin: "0 0 20px 0",
+        margin: 0,
         fontSize: "1.5rem",
         fontWeight: 600,
+    },
+    articleCount: {
+        fontSize: "0.875rem",
+        color: "var(--text-muted)",
     },
     filterBar: {
         display: "flex",

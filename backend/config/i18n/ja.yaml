@@ -757,6 +757,8 @@ ui:
     import_result_reason_import_failed: "インポート失敗 (互換性のない構造)"
   articles:
     list_heading: "記事"
+    count_singular: "記事"
+    count_plural: "記事"
     list_error: "記事リストを読み込めませんでした。"
     new: "新しい記事"
     default_title: "新しい記事"

@@ -757,6 +757,8 @@ ui:
     import_result_reason_import_failed: "Η εισαγωγή απέτυχε (μη συμβατή δομή)"
   articles:
     list_heading: "Άρθρα"
+    count_singular: "Άρθρο"
+    count_plural: "Άρθρα"
     list_error: "Δεν ήταν δυνατή η φόρτωση της λίστας άρθρων."
     new: "Νέο άρθρο"
     default_title: "Νέο άρθρο"

@@ -793,6 +793,8 @@ ui:
     import_result_reason_import_failed: "Echec de l'import (structure incompatible)"
   articles:
     list_heading: "Articles"
+    count_singular: "Article"
+    count_plural: "Articles"
     list_error: "Impossible de charger la liste des articles."
     new: "Nouvel article"
     default_title: "Nouvel article"

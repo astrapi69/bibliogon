@@ -757,6 +757,8 @@ ui:
     import_result_reason_import_failed: "Falha ao importar (estrutura incompativel)"
   articles:
     list_heading: "Artigos"
+    count_singular: "Artigo"
+    count_plural: "Artigos"
     list_error: "Nao foi possivel carregar a lista de artigos."
     new: "Novo artigo"
     default_title: "Novo artigo"

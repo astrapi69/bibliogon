@@ -793,6 +793,8 @@ ui:
     import_result_reason_import_failed: "Iceri aktarma basarisiz (uyumsuz yapi)"
   articles:
     list_heading: "Makaleler"
+    count_singular: "Makale"
+    count_plural: "Makale"
     list_error: "Makale listesi yuklenemedi."
     new: "Yeni makale"
     default_title: "Yeni makale"

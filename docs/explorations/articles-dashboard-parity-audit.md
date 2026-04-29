@@ -6,6 +6,31 @@
 > resolved or explicitly deferred under `I18N-DIACRITICS-01`
 > (cosmetic-only) below.
 
+## Update 2026-04-29 — Round 2 (post-cluster smoke)
+
+Manual smoke after the cluster-fix shipment surfaced three more
+gaps the original audit missed because the deferred H-6 / H-7
+items were prematurely dismissed as "books-only". Fixed in the
+follow-up commit referenced at the bottom of this section.
+
+| # | Element | Books | Articles (before) | Severity | Status |
+|---|---------|-------|-------------------|----------|--------|
+| H-10 | Project Backup button (`/api/backup/export`) | Yes | **No** | Medium | Fixed |
+| H-11 | Import wizard button (project-wide) | Yes | **No** | Medium | Fixed |
+| H-12 | ViewToggle inside the page-title row (next to count) | Yes | **No** (sat in chrome) | Medium | Fixed |
+
+Backup + import are project-wide actions (the .bgb is project-
+scoped). Articles dashboard now exposes the same handlers + same
+`ImportWizardModal` mount so users do not have to navigate to the
+books dashboard to trigger them. The wizard's import path still
+lands books only - articles join the .bgb pipeline as a separate
+backlog item once the backup pipeline supports them.
+
+ViewToggle moved from the app-header chrome into a new
+`mainHeader` row immediately after the page heading, mirroring
+``Dashboard.tsx`` ``mainHeader`` (`<h2>` + count + ViewToggle
+inline).
+
 
 
 Date: 2026-04-29.
