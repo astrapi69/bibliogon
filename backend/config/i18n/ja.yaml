@@ -1349,6 +1349,8 @@ ui:
     warnings_heading: 警告
     button_back: 戻る
     button_import: インポート
+    articles_only_heading: 記事バックアップ
+    articles_only_body: 'このバックアップには{count}件の記事が含まれ、書籍はありません。インポートをクリックして復元してください。'
     step_1_drop_zone: ファイルをここにドロップ、またはクリックして選択
     step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'サポートされていない形式です。対応: {formats}'

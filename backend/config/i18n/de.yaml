@@ -1349,6 +1349,8 @@ ui:
     warnings_heading: Warnungen
     button_back: Zurück
     button_import: Importieren
+    articles_only_heading: Artikel-Backup
+    articles_only_body: 'Dieses Backup enthält {count} Artikel und keine Bücher. Klicke auf Importieren, um die Artikel wiederherzustellen.'
     step_1_drop_zone: Datei hier ablegen oder zum Durchsuchen klicken
     step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Dateiformat nicht unterstützt. Akzeptiert: {formats}'

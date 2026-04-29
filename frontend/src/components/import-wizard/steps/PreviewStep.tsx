@@ -22,6 +22,10 @@ function hasMandatoryValues(
     return valid(author);
 }
 
+function isArticlesOnly(detected: DetectedProject): boolean {
+    return Boolean(detected.plugin_specific_data?.articles_only);
+}
+
 export function PreviewStep({
     detected,
     duplicate,
@@ -49,7 +53,16 @@ export function PreviewStep({
 }) {
     const { t } = useI18n();
     const allowDeferAuthor = useAllowBooksWithoutAuthor();
-    const canImport = hasMandatoryValues(overrides, allowDeferAuthor);
+    const articlesOnly = isArticlesOnly(detected);
+    const articleCount = Number(
+        detected.plugin_specific_data?.article_count ?? 0,
+    );
+    // Articles-only .bgb has no Book metadata; the title+author gate
+    // is book-centric and would always disable Confirm. Bypass it so
+    // the user can restore article-only backups end to end.
+    const canImport = articlesOnly
+        ? articleCount > 0
+        : hasMandatoryValues(overrides, allowDeferAuthor);
 
     return (
         <div data-testid="preview-step">
@@ -58,14 +71,39 @@ export function PreviewStep({
                 currentAction={duplicateAction}
                 onActionChange={onDuplicateActionChange}
             />
-            <PreviewPanel
-                detected={detected}
-                overrides={overrides}
-                onOverridesChange={onOverridesChange}
-                tempRef={tempRef}
-                gitAdoption={gitAdoption}
-                onGitAdoptionChange={onGitAdoptionChange}
-            />
+            {articlesOnly ? (
+                <div
+                    data-testid="preview-articles-only"
+                    style={{
+                        padding: 16,
+                        border: "1px solid var(--border)",
+                        borderRadius: 8,
+                        background: "var(--bg-secondary)",
+                    }}
+                >
+                    <h3 style={{ marginTop: 0 }}>
+                        {t(
+                            "ui.import_wizard.articles_only_heading",
+                            "Articles backup",
+                        )}
+                    </h3>
+                    <p style={{ marginBottom: 0 }}>
+                        {t(
+                            "ui.import_wizard.articles_only_body",
+                            "This backup contains {count} article(s) and no books. Confirm to restore them.",
+                        ).replace("{count}", String(articleCount))}
+                    </p>
+                </div>
+            ) : (
+                <PreviewPanel
+                    detected={detected}
+                    overrides={overrides}
+                    onOverridesChange={onOverridesChange}
+                    tempRef={tempRef}
+                    gitAdoption={gitAdoption}
+                    onGitAdoptionChange={onGitAdoptionChange}
+                />
+            )}
             <div
                 data-testid="preview-step-footer"
                 style={{
