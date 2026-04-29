@@ -9,6 +9,8 @@ publication CRUD lives in ``publications.py``.
 
 import json
 import logging
+import shutil
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -97,8 +99,31 @@ def update_article(
 
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
+    """Hard-delete an article + every related row + on-disk assets.
+
+    Cascade is configured via SQLAlchemy FK ``ondelete="CASCADE"``
+    on ``ArticleAsset.article_id`` and ``Publication.article_id`` so
+    ``db.delete(article)`` clears those rows automatically. The
+    matching ``uploads/articles/{id}/`` directory is removed in a
+    best-effort step **before** the DB delete so a half-finished
+    delete does not orphan files when the DB commit fails.
+    """
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
+
+    # Best-effort disk cleanup: featured-image + any other article
+    # asset uploads land under ``uploads/articles/{article_id}/``
+    # (see article_assets router). Missing directory or permission
+    # error must not block the DB delete; log + continue.
+    asset_dir = Path("uploads") / "articles" / article_id
+    if asset_dir.exists():
+        try:
+            shutil.rmtree(asset_dir)
+        except OSError as exc:
+            logger.warning(
+                "delete_article: could not remove %s: %s", asset_dir, exc
+            )
+
     db.delete(article)
     db.commit()

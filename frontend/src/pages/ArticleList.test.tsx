@@ -71,6 +71,13 @@ vi.mock("../api/client", () => ({
     },
 }));
 
+vi.mock("../components/AppDialog", () => ({
+    useDialog: () => ({
+        confirm: vi.fn().mockResolvedValue(false),
+        alert: vi.fn().mockResolvedValue(undefined),
+    }),
+}));
+
 vi.mock("../utils/notify", () => ({
     notify: {
         error: vi.fn(),

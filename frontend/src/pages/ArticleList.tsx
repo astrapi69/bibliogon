@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Home, Plus } from "lucide-react";
+import { FileText, Home, Plus, Trash2 } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
@@ -17,6 +17,7 @@ import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
 import { useViewMode } from "../hooks/useViewMode";
+import { useDialog } from "../components/AppDialog";
 
 const STATUS_FILTERS: (ArticleStatus | "all")[] = [
     "all",
@@ -33,6 +34,32 @@ export default function ArticleList() {
     const [filter, setFilter] = useState<ArticleStatus | "all">("all");
     const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
+    const { confirm } = useDialog();
+
+    async function handleDelete(article: Article): Promise<void> {
+        const ok = await confirm(
+            t("ui.articles.delete_title", "Artikel löschen?"),
+            t(
+                "ui.articles.delete_body",
+                "Dieser Artikel wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+            ),
+            "danger",
+            { confirmLabel: t("ui.articles.delete_confirm", "Löschen") },
+        );
+        if (!ok) return;
+        try {
+            await api.articles.delete(article.id);
+            setArticles((prev) => prev.filter((a) => a.id !== article.id));
+            notify.success(t("ui.articles.deleted", "Artikel gelöscht."));
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
+                    err,
+                );
+            }
+        }
+    }
 
     useEffect(() => {
         let cancelled = false;
@@ -149,6 +176,7 @@ export default function ArticleList() {
                             key={a.id}
                             article={a}
                             onClick={() => navigate(`/articles/${a.id}`)}
+                            onDelete={() => void handleDelete(a)}
                         />
                     ))}
                 </div>
@@ -159,6 +187,7 @@ export default function ArticleList() {
                             key={a.id}
                             article={a}
                             onOpen={() => navigate(`/articles/${a.id}`)}
+                            onDelete={() => void handleDelete(a)}
                         />
                     ))}
                 </ul>
@@ -235,9 +264,11 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 function ArticleRow({
     article,
     onOpen,
+    onDelete,
 }: {
     article: Article;
     onOpen: () => void;
+    onDelete?: () => void;
 }) {
     const { t } = useI18n();
     const subtitle = article.subtitle?.trim() || article.author?.trim() || "";
@@ -260,6 +291,27 @@ function ArticleRow({
                 {subtitle && (
                     <div style={layout.rowSubtitle}>{subtitle}</div>
                 )}
+                {onDelete ? (
+                    <button
+                        type="button"
+                        className="btn-icon"
+                        data-testid={`article-list-row-delete-${article.id}`}
+                        aria-label={t("ui.articles.delete", "Löschen")}
+                        title={t("ui.articles.delete", "Löschen")}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                        style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            color: "var(--danger)",
+                        }}
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                ) : null}
                 <div style={layout.rowMeta}>
                     <span
                         data-testid={`article-list-row-status-${article.id}`}
@@ -354,6 +406,7 @@ const layout: Record<string, React.CSSProperties> = {
         cursor: "pointer",
         display: "flex",
         gap: 12,
+        position: "relative",
     },
     rowTitle: {
         fontSize: "1rem",

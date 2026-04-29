@@ -199,6 +199,36 @@ def test_delete_article_404_on_missing() -> None:
     assert resp.status_code == 404
 
 
+def test_delete_article_removes_uploads_directory() -> None:
+    """Best-effort disk cleanup: ``uploads/articles/{id}/`` is gone
+    after a successful delete. Guards F-9 (asset files orphaned)."""
+    import shutil as _shutil
+    from pathlib import Path
+
+    article = _create("With Assets")
+    uploads_root = Path("uploads") / "articles" / article["id"]
+    uploads_root.mkdir(parents=True, exist_ok=True)
+    (uploads_root / "featured.png").write_bytes(b"fake-image")
+    assert uploads_root.exists()
+
+    try:
+        resp = client.delete(f"/api/articles/{article['id']}")
+        assert resp.status_code == 204
+        assert not uploads_root.exists()
+    finally:
+        # Clean any half-state in case the test fails mid-flight.
+        if uploads_root.exists():
+            _shutil.rmtree(uploads_root, ignore_errors=True)
+
+
+def test_delete_article_survives_missing_uploads_directory() -> None:
+    """No ``uploads/articles/{id}/`` ever existed - delete still
+    succeeds. The disk-cleanup branch is best-effort."""
+    article = _create("No Assets")
+    resp = client.delete(f"/api/articles/{article['id']}")
+    assert resp.status_code == 204
+
+
 # --- isolation: Article does NOT touch books ---
 
 

@@ -5,6 +5,9 @@
  * the editor; the actions menu lives on the editor itself for now
  * (parity with BookCard's recent additions can come later).
  */
+import { useState } from "react";
+import { MoreVertical, Trash2 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import CoverPlaceholder from "../CoverPlaceholder";
@@ -12,10 +15,14 @@ import CoverPlaceholder from "../CoverPlaceholder";
 interface Props {
     article: Article;
     onClick: () => void;
+    /** Optional - when omitted, the actions menu is hidden so callers
+     *  that have no delete authority (rare) keep a clean tile. */
+    onDelete?: () => void;
 }
 
-export default function ArticleCard({ article, onClick }: Props) {
+export default function ArticleCard({ article, onClick, onDelete }: Props) {
     const { t } = useI18n();
+    const [menuOpen, setMenuOpen] = useState(false);
     const updated = (() => {
         try {
             return new Date(article.updated_at).toLocaleDateString("de-DE", {
@@ -32,7 +39,9 @@ export default function ArticleCard({ article, onClick }: Props) {
         <div
             data-testid={`article-card-${article.id}`}
             style={styles.card}
-            onClick={onClick}
+            onClick={() => {
+                if (!menuOpen) onClick();
+            }}
         >
             <div style={styles.coverImage}>
                 {article.featured_image_url ? (
@@ -66,6 +75,40 @@ export default function ArticleCard({ article, onClick }: Props) {
                     </span>
                     <span style={styles.lang}>{(article.language || "??").toUpperCase()}</span>
                     <span style={styles.date}>{updated}</span>
+                    {onDelete ? (
+                        <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+                            <DropdownMenu.Trigger asChild>
+                                <button
+                                    className="btn-icon"
+                                    data-testid={`article-card-menu-${article.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ marginLeft: "auto" }}
+                                    aria-label={t("ui.articles.actions_menu", "Aktionen")}
+                                >
+                                    <MoreVertical size={16} />
+                                </button>
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                    className="hamburger-menu-content"
+                                    align="end"
+                                    sideOffset={4}
+                                >
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        data-testid={`article-card-menu-delete-${article.id}`}
+                                        onSelect={(e) => {
+                                            e.preventDefault();
+                                            onDelete();
+                                        }}
+                                        style={{ color: "var(--danger)" }}
+                                    >
+                                        <Trash2 size={14} /> {t("ui.articles.delete", "Löschen")}
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+                    ) : null}
                 </div>
             </div>
         </div>
