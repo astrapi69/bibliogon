@@ -2,10 +2,8 @@
 
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
-import yaml
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -56,17 +54,21 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 def _get_ai_config() -> dict[str, Any]:
-    """Read AI config from app.yaml."""
-    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
-    if not config_path.exists():
-        return {}
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        ai_config = config.get("ai", {})
-        return ai_config if isinstance(ai_config, dict) else {}
-    except Exception:
-        return {}
+    """Read merged AI config (project app.yaml + user override file +
+    env-vars).
+
+    Routes through ``app.main._load_app_config`` so the three-layer
+    chain (T-XX secrets refactor) reaches the AI client. Reading
+    ``app.yaml`` directly here was the bug surfaced when
+    ai.api_key was emptied from the project file and moved to
+    ~/.config/bibliogon/secrets.yaml: the AI client kept reading
+    the empty project value and failed every connection. Lazy
+    import to avoid the circular ai/routes.py <-> app.main cycle.
+    """
+    from app.main import _load_app_config
+
+    ai_config = _load_app_config().get("ai", {})
+    return ai_config if isinstance(ai_config, dict) else {}
 
 
 def _get_client() -> LLMClient:

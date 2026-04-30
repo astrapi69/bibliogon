@@ -56,13 +56,28 @@ def temp_base(tmp_path):
 
 
 @pytest.fixture
-def client(temp_base):
-    """TestClient with settings module pointing at temp dir."""
+def client(temp_base, monkeypatch):
+    """TestClient with settings module pointing at temp dir.
+
+    Also redirects the user-override path resolution to ``temp_base``
+    so the secrets-refactor flag (T-XX) does not see the developer's
+    real ``~/.config/bibliogon/secrets.yaml`` while the suite runs.
+    Same for ``BIBLIOGON_AI_API_KEY`` env-var.
+    """
+    from app import main as main_module
+
     original_base = settings_module._base_dir
     original_manager = settings_module._manager
 
     settings_module._base_dir = temp_base
     settings_module._manager = None
+
+    monkeypatch.setattr(
+        main_module,
+        "_get_user_override_path",
+        lambda: temp_base / "secrets-not-present.yaml",
+    )
+    monkeypatch.delenv("BIBLIOGON_AI_API_KEY", raising=False)
 
     yield TestClient(app)
 
