@@ -8,6 +8,7 @@ import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
+import styles from "./ExportDialog.module.css";
 
 interface Props {
     open: boolean;
@@ -228,14 +229,11 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     {/* Format selection */}
                     <div style={{marginBottom: 20}}>
                         <label className="label">{t("ui.export_dialog.format", "Format")}</label>
-                        <div style={styles.formatGrid}>
+                        <div className={styles.formatGrid}>
                             {FORMATS.map((f) => (
                                 <button
                                     key={f.id}
-                                    style={{
-                                        ...styles.formatBtn,
-                                        ...(format === f.id ? styles.formatBtnActive : {}),
-                                    }}
+                                    className={`${styles.formatBtn} ${format === f.id ? styles.formatBtnActive : ""}`}
                                     onClick={() => setFormat(f.id)}
                                 >
                                     <strong>{t(f.labelKey, f.labelFallback)}</strong>
@@ -538,20 +536,3 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    formatGrid: {
-        display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8,
-    },
-    formatBtn: {
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-        padding: "12px 8px", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)", background: "var(--bg-primary)",
-        cursor: "pointer", transition: "all 150ms",
-        fontFamily: "var(--font-body)", fontSize: "0.875rem",
-        color: "var(--text-primary)",
-    },
-    formatBtnActive: {
-        borderColor: "var(--accent)", background: "var(--accent-light)",
-        color: "var(--accent)",
-    },
-};

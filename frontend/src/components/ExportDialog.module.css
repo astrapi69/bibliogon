@@ -1,0 +1,36 @@
+/**
+ * T-01 Phase B: ExportDialog CSS-Module.
+ *
+ * Migrated from a 17-line ``const styles`` block at the bottom of
+ * ExportDialog.tsx. 3 keys, 3 inline applications (1 grid, 1 btn,
+ * 1 btn-active modifier).
+ */
+
+.formatGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.formatBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: all 150ms;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.formatBtnActive {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+}
