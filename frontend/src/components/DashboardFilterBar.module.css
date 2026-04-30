@@ -1,0 +1,93 @@
+/**
+ * T-01 Phase B: DashboardFilterBar CSS-Module.
+ *
+ * Migrated from a 41-line ``const styles`` block + 7 inline-object
+ * sites. 14 keys, ~14 inline applications. Search/genre/language/sort
+ * controls shared between desktop row and mobile stack layouts.
+ */
+
+.row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 0 12px;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.searchRow,
+.searchStack {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.searchRow {
+    padding: 6px 10px;
+}
+
+.searchStack {
+    padding: 8px 12px;
+}
+
+.controlsRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.controlsStack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.searchIcon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.searchInput {
+    border: none;
+    background: transparent;
+    flex: 1;
+    padding: 4px 0;
+}
+
+.resetBtn {
+    flex-shrink: 0;
+}
+
+.sortGroup {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.sortBtn {
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+}
+
+.sortBtnActive {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.sortDirBtn {
+    padding: 2px;
+}
+
+.selectTrigger {
+    font-size: 0.8125rem;
+    padding: 4px 10px;
+    min-width: 120px;
+}

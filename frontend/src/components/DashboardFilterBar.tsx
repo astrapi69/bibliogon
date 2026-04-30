@@ -15,6 +15,7 @@ import * as Select from "@radix-ui/react-select";
 import {ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import type {BookFilters, SortField} from "../hooks/useBookFilters";
+import styles from "./DashboardFilterBar.module.css";
 
 interface Props {
     filters: BookFilters;
@@ -36,26 +37,24 @@ export default function DashboardFilterBar({filters, layout = "row"}: Props) {
     return (
         <div
             data-testid="filter-bar"
-            style={isStack ? styles.stack : styles.row}
+            className={isStack ? styles.stack : styles.row}
         >
             {/* Search */}
-            <div style={isStack ? styles.searchStack : styles.searchRow}>
-                <Search size={16} style={{color: "var(--text-muted)", flexShrink: 0}}/>
+            <div className={isStack ? styles.searchStack : styles.searchRow}>
+                <Search size={16} className={styles.searchIcon}/>
                 <input
-                    className="input"
+                    className={`input ${styles.searchInput}`}
                     data-testid="filter-search-input"
                     value={filters.searchQuery}
                     onChange={(e) => filters.setSearchQuery(e.target.value)}
                     placeholder={t("ui.dashboard.search_placeholder", "Suche nach Titel, Autor, Genre oder Sprache...")}
-                    style={{border: "none", background: "transparent", flex: 1, padding: "4px 0"}}
                 />
                 {filters.hasActiveFilters && (
                     <button
-                        className="btn-icon btn-sm"
+                        className={`btn-icon btn-sm ${styles.resetBtn}`}
                         data-testid="filter-reset"
                         onClick={filters.resetFilters}
                         title={t("ui.dashboard.reset_filters", "Filter zurücksetzen")}
-                        style={{flexShrink: 0}}
                     >
                         <X size={14}/>
                     </button>
@@ -63,7 +62,7 @@ export default function DashboardFilterBar({filters, layout = "row"}: Props) {
             </div>
 
             {/* Dropdowns + sort */}
-            <div style={isStack ? styles.controlsStack : styles.controlsRow}>
+            <div className={isStack ? styles.controlsStack : styles.controlsRow}>
                 {/* Genre */}
                 <FilterSelect
                     testId="filter-genre"
@@ -83,32 +82,24 @@ export default function DashboardFilterBar({filters, layout = "row"}: Props) {
                 />
 
                 {/* Sort */}
-                <div style={{display: "flex", gap: 2, flexShrink: 0}}>
+                <div className={styles.sortGroup}>
                     {SORT_FIELDS.map((field) => (
                         <button
                             key={field}
-                            className="btn btn-ghost btn-sm"
+                            className={`btn btn-ghost btn-sm ${styles.sortBtn} ${filters.sortBy === field ? styles.sortBtnActive : ""}`}
                             data-testid={`filter-sort-${field}`}
-                            style={{
-                                padding: "2px 8px",
-                                fontSize: "0.6875rem",
-                                ...(filters.sortBy === field
-                                    ? {background: "var(--accent-light)", color: "var(--accent)"}
-                                    : {}),
-                            }}
                             onClick={() => filters.setSortBy(field)}
                         >
                             {sortLabel(field)}
                         </button>
                     ))}
                     <button
-                        className="btn-icon btn-sm"
+                        className={`btn-icon btn-sm ${styles.sortDirBtn}`}
                         data-testid="filter-sort-direction"
                         onClick={filters.toggleSortOrder}
                         title={filters.sortOrder === "asc"
                             ? t("ui.dashboard.sort_asc", "Aufsteigend")
                             : t("ui.dashboard.sort_desc", "Absteigend")}
-                        style={{padding: 2}}
                     >
                         {filters.sortOrder === "asc"
                             ? <ChevronUp size={14}/>
@@ -138,9 +129,8 @@ function FilterSelect({testId, value, onChange, allLabel, options}: {
     return (
         <Select.Root value={radixValue} onValueChange={handleChange}>
             <Select.Trigger
-                className="radix-select-trigger"
+                className={`radix-select-trigger ${styles.selectTrigger}`}
                 data-testid={`${testId}-trigger`}
-                style={{fontSize: "0.8125rem", padding: "4px 10px", minWidth: 120}}
             >
                 <Select.Value/>
                 <Select.Icon><ChevronDownIcon size={14}/></Select.Icon>
@@ -176,45 +166,3 @@ function FilterSelect({testId, value, onChange, allLabel, options}: {
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    row: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        padding: "0 0 12px",
-    },
-    stack: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-    },
-    searchRow: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "6px 10px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-    },
-    searchStack: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-    },
-    controlsRow: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        flexWrap: "wrap",
-    },
-    controlsStack: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-    },
-};
