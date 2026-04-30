@@ -656,6 +656,7 @@ ui:
     ai_api_key: "Cle API"
     ai_key_not_required: "Non requise"
     ai_key_hint: "La cle est stockee localement et envoyee uniquement au service indique dans 'Base URL'."
+    ai_api_key_external_note: "La cle API est lue depuis une configuration externe (~/.config/bibliogon/secrets.yaml ou variable d'environnement BIBLIOGON_AI_API_KEY). Modifie le fichier directement ou definis la variable pour changer la cle."
     ai_lmstudio_hint: "Fonctionne localement, pas de cle API necessaire. Les modeles sont fournis par le serveur LM Studio."
     ai_test: "Tester la connexion"
     ai_test_ok: "Connexion reussie"

@@ -666,6 +666,7 @@ ui:
     ai_api_key: "API Anahtari"
     ai_key_not_required: "Gerekli degil"
     ai_key_hint: "Anahtar yerel olarak saklanir ve yalnizca 'Base URL' adresine gonderilir."
+    ai_api_key_external_note: "API anahtari harici yapilandirmadan okunur (~/.config/bibliogon/secrets.yaml veya BIBLIOGON_AI_API_KEY ortam degiskeni). Anahtari degistirmek icin dosyayi dogrudan duzenle veya degiskeni ayarla."
     ai_lmstudio_hint: "Yerel olarak calisiyor, API anahtari gerekli degil. Modeller LM Studio sunucusu tarafindan saglaniyor."
     ai_test: "Baglanti testi"
     ai_test_ok: "Baglanti basarili"

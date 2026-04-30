@@ -652,6 +652,7 @@ ui:
     ai_api_key: "API Key"
     ai_key_not_required: "Nicht erforderlich"
     ai_key_hint: "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen."
+    ai_api_key_external_note: "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern."
     ai_lmstudio_hint: "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt."
     ai_test: "Verbindung testen"
     ai_test_ok: "Verbindung erfolgreich"

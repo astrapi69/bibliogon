@@ -652,6 +652,7 @@ ui:
     ai_api_key: "APIキー"
     ai_key_not_required: "不要"
     ai_key_hint: "APIキーはローカルに保存され、Base URLで指定したサービスにのみ送信されます。"
+    ai_api_key_external_note: "APIキーは外部設定（~/.config/bibliogon/secrets.yamlまたは環境変数BIBLIOGON_AI_API_KEY）から読み込まれます。キーを変更するにはファイルを直接編集するか環境変数を設定してください。"
     ai_lmstudio_hint: "ローカルで実行中、APIキー不要。モデルはLM Studioサーバーから提供されます。"
     ai_test: "接続テスト"
     ai_test_ok: "接続成功"

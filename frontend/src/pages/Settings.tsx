@@ -626,17 +626,28 @@ function AiAssistantSettings({config, onSave, saving}: {
         setAiApiKey((ai.api_key as string) || "");
     }, [config]);
 
-    const buildSaveData = () => ({
-        ai: {
+    // True when secrets are managed via ~/.config/bibliogon/secrets.yaml
+    // or BIBLIOGON_AI_API_KEY env-var. Backend strips api_key from
+    // PATCH bodies in this case as defense-in-depth; we drop it here
+    // so the frontend never sends it in the first place.
+    const secretsExternal = Boolean(
+        (config as Record<string, unknown>)._secrets_managed_externally,
+    );
+
+    const buildSaveData = () => {
+        const ai: Record<string, unknown> = {
             enabled: aiEnabled,
             provider: aiProvider,
             base_url: aiBaseUrl,
             model: aiModel,
             temperature: parseFloat(aiTemp) || 0.7,
             max_tokens: parseInt(aiMaxTokens) || 4096,
-            api_key: aiApiKey,
-        },
-    });
+        };
+        if (!secretsExternal) {
+            ai.api_key = aiApiKey;
+        }
+        return {ai};
+    };
 
     return (
         <div className={styles.main}>
@@ -707,22 +718,42 @@ function AiAssistantSettings({config, onSave, saving}: {
                                     value={aiMaxTokens} onChange={(e) => setAiMaxTokens(e.target.value)}/>
                             </div>
                         </div>
-                        <div className="field">
-                            <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
-                            <div style={{display: "flex", gap: 8}}>
-                                <input className="input" type={showAiKey ? "text" : "password"}
-                                    value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
-                                    placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_key_not_required", "Nicht erforderlich") : "sk-..."}
-                                    style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
-                                    title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
-                                    {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
-                                </button>
+                        {secretsExternal ? (
+                            <div className="field" data-testid="ai-api-key-external-note">
+                                <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
+                                <div style={{
+                                    padding: 12,
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "var(--radius-sm)",
+                                    background: "var(--bg-secondary)",
+                                    color: "var(--text-muted)",
+                                    fontSize: "0.8125rem",
+                                }}>
+                                    {t(
+                                        "ui.settings.ai_api_key_external_note",
+                                        "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern.",
+                                    )}
+                                </div>
                             </div>
-                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
-                                {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.")}
-                            </small>
-                        </div>
+                        ) : (
+                            <div className="field">
+                                <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
+                                <div style={{display: "flex", gap: 8}}>
+                                    <input className="input" type={showAiKey ? "text" : "password"}
+                                        data-testid="ai-api-key-input"
+                                        value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
+                                        placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_key_not_required", "Nicht erforderlich") : "sk-..."}
+                                        style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                                    <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                                        title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
+                                        {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                                    </button>
+                                </div>
+                                <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                                    {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.")}
+                                </small>
+                            </div>
+                        )}
                         {aiProvider === "lmstudio" && (
                             <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
                                 {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.")}

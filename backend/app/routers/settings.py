@@ -1,5 +1,7 @@
 """Settings API for reading and writing app and plugin configurations."""
 
+import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +11,30 @@ from pydantic import BaseModel
 
 from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
+
+# Dotted paths into the AppSettingsUpdate body that name secrets.
+# When an override file exists OR an env-var is set for that secret,
+# the field is stripped from PATCH bodies before write so the UI
+# cannot accidentally clobber the externally-managed value.
+# Initial scope mirrors _ENV_SECRET_OVERRIDES in app.main: ai.api_key.
+_SECRET_FIELDS: tuple[tuple[str, str], ...] = (("ai", "api_key"),)
+
+
+def _secrets_managed_externally() -> bool:
+    """True when the user has migrated secrets to the override file
+    OR set the BIBLIOGON_AI_API_KEY env-var. Frontend reads this
+    flag to hide the API-key input; backend uses it to defensively
+    strip the same field from PATCH bodies."""
+    from app.main import _get_user_override_path
+
+    if _get_user_override_path().exists():
+        return True
+    if os.environ.get("BIBLIOGON_AI_API_KEY"):
+        return True
+    return False
+
 
 _base_dir: Path = Path(".")
 _manager: Any = None
@@ -39,11 +64,17 @@ def _active_plugin_names() -> set[str]:
 
 @router.get("/app")
 def get_app_settings() -> dict[str, Any]:
-    """Get the full app configuration."""
+    """Get the full app configuration plus the
+    ``_secrets_managed_externally`` flag the frontend reads to gate
+    secret inputs (Settings tab + AiSetupWizard).
+
+    Underscore prefix on the flag marks it as a meta-field that the
+    PATCH endpoint does NOT round-trip back into ``app.yaml``.
+    """
     path = _base_dir / "config" / "app.yaml"
-    if not path.exists():
-        return {}
-    return _read_yaml(path)
+    config = _read_yaml(path) if path.exists() else {}
+    config["_secrets_managed_externally"] = _secrets_managed_externally()
+    return config
 
 
 class AppSettingsUpdate(BaseModel):
@@ -119,9 +150,31 @@ def add_pen_name(body: AddPenNameRequest) -> dict[str, Any]:
 
 @router.patch("/app")
 def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
-    """Update app configuration (merges with existing)."""
+    """Update app configuration (merges with existing).
+
+    Defense-in-depth: when secrets are managed externally (override
+    file or env-var present), strip secret fields from the incoming
+    body before writing. The UI is supposed to hide those inputs,
+    but a stale tab or misbehaving plugin could still POST them.
+    Stripping prevents the project ``app.yaml`` from clobbering an
+    externally-managed value.
+    """
     path = _base_dir / "config" / "app.yaml"
     current = _read_yaml(path) if path.exists() else {}
+
+    if _secrets_managed_externally():
+        for parent_key, child_key in _SECRET_FIELDS:
+            section = getattr(body, parent_key, None)
+            if isinstance(section, dict) and child_key in section:
+                del section[child_key]
+                logger.warning(
+                    "Stripped %r.%r from Settings PATCH because secrets are "
+                    "managed externally (override file or env-var active). "
+                    "Frontend should hide this field; check Settings.tsx and "
+                    "AiSetupWizard.tsx.",
+                    parent_key,
+                    child_key,
+                )
 
     if body.app is not None:
         current.setdefault("app", {}).update(body.app)

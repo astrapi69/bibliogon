@@ -31,18 +31,26 @@ def temp_base(tmp_path):
     plugins_dir.mkdir()
 
     app_yaml = config_dir / "app.yaml"
-    app_yaml.write_text(yaml.dump({
-        "app": {"language": "de", "theme": "warm-literary"},
-        "author": {"name": "Test Author"},
-        "plugins": {"enabled": ["export", "help"], "disabled": []},
-    }))
+    app_yaml.write_text(
+        yaml.dump(
+            {
+                "app": {"language": "de", "theme": "warm-literary"},
+                "author": {"name": "Test Author"},
+                "plugins": {"enabled": ["export", "help"], "disabled": []},
+            }
+        )
+    )
 
     # Seed one plugin config
     export_yaml = plugins_dir / "export.yaml"
-    export_yaml.write_text(yaml.dump({
-        "plugin": {"name": "export", "version": "1.0.0", "license": "MIT"},
-        "settings": {"type_suffix_in_filename": True},
-    }))
+    export_yaml.write_text(
+        yaml.dump(
+            {
+                "plugin": {"name": "export", "version": "1.0.0", "license": "MIT"},
+                "settings": {"type_suffix_in_filename": True},
+            }
+        )
+    )
 
     return tmp_path
 
@@ -77,12 +85,14 @@ def test_get_app_settings(client):
 
 
 def test_get_app_settings_missing_file(client, temp_base):
-    """Returns empty dict when app.yaml does not exist."""
+    """Returns the flag-only payload when app.yaml does not exist."""
     (temp_base / "config" / "app.yaml").unlink()
 
     resp = client.get("/api/settings/app")
     assert resp.status_code == 200
-    assert resp.json() == {}
+    # _secrets_managed_externally meta-field is always emitted by the
+    # endpoint so the frontend has a deterministic flag to read.
+    assert resp.json() == {"_secrets_managed_externally": False}
 
 
 # --- PATCH /api/settings/app ---
@@ -137,6 +147,73 @@ def test_update_empty_body(client):
     assert resp.json()["app"]["language"] == "de"
 
 
+def test_get_app_settings_externally_managed_flag_false_by_default(client):
+    """Without override file or env-var, the flag is False."""
+    resp = client.get("/api/settings/app")
+    assert resp.status_code == 200
+    assert resp.json()["_secrets_managed_externally"] is False
+
+
+def test_get_app_settings_externally_managed_flag_true_with_env(client, monkeypatch):
+    """Setting BIBLIOGON_AI_API_KEY flips the flag to True."""
+    monkeypatch.setenv("BIBLIOGON_AI_API_KEY", "from-env")
+    resp = client.get("/api/settings/app")
+    assert resp.status_code == 200
+    assert resp.json()["_secrets_managed_externally"] is True
+
+
+def test_patch_strips_ai_api_key_when_externally_managed(client, temp_base, monkeypatch):
+    """When override is active, the PATCH body's ai.api_key is
+    stripped + a WARNING is logged. Other ai fields in the same
+    PATCH still apply.
+
+    Spies on ``settings_module.logger.warning`` directly because the
+    suite reconfigures loggers across tests and ``caplog`` is not
+    reliable cross-test for module-level loggers (same pattern as
+    test_config_loader.py corrupt-override case).
+    """
+    monkeypatch.setenv("BIBLIOGON_AI_API_KEY", "from-env")
+
+    captured: list[str] = []
+    original_warning = settings_module.logger.warning
+
+    def spy(msg, *args, **kwargs):
+        captured.append(msg % args if args else msg)
+        return original_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(settings_module.logger, "warning", spy)
+
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ai": {"provider": "openai", "api_key": "should-be-stripped"}},
+    )
+    assert resp.status_code == 200
+    # ai.provider applied, ai.api_key NOT written.
+    written = resp.json()
+    assert written["ai"]["provider"] == "openai"
+    assert (
+        "api_key" not in written.get("ai", {})
+        or written["ai"].get("api_key", "") != "should-be-stripped"
+    )
+    # On-disk verification: api_key absent or unchanged from baseline.
+    with open(temp_base / "config" / "app.yaml") as f:
+        on_disk = yaml.safe_load(f)
+    assert on_disk["ai"].get("api_key", "") != "should-be-stripped"
+    # Warning logged with the parent.child path so the dev sees
+    # which UI surface still ships the field.
+    assert any("ai" in m and "api_key" in m and "Stripped" in m for m in captured), captured
+
+
+def test_patch_preserves_api_key_when_not_externally_managed(client):
+    """Without override, ai.api_key flows through to disk as before."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ai": {"provider": "anthropic", "api_key": "from-ui"}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["ai"]["api_key"] == "from-ui"
+
+
 # --- GET /api/settings/plugins ---
 
 
@@ -152,6 +229,7 @@ def test_list_plugin_configs(client):
 def test_list_plugin_configs_empty(client, temp_base):
     """Empty plugins dir returns empty dict."""
     import shutil
+
     shutil.rmtree(temp_base / "config" / "plugins")
     (temp_base / "config" / "plugins").mkdir()
 
@@ -165,14 +243,17 @@ def test_list_plugin_configs_empty(client, temp_base):
 
 def test_create_plugin_config(client, temp_base):
     """Creates a new plugin YAML config file."""
-    resp = client.post("/api/settings/plugins", json={
-        "name": "custom-plugin",
-        "display_name": "Custom Plugin",
-        "description": "A custom plugin",
-        "version": "2.0.0",
-        "license": "MIT",
-        "settings": {"enabled": True},
-    })
+    resp = client.post(
+        "/api/settings/plugins",
+        json={
+            "name": "custom-plugin",
+            "display_name": "Custom Plugin",
+            "description": "A custom plugin",
+            "version": "2.0.0",
+            "license": "MIT",
+            "settings": {"enabled": True},
+        },
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["plugin"]["name"] == "custom-plugin"
@@ -184,10 +265,13 @@ def test_create_plugin_config(client, temp_base):
 
 def test_create_plugin_config_duplicate_returns_409(client):
     """Creating a config that already exists returns 409."""
-    resp = client.post("/api/settings/plugins", json={
-        "name": "export",
-        "display_name": "Export",
-    })
+    resp = client.post(
+        "/api/settings/plugins",
+        json={
+            "name": "export",
+            "display_name": "Export",
+        },
+    )
     assert resp.status_code == 409
 
 
@@ -300,15 +384,15 @@ def test_update_preserves_comments_and_formatting(client, temp_base):
     """
     export_yaml_path = temp_base / "config" / "plugins" / "export.yaml"
     export_yaml_path.write_text(
-        'plugin:\n'
+        "plugin:\n"
         '  name: "export"\n'
         '  version: "1.0.0"\n'
         '  license: "MIT"\n'
-        '\n'
-        'settings:\n'
-        '  type_suffix_in_filename: true\n'
-        '  # INTERNAL: power-user knob, edit via YAML only\n'
-        '  pandoc_timeout_seconds: 120\n'
+        "\n"
+        "settings:\n"
+        "  type_suffix_in_filename: true\n"
+        "  # INTERNAL: power-user knob, edit via YAML only\n"
+        "  pandoc_timeout_seconds: 120\n"
         '  output_dir: "./out"\n',
         encoding="utf-8",
     )
@@ -425,9 +509,7 @@ def test_enable_then_disable_roundtrip(client, temp_base):
 
 def test_add_pen_name_appends_to_existing_profile(client, temp_base):
     """name set, pen_names empty -> new pen name appended."""
-    resp = client.post(
-        "/api/settings/author/pen-name", json={"name": "New Pen"}
-    )
+    resp = client.post("/api/settings/author/pen-name", json={"name": "New Pen"})
     assert resp.status_code == 200
     body = resp.json()
     assert body["name"] == "Test Author"
@@ -440,18 +522,14 @@ def test_add_pen_name_appends_to_existing_profile(client, temp_base):
 def test_add_pen_name_idempotent_when_already_present(client, temp_base):
     """Adding a pen name that already exists is a no-op."""
     client.post("/api/settings/author/pen-name", json={"name": "Pen A"})
-    resp = client.post(
-        "/api/settings/author/pen-name", json={"name": "Pen A"}
-    )
+    resp = client.post("/api/settings/author/pen-name", json={"name": "Pen A"})
     assert resp.status_code == 200
     assert resp.json()["pen_names"] == ["Pen A"]
 
 
 def test_add_pen_name_idempotent_when_matches_real_name(client, temp_base):
     """Adding the real name does not duplicate it into pen_names."""
-    resp = client.post(
-        "/api/settings/author/pen-name", json={"name": "Test Author"}
-    )
+    resp = client.post("/api/settings/author/pen-name", json={"name": "Test Author"})
     assert resp.status_code == 200
     assert resp.json() == {"name": "Test Author", "pen_names": []}
 
@@ -476,7 +554,5 @@ def test_add_pen_name_sets_real_name_when_empty(tmp_path, monkeypatch):
 
 def test_add_pen_name_rejects_blank(client):
     """Empty / whitespace-only name -> 400."""
-    resp = client.post(
-        "/api/settings/author/pen-name", json={"name": "   "}
-    )
+    resp = client.post("/api/settings/author/pen-name", json={"name": "   "})
     assert resp.status_code == 400

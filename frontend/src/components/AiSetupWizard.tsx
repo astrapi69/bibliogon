@@ -24,9 +24,15 @@ const DISMISSED_KEY = "bibliogon-ai-setup-dismissed"
 interface Props {
   open: boolean
   onClose: () => void
+  /** True when the backend reports ai.api_key comes from
+   *  ~/.config/bibliogon/secrets.yaml or BIBLIOGON_AI_API_KEY.
+   *  Wizard hides the API-key input + skips its validation; the
+   *  user has already configured the key out-of-band, the wizard
+   *  must not block them from completing setup. */
+  secretsManagedExternally?: boolean
 }
 
-export default function AiSetupWizard({open, onClose}: Props) {
+export default function AiSetupWizard({open, onClose, secretsManagedExternally = false}: Props) {
   const {t} = useI18n()
   const [step, setStep] = useState(0)
   const [provider, setProvider] = useState("anthropic")
@@ -39,7 +45,9 @@ export default function AiSetupWizard({open, onClose}: Props) {
   const [saving, setSaving] = useState(false)
 
   const preset = getProviderPreset(provider)
-  const needsKey = preset?.requires_api_key !== false
+  // Externally-managed key already exists; no input needed even for
+  // providers that nominally require one.
+  const needsKey = preset?.requires_api_key !== false && !secretsManagedExternally
 
   const handleProviderChange = (pid: string) => {
     setProvider(pid)
@@ -52,22 +60,30 @@ export default function AiSetupWizard({open, onClose}: Props) {
     }
   }
 
+  const buildAiPayload = (): Record<string, unknown> => {
+    const ai: Record<string, unknown> = {
+      enabled: true,
+      provider,
+      base_url: baseUrl,
+      model,
+      temperature: 0.7,
+      max_tokens: 2048,
+    }
+    // Skip api_key when managed externally; backend would strip it
+    // anyway with a defensive WARNING log, but stripping client-side
+    // keeps logs quiet and avoids the round-trip.
+    if (!secretsManagedExternally) {
+      ai.api_key = apiKey
+    }
+    return ai
+  }
+
   const handleTest = async () => {
     setTesting(true)
     setTestResult("idle")
     try {
       // Save first so the backend sees the config
-      await api.settings.updateApp({
-        ai: {
-          enabled: true,
-          provider,
-          base_url: baseUrl,
-          model,
-          api_key: apiKey,
-          temperature: 0.7,
-          max_tokens: 2048,
-        },
-      })
+      await api.settings.updateApp({ai: buildAiPayload()})
       const resp = await fetch("/api/ai/test-connection")
       if (resp.ok) {
         const data = await resp.json()
@@ -96,17 +112,7 @@ export default function AiSetupWizard({open, onClose}: Props) {
   const handleFinish = async () => {
     setSaving(true)
     try {
-      await api.settings.updateApp({
-        ai: {
-          enabled: true,
-          provider,
-          base_url: baseUrl,
-          model,
-          api_key: apiKey,
-          temperature: 0.7,
-          max_tokens: 2048,
-        },
-      })
+      await api.settings.updateApp({ai: buildAiPayload()})
       localStorage.setItem(DISMISSED_KEY, "true")
       notify.success(t("ui.ai_wizard.done", "KI-Assistent eingerichtet"))
       onClose()
@@ -166,13 +172,31 @@ export default function AiSetupWizard({open, onClose}: Props) {
           {/* Step 1: API key + model */}
           {step === 1 && (
             <div style={styles.stepContent}>
-              {needsKey ? (
+              {secretsManagedExternally ? (
+                <div className="field" data-testid="wizard-api-key-external-note">
+                  <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
+                  <div style={{
+                    padding: 12,
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--bg-secondary)",
+                    color: "var(--text-muted)",
+                    fontSize: "0.8125rem",
+                  }}>
+                    {t(
+                      "ui.settings.ai_api_key_external_note",
+                      "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern.",
+                    )}
+                  </div>
+                </div>
+              ) : needsKey ? (
                 <>
                   <div className="field">
                     <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
                     <div style={{display: "flex", gap: 8}}>
                       <input
                         className="input"
+                        data-testid="wizard-api-key-input"
                         type={showKey ? "text" : "password"}
                         value={apiKey}
                         onChange={(e) => { setApiKey(e.target.value); setTestResult("idle") }}
