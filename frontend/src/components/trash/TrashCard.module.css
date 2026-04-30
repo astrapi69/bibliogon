@@ -1,0 +1,54 @@
+/**
+ * Shared trash-grid card layout. Used by both books-trash
+ * (Dashboard.tsx) and articles-trash (ArticleList.tsx) so the two
+ * dashboards render identical cards.
+ *
+ * Pilot of the T-01 inline-styles refactor (audit:
+ * docs/explorations/inline-styles-audit.md). Two prior duplicates
+ * (styles.trashCard, layout.trashCard) collapse into this single
+ * CSS-Module class.
+ *
+ * flex-wrap: wrap is the bug-fix from the trash-card-permanent-delete-recheck
+ * audit. Without wrap, two German action-button labels overflow a
+ * narrow grid column and the second button paints outside the card.
+ */
+
+.card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    height: 100%;
+}
+
+.body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.title {
+    display: block;
+}
+
+.meta {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    margin: 4px 0 0 0;
+}
+
+.metaSmall {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 4px 0 0 0;
+}
+
+.actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}

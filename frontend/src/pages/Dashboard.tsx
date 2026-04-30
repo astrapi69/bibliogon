@@ -17,6 +17,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import BackupCompareDialog from "../components/BackupCompareDialog";
 import { ImportWizardModal } from "../components/import-wizard";
+import TrashCard from "../components/trash/TrashCard";
 import ThemeToggle from "../components/ThemeToggle";
 import {useTheme} from "../hooks/useTheme";
 import {Moon, Sun} from "lucide-react";
@@ -301,32 +302,18 @@ export default function Dashboard() {
                         ) : viewMode === "grid" ? (
                             <div style={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
-                                    <div
+                                    <TrashCard
                                         key={book.id}
-                                        style={styles.trashCard}
-                                        data-testid={`trash-card-${book.id}`}
-                                    >
-                                        <div style={{flex: 1}}>
-                                            <strong>{book.title}</strong>
-                                            <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>{book.author}</p>
-                                        </div>
-                                        <div style={{display: "flex", gap: 6, flexShrink: 0}}>
-                                            <button
-                                                className="btn btn-primary btn-sm"
-                                                data-testid={`trash-restore-${book.id}`}
-                                                onClick={() => handleRestore(book.id)}
-                                            >
-                                                <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
-                                            </button>
-                                            <button
-                                                className="btn btn-danger btn-sm"
-                                                data-testid={`trash-delete-permanent-${book.id}`}
-                                                onClick={() => handlePermanentDelete(book.id)}
-                                            >
-                                                <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgültig löschen")}
-                                            </button>
-                                        </div>
-                                    </div>
+                                        title={book.title}
+                                        subtitle={book.author}
+                                        onRestore={() => handleRestore(book.id)}
+                                        onPermanentDelete={() => handlePermanentDelete(book.id)}
+                                        restoreLabel={t("ui.dashboard.restore_book", "Wiederherstellen")}
+                                        deletePermanentLabel={t("ui.dashboard.delete_permanent", "Endgültig löschen")}
+                                        cardTestId={`trash-card-${book.id}`}
+                                        restoreTestId={`trash-restore-${book.id}`}
+                                        permanentTestId={`trash-delete-permanent-${book.id}`}
+                                    />
                                 ))}
                             </div>
                         ) : (
@@ -589,12 +576,6 @@ const styles: Record<string, React.CSSProperties> = {
     emptyText: {
         color: "var(--text-muted)", fontSize: "0.9375rem",
         textAlign: "center" as const, maxWidth: 480, lineHeight: 1.6,
-    },
-    trashCard: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap" as const,
-        gap: 12, padding: 16, background: "var(--bg-card)",
-        border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
     },
     /** Trash list-view container. Same shape as ArticleList ``layout.list``
      *  so the books and articles trash list views feel identical. */
