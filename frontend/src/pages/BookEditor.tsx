@@ -17,6 +17,7 @@ import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {Menu} from "lucide-react";
+import styles from "./BookEditor.module.css";
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
@@ -401,7 +402,7 @@ export default function BookEditor() {
 
     if (loading) {
         return (
-            <div style={styles.loading}>
+            <div className={styles.loading}>
                 <p>Laden...</p>
             </div>
         );
@@ -409,14 +410,14 @@ export default function BookEditor() {
 
     if (!book) {
         return (
-            <div style={styles.loading}>
+            <div className={styles.loading}>
                 <p>Buch nicht gefunden.</p>
             </div>
         );
     }
 
     return (
-        <div style={styles.layout}>
+        <div className={styles.layout}>
             {/* Mobile sidebar toggle */}
             {!sidebarOpen && (
                 <button
@@ -502,24 +503,24 @@ export default function BookEditor() {
                     initialFocus={pendingFocus && pendingFocus.chapterId === activeChapterMeta.id ? {type: pendingFocus.type, seq: pendingFocus.seq} : undefined}
                 />
             ) : activeChapterMeta && contentLoading ? (
-                <div style={styles.loading}><p>{t("ui.common.loading", "Laden...")}</p></div>
+                <div className={styles.loading}><p>{t("ui.common.loading", "Laden...")}</p></div>
             ) : (
-                <div style={styles.noChapter}>
-                    <p style={styles.noChapterText}>
+                <div className={styles.noChapter}>
+                    <p className={styles.noChapterText}>
                         Erstelle dein erstes Kapitel, um zu beginnen.
                     </p>
 
-                    <div style={styles.chapterTypeGrid}>
-                        <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
+                    <div className={styles.chapterTypeGrid}>
+                        <div className={styles.typeGroup}>
+                            <span className={styles.typeGroupLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
                             {(["toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction"] as ChapterType[]).map((ct) => (
                                 <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
                                     {TYPE_LABELS[ct]}
                                 </button>
                             ))}
                         </div>
-                        <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>{t("ui.chapter_types.chapter", "Kapitel")}</span>
+                        <div className={styles.typeGroup}>
+                            <span className={styles.typeGroupLabel}>{t("ui.chapter_types.chapter", "Kapitel")}</span>
                             <button className="btn btn-primary" onClick={() => handleAddChapter("chapter")}>
                                 {t("ui.editor.new_chapter", "Neues Kapitel")}
                             </button>
@@ -529,8 +530,8 @@ export default function BookEditor() {
                                 </button>
                             ))}
                         </div>
-                        <div style={styles.typeGroup}>
-                            <span style={styles.typeGroupLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
+                        <div className={styles.typeGroup}>
+                            <span className={styles.typeGroupLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
                             {(["epilogue", "afterword", "about_author", "acknowledgments", "appendix", "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series"] as ChapterType[]).map((ct) => (
                                 <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
                                     {TYPE_LABELS[ct]}
@@ -630,50 +631,3 @@ export default function BookEditor() {
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    layout: {
-        display: "flex",
-        height: "100vh",
-        overflow: "hidden",
-    },
-    loading: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        color: "var(--text-muted)",
-    },
-    noChapter: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 16,
-    },
-    noChapterText: {
-        color: "var(--text-muted)",
-        fontFamily: "var(--font-display)",
-        fontSize: "1.125rem",
-    },
-    chapterTypeGrid: {
-        display: "flex",
-        gap: 24,
-        marginTop: 8,
-    },
-    typeGroup: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        alignItems: "stretch",
-        minWidth: 140,
-    },
-    typeGroupLabel: {
-        fontSize: "0.6875rem",
-        fontWeight: 600,
-        textTransform: "uppercase" as const,
-        letterSpacing: "0.08em",
-        color: "var(--text-muted)",
-        marginBottom: 4,
-    },
-};

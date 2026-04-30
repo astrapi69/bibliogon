@@ -1,0 +1,59 @@
+/**
+ * T-01 Phase B: BookEditor CSS-Module.
+ *
+ * Migrated from a 47-line ``const styles`` block. 7 keys, ~14 inline
+ * applications. Page chrome (layout, loading, no-chapter empty
+ * state) + chapter-type picker grid in the add-chapter dialog.
+ */
+
+.layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: var(--text-muted);
+}
+
+.noChapter {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.noChapterText {
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+}
+
+.chapterTypeGrid {
+    display: flex;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+.typeGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    min-width: 140px;
+}
+
+.typeGroupLabel {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
