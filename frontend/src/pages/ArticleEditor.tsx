@@ -39,6 +39,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useAuthorProfile } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/useTopics";
 import { notify } from "../utils/notify";
+import layout from "./ArticleEditor.module.css";
 
 /** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */
 const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
@@ -462,7 +463,7 @@ export default function ArticleEditor() {
 
     if (loading || !article) {
         return (
-            <div data-testid="article-editor-loading" style={layout.loading}>
+            <div data-testid="article-editor-loading" className={layout.loading}>
                 <Loader2 size={20} className="spin" />
                 {t("ui.common.loading", "Laedt...")}
             </div>
@@ -470,8 +471,8 @@ export default function ArticleEditor() {
     }
 
     return (
-        <div data-testid="article-editor" style={layout.page}>
-            <header style={layout.header}>
+        <div data-testid="article-editor" className={layout.page}>
+            <header className={layout.header}>
                 <button
                     type="button"
                     className="btn btn-ghost btn-sm"
@@ -494,7 +495,7 @@ export default function ArticleEditor() {
                 </button>
                 <input
                     data-testid="article-editor-title"
-                    style={layout.titleInput}
+                    className={layout.titleInput}
                     value={article.title}
                     onChange={(e) =>
                         setArticle({ ...article, title: e.target.value })
@@ -509,9 +510,9 @@ export default function ArticleEditor() {
                 <ThemeToggle />
             </header>
 
-            <main style={layout.body}>
-                <aside style={layout.sidebar} data-testid="article-editor-sidebar">
-                    <h3 style={layout.sidebarHeading}>
+            <main className={layout.body}>
+                <aside className={layout.sidebar} data-testid="article-editor-sidebar">
+                    <h3 className={layout.sidebarHeading}>
                         {t("ui.articles.metadata_heading", "Metadaten")}
                     </h3>
                     <Field
@@ -575,7 +576,7 @@ export default function ArticleEditor() {
                             setArticle({ ...article, language: v });
                             void persistMeta({ language: v });
                         }}
-                        style={layout.fieldInput}
+                        className={layout.fieldInput}
                     >
                         {SUPPORTED_LANGUAGES.map((opt) => (
                             <option key={opt.code} value={opt.code}>
@@ -598,7 +599,7 @@ export default function ArticleEditor() {
                                 status: e.target.value as ArticleStatus,
                             })
                         }
-                        style={layout.fieldInput}
+                        className={layout.fieldInput}
                     >
                         {STATUSES.map((s) => (
                             <option key={s} value={s}>
@@ -610,7 +611,7 @@ export default function ArticleEditor() {
                         ))}
                     </select>
 
-                    <h4 style={layout.sectionHeading}>
+                    <h4 className={layout.sectionHeading}>
                         {t("ui.articles.seo_section", "SEO")}
                     </h4>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -654,7 +655,7 @@ export default function ArticleEditor() {
                             "ui.articles.seo_title_placeholder",
                             "Faellt leer auf Titel zurück",
                         )}
-                        style={layout.fieldInput}
+                        className={layout.fieldInput}
                     />
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <FieldLabel
@@ -698,8 +699,8 @@ export default function ArticleEditor() {
                             "ui.articles.seo_description_placeholder",
                             "Faellt leer auf Excerpt zurück",
                         )}
+                        className={layout.fieldInput}
                         style={{
-                            ...layout.fieldInput,
                             resize: "vertical",
                             fontFamily: "inherit",
                             minHeight: "5em",
@@ -790,8 +791,8 @@ export default function ArticleEditor() {
                             "ui.articles.excerpt_placeholder",
                             "Kurze Zusammenfassung für Newsletter und SEO-Snippets.",
                         )}
+                        className={layout.fieldInput}
                         style={{
-                            ...layout.fieldInput,
                             resize: "vertical",
                             fontFamily: "inherit",
                             minHeight: "5em",
@@ -830,7 +831,7 @@ export default function ArticleEditor() {
                     />
                     <PublicationsPanel articleId={article.id} />
 
-                    <h4 style={layout.sectionHeading}>
+                    <h4 className={layout.sectionHeading}>
                         {t("ui.articles.export_section", "Exportieren")}
                     </h4>
                     <div
@@ -854,7 +855,7 @@ export default function ArticleEditor() {
                         ))}
                     </div>
 
-                    <h4 style={layout.sectionHeading}>
+                    <h4 className={layout.sectionHeading}>
                         {t("ui.articles.translate_section", "Übersetzen")}
                     </h4>
                     {!translateOpen ? (
@@ -884,7 +885,7 @@ export default function ArticleEditor() {
                                     "Erstellt einen neuen Artikel-Entwurf in der Zielsprache. Inline-Formatierung (fett/kursiv) geht beim Übersetzen verloren.",
                                 )}
                             </p>
-                            <label style={layout.fieldLabel}>
+                            <label className={layout.fieldLabel}>
                                 {t("ui.articles.translate_provider", "Anbieter")}
                             </label>
                             {(() => {
@@ -916,7 +917,7 @@ export default function ArticleEditor() {
                                             setTranslateProvider(e.target.value as "deepl" | "lmstudio")
                                         }
                                         disabled={translating || providers === null}
-                                        style={layout.fieldInput}
+                                        className={layout.fieldInput}
                                     >
                                         {visibleProviders.map((p) => (
                                             <option key={p.id} value={p.id}>
@@ -926,7 +927,7 @@ export default function ArticleEditor() {
                                     </select>
                                 );
                             })()}
-                            <label style={layout.fieldLabel}>
+                            <label className={layout.fieldLabel}>
                                 {t("ui.articles.translate_target_lang", "Zielsprache")}
                             </label>
                             <select
@@ -934,7 +935,7 @@ export default function ArticleEditor() {
                                 value={translateLang}
                                 onChange={(e) => setTranslateLang(e.target.value)}
                                 disabled={translating}
-                                style={layout.fieldInput}
+                                className={layout.fieldInput}
                             >
                                 {SUPPORTED_LANGUAGES.filter((l) => l.code !== article.language).map(
                                     (opt) => (
@@ -981,16 +982,15 @@ export default function ArticleEditor() {
 
                     <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className={`btn btn-secondary btn-sm ${layout.deleteBtn}`}
                         onClick={() => void handleDelete()}
                         data-testid="article-editor-delete"
-                        style={layout.deleteBtn}
                     >
                         <Trash2 size={12} />
                         {t("ui.articles.delete", "Löschen")}
                     </button>
                 </aside>
-                <div style={layout.editorPane}>
+                <div className={layout.editorPane}>
                     <Editor
                         contentKind="article"
                         content={article.content_json}
@@ -1174,7 +1174,7 @@ function Field({
                 onChange={(e) => onChange(e.target.value)}
                 onBlur={onBlur}
                 placeholder={placeholder}
-                style={layout.fieldInput}
+                className={layout.fieldInput}
             />
         </>
     );
@@ -1185,13 +1185,13 @@ function Field({
  *  hover trigger and renders the explanatory string on dwell. */
 function FieldLabel({label, tooltip}: {label: string; tooltip?: string}) {
     if (!tooltip) {
-        return <label style={layout.fieldLabel}>{label}</label>;
+        return <label className={layout.fieldLabel}>{label}</label>;
     }
     return (
         <Tooltip content={tooltip}>
             <label
+                className={layout.fieldLabel}
                 style={{
-                    ...layout.fieldLabel,
                     cursor: "help",
                     textDecoration: "underline dotted",
                     textDecorationColor: "var(--text-muted)",
@@ -1297,7 +1297,8 @@ function TopicSelect({
                         "ui.articles.topic_add_new_placeholder",
                         "Themenname",
                     )}
-                    style={{...layout.fieldInput, flex: 1}}
+                    className={layout.fieldInput}
+                    style={{flex: 1}}
                 />
                 <button
                     type="button"
@@ -1326,7 +1327,7 @@ function TopicSelect({
                 data-testid="article-editor-topic"
                 value={value}
                 onChange={handleSelectChange}
-                style={layout.fieldInput}
+                className={layout.fieldInput}
                 disabled={topics === null}
             >
                 <option value="">
@@ -1363,99 +1364,3 @@ function TopicSelect({
     );
 }
 
-const layout: Record<string, React.CSSProperties> = {
-    page: {
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        background: "var(--bg-primary)",
-    },
-    header: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "12px 20px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-card)",
-    },
-    titleInput: {
-        flex: 1,
-        fontSize: "1.25rem",
-        fontWeight: 600,
-        border: "none",
-        background: "transparent",
-        outline: "none",
-        color: "var(--text-primary)",
-    },
-    body: {
-        flex: 1,
-        display: "grid",
-        // Sidebar on the left to mirror BookEditor's sidebar position
-        // (UX consistency between Book + Article editors).
-        gridTemplateColumns: "300px 1fr",
-        minHeight: 0,
-    },
-    editorPane: {
-        overflowY: "auto",
-        padding: "24px 32px",
-    },
-    wordCount: {
-        marginTop: 16,
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-    },
-    sidebar: {
-        borderRight: "1px solid var(--border)",
-        background: "var(--bg-card)",
-        padding: "16px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        overflowY: "auto",
-    },
-    sidebarHeading: {
-        margin: 0,
-        marginBottom: 8,
-        fontSize: "0.875rem",
-        fontWeight: 600,
-        color: "var(--text-secondary)",
-    },
-    sectionHeading: {
-        margin: 0,
-        marginTop: 16,
-        marginBottom: 4,
-        fontSize: "0.75rem",
-        fontWeight: 600,
-        color: "var(--text-secondary)",
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-    },
-    fieldLabel: {
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        marginTop: 8,
-    },
-    fieldInput: {
-        padding: "6px 8px",
-        border: "1px solid var(--border)",
-        borderRadius: 4,
-        background: "var(--bg-primary)",
-        color: "var(--text-primary)",
-        fontSize: "0.875rem",
-    },
-    deleteBtn: {
-        marginTop: 16,
-        alignSelf: "flex-start",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        color: "var(--error, #b91c1c)",
-    },
-    loading: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: 32,
-        color: "var(--text-muted)",
-    },
-};
