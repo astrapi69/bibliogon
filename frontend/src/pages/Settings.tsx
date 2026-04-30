@@ -14,6 +14,7 @@ import {useI18n} from "../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/aiProviders";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import SshKeySection from "../components/SshKeySection";
+import styles from "./Settings.module.css";
 
 const VALID_SETTINGS_TABS = ["app", "ai", "author", "topics", "plugins", "support"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
@@ -77,15 +78,15 @@ export default function Settings() {
     };
 
     return (
-        <div style={styles.container}>
+        <div className={styles.container}>
             {/* Header */}
-            <header style={styles.header}>
-                <div style={styles.headerInner}>
-                    <div style={styles.headerLeft}>
-                        <button style={styles.backBtn} onClick={() => navigate("/")}>
+            <header className={styles.header}>
+                <div className={styles.headerInner}>
+                    <div className={styles.headerLeft}>
+                        <button className={styles.backBtn} onClick={() => navigate("/")}>
                             <ChevronLeft size={18}/>
                         </button>
-                        <h1 style={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
+                        <h1 className={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
                     <div className="icon-row">
                         <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
@@ -108,7 +109,7 @@ export default function Settings() {
                     ) : null}
                 </Tabs.List>
 
-            <main style={styles.main}>
+            <main className={styles.main}>
                 <Tabs.Content value="app">
                     <AppSettings
                         config={appConfig}
@@ -349,9 +350,9 @@ function AppSettings({config, onSave, saving}: {
     };
 
     return (
-        <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t("ui.settings.app_settings", "App-Einstellungen")}</h2>
-            <div style={styles.card}>
+        <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>{t("ui.settings.app_settings", "App-Einstellungen")}</h2>
+            <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.language", "Sprache")}</label>
                     <RadixSelect
@@ -497,8 +498,8 @@ function AppSettings({config, onSave, saving}: {
 
             {/* Editor Settings */}
             <div style={{marginTop: 16}}>
-                <h2 style={styles.sectionTitle}>{t("ui.settings.editor_title", "Editor")}</h2>
-                <div style={styles.card}>
+                <h2 className={styles.sectionTitle}>{t("ui.settings.editor_title", "Editor")}</h2>
+                <div className={styles.card}>
                     <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
                         <div className="field" style={{flex: 1, minWidth: 140}}>
                             <label className="label">{t("ui.settings.editor_autosave", "Autosave (ms)")}</label>
@@ -542,7 +543,7 @@ function AppSettings({config, onSave, saving}: {
                 </button>
 
                 {showAdvanced && (
-                    <div style={{...styles.card, marginTop: 12, borderLeft: "3px solid var(--accent)"}}>
+                    <div className={styles.card} style={{marginTop: 12, borderLeft: "3px solid var(--accent)"}}>
                         <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 4}}>
                             {t("ui.settings.white_label_title", "White-Label Konfiguration")}
                         </h3>
@@ -638,10 +639,10 @@ function AiAssistantSettings({config, onSave, saving}: {
     });
 
     return (
-        <div style={styles.main}>
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
-                <div style={styles.card}>
+        <div className={styles.main}>
+            <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
+                <div className={styles.card}>
                     <div className="field">
                         <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
                             <input
@@ -865,9 +866,9 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
         });
 
     return (
-        <div style={styles.section}>
+        <div className={styles.section}>
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                <h2 style={styles.sectionTitle}>{t("ui.settings.plugin_settings", "Plugin-Einstellungen")}</h2>
+                <h2 className={styles.sectionTitle}>{t("ui.settings.plugin_settings", "Plugin-Einstellungen")}</h2>
                 <div style={{display: "flex", gap: 8}}>
                     <button
                         className="btn btn-ghost btn-sm"
@@ -885,7 +886,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
             </div>
 
             {showAdd && inactivePlugins.length > 0 && (
-                <div style={styles.card}>
+                <div className={styles.card}>
                     <h3 style={{fontSize: "0.9375rem", fontWeight: 600, marginBottom: 12}}>{t("ui.settings.available_plugins", "Verfügbare Plugins")}</h3>
                     <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
                         {t("ui.settings.available_plugins_hint", "Diese Plugins sind installiert aber noch nicht aktiviert:")}
@@ -1146,7 +1147,7 @@ function TranslationSettingsPanel({settings, onSave}: {
             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                 {t("ui.settings.expand_settings", "Einstellungen")}
             </h4>
-            <div style={styles.settingsGrid}>
+            <div className={styles.settingsGrid}>
                 <div className="field">
                     <label className="label">{t("ui.translation.provider", "Anbieter")}</label>
                     <RadixSelect value={provider} onValueChange={setProvider} options={providerOptions} />
@@ -1338,7 +1339,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                 {t("ui.settings.expand_settings", "Einstellungen")}
             </h4>
-            <div style={styles.settingsGrid}>
+            <div className={styles.settingsGrid}>
                 <div className="field">
                     <label className="label">{t("ui.audiobook.engine", "Sprachsynthese-Engine")}</label>
                     <RadixSelect value={engine} onValueChange={(v) => { setEngine(v); setVoice(""); }} options={engineOptions} />
@@ -1748,33 +1749,29 @@ function PluginCard({name, displayName, description, version, enabled, settings,
     const hasSettings = scalarSettings.length > 0 || orderedListSettings.length > 0 || complexSettings.length > 0;
 
     return (
-        <div style={{
-            ...styles.card,
+        <div className={styles.card} style={{
             borderLeft: enabled ? "3px solid var(--accent)" : "3px solid transparent",
             opacity: enabled ? 1 : 0.75,
         }}>
-            <div style={styles.pluginHeader}>
+            <div className={styles.pluginHeader}>
                 <div style={{flex: 1}}>
                     <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
                         <strong style={{fontSize: "1rem"}}>{displayName}</strong>
-                        <span style={styles.badge}>v{version}</span>
-                        <span style={{
-                            ...styles.badge,
+                        <span className={styles.badge}>v{version}</span>
+                        <span className={styles.badge} style={{
                             background: "var(--accent-light)",
                             color: "var(--accent)",
                         }}>
                             {t("ui.settings.free", "Kostenlos")}
                         </span>
-                        <span style={{
-                            ...styles.badge,
+                        <span className={styles.badge} style={{
                             background: enabled ? "rgba(34,197,94,0.12)" : "rgba(168,162,158,0.12)",
                             color: enabled ? "#16a34a" : "var(--text-muted)",
                         }}>
                             {enabled ? t("ui.settings.active", "Aktiv") : t("ui.settings.inactive", "Inaktiv")}
                         </span>
                         {isCore && (
-                            <span style={{
-                                ...styles.badge,
+                            <span className={styles.badge} style={{
                                 background: "rgba(59,130,246,0.12)",
                                 color: "#2563eb",
                             }}>
@@ -1829,7 +1826,7 @@ function PluginCard({name, displayName, description, version, enabled, settings,
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
                                 {t("ui.settings.expand_settings", "Einstellungen")}
                             </h4>
-                            <div style={styles.settingsGrid}>
+                            <div className={styles.settingsGrid}>
                                 {scalarSettings.map(([key, value]) => (
                                     <ScalarSettingField
                                         key={key}
@@ -1959,9 +1956,9 @@ function AuthorSettings({config, onSave, saving}: {
     };
 
     return (
-        <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t("ui.settings.author_profile", "Autorenprofil")}</h2>
-            <div style={styles.card}>
+        <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>{t("ui.settings.author_profile", "Autorenprofil")}</h2>
+            <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.real_name", "Echter Name")}</label>
                     <input
@@ -2061,9 +2058,9 @@ function TopicsSettings({config, onSave, saving}: {
     };
 
     return (
-        <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t("ui.settings.topics_title", "Artikel-Themen")}</h2>
-            <div style={styles.card}>
+        <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>{t("ui.settings.topics_title", "Artikel-Themen")}</h2>
+            <div className={styles.card}>
                 <div className="field">
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
                         {t("ui.settings.topics_hint", "Themen erscheinen als Auswahl im Artikel-Editor. Ein Thema ist die primaere Kategorie eines Artikels.")}
@@ -2224,44 +2221,3 @@ function renderReadOnlyValue(value: unknown): React.ReactNode {
     return <span style={{fontSize: "0.8125rem", color: "var(--text-secondary)"}}>{String(value)}</span>;
 }
 
-// --- Styles ---
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {minHeight: "100vh", background: "var(--bg-primary)"},
-    header: {borderBottom: "1px solid var(--border)", background: "var(--bg-card)"},
-    headerInner: {
-        maxWidth: 900, margin: "0 auto", padding: "16px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-    },
-    headerLeft: {display: "flex", alignItems: "center", gap: 8},
-    backBtn: {
-        background: "none", border: "none", cursor: "pointer",
-        color: "var(--text-secondary)", display: "flex", alignItems: "center",
-        padding: 4, borderRadius: 4,
-    },
-    title: {
-        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600,
-        color: "var(--text-primary)",
-    },
-    message: {
-        fontSize: "0.8125rem", fontWeight: 500, color: "var(--accent)",
-    },
-    main: {maxWidth: 900, margin: "0 auto", padding: "24px"},
-    section: {display: "flex", flexDirection: "column", gap: 16},
-    sectionTitle: {
-        fontFamily: "var(--font-display)", fontSize: "1.125rem", fontWeight: 600,
-        color: "var(--text-primary)", marginBottom: 4,
-    },
-    card: {
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)", padding: 20,
-    },
-    pluginHeader: {display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16},
-    badge: {
-        fontSize: "0.6875rem", fontWeight: 600, padding: "2px 6px",
-        borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-muted)",
-    },
-    settingsGrid: {
-        display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12,
-    },
-};

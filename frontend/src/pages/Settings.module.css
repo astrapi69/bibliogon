@@ -1,0 +1,101 @@
+/**
+ * T-01 Phase B: Settings page CSS-Module.
+ *
+ * Migrated from a 39-line ``const styles: Record<string, React.CSSProperties>``
+ * block at the bottom of Settings.tsx. 13 keys, 35 usages.
+ *
+ * Theme tokens via var(--*) so 6-theme switching keeps working
+ * via the existing global.css cascade with no React re-render.
+ */
+
+.container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.header {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.headerInner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionTitle {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.pluginHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+.settingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
