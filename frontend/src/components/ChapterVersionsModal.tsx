@@ -13,6 +13,7 @@ import {X, RotateCcw, History} from "lucide-react";
 import {api, type ChapterVersionSummary} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import styles from "./ChapterVersionsModal.module.css";
 
 interface Props {
   open: boolean;
@@ -58,9 +59,9 @@ export default function ChapterVersionsModal({open, bookId, chapterId, onClose, 
     <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="radix-dialog-overlay" />
-        <Dialog.Content className="radix-dialog-content" style={styles.content} data-testid="chapter-versions-modal">
-          <div style={styles.header}>
-            <Dialog.Title style={styles.title}>
+        <Dialog.Content className={`radix-dialog-content ${styles.content}`} data-testid="chapter-versions-modal">
+          <div className={styles.header}>
+            <Dialog.Title className={styles.title}>
               <History size={18} aria-hidden />
               {t("ui.versions.title", "Versionsverlauf")}
             </Dialog.Title>
@@ -70,23 +71,23 @@ export default function ChapterVersionsModal({open, bookId, chapterId, onClose, 
               </button>
             </Dialog.Close>
           </div>
-          <Dialog.Description style={styles.description}>
+          <Dialog.Description className={styles.description}>
             {t("ui.versions.description", "Die letzten 20 gespeicherten Fassungen dieses Kapitels. Wiederherstellen überschreibt den aktuellen Inhalt - die aktuelle Fassung wird zuvor als neue Version gesichert.")}
           </Dialog.Description>
           {loading ? (
-            <p style={styles.emptyState}>{t("ui.common.loading", "Laden...")}</p>
+            <p className={styles.emptyState}>{t("ui.common.loading", "Laden...")}</p>
           ) : versions && versions.length === 0 ? (
-            <p style={styles.emptyState} data-testid="chapter-versions-empty">
+            <p className={styles.emptyState} data-testid="chapter-versions-empty">
               {t("ui.versions.empty", "Noch keine älteren Fassungen vorhanden.")}
             </p>
           ) : versions ? (
-            <ul style={styles.list} data-testid="chapter-versions-list">
+            <ul className={styles.list} data-testid="chapter-versions-list">
               {versions.map((v) => (
-                <li key={v.id} style={styles.item}>
-                  <div style={styles.itemLine}>
-                    <span style={styles.versionBadge}>v{v.version}</span>
-                    <span style={styles.timestamp}>{new Date(v.created_at).toLocaleString()}</span>
-                    <span style={styles.versionTitle}>{v.title}</span>
+                <li key={v.id} className={styles.item}>
+                  <div className={styles.itemLine}>
+                    <span className={styles.versionBadge}>v{v.version}</span>
+                    <span className={styles.timestamp}>{new Date(v.created_at).toLocaleString()}</span>
+                    <span className={styles.versionTitle}>{v.title}</span>
                   </div>
                   <button
                     className="btn btn-secondary btn-sm"
@@ -107,16 +108,3 @@ export default function ChapterVersionsModal({open, bookId, chapterId, onClose, 
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  content: {maxWidth: "640px", width: "min(640px, 95vw)"},
-  header: {display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem"},
-  title: {display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.1rem", fontWeight: 600, margin: 0},
-  description: {color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.4, fontSize: "0.875rem"},
-  emptyState: {color: "var(--text-muted)", textAlign: "center", padding: "1rem"},
-  list: {listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.35rem", maxHeight: 380, overflow: "auto"},
-  item: {display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", padding: "0.5rem 0.75rem", border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg-surface)"},
-  itemLine: {display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, overflow: "hidden"},
-  versionBadge: {fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem", color: "var(--text-muted)", flexShrink: 0},
-  timestamp: {fontSize: "0.8rem", color: "var(--text-muted)", flexShrink: 0},
-  versionTitle: {fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"},
-};

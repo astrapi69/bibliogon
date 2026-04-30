@@ -1,0 +1,90 @@
+/**
+ * T-01 Phase B: ChapterVersionsModal CSS-Module.
+ *
+ * Migrated from a 13-line ``const styles`` block. 11 keys, ~12 inline
+ * applications. Lists chapter version history.
+ */
+
+.content {
+    max-width: 640px;
+    width: min(640px, 95vw);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.description {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    font-size: 0.875rem;
+}
+
+.emptyState {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem;
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: 380px;
+    overflow: auto;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-surface);
+}
+
+.itemLine {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.versionBadge {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.timestamp {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.versionTitle {
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
