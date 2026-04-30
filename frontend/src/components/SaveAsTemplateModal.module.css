@@ -1,0 +1,84 @@
+/**
+ * T-01 Phase B: SaveAsTemplateModal CSS-Module.
+ *
+ * Migrated from a 68-line ``const styles`` block. 11 keys, ~17 inline
+ * applications. Modal that lets the user save a book as a reusable
+ * template with chapter-list preview.
+ */
+
+.body {
+    padding: 8px 0 16px;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+}
+
+.radioRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.detailsToggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    padding: 8px 0 4px;
+}
+
+.previewList {
+    max-height: 180px;
+    overflow-y: auto;
+    padding-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.previewRow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.8125rem;
+}
+
+.previewPos {
+    min-width: 24px;
+    color: var(--text-muted);
+}
+
+.previewTitle {
+    flex: 1;
+}
+
+.previewType {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--bg-subtle, var(--bg-surface));
+}
+
+.errorText {
+    color: var(--danger, #c43);
+    font-size: 0.8125rem;
+    margin-top: 4px;
+}

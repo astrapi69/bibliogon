@@ -13,6 +13,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
 import {ChevronDown, ChevronRight} from "lucide-react";
+import styles from "./SaveAsTemplateModal.module.css";
 
 type ContentMode = "empty" | "preserve";
 
@@ -144,7 +145,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                         </Dialog.Title>
                     </div>
 
-                    <div style={styles.body}>
+                    <div className={styles.body}>
                         <div className="field">
                             <label className="label">{t("ui.save_template.name", "Name")} *</label>
                             <input
@@ -157,7 +158,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                                 maxLength={100}
                             />
                             {nameError && (
-                                <div style={styles.errorText} data-testid="save-template-name-error">{nameError}</div>
+                                <div className={styles.errorText} data-testid="save-template-name-error">{nameError}</div>
                             )}
                         </div>
 
@@ -174,7 +175,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                             />
                         </div>
 
-                        <div style={styles.row}>
+                        <div className={styles.row}>
                             <div className="field" style={{flex: 1}}>
                                 <label className="label">{t("ui.save_template.genre", "Genre")}</label>
                                 <Select.Root value={genre} onValueChange={setGenre}>
@@ -219,7 +220,7 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
 
                         <div className="field">
                             <label className="label">{t("ui.save_template.content_mode", "Kapitelinhalt")}</label>
-                            <label style={styles.radioRow}>
+                            <label className={styles.radioRow}>
                                 <input
                                     type="radio"
                                     name="content-mode"
@@ -231,10 +232,10 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                                 />
                                 <div>
                                     <div>{t("ui.save_template.content_empty", "Leere Platzhalter")}</div>
-                                    <div style={styles.hint}>{t("ui.save_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
+                                    <div className={styles.hint}>{t("ui.save_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
                                 </div>
                             </label>
-                            <label style={styles.radioRow}>
+                            <label className={styles.radioRow}>
                                 <input
                                     type="radio"
                                     name="content-mode"
@@ -246,28 +247,28 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
                                 />
                                 <div>
                                     <div>{t("ui.save_template.content_preserve", "Inhalt übernehmen")}</div>
-                                    <div style={styles.hint}>{t("ui.save_template.content_preserve_hint", "Kopiert den Kapiteltext in die Vorlage")}</div>
+                                    <div className={styles.hint}>{t("ui.save_template.content_preserve_hint", "Kopiert den Kapiteltext in die Vorlage")}</div>
                                 </div>
                             </label>
                         </div>
 
                         <Collapsible.Root open={previewOpen} onOpenChange={setPreviewOpen}>
                             <Collapsible.Trigger asChild>
-                                <button style={styles.detailsToggle} data-testid="save-template-preview-toggle">
+                                <button className={styles.detailsToggle} data-testid="save-template-preview-toggle">
                                     {previewOpen ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
                                     {t("ui.save_template.preview", "Kapitelvorschau")} ({chapterCount})
                                 </button>
                             </Collapsible.Trigger>
                             <Collapsible.Content>
-                                <div style={styles.previewList} data-testid="save-template-preview-list">
+                                <div className={styles.previewList} data-testid="save-template-preview-list">
                                     {book.chapters
                                         .slice()
                                         .sort((a, b) => a.position - b.position)
                                         .map((c) => (
-                                            <div key={c.id} style={styles.previewRow}>
-                                                <span style={styles.previewPos}>{c.position + 1}.</span>
-                                                <span style={styles.previewTitle}>{c.title}</span>
-                                                <span style={styles.previewType}>{c.chapter_type}</span>
+                                            <div key={c.id} className={styles.previewRow}>
+                                                <span className={styles.previewPos}>{c.position + 1}.</span>
+                                                <span className={styles.previewTitle}>{c.title}</span>
+                                                <span className={styles.previewType}>{c.chapter_type}</span>
                                             </div>
                                         ))}
                                 </div>
@@ -296,71 +297,3 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    body: {
-        padding: "8px 0 16px",
-    },
-    row: {
-        display: "flex",
-        gap: 12,
-    },
-    radioRow: {
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "6px 0",
-        cursor: "pointer",
-        fontSize: "0.875rem",
-    },
-    hint: {
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        marginTop: 2,
-    },
-    detailsToggle: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "var(--text-muted)",
-        fontSize: "0.8125rem",
-        fontWeight: 500,
-        fontFamily: "var(--font-body)",
-        padding: "8px 0 4px",
-    },
-    previewList: {
-        maxHeight: 180,
-        overflowY: "auto",
-        paddingTop: 6,
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-    },
-    previewRow: {
-        display: "flex",
-        gap: 8,
-        alignItems: "center",
-        fontSize: "0.8125rem",
-    },
-    previewPos: {
-        minWidth: 24,
-        color: "var(--text-muted)",
-    },
-    previewTitle: {
-        flex: 1,
-    },
-    previewType: {
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        padding: "1px 6px",
-        borderRadius: 4,
-        background: "var(--bg-subtle, var(--bg-surface))",
-    },
-    errorText: {
-        color: "var(--danger, #c43)",
-        fontSize: "0.8125rem",
-        marginTop: 4,
-    },
-};
