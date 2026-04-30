@@ -1,0 +1,79 @@
+/**
+ * T-01 Phase B: Toolbar CSS-Module.
+ *
+ * Migrated from a 60-line ``const styles`` block. 8 keys, ~11 inline
+ * applications (many with 2-3 conditional spreads). Editor toolbar
+ * with format/heading/align/list/AI/spellcheck/markdown buttons.
+ */
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    flex-wrap: wrap;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 150ms;
+}
+
+.buttonActive {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.buttonDisabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.buttonLoading {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.separator {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.modeToggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    transition: all 150ms;
+}
+
+.modeToggleActive {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+}

@@ -1,5 +1,6 @@
 import {Editor} from "@tiptap/react";
 import {useI18n} from "../hooks/useI18n";
+import styles from "./Toolbar.module.css";
 import {
     Bold,
     Italic,
@@ -280,12 +281,15 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         },
     ];
 
+    const cx = (...names: (string | false | undefined | null)[]) =>
+        names.filter(Boolean).join(" ");
+
     return (
-        <div style={styles.toolbar}>
+        <div className={styles.toolbar}>
             {items.map((item, i) => {
                 if ("hidden" in item && item.hidden) return null;
                 if ("type" in item && item.type === "separator") {
-                    return <div key={i} style={styles.separator}/>;
+                    return <div key={i} className={styles.separator}/>;
                 }
                 const btn = item as {
                     icon: React.ReactNode;
@@ -301,10 +305,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                         title={btn.title}
                         aria-label={btn.title}
                         data-testid={btn.testId}
-                        style={{
-                            ...styles.button,
-                            ...(btn.active ? styles.buttonActive : {}),
-                        }}
+                        className={cx(styles.button, btn.active && styles.buttonActive)}
                     >
                         {btn.icon}
                     </button>
@@ -312,7 +313,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             })}
 
             {/* Spacer */}
-            <div style={{flex: 1}}/>
+            <div className={styles.spacer}/>
 
             {/* Search toggle */}
             {onToggleSearch && !markdownMode && (
@@ -321,7 +322,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={t("ui.toolbar.search", "Suchen & Ersetzen") + " (Ctrl+H)"}
                     aria-label={t("ui.toolbar.search", "Suchen & Ersetzen")}
                     data-testid="toolbar-search"
-                    style={styles.button}
+                    className={styles.button}
                 >
                     <Search size={16}/>
                 </button>
@@ -334,10 +335,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={t("ui.toolbar.focus_mode", "Focus Mode")}
                     aria-label={t("ui.toolbar.focus_mode", "Focus Mode")}
                     data-testid="toolbar-focus"
-                    style={{
-                        ...styles.button,
-                        ...(focusMode ? styles.buttonActive : {}),
-                    }}
+                    className={cx(styles.button, focusMode && styles.buttonActive)}
                 >
                     <Focus size={16}/>
                 </button>
@@ -351,11 +349,11 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={t("ui.toolbar.style_check", "Stilprüfung")}
                     aria-label={t("ui.toolbar.style_check", "Stilprüfung")}
                     data-testid="toolbar-style-check"
-                    style={{
-                        ...styles.button,
-                        ...(styleCheckActive ? styles.buttonActive : {}),
-                        ...(styleCheckLoading ? {opacity: 0.5, cursor: "wait"} : {}),
-                    }}
+                    className={cx(
+                        styles.button,
+                        styleCheckActive && styles.buttonActive,
+                        styleCheckLoading && styles.buttonLoading,
+                    )}
                 >
                     <Wrench size={16}/>
                 </button>
@@ -369,11 +367,11 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={spellcheckDisabledReason || t("ui.toolbar.spellcheck", "Rechtschreibprüfung (LanguageTool)")}
                     aria-label={t("ui.toolbar.spellcheck", "Rechtschreibprüfung")}
                     data-testid="toolbar-spellcheck"
-                    style={{
-                        ...styles.button,
-                        ...(spellcheckActive ? styles.buttonActive : {}),
-                        ...(!onToggleSpellcheck || spellcheckDisabledReason ? styles.buttonDisabled : {}),
-                    }}
+                    className={cx(
+                        styles.button,
+                        spellcheckActive && styles.buttonActive,
+                        (!onToggleSpellcheck || spellcheckDisabledReason) && styles.buttonDisabled,
+                    )}
                 >
                     <SpellCheck size={16}/>
                 </button>
@@ -387,11 +385,11 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={previewDisabledReason || t("ui.toolbar.tts_preview", "Vorhören (TTS)")}
                     aria-label={t("ui.toolbar.tts_preview", "Vorhören")}
                     data-testid="toolbar-tts-preview"
-                    style={{
-                        ...styles.button,
-                        ...(previewLoading ? {opacity: 0.5, cursor: "wait"} : {}),
-                        ...(!onPreviewAudio || previewDisabledReason ? styles.buttonDisabled : {}),
-                    }}
+                    className={cx(
+                        styles.button,
+                        previewLoading && styles.buttonLoading,
+                        (!onPreviewAudio || previewDisabledReason) && styles.buttonDisabled,
+                    )}
                 >
                     <Headphones size={16}/>
                 </button>
@@ -405,11 +403,11 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     title={aiDisabledReason || t("ui.toolbar.ai_assistant", "KI-Assistent")}
                     aria-label={t("ui.toolbar.ai_assistant", "KI-Assistent")}
                     data-testid="toolbar-ai"
-                    style={{
-                        ...styles.button,
-                        ...(aiPanelActive ? styles.buttonActive : {}),
-                        ...(!onToggleAi || aiDisabledReason ? styles.buttonDisabled : {}),
-                    }}
+                    className={cx(
+                        styles.button,
+                        aiPanelActive && styles.buttonActive,
+                        (!onToggleAi || aiDisabledReason) && styles.buttonDisabled,
+                    )}
                 >
                     <Sparkles size={16}/>
                 </button>
@@ -420,10 +418,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 onClick={onToggleMarkdown}
                 title={markdownMode ? t("ui.toolbar.wysiwyg_mode", "WYSIWYG-Modus") : t("ui.toolbar.markdown_mode", "Markdown-Modus")}
                 data-testid="toolbar-markdown-toggle"
-                style={{
-                    ...styles.modeToggle,
-                    ...(markdownMode ? styles.modeToggleActive : {}),
-                }}
+                className={cx(styles.modeToggle, markdownMode && styles.modeToggleActive)}
             >
                 {markdownMode ? <FileText size={14}/> : <FileCode size={14}/>}
                 {markdownMode ? "WYSIWYG" : "Markdown"}
@@ -432,61 +427,3 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    toolbar: {
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        padding: "8px 16px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-card)",
-        flexWrap: "wrap",
-    },
-    button: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 32,
-        height: 32,
-        border: "none",
-        background: "transparent",
-        borderRadius: "var(--radius-sm)",
-        cursor: "pointer",
-        color: "var(--text-secondary)",
-        transition: "all 150ms",
-    },
-    buttonActive: {
-        background: "var(--accent-light)",
-        color: "var(--accent)",
-    },
-    buttonDisabled: {
-        opacity: 0.35,
-        cursor: "not-allowed",
-    },
-    separator: {
-        width: 1,
-        height: 20,
-        background: "var(--border)",
-        margin: "0 4px",
-    },
-    modeToggle: {
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "4px 10px",
-        border: "1px solid var(--border)",
-        background: "transparent",
-        borderRadius: "var(--radius-sm)",
-        cursor: "pointer",
-        color: "var(--text-secondary)",
-        fontSize: "0.75rem",
-        fontWeight: 500,
-        fontFamily: "var(--font-body)",
-        transition: "all 150ms",
-    },
-    modeToggleActive: {
-        background: "var(--accent-light)",
-        color: "var(--accent)",
-        borderColor: "var(--accent)",
-    },
-};
