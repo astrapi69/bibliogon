@@ -228,3 +228,31 @@ Wait for Go on Phase 2 commit 1.
 - [x] Settings write-path trace (PATCH endpoint + 2 UI surfaces)
 - [x] Concrete plan for each Phase-2 commit
 - [x] Surprises documented (plugin yaml scoping, `_startup_config` ordering, AiSetupWizard second surface, defense-in-depth strip)
+
+---
+
+## 5. Follow-up: Plugin yaml secrets
+
+Plugin yamls (audiobook, grammar, translation) are currently empty
+templates and load via PluginManager, not `_load_app_config`. They
+are NOT covered by this refactor.
+
+When any plugin yaml gets a real secret value, the same three-layer
+mechanism (project < override < env-var) must be applied to
+PluginManager. Inventory of fields ready for migration:
+
+- `plugins/audiobook.yaml` `elevenlabs.api_key` → env-var
+  `BIBLIOGON_AUDIOBOOK_ELEVENLABS_API_KEY`
+- `plugins/grammar.yaml` `grammar.languagetool_api_key` +
+  `languagetool_username` → env-vars
+  `BIBLIOGON_GRAMMAR_LANGUAGETOOL_API_KEY` and
+  `BIBLIOGON_GRAMMAR_LANGUAGETOOL_USERNAME`
+- `plugins/translation.yaml` `translation.deepl_api_key` → env-var
+  `BIBLIOGON_TRANSLATION_DEEPL_API_KEY`
+
+Suggested ROADMAP entry: **T-XX Plugin-Config Secrets Layering**.
+Estimate: 1-2 sessions, mirrors this refactor at PluginManager level.
+Trigger: first plugin yaml that needs a real secret value.
+
+ID assignment deferred — Aster picks the next free T-* number when
+ready to schedule.
