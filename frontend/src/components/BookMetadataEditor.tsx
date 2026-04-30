@@ -192,7 +192,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     {otherBooks.map((b) => (
                         <button key={b.id} className="btn btn-ghost btn-sm" onClick={() => handleCopyFrom(b)}
                             style={{display: "block", width: "100%", textAlign: "left", marginBottom: 4}}>
-                            {b.title} <span style={{color: "var(--text-muted)"}}>- {b.author}</span>
+                            {b.title} <span className="muted">- {b.author}</span>
                         </button>
                     ))}
                 </div>

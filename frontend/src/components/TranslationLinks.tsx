@@ -152,7 +152,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
                 fontSize: "0.8125rem",
             }}
         >
-            <Globe size={14} style={{ color: "var(--text-muted)" }} />
+            <Globe size={14} className="muted" />
             <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
                 {t("ui.translations.label", "Übersetzungen")}:
             </span>

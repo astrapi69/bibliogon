@@ -169,7 +169,7 @@ export default function AudioExportProgress() {
 function PhaseIcon({phase}: {phase: AudiobookPhase}) {
     if (phase === "completed") return <CheckCircle size={20} style={{color: "#16a34a"}} />;
     if (phase === "failed") return <AlertCircle size={20} style={{color: "#ef4444"}} />;
-    if (phase === "cancelled") return <X size={20} style={{color: "var(--text-muted)"}} />;
+    if (phase === "cancelled") return <X size={20} className="muted" />;
     return <Loader size={20} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}} />;
 }
 

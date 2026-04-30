@@ -562,7 +562,7 @@ export default function ArticleList() {
                 <EmptyState onCreate={() => void handleCreate()} />
             ) : filters.filteredArticles.length === 0 ? (
                 <div data-testid="article-list-filter-empty" style={layout.empty}>
-                    <Search size={32} style={{ color: "var(--text-muted)" }} />
+                    <Search size={32} className="muted" />
                     <p style={{ color: "var(--text-muted)", margin: 0 }}>
                         {t(
                             "ui.articles.empty_filtered",
@@ -654,7 +654,7 @@ function TrashPanel({
             >
                 <ChevronLeft size={18} />
             </button>
-            <Trash2 size={20} style={{ color: "var(--text-muted)" }} />
+            <Trash2 size={20} className="muted" />
             <h2 style={layout.heading}>
                 {t("ui.articles.trash_title", "Papierkorb")}
             </h2>
@@ -688,7 +688,7 @@ function TrashPanel({
                     data-testid="article-trash-empty"
                     style={{ ...layout.empty, marginBottom: 16 }}
                 >
-                    <Trash size={28} style={{ color: "var(--text-muted)" }} />
+                    <Trash size={28} className="muted" />
                     <p style={{ color: "var(--text-muted)", margin: 0 }}>
                         {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
                     </p>
@@ -900,7 +900,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     const navigate = useNavigate();
     return (
         <div data-testid="article-list-empty" style={layout.empty}>
-            <FileText size={32} style={{ color: "var(--text-muted)" }} />
+            <FileText size={32} className="muted" />
             <h3 style={{ margin: 0 }}>
                 {t("ui.articles.empty_heading", "Noch keine Artikel")}
             </h3>

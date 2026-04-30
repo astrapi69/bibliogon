@@ -694,6 +694,15 @@ body {
     gap: 6px;
 }
 
+.muted {
+    color: var(--text-muted);
+}
+
+.muted-sm {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
 /* --- Buttons --- */
 .btn {
     display: inline-flex;

@@ -279,7 +279,7 @@ export default function Dashboard() {
                             <button className="btn-icon" onClick={() => setShowTrash(false)} title={t("ui.dashboard.back", "Zurück")}>
                                 <ChevronLeft size={18}/>
                             </button>
-                            <Trash2 size={20} style={{color: "var(--text-muted)"}}/>
+                            <Trash2 size={20} className="muted"/>
                             <h2 style={styles.mainTitle}>{t("ui.dashboard.trash", "Papierkorb")}</h2>
                             <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                             <div style={{flex: 1}}/>

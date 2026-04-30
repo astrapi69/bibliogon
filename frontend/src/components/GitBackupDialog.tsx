@@ -302,7 +302,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                         <div style={{padding: 16, display: "flex", flexDirection: "column", gap: 16}}>
                             {/* Header: HEAD + sync status + refresh */}
                             <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: "0.8125rem", flexWrap: "wrap"}}>
-                                <span style={{color: "var(--text-muted)"}}>HEAD:</span>
+                                <span className="muted">HEAD:</span>
                                 <code style={{fontFamily: "var(--font-mono)"}}>{status.head_short_hash}</code>
                                 {status.dirty && (
                                     <span style={{color: "var(--accent)", fontWeight: 500}}>
@@ -370,7 +370,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                                 )}
                                 {!editingRemote && remote && !remote.url && (
                                     <div style={{display: "flex", gap: 8, alignItems: "center"}}>
-                                        <span style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                                        <span className="muted-sm">
                                             {t("ui.git.no_remote", "Kein Remote konfiguriert.")}
                                         </span>
                                         <button
@@ -469,7 +469,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                                     {t("ui.git.history", "Verlauf")} ({commits.length})
                                 </h3>
                                 {commits.length === 0 ? (
-                                    <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}}>
+                                    <p className="muted-sm">
                                         {t("ui.git.no_commits", "Noch keine Commits.")}
                                     </p>
                                 ) : (

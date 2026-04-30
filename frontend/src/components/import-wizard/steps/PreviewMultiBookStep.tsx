@@ -110,7 +110,7 @@ export function PreviewMultiBookStep({
                     </button>
                     <span
                         data-testid="multi-book-selected-count"
-                        style={{ color: "var(--text-muted)" }}
+                        className="muted"
                     >
                         {t(
                             "ui.import_wizard.multi_book_selected_count",

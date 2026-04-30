@@ -467,7 +467,7 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                                                 {t("ui.audiobook.regen_count_outdated", "{n} veraltet").replace("{n}", String(out))}
                                             </span>}
                                             {mis > 0 && <span style={{display: "flex", alignItems: "center", gap: 4}}>
-                                                <Clock size={12} style={{color: "var(--text-muted)"}}/>
+                                                <Clock size={12} className="muted"/>
                                                 {t("ui.audiobook.regen_count_missing", "{n} fehlend").replace("{n}", String(mis))}
                                             </span>}
                                         </div>

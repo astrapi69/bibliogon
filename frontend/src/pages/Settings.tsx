@@ -950,7 +950,7 @@ function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAdd
                 );
             })}
             {Object.entries(configs).filter(([name]) => enabled.has(name) && !disabled.has(name)).length === 0 && (
-                <p style={{color: "var(--text-muted)"}}>{t("ui.settings.no_active_plugins", "Keine aktiven Plugins. Klicke \"Plugin hinzufügen\" um verfügbare Plugins zu aktivieren.")}</p>
+                <p className="muted">{t("ui.settings.no_active_plugins", "Keine aktiven Plugins. Klicke \"Plugin hinzufügen\" um verfügbare Plugins zu aktivieren.")}</p>
             )}
         </div>
     );

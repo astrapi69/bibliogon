@@ -32,7 +32,7 @@ export default function DashboardFilterSheet({filters, open, onOpenChange}: Prop
                     aria-describedby={undefined}
                 >
                     <div style={styles.header}>
-                        <SlidersHorizontal size={18} style={{color: "var(--text-muted)"}}/>
+                        <SlidersHorizontal size={18} className="muted"/>
                         <Dialog.Title style={styles.title}>
                             {t("ui.dashboard.filters", "Filter")}
                         </Dialog.Title>
