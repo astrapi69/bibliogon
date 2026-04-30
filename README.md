@@ -146,12 +146,22 @@ Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
 ## Configuration
 
-Environment variables (set in `.env`):
+Three-layer config: project `app.yaml` (defaults) ← user override file
+(`~/.config/bibliogon/secrets.yaml`, gitignored) ← env-vars (CI/Docker).
+Override-wins, env-vars always highest priority. Detailed guide:
+[docs/configuration.md](docs/configuration.md).
+
+Move secrets like `ai.api_key` out of project `app.yaml` into the
+override file or `BIBLIOGON_AI_API_KEY` env-var. The Settings UI
+hides the API-key input automatically when an override is active.
+
+Environment variables (set in `.env` or shell):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BIBLIOGON_PORT` | 7880 | Port for the web app |
 | `BIBLIOGON_DEBUG` | false | Debug mode (enables test endpoints, API docs) |
+| `BIBLIOGON_AI_API_KEY` | (unset) | Overrides `ai.api_key` from any yaml layer |
 | `BIBLIOGON_SECRET_KEY` | (generated) | Secret for license validation |
 | `BIBLIOGON_CREDENTIALS_SECRET` | (generated) | Secret for encrypting API keys and service account files |
 | `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Allowed CORS origins |
