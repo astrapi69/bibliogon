@@ -36,6 +36,7 @@ import ArticleCard from "../components/articles/ArticleCard";
 import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
+import layout from "./ArticleList.module.css";
 import { useViewMode } from "../hooks/useViewMode";
 import { useArticleFilters } from "../hooks/useArticleFilters";
 import { useDialog } from "../components/AppDialog";
@@ -330,20 +331,20 @@ export default function ArticleList() {
     }
 
     return (
-        <div data-testid="article-list-page" style={layout.page}>
-            <header style={layout.appHeader}>
-                <div style={layout.appHeaderInner}>
+        <div data-testid="article-list-page" className={layout.page}>
+            <header className={layout.appHeader}>
+                <div className={layout.appHeaderInner}>
                     <div
-                        style={layout.logo}
+                        className={layout.logo}
                         onClick={() => navigate("/")}
                         role="button"
                         title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
                         data-testid="article-list-dashboard"
                     >
                         <BookOpen size={28} strokeWidth={1.5} />
-                        <h1 style={layout.logoText}>Bibliogon</h1>
+                        <h1 className={layout.logoText}>Bibliogon</h1>
                     </div>
-                    <div style={layout.headerActions}>
+                    <div className={layout.headerActions}>
                         <button
                             className="btn btn-primary"
                             onClick={() => void handleCreate()}
@@ -392,7 +393,7 @@ export default function ArticleList() {
                             >
                                 <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
                             </button>
-                            <div style={layout.headerSeparator} />
+                            <div className={layout.headerSeparator} />
                             <button
                                 className="btn-icon"
                                 onClick={() => navigate("/get-started")}
@@ -432,7 +433,7 @@ export default function ArticleList() {
                                 <Trash size={18} />
                                 {trash.length > 0 && (
                                     <span
-                                        style={layout.trashBadge}
+                                        className={layout.trashBadge}
                                         data-testid="article-trash-badge"
                                     >
                                         {trash.length}
@@ -515,19 +516,19 @@ export default function ArticleList() {
                     </div>
                 </div>
             </header>
-            <main style={layout.main}>
+            <main className={layout.main}>
             {/* Page title row mirrors the books-dashboard ``mainHeader``
                 shape: heading + count + ViewToggle inline. Hidden in
                 trash mode; TrashPanel renders its own header that
                 matches the books-trash chrome (chevron + icon + title
                 + count + empty-trash + ViewToggle). */}
             {!showTrash && (
-                <div style={layout.mainHeader}>
-                    <h2 style={layout.heading}>
+                <div className={layout.mainHeader}>
+                    <h2 className={layout.heading}>
                         <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
                         {t("ui.articles.list_heading", "Artikel")}
                     </h2>
-                    <span style={layout.articleCount}>
+                    <span className={layout.articleCount}>
                         {articles.length}{" "}
                         {articles.length === 1
                             ? t("ui.articles.count_singular", "Artikel")
@@ -561,7 +562,7 @@ export default function ArticleList() {
             ) : articles.length === 0 ? (
                 <EmptyState onCreate={() => void handleCreate()} />
             ) : filters.filteredArticles.length === 0 ? (
-                <div data-testid="article-list-filter-empty" style={layout.empty}>
+                <div data-testid="article-list-filter-empty" className={layout.empty}>
                     <Search size={32} className="muted" />
                     <p style={{ color: "var(--text-muted)", margin: 0 }}>
                         {t(
@@ -579,7 +580,7 @@ export default function ArticleList() {
                     </button>
                 </div>
             ) : viewMode === "grid" ? (
-                <div style={layout.grid} data-testid="article-list">
+                <div className={layout.grid} data-testid="article-list">
                     {filters.filteredArticles.map((a) => (
                         <ArticleCard
                             key={a.id}
@@ -591,7 +592,7 @@ export default function ArticleList() {
                     ))}
                 </div>
             ) : (
-                <ul style={layout.list} data-testid="article-list">
+                <ul className={layout.list} data-testid="article-list">
                     {filters.filteredArticles.map((a) => (
                         <ArticleRow
                             key={a.id}
@@ -644,7 +645,7 @@ function TrashPanel({
      *  icon + h2 title + count span + spacer + (optional) empty
      *  action + ViewToggle. */
     const trashHeader = (
-        <div style={layout.mainHeader}>
+        <div className={layout.mainHeader}>
             <button
                 type="button"
                 className="btn-icon"
@@ -655,10 +656,10 @@ function TrashPanel({
                 <ChevronLeft size={18} />
             </button>
             <Trash2 size={20} className="muted" />
-            <h2 style={layout.heading}>
+            <h2 className={layout.heading}>
                 {t("ui.articles.trash_title", "Papierkorb")}
             </h2>
-            <span style={layout.articleCount}>
+            <span className={layout.articleCount}>
                 {trash.length}{" "}
                 {trash.length === 1
                     ? t("ui.articles.count_singular", "Artikel")
@@ -686,7 +687,8 @@ function TrashPanel({
                 {trashHeader}
                 <div
                     data-testid="article-trash-empty"
-                    style={{ ...layout.empty, marginBottom: 16 }}
+                    className={layout.empty}
+                    style={{ marginBottom: 16 }}
                 >
                     <Trash size={28} className="muted" />
                     <p style={{ color: "var(--text-muted)", margin: 0 }}>
@@ -700,7 +702,7 @@ function TrashPanel({
         <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
             {trashHeader}
             {viewMode === "grid" ? (
-                <div style={layout.grid} data-testid="article-trash-grid">
+                <div className={layout.grid} data-testid="article-trash-grid">
                     {trash.map((a) => (
                         <TrashCard
                             key={a.id}
@@ -722,16 +724,17 @@ function TrashPanel({
                     ))}
                 </div>
             ) : (
-                <ul style={layout.list} data-testid="article-trash-list">
+                <ul className={layout.list} data-testid="article-trash-list">
                     {trash.map((a) => (
                         <li
                             key={a.id}
                             data-testid={`article-trash-row-${a.id}`}
-                            style={{ ...layout.row, position: "relative" }}
+                            className={layout.row}
+                            style={{ position: "relative" }}
                         >
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={layout.rowTitle}>{a.title}</div>
-                                <div style={layout.rowMeta}>
+                                <div className={layout.rowTitle}>{a.title}</div>
+                                <div className={layout.rowMeta}>
                                     {a.deleted_at ? (
                                         <span>
                                             {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
@@ -773,24 +776,23 @@ function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFi
     const { t } = useI18n();
 
     return (
-        <div data-testid="article-list-filter" style={layout.filterBar}>
-            <div style={layout.searchInputWrapper}>
-                <Search size={14} style={layout.searchIcon} aria-hidden />
+        <div data-testid="article-list-filter" className={layout.filterBar}>
+            <div className={layout.searchInputWrapper}>
+                <Search size={14} className={layout.searchIcon} aria-hidden />
                 <input
                     type="search"
                     value={filters.searchQuery}
                     onChange={(e) => filters.setSearchQuery(e.target.value)}
                     placeholder={t("ui.articles.search_placeholder", "Suche...")}
                     data-testid="article-list-search"
-                    style={layout.searchInput}
+                    className={layout.searchInput}
                 />
                 {filters.searchQuery ? (
                     <button
                         type="button"
-                        className="btn-icon"
+                        className={`btn-icon ${layout.searchClear}`}
                         aria-label={t("ui.common.clear", "Löschen")}
                         onClick={() => filters.setSearchQuery("")}
-                        style={layout.searchClear}
                     >
                         <XIcon size={12} />
                     </button>
@@ -824,7 +826,7 @@ function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFi
                     value={filters.topic}
                     onChange={(e) => filters.setTopic(e.target.value)}
                     data-testid="article-list-filter-topic"
-                    style={layout.filterSelect}
+                    className={layout.filterSelect}
                     aria-label={t("ui.articles.filter_topic", "Thema")}
                 >
                     <option value="">
@@ -843,7 +845,7 @@ function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFi
                     value={filters.language}
                     onChange={(e) => filters.setLanguage(e.target.value)}
                     data-testid="article-list-filter-language"
-                    style={layout.filterSelect}
+                    className={layout.filterSelect}
                     aria-label={t("ui.articles.filter_language", "Sprache")}
                 >
                     <option value="">
@@ -863,7 +865,7 @@ function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFi
                     filters.setSortBy(e.target.value as "date" | "title" | "author")
                 }
                 data-testid="article-list-sort-by"
-                style={layout.filterSelect}
+                className={layout.filterSelect}
                 aria-label={t("ui.articles.sort_by", "Sortieren nach")}
             >
                 <option value="date">{t("ui.articles.sort_date", "Datum")}</option>
@@ -899,7 +901,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     const { t } = useI18n();
     const navigate = useNavigate();
     return (
-        <div data-testid="article-list-empty" style={layout.empty}>
+        <div data-testid="article-list-empty" className={layout.empty}>
             <FileText size={32} className="muted" />
             <h3 style={{ margin: 0 }}>
                 {t("ui.articles.empty_heading", "Noch keine Artikel")}
@@ -968,18 +970,18 @@ function ArticleRow({
     return (
         <li
             data-testid={`article-list-row-${article.id}`}
-            style={layout.gridRow}
+            className={layout.gridRow}
             onClick={() => {
                 if (!menuOpen) onOpen();
             }}
         >
-            <div style={layout.gridCellCover}>
-                <div style={layout.coverThumb}>
+            <div className={layout.gridCellCover}>
+                <div className={layout.coverThumb}>
                     {article.featured_image_url ? (
                         <img
                             src={article.featured_image_url}
                             alt={`${article.title} cover`}
-                            style={layout.coverThumbImg}
+                            className={layout.coverThumbImg}
                             onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = "none";
                             }}
@@ -989,27 +991,27 @@ function ArticleRow({
                     )}
                 </div>
             </div>
-            <div style={layout.gridCellMain}>
-                <div style={layout.titleCell}>
-                    <span style={layout.title}>{article.title}</span>
+            <div className={layout.gridCellMain}>
+                <div className={layout.titleCell}>
+                    <span className={layout.title}>{article.title}</span>
                     {article.subtitle ? (
-                        <span style={layout.subtitle}>{article.subtitle}</span>
+                        <span className={layout.subtitle}>{article.subtitle}</span>
                     ) : null}
                 </div>
             </div>
-            <div style={layout.gridCellAuthor}>
+            <div className={layout.gridCellAuthor}>
                 {article.author?.trim()
                     ? article.author
                     : t("ui.articles.no_author", "—")}
             </div>
-            <div style={layout.gridCellTopic}>
+            <div className={layout.gridCellTopic}>
                 {article.topic ?? "—"}
             </div>
-            <div style={layout.gridCellStatus}>
+            <div className={layout.gridCellStatus}>
                 <span
                     data-testid={`article-list-row-status-${article.id}`}
+                    className={layout.statusBadge}
                     style={{
-                        ...layout.statusBadge,
                         background: badgeBg(article.status),
                         color: badgeFg(article.status),
                     }}
@@ -1017,11 +1019,11 @@ function ArticleRow({
                     {t(`ui.articles.status_${article.status}`, article.status)}
                 </span>
             </div>
-            <div style={layout.gridCellLang}>
+            <div className={layout.gridCellLang}>
                 {(article.language || "??").toUpperCase()}
             </div>
-            <div style={layout.gridCellDate}>{updated}</div>
-            <div style={layout.gridCellActions}>
+            <div className={layout.gridCellDate}>{updated}</div>
+            <div className={layout.gridCellActions}>
                 {onDelete ? (
                     <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                         <DropdownMenu.Trigger asChild>
@@ -1103,262 +1105,3 @@ function badgeFg(status: ArticleStatus): string {
     }
 }
 
-const layout: Record<string, React.CSSProperties> = {
-    page: {
-        padding: 0,
-        margin: 0,
-        minHeight: "100vh",
-        background: "var(--bg-primary)",
-    },
-    appHeader: {
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-card)",
-    },
-    appHeaderInner: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "12px 24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
-    },
-    logo: {
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        color: "var(--accent)",
-        flexShrink: 0,
-        cursor: "pointer",
-    },
-    logoText: {
-        fontFamily: "var(--font-display)",
-        fontSize: "1.5rem",
-        fontWeight: 600,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.02em",
-        margin: 0,
-    },
-    headerActions: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        flexWrap: "wrap",
-        justifyContent: "flex-end",
-    },
-    headerSeparator: {
-        width: 1,
-        height: 24,
-        background: "var(--border)",
-        margin: "0 4px",
-    },
-    trashBadge: {
-        position: "absolute",
-        top: -4,
-        right: -4,
-        background: "var(--danger)",
-        color: "white",
-        fontSize: "0.625rem",
-        fontWeight: 700,
-        width: 16,
-        height: 16,
-        borderRadius: "50%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    main: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "32px 24px",
-    },
-    mainHeader: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        marginBottom: 20,
-    },
-    heading: {
-        margin: 0,
-        fontSize: "1.5rem",
-        fontWeight: 600,
-    },
-    articleCount: {
-        fontSize: "0.875rem",
-        color: "var(--text-muted)",
-    },
-    filterBar: {
-        display: "flex",
-        gap: 8,
-        marginBottom: 16,
-        flexWrap: "wrap",
-        alignItems: "center",
-    },
-    searchInputWrapper: {
-        position: "relative",
-        display: "inline-flex",
-        alignItems: "center",
-        flex: "1 1 240px",
-        minWidth: 200,
-        maxWidth: 360,
-    },
-    searchIcon: {
-        position: "absolute",
-        left: 10,
-        color: "var(--text-muted)",
-        pointerEvents: "none",
-    },
-    searchInput: {
-        width: "100%",
-        padding: "6px 28px 6px 30px",
-        fontSize: "0.875rem",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        color: "var(--text-primary)",
-    },
-    searchClear: {
-        position: "absolute",
-        right: 4,
-        padding: 4,
-    },
-    filterSelect: {
-        padding: "6px 8px",
-        fontSize: "0.8125rem",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        color: "var(--text-primary)",
-    },
-    list: {
-        listStyle: "none",
-        padding: 0,
-        margin: 0,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-    },
-    grid: {
-        // ``gridAutoRows: 1fr`` keeps row heights uniform across the
-        // whole grid (matches the books-dashboard fix in F-8). Cards
-        // ``height: 100%`` stretch to the row height.
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gridAutoRows: "1fr",
-        gap: 16,
-    },
-    row: {
-        padding: "12px 16px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: 6,
-        cursor: "pointer",
-        display: "flex",
-        gap: 12,
-        position: "relative",
-    },
-    // Grid-row layout for the per-article list view. Mirrors
-    // ``BookListView`` columns + adds a topic column. Same column
-    // template applies to the header row + every body row so cells
-    // align across the whole table.
-    gridRow: {
-        display: "grid",
-        gridTemplateColumns: "50px 1fr 160px 120px 100px 60px 130px 50px",
-        gap: 12,
-        alignItems: "center",
-        padding: "10px 16px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: 6,
-        cursor: "pointer",
-        listStyle: "none",
-    },
-    gridCellCover: { width: 50 },
-    gridCellMain: { minWidth: 0 },
-    gridCellAuthor: {
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    gridCellTopic: {
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    gridCellStatus: {},
-    gridCellLang: { fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-muted)" },
-    gridCellDate: { fontSize: "0.8125rem", color: "var(--text-muted)" },
-    gridCellActions: { textAlign: "right" },
-    coverThumb: {
-        width: 40,
-        height: 60,
-        borderRadius: 2,
-        overflow: "hidden",
-        background: "var(--bg-secondary)",
-    },
-    coverThumbImg: {
-        width: "100%",
-        height: "100%",
-        objectFit: "cover",
-    },
-    titleCell: { display: "flex", flexDirection: "column", gap: 2, minWidth: 0 },
-    title: {
-        fontWeight: 600,
-        fontSize: "0.9375rem",
-        color: "var(--text)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    subtitle: {
-        fontSize: "0.8125rem",
-        color: "var(--text-muted)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    rowTitle: {
-        fontSize: "1rem",
-        fontWeight: 600,
-        color: "var(--text-primary)",
-    },
-    rowSubtitle: {
-        marginTop: 2,
-        fontSize: "0.875rem",
-        color: "var(--text-secondary)",
-    },
-    rowMeta: {
-        marginTop: 6,
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-    },
-    statusBadge: {
-        padding: "2px 8px",
-        borderRadius: 999,
-        fontSize: "0.6875rem",
-        fontWeight: 500,
-    },
-    rowLanguage: {
-        fontFamily: "monospace",
-    },
-    rowUpdated: {
-        marginLeft: "auto",
-    },
-    empty: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 12,
-        padding: "48px 16px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: 8,
-    },
-};
