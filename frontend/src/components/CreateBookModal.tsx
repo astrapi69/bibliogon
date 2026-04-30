@@ -9,6 +9,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
 import * as Tabs from "@radix-ui/react-tabs";
 import {ChevronDown, ChevronRight, Lock, Trash2} from "lucide-react";
+import styles from "./CreateBookModal.module.css";
 
 type Mode = "blank" | "template";
 
@@ -217,23 +218,23 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                         </Tabs.List>
 
                         <Tabs.Content value="template">
-                            <div style={styles.templatePickerHeader}>
+                            <div className={styles.templatePickerHeader}>
                                 <div className="label">{t("ui.create_book.template_picker_title", "Wähle eine Vorlage")}</div>
                             </div>
                             {templates === null && (
-                                <div style={styles.templatesEmpty}>
+                                <div className={styles.templatesEmpty}>
                                     {t("ui.create_book.template_loading", "Lade Vorlagen...")}
                                 </div>
                             )}
                             {templates !== null && templates.length === 0 && (
-                                <div style={styles.templatesEmpty}>
+                                <div className={styles.templatesEmpty}>
                                     {templatesError
                                         ? t("ui.create_book.template_load_error", "Vorlagen konnten nicht geladen werden")
                                         : t("ui.create_book.template_empty", "Keine Vorlagen verfügbar")}
                                 </div>
                             )}
                             {templates !== null && templates.length > 0 && (
-                                <div style={styles.templateList} role="radiogroup">
+                                <div className={styles.templateList} role="radiogroup">
                                     {templates.map((tpl) => {
                                         const selected = tpl.id === selectedTemplateId;
                                         const genreLabel = t(
@@ -255,13 +256,10 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                         select();
                                                     }
                                                 }}
-                                                style={{
-                                                    ...styles.templateCard,
-                                                    ...(selected ? styles.templateCardSelected : {}),
-                                                }}
+                                                className={`${styles.templateCard} ${selected ? styles.templateCardSelected : ""}`}
                                             >
-                                                <div style={styles.templateCardHeader}>
-                                                    <span style={styles.templateName}>
+                                                <div className={styles.templateCardHeader}>
+                                                    <span className={styles.templateName}>
                                                         {tpl.is_builtin
                                                             ? t(
                                                                   `ui.builtin_templates.${slugifyTemplateName(tpl.name)}.name`,
@@ -269,11 +267,11 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                               )
                                                             : tpl.name}
                                                     </span>
-                                                    <div style={styles.templateCardBadges}>
-                                                        <span style={styles.templateBadge}>{genreLabel}</span>
+                                                    <div className={styles.templateCardBadges}>
+                                                        <span className={styles.templateBadge}>{genreLabel}</span>
                                                         {tpl.is_builtin ? (
                                                             <span
-                                                                style={styles.builtinBadge}
+                                                                className={styles.builtinBadge}
                                                                 title={t("ui.template_picker.builtin_hint", "Mitgelieferte Vorlage")}
                                                                 data-testid={`template-builtin-badge-${tpl.id}`}
                                                             >
@@ -283,8 +281,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                         ) : (
                                                             <button
                                                                 type="button"
-                                                                className="btn-icon"
-                                                                style={styles.deleteBtn}
+                                                                className={`btn-icon ${styles.deleteBtn}`}
                                                                 aria-label={t("ui.template_picker.delete", "Löschen")}
                                                                 data-testid={`template-delete-${tpl.id}`}
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl); }}
@@ -294,7 +291,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div style={styles.templateDescription}>
+                                                <div className={styles.templateDescription}>
                                                     {tpl.is_builtin
                                                         ? t(
                                                               `ui.builtin_templates.${slugifyTemplateName(tpl.name)}.description`,
@@ -302,7 +299,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                                           )
                                                         : tpl.description}
                                                 </div>
-                                                <div style={styles.templateMeta}>
+                                                <div className={styles.templateMeta}>
                                                     {t("ui.create_book.template_chapter_count", "{count} Kapitel")
                                                         .replace("{count}", String(tpl.chapters.length))}
                                                 </div>
@@ -318,7 +315,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                         </Tabs.Content>
                     </Tabs.Root>
 
-                    <div style={styles.body}>
+                    <div className={styles.body}>
                         {/* === Stage 1: Required fields only === */}
                         <div className="field">
                             <label className="label">{t("ui.create_book.book_title", "Titel")} *</label>
@@ -369,14 +366,14 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                         {/* === Stage 2: Optional fields (Radix Collapsible) === */}
                         <Collapsible.Root open={detailsOpen} onOpenChange={setDetailsOpen}>
                             <Collapsible.Trigger asChild>
-                                <button style={styles.detailsToggle}>
+                                <button className={styles.detailsToggle}>
                                     {detailsOpen ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
                                     {t("ui.create_book.more_details", "Weitere Details")}
                                 </button>
                             </Collapsible.Trigger>
 
                             <Collapsible.Content>
-                                <div style={styles.detailsSection}>
+                                <div className={styles.detailsSection}>
                                     <div className="field">
                                         <label className="label">{t("ui.create_book.genre", "Genre")}</label>
                                         <input
@@ -458,7 +455,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                         </Select.Root>
                                     </div>
 
-                                    <label style={styles.checkboxLabel}>
+                                    <label className={styles.checkboxLabel}>
                                         <input
                                             type="checkbox"
                                             checked={isSeries}
@@ -472,7 +469,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                     </label>
 
                                     {isSeries && (
-                                        <div style={styles.row}>
+                                        <div className={styles.row}>
                                             <div className="field" style={{flex: 2}}>
                                                 <label className="label">{t("ui.create_book.series", "Reihe")}</label>
                                                 <input
@@ -519,125 +516,3 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    body: {
-        padding: "8px 0 16px",
-    },
-    row: {
-        display: "flex",
-        gap: 12,
-    },
-    detailsToggle: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "var(--text-muted)",
-        fontSize: "0.8125rem",
-        fontWeight: 500,
-        fontFamily: "var(--font-body)",
-        padding: "8px 0 4px",
-    },
-    detailsSection: {
-        paddingTop: 8,
-        borderTop: "1px solid var(--border)",
-        marginTop: 4,
-    },
-    checkboxLabel: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        cursor: "pointer",
-        fontSize: "0.875rem",
-        marginTop: 8,
-    },
-    templatePickerHeader: {
-        marginBottom: 8,
-    },
-    templatesEmpty: {
-        padding: "16px 0",
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
-    },
-    templateList: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-        gap: 8,
-        marginBottom: 8,
-    },
-    templateCard: {
-        textAlign: "left",
-        padding: 12,
-        borderRadius: 8,
-        border: "1px solid var(--border)",
-        background: "var(--bg-surface)",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        fontFamily: "var(--font-body)",
-        color: "var(--text)",
-    },
-    templateCardSelected: {
-        borderColor: "var(--accent)",
-        outline: "2px solid var(--accent)",
-        outlineOffset: -1,
-    },
-    templateCardHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 8,
-    },
-    templateCardBadges: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-    },
-    builtinBadge: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 3,
-        fontSize: "0.6875rem",
-        padding: "1px 6px",
-        borderRadius: 4,
-        background: "var(--bg-subtle, var(--bg-surface))",
-        color: "var(--text-muted)",
-        whiteSpace: "nowrap",
-    },
-    deleteBtn: {
-        padding: 4,
-        background: "none",
-        border: "none",
-        borderRadius: 4,
-        color: "var(--text-muted)",
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    templateName: {
-        fontWeight: 600,
-        fontSize: "0.9375rem",
-    },
-    templateBadge: {
-        fontSize: "0.75rem",
-        padding: "2px 6px",
-        borderRadius: 4,
-        background: "var(--accent-muted, var(--bg-subtle))",
-        color: "var(--text-muted)",
-        whiteSpace: "nowrap",
-    },
-    templateDescription: {
-        fontSize: "0.8125rem",
-        color: "var(--text-muted)",
-        lineHeight: 1.4,
-    },
-    templateMeta: {
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        marginTop: 2,
-    },
-};

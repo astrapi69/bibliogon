@@ -1,0 +1,145 @@
+/**
+ * T-01 Phase B: CreateBookModal CSS-Module.
+ *
+ * Migrated from a 122-line ``const styles`` block at the bottom of
+ * CreateBookModal.tsx. 18 keys, ~22 inline applications (book
+ * creation form + template picker grid).
+ */
+
+.body {
+    padding: 8px 0 16px;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+}
+
+.detailsToggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    padding: 8px 0 4px;
+}
+
+.detailsSection {
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-top: 8px;
+}
+
+.templatePickerHeader {
+    margin-bottom: 8px;
+}
+
+.templatesEmpty {
+    padding: 16px 0;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.templateList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.templateCard {
+    text-align: left;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: var(--font-body);
+    color: var(--text);
+}
+
+.templateCardSelected {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.templateCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.templateCardBadges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.builtinBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.6875rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--bg-subtle, var(--bg-surface));
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.deleteBtn {
+    padding: 4px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.templateName {
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.templateBadge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--accent-muted, var(--bg-subtle));
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.templateDescription {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.templateMeta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
