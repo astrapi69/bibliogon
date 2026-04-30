@@ -1,0 +1,75 @@
+/**
+ * T-01 Phase B: DonationOnboardingDialog CSS-Module.
+ *
+ * Migrated from a 60-line ``const styles`` block. 10 keys, ~12 inline
+ * applications. S-02 first-run dialog after first book creation.
+ */
+
+.content {
+    max-width: 480px;
+    width: min(480px, 90vw);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.body {
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.hint {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.channelList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.channelLink {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+}
+
+.channelName {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

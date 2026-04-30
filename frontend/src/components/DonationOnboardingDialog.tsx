@@ -14,6 +14,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {Heart, X, ExternalLink, Star} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import type {DonationsConfig} from "./SupportSection";
+import styles from "./DonationOnboardingDialog.module.css";
 
 export const DONATION_ONBOARDING_SEEN_KEY = "bibliogon-donation-onboarding-seen";
 
@@ -65,9 +66,9 @@ export default function DonationOnboardingDialog({open, onClose, donations}: Pro
     <Dialog.Root open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="radix-dialog-overlay" />
-        <Dialog.Content className="radix-dialog-content" data-testid="donation-onboarding" style={styles.content}>
-          <div style={styles.header}>
-            <Dialog.Title style={styles.title}>
+        <Dialog.Content className={`radix-dialog-content ${styles.content}`} data-testid="donation-onboarding">
+          <div className={styles.header}>
+            <Dialog.Title className={styles.title}>
               <Heart size={18} aria-hidden /> {t("ui.donations.onboarding_title", "Bibliogon unterstützen")}
             </Dialog.Title>
             <Dialog.Close asChild>
@@ -79,11 +80,11 @@ export default function DonationOnboardingDialog({open, onClose, donations}: Pro
 
           {!showChannels ? (
             <>
-              <p style={styles.body}>
+              <p className={styles.body}>
                 {t("ui.donations.onboarding_body", "Bibliogon entsteht als Open-Source-Projekt ohne Tracking, ohne Cloud-Backend, ohne Werbung.")}
               </p>
-              <p style={styles.hint}>{t("ui.donations.onboarding_hint", "Diesen Hinweis findest du jederzeit in den Einstellungen.")}</p>
-              <div style={styles.actions}>
+              <p className={styles.hint}>{t("ui.donations.onboarding_hint", "Diesen Hinweis findest du jederzeit in den Einstellungen.")}</p>
+              <div className={styles.actions}>
                 <button className="btn btn-primary" onClick={handleSupport} data-testid="donation-onboarding-support">
                   <ExternalLink size={14} aria-hidden /> {t("ui.donations.support_button", "Projekt unterstützen")}
                 </button>
@@ -94,31 +95,30 @@ export default function DonationOnboardingDialog({open, onClose, donations}: Pro
             </>
           ) : (
             <>
-              <p style={styles.body}>{t("ui.donations.intro", "Bibliogon entsteht als Open-Source-Projekt...")}</p>
-              <div style={styles.channelList}>
+              <p className={styles.body}>{t("ui.donations.intro", "Bibliogon entsteht als Open-Source-Projekt...")}</p>
+              <div className={styles.channelList}>
                 {donations.channels.map((channel) => (
                   <a
                     key={channel.name}
                     href={channel.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-secondary"
+                    className={`btn btn-secondary ${styles.channelLink}`}
                     onClick={() => { handleClose(); }}
-                    style={styles.channelLink}
                     data-testid={`donation-onboarding-channel-${channel.name}`}
                   >
-                    <span style={styles.channelName}>
+                    <span className={styles.channelName}>
                       <ExternalLink size={14} aria-hidden /> {channel.name}
                     </span>
                     {channel.recommended ? (
-                      <span style={styles.badge}>
+                      <span className={styles.badge}>
                         <Star size={12} aria-hidden /> {t("ui.donations.recommended_badge", "Empfohlen")}
                       </span>
                     ) : null}
                   </a>
                 ))}
               </div>
-              <div style={styles.actions}>
+              <div className={styles.actions}>
                 <button className="btn btn-secondary" onClick={handleClose}>
                   {t("ui.donations.understood_button", "Verstanden")}
                 </button>
@@ -131,64 +131,3 @@ export default function DonationOnboardingDialog({open, onClose, donations}: Pro
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  content: {
-    maxWidth: "480px",
-    width: "min(480px, 90vw)",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.5rem",
-    marginBottom: "0.75rem",
-  },
-  title: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    margin: 0,
-  },
-  body: {
-    color: "var(--text)",
-    lineHeight: 1.5,
-    marginBottom: "0.75rem",
-  },
-  hint: {
-    color: "var(--text-muted)",
-    fontSize: "0.875rem",
-    marginBottom: "1rem",
-  },
-  actions: {
-    display: "flex",
-    gap: "0.5rem",
-    justifyContent: "flex-end",
-    flexWrap: "wrap",
-  },
-  channelList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-  },
-  channelLink: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    textDecoration: "none",
-  },
-  channelName: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.35rem",
-  },
-  badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.25rem",
-    fontSize: "0.75rem",
-    color: "var(--text-muted)",
-  },
-};
