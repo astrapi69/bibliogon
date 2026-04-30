@@ -13,6 +13,7 @@ import { useI18n } from "../hooks/useI18n";
 import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
+import styles from "./BookListView.module.css";
 
 interface Props {
     books: Book[];
@@ -28,25 +29,25 @@ export default function BookListView({ books, onClick, onDelete, onDeletePermane
             data-testid="book-list-view"
             role="table"
             aria-label={t("ui.dashboard.list_aria_label", "Bücherliste")}
-            style={styles.table}
+            className={styles.table}
         >
-            <div role="row" style={styles.headerRow}>
-                <div role="columnheader" style={styles.colCover}>
+            <div role="row" className={styles.headerRow}>
+                <div role="columnheader" className={styles.colCover}>
                     {t("ui.dashboard.col_cover", "Cover")}
                 </div>
-                <div role="columnheader" style={styles.colMain}>
+                <div role="columnheader" className={styles.colMain}>
                     {t("ui.dashboard.col_title", "Titel")}
                 </div>
-                <div role="columnheader" style={styles.colAuthor}>
+                <div role="columnheader" className={styles.colAuthor}>
                     {t("ui.dashboard.col_author", "Autor")}
                 </div>
-                <div role="columnheader" style={styles.colLang}>
+                <div role="columnheader" className={styles.colLang}>
                     {t("ui.dashboard.col_language", "Sprache")}
                 </div>
-                <div role="columnheader" style={styles.colDate}>
+                <div role="columnheader" className={styles.colDate}>
                     {t("ui.dashboard.col_last_edit", "Zuletzt bearbeitet")}
                 </div>
-                <div role="columnheader" style={styles.colActions} aria-hidden="true" />
+                <div role="columnheader" className={styles.colActions} aria-hidden="true" />
             </div>
             {books.map((book) => (
                 <BookListRow
@@ -85,18 +86,18 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
         <div
             role="row"
             data-testid={`book-list-row-${book.id}`}
-            style={styles.row}
+            className={styles.row}
             onClick={() => {
                 if (!menuOpen) onClick();
             }}
         >
-            <div role="cell" style={styles.colCover}>
-                <div style={styles.coverThumb}>
+            <div role="cell" className={styles.colCover}>
+                <div className={styles.coverThumb}>
                     {coverUrl ? (
                         <img
                             src={coverUrl}
                             alt={`${book.title} cover`}
-                            style={styles.coverThumbImg}
+                            className={styles.coverThumbImg}
                             onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = "none";
                             }}
@@ -106,27 +107,27 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
                     )}
                 </div>
             </div>
-            <div role="cell" style={styles.colMain}>
-                <div style={styles.titleCell}>
-                    <span style={styles.title}>{book.title}</span>
-                    {book.subtitle ? <span style={styles.subtitle}>{book.subtitle}</span> : null}
+            <div role="cell" className={styles.colMain}>
+                <div className={styles.titleCell}>
+                    <span className={styles.title}>{book.title}</span>
+                    {book.subtitle ? <span className={styles.subtitle}>{book.subtitle}</span> : null}
                 </div>
             </div>
-            <div role="cell" style={styles.colAuthor}>
+            <div role="cell" className={styles.colAuthor}>
                 {book.author?.trim()
                     ? book.author
                     : t("ui.dashboard.book_no_author", "—")}
             </div>
-            <div role="cell" style={styles.colLang}>
+            <div role="cell" className={styles.colLang}>
                 {book.language.toUpperCase()}
             </div>
-            <div role="cell" style={styles.colDate}>
+            <div role="cell" className={styles.colDate}>
                 <span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
                     <Clock size={12} />
                     {updated}
                 </span>
             </div>
-            <div role="cell" style={styles.colActions}>
+            <div role="cell" className={styles.colActions}>
                 <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                     <DropdownMenu.Trigger asChild>
                         <button
@@ -178,68 +179,3 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    table: {
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-        overflow: "hidden",
-    },
-    headerRow: {
-        display: "grid",
-        gridTemplateColumns: "50px 1fr 180px 80px 160px 50px",
-        gap: 12,
-        padding: "10px 16px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-secondary)",
-        fontSize: "0.8125rem",
-        fontWeight: 600,
-        color: "var(--text-muted)",
-        textTransform: "uppercase",
-        letterSpacing: "0.04em",
-    },
-    row: {
-        display: "grid",
-        gridTemplateColumns: "50px 1fr 180px 80px 160px 50px",
-        gap: 12,
-        alignItems: "center",
-        padding: "10px 16px",
-        borderBottom: "1px solid var(--border)",
-        cursor: "pointer",
-        transition: "background 120ms ease",
-    },
-    colCover: { width: 50 },
-    colMain: { minWidth: 0 },
-    colAuthor: { color: "var(--text-muted)", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-    colLang: { fontSize: "0.6875rem", fontWeight: 600, color: "var(--text-muted)" },
-    colDate: { fontSize: "0.8125rem", color: "var(--text-muted)" },
-    colActions: { textAlign: "right" },
-    coverThumb: {
-        width: 40,
-        height: 60,
-        borderRadius: 2,
-        overflow: "hidden",
-        background: "var(--bg-secondary)",
-    },
-    coverThumbImg: {
-        width: "100%",
-        height: "100%",
-        objectFit: "cover" as const,
-    },
-    titleCell: { display: "flex", flexDirection: "column", gap: 2, minWidth: 0 },
-    title: {
-        fontWeight: 600,
-        fontSize: "0.9375rem",
-        color: "var(--text)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    subtitle: {
-        fontSize: "0.8125rem",
-        color: "var(--text-muted)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-};
