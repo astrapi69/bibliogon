@@ -5,6 +5,7 @@ import {ApiError, api} from "../api/client";
 import type {CoverUploadResponse} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import styles from "./CoverUpload.module.css";
 
 interface Props {
     bookId: string;
@@ -107,13 +108,11 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-                style={{
-                    ...styles.dropZone,
-                    borderColor: dragging ? "var(--accent)" : "var(--border)",
-                    background: dragging ? "var(--accent-light)" : "var(--bg-secondary)",
-                    cursor: uploading ? "wait" : "pointer",
-                    opacity: uploading ? 0.6 : 1,
-                }}
+                className={[
+                    styles.dropZone,
+                    dragging ? styles.dropZoneDragging : "",
+                    uploading ? styles.dropZoneUploading : "",
+                ].filter(Boolean).join(" ")}
                 onClick={() => !uploading && !coverUrl && inputRef.current?.click()}
             >
                 {coverUrl ? (
@@ -132,7 +131,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                     ref={inputRef}
                     type="file"
                     accept={ACCEPT_ATTR}
-                    style={{display: "none"}}
+                    className={styles.hiddenInput}
                     onChange={(e) => handleFiles(e.target.files)}
                 />
             </div>
@@ -140,10 +139,9 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
             {!coverUrl && (
                 <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    className={`btn btn-secondary btn-sm ${styles.chooseFileBtn}`}
                     onClick={() => inputRef.current?.click()}
                     disabled={uploading}
-                    style={{marginTop: 8}}
                 >
                     <Upload size={14} />{" "}
                     {uploading
@@ -152,7 +150,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                 </button>
             )}
 
-            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 4}}>
+            <small className={styles.helpText}>
                 {t(
                     "ui.cover.help",
                     "JPG, PNG oder WebP, maximal 10 MB. KDP empfiehlt 1600x2560 Pixel.",
@@ -179,11 +177,11 @@ function CoverPreview({
 }) {
     const {t} = useI18n();
     return (
-        <div style={{position: "relative", display: "inline-block"}}>
+        <div className={styles.previewWrap}>
             <img
                 src={url}
                 alt="Cover"
-                style={styles.preview}
+                className={styles.preview}
                 onLoad={(e) => {
                     const img = e.currentTarget;
                     onLoadInfo({width: img.naturalWidth, height: img.naturalHeight});
@@ -191,19 +189,18 @@ function CoverPreview({
             />
             <button
                 type="button"
-                className="btn btn-danger btn-sm"
+                className={`btn btn-danger btn-sm ${styles.removeBtn}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onRemove();
                 }}
                 disabled={disabled}
                 title={t("ui.cover.remove", "Cover entfernen")}
-                style={styles.removeBtn}
             >
                 <X size={14} />
             </button>
             {info && (
-                <div style={styles.dimensions}>
+                <div className={styles.dimensions}>
                     {info.width} x {info.height} px
                 </div>
             )}
@@ -214,9 +211,9 @@ function CoverPreview({
 function EmptyState({dragging, uploading}: {dragging: boolean; uploading: boolean}) {
     const {t} = useI18n();
     return (
-        <div style={styles.emptyState}>
+        <div className={styles.emptyState}>
             <ImageIcon size={42} color="var(--text-muted)" />
-            <div style={{marginTop: 8, color: "var(--text-muted)", fontSize: "0.875rem"}}>
+            <div className={styles.emptyHint}>
                 {uploading
                     ? t("ui.cover.uploading", "Wird hochgeladen...")
                     : dragging
@@ -233,17 +230,7 @@ function KdpHint({info}: {info: CoverInfo}) {
     const off = Math.abs(aspect - KDP_TARGET_ASPECT) > ASPECT_TOLERANCE;
     if (!off) return null;
     return (
-        <div
-            style={{
-                marginTop: 8,
-                padding: "6px 10px",
-                background: "rgba(245, 158, 11, 0.1)",
-                border: "1px solid rgba(245, 158, 11, 0.3)",
-                borderRadius: 4,
-                fontSize: "0.75rem",
-                color: "var(--text-secondary)",
-            }}
-        >
+        <div className={styles.kdpWarning}>
             {t(
                 "ui.cover.kdp_warning",
                 "Empfohlen für KDP: 1600x2560 Pixel (aktuell: {w}x{h})",
@@ -259,44 +246,3 @@ function isAcceptedFile(file: File): boolean {
     return ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext));
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    dropZone: {
-        border: "2px dashed var(--border)",
-        borderRadius: 8,
-        padding: 16,
-        minHeight: 200,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: "all 0.15s ease",
-    },
-    emptyState: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "16px 8px",
-    },
-    preview: {
-        maxHeight: 300,
-        maxWidth: "100%",
-        borderRadius: 4,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        display: "block",
-    },
-    removeBtn: {
-        position: "absolute",
-        top: 6,
-        right: 6,
-        padding: "4px 6px",
-        borderRadius: "50%",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-    },
-    dimensions: {
-        marginTop: 6,
-        textAlign: "center",
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-    },
-};
