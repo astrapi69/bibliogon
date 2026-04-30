@@ -1,0 +1,84 @@
+/**
+ * T-01 Phase B: QualityTab CSS-Module.
+ *
+ * Migrated from a 67-line ``const styles`` block at the bottom of
+ * QualityTab.tsx. 11 keys, ~33 inline applications (heavy table
+ * row + cell repetition is the bulk).
+ *
+ * .td and .tdOutlier share most properties; the outlier overlay
+ * adds a tinted background. Same for .navButton vs .navButtonOutlier.
+ */
+
+.summary {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.summaryItem {
+    min-width: 100px;
+}
+
+.tableContainer {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.th {
+    padding: 8px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+.td,
+.tdOutlier {
+    padding: 6px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.tdOutlier {
+    background: rgba(251, 146, 60, 0.15);
+}
+
+.outlierValue {
+    font-weight: 600;
+    cursor: help;
+    border-bottom: 1px dashed rgba(251, 146, 60, 0.6);
+    padding-bottom: 1px;
+}
+
+.navButton {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    font: inherit;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    border-radius: 3px;
+}
+
+.navButtonOutlier {
+    color: inherit;
+    font-weight: 600;
+    text-decoration-color: rgba(251, 146, 60, 0.8);
+}
+
+.emptyRow {
+    opacity: 0.5;
+}

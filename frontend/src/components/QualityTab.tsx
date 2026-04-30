@@ -12,6 +12,7 @@ import {useEffect, useState} from "react"
 import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
+import styles from "./QualityTab.module.css"
 
 export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
 
@@ -67,7 +68,7 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
     return (
         <div>
             {/* Summary */}
-            <div style={styles.summary}>
+            <div className={styles.summary}>
                 <SummaryItem label={t("ui.metadata.quality_chapters", "Kapitel")} value={String(nonEmpty.length)} />
                 <SummaryItem label={t("ui.editor.words", "Woerter")} value={String(nonEmpty.reduce((s, c) => s + c.word_count, 0))} />
                 <SummaryItem
@@ -86,19 +87,19 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
             </button>
 
             {/* Chapter table */}
-            <div style={styles.tableContainer}>
-                <table style={styles.table}>
+            <div className={styles.tableContainer}>
+                <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th style={styles.th}>#</th>
-                            <th style={{...styles.th, textAlign: "left"}}>{t("ui.metadata.quality_col_chapter", "Kapitel")}</th>
-                            <th style={styles.th}>{t("ui.editor.words", "Woerter")}</th>
-                            <th style={styles.th}>{t("ui.metadata.quality_col_sentences", "Saetze")}</th>
-                            <th style={styles.th}>Flesch</th>
-                            <th style={styles.th}>{t("ui.metadata.quality_col_filler", "Fuell %")}</th>
-                            <th style={styles.th}>{t("ui.metadata.quality_col_passive", "Passiv %")}</th>
-                            <th style={styles.th}>{t("ui.metadata.quality_col_adverb", "Adv %")}</th>
-                            <th style={styles.th}>{t("ui.metadata.quality_col_long", "Lange Saetze")}</th>
+                            <th className={styles.th}>#</th>
+                            <th className={styles.th} style={{textAlign: "left"}}>{t("ui.metadata.quality_col_chapter", "Kapitel")}</th>
+                            <th className={styles.th}>{t("ui.editor.words", "Woerter")}</th>
+                            <th className={styles.th}>{t("ui.metadata.quality_col_sentences", "Saetze")}</th>
+                            <th className={styles.th}>Flesch</th>
+                            <th className={styles.th}>{t("ui.metadata.quality_col_filler", "Fuell %")}</th>
+                            <th className={styles.th}>{t("ui.metadata.quality_col_passive", "Passiv %")}</th>
+                            <th className={styles.th}>{t("ui.metadata.quality_col_adverb", "Adv %")}</th>
+                            <th className={styles.th}>{t("ui.metadata.quality_col_long", "Lange Saetze")}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,7 +115,7 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
 
 function SummaryItem({label, value}: {label: string; value: string}) {
     return (
-        <div style={styles.summaryItem}>
+        <div className={styles.summaryItem}>
             <div style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>{label}</div>
             <div style={{fontSize: "1.125rem", fontWeight: 600}}>{value}</div>
         </div>
@@ -130,10 +131,10 @@ function ChapterRow({ch, avg, onNavigate}: {
 
     if (ch.empty) {
         return (
-            <tr style={styles.emptyRow}>
-                <td style={styles.td}>{ch.position + 1}</td>
-                <td style={{...styles.td, textAlign: "left", color: "var(--text-muted)"}}>{ch.chapter}</td>
-                <td colSpan={7} style={{...styles.td, color: "var(--text-muted)", fontStyle: "italic"}}>-</td>
+            <tr className={styles.emptyRow}>
+                <td className={styles.td}>{ch.position + 1}</td>
+                <td className={styles.td} style={{textAlign: "left", color: "var(--text-muted)"}}>{ch.chapter}</td>
+                <td colSpan={7} className={styles.td} style={{color: "var(--text-muted)", fontStyle: "italic"}}>-</td>
             </tr>
         )
     }
@@ -144,8 +145,8 @@ function ChapterRow({ch, avg, onNavigate}: {
 
     return (
         <tr>
-            <td style={styles.td}>{ch.position + 1}</td>
-            <td style={{...styles.td, textAlign: "left", fontWeight: 500}}>{ch.chapter}</td>
+            <td className={styles.td}>{ch.position + 1}</td>
+            <td className={styles.td} style={{textAlign: "left", fontWeight: 500}}>{ch.chapter}</td>
             <AggregateCell
                 value={ch.word_count}
                 display={String(ch.word_count)}
@@ -153,8 +154,8 @@ function ChapterRow({ch, avg, onNavigate}: {
                 tooltip={t("ui.metadata.quality_tip_words", "Deutlich mehr Woerter als der Buchdurchschnitt ({avg}). Kapitel eventuell aufteilen.")
                     .replace("{avg}", Math.round(avg.word_count || 0).toString())}
             />
-            <td style={styles.td}>{ch.sentence_count}</td>
-            <td style={styles.td}>{ch.flesch_reading_ease.toFixed(0)}</td>
+            <td className={styles.td}>{ch.sentence_count}</td>
+            <td className={styles.td}>{ch.flesch_reading_ease.toFixed(0)}</td>
             <NavigableCell
                 value={ch.filler_ratio}
                 display={`${(ch.filler_ratio * 100).toFixed(1)}`}
@@ -206,13 +207,13 @@ function AggregateCell({value, display, avg, tooltip}: {
     const flagged = isOutlier(value, avg)
 
     if (!flagged) {
-        return <td style={styles.td}>{display}</td>
+        return <td className={styles.td}>{display}</td>
     }
 
     return (
-        <td style={styles.tdOutlier}>
+        <td className={styles.tdOutlier}>
             <Tooltip content={tooltip} side="top">
-                <span style={styles.outlierValue} tabIndex={0}>{display}</span>
+                <span className={styles.outlierValue} tabIndex={0}>{display}</span>
             </Tooltip>
         </td>
     )
@@ -238,7 +239,7 @@ function NavigableCell({value, display, avg, tooltip, ariaLabel, onClick}: {
             onClick={onClick}
             disabled={!onClick || value === 0}
             aria-label={ariaLabel}
-            style={{...styles.navButton, ...(flagged ? styles.navButtonOutlier : {})}}
+            className={`${styles.navButton} ${flagged ? styles.navButtonOutlier : ""}`}
         >
             {display}
         </button>
@@ -246,7 +247,7 @@ function NavigableCell({value, display, avg, tooltip, ariaLabel, onClick}: {
 
     if (flagged) {
         return (
-            <td style={styles.tdOutlier}>
+            <td className={styles.tdOutlier}>
                 <Tooltip content={tooltip} side="top">
                     {button}
                 </Tooltip>
@@ -254,73 +255,6 @@ function NavigableCell({value, display, avg, tooltip, ariaLabel, onClick}: {
         )
     }
 
-    return <td style={styles.td}>{button}</td>
+    return <td className={styles.td}>{button}</td>
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    summary: {
-        display: "flex",
-        gap: 16,
-        flexWrap: "wrap",
-        marginBottom: 16,
-        padding: "12px 0",
-        borderBottom: "1px solid var(--border)",
-    },
-    summaryItem: {
-        minWidth: 100,
-    },
-    tableContainer: {
-        overflowX: "auto",
-    },
-    table: {
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: "0.8125rem",
-    },
-    th: {
-        padding: "8px 10px",
-        textAlign: "center",
-        fontWeight: 600,
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        borderBottom: "2px solid var(--border)",
-        whiteSpace: "nowrap",
-    },
-    td: {
-        padding: "6px 10px",
-        textAlign: "center",
-        borderBottom: "1px solid var(--border)",
-    },
-    tdOutlier: {
-        padding: "6px 10px",
-        textAlign: "center",
-        borderBottom: "1px solid var(--border)",
-        background: "rgba(251, 146, 60, 0.15)",
-    },
-    outlierValue: {
-        fontWeight: 600,
-        cursor: "help",
-        borderBottom: "1px dashed rgba(251, 146, 60, 0.6)",
-        paddingBottom: 1,
-    },
-    navButton: {
-        background: "none",
-        border: "none",
-        padding: "2px 4px",
-        font: "inherit",
-        color: "var(--accent)",
-        cursor: "pointer",
-        textDecoration: "underline",
-        textDecorationStyle: "dotted",
-        textUnderlineOffset: 2,
-        borderRadius: 3,
-    },
-    navButtonOutlier: {
-        color: "inherit",
-        fontWeight: 600,
-        textDecorationColor: "rgba(251, 146, 60, 0.8)",
-    },
-    emptyRow: {
-        opacity: 0.5,
-    },
-}
