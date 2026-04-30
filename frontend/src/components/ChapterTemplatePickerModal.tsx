@@ -5,6 +5,7 @@ import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
 import {Lock, Trash2} from "lucide-react";
+import styles from "./ChapterTemplatePickerModal.module.css";
 
 interface Props {
     open: boolean;
@@ -76,21 +77,21 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                         </Dialog.Title>
                     </div>
 
-                    <div style={styles.body}>
+                    <div className={styles.body}>
                         {templates === null && (
-                            <div style={styles.emptyState}>
+                            <div className={styles.emptyState}>
                                 {t("ui.chapter_template_picker.loading", "Lade Vorlagen...")}
                             </div>
                         )}
                         {templates !== null && templates.length === 0 && (
-                            <div style={styles.emptyState}>
+                            <div className={styles.emptyState}>
                                 {templatesError
                                     ? t("ui.chapter_template_picker.load_error", "Vorlagen konnten nicht geladen werden")
                                     : t("ui.chapter_template_picker.empty", "Keine Kapitelvorlagen verfügbar")}
                             </div>
                         )}
                         {templates !== null && templates.length > 0 && (
-                            <div style={styles.list} role="radiogroup">
+                            <div className={styles.list} role="radiogroup">
                                 {templates.map((tpl) => {
                                     const selected = tpl.id === selectedId;
                                     const select = () => setSelectedId(tpl.id);
@@ -108,18 +109,15 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                     select();
                                                 }
                                             }}
-                                            style={{
-                                                ...styles.card,
-                                                ...(selected ? styles.cardSelected : {}),
-                                            }}
+                                            className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
                                         >
-                                            <div style={styles.cardHeader}>
-                                                <span style={styles.name}>{tpl.name}</span>
-                                                <div style={styles.badges}>
-                                                    <span style={styles.typeBadge}>{tpl.chapter_type}</span>
+                                            <div className={styles.cardHeader}>
+                                                <span className={styles.name}>{tpl.name}</span>
+                                                <div className={styles.badges}>
+                                                    <span className={styles.typeBadge}>{tpl.chapter_type}</span>
                                                     {tpl.is_builtin ? (
                                                         <span
-                                                            style={styles.builtinBadge}
+                                                            className={styles.builtinBadge}
                                                             title={t("ui.chapter_template_picker.builtin_hint", "Mitgelieferte Vorlage")}
                                                             data-testid={`chapter-template-builtin-badge-${tpl.id}`}
                                                         >
@@ -129,8 +127,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                     ) : (
                                                         <button
                                                             type="button"
-                                                            className="btn-icon"
-                                                            style={styles.deleteBtn}
+                                                            className={`btn-icon ${styles.deleteBtn}`}
                                                             aria-label={t("ui.chapter_template_picker.delete", "Löschen")}
                                                             data-testid={`chapter-template-delete-${tpl.id}`}
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(tpl); }}
@@ -140,7 +137,7 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                     )}
                                                 </div>
                                             </div>
-                                            <div style={styles.description}>{tpl.description}</div>
+                                            <div className={styles.description}>{tpl.description}</div>
                                         </div>
                                     );
                                 })}
@@ -167,86 +164,3 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    body: {
-        padding: "8px 0 16px",
-    },
-    emptyState: {
-        padding: "16px 0",
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
-    },
-    list: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-        gap: 8,
-    },
-    card: {
-        textAlign: "left",
-        padding: 12,
-        borderRadius: 8,
-        border: "1px solid var(--border)",
-        background: "var(--bg-surface)",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        fontFamily: "var(--font-body)",
-        color: "var(--text)",
-    },
-    cardSelected: {
-        borderColor: "var(--accent)",
-        outline: "2px solid var(--accent)",
-        outlineOffset: -1,
-    },
-    cardHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 8,
-    },
-    name: {
-        fontWeight: 600,
-        fontSize: "0.9375rem",
-    },
-    badges: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-    },
-    typeBadge: {
-        fontSize: "0.75rem",
-        padding: "2px 6px",
-        borderRadius: 4,
-        background: "var(--accent-muted, var(--bg-subtle))",
-        color: "var(--text-muted)",
-        whiteSpace: "nowrap",
-    },
-    builtinBadge: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 3,
-        fontSize: "0.6875rem",
-        padding: "1px 6px",
-        borderRadius: 4,
-        background: "var(--bg-subtle, var(--bg-surface))",
-        color: "var(--text-muted)",
-        whiteSpace: "nowrap",
-    },
-    deleteBtn: {
-        padding: 4,
-        background: "none",
-        border: "none",
-        borderRadius: 4,
-        color: "var(--text-muted)",
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    description: {
-        fontSize: "0.8125rem",
-        color: "var(--text-muted)",
-        lineHeight: 1.4,
-    },
-};
