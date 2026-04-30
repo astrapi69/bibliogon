@@ -533,6 +533,7 @@ export default function ArticleList() {
             {showTrash ? (
                 <TrashPanel
                     trash={trash}
+                    viewMode={viewMode}
                     onRestore={(a) => void handleRestore(a)}
                     onPermanentDelete={(a) => void handlePermanentDelete(a)}
                     onEmptyTrash={() => void handleEmptyTrash()}
@@ -612,11 +613,13 @@ export default function ArticleList() {
 
 function TrashPanel({
     trash,
+    viewMode,
     onRestore,
     onPermanentDelete,
     onEmptyTrash,
 }: {
     trash: Article[];
+    viewMode: "grid" | "list";
     onRestore: (a: Article) => void;
     onPermanentDelete: (a: Article) => void;
     onEmptyTrash: () => void;
@@ -659,48 +662,133 @@ function TrashPanel({
                     {t("ui.articles.empty_trash", "Papierkorb leeren")}
                 </button>
             </div>
-            <ul style={layout.list}>
-                {trash.map((a) => (
-                    <li
-                        key={a.id}
-                        data-testid={`article-trash-row-${a.id}`}
-                        style={{ ...layout.row, position: "relative" }}
-                    >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={layout.rowTitle}>{a.title}</div>
-                            <div style={layout.rowMeta}>
-                                {a.deleted_at ? (
-                                    <span>
-                                        {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
-                                        {new Date(a.deleted_at).toLocaleString()}
-                                    </span>
-                                ) : null}
+            {viewMode === "grid" ? (
+                <div style={layout.grid} data-testid="article-trash-grid">
+                    {trash.map((a) => (
+                        <TrashArticleCard
+                            key={a.id}
+                            article={a}
+                            onRestore={() => onRestore(a)}
+                            onPermanentDelete={() => onPermanentDelete(a)}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <ul style={layout.list} data-testid="article-trash-list">
+                    {trash.map((a) => (
+                        <li
+                            key={a.id}
+                            data-testid={`article-trash-row-${a.id}`}
+                            style={{ ...layout.row, position: "relative" }}
+                        >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={layout.rowTitle}>{a.title}</div>
+                                <div style={layout.rowMeta}>
+                                    {a.deleted_at ? (
+                                        <span>
+                                            {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
+                                            {new Date(a.deleted_at).toLocaleString()}
+                                        </span>
+                                    ) : null}
+                                </div>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => onRestore(a)}
-                            data-testid={`article-trash-restore-${a.id}`}
-                            title={t("ui.articles.restore", "Wiederherstellen")}
-                        >
-                            <RotateCcw size={14} />
-                            {t("ui.articles.restore", "Wiederherstellen")}
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => onPermanentDelete(a)}
-                            data-testid={`article-trash-permanent-${a.id}`}
-                            title={t("ui.articles.delete_permanent", "Endgültig löschen")}
-                            style={{ color: "var(--danger)" }}
-                        >
-                            <Trash2 size={14} />
-                            {t("ui.articles.delete_permanent", "Endgültig löschen")}
-                        </button>
-                    </li>
-                ))}
-            </ul>
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-ghost"
+                                onClick={() => onRestore(a)}
+                                data-testid={`article-trash-restore-${a.id}`}
+                                title={t("ui.articles.restore", "Wiederherstellen")}
+                            >
+                                <RotateCcw size={14} />
+                                {t("ui.articles.restore", "Wiederherstellen")}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-ghost"
+                                onClick={() => onPermanentDelete(a)}
+                                data-testid={`article-trash-permanent-${a.id}`}
+                                title={t("ui.articles.delete_permanent", "Endgültig löschen")}
+                                style={{ color: "var(--danger)" }}
+                            >
+                                <Trash2 size={14} />
+                                {t("ui.articles.delete_permanent", "Endgültig löschen")}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+/** Grid-view trash card. Mirrors ArticleCard's tile shape but
+ *  swaps the editor-navigation onClick for inline restore +
+ *  permanent-delete buttons; trashed articles must not open the
+ *  editor (they have ``deleted_at`` set and the editor would
+ *  treat them as live). */
+function TrashArticleCard({
+    article,
+    onRestore,
+    onPermanentDelete,
+}: {
+    article: Article;
+    onRestore: () => void;
+    onPermanentDelete: () => void;
+}) {
+    const { t } = useI18n();
+    return (
+        <div
+            data-testid={`article-trash-card-${article.id}`}
+            style={layout.trashCard}
+        >
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <strong style={{ display: "block" }}>{article.title}</strong>
+                {article.author ? (
+                    <p
+                        style={{
+                            color: "var(--text-muted)",
+                            fontSize: "0.8125rem",
+                            margin: "4px 0 0 0",
+                        }}
+                    >
+                        {article.author}
+                    </p>
+                ) : null}
+                {article.deleted_at ? (
+                    <p
+                        style={{
+                            color: "var(--text-muted)",
+                            fontSize: "0.75rem",
+                            margin: "4px 0 0 0",
+                        }}
+                    >
+                        {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
+                        {new Date(article.deleted_at).toLocaleString()}
+                    </p>
+                ) : null}
+            </div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={onRestore}
+                    data-testid={`article-trash-restore-${article.id}`}
+                    title={t("ui.articles.restore", "Wiederherstellen")}
+                >
+                    <RotateCcw size={12} />
+                    {t("ui.articles.restore", "Wiederherstellen")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={onPermanentDelete}
+                    data-testid={`article-trash-permanent-${article.id}`}
+                    title={t("ui.articles.delete_permanent", "Endgültig löschen")}
+                >
+                    <Trash2 size={12} />
+                    {t("ui.articles.delete_permanent", "Endgültig löschen")}
+                </button>
+            </div>
         </div>
     );
 }
@@ -1183,6 +1271,18 @@ const layout: Record<string, React.CSSProperties> = {
         gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
         gridAutoRows: "1fr",
         gap: 16,
+    },
+    /** Trash-grid card. Same shape as Dashboard.tsx ``trashCard`` so
+     *  the books and articles trash views look identical. */
+    trashCard: {
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        padding: 16,
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        height: "100%",
     },
     row: {
         padding: "12px 16px",

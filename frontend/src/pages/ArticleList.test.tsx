@@ -37,12 +37,14 @@ vi.mock("react-router-dom", async () => {
 
 const mockList = vi.fn();
 const mockCreate = vi.fn();
+const mockListTrash = vi.fn();
 
 vi.mock("../api/client", () => ({
     api: {
         articles: {
             list: (...args: unknown[]) => mockList(...args),
             create: (...args: unknown[]) => mockCreate(...args),
+            listTrash: (...args: unknown[]) => mockListTrash(...args),
         },
         settings: {
             // Existing row-based assertions assume the list view is
@@ -137,6 +139,8 @@ describe("ArticleList", () => {
         navigateMock.mockReset();
         mockList.mockReset();
         mockCreate.mockReset();
+        mockListTrash.mockReset();
+        mockListTrash.mockResolvedValue([]);
     });
 
     it("renders empty state with CTA when list is empty", async () => {
@@ -211,6 +215,50 @@ describe("ArticleList", () => {
         await waitFor(() =>
             expect(navigateMock).toHaveBeenCalledWith("/articles/fresh-id"),
         );
+    });
+
+    it("trash view respects viewMode toggle (list <-> grid)", async () => {
+        // Seed one trashed article + one live article so the toggle has
+        // something to render in both modes.
+        const trashed = makeArticle({
+            id: "tr-1",
+            title: "Trashed Article",
+            deleted_at: "2026-04-29T10:00:00Z",
+        });
+        mockListTrash.mockResolvedValue([trashed]);
+        await renderList([makeArticle({ id: "live-1" })]);
+
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("article-list-trash-toggle"),
+            ).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("article-list-trash-toggle"));
+
+        // Default mock view is "list" -> trash list rendered.
+        await waitFor(() =>
+            expect(screen.getByTestId("article-trash-list")).toBeInTheDocument(),
+        );
+        expect(
+            screen.queryByTestId("article-trash-grid"),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByTestId("article-trash-row-tr-1"),
+        ).toBeInTheDocument();
+
+        // Flip to grid via the global ViewToggle. The trash branch
+        // must follow the same setting; before this commit it stayed
+        // on <ul> regardless.
+        fireEvent.click(screen.getByTestId("view-toggle-grid"));
+        await waitFor(() =>
+            expect(screen.getByTestId("article-trash-grid")).toBeInTheDocument(),
+        );
+        expect(
+            screen.queryByTestId("article-trash-list"),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByTestId("article-trash-card-tr-1"),
+        ).toBeInTheDocument();
     });
 
     it("empty-state CTA also creates + navigates", async () => {
