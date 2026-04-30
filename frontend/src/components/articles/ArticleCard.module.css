@@ -1,0 +1,93 @@
+/**
+ * T-01 Phase B: ArticleCard CSS-Module.
+ *
+ * Migrated from a 82-line ``const styles`` block. 12 keys, ~15 inline
+ * applications. Mirrors BookCard's tile shape.
+ */
+
+/* Stretch to the grid row height so all cards match. */
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 180ms ease;
+    height: 100%;
+}
+
+.coverImage {
+    width: 100%;
+    height: 140px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.coverImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.content {
+    padding: 16px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.subtitle,
+.author {
+    margin: 4px 0 0 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.topic {
+    display: inline-block;
+    align-self: flex-start;
+    margin-top: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    font-weight: 500;
+}
+
+.lang {
+    font-family: monospace;
+}
+
+.date {
+    margin-left: auto;
+}
