@@ -114,4 +114,3 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
         </div>
     );
 }
-

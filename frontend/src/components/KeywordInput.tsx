@@ -348,4 +348,3 @@ export default function KeywordInput({keywords, onChange}: Props) {
         </div>
     );
 }
-

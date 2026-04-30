@@ -178,4 +178,3 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
         </div>
     );
 }
-

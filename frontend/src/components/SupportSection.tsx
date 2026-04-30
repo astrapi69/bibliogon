@@ -109,4 +109,3 @@ export default function SupportSection({config}: Props) {
     </section>
   );
 }
-

@@ -130,4 +130,3 @@ export default function DonationOnboardingDialog({open, onClose, donations}: Pro
     </Dialog.Root>
   );
 }
-

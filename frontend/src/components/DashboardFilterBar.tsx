@@ -165,4 +165,3 @@ function FilterSelect({testId, value, onChange, allLabel, options}: {
         </Select.Root>
     );
 }
-

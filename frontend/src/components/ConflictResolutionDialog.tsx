@@ -137,4 +137,3 @@ export default function ConflictResolutionDialog({conflict, onKeepLocal, onDisca
     </Dialog.Root>
   );
 }
-

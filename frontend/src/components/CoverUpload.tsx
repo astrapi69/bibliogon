@@ -245,4 +245,3 @@ function isAcceptedFile(file: File): boolean {
     const name = file.name.toLowerCase();
     return ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext));
 }
-

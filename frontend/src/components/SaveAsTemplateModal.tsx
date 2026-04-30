@@ -296,4 +296,3 @@ export default function SaveAsTemplateModal({open, book, onClose, onSaved}: Prop
         </Dialog.Root>
     );
 }
-

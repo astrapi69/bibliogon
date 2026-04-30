@@ -163,4 +163,3 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
         </Dialog.Root>
     );
 }
-

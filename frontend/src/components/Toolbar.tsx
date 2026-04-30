@@ -426,4 +426,3 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         </div>
     );
 }
-

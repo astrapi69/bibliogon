@@ -257,4 +257,3 @@ function NavigableCell({value, display, avg, tooltip, ariaLabel, onClick}: {
 
     return <td className={styles.td}>{button}</td>
 }
-

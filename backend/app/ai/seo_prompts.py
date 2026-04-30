@@ -110,11 +110,7 @@ def parse_tags_from_ai_output(text: str) -> list[str]:
     if not text:
         return []
 
-    lines = [
-        line.strip().lstrip("-*•0123456789. ")
-        for line in text.split("\n")
-        if line.strip()
-    ]
+    lines = [line.strip().lstrip("-*•0123456789. ") for line in text.split("\n") if line.strip()]
 
     raw_tags: list[str]
     if len(lines) == 1:
@@ -126,7 +122,7 @@ def parse_tags_from_ai_output(text: str) -> list[str]:
     cleaned: list[str] = []
     for raw in raw_tags:
         # Strip surrounding quotes (some models wrap each tag).
-        tag = raw.strip().strip('"\'').strip()
+        tag = raw.strip().strip("\"'").strip()
         if not tag or tag in seen:
             continue
         seen.add(tag)

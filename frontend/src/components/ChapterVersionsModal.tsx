@@ -107,4 +107,3 @@ export default function ChapterVersionsModal({open, bookId, chapterId, onClose, 
     </Dialog.Root>
   );
 }
-

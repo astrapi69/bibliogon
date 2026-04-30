@@ -535,4 +535,3 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
         </>
     );
 }
-

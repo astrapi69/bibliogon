@@ -515,4 +515,3 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
         </Dialog.Root>
     );
 }
-

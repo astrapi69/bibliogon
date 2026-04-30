@@ -182,4 +182,3 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
         </Dialog.Root>
     );
 }
-

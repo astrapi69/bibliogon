@@ -54,4 +54,3 @@ export default function DashboardFilterSheet({filters, open, onOpenChange}: Prop
         </Dialog.Root>
     );
 }
-

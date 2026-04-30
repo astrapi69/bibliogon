@@ -1104,4 +1104,3 @@ function badgeFg(status: ArticleStatus): string {
             return "var(--text-secondary)";
     }
 }
-

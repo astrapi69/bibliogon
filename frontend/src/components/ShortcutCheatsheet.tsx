@@ -74,4 +74,3 @@ function formatKeys(keys: string): string {
     .replace(/shift/gi, navigator.platform.includes("Mac") ? "\u21E7" : "Shift")
     .replace(/alt/gi, navigator.platform.includes("Mac") ? "\u2325" : "Alt")
 }
-

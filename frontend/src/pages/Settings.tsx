@@ -2251,4 +2251,3 @@ function renderReadOnlyValue(value: unknown): React.ReactNode {
     }
     return <span style={{fontSize: "0.8125rem", color: "var(--text-secondary)"}}>{String(value)}</span>;
 }
-
