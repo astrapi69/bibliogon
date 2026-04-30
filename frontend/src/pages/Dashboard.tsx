@@ -291,14 +291,15 @@ export default function Dashboard() {
                                     <Trash size={14}/> {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
                                 </button>
                             )}
+                            <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {trash.length === 0 ? (
                             <div style={styles.emptyState} data-testid="trash-empty-state">
                                 <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
                                 <p style={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
                             </div>
-                        ) : (
-                            <div style={styles.grid}>
+                        ) : viewMode === "grid" ? (
+                            <div style={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
                                     <div
                                         key={book.id}
@@ -328,6 +329,35 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
+                        ) : (
+                            <ul style={styles.trashList} data-testid="trash-list">
+                                {trash.map((book) => (
+                                    <li
+                                        key={book.id}
+                                        style={styles.trashRow}
+                                        data-testid={`trash-row-${book.id}`}
+                                    >
+                                        <div style={{flex: 1, minWidth: 0}}>
+                                            <strong>{book.title}</strong>
+                                            <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", margin: "4px 0 0 0"}}>{book.author}</p>
+                                        </div>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            data-testid={`trash-restore-${book.id}`}
+                                            onClick={() => handleRestore(book.id)}
+                                        >
+                                            <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
+                                        </button>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            data-testid={`trash-delete-permanent-${book.id}`}
+                                            onClick={() => handlePermanentDelete(book.id)}
+                                        >
+                                            <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgültig löschen")}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
                         )}
                     </div>
                 ) : loading ? (
@@ -565,5 +595,17 @@ const styles: Record<string, React.CSSProperties> = {
         flexWrap: "wrap" as const,
         gap: 12, padding: 16, background: "var(--bg-card)",
         border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
+    },
+    /** Trash list-view container. Same shape as ArticleList ``layout.list``
+     *  so the books and articles trash list views feel identical. */
+    trashList: {
+        listStyle: "none", padding: 0, margin: 0,
+        display: "flex", flexDirection: "column" as const, gap: 8,
+    },
+    trashRow: {
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 16px",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)", borderRadius: 6,
     },
 };
