@@ -37,6 +37,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
+import styles from "./ChapterSidebar.module.css";
 
 interface Props {
     bookTitle: string;
@@ -121,16 +122,18 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
         isDragging,
     } = useSortable({id: chapter.id});
 
+    const className = [
+        styles.item,
+        isActive ? styles.itemActive : "",
+        isDragging ? styles.itemDragging : "",
+    ].filter(Boolean).join(" ");
     const style: React.CSSProperties = {
-        ...styles.item,
-        ...(isActive ? styles.itemActive : {}),
-        ...(isDragging ? styles.itemDragging : {}),
         transform: CSS.Transform.toString(transform),
         transition,
     };
 
     const itemContent = (
-        <div ref={setNodeRef} style={style} data-testid={`chapter-item-${chapter.id}`} role="button" tabIndex={0} onClick={() => !editing && onSelect(chapter.id)} onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !editing) { e.preventDefault(); onSelect(chapter.id); } }}>
+        <div ref={setNodeRef} className={className} style={style} data-testid={`chapter-item-${chapter.id}`} role="button" tabIndex={0} onClick={() => !editing && onSelect(chapter.id)} onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !editing) { e.preventDefault(); onSelect(chapter.id); } }}>
             <span {...attributes} {...listeners} style={{display: "flex", cursor: "grab"}} data-testid={`drag-handle-${chapter.id}`}>
                 <GripVertical size={14} style={{flexShrink: 0, opacity: 0.3}}/>
             </span>
@@ -148,16 +151,16 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
                         }
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    style={styles.renameInput}
+                    className={styles.renameInput}
                 />
             ) : (
-                <span style={styles.itemTitle} onDoubleClick={(e) => {
+                <span className={styles.itemTitle} onDoubleClick={(e) => {
                     e.stopPropagation();
                     setEditValue(chapter.title);
                     setEditing(true);
                 }}>
                     {chapter.chapter_type !== "chapter" && (
-                        <span style={styles.typeTag}>{typeLabels[chapter.chapter_type]}</span>
+                        <span className={styles.typeTag}>{typeLabels[chapter.chapter_type]}</span>
                     )}
                     {chapter.title}
                 </span>
@@ -165,7 +168,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
             {!editing && (
                 <Tooltip content={deleteLabel} side="right">
                     <button
-                        style={styles.deleteBtn}
+                        className={styles.deleteBtn}
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete(chapter.id);
@@ -364,15 +367,15 @@ export default function ChapterSidebar({
     };
 
     return (
-        <aside style={styles.sidebar} data-testid="chapter-sidebar">
+        <aside className={styles.sidebar} data-testid="chapter-sidebar">
             {/* Header */}
-            <div style={styles.header} data-testid="chapter-sidebar-header">
+            <div className={styles.header} data-testid="chapter-sidebar-header">
                 <Tooltip content={t("ui.sidebar.back_to_dashboard", "Zurück zum Dashboard")}>
-                    <button style={styles.backBtn} onClick={onBack}>
+                    <button className={styles.backBtn} onClick={onBack}>
                         <ChevronLeft size={18}/>
                     </button>
                 </Tooltip>
-                <h2 style={styles.bookTitle} title={bookTitle}>
+                <h2 className={styles.bookTitle} title={bookTitle}>
                     {bookTitle}
                 </h2>
                 <div style={{marginLeft: "auto"}}>
@@ -380,18 +383,18 @@ export default function ChapterSidebar({
                 </div>
             </div>
 
-            <div style={styles.manuscriptHeader}>
-                <span style={styles.manuscriptTitle}>{t("ui.sidebar.manuscript", "Manuskript")}</span>
+            <div className={styles.manuscriptHeader}>
+                <span className={styles.manuscriptTitle}>{t("ui.sidebar.manuscript", "Manuskript")}</span>
             </div>
 
-            <div style={styles.list} data-testid="chapter-sidebar-list">
+            <div className={styles.list} data-testid="chapter-sidebar-list">
                 {/* Add button with dropdown */}
-                <div style={{...styles.sectionHeader, justifyContent: "space-between"}}>
-                    <span style={styles.listLabel}>{t("ui.sidebar.content", "Inhalt")}</span>
+                <div className={styles.sectionHeader} style={{justifyContent: "space-between"}}>
+                    <span className={styles.listLabel}>{t("ui.sidebar.content", "Inhalt")}</span>
                     <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                         <Tooltip content={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}>
                             <DropdownMenu.Trigger asChild>
-                                <button style={styles.addBtn} data-testid="chapter-add-trigger">
+                                <button className={styles.addBtn} data-testid="chapter-add-trigger">
                                     <Plus size={14}/>
                                 </button>
                             </DropdownMenu.Trigger>
@@ -448,12 +451,12 @@ export default function ChapterSidebar({
                 {/* Front Matter */}
                 {frontMatter.length > 0 && (
                     <>
-                        <div style={styles.sectionHeader}>
-                            <button style={styles.collapseBtn} onClick={() => toggleSection("front")}>
+                        <div className={styles.sectionHeader}>
+                            <button className={styles.collapseBtn} onClick={() => toggleSection("front")}>
                                 {collapsedSections.front ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
-                            <span style={styles.listLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
-                            <span style={styles.sectionCount}>{frontMatter.length}</span>
+                            <span className={styles.listLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
+                            <span className={styles.sectionCount}>{frontMatter.length}</span>
                         </div>
                         {!collapsedSections.front && (
                             <SortableGroup
@@ -477,17 +480,17 @@ export default function ChapterSidebar({
                 )}
 
                 {/* Main Chapters */}
-                <div style={styles.sectionHeader}>
-                    <button style={styles.collapseBtn} onClick={() => toggleSection("chapters")}>
+                <div className={styles.sectionHeader}>
+                    <button className={styles.collapseBtn} onClick={() => toggleSection("chapters")}>
                         {collapsedSections.chapters ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                     </button>
-                    <span style={styles.listLabel}>{t("ui.sidebar.chapters", "Kapitel")}</span>
-                    <span style={styles.sectionCount}>{mainChapters.length}</span>
+                    <span className={styles.listLabel}>{t("ui.sidebar.chapters", "Kapitel")}</span>
+                    <span className={styles.sectionCount}>{mainChapters.length}</span>
                 </div>
                 {!collapsedSections.chapters && (
                     <>
                         {mainChapters.length === 0 && (
-                            <p style={styles.empty}>{t("ui.sidebar.no_chapters", "Noch keine Kapitel")}</p>
+                            <p className={styles.empty}>{t("ui.sidebar.no_chapters", "Noch keine Kapitel")}</p>
                         )}
                         <SortableGroup
                             chapters={mainChapters}
@@ -511,12 +514,12 @@ export default function ChapterSidebar({
                 {/* Back Matter */}
                 {backMatter.length > 0 && (
                     <>
-                        <div style={styles.sectionHeader}>
-                            <button style={styles.collapseBtn} onClick={() => toggleSection("back")}>
+                        <div className={styles.sectionHeader}>
+                            <button className={styles.collapseBtn} onClick={() => toggleSection("back")}>
                                 {collapsedSections.back ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
-                            <span style={styles.listLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
-                            <span style={styles.sectionCount}>{backMatter.length}</span>
+                            <span className={styles.listLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
+                            <span className={styles.sectionCount}>{backMatter.length}</span>
                         </div>
                         {!collapsedSections.back && (
                             <SortableGroup
@@ -541,16 +544,18 @@ export default function ChapterSidebar({
             </div>
 
             {/* Actions */}
-            <div style={styles.exportSection} data-testid="chapter-sidebar-footer">
+            <div className={styles.exportSection} data-testid="chapter-sidebar-footer">
                 <button
-                    style={{...styles.exportBtn, ...(showMetadata ? styles.exportBtnActive : {}), marginBottom: 6}}
+                    className={`${styles.exportBtn} ${showMetadata ? styles.exportBtnActive : ""}`}
+                    style={{marginBottom: 6}}
                     onClick={onMetadata}
                 >
                     <FileText size={14}/> {t("ui.sidebar.metadata", "Metadaten")}
                 </button>
                 {onGitBackup && (
                     <button
-                        style={{...styles.exportBtn, marginBottom: 6, position: "relative"}}
+                        className={styles.exportBtn}
+                        style={{marginBottom: 6, position: "relative"}}
                         onClick={onGitBackup}
                         data-testid="sidebar-git-backup"
                         data-git-sync-state={gitSyncState ?? ""}
@@ -576,7 +581,8 @@ export default function ChapterSidebar({
                 )}
                 {gitSyncMapped && onGitSync && (
                     <button
-                        style={{...styles.exportBtn, marginBottom: 6}}
+                        className={styles.exportBtn}
+                        style={{marginBottom: 6}}
                         onClick={onGitSync}
                         data-testid="sidebar-git-sync"
                         title={t(
@@ -589,7 +595,8 @@ export default function ChapterSidebar({
                 )}
                 {hasToc && onValidateToc && (
                     <button
-                        style={{...styles.exportBtn, marginBottom: 6}}
+                        className={styles.exportBtn}
+                        style={{marginBottom: 6}}
                         onClick={onValidateToc}
                     >
                         <ListChecks size={14}/> {t("ui.sidebar.toc_validate", "TOC prüfen")}
@@ -598,7 +605,8 @@ export default function ChapterSidebar({
                 {onSaveAsTemplate && (
                     <Tooltip content={chapters.length === 0 ? t("ui.sidebar.save_template_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.save_template_tooltip", "Buchstruktur als wiederverwendbare Vorlage speichern")}>
                         <button
-                            style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {}), marginBottom: 6}}
+                            className={`${styles.exportBtn} ${chapters.length === 0 ? styles.btnDisabled : ""}`}
+                            style={{marginBottom: 6}}
                             onClick={onSaveAsTemplate}
                             disabled={chapters.length === 0}
                             data-testid="sidebar-save-as-template"
@@ -609,7 +617,7 @@ export default function ChapterSidebar({
                 )}
                 <Tooltip content={chapters.length === 0 ? t("ui.sidebar.export_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.export_book", "Buch exportieren")}>
                     <button
-                        style={{...styles.exportBtn, ...(chapters.length === 0 ? styles.btnDisabled : {})}}
+                        className={`${styles.exportBtn} ${chapters.length === 0 ? styles.btnDisabled : ""}`}
                         onClick={onExport}
                         disabled={chapters.length === 0}
                     >
@@ -621,108 +629,6 @@ export default function ChapterSidebar({
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    sidebar: {
-        width: 260, minWidth: 260, height: "100vh",
-        background: "var(--bg-sidebar)", color: "var(--text-sidebar)",
-        display: "flex", flexDirection: "column",
-        borderRight: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
-    },
-    manuscriptHeader: {
-        padding: "12px 16px 0",
-        flexShrink: 0,
-    },
-    manuscriptTitle: {
-        fontFamily: "var(--font-display)", fontSize: "0.8125rem", fontWeight: 600,
-        color: "color-mix(in srgb, var(--text-sidebar) 50%, transparent)", letterSpacing: "0.04em",
-    },
-    header: {
-        padding: "16px 12px 12px", display: "flex", alignItems: "center", gap: 6,
-        borderBottom: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
-        flexShrink: 0,
-    },
-    backBtn: {
-        background: "none", border: "none", color: "var(--text-sidebar)",
-        cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
-    },
-    bookTitle: {
-        fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 600,
-        color: "var(--text-sidebar)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-    },
-    sectionHeader: {
-        padding: "16px 16px 8px", display: "flex", alignItems: "center", gap: 4,
-    },
-    collapseBtn: {
-        background: "none", border: "none", color: "color-mix(in srgb, var(--text-sidebar) 35%, transparent)",
-        cursor: "pointer", padding: 2, borderRadius: 3, display: "flex", alignItems: "center",
-        flexShrink: 0,
-    },
-    sectionCount: {
-        fontSize: "0.625rem", color: "color-mix(in srgb, var(--text-sidebar) 25%, transparent)",
-        marginLeft: "auto",
-    },
-    listLabel: {
-        fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase" as const,
-        letterSpacing: "0.08em", color: "color-mix(in srgb, var(--text-sidebar) 35%, transparent)",
-    },
-    addBtn: {
-        background: "color-mix(in srgb, var(--text-sidebar) 8%, transparent)", border: "none", color: "var(--text-sidebar)",
-        cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
-    },
-    // minHeight: 0 is mandatory for flexbox scrolling. Without it, the
-    // flex child defaults to min-height: auto and expands to its
-    // intrinsic content height, silently defeating overflow-y: auto.
-    list: { flex: 1, minHeight: 0, overflowY: "auto" as const, padding: "0 8px" },
-    empty: {
-        padding: "12px 8px", fontSize: "0.8125rem", color: "color-mix(in srgb, var(--text-sidebar) 25%, transparent)", fontStyle: "italic",
-    },
-    item: {
-        display: "flex", alignItems: "center", gap: 6, padding: "8px 8px",
-        borderRadius: 6, cursor: "pointer", fontSize: "0.875rem",
-        transition: "background 150ms", marginBottom: 2,
-        background: "transparent",
-    },
-    itemActive: { background: "color-mix(in srgb, var(--text-sidebar) 10%, transparent)", color: "var(--text-sidebar)" },
-    itemDragging: { opacity: 0.5, background: "color-mix(in srgb, var(--text-sidebar) 5%, transparent)" },
-    itemTitle: {
-        flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
-        display: "flex", alignItems: "center", gap: 4,
-    },
-    typeTag: {
-        fontSize: "0.625rem", fontWeight: 600, textTransform: "uppercase" as const,
-        background: "color-mix(in srgb, var(--text-sidebar) 8%, transparent)", padding: "1px 4px", borderRadius: 3,
-        color: "color-mix(in srgb, var(--text-sidebar) 40%, transparent)", flexShrink: 0,
-    },
-    deleteBtn: {
-        background: "none", border: "none", color: "color-mix(in srgb, var(--text-sidebar) 20%, transparent)",
-        cursor: "pointer", padding: 4, borderRadius: 4, display: "flex", alignItems: "center",
-        opacity: 0, transition: "opacity 150ms",
-    },
-    renameInput: {
-        flex: 1, background: "color-mix(in srgb, var(--text-sidebar) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--text-sidebar) 20%, transparent)",
-        color: "var(--text-sidebar)", fontSize: "0.875rem", padding: "2px 6px", borderRadius: 4,
-        outline: "none", fontFamily: "var(--font-body)",
-    },
-    exportSection: {
-        padding: "12px 16px 16px",
-        borderTop: "1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
-        flexShrink: 0,
-    },
-    exportBtn: {
-        width: "100%",
-        flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "8px 0", background: "color-mix(in srgb, var(--text-sidebar) 6%, transparent)",
-        border: "1px solid color-mix(in srgb, var(--text-sidebar) 8%, transparent)", color: "var(--text-sidebar)",
-        borderRadius: 6, cursor: "pointer", fontSize: "0.8125rem",
-        fontFamily: "var(--font-body)", fontWeight: 500, transition: "background 150ms",
-    },
-    exportBtnActive: {
-        background: "color-mix(in srgb, var(--text-sidebar) 12%, transparent)", borderColor: "color-mix(in srgb, var(--text-sidebar) 15%, transparent)",
-    },
-    btnDisabled: {
-        opacity: 0.3, cursor: "not-allowed",
-    },
-};
 
 function gitSyncStateLabel(state: string | null | undefined, t: (key: string, fallback: string) => string): string {
     switch (state) {

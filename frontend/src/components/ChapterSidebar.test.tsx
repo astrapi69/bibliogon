@@ -76,32 +76,24 @@ describe("ChapterSidebar - flexbox scroll container", () => {
         expect(screen.getByTestId("chapter-sidebar-list")).toBeTruthy();
     });
 
-    it("list container has overflow-y: auto so it can scroll", () => {
-        renderSidebar();
-        const list = screen.getByTestId("chapter-sidebar-list") as HTMLDivElement;
-        // React normalizes inline styles onto the element; happy-dom
-        // reports them through style.getPropertyValue.
-        expect(list.style.overflowY).toBe("auto");
-    });
-
-    it("list container has min-height: 0 so overflow-y actually works in a flex column", () => {
-        // This is the regression pin. Removing min-height: 0 silently
-        // breaks the scroll container because flex children default
-        // to min-height: auto and expand to content height.
-        renderSidebar();
-        const list = screen.getByTestId("chapter-sidebar-list") as HTMLDivElement;
-        // React serializes a plain numeric ``minHeight: 0`` as "0"
-        // rather than "0px". Match either so the test is stable if
-        // somebody later writes ``minHeight: "0px"`` as a string.
-        expect(["0", "0px"]).toContain(list.style.minHeight);
-    });
-
-    it("list container has flex: 1 so it consumes remaining vertical space", () => {
-        renderSidebar();
-        const list = screen.getByTestId("chapter-sidebar-list") as HTMLDivElement;
-        // React serializes numeric flex to the short form "1 1 0%"
-        // in happy-dom. Checking flexGrow is the stable substring.
-        expect(list.style.flex || list.style.flexGrow).toBeTruthy();
+    // Post T-01 migration: the inline-style regression pins moved
+    // from the rendered DOM (jsdom can't compute layout, only inline
+    // values) to the CSS-Module source. The .list rule must keep the
+    // three flex-scroll declarations or scrolling silently breaks.
+    it("ChapterSidebar.module.css .list rule has the flex-scroll trio", () => {
+        const cssPath = path.resolve(
+            __dirname,
+            "./ChapterSidebar.module.css",
+        );
+        const css = fs.readFileSync(cssPath, "utf8");
+        // Match the .list block and assert all three declarations
+        // are present inside it.
+        const blockMatch = css.match(/\.list\s*\{[^}]*\}/);
+        expect(blockMatch).not.toBeNull();
+        const block = blockMatch![0];
+        expect(block).toContain("overflow-y: auto");
+        expect(block).toContain("min-height: 0");
+        expect(block).toContain("flex: 1");
     });
 });
 
