@@ -678,6 +678,22 @@ body {
     border-radius: 3px;
 }
 
+/* --- Layout utilities (T-01 quick-wins) ---
+   Single source of truth for the most repeated inline-style flex
+   patterns. See docs/explorations/inline-styles-audit.md.
+*/
+.icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-row-sm {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 /* --- Buttons --- */
 .btn {
     display: inline-flex;

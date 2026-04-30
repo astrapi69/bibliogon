@@ -106,7 +106,7 @@ export default function GetStarted() {
                         <Rocket size={22} style={{color: "var(--accent)"}}/>
                         <h1 style={styles.title}>{t("ui.get_started.title", "Erste Schritte")}</h1>
                     </div>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <div className="icon-row">
                         <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
                             <Home size={18}/>
                         </button>

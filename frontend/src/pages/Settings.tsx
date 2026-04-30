@@ -87,7 +87,7 @@ export default function Settings() {
                         </button>
                         <h1 style={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <div className="icon-row">
                         <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
                             <Home size={18}/>
                         </button>
@@ -989,7 +989,7 @@ function ScalarSettingField({
     if (typeof value === "boolean") {
         return (
             <div className="field">
-                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                <label className="label icon-row">
                     <input
                         type="checkbox"
                         checked={value}
@@ -1174,7 +1174,7 @@ function TranslationSettingsPanel({settings, onSave}: {
                     </div>
                 </div>
                 <div className="field">
-                    <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <label className="label icon-row">
                         <input
                             type="checkbox"
                             checked={freeApi}
@@ -1375,7 +1375,7 @@ function AudiobookSettingsPanel({settings, onSave}: {
                 </div>
             </div>
             <div className="field" style={{marginTop: 16}}>
-                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                <label className="label icon-row">
                     <input
                         type="checkbox"
                         checked={readChapterNumber}

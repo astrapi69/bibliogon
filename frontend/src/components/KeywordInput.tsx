@@ -215,7 +215,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
         // Splicing into the pre-delete list would duplicate the removed
         // entry instead of restoring it.
         const toastId = toast.info(
-            <div style={{display: "flex", alignItems: "center", gap: 8}}>
+            <div className="icon-row">
                 <span>{t("ui.keywords.removed", "Schlüsselwort entfernt")}: {removed}</span>
                 <button
                     type="button"

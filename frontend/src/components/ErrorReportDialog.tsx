@@ -86,7 +86,7 @@ export default function ErrorReportDialog({open, onClose, errorMessage, apiError
                 <Dialog.Overlay className="dialog-overlay"/>
                 <Dialog.Content className="dialog-content dialog-content-wide">
                     <div className="dialog-header">
-                        <Dialog.Title className="dialog-title" style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <Dialog.Title className="dialog-title icon-row">
                             <Bug size={18}/> {t("ui.error_report.title", "Issue-Report erstellen")}
                         </Dialog.Title>
                     </div>

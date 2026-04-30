@@ -161,7 +161,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         <div style={styles.container}>
             {/* Header */}
             <div style={styles.header}>
-                <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                <div className="icon-row">
                     <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurück")}>
                         <ChevronLeft size={18}/>
                     </button>
@@ -934,7 +934,7 @@ function AudiobookBookConfig({
                 onChange={onCustomFilenameChange}
             />
             <div className="field">
-                <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+                <label className="label icon-row">
                     <input
                         type="checkbox"
                         checked={overwriteExisting}
@@ -1066,7 +1066,7 @@ function CustomFilenameField({bookTitle, value, onChange}: {
 
     return (
         <div className="field">
-            <label className="label" style={{display: "flex", alignItems: "center", gap: 8}}>
+            <label className="label icon-row">
                 <input
                     type="checkbox"
                     checked={enabled}
@@ -1333,7 +1333,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                                         flexDirection: "column", alignItems: "stretch", gap: 4,
                                                         ...(isPlaying ? {borderLeft: "3px solid var(--accent)", paddingLeft: 5} : {}),
                                                     }}>
-                                                        <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                                        <div className="icon-row">
                                                             {audio ? (
                                                                 <button
                                                                     className="btn-icon"
@@ -1402,7 +1402,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                             <ul style={audiobookStyles.chapterList}>
                                 {previews.map((p) => (
                                     <li key={p.filename} style={{...audiobookStyles.chapterItem, flexDirection: "column", alignItems: "stretch", gap: 4}}>
-                                        <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                        <div className="icon-row">
                                             <span style={{flex: 1, fontSize: "0.75rem", wordBreak: "break-all"}}>{p.filename}</span>
                                             <span style={audiobookStyles.muted}>{formatBytes(p.size_bytes)}</span>
                                             <a href={p.url} download className="btn-icon" title="Download"><Download size={12}/></a>

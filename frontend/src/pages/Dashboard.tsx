@@ -436,7 +436,7 @@ export default function Dashboard() {
                 )}
                 {/* Version History */}
                 <div style={{marginTop: 32}}>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <div className="icon-row">
                         <button
                             className="btn btn-ghost btn-sm"
                             onClick={() => setShowHistory(!showHistory)}

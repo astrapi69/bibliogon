@@ -29,7 +29,7 @@ export default function Help() {
                         </button>
                         <h1 style={styles.title}>{t("ui.help.title", "Hilfe")}</h1>
                     </div>
-                    <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <div className="icon-row">
                         <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
                             <Home size={18}/>
                         </button>
