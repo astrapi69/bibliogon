@@ -17,6 +17,7 @@ import {useI18n} from "../hooks/useI18n";
 import {db, deleteDraft, type ChapterDraft} from "../db/drafts";
 import {api, ApiError} from "../api/client";
 import {notify} from "../utils/notify";
+import styles from "./OfflineBanner.module.css";
 
 /**
  * Sync all pending drafts to the backend. Pure function so it can be
@@ -91,22 +92,10 @@ export default function OfflineBanner() {
   if (online) return null;
 
   return (
-    <div role="alert" aria-live="polite" style={styles.banner} data-testid="offline-banner">
+    <div role="alert" aria-live="polite" className={styles.banner} data-testid="offline-banner">
       <WifiOff size={16} aria-hidden />
       <span>{t("ui.offline.banner_message", "Du bist offline. Änderungen sind lokal gesichert und werden beim nächsten Verbindungsaufbau synchronisiert.")}</span>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  banner: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.5rem 1rem",
-    background: "var(--bg-surface)",
-    borderBottom: "1px solid var(--border)",
-    color: "var(--text-muted)",
-    fontSize: "0.875rem",
-  },
-};

@@ -1,0 +1,17 @@
+/**
+ * T-01 Phase B: OfflineBanner CSS-Module.
+ *
+ * Migrated from a 12-line ``const styles`` block. 1 key, 1 inline
+ * application. Top-of-app offline banner.
+ */
+
+.banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
