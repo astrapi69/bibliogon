@@ -1,0 +1,100 @@
+/**
+ * T-01 Phase B: BookCard CSS-Module.
+ *
+ * Migrated from a 90-line ``const styles`` block. 11 used keys
+ * (one ``accent`` defined-but-unused dropped), ~14 inline applications.
+ */
+
+/* Stretch to the parent grid row height so all cards in a row
+   (and across rows when ``grid-auto-rows: 1fr`` is set) match. */
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 180ms ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.coverImage {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border);
+}
+
+.content {
+    padding: 20px 20px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    margin-bottom: 4px;
+}
+
+.author {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.genre {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    align-self: flex-start;
+}
+
+.series {
+    font-size: 0.8125rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lang {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+}

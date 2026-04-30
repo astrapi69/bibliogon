@@ -4,6 +4,7 @@ import {useI18n} from "../hooks/useI18n";
 import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
+import styles from "./BookCard.module.css";
 
 interface Props {
     book: Book;
@@ -27,7 +28,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
 
     return (
         <div
-            style={styles.card}
+            className={styles.card}
             data-testid={`book-card-${book.id}`}
             onClick={() => { if (!menuOpen) onClick(); }}
         >
@@ -35,11 +36,11 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                 <img
                     src={coverUrl}
                     alt={`${book.title} cover`}
-                    style={styles.coverImage}
+                    className={styles.coverImage}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
             ) : (
-                <div style={styles.coverImage}>
+                <div className={styles.coverImage}>
                     <CoverPlaceholder
                         title={book.title}
                         subtitle={book.subtitle}
@@ -47,31 +48,31 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                     />
                 </div>
             )}
-            <div style={styles.content}>
-                <h3 style={styles.title}>{book.title}</h3>
-                {book.subtitle && <p style={styles.subtitle}>{book.subtitle}</p>}
-                <p style={styles.author}>
+            <div className={styles.content}>
+                <h3 className={styles.title}>{book.title}</h3>
+                {book.subtitle && <p className={styles.subtitle}>{book.subtitle}</p>}
+                <p className={styles.author}>
                     {book.author && book.author.trim()
                         ? book.author
                         : t("ui.dashboard.book_no_author", "—")}
                 </p>
                 {book.genre && (
-                    <span style={styles.genre}>
+                    <span className={styles.genre}>
                         {t(`ui.genres.${book.genre}`, book.genre)}
                     </span>
                 )}
                 {book.series && (
-                    <p style={styles.series}>
+                    <p className={styles.series}>
                         {book.series}
                         {book.series_index != null ? ` - Band ${book.series_index}` : ""}
                     </p>
                 )}
-                <div style={styles.footer}>
-                    <span style={styles.date}>
+                <div className={styles.footer}>
+                    <span className={styles.date}>
                         <Clock size={12}/>
                         {updated}
                     </span>
-                    <span style={styles.lang}>{book.language.toUpperCase()}</span>
+                    <span className={styles.lang}>{book.language.toUpperCase()}</span>
                     <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                         <DropdownMenu.Trigger asChild>
                             <button
@@ -114,92 +115,3 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    card: {
-        background: "var(--bg-card)",
-        borderRadius: "var(--radius-md)",
-        boxShadow: "var(--shadow-sm)",
-        border: "1px solid var(--border)",
-        cursor: "pointer",
-        overflow: "hidden",
-        transition: "all 180ms ease",
-        display: "flex",
-        flexDirection: "column",
-        // Stretch to the parent grid row height so all cards in a row
-        // (and across rows when ``grid-auto-rows: 1fr`` is set) match.
-        height: "100%",
-    },
-    coverImage: {
-        width: "100%",
-        height: 140,
-        objectFit: "cover" as const,
-        borderBottom: "1px solid var(--border)",
-    },
-    accent: {
-        height: 4,
-        background: "var(--accent)",
-    },
-    content: {
-        padding: "20px 20px 16px",
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-    },
-    title: {
-        fontFamily: "var(--font-display)",
-        fontSize: "1.25rem",
-        fontWeight: 600,
-        lineHeight: 1.3,
-        marginBottom: 4,
-    },
-    subtitle: {
-        color: "var(--text-secondary)",
-        fontSize: "0.9375rem",
-        marginBottom: 4,
-    },
-    author: {
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
-        marginBottom: 4,
-    },
-    genre: {
-        display: "inline-block",
-        fontSize: "0.6875rem",
-        fontWeight: 600,
-        background: "var(--accent-light)",
-        color: "var(--accent)",
-        padding: "2px 8px",
-        borderRadius: 4,
-        marginBottom: 8,
-        alignSelf: "flex-start",
-    },
-    series: {
-        fontSize: "0.8125rem",
-        color: "var(--accent)",
-        fontWeight: 500,
-        marginBottom: 8,
-    },
-    footer: {
-        marginTop: "auto",
-        paddingTop: 12,
-        borderTop: "1px solid var(--border)",
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        fontSize: "0.8125rem",
-        color: "var(--text-muted)",
-    },
-    date: {
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-    },
-    lang: {
-        fontSize: "0.6875rem",
-        fontWeight: 600,
-        background: "var(--bg-secondary)",
-        padding: "2px 6px",
-        borderRadius: 3,
-        letterSpacing: "0.05em",
-    },
-};
