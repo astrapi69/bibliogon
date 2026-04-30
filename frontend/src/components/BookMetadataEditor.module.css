@@ -1,0 +1,117 @@
+/**
+ * T-01 Phase B: BookMetadataEditor CSS-Module.
+ *
+ * Migrated from two component-local style objects:
+ * - ``const styles`` (~30 lines, 7 used keys) — page chrome.
+ * - ``const audiobookStyles`` (~31 lines, 5 used keys) — audiobook
+ *   per-chapter list. Renamed with ``audiobook*`` prefix to avoid
+ *   collisions when merged into a single flat namespace.
+ *
+ * Dropped (defined but unused):
+ * - ``styles.input`` (empty literal)
+ * - ``audiobookStyles.header``
+ * - ``audiobookStyles.subHeader``
+ *
+ * Theme tokens via var(--*) keep the 6-theme cascade working.
+ */
+
+/* --- Page chrome --- */
+
+.container {
+    flex: 1;
+    overflow: auto;
+    padding: 24px 32px;
+    background: var(--bg-primary);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Locks the tab area to a uniform height so switching between
+   tabs with very different content (general vs marketing) does
+   not make the page jump. */
+.tabContent {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: var(--metadata-tab-min-height, 600px);
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+}
+
+/* Bigger writing area for descriptions; the user can drag the
+   resize handle vertically to grow it further. */
+.multilineInput {
+    min-height: 200px;
+    max-width: 100%;
+    resize: vertical;
+    padding: 12px;
+    line-height: 1.5;
+    font-family: var(--font-body);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.copyDialog {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+/* --- Audiobook chapter-list rows --- */
+
+.audiobookSection {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.audiobookMetaLine {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.audiobookMuted {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.audiobookChapterList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.audiobookChapterItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+}

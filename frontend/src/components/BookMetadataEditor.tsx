@@ -17,6 +17,7 @@ import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
 import QualityTab, {NavigableFindingType} from "./QualityTab";
 import TranslationLinks from "./TranslationLinks";
+import styles from "./BookMetadataEditor.module.css";
 
 interface Props {
     book: BookDetail;
@@ -158,14 +159,14 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
 
     return (
-        <div style={styles.container}>
+        <div className={styles.container}>
             {/* Header */}
-            <div style={styles.header}>
+            <div className={styles.header}>
                 <div className="icon-row">
                     <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurück")}>
                         <ChevronLeft size={18}/>
                     </button>
-                    <h2 style={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>
+                    <h2 className={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>
                 </div>
                 <div style={{display: "flex", gap: 8}}>
                     {otherBooks.length > 0 && (
@@ -185,7 +186,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             </div>
 
             {showCopyDialog && (
-                <div style={styles.copyDialog}>
+                <div className={styles.copyDialog}>
                     <p style={{fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: 8}}>
                         {t("ui.metadata.copy_hint", "Übernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:")}
                     </p>
@@ -211,7 +212,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.List>
 
                 <Tabs.Content value="general">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <TranslationLinks bookId={book.id} />
                         <Row>
                             <AuthorSelectField
@@ -238,7 +239,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="publisher">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <Row>
                             <Field label={t("ui.metadata.publisher", "Verlag")} value={form.publisher} onChange={(v) => set("publisher", v)} placeholder="z.B. Conscious Path Publishing"/>
                             <Field label={t("ui.metadata.publisher_city", "Stadt")} value={form.publisher_city} onChange={(v) => set("publisher_city", v)} placeholder="z.B. Ludwigsburg"/>
@@ -247,7 +248,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="isbn">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <Row>
                             <Field label="ISBN E-Book" value={form.isbn_ebook} onChange={(v) => set("isbn_ebook", v)} placeholder="z.B. 9798253911952"/>
                             <Field label="ISBN Taschenbuch" value={form.isbn_paperback} onChange={(v) => set("isbn_paperback", v)}/>
@@ -264,7 +265,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="marketing">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         {book.ai_tokens_used > 0 && (
                             <div style={{
                                 display: "flex", alignItems: "center", gap: 8,
@@ -339,7 +340,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="design">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <CoverUpload
                             bookId={book.id}
                             coverImage={form.cover_image ?? null}
@@ -352,7 +353,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="audiobook">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <AudiobookBookConfig
                             bookLanguage={book.language}
                             bookTitle={book.title}
@@ -377,7 +378,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 </Tabs.Content>
 
                 <Tabs.Content value="quality">
-                    <div style={styles.tabContent}>
+                    <div className={styles.tabContent}>
                         <QualityTab bookId={book.id} onNavigateToIssue={onNavigateToIssue} />
                     </div>
                 </Tabs.Content>
@@ -389,7 +390,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 // --- Sub-components ---
 
 function Row({children}: {children: React.ReactNode}) {
-    return <div style={styles.row}>{children}</div>;
+    return <div className={styles.row}>{children}</div>;
 }
 
 /**
@@ -433,7 +434,6 @@ function AuthorSelectField({
             <label className="label">{label}</label>
             <select
                 className="input"
-                style={styles.input}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 data-testid="metadata-author-select"
@@ -522,7 +522,12 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
     fullscreen?: boolean;
 }) {
     const {t} = useI18n();
-    const inputStyle = mono ? {...styles.input, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"} : styles.input;
+    // styles.input was an empty literal in the prior styles object;
+    // dropped during the CSS-Module migration. mono path keeps the
+    // monospace overrides as a small inline literal.
+    const inputStyle: React.CSSProperties | undefined = mono
+        ? {fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}
+        : undefined;
     const text = value || "";
     const listId =
         !multiline && datalist && datalist.length > 0 ? datalistId : undefined;
@@ -772,9 +777,8 @@ export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8
             </div>
             {showPreview ? (
                 <div
-                    className="input"
+                    className={`input ${styles.multilineInput}`}
                     style={{
-                        ...styles.multilineInput,
                         minHeight: rows * 24,
                         padding: "12px 16px",
                         fontSize: "0.875rem",
@@ -785,8 +789,8 @@ export function HtmlFieldWithPreview({label, value, onChange, maxChars, rows = 8
                 />
             ) : (
                 <textarea
-                    className="input"
-                    style={{...styles.multilineInput, maxWidth: "100%"}}
+                    className={`input ${styles.multilineInput}`}
+                    style={{maxWidth: "100%"}}
                     rows={rows}
                     value={text}
                     onChange={(e) => onChange(e.target.value)}
@@ -1218,14 +1222,14 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
 
     if (!data) {
         return (
-            <div style={audiobookStyles.section}>
-                <div style={audiobookStyles.muted}>{t("ui.common.loading", "Laden...")}</div>
+            <div className={styles.audiobookSection}>
+                <div className={styles.audiobookMuted}>{t("ui.common.loading", "Laden...")}</div>
             </div>
         );
     }
 
     return (
-        <div style={audiobookStyles.section}>
+        <div className={styles.audiobookSection}>
             {/* Sub-tab selector */}
             <div style={{display: "flex", gap: 0, marginBottom: 12, borderBottom: "1px solid var(--border)"}}>
                 <button
@@ -1271,7 +1275,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                             {/* Engine / voice / speed summary line */}
                             {hasDownloads && (
                                 <>
-                                    <div style={audiobookStyles.metaLine}>
+                                    <div className={styles.audiobookMetaLine}>
                                         {data.created_at && <span>{t("ui.audiobook.created_at", "Erstellt am")}: {new Date(data.created_at).toLocaleString()}</span>}
                                         {data.engine && <span style={{marginLeft: 12}}>Engine: {data.engine}</span>}
                                         {data.voice && <span style={{marginLeft: 12}}>{t("ui.audiobook.voice", "Stimme")}: {data.voice}</span>}
@@ -1302,7 +1306,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                 </>
                             )}
                             {!hasDownloads && sortedChapters.length === 0 && (
-                                <div style={audiobookStyles.muted}>
+                                <div className={styles.audiobookMuted}>
                                     {t("ui.audiobook.downloads_empty", "Noch kein Audiobook generiert. Nutze den Export-Dialog um eines zu erstellen.")}
                                 </div>
                             )}
@@ -1321,15 +1325,14 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                 }
                                 return sortedChapters.length > 0 && (
                                     <>
-                                        <ul style={{...audiobookStyles.chapterList, marginTop: 16}}>
+                                        <ul className={styles.audiobookChapterList} style={{marginTop: 16}}>
                                             {sortedChapters.map((bookCh) => {
                                                 const audio = audioByTitle.get(bookCh.title);
                                                 const dur = audio ? formatDuration(audio.duration_seconds) : "";
                                                 const playerIdx = chapterToPlayerIndex.get(bookCh.id);
                                                 const isPlaying = playingIndex !== null && playerIdx === playingIndex;
                                                 return (
-                                                    <li key={bookCh.id} style={{
-                                                        ...audiobookStyles.chapterItem,
+                                                    <li key={bookCh.id} className={styles.audiobookChapterItem} style={{
                                                         flexDirection: "column", alignItems: "stretch", gap: 4,
                                                         ...(isPlaying ? {borderLeft: "3px solid var(--accent)", paddingLeft: 5} : {}),
                                                     }}>
@@ -1351,8 +1354,8 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                                             </span>
                                                             {audio ? (
                                                                 <>
-                                                                    {dur && <span style={{...audiobookStyles.muted, whiteSpace: "nowrap"}}>{dur}</span>}
-                                                                    <span style={audiobookStyles.muted}>{formatBytes(audio.size_bytes)}</span>
+                                                                    {dur && <span className={styles.audiobookMuted} style={{whiteSpace: "nowrap"}}>{dur}</span>}
+                                                                    <span className={styles.audiobookMuted}>{formatBytes(audio.size_bytes)}</span>
                                                                     <a href={audio.url} download className="btn-icon" title="Download"><Download size={12}/></a>
                                                                     <button className="btn-icon" onClick={() => handleDeleteChapter(audio.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
                                                                         <Trash2 size={12}/>
@@ -1389,7 +1392,7 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
             {subTab === "previews" && (
                 <>
                     {!hasPreviews ? (
-                        <div style={audiobookStyles.muted}>
+                        <div className={styles.audiobookMuted}>
                             {t("ui.audiobook.previews_empty", "Keine Previews vorhanden. Nutze den Vorhören-Button im Editor um eine Vorschau zu erstellen.")}
                         </div>
                     ) : (
@@ -1399,12 +1402,12 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
                                     <Trash2 size={10}/> {t("ui.audiobook.delete_all_previews", "Alle löschen")}
                                 </button>
                             </div>
-                            <ul style={audiobookStyles.chapterList}>
+                            <ul className={styles.audiobookChapterList}>
                                 {previews.map((p) => (
-                                    <li key={p.filename} style={{...audiobookStyles.chapterItem, flexDirection: "column", alignItems: "stretch", gap: 4}}>
+                                    <li key={p.filename} className={styles.audiobookChapterItem} style={{flexDirection: "column", alignItems: "stretch", gap: 4}}>
                                         <div className="icon-row">
                                             <span style={{flex: 1, fontSize: "0.75rem", wordBreak: "break-all"}}>{p.filename}</span>
-                                            <span style={audiobookStyles.muted}>{formatBytes(p.size_bytes)}</span>
+                                            <span className={styles.audiobookMuted}>{formatBytes(p.size_bytes)}</span>
                                             <a href={p.url} download className="btn-icon" title="Download"><Download size={12}/></a>
                                             <button className="btn-icon" onClick={() => handleDeletePreview(p.filename)} disabled={busy} title={t("ui.common.delete", "Löschen")} style={{color: "var(--danger, #c0392b)"}}>
                                                 <Trash2 size={12}/>
@@ -1423,79 +1426,3 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
     );
 }
 
-const audiobookStyles: Record<string, React.CSSProperties> = {
-    section: {
-        marginTop: 24, paddingTop: 16,
-        borderTop: "1px solid var(--border)",
-    },
-    header: {
-        fontSize: "0.8125rem", fontWeight: 600,
-        color: "var(--text-muted)", marginBottom: 8,
-    },
-    subHeader: {
-        fontSize: "0.75rem", fontWeight: 600,
-        color: "var(--text-muted)", marginBottom: 6,
-    },
-    metaLine: {
-        fontSize: "0.75rem", color: "var(--text-secondary)",
-    },
-    muted: {
-        fontSize: "0.75rem", color: "var(--text-muted)",
-    },
-    chapterList: {
-        listStyle: "none", padding: 0, margin: 0,
-        display: "flex", flexDirection: "column", gap: 4,
-    },
-    chapterItem: {
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "4px 8px",
-        background: "var(--bg-primary)",
-        borderRadius: "var(--radius-sm)",
-        fontSize: "0.8125rem",
-    },
-};
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        flex: 1, overflow: "auto", padding: "24px 32px",
-        background: "var(--bg-primary)",
-    },
-    header: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 24,
-    },
-    title: {
-        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600,
-    },
-    tabContent: {
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)", padding: 20,
-        display: "flex", flexDirection: "column", gap: 12,
-        // Locks the tab area to a uniform height so switching between
-        // tabs with very different content (general vs marketing) does
-        // not make the page jump.
-        minHeight: "var(--metadata-tab-min-height, 600px)",
-    },
-    row: {
-        display: "flex", gap: 12,
-    },
-    input: {},
-    multilineInput: {
-        // Bigger writing area for descriptions; the user can drag the
-        // resize handle vertically to grow it further.
-        minHeight: 200,
-        maxWidth: "100%",
-        resize: "vertical",
-        padding: 12,
-        lineHeight: 1.5,
-        fontFamily: "var(--font-body)",
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-    },
-    copyDialog: {
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)", padding: 16, marginBottom: 16,
-    },
-};
