@@ -60,6 +60,7 @@ export {pluginsForContentKind} from "./editor-gates";
 export type {ContentKind, PluginGates} from "./editor-gates";
 import type {ContentKind} from "./editor-gates";
 import {pluginsForContentKind as pluginsForKind} from "./editor-gates";
+import styles from "./Editor.module.css";
 
 interface Props {
     content: string;
@@ -954,10 +955,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     };
 
     return (
-        <div style={styles.wrapper}>
+        <div className={styles.wrapper}>
             {/* Recovery dialog */}
             {recoveryDraft && (
-                <div style={styles.recoveryBanner} data-testid="recovery-banner">
+                <div className={styles.recoveryBanner} data-testid="recovery-banner">
                     <div style={{flex: 1}}>
                         <strong>{t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}</strong>
                         <p style={{margin: "4px 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)"}}>
@@ -1032,8 +1033,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
             {/* AI Assistant Panel */}
             {showAiPanel && !markdownMode && (
-                <div style={styles.aiPanel}>
-                    <div style={styles.aiHeader}>
+                <div className={styles.aiPanel}>
+                    <div className={styles.aiHeader}>
                         <strong>{t("ui.editor.ai_assistant", "AI-Assistent")}</strong>
                         <div style={{display: "flex", gap: 4, marginLeft: "auto", flexWrap: "wrap"}}>
                             {activeIssue && (
@@ -1137,7 +1138,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                 )}
                             </div>
                             {aiReview && (
-                                <div style={styles.aiSuggestion}>
+                                <div className={styles.aiSuggestion}>
                                     <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)", lineHeight: 1.6}}>
                                         {aiReview}
                                     </div>
@@ -1187,7 +1188,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                 </button>
                             </div>
                             {aiSuggestion && (
-                                <div style={styles.aiSuggestion}>
+                                <div className={styles.aiSuggestion}>
                                     <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)"}}>
                                         {aiSuggestion}
                                     </div>
@@ -1208,9 +1209,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
             {/* Search & Replace bar */}
             {showSearch && !markdownMode && editor && (
-                <div style={styles.searchBar}>
+                <div className={styles.searchBar}>
                     <input
-                        style={styles.searchInput}
+                        className={styles.searchInput}
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -1224,7 +1225,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                         }}
                     />
                     <input
-                        style={styles.searchInput}
+                        className={styles.searchInput}
                         value={replaceTerm}
                         onChange={(e) => {
                             setReplaceTerm(e.target.value);
@@ -1255,17 +1256,17 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
             {/* Spellcheck results panel */}
             {showSpellcheck && !markdownMode && (
-                <div style={styles.spellcheckPanel}>
-                    <div style={styles.spellcheckHeader}>
+                <div className={styles.spellcheckPanel}>
+                    <div className={styles.spellcheckHeader}>
                         <strong>{t("ui.editor.spellcheck", "Rechtschreibprüfung")}</strong>
                         {spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{t("ui.editor.checking", "Prüfe...")}</span>}
                         {!spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{spellcheckResults.length} {t("ui.editor.issues", "Probleme")}</span>}
                         <button className="btn btn-ghost btn-sm" style={{marginLeft: "auto"}} onClick={handleToggleSpellcheck}>&times;</button>
                     </div>
                     {spellcheckResults.length > 0 && (
-                        <div style={styles.spellcheckList}>
+                        <div className={styles.spellcheckList}>
                             {spellcheckResults.map((issue, i) => (
-                                <div key={i} style={styles.spellcheckItem}>
+                                <div key={i} className={styles.spellcheckItem}>
                                     <div style={{fontSize: "0.8125rem", color: "var(--text-primary)"}}>
                                         {issue.message}
                                     </div>
@@ -1285,15 +1286,15 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             )}
 
             {/* Status bar */}
-            <div style={styles.statusBar}>
-                <span style={styles.wordCount}>
+            <div className={styles.statusBar}>
+                <span className={styles.wordCount}>
                     {wordCount} {t("ui.editor.words", "Wörter")}
                     {" / "}
                     {charCount} {t("ui.editor.characters", "Zeichen")}
                     {/* Word goal */}
                     {chapterId && !editingGoal && (
                         <button
-                            style={styles.goalBtn}
+                            className={styles.goalBtn}
                             onClick={() => setEditingGoal(true)}
                             title={t("ui.editor.set_goal", "Wortziel setzen")}
                         >
@@ -1302,7 +1303,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     )}
                     {editingGoal && (
                         <input
-                            style={styles.goalInput}
+                            className={styles.goalInput}
                             type="number"
                             min="0"
                             placeholder="z.B. 2000"
@@ -1328,17 +1329,15 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 </span>
                 {/* Progress bar for word goal */}
                 {wordGoal && wordGoal > 0 && (
-                    <div style={styles.goalProgress}>
-                        <div style={{
-                            ...styles.goalProgressFill,
+                    <div className={styles.goalProgress}>
+                        <div className={styles.goalProgressFill} style={{
                             width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
                             background: wordCount >= wordGoal ? "#16a34a" : "var(--accent)",
                         }}/>
                     </div>
                 )}
                 {statusLabel && (
-                    <span style={{
-                        ...styles.saveStatus,
+                    <span className={styles.saveStatus} style={{
                         color:
                             saveStatus === "saving" ? "var(--text-muted)" :
                             saveStatus === "error" ? "var(--danger, #b91c1c)" :
@@ -1349,11 +1348,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 )}
             </div>
 
-            <div style={styles.editorArea}>
-                <div style={styles.editorContainer} className={focusMode ? "focus-mode" : ""}>
+            <div className={styles.editorArea}>
+                <div className={`${styles.editorContainer} ${focusMode ? "focus-mode" : ""}`}>
                     {markdownMode ? (
                         <textarea
-                            style={styles.markdownEditor}
+                            className={styles.markdownEditor}
                             value={markdownText}
                             onChange={handleMarkdownChange}
                             spellCheck={false}
@@ -1581,168 +1580,3 @@ function inlineMarkdown(text: string): string {
         .replace(/`(.+?)`/g, "<code>$1</code>")
         .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    wrapper: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        overflow: "hidden",
-    },
-    recoveryBanner: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "10px 16px",
-        background: "rgba(251, 191, 36, 0.15)",
-        borderBottom: "1px solid rgba(251, 191, 36, 0.3)",
-        fontSize: "0.875rem",
-    },
-    searchBar: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "6px 16px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-secondary)",
-    },
-    searchInput: {
-        padding: "4px 8px",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        fontSize: "0.8125rem",
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-        outline: "none",
-        width: 160,
-    },
-    spellcheckPanel: {
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-secondary)",
-        maxHeight: 200,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column" as const,
-    },
-    spellcheckHeader: {
-        display: "flex",
-        alignItems: "center",
-        padding: "6px 16px",
-        fontSize: "0.8125rem",
-        borderBottom: "1px solid var(--border)",
-    },
-    spellcheckList: {
-        overflowY: "auto" as const,
-        flex: 1,
-    },
-    spellcheckItem: {
-        padding: "6px 16px",
-        borderBottom: "1px solid var(--border)",
-    },
-    aiPanel: {
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-secondary)",
-        maxHeight: 300,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column" as const,
-    },
-    aiHeader: {
-        display: "flex",
-        alignItems: "center",
-        padding: "6px 16px",
-        fontSize: "0.8125rem",
-        borderBottom: "1px solid var(--border)",
-        gap: 8,
-        flexWrap: "wrap" as const,
-    },
-    aiSuggestion: {
-        padding: "8px 16px",
-        borderTop: "1px solid var(--border)",
-        background: "var(--bg-card)",
-        overflowY: "auto" as const,
-        maxHeight: 180,
-    },
-    statusBar: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "4px 16px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-card)",
-        fontSize: "0.75rem",
-    },
-    wordCount: {
-        color: "var(--text-muted)",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-    },
-    goalBtn: {
-        background: "none",
-        border: "1px dashed var(--border)",
-        borderRadius: 3,
-        padding: "1px 6px",
-        fontSize: "0.6875rem",
-        color: "var(--text-muted)",
-        cursor: "pointer",
-        fontFamily: "var(--font-body)",
-    },
-    goalInput: {
-        width: 70,
-        padding: "1px 4px",
-        border: "1px solid var(--accent)",
-        borderRadius: 3,
-        fontSize: "0.6875rem",
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-        outline: "none",
-    },
-    goalProgress: {
-        width: 80,
-        height: 4,
-        background: "var(--bg-secondary)",
-        borderRadius: 2,
-        overflow: "hidden",
-    },
-    goalProgressFill: {
-        height: "100%",
-        borderRadius: 2,
-        transition: "width 300ms ease",
-    },
-    saveStatus: {
-        fontSize: "0.75rem",
-        fontWeight: 500,
-    },
-    editorArea: {
-        flex: 1,
-        overflow: "auto",
-        background: "var(--bg-primary)",
-        display: "flex",
-        justifyContent: "center",
-    },
-    editorContainer: {
-        width: "100%",
-        maxWidth: 740,
-        background: "var(--bg-editor)",
-        minHeight: "100%",
-        borderLeft: "1px solid var(--border)",
-        borderRight: "1px solid var(--border)",
-        boxShadow: "var(--shadow-sm)",
-    },
-    markdownEditor: {
-        width: "100%",
-        height: "100%",
-        minHeight: "100%",
-        border: "none",
-        outline: "none",
-        resize: "none",
-        padding: "24px 32px",
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-        fontSize: "0.9375rem",
-        lineHeight: 1.7,
-        color: "var(--text-primary)",
-        background: "var(--bg-editor)",
-    },
-};
