@@ -4,6 +4,7 @@ import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import ThemeToggle from "../components/ThemeToggle";
 import {notify} from "../utils/notify";
+import styles from "./GetStarted.module.css";
 import {
     ChevronLeft, ChevronRight, BookPlus, FilePlus, PenTool, GripVertical,
     Download, Settings, Archive, Rocket, Check, Home, HelpCircle,
@@ -96,15 +97,15 @@ export default function GetStarted() {
     const progress = steps.length > 0 ? Math.round((completedSteps.size / steps.length) * 100) : 0;
 
     return (
-        <div style={styles.container}>
-            <header style={styles.header}>
-                <div style={styles.headerInner}>
-                    <div style={styles.headerLeft}>
-                        <button style={styles.backBtn} onClick={() => navigate("/")}>
+        <div className={styles.container}>
+            <header className={styles.header}>
+                <div className={styles.headerInner}>
+                    <div className={styles.headerLeft}>
+                        <button className={styles.backBtn} onClick={() => navigate("/")}>
                             <ChevronLeft size={18}/>
                         </button>
                         <Rocket size={22} style={{color: "var(--accent)"}}/>
-                        <h1 style={styles.title}>{t("ui.get_started.title", "Erste Schritte")}</h1>
+                        <h1 className={styles.title}>{t("ui.get_started.title", "Erste Schritte")}</h1>
                     </div>
                     <div className="icon-row">
                         <button className="btn-icon" onClick={() => navigate("/")} title="Dashboard">
@@ -115,13 +116,13 @@ export default function GetStarted() {
                 </div>
             </header>
 
-            <main style={styles.main}>
+            <main className={styles.main}>
                 {/* Progress bar */}
-                <div style={styles.progressSection}>
-                    <div style={styles.progressBar}>
-                        <div style={{...styles.progressFill, width: `${progress}%`}}/>
+                <div className={styles.progressSection}>
+                    <div className={styles.progressBar}>
+                        <div className={styles.progressFill} style={{width: `${progress}%`}}/>
                     </div>
-                    <span style={styles.progressText}>
+                    <span className={styles.progressText}>
                         {allDone
                             ? t("ui.get_started.done", "Fertig!")
                             : t("ui.get_started.progress", "Schritt {current} von {total}")
@@ -132,16 +133,16 @@ export default function GetStarted() {
                 </div>
 
                 {/* Step indicators */}
-                <div style={styles.stepIndicators}>
+                <div className={styles.stepIndicators}>
                     {steps.map((s, i) => (
                         <button
                             key={s.id}
                             onClick={() => setCurrentStep(i)}
-                            style={{
-                                ...styles.indicator,
-                                ...(i === currentStep ? styles.indicatorActive : {}),
-                                ...(completedSteps.has(s.id) ? styles.indicatorDone : {}),
-                            }}
+                            className={[
+                                styles.indicator,
+                                i === currentStep ? styles.indicatorActive : "",
+                                completedSteps.has(s.id) ? styles.indicatorDone : "",
+                            ].filter(Boolean).join(" ")}
                         >
                             {completedSteps.has(s.id) ? <Check size={14}/> : i + 1}
                         </button>
@@ -150,7 +151,7 @@ export default function GetStarted() {
 
                 {/* All done celebration */}
                 {allDone && (
-                    <div style={styles.doneCard}>
+                    <div className={styles.doneCard}>
                         <PartyPopper size={40} style={{color: "var(--accent)"}}/>
                         <h2 style={{fontSize: "1.25rem", fontWeight: 600, marginTop: 12}}>
                             {t("ui.get_started.congratulations", "Glueckwunsch!")}
@@ -175,23 +176,23 @@ export default function GetStarted() {
 
                 {/* Current step */}
                 {step && !allDone && (
-                    <div style={styles.stepCard}>
-                        <div style={styles.stepHeader}>
-                            <div style={{
-                                ...styles.stepIconCircle,
-                                ...(isComplete ? {background: "var(--accent-light)", color: "var(--accent)"} : {}),
-                            }}>
+                    <div className={styles.stepCard}>
+                        <div className={styles.stepHeader}>
+                            <div
+                                className={styles.stepIconCircle}
+                                style={isComplete ? {background: "var(--accent-light)", color: "var(--accent)"} : undefined}
+                            >
                                 {isComplete ? <Check size={32}/> : (ICON_MAP[step.icon] || <Rocket size={32}/>)}
                             </div>
                             <div style={{flex: 1}}>
-                                <h2 style={styles.stepTitle}>{step.title}</h2>
-                                <p style={styles.stepDesc}>{step.description}</p>
+                                <h2 className={styles.stepTitle}>{step.title}</h2>
+                                <p className={styles.stepDesc}>{step.description}</p>
                             </div>
                         </div>
 
                         {/* Help toggle */}
                         <button
-                            style={styles.helpToggle}
+                            className={styles.helpToggle}
                             onClick={() => setExpandedHelp(!expandedHelp)}
                         >
                             <HelpCircle size={16}/>
@@ -200,9 +201,9 @@ export default function GetStarted() {
                         </button>
 
                         {expandedHelp && (
-                            <div style={styles.helpContent}>
+                            <div className={styles.helpContent}>
                                 {step.id === "create-book" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_create_1", "Gehe zum Dashboard (Startseite)")}</li>
                                         <li>{t("ui.get_started.help_create_2", "Klicke den Button \"Neues Buch\"")}</li>
                                         <li>{t("ui.get_started.help_create_3", "Gib Titel und Autor ein (Pseudonym wird aus den Einstellungen geladen)")}</li>
@@ -210,7 +211,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "add-chapters" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_chapters_1", "Oeffne ein Buch im Dashboard")}</li>
                                         <li>{t("ui.get_started.help_chapters_2", "Klicke das \"+\" neben \"Inhalt\" in der linken Sidebar")}</li>
                                         <li>{t("ui.get_started.help_chapters_3", "Wähle den Kapiteltyp: Kapitel, Vorwort, Epilog, etc.")}</li>
@@ -218,7 +219,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "write-content" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_write_1", "Klicke auf ein Kapitel in der Sidebar")}</li>
                                         <li>{t("ui.get_started.help_write_2", "Der WYSIWYG-Editor oeffnet sich rechts")}</li>
                                         <li>{t("ui.get_started.help_write_3", "Nutze die Toolbar für Formatierung (Fett, Kursiv, Überschriften, etc.)")}</li>
@@ -227,7 +228,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "organize" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_organize_1", "Greife das Griffsymbol links neben einem Kapitel")}</li>
                                         <li>{t("ui.get_started.help_organize_2", "Ziehe es an die gewuenschte Position")}</li>
                                         <li>{t("ui.get_started.help_organize_3", "Front Matter, Kapitel und Back Matter sind getrennte Bereiche")}</li>
@@ -235,7 +236,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "export" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_export_1", "Klicke \"Exportieren...\" unten in der Sidebar")}</li>
                                         <li>{t("ui.get_started.help_export_2", "Wähle das Format: EPUB, PDF, Word, HTML oder Markdown")}</li>
                                         <li>{t("ui.get_started.help_export_3", "Wähle den Buchtyp: E-Book, Taschenbuch oder Hardcover")}</li>
@@ -244,7 +245,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "settings" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_settings_1", "Oeffne die Einstellungen über das Zahnrad-Icon")}</li>
                                         <li>{t("ui.get_started.help_settings_2", "Tab \"Allgemein\": Sprache, Theme, Titel")}</li>
                                         <li>{t("ui.get_started.help_settings_3", "Tab \"Autor\": Dein Name und Pseudonyme eintragen")}</li>
@@ -252,7 +253,7 @@ export default function GetStarted() {
                                     </ol>
                                 )}
                                 {step.id === "backup" && (
-                                    <ol style={styles.helpList}>
+                                    <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_backup_1", "Im Dashboard: \"Backup\" Button erstellt eine .bgb-Datei")}</li>
                                         <li>{t("ui.get_started.help_backup_2", "Die Datei enthält alle Bücher, Kapitel und Bilder")}</li>
                                         <li>{t("ui.get_started.help_backup_3", "\"Restore\" stellt ein Backup wieder her")}</li>
@@ -263,7 +264,7 @@ export default function GetStarted() {
                         )}
 
                         {/* Action buttons */}
-                        <div style={styles.stepActions}>
+                        <div className={styles.stepActions}>
                             {step.id === "create-book" && (
                                 <button
                                     className="btn btn-ghost"
@@ -302,10 +303,10 @@ export default function GetStarted() {
                         </div>
 
                         {/* Spacer pushes navigation to bottom */}
-                        <div style={styles.stepSpacer}/>
+                        <div className={styles.stepSpacer}/>
 
                         {/* Navigation */}
-                        <div style={styles.navigation}>
+                        <div className={styles.navigation}>
                             <button
                                 className="btn btn-ghost btn-sm"
                                 disabled={currentStep === 0}
@@ -339,92 +340,3 @@ export default function GetStarted() {
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    container: {minHeight: "100vh", background: "var(--bg-primary)"},
-    header: {borderBottom: "1px solid var(--border)", background: "var(--bg-card)"},
-    headerInner: {
-        maxWidth: 700, margin: "0 auto", padding: "16px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-    },
-    headerLeft: {display: "flex", alignItems: "center", gap: 8},
-    backBtn: {
-        background: "none", border: "none", cursor: "pointer",
-        color: "var(--text-secondary)", display: "flex", alignItems: "center", padding: 4, borderRadius: 4,
-    },
-    title: {
-        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600, color: "var(--text-primary)",
-    },
-    main: {maxWidth: 700, margin: "0 auto", padding: "24px", display: "flex", flexDirection: "column", gap: 20},
-    progressSection: {display: "flex", alignItems: "center", gap: 12},
-    progressBar: {
-        flex: 1, height: 6, background: "var(--bg-secondary)", borderRadius: 3, overflow: "hidden",
-    },
-    progressFill: {
-        height: "100%", background: "var(--accent)", borderRadius: 3, transition: "width 300ms ease",
-    },
-    progressText: {fontSize: "0.8125rem", fontWeight: 500, color: "var(--text-muted)", whiteSpace: "nowrap"},
-    stepIndicators: {
-        display: "flex", justifyContent: "center", gap: 8,
-    },
-    indicator: {
-        width: 32, height: 32, borderRadius: "50%", border: "2px solid var(--border)",
-        background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)",
-        cursor: "pointer", transition: "all 150ms",
-    },
-    indicatorActive: {
-        borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-light)",
-    },
-    indicatorDone: {
-        borderColor: "var(--accent)", color: "#fff", background: "var(--accent)",
-    },
-    doneCard: {
-        background: "var(--bg-card)", border: "1px solid var(--accent)",
-        borderRadius: "var(--radius-lg)", padding: 32, textAlign: "center",
-    },
-    stepCard: {
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)", padding: 24,
-        display: "flex", flexDirection: "column",
-        minHeight: 380,
-    },
-    stepHeader: {
-        display: "flex", alignItems: "flex-start", gap: 20,
-    },
-    stepIconCircle: {
-        width: 64, height: 64, borderRadius: "50%", background: "var(--bg-secondary)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: "var(--text-muted)", flexShrink: 0,
-    },
-    stepTitle: {
-        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600, marginBottom: 8,
-    },
-    stepDesc: {
-        fontSize: "0.9375rem", color: "var(--text-secondary)", lineHeight: 1.6,
-    },
-    helpToggle: {
-        display: "flex", alignItems: "center", gap: 6, marginTop: 16,
-        background: "none", border: "none", cursor: "pointer",
-        color: "var(--accent)", fontSize: "0.8125rem", fontWeight: 500,
-        fontFamily: "var(--font-body)", padding: 0,
-    },
-    helpContent: {
-        marginTop: 12, padding: 16, background: "var(--bg-secondary)",
-        borderRadius: "var(--radius-md)", borderLeft: "3px solid var(--accent)",
-    },
-    helpList: {
-        margin: 0, paddingLeft: 20, fontSize: "0.875rem", lineHeight: 1.8,
-        color: "var(--text-secondary)",
-    },
-    stepActions: {
-        display: "flex", alignItems: "center", gap: 12, marginTop: 20,
-        flexWrap: "wrap",
-    },
-    stepSpacer: {
-        flex: 1,
-    },
-    navigation: {
-        display: "flex", justifyContent: "space-between", marginTop: "auto",
-        paddingTop: 16, borderTop: "1px solid var(--border)",
-    },
-};

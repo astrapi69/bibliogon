@@ -1,0 +1,222 @@
+/**
+ * T-01 Phase B: GetStarted page CSS-Module.
+ *
+ * Migrated from a 89-line ``const styles`` block at the bottom of
+ * GetStarted.tsx. 27 keys, ~38 inline applications.
+ *
+ * Theme tokens via var(--*) keep the 6-theme cascade working.
+ */
+
+.container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.header {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.headerInner {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.progressSection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progressBar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 300ms ease;
+}
+
+.progressText {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.stepIndicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 150ms;
+}
+
+.indicatorActive {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.indicatorDone {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+}
+
+.doneCard {
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: center;
+}
+
+.stepCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
+}
+
+.stepHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.stepIconCircle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.stepTitle {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.stepDesc {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.helpToggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    padding: 0;
+}
+
+.helpContent {
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--accent);
+}
+
+.helpList {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.875rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+}
+
+.stepActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.stepSpacer {
+    flex: 1;
+}
+
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
