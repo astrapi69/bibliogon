@@ -1,0 +1,48 @@
+/**
+ * T-01 Phase B: DashboardFilterSheet CSS-Module.
+ *
+ * Migrated from a 35-line ``const styles`` block + 1 inline-object
+ * site. 5 keys, ~5 inline applications. Radix-Dialog side sheet for
+ * mobile filters.
+ */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+}
+
+.content {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    width: min(320px, 85vw);
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    padding: 24px;
+    z-index: 2001;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.closeBtn {
+    margin-left: auto;
+}
