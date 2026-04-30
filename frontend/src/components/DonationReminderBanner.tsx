@@ -18,6 +18,7 @@ import {Heart, X, ExternalLink} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import type {DonationsConfig} from "./SupportSection";
 import {DONATION_ONBOARDING_SEEN_KEY} from "./DonationOnboardingDialog";
+import styles from "./DonationReminderBanner.module.css";
 
 export const FIRST_USE_DATE_KEY = "bibliogon-first-use-date";
 export const REMINDER_NEXT_ALLOWED_KEY = "bibliogon-donation-reminder-next-allowed";
@@ -115,12 +116,12 @@ export default function DonationReminderBanner({donations, onDismiss}: Props) {
   };
 
   return (
-    <div role="region" aria-label="Bibliogon support reminder" style={styles.banner} data-testid="donation-reminder">
-      <Heart size={16} aria-hidden style={styles.icon} />
-      <span style={styles.text}>
+    <div role="region" aria-label="Bibliogon support reminder" className={styles.banner} data-testid="donation-reminder">
+      <Heart size={16} aria-hidden className={styles.icon} />
+      <span className={styles.text}>
         {t("ui.donations.reminder_body", "Du nutzt Bibliogon seit drei Monaten. Wenn dir das Projekt gefällt:")}
       </span>
-      <div style={styles.actions}>
+      <div className={styles.actions}>
         <a
           href={supportHref}
           target="_blank"
@@ -147,29 +148,3 @@ export default function DonationReminderBanner({donations, onDismiss}: Props) {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  banner: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.6rem 1rem",
-    background: "var(--bg-surface)",
-    border: "1px solid var(--border)",
-    borderRadius: 8,
-    color: "var(--text)",
-    marginBottom: "1rem",
-  },
-  icon: {
-    color: "var(--accent)",
-    flexShrink: 0,
-  },
-  text: {
-    flex: 1,
-    fontSize: "0.9rem",
-  },
-  actions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.35rem",
-  },
-};

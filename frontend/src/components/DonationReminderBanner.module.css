@@ -1,0 +1,34 @@
+/**
+ * T-01 Phase B: DonationReminderBanner CSS-Module.
+ *
+ * Migrated from a 26-line ``const styles`` block. 4 keys, 4 inline
+ * applications. S-03 90-day reminder banner on the dashboard.
+ */
+
+.banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+
+.icon {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.text {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
