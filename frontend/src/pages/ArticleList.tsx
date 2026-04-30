@@ -516,25 +516,31 @@ export default function ArticleList() {
             </header>
             <main style={layout.main}>
             {/* Page title row mirrors the books-dashboard ``mainHeader``
-                shape: heading + count + ViewToggle inline. */}
-            <div style={layout.mainHeader}>
-                <h2 style={layout.heading}>
-                    <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
-                    {t("ui.articles.list_heading", "Artikel")}
-                </h2>
-                <span style={layout.articleCount}>
-                    {articles.length}{" "}
-                    {articles.length === 1
-                        ? t("ui.articles.count_singular", "Artikel")
-                        : t("ui.articles.count_plural", "Artikel")}
-                </span>
-                <ViewToggle mode={viewMode} onChange={setViewMode} />
-            </div>
+                shape: heading + count + ViewToggle inline. Hidden in
+                trash mode; TrashPanel renders its own header that
+                matches the books-trash chrome (chevron + icon + title
+                + count + empty-trash + ViewToggle). */}
+            {!showTrash && (
+                <div style={layout.mainHeader}>
+                    <h2 style={layout.heading}>
+                        <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
+                        {t("ui.articles.list_heading", "Artikel")}
+                    </h2>
+                    <span style={layout.articleCount}>
+                        {articles.length}{" "}
+                        {articles.length === 1
+                            ? t("ui.articles.count_singular", "Artikel")
+                            : t("ui.articles.count_plural", "Artikel")}
+                    </span>
+                    <ViewToggle mode={viewMode} onChange={setViewMode} />
+                </div>
+            )}
 
             {showTrash ? (
                 <TrashPanel
                     trash={trash}
                     viewMode={viewMode}
+                    setViewMode={setViewMode}
                     onBack={() => setShowTrash(false)}
                     onRestore={(a) => void handleRestore(a)}
                     onPermanentDelete={(a) => void handlePermanentDelete(a)}
@@ -616,6 +622,7 @@ export default function ArticleList() {
 function TrashPanel({
     trash,
     viewMode,
+    setViewMode,
     onBack,
     onRestore,
     onPermanentDelete,
@@ -623,69 +630,74 @@ function TrashPanel({
 }: {
     trash: Article[];
     viewMode: "grid" | "list";
+    setViewMode: (mode: "grid" | "list") => void;
     onBack: () => void;
     onRestore: (a: Article) => void;
     onPermanentDelete: (a: Article) => void;
     onEmptyTrash: () => void;
 }) {
     const { t } = useI18n();
-    if (trash.length === 0) {
-        return (
-            <div
-                data-testid="article-trash-empty"
-                style={{ ...layout.empty, marginBottom: 16 }}
+
+    /** Header chrome shared between empty + populated trash. Mirrors
+     *  Dashboard.tsx ``trash-view`` mainHeader: ChevronLeft + Trash2
+     *  icon + h2 title + count span + spacer + (optional) empty
+     *  action + ViewToggle. */
+    const trashHeader = (
+        <div style={layout.mainHeader}>
+            <button
+                type="button"
+                className="btn-icon"
+                onClick={onBack}
+                data-testid="article-trash-back"
+                title={t("ui.dashboard.back", "Zurück")}
             >
+                <ChevronLeft size={18} />
+            </button>
+            <Trash2 size={20} style={{ color: "var(--text-muted)" }} />
+            <h2 style={layout.heading}>
+                {t("ui.articles.trash_title", "Papierkorb")}
+            </h2>
+            <span style={layout.articleCount}>
+                {trash.length}{" "}
+                {trash.length === 1
+                    ? t("ui.articles.count_singular", "Artikel")
+                    : t("ui.articles.count_plural", "Artikel")}
+            </span>
+            <div style={{ flex: 1 }} />
+            {trash.length > 0 && (
                 <button
                     type="button"
-                    className="btn-icon"
-                    onClick={onBack}
-                    data-testid="article-trash-back"
-                    title={t("ui.dashboard.back", "Zurück")}
-                    style={{ alignSelf: "flex-start" }}
+                    className="btn btn-danger btn-sm"
+                    onClick={onEmptyTrash}
+                    data-testid="article-trash-empty-all"
                 >
-                    <ChevronLeft size={18} />
+                    <Trash2 size={14} />
+                    {t("ui.articles.empty_trash", "Papierkorb leeren")}
                 </button>
-                <Trash size={28} style={{ color: "var(--text-muted)" }} />
-                <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                    {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
-                </p>
+            )}
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
+        </div>
+    );
+
+    if (trash.length === 0) {
+        return (
+            <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
+                {trashHeader}
+                <div
+                    data-testid="article-trash-empty"
+                    style={{ ...layout.empty, marginBottom: 16 }}
+                >
+                    <Trash size={28} style={{ color: "var(--text-muted)" }} />
+                    <p style={{ color: "var(--text-muted)", margin: 0 }}>
+                        {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
+                    </p>
+                </div>
             </div>
         );
     }
     return (
         <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginBottom: 8,
-                }}
-            >
-                <button
-                    type="button"
-                    className="btn-icon"
-                    onClick={onBack}
-                    data-testid="article-trash-back"
-                    title={t("ui.dashboard.back", "Zurück")}
-                >
-                    <ChevronLeft size={18} />
-                </button>
-                <h3 style={{ margin: 0, fontSize: "1rem" }}>
-                    {t("ui.articles.trash_title", "Papierkorb")} ({trash.length})
-                </h3>
-                <div style={{ flex: 1 }} />
-                <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    onClick={onEmptyTrash}
-                    data-testid="article-trash-empty-all"
-                    style={{ color: "var(--danger)" }}
-                >
-                    <Trash2 size={14} />
-                    {t("ui.articles.empty_trash", "Papierkorb leeren")}
-                </button>
-            </div>
+            {trashHeader}
             {viewMode === "grid" ? (
                 <div style={layout.grid} data-testid="article-trash-grid">
                     {trash.map((a) => (
