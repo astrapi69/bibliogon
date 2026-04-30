@@ -1,0 +1,74 @@
+/**
+ * T-01 Phase B: SupportSection CSS-Module.
+ *
+ * Migrated from a 62-line ``const styles`` block. 10 keys, ~13 inline
+ * applications. Donation channels grid in Settings.
+ */
+
+.section {
+    max-width: 720px;
+    padding: 1rem;
+}
+
+.heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+}
+
+.intro {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.channelGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+}
+
+.channelCard {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.channelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.channelDesc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.channelButton,
+.primaryButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.channelButton {
+    align-self: flex-start;
+}
