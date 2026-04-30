@@ -217,6 +217,36 @@ describe("ArticleList", () => {
         );
     });
 
+    it("trash view back-button returns to live list", async () => {
+        const trashed = makeArticle({
+            id: "tr-back-1",
+            title: "Trashed",
+            deleted_at: "2026-04-29T10:00:00Z",
+        });
+        mockListTrash.mockResolvedValue([trashed]);
+        await renderList([makeArticle({ id: "live-back-1" })]);
+
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("article-list-trash-toggle"),
+            ).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("article-list-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("article-trash-panel")).toBeInTheDocument(),
+        );
+
+        fireEvent.click(screen.getByTestId("article-trash-back"));
+        await waitFor(() =>
+            expect(
+                screen.queryByTestId("article-trash-panel"),
+            ).not.toBeInTheDocument(),
+        );
+        expect(
+            screen.getByTestId("article-list-row-live-back-1"),
+        ).toBeInTheDocument();
+    });
+
     it("trash view respects viewMode toggle (list <-> grid)", async () => {
         // Seed one trashed article + one live article so the toggle has
         // something to render in both modes.

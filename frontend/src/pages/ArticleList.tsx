@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import {
     AlertTriangle,
     BookOpen,
+    ChevronLeft,
     Download,
     FileText,
     HelpCircle,
@@ -534,6 +535,7 @@ export default function ArticleList() {
                 <TrashPanel
                     trash={trash}
                     viewMode={viewMode}
+                    onBack={() => setShowTrash(false)}
                     onRestore={(a) => void handleRestore(a)}
                     onPermanentDelete={(a) => void handlePermanentDelete(a)}
                     onEmptyTrash={() => void handleEmptyTrash()}
@@ -614,12 +616,14 @@ export default function ArticleList() {
 function TrashPanel({
     trash,
     viewMode,
+    onBack,
     onRestore,
     onPermanentDelete,
     onEmptyTrash,
 }: {
     trash: Article[];
     viewMode: "grid" | "list";
+    onBack: () => void;
     onRestore: (a: Article) => void;
     onPermanentDelete: (a: Article) => void;
     onEmptyTrash: () => void;
@@ -631,6 +635,16 @@ function TrashPanel({
                 data-testid="article-trash-empty"
                 style={{ ...layout.empty, marginBottom: 16 }}
             >
+                <button
+                    type="button"
+                    className="btn-icon"
+                    onClick={onBack}
+                    data-testid="article-trash-back"
+                    title={t("ui.dashboard.back", "Zurück")}
+                    style={{ alignSelf: "flex-start" }}
+                >
+                    <ChevronLeft size={18} />
+                </button>
                 <Trash size={28} style={{ color: "var(--text-muted)" }} />
                 <p style={{ color: "var(--text-muted)", margin: 0 }}>
                     {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
@@ -644,13 +658,23 @@ function TrashPanel({
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    gap: 8,
                     marginBottom: 8,
                 }}
             >
+                <button
+                    type="button"
+                    className="btn-icon"
+                    onClick={onBack}
+                    data-testid="article-trash-back"
+                    title={t("ui.dashboard.back", "Zurück")}
+                >
+                    <ChevronLeft size={18} />
+                </button>
                 <h3 style={{ margin: 0, fontSize: "1rem" }}>
                     {t("ui.articles.trash_title", "Papierkorb")} ({trash.length})
                 </h3>
+                <div style={{ flex: 1 }} />
                 <button
                     type="button"
                     className="btn btn-sm btn-ghost"
