@@ -18,6 +18,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import BackupCompareDialog from "../components/BackupCompareDialog";
 import { ImportWizardModal } from "../components/import-wizard";
 import TrashCard from "../components/trash/TrashCard";
+import styles from "./Dashboard.module.css";
 import ThemeToggle from "../components/ThemeToggle";
 import {useTheme} from "../hooks/useTheme";
 import {Moon, Sun} from "lucide-react";
@@ -156,15 +157,15 @@ export default function Dashboard() {
     };
 
     return (
-        <div style={styles.container}>
+        <div className={styles.container}>
             {/* Header */}
-            <header style={styles.header}>
-                <div style={styles.headerInner}>
-                    <div style={styles.logo} onClick={() => navigate("/")} role="button" title="Dashboard">
+            <header className={styles.header}>
+                <div className={styles.headerInner}>
+                    <div className={styles.logo} onClick={() => navigate("/")} role="button" title="Dashboard">
                         <BookOpen size={28} strokeWidth={1.5}/>
-                        <h1 style={styles.logoText}>Bibliogon</h1>
+                        <h1 className={styles.logoText}>Bibliogon</h1>
                     </div>
-                    <div style={styles.headerActions}>
+                    <div className={styles.headerActions}>
                         {/* Always visible */}
                         <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
                             <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
@@ -180,7 +181,7 @@ export default function Dashboard() {
 
                         {/* Desktop: inline buttons */}
                         <div className="hide-mobile" style={{display: "flex", alignItems: "center", gap: 6}}>
-                            <div style={styles.headerSeparator}/>
+                            <div className={styles.headerSeparator}/>
                             <button
                                 className="btn btn-secondary btn-sm"
                                 data-testid="backup-export-btn"
@@ -192,7 +193,7 @@ export default function Dashboard() {
                             <button className="btn btn-secondary btn-sm" data-testid="import-wizard-btn" onClick={() => setImportWizardOpen(true)}>
                                 <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
                             </button>
-                            <div style={styles.headerSeparator}/>
+                            <div className={styles.headerSeparator}/>
                             <button className="btn-icon" onClick={() => navigate("/get-started")} title={t("ui.get_started.title", "Erste Schritte")}>
                                 <Rocket size={18}/>
                             </button>
@@ -214,7 +215,7 @@ export default function Dashboard() {
                             >
                                 <Trash2 size={18}/>
                                 {trash.length > 0 && (
-                                    <span style={styles.trashBadge} data-testid="trash-badge">
+                                    <span className={styles.trashBadge} data-testid="trash-badge">
                                         {trash.length}
                                     </span>
                                 )}
@@ -265,7 +266,7 @@ export default function Dashboard() {
             </header>
 
             {/* Content */}
-            <main style={styles.main}>
+            <main className={styles.main}>
                 {donationsConfig && reminderVisible && !showTrash ? (
                     <DonationReminderBanner
                         donations={donationsConfig}
@@ -275,13 +276,13 @@ export default function Dashboard() {
                 {showTrash ? (
                     /* Trash view */
                     <div data-testid="trash-view">
-                        <div style={styles.mainHeader}>
+                        <div className={styles.mainHeader}>
                             <button className="btn-icon" onClick={() => setShowTrash(false)} title={t("ui.dashboard.back", "Zurück")}>
                                 <ChevronLeft size={18}/>
                             </button>
                             <Trash2 size={20} className="muted"/>
-                            <h2 style={styles.mainTitle}>{t("ui.dashboard.trash", "Papierkorb")}</h2>
-                            <span style={styles.bookCount}>{trash.length} {trash.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
+                            <h2 className={styles.mainTitle}>{t("ui.dashboard.trash", "Papierkorb")}</h2>
+                            <span className={styles.bookCount}>{trash.length} {trash.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                             <div style={{flex: 1}}/>
                             {trash.length > 0 && (
                                 <button
@@ -295,12 +296,12 @@ export default function Dashboard() {
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {trash.length === 0 ? (
-                            <div style={styles.emptyState} data-testid="trash-empty-state">
+                            <div className={styles.emptyState} data-testid="trash-empty-state">
                                 <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
-                                <p style={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
+                                <p className={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
                             </div>
                         ) : viewMode === "grid" ? (
-                            <div style={styles.grid} data-testid="trash-grid">
+                            <div className={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
                                     <TrashCard
                                         key={book.id}
@@ -317,11 +318,11 @@ export default function Dashboard() {
                                 ))}
                             </div>
                         ) : (
-                            <ul style={styles.trashList} data-testid="trash-list">
+                            <ul className={styles.trashList} data-testid="trash-list">
                                 {trash.map((book) => (
                                     <li
                                         key={book.id}
-                                        style={styles.trashRow}
+                                        className={styles.trashRow}
                                         data-testid={`trash-row-${book.id}`}
                                     >
                                         <div style={{flex: 1, minWidth: 0}}>
@@ -348,12 +349,12 @@ export default function Dashboard() {
                         )}
                     </div>
                 ) : loading ? (
-                    <p style={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
+                    <p className={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
                 ) : books.length === 0 ? (
-                    <div style={styles.emptyState}>
+                    <div className={styles.emptyState}>
                         <BookOpen size={56} strokeWidth={1} color="var(--text-muted)"/>
-                        <p style={styles.emptyTitle}>{t("ui.dashboard.welcome", "Willkommen bei Bibliogon")}</p>
-                        <p style={styles.emptyText}>
+                        <p className={styles.emptyTitle}>{t("ui.dashboard.welcome", "Willkommen bei Bibliogon")}</p>
+                        <p className={styles.emptyText}>
                             {t("ui.dashboard.welcome_text", "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an.")}
                         </p>
                         <div style={{display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap", justifyContent: "center"}}>
@@ -370,9 +371,9 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <>
-                        <div style={styles.mainHeader}>
-                            <h2 style={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
-                            <span style={styles.bookCount}>{books.length} {books.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
+                        <div className={styles.mainHeader}>
+                            <h2 className={styles.mainTitle}>{t("ui.dashboard.title", "Meine Bücher")}</h2>
+                            <span className={styles.bookCount}>{books.length} {books.length === 1 ? t("ui.dashboard.book_singular", "Buch") : t("ui.dashboard.book_plural", "Bücher")}</span>
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (
@@ -396,10 +397,10 @@ export default function Dashboard() {
                             </>
                         )}
                         {filters.filteredBooks.length === 0 && books.length > 0 && !loading ? (
-                            <div style={styles.emptyState} data-testid="filter-empty-state">
+                            <div className={styles.emptyState} data-testid="filter-empty-state">
                                 <Search size={48} strokeWidth={1} color="var(--text-muted)"/>
-                                <p style={styles.emptyTitle}>{t("ui.dashboard.empty_filtered", "Keine Treffer")}</p>
-                                <p style={styles.emptyText}>
+                                <p className={styles.emptyTitle}>{t("ui.dashboard.empty_filtered", "Keine Treffer")}</p>
+                                <p className={styles.emptyText}>
                                     {t("ui.dashboard.empty_filtered_hint", "Es gibt keine Bücher die zu den aktuellen Filtern passen.")}
                                 </p>
                                 <button
@@ -419,7 +420,7 @@ export default function Dashboard() {
                                     onDeletePermanent={(book) => handleDeletePermanent(book.id)}
                                 />
                             ) : (
-                                <div style={styles.grid}>
+                                <div className={styles.grid}>
                                     {filters.filteredBooks.map((book) => (
                                         <BookCard
                                             key={book.id}
@@ -522,71 +523,3 @@ export default function Dashboard() {
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    container: {minHeight: "100vh", background: "var(--bg-primary)"},
-    header: {borderBottom: "1px solid var(--border)", background: "var(--bg-card)"},
-    headerInner: {
-        maxWidth: 1100, margin: "0 auto", padding: "12px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-    },
-    logo: {display: "flex", alignItems: "center", gap: 10, color: "var(--accent)", flexShrink: 0, cursor: "pointer"},
-    logoText: {
-        fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600,
-        color: "var(--text-primary)", letterSpacing: "-0.02em",
-    },
-    headerActions: {
-        display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end",
-    },
-    headerSeparator: {width: 1, height: 24, background: "var(--border)", margin: "0 4px"},
-    trashBadge: {
-        position: "absolute" as const, top: -4, right: -4,
-        background: "var(--danger)", color: "white", fontSize: "0.625rem",
-        fontWeight: 700, width: 16, height: 16, borderRadius: "50%",
-        display: "flex", alignItems: "center", justifyContent: "center",
-    },
-    main: {maxWidth: 1100, margin: "0 auto", padding: "32px 24px"},
-    mainHeader: {
-        display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
-    },
-    mainTitle: {
-        fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600,
-        color: "var(--text-primary)",
-    },
-    bookCount: {fontSize: "0.875rem", color: "var(--text-muted)"},
-    grid: {
-        // ``gridAutoRows: 1fr`` forces every row to the same height
-        // (= height of the tallest card across the entire grid). Without
-        // it CSS Grid sizes each row to the tallest item IN THAT ROW so
-        // a row with long titles + genre + series renders visibly taller
-        // than the next row with shorter cards. The card flex column
-        // (``display: flex; flex-direction: column``) plus ``height: 100%``
-        // on the card itself stretches each tile to the row height.
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        gridAutoRows: "1fr",
-        gap: 20,
-    },
-    empty: {textAlign: "center" as const, color: "var(--text-muted)", marginTop: 80},
-    emptyState: {
-        display: "flex", flexDirection: "column" as const, alignItems: "center", marginTop: 80, gap: 8,
-    },
-    emptyTitle: {
-        fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600, marginTop: 16,
-    },
-    emptyText: {
-        color: "var(--text-muted)", fontSize: "0.9375rem",
-        textAlign: "center" as const, maxWidth: 480, lineHeight: 1.6,
-    },
-    /** Trash list-view container. Same shape as ArticleList ``layout.list``
-     *  so the books and articles trash list views feel identical. */
-    trashList: {
-        listStyle: "none", padding: 0, margin: 0,
-        display: "flex", flexDirection: "column" as const, gap: 8,
-    },
-    trashRow: {
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "12px 16px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)", borderRadius: 6,
-    },
-};
