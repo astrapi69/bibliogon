@@ -1,10 +1,15 @@
 # Support Bibliogon
 
-Bibliogon is an open-source project developed by a single developer. No cloud,
+Bibliogon is an open-source project developed by a single person. No cloud,
 no tracking, no ads - your books, articles, and writing stay on your device.
 
-If Bibliogon helps you and you would like to support its development, donations
-are very welcome. Several options are available:
+Development happens alongside parenting three children, one of whom requires
+ongoing medical and care support. Donations help carve out reliable
+development time despite a packed schedule. They go directly into Bibliogon
+work, not personal expenses.
+
+If Bibliogon helps you and you would like to support its development,
+donations are very welcome. Several options are available:
 
 ---
 
@@ -64,12 +69,18 @@ on the donor side - credit card works as well.
 
 ### What are donations used for?
 
-Bibliogon is developed by a single person. Donations cover:
+Bibliogon is developed by a single person, alongside full-time parenting
+responsibilities including caregiving for a child with chronic medical
+needs. Donations cover:
 
-- Development time (currently unpaid, done in free time)
+- Development time that would otherwise compete with caregiving and other obligations
 - Domain costs and hosting for documentation
 - Legal advice on privacy-related questions
 - Tools and licenses (e.g., code-signing certificates for desktop launcher distribution)
+
+Recurring donations matter most because they translate into predictable
+development blocks. One-time donations help fund specific features and
+infrastructure costs.
 
 ### Do I receive a donation receipt?
 
