@@ -256,3 +256,108 @@ Trigger: first plugin yaml that needs a real secret value.
 
 ID assignment deferred — Aster picks the next free T-* number when
 ready to schedule.
+
+---
+
+## 6. Lessons Learned (post-implementation)
+
+The Phase 2 ship (commits 294e8fa, ad4301a, f2bf783) had a real
+regression caught by Aster's manual smoke test: AI connection
+broke after migrating ai.api_key to the override file. Fix landed
+in commit e35ecc8. The regression points at gaps in this audit
+that are worth recording for future T-XX refactors.
+
+### 6.1 Audit categorization "consumer" vs "independent reader" was insufficient
+
+Section 1.2 listed `ai/routes.py:80` as a config consumer that
+"funnels through `_load_app_config`". That was wrong. `ai/routes.py`
+had its own `_get_ai_config()` helper that did `yaml.safe_load`
+directly on the project file, BYPASSING the new loader.
+
+The audit traced the call chain forward from `_load_app_config`
+and confirmed every reference funneled there. It did NOT also
+trace BACKWARD from every yaml read to confirm the source. A
+function whose name suggests "consumer" can in fact be a second
+independent reader.
+
+Future T-XX refactors that touch a single chokepoint (loader,
+reader, writer) MUST also audit every alternative path that could
+sidestep the chokepoint.
+
+### 6.2 Required grep for any future T-XX yaml-loader refactor
+
+Before declaring a single chokepoint, run:
+
+```bash
+grep -rn "yaml.safe_load\|yaml.load" backend/app/ --include='*.py'
+```
+
+Every match is either:
+
+- The chokepoint itself (expected)
+- A test fixture (acceptable)
+- A second reader that bypasses the chokepoint (BUG IN WAITING)
+
+Each non-chokepoint match must be either redirected through the
+chokepoint or explicitly justified ("this loads a different file
+type, not the config under refactor").
+
+This audit ran a similar sweep against `_load_app_config` callers
+but only forward, not against `yaml.safe_load` globally. Doing the
+global grep would have surfaced `ai/routes.py:_get_ai_config`
+immediately.
+
+### 6.3 Same pattern likely lurks in PluginManager
+
+Plugin yaml secrets are deferred (section 5). When the follow-up
+refactor lands, the same global yaml grep applies, scoped to
+`backend/app/` AND `plugins/`:
+
+```bash
+grep -rn "yaml.safe_load\|yaml.load" backend/app/ plugins/ --include='*.py'
+```
+
+PluginManager loads `plugins/<name>/config.yaml` as its primary
+chokepoint. Every plugin can in principle ALSO read its config
+ad-hoc. Audit MUST verify each plugin defers to PluginManager's
+view rather than re-loading the file independently.
+
+### 6.4 Test fixtures must isolate filesystem state
+
+The same regression also broke 2 tests in `test_settings_api.py`
+because the `client` fixture did NOT monkeypatch
+`_get_user_override_path` or `BIBLIOGON_AI_API_KEY`. When Aster
+created the real override file during the migration, the test
+suite picked it up and the
+`test_get_app_settings_externally_managed_flag_*` cases flipped
+behavior.
+
+For T-XX refactors that introduce env-var or filesystem-based
+override layers:
+
+- Every test fixture that loads config MUST monkeypatch:
+  - The override path resolution helper (point at `tmp_path`)
+  - Any associated env-var (`monkeypatch.delenv(..., raising=False)`)
+- Tests that explicitly TEST override behavior set them to a
+  known value; default tests clear them.
+- Without this isolation, dev-machine state leaks into CI / other
+  tests. Hard to debug because failures only manifest after
+  somebody actually creates the override file.
+
+The fix in commit e35ecc8 extends the existing `client` fixture
+in `test_settings_api.py` to monkeypatch both. Same pattern
+needed for any future override-aware test.
+
+### 6.5 Recommendation for the next T-XX refactor
+
+Audit checklist additions:
+
+1. Forward trace from chokepoint (already done).
+2. **Backward grep for every alternative path** (`yaml.safe_load`,
+   `json.load`, file-read patterns). Resolve every non-chokepoint match.
+3. **Test-fixture isolation review**: identify every fixture that
+   touches the config layer. Add monkeypatches for new override
+   paths + env-vars.
+4. Run the test suite WITH the new override file present (sim
+   real user state) to catch fixture-isolation gaps before
+   shipping.
