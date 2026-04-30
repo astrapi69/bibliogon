@@ -1,0 +1,81 @@
+/**
+ * T-01 Phase B: ConflictResolutionDialog CSS-Module.
+ *
+ * Migrated from a 12-line ``const styles`` block (compact). 10 keys,
+ * ~13 inline applications. Side-by-side conflict diff dialog when
+ * a chapter save collides with a remote update.
+ */
+
+.content {
+    max-width: 720px;
+    width: min(720px, 95vw);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--warning, #b45309);
+}
+
+.description {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: var(--bg-surface);
+    overflow: hidden;
+}
+
+.panelTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+}
+
+.timestamp {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.preview {
+    font-family: inherit;
+    font-size: 0.8rem;
+    margin: 0;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-muted);
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}

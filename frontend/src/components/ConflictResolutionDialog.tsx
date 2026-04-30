@@ -13,6 +13,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import {AlertTriangle, Save, RotateCcw, FilePlus} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
+import styles from "./ConflictResolutionDialog.module.css";
 
 export interface ConflictInfo {
   chapterId: string;
@@ -64,43 +65,42 @@ export default function ConflictResolutionDialog({conflict, onKeepLocal, onDisca
       <Dialog.Portal>
         <Dialog.Overlay className="radix-dialog-overlay" />
         <Dialog.Content
-          className="radix-dialog-content"
+          className={`radix-dialog-content ${styles.content}`}
           data-testid="conflict-dialog"
-          style={styles.content}
           onEscapeKeyDown={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
         >
-          <div style={styles.header}>
-            <Dialog.Title style={styles.title}>
+          <div className={styles.header}>
+            <Dialog.Title className={styles.title}>
               <AlertTriangle size={18} aria-hidden />
               {t("ui.conflict.title", "Dieses Kapitel wurde anderswo geändert")}
             </Dialog.Title>
           </div>
-          <Dialog.Description style={styles.description}>
+          <Dialog.Description className={styles.description}>
             {t("ui.conflict.description", "Eine andere Änderung wurde gespeichert, bevor du deine Version abgeschickt hast. Wähle, was mit deinen lokalen Änderungen geschehen soll.")}
           </Dialog.Description>
 
-          <div style={styles.panels}>
-            <section style={styles.panel}>
-              <h3 style={styles.panelTitle}>{t("ui.conflict.your_changes", "Deine Änderungen")}</h3>
-              <pre style={styles.preview} data-testid="conflict-local-preview">
+          <div className={styles.panels}>
+            <section className={styles.panel}>
+              <h3 className={styles.panelTitle}>{t("ui.conflict.your_changes", "Deine Änderungen")}</h3>
+              <pre className={styles.preview} data-testid="conflict-local-preview">
                 {previewText(conflict.localContent)}
               </pre>
             </section>
-            <section style={styles.panel}>
-              <h3 style={styles.panelTitle}>
+            <section className={styles.panel}>
+              <h3 className={styles.panelTitle}>
                 {t("ui.conflict.server_version", "Server-Version")}
                 {conflict.serverUpdatedAt ? (
-                  <span style={styles.timestamp}> ({new Date(conflict.serverUpdatedAt).toLocaleString()})</span>
+                  <span className={styles.timestamp}> ({new Date(conflict.serverUpdatedAt).toLocaleString()})</span>
                 ) : null}
               </h3>
-              <pre style={styles.preview} data-testid="conflict-server-preview">
+              <pre className={styles.preview} data-testid="conflict-server-preview">
                 {previewText(conflict.serverContent)}
               </pre>
             </section>
           </div>
 
-          <div style={styles.actions}>
+          <div className={styles.actions}>
             <button
               className="btn btn-primary"
               onClick={() => void onKeepLocal(conflict)}
@@ -138,15 +138,3 @@ export default function ConflictResolutionDialog({conflict, onKeepLocal, onDisca
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  content: {maxWidth: "720px", width: "min(720px, 95vw)"},
-  header: {display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem"},
-  title: {display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.1rem", fontWeight: 600, margin: 0, color: "var(--warning, #b45309)"},
-  description: {color: "var(--text-muted)", marginBottom: "1rem", lineHeight: 1.5},
-  panels: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem"},
-  panel: {border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem", background: "var(--bg-surface)", overflow: "hidden"},
-  panelTitle: {fontSize: "0.85rem", fontWeight: 600, margin: "0 0 0.5rem 0", color: "var(--text)"},
-  timestamp: {fontWeight: 400, color: "var(--text-muted)", fontSize: "0.75rem"},
-  preview: {fontFamily: "inherit", fontSize: "0.8rem", margin: 0, maxHeight: "260px", overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", color: "var(--text-muted)"},
-  actions: {display: "flex", gap: "0.5rem", justifyContent: "flex-end", flexWrap: "wrap"},
-};
