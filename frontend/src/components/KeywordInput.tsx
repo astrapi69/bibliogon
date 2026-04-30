@@ -20,6 +20,7 @@ import {
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
+import styles from "./KeywordInput.module.css";
 
 export const RECOMMENDED_MAX = 7;
 export const MAX_LENGTH = 50;
@@ -105,8 +106,8 @@ function SortableChip({
             <span
                 ref={setNodeRef}
                 data-testid={`keyword-chip-${index}-editing`}
+                className={styles.chip}
                 style={{
-                    ...styles.chip,
                     transform: CSS.Transform.toString(transform),
                     transition,
                     padding: "2px 4px",
@@ -124,7 +125,7 @@ function SortableChip({
                     }}
                     onBlur={tryCommit}
                     maxLength={MAX_LENGTH + 10}
-                    style={styles.editInput}
+                    className={styles.editInput}
                 />
             </span>
         );
@@ -136,8 +137,8 @@ function SortableChip({
         <span
             ref={setNodeRef}
             data-testid={`keyword-chip-${index}`}
+            className={styles.chip}
             style={{
-                ...styles.chip,
                 transform: CSS.Transform.toString(transform),
                 transition,
                 opacity: isDragging ? 0.5 : 1,
@@ -150,11 +151,11 @@ function SortableChip({
             <span {...attributes} {...listeners} style={{cursor: "grab", display: "flex"}}>
                 <GripVertical size={12} style={{opacity: 0.4}}/>
             </span>
-            <span style={styles.chipText}>{keyword}</span>
+            <span className={styles.chipText}>{keyword}</span>
             <button
                 data-testid={`keyword-chip-${index}-delete`}
                 aria-label={`Delete ${keyword}`}
-                style={styles.chipRemove}
+                className={styles.chipRemove}
                 onClick={onRemove}
                 type="button"
             >
@@ -226,7 +227,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                         onChange(restored);
                         toast.dismiss(toastId);
                     }}
-                    style={styles.undoButton}
+                    className={styles.undoButton}
                 >
                     {t("ui.keywords.undo", "Rückgaengig")}
                 </button>
@@ -282,7 +283,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
 
     return (
         <div>
-            <div style={styles.container}>
+            <div className={styles.container}>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext items={ids} strategy={horizontalListSortingStrategy}>
                         {keywords.map((kw, i) => (
@@ -303,7 +304,7 @@ export default function KeywordInput({keywords, onChange}: Props) {
                 </DndContext>
                 <input
                     data-testid="keyword-add-input"
-                    style={styles.input}
+                    className={styles.input}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -319,7 +320,8 @@ export default function KeywordInput({keywords, onChange}: Props) {
                 data-testid="keyword-counter"
                 data-over-recommended={overRecommended ? "true" : "false"}
                 data-at-hard-limit={atHardLimit ? "true" : "false"}
-                style={{...styles.counter, color: counterColor}}
+                className={styles.counter}
+                style={{color: counterColor}}
             >
                 {keywords.length} / {RECOMMENDED_MAX} {t("ui.keywords.counter", "Schlüsselwoerter")}
                 {atHardLimit ? (
@@ -340,90 +342,10 @@ export default function KeywordInput({keywords, onChange}: Props) {
                     </>
                 ) : null}
             </span>
-            <div style={styles.hint}>
+            <div className={styles.hint}>
                 {t("ui.keywords.hint", "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren")}
             </div>
         </div>
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6,
-        padding: "6px 8px",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        background: "var(--bg-card)",
-        minHeight: 38,
-        alignItems: "center",
-    },
-    chip: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "3px 6px 3px 4px",
-        background: "var(--accent-light)",
-        color: "var(--accent)",
-        borderRadius: 4,
-        fontSize: "0.8125rem",
-        fontWeight: 500,
-        whiteSpace: "nowrap",
-    },
-    chipText: {
-        maxWidth: 180,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-    },
-    chipRemove: {
-        display: "flex",
-        alignItems: "center",
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "inherit",
-        padding: 0,
-        opacity: 0.6,
-    },
-    input: {
-        flex: 1,
-        minWidth: 120,
-        border: "none",
-        outline: "none",
-        background: "transparent",
-        fontSize: "0.8125rem",
-        color: "var(--text-primary)",
-        padding: "2px 0",
-    },
-    editInput: {
-        border: "none",
-        outline: "none",
-        background: "transparent",
-        fontSize: "0.8125rem",
-        fontWeight: 500,
-        color: "inherit",
-        minWidth: 80,
-        maxWidth: 200,
-    },
-    counter: {
-        display: "block",
-        fontSize: "0.6875rem",
-        marginTop: 4,
-    },
-    hint: {
-        fontSize: "0.6875rem",
-        color: "var(--text-muted)",
-        marginTop: 2,
-    },
-    undoButton: {
-        border: "1px solid currentColor",
-        background: "transparent",
-        color: "inherit",
-        fontSize: "0.75rem",
-        fontWeight: 600,
-        padding: "2px 8px",
-        borderRadius: 4,
-        cursor: "pointer",
-    },
-};

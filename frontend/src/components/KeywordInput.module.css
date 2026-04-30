@@ -1,0 +1,93 @@
+/**
+ * T-01 Phase B: KeywordInput CSS-Module.
+ *
+ * Migrated from a 80-line ``const styles`` block. 9 keys, ~12 inline
+ * applications (chip-style keyword input with edit-in-place).
+ */
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    min-height: 38px;
+    align-items: center;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px 3px 4px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.chipText {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chipRemove {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    padding: 0;
+    opacity: 0.6;
+}
+
+.input {
+    flex: 1;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    padding: 2px 0;
+}
+
+.editInput {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: inherit;
+    min-width: 80px;
+    max-width: 200px;
+}
+
+.counter {
+    display: block;
+    font-size: 0.6875rem;
+    margin-top: 4px;
+}
+
+.hint {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.undoButton {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
