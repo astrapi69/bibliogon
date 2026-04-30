@@ -4,6 +4,7 @@ import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
 import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
+import styles from "./SaveAsChapterTemplateModal.module.css";
 
 type ContentMode = "empty" | "preserve";
 
@@ -96,7 +97,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                         </Dialog.Title>
                     </div>
 
-                    <div style={styles.body}>
+                    <div className={styles.body}>
                         <div className="field">
                             <label className="label">{t("ui.save_chapter_template.name", "Name")} *</label>
                             <input
@@ -109,7 +110,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                 maxLength={100}
                             />
                             {nameError && (
-                                <div style={styles.errorText} data-testid="save-chapter-template-name-error">{nameError}</div>
+                                <div className={styles.errorText} data-testid="save-chapter-template-name-error">{nameError}</div>
                             )}
                         </div>
 
@@ -128,7 +129,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
 
                         <div className="field">
                             <label className="label">{t("ui.save_chapter_template.content_mode", "Kapitelinhalt")}</label>
-                            <label style={styles.radioRow}>
+                            <label className={styles.radioRow}>
                                 <input
                                     type="radio"
                                     name="chapter-template-content-mode"
@@ -136,14 +137,14 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                     checked={contentMode === "empty"}
                                     onChange={() => setContentMode("empty")}
                                     data-testid="save-chapter-template-content-empty"
-                                    style={{accentColor: "var(--accent)"}}
+                                    className={styles.radioInput}
                                 />
                                 <div>
                                     <div>{t("ui.save_chapter_template.content_empty", "Leerer Platzhalter")}</div>
-                                    <div style={styles.hint}>{t("ui.save_chapter_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
+                                    <div className={styles.hint}>{t("ui.save_chapter_template.content_empty_hint", "Empfohlen für wiederverwendbare Vorlagen")}</div>
                                 </div>
                             </label>
-                            <label style={styles.radioRow}>
+                            <label className={styles.radioRow}>
                                 <input
                                     type="radio"
                                     name="chapter-template-content-mode"
@@ -151,11 +152,11 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                     checked={contentMode === "preserve"}
                                     onChange={() => setContentMode("preserve")}
                                     data-testid="save-chapter-template-content-preserve"
-                                    style={{accentColor: "var(--accent)"}}
+                                    className={styles.radioInput}
                                 />
                                 <div>
                                     <div>{t("ui.save_chapter_template.content_preserve", "Inhalt übernehmen")}</div>
-                                    <div style={styles.hint}>{t("ui.save_chapter_template.content_preserve_hint", "Kopiert den aktuellen Kapitelinhalt in die Vorlage")}</div>
+                                    <div className={styles.hint}>{t("ui.save_chapter_template.content_preserve_hint", "Kopiert den aktuellen Kapitelinhalt in die Vorlage")}</div>
                                 </div>
                             </label>
                         </div>
@@ -182,26 +183,3 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    body: {
-        padding: "8px 0 16px",
-    },
-    radioRow: {
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "6px 0",
-        cursor: "pointer",
-        fontSize: "0.875rem",
-    },
-    hint: {
-        fontSize: "0.75rem",
-        color: "var(--text-muted)",
-        marginTop: 2,
-    },
-    errorText: {
-        color: "var(--danger, #c43)",
-        fontSize: "0.8125rem",
-        marginTop: 4,
-    },
-};

@@ -1,0 +1,36 @@
+/**
+ * T-01 Phase B: SaveAsChapterTemplateModal CSS-Module.
+ *
+ * Migrated from a 22-line ``const styles`` block + 2 inline-object
+ * radio sites. 5 keys, 8 inline applications. Save-chapter-as-template
+ * dialog with empty/preserve content mode.
+ */
+
+.body {
+    padding: 8px 0 16px;
+}
+
+.radioRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.radioInput {
+    accent-color: var(--accent);
+}
+
+.hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.errorText {
+    color: var(--danger, #c43);
+    font-size: 0.8125rem;
+    margin-top: 4px;
+}
