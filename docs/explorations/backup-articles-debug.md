@@ -400,3 +400,44 @@ durch Pfad 2.
   funktional kriegen.
 
 Phase 2 wartet auf explizites Go.
+
+---
+
+## Phase 2 — Conclusion (2026-05-01)
+
+Phase 2 ist abgeschlossen. Implementierungs-Commits:
+
+- `ca5e57e` — `BgbImportHandler` article-aware: `detect()` zaehlt
+  Articles + Books, `_book_blobs`/`_book_count` ergaenzt um
+  Article-Pendants, `execute()` ruft `_restore_single_book_and_articles`
+  und retourniert `("", N)` fuer articles-only Pfade,
+  `execute_multi()` iteriert zusaetzlich `articles_dir`.
+- `ea20fd7` — Wizard `validate_overrides` skip wenn
+  `is_articles_only`, sonst blockt der title+author-Gate den
+  Continue-Button bei Articles-only-Backups.
+- `1abc937` — Wizard `onImported(bookId="")` triggert
+  Articles-only-SuccessStep mit Redirect nach `/articles`.
+- `8043105` — Test-Pyramide: 13 Tests in
+  `test_backup_articles.py` decken Export, Roundtrip, Legacy,
+  HTTP-User-Path, Idempotenz, Soft-Delete-Revival, Multi-Book,
+  Forward-Compat-Warning. **Schliesst die Test-Lucke aus Phase 1**.
+- `a415ee9` — Wizard zeigt Article-Counts in DetectedProject-Summary.
+- `128ea16` — Articles-Dashboard refresh auf bfcache + visibility,
+  damit `onImported` ohne F5 sichtbar wird.
+
+Alle 7 Flows in [docs/testing/smoke-tests/articles-backup.md](../testing/smoke-tests/articles-backup.md)
+dokumentiert. Backend-Tests gruen am 2026-05-01:
+
+```
+$ poetry run pytest tests/test_backup_articles.py -q
+13 passed in 0.63s
+```
+
+UI-Smoke-Verifikation steht aus, blockiert auf Node 22 im
+Frontend-Shell (Vite 7 inkompatibel mit Node 18, siehe
+lessons-learned.md). Sobald Aster `nvm use 22 && make dev-bg`
+durchlaufen kann, sind Flows 1-7 in der genannten Smoke-Doc
+abzuhaken.
+
+**Status: Code-complete. Geschlossen. UI-Smoke deferred to next
+Node-22 session.**
