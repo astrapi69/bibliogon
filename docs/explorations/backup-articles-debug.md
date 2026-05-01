@@ -433,11 +433,9 @@ $ poetry run pytest tests/test_backup_articles.py -q
 13 passed in 0.63s
 ```
 
-UI-Smoke-Verifikation steht aus, blockiert auf Node 22 im
-Frontend-Shell (Vite 7 inkompatibel mit Node 18, siehe
-lessons-learned.md). Sobald Aster `nvm use 22 && make dev-bg`
-durchlaufen kann, sind Flows 1-7 in der genannten Smoke-Doc
-abzuhaken.
+UI-Smoke-Verifikation laeuft auf Node 22+ (Aster verwendet Node
+24); fuer Node 18 dokumentiert lessons-learned.md die
+Vite-7-Inkompatibilitaet. Flows 1-7 in der genannten Smoke-Doc
+sind in einem normalen `make dev-bg`-Lauf abzuhaken.
 
-**Status: Code-complete. Geschlossen. UI-Smoke deferred to next
-Node-22 session.**
+**Status: Code-complete. Geschlossen.**
