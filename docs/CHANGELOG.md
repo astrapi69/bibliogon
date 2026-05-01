@@ -2,6 +2,81 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.25.0] - 2026-05-01
+
+Articles reach feature parity with books across the full lifecycle: dashboard chrome, soft-delete + trash, AI-generated SEO metadata, backup format extended to manifest 2.0 with article + publication + asset segments, and CIO-handler restore through the Import Wizard. Three-layer secrets configuration (project YAML < user override < env-var) replaces the old "edit `app.yaml`" advice with a Gradle-style override file. The donations theme ships its first user-visible surface (S-01 Settings tab "Unterstützen" with four-channel grid). T-01 inline-styles refactor migrates 22 components / pages to per-file CSS Modules, eliminating ~700 inline-style call-sites. Plus a mobile-first hamburger for the Settings tabs (F-01) and a sturdier `make dev-bg` that no longer dies silently when the recipe shell exits (F-02).
+
+### Action required
+
+No migrations new in this release. If you carry a real Anthropic API key in `backend/config/app.yaml`, move it to `~/.config/bibliogon/secrets.yaml` (or set `BIBLIOGON_AI_API_KEY`) per [docs/configuration.md](configuration.md); the running app still reads the old location with a deprecation warning, but the Settings UI hides the API-key input so editing it requires the override path.
+
+The donations block was already shipped in `app.yaml.example` in v0.24.0 cycle but was inert; v0.25.0 wires it into the UI. Existing installs gain the "Unterstützen" tab automatically once their `app.yaml` carries the block (copy from `app.yaml.example` if missing).
+
+### Added
+
+**Articles dashboard parity with books.** Articles list/grid view toggle, deterministic cover placeholder, action menu with hamburger + soft-delete + permanent-delete entries, header chrome (back button, navigation), trash bin with restore + permanent-delete, refresh on bfcache + visibility-change so import-restore flows do not need F5.
+
+**Articles in backup format (manifest 2.0).** `export_backup_archive` writes an `articles/<id>/article.json` segment alongside `books/`, plus `publications/` and `article_assets/` when present. Manifest reports `article_count`, `publication_count`, `article_asset_count`. Forward-compat: legacy v1.0 backups still restore book-only as before; unknown future versions log a warning-only (no hard reject).
+
+**CIO BgbImportHandler restores articles.** `detect()` counts both books and articles; the "no book.json inside the backup" warning fires only when the archive is empty in BOTH segments. `execute()` and `execute_multi()` walk `articles/` and call the article-restore helpers. Articles-only `.bgb` returns `book_id=""` so the wizard's `SuccessStep` redirects to `/articles` instead of expecting a book id. Idempotent re-import: an already-live article is silently skipped; a soft-deleted article gets hard-deleted and re-inserted as live (revival).
+
+**AI-generated SEO for articles.** "Generate" button next to SEO title / description / tags fields runs the article body through the configured LLM provider with article-specific prompts. Streaming-style insertion into the form fields. Per-provider gating reuses the existing health/availability check.
+
+**Three-layer secrets configuration.** New loader chain in `backend/app/main.py`: project `backend/config/app.yaml` < user override at `~/.config/bibliogon/secrets.yaml` (XDG_CONFIG_HOME / %APPDATA% on Windows) < `BIBLIOGON_*` env-vars. Settings UI hides the API-key input field when the resolved key is "managed externally" so users cannot accidentally write a secret into the project YAML. Defense-in-depth: `PATCH /api/settings/app` strips `ai.api_key` from request bodies (with a WARNING log) when an override is configured. AiSetupWizard branches on the `secretsManagedExternally` prop and shows an info note about how to rotate the key. Backwards-compatible: if `app.yaml` still carries a key, the loader emits a deprecation warning but the value still reaches the AI client.
+
+**Donation visibility — S-01 Settings tab.** New "Unterstützen" tab in Settings renders the channel grid (Liberapay, GitHub Sponsors, Ko-fi, PayPal) with optional `recommended` badge per channel. `landing_page_url: null` (default) keeps the inline grid; setting it to a URL collapses every donation surface (S-01, S-02, S-03) to a single "Projekt unterstützen" button. DONATE.md and DONATE-de.md rebranded from a previous experimental name to Bibliogon-only, expanded with parenting/caregiving context.
+
+**Settings mobile hamburger (F-01).** Below the 768px breakpoint, the Tabs.List collapses into a `Menu`-icon dropdown labelled with the active tab's name. Same `tabDefs` array is the source of truth for both desktop tabs and mobile dropdown; deep-link via `?tab=X` and the URL-replace behaviour are unchanged.
+
+**`make dev-bg` robustness (F-02).** `setsid` puts each child in its own session so the recipe shell exiting does not SIGHUP the children. stdout + stderr redirect to `$(DEV_LOG_DIR)/{backend,frontend}.log`. `kill -0` startup probe fails loud with the log path on early death. New `make dev-bg-logs` target tails both files.
+
+### Changed
+
+**T-01 inline-styles refactor.** 22 components and pages migrated from `const styles = { ... }` JS objects + `style={styles.X}` JSX to per-file `*.module.css` files + `className={styles.X}`. Theme tokens (`var(--bg-card)`, `var(--accent)`, ...) preserved verbatim so the 3-theme × light/dark cascade works through the module boundary unchanged. Multi-className merges via template literal where global utility classes (`btn`, `btn-icon`) had to coexist with module classes. Conditional active/disabled states refactored from spread-objects to filter-Boolean className joins. Pilot (`TrashCard`) committed first; per-file migrations followed in `Phase B` commits.
+
+**Articles trash card layout.** `flex-wrap: wrap` added to the action button row so the second German button label (`Endgültig löschen`) survives narrow grid columns. Articles trash grid track bumped from `minmax(220px, 1fr)` to `minmax(300px, 1fr)` to match the books-dashboard column sizing.
+
+**Donation document rebranded.** DONATE.md and DONATE-de.md scrubbed of the old experimental project name; expanded with the parenting/caregiving context.
+
+**Donation `landing_page_url` example default.** `app.yaml.example` ships with `landing_page_url: null` so a fresh `cp` lands on the inline four-channel grid (the in-app UI surface). The DONATE.md landing variant collapses S-01 to a single button - useful for S-02/S-03 dialogs but loses the in-app channel UI.
+
+**Centralised app version.** `backend/app/__init__.py` now defines `__version__ = "0.25.0"`. `app.main` reads it for both the FastAPI metadata and the `/api/health` response, replacing the previous hardcoded strings (one of which was stale at `0.15.0` and reported the wrong version to the frontend).
+
+### Fixed
+
+**AI client read-path regression.** `ai/routes.py:_get_ai_config` previously called `yaml.safe_load(open("config/app.yaml"))` directly, bypassing the new three-layer loader and ignoring both the user override and `BIBLIOGON_AI_API_KEY`. Routed through `_load_app_config` via lazy import (avoids circular).
+
+**Articles trash header chrome.** Was missing the back-button + ChevronLeft + symmetric navigation found on books-trash; sweep brought articles-trash to parity.
+
+**Articles trash respects view mode.** TrashPanel rendered grid layout regardless of the active view-mode toggle. Now switches between grid + list to mirror the live-articles view.
+
+**Books trash list layout.** ViewToggle was rendered outside the trash branch so list-mode in trash fell through to grid. Moved into the branch.
+
+**Dashboard trash badge positioning.** Toggle button needed `position: relative` so the absolutely-positioned badge anchored correctly.
+
+**Import Wizard for articles-only `.bgb`.** `validate_overrides` skipped the title+author gate when `is_articles_only`; previously the Continue button stayed disabled because the orchestrator demanded book-level metadata. `onImported` now fires with `bookId=""` for the articles-only path so the SuccessStep can redirect to `/articles`.
+
+**WBT importer iterates branches.** Multi-language WBT ZIPs / folders adopt main + main-XX branches under git adoption (was main-only). Picks up the modern `backpage-*` sidecar filenames the WBT format started using earlier.
+
+**Navigation metadata link.** "Autoren in Einstellungen verwalten" link now lands on the Settings → Author tab.
+
+**i18n ASCII umlaut substitutes.** Spanish accents fixed in 4 plugin YAMLs (`Traducción`, `página`, `validación`, `publicación`, `Generación`, `capítulos`); German `ä` / `ö` / `ü` / `ß` substitutes scrubbed; builtin chapter-template translations added.
+
+### Documentation
+
+- New `docs/configuration.md` documents the three-layer secrets chain. README + CLAUDE.md cross-reference it.
+- Multiple Phase 1 audit docs under `docs/explorations/`: articles-backup, articles-dashboard parity, trash parity, trash-card permanent-delete, secrets-refactor, donation visibility, T-01 inline-styles. Each maps the surface, lists hypotheses with code evidence, and proposes a Phase 2 scope.
+- New per-feature smoke-test docs under `docs/testing/smoke-tests/`: articles-backup, donation-visibility, inline-styles-migration, phylax-rebrand, secrets-refactor, trash-card-permanent-delete, trash-parity. README index lists all of them.
+- New session-1 test plan + onboarding + result template + coverage matrix.
+- ROADMAP, journal entries, post-v0.24.0 optimization report, Medium-ready competitive analysis draft, OpenAI Codex review instructions.
+
+### Internal
+
+- `backend/app/__init__.py` switches from empty to a real `__version__` constant (single source of truth).
+- Pre-commit auto-fixes (EOF + ruff-format) sweep across the inline-styles refactor wave so each commit re-passed the local hooks.
+- `make fix-watchers` target persists Linux inotify limits for vite dev mode (`/etc/sysctl.d/99-bibliogon-watchers.conf`); avoids the per-session `sudo sysctl` workaround.
+- `make dev-bg-logs` tails both backend + frontend logs from a `make dev-bg` run.
+
 ## [0.24.0] - 2026-04-28
 
 Article authoring lands as a first-class feature alongside book authoring. Articles are standalone documents (not book chapters) intended for blog posts, newsletter pieces, and online publication. The release ships AR-01 (entity + CRUD + editor), AR-02 (publications + drift detection across 8 platforms), AR-02 Phase 2.1 (topics + SEO), and three editor-parity phases that bring articles to feature parity with the book editor: a shared `RichTextEditor` with content-kind-aware plugin gating, per-article ms-tools quality checks, translate-article via the existing translation provider abstraction, and Markdown / HTML / PDF / DOCX export. Plus PS-13 "Save as new chapter" in the chapter conflict dialog, UX-FU-02 featured image upload, follow-ups for PGS-02..04 (per-book PAT credential integration, mark_conflict + rename detection in the smart-merge diff, surface skipped branches in multi-language import), and a refreshed README + UX conventions guide + plugin author patterns.

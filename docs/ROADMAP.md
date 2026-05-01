@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-04-28
-Latest release: v0.24.0 (article authoring as first-class feature: AR-01 Article entity + CRUD + ArticleEditor, AR-02 Publications + drift detection across 8 platforms, AR-02 Phase 2.1 Topics + SEO + sidebar-left, Editor-Parity Phases 1-3 with shared RichTextEditor + contentKind plugin gating + per-article ms-tools + translate-article + export to Markdown/HTML/PDF/DOCX. Plus PS-13 "Save as new chapter" in conflict dialog, UX-FU-02 featured image upload, plugin-git-sync follow-ups, CIO-08-FU-01 multi-book wizard finishing, README rewrite + UX conventions doc + plugin author patterns.)
+Last updated: 2026-05-01
+Latest release: v0.25.0 (articles reach full feature parity with books — dashboard chrome, soft-delete + trash, AI-generated SEO, backup format manifest 2.0 with articles + publications + assets segments, CIO restore through the Import Wizard. Three-layer secrets configuration replaces the "edit app.yaml" advice with a Gradle-style override file. Donations S-01 Settings tab "Unterstützen" with four-channel grid is the first user-visible donation surface. T-01 inline-styles refactor migrates 22 components/pages to CSS Modules, eliminating ~700 inline-style call-sites. Plus Settings mobile hamburger F-01 and `make dev-bg` robustness F-02. Stale `0.15.0` health-endpoint version bug squashed via centralised `app.__version__`.)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
 
