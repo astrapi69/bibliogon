@@ -64,7 +64,7 @@ donations:
   # Set `landing_page_url` to a single URL to route every button there
   # instead of showing the per-channel list; leave null for the list.
   enabled: true
-  landing_page_url: null
+  landing_page_url: https://github.com/astrapi69/bibliogon/blob/main/DONATE.md
   channels:
     - name: Liberapay
       url: https://liberapay.com/astrapi69/donate
