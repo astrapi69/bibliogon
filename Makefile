@@ -1,4 +1,4 @@
-.PHONY: dev dev-bg dev-down dev-backend dev-frontend stop restart fix-watchers \
+.PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync \
@@ -31,13 +31,55 @@ dev: ## Start backend + frontend (backend first, then frontend)
 	@echo "Backend ready. Starting frontend..."
 	@cd frontend && npm run dev
 
-dev-bg: ## Start in background (stop with: make dev-down)
+DEV_LOG_DIR ?= /tmp/bibliogon-logs
+
+dev-bg: ## Start in background, logs to $(DEV_LOG_DIR) (stop with: make dev-down)
+	@mkdir -p $(DEV_LOG_DIR)
 	@echo "Starting Bibliogon (background)..."
-	@cd backend && poetry run uvicorn app.main:app --reload --port 8000 & echo $$! > .pid-backend
-	@cd frontend && npm run dev & echo $$! > .pid-frontend
-	@echo "Backend PID: $$(cat .pid-backend)"
-	@echo "Frontend PID: $$(cat .pid-frontend)"
-	@echo "Stop with: make dev-down"
+	@echo "  Backend  log: $(DEV_LOG_DIR)/backend.log"
+	@echo "  Frontend log: $(DEV_LOG_DIR)/frontend.log"
+	@# `setsid` puts each child in its own session so it survives the
+	@# Makefile recipe shell exiting. `< /dev/null` closes stdin so the
+	@# child does not block waiting on a tty. `> ... 2>&1` captures both
+	@# streams to a log file we can tail later. The bare `&` backgrounds
+	@# the compound, and `echo $$!` then writes the child PID for
+	@# `dev-down` to kill.
+	@# `A && B &` is one AND-OR list backgrounded in a subshell; the
+	@# subshell inherits the cd, the main shell does not. So PID
+	@# files are written from the main recipe shell at repo root, and
+	@# the path is `.pid-backend` (NOT `../.pid-backend`).
+	@cd backend && \
+		setsid poetry run uvicorn app.main:app --reload --port 8000 \
+			< /dev/null > $(DEV_LOG_DIR)/backend.log 2>&1 & \
+		echo $$! > .pid-backend
+	@cd frontend && \
+		setsid npm run dev \
+			< /dev/null > $(DEV_LOG_DIR)/frontend.log 2>&1 & \
+		echo $$! > .pid-frontend
+	@sleep 2
+	@if kill -0 $$(cat .pid-backend) 2>/dev/null; then \
+		echo "  Backend  PID: $$(cat .pid-backend) (alive)"; \
+	else \
+		echo "  ERROR: backend died on startup. tail $(DEV_LOG_DIR)/backend.log"; \
+		rm -f .pid-backend; \
+		exit 1; \
+	fi
+	@if kill -0 $$(cat .pid-frontend) 2>/dev/null; then \
+		echo "  Frontend PID: $$(cat .pid-frontend) (alive)"; \
+	else \
+		echo "  ERROR: frontend died on startup. tail $(DEV_LOG_DIR)/frontend.log"; \
+		rm -f .pid-frontend; \
+		exit 1; \
+	fi
+	@echo "Stop with: make dev-down  |  Tail logs with: make dev-bg-logs"
+
+dev-bg-logs: ## Tail backend + frontend logs from a `make dev-bg` run
+	@if [ ! -f $(DEV_LOG_DIR)/backend.log ] && [ ! -f $(DEV_LOG_DIR)/frontend.log ]; then \
+		echo "No logs in $(DEV_LOG_DIR). Run 'make dev-bg' first."; \
+		exit 1; \
+	fi
+	@echo "Tailing $(DEV_LOG_DIR)/backend.log + $(DEV_LOG_DIR)/frontend.log (Ctrl+C to stop)..."
+	@tail -F $(DEV_LOG_DIR)/backend.log $(DEV_LOG_DIR)/frontend.log
 
 dev-down: ## Stop background dev servers
 	@if [ -f .pid-backend ]; then kill $$(cat .pid-backend) 2>/dev/null; rm -f .pid-backend; echo "Backend stopped"; fi
