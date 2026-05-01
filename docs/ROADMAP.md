@@ -236,8 +236,8 @@ Items with external deadlines or recurring cost that deserve planning-view visib
 
 ### Code quality
 
-- [ ] **T-01:** Inline-Styles Refactor — migrate JS style-objects to Tailwind / CSS-Modules. Scope tbd by audit (T-01-audit). Blocks: cleaner theme-switching, smaller bundles, testable layout (jsdom has no layout engine). Estimate: tbd by audit (likely L, multi-session).
-- [ ] **T-01-audit:** Inline-Styles Inventory — grep all JS style-objects, classify by component / page / shared, propose migration target (Tailwind utilities vs CSS-Modules vs styled-components), estimate effort per cluster. Output: docs/explorations/inline-styles-audit.md.
+- [x] **T-01:** Inline-Styles Refactor — migrated to per-file CSS-Modules (Tailwind rejected to keep theme-token cascade intact). Phase A pilot (`TrashCard`) + Phase B sweep migrated 22 components / pages including `Dashboard`, `Settings`, `BookEditor`, `ArticleEditor`, `ArticleList`, `Toolbar`, `KeywordInput`, `ChapterSidebar`, `ConflictResolutionDialog`, `SupportSection`, `BookCard`, `BookListView`, `ArticleCard`, `BookMetadataEditor`, `ChapterTemplatePickerModal`, `ChapterVersionsModal`, `CoverUpload`, `CreateBookModal`, `DashboardFilterBar`, `DashboardFilterSheet`, `DonationOnboardingDialog`, `DonationReminderBanner`, `Editor`, `ExportDialog`, `GetStarted`, `Help`, `OfflineBanner`, `QualityTab`, `SaveAsChapterTemplateModal`, `SaveAsTemplateModal`, `ShortcutCheatsheet`. ~700 inline-style call-sites eliminated. Theme tokens preserved via `var(--*)`. Multi-className collisions resolved via template literal merges. Closed in v0.25.0; remaining stragglers (`AiSetupWizard` skipped by design pending upstream rewrite) tracked as follow-ups, not blocking the theme.
+- [x] **T-01-audit:** Inline-Styles Inventory — `docs/explorations/inline-styles-audit.md` shipped pre-T-01. Audit drove the per-file migration order in Phase B.
 
 ### Security tracking
 
