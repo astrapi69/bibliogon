@@ -2,12 +2,13 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {api, AudiobookVoice, formatVoiceLabel} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Save, Check, X, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff} from "lucide-react";
+import {ChevronLeft, Save, Check, X, Plus, Trash2, Home, Upload, Wrench, Eye, EyeOff, Menu} from "lucide-react";
 import OrderedListEditor from "../components/OrderedListEditor";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {PALETTES} from "../themes/palettes";
 import {ChevronDown as ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
@@ -98,16 +99,68 @@ export default function Settings() {
             </header>
 
             <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
-                <Tabs.List className="radix-tabs-list">
-                    <Tabs.Trigger value="app" className="radix-tab-trigger">{t("ui.settings.tab_general", "Allgemein")}</Tabs.Trigger>
-                    <Tabs.Trigger value="ai" className="radix-tab-trigger" data-testid="settings-tab-ai">{t("ui.settings.tab_ai", "KI-Assistent")}</Tabs.Trigger>
-                    <Tabs.Trigger value="author" className="radix-tab-trigger">{t("ui.settings.tab_author", "Autor")}</Tabs.Trigger>
-                    <Tabs.Trigger value="topics" className="radix-tab-trigger" data-testid="settings-tab-topics">{t("ui.settings.tab_topics", "Themen")}</Tabs.Trigger>
-                    <Tabs.Trigger value="plugins" className="radix-tab-trigger">{t("ui.settings.tab_plugins", "Plugins")}</Tabs.Trigger>
-                    {getDonationsConfig(appConfig) ? (
-                        <Tabs.Trigger value="support" className="radix-tab-trigger" data-testid="settings-tab-support">{t("ui.donations.tab", "Unterstützen")}</Tabs.Trigger>
-                    ) : null}
-                </Tabs.List>
+                {(() => {
+                    // Single source of truth so the desktop Tabs.List and the
+                    // mobile DropdownMenu render the same set of options. The
+                    // dropdown items call ``handleTabChange`` directly because
+                    // they are not Tabs.Trigger nodes.
+                    const tabDefs: {value: SettingsTab; label: string; testId?: string}[] = [
+                        {value: "app", label: t("ui.settings.tab_general", "Allgemein")},
+                        {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
+                        {value: "author", label: t("ui.settings.tab_author", "Autor")},
+                        {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
+                        {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins")},
+                        ...(getDonationsConfig(appConfig)
+                            ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
+                            : []),
+                    ];
+                    const activeLabel = tabDefs.find((d) => d.value === activeTab)?.label ?? "";
+                    return (
+                        <>
+                            <Tabs.List className="radix-tabs-list settings-tabs-desktop">
+                                {tabDefs.map((d) => (
+                                    <Tabs.Trigger
+                                        key={d.value}
+                                        value={d.value}
+                                        className="radix-tab-trigger"
+                                        data-testid={d.testId}
+                                    >
+                                        {d.label}
+                                    </Tabs.Trigger>
+                                ))}
+                            </Tabs.List>
+                            <div className="settings-tabs-mobile">
+                                <DropdownMenu.Root>
+                                    <DropdownMenu.Trigger asChild>
+                                        <button
+                                            className="btn btn-secondary settings-tabs-mobile-trigger"
+                                            data-testid="settings-tabs-mobile-trigger"
+                                            aria-label={t("ui.settings.open_tab_menu", "Tab-Menü öffnen")}
+                                        >
+                                            <Menu size={16}/>
+                                            <span>{activeLabel}</span>
+                                        </button>
+                                    </DropdownMenu.Trigger>
+                                    <DropdownMenu.Portal>
+                                        <DropdownMenu.Content className="hamburger-menu-content" align="start" sideOffset={4}>
+                                            {tabDefs.map((d) => (
+                                                <DropdownMenu.Item
+                                                    key={d.value}
+                                                    className="hamburger-menu-item"
+                                                    data-testid={d.testId ? `${d.testId}-mobile` : `settings-tab-${d.value}-mobile`}
+                                                    onSelect={() => handleTabChange(d.value)}
+                                                >
+                                                    {d.label}
+                                                    {d.value === activeTab ? <Check size={14}/> : null}
+                                                </DropdownMenu.Item>
+                                            ))}
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Portal>
+                                </DropdownMenu.Root>
+                            </div>
+                        </>
+                    );
+                })()}
 
             <main className={styles.main}>
                 <Tabs.Content value="app">

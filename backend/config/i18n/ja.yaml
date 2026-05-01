@@ -547,6 +547,7 @@ ui:
     tab_ai: "AIアシスタント"
     tab_author: "著者"
     tab_plugins: "プラグイン"
+    open_tab_menu: "タブメニューを開く"
     tab_topics: "トピック"
     tab_licenses: "ライセンス"
     topics_title: "記事のトピック"

@@ -547,6 +547,7 @@ ui:
     tab_ai: "Βοηθός AI"
     tab_author: "Συγγραφέας"
     tab_plugins: "Plugins"
+    open_tab_menu: "Άνοιγμα μενού καρτελών"
     tab_topics: "Θέματα"
     tab_licenses: "Άδειες"
     topics_title: "Θέματα άρθρων"

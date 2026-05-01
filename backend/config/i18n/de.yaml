@@ -547,6 +547,7 @@ ui:
     tab_ai: "KI-Assistent"
     tab_author: "Autor"
     tab_plugins: "Plugins"
+    open_tab_menu: "Tab-Menü öffnen"
     tab_topics: "Themen"
     tab_licenses: "Lizenzen"
     topics_title: "Artikel-Themen"

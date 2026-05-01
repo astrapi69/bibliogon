@@ -1100,6 +1100,26 @@ body {
     margin-right: 4px;
 }
 
+/* --- Settings page tab switcher: desktop tabs vs. mobile hamburger --- */
+.settings-tabs-mobile {
+    display: none;
+}
+.settings-tabs-mobile-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 16px;
+    font-size: 0.875rem;
+}
+@media (max-width: 768px) {
+    .settings-tabs-desktop {
+        display: none;
+    }
+    .settings-tabs-mobile {
+        display: flex;
+    }
+}
+
 /* --- TipTap Editor --- */
 .tiptap-editor {
     min-height: 400px;

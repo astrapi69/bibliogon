@@ -561,6 +561,7 @@ ui:
     tab_ai: "Asistente AI"
     tab_author: "Autor"
     tab_plugins: "Plugins"
+    open_tab_menu: "Abrir menú de pestañas"
     tab_topics: "Temas"
     tab_licenses: "Licencias"
     topics_title: "Temas de articulos"

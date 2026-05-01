@@ -561,6 +561,7 @@ ui:
     tab_ai: "AI Asistani"
     tab_author: "Yazar"
     tab_plugins: "Eklentiler"
+    open_tab_menu: "Sekme menüsünü aç"
     tab_topics: "Konular"
     tab_licenses: "Lisanslar"
     topics_title: "Makale konulari"
