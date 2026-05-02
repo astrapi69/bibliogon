@@ -19,6 +19,7 @@ import re
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from app.paths import get_upload_dir
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 def reviews_dir(book_id: str) -> Path:
     """Return the reviews directory for a book. Does not create it."""
-    return Path("uploads") / book_id / REVIEWS_DIRNAME
+    return get_upload_dir() / book_id / REVIEWS_DIRNAME
 
 
 def slugify(text: str, max_length: int = 60) -> str:

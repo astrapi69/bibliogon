@@ -148,7 +148,7 @@ def isolated_uploads(tmp_path, monkeypatch):
     """Redirect both git_backup's UPLOADS_ROOT + git_sync_mapping's
     persistent clone area to the test's tmp dir so we never touch
     the real ``uploads/`` tree."""
-    monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "credentials")
     monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-pgs05")
     yield tmp_path

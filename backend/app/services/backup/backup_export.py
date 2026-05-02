@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.backup_history import BackupHistory
 from app.models import Article, ArticleAsset, Asset, Book, Chapter, Publication
+from app.paths import get_upload_dir
 from app.services.backup.serializer import (
     serialize_article_asset_for_backup,
     serialize_article_for_backup,
@@ -147,7 +148,7 @@ def _write_audiobook(book_id: str, book_dir: Path) -> None:
     metadata.json (it gets re-created on restore from the surviving
     layout) and silently ignore an absent directory.
     """
-    source = Path("uploads") / book_id / "audiobook"
+    source = get_upload_dir() / book_id / "audiobook"
     if not source.exists():
         return
     target = book_dir / "audiobook"

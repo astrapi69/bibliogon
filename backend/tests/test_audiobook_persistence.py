@@ -91,6 +91,7 @@ def _wait(job_id: str, timeout: float = 5.0) -> None:
 def test_async_audiobook_export_persists_files(client, tmp_path, monkeypatch):
     """After a successful job, uploads/{id}/audiobook/ exists with the chapters."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 2)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -114,6 +115,7 @@ def test_async_audiobook_export_persists_files(client, tmp_path, monkeypatch):
 
 def test_get_book_audiobook_returns_metadata(client, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 2)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -141,6 +143,7 @@ def test_get_book_audiobook_returns_metadata(client, tmp_path, monkeypatch):
 def test_get_book_audiobook_empty_state(client, tmp_path, monkeypatch):
     """A book without a generated audiobook returns ``exists: false``."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         r = client.get(f"/api/books/{book_id}/audiobook")
@@ -152,6 +155,7 @@ def test_get_book_audiobook_empty_state(client, tmp_path, monkeypatch):
 
 def test_per_book_chapter_and_zip_downloads(client, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 2)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -183,6 +187,7 @@ def test_per_book_chapter_and_zip_downloads(client, tmp_path, monkeypatch):
 
 def test_delete_book_audiobook(client, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -206,6 +211,7 @@ def test_delete_book_audiobook(client, tmp_path, monkeypatch):
 
 def test_chapter_download_path_traversal_blocked(client, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -226,6 +232,7 @@ def test_chapter_download_path_traversal_blocked(client, tmp_path, monkeypatch):
 def test_async_audiobook_blocks_regeneration_when_existing(client, tmp_path, monkeypatch):
     """Second async export call must return 409 with the existing metadata."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -254,6 +261,7 @@ def test_async_audiobook_blocks_regeneration_when_existing(client, tmp_path, mon
 def test_book_overwrite_flag_persists_via_patch(client, tmp_path, monkeypatch):
     """PATCH sets the per-book overwrite flag and GET reports it back."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         initial = client.get(f"/api/books/{book_id}").json()
@@ -280,6 +288,7 @@ def test_book_overwrite_flag_disables_content_hash_cache(client, tmp_path, monke
     synthesizes 0 chapters. Flag on: second run regenerates all chapters.
     """
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 2)
     try:
         call_count = {"n": 0}
@@ -331,6 +340,7 @@ def test_async_audiobook_per_book_overwrite_flag_skips_warning(client, tmp_path,
     which has been removed in favor of the per-book column.
     """
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):
@@ -359,6 +369,7 @@ def test_async_audiobook_per_book_overwrite_flag_skips_warning(client, tmp_path,
 def test_elevenlabs_config_get_reports_unconfigured_initially(client, tmp_path, monkeypatch):
     """The fixture starts with no ElevenLabs key configured."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     # Import here so the engine module reset is local to this test
     from bibliogon_audiobook import tts_engine
     tts_engine.set_elevenlabs_api_key("")
@@ -379,6 +390,7 @@ def test_elevenlabs_config_post_verifies_and_persists(client, tmp_path, monkeypa
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     class FakeResponse:
         status_code = 200
@@ -419,6 +431,7 @@ def test_elevenlabs_config_post_rejects_bad_key(client, tmp_path, monkeypatch):
         "settings: {}\nelevenlabs:\n  api_key: ''\n", encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     class FakeResponse:
         status_code = 401
@@ -449,6 +462,7 @@ def test_elevenlabs_config_delete_clears_key(client, tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     from bibliogon_audiobook import tts_engine
     tts_engine.set_elevenlabs_api_key("sk_will_be_removed")
 
@@ -467,6 +481,7 @@ def test_backup_includes_audiobook_when_requested(client, tmp_path, monkeypatch)
     """include_audiobook=true adds the persisted audiobook directory to the .bgb."""
     import zipfile
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     book_id = _create_book_with_chapters(client, 1)
     try:
         with patch("bibliogon_audiobook.generator.get_engine", return_value=_fake_engine()):

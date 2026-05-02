@@ -134,6 +134,34 @@ bibliogon/
 - E2E tests under `e2e/`, not on the `make test` default path
 - Current counts and coverage: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md)
 
+## Test isolation
+
+Tests run in a temporary data directory, never against production
+data. Two layers of protection in `backend/tests/conftest.py`:
+
+1. `BIBLIOGON_TEST=1` + `TEST_DATABASE_URL=sqlite:///:memory:` are
+   set BEFORE any `app.*` import. `BIBLIOGON_DATA_DIR` is set to a
+   process-scoped tmp dir. All `app.paths.get_data_dir()` and
+   `get_upload_dir()` calls resolve into this tmp path.
+2. Production data directories carry a `.bibliogon-production`
+   marker file (written by the FastAPI lifespan in non-test mode
+   via `app.paths.mark_data_dir_as_production`). If any test ever
+   sees this marker, the entire test run aborts with
+   `pytest.exit(returncode=2)`.
+
+Exit code 2 means a test path was pointed at real data. Investigate;
+never delete the marker just to "make the test pass". Origin: the
+April 2026 data-loss incident — the DB tripwire landed in `a4cf7cf`,
+the filesystem tripwire in this commit.
+
+Path conventions:
+- `Path("uploads")` is forbidden (CWD-relative). Use
+  `app.paths.get_upload_dir()` everywhere — it resolves fresh on
+  every call so test env-var overrides take effect.
+- `from app.routers.assets import UPLOAD_DIR` is forbidden (frozen
+  at import time). Use `from app.paths import get_upload_dir`
+  instead.
+
 ## Pre-commit hooks
 
 The repo uses pre-commit for formatting and linting. Contributors install once:

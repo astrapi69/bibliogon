@@ -29,7 +29,7 @@ def _isolate_uploads(tmp_path, monkeypatch):
     """Point UPLOADS_ROOT at per-test tmp so adoption writes don't
     pollute the real uploads dir. Also matches the pattern already
     used in test_git_import_adopter.py."""
-    monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
 
 def _wbt_zip_with_git(tmp_dir: Path, *, remote: str | None = None) -> Path:

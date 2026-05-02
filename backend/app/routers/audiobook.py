@@ -33,6 +33,7 @@ from app import credential_store
 from app.database import SessionLocal, get_db
 from app.models import AudioVoice, Book
 from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.paths import get_upload_dir
 
 logger = logging.getLogger(__name__)
 
@@ -789,7 +790,7 @@ PREVIEWS_DIRNAME = "previews"
 
 
 def _previews_dir(book_id: str) -> Path:
-    return Path("uploads") / book_id / "audiobook" / PREVIEWS_DIRNAME
+    return get_upload_dir() / book_id / "audiobook" / PREVIEWS_DIRNAME
 
 
 @router.get("/books/{book_id}/audiobook/previews")

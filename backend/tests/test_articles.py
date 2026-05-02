@@ -244,10 +244,11 @@ def test_permanent_delete_removes_article_and_uploads() -> None:
     on-disk assets. Guards F-9 (assets orphaned) under the new
     trash-bin pattern."""
     import shutil as _shutil
-    from pathlib import Path
+
+    from app.paths import get_upload_dir
 
     article = _create("With Assets")
-    uploads_root = Path("uploads") / "articles" / article["id"]
+    uploads_root = get_upload_dir() / "articles" / article["id"]
     uploads_root.mkdir(parents=True, exist_ok=True)
     (uploads_root / "featured.png").write_bytes(b"fake-image")
     assert uploads_root.exists()

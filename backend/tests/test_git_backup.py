@@ -30,7 +30,7 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def _isolate_uploads(tmp_path, monkeypatch):
     """Redirect UPLOADS_ROOT + credentials dir to a tmp dir for every test."""
-    monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "git_credentials")
     # Phase 2 uses credential_store which requires a secret in env.
     monkeypatch.setenv("BIBLIOGON_CREDENTIALS_SECRET", "test-secret-for-git-backup")

@@ -32,6 +32,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import Book, GitSyncMapping
+from app.paths import get_upload_dir
 from app.services.translation_groups import (
     _BRANCH_LANG_RE,
     derive_language,
@@ -43,7 +44,6 @@ logger = logging.getLogger(__name__)
 
 # Persistent clone area lives next to the asset store (mirrors PGS-02).
 _GIT_SYNC_ROOT_NAME = "git-sync"
-_UPLOADS_ROOT = Path("uploads")
 
 
 class TranslationImportError(Exception):
@@ -109,7 +109,7 @@ def import_translation_group(
     db: Session,
     *,
     git_url: str,
-    uploads_dir: Path = _UPLOADS_ROOT,
+    uploads_dir: Path = get_upload_dir(),
 ) -> MultiBranchResult:
     """Clone ``git_url`` once, import every matching branch as a book.
 

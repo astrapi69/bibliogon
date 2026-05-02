@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal, get_db
 from app.models import Article
 from app.schemas import ArticleCreate, ArticleOut, ArticleUpdate
+from app.paths import get_upload_dir
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ def cleanup_expired_article_trash() -> int:
             .all()
         )
         for article in expired:
-            asset_dir = Path("uploads") / "articles" / article.id
+            asset_dir = get_upload_dir() / "articles" / article.id
             if asset_dir.exists():
                 try:
                     shutil.rmtree(asset_dir)
@@ -188,7 +189,7 @@ def empty_article_trash(db: Session = Depends(get_db)) -> None:
     """Permanently delete every article currently in the trash."""
     expired = db.query(Article).filter(Article.deleted_at.is_not(None)).all()
     for article in expired:
-        asset_dir = Path("uploads") / "articles" / article.id
+        asset_dir = get_upload_dir() / "articles" / article.id
         if asset_dir.exists():
             try:
                 shutil.rmtree(asset_dir)
@@ -207,7 +208,7 @@ def permanent_delete_article(article_id: str, db: Session = Depends(get_db)) -> 
     )
     if not article:
         raise HTTPException(status_code=404, detail="Article not found in trash")
-    asset_dir = Path("uploads") / "articles" / article_id
+    asset_dir = get_upload_dir() / "articles" / article_id
     if asset_dir.exists():
         try:
             shutil.rmtree(asset_dir)
@@ -412,7 +413,7 @@ def delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
         raise HTTPException(status_code=404, detail="Article not found")
 
     if _is_permanent_delete():
-        asset_dir = Path("uploads") / "articles" / article_id
+        asset_dir = get_upload_dir() / "articles" / article_id
         if asset_dir.exists():
             try:
                 shutil.rmtree(asset_dir)

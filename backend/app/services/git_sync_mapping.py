@@ -24,6 +24,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import GitSyncMapping
+from app.paths import get_upload_dir
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,6 @@ logger = logging.getLogger(__name__)
 # sibling state (e.g. a credentials cache) later without
 # reorganizing.
 _GIT_SYNC_ROOT_NAME = "git-sync"
-_UPLOADS_ROOT = Path("uploads")
 
 
 def persist_clone_after_import(
@@ -42,7 +42,7 @@ def persist_clone_after_import(
     *,
     staging_path: Path,
     book_id: str,
-    uploads_dir: Path = _UPLOADS_ROOT,
+    uploads_dir: Path = get_upload_dir(),
 ) -> None:
     """Move the staged clone into a long-lived directory and write
     the GitSyncMapping row.

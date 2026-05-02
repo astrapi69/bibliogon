@@ -42,7 +42,7 @@ def _isolate_uploads(tmp_path, monkeypatch):
     """``git_backup.repo_path`` reads ``UPLOADS_ROOT`` at import time as
     a module-level ``Path("uploads")``; point it at tmp so tests
     don't touch the real uploads dir."""
-    monkeypatch.setattr(git_backup, "UPLOADS_ROOT", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
 
 # --- sanitize_git_dir ---

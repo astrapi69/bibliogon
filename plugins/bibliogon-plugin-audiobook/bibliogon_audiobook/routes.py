@@ -273,7 +273,9 @@ def _persist_preview(mp3_path: Path, book_id: str, chapter_title: str, text: str
     Filename format: {chapter-slug}-preview-{short-text-slug}.mp3
     so the user can tell which chapter and passage the preview is from.
     """
-    previews_dir = Path("uploads") / book_id / "audiobook" / "previews"
+    from app.paths import get_upload_dir
+
+    previews_dir = get_upload_dir() / book_id / "audiobook" / "previews"
     previews_dir.mkdir(parents=True, exist_ok=True)
 
     chapter_slug = _slugify_preview(chapter_title) if chapter_title else "untitled"

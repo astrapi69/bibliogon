@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.backup_history import BackupHistory
 from app.exceptions import ValidationError
+from app.paths import get_upload_dir
 from app.models import Article, ArticleAsset, Asset, Book, Chapter, ChapterType, Publication
 from app.services.backup.archive_utils import find_articles_dir, find_books_dir, find_manifest
 from app.services.backup.serializer import (
@@ -257,7 +258,7 @@ def _restore_article_assets(db: Session, article_dir: Path, article_id: str) -> 
     if not assets_json.exists():
         return
 
-    base_uploads = Path("uploads") / "articles" / article_id
+    base_uploads = get_upload_dir() / "articles" / article_id
     assets_src_dir = article_dir / "assets"
     assets_meta: list[dict[str, Any]] = json.loads(assets_json.read_text(encoding="utf-8"))
     for meta in assets_meta:
@@ -302,8 +303,6 @@ def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
     assets_json = book_dir / "assets.json"
     if not assets_json.exists():
         return
-
-    from app.paths import get_upload_dir
 
     upload_dir = get_upload_dir()
     assets_src_dir = book_dir / "assets"

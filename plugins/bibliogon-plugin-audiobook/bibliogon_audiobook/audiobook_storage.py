@@ -39,13 +39,23 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_DIR = Path("uploads")
 METADATA_FILENAME = "metadata.json"
 CHAPTERS_DIRNAME = "chapters"
 MERGED_FILENAME = "audiobook.mp3"
 
 STATUS_IN_PROGRESS = "in_progress"
 STATUS_COMPLETE = "complete"
+
+
+def _default_upload_root() -> Path:
+    """Resolve the upload root via the central app helper.
+
+    The helper reads ``BIBLIOGON_DATA_DIR`` lazily; tests setting that
+    env var still take effect even if this module was imported earlier.
+    """
+    from app.paths import get_upload_dir
+
+    return get_upload_dir()
 
 
 def audiobook_dir(book_id: str, root: Path | None = None) -> Path:
@@ -55,7 +65,7 @@ def audiobook_dir(book_id: str, root: Path | None = None) -> Path:
     should check ``exists()`` first, writers should go through
     :func:`prepare_chapters_dir`.
     """
-    base = root if root is not None else UPLOAD_DIR
+    base = root if root is not None else _default_upload_root()
     return base / book_id / "audiobook"
 
 

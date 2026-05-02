@@ -24,9 +24,9 @@ from sqlalchemy.orm import Session
 
 from app.models import Book, Chapter, ChapterType
 from app.services import git_credentials
+from app.paths import get_upload_dir
 
 # Bibliogon convention: every book's uploads live at ``uploads/{book_id}/``.
-UPLOADS_ROOT = Path("uploads")
 
 # Per-book remote URL + metadata. Plain YAML (URL is not secret; PAT is).
 GIT_CONFIG_FILENAME = ".bibliogon-git-config.yaml"
@@ -124,7 +124,7 @@ class NoMergeInProgressError(GitBackupError):
 
 def repo_path(book_id: str) -> Path:
     """Return the on-disk path that hosts ``.git`` for this book."""
-    return UPLOADS_ROOT / book_id
+    return get_upload_dir() / book_id
 
 
 def is_initialized(book_id: str) -> bool:
