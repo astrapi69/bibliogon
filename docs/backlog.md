@@ -191,18 +191,19 @@ DOC-03 closed in `ef299bc`, TD-01 + PS-09-FU-01 closed
 (already-resolved); top 2 below remain. DEP-02 deferred per
 user note (line below).
 
-### 1. DEP-02 - TipTap 2 → 3 migration (deadline pressure)
+### 1. DEP-02 - TipTap 2 → 3 migration (BLOCKED)
 
 - **ID**: DEP-02
 - **Effort**: 4-8h code + 1-2h regression
-- **Why rank 1**: hard fallback deadline 2026-05-05 (10 days
-  out). Blocks DEP-09 / SEC-01 chain. If
-  `@sereneinserenade/tiptap-search-and-replace` v0.2.0 not
-  published to npm by 2026-05-05, fall back to
-  `prosemirror-search` adapter (~50-80 LOC).
-- **Status**: pre-audit complete in
-  `docs/explorations/tiptap-3-migration.md`.
-- is still not implemented and v0.24.0 is available. see: https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace
+- **Status**: **BLOCKED** (per user 2026-05-02). Pre-audit complete
+  in `docs/explorations/tiptap-3-migration.md`. Hard blocker:
+  `@sereneinserenade/tiptap-search-and-replace` v0.2.0 still
+  unpublished on npm (latest published v0.1.x for TipTap 2 only).
+  See https://www.npmjs.com/package/@sereneinserenade/tiptap-search-and-replace.
+- **Unblock**: upstream npm publish of v0.2.0, OR explicit go-ahead
+  to ship the `prosemirror-search` adapter (~50-80 LOC) fallback.
+- **Knock-on blocks**: DEP-09 (Vite 8) + SEC-01 (vite-plugin-pwa
+  CVEs) chain on the same vite-plugin-pwa upstream.
 
 ### 2. AR-03+ - Article Phase 3 (platform APIs + automation)
 
@@ -303,16 +304,16 @@ user note (line below).
 
 ### Dependencies (DEP / SEC)
 
-- **DEP-02**: TipTap 2 → 3. See top #1.
-- **DEP-05**: elevenlabs SDK 0.2 → 2.x. Effort: M-L. Needs paid
-  API key for verification. Schedule with a real audiobook test
-  run.
-- **DEP-09**: Vite 7 → 8. Blocked on `vite-plugin-pwa` upstream
-  (peer deps top out at Vite 7). Re-check
+- **DEP-02**: BLOCKED. TipTap 2 → 3. See top #1 + Blocked-or-waiting
+  table.
+- **DEP-05**: BLOCKED. elevenlabs SDK 0.2 → 2.x. Needs paid API
+  key for verification. Schedule with a real audiobook test run.
+- **DEP-09**: BLOCKED. Vite 7 → 8. `vite-plugin-pwa` upstream
+  peer-deps top out at Vite 7. Re-check
   `npm view vite-plugin-pwa peerDependencies` every ~2 weeks.
-  Last check: 2026-04-18. Tracker: GH #6.
-- **SEC-01**: vite-plugin-pwa CVE chain (4 high-severity, all
-  dev-only, production bundle clean). Same upstream blocker as
+  Last check: 2026-04-30. Tracker: GH #6.
+- **SEC-01**: BLOCKED. vite-plugin-pwa CVE chain (4 high-severity,
+  all dev-only, production bundle clean). Same upstream blocker as
   DEP-09. Re-audit monthly via `npm audit --audit-level=high`.
 
 ### Documentation
@@ -342,7 +343,8 @@ user note (line below).
 
 | Item | Blocked on | Unblock condition |
 |------|-----------|-------------------|
-| DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | 2026-05-05 hard deadline → fallback to `prosemirror-search` adapter |
+| DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | npm publish OR explicit go-ahead for `prosemirror-search` adapter fallback |
+| DEP-05 (elevenlabs 2.x) | Real paid-API verification | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | DEP-09 (Vite 8) | `vite-plugin-pwa` peer-dep update | Upstream releases Vite 8 compat |
 | SEC-01 | Same as DEP-09 | Same as DEP-09 |
 | AR-02 | Validation data from AR-01 | 3-5 article workflows logged |
