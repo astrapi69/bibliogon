@@ -406,18 +406,12 @@ test.describe('G. Integration', () => {
     await expect(page.locator('.ProseMirror')).toContainText('Edited A')
   })
 
-  // Still skipped after partial #12 fix: Editor.tsx now uses
-  // `useEditorState` (the idiomatic TipTap reactive read) for word +
-  // character count instead of inline `editor.storage...` reads, but
-  // Playwright still sees a stale rendered counter after
-  // keyboard.type. The inline-read -> useEditorState migration is the
-  // right architectural direction and is the code fix for the
-  // user-visible bug; the test failure mode may be an interaction
-  // between React strict-mode double-mount and
-  // useSyncExternalStore's initial subscription timing in the Vite
-  // dev server Playwright drives against. Needs a dedicated debug
-  // session with browser-side console logging. Tracked in issue #12.
-  test.skip('word count updates after typing', async ({page}) => {
+  // Re-enabled with the issue #12 final fix: Editor.tsx switched
+  // from `useEditorState` back to a plain useState + editor.on('update')
+  // subscription. useEditorState wrapped useSyncExternalStore, which
+  // produced stale renders under React StrictMode + Playwright +
+  // Vite dev server. The manual subscription path bypasses that.
+  test('word count updates after typing', async ({page}) => {
     await openEditor(page, bookId)
     await page.getByText('Chapter A').click()
     await focusEditor(page)

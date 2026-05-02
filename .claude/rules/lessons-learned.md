@@ -427,8 +427,11 @@ Stability filter:
 ### TipTap `useEditor` does NOT flush `editor.storage` reads to React
 
 - Inline reads like `{editor?.storage.characterCount?.words()}` in JSX do not update reliably on every content transaction. TipTap's built-in re-render fires on selection changes, not every content edit.
-- Current implementation: `frontend/src/components/Editor.tsx:350` uses TipTap's idiomatic `useEditorState` selector to read `storage.characterCount.{words,characters}()` reactively. This is the right architectural pattern.
-- Smoke test `smoke/editor-formatting.spec.ts:420` "word count updates after typing" remains `test.skip`. The remaining failure mode is suspected interaction between React strict-mode double-mount and `useSyncExternalStore`'s initial subscription timing under the Vite dev server Playwright drives. Tracked in issue #12 (the `Editor.tsx` comment is canonical; older docs/audits refs to issue #9 are stale). Needs a dedicated debug session with browser-side console logging.
+- Two viable patterns:
+  1. **`useEditorState` selector** (TipTap-idiomatic). Wraps `useSyncExternalStore`, subscribes to the editor's transactionNumber, re-runs the selector per transaction.
+  2. **`useState` + `editor.on('update')` listener** (plain React). Manually `setWordCount(...)` on every update event.
+- Choose pattern 2 when running under React `StrictMode` + Playwright + Vite dev server. `useSyncExternalStore` under that combination produced stale renders even though storage updates fired (issue #12). The plain-listener path bypasses `useSyncExternalStore` entirely. `frontend/src/components/Editor.tsx` uses pattern 2.
+- Cleanup: always pair `editor.on('update', cb)` with `editor.off('update', cb)` in the same `useEffect` cleanup to avoid leaks across hot-reload cycles.
 
 ### Prefix testid selectors match every nested testid that shares the prefix
 

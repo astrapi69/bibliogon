@@ -1,7 +1,7 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
-import {useEditor, useEditorState, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
+import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
 import {reviewString, NON_PROSE_CHAPTER_TYPES} from "../data/ai-review-strings";
 import StarterKit from "@tiptap/starter-kit";
@@ -340,22 +340,35 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     });
 
     // Live word/char count off editor.storage.characterCount.
-    // useEditorState subscribes to the editor's transactionNumber and
-    // re-runs the selector on every transaction. See GitHub issue #12:
-    // inline reads in JSX do not re-render the status bar on keyboard
-    // input because `editor.storage` is not a React state dep.
-    const {words: wordCount, chars: charCount} = useEditorState({
-        editor,
-        selector: ({editor: ed}) => {
-            const storage = ed?.storage.characterCount as
+    // Manual `editor.on('update')` subscription per GitHub issue #12.
+    // The earlier `useEditorState` migration was correct in spirit but
+    // wrapped useSyncExternalStore, which under React StrictMode +
+    // Playwright + Vite-dev-server produced a stale rendered value
+    // even though the storage updates fired (see e2e/smoke/
+    // editor-formatting.spec.ts skip comment). The plain useState +
+    // editor.on('update') pattern sidesteps useSyncExternalStore
+    // entirely and is what issue #12 originally proposed.
+    const [wordCount, setWordCount] = useState(0);
+    const [charCount, setCharCount] = useState(0);
+    useEffect(() => {
+        if (!editor) return;
+        const storage = () =>
+            editor.storage.characterCount as
                 | {words: () => number; characters: () => number}
                 | undefined;
-            return {
-                words: storage ? storage.words() : 0,
-                chars: storage ? storage.characters() : 0,
-            };
-        },
-    }) ?? {words: 0, chars: 0};
+        const sync = () => {
+            const s = storage();
+            setWordCount(s ? s.words() : 0);
+            setCharCount(s ? s.characters() : 0);
+        };
+        sync();
+        editor.on("update", sync);
+        editor.on("create", sync);
+        return () => {
+            editor.off("update", sync);
+            editor.off("create", sync);
+        };
+    }, [editor]);
 
     // Keep ref in sync for async callbacks (image upload)
     useEffect(() => { editorRef.current = editor; }, [editor]);
