@@ -146,9 +146,7 @@ def test_source_identifier_deterministic_for_zip(
 def test_execute_creates_book_and_chapters(
     handler: WbtImportHandler, tmp_path: Path, db: Session, monkeypatch
 ) -> None:
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     root = _minimal_wbt(tmp_path, title="Exec Book")
     zip_path = _zip_of(root, tmp_path / "p.zip")
@@ -169,9 +167,7 @@ def test_execute_creates_book_and_chapters(
 def test_execute_with_overrides_updates_book(
     handler: WbtImportHandler, tmp_path: Path, db: Session, monkeypatch
 ) -> None:
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     zip_path = _zip_of(
         _minimal_wbt(tmp_path, title="Original"), tmp_path / "p.zip"
@@ -190,9 +186,7 @@ def test_execute_with_overrides_updates_book(
 def test_execute_rejects_unknown_override_key(
     handler: WbtImportHandler, tmp_path: Path, monkeypatch
 ) -> None:
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     zip_path = _zip_of(_minimal_wbt(tmp_path), tmp_path / "p.zip")
     detected = handler.detect(str(zip_path))

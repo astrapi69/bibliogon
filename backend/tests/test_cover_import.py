@@ -216,15 +216,21 @@ def test_import_assets_classifies_singular_cover_folder(tmp_path: Path, db: Sess
     (src / "cover").mkdir(parents=True)
     (src / "cover" / "cover.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
-    # import_assets reads UPLOAD_DIR at call time; point it elsewhere.
-    from app.routers import assets as assets_mod
+    # ``import_assets`` resolves the upload root via ``get_upload_dir()``
+    # which reads ``BIBLIOGON_DATA_DIR`` fresh on every call, so the
+    # monkeypatch survives even though no module-level constant exists
+    # to override.
+    import os
 
-    original = assets_mod.UPLOAD_DIR
-    assets_mod.UPLOAD_DIR = tmp_path / "uploads"
+    original = os.environ.get("BIBLIOGON_DATA_DIR")
+    os.environ["BIBLIOGON_DATA_DIR"] = str(tmp_path)
     try:
         count = import_assets(db, "b4", src)
     finally:
-        assets_mod.UPLOAD_DIR = original
+        if original is None:
+            os.environ.pop("BIBLIOGON_DATA_DIR", None)
+        else:
+            os.environ["BIBLIOGON_DATA_DIR"] = original
     db.commit()
 
     assert count == 1

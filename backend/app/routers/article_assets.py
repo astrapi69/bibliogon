@@ -16,11 +16,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Article, ArticleAsset
+from app.paths import get_upload_dir
 from app.schemas import ArticleAssetOut
 
 router = APIRouter(prefix="/articles/{article_id}/assets", tags=["article-assets"])
-
-UPLOAD_DIR = Path("uploads")
 
 _ALLOWED_ASSET_TYPES = ("featured_image",)
 _ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
@@ -59,7 +58,7 @@ def upload_asset(
             detail=f"Unsupported extension {ext!r}; allowed: {_ALLOWED_EXTENSIONS}",
         )
 
-    article_dir = UPLOAD_DIR / "articles" / article_id / asset_type
+    article_dir = get_upload_dir() / "articles" / article_id / asset_type
     article_dir.mkdir(parents=True, exist_ok=True)
     file_path = article_dir / file.filename
 

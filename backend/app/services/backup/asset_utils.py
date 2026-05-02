@@ -51,8 +51,9 @@ def import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
     Walks the assets directory tree, determines asset_type from folder name
     (with subfolder override) and copies files to the configured uploads dir.
     """
-    from app.routers.assets import UPLOAD_DIR
+    from app.paths import get_upload_dir
 
+    upload_dir = get_upload_dir()
     count = 0
     for file_path in assets_dir.rglob("*"):
         if not file_path.is_file():
@@ -61,7 +62,7 @@ def import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
             continue
 
         asset_type = _classify_asset_type(file_path.relative_to(assets_dir))
-        dest_dir = UPLOAD_DIR / book_id / asset_type
+        dest_dir = upload_dir / book_id / asset_type
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest_path = dest_dir / file_path.name
         shutil.copy2(file_path, dest_path)

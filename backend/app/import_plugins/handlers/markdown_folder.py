@@ -301,10 +301,12 @@ def _import_assets(
     figures: list[Path],
 ) -> None:
     """Copy each image into the book's uploads dir and record Asset rows."""
-    from app.routers.assets import UPLOAD_DIR
+    from app.paths import get_upload_dir
+
+    upload_dir = get_upload_dir()
 
     def _copy(path: Path, asset_type: str) -> None:
-        dest_dir = UPLOAD_DIR / book_id / asset_type
+        dest_dir = upload_dir / book_id / asset_type
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / path.name
         shutil.copy2(path, dest)

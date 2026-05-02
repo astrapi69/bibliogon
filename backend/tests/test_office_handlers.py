@@ -123,9 +123,7 @@ def test_detect_warns_on_long_single_chapter(
 def test_execute_creates_book_and_chapters(
     tmp_path: Path, db: Session, monkeypatch
 ) -> None:
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
         _fake_conversion("# Chapter A\n\nBody A.\n\n# Chapter B\n\nBody B.\n"),
@@ -148,9 +146,7 @@ def test_execute_creates_book_and_chapters(
 def test_execute_with_overrides_updates_book(
     tmp_path: Path, db: Session, monkeypatch
 ) -> None:
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
         _fake_conversion("# Auto\n\nBody."),
@@ -191,9 +187,7 @@ def test_execute_copies_pandoc_extracted_media(
     copies them into uploads/{book}/figure/ and records Asset rows."""
     import shutil
 
-    from app.routers import assets as assets_mod
-
-    monkeypatch.setattr(assets_mod, "UPLOAD_DIR", tmp_path / "uploads")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
 
     def _convert_with_media(path: Path, fmt: str):
         media = tmp_path / "media"

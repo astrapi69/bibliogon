@@ -303,13 +303,14 @@ def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
     if not assets_json.exists():
         return
 
-    from app.routers.assets import UPLOAD_DIR
+    from app.paths import get_upload_dir
 
+    upload_dir = get_upload_dir()
     assets_src_dir = book_dir / "assets"
     assets_meta: list[dict[str, Any]] = json.loads(assets_json.read_text(encoding="utf-8"))
     for meta in assets_meta:
         asset_type = meta.get("asset_type", "figure")
-        dest_dir = UPLOAD_DIR / book_id / asset_type
+        dest_dir = upload_dir / book_id / asset_type
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest_path = dest_dir / meta["filename"]
 

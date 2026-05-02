@@ -7,11 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Asset, Book
+from app.paths import get_upload_dir
 from app.schemas import AssetOut
 
 router = APIRouter(prefix="/books/{book_id}/assets", tags=["assets"])
-
-UPLOAD_DIR = Path("uploads")
 
 
 @router.get("", response_model=list[AssetOut])
@@ -41,7 +40,7 @@ def upload_asset(
         raise HTTPException(status_code=400, detail="No filename provided")
 
     # Store file
-    book_dir = UPLOAD_DIR / book_id / asset_type
+    book_dir = get_upload_dir() / book_id / asset_type
     book_dir.mkdir(parents=True, exist_ok=True)
     file_path = book_dir / file.filename
 

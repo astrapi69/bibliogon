@@ -280,9 +280,9 @@ def _import_media(session: Session, book_id: str, media_dir: Path) -> None:
     if not media_dir.is_dir():
         return
 
-    from app.routers.assets import UPLOAD_DIR
+    from app.paths import get_upload_dir
 
-    dest_root = UPLOAD_DIR / book_id / "figure"
+    dest_root = get_upload_dir() / book_id / "figure"
     dest_root.mkdir(parents=True, exist_ok=True)
     for path in sorted(media_dir.rglob("*")):
         if not path.is_file():

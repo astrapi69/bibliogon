@@ -19,7 +19,6 @@ from pathlib import Path
 from app.database import Base, SessionLocal, engine
 from app.import_plugins.handlers.wbt import WbtImportHandler
 from app.models import Asset, Book
-from app.routers.assets import UPLOAD_DIR
 
 
 def _broken_shape_zip(tmp_dir: Path) -> Path:
@@ -108,9 +107,7 @@ def test_execute_persists_cover_image_to_book_row(
     """book.cover_image must populate so the dashboard can render the
     thumbnail. If assets import path copies the cover but never sets
     the column, this test fails."""
-    monkeypatch.setattr(
-        "app.routers.assets.UPLOAD_DIR", tmp_path / "uploads"
-    )
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     # Also patch at the asset_utils import site if it re-imports.
     Base.metadata.create_all(bind=engine)
     zip_path = _broken_shape_zip(tmp_path)
@@ -152,9 +149,7 @@ def test_stale_cover_image_override_does_not_clobber_upload_path(
     This test pins the backend contract: when overrides do NOT contain
     cover_image, the handler's post-import path survives.
     """
-    monkeypatch.setattr(
-        "app.routers.assets.UPLOAD_DIR", tmp_path / "uploads"
-    )
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     Base.metadata.create_all(bind=engine)
     zip_path = _broken_shape_zip(tmp_path)
     handler = WbtImportHandler()

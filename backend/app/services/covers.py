@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import NotFoundError, PayloadTooLargeError, ValidationError
 from app.models import Asset, Book
-from app.routers.assets import UPLOAD_DIR
+from app.paths import get_upload_dir
 
 # Whitelisted extensions (KDP-friendly raster formats only)
 ALLOWED_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}
@@ -63,7 +63,7 @@ def upload_cover(db: Session, book_id: str, file: UploadFile) -> CoverUploadResu
         book_id=book_id,
         filename=target_filename,
         asset_type="cover",
-        path=str(UPLOAD_DIR / book_id / "cover" / target_filename),
+        path=str(get_upload_dir() / book_id / "cover" / target_filename),
     )
     db.add(asset)
     book.cover_image = relative_path
@@ -201,7 +201,7 @@ def _write_cover_file(book_id: str, filename: str, payload: bytes) -> str:
 
     Returns the relative path used as ``Book.cover_image``.
     """
-    cover_dir = UPLOAD_DIR / book_id / "cover"
+    cover_dir = get_upload_dir() / book_id / "cover"
     cover_dir.mkdir(parents=True, exist_ok=True)
     target = cover_dir / filename
     with open(target, "wb") as f:
