@@ -334,6 +334,60 @@ NOT in CLAUDE.md:
 - Task completed (checkbox)
 - Phase planned or prioritized
 
+### ROADMAP priority tiers
+
+`docs/ROADMAP.md` and `docs/backlog.md` are sorted by priority.
+Section headers `## P0` through `## P5` mark the tiers, top to
+bottom; a `## Blocked / Upstream Wait` section sits between P5
+and the archive link.
+
+| Tier | Meaning |
+|------|---------|
+| **P0** | Deadline pressure, active blocker, security issue, or production-data risk. "Do this now." |
+| **P1** | Architecture / hygiene debt. Code-rule violations, test isolation gaps, things that would block a clean release. |
+| **P2** | High-value user features. Anything moving Bibliogon from "toy to serious tool". |
+| **P3** | Infrastructure / quality. Test coverage, CI / tooling, internal refactors with no user-visible effect. |
+| **P4** | Roadmap / future phases. Items deliberately deferred to a later phase. |
+| **P5** | Speculative / nice-to-have. No concrete trigger or user demand. |
+| **Blocked / Upstream Wait** | Items waiting on an external trigger (npm publish, paid-API access, hardware availability, user report). NOT P0 even when critical. |
+
+Within each tier, sub-order by:
+1. Smaller scope first (faster wins).
+2. Items unblocking other items first.
+3. Alphabetical by ID as final tiebreaker.
+
+Document the tier of each item by section header. Do NOT add
+P-prefixes to the IDs themselves (T-01 stays T-01, not P2-T-01).
+The tier is a section header, the ID is the task.
+
+### Backlog-as-pointer convention
+
+`docs/backlog.md` is a daily-planning view of `docs/ROADMAP.md`.
+It is NOT a duplicate definition store.
+
+- A task that lives in ROADMAP must NOT have its full body
+  duplicated in backlog. Use a one-line pointer instead:
+  `- **DEP-02**: TipTap 2 -> 3 (BLOCKED) — see ROADMAP > Blocked / Upstream Wait.`
+- A task that lives only in backlog (no ROADMAP entry) keeps its
+  full body. The backlog is the queue for not-yet-promoted ideas.
+- When backlog and ROADMAP disagree, ROADMAP wins.
+
+### Archive
+
+Completed tasks are archived to `docs/roadmap-archive/`:
+
+- `phase-1-complete.md` (v0.1.0..v0.14.0).
+- `v0.25.0-cleanup-2026-05-02.md` (Phase 2 work shipped between
+  v0.15.0 and v0.25.0).
+- `backlog-recently-closed-2026-05-02.md` (backlog "Recently
+  closed" prose).
+
+Active files (`ROADMAP.md` and `backlog.md`) contain ONLY open
+`- [ ]` items. Do not re-add closed tasks to the active files;
+if a closed task needs to come back, create a new ID. Stable IDs
+across the archive boundary mean single-word prompts like
+"implement T-01" still resolve.
+
 ### When to update CONCEPT.md
 
 - Architectural decision made or changed
