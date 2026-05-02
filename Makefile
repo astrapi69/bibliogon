@@ -284,6 +284,11 @@ mutmut-results: ## Show mutation testing results
 	@echo "=== Export ===" && cd plugins/bibliogon-plugin-export && poetry run mutmut results 2>/dev/null || true
 	@echo "=== MS-Tools ===" && cd plugins/bibliogon-plugin-ms-tools && poetry run mutmut results 2>/dev/null || true
 
+# --- Blocker Status ---
+
+check-blockers: ## Ping upstream sources for every BLOCKED item in docs/backlog.md
+	@bash scripts/check-blockers.sh
+
 # --- Type Checking ---
 
 check-types: check-types-backend check-types-frontend ## Run all type checks

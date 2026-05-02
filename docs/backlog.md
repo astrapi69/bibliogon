@@ -341,6 +341,11 @@ user note (line below).
 
 ## Blocked or waiting
 
+Run `make check-blockers` (or `bash scripts/check-blockers.sh`) to
+poll every upstream source in this table at once. The script prints
+`[BLOCKED]` / `[UNBLOCKED]` / `[MANUAL]` per item plus a one-line
+summary; flip the corresponding row when something turns green.
+
 | Item | Blocked on | Unblock condition |
 |------|-----------|-------------------|
 | DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | npm publish OR explicit go-ahead for `prosemirror-search` adapter fallback |
