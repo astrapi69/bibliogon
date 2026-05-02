@@ -514,6 +514,7 @@ ui:
     builtin: "Incluso"
     builtin_hint: "Enviado com o aplicativo"
     delete: "Excluir"
+    edit: "Editar"
     delete_title: "Excluir modelo de capitulo"
     delete_confirm: "Excluir modelo '{name}'? Isto nao pode ser desfeito."
     deleted: "Modelo de capitulo excluido"
@@ -525,6 +526,7 @@ ui:
     insert_failed: "Falha ao inserir"
   save_chapter_template:
     title: "Salvar capitulo como modelo"
+    title_edit: "Editar modelo de capítulo"
     name: "Nome"
     name_placeholder: "ex. Modelo de entrevista"
     description: "Descricao"
@@ -537,6 +539,7 @@ ui:
     save: "Salvar"
     saving: "Salvando..."
     saved: "Modelo salvo"
+    saved_edit: "Modelo atualizado"
     name_required: "O nome e obrigatorio"
     name_taken: "Ja existe um modelo com esse nome"
     description_required: "A descricao e obrigatoria"

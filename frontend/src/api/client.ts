@@ -328,6 +328,16 @@ export interface ChapterTemplateCreate {
     language?: string;
 }
 
+/** All fields optional - matches the backend Pydantic
+ *  ChapterTemplateUpdate (PUT /api/chapter-templates/{id}). */
+export interface ChapterTemplateUpdate {
+    name?: string;
+    description?: string;
+    chapter_type?: ChapterType;
+    content?: string | null;
+    language?: string;
+}
+
 export interface ChapterCreate {
     title: string;
     content?: string;
@@ -1722,6 +1732,12 @@ export const api = {
         create: (data: ChapterTemplateCreate) =>
             request<ChapterTemplate>("/chapter-templates", {
                 method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        update: (id: string, data: ChapterTemplateUpdate) =>
+            request<ChapterTemplate>(`/chapter-templates/${id}`, {
+                method: "PUT",
                 body: JSON.stringify(data),
             }),
 

@@ -249,10 +249,14 @@ user note (line below).
 - **PS-13**: closed; see Recently closed.
 - **PS-14+**: future polish items, surface as found.
 - **CIO-08-FU-01**: closed; see Recently closed.
-- **TM-04b sub-items** (chapter-template followups): update
-  endpoint exposed in UI, JSON export/import, multi-chapter
-  templates. Effort: 4-6h spread across three independent items.
-  Status: deferred.
+- **TM-04b sub-items** (chapter-template followups):
+  - [x] Update endpoint exposed in UI — Pencil button per
+    user template in `ChapterTemplatePickerModal` opens
+    `SaveAsChapterTemplateModal` in edit mode (renames + redescribes
+    via `PUT /api/chapter-templates/{id}`). Builtins remain read-only.
+    Closed 2026-05-02.
+  - [ ] JSON export/import for templates. Effort: S-M.
+  - [ ] Multi-chapter templates (data model change). Effort: M.
 - **D-05**: full Windows installer (Docker Desktop bundling).
   Effort: L. Deferred until user feedback says install (not
   start) is the friction.

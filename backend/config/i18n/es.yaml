@@ -528,6 +528,7 @@ ui:
     builtin: "Incluida"
     builtin_hint: "Incluida con la aplicacion"
     delete: "Eliminar"
+    edit: "Editar"
     delete_title: "Eliminar plantilla de capitulo"
     delete_confirm: "Eliminar plantilla '{name}'? Esta accion no se puede deshacer."
     deleted: "Plantilla de capitulo eliminada"
@@ -539,6 +540,7 @@ ui:
     insert_failed: "Error al insertar"
   save_chapter_template:
     title: "Guardar capitulo como plantilla"
+    title_edit: "Editar plantilla de capítulo"
     name: "Nombre"
     name_placeholder: "p. ej. Plantilla de entrevista"
     description: "Descripcion"
@@ -551,6 +553,7 @@ ui:
     save: "Guardar"
     saving: "Guardando..."
     saved: "Plantilla guardada"
+    saved_edit: "Plantilla actualizada"
     name_required: "El nombre es obligatorio"
     name_taken: "Ya existe una plantilla con este nombre"
     description_required: "La descripcion es obligatoria"

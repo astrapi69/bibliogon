@@ -4,8 +4,9 @@ import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
-import {Lock, Trash2} from "lucide-react";
+import {Lock, Pencil, Trash2} from "lucide-react";
 import styles from "./ChapterTemplatePickerModal.module.css";
+import SaveAsChapterTemplateModal from "./SaveAsChapterTemplateModal";
 
 interface Props {
     open: boolean;
@@ -20,13 +21,19 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
     const [templates, setTemplates] = useState<ChapterTemplate[] | null>(null);
     const [templatesError, setTemplatesError] = useState<string | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [editingTemplate, setEditingTemplate] = useState<ChapterTemplate | null>(null);
+
+    const refreshList = () => {
+        api.chapterTemplates.list()
+            .then((list) => { setTemplates(list); setTemplatesError(null); })
+            .catch((err) => { setTemplates([]); setTemplatesError(String(err?.message || err)); });
+    };
 
     useEffect(() => {
         if (!open) return;
         // Always refetch on open so recent saves/deletes surface
-        api.chapterTemplates.list()
-            .then((list) => { setTemplates(list); setTemplatesError(null); })
-            .catch((err) => { setTemplates([]); setTemplatesError(String(err?.message || err)); });
+        refreshList();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const handleClose = () => {
@@ -125,15 +132,26 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                             {t("ui.chapter_template_picker.builtin", "Mitgeliefert")}
                                                         </span>
                                                     ) : (
-                                                        <button
-                                                            type="button"
-                                                            className={`btn-icon ${styles.deleteBtn}`}
-                                                            aria-label={t("ui.chapter_template_picker.delete", "Löschen")}
-                                                            data-testid={`chapter-template-delete-${tpl.id}`}
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(tpl); }}
-                                                        >
-                                                            <Trash2 size={14}/>
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                className={`btn-icon ${styles.deleteBtn}`}
+                                                                aria-label={t("ui.chapter_template_picker.edit", "Bearbeiten")}
+                                                                data-testid={`chapter-template-edit-${tpl.id}`}
+                                                                onClick={(e) => { e.stopPropagation(); setEditingTemplate(tpl); }}
+                                                            >
+                                                                <Pencil size={14}/>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className={`btn-icon ${styles.deleteBtn}`}
+                                                                aria-label={t("ui.chapter_template_picker.delete", "Löschen")}
+                                                                data-testid={`chapter-template-delete-${tpl.id}`}
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(tpl); }}
+                                                            >
+                                                                <Trash2 size={14}/>
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -160,6 +178,17 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
+            {editingTemplate && (
+                <SaveAsChapterTemplateModal
+                    open={!!editingTemplate}
+                    existingTemplate={editingTemplate}
+                    onClose={() => {
+                        setEditingTemplate(null);
+                        // Refresh so the renamed template surfaces in the list.
+                        refreshList();
+                    }}
+                />
+            )}
         </Dialog.Root>
     );
 }

@@ -528,6 +528,7 @@ ui:
     builtin: "Yerlesik"
     builtin_hint: "Uygulama ile birlikte gelir"
     delete: "Sil"
+    edit: "Düzenle"
     delete_title: "Bolum sablonunu sil"
     delete_confirm: "'{name}' sablonu silinsin mi? Bu geri alinamaz."
     deleted: "Bolum sablonu silindi"
@@ -539,6 +540,7 @@ ui:
     insert_failed: "Ekleme basarisiz"
   save_chapter_template:
     title: "Bolumu sablon olarak kaydet"
+    title_edit: "Bölüm şablonunu düzenle"
     name: "Ad"
     name_placeholder: "orn. Roportaj sablonu"
     description: "Aciklama"
@@ -551,6 +553,7 @@ ui:
     save: "Kaydet"
     saving: "Kaydediliyor..."
     saved: "Sablon kaydedildi"
+    saved_edit: "Şablon güncellendi"
     name_required: "Ad zorunludur"
     name_taken: "Bu adla bir sablon zaten var"
     description_required: "Aciklama zorunludur"

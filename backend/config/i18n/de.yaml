@@ -514,6 +514,7 @@ ui:
     builtin: "Mitgeliefert"
     builtin_hint: "Mit der App mitgeliefert"
     delete: "Löschen"
+    edit: "Bearbeiten"
     delete_title: "Kapitelvorlage löschen"
     delete_confirm: "Vorlage '{name}' wirklich löschen? Dies kann nicht rückgängig gemacht werden."
     deleted: "Kapitelvorlage gelöscht"
@@ -525,6 +526,7 @@ ui:
     insert_failed: "Einfügen fehlgeschlagen"
   save_chapter_template:
     title: "Kapitel als Vorlage speichern"
+    title_edit: "Kapitelvorlage bearbeiten"
     name: "Name"
     name_placeholder: "z.B. Interview-Vorlage"
     description: "Beschreibung"
@@ -537,6 +539,7 @@ ui:
     save: "Speichern"
     saving: "Speichert..."
     saved: "Vorlage gespeichert"
+    saved_edit: "Vorlage aktualisiert"
     name_required: "Name ist erforderlich"
     name_taken: "Eine Vorlage mit diesem Namen existiert bereits"
     description_required: "Beschreibung ist erforderlich"

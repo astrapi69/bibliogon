@@ -528,6 +528,7 @@ ui:
     builtin: "Integre"
     builtin_hint: "Fourni avec l'application"
     delete: "Supprimer"
+    edit: "Modifier"
     delete_title: "Supprimer le modele de chapitre"
     delete_confirm: "Supprimer le modele '{name}' ? Cette action est irreversible."
     deleted: "Modele de chapitre supprime"
@@ -539,6 +540,7 @@ ui:
     insert_failed: "Echec de l'insertion"
   save_chapter_template:
     title: "Enregistrer le chapitre comme modele"
+    title_edit: "Modifier le modèle de chapitre"
     name: "Nom"
     name_placeholder: "p. ex. Modele d'interview"
     description: "Description"
@@ -551,6 +553,7 @@ ui:
     save: "Enregistrer"
     saving: "Enregistrement..."
     saved: "Modele enregistre"
+    saved_edit: "Modèle mis à jour"
     name_required: "Le nom est requis"
     name_taken: "Un modele avec ce nom existe deja"
     description_required: "La description est requise"

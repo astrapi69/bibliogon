@@ -514,6 +514,7 @@ ui:
     builtin: "組み込み"
     builtin_hint: "アプリに付属"
     delete: "削除"
+    edit: "編集"
     delete_title: "章テンプレートを削除"
     delete_confirm: "テンプレート '{name}' を削除しますか? この操作は取り消せません。"
     deleted: "章テンプレートを削除しました"
@@ -525,6 +526,7 @@ ui:
     insert_failed: "挿入に失敗しました"
   save_chapter_template:
     title: "章をテンプレートとして保存"
+    title_edit: "チャプターテンプレートを編集"
     name: "名前"
     name_placeholder: "例: インタビューテンプレート"
     description: "説明"
@@ -537,6 +539,7 @@ ui:
     save: "保存"
     saving: "保存中..."
     saved: "テンプレートを保存しました"
+    saved_edit: "テンプレートを更新しました"
     name_required: "名前は必須です"
     name_taken: "この名前のテンプレートは既に存在します"
     description_required: "説明は必須です"

@@ -514,6 +514,7 @@ ui:
     builtin: "Built-in"
     builtin_hint: "Shipped with the app"
     delete: "Delete"
+    edit: "Edit"
     delete_title: "Delete chapter template"
     delete_confirm: "Delete template '{name}'? This cannot be undone."
     deleted: "Chapter template deleted"
@@ -525,6 +526,7 @@ ui:
     insert_failed: "Insert failed"
   save_chapter_template:
     title: "Save chapter as template"
+    title_edit: "Edit chapter template"
     name: "Name"
     name_placeholder: "e.g. Interview template"
     description: "Description"
@@ -537,6 +539,7 @@ ui:
     save: "Save"
     saving: "Saving..."
     saved: "Template saved"
+    saved_edit: "Template updated"
     name_required: "Name is required"
     name_taken: "A template with this name already exists"
     description_required: "Description is required"

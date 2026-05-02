@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {api, ApiError, Chapter} from "../api/client";
+import {useEffect, useState} from "react";
+import {api, ApiError, Chapter, ChapterTemplate} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -10,23 +10,41 @@ type ContentMode = "empty" | "preserve";
 
 interface Props {
     open: boolean;
-    chapter: Chapter;
-    bookId: string;
+    /** Source chapter for create mode. Required unless ``existingTemplate``
+     *  is set (in which case the modal edits an existing user template). */
+    chapter?: Chapter;
+    bookId?: string;
+    /** When set, modal switches into edit mode: pre-fills name +
+     *  description from the template, hides the contentMode toggle, and
+     *  calls ``api.chapterTemplates.update`` on save. TM-04b sub-item:
+     *  surface the existing PUT endpoint in the UI. */
+    existingTemplate?: ChapterTemplate;
     onClose: () => void;
 }
 
-export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClose}: Props) {
+export default function SaveAsChapterTemplateModal({open, chapter, bookId, existingTemplate, onClose}: Props) {
     const {t} = useI18n();
 
-    const [name, setName] = useState(chapter.title);
-    const [description, setDescription] = useState("");
+    const isEdit = !!existingTemplate;
+
+    const [name, setName] = useState(existingTemplate?.name ?? chapter?.title ?? "");
+    const [description, setDescription] = useState(existingTemplate?.description ?? "");
     const [contentMode, setContentMode] = useState<ContentMode>("empty");
     const [saving, setSaving] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
 
+    // Re-seed when the modal opens or the target template / chapter changes.
+    useEffect(() => {
+        if (!open) return;
+        setName(existingTemplate?.name ?? chapter?.title ?? "");
+        setDescription(existingTemplate?.description ?? "");
+        setContentMode("empty");
+        setNameError(null);
+    }, [open, existingTemplate, chapter]);
+
     const resetForm = () => {
-        setName(chapter.title);
-        setDescription("");
+        setName(existingTemplate?.name ?? chapter?.title ?? "");
+        setDescription(existingTemplate?.description ?? "");
         setContentMode("empty");
         setNameError(null);
     };
@@ -52,21 +70,32 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
         setSaving(true);
         setNameError(null);
         try {
-            let content: string | null = null;
-            if (contentMode === "preserve") {
-                // BookEditor's `book` holds chapters without content; fetch the
-                // current chapter fresh so we save the actual body.
-                const full = await api.chapters.get(bookId, chapter.id);
-                content = full.content;
+            if (isEdit && existingTemplate) {
+                await api.chapterTemplates.update(existingTemplate.id, {
+                    name: trimmedName,
+                    description: trimmedDescription,
+                });
+                notify.success(t("ui.save_chapter_template.saved_edit", "Vorlage aktualisiert"));
+            } else {
+                if (!chapter || !bookId) {
+                    throw new Error("Create mode requires chapter + bookId");
+                }
+                let content: string | null = null;
+                if (contentMode === "preserve") {
+                    // BookEditor's `book` holds chapters without content; fetch the
+                    // current chapter fresh so we save the actual body.
+                    const full = await api.chapters.get(bookId, chapter.id);
+                    content = full.content;
+                }
+                await api.chapterTemplates.create({
+                    name: trimmedName,
+                    description: trimmedDescription,
+                    chapter_type: chapter.chapter_type,
+                    content,
+                    language: "en",
+                });
+                notify.success(t("ui.save_chapter_template.saved", "Vorlage gespeichert"));
             }
-            await api.chapterTemplates.create({
-                name: trimmedName,
-                description: trimmedDescription,
-                chapter_type: chapter.chapter_type,
-                content,
-                language: "en",
-            });
-            notify.success(t("ui.save_chapter_template.saved", "Vorlage gespeichert"));
             resetForm();
             onClose();
         } catch (err) {
@@ -93,7 +122,9 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                 <Dialog.Content className="dialog-content dialog-content-wide" data-testid="save-chapter-template-modal">
                     <div className="dialog-header">
                         <Dialog.Title className="dialog-title">
-                            {t("ui.save_chapter_template.title", "Kapitel als Vorlage speichern")}
+                            {isEdit
+                                ? t("ui.save_chapter_template.title_edit", "Kapitelvorlage bearbeiten")
+                                : t("ui.save_chapter_template.title", "Kapitel als Vorlage speichern")}
                         </Dialog.Title>
                     </div>
 
@@ -127,6 +158,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                             />
                         </div>
 
+                        {!isEdit && (
                         <div className="field">
                             <label className="label">{t("ui.save_chapter_template.content_mode", "Kapitelinhalt")}</label>
                             <label className={styles.radioRow}>
@@ -160,6 +192,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
                                 </div>
                             </label>
                         </div>
+                        )}
                     </div>
 
                     <div className="dialog-footer">
