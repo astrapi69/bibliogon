@@ -1743,6 +1743,56 @@ export const api = {
 
         delete: (id: string) =>
             request<void>(`/chapter-templates/${id}`, {method: "DELETE"}),
+
+        /** TM-04b: trigger a browser download of the template as a
+         *  portable JSON file. Filename comes from the backend's
+         *  Content-Disposition header. */
+        exportJson: async (id: string): Promise<void> => {
+            const url = `${BASE}/chapter-templates/${id}/export`;
+            const res = await fetch(url, {method: "GET"});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Export failed",
+                    url,
+                    "GET",
+                    err.stacktrace || "",
+                );
+            }
+            const cd = res.headers.get("content-disposition") ?? "";
+            const filename = _filenameFromContentDisposition(cd) ?? "chapter-template.json";
+            const blob = await res.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = objectUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objectUrl);
+        },
+
+        /** TM-04b: create a chapter template from a previously-exported
+         *  JSON file. Multipart upload; the backend validates the
+         *  ``format`` marker, required fields, and chapter_type enum. */
+        importJson: async (file: File): Promise<ChapterTemplate> => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const url = `${BASE}/chapter-templates/import`;
+            const res = await fetch(url, {method: "POST", body: formData});
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Import failed",
+                    url,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.json();
+        },
     },
 
     git: {

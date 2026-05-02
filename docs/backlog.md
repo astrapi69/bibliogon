@@ -255,7 +255,14 @@ user note (line below).
     `SaveAsChapterTemplateModal` in edit mode (renames + redescribes
     via `PUT /api/chapter-templates/{id}`). Builtins remain read-only.
     Closed 2026-05-02.
-  - [ ] JSON export/import for templates. Effort: S-M.
+  - [x] JSON export/import for templates — `GET /api/chapter-templates/{id}/export`
+    returns a `bibliogon-chapter-template` JSON with the four
+    template fields (no `is_builtin`). `POST /api/chapter-templates/import`
+    accepts the same shape, validates the `format` marker +
+    required fields + `chapter_type` enum, and inserts as a user
+    template. UI: Download icon per card + "JSON importieren" button
+    in the picker header. 8 backend tests, 6 i18n keys × 8 langs.
+    Closed 2026-05-02.
   - [ ] Multi-chapter templates (data model change). Effort: M.
 - **D-05**: full Windows installer (Docker Desktop bundling).
   Effort: L. Deferred until user feedback says install (not

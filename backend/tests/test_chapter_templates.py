@@ -8,6 +8,8 @@ Mirrors the structure of ``test_templates.py``:
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -262,3 +264,170 @@ def test_delete_and_update_builtin_returns_403(client: TestClient):
             db.commit()
         finally:
             db.close()
+
+
+# --- TM-04b sub-item 2: JSON export / import -------------------------------
+
+
+def test_export_chapter_template_returns_portable_json(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates",
+        json={
+            "name": "Export Source",
+            "description": "exportable",
+            "chapter_type": "chapter",
+            "content": '{"type":"doc"}',
+            "language": "de",
+        },
+    )
+    template_id = r.json()["id"]
+    try:
+        r = client.get(f"/api/chapter-templates/{template_id}/export")
+        assert r.status_code == 200
+        cd = r.headers.get("content-disposition", "")
+        assert "attachment" in cd
+        assert "export-source.chapter-template.json" in cd
+        body = r.json()
+        assert body["format"] == "bibliogon-chapter-template"
+        assert body["format_version"] == "1.0"
+        assert body["name"] == "Export Source"
+        assert body["chapter_type"] == "chapter"
+        assert body["content"] == '{"type":"doc"}'
+        assert body["language"] == "de"
+        # is_builtin must NOT travel with the file - re-import always
+        # lands as a user template.
+        assert "is_builtin" not in body
+    finally:
+        client.delete(f"/api/chapter-templates/{template_id}")
+
+
+def test_export_unknown_chapter_template_returns_404(client: TestClient):
+    r = client.get("/api/chapter-templates/does-not-exist/export")
+    assert r.status_code == 404
+
+
+def test_import_roundtrip_creates_user_template(client: TestClient):
+    payload = {
+        "format": "bibliogon-chapter-template",
+        "format_version": "1.0",
+        "name": "Imported Template",
+        "description": "imported",
+        "chapter_type": "chapter",
+        "content": '{"type":"doc","content":[]}',
+        "language": "en",
+    }
+    r = client.post(
+        "/api/chapter-templates/import",
+        files={"file": ("tpl.json", json.dumps(payload).encode("utf-8"), "application/json")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    template_id = body["id"]
+    try:
+        assert body["name"] == "Imported Template"
+        assert body["content"] == payload["content"]
+        # Always lands as user template even if the JSON tried to claim
+        # is_builtin (the importer ignores that key entirely).
+        assert body["is_builtin"] is False
+    finally:
+        client.delete(f"/api/chapter-templates/{template_id}")
+
+
+def test_import_rejects_non_json_file(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates/import",
+        files={"file": ("tpl.txt", b"plain text", "text/plain")},
+    )
+    assert r.status_code == 400
+    assert "JSON" in r.json()["detail"]
+
+
+def test_import_rejects_wrong_format_marker(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates/import",
+        files={
+            "file": (
+                "tpl.json",
+                json.dumps({"format": "wrong", "name": "X"}).encode("utf-8"),
+                "application/json",
+            )
+        },
+    )
+    assert r.status_code == 400
+    assert "Bibliogon chapter template" in r.json()["detail"]
+
+
+def test_import_rejects_missing_required_fields(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates/import",
+        files={
+            "file": (
+                "tpl.json",
+                json.dumps(
+                    {
+                        "format": "bibliogon-chapter-template",
+                        "name": "Only name",
+                    }
+                ).encode("utf-8"),
+                "application/json",
+            )
+        },
+    )
+    assert r.status_code == 400
+    assert "Required fields missing" in r.json()["detail"]
+
+
+def test_import_rejects_unknown_chapter_type(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates/import",
+        files={
+            "file": (
+                "tpl.json",
+                json.dumps(
+                    {
+                        "format": "bibliogon-chapter-template",
+                        "name": "Bad Type",
+                        "description": "x",
+                        "chapter_type": "not-a-real-type",
+                    }
+                ).encode("utf-8"),
+                "application/json",
+            )
+        },
+    )
+    assert r.status_code == 400
+    assert "chapter_type" in r.json()["detail"].lower()
+
+
+def test_import_duplicate_name_returns_409(client: TestClient):
+    # Seed an existing template under the target name first.
+    r = client.post(
+        "/api/chapter-templates",
+        json={
+            "name": "Dup Import",
+            "description": "x",
+            "chapter_type": "chapter",
+        },
+    )
+    template_id = r.json()["id"]
+    try:
+        r = client.post(
+            "/api/chapter-templates/import",
+            files={
+                "file": (
+                    "tpl.json",
+                    json.dumps(
+                        {
+                            "format": "bibliogon-chapter-template",
+                            "name": "Dup Import",
+                            "description": "x",
+                            "chapter_type": "chapter",
+                        }
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            },
+        )
+        assert r.status_code == 409
+    finally:
+        client.delete(f"/api/chapter-templates/{template_id}")

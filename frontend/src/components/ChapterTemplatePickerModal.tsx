@@ -1,10 +1,10 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {api, ApiError, ChapterTemplate} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import * as Dialog from "@radix-ui/react-dialog";
-import {Lock, Pencil, Trash2} from "lucide-react";
+import {Download, Lock, Pencil, Trash2, Upload} from "lucide-react";
 import styles from "./ChapterTemplatePickerModal.module.css";
 import SaveAsChapterTemplateModal from "./SaveAsChapterTemplateModal";
 
@@ -22,11 +22,49 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
     const [templatesError, setTemplatesError] = useState<string | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [editingTemplate, setEditingTemplate] = useState<ChapterTemplate | null>(null);
+    const importInputRef = useRef<HTMLInputElement>(null);
 
     const refreshList = () => {
         api.chapterTemplates.list()
             .then((list) => { setTemplates(list); setTemplatesError(null); })
             .catch((err) => { setTemplates([]); setTemplatesError(String(err?.message || err)); });
+    };
+
+    const handleExport = async (tpl: ChapterTemplate) => {
+        try {
+            await api.chapterTemplates.exportJson(tpl.id);
+            notify.success(t("ui.chapter_template_picker.exported", "Vorlage exportiert"));
+        } catch (err) {
+            notify.error(
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.chapter_template_picker.export_failed", "Export fehlgeschlagen"),
+            );
+        }
+    };
+
+    const handleImportClick = () => {
+        importInputRef.current?.click();
+    };
+
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const created = await api.chapterTemplates.importJson(file);
+                notify.success(t("ui.chapter_template_picker.imported", "Vorlage importiert"));
+                refreshList();
+                setSelectedId(created.id);
+            } catch (err) {
+                notify.error(
+                    err instanceof ApiError
+                        ? err.detail
+                        : t("ui.chapter_template_picker.import_failed", "Import fehlgeschlagen"),
+                );
+            }
+        }
+        // Reset input so picking the same file twice still triggers onChange.
+        if (importInputRef.current) importInputRef.current.value = "";
     };
 
     useEffect(() => {
@@ -82,6 +120,25 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                         <Dialog.Title className="dialog-title">
                             {t("ui.chapter_template_picker.title", "Wähle eine Kapitelvorlage")}
                         </Dialog.Title>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={handleImportClick}
+                            data-testid="chapter-template-import"
+                            aria-label={t("ui.chapter_template_picker.import", "JSON importieren")}
+                            title={t("ui.chapter_template_picker.import", "JSON importieren")}
+                        >
+                            <Upload size={14}/>
+                            {t("ui.chapter_template_picker.import", "JSON importieren")}
+                        </button>
+                        <input
+                            ref={importInputRef}
+                            type="file"
+                            accept=".json,application/json"
+                            style={{display: "none"}}
+                            onChange={handleImportFile}
+                            data-testid="chapter-template-import-input"
+                        />
                     </div>
 
                     <div className={styles.body}>
@@ -122,6 +179,16 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                                 <span className={styles.name}>{tpl.name}</span>
                                                 <div className={styles.badges}>
                                                     <span className={styles.typeBadge}>{tpl.chapter_type}</span>
+                                                    <button
+                                                        type="button"
+                                                        className={`btn-icon ${styles.deleteBtn}`}
+                                                        aria-label={t("ui.chapter_template_picker.export", "Als JSON exportieren")}
+                                                        title={t("ui.chapter_template_picker.export", "Als JSON exportieren")}
+                                                        data-testid={`chapter-template-export-${tpl.id}`}
+                                                        onClick={(e) => { e.stopPropagation(); void handleExport(tpl); }}
+                                                    >
+                                                        <Download size={14}/>
+                                                    </button>
                                                     {tpl.is_builtin ? (
                                                         <span
                                                             className={styles.builtinBadge}
