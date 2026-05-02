@@ -1450,6 +1450,11 @@ export const api = {
             }),
     },
 
+    i18n: {
+        get: (lang: string) =>
+            request<Record<string, unknown>>(`/i18n/${encodeURIComponent(lang)}`),
+    },
+
     bookAudiobook: {
         /** GET /api/books/{id}/audiobook -> persisted audiobook metadata */
         get: (bookId: string) =>

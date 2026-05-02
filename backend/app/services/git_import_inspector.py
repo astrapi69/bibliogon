@@ -148,7 +148,8 @@ def _count_commits(git_dir: Path) -> int | None:
     try:
         repo = git.Repo(git_dir.parent)
         return sum(1 for _ in repo.iter_commits())
-    except Exception:
+    except Exception as exc:
+        logger.debug("git import inspector: commit count failed for %s: %s", git_dir, exc)
         return None
 
 

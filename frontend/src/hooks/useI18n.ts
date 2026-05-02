@@ -35,14 +35,16 @@ export function I18nProvider({children}: {children: ReactNode}) {
             setStrings(cachedStrings);
             return;
         }
-        fetch(`/api/i18n/${lang}`)
-            .then((r) => r.json())
+        api.i18n
+            .get(lang)
             .then((data) => {
                 cachedLang = lang;
                 cachedStrings = data;
                 setStrings(data);
             })
-            .catch(() => {});
+            .catch(() => {
+                /* Silent bootstrap fallback: t() reverts to fallback strings. */
+            });
     }, [lang]);
 
     const setLang = useCallback((newLang: string) => {
