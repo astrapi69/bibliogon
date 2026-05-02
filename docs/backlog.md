@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-02 (priority-tier reorder + cleanup pass)
+Last updated: 2026-05-02 (DOC-01 confirmed already-shipped in `435c10e`)
 Current version: v0.25.0
-Open tasks: 7 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 6 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -58,9 +58,6 @@ store.
 - **DOC-02**: ROADMAP header refresh on next release (latest
   release line, last-updated date, "next active theme" line).
   Effort: trivial.
-
-- **DOC-01**: DE translation of `docs/help/en/import/git-adoption.md`
-  (CIO-07 follow-up). Effort: S.
 
 - **Modal sticky-footer audit beyond wizard**: v0.22.0 covered 13
   dialog modals; the 2026-05-02 follow-up landed
