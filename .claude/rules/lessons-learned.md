@@ -426,9 +426,9 @@ Stability filter:
 
 ### TipTap `useEditor` does NOT flush `editor.storage` reads to React
 
-- A status-bar word count written as `{editor?.storage.characterCount?.words()}` inline in JSX looks fine but does not update reliably after keyboard input. TipTap's built-in re-render on transaction fires for selection changes but not for every content transaction we rely on.
-- Reliable fix: subscribe explicitly via `editor.on('update', () => forceUpdate())`, or mirror the count into React state via `useState` + `editor.on('update')`.
-- Surfaced as a smoke-test failure in `smoke/editor-formatting.spec.ts` "word count updates after typing". Currently skipped with a reference to issue #9 until the subscribe pattern is wired up.
+- Inline reads like `{editor?.storage.characterCount?.words()}` in JSX do not update reliably on every content transaction. TipTap's built-in re-render fires on selection changes, not every content edit.
+- Current implementation: `frontend/src/components/Editor.tsx:350` uses TipTap's idiomatic `useEditorState` selector to read `storage.characterCount.{words,characters}()` reactively. This is the right architectural pattern.
+- Smoke test `smoke/editor-formatting.spec.ts:420` "word count updates after typing" remains `test.skip`. The remaining failure mode is suspected interaction between React strict-mode double-mount and `useSyncExternalStore`'s initial subscription timing under the Vite dev server Playwright drives. Tracked in issue #12 (the `Editor.tsx` comment is canonical; older docs/audits refs to issue #9 are stale). Needs a dedicated debug session with browser-side console logging.
 
 ### Prefix testid selectors match every nested testid that shares the prefix
 

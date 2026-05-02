@@ -10,22 +10,6 @@ is the daily-planning view.
 
 ---
 
-## ROADMAP / shipped-state conflicts
-
-`docs/ROADMAP.md` header (line 4-5) is stale:
-
-- Says `Last updated: 2026-04-22` and `Latest release: v0.21.0`.
-- Actual latest tag: `v0.23.0` (PGS-02..05 shipped after the header
-  was last touched).
-- "Next active theme: TBD - likely Git-based backup (SI-01 onward)"
-  is also stale; the Git-based backup theme finished v0.21.0 and
-  plugin-git-sync finished v0.23.0.
-
-Flag only; no auto-edit per session scope. Refresh on the next
-release pass.
-
----
-
 ## Where we stand
 
 **Recently shipped (v0.21.0 → v0.23.0):**
