@@ -120,19 +120,23 @@ test.describe('Chapter drag-and-drop reorder', () => {
     const handle = page.getByTestId(`drag-handle-${firstId}`)
     await expect(handle).toBeVisible()
 
-    // Focus the drag handle and use keyboard DnD
+    // Focus the drag handle and use keyboard DnD. Brief stabiliser
+    // delays around the Space/ArrowDown sequence make @dnd-kit's
+    // KeyboardSensor reliable under Playwright; without them the
+    // pickup/move/drop events occasionally batch and the drop lands
+    // before the move has committed.
     await handle.focus()
+    await page.waitForTimeout(50)
     await page.keyboard.press('Space')  // pick up
+    await page.waitForTimeout(50)
     await page.keyboard.press('ArrowDown')  // move down one position
+    await page.waitForTimeout(50)
     await page.keyboard.press('Space')  // drop
 
-    // Wait for the reorder API call to complete
-    await page.waitForTimeout(500)
-
-    // Verify via API that Chapter 1 is now in position 1 (was 0)
-    const afterOrder = await getApiOrder(request, bookId)
-    expect(afterOrder[0]).toBe('Chapter 2')
-    expect(afterOrder[1]).toBe('Chapter 1')
-    expect(afterOrder[2]).toBe('Chapter 3')
+    // Poll API until the new order lands. The server reorder fires
+    // asynchronously; a fixed 500ms wait was racy on slower runs.
+    await expect.poll(async () => (await getApiOrder(request, bookId)).join(','), {
+      timeout: 5000,
+    }).toBe('Chapter 2,Chapter 1,Chapter 3')
   })
 })

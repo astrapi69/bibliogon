@@ -647,15 +647,23 @@ export default function BookEditor() {
                     chapterId={versionsChapterId}
                     onClose={() => setVersionsChapterId(null)}
                     onRestored={async (restoredId) => {
-                        // Reload the book so the restored chapter's new content
-                        // and bumped version land in state.
+                        // Reload the book so the restored chapter's
+                        // bumped version lands in state, AND fetch
+                        // the chapter directly so the editor receives
+                        // the new content. ``api.books.get`` defaults
+                        // to ``include_content=false``, which would
+                        // otherwise propagate an empty string into the
+                        // editor and silently wipe the restored text.
                         if (!bookId) return;
                         try {
                             const fresh = await api.books.get(bookId);
                             setBook(fresh);
                             if (restoredId === activeChapterId) {
-                                const ch = fresh.chapters.find((c) => c.id === restoredId);
-                                if (ch) setLoadedContent({id: ch.id, content: ch.content});
+                                const restoredChapter = await api.chapters.get(bookId, restoredId);
+                                setLoadedContent({
+                                    id: restoredChapter.id,
+                                    content: restoredChapter.content,
+                                });
                             }
                         } catch {
                             /* next interaction will reload */

@@ -104,4 +104,125 @@ test.describe('Content safety', () => {
     await context.setOffline(false)
     await expect(page.getByTestId('offline-banner')).toBeHidden({timeout: 5000})
   })
+
+  // Issue #8 Part 2 scenarios. The original issue body lists these as
+  // "manual browser smoke" but the autosave-retry, 409-conflict and
+  // version-history paths can all be driven through Playwright once
+  // route mocking, two-tab orchestration and context-menu navigation
+  // are in place. Keep them in the smoke project so a regression
+  // surfaces alongside the recovery + offline scenarios above.
+  test('autosave retry: PATCH 500 -> retry toast -> click retry -> saved', async ({page}) => {
+    const book = await createBook('Safety Retry', 'T')
+    const chapter = await createChapter(
+      book.id,
+      'Chapter R',
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"initial"}]}]}',
+    )
+
+    await page.goto(`/book/${book.id}`)
+    await expect(page.locator('.ProseMirror')).toBeVisible()
+    await page.getByText('Chapter R').click()
+    await page.locator('.ProseMirror').click()
+
+    // Mock the chapter PATCH to fail with 500. Save attempt fires
+    // ApiError -> Editor branches to notify.saveError -> retry toast.
+    let failNext = true
+    await page.route(`**/api/books/${book.id}/chapters/${chapter.id}`, async (route) => {
+      if (failNext && route.request().method() === 'PATCH') {
+        await route.fulfill({status: 500, body: JSON.stringify({detail: 'Simulated outage'})})
+        return
+      }
+      await route.continue()
+    })
+
+    await page.keyboard.press('Control+a')
+    await page.keyboard.type('change one')
+
+    await expect(page.getByTestId('save-error-retry')).toBeVisible({timeout: 5000})
+
+    // Lift the mock and click retry; the same change should now save.
+    failNext = false
+    await page.getByTestId('save-error-retry').click()
+    await expect(page.getByText(/Gespeichert|Saved/)).toBeVisible({timeout: 5000})
+  })
+
+  test('409 conflict: two-tab race opens the conflict resolution dialog', async ({context}) => {
+    const book = await createBook('Safety Conflict', 'T')
+    const chapter = await createChapter(
+      book.id,
+      'Chapter C',
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"shared"}]}]}',
+    )
+
+    const tabA = await context.newPage()
+    const tabB = await context.newPage()
+
+    await tabA.goto(`/book/${book.id}`)
+    await tabB.goto(`/book/${book.id}`)
+    await expect(tabA.locator('.ProseMirror')).toBeVisible()
+    await expect(tabB.locator('.ProseMirror')).toBeVisible()
+    await tabA.getByText('Chapter C').click()
+    await tabB.getByText('Chapter C').click()
+
+    // Tab A saves first; Tab B's stale `version` then loses the race
+    // and the chapter PATCH returns 409 -> Editor surfaces the
+    // ConflictResolutionDialog instead of the retry toast.
+    await tabA.locator('.ProseMirror').click()
+    await tabA.keyboard.press('Control+a')
+    await tabA.keyboard.type('tab A wins')
+    await expect(tabA.getByText(/Gespeichert|Saved/)).toBeVisible({timeout: 5000})
+
+    await tabB.locator('.ProseMirror').click()
+    await tabB.keyboard.press('Control+a')
+    await tabB.keyboard.type('tab B loses')
+    await expect(tabB.getByTestId('conflict-dialog')).toBeVisible({timeout: 10_000})
+
+    // Discard local: server version wins, dialog closes.
+    await tabB.getByTestId('conflict-discard').click()
+    await expect(tabB.getByTestId('conflict-dialog')).toBeHidden({timeout: 5000})
+
+    // Confirm chapter id is unused so the lint rule is happy.
+    void chapter
+  })
+
+  test('version history: edits create versions, restore brings the older one back', async ({page}) => {
+    const book = await createBook('Safety Versions', 'T')
+    const chapter = await createChapter(
+      book.id,
+      'Chapter V',
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"v0"}]}]}',
+    )
+
+    await page.goto(`/book/${book.id}`)
+    await expect(page.locator('.ProseMirror')).toBeVisible()
+    await page.getByText('Chapter V').click()
+    await page.locator('.ProseMirror').click()
+
+    // Three edits with autosave between each builds three versions.
+    for (const text of ['edit one', 'edit two', 'edit three']) {
+      await page.keyboard.press('Control+a')
+      await page.keyboard.type(text)
+      await expect(page.getByText(/Gespeichert|Saved/)).toBeVisible({timeout: 5000})
+      // Wait briefly so each save lands as a separate ChapterVersion
+      // (the version dedup window is on a debounce timer in the
+      // backend; 250ms is enough headroom for the smoke).
+      await page.waitForTimeout(250)
+    }
+
+    // Open the chapter context menu and click the history item.
+    await page.locator(`[data-testid='chapter-context-trigger-${chapter.id}']`).click().catch(async () => {
+      // Some sidebar variants use the chapter row's right-click as
+      // the trigger; fall back to that path.
+      await page.locator(`[data-testid='chapter-item-${chapter.id}']`).click({button: 'right'})
+    })
+    await page.getByTestId(`chapter-context-history-${chapter.id}`).click()
+    await expect(page.getByTestId('chapter-versions-modal')).toBeVisible()
+
+    // Backend snapshots the PRE-update state; with 3 saves the
+    // versions are: v1 = initial "v0", v2 = "edit one", v3 = "edit two".
+    // Restore v2 to bring "edit one" back into the editor.
+    await page.getByTestId('chapter-version-restore-2').click()
+    await expect(page.getByTestId('chapter-versions-modal')).toBeHidden({timeout: 5000})
+    await expect(page.locator('.ProseMirror')).toContainText('edit one')
+  })
 })
