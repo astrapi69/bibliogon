@@ -32,6 +32,10 @@ backend/config/plugins/audiobook/google-credentials.enc
 # Uploads (user assets)
 backend/uploads/
 
+# Production marker (written by FastAPI lifespan startup; see
+# backend/app/paths.py + backend/tests/conftest.py).
+.bibliogon-production
+
 # MkDocs build output
 site/
 

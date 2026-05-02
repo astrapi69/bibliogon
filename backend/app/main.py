@@ -323,6 +323,12 @@ def _load_installed_plugins() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Bibliogon (debug=%s)", DEBUG)
+    # Stamp the data dir as production so the test conftest tripwire
+    # can refuse to run if a test ever points at this same path.
+    # No-op in test mode (BIBLIOGON_TEST=1).
+    from app.paths import mark_data_dir_as_production
+
+    mark_data_dir_as_production()
     init_db()
     # Auto-delete expired trash items on startup
     from app.routers.articles import cleanup_expired_article_trash

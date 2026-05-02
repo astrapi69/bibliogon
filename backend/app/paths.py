@@ -52,3 +52,30 @@ def get_upload_dir() -> Path:
     ``app.*`` import still take effect.
     """
     return get_data_dir() / "uploads"
+
+
+def mark_data_dir_as_production() -> None:
+    """Write the ``.bibliogon-production`` marker into the data dir.
+
+    Called once from the FastAPI lifespan startup. Skipped when the
+    process is running in test mode (``BIBLIOGON_TEST=1``); the
+    conftest tripwire treats the presence of this marker file as a
+    fatal abort signal, so writing it during tests would defeat the
+    isolation the marker is meant to enforce.
+    """
+    if os.environ.get("BIBLIOGON_TEST") == "1":
+        return
+
+    data_dir = get_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    marker = data_dir / PRODUCTION_MARKER_FILENAME
+
+    if marker.exists():
+        return
+
+    marker.write_text(
+        "This directory contains production Bibliogon data.\n"
+        "Do NOT delete this file. It protects against accidental\n"
+        "data loss caused by test runs (see backend/tests/conftest.py).\n",
+        encoding="utf-8",
+    )
