@@ -110,8 +110,19 @@ mark_manual "Bump available (${el_pinned:-?} -> ${el_latest}). Manual unblock = 
 print_header "AR-03+ platform APIs (cross-posting validation log)"
 ar_log="docs/journal/article-workflow-observations.md"
 if [ -f "$ar_log" ]; then
-  ar_entries=$(grep -c '^## ' "$ar_log" 2>/dev/null || echo 0)
-  printf "  Log entries (## headings): %s\n" "$ar_entries"
+  # Count real entries only: numeric-prefixed `## N. Title (YYYY-MM-DD)`
+  # headings inside the "Observation log" section. The earlier heuristic
+  # of counting every `^## ` line over-counted: section markers
+  # (Entry template / Observation log / Monthly review) and the template
+  # fixture inside a code fence (`## {N}. {Article title} ...`) all
+  # matched, producing a false UNBLOCKED reading.
+  ar_entries=$(awk '
+    /^## Observation log/   { in_log=1; next }
+    /^## Monthly review/    { in_log=0 }
+    in_log && /^## [0-9]+\. .* \([0-9]{4}-[0-9]{2}-[0-9]{2}\)/ { count++ }
+    END { print count+0 }
+  ' "$ar_log")
+  printf "  Real article entries (numeric-prefixed in Observation log): %s\n" "$ar_entries"
   if [ "$ar_entries" -ge 3 ]; then
     mark_unblocked "AR-01 log has $ar_entries entries (>= 3 needed). AR-03+ platform-API commitment can proceed."
   else

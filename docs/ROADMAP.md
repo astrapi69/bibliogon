@@ -192,21 +192,23 @@ the Publications panel, with content-snapshot drift detection.
 
 ### In progress
 
-- [x] **AR-01 validation log:** Capture real cross-posting workflow
+- [ ] **AR-01 validation log:** Capture real cross-posting workflow
   data in
   [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
   during normal publication work. Target 3-5 entries before any
-  AR-03+ platform-API commitment. **Threshold met 2026-05-02 (4
-  entries logged); AR-03+ now actionable.** Log stays open as a
-  passive track to inform platform-priority decisions.
+  AR-03+ platform-API commitment. **Status 2026-05-02: 0 real entries
+  (template fixture + section headers only).** Earlier "threshold met"
+  flip on 2026-05-02 was a false positive from a buggy
+  `make check-blockers` heuristic; reverted in `make check-blockers`
+  bugfix same session. Log stays open and the threshold remains the
+  AR-03+ blocker.
 
 ### Open / deferred
 
-- [ ] **AR-03+ Platform APIs:** UNBLOCKED 2026-05-02 (AR-01 log
-  threshold met). OAuth + scheduled publish + analytics + cross-post
-  automation for Medium, Substack, X, LinkedIn, dev.to, Mastodon,
-  Bluesky. Read the validation log first to pick the 1-2 highest-
-  pain platforms; ship those before broadening. XL effort,
+- [ ] **AR-03+ Platform APIs:** BLOCKED on AR-01 validation log
+  (target 3-5 cross-posting entries; current count: 0). OAuth +
+  scheduled publish + analytics + cross-post automation for Medium,
+  Substack, X, LinkedIn, dev.to, Mastodon, Bluesky. XL effort,
   multi-session.
 - [ ] **Phase 4 article-as-WBT git-sync:** Article version control
   via plugin-git-sync, parallel to the book path. Deferred - only on

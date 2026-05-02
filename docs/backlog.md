@@ -209,14 +209,20 @@ user note (line below).
 
 - **ID**: AR-03
 - **Effort**: XL (~20-30h, multi-session)
-- **Status**: **UNBLOCKED 2026-05-02.** AR-01 validation log
-  reached 4 entries (threshold 3-5). Surfaced by
-  `make check-blockers`.
-- **Next step**: scoping session - read
-  `docs/journal/article-workflow-observations.md`, pick the 1-2
-  platforms where manual workflow hurts most, write a
-  per-platform exploration doc, then ship narrowly. Do NOT bundle
-  every platform into one phase.
+- **Status**: **BLOCKED** on AR-01 validation log threshold.
+  Current count: 0 real cross-posting entries; target 3-5.
+  (An earlier "UNBLOCKED 2026-05-02" reading came from a buggy
+  `make check-blockers` heuristic that counted template fixtures
+  and section headers as observations. Heuristic fixed in same
+  session.)
+- **Unblock**: 3-5 numeric-prefixed `## N. Title (YYYY-MM-DD)`
+  entries inside the "Observation log" section of
+  `docs/journal/article-workflow-observations.md`, each filled
+  in during or immediately after real cross-posting work.
+- **Next step (when unblocked)**: scoping session - read the log,
+  pick the 1-2 platforms where manual workflow hurts most, write
+  a per-platform exploration doc, then ship narrowly. Do NOT
+  bundle every platform into one phase.
 - **Phase 3 candidates** (do not commit until scoping done):
   platform API integration (Medium / Substack / X / LinkedIn /
   dev.to / Mastodon / Bluesky), scheduled publishing background
@@ -225,9 +231,10 @@ user note (line below).
 
 ### Article validation (background, no code)
 
-- **AR-01 validation log**: threshold met (4 entries as of
-  2026-05-02). Stays open as a passive track to inform
-  platform-priority decisions.
+- **AR-01 validation log**: threshold NOT met (0 real entries as
+  of 2026-05-02). Long-running passive task - fill
+  `docs/journal/article-workflow-observations.md` during normal
+  cross-posting work. Drives the AR-03+ unblock.
 
 
 ---
@@ -333,13 +340,13 @@ user note (line below).
 
 - **AR-01**: article authoring validation log. Long-running passive
   task. Log at `docs/journal/article-workflow-observations.md`
-  currently has 4 entries (>= 3-5 target).
+  currently has 0 real entries (template fixture + section headers
+  only). Threshold 3-5.
 - **AR-02**: article authoring architecture decision. Resolved as
   Option B (separate `Article` entity), shipped through
   AR-02 Phase 1 + Phase 2 (Publications + drift detection). See
   ROADMAP "Article authoring" section.
-- **AR-03+**: UNBLOCKED 2026-05-02. AR-01 log threshold met.
-  Platform-API scoping session can proceed. See top #2.
+- **AR-03+**: BLOCKED on AR-01 log threshold. See top #2.
 
 ### Maintenance
 
@@ -360,7 +367,7 @@ summary; flip the corresponding row when something turns green.
 | DEP-05 (elevenlabs 2.x) | Real paid-API verification | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | DEP-09 (Vite 8) | `vite-plugin-pwa` peer-dep update | Upstream releases Vite 8 compat |
 | SEC-01 | Same as DEP-09 | Same as DEP-09 |
-| ~~AR-03+~~ | ~~AR-01 validation log (3-5 entries)~~ | **UNBLOCKED 2026-05-02** — `docs/journal/article-workflow-observations.md` has 4 entries. Architecture pick + platform-API scoping session ready. |
+| AR-03+ | AR-01 validation log threshold (3-5 cross-posting entries) | Reach the threshold by logging real cross-posting work in `docs/journal/article-workflow-observations.md`. **Current count: 0 real entries** (corrected 2026-05-02 after a false-positive UNBLOCKED reading from a buggy `make check-blockers` heuristic). |
 | PGS-04-FU-01 | First user report of cross-language structural divergence | User report |
 | Manual launcher smoke tests | Real hardware (Windows / macOS / Linux) availability | Hardware access |
 
