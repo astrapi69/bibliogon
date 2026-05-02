@@ -1,94 +1,117 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-02 (cleanup pass — 77 closed items archived)
+Last updated: 2026-05-02 (priority-tier reorder + cleanup pass)
 Current version: v0.25.0
-Open tasks: 13 active + 4 BLOCKED-on-upstream
+Open tasks: 7 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
-Living backlog. Supplements `docs/ROADMAP.md` with deferred items
-spawned during sessions and a curated daily-planning view of
-ROADMAP work. ROADMAP stays the canonical theme tracker; this
-file is the daily-planning view.
+Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
+the canonical theme tracker; this file is forward-looking only.
 
 This file lists ONLY open tasks. Closed tasks live in the archive
 files; do not re-add closed entries here. If a closed task needs
 to come back, create a new ID.
 
----
+Tasks are sorted by priority tier (P0 most urgent, P5 most
+speculative). BLOCKED-on-upstream pointers + non-task waiting
+items live in their own section between P5 and the archive link.
+Within each tier, smaller-scope and unblocking items come first,
+with alphabetical-by-ID as final tiebreaker.
 
-## Top priorities (curated view)
-
-Most planning links here point at ROADMAP entries; the canonical
-description lives there. The backlog is a working list of pointers,
-not a duplicate definition store.
-
-- **DEP-02**: TipTap 2 -> 3 migration (BLOCKED). See ROADMAP >
-  Maintenance and tech debt > Deferred major dependency upgrades.
-- **DEP-05**: elevenlabs SDK 0.2 -> 2.x (BLOCKED on paid-API
-  access). See ROADMAP > Maintenance and tech debt > Deferred
-  major dependency upgrades.
-- **DEP-09**: Vite 7 -> 8 (BLOCKED on vite-plugin-pwa). See ROADMAP
-  > Maintenance and tech debt > Deferred major dependency upgrades.
-- **SEC-01**: vite-plugin-pwa CVE chain (BLOCKED). See ROADMAP >
-  Maintenance and tech debt > Security tracking.
-- **AR-01 validation log**: passive task, fills as feature is used
-  in anger. See ROADMAP > Article authoring > Open.
+The 5 entries in "ROADMAP cross-reference" below are pointers to
+ROADMAP entries; their canonical description lives there. The
+backlog is a working list of pointers, not a duplicate definition
+store.
 
 ---
 
-## All open items by category
+## ROADMAP cross-reference (curated planning view)
 
-### Plugin work
+- **AR-01 validation log** — see ROADMAP > P3.
+- **DEP-02** (TipTap 3) — see ROADMAP > Blocked / Upstream Wait.
+- **DEP-05** (elevenlabs 2.x) — see ROADMAP > Blocked / Upstream Wait.
+- **DEP-09** (Vite 8) — see ROADMAP > Blocked / Upstream Wait.
+- **SEC-01** (vite-plugin-pwa CVE chain) — see ROADMAP > Blocked / Upstream Wait.
 
-- **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
-  (only one of two subsystems active, partial-failure UX). Effort
-  S; trigger by user report.
+---
 
-### Core features
+## P0 - Deadline / Blocker / Security
 
-- **D-02 follow-ups**: macOS Intel universal2 build + code signing.
-  Effort: M each. Deferred until user demand.
-- **Launcher localization**: launcher UI is English-only. Effort: S
-  per language; defer until user demand.
+(none)
 
-### Quality / Polish
+---
+
+## P1 - Architecture / Hygiene Debt
+
+(none)
+
+---
+
+## P2 - High-Value User Features
+
+(none)
+
+---
+
+## P3 - Infrastructure / Quality
+
+- **DOC-02**: ROADMAP header refresh on next release (latest
+  release line, last-updated date, "next active theme" line).
+  Effort: trivial.
+
+- **DOC-01**: DE translation of `docs/help/en/import/git-adoption.md`
+  (CIO-07 follow-up). Effort: S.
 
 - **Modal sticky-footer audit beyond wizard**: v0.22.0 covered 13
   dialog modals; the 2026-05-02 follow-up landed
   SaveAsChapterTemplateModal + ConflictResolutionDialog. Confirm
   whether any non-wizard modal still scrolls without sticky
   footer. Effort: S audit + per-modal fix. Status: confirm-or-close.
+
+- **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
+  (only one of two subsystems active, partial-failure UX). Effort
+  S; trigger by user report.
+
 - **I18N-DIACRITICS-01**: auto-translated non-DE i18n YAMLs (es,
   pt, tr, possibly fr) ship with inconsistent diacritic coverage —
   some entries use proper Unicode (`géneros`, `Décroissant`,
   `gêneros`), others ASCII-substitute (`Titulo`, `Baslik`). Found
   in Test Phase Session 3 (2026-04-28) cross-language audit while
   fixing DE umlauts. Severity: Medium (readable but inconsistent +
-  non-native). Effort: M per language. Cause:
-  `AUTO_TRANSLATED.md` banner in `backend/config/i18n/` indicates
-  DeepL/LMStudio passes with mixed quality. Fix: re-run translation
-  with current DE source as canonical (DE was just cleaned up of
-  all ASCII substitutes), human-review each for native diacritic
-  use. Defer until DE i18n stable + a native speaker is available
-  per language for review.
-
-### Documentation
-
-- **DOC-01**: DE translation of `docs/help/en/import/git-adoption.md`
-  (CIO-07 follow-up). Effort: S.
-- **DOC-02**: ROADMAP header refresh on next release (latest
-  release line, last-updated date, "next active theme" line).
-  Effort: trivial.
+  non-native). Effort: M per language. Cause: `AUTO_TRANSLATED.md`
+  banner in `backend/config/i18n/` indicates DeepL/LMStudio passes
+  with mixed quality. Fix: re-run translation with current DE
+  source as canonical (DE was just cleaned up of all ASCII
+  substitutes), human-review each for native diacritic use. Defer
+  until DE i18n stable + a native speaker is available per
+  language for review.
 
 ---
 
-## Blocked or waiting
+## P4 - Roadmap / Future Phases
 
-Run `make check-blockers` (or `bash scripts/check-blockers.sh`) to
-poll every upstream source in this table at once. The script
-prints `[BLOCKED]` / `[UNBLOCKED]` / `[MANUAL]` per item plus a
-one-line summary; flip the corresponding row when something turns
-green.
+(none in backlog; D-05 lives in ROADMAP > P4)
+
+---
+
+## P5 - Speculative / Nice-to-have
+
+- **D-02 follow-ups**: macOS Intel universal2 build + code signing.
+  Effort: M each. Deferred until user demand.
+
+- **Launcher localization**: launcher UI is English-only. Effort: S
+  per language; defer until user demand.
+
+---
+
+## Blocked / Upstream Wait
+
+Items waiting on external triggers. Re-audit monthly via
+`make check-blockers`. Do not attempt to advance these without an
+unblock signal. ROADMAP entries (DEP-02, DEP-05, DEP-09, SEC-01)
+are listed in the cross-reference at the top of this file; the
+table below covers backlog-only waiting items + a quick-poll
+summary.
 
 | Item | Blocked on | Unblock condition |
 |------|-----------|-------------------|
@@ -125,15 +148,15 @@ Recurring upkeep, low priority but worth scheduling:
 
 ## How to use this file
 
-- Pick from the "Top priorities" pointers when starting a session
+- Pick from the highest non-empty tier when starting a session
   and there's no user-driven priority override; consult ROADMAP
-  for the canonical task description.
+  for the canonical task description on cross-referenced items.
 - When a session defers a sub-item, add it under the matching
-  category with a `*-FU-NN` ID and one-line "why deferred".
+  tier with a `*-FU-NN` ID and one-line "why deferred".
 - When an item ships, **delete the row** from this file. The
   CHANGELOG / ROADMAP archive records the history; the backlog
   is forward-looking only.
-- When the top changes, re-rank explicitly in this file before
-  starting work, not implicitly during a session.
+- When the top tier changes, re-rank explicitly in this file
+  before starting work, not implicitly during a session.
 - Don't grow past 50 items. If it grows, split by category into
   themed files (`docs/backlog/dependencies.md`, etc.).
