@@ -1,0 +1,125 @@
+name: Mutation Testing (Import Orchestrator)
+
+# Scoped mutmut run for the core import orchestrator and its handlers.
+# Issue context:
+#   - app/import_plugins/ + app/routers/import_orchestrator.py have strong
+#     line coverage but no mutation-score evidence yet.
+#   - Acceptance criteria from the issue: >= 60% mutation score on
+#     app/import_plugins/, triage of survivors in _sanitise_rel_path /
+#     _check_duplicate, audit doc under docs/audits/.
+#   - Initial run is 20-40 min CPU; not part of the per-PR loop.
+#
+# On/off switch
+# -------------
+# This workflow is OFF by default for scheduled runs.
+#
+#   * Scheduled runs (nightly 02:00 UTC) execute only when the
+#     repository variable ENABLE_NIGHTLY_MUTATION is set to "true".
+#     Set / unset the variable in
+#       Settings -> Secrets and variables -> Actions -> Variables
+#     No code change required to flip it.
+#
+#   * workflow_dispatch (manual "Run workflow" button) always runs
+#     regardless of the variable, so a maintainer can do a one-off
+#     audit without enabling the nightly job.
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC nightly
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: "Override paths to mutate (comma-separated, defaults to import scope)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  mutmut-import:
+    name: mutmut (import scope)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_MUTATION == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Restore mutmut cache
+        uses: actions/cache@v4
+        with:
+          path: backend/mutants/
+          key: mutmut-import-${{ hashFiles('backend/app/import_plugins/**', 'backend/app/routers/import_orchestrator.py', 'backend/tests/**') }}
+          restore-keys: |
+            mutmut-import-
+
+      - name: Override mutmut scope in pyproject.toml
+        working-directory: backend
+        env:
+          INPUT_PATHS: ${{ github.event.inputs.paths }}
+        run: |
+          # mutmut v3 reads paths_to_mutate from pyproject.toml. Rewrite
+          # the [tool.mutmut] section to the import-only scope before
+          # running. The CI workspace is throwaway, no need to restore.
+          python <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          override = os.environ.get("INPUT_PATHS", "").strip()
+          if override:
+              entries = [p.strip() for p in override.split(",") if p.strip()]
+          else:
+              entries = [
+                  "app/import_plugins/",
+                  "app/routers/import_orchestrator.py",
+              ]
+          paths_repr = "[" + ", ".join(f'"{p}"' for p in entries) + "]"
+
+          pp = Path("pyproject.toml")
+          text = pp.read_text(encoding="utf-8")
+          pattern = re.compile(
+              r"(\[tool\.mutmut\][^\[]*?paths_to_mutate\s*=\s*)\[[^\]]*\]",
+              re.DOTALL,
+          )
+          new_text, count = pattern.subn(rf"\g<1>{paths_repr}", text, count=1)
+          if count == 0:
+              raise SystemExit("Failed to locate paths_to_mutate in pyproject.toml")
+          pp.write_text(new_text, encoding="utf-8")
+          print(f"Scoped paths_to_mutate -> {paths_repr}")
+          PY
+
+      - name: Run mutmut
+        working-directory: backend
+        run: |
+          # mutmut exits non-zero when survivors exist; still want artifacts
+          poetry run mutmut run || true
+
+      - name: Print mutmut results summary
+        working-directory: backend
+        run: poetry run mutmut results || true
+
+      - name: Generate HTML report
+        working-directory: backend
+        run: poetry run mutmut html || true
+
+      - name: Upload mutmut artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutmut-import-${{ github.run_id }}
+          path: |
+            backend/html/
+            backend/mutants/
+          retention-days: 30
