@@ -192,20 +192,22 @@ the Publications panel, with content-snapshot drift detection.
 
 ### In progress
 
-- [ ] **AR-01 validation log:** Capture real cross-posting workflow
+- [x] **AR-01 validation log:** Capture real cross-posting workflow
   data in
   [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
   during normal publication work. Target 3-5 entries before any
-  AR-03+ platform-API commitment. Passive task - fills as the
-  feature is used in anger, not via dedicated sessions.
+  AR-03+ platform-API commitment. **Threshold met 2026-05-02 (4
+  entries logged); AR-03+ now actionable.** Log stays open as a
+  passive track to inform platform-priority decisions.
 
 ### Open / deferred
 
-- [ ] **AR-03+ Platform APIs:** OAuth + scheduled publish + analytics
-  + cross-post automation for Medium, Substack, X, LinkedIn, dev.to,
-  Mastodon, Bluesky. Blocked on AR-01 validation log showing which
-  platforms are actually used and where the manual workflow hurts.
-  XL effort, multi-session.
+- [ ] **AR-03+ Platform APIs:** UNBLOCKED 2026-05-02 (AR-01 log
+  threshold met). OAuth + scheduled publish + analytics + cross-post
+  automation for Medium, Substack, X, LinkedIn, dev.to, Mastodon,
+  Bluesky. Read the validation log first to pick the 1-2 highest-
+  pain platforms; ship those before broadening. XL effort,
+  multi-session.
 - [ ] **Phase 4 article-as-WBT git-sync:** Article version control
   via plugin-git-sync, parallel to the book path. Deferred - only on
   user demand.

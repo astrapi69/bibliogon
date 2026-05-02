@@ -101,18 +101,21 @@ printf "  Latest on PyPI: %s\n" "$el_latest"
 mark_manual "Bump available (${el_pinned:-?} -> ${el_latest}). Manual unblock = schedule a real audiobook test session with a live ElevenLabs key."
 
 # -----------------------------------------------------------------------------
-# AR-02: validation log
-# Not network-checkable. Prompt the operator if the AR-01 log is empty.
+# AR-03+: validation log
+# AR-02 architecture decision is already done (Option B, see
+# docs/ROADMAP.md:140). The remaining gate is AR-01 validation entries
+# driving the AR-03+ platform-API commitment per ROADMAP:199.
+# Not network-checkable; counts ## headings in the journal.
 # -----------------------------------------------------------------------------
-print_header "AR-02 validation data (cross-posting workflow log)"
+print_header "AR-03+ platform APIs (cross-posting validation log)"
 ar_log="docs/journal/article-workflow-observations.md"
 if [ -f "$ar_log" ]; then
   ar_entries=$(grep -c '^## ' "$ar_log" 2>/dev/null || echo 0)
   printf "  Log entries (## headings): %s\n" "$ar_entries"
   if [ "$ar_entries" -ge 3 ]; then
-    mark_unblocked "AR-01 log has $ar_entries entries (>= 3 needed). AR-02 architecture decision can proceed."
+    mark_unblocked "AR-01 log has $ar_entries entries (>= 3 needed). AR-03+ platform-API commitment can proceed."
   else
-    mark_manual "AR-01 log has $ar_entries entries. Target 3-5 entries before AR-02 commitment."
+    mark_manual "AR-01 log has $ar_entries entries. Target 3-5 entries before AR-03+ commitment."
   fi
 else
   printf "  Log file not present yet.\n"

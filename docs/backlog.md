@@ -209,21 +209,25 @@ user note (line below).
 
 - **ID**: AR-03
 - **Effort**: XL (~20-30h, multi-session)
-- **Why rank 2**: Phase 2 (Publications + drift detection +
-  manual workflow) shipped; Phase 3 candidates include
-  platform API integration (Medium / Substack / X /
-  LinkedIn), scheduled publishing background jobs, automated
-  cross-posting, analytics fetching, OAuth credential storage.
-- **Status**: deferred. Each platform API has its own auth +
-  rate-limit + maintenance burden; ship only when validation
-  data shows manual workflow is the bottleneck.
+- **Status**: **UNBLOCKED 2026-05-02.** AR-01 validation log
+  reached 4 entries (threshold 3-5). Surfaced by
+  `make check-blockers`.
+- **Next step**: scoping session - read
+  `docs/journal/article-workflow-observations.md`, pick the 1-2
+  platforms where manual workflow hurts most, write a
+  per-platform exploration doc, then ship narrowly. Do NOT bundle
+  every platform into one phase.
+- **Phase 3 candidates** (do not commit until scoping done):
+  platform API integration (Medium / Substack / X / LinkedIn /
+  dev.to / Mastodon / Bluesky), scheduled publishing background
+  jobs, automated cross-posting, analytics fetching, OAuth
+  credential storage.
 
 ### Article validation (background, no code)
 
-- **AR-01 validation log**: still open. Long-running passive
-  task — fill `docs/journal/article-workflow-observations.md`
-  during normal cross-posting work. Drives AR-02 architecture
-  decision.
+- **AR-01 validation log**: threshold met (4 entries as of
+  2026-05-02). Stays open as a passive track to inform
+  platform-priority decisions.
 
 
 ---
@@ -327,11 +331,15 @@ user note (line below).
 
 ### Validation tracks
 
-- **AR-01**: article authoring validation log. See top #2.
-- **AR-02**: article authoring architecture decision. Blocked on
-  AR-01 data.
-- **AR-03+**: article authoring implementation phases. Blocked
-  on AR-02.
+- **AR-01**: article authoring validation log. Long-running passive
+  task. Log at `docs/journal/article-workflow-observations.md`
+  currently has 4 entries (>= 3-5 target).
+- **AR-02**: article authoring architecture decision. Resolved as
+  Option B (separate `Article` entity), shipped through
+  AR-02 Phase 1 + Phase 2 (Publications + drift detection). See
+  ROADMAP "Article authoring" section.
+- **AR-03+**: UNBLOCKED 2026-05-02. AR-01 log threshold met.
+  Platform-API scoping session can proceed. See top #2.
 
 ### Maintenance
 
@@ -352,8 +360,7 @@ summary; flip the corresponding row when something turns green.
 | DEP-05 (elevenlabs 2.x) | Real paid-API verification | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | DEP-09 (Vite 8) | `vite-plugin-pwa` peer-dep update | Upstream releases Vite 8 compat |
 | SEC-01 | Same as DEP-09 | Same as DEP-09 |
-| AR-02 | Validation data from AR-01 | 3-5 article workflows logged |
-| AR-03+ | AR-02 decision | Architecture pick (A/B/C or archive) |
+| ~~AR-03+~~ | ~~AR-01 validation log (3-5 entries)~~ | **UNBLOCKED 2026-05-02** — `docs/journal/article-workflow-observations.md` has 4 entries. Architecture pick + platform-API scoping session ready. |
 | PGS-04-FU-01 | First user report of cross-language structural divergence | User report |
 | Manual launcher smoke tests | Real hardware (Windows / macOS / Linux) availability | Hardware access |
 
