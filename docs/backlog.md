@@ -45,6 +45,18 @@ is the daily-planning view.
 
 ## Recently closed
 
+- **AR-03+ Article Phase 3 (platform APIs + automation)**: archived
+  2026-05-02 as "investigated and deferred" per the exploration's
+  Section 11 escape hatch. Full readiness audit at
+  `docs/audits/2026-05-02-ar-03-readiness.md`. Reason: AR-01
+  validation log holds 0 real cross-posting entries (template
+  fixture + section markers only); without that data the scoping
+  decision is a guess about a use case not yet understood.
+  Re-open conditions documented in the audit. Same session also
+  fixed `make check-blockers`'s entry counter (false-positive
+  UNBLOCKED reading on 2026-05-02 from counting template lines)
+  and reverted the wrong ROADMAP / backlog flips.
+
 - **GH issue #13 — mutmut nightly on import orchestrator**: closed
   2026-05-02 in `814d870`. Wired `.github/workflows/mutation-import.yml`
   scoped to `backend/app/import_plugins/` +
@@ -205,36 +217,19 @@ user note (line below).
 - **Knock-on blocks**: DEP-09 (Vite 8) + SEC-01 (vite-plugin-pwa
   CVEs) chain on the same vite-plugin-pwa upstream.
 
-### 2. AR-03+ - Article Phase 3 (platform APIs + automation)
+### 2. _slot open_
 
-- **ID**: AR-03
-- **Effort**: XL (~20-30h, multi-session)
-- **Status**: **BLOCKED** on AR-01 validation log threshold.
-  Current count: 0 real cross-posting entries; target 3-5.
-  (An earlier "UNBLOCKED 2026-05-02" reading came from a buggy
-  `make check-blockers` heuristic that counted template fixtures
-  and section headers as observations. Heuristic fixed in same
-  session.)
-- **Unblock**: 3-5 numeric-prefixed `## N. Title (YYYY-MM-DD)`
-  entries inside the "Observation log" section of
-  `docs/journal/article-workflow-observations.md`, each filled
-  in during or immediately after real cross-posting work.
-- **Next step (when unblocked)**: scoping session - read the log,
-  pick the 1-2 platforms where manual workflow hurts most, write
-  a per-platform exploration doc, then ship narrowly. Do NOT
-  bundle every platform into one phase.
-- **Phase 3 candidates** (do not commit until scoping done):
-  platform API integration (Medium / Substack / X / LinkedIn /
-  dev.to / Mastodon / Bluesky), scheduled publishing background
-  jobs, automated cross-posting, analytics fetching, OAuth
-  credential storage.
+(AR-03+ archived 2026-05-02 - see Recently closed.)
 
 ### Article validation (background, no code)
 
-- **AR-01 validation log**: threshold NOT met (0 real entries as
-  of 2026-05-02). Long-running passive task - fill
+- **AR-01 validation log**: 0 real entries as of 2026-05-02.
+  Long-running passive task — fill
   `docs/journal/article-workflow-observations.md` during normal
-  cross-posting work. Drives the AR-03+ unblock.
+  cross-posting work. Reaching 3-5 entries triggers a fresh
+  AR-03+ readiness audit (the archived audit lives at
+  `docs/audits/2026-05-02-ar-03-readiness.md` and lists the
+  re-open conditions).
 
 
 ---
@@ -339,14 +334,13 @@ user note (line below).
 ### Validation tracks
 
 - **AR-01**: article authoring validation log. Long-running passive
-  task. Log at `docs/journal/article-workflow-observations.md`
-  currently has 0 real entries (template fixture + section headers
-  only). Threshold 3-5.
+  task. 0 real entries as of 2026-05-02; threshold 3-5.
 - **AR-02**: article authoring architecture decision. Resolved as
-  Option B (separate `Article` entity), shipped through
-  AR-02 Phase 1 + Phase 2 (Publications + drift detection). See
-  ROADMAP "Article authoring" section.
-- **AR-03+**: BLOCKED on AR-01 log threshold. See top #2.
+  Option B (separate `Article` entity), shipped through Phase 1 +
+  Phase 2 (Publications + drift detection).
+- **AR-03+**: archived 2026-05-02 as "investigated and deferred".
+  See `docs/audits/2026-05-02-ar-03-readiness.md` for findings and
+  re-open conditions.
 
 ### Maintenance
 
@@ -367,7 +361,7 @@ summary; flip the corresponding row when something turns green.
 | DEP-05 (elevenlabs 2.x) | Real paid-API verification | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | DEP-09 (Vite 8) | `vite-plugin-pwa` peer-dep update | Upstream releases Vite 8 compat |
 | SEC-01 | Same as DEP-09 | Same as DEP-09 |
-| AR-03+ | AR-01 validation log threshold (3-5 cross-posting entries) | Reach the threshold by logging real cross-posting work in `docs/journal/article-workflow-observations.md`. **Current count: 0 real entries** (corrected 2026-05-02 after a false-positive UNBLOCKED reading from a buggy `make check-blockers` heuristic). |
+| ~~AR-03+~~ | _archived 2026-05-02_ | Investigated and deferred — see `docs/audits/2026-05-02-ar-03-readiness.md`. Re-open when AR-01 log threshold met OR Section 13 cadence trigger fires. |
 | PGS-04-FU-01 | First user report of cross-language structural divergence | User report |
 | Manual launcher smoke tests | Real hardware (Windows / macOS / Linux) availability | Hardware access |
 

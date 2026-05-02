@@ -195,21 +195,22 @@ the Publications panel, with content-snapshot drift detection.
 - [ ] **AR-01 validation log:** Capture real cross-posting workflow
   data in
   [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
-  during normal publication work. Target 3-5 entries before any
-  AR-03+ platform-API commitment. **Status 2026-05-02: 0 real entries
-  (template fixture + section headers only).** Earlier "threshold met"
-  flip on 2026-05-02 was a false positive from a buggy
-  `make check-blockers` heuristic; reverted in `make check-blockers`
-  bugfix same session. Log stays open and the threshold remains the
-  AR-03+ blocker.
+  during normal publication work. Status 2026-05-02: 0 real entries
+  (template fixture + section markers only). Log stays open as a
+  passive track. Reaching the 3-5-entry threshold reopens the AR-03+
+  audit (see archive entry below).
 
-### Open / deferred
+### Archived
 
-- [ ] **AR-03+ Platform APIs:** BLOCKED on AR-01 validation log
-  (target 3-5 cross-posting entries; current count: 0). OAuth +
-  scheduled publish + analytics + cross-post automation for Medium,
-  Substack, X, LinkedIn, dev.to, Mastodon, Bluesky. XL effort,
-  multi-session.
+- [archived 2026-05-02] **AR-03+ Platform APIs:** Investigated and
+  deferred per the exploration's Section 11 escape hatch. Zero
+  cross-posting entries in the validation log; without that data
+  the scoping decision is a guess. Re-open conditions and full
+  audit findings: [docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md).
+  Phase 3 candidates remain on file (OAuth + scheduled publish +
+  analytics + cross-post automation for Medium / Substack / X /
+  LinkedIn / dev.to / Mastodon / Bluesky) but the slot no longer
+  holds the "next priority" position.
 - [ ] **Phase 4 article-as-WBT git-sync:** Article version control
   via plugin-git-sync, parallel to the book path. Deferred - only on
   user demand.
