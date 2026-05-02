@@ -113,45 +113,36 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const handleAiGenerate = async (field: string) => {
         setAiGenerating(field);
         try {
-            const res = await fetch("/api/ai/generate-marketing", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    field,
-                    book_title: book.title,
-                    author: book.author,
-                    genre: book.genre || "",
-                    language: book.language || "de",
-                    description: book.description || "",
-                    chapter_titles: book.chapters.map((ch) => ch.title),
-                    existing_text: field === "keywords" ? "" : (form[field] || ""),
-                    book_id: book.id,
-                }),
+            const data = await api.ai.generateMarketing({
+                field,
+                book_title: book.title,
+                author: book.author,
+                genre: book.genre || "",
+                language: book.language || "de",
+                description: book.description || "",
+                chapter_titles: book.chapters.map((ch) => ch.title),
+                existing_text: field === "keywords" ? "" : (form[field] || ""),
+                book_id: book.id,
             });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "AI generation failed"}));
-                notify.error(err.detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
-            } else {
-                const data = await res.json();
-                if (field === "keywords") {
-                    try {
-                        const parsed = JSON.parse(data.content);
-                        if (Array.isArray(parsed)) {
-                            setKeywords(parsed.map(String).filter(Boolean));
-                            notify.success(t("ui.metadata.ai_keywords_generated", "Keywords generiert"));
-                        } else {
-                            notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
-                        }
-                    } catch {
+            if (field === "keywords") {
+                try {
+                    const parsed = JSON.parse(data.content);
+                    if (Array.isArray(parsed)) {
+                        setKeywords(parsed.map(String).filter(Boolean));
+                        notify.success(t("ui.metadata.ai_keywords_generated", "Keywords generiert"));
+                    } else {
                         notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
                     }
-                } else {
-                    set(field, data.content || "");
-                    notify.success(t("ui.metadata.ai_text_generated", "Text generiert"));
+                } catch {
+                    notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
                 }
+            } else {
+                set(field, data.content || "");
+                notify.success(t("ui.metadata.ai_text_generated", "Text generiert"));
             }
-        } catch {
-            notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : null;
+            notify.error(detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
         }
         setAiGenerating(null);
     };

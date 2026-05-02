@@ -523,14 +523,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             return;
         }
         let cancelled = false;
-        fetch("/api/ai/review/estimate", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({content: fullText}),
-        })
-            .then((r) => (r.ok ? r.json() : null))
+        api.ai
+            .estimateReview(fullText)
             .then((payload) => {
-                if (cancelled || !payload) return;
+                if (cancelled) return;
                 const tokens = Number(payload.input_tokens || 0);
                 const cost = typeof payload.cost_usd === "number" ? payload.cost_usd : null;
                 const tokensLabel = tokens >= 1000 ? `${Math.round(tokens / 100) / 10}k` : `${tokens}`;
@@ -594,24 +590,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         setSpellcheckLoading(true);
         try {
             const text = editor.getText();
-            const res = await fetch("/api/grammar/check", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({text}),
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "Grammar check failed"}));
-                notify.error(err.detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
-                setSpellcheckResults([]);
-            } else {
-                const data = await res.json();
-                setSpellcheckResults(data.matches || []);
-                if ((data.matches || []).length === 0) {
-                    notify.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
-                }
+            const data = await api.grammar.check(text);
+            setSpellcheckResults(data.matches || []);
+            if ((data.matches || []).length === 0) {
+                notify.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
             }
-        } catch {
-            notify.error(t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : null;
+            notify.error(detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
             setSpellcheckResults([]);
         }
         setSpellcheckLoading(false);
@@ -656,27 +642,17 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 return;
             }
 
-            const res = await fetch("/api/audiobook/preview", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    text,
-                    book_id: bookId || "",
-                    chapter_title: chapterTitle || "",
-                }),
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "Preview failed"}));
-                notify.error(err.detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+            try {
+                const blob = await api.audiobook.preview(text, bookId || "", chapterTitle || "");
+                // Revoke any previous preview URL to avoid memory leaks
+                if (previewAudioUrl) URL.revokeObjectURL(previewAudioUrl);
+                setPreviewAudioUrl(URL.createObjectURL(blob));
+            } catch (err) {
+                const detail = err instanceof ApiError ? err.detail : null;
+                notify.error(detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
                 setPreviewLoading(false);
                 return;
             }
-
-            // Store the blob URL so the inline player renders
-            const blob = await res.blob();
-            // Revoke any previous preview URL to avoid memory leaks
-            if (previewAudioUrl) URL.revokeObjectURL(previewAudioUrl);
-            setPreviewAudioUrl(URL.createObjectURL(blob));
         } catch {
             notify.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
         }
@@ -795,25 +771,12 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             };
 
         try {
-            const res = await fetch("/api/ai/generate", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    prompt: selectedText,
-                    system: basePrompts[aiPromptType],
-                    book_id: bookId || "",
-                }),
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({detail: "AI request failed"}));
-                notify.error(err.detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
-                setAiSuggestion("");
-            } else {
-                const data = await res.json();
-                setAiSuggestion(data.content || "");
-            }
-        } catch {
-            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+            const data = await api.ai.generate(selectedText, basePrompts[aiPromptType], bookId || "");
+            setAiSuggestion(data.content || "");
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : null;
+            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
+            setAiSuggestion("");
         }
         setAiLoading(false);
     };
@@ -847,32 +810,21 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
         let jobId: string | null = null;
         try {
-            const submit = await fetch("/api/ai/review/async", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    content: fullText,
-                    chapter_id: chapterId || "",
-                    chapter_title: chapterTitle || "",
-                    chapter_type: chapterType,
-                    book_title: bookContext?.title || "",
-                    genre: bookContext?.genre || "",
-                    language: bookLanguage,
-                    focus: [reviewFocus],
-                    book_id: bookId || "",
-                }),
+            const submitted = await api.ai.reviewAsync({
+                content: fullText,
+                chapter_id: chapterId || "",
+                chapter_title: chapterTitle || "",
+                chapter_type: chapterType,
+                book_title: bookContext?.title || "",
+                genre: bookContext?.genre || "",
+                language: bookLanguage,
+                focus: [reviewFocus],
+                book_id: bookId || "",
             });
-            if (!submit.ok) {
-                const err = await submit.json().catch(() => ({detail: "AI review failed"}));
-                notify.error(err.detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
-                setAiLoading(false);
-                setReviewStatusMsg(null);
-                return;
-            }
-            const submitted = await submit.json();
-            jobId = submitted.job_id as string;
-        } catch {
-            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
+            jobId = submitted.job_id;
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : null;
+            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
             setAiLoading(false);
             setReviewStatusMsg(null);
             return;
@@ -901,11 +853,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     setReviewStatusMsg(null);
                     // Pull the final result from the poll endpoint.
                     if (jobId) {
-                        fetch(`/api/ai/jobs/${jobId}`)
-                            .then((r) => r.ok ? r.json() : null)
+                        api.ai
+                            .getJob(jobId)
                             .then((payload) => {
                                 if (payload?.result?.review) {
-                                    setAiReview(payload.result.review as string);
+                                    setAiReview(payload.result.review);
                                 }
                             })
                             .catch(() => {

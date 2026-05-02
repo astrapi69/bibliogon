@@ -567,6 +567,63 @@ export interface AudiobookExistsError {
     };
 }
 
+// --- AI / grammar shapes ---
+
+export interface AiReviewEstimate {
+    input_tokens: number;
+    cost_usd: number | null;
+}
+
+export interface AiGenerateResponse {
+    content: string;
+}
+
+export interface AiReviewSubmitRequest {
+    content: string;
+    chapter_id: string;
+    chapter_title: string;
+    chapter_type: string | null;
+    book_title: string;
+    genre: string;
+    language: string;
+    focus: string[];
+    book_id: string;
+}
+
+export interface AiGenerateMarketingRequest {
+    field: string;
+    book_title: string;
+    author: string | null;
+    genre: string;
+    language: string;
+    description: string;
+    chapter_titles: string[];
+    existing_text: string;
+    book_id: string;
+}
+
+export interface AiAsyncJobSubmit {
+    job_id: string;
+}
+
+export interface AiJobStatus {
+    status: string;
+    result?: {review?: string} & Record<string, unknown>;
+}
+
+export interface GrammarMatch {
+    message: string;
+    short_message: string;
+    offset: number;
+    length: number;
+    replacements: string[];
+    rule_id: string;
+}
+
+export interface GrammarCheckResponse {
+    matches: GrammarMatch[];
+}
+
 // --- ApiError with context ---
 
 /** Thrown by `api.chapters.update` when a newer save for the same
@@ -1320,6 +1377,77 @@ export const api = {
                 return [];
             }
         },
+
+        /** Synthesise a short preview MP3 for the editor's "Vorlesen"
+         *  button. Returns the audio bytes as a Blob so the caller
+         *  can `URL.createObjectURL` it into an <audio> element. */
+        preview: async (
+            text: string,
+            bookId: string,
+            chapterTitle: string,
+        ): Promise<Blob> => {
+            const url = `${BASE}/audiobook/preview`;
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({text, book_id: bookId, chapter_title: chapterTitle}),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}));
+                throw new ApiError(
+                    res.status,
+                    err.detail || "Preview failed",
+                    url,
+                    "POST",
+                    err.stacktrace || "",
+                );
+            }
+            return res.blob();
+        },
+    },
+
+    ai: {
+        /** Cheap pre-flight estimate for the AI review cost label. */
+        estimateReview: (content: string) =>
+            request<AiReviewEstimate>("/ai/review/estimate", {
+                method: "POST",
+                body: JSON.stringify({content}),
+            }),
+
+        /** Free-form generation used by the editor's AI panel. */
+        generate: (prompt: string, system: string, bookId: string) =>
+            request<AiGenerateResponse>("/ai/generate", {
+                method: "POST",
+                body: JSON.stringify({prompt, system, book_id: bookId}),
+            }),
+
+        /** Submit an async chapter review. The caller subscribes to
+         *  `/api/ai/jobs/{id}/stream` (SSE) afterwards via the native
+         *  EventSource - that lifecycle is not part of the API client. */
+        reviewAsync: (request_body: AiReviewSubmitRequest) =>
+            request<AiAsyncJobSubmit>("/ai/review/async", {
+                method: "POST",
+                body: JSON.stringify(request_body),
+            }),
+
+        /** Poll the final job result once SSE reports `stream_end`. */
+        getJob: (jobId: string) =>
+            request<AiJobStatus>(`/ai/jobs/${jobId}`),
+
+        /** Generate marketing copy for a book metadata field. */
+        generateMarketing: (request_body: AiGenerateMarketingRequest) =>
+            request<AiGenerateResponse>("/ai/generate-marketing", {
+                method: "POST",
+                body: JSON.stringify(request_body),
+            }),
+    },
+
+    grammar: {
+        check: (text: string) =>
+            request<GrammarCheckResponse>("/grammar/check", {
+                method: "POST",
+                body: JSON.stringify({text}),
+            }),
     },
 
     bookAudiobook: {
