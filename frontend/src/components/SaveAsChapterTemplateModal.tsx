@@ -90,7 +90,7 @@ export default function SaveAsChapterTemplateModal({open, chapter, bookId, onClo
         <Dialog.Root open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay"/>
-                <Dialog.Content className="dialog-content" data-testid="save-chapter-template-modal">
+                <Dialog.Content className="dialog-content dialog-content-wide" data-testid="save-chapter-template-modal">
                     <div className="dialog-header">
                         <Dialog.Title className="dialog-title">
                             {t("ui.save_chapter_template.title", "Kapitel als Vorlage speichern")}

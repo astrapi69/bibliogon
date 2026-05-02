@@ -9,6 +9,8 @@
 .content {
     max-width: 720px;
     width: min(720px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .header {
@@ -78,4 +80,12 @@
     gap: 0.5rem;
     justify-content: flex-end;
     flex-wrap: wrap;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.5rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
 }
