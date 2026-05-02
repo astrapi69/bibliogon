@@ -16,8 +16,9 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
+from app.exceptions import ValidationError
 from app.services.backup.archive_utils import find_books_dir, find_manifest
 
 # --- Public entry point ---
@@ -46,13 +47,10 @@ def compare_backups(file_a: UploadFile, file_b: UploadFile) -> dict[str, Any]:
         only_in_b = sorted(books_b.keys() - books_a.keys())
 
         if not common_ids:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Die beiden Backups enthalten keine gemeinsamen Bücher. "
-                    "Ein Vergleich ist nur möglich wenn dasselbe Buch in beiden "
-                    "Dateien vorkommt."
-                ),
+            raise ValidationError(
+                "Die beiden Backups enthalten keine gemeinsamen Bücher. "
+                "Ein Vergleich ist nur möglich wenn dasselbe Buch in beiden "
+                "Dateien vorkommt."
             )
 
         books_diff = [_diff_book(books_a[bid], books_b[bid]) for bid in common_ids]
@@ -76,11 +74,10 @@ def compare_backups(file_a: UploadFile, file_b: UploadFile) -> dict[str, Any]:
 
 def _validate_filename(filename: str | None, label: str) -> None:
     if not filename:
-        raise HTTPException(status_code=400, detail=f"Backup {label}: keine Datei hochgeladen")
+        raise ValidationError(f"Backup {label}: keine Datei hochgeladen")
     if not filename.endswith(".bgb"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Backup {label}: Datei muss eine .bgb-Datei sein (erhalten: {filename})",
+        raise ValidationError(
+            f"Backup {label}: Datei muss eine .bgb-Datei sein (erhalten: {filename})"
         )
 
 
@@ -94,26 +91,19 @@ def _extract_upload(file: UploadFile, dest: Path, label: str) -> Path:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(extracted)
     except zipfile.BadZipFile as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Backup {label}: Datei ist beschädigt und kann nicht gelesen werden",
+        raise ValidationError(
+            f"Backup {label}: Datei ist beschädigt und kann nicht gelesen werden"
         ) from e
 
     manifest = find_manifest(extracted)
     if manifest:
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         if manifest_data.get("format") != "bibliogon-backup":
-            raise HTTPException(
-                status_code=400,
-                detail=f"Backup {label}: kein gültiges Bibliogon-Backup-Format",
-            )
+            raise ValidationError(f"Backup {label}: kein gültiges Bibliogon-Backup-Format")
 
     books_dir = find_books_dir(extracted)
     if not books_dir:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Backup {label}: kein 'books'-Verzeichnis gefunden",
-        )
+        raise ValidationError(f"Backup {label}: kein 'books'-Verzeichnis gefunden")
     return books_dir
 
 

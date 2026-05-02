@@ -10,9 +10,10 @@ the new file's relative path so the existing
 from dataclasses import dataclass
 from pathlib import Path
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from app.exceptions import NotFoundError, PayloadTooLargeError, ValidationError
 from app.models import Asset, Book
 from app.routers.assets import UPLOAD_DIR
 
@@ -98,22 +99,19 @@ def delete_cover(db: Session, book_id: str) -> bool:
 def _get_book_or_404(db: Session, book_id: str) -> Book:
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
+        raise NotFoundError("Book not found")
     return book
 
 
 def _validate_extension(filename: str | None) -> str:
-    """Return the lowercased extension (with dot) or raise 400."""
+    """Return the lowercased extension (with dot) or raise ValidationError."""
     if not filename:
-        raise HTTPException(status_code=400, detail="No filename provided")
+        raise ValidationError("No filename provided")
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Unsupported cover format '{suffix or filename}'. "
-                f"Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
-            ),
+        raise ValidationError(
+            f"Unsupported cover format '{suffix or filename}'. "
+            f"Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
         )
     return suffix
 
@@ -133,13 +131,12 @@ def _read_within_limit(file: UploadFile) -> bytes:
             break
         total += len(chunk)
         if total > MAX_COVER_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"Cover too large. Max {MAX_COVER_BYTES // (1024 * 1024)} MB.",
+            raise PayloadTooLargeError(
+                f"Cover too large. Max {MAX_COVER_BYTES // (1024 * 1024)} MB."
             )
         chunks.append(chunk)
     if total == 0:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        raise ValidationError("Uploaded file is empty")
     return b"".join(chunks)
 
 
@@ -156,17 +153,16 @@ def _validate_image_format(payload: bytes) -> tuple[int, int]:
         with Image.open(BytesIO(payload)) as img:
             fmt = (img.format or "").upper()
             if fmt not in _PILLOW_FORMATS:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"File is not a supported image (detected: {fmt or 'unknown'})",
+                raise ValidationError(
+                    f"File is not a supported image (detected: {fmt or 'unknown'})"
                 )
             return img.width, img.height
     except UnidentifiedImageError as e:
-        raise HTTPException(status_code=400, detail="File is not a valid image") from e
-    except HTTPException:
+        raise ValidationError("File is not a valid image") from e
+    except ValidationError:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image validation failed: {e}") from e
+        raise ValidationError(f"Image validation failed: {e}") from e
 
 
 # --- Storage helpers ---

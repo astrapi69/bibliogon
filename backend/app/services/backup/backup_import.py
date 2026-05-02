@@ -8,10 +8,11 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.backup_history import BackupHistory
+from app.exceptions import ValidationError
 from app.models import Article, ArticleAsset, Asset, Book, Chapter, ChapterType, Publication
 from app.services.backup.archive_utils import find_articles_dir, find_books_dir, find_manifest
 from app.services.backup.serializer import (
@@ -81,19 +82,15 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
 
 def _validate_bgb_filename(filename: str | None) -> None:
     if not filename:
-        raise HTTPException(status_code=400, detail="No file provided")
+        raise ValidationError("No file provided")
     if filename.endswith(".bgb"):
         return
     if filename.endswith(".zip"):
-        raise HTTPException(
-            status_code=400,
-            detail="Das ist eine ZIP-Datei. Für Projekt-Import nutze den 'Import'-Button. "
-            "Für Backup-Restore wird eine .bgb-Datei erwartet (erstellt über 'Backup').",
+        raise ValidationError(
+            "Das ist eine ZIP-Datei. Für Projekt-Import nutze den 'Import'-Button. "
+            "Für Backup-Restore wird eine .bgb-Datei erwartet (erstellt über 'Backup')."
         )
-    raise HTTPException(
-        status_code=400,
-        detail="Datei muss eine .bgb-Datei sein (Bibliogon Backup)",
-    )
+    raise ValidationError("Datei muss eine .bgb-Datei sein (Bibliogon Backup)")
 
 
 def _extract_bgb(file: UploadFile, tmp_dir: Path) -> Path:
@@ -106,7 +103,7 @@ def _extract_bgb(file: UploadFile, tmp_dir: Path) -> Path:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(extracted)
     except zipfile.BadZipFile as e:
-        raise HTTPException(status_code=400, detail="Beschaedigte .bgb-Datei") from e
+        raise ValidationError("Beschaedigte .bgb-Datei") from e
     return extracted
 
 
@@ -116,9 +113,8 @@ def _validate_backup_manifest(extracted: Path) -> None:
         return
     manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
     if manifest_data.get("format") != "bibliogon-backup":
-        raise HTTPException(
-            status_code=400,
-            detail="Ungültige Backup-Datei. Die Datei hat kein gültiges Bibliogon-Backup-Format.",
+        raise ValidationError(
+            "Ungültige Backup-Datei. Die Datei hat kein gültiges Bibliogon-Backup-Format."
         )
     version = str(manifest_data.get("version", "1.0"))
     if version not in _KNOWN_MANIFEST_VERSIONS:
@@ -138,10 +134,9 @@ def _validate_backup_manifest(extracted: Path) -> None:
 def _require_books_dir(extracted: Path) -> Path:
     books_dir = find_books_dir(extracted)
     if not books_dir:
-        raise HTTPException(
-            status_code=400,
-            detail="Ungültige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
-            "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button.",
+        raise ValidationError(
+            "Ungültige Backup-Datei: kein 'books'-Verzeichnis gefunden. "
+            "Ist das vielleicht ein Projekt-ZIP? Dann nutze den 'Import'-Button."
         )
     return books_dir
 

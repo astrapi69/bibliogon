@@ -419,6 +419,30 @@ app.include_router(ws_router, prefix="/api")
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from app.exceptions import BibliogonError
+
+
+@app.exception_handler(BibliogonError)
+async def bibliogon_error_handler(request: Request, exc: BibliogonError):
+    """Map typed domain errors to HTTP responses (per code-hygiene.md)."""
+    if exc.status_code >= 500:
+        logger.error(
+            "%s %s -> %s",
+            request.method,
+            request.url.path,
+            exc.detail,
+            exc_info=exc,
+        )
+    else:
+        logger.warning(
+            "%s %s -> %s %s",
+            request.method,
+            request.url.path,
+            exc.status_code,
+            exc.detail,
+        )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
