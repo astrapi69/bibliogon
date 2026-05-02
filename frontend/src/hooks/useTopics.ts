@@ -14,8 +14,9 @@ import { api } from "../api/client";
  *
  * Settings is the single source of truth; the ArticleEditor
  * topic dropdown reads from this hook. Empty strings are filtered;
- * non-string entries are dropped. Returns ``null`` while loading
- * or on API failure so callers can render an empty state.
+ * non-string entries are dropped. Returns ``null`` only while
+ * loading; on API failure falls back to an empty array so the
+ * dropdown stays interactive (user can still inline-add a topic).
  */
 export function useTopics(): string[] | null {
     const [topics, setTopics] = useState<string[] | null>(null);
@@ -35,8 +36,10 @@ export function useTopics(): string[] | null {
                     .filter((t) => t.length > 0);
                 setTopics(cleaned);
             })
-            .catch(() => {
-                /* network failure leaves topics null */
+            .catch((err) => {
+                if (cancelled) return;
+                console.warn("useTopics: settings fetch failed", err);
+                setTopics([]);
             });
         return () => {
             cancelled = true;

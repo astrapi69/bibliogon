@@ -1,7 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-04-27 (AR-01 Phase 1 + AR-02 Phase 2 shipped; TD-01 + PGS-02-FU-01 + PS-09-FU-01 + CIO-08-FU-01 + PGS-03-FU-01 + PS-13 + PGS-04-FU-01 + MAINT-01 + DOC-03 closed)
-Current version: v0.23.0
+Last updated: 2026-05-02 (UX-FU-01 closed)
+Current version: v0.25.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
 spawned during sessions and re-ranks open work by today's
@@ -261,14 +261,14 @@ user note (line below).
   Status: confirm-or-close.
 - **ImportWizardModal full useMachine migration**: covered
   under CIO-08-FU-01 above.
-- **UX-FU-01**: TopicSelect silent fallback when settings API
-  fails. ArticleEditor's TopicSelect uses
-  `disabled={topics === null}`; if `useTopics` rejects
-  (network/server error), the dropdown stays disabled forever
-  with no hint. Effort: S. Priority: low (minimal real risk on
-  localhost-only deploys; anti-pattern for hosted setups). Fix:
-  surface the error state with a retry hint, OR fall back to an
-  enabled dropdown with the loaded value preserved.
+- **UX-FU-01**: closed 2026-05-02. `useTopics` hook now falls
+  back to `[]` on API failure (was `null` forever, which kept
+  TopicSelect disabled). On failure logs `console.warn` for
+  diagnostics; TopicSelect stays interactive — empty hint shows
+  and inline-add ("+ Neues Thema hinzufügen") still works. Test
+  flipped from "stays null on API failure" to "falls back to
+  empty array on API failure". 6/6 useTopics Vitest green; 682
+  full Vitest green; tsc clean.
 - **TPL-I18N-01**: closed 2026-04-28 in `<commit>`. Fixed via
   option (c): `slugifyTemplateName` helper in
   `frontend/src/components/CreateBookModal.tsx` derives a

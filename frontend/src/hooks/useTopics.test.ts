@@ -63,11 +63,16 @@ describe("useTopics", () => {
         await waitFor(() => expect(result.current).toEqual([]));
     });
 
-    it("stays null on API failure", async () => {
+    it("falls back to empty array on API failure", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         mockGetApp.mockRejectedValue(new Error("net"));
         const { useTopics } = await import("./useTopics");
         const { result } = renderHook(() => useTopics());
-        await waitFor(() => expect(mockGetApp).toHaveBeenCalled());
-        expect(result.current).toBeNull();
+        await waitFor(() => expect(result.current).toEqual([]));
+        expect(warnSpy).toHaveBeenCalledWith(
+            "useTopics: settings fetch failed",
+            expect.any(Error),
+        );
+        warnSpy.mockRestore();
     });
 });
