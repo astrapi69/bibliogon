@@ -152,11 +152,7 @@ def _validate_child_ids(
     if not child_ids:
         return
 
-    found = (
-        db.query(ChapterTemplate.id)
-        .filter(ChapterTemplate.id.in_(child_ids))
-        .all()
-    )
+    found = db.query(ChapterTemplate.id).filter(ChapterTemplate.id.in_(child_ids)).all()
     found_ids = {row[0] for row in found}
     missing = [cid for cid in child_ids if cid not in found_ids]
     if missing:
