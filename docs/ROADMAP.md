@@ -1,231 +1,94 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-01
-Latest release: v0.25.0 (articles reach full feature parity with books — dashboard chrome, soft-delete + trash, AI-generated SEO, backup format manifest 2.0 with articles + publications + assets segments, CIO restore through the Import Wizard. Three-layer secrets configuration replaces the "edit app.yaml" advice with a Gradle-style override file. Donations S-01 Settings tab "Unterstützen" with four-channel grid is the first user-visible donation surface. T-01 inline-styles refactor migrates 22 components/pages to CSS Modules, eliminating ~700 inline-style call-sites. Plus Settings mobile hamburger F-01 and `make dev-bg` robustness F-02. Stale `0.15.0` health-endpoint version bug squashed via centralised `app.__version__`.)
+Last updated: 2026-05-02
+Latest release: v0.25.0
+Open tasks: 9 (4 BLOCKED on upstream)
+Archive: [docs/roadmap-archive/](roadmap-archive/)
 
-Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0) is archived at [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). The archive includes a postscript (2026-04-15) about the silent-image-drop bug discovered after archival.
+Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
+is archived at
+[docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md).
+The bulk of Phase 2 work (v0.15.0 through v0.25.0) is archived at
+[docs/roadmap-archive/v0.25.0-cleanup-2026-05-02.md](roadmap-archive/v0.25.0-cleanup-2026-05-02.md).
+
+This file lists ONLY open tasks. Closed tasks live in the archive
+files above. Re-opening a closed task creates a new ID; do not
+revive old IDs in the active list.
 
 ---
 
 ## Current focus
 
-Distribution code is complete for all three platforms (D-01 Windows, D-02 macOS, D-03 Linux) plus auto-update (D-04). Manual smoke tests on real hardware are tracked as GitHub issues ([#2](https://github.com/astrapi69/bibliogon/issues/2), [#3](https://github.com/astrapi69/bibliogon/issues/3), [#4](https://github.com/astrapi69/bibliogon/issues/4)). Templates theme is complete (TM-01..05). Git-based backup theme is complete (Phase 1-5, SI-01..04). plugin-git-sync is complete through PGS-05. Next active theme: TBD - top candidates tracked in [docs/backlog.md](backlog.md). All four major-dependency items are currently BLOCKED on upstream releases (DEP-02 TipTap 3, DEP-05 elevenlabs 2.x, DEP-09 Vite 8, SEC-01 vite-plugin-pwa CVEs); see backlog "Blocked or waiting" for unblock conditions.
-
----
-
-## Critical Fixes (Phase 2)
-
-Bugs whose impact on shipped versions warrants tracking separately from polish work.
-
-- [x] CF-01: PDF/DOCX silent image drop. Bug present v0.1.0 through v0.14.0, fixed v0.15.0. Originally tracked as PS-06 polish item; severity reclassified after diagnosis revealed shipped impact. See [archive postscript](roadmap-archive/phase-1-complete.md#postscript-2026-04-15) for the full trajectory.
+All Phase 2 themes (Distribution, Templates, Polish, Git-based
+backup, Donations, Core import orchestrator, plugin-git-sync,
+Article authoring, the deferred dependency sweep) are complete. The
+remaining open work is a small set of deferred-by-design items, a
+passive validation track, and four upstream-blocked dependency
+upgrades. See backlog for a curated daily-planning view.
 
 ---
 
 ## Themes for Phase 2
 
-### 1. Distribution and packaging (priority: now)
+### 1. Distribution and packaging
 
-Lower the installation barrier for non-technical users. Simple Launcher first, Tauri as a later option if needed. No Electron. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for the full evaluation.
+- [ ] **D-03a**: AppImage for Linux — deferred. The PyInstaller
+  binary requires `python3-tk` on the target (preinstalled on
+  every major desktop distro). AppImage would make that
+  self-contained at a 4-10x size cost and added CI complexity
+  (FUSE + appimagetool). Re-evaluate only when a user reports a
+  missing-tkinter failure in the wild.
+- [ ] **D-05**: Full Windows installer (downloads Docker Desktop +
+  Bibliogon repo + generates `.env`, no terminal required at any
+  step). Larger scope than D-01's launcher. Defer until user
+  feedback shows the install (not the start) is the actual
+  friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md)
+  for context and triggers for reconsidering.
 
-- [x] D-01: Simple Launcher for Windows (`.exe` via PyInstaller). Install, uninstall, Docker start/stop, browser open, health check, update notification, opt-out settings. CI: [launcher-windows.yml](../.github/workflows/launcher-windows.yml). Per-user state lives in `%APPDATA%\bibliogon\` with files `install.json` (manifest), `install.log` (rotating activity log), `cleanup.json` (only during interrupted uninstall), `settings.json` (user preferences). Manual smoke test: [issue #2](https://github.com/astrapi69/bibliogon/issues/2).
-- [x] D-02: Simple Launcher for macOS (`.app` bundle, arm64-only for initial release). Same source as Windows launcher; spec file's darwin BUNDLE block produces the `.app`. CI: [launcher-macos.yml](../.github/workflows/launcher-macos.yml). Unsigned binary requires Gatekeeper bypass (right-click -> Open) on first launch. Intel Mac support (universal2) and code signing deferred until user demand. Manual smoke test: [issue #3](https://github.com/astrapi69/bibliogon/issues/3).
-- [x] D-03: Simple Launcher for Linux (PyInstaller binary). Same source as Windows launcher; spec file is cross-platform aware. CI: [launcher-linux.yml](../.github/workflows/launcher-linux.yml). Requires `python3-tk` on target (preinstalled on every major desktop distro). Optional follow-up: `.desktop` file for GNOME/KDE menu integration. Manual smoke test: [issue #4](https://github.com/astrapi69/bibliogon/issues/4).
-- [ ] D-03a: AppImage for Linux — deferred. The PyInstaller binary requires `python3-tk` on the target (preinstalled on every major desktop distro). AppImage would make that self-contained at a 4-10x size cost and added CI complexity (FUSE + appimagetool). Re-evaluate only when a user reports a missing-tkinter failure in the wild.
-- [x] D-04: auto-update check in the launcher (notify user of new versions). Background thread polls `https://api.github.com/repos/astrapi69/bibliogon/releases/latest` on every launcher start, compares against the installed version from the manifest, and shows a non-blocking "Open release page / Dismiss" dialog when a strictly newer release is available. All failures are silent (network, timeout, rate limit, malformed response). Stdlib-only (urllib + threading). 21 tests in [test_update_check.py](../launcher/tests/test_update_check.py).
-- [ ] D-05: Full Windows installer (downloads Docker Desktop + Bibliogon repo + generates .env, no terminal required at any step). Larger scope than D-01's launcher. Defer until user feedback shows the install (not the start) is the actual friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md) for context and triggers for reconsidering.
+### 2. Polish and stability
 
-### 2. Book and chapter templates (priority: after distribution)
-
-Pre-built structures for common book genres. Lowers the entry barrier for new users who do not know how to structure a book.
-
-- [x] TM-01: template data model. `BookTemplate` + `BookTemplateChapter` tables (Alembic migration `b7c8d9e0f1a2`), `/api/templates/` CRUD, 5 new `ChapterType` values (half_title, title_page, copyright, section, conclusion), idempotent seed at startup.
-- [x] TM-02: 5 builtin templates seeded with TM-01 - Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Definitions live in `backend/app/data/builtin_templates.py`.
-- [x] TM-03: "Create from template" mode in CreateBookModal (Radix Tabs toggle), POST /api/books/from-template builds the book + chapters in a single commit, template picker cards with genre badge and chapter count.
-- [x] TM-04: chapter templates. `ChapterTemplate` table (Alembic migration `c8d9e0f1a2b3`), `/api/chapter-templates/` CRUD, 4 builtins seeded (Interview, FAQ, Recipe, Photo Report) as TipTap JSON. Frontend: "Aus Vorlage..." entry in the new-chapter dropdown opens `ChapterTemplatePickerModal`; "Save as template" entry in each chapter's ContextMenu opens `SaveAsChapterTemplateModal` (empty-placeholders vs preserve-content). User templates deletable; builtins show a "Built-in" badge. TM-04b items deferred: update endpoint exposed in UI, JSON export/import, multi-chapter templates.
-- [x] TM-05: user-created templates. "Save as template" in the ChapterSidebar footer opens SaveAsTemplateModal (empty-placeholders vs preserve-content), user templates appear in the picker alongside builtins with a trash-icon delete action; builtin templates show a "Built-in" badge and are read-only.
-
-### 3. Polish and stability (runs in parallel throughout Phase 2)
-
-- [x] PS-01: app.yaml auto-creation from app.yaml.example on first startup
-- [x] PS-02: onboarding flow for AI provider setup (first-run wizard)
-- [x] PS-03: keyboard shortcuts customization
-- [x] PS-04: performance optimization for large books (500+ pages, 100+ chapters)
-- [x] PS-05: accessibility audit (WCAG 2.1 AA for core workflows)
-- [x] PS-06: manuscripta integration polish (rough edges in the export pipeline) (reclassified as CF-01 after diagnosis revealed critical severity)
-- [x] PS-07: plugin developer documentation (API reference, tutorial, example plugin)
-- [x] PS-08: docs + help catch-up for the Templates theme. New `docs/help/{de,en}/templates.md` pages registered in `_meta.yaml`, 6 new FAQ entries in `backend/config/plugins/help.yaml` (DE + EN), stale "21 chapter types" answer refreshed to 31, CLAUDE.md data-model updated with BookTemplate / ChapterTemplate entries and the new `make test-coverage` target, CHANGELOG Unreleased section opened capturing templates + coverage-to-CI + theme-toggle placement work.
-- [x] PS-09: expand the CI plugin matrix. `ci.yml` and `coverage.yml` now run 7 plugins (added audiobook + translation alongside the existing export, grammar, kdp, kinderbuch, ms-tools). pytest-cov added to both new plugins' dev deps; root Makefile gets matching `test-coverage-plugin-audiobook` and `test-coverage-plugin-translation` targets.
-- [x] PS-10: trivial cleanup of the `plugin_config` unused-parameter warning in `backend/app/main.py` `_check_license`. Pluginforge's `pre_activate` signature requires the second argument, so the parameter was prefixed with `_` (`_plugin_config`) to silence the warning while preserving the hook contract.
-- [x] PS-11: regression tests for the ruamel.yaml round-trip (`backend/tests/test_yaml_io.py`, 5 tests covering byte-identical round-trip, `# INTERNAL` comment survival, quote-style preservation, missing-file errors, and parent-directory creation) + missing Spanish accents fixed in 4 plugin YAMLs (`translation.yaml`, `kinderbuch.yaml`, `kdp.yaml`, `audiobook.yaml`: Traducción, página, validación, publicación, Generación, capítulos).
-- [x] PS-12: removed .gitignore rule blocking session journals; aligned ai-workflow.md
-- [x] PS-13: "Save as new chapter" action in `ConflictResolutionDialog`. Third button alongside Keep/Discard clones the local edit into a fresh chapter inserted at `source.position + 1`; subsequent chapters bump by 1 to keep the list gap-free. Source chapter is left untouched (keeps server content). Backend `POST /api/books/{id}/chapters/{cid}/fork` (`ChapterFork` schema, 201 on success, 404 on missing book/chapter, inherits `chapter_type` from source). Frontend dialog grows an optional `onSaveAsNewChapter` prop so existing 409 callers stay backward-compatible; BookEditor wires `resolveConflictSaveAsNew` through `api.chapters.fork`. 5 new i18n keys × 8 languages (`save_as_new_chapter`, `save_as_new_chapter_tooltip`, `local_draft_suffix`, `saved_as_new_chapter`, `save_as_new_failed`). 6 backend pytest tests + 3 Vitest tests cover happy path, default-title suffix, position bump, source untouched, 404s, chapter_type inheritance. Shipped in commits `39927ae` (backend) + `de4638d` (frontend).
-- [ ] PS-14+: future polish items, surface as found
-
-### 4. Git-based backup (phased)
-
-Replaces the upload-based backup-compare (V-02 stop-gap) with proper Git integration. Phased plan lives in [docs/explorations/git-based-backup.md](explorations/git-based-backup.md). MVP ships TipTap JSON per chapter under `uploads/{book_id}/.git`, user-controlled commits, remote-agnostic (any git URL), offline-first.
-
-- [x] **Phase 1:** local git per book (init / commit / log / status). GitPython backend, Dockerfile git binary, frontend Commit dialog + sidebar button, i18n in 8 languages. Shipped in `feat(git-backup): Phase 1 local git per book` (commit `436de37`) + frontend `2203c2e` + i18n fix `556231c`.
-- [x] **Phase 2:** remote push/pull + SI-01 + SI-04. Backend: configure_remote/push/pull/sync_status with Fernet-encrypted PAT via credential_store, one-shot-URL PAT injection so the token never lands in `.git/config`, ff-only pull with DivergedError for SI-02. Frontend: remote config form, Push/Pull buttons, SyncBadge (in_sync / local_ahead / remote_ahead / diverged / never_synced). Shipped `c78fa1c` (backend) + `d9f72bc` (frontend).
-- [x] **SI-04 polish:** real sidebar indicator. Accent-coloured dot on the Git-Sicherung sidebar button when sync state is `remote_ahead` or `diverged`. Polled on book load and after Git dialog close. Shipped `7f5bd4e`.
-- [x] **SI-01 polish:** dedicated Accept Remote / Accept Local conflict resolution panel in the Git dialog. Push rejection and pull divergence both open the panel; Accept Local runs force push behind a confirm() dialog. Backend `push(force=bool)` + regression test. Shipped `d229d81`.
-- [x] **Phase 3:** SI-03 SSH key generation. Ed25519 keypair via the existing `cryptography` dep (no paramiko, no subprocess). One keypair per install at `config/ssh/id_ed25519` with 0600 perms. Settings UI (Allgemein tab) to generate / copy public key / delete. git_backup push/pull auto-wires `GIT_SSH_COMMAND` when URL is SSH and a key exists. Backend `d35ebd4`, frontend `fe48b0a`, 20 new tests.
-- [x] **Phase 4:** SI-02 conflict analysis + per-file resolution. Backend: `analyze_conflict` classifies diverged state as simple (disjoint file sets) or complex (overlap); `merge` attempts a 3-way merge, auto-commits simple cases, leaves complex cases in merge-in-progress state; `resolve_conflicts` applies per-file Mine/Theirs resolution; `abort_merge` rolls back. Frontend: two-mode ConflictResolution panel — initial Merge/Force-Push/Cancel choice, then per-file radio picker with Apply/Abort after a complex merge surfaces conflicts. Backend `76b662c`, frontend `530732e`, 11 new tests.
-- [x] **Phase 5:** Markdown side-files. Every commit writes a `.md` counterpart next to each chapter `.json` (via the export plugin's TipTap → Markdown converter, lazy-imported and failure-tolerant). JSON stays canonical; MD is advisory for readable git diffs. Shipped `64a8ca3`, 4 new tests.
-
-### 5. Donation integration (priority: after stability)
-
-Users can support the project. Prompts are subtle, respectful, without dark patterns. Donation state stored locally, no tracking.
-
-See [docs/explorations/donations-ux.md](explorations/donations-ux.md) for the full strategy document.
-
-- [x] S-01: Settings section "Support Bibliogon" - new 4th Radix tab in `frontend/src/pages/Settings.tsx`, rendered only when `donations.enabled === true`. Channel list with per-channel description and optional "Recommended" badge; `landing_page_url` override collapses UI to one primary button. New `SupportSection.tsx` component, i18n `ui.donations.*` in all 8 languages.
-- [x] S-02: One-time onboarding dialog after first book creation - new `DonationOnboardingDialog.tsx` mirroring the AiSetupWizard pattern. Triggered from `Dashboard.handleCreate`/`handleCreateFromTemplate` when `books.length === 0` BEFORE the create and the `bibliogon-donation-onboarding-seen` localStorage flag is unset. Every dismiss path (Support, Understood, close-X) sets the flag. Two-step: intro -> channel picker if no `landing_page_url`.
-- [x] S-03: 90-day reminder banner on Dashboard - new `DonationReminderBanner.tsx` + pure `shouldShowReminder` helper. Banner shows only when donations enabled AND onboarding seen AND 90+ days since `bibliogon-first-use-date` (initialised in `App.tsx`) AND `bibliogon-donation-reminder-next-allowed` is missing or in the past AND Dashboard is in book-grid mode. Dismiss: Support = 180-day cooldown, Not now / close-X = 90-day cooldown. Never during editor/export (different routes), no counter shown, no animation, no urgency.
-- [x] Help page: `docs/help/{de,en}/support.md` with channels, FAQ (tax-deductibility, anonymity per platform, recurring vs one-time, how to cancel), contact. Top-level nav entry with icon `heart`, brings nav from 14 to 15 entries.
-
----
-
-## Core import orchestrator
-
-Unified import wizard in core that dispatches to format-specific plugin handlers via a two-phase `ImportPlugin` protocol (detect + execute). Preview panel catches silent-failure bugs (wrong cover path, stale CSS, misclassified assets) before they reach the DB. Full design in [docs/explorations/core-import-orchestrator.md](explorations/core-import-orchestrator.md).
-
-- [x] **CIO-01:** core wizard + detect/execute endpoints + `ImportPlugin` protocol + preview panel + override UI + duplicate detection + `.bgb` and markdown core handlers. Shipped across 2 sessions (backend foundation 5 commits ending `52744f0`, frontend wizard 9 commits ending `9a0ac7f`). 40 new backend tests + 38 new Vitest tests. Legacy `/api/backup/*` endpoints untouched.
-- [x] **CIO-02:** WBT logic now flows through `WbtImportHandler` implementing `ImportPlugin` (`2039fce`); wizard re-advertises `.zip` (`a611722`); `/api/backup/smart-import` marked `deprecated=True` with Deprecation + Link + Warning headers pointing at `/api/import/detect`. Extraction into a separate plugin package is deferred to PGS-01; the handler lives as a core handler in-repo until the protocol-location decision (exploration Section 9) is resolved. Endpoint removal scheduled for CIO-05.
-- [x] **CIO-03:** folder drag-drop handler (`core-markdown-folder`). Shipped in 4 commits: `f524ca1` (folder handler + 14 tests), `92f2331` (`/api/import/detect` accepts multi-file multipart + path-traversal guard), `896e7e6` (wizard webkitdirectory + drop-many support), i18n + this roadmap update.
-- [x] **CIO-04:** office formats shipped as core handlers (`b442de1`): `DocxImportHandler` + `EpubImportHandler` shell out to the Pandoc binary, split on H1 boundaries, and copy `--extract-media` output into `uploads/{book}/figure/`. Wizard accepts `.docx` and `.epub`. Packaging into a separate `bibliogon-plugin-import-office` stays deferred alongside the other plugin-extraction work; in-repo core handlers deliver the user-facing feature today.
-- [x] **CIO-07:** `.git/` adoption in import wizard (Option C from audit: opt-in with 3 radio choices). Backend Session 1 + Frontend Session 2 both shipped.
-  - DetectedProject carries optional `DetectedGitRepo` with size, branch, head, remote_url, has_lfs/submodules/shallow, is_corrupted, and security_warnings (non-breaking; defaults to None).
-  - `app.services.git_import_inspector` (23 tests): read-only scan of `.git/` for metadata + security findings (http.*.extraheader, credential.helper, custom hooks, token-shaped user.email, non-standard packed-refs).
-  - `app.services.git_import_adopter` (12 tests): mandatory sanitization (strip extraheader, credential section, custom hooks, prune non-standard refs; clear reflog + gc prune), then `shutil.copytree` to `uploads/<book_id>/.git`. Rejects `RepoAlreadyPresent` and `CorruptedSourceRepo`. Preserve-remote path calls the existing `git_backup.configure_remote`; without-remote path strips origin.
-  - `ExecuteRequest.git_adoption: "start_fresh" | "adopt_with_remote" | "adopt_without_remote" | None`; orchestrator forwards to handler's new `git_adoption` kwarg. Router 400 on `adopt_*` without detected git_repo. WBT handler's `_maybe_adopt_git` runs post-commit so the Book row exists before .git/ copy.
-  - Backfill endpoint `POST /api/books/{id}/git-import/adopt`: multipart ZIP upload for books imported before this feature shipped. 7 tests (404 unknown, 409 existing .git, 400 non-zip, 400 missing .git, root + nested placement, preserve_remote flag).
-  - Session 2 frontend: `api/import.ts` gains `DetectedGitRepo`, `GitAdoption` type, and optional `gitAdoption` arg on `executeImport`. New `GitAdoptionSection` in PreviewPanel renders a 3-way radio selector + repo metadata summary (branch, commits, HEAD abbrev, remote, size, lfs/submodule/shallow/corrupted flags) + security-warnings block, gated on `detected.git_repo?.present`. `adopt_with_remote` radio disabled when `remote_url` is null. ImportWizardModal state machine threads `gitAdoption` through preview + executing states, defaulted to `start_fresh`. 7 new PreviewPanel tests + 1 ExecutingStep test + 2 modal tests updated to the 5-arg `executeImport` signature. 16 new i18n keys × 8 languages.
-  - Help doc `docs/help/en/import/git-adoption.md`. DE translation still deferred.
-  - Backend shipped commits `adb031d..d11d582`; frontend shipped commit `eba6585`. Frontend 508 Vitest green; 67 backend translation tests green.
-
-- [x] **CIO-06:** wizard field-selection rework (Option B, full Metadata-Editor parity). DetectedProject + handlers gain 20 nullable fields (subtitle, series, series_index, genre, description, edition, publisher, publisher_city, publish_date, 3 ISBNs, 3 ASINs, keywords, html_description, backpage_description, backpage_author_bio, cover_image, custom_css). Shared `app.import_plugins.overrides` helper centralises per-field allowlist + null-skip application; mandatory-field validation (title/author) surfaces as HTTP 400 from the router. Step 2 becomes a deliberate Summary step; Step 3 rewritten as sectioned per-field selection (24 rows across Basics / Metadata / Publishing / Long-form / Styling / Keywords / Overview), each non-mandatory row with an include/exclude checkbox. Import button disabled until title + author are non-empty. 32 new i18n keys × 8 languages; help page `docs/help/{de,en}/import/field-selection.md`. Backend 910 + Vitest 482 green. Shipped across commits eb3d334..5ec5ae8.
-
-- [x] **CIO-05:** deprecation cleanup. Deleted `smart_import.py` + `markdown_import.py`; trimmed `project_import.py` to the helpers `WbtImportHandler` still needs (`_import_project_root`, `_parse_project_metadata`, `_read_metadata_yaml`, asset/chapter helpers); removed `/api/backup/smart-import` + `/api/backup/import-project` routes (`/api/backup/import` stays, now scoped to `.bgb` only). Frontend: deleted legacy Import button + hidden file input + `api.backup.smartImport` + `api.backup.importProject`; mobile menu + empty-state picker now open the wizard. `ui.dashboard.import_new` i18n key dropped from all 8 languages. E2E `import-flows.spec.ts` rewritten to hit `/api/import/detect` + `/api/import/execute`. Backend 860 + Vitest 475 green.
-
-- [x] **CIO-08:** multi-cover import + author-assets classification + author picker in wizard. Three orthogonal blocks filling preview/preservation gaps surfaced during manual testing of CIO-06 imports.
-  - **Block 1 — multi-cover selector.** WBT handler already collected every `assets/cover/*` and `assets/covers/*` file with `purpose="cover"`; CIO-08 surfaces them in the wizard. New `primary_cover` meta-override on `ExecuteRequest` (tracked in `META_OVERRIDE_KEYS` alongside the existing column-override allowlist) promotes a chosen filename onto `book.cover_image` at execute-time; the non-primary covers still import as `asset_type="cover"` rows for later swapping in the metadata editor. Unknown filename raises `KeyError` so a bad payload fails loudly. Frontend: `CoverGridSection` in PreviewPanel renders an auto-fill thumbnail grid with `role="radiogroup"`, default selection follows `detected.cover_image` when it matches a file, else first cover. Meta-override emitted only when >1 cover is present (single-cover projects keep the handler default). Backend 5 tests + frontend 6 tests. Staging file endpoint `GET /api/import/staged/{temp_ref}/file?path=<rel>` (path-traversal guard) drives the actual image preview.
-  - **Block 2 — author-asset classification.** `assets/author/`, `assets/authors/`, and `assets/about-author/` folders now classify as `purpose="author-asset"` at detect-time and `asset_type="author-asset"` at execute-time, so portraits/signatures/bio images no longer leak into the chapter-figure list. Shared `_ASSET_TYPE_MAP` in `services/backup/asset_utils.py` + `_purpose_from_path` in the WBT handler updated together; 6 backend tests pin the classification. Frontend: `AuthorAssetsSection` renders a read-only thumbnail grid under the covers section with filename + size per asset; `AssetGroups` content-overview adds `author-asset` to the ordered purpose list so the label appears translated rather than falling through to the fallback. 3 new Vitest tests.
-  - **Block 3 — author picker in wizard.** `useAuthorChoices` hook reads `/api/settings/app` and returns `author.name + author.pen_names[]` deduplicated. PreviewPanel author input gets a `<datalist id="preview-author-options">` populated from the hook; gracefully falls back to a plain input when the API fails or returns no author config (silent catch). Audit: `BookMetadataEditor` has no author field, so scope limited to the wizard. `CreateBookModal` already used a Radix Select on the same data source — no change needed. 7 hook unit tests + 2 PreviewPanel datalist tests + modal mock stub.
-  - i18n: 5 new `ui.import_wizard.*` keys across 8 languages (`section_covers`, `covers_hint`, `section_author_assets`, `author_assets_hint`, `purpose_author-asset`). Block 3 reused the existing `ui.metadata.author` label.
-  - Shipped commits ending `9ca89ca` (Block 3 `67e05f8`, Block 1 frontend `5df3106`, Block 2 frontend `dc37963`, i18n `9ca89ca`; backend Blocks 1+2 landed earlier in the cascade). Frontend 500 Vitest green; backend 67 translation tests green.
-
----
-
-## Plugins
-
-New plugin work tracked separately from Phase 2 themes. Plugin versions are independent of the app version; a plugin is bumped only when the plugin itself changes.
-
-### plugin-git-sync (phased)
-
-Bi-directional git sync for Bibliogon books: import existing git-based book projects (write-book-template format), sync edits back. First plugin-to-plugin dependency (builds on plugin-export), orthogonal to the v0.21.0 core git integration. Full design in [docs/explorations/plugin-git-sync.md](explorations/plugin-git-sync.md).
-
-- [x] **PGS-01:** plugin-git-sync Phase 1 (import-only MVP). **Shipped.** Plugin at `plugins/bibliogon-plugin-git-sync/` implements a new `RemoteSourceHandler` protocol in the core registry (`backend/app/import_plugins/registry.py`) and delegates detect/execute to the existing `WbtImportHandler` instead of re-implementing WBT parsing — the plugin is a source adapter, not a format parser. New endpoint `POST /api/import/detect/git` accepts `{git_url}`, dispatches to the plugin's `GitImportHandler`, clones via GitPython into the orchestrator's staging directory, and returns the normal `DetectResponse` so `POST /api/import/execute` resolves the `temp_ref` identically to file uploads. Wizard Step 1 gains a git URL input with 8-language i18n. Public HTTPS only; auth + branch selection + smart-merge deferred to PGS-02/03. First plugin-to-plugin dependency in the project: `pyproject.toml` declares `plugin-export` as a path dep for future PGS-02 export-to-repo reuse. Backend 895 -> 900 tests (5 new E2E); Vitest 480 -> 485 (5 new UploadStep git-URL tests); plugin-level 23 new tests. Shipped across commits c93d496..df6cb39. Patterns that emerged (source adapter, two registries, plugin-to-plugin path dep, PluginForge-activation bridge) captured in `docs/help/{de,en}/developers/plugins.md` with step-by-step tutorial for future plugin authors.
-- [x] **PGS-02:** plugin-git-sync Phase 2 (export to repo, overwrite MVP). **Shipped.** Migration `d7e8f9a0b1c2` adds `git_sync_mappings`. `app/services/git_sync_mapping.py` lifts the staged clone into `uploads/git-sync/{book_id}/repo/` after a successful git import + writes the mapping. `app/services/git_sync_commit.py` re-scaffolds the book via plugin-export's `scaffold_project`, replaces the working tree (preserves `.git/`), creates one commit, and pushes via the user's ambient git credentials when requested (typed `PushFailedError` with stable `.reason` slug; PAT injection via the credential store deferred to a follow-up alongside `app.services.git_backup`). Endpoints `GET /api/git-sync/{book_id}` + `POST /api/git-sync/{book_id}/commit` (404 unmapped / 410 clone missing / 409 nothing-to-commit or no-remote / 401 push-auth / 502 network). Frontend `GitSyncDialog` surfaces the mapping snapshot, a dirty-warning, optional commit message + push toggle, and last-commit confirmation; ChapterSidebar conditionally renders the "Sync zum Repo" button when the book has a mapping. Backend 1007 -> 1008 (+1 push test net), Frontend 595 -> 604 (+9 dialog tests). 8-language i18n for every dialog string. PAT/credential-store integration is **PGS-02 follow-up**, not blocking.
-- [x] **PGS-03:** plugin-git-sync Phase 3 (smart-merge on re-import). **Shipped.** Backend `app/services/git_sync_diff.py` runs the three-way comparison: reads base + remote WBT chapters from arbitrary git refs via `git ls-tree` + `git show` (no working-tree checkout), reads the local DB and converts each chapter through `bibliogon_export.tiptap_to_md.tiptap_to_markdown` so the diff sees what commit-to-repo would write. Identity is `(section, slug-of-title)`. Pure `_classify` covers every classification (unchanged / remote_changed / local_changed / both_changed / remote_added / local_added / remote_removed / local_removed) plus the same-edit-on-both-sides not-a-conflict case and a normalize step that tolerates blank-line runs and trailing newlines. `apply_resolutions` walks the resolution list, mutates the DB (overwrite via `md_to_html` + `sanitize_import_markdown` for `take_remote`; create/delete for the add/remove cases), and bumps `last_imported_commit_sha` to the current branch HEAD so the next diff stops re-reporting the same changes. Endpoints `POST /api/git-sync/{book_id}/diff` (classifications + counts) and `POST /api/git-sync/{book_id}/resolve` (apply Keep/Take per chapter). Frontend `GitSyncDiffDialog` lists the actionable rows, defaults remote_changed -> Take Repo and conflict -> Keep Bibliogon, and posts the resolutions; reachable via "Auf Aenderungen vom Repo pruefen" inside the existing GitSyncDialog. 8-language i18n (20 keys per language). 22 backend tests + 6 Vitest tests. **Out of MVP scope:** mark_conflict (write both versions as a visible conflict block) and rename detection (renames currently surface as delete + add).
-- [x] **PGS-04:** plugin-git-sync Phase 4 (multi-language linking UI). **Shipped.** Migration `e8f9a0b1c2d3` adds `books.translation_group_id` (nullable indexed UUID). `app/services/translation_groups.py` owns the linking primitives - `derive_language(branch, metadata)` resolves `main-XX` → `XX` and bare `main` → `metadata.yaml.language`; `link_books` creates a fresh group or folds members into the lexicographically-smallest existing group (deterministic merge); `unlink_book` clears the row and auto-unlinks the lone survivor of a two-book group; `list_siblings` excludes self + soft-deleted, sorted by language. `app/services/translation_import.py` clones a repo once, enumerates every `main` + `main-XX` branch, runs the WBT importer per checkout, persists a per-book clone under `uploads/git-sync/{book_id}/repo` with its own `GitSyncMapping`, and links the resulting books with one shared group id. Endpoints `GET /api/translations/{book_id}`, `POST /api/translations/link`, `POST /api/translations/{book_id}/unlink`, `POST /api/translations/import-multi-branch` (502 on clone failure, 415 when no `main`/`main-XX` branches found, per-branch failures log + skip). Frontend `TranslationLinks` mounts inside the metadata editor's General tab: linked state shows clickable language badges that navigate to each sibling + an Unlink button; unlinked state shows a Link button that opens a dialog listing every other book with checkboxes. 8-language i18n (14 keys × 8). 29 backend tests + 6 Vitest tests. **Out of scope for now:** rename detection across branches, conflict UI when two languages diverge into incompatible structures.
-- [x] **PGS-05:** plugin-git-sync Phase 5 (core git integration bridge). **Shipped.** Backend `app/services/git_sync_lock.py` provides a per-book `threading.Lock` with a 30 s default timeout. `app/services/git_sync_unified.py` decides which subsystems are active for a book and fans one call out to both - core git first (smaller blast radius), plugin-git-sync second; per-subsystem failures land in the response payload (`status: ok | skipped | nothing_to_commit | failed`) rather than as a single hard 500. `GET /api/git-sync/{book_id}` returns `core_git_initialized`; `POST /api/git-sync/{book_id}/unified-commit` runs both paths under the lock (503 when held). Frontend `GitSyncDialog` shows a banner + a primary "Commit ueberall" button next to the existing single-subsystem button when `core_git_initialized && mapped`; per-subsystem outcomes render as a status-coded result list under the form. Toast tier follows the per-subsystem result: success when both ok, warning when one failed, error on hard failure / 503. 8-language i18n (9 keys × 8). 10 backend tests + 4 Vitest tests.
+- [ ] **PS-14+**: future polish items, surface as found.
 
 ---
 
 ## Article authoring
 
-Publication workflow for articles, blogposts, tweets. Architecture
-decision (formerly AR-02) resolved as Option B: a separate `Article`
-entity alongside `Book`, with article-specific routes, sidebar, and
-editor that share the underlying TipTap RichTextEditor and selected
-plugins (export, ms-tools, translation). The exploration document at
+Architecture decision (formerly AR-02) resolved as Option B: a
+separate `Article` entity alongside `Book`, with article-specific
+routes, sidebar, and editor that share the underlying TipTap
+RichTextEditor and selected plugins (export, ms-tools, translation).
+Phase 1 + Phase 2 (Publications + drift detection) shipped; see
+the Phase 2 archive entry. The exploration document at
 [docs/explorations/article-authoring.md](explorations/article-authoring.md)
-captures the decision history; the editor-parity audit at
-[docs/explorations/article-editor-parity.md](explorations/article-editor-parity.md)
-drove the three editor-parity phases.
+captures the decision history.
 
-Articles are standalone documents (not book chapters). Drafts move
-through a status lifecycle (draft -> ready -> published -> archived)
-and can be tracked across multiple external publishing platforms via
-the Publications panel, with content-snapshot drift detection.
+### Open
 
-### Shipped (unreleased; rolling up into the next minor)
-
-- [x] **AR-01 Phase 1:** Article entity + Alembic migration, CRUD
-  endpoints, ArticleEditor (basic), Dashboard "New Article" + list
-  view, status lifecycle, author dropdown (settings-managed),
-  language dropdown (8 supported), KeywordInput tags, Featured Image
-  (URL + upload), Topic dropdown with inline-add, SEO Title + SEO
-  Description, Excerpt, tooltips on every metadata field, theme
-  toggle, back-to-dashboard nav. Commits: `3ce27fd`, `dae36c0`,
-  `54426df` (+ UX iteration).
-- [x] **AR-02 Phase 2:** Publication entity + cascade migration, 8
-  platform schemas (YAML), Publication CRUD, mark-as-published with
-  content snapshot, drift detection (out-of-sync status), verify-live
-  timestamp, PublicationsPanel in editor sidebar, AddPublicationModal
-  with schema-driven form, article-level SEO fields (canonical_url,
-  featured_image_url, excerpt, tags). Commits: `e70f47b`, `e09f51e`,
-  `bbe28ab`.
-- [x] **AR-02 Phase 2.1:** Topic + SEO + sidebar-left layout,
-  settings-managed topics. Commits: `d6a415b`, `2c6f275`, `68a9686`,
-  `ac25cc8`, `e8249fe`, `3fb0a33`.
-- [x] **Editor-Parity Phase 1:** RichTextEditor extraction with
-  `contentKind` prop, plugin gating per content type, AI-prompt
-  branching for articles. Commits: `db44cd3`, `ab15131`, `fcfe14c`.
-- [x] **Editor-Parity Phase 2:** ms-tools per-article (no code change
-  required - endpoint already accepts an optional `book_id`),
-  translate-article endpoint with `content_json` translation through
-  the existing translation provider abstraction. Commits: `8c338ce`,
-  `64938f4`, `8bd19ea`. Plus translate-panel hardening:
-  unconfigured/unhealthy provider gating, 502 surfacing, rebuild
-  fallback (`0ed1c30`, `54ae8af`, `89de150`, `68f1d71`).
-- [x] **Editor-Parity Phase 3:** Article export to Markdown / HTML /
-  PDF / DOCX. Reuses `tiptap_to_markdown` from plugin-export and
-  shells out to Pandoc for PDF/DOCX. Sidebar Export panel with one
-  button per format; backend unit tests cover all four formats.
-  Commits: `8686031` (backend, 11 tests), `5b471f3` (frontend +
-  smoke + i18n).
-- [x] **UX-FU-02:** Featured image upload (per-article, mirrors
-  `api.covers` for books). Commits: `335cf04`, `ebb568b`, `9600ce2`.
-
-### In progress
-
-- [ ] **AR-01 validation log:** Capture real cross-posting workflow
+- [ ] **AR-01 validation log**: capture real cross-posting workflow
   data in
   [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
   during normal publication work. Status 2026-05-02: 0 real entries
-  (template fixture + section markers only). Log stays open as a
-  passive track. Reaching the 3-5-entry threshold reopens the AR-03+
-  audit (see archive entry below).
+  (template fixture + section markers only). Reaching the 3-5-entry
+  threshold reopens the AR-03+ readiness audit
+  ([docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md)).
+  Long-running passive task; fills as the feature is used in anger.
 
-### Archived
+### Deferred (only on user demand)
 
-- [archived 2026-05-02] **AR-03+ Platform APIs:** Investigated and
-  deferred per the exploration's Section 11 escape hatch. Zero
-  cross-posting entries in the validation log; without that data
-  the scoping decision is a guess. Re-open conditions and full
-  audit findings: [docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md).
-  Phase 3 candidates remain on file (OAuth + scheduled publish +
-  analytics + cross-post automation for Medium / Substack / X /
-  LinkedIn / dev.to / Mastodon / Bluesky) but the slot no longer
-  holds the "next priority" position.
-- [ ] **Phase 4 article-as-WBT git-sync:** Article version control
-  via plugin-git-sync, parallel to the book path. Deferred - only on
-  user demand.
-- [ ] **Phase 4 kinderbuch single-page article variant:** Single-page
-  layout for the kinderbuch use case. Deferred - only on user
+- [ ] **Phase 4 article-as-WBT git-sync**: article version control
+  via plugin-git-sync, parallel to the book path. Deferred — only
+  on user demand.
+- [ ] **Phase 4 kinderbuch single-page article variant**: single-
+  page layout for the kinderbuch use case. Deferred — only on user
   demand.
-- [ ] **UX-FU-01:** Silent fallback in TopicSelect when the settings
-  API fails. Low priority; current behaviour surfaces an empty
-  dropdown rather than a hardcoded list.
 
 ### Reference
 
 - Architecture exploration: [docs/explorations/article-authoring.md](explorations/article-authoring.md)
 - Editor-parity audit: [docs/explorations/article-editor-parity.md](explorations/article-editor-parity.md)
 - Validation log: [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
+- AR-03+ readiness audit: [docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md)
 - UX conventions: [docs/ux-conventions.md](ux-conventions.md)
 - Help docs: [docs/help/en/articles.md](help/en/articles.md), [docs/help/de/articles.md](help/de/articles.md)
 
@@ -233,52 +96,57 @@ the Publications panel, with content-snapshot drift detection.
 
 ## Maintenance and tech debt
 
-Items with external deadlines or recurring cost that deserve planning-view visibility. Not features; just upkeep that will bite if ignored.
-
-- [x] **Node.js 20 -> 22 LTS:** Dockerfile and CI upgraded from Node 20 to Node 22 (Active LTS until Apr 2027). Node 20 EOL Sep 2026 is no longer a concern.
-- [x] **Coverage moved to CI:** `make test` stays fast and coverage-free for everyday local use. Opt-in `make test-coverage` available for local runs. `.github/workflows/coverage.yml` runs on every push/PR and uploads HTML + XML artifacts (14-day retention) for backend, all 9 plugins (export, grammar, kdp, kinderbuch, ms-tools, audiobook, translation, help, getstarted; audiobook + translation added in `99dd15e`, help + getstarted in `8f36c25`), and frontend. Codecov integration deferred.
-- [x] **Monitor v0.22.0 -> v0.22.1 upgrade feedback:** `books.tts_speed` Alembic migration was missing in v0.22.0; users on the alembic-upgrade path hit HTTP 500 on `/api/import/detect` until v0.22.1 backfilled it. Closed 2026-04-27 in `ffb1618` — no GitHub issues touched the v0.22.x migration topic since v0.22.1 shipped 2026-04-25, and the audit in `backend/tests/test_alembic_drift.py` confirms all 42 `Book.Mapped` columns now have a paired Alembic migration (10 regression tests pin the same).
-
-### Code quality
-
-- [x] **T-01:** Inline-Styles Refactor — migrated to per-file CSS-Modules (Tailwind rejected to keep theme-token cascade intact). Phase A pilot (`TrashCard`) + Phase B sweep migrated 22 components / pages including `Dashboard`, `Settings`, `BookEditor`, `ArticleEditor`, `ArticleList`, `Toolbar`, `KeywordInput`, `ChapterSidebar`, `ConflictResolutionDialog`, `SupportSection`, `BookCard`, `BookListView`, `ArticleCard`, `BookMetadataEditor`, `ChapterTemplatePickerModal`, `ChapterVersionsModal`, `CoverUpload`, `CreateBookModal`, `DashboardFilterBar`, `DashboardFilterSheet`, `DonationOnboardingDialog`, `DonationReminderBanner`, `Editor`, `ExportDialog`, `GetStarted`, `Help`, `OfflineBanner`, `QualityTab`, `SaveAsChapterTemplateModal`, `SaveAsTemplateModal`, `ShortcutCheatsheet`. ~700 inline-style call-sites eliminated. Theme tokens preserved via `var(--*)`. Multi-className collisions resolved via template literal merges. Closed in v0.25.0; remaining stragglers (`AiSetupWizard` skipped by design pending upstream rewrite) tracked as follow-ups, not blocking the theme.
-- [x] **T-01-audit:** Inline-Styles Inventory — `docs/explorations/inline-styles-audit.md` shipped pre-T-01. Audit drove the per-file migration order in Phase B.
-
 ### Security tracking
 
-- [ ] **SEC-01: BLOCKED.** vite-plugin-pwa vulnerability chain. 4 high-severity vulns in frontend devDependencies, all routed through `vite-plugin-pwa@1.2.0 -> workbox-build -> @rollup/plugin-terser -> serialize-javascript <=7.0.4`. CVEs: GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v (DoS, CVSS 5.9). Production bundle audit: 0 vulns (dev-only exposure, not shipped to users). `npm audit fix` cannot resolve non-breaking; `--force` downgrades vite-plugin-pwa 1.2.0 -> 0.19.8 (SemVer major). Resolution path: wait for upstream patch; re-audit monthly via `npm audit --audit-level=high`. Triggers revisit: vite-plugin-pwa ships new release, any vuln reclassified as production, DEP-09 Vite 8 unblocks (forces migration). Same upstream blocker as DEP-09.
+- [ ] **SEC-01: BLOCKED.** vite-plugin-pwa vulnerability chain. 4
+  high-severity vulns in frontend devDependencies, all routed
+  through `vite-plugin-pwa@1.2.0 -> workbox-build ->
+  @rollup/plugin-terser -> serialize-javascript <=7.0.4`. CVEs:
+  GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v (DoS,
+  CVSS 5.9). Production bundle audit: 0 vulns (dev-only exposure,
+  not shipped to users). `npm audit fix` cannot resolve
+  non-breaking; `--force` downgrades vite-plugin-pwa 1.2.0 ->
+  0.19.8 (SemVer major). Resolution path: wait for upstream patch;
+  re-audit monthly via `npm audit --audit-level=high`. Triggers
+  revisit: vite-plugin-pwa ships new release, any vuln reclassified
+  as production, DEP-09 Vite 8 unblocks (forces migration). Same
+  upstream blocker as DEP-09.
 
 ### Deferred major dependency upgrades
 
-Each gets a dedicated session with its own testing cycle. Not urgent, but tracked so they don't get forgotten. See `lessons-learned.md` "Dependency currency" for the rules.
+Each gets a dedicated session with its own testing cycle. Not
+urgent, but tracked so they don't get forgotten. See
+`lessons-learned.md` "Dependency currency" for the rules.
 
-- [x] DEP-01: React 18 -> 19 migration. `react`/`react-dom` bumped to ^19.2.0 and `@types/react`/`@types/react-dom` to ^19.2.0 in `frontend/package.json`. No code changes needed: the codebase was already on `createRoot` (React 18+ API) and has no `forwardRef`/`defaultProps`/`PropTypes`/`findDOMNode`/legacy lifecycle usage. All peer deps (TipTap 2.27.2, react-router-dom 6, react-toastify 11, react-markdown 10, lucide-react, @dnd-kit, Radix) accept React ^19. Verified: `tsc --noEmit` clean, 351 Vitest tests green, `npm run build` + PWA regen clean. UI smoke test by Aster pending.
-- [ ] **DEP-02: BLOCKED.** TipTap 2 -> 3 migration. Status: pre-audit complete, blocked on upstream release. Single hard blocker: `@sereneinserenade/tiptap-search-and-replace` v0.2.0 is merged on `main` (dual peer `^2.0.0 || ^3.0.0`) but not yet published to npm. Upstream issue requesting publish: [sereneinserenade/tiptap-search-and-replace#19](https://github.com/sereneinserenade/tiptap-search-and-replace/issues/19). License verified MIT (repo LICENSE file; npm's "Proprietary" label was stale metadata from 2024). Community bumps forced: `@pentestpad/tiptap-extension-figure` 1.0.12 -> 1.1.0, `tiptap-footnotes` 2.0.4 -> 3.0.1. Fallback (`prosemirror-search` adapter, ~50-80 LOC) gated on explicit user go-ahead. Pre-audit: [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md). Estimated effort once unblocked: 4-8h code + 1-2h regression verification.
-- [x] DEP-03: react-router-dom 6.28 -> ^7.14 migration. Zero-touch bump: declarative `<BrowserRouter>` + `<Routes>` unchanged in v7, no `future:` flags set in v6, no `json()`/`defer()` loader helpers used, no data-router (`createBrowserRouter`) in play. Package-only change. Verified: tsc clean, 397 Vitest tests green, vite build + PWA regen clean on Node 22. Data-router migration (loaders/actions) stays deferred as separate opt-in modernization - not needed while the app uses `api` client fetching.
-- [x] DEP-04 (partial): Vite 6 -> **7**.3.2 + TypeScript 5 -> 6.0.3 + @vitejs/plugin-react 4 -> 5.2.0 + explicit `@types/node` ^22. Vite 8 deferred: `vite-plugin-pwa@1.2.0` (latest) only supports Vite up to 7; a follow-up DEP will pick up Vite 8 once vite-plugin-pwa releases 8 compat. TS 6 required adding `"types": ["node", "vite/client"]` to `frontend/tsconfig.json` - TS 6 no longer auto-includes every `@types/*` from node_modules when the field is absent (breaks `node:fs`/`node:path` imports in `ChapterSidebar.test.tsx`). Verified: tsc clean, 351 Vitest tests green, vite build + PWA regen clean on Node 23. Vite 7 requires Node 20.19+/22.12+; CI's Node 22 is fine, local Node 18 is not - dev/build must use Node 22+. UI smoke test by Aster pending.
-- [ ] **DEP-05: BLOCKED.** elevenlabs SDK 0.2 -> 2.x migration (complete SDK rewrite, needs real paid-API testing). Schedule with a dedicated audiobook test session and a live ElevenLabs key.
-- [x] DEP-06: pandas 2 -> 3 (resolved: transitive dep of manuscripta 0.9.0 which requires pandas >=3.0)
-- [x] DEP-07: lucide-react 0.468 -> ^1.8.0. Zero-touch upgrade: only breaking change in 1.0 was removal of 13 brand icons (Chromium, GitHub, Instagram, LinkedIn, Slack, etc.) and the codebase imports ~70 distinct icons, all semantic UI (Save, Check, Chevron*, Download, etc.), none branded. Import syntax, component props, tree-shaking and naming unchanged. Bonus: UMD format dropped (smaller bundle), `aria-hidden` auto-added for a11y. Verified: tsc clean, 351 Vitest tests green, vite build + PWA regen clean on Node 22. UI smoke test by Aster pending.
-- [x] DEP-08: Pillow 11 -> 12 (resolved: manuscripta 0.9.0 requires pillow >=12.0. Both bumped together.)
-- [ ] **DEP-09: BLOCKED.** Vite 7 -> 8 (tracker: #6). Blocked on `vite-plugin-pwa` upstream: `1.2.0` still lists peer deps `vite: ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0`; no Vite 8 PR visible on github.com/vite-pwa/vite-plugin-pwa. Vite latest observed: `8.0.8`. Do NOT force with `--legacy-peer-deps`: Vite 8 changed plugin APIs, and PWA is only exercised at `vite build`/SW regen, so a runtime break there is hard to detect. Re-check `npm view vite-plugin-pwa peerDependencies` every ~2 weeks or after a new release is cut. Last re-check: 2026-04-30 (no change).
-
----
-
-## Completed in early Phase 2
-
-### AI writing assistance (delivered in v0.14.0)
-
-Built on the multi-provider foundation. All initial AI items shipped in a single release.
-
-- [x] AI-01: multi-provider LLM client (Anthropic, OpenAI, Google, Mistral, LM Studio)
-- [x] AI-02: Anthropic /v1/messages adapter
-- [x] AI-03: provider selection UI with presets
-- [x] AI-04: connection test with error-specific feedback (7 error categories)
-- [x] AI-05: AI enable/disable toggle (default: off)
-- [x] AI-06: AI-assisted chapter review (style, coherence, pacing suggestions)
-- [x] AI-07: AI-assisted book blurb and marketing text generation
-- [x] AI-08: context-aware AI prompts (pass chapter context, book metadata, genre)
-- [x] AI-09: AI usage tracking per book (token count, cost estimate display)
+- [ ] **DEP-02: BLOCKED.** TipTap 2 -> 3 migration. Status:
+  pre-audit complete, blocked on upstream release. Single hard
+  blocker: `@sereneinserenade/tiptap-search-and-replace` v0.2.0 is
+  merged on `main` (dual peer `^2.0.0 || ^3.0.0`) but not yet
+  published to npm. Upstream issue requesting publish:
+  [sereneinserenade/tiptap-search-and-replace#19](https://github.com/sereneinserenade/tiptap-search-and-replace/issues/19).
+  License verified MIT (repo LICENSE file; npm's "Proprietary"
+  label was stale metadata from 2024). Community bumps forced:
+  `@pentestpad/tiptap-extension-figure` 1.0.12 -> 1.1.0,
+  `tiptap-footnotes` 2.0.4 -> 3.0.1. Fallback (`prosemirror-search`
+  adapter, ~50-80 LOC) gated on explicit user go-ahead. Pre-audit:
+  [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md).
+  Estimated effort once unblocked: 4-8h code + 1-2h regression
+  verification.
+- [ ] **DEP-05: BLOCKED.** elevenlabs SDK 0.2 -> 2.x migration
+  (complete SDK rewrite, needs real paid-API testing). Schedule
+  with a dedicated audiobook test session and a live ElevenLabs
+  key.
+- [ ] **DEP-09: BLOCKED.** Vite 7 -> 8 (tracker: #6). Blocked on
+  `vite-plugin-pwa` upstream: `1.2.0` still lists peer deps
+  `vite: ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0`; no
+  Vite 8 PR visible on github.com/vite-pwa/vite-plugin-pwa. Vite
+  latest observed: `8.0.10`. Do NOT force with
+  `--legacy-peer-deps`: Vite 8 changed plugin APIs, and PWA is
+  only exercised at `vite build` / SW regen, so a runtime break
+  there is hard to detect. Re-check
+  `npm view vite-plugin-pwa peerDependencies` every ~2 weeks or
+  after a new release is cut. Last re-check: 2026-05-02 (no
+  change).
 
 ---
 
@@ -286,12 +154,14 @@ Built on the multi-provider foundation. All initial AI items shipped in a single
 
 See [docs/explorations/](explorations/) for future considerations:
 
-- [Desktop packaging](explorations/desktop-packaging.md) - Simple Launcher first, Tauri as later option, no Electron
-- [Monetization strategy](explorations/monetization.md) - donations-first approach, deferred freemium
-- [Multi-user and SaaS](explorations/multi-user-saas.md) - long-term, not near-term
+- [Desktop packaging](explorations/desktop-packaging.md) — Simple Launcher first, Tauri as later option, no Electron.
+- [Monetization strategy](explorations/monetization.md) — donations-first approach, deferred freemium.
+- [Multi-user and SaaS](explorations/multi-user-saas.md) — long-term, not near-term.
 
 ---
 
 ## Archive
 
-- **Phase 1** (completed, v0.1.0 - v0.14.0): [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md) — includes the 2026-04-15 postscript on CF-01.
+- **Phase 1** (v0.1.0 - v0.14.0): [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). Includes the 2026-04-15 postscript on CF-01.
+- **Phase 2 cleanup pass** (v0.15.0 - v0.25.0): [docs/roadmap-archive/v0.25.0-cleanup-2026-05-02.md](roadmap-archive/v0.25.0-cleanup-2026-05-02.md). 74 ROADMAP entries + 3 backlog sub-entries archived 2026-05-02. AR-03+ Platform APIs archived as obsolete in the same pass.
+- **Backlog "Recently closed" prose**: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md). Preserves commit hashes + closure notes for items shipped 2026-04-24..2026-05-02.
