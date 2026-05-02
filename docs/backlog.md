@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-02 (UX-FU-01 closed)
+Last updated: 2026-05-02 (GH #13 mutmut wiring + service-error refactor + fetch consolidation closed)
 Current version: v0.25.0
 
 Living backlog. Supplements `docs/ROADMAP.md` with deferred items
@@ -44,6 +44,26 @@ is the daily-planning view.
 ---
 
 ## Recently closed
+
+- **GH issue #13 — mutmut nightly on import orchestrator**: closed
+  2026-05-02 in `814d870`. Wired `.github/workflows/mutation-import.yml`
+  scoped to `backend/app/import_plugins/` +
+  `backend/app/routers/import_orchestrator.py`. Repo-variable gate
+  `ENABLE_NIGHTLY_MUTATION=true` enables the cron `0 2 * * *` run;
+  `workflow_dispatch` always runs regardless. mutmut v3 dropped
+  `--paths-to-mutate`, workflow rewrites `[tool.mutmut].paths_to_mutate`
+  in `pyproject.toml` in-place before invoking. Artifacts:
+  `mutmut-import-<run-id>` (30-day retention). Audit skeleton at
+  `docs/audits/mutmut-2026-05-02-import.md`; survivor triage + score
+  numbers fill once first CI run lands. Same session also closed:
+  service `HTTPException → BibliogonError` migration (`543d9eb`,
+  20 sites across `services/covers.py` + `services/backup/*`,
+  preserves all status codes, 1253/1253 backend tests green); raw
+  `fetch()` consolidation in `Editor.tsx` + `BookMetadataEditor.tsx`
+  through `api.ai.*` / `api.grammar.*` / `api.audiobook.preview`
+  (`0559d57`); compose Node 20 → 24 (`9e29838`); ROADMAP-conflict
+  notice + TipTap word-count lesson refresh (`57ea6fb`); UX-FU-01
+  TopicSelect interactive on settings-API failure (`de6d251`).
 
 - **AR-02 Phase 2** (Publications + multi-platform tracking +
   SEO + drift detection): shipped 2026-04-27 in `e70f47b`
