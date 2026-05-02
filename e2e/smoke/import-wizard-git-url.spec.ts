@@ -127,10 +127,14 @@ test.describe("Import wizard UI: git URL", () => {
             .fill("https://github.com/astrapi69/write-book-template");
         await page.getByTestId("git-url-submit").click();
 
+        await expect(page.getByTestId("summary-step")).toBeVisible({
+            timeout: 10_000,
+        });
+        await page.getByTestId("summary-next").click();
         await expect(page.getByTestId("preview-step")).toBeVisible({
             timeout: 10_000,
         });
-        await expect(page.getByTestId("preview-title")).toContainText(
+        await expect(page.getByTestId("preview-field-title")).toHaveValue(
             "Git URL Smoke Book",
         );
 

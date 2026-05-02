@@ -32,8 +32,10 @@ test.describe("Import wizard UI: .bgb", () => {
         });
 
         // Detect -> preview with the fixture's declared title.
+        await expect(page.getByTestId("summary-step")).toBeVisible({timeout: 10_000});
+        await page.getByTestId("summary-next").click();
         await expect(page.getByTestId("preview-step")).toBeVisible({timeout: 10_000});
-        await expect(page.getByTestId("preview-title")).toContainText(
+        await expect(page.getByTestId("preview-field-title")).toHaveValue(
             "BGB Smoke Book",
         );
         // No duplicate on a fresh DB: the wizard should not render
@@ -45,7 +47,9 @@ test.describe("Import wizard UI: .bgb", () => {
 
         await page.getByTestId("wizard-close").click();
         await expect(
-            page.locator("[data-testid^='book-card-']:not([data-testid*='-menu-'])"),
+            page.locator(
+                "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-'])",
+            ),
         ).toContainText("BGB Smoke Book");
     });
 
@@ -60,6 +64,8 @@ test.describe("Import wizard UI: .bgb", () => {
             mimeType: "application/octet-stream",
             buffer: bgbBytes,
         });
+        await expect(page.getByTestId("summary-step")).toBeVisible({timeout: 10_000});
+        await page.getByTestId("summary-next").click();
         await expect(page.getByTestId("preview-step")).toBeVisible({timeout: 10_000});
         await page.getByTestId("preview-confirm").click();
         await expect(page.getByTestId("success-step")).toBeVisible({timeout: 10_000});
@@ -77,6 +83,8 @@ test.describe("Import wizard UI: .bgb", () => {
             mimeType: "application/octet-stream",
             buffer: bgbBytes,
         });
+        await expect(page.getByTestId("summary-step")).toBeVisible({timeout: 10_000});
+        await page.getByTestId("summary-next").click();
         await expect(page.getByTestId("preview-step")).toBeVisible({timeout: 10_000});
         await expect(page.getByTestId("duplicate-banner")).toBeVisible();
         await page.getByTestId("wizard-close").click();

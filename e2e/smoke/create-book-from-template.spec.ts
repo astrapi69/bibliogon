@@ -51,17 +51,27 @@ async function clickTab(page: Page, testId: string) {
  * Fill the author field in CreateBookModal. The modal swaps the plain
  * <input data-testid="create-book-author"> for a Radix Select with
  * data-testid="create-book-author-select" when `config.author.name` is
- * configured. Handle both paths.
+ * configured. Settings load asynchronously, so the input variant can
+ * appear first and then detach when the Select replaces it - wait for
+ * the title field to be stable, then race the two variants.
  */
 async function pickAuthor(page: Page, fallbackName: string) {
+    // Title field renders first and is stable; gate on it before
+    // probing the author field so we never read mid-swap.
+    await page.getByTestId("create-book-title").waitFor({state: "visible"});
     const input = page.getByTestId("create-book-author");
-    if (await input.count()) {
-        await input.fill(fallbackName);
+    const select = page.getByTestId("create-book-author-select");
+    // Wait for at least one of the two variants to be visible.
+    await Promise.race([
+        input.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
+        select.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
+    ]);
+    if (await select.count()) {
+        await select.click();
+        await page.locator('[role="option"]').first().click();
         return;
     }
-    // Select variant: open + pick the first option
-    await page.getByTestId("create-book-author-select").click();
-    await page.locator('[role="option"]').first().click();
+    await input.fill(fallbackName);
 }
 
 test("create book from memoir template populates chapters", async ({page}) => {

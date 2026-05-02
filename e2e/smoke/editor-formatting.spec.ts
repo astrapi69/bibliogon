@@ -426,17 +426,20 @@ test.describe('G. Integration', () => {
 // =========================================================================
 
 /**
- * Active toolbar buttons get inline styles: background: var(--accent-light),
- * color: var(--accent). We detect the active state by checking whether the
- * button's inline style contains "accent-light" (the active background).
+ * Active toolbar buttons carry the CSS-Module ``buttonActive`` class
+ * (post-T-01 inline-styles refactor in v0.25.0; previously the active
+ * state was an inline ``background: var(--accent-light)`` style).
+ * Detect by class name instead of inline style.
  */
 async function isToolbarButtonActive(
   page: import('@playwright/test').Page,
   testId: string,
 ): Promise<boolean> {
   const btn = page.getByTestId(testId)
-  const style = await btn.getAttribute('style') || ''
-  return style.includes('accent-light')
+  const className = await btn.getAttribute('class') || ''
+  // CSS Modules hash the class name to ``_buttonActive_<hash>_<line>``,
+  // so a plain substring match is enough.
+  return className.includes('buttonActive')
 }
 
 test.describe('H. Toolbar button state sync', () => {

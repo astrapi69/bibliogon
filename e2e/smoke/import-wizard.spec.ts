@@ -36,8 +36,14 @@ test.describe("Import wizard UI", () => {
             "wizard-smoke.md",
         );
 
+        // CIO-06 wedged a "Detection complete" Summary step (Schritt 2)
+        // between Upload and Preview. Advance through it.
+        await expect(page.getByTestId("summary-step")).toBeVisible({timeout: 10_000});
+        await page.getByTestId("summary-next").click();
+
         await expect(page.getByTestId("preview-step")).toBeVisible({timeout: 10_000});
-        await expect(page.getByTestId("preview-title")).toContainText(
+        // CIO-06 rework: preview title is an editable input, not a heading.
+        await expect(page.getByTestId("preview-field-title")).toHaveValue(
             "Wizard Smoke Book",
         );
 
@@ -47,7 +53,9 @@ test.describe("Import wizard UI", () => {
         // Close the wizard and assert the new book shows on the Dashboard.
         await page.getByTestId("wizard-close").click();
         await expect(
-            page.locator("[data-testid^='book-card-']:not([data-testid*='-menu-'])"),
+            page.locator(
+                "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-'])",
+            ),
         ).toContainText("Wizard Smoke Book");
     });
 

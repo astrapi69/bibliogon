@@ -54,10 +54,15 @@ async function openDashboard(page: Page) {
 }
 
 function visibleBookCards(page: Page) {
-    // `book-card-{id}` matches both the card root AND the menu trigger
-    // button nested inside (`book-card-menu-{id}`). Exclude the menu
-    // variants so the locator returns one element per visible card.
-    return page.locator("[data-testid^='book-card-']:not([data-testid*='-menu-'])");
+    // `book-card-{id}` matches multiple nested testids: the card root,
+    // the menu trigger (`book-card-menu-{id}`), the cover placeholder
+    // (`book-card-placeholder-{id}`). Exclude every nested variant so
+    // the locator returns one element per visible card. See
+    // `.claude/rules/lessons-learned.md` "Prefix testid selectors
+    // match every nested testid that shares the prefix".
+    return page.locator(
+        "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-'])",
+    );
 }
 
 test.describe("Dashboard filters - text search", () => {
