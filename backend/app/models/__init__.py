@@ -358,6 +358,13 @@ class ChapterTemplate(Base):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
     is_builtin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # TM-04b sub-item 3: multi-chapter templates. JSON-stringified
+    # ``list[str]`` of child ChapterTemplate ids. NULL or empty means a
+    # single-chapter template (legacy behaviour). When set, applying the
+    # template inserts one chapter per child id, in list order; the
+    # parent template's own ``content`` + ``chapter_type`` are ignored
+    # at apply time.
+    child_template_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow

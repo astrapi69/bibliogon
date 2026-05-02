@@ -529,6 +529,9 @@ ui:
     empty: "Keine Kapitelvorlagen verfügbar"
     load_error: "Vorlagen konnten nicht geladen werden"
     inserted: "Kapitel aus Vorlage eingefügt"
+    group_count: "{count} Kapitel"
+    group_hint: "Gruppe: fügt mehrere Kapitel auf einmal ein"
+    inserted_group: "{count} Kapitel aus Gruppe eingefügt"
     insert_failed: "Einfügen fehlgeschlagen"
   save_chapter_template:
     title: "Kapitel als Vorlage speichern"

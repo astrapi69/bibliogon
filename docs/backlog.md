@@ -263,7 +263,22 @@ user note (line below).
     template. UI: Download icon per card + "JSON importieren" button
     in the picker header. 8 backend tests, 6 i18n keys × 8 langs.
     Closed 2026-05-02.
-  - [ ] Multi-chapter templates (data model change). Effort: M.
+  - [x] Multi-chapter templates — `ChapterTemplate.child_template_ids`
+    JSON column (Alembic migration `f5a6b7c8d9e0`). When set on a
+    template, applying it inserts one chapter per child in list
+    order; `content` + `chapter_type` of the parent are ignored at
+    apply time. Validation rejects self-reference, missing ids, and
+    cycles. Export/import roundtrip carries the child id list.
+    Picker shows a "{count} chapters" badge instead of the
+    chapter-type badge for groups. BookEditor's apply handler
+    detects groups, fetches each child via the new
+    `api.chapterTemplates.get(id)` accessor, and creates N chapters
+    sequentially (NON-transactional: mid-loop failure leaves the
+    chapters created so far in place). 7 backend tests. 3 i18n
+    keys × 8 languages. **Group creation UI deferred** —
+    in-app users can produce groups via JSON import only; UI for
+    multi-select + save-as-group tracked as future work. Closed
+    2026-05-02.
 - **D-05**: full Windows installer (Docker Desktop bundling).
   Effort: L. Deferred until user feedback says install (not
   start) is the friction.

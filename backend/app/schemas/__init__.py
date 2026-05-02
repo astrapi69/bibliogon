@@ -412,6 +412,10 @@ class ChapterTemplateCreate(BaseModel):
     content: str | None = None
     language: str = "en"
     is_builtin: bool = False
+    # TM-04b sub-item 3: list of child ChapterTemplate ids that, when
+    # the template is applied, are inserted in order. Empty list (or
+    # None) means single-chapter mode (legacy default).
+    child_template_ids: list[str] | None = None
 
 
 class ChapterTemplateUpdate(BaseModel):
@@ -420,6 +424,7 @@ class ChapterTemplateUpdate(BaseModel):
     chapter_type: ChapterType | None = None
     content: str | None = None
     language: str | None = None
+    child_template_ids: list[str] | None = None
 
 
 class ChapterTemplateRead(BaseModel):
@@ -432,8 +437,29 @@ class ChapterTemplateRead(BaseModel):
     content: str | None
     language: str
     is_builtin: bool
+    child_template_ids: list[str] | None = None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("child_template_ids", mode="before")
+    @classmethod
+    def _decode_child_ids(cls, value: object) -> object:
+        """Accept either a JSON-stringified list (from the DB column)
+        or a real list (when constructed in code). Empty / null become
+        ``None`` so callers can branch on a falsy value."""
+        if value is None or value == "":
+            return None
+        if isinstance(value, list):
+            return value or None
+        if isinstance(value, str):
+            import json as _json
+
+            try:
+                parsed = _json.loads(value)
+            except (TypeError, ValueError):
+                return None
+            return parsed or None
+        return value
 
 
 # --- Article schemas (AR-01 Phase 1) ---

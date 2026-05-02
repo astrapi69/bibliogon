@@ -529,6 +529,9 @@ ui:
     empty: "No chapter templates available"
     load_error: "Could not load chapter templates"
     inserted: "Chapter inserted from template"
+    group_count: "{count} chapters"
+    group_hint: "Group: inserts multiple chapters at once"
+    inserted_group: "{count} chapters inserted from group"
     insert_failed: "Insert failed"
   save_chapter_template:
     title: "Save chapter as template"

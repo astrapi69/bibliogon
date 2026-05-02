@@ -43,6 +43,9 @@ def create_chapter_template(payload: ChapterTemplateCreate, db: Session = Depend
     if db.query(ChapterTemplate).filter(ChapterTemplate.name == payload.name).first():
         raise HTTPException(status_code=409, detail="Chapter template name already exists")
 
+    child_ids = payload.child_template_ids or []
+    _validate_child_ids(db, child_ids)
+
     template = ChapterTemplate(
         name=payload.name,
         description=payload.description,
@@ -50,6 +53,7 @@ def create_chapter_template(payload: ChapterTemplateCreate, db: Session = Depend
         content=payload.content,
         language=payload.language,
         is_builtin=False,
+        child_template_ids=_encode_child_ids(child_ids),
     )
     db.add(template)
     db.commit()
@@ -68,7 +72,12 @@ def update_chapter_template(
     if template.is_builtin:
         raise HTTPException(status_code=403, detail="Builtin chapter templates are read-only")
 
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    fields = payload.model_dump(exclude_unset=True)
+    if "child_template_ids" in fields:
+        new_children = fields.pop("child_template_ids") or []
+        _validate_child_ids(db, new_children, self_id=template.id)
+        template.child_template_ids = _encode_child_ids(new_children)
+    for key, value in fields.items():
         if key == "chapter_type" and value is not None:
             value = value.value if hasattr(value, "value") else value
         setattr(template, key, value)
@@ -105,6 +114,83 @@ def _slugify_filename(name: str) -> str:
     return slug or "chapter-template"
 
 
+def _encode_child_ids(child_ids: list[str] | None) -> str | None:
+    """JSON-stringify the child id list for storage in a TEXT column."""
+    if not child_ids:
+        return None
+    return json.dumps(child_ids)
+
+
+def _decode_child_ids(raw: str | None) -> list[str]:
+    """Decode the JSON-stringified child id list (empty list on null)."""
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
+def _validate_child_ids(
+    db: Session,
+    child_ids: list[str],
+    *,
+    self_id: str | None = None,
+) -> None:
+    """Reject self-reference, missing ids, and reference cycles.
+
+    The cycle check is a depth-first walk over already-stored
+    children, so an attempt to set ``A -> [B]`` when ``B -> [A]`` is
+    rejected before the new state is committed.
+    """
+    if self_id is not None and self_id in child_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="A chapter template cannot reference itself.",
+        )
+    if not child_ids:
+        return
+
+    found = (
+        db.query(ChapterTemplate.id)
+        .filter(ChapterTemplate.id.in_(child_ids))
+        .all()
+    )
+    found_ids = {row[0] for row in found}
+    missing = [cid for cid in child_ids if cid not in found_ids]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown child template id(s): {', '.join(missing)}",
+        )
+
+    # Cycle check: walk down each child's already-stored child list
+    # and bail if the path returns to ``self_id``.
+    if self_id is not None:
+        stack = list(child_ids)
+        seen: set[str] = set()
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            row = (
+                db.query(ChapterTemplate.child_template_ids)
+                .filter(ChapterTemplate.id == current)
+                .first()
+            )
+            if row is None:
+                continue
+            grand = _decode_child_ids(row[0])
+            if self_id in grand:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cycle detected in child_template_ids.",
+                )
+            stack.extend(grand)
+
+
 @router.get("/{template_id}/export")
 def export_chapter_template(template_id: str, db: Session = Depends(get_db)):
     """Download a chapter template as a portable JSON file.
@@ -125,6 +211,10 @@ def export_chapter_template(template_id: str, db: Session = Depends(get_db)):
         "chapter_type": template.chapter_type,
         "content": template.content,
         "language": template.language,
+        # TM-04b sub-item 3: groups carry their child id list. Single-
+        # chapter templates serialise the empty list so the importer
+        # path stays uniform.
+        "child_template_ids": _decode_child_ids(template.child_template_ids),
     }
     filename = f"{_slugify_filename(template.name)}.chapter-template.json"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
@@ -176,6 +266,16 @@ async def import_chapter_template(file: UploadFile, db: Session = Depends(get_db
     if db.query(ChapterTemplate).filter(ChapterTemplate.name == name).first():
         raise HTTPException(status_code=409, detail="Chapter template name already exists")
 
+    raw_child_ids = data.get("child_template_ids") or []
+    if not isinstance(raw_child_ids, list) or not all(
+        isinstance(cid, str) for cid in raw_child_ids
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="child_template_ids must be a list of strings",
+        )
+    _validate_child_ids(db, raw_child_ids)
+
     template = ChapterTemplate(
         name=name,
         description=description,
@@ -183,6 +283,7 @@ async def import_chapter_template(file: UploadFile, db: Session = Depends(get_db
         content=data.get("content"),
         language=data.get("language") or "en",
         is_builtin=False,
+        child_template_ids=_encode_child_ids(raw_child_ids),
     )
     db.add(template)
     db.commit()

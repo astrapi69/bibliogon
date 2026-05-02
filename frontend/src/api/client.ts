@@ -316,6 +316,11 @@ export interface ChapterTemplate {
     content: string | null;
     language: string;
     is_builtin: boolean;
+    /** TM-04b sub-item 3: when non-null and non-empty, marks the
+     *  template as a group whose application inserts one chapter per
+     *  child id, in list order. ``content`` + ``chapter_type`` are
+     *  ignored at apply time for groups. */
+    child_template_ids: string[] | null;
     created_at: string;
     updated_at: string;
 }
@@ -326,6 +331,7 @@ export interface ChapterTemplateCreate {
     chapter_type: ChapterType;
     content?: string | null;
     language?: string;
+    child_template_ids?: string[] | null;
 }
 
 /** All fields optional - matches the backend Pydantic
@@ -336,6 +342,7 @@ export interface ChapterTemplateUpdate {
     chapter_type?: ChapterType;
     content?: string | null;
     language?: string;
+    child_template_ids?: string[] | null;
 }
 
 export interface ChapterCreate {
@@ -1728,6 +1735,8 @@ export const api = {
 
     chapterTemplates: {
         list: () => request<ChapterTemplate[]>("/chapter-templates"),
+
+        get: (id: string) => request<ChapterTemplate>(`/chapter-templates/${id}`),
 
         create: (data: ChapterTemplateCreate) =>
             request<ChapterTemplate>("/chapter-templates", {

@@ -399,6 +399,142 @@ def test_import_rejects_unknown_chapter_type(client: TestClient):
     assert "chapter_type" in r.json()["detail"].lower()
 
 
+# --- TM-04b sub-item 3: multi-chapter templates ----------------------------
+
+
+def test_create_group_template_persists_child_ids(client: TestClient):
+    # Seed two children first
+    a = client.post("/api/chapter-templates", json={"name": "Child A", "description": "a", "chapter_type": "chapter"}).json()
+    b = client.post("/api/chapter-templates", json={"name": "Child B", "description": "b", "chapter_type": "chapter"}).json()
+    try:
+        r = client.post(
+            "/api/chapter-templates",
+            json={
+                "name": "Group AB",
+                "description": "group",
+                "chapter_type": "chapter",
+                "child_template_ids": [a["id"], b["id"]],
+            },
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["child_template_ids"] == [a["id"], b["id"]]
+        client.delete(f"/api/chapter-templates/{body['id']}")
+    finally:
+        client.delete(f"/api/chapter-templates/{a['id']}")
+        client.delete(f"/api/chapter-templates/{b['id']}")
+
+
+def test_create_group_rejects_unknown_child(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates",
+        json={
+            "name": "Group with Ghost",
+            "description": "group",
+            "chapter_type": "chapter",
+            "child_template_ids": ["does-not-exist"],
+        },
+    )
+    assert r.status_code == 400
+    assert "Unknown child template id" in r.json()["detail"]
+
+
+def test_update_group_rejects_self_reference(client: TestClient):
+    r = client.post(
+        "/api/chapter-templates",
+        json={"name": "Self Ref Test", "description": "x", "chapter_type": "chapter"},
+    )
+    template_id = r.json()["id"]
+    try:
+        r = client.put(
+            f"/api/chapter-templates/{template_id}",
+            json={"child_template_ids": [template_id]},
+        )
+        assert r.status_code == 400
+        assert "itself" in r.json()["detail"]
+    finally:
+        client.delete(f"/api/chapter-templates/{template_id}")
+
+
+def test_update_group_rejects_cycle(client: TestClient):
+    a = client.post("/api/chapter-templates", json={"name": "Cycle A", "description": "a", "chapter_type": "chapter"}).json()
+    b = client.post("/api/chapter-templates", json={"name": "Cycle B", "description": "b", "chapter_type": "chapter"}).json()
+    try:
+        # B -> [A] is fine
+        r = client.put(f"/api/chapter-templates/{b['id']}", json={"child_template_ids": [a["id"]]})
+        assert r.status_code == 200
+        # A -> [B] would close the loop -> rejected
+        r = client.put(f"/api/chapter-templates/{a['id']}", json={"child_template_ids": [b["id"]]})
+        assert r.status_code == 400
+        assert "Cycle" in r.json()["detail"]
+    finally:
+        client.delete(f"/api/chapter-templates/{a['id']}")
+        client.delete(f"/api/chapter-templates/{b['id']}")
+
+
+def test_export_group_includes_child_ids(client: TestClient):
+    a = client.post("/api/chapter-templates", json={"name": "Exp A", "description": "a", "chapter_type": "chapter"}).json()
+    g = client.post(
+        "/api/chapter-templates",
+        json={
+            "name": "Exp Group",
+            "description": "group",
+            "chapter_type": "chapter",
+            "child_template_ids": [a["id"]],
+        },
+    ).json()
+    try:
+        r = client.get(f"/api/chapter-templates/{g['id']}/export")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["child_template_ids"] == [a["id"]]
+    finally:
+        client.delete(f"/api/chapter-templates/{g['id']}")
+        client.delete(f"/api/chapter-templates/{a['id']}")
+
+
+def test_import_group_from_json(client: TestClient):
+    a = client.post("/api/chapter-templates", json={"name": "Imp A", "description": "a", "chapter_type": "chapter"}).json()
+    try:
+        payload = {
+            "format": "bibliogon-chapter-template",
+            "format_version": "1.0",
+            "name": "Imported Group",
+            "description": "group",
+            "chapter_type": "chapter",
+            "content": None,
+            "language": "en",
+            "child_template_ids": [a["id"]],
+        }
+        r = client.post(
+            "/api/chapter-templates/import",
+            files={"file": ("group.json", json.dumps(payload).encode("utf-8"), "application/json")},
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+        try:
+            assert body["child_template_ids"] == [a["id"]]
+        finally:
+            client.delete(f"/api/chapter-templates/{body['id']}")
+    finally:
+        client.delete(f"/api/chapter-templates/{a['id']}")
+
+
+def test_legacy_single_chapter_template_has_null_child_ids(client: TestClient):
+    """No regression: existing templates without ``child_template_ids`` in
+    the create payload still surface as ``None`` in the read shape."""
+    r = client.post(
+        "/api/chapter-templates",
+        json={"name": "Legacy Single", "description": "x", "chapter_type": "chapter"},
+    )
+    template_id = r.json()["id"]
+    try:
+        body = r.json()
+        assert body["child_template_ids"] is None
+    finally:
+        client.delete(f"/api/chapter-templates/{template_id}")
+
+
 def test_import_duplicate_name_returns_409(client: TestClient):
     # Seed an existing template under the target name first.
     r = client.post(

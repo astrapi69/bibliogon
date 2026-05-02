@@ -203,6 +203,42 @@ export default function BookEditor() {
 
     const handleAddChapterFromTemplate = async (template: import("../api/client").ChapterTemplate) => {
         if (!bookId) return;
+        const childIds = template.child_template_ids ?? [];
+        // Group template: insert one chapter per child, in list order.
+        // Insertion is intentionally NOT transactional here - on a
+        // mid-loop failure the chapters created so far stay so the user
+        // can decide whether to retry the rest or delete the partial
+        // result.
+        if (childIds.length > 0) {
+            try {
+                const children = await Promise.all(childIds.map((cid) => api.chapterTemplates.get(cid)));
+                const created: import("../api/client").Chapter[] = [];
+                for (const child of children) {
+                    const chapter = await api.chapters.create(bookId, {
+                        title: child.name,
+                        chapter_type: child.chapter_type,
+                        content: child.content ?? "",
+                    });
+                    created.push(chapter);
+                }
+                setBook((prev) => {
+                    if (!prev) return prev;
+                    return {...prev, chapters: [...prev.chapters, ...created]};
+                });
+                if (created.length > 0) setActiveChapterId(created[0].id);
+                notify.success(
+                    t("ui.chapter_template_picker.inserted_group", "{count} Kapitel aus Gruppe eingefügt")
+                        .replace("{count}", String(created.length)),
+                );
+            } catch (err) {
+                notify.error(
+                    t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"),
+                );
+                throw err;
+            }
+            return;
+        }
+
         try {
             const chapter = await api.chapters.create(bookId, {
                 title: template.name,

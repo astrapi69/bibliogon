@@ -543,6 +543,9 @@ ui:
     empty: "Aucun modele de chapitre disponible"
     load_error: "Impossible de charger les modeles"
     inserted: "Chapitre insere depuis un modele"
+    group_count: "{count} chapitres"
+    group_hint: "Groupe : insère plusieurs chapitres à la fois"
+    inserted_group: "{count} chapitres insérés depuis le groupe"
     insert_failed: "Echec de l'insertion"
   save_chapter_template:
     title: "Enregistrer le chapitre comme modele"

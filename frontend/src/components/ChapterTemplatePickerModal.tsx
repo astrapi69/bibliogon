@@ -178,7 +178,21 @@ export default function ChapterTemplatePickerModal({open, onClose, onInsert}: Pr
                                             <div className={styles.cardHeader}>
                                                 <span className={styles.name}>{tpl.name}</span>
                                                 <div className={styles.badges}>
-                                                    <span className={styles.typeBadge}>{tpl.chapter_type}</span>
+                                                    {(tpl.child_template_ids?.length ?? 0) > 0 ? (
+                                                        <span
+                                                            className={styles.typeBadge}
+                                                            data-testid={`chapter-template-group-badge-${tpl.id}`}
+                                                            title={t(
+                                                                "ui.chapter_template_picker.group_hint",
+                                                                "Gruppe: fügt mehrere Kapitel auf einmal ein",
+                                                            )}
+                                                        >
+                                                            {t("ui.chapter_template_picker.group_count", "{count} Kapitel")
+                                                                .replace("{count}", String(tpl.child_template_ids?.length ?? 0))}
+                                                        </span>
+                                                    ) : (
+                                                        <span className={styles.typeBadge}>{tpl.chapter_type}</span>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         className={`btn-icon ${styles.deleteBtn}`}

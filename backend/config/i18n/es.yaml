@@ -543,6 +543,9 @@ ui:
     empty: "No hay plantillas de capitulo disponibles"
     load_error: "No se pudieron cargar las plantillas"
     inserted: "Capitulo insertado desde plantilla"
+    group_count: "{count} capítulos"
+    group_hint: "Grupo: inserta varios capítulos a la vez"
+    inserted_group: "{count} capítulos insertados desde el grupo"
     insert_failed: "Error al insertar"
   save_chapter_template:
     title: "Guardar capitulo como plantilla"

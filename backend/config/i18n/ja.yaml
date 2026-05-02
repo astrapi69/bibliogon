@@ -529,6 +529,9 @@ ui:
     empty: "利用可能な章テンプレートはありません"
     load_error: "テンプレートを読み込めませんでした"
     inserted: "テンプレートから章を挿入しました"
+    group_count: "{count}章"
+    group_hint: "グループ: 複数の章を一度に挿入します"
+    inserted_group: "グループから{count}章を挿入しました"
     insert_failed: "挿入に失敗しました"
   save_chapter_template:
     title: "章をテンプレートとして保存"

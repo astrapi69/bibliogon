@@ -65,6 +65,7 @@ const BUILTIN_TPL: ChapterTemplate = {
   content: '{"type":"doc","content":[]}',
   language: "en",
   is_builtin: true,
+  child_template_ids: null,
   created_at: "2026-04-17T00:00:00Z",
   updated_at: "2026-04-17T00:00:00Z",
 }
@@ -77,6 +78,7 @@ const USER_TPL: ChapterTemplate = {
   content: null,
   language: "en",
   is_builtin: false,
+  child_template_ids: null,
   created_at: "2026-04-17T00:00:00Z",
   updated_at: "2026-04-17T00:00:00Z",
 }

@@ -529,6 +529,9 @@ ui:
     empty: "Nenhum modelo de capitulo disponivel"
     load_error: "Nao foi possivel carregar os modelos"
     inserted: "Capitulo inserido a partir de modelo"
+    group_count: "{count} capítulos"
+    group_hint: "Grupo: insere vários capítulos de uma vez"
+    inserted_group: "{count} capítulos inseridos do grupo"
     insert_failed: "Falha ao inserir"
   save_chapter_template:
     title: "Salvar capitulo como modelo"

@@ -543,6 +543,9 @@ ui:
     empty: "Kullanilabilir bolum sablonu yok"
     load_error: "Sablonlar yuklenemedi"
     inserted: "Bolum sablondan eklendi"
+    group_count: "{count} bölüm"
+    group_hint: "Grup: birden fazla bölümü tek seferde ekler"
+    inserted_group: "Gruptan {count} bölüm eklendi"
     insert_failed: "Ekleme basarisiz"
   save_chapter_template:
     title: "Bolumu sablon olarak kaydet"
