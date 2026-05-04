@@ -252,6 +252,45 @@ are frequently working from their own stale sources.
 - If something violates the architecture: say so, do not silently work around it.
 - Suggestions are welcome, but mark them as suggestions.
 
+## Self-clarification rule
+
+When a question arises mid-task that cannot be answered from the
+current context, do NOT guess. Three options, in order of
+preference:
+
+1. **Answer it from evidence in the repo.** Check git history,
+   adjacent files, related rules in `.claude/rules/`, or existing
+   patterns. If a defensible answer exists in the repo, use it
+   and note the basis in the final report.
+
+2. **Park the question with a clear marker.** If no evidence
+   resolves it, write the section as best you can with the most
+   conservative assumption, mark the spot in the file with an
+   inline HTML comment
+   `<!-- TODO(clarify): <specific question> -->`,
+   and continue. Do not block the session waiting for an answer
+   to a non-blocking question.
+
+3. **Stop and ask** ONLY if the question blocks meaningful
+   progress (e.g. cannot proceed without knowing whether to keep
+   or remove a major section, cannot tell which of two
+   contradictory sources is canonical, would otherwise risk a
+   destructive change).
+
+At the end of every session, the final report MUST include a
+"Questions and assumptions" section listing:
+
+- Each parked question with location and the conservative
+  assumption that was taken
+- Each evidence-based answer that was derived, with the source
+- Any STOP-blocking questions that came up and how they were
+  resolved
+
+This applies to features, refactors, audits, and documentation
+work alike. The goal is that no silent guess ever ships - either
+the answer is grounded in repo evidence, or the open question is
+visible in the artifact and the report.
+
 ## Documentation protocol
 
 Every session is documented. This is mandatory, not optional. The documentation serves as a retrospective and as a knowledge base for future sessions.
