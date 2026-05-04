@@ -445,6 +445,77 @@ Stability filter:
 - A misleading test comment saying "must differ from server hash" burned multiple sessions before the `checkForRecovery` source was re-read.
 - When writing tests that seed IndexedDB, compute the hash of the real server content inside the seed script rather than using a sentinel value.
 
+## German content uses real umlauts
+
+Production German content uses proper UTF-8 umlauts (ä, ö, ü, ß),
+NOT ASCII transliterations (ae, oe, ue, ss).
+
+### Where this applies (real umlauts required)
+
+- i18n catalogs (`backend/config/i18n/de.yaml`).
+- User documentation (`docs/help/de/**/*.md`).
+- Plugin German content (under any `*/content/de/`).
+- README German sections (currently none; English-only).
+- CHANGELOG German entries (rare; quoted UI strings only).
+- Journal entries written in German prose.
+- Any other user-facing German text.
+
+### Where ASCII stays
+
+- Source code (`*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`).
+- Code comments, docstrings (English convention).
+- Variable / function / class / identifier names.
+- File names, directory names.
+- Git branch names, commit messages.
+- This chat with the user (per the user's style preference,
+  ASCII-only in chat communication).
+
+The chat-style rule and the production-content rule are
+deliberately different. Production text is authored for end
+readers; the chat is a working channel.
+
+### Tooling
+
+`scripts/find_umlaut_candidates.py` and
+`scripts/replace_umlauts.py` implement a whitelist-based,
+reviewable workflow:
+
+1. Build an in-scope file list (one path per line at
+   `/tmp/in-scope-files.txt`).
+2. Run the finder; review the JSON report at
+   `/tmp/umlaut-candidates.json`.
+3. If the finder surfaces obvious German words missing from
+   `KNOWN_WORDS`, surface them, get explicit approval, add them.
+4. Run the replacer with `--dry-run` first; review diffs.
+5. Apply per-file with `y / N / q` prompts; after 5 clean
+   replacements the prompt offers `a` (yes-to-all) — only opt in
+   when every prior diff was clean.
+6. Re-run the finder to confirm 0 remaining candidates.
+7. UTF-8 readback every changed file before committing.
+
+Both scripts mask Markdown code regions (fenced + inline +
+indented) before scanning so identifiers and technical strings
+inside code never become candidates. Word-boundary regex
+(`\b...\b`) prevents partial matches inside compound identifiers.
+
+### Why this matters
+
+ASCII transliteration looks unprofessional to German readers and
+can break Pandoc / EPUB export rendering when the surrounding
+text uses proper umlauts (the mixed-encoding pattern is the
+worst case — same file, two styles, output renders as garbage).
+
+### Known regression pattern
+
+Mixed-encoding files (BOTH real umlauts AND ASCII transliterations
+in the same paragraph) are not tooling regressions but author-
+style drift: typing in an environment without a German IME, then
+copy-pasting UTF-8 text from elsewhere. There is no
+heading / code-fence / section boundary to predict it.
+Mitigation: the scripts above run cleanly per-session against
+any new German prose; the `roadmap-archive-reminder` pre-commit
+hook can be extended later to add an umlaut check the same way.
+
 ## Global CSS rules: distinguish viewport containers from app container
 
 Setting `overflow: hidden` on `html, body, #root` as a single rule blocks document scroll but also blocks every full-page component that relied on scroll (Settings, Dashboard, GetStarted, Help).
