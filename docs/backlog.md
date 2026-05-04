@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-02 (DOC-01 + DOC-02 confirmed already-shipped during cleanup pass)
+Last updated: 2026-05-02 (modal sticky-footer audit closed; AiSetupWizard fix)
 Current version: v0.25.0
-Open tasks: 5 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 4 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -54,12 +54,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **Modal sticky-footer audit beyond wizard**: v0.22.0 covered 13
-  dialog modals; the 2026-05-02 follow-up landed
-  SaveAsChapterTemplateModal + ConflictResolutionDialog. Confirm
-  whether any non-wizard modal still scrolls without sticky
-  footer. Effort: S audit + per-modal fix. Status: confirm-or-close.
 
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort

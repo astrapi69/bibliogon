@@ -310,6 +310,7 @@ const styles: Record<string, React.CSSProperties> = {
     transform: "translate(-50%, -50%)",
     background: "var(--bg-card)", borderRadius: "var(--radius-lg, 12px)",
     padding: 24, width: "min(480px, 90vw)",
+    maxHeight: "90vh", overflowY: "auto" as const,
     boxShadow: "var(--shadow-lg)", zIndex: 9999,
   },
   title: {
