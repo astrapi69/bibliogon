@@ -2,6 +2,31 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.1] - 2026-05-04
+
+Hotfix for v0.26.0. The CI release-gate workflow added in v0.26.0
+invokes `scripts/sync_versions.py` and `scripts/verify_version_pins.sh`,
+which in turn invoke `scripts/generate_install_sh.sh` as a
+subprocess. Those scripts had been chmod-ed locally during
+development but git tracked them at mode 100644, so a fresh CI
+checkout could not execute them directly. The gate run for
+v0.26.0 failed with `PermissionError: [Errno 13] Permission denied`
+on the generate_install_sh subprocess invocation, and the verify
+script reported a misleading `MISMATCH: install.sh out of sync`
+because bash returns 126 for non-executable files and the if-then
+ladder treated that as drift.
+
+**Fix.** `git update-index --chmod=+x` applied to all 11
+shebang-bearing scripts under `scripts/`. The index now records
+mode 100755 so any clean checkout (CI runner, new contributor)
+can execute them directly. No script content changed; this is a
+metadata-only correction.
+
+The v0.26.0 tag remains in place as historical record; no
+artifacts were attached to it because the gate failed before the
+launcher build workflows could run. v0.26.1 is the version users
+should install.
+
 ## [0.26.0] - 2026-05-04
 
 This release is a foundation cleanup. The user-facing surface
