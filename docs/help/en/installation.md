@@ -1,8 +1,12 @@
 # Installation
 
-> **Comfortable with the terminal?** The Docker / curl install path is on [Getting Started](getting-started.md). This page is the launcher track for users who want a click-and-run experience.
+> **Comfortable with the terminal?** The Docker / curl install path is on [Getting Started](getting-started.md). This page is the recommended path for users who prefer a graphical install.
 
-Bibliogon runs on Windows, macOS, and Linux. On every platform, the app itself is the same Docker-based stack at `http://localhost:7880`; only the way you start and stop it differs.
+Bibliogon ships a desktop launcher for Windows, macOS, and Linux. The launcher is a small program that handles the Bibliogon side of the install for you (downloading the release, preparing configuration, building Docker images, opening the browser). You only need to install Docker Desktop yourself; the launcher does the rest on first run.
+
+## Prerequisites
+
+- [Docker Desktop](https://docs.docker.com/get-docker/) installed and running. The launcher detects this on startup; if Docker Desktop is missing or not started, the launcher shows a dialog with a direct link to the Docker download page and exits cleanly. The Bibliogon launcher does not (and per Docker's licensing terms cannot) install Docker Desktop for you.
 
 ## Pick your platform
 
@@ -14,18 +18,34 @@ Bibliogon runs on Windows, macOS, and Linux. On every platform, the app itself i
 
 All three launchers share the same core:
 
-- One-time folder picker on first run, remembered via `install.json`
-- Docker check before starting the stack
-- Browser opens at `http://localhost:7880` when the stack is ready
+- Docker Desktop detection on startup, with a clear dialog if it is missing or not running
+- Welcome flow on first run (see below) that downloads and sets up Bibliogon if it is not already installed
+- Browser opens at `http://localhost:7880` once the stack is healthy
 - **Stop Bibliogon** button tears the stack down cleanly
 - Activity log rotation (1 MB, 1 backup) written to the platform's config directory
 - Auto-update notification on launcher start (opt-out in Settings)
 
+## What you see on first run
+
+If Docker Desktop is installed and running but Bibliogon itself is not yet on disk, the launcher walks you through the install:
+
+1. **Welcome dialog**: a three-button window appears - "Bibliogon is not installed on this computer yet". Choose **Install** to proceed automatically, **Open install guide** to read the docs in your browser, or **Close** to exit.
+2. **Folder picker**: if you chose Install, the launcher asks where Bibliogon should live (default: `~/bibliogon` on macOS / Linux, `%USERPROFILE%\bibliogon` on Windows). You can override; the choice is remembered.
+3. **Download**: the launcher fetches the Bibliogon release ZIP from GitHub, extracts it, and writes a fresh `.env` with a generated secret. This step is fast (a few seconds on a normal connection).
+4. **Docker build**: Docker downloads base images and builds the Bibliogon stack. First build is the slow part - typically 3-5 minutes depending on your machine and connection. Subsequent starts skip this.
+5. **Health wait**: the launcher waits for the backend to report healthy on port 7880, then opens the browser at `http://localhost:7880`.
+6. **Status window**: a small window stays open showing "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button. Closing the window stops the stack cleanly.
+
+On subsequent launches, steps 1-3 are skipped. The launcher detects the existing install via a manifest file, runs `docker compose up`, waits for health, and opens the browser.
+
 ## What the launcher does not do
 
-The launcher is **not** a full installer. It expects Bibliogon itself to be on your disk first (cloned or unzipped from the release). If you double-click the launcher on a fresh machine with nothing else, it tells you to install Bibliogon first and exits. This is tracked as a future item (D-05) and depends on user feedback.
+- **It does not install Docker Desktop.** Docker's licensing terms prohibit silent third-party installation, so this step stays manual. The launcher detects and instructs.
+- **It does not run as a background service.** The launcher is a foreground program; closing its window stops Bibliogon. If you need Bibliogon running continuously, leave the launcher window open or use the terminal path (see Getting Started) and let `docker compose` run as a service.
 
-If you prefer a terminal workflow instead of the launcher, see the top-level `install.sh` script in the [main repository README](https://github.com/astrapi69/bibliogon#installation).
+## Terminal alternative
+
+If you would rather use the command line - or want to script Bibliogon's lifecycle, run it on a server, or skip the launcher's GUI altogether - see [Getting Started](getting-started.md). The terminal path uses `start.sh` / `stop.sh` and produces an identical Docker stack on the same port. You can mix the two: install via the launcher, manage via the scripts, or vice versa.
 
 ## Config directory
 
@@ -37,7 +57,7 @@ Each platform stores launcher state (remembered install path, activity log, auto
 | macOS | `~/Library/Application Support/bibliogon/` |
 | Linux | `~/.config/bibliogon/` |
 
-You can delete this directory at any time; the launcher asks you to pick the install folder again on the next start.
+You can delete this directory at any time; the launcher asks you to pick the install folder again on the next start (or shows the welcome flow if no install is found).
 
 ## Uninstalling
 

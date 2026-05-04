@@ -2,9 +2,9 @@
 
 Der Windows-Launcher ist eine kleine `bibliogon-launcher.exe`, die Bibliogon per Doppelklick startet: kein Terminal, keine `docker compose`-Kommandos. Docker Desktop lässt die App weiterhin laufen, der Launcher startet und stoppt sie nur für dich.
 
-> **Wichtig: der Launcher ist kein Installer.** Er setzt voraus, dass Bibliogon bereits auf deinem Rechner installiert ist (Schritte 1 und 2 unten). Wenn du nur die `.exe` herunterlädst und sie auf einem frischen Rechner startest, erklärt sie dir, dass Bibliogon zuerst installiert werden muss, und beendet sich. Einen "Ein-Klick-alles-installieren"-Weg gibt es heute nicht; das ist als separater zukünftiger Punkt (D-05) erfasst und hängt von Nutzer-Feedback ab.
+> **Was der Launcher für dich erledigt.** Beim ersten Start erkennt der Launcher, ob Bibliogon bereits auf der Festplatte liegt. Wenn nicht, bietet er an, Bibliogon für dich herunterzuladen und einzurichten (siehe "Erster Start" unten). Du musst nur Docker Desktop selbst installieren; Docker-Lizenzbedingungen verbieten eine stille Drittanbieter-Installation. Plattformübergreifender Überblick: [Installations-Übersicht](installation.md).
 
-Für macOS oder Linux siehe [macOS-Launcher](launcher-macos.md) / [Linux-Launcher](launcher-linux.md). Das Gesamtbild über alle drei Plattformen hinweg: [Installations-Übersicht](installation.md).
+Für macOS oder Linux siehe [macOS-Launcher](launcher-macos.md) / [Linux-Launcher](launcher-linux.md).
 
 ## Einmalige Einrichtung
 
@@ -12,13 +12,9 @@ Für macOS oder Linux siehe [macOS-Launcher](launcher-macos.md) / [Linux-Launche
 
 Docker Desktop von [docs.docker.com/desktop/install/windows-install](https://docs.docker.com/desktop/install/windows-install/) herunterladen und installieren. Anschließend Docker Desktop starten und warten, bis die Engine läuft.
 
-### 2. Bibliogon selbst installieren
+Wenn du diesen Schritt überspringst, erkennt der Launcher das fehlende Docker beim Start, zeigt einen Dialog mit direktem Link zur Download-Seite und beendet sich. Du kannst den Launcher nach der Docker-Installation einfach erneut starten.
 
-Das Bibliogon-Repository in einen Ordner auf deinem Rechner klonen oder herunterladen. Empfohlene Lage: `%USERPROFILE%\bibliogon` (zum Beispiel `C:\Users\deinname\bibliogon`), weil der Launcher dort zuerst sucht. Andere Orte funktionieren auch; der Launcher fragt beim ersten Start nach dem Ordner.
-
-Ohne Git: die Quell-ZIP von der [Releases-Seite](https://github.com/astrapi69/bibliogon/releases/latest) herunterladen und nach `%USERPROFILE%\bibliogon` entpacken.
-
-### 3. Launcher herunterladen
+### 2. Launcher herunterladen
 
 Von der Releases-Seite zwei Dateien herunterladen, die am Release hängen:
 
@@ -27,7 +23,7 @@ Von der Releases-Seite zwei Dateien herunterladen, die am Release hängen:
 
 Beliebiger Ordner: Desktop oder `Downloads` sind beide in Ordnung.
 
-### 4. Download prüfen (optional, aber empfohlen)
+### 3. Download prüfen (optional, aber empfohlen)
 
 Bibliogon signiert den Launcher (noch) nicht (siehe [Warum kommt eine Sicherheitswarnung?](#warum-kommt-eine-sicherheitswarnung) unten). Um zu bestätigen, dass du genau die veröffentlichte Datei hast, öffne PowerShell in dem Ordner und führe aus:
 
@@ -55,11 +51,15 @@ Hintergrund unter [Warum kommt eine Sicherheitswarnung?](#warum-kommt-eine-siche
 
 ### Was danach passiert
 
-1. Der Launcher prüft, ob Docker Desktop installiert ist und läuft. Wenn Docker nicht läuft, erscheint ein Dialog mit Bitte um Start und Wiederholen.
-2. Wenn Bibliogon nicht unter `%USERPROFILE%\bibliogon` liegt, fragt der Launcher nach dem Ordner (derjenige mit `docker-compose.prod.yml`). Deine Wahl wird in `%APPDATA%\Bibliogon\launcher.json` gemerkt, beim nächsten Start entfällt dieser Schritt.
-3. Ein kleines "Bibliogon wird gestartet..."-Fenster erscheint, während Docker die Container hochfährt.
-4. Wenn Bibliogon bereit ist, öffnet dein Standard-Browser `http://localhost:7880` (oder den in `.env` konfigurierten Port).
-5. Das kleine Fenster wechselt auf "Bibliogon läuft auf localhost:7880" mit einem **Bibliogon beenden**-Button.
+Die erste Aufgabe des Launchers ist die Erkennung des aktuellen Zustands.
+
+1. **Docker-Prüfung.** Der Launcher bestätigt, dass Docker Desktop installiert ist und läuft. Fehlt Docker Desktop, erscheint ein Dialog mit Installations-URL und der Launcher beendet sich. Ist Docker installiert, aber nicht gestartet, bittet ein Dialog um den Start und einen Klick auf Wiederholen; der Launcher versucht es bis zu drei Mal.
+2. **Bibliogon-Prüfung.** Der Launcher sucht eine bestehende Bibliogon-Installation über die Manifest-Datei (`%APPDATA%\bibliogon\install.json`) oder, auf einem frischen Rechner, am Standardort `%USERPROFILE%\bibliogon`.
+   - **Bereits installiert**: der Launcher fährt direkt mit Schritt 3 fort.
+   - **Nicht installiert**: ein Willkommensdialog erscheint: "Bibliogon ist auf diesem Rechner noch nicht installiert". Drei Schaltflächen: **Installieren** (der Launcher lädt die neueste Release-ZIP herunter, entpackt sie in einen von dir gewählten Ordner, generiert eine frische `.env` und baut die Docker-Images - der erste Build dauert 3-5 Minuten), **Installationsanleitung öffnen** (öffnet die Doku im Browser), oder **Schließen**.
+3. **Start.** Ein kleines "Bibliogon wird gestartet..."-Fenster erscheint, während Docker die Container hochfährt.
+4. **Browser.** Wenn Bibliogon bereit ist, öffnet dein Standard-Browser `http://localhost:7880` (oder den in `.env` konfigurierten Port).
+5. **Statusfenster.** Das kleine Fenster wechselt auf "Bibliogon läuft auf localhost:7880" mit einer Schaltfläche **Bibliogon beenden**.
 
 ## Bibliogon beenden
 

@@ -2,7 +2,7 @@
 
 The Linux launcher is a `bibliogon-launcher-linux` ELF binary that starts Bibliogon with a click: no `docker compose` commands, no terminal session kept open. Docker still runs the actual app; the launcher just starts and stops it for you.
 
-> **Heads-up: the launcher is not an installer.** It assumes Bibliogon is already on your disk. If you download only the launcher on a fresh machine, it tells you to install Bibliogon first and exits. See [Installation overview](installation.md) for the full picture.
+> **What the launcher does for you.** On first run, the launcher detects whether Bibliogon is already on disk. If it is not, the launcher offers to download and set up Bibliogon for you (see "First launch" below). The only thing you have to install yourself is Docker; Docker's licensing terms prohibit silent third-party installation. See the [Installation overview](installation.md) for the cross-platform picture.
 
 ## System requirements
 
@@ -30,13 +30,7 @@ Verify Docker is reachable without `sudo`:
 docker info
 ```
 
-### 2. Install Bibliogon itself
-
-Clone or download the Bibliogon repository to a folder on your machine. The launcher looks first in `~/bibliogon`. Any other location works; the launcher asks you to pick the folder on first run and remembers it.
-
-If you do not use Git, download the source ZIP from [the Bibliogon releases page](https://github.com/astrapi69/bibliogon/releases/latest) and extract it to `~/bibliogon`.
-
-### 3. Download the launcher
+### 2. Download the launcher
 
 From the Bibliogon releases page, download two files attached to the release:
 
@@ -45,7 +39,7 @@ From the Bibliogon releases page, download two files attached to the release:
 
 Save them anywhere; `~/Downloads` is fine.
 
-### 4. Verify the download (optional but recommended)
+### 3. Verify the download (optional but recommended)
 
 The launcher is not signed. To confirm the binary you downloaded is the exact file published, open a terminal where you saved it and run:
 
@@ -56,7 +50,7 @@ cat bibliogon-launcher-linux.sha256
 
 The hash from `sha256sum` should match the hex string in the `.sha256` file. If it does not, do not run the binary and report it on [GitHub Issues](https://github.com/astrapi69/bibliogon/issues).
 
-### 5. Make the launcher executable
+### 4. Make the launcher executable
 
 ```bash
 chmod +x bibliogon-launcher-linux
@@ -76,11 +70,15 @@ Or, if your desktop environment supports launching executables from a file manag
 
 ### What happens on first launch
 
-1. The launcher checks that Docker is installed and reachable. If not, a dialog tells you to start Docker (or log out/back in after the `docker` group change) and click Retry.
-2. If Bibliogon is not at `~/bibliogon`, the launcher asks you to pick the folder where you installed it (the folder that contains `docker-compose.prod.yml`). Your choice is remembered in `~/.config/bibliogon/install.json`, so the next start skips this step.
-3. A small "Starting Bibliogon..." window appears while Docker brings up the containers.
-4. When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in your `.env` file).
-5. The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
+The launcher's first job is to detect what is already in place.
+
+1. **Docker check.** The launcher confirms Docker is installed and reachable without `sudo`. If Docker is missing, a dialog with the install URL appears and the launcher exits. If Docker is installed but not running (or the user is not yet in the `docker` group), a dialog asks you to start Docker and click Retry; the launcher tries up to three times.
+2. **Bibliogon check.** The launcher looks for an existing Bibliogon install via its manifest (`~/.config/bibliogon/install.json`) or, on a clean machine, checks the default location `~/bibliogon`.
+   - **Already installed**: the launcher proceeds straight to step 3.
+   - **Not installed**: a welcome dialog appears: "Bibliogon is not installed on this computer yet". Three buttons: **Install** (the launcher downloads the latest release ZIP, extracts to a folder you pick, generates a fresh `.env`, and builds the Docker images - first build takes 3-5 minutes), **Open install guide** (opens the docs in your browser), or **Close**.
+3. **Start.** A small "Starting Bibliogon..." window appears while Docker brings up the containers.
+4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`).
+5. **Status window.** The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
 
 ## Stopping Bibliogon
 

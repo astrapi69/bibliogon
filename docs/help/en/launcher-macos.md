@@ -4,7 +4,7 @@ The macOS launcher is a `Bibliogon.app` bundle that starts Bibliogon with a doub
 
 **This initial release is arm64 only.** Apple-silicon Macs (M1, M2, M3, M4 and later) are supported. Intel Macs are not covered by this binary; use `install.sh` from the terminal instead.
 
-> **Heads-up: the launcher is not an installer.** It assumes Bibliogon is already on your disk. If you download only the launcher on a fresh machine, it tells you to install Bibliogon first and exits. See [Installation overview](installation.md) for the full picture.
+> **What the launcher does for you.** On first run, the launcher detects whether Bibliogon is already on disk. If it is not, the launcher offers to download and set up Bibliogon for you (see "First launch" below). The only thing you have to install yourself is Docker Desktop; Docker's licensing terms prohibit silent third-party installation. See the [Installation overview](installation.md) for the cross-platform picture.
 
 ## One-time setup
 
@@ -12,13 +12,9 @@ The macOS launcher is a `Bibliogon.app` bundle that starts Bibliogon with a doub
 
 Download and install Docker Desktop for Mac (Apple silicon) from [docs.docker.com/desktop/install/mac-install](https://docs.docker.com/desktop/install/mac-install/). Start it after install and wait until the whale icon in the menu bar reports the engine is running.
 
-### 2. Install Bibliogon itself
+If you skip this step, the launcher detects the missing Docker on startup and shows a dialog with a direct link to the download page, then exits. You can run the launcher again after installing Docker.
 
-Clone or download the Bibliogon repository to a folder on your machine. The launcher looks first in `~/bibliogon`. Any other location works; the launcher asks you to pick the folder on first run and remembers it.
-
-If you do not use Git, download the source ZIP from [the Bibliogon releases page](https://github.com/astrapi69/bibliogon/releases/latest) and extract it to `~/bibliogon`.
-
-### 3. Download the launcher
+### 2. Download the launcher
 
 From the Bibliogon releases page, download two files attached to the release:
 
@@ -27,7 +23,7 @@ From the Bibliogon releases page, download two files attached to the release:
 
 Save them anywhere; `~/Downloads` is fine.
 
-### 4. Verify the download (optional but recommended)
+### 3. Verify the download (optional but recommended)
 
 The launcher is not signed with an Apple Developer ID (see [Why is there a security warning?](#why-is-there-a-security-warning) below). To confirm the ZIP you downloaded is the exact file published, open Terminal where you saved it and run:
 
@@ -38,7 +34,7 @@ cat bibliogon-launcher-macos.zip.sha256
 
 The hash printed by `shasum` should match the hex string in the `.sha256` file. If it does not, do not open the ZIP and report it on [GitHub Issues](https://github.com/astrapi69/bibliogon/issues).
 
-### 5. Unzip and move the app
+### 4. Unzip and move the app
 
 Unzip `bibliogon-launcher-macos.zip`. The archive contains `Bibliogon.app`. Move it to `/Applications` if you want it reachable from Launchpad, or keep it in `~/Downloads`.
 
@@ -68,11 +64,15 @@ xattr -d com.apple.quarantine /path/to/Bibliogon.app
 
 ### What happens after you click Open
 
-1. The launcher checks that Docker Desktop is installed and running. If Docker is not running, a dialog asks you to start it and click Retry.
-2. If Bibliogon is not at `~/bibliogon`, the launcher asks you to pick the folder where you installed it (the folder that contains `docker-compose.prod.yml`). Your choice is remembered in `~/Library/Application Support/bibliogon/install.json`, so the next start skips this step.
-3. A small "Starting Bibliogon..." window appears while Docker brings up the containers.
-4. When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in your `.env` file).
-5. The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
+The launcher's first job is to detect what is already in place.
+
+1. **Docker check.** The launcher confirms Docker Desktop is installed and running. If Docker Desktop is missing, a dialog with the install URL appears and the launcher exits. If Docker is installed but not running, a dialog asks you to start Docker Desktop and click Retry; the launcher tries up to three times.
+2. **Bibliogon check.** The launcher looks for an existing Bibliogon install via its manifest (`~/Library/Application Support/bibliogon/install.json`) or, on a clean machine, checks the default location `~/bibliogon`.
+   - **Already installed**: the launcher proceeds straight to step 3.
+   - **Not installed**: a welcome dialog appears: "Bibliogon is not installed on this computer yet". Three buttons: **Install** (the launcher downloads the latest release ZIP, extracts to a folder you pick, generates a fresh `.env`, and builds the Docker images - first build takes 3-5 minutes), **Open install guide** (opens the docs in your browser), or **Close**.
+3. **Start.** A small "Starting Bibliogon..." window appears while Docker brings up the containers.
+4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`).
+5. **Status window.** The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
 
 ## Stopping Bibliogon
 
