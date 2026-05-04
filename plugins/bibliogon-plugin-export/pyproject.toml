@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-export"
-version = "1.0.0"
+version = "0.25.0"
 description = "EPUB, PDF and project structure export plugin for Bibliogon"
 authors = ["astrapi69"]
 license = "MIT"
