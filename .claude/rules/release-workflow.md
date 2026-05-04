@@ -147,9 +147,10 @@ scripts/verify_version_pins.sh <new-version>
 drifts from canonical. `verify_version_pins.sh` runs the same
 check plus regression detectors for hardcoded literals in the
 "DO NOT EDIT" tier (Python `__version__ = "..."` outside
-`_build_info`, deprecated `COMPATIBLE_VERSION` declarations,
-frontend `APP_VERSION = "..."` literals, `install.sh` template
-sync). Both must succeed before tagging.
+`_build_info`, any reintroduction of the removed
+`COMPATIBLE_VERSION` symbol, frontend `APP_VERSION = "..."`
+literals, `install.sh` template sync). Both must succeed
+before tagging.
 
 CI runs the same checks at `release-gate.yml` (on tag push) and
 again as the first step of every launcher build job (on

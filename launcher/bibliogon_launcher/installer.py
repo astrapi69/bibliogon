@@ -61,14 +61,10 @@ except ImportError:
         )
         BIBLIOGON_TARGET_VERSION = "0.0.0+unknown"
 
-# Backwards-compatible alias for any external consumer that still
-# references the old name. New code should use BIBLIOGON_TARGET_VERSION.
-COMPATIBLE_VERSION = BIBLIOGON_TARGET_VERSION
-
 
 def release_zip_url(version: str | None = None) -> str:
     """GitHub archive URL for a tagged release."""
-    ver = version or COMPATIBLE_VERSION
+    ver = version or BIBLIOGON_TARGET_VERSION
     tag = ver if ver.startswith("v") else f"v{ver}"
     return f"https://github.com/{GITHUB_REPO}/archive/refs/tags/{tag}.zip"
 
@@ -82,7 +78,7 @@ def download_release(target_dir: Path, version: str | None = None) -> tuple[bool
 
     Returns ``(True, "ok")`` on success, ``(False, detail)`` on failure.
     """
-    ver = version or COMPATIBLE_VERSION
+    ver = version or BIBLIOGON_TARGET_VERSION
     url = release_zip_url(ver)
     logger.info("Downloading %s", url)
 

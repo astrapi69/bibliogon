@@ -123,11 +123,12 @@ regression_check \
     'hardcoded Python __version__ literal' \
     "$ROOT/backend/app $ROOT/plugins"
 
-# Deprecated launcher COMPATIBLE_VERSION literal (assignment, not
-# the alias re-binding in installer.py which is OK)
+# Defensive: the deprecated COMPATIBLE_VERSION alias was removed
+# in 2026-05-04 cleanup. Any reappearance signals someone resurrected
+# the old name; flag it so we re-decide the deprecation cycle.
 regression_check \
-    '^COMPATIBLE_VERSION\s*=\s*"[0-9]' \
-    'deprecated COMPATIBLE_VERSION literal' \
+    'COMPATIBLE_VERSION' \
+    'reintroduced COMPATIBLE_VERSION (use BIBLIOGON_TARGET_VERSION)' \
     "$ROOT/launcher/bibliogon_launcher"
 
 # Launcher target-version literal outside _build_info
