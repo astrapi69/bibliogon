@@ -18,8 +18,14 @@ from pathlib import Path
 # is the canonical Python source-of-truth; the launcher's frozen binary
 # bakes the value in at build time so it is offline-evaluable in
 # production. The generated file is gitignored.
+#
+# PyInstaller exec()s spec files via build_main.exec(code, spec_namespace),
+# which does NOT define ``__file__``. PyInstaller injects ``SPECPATH``
+# (directory containing the spec file) into the namespace instead; use
+# that as the anchor.
 
-_repo_root = Path(__file__).resolve().parent.parent
+_spec_dir = Path(SPECPATH).resolve()
+_repo_root = _spec_dir.parent
 _backend_pyproject = _repo_root / "backend" / "pyproject.toml"
 _match = re.search(
     r'^version\s*=\s*"([^"]+)"',
@@ -33,7 +39,7 @@ if _match is None:
 _target_version = _match.group(1)
 
 _build_info = (
-    Path(__file__).resolve().parent / "bibliogon_launcher" / "_build_info.py"
+    _spec_dir / "bibliogon_launcher" / "_build_info.py"
 )
 _build_info.write_text(
     "# AUTO-GENERATED at PyInstaller build time. Do not edit; regenerate "
@@ -110,8 +116,8 @@ if sys.platform == "darwin":
         info_plist={
             "CFBundleName": "Bibliogon Launcher",
             "CFBundleDisplayName": "Bibliogon Launcher",
-            "CFBundleVersion": "0.26.1",
-            "CFBundleShortVersionString": "0.26.1",
+            "CFBundleVersion": "0.26.2",
+            "CFBundleShortVersionString": "0.26.2",
             "NSHighResolutionCapable": True,
             "NSRequiresAquaSystemAppearance": False,
         },

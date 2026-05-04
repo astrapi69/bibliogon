@@ -2,6 +2,32 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.2] - 2026-05-04
+
+Hotfix for v0.26.1. Two bugs surfaced when the launcher workflows
+and the CI mypy check ran against v0.26.1:
+
+**Launcher build NameError.** The PyInstaller spec file added in
+v0.26.0 used `Path(__file__).resolve()` to locate
+`backend/pyproject.toml` for build-time version injection.
+PyInstaller exec()s spec files via `exec(code, spec_namespace)`
+which does NOT define `__file__` in the namespace. Linux, macOS,
+and Windows launcher builds all crashed with
+`NameError: name '__file__' is not defined`. PyInstaller injects
+`SPECPATH` (directory containing the spec) into the namespace
+instead; the spec now uses that as the anchor.
+
+**mypy `[no-any-return]`.** `tomllib.load` returns
+`dict[str, Any]`, so the chained access `data["tool"]["poetry"]
+["version"]` is `Any`. The function declared `-> str`. mypy in
+strict mode rejected the implicit Any-to-str fall-through. Fix:
+explicit `isinstance(version, str)` check that raises `TypeError`
+on a corrupted pyproject (caught by the existing except chain
+that falls back to the `0.0.0+unknown` sentinel).
+
+Both fixes are mechanical. No production behavior change beyond
+the launcher actually building and the mypy gate passing.
+
 ## [0.26.1] - 2026-05-04
 
 Hotfix for v0.26.0. The CI release-gate workflow added in v0.26.0
