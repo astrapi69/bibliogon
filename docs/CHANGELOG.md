@@ -2,6 +2,33 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.6] - 2026-05-04
+
+Hotfix for v0.26.5. v0.26.5's `.gitattributes` fix was correct
+defensive hygiene but not the actual cause of the Windows
+release-event failure. The actual cause: `sync_versions.py`
+invoked `bash` via `subprocess.run(["bash", str(script),
+"--check"])`. On Windows, PATH ordering meant subprocess could
+resolve `bash` to the WSL2 launcher (`C:\Windows\System32\
+bash.exe`) instead of Git Bash (`C:\Program Files\Git\bin\bash.
+exe`). WSL2 mishandles native Windows paths passed as args,
+producing spurious drift even when content matches.
+
+Fix: reimplement the install.sh `--check` logic in pure Python
+inside `sync_versions.py`. Reads `install.sh.template`,
+substitutes `@@BIBLIOGON_VERSION@@` from the canonical
+pyproject, compares to `install.sh` content, returns drift bool.
+No bash subprocess, no PATH-dependent resolution, no
+cross-platform path translation. The bash script
+`generate_install_sh.sh` stays as the canonical human-facing
+tool; the Python implementation is the cross-platform
+equivalent for tooling that does not want to spawn subprocesses.
+
+`.gitattributes` from v0.26.5 stays — still useful for any
+future bash-driven check and for general line-ending hygiene.
+
+v0.26.6 is the version Windows users should install.
+
 ## [0.26.5] - 2026-05-04
 
 Hotfix for v0.26.4. v0.26.4 attached Linux and macOS launcher
