@@ -23,8 +23,8 @@ import yaml
 from sqlalchemy.orm import Session
 
 from app.models import Book, Chapter, ChapterType
-from app.services import git_credentials
 from app.paths import get_upload_dir
+from app.services import git_credentials
 
 # Bibliogon convention: every book's uploads live at ``uploads/{book_id}/``.
 

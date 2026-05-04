@@ -32,7 +32,6 @@ from pathlib import Path
 
 from platformdirs import user_cache_dir, user_config_dir, user_data_dir
 
-
 PRODUCTION_MARKER_FILENAME = ".bibliogon-production"
 APP_NAME = "bibliogon"
 
