@@ -230,7 +230,7 @@ ui:
     diff_label_renamed_local: "In Bibliogon umbenannt"
     diff_renamed_from: "Umbenannt von {section}/{slug}"
     diff_mark_conflict: "Konflikt"
-    diff_mark_conflict_tooltip: "Beide Versionen mit Konflikt-Markern in das Kapitel schreiben (manuell aufloesen)"
+    diff_mark_conflict_tooltip: "Beide Versionen mit Konflikt-Markern in das Kapitel schreiben (manuell auflösen)"
     resolve_success_v2: "Aktualisiert {updated}, neu {created}, gelöscht {deleted}, umbenannt {renamed}, mit Konflikt-Markern {marked}"
     diff_label_unchanged: "Unverändert"
     check_upstream: "Auf Änderungen vom Repo prüfen"
@@ -383,7 +383,7 @@ ui:
     missing_images_hint: "Bitte überprüfe, ob die genannten Bilddateien noch im Buch vorhanden sind."
     dry_run_button: Probe hören
     dry_run_failed: Test-Export fehlgeschlagen
-    dry_run_hint: Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten.
+    dry_run_hint: Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschätzten Kosten.
     dry_run_loading: Generiert Probe...
     dry_run_title: Test-Export
     free: kostenlos
@@ -1046,7 +1046,7 @@ ui:
     event_cost: "Kosten"
     event_saved: "Gespart"
     dry_run_title: "Test-Export"
-    dry_run_hint: "Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschaetzten Kosten."
+    dry_run_hint: "Generiert nur den ersten Absatz des ersten Kapitels. Prüft ob Engine und Stimme funktionieren und zeigt die geschätzten Kosten."
     dry_run_button: "Probe hören"
     dry_run_loading: "Generiert Probe..."
     dry_run_failed: "Test-Export fehlgeschlagen"
@@ -1232,7 +1232,7 @@ ui:
     chapter_not_generated: "Nicht generiert"
     delete_all_previews: Alle löschen
     delete_previews: Alle Previews löschen
-    delete_previews_confirm: Alle Vorhoer-Dateien löschen?
+    delete_previews_confirm: Alle Vorhör-Dateien löschen?
     previews_empty: Keine Previews vorhanden. Nutze den Vorhören-Button im Editor um eine Vorschau zu erstellen.
     speed: Geschwindigkeit
   languages:

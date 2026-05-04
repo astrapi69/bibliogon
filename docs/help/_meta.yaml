@@ -25,7 +25,7 @@ navigation:
     icon: edit
     children:
       - title:
-          de: Uebersicht
+          de: Übersicht
           en: Overview
         slug: editor/uebersicht
       - title:
@@ -59,7 +59,7 @@ navigation:
     icon: puzzle
     children:
       - title:
-          de: Uebersicht
+          de: Übersicht
           en: Overview
         slug: plugins/uebersicht
       - title:
@@ -88,18 +88,17 @@ navigation:
           en: Field selection
         slug: import/field-selection
       - title:
-          de: Git-Historie uebernehmen
+          de: Git-Historie übernehmen
           en: Adopt git history
         slug: import/git-adoption
 
   - title:
       de: Installation
       en: Installation
-    slug: installation
     icon: download
     children:
       - title:
-          de: Uebersicht
+          de: Übersicht
           en: Overview
         slug: installation
       - title:
@@ -132,7 +131,7 @@ navigation:
     icon: palette
 
   - title:
-      de: Tastenkuerzel
+      de: Tastenkürzel
       en: Keyboard Shortcuts
     slug: shortcuts
     icon: keyboard

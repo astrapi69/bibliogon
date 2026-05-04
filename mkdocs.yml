@@ -45,19 +45,19 @@ plugins:
       nav_translations:
         Erste Schritte: Getting Started
         Artikel: Articles
-        Uebersicht: Overview
+        Übersicht: Overview
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
         Feldauswahl: Field selection
-        Git-Historie uebernehmen: Adopt git history
+        Git-Historie übernehmen: Adopt git history
         Windows-Launcher: Windows Launcher
         macOS-Launcher: macOS Launcher
         Linux-Launcher: Linux Launcher
         Deinstallieren: Uninstall
         KI-Assistent: AI Assistant
-        Tastenkuerzel: Keyboard Shortcuts
+        Tastenkürzel: Keyboard Shortcuts
         Git-Sicherung: Git Backup
         Grundlagen: Basics
         SSH-Schlüssel: SSH Keys
@@ -90,29 +90,29 @@ nav:
 - Erste Schritte: de/getting-started.md
 - Artikel: de/articles.md
 - Editor:
-  - Uebersicht: de/editor/uebersicht.md
+  - Übersicht: de/editor/uebersicht.md
   - Formatierung: de/editor/formatierung.md
 - Export:
   - EPUB: de/export/epub.md
   - PDF: de/export/pdf.md
   - Audiobook: de/export/audiobook.md
 - Plugins:
-  - Uebersicht: de/plugins/uebersicht.md
+  - Übersicht: de/plugins/uebersicht.md
   - Manuskript-Tools: de/plugins/ms-tools.md
 - Vorlagen: de/templates.md
 - Import:
   - Git-URL: de/import/git-url.md
   - Feldauswahl: de/import/field-selection.md
-  - Git-Historie uebernehmen: de/import/git-adoption.md
+  - Git-Historie übernehmen: de/import/git-adoption.md
 - Installation:
-  - Uebersicht: de/installation.md
+  - Übersicht: de/installation.md
   - Windows-Launcher: de/launcher-windows.md
   - macOS-Launcher: de/launcher-macos.md
   - Linux-Launcher: de/launcher-linux.md
   - Deinstallieren: de/uninstall.md
 - KI-Assistent: de/ai.md
 - Themes: de/themes.md
-- Tastenkuerzel: de/shortcuts.md
+- Tastenkürzel: de/shortcuts.md
 - Git-Sicherung:
   - Grundlagen: de/git-backup/basics.md
   - Remote: de/git-backup/remote.md
