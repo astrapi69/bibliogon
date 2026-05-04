@@ -32,9 +32,7 @@ def _read_version() -> str:
         # outer except chain.
         version = data["tool"]["poetry"]["version"]
         if not isinstance(version, str):
-            raise TypeError(
-                f"version field is {type(version).__name__}, expected str"
-            )
+            raise TypeError(f"version field is {type(version).__name__}, expected str")
         return version
     except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as exc:
         logger.warning(

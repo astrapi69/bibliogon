@@ -2,6 +2,23 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.3] - 2026-05-04
+
+Hotfix for v0.26.2. The CI pre-commit step (ruff format) caught
+a single-line vs multi-line `raise` formatting nit in
+`backend/app/__init__.py:_read_version` that the local pre-tag
+sweep missed because pre-commit was not run as part of the
+release-workflow Step 5 verification chain. Applied the
+formatter locally; one file reformatted, no semantic change.
+
+Other v0.26.2 CI workflows passed: launcher builds for Linux,
+macOS, and Windows are green and produced binaries; the release
+gate validated. v0.26.3 is the version users should install.
+
+A follow-up addition to the release-workflow rule would add
+`poetry run pre-commit run --all-files` to the pre-tag checklist
+so this class of CI failure is caught before tagging.
+
 ## [0.26.2] - 2026-05-04
 
 Hotfix for v0.26.1. Two bugs surfaced when the launcher workflows
