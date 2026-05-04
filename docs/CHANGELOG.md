@@ -2,6 +2,24 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.5] - 2026-05-04
+
+Hotfix for v0.26.4. v0.26.4 attached Linux and macOS launcher
+binaries but Windows still failed at the install.sh sync check.
+Root cause: `core.autocrlf=true` on Windows GitHub Actions
+runners converts text files to CRLF on checkout. The bash-driven
+`generate_install_sh.sh --check` regenerates with LF and compares
+to the working-tree file via `diff -q`. CRLF vs LF mismatch
+trips the check.
+
+Fix: new `.gitattributes` at repo root pins `*.sh`, `*.template`,
+and `install.sh` to `text eol=lf` so git keeps them LF on every
+platform regardless of `autocrlf` setting. No content changes;
+Windows runners now check out LF as Linux/macOS already do.
+
+v0.26.5 is the version Windows users should install. Linux and
+macOS users on v0.26.4 can stay or upgrade — same binaries.
+
 ## [0.26.4] - 2026-05-04
 
 Hotfix for v0.26.3. The GitHub Release for v0.26.3 attached only

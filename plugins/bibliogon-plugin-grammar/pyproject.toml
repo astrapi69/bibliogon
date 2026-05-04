@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-grammar"
-version = "0.26.4"
+version = "0.26.5"
 description = "Grammar check plugin for Bibliogon via LanguageTool"
 authors = ["astrapi69"]
 license = "MIT"

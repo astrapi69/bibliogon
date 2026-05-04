@@ -1,0 +1,18 @@
+# Force LF line endings for shell scripts and the install template.
+#
+# Windows GitHub Actions runners default to `core.autocrlf=true`,
+# which converts checked-out text files to CRLF. The Phase 2 SSoT
+# tooling regenerates install.sh from install.sh.template via bash
+# (LF-only output) and compares against the committed file via
+# `diff -q`. Without this attribute, Windows runners report a
+# spurious "install.sh out of sync" error on every release-event
+# run because of CRLF vs LF mismatch on platforms with autocrlf
+# enabled.
+#
+# Forcing eol=lf on these specific files makes git keep them LF
+# regardless of platform autocrlf settings, so the regenerator's
+# output matches the working-tree content byte-for-byte.
+
+*.sh         text eol=lf
+*.template   text eol=lf
+install.sh   text eol=lf
