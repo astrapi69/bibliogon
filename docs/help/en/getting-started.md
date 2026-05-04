@@ -1,5 +1,7 @@
 # Getting Started
 
+> **Prefer a click-and-run install?** The desktop launcher for Windows, macOS, and Linux is documented under [Installation](installation.md). This page covers the terminal-based path plus the post-install orientation.
+
 ## Installation
 
 Bibliogon runs as a set of Docker containers on your own machine. Your books, settings, and exports stay local; nothing is uploaded to a service.

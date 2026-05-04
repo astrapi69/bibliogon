@@ -1,5 +1,7 @@
 # Erste Schritte
 
+> **Lieber per Klick statt Terminal?** Der Desktop-Launcher für Windows, macOS und Linux ist unter [Installation](installation.md) dokumentiert. Diese Seite beschreibt den terminalbasierten Weg und die Orientierung danach.
+
 ## Installation
 
 Bibliogon läuft als Sammlung von Docker-Containern auf deinem eigenen Rechner. Bücher, Einstellungen und Exporte bleiben lokal; nichts wird zu einem Dienst hochgeladen.

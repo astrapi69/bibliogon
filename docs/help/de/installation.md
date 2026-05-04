@@ -1,5 +1,7 @@
 # Installation
 
+> **Mit Terminal vertraut?** Der Docker-/curl-Installationsweg steht unter [Erste Schritte](getting-started.md). Diese Seite ist der Launcher-Pfad für Nutzer, die Klick-und-Start bevorzugen.
+
 Bibliogon läuft unter Windows, macOS und Linux. Auf allen drei Plattformen ist die eigentliche Anwendung derselbe Docker-Stack unter `http://localhost:7880`; nur der Weg zum Starten und Stoppen unterscheidet sich.
 
 ## Plattform wählen
