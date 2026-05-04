@@ -11,7 +11,7 @@ const ISSUES_URL = "https://github.com/astrapi69/bibliogon/issues/new";
 // GitHub rejects URLs over ~8192 chars. After encoding, special chars
 // (spaces, umlauts, markdown) expand 3x, so the raw body limit is ~2500.
 const MAX_ENCODED_URL = 7800;
-const APP_VERSION = "0.12.0";
+const APP_VERSION = "0.25.0";
 
 interface Props {
     open: boolean;
