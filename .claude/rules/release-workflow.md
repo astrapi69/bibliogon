@@ -107,22 +107,58 @@ docs: changelog for v0.X.0
 
 ## Step 4: Bump the versions
 
-Update every place the version lives. Typical locations:
+Every release MUST update ALL of these in lockstep. Missing one
+ships either the launcher pointing at the wrong release ZIP or
+bug reports tagged with a years-old version. The 2026-05-04
+audit found three stale pins (COMPATIBLE_VERSION at 0.17.0,
+two APP_VERSION constants at 0.12.0 and 0.22.0) that had been
+missed by every release since they were introduced.
 
-- `backend/pyproject.toml`
-- `frontend/package.json`
-- `plugins/*/pyproject.toml`
-- `backend/app/__init__.py` (`__version__`)
-- `install.sh` (`VERSION` default on line 15)
-- `docs/CONCEPT.md` (if the version is mentioned)
-- `README.md` (if the version is mentioned)
+Mandatory pins (run `scripts/verify_version_pins.sh <new-version>`
+to confirm all of these are aligned):
 
-Check via grep:
+- [ ] `install.sh`: `VERSION` default (line ~15)
+- [ ] `backend/pyproject.toml`: `version`
+- [ ] `backend/app/__init__.py`: `__version__`
+- [ ] `frontend/package.json`: `version`
+- [ ] `launcher/bibliogon_launcher/installer.py`: `COMPATIBLE_VERSION`
+- [ ] `frontend/src/components/ErrorReportDialog.tsx`: `APP_VERSION`
+- [ ] `frontend/src/components/import-wizard/errorContext.ts`: `APP_VERSION`
+
+Conditional (only when the corresponding component actually changed):
+
+- [ ] `plugins/*/pyproject.toml` (per-plugin; bump ONLY when the
+      plugin itself changed - see CLAUDE.md "Plugin package
+      versions")
+- [ ] `launcher/pyproject.toml` + `launcher/bibliogon_launcher/__init__.py`
+      (`version` / `__version__`; the launcher has its own
+      release lifecycle - bump only when launcher code changed)
+- [ ] `docs/CONCEPT.md` (if the version is mentioned in prose)
+- [ ] `README.md` (if the version is mentioned in prose)
+
+Verification (mandatory before tagging):
+
 ```bash
-grep -rn "0\.9\.0" --include="*.toml" --include="*.json" --include="*.py" --include="*.md" --include="*.sh"
+scripts/verify_version_pins.sh <new-version>
+# example: scripts/verify_version_pins.sh 0.26.0
 ```
 
-(Adjust the old version number to the actual predecessor.)
+The script exits non-zero on any mismatch. Tag only after it
+passes. If a new pin is introduced anywhere in the codebase,
+add it to both this checklist AND the script in the same
+commit.
+
+Cross-check via grep (catches anything new the script does not
+yet know about):
+```bash
+grep -rn "<predecessor-version>" --include="*.toml" --include="*.json" \
+  --include="*.py" --include="*.tsx" --include="*.ts" --include="*.md" \
+  --include="*.sh" --exclude-dir=node_modules --exclude-dir=.venv \
+  --exclude-dir=__pycache__
+```
+
+(Adjust `<predecessor-version>` to the actual previous version,
+e.g. `0\.25\.0`.)
 
 Important: check the dependency versions of manuscripta, pluginforge
 and other Bibliogon-owned libraries. If a new manuscripta version
