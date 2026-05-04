@@ -77,6 +77,11 @@ upgrades. See backlog for a curated daily-planning view.
   implementation). Decision: keep as P4, re-evaluate after
   discovery session completes; move to P5 if discovery confirms
   full silent install is infeasible.
+  - Rescoped 2026-05-04 (commit `93af0b2`) from "full Windows
+    installer (Docker Desktop + repo + `.env`)" to "Docker
+    Desktop auto-install only". Earlier CHANGELOG and archive
+    entries describe the original framing; this is intentional
+    historical record.
 
 ---
 
