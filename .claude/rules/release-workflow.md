@@ -105,39 +105,47 @@ docs: changelog for v0.X.0
 
 ---
 
-## Step 4: Bump the versions
+## Step 4: Bump version
 
-Every release MUST update ALL of these in lockstep. Missing one
-ships either the launcher pointing at the wrong release ZIP or
-bug reports tagged with a years-old version. The 2026-05-04
-audit found three stale pins (COMPATIBLE_VERSION at 0.17.0,
-two APP_VERSION constants at 0.12.0 and 0.22.0) that had been
-missed by every release since they were introduced.
+Bibliogon follows the Java/Maven SSoT precedent: ONE version per
+subsystem, derived everywhere else. As of the 2026-05-04 audit
+chain (commits 8c3e23c..3f7316e), only TWO files carry the
+hand-edited version literal - everything else derives.
 
-Mandatory pins (run `scripts/verify_version_pins.sh <new-version>`
-to confirm all of these are aligned):
+Edit only:
+- [ ] `backend/pyproject.toml` (canonical Python source-of-truth)
+- [ ] `frontend/package.json` (canonical JS source-of-truth)
 
-- [ ] `install.sh`: `VERSION` default (line ~15)
-- [ ] `backend/pyproject.toml`: `version`
-- [ ] `backend/app/__init__.py`: `__version__`
-- [ ] `frontend/package.json`: `version`
-- [ ] `launcher/bibliogon_launcher/installer.py`: `COMPATIBLE_VERSION`
+Per-plugin (independent versions, only when the plugin changed):
+- [ ] `plugins/<name>/pyproject.toml`
 
-Frontend usage: NOT a mandatory pin. The frontend reads its
-version from `package.json` at build time via the Vite `define`
-in `frontend/vite.config.ts`, which exposes the literal
-`__APP_VERSION__`. Downstream code (e.g. `ErrorReportDialog`,
-`errorContext`) reads `__APP_VERSION__`; no other frontend file
-should hardcode a version constant. The verification script
-includes a defensive regression check that fails if a new
-`APP_VERSION = "X.Y.Z"` literal appears anywhere under
-`frontend/src/`.
+Then regenerate the install.sh artifact (subbed from
+`install.sh.template` + `backend/pyproject.toml`):
 
-Conditional (only when the corresponding component actually changed):
+```bash
+scripts/generate_install_sh.sh
+git add install.sh
+```
 
-- [ ] `plugins/*/pyproject.toml` (per-plugin; bump ONLY when the
-      plugin itself changed - see CLAUDE.md "Plugin package
-      versions")
+Everything else derives - DO NOT EDIT:
+- `backend/app/__init__.py`: reads pyproject via tomllib
+- `install.sh`: generated from `install.sh.template`; the
+  generator substitutes `@@BIBLIOGON_VERSION@@` from
+  `backend/pyproject.toml`
+- `launcher/bibliogon_launcher/installer.py`:
+  `BIBLIOGON_TARGET_VERSION` is injected at PyInstaller build
+  time by `launcher/bibliogon-launcher.spec` from
+  `backend/pyproject.toml`
+- `frontend/src/components/*`: reads `__APP_VERSION__` injected
+  by Vite's `define` block from `frontend/package.json`
+- `plugins/bibliogon-plugin-git-sync/bibliogon_git_sync/__init__.py`:
+  `__version__` reads its own pyproject via `importlib.metadata`
+
+If a hardcoded version literal appears anywhere in the
+"derives" list above, the derivation is broken. Fix the
+derivation, do not edit the literal.
+
+Conditional updates (manual, only when applicable):
 - [ ] `launcher/pyproject.toml` + `launcher/bibliogon_launcher/__init__.py`
       (`version` / `__version__`; the launcher has its own
       release lifecycle - bump only when launcher code changed)
@@ -151,22 +159,18 @@ scripts/verify_version_pins.sh <new-version>
 # example: scripts/verify_version_pins.sh 0.26.0
 ```
 
-The script exits non-zero on any mismatch. Tag only after it
-passes. If a new pin is introduced anywhere in the codebase,
-add it to both this checklist AND the script in the same
-commit.
+The script:
+1. Confirms the canonical pins (backend pyproject, frontend
+   package.json) match the expected version.
+2. Calls `scripts/generate_install_sh.sh --check` to confirm
+   the committed `install.sh` matches what regeneration would
+   produce.
+3. Greps for known regression patterns (hardcoded
+   `__version__ = "X.Y.Z"` outside `_build_info`, deprecated
+   `COMPATIBLE_VERSION` declarations, frontend
+   `APP_VERSION = "X.Y.Z"` literals).
 
-Cross-check via grep (catches anything new the script does not
-yet know about):
-```bash
-grep -rn "<predecessor-version>" --include="*.toml" --include="*.json" \
-  --include="*.py" --include="*.tsx" --include="*.ts" --include="*.md" \
-  --include="*.sh" --exclude-dir=node_modules --exclude-dir=.venv \
-  --exclude-dir=__pycache__
-```
-
-(Adjust `<predecessor-version>` to the actual previous version,
-e.g. `0\.25\.0`.)
+Exit non-zero on any failure. Tag only after the script passes.
 
 Important: check the dependency versions of manuscripta, pluginforge
 and other Bibliogon-owned libraries. If a new manuscripta version
