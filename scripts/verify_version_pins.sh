@@ -149,6 +149,19 @@ if grep -rnE "APP_VERSION\s*=\s*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" \
     errors=$((errors + 1))
 fi
 
+# -------- Subsystem lock-step (sync-versions --check) --------
+
+# Confirms every derived subsystem (launcher pyproject + spec + init,
+# plugin pyprojects, frontend package.json) carries the canonical
+# version. Catches drift the per-file regression detectors above
+# do not see (a hand-edited launcher version, a forgotten plugin
+# pyproject bump). sync_versions.py exits 1 on any drift.
+echo
+echo "Subsystem lock-step:"
+if ! python3 "$ROOT/scripts/sync_versions.py" --check >&2; then
+    errors=$((errors + 1))
+fi
+
 echo
 
 if [[ $errors -gt 0 ]]; then

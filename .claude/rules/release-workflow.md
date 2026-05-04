@@ -107,79 +107,94 @@ docs: changelog for v0.X.0
 
 ## Step 4: Bump version
 
-Bibliogon follows the Java/Maven SSoT precedent: ONE version per
-subsystem, derived everywhere else. As of the 2026-05-04 audit
-chain (commits 8c3e23c..3f7316e), only TWO files carry the
-hand-edited version literal - everything else derives.
+Bibliogon ships in lock-step. ALL components carry the same
+version string at every release. Only ONE file is hand-edited;
+everything else is propagated by tooling.
 
-Edit only:
-- [ ] `backend/pyproject.toml` (canonical Python source-of-truth)
-- [ ] `frontend/package.json` (canonical JS source-of-truth)
+### Hand-edit (the ONLY editable version source)
 
-Per-plugin (independent versions, only when the plugin changed):
-- [ ] `plugins/<name>/pyproject.toml`
+- [ ] `backend/pyproject.toml`: `version`
 
-Then regenerate the install.sh artifact (subbed from
-`install.sh.template` + `backend/pyproject.toml`):
+That is the entire human-side checklist. Do not touch any other
+version field; do not touch `frontend/package.json`'s version,
+do not touch any `plugins/*/pyproject.toml`, do not touch the
+launcher spec or `__init__.py`. The tool does it.
+
+### Propagate to all subsystems
 
 ```bash
-scripts/generate_install_sh.sh
-git add install.sh
+make sync-versions
 ```
 
-Everything else derives - DO NOT EDIT:
-- `backend/app/__init__.py`: reads pyproject via tomllib
-- `install.sh`: generated from `install.sh.template`; the
-  generator substitutes `@@BIBLIOGON_VERSION@@` from
-  `backend/pyproject.toml`
-- `launcher/bibliogon_launcher/installer.py`:
-  `BIBLIOGON_TARGET_VERSION` is injected at PyInstaller build
-  time by `launcher/bibliogon-launcher.spec` from
-  `backend/pyproject.toml`
-- `frontend/src/components/*`: reads `__APP_VERSION__` injected
-  by Vite's `define` block from `frontend/package.json`
-- `plugins/bibliogon-plugin-git-sync/bibliogon_git_sync/__init__.py`:
-  `__version__` reads its own pyproject via `importlib.metadata`
+This single command updates:
+- `frontend/package.json`
+- `launcher/pyproject.toml`
+- `launcher/bibliogon_launcher/__init__.py` (`__version__` literal)
+- `launcher/bibliogon-launcher.spec` (CFBundleVersion +
+  CFBundleShortVersionString, both same value)
+- All 10 `plugins/*/pyproject.toml`
+- `install.sh` (regenerated from `install.sh.template` via
+  `scripts/generate_install_sh.sh`)
 
-If a hardcoded version literal appears anywhere in the
-"derives" list above, the derivation is broken. Fix the
-derivation, do not edit the literal.
+### Verify
 
-Conditional updates (manual, only when applicable):
-- [ ] `launcher/pyproject.toml` + `launcher/bibliogon_launcher/__init__.py`
-      (`version` / `__version__`; the launcher has its own
-      release lifecycle - bump only when launcher code changed)
+```bash
+make sync-versions-check
+scripts/verify_version_pins.sh <new-version>
+```
+
+`make sync-versions-check` exits non-zero if any subsystem
+drifts from canonical. `verify_version_pins.sh` runs the same
+check plus regression detectors for hardcoded literals in the
+"DO NOT EDIT" tier (Python `__version__ = "..."` outside
+`_build_info`, deprecated `COMPATIBLE_VERSION` declarations,
+frontend `APP_VERSION = "..."` literals, `install.sh` template
+sync). Both must succeed before tagging.
+
+CI runs the same checks at `release-gate.yml` (on tag push) and
+again as the first step of every launcher build job (on
+`release: created`). Artifact attachment is blocked if either
+fails - this is hard enforcement, not advisory.
+
+### Tag and push
+
+```bash
+git add -A
+git commit -m "chore(release): bump version to v<new-version>"
+git tag v<new-version>
+git push origin main --tags
+```
+
+### What derives from what (DO NOT EDIT)
+
+| Derived location | Source | Mechanism |
+|---|---|---|
+| `backend/app/__init__.py:__version__` | `backend/pyproject.toml` | tomllib parse at module import |
+| `install.sh` | `install.sh.template` + `backend/pyproject.toml` | release-time substitution via `scripts/generate_install_sh.sh` (called by `sync-versions`) |
+| `launcher/bibliogon_launcher/installer.py:BIBLIOGON_TARGET_VERSION` | `backend/pyproject.toml` | PyInstaller build-time injection via `bibliogon-launcher.spec` writing `_build_info.py` |
+| `launcher/bibliogon_launcher/__init__.py:__version__` | `backend/pyproject.toml` | `make sync-versions` literal substitution (literal kept for frozen-binary compatibility) |
+| `launcher/bibliogon-launcher.spec` CFBundle plist fields | `backend/pyproject.toml` | `make sync-versions` literal substitution |
+| `launcher/pyproject.toml:version` | `backend/pyproject.toml` | `make sync-versions` |
+| `plugins/*/pyproject.toml:version` | `backend/pyproject.toml` | `make sync-versions` (lock-step; per-plugin independent versions deferred to a future Core-vs-Third-Party decision) |
+| `plugins/bibliogon-plugin-git-sync/bibliogon_git_sync/__init__.py:__version__` | own pyproject | `importlib.metadata.version` |
+| `frontend/src/components/*` `__APP_VERSION__` | `frontend/package.json` | Vite `define` build-time literal |
+
+If a hardcoded version literal appears anywhere in the "DO NOT
+EDIT" list, the derivation is broken. Fix the derivation, do not
+edit the literal. The verify script's regression detectors catch
+new literals.
+
+### Conditional documentation updates (manual, only when needed)
+
 - [ ] `docs/CONCEPT.md` (if the version is mentioned in prose)
 - [ ] `README.md` (if the version is mentioned in prose)
 
-Verification (mandatory before tagging):
+### Other release-time considerations
 
-```bash
-scripts/verify_version_pins.sh <new-version>
-# example: scripts/verify_version_pins.sh 0.26.0
-```
-
-The script:
-1. Confirms the canonical pins (backend pyproject, frontend
-   package.json) match the expected version.
-2. Calls `scripts/generate_install_sh.sh --check` to confirm
-   the committed `install.sh` matches what regeneration would
-   produce.
-3. Greps for known regression patterns (hardcoded
-   `__version__ = "X.Y.Z"` outside `_build_info`, deprecated
-   `COMPATIBLE_VERSION` declarations, frontend
-   `APP_VERSION = "X.Y.Z"` literals).
-
-Exit non-zero on any failure. Tag only after the script passes.
-
-Important: check the dependency versions of manuscripta, pluginforge
-and other Bibliogon-owned libraries. If a new manuscripta version
-shipped, update it at the same time.
-
-Commit:
-```
-chore(release): bump version to v0.X.0
-```
+Check the dependency versions of `manuscripta`, `pluginforge`
+and other Bibliogon-owned libraries. If a new `manuscripta`
+version shipped, update it at the same time as the canonical
+version bump.
 
 ---
 
