@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-04 (v0.26.6 released: foundation cleanup, XDG, lock-step, CI gate, Docker upload persistence, stale-target safeguard)
 Current version: v0.26.6
-Open tasks: 4 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 7 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -55,6 +55,36 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle. Per
+  v0.26.6 changelog, the env var still works but is documented
+  as deprecated. Concrete steps: (1) emit a `logger.warning`
+  when `BIBLIOGON_DB_PATH` is set without `BIBLIOGON_DATA_DIR`
+  for one release cycle, (2) flip precedence so
+  `BIBLIOGON_DATA_DIR` derivation wins, (3) remove
+  `BIBLIOGON_DB_PATH` override entirely. Effort: S per step,
+  spread across 2-3 releases. Trigger: any release after
+  v0.27.0.
+
+- **DEP-FE-VERSION-01**: frontend version source-of-truth
+  runtime cross-check. Currently `__APP_VERSION__` is a Vite
+  build-time literal from `package.json`. In dev with hot-
+  reload of one half but not the other, frontend version and
+  backend version can diverge silently. Add a runtime read of
+  `/api/health` `version` field; if it differs from
+  `__APP_VERSION__`, surface a console warning. Effort: S.
+  Speculative; not blocking.
+
+- **CI-PRECOMMIT-HOOK-01**: enforce
+  `poetry run pre-commit run --all-files` as a pre-push git
+  hook scoped to tag pushes. Currently the release-workflow
+  rule says "run before tagging" but nothing enforces it; the
+  v0.26.0 -> v0.26.6 hotfix chain proved that workflow rules
+  alone are insufficient. Effort: S. Belongs under
+  `.git/hooks/pre-push` (per-checkout, not committed) plus a
+  Makefile target `make install-hooks` to set it up. Defer if
+  release frequency is low enough that catching at CI is
+  acceptable; revisit if another hotfix chain happens.
+
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
@@ -77,7 +107,20 @@ store.
 
 ## P4 - Roadmap / Future Phases
 
-(none in backlog; D-05 lives in ROADMAP > P4)
+- **LAUNCHER-SELFREPLACE-01**: launcher binary self-replace.
+  Currently the pre-install stale-target safeguard tells the
+  user "download a newer launcher manually" and opens the
+  GitHub release page. A real self-replace mechanism (download
+  new binary, atomic replace, relaunch) would close that loop.
+  Windows non-trivial: a running binary cannot replace itself
+  directly; needs a helper script (e.g. spawn a `cmd.exe`
+  background that waits for parent exit, copies new binary
+  over old, relaunches). Linux/macOS simpler (`rename` + exec).
+  Effort: 1-2 sessions. Defer: no concrete user demand and
+  current safeguard already protects against installing a
+  stale Bibliogon.
+
+(D-05 lives in ROADMAP > P4)
 
 ---
 
