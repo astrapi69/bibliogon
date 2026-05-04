@@ -1,13 +1,13 @@
 # Chat-Journal: Bibliogon Session 2026-04-04
 
-Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
+Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
 ## 1. Q-03: Roundtrip-Tests fertigstellen (fortgesetzt)
 
 - Original-Prompt: Fortgesetzt aus Session 2026-04-03 nach Context-Komprimierung
-- Ergebnis: 3 verbleibende Tests gefixt (HTTP-Export durch Scaffolder-Direktaufruf ersetzt), 5/5 Tests gruen
+- Ergebnis: 3 verbleibende Tests gefixt (HTTP-Export durch Scaffolder-Direktaufruf ersetzt), 5/5 Tests grün
 - Commit: ad122f2
 
 ---
@@ -31,12 +31,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 4. P-09: Plugin Manuscript Tools (19:25)
 
 - Original-Prompt: "Setze P-09 um"
-- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Woerter DE+EN, Passiv, Satzlaenge) und Sanitizer (Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
+- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Wörter DE+EN, Passiv, Satzlaenge) und Sanitizer (Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
 - Commit: ee2f4c9
 
 ---
 
-## 5. P-10: Filler-Woerter, Passiv, Satzlaenge (19:35)
+## 5. P-10: Filler-Wörter, Passiv, Satzlaenge (19:35)
 
 - Original-Prompt: "Setze P-10 um"
 - Ergebnis: Bereits in P-09 implementiert, nur ROADMAP markiert
@@ -64,12 +64,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 8. U-07: Kapitel umbenennen (19:49)
 
 - Original-Prompt: "Setze U-07 um"
-- Ergebnis: Radix ContextMenu auf Sidebar-Kapitel (Rechtsklick: Umbenennen/Loeschen), Doppelklick fuer Inline-Rename, Enter/Escape, @radix-ui/react-context-menu installiert, i18n 5 Sprachen
+- Ergebnis: Radix ContextMenu auf Sidebar-Kapitel (Rechtsklick: Umbenennen/Löschen), Doppelklick für Inline-Rename, Enter/Escape, @radix-ui/react-context-menu installiert, i18n 5 Sprachen
 - Commit: 302536f
 
 ---
 
-## 9. U-08: Sidebar-Theme unabhaengig (19:55)
+## 9. U-08: Sidebar-Theme unabhängig (19:55)
 
 - Original-Prompt: "Setze U-08 um"
 - Ergebnis: --bg-sidebar und --text-sidebar Overrides aus allen Dark-Mode-Bloecken entfernt. Sidebar bleibt visuell konstant beim Light/Dark-Toggle
@@ -104,7 +104,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 13. I-01: Live Sprachumschaltung (20:07)
 
 - Original-Prompt: "Setze I-01 um"
-- Ergebnis: useI18n refactored zu React Context (I18nProvider), App.tsx wrapped, Settings.tsx ruft setGlobalLang() nach Speichern. Alle 27 useI18n()-Aufrufe funktionieren unveraendert
+- Ergebnis: useI18n refactored zu React Context (I18nProvider), App.tsx wrapped, Settings.tsx ruft setGlobalLang() nach Speichern. Alle 27 useI18n()-Aufrufe funktionieren unverändert
 - Commit: 5365b18
 
 ---
@@ -112,7 +112,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 14. B-01: Alembic-Migrationen (20:12)
 
 - Original-Prompt: "Setze B-01 um"
-- Ergebnis: Alembic installiert, env.py konfiguriert (render_as_batch fuer SQLite), Initial Migration generiert, init_db() behandelt 3 Faelle (frisch/ohne Alembic/mit Alembic), _auto_migrate() entfernt
+- Ergebnis: Alembic installiert, env.py konfiguriert (render_as_batch für SQLite), Initial Migration generiert, init_db() behandelt 3 Faelle (frisch/ohne Alembic/mit Alembic), _auto_migrate() entfernt
 - Commit: 165f9ee
 
 ---
@@ -120,12 +120,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 15. Q-02: Mutation Testing (20:20)
 
 - Original-Prompt: "Setze Q-02 um"
-- Ergebnis: mutmut v3 als dev-Dependency in Backend, Export, MS-Tools. pyproject.toml-Config, 4 Makefile-Targets (mutmut-backend/export/ms-tools/results), .gitignore fuer mutants/
+- Ergebnis: mutmut v3 als dev-Dependency in Backend, Export, MS-Tools. pyproject.toml-Config, 4 Makefile-Targets (mutmut-backend/export/ms-tools/results), .gitignore für mutants/
 - Commit: 28fe59c
 
 ---
 
-## 16. U-09: Papierkorb Auto-Loeschen (20:30)
+## 16. U-09: Papierkorb Auto-Löschen (20:30)
 
 - Original-Prompt: "Setze U-09 um"
 - Ergebnis: cleanup_expired_trash() beim App-Start, trash_auto_delete_days in app.yaml (Default 30, 0=deaktiviert), Settings-UI mit Zahlenfeld und Live-Hinweis, i18n 5 Sprachen
@@ -136,7 +136,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 17. Q-04: API Client Unit Tests (20:35)
 
 - Original-Prompt: "Setze Q-04 um"
-- Ergebnis: 29 neue Vitest-Tests fuer client.ts (books, chapters, settings, errors, backup, help, licenses). Frontend-Tests: 21 -> 50
+- Ergebnis: 29 neue Vitest-Tests für client.ts (books, chapters, settings, errors, backup, help, licenses). Frontend-Tests: 21 -> 50
 - Commit: 1f71cf1
 
 ---
@@ -160,7 +160,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 20. B-02: Structured Logging
 
 - Original-Prompt: "Setze B-02 um"
-- Ergebnis: JsonFormatter fuer Produktion, human-readable fuer Dev, Lifecycle-Logs in main.py
+- Ergebnis: JsonFormatter für Produktion, human-readable für Dev, Lifecycle-Logs in main.py
 - Commit: 51a52a6
 
 ---
@@ -223,9 +223,9 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 28. L-01: Freemium-Lizenzsystem
 
-- Original-Prompt: Detaillierte Spezifikation fuer license_tier (core/premium), Trial-Keys, Settings UI, Tests, Docs
-- Optimierter Prompt: "Erweitere das Lizenzsystem um ein license_tier Attribut auf BasePlugin: core (keine Lizenz) vs premium (Lizenzschluessel). Trial-Key fuer alle Premium-Plugins. Settings UI mit Premium Badge. 13 Tests."
-- Ziel: Freemium-Modell fuer Bibliogon-Plugins
+- Original-Prompt: Detaillierte Spezifikation für license_tier (core/premium), Trial-Keys, Settings UI, Tests, Docs
+- Optimierter Prompt: "Erweitere das Lizenzsystem um ein license_tier Attribut auf BasePlugin: core (keine Lizenz) vs premium (Lizenzschluessel). Trial-Key für alle Premium-Plugins. Settings UI mit Premium Badge. 13 Tests."
+- Ziel: Freemium-Modell für Bibliogon-Plugins
 - Ergebnis:
   - license_tier auf allen 9 Plugins (4 core, 5 premium)
   - _check_license nutzt tier statt YAML-License-Feld, Wildcard-Fallback
@@ -256,7 +256,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 31. Bugfix: Premium-Plugins in Settings nicht sichtbar
 
 - Original-Prompt: "Bug: Premium-Plugins werden in Settings > Plugins nicht angezeigt"
-- Ergebnis: inactivePlugins Filter erweitert (pluginLicenseInfo statt nur loadedPlugins), "Lizenz eingeben" Button fuer unlizenzierte Premium-Plugins
+- Ergebnis: inactivePlugins Filter erweitert (pluginLicenseInfo statt nur loadedPlugins), "Lizenz eingeben" Button für unlizenzierte Premium-Plugins
 - Commit: 9005b98
 
 ---
@@ -271,7 +271,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 33. Dark-Mode Button Audit
 
-- Original-Prompt: "Dark-Mode Audit: Button-Lesbarkeit in der gesamten Anwendung pruefen und fixen"
+- Original-Prompt: "Dark-Mode Audit: Button-Lesbarkeit in der gesamten Anwendung prüfen und fixen"
 - Ergebnis: btn-primary nutzt var(--text-inverse), btn-danger hover rgba-Overlay, neue btn-premium Klasse mit Dark-Mode-Variante, btn:disabled Styles, Settings.tsx auf btn-premium umgestellt
 - Commit: 7aeab8a
 
@@ -287,16 +287,16 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 35. U-09: Papierkorb Redesign mit Checkbox + Select
 
-- Original-Prompt: "Feature U-09: Papierkorb Auto-Loeschen mit konfigurierbarer Aufbewahrungsfrist"
+- Original-Prompt: "Feature U-09: Papierkorb Auto-Löschen mit konfigurierbarer Aufbewahrungsfrist"
 - Ergebnis: trash_auto_delete_enabled Flag, Checkbox + Radix Select (7/14/30/60/90/180/365 Tage), 10 neue i18n-Keys in 8 Sprachen
 - Commit: 61e6a78
 
 ---
 
-## 36. Lizenz-Workflow: Autor-Bindung statt Geraete-Lock
+## 36. Lizenz-Workflow: Autor-Bindung statt Geräte-Lock
 
 - Original-Prompt: "Lizenz-Workflow ueberarbeiten: Dialog ersetzen durch Tab-Navigation + Key-Generierung"
-- Ergebnis: machine_id durch author_name ersetzt, Tab-Navigation statt Modal, 3 Makefile-Targets (trial/plugin/all), 20 Tests, validate_license gibt (payload, warning) Tuple zurueck
+- Ergebnis: machine_id durch author_name ersetzt, Tab-Navigation statt Modal, 3 Makefile-Targets (trial/plugin/all), 20 Tests, validate_license gibt (payload, warning) Tuple zurück
 - Commit: 6104fe0
 
 ---
@@ -341,7 +341,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
-## 42. Kinderbuch + Trash Aenderungen (User-Edits)
+## 42. Kinderbuch + Trash Änderungen (User-Edits)
 
 - Ergebnis: User hat Kinderbuch Plugin YAML und Trash-Settings in app.yaml angepasst, zusammen committed
 - Commit: ed07212
@@ -356,10 +356,10 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
-## 44. Backup/Restore: TTS-Felder ergaenzt
+## 44. Backup/Restore: TTS-Felder ergänzt
 
 - Original-Prompt: "Restore und Import sind kaputt"
-- Ergebnis: tts_engine/tts_voice/tts_language in Export und Import ergaenzt, Tests gruen
+- Ergebnis: tts_engine/tts_voice/tts_language in Export und Import ergänzt, Tests grün
 - Commit: ec4eb75
 
 ---
@@ -382,7 +382,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 47. Audiobook: Alle 4 TTS-Engines im Dropdown
 
-- Original-Prompt: "Alle Engines muessen als Optionen verfuegbar sein"
+- Original-Prompt: "Alle Engines müssen als Optionen verfügbar sein"
 - Ergebnis: Edge TTS, Google TTS, pyttsx3, ElevenLabs im Dropdown, Voice-Label umbenannt
 - Commit: 40108b6
 
@@ -390,7 +390,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 48. Lessons-Learned: TipTap Peer-Dep-Pinning
 
-- Ergebnis: Dokumentation in lessons-learned.md fuer Community-Extensions Pinning
+- Ergebnis: Dokumentation in lessons-learned.md für Community-Extensions Pinning
 - Commit: d7b9c68
 
 ---

@@ -7,13 +7,13 @@ folgt, und als neues Buch importieren.
 ## Bedienung
 
 1. Oeffne den Import-Assistenten vom Dashboard.
-2. Fuege die Repo-URL in das Feld "Import aus einer Git-URL"
+2. Füge die Repo-URL in das Feld "Import aus einer Git-URL"
    oben in Schritt 1 ein.
 3. Klicke auf **Klonen + Importieren**.
 
 Bibliogon klont das Repository in ein temporaeres Staging-
 Verzeichnis, erkennt das Format wie gewohnt, zeigt das
-Preview-Panel und importiert nach Bestaetigung.
+Preview-Panel und importiert nach Bestätigung.
 
 ## Akzeptierte URL-Formen
 
@@ -24,19 +24,19 @@ Preview-Panel und importiert nach Bestaetigung.
 
 ## Was aktuell nicht unterstuetzt wird
 
-Die erste Version von plugin-git-sync ist reiner Import fuer
+Die erste Version von plugin-git-sync ist reiner Import für
 **oeffentliche** Repositories. Folgendes ist aufgeschoben:
 
-- Authentifizierung fuer private Repositories (Basic HTTPS,
+- Authentifizierung für private Repositories (Basic HTTPS,
   SSH-Keys, GitHub-Tokens).
 - Auswahl eines bestimmten Branches oder Tags — der
   Default-Branch wird geklont.
-- Shallow Clones fuer grosse Repositories.
-- Git-LFS-Unterstuetzung.
-- Rueckschreiben von Bibliogon-Aenderungen ins Repo
+- Shallow Clones für große Repositories.
+- Git-LFS-Unterstützung.
+- Rueckschreiben von Bibliogon-Änderungen ins Repo
   ("Sync-back").
 - Smart-Merge beim erneuten Import eines Repositories, das
-  sich seit dem letzten Import geaendert hat.
+  sich seit dem letzten Import geändert hat.
 
 ## Wenn der Klon fehlschlaegt
 
@@ -54,9 +54,9 @@ Ursache beheben und auf **Erneut versuchen** klicken.
 
 Existiert das Repository, entspricht aber nicht der
 write-book-template-Struktur (fehlende `config/metadata.yaml`,
-fehlendes `manuscript/`-Verzeichnis), laeuft der Import ueber
+fehlendes `manuscript/`-Verzeichnis), läuft der Import über
 den generischen Ordner-Importer. Das resultierende Buch ist
-dann meist leer. Aus dem Papierkorb loeschen und eine andere
+dann meist leer. Aus dem Papierkorb löschen und eine andere
 URL versuchen.
 
 ## Verwandte Themen
@@ -64,5 +64,5 @@ URL versuchen.
 - [Git-Sicherung](../git-backup/) — das Kernfeature, das ein
   Buch versioniert, das du in Bibliogon bearbeitest. Orthogonal
   zum Git-URL-Import: das eine zieht ein Buch rein, das andere
-  verfolgt Aenderungen an einem bereits in Bibliogon liegenden
+  verfolgt Änderungen an einem bereits in Bibliogon liegenden
   Buch.

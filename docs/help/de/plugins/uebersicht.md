@@ -6,7 +6,7 @@ Bibliogon ist modular aufgebaut. Der Kern der Anwendung umfasst die grundlegende
 
 Plugins sind eigenständige Pakete, die über das PluginForge-Framework (basierend auf pluggy) geladen werden. Jedes Plugin registriert sich beim Start der Anwendung automatisch und stellt seine Funktionen über API-Endpunkte und UI-Erweiterungen bereit. Plugins können von anderen Plugins abhängen, zum Beispiel baut das Audiobook-Plugin auf dem Export-Plugin auf.
 
-## Verfuegbare Plugins
+## Verfügbare Plugins
 
 Alle Plugins sind kostenlos und können frei verwendet werden:
 

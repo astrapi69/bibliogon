@@ -48,14 +48,14 @@ Backup-System (vor v0.20) kennt sie nicht.
 **Restore** ([backend/app/services/backup/backup_import.py](backend/app/services/backup/backup_import.py)):
 
 - `import_backup_archive(file, db)` — Top-level. Validiert
-  Filename (`.bgb`), entpackt, prueft Manifest, erwartet
+  Filename (`.bgb`), entpackt, prüft Manifest, erwartet
   `books/`-Verzeichnis (`_require_books_dir`).
 - Returnt `{"imported_books": N}`.
 - `_restore_book_from_dir(db, book_dir)` — pro Buch.
 - `_restore_chapters` + `_restore_assets`.
 - Format-Validation: nur `format == "bibliogon-backup"` wird
-  akzeptiert (Zeile 88-92). `version` wird **nicht** geprueft —
-  ein neueres Backup mit `version=2.0` wuerde aktuell ohne Warnung
+  akzeptiert (Zeile 88-92). `version` wird **nicht** geprüft —
+  ein neueres Backup mit `version=2.0` würde aktuell ohne Warnung
   durchlaufen, aber die Articles-Daten ignorieren.
 
 ### 1.3 Aktueller Datenumfang Backup (vollstaendige Liste)
@@ -81,13 +81,13 @@ sind**; soft-deleted Books werden hard-gelöscht und neu eingefuegt
 `backend/app/services/backup/archive_utils.py`:
 - `find_manifest(extracted)` — Top-Level oder eine Ebene tief.
 - `find_books_dir(extracted)` — sucht `books/`-Verzeichnis.
-- `find_project_root(extracted)` — fuer WBT-ZIPs (separat).
+- `find_project_root(extracted)` — für WBT-ZIPs (separat).
 
 ---
 
 ## 2. Article-Entities (was fehlt)
 
-### 2.1 Tabellen die exportiert werden muessen
+### 2.1 Tabellen die exportiert werden müssen
 
 | Tabelle | Zweck | FK | Anmerkung |
 |---------|-------|----|-----------|
@@ -114,9 +114,9 @@ Konfigurationsdatei. Articles tragen den Topic-String selbst.
 
 ### 2.4 Article-Export ist NICHT Backup
 
-Articles haben bereits Phase-3 Export (Markdown/HTML/PDF/DOCX) ueber
+Articles haben bereits Phase-3 Export (Markdown/HTML/PDF/DOCX) über
 `POST /api/articles/{id}/export` — das ist **per-article** Format-
-Konvertierung fuer Veroeffentlichung. Der Backup-Use-Case ist
+Konvertierung für Veröffentlichung. Der Backup-Use-Case ist
 **alle Articles in einem ZIP** zur Wiederherstellung. Beide
 Pipelines bleiben getrennt; Backup nutzt eine eigene serializer-
 Schicht analog zu `serialize_book_for_backup`.
@@ -136,7 +136,7 @@ Schicht analog zu `serialize_book_for_backup`.
 
 - `ImportWizardModal` ist die einzige sichtbare Restore-Surface.
   Frontend ruft NICHT `api.backup.import` direkt — der Wizard geht
-  ueber den CIO-Orchestrator (`/api/import/detect` + `/api/import/execute`).
+  über den CIO-Orchestrator (`/api/import/detect` + `/api/import/execute`).
 - `api.backup.import` (defined `frontend/src/api/client.ts:1386`)
   ist Legacy + **wird nicht aufgerufen** von der UI. Der CIO-
   Orchestrator behandelt `.bgb`-Files via einen eigenen Handler
@@ -158,16 +158,16 @@ Backup-Export erzeugt keinen Toast (Browser-Download).
 ## 4. CIO-Pfad: BGB Handler (wo der Article-Restore wirklich landet)
 
 `backend/app/import_plugins/handlers/bgb.py` ist **der**
-tatsaechliche Pfad fuer Restore. Er ruft intern
+tatsaechliche Pfad für Restore. Er ruft intern
 `backup_import.import_backup_archive` auf wenn die Datei nach
 manifest.json + books/ aussieht.
 
-Das heisst: **Phase 2 erweitert primaer den
+Das heißt: **Phase 2 erweitert primaer den
 `backup_import._restore_book_from_dir` + `backup_export._write_book_dir`
 Service-Code.** Der CIO-Handler delegiert; Wizard-State-Machine
 zeigt das Ergebnis.
 
-`bgb_handler` muesste minimal angepasst werden um Articles-
+`bgb_handler` müsste minimal angepasst werden um Articles-
 Counts zurueckzugeben (DetectedProject/ExecuteResponse-Schema).
 Audit:
 
@@ -194,7 +194,7 @@ ein neues Feld auf `DetectedProject` brauchen
 }
 ```
 
-`version` wird beim Restore **nicht** geprueft. Phase 2 muss:
+`version` wird beim Restore **nicht** geprüft. Phase 2 muss:
 1. Beim Export: `version` auf `"2.0"` bumpen + neuen `articles_count`-
    Block schreiben.
 2. Beim Restore: `version` lesen.
@@ -207,34 +207,34 @@ ein neues Feld auf `DetectedProject` brauchen
 
 Books-Pattern in `_restore_book_from_dir`:
 - Live-Book mit selber id existiert → skip (idempotent).
-- Soft-deleted-Book → hard-delete + neu einfuegen.
-- Keine ID kollidiert → frisch einfuegen.
+- Soft-deleted-Book → hard-delete + neu einfügen.
+- Keine ID kollidiert → frisch einfügen.
 
-Articles muessen **dasselbe** Pattern bekommen
+Articles müssen **dasselbe** Pattern bekommen
 (Article hat `deleted_at` seit `82acc16`).
 
 ### 5.3 Risiken
 
-- **Roundtrip-Test fehlt fuer Articles.** Phase-2-Test muss klar
+- **Roundtrip-Test fehlt für Articles.** Phase-2-Test muss klar
   zeigen: 5 Articles + 3 Publications + 2 Featured-Images →
   Backup → DB leeren → Restore → alle Felder identisch.
 - **Featured-Image-Pfad-Konflikt.** Article-Asset wird mit
   absolutem `path` exportiert (`uploads/articles/{id}/featured/foo.png`).
   Beim Restore muss der Pfad regeneriert werden falls die
-  `uploads/`-Struktur sich geaendert hat — gleiches Risiko wie
+  `uploads/`-Struktur sich geändert hat — gleiches Risiko wie
   beim Books-`_restore_assets`.
 - **Soft-deleted Articles im Backup.** Aktuell exportiert der
   Books-Pfad **alle** Books inkl. soft-deleted. Article-Backup
   muss konsistente Wahl treffen — Empfehlung: alle Articles
   inkl. soft-deleted exportieren, `deleted_at` mit serialisieren,
-  beim Restore `deleted_at`-Status uebernehmen. Mirror Books-
+  beim Restore `deleted_at`-Status übernehmen. Mirror Books-
   Verhalten.
 
 ---
 
-## 6. Plan fuer Phase 2
+## 6. Plan für Phase 2
 
-### 6.1 Service-Aenderungen
+### 6.1 Service-Änderungen
 
 **`backend/app/services/backup/serializer.py`** (Erweiterung):
 - Neu: `serialize_article_for_backup(article)` mit allen Article-
@@ -267,7 +267,7 @@ Articles muessen **dasselbe** Pattern bekommen
 - DetectedProject bekommt `article_count` Feld.
 - ExecuteResult returnt erweiterten Counts-Block.
 
-### 6.2 Frontend-Aenderungen
+### 6.2 Frontend-Änderungen
 
 - `frontend/src/api/client.ts`: `api.backup.import`'s Return-Type
   erweitern auf `{imported_books, imported_articles}`.
@@ -290,7 +290,7 @@ Articles muessen **dasselbe** Pattern bekommen
   - Legacy-Backup-Fixture (manifest version=1.0, kein articles/):
     Restore funktioniert, 0 Articles importiert.
   - ID-Konflikt: Article mit selber id existiert live → skip.
-  - Soft-deleted Article: hard-delete + neu einfuegen (mirror Books).
+  - Soft-deleted Article: hard-delete + neu einfügen (mirror Books).
 
 ### 6.4 Geschaetzter Aufwand
 
@@ -307,7 +307,7 @@ Articles muessen **dasselbe** Pattern bekommen
 Bestaetige bitte einen der drei Pfade:
 
 - **A) Phase 2 wie geplant.** Articles + Publications + Article-Assets
-  ins `.bgb`. format_version 2.0. Backwards-Compat fuer 1.0.
+  ins `.bgb`. format_version 2.0. Backwards-Compat für 1.0.
 - **B) Reduzierter Scope.** Nur Articles (ohne Publications oder
   Article-Assets). Kommt aber in einem zweiten Schritt.
 - **C) Anderer Plan.** Bitte Korrektur an den Audit-Findings oben.

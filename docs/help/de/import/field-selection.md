@@ -6,13 +6,13 @@ Drei-Schritte-Ablauf:
 
 ## Schritt 1: Quelle
 
-Datei fallenlassen, Ordner waehlen oder Git-URL einfuegen.
+Datei fallenlassen, Ordner wählen oder Git-URL einfügen.
 Wie bisher.
 
 ## Schritt 2: Zusammenfassung
 
 Nach Abschluss der Erkennung zeigt der Assistent eine kurze
-Uebersicht dessen, was gefunden wurde:
+Übersicht dessen, was gefunden wurde:
 
 - Erkanntes Format (`.bgb`, `markdown`, `wbt-zip`, `docx`,
   `epub`, ...)
@@ -22,9 +22,9 @@ Uebersicht dessen, was gefunden wurde:
 - Dateiname des eigenen CSS, wenn ein Stylesheet erkannt wurde
 - Warnungen (fehlendes Cover, Metadaten-Probleme, ...)
 
-Klick auf **Weiter: Pruefen & Konfigurieren** zum Fortfahren.
+Klick auf **Weiter: Prüfen & Konfigurieren** zum Fortfahren.
 
-## Schritt 3: Pruefen & Konfigurieren
+## Schritt 3: Prüfen & Konfigurieren
 
 Ein abschnittsbasiertes Formular mit jedem Feld, das der Buch-
 Metadaten-Editor anbietet:
@@ -44,24 +44,24 @@ Metadaten-Editor anbietet:
 
 **Langformige Inhalte**
 - Beschreibung, HTML-Beschreibung, Rueckseitenbeschreibung,
-  Autoren-Bio. Lange Eintraege sind zuklappbar.
+  Autoren-Bio. Lange Einträge sind zuklappbar.
 
 **Gestaltung**
 - Eigenes CSS (EPUB-Styles). Mono-Schrift, zuklappbar.
 
 **Keywords** — kommagetrennt.
 
-Jede Zeile ausser Pflichtfeldern hat eine Checkbox fuer
+Jede Zeile ausser Pflichtfeldern hat eine Checkbox für
 Einbinden / Ausschliessen:
 
 - Checkbox AN: Das Feld wird mit dem angezeigten (evtl.
   bearbeiteten) Wert importiert.
-- Checkbox AUS: Das Feld wird uebersprungen. Die Buch-Spalte
-  behaelt ihren Standard (leer/null, fuer Sprache `de`).
+- Checkbox AUS: Das Feld wird übersprungen. Die Buch-Spalte
+  behaelt ihren Standard (leer/null, für Sprache `de`).
 
 Abschnitte, deren Felder in der Quelle alle leer sind, werden
-unter **+ Felder hinzufuegen** zusammengeklappt, damit du
-fehlende Metadaten auch dann ergaenzen kannst, wenn der Import
+unter **+ Felder hinzufügen** zusammengeklappt, damit du
+fehlende Metadaten auch dann ergänzen kannst, wenn der Import
 sie nicht geliefert hat.
 
 ## Warum das existiert
@@ -71,7 +71,7 @@ und Sprache. Langformige Felder (CSS, Rueckseitentext, Autoren-
 Bio) wurden zwar importiert, aber erst im Metadaten-Editor
 nach dem Import sichtbar. Nutzer meldeten das als "Felder
 werden nicht importiert", weil sie sie nicht sehen konnten.
-Der Feldauswahl-Schritt schliesst diese Luecke.
+Der Feldauswahl-Schritt schliesst diese Lücke.
 
 ## Verwandte Themen
 

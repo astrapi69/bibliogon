@@ -28,7 +28,7 @@ reorg slipped in just before the release cut.
   `last_imported_commit_sha`.
 - `GitSyncDiffDialog` lists actionable rows with smart
   per-classification defaults; reachable from GitSyncDialog
-  via "Auf Aenderungen vom Repo pruefen".
+  via "Auf Änderungen vom Repo prüfen".
 - 22 backend tests + 6 Vitest tests.
 
 ## 3. PGS-04 Multi-language Branch Linking

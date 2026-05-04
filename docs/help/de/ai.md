@@ -80,7 +80,7 @@ Jedes Review wird als Markdown-Datei unter `uploads/{book_id}/reviews/` gespeich
 
 ### Asynchroner Fortschritt
 
-Grosse Kapitel brauchen 5-60 Sekunden. Das Review läuft als Hintergrund-Job; der Editor bleibt bedienbar, und eine rotierende Statusmeldung (in der Sprache deines Buches) zeigt den Fortschritt. Du kannst das KI-Panel mitten im Review schliessen; sobald das Review fertig ist, taucht das Ergebnis beim erneuten Öffnen wieder auf.
+Große Kapitel brauchen 5-60 Sekunden. Das Review läuft als Hintergrund-Job; der Editor bleibt bedienbar, und eine rotierende Statusmeldung (in der Sprache deines Buches) zeigt den Fortschritt. Du kannst das KI-Panel mitten im Review schließen; sobald das Review fertig ist, taucht das Ergebnis beim erneuten Öffnen wieder auf.
 
 ## Marketing-Texte
 

@@ -3,7 +3,7 @@
 Haeufige Probleme im Dev-Setup, die `make dev` treffen, und wie man
 sie loest. Produktions-Deploys (Docker `make prod` + nativer
 Launcher) sind davon nicht betroffen: das statische Frontend-Build
-und `uvicorn` ohne `--reload` ueberspringen die File-Watching-
+und `uvicorn` ohne `--reload` überspringen die File-Watching-
 Schicht komplett.
 
 ## ENOSPC: File-Watcher-Limit erreicht
@@ -18,10 +18,10 @@ watch '/.../frontend/vite.config.ts'
 
 Ursache: Linux `fs.inotify.max_user_watches` ist zu niedrig. GNOME
 Tracker liefert `/usr/lib/sysctl.d/30-tracker.conf` aus, das den
-Wert auf 65536 deckelt, was fuer den TipTap + Vite + uvicorn Dev-
+Wert auf 65536 deckelt, was für den TipTap + Vite + uvicorn Dev-
 Stack zu wenig ist.
 
-Loesung (einmalig, dauerhaft):
+Lösung (einmalig, dauerhaft):
 
 ```bash
 make fix-watchers
@@ -34,10 +34,10 @@ beiden Limits hochgesetzt:
 - `fs.inotify.max_user_instances=512`
 
 Der 99-Praefix gewinnt die lexikalische Reihenfolge gegen
-30-tracker, sodass die hoeheren Limits ueber Neustarts hinweg
+30-tracker, sodass die hoeheren Limits über Neustarts hinweg
 bestehen bleiben.
 
-Wenn `make fix-watchers` nicht verfuegbar ist, die equivalente
+Wenn `make fix-watchers` nicht verfügbar ist, die equivalente
 Befehle:
 
 ```bash
@@ -46,7 +46,7 @@ echo "fs.inotify.max_user_instances=512"    | sudo tee -a /etc/sysctl.d/99-bibli
 sudo sysctl --system
 ```
 
-`make dev` prueft das Limit vorab und warnt, wenn es unter 100000
+`make dev` prüft das Limit vorab und warnt, wenn es unter 100000
 liegt.
 
 ## Vite-Build scheitert mit `crypto.hash is not a function`
@@ -59,14 +59,14 @@ bzw. 22.12+ gelandet ist. Auf Node 18 fehlt die API und das PWA-
 Plugin crasht im Postcss-Handling. Die Fehlermeldung verweist auf
 Postcss; das eigentliche Problem ist die Node-Version.
 
-Loesung: lokales Node auf 22 LTS oder neuer aktualisieren.
+Lösung: lokales Node auf 22 LTS oder neuer aktualisieren.
 
 ```bash
 nvm install 22
 nvm use 22
 ```
 
-CI laeuft bereits auf Node 24; das betrifft nur lokale Entwicklung.
+CI läuft bereits auf Node 24; das betrifft nur lokale Entwicklung.
 
 ## Backend-Tests scheitern mit "duplicate column name"
 
@@ -79,9 +79,9 @@ sqlite3.OperationalError: duplicate column name: ...
 Ursache: eine neue Alembic-Migration mit `ALTER TABLE` wurde
 gepullt, aber die lokale `backend/bibliogon.db` hat noch die alte
 `alembic_version`. Das Test-Harness erstellt die Tabellen mit dem
-neuen Schema neu, waehrend die DB die Migration darauf anwendet.
+neuen Schema neu, während die DB die Migration darauf anwendet.
 
-Loesung: lokale SQLite-Datei loeschen und neu starten.
+Lösung: lokale SQLite-Datei löschen und neu starten.
 
 ```bash
 rm backend/bibliogon.db
@@ -93,11 +93,11 @@ Das Test-Harness erstellt die Datenbank frisch.
 ## Pre-commit-Hooks fehlen
 
 Symptom: Commits enthalten Formatierungs-Drift oder import-untyped-
-Fehler, die lokal haetten gefangen werden sollen.
+Fehler, die lokal hätten gefangen werden sollen.
 
 Ursache: pre-commit-Hooks wurden nie registriert.
 
-Loesung:
+Lösung:
 
 ```bash
 cd backend && poetry run pre-commit install
@@ -117,7 +117,7 @@ Symptom: `make dev` scheitert mit `[Errno 98] Address already in use`.
 Ursache: ein frueheres `make dev-bg` hat ein uvicorn am Leben
 gelassen, oder ein anderer Prozess belegt Port 8000.
 
-Loesung:
+Lösung:
 
 ```bash
 make dev-down
@@ -132,14 +132,14 @@ kill <pid>
 
 ## SQLite-Datenbank ist gesperrt
 
-Symptom: API-Calls scheitern mit `database is locked` waehrend
+Symptom: API-Calls scheitern mit `database is locked` während
 Tests oder nach dem Abbrechen einer laufenden Transaktion.
 
-Ursache: SQLite ist Single-Writer. Ein vorheriger Prozess haelt eine
+Ursache: SQLite ist Single-Writer. Ein vorheriger Prozess hält eine
 Schreib-Sperre, oder die WAL-Dateien (`*.db-shm`, `*.db-wal`) sind
 verwaist.
 
-Loesung:
+Lösung:
 
 ```bash
 make dev-down
@@ -155,11 +155,11 @@ Symptom: ein Plugin liegt in `plugins/`, `make install-plugins` war
 erfolgreich, aber die Routen liefern 404.
 
 Ursache: das `poetry.lock` des Backends cached die aufgeloesten
-transitiven Abhaengigkeiten von Path-installierten Plugins. Nach
-einer Aenderung der Plugin-pyproject.toml ist der Backend-Lock
+transitiven Abhängigkeiten von Path-installierten Plugins. Nach
+einer Änderung der Plugin-pyproject.toml ist der Backend-Lock
 veraltet.
 
-Loesung:
+Lösung:
 
 ```bash
 cd backend && poetry lock && poetry install

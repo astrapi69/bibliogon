@@ -16,7 +16,7 @@ Links neben dem Editor zeigt die Sidebar die Kapitelstruktur deines Buchs. Jedes
 - Die Reihenfolge per Drag-and-Drop ändern
 - Kapitel durch Klick auswählen und bearbeiten
 - Den Kapiteltyp ändern (Kapitel, Vorwort, Nachwort, Glossar, Anhang, etc.)
-- Kapitel löschen (mit Bestaetigung)
+- Kapitel löschen (mit Bestätigung)
 
 Die Kapiteltypen bestimmen, in welchem Abschnitt des exportierten Buchs ein Kapitel erscheint (Front-Matter, Hauptteil, Back-Matter).
 

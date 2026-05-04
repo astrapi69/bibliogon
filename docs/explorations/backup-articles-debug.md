@@ -5,8 +5,8 @@ Status: Phase 1 (Diagnose) abgeschlossen. Phase 2 wartet auf Daten
 von Aster + Go.
 
 Auftrag: Commit `ed2e3ec` hat Articles-Support in
-`backup_export.py` ergaenzt (5 Backend-Tests gruen). Aster meldet:
-ZIP enthaelt keine Articles. Tests treffen also den modifizierten
+`backup_export.py` ergänzt (5 Backend-Tests grün). Aster meldet:
+ZIP enthält keine Articles. Tests treffen also den modifizierten
 Pfad, der User-Click trifft etwas anderes — oder es gibt eine
 externe Ursache (Cache, alte Prozess-Instanz, ...).
 
@@ -24,7 +24,7 @@ Beide Dashboards rufen **denselben** Handler:
 | Articles | `ArticleList` | `frontend/src/pages/ArticleList.tsx:330` `data-testid="article-backup-export-btn"` | `handleBackupExport` (Zeile 70) | `window.open(api.backup.exportUrl(), "_blank")` |
 
 Beide Handler sind funktional identisch — `api.backup.exportUrl()`
-gibt `${BASE}/backup/export` zurueck (`frontend/src/api/client.ts:1380`).
+gibt `${BASE}/backup/export` zurück (`frontend/src/api/client.ts:1380`).
 
 ### Backend Route
 
@@ -50,7 +50,7 @@ grep -rn 'ZipFile\|zipfile' backend/app/ --include='*.py' | grep -v test
 | `routers/plugin_install.py` | ZIP-installierter Plugin | Nein (liest nur) |
 | `routers/git_import_backfill.py` | Git-Import | Nein (liest nur) |
 
-**Es gibt nur einen einzigen ZIP-Build-Pfad fuer Backup.** Das ist
+**Es gibt nur einen einzigen ZIP-Build-Pfad für Backup.** Das ist
 `backup_export.py` — die Datei, die in `ed2e3ec` modifiziert wurde.
 
 ### manifest.json-Writer
@@ -59,7 +59,7 @@ grep -rn 'ZipFile\|zipfile' backend/app/ --include='*.py' | grep -v test
 grep -rn 'manifest.json' backend/app/ --include='*.py' | grep -v test
 ```
 
-Nur `backup_export.py:213` schreibt manifest.json fuer Backups.
+Nur `backup_export.py:213` schreibt manifest.json für Backups.
 Andere Hits sind Reader (`archive_utils`, `bgb.py`, `backup_import`).
 
 ---
@@ -79,27 +79,27 @@ Andere Hits sind Reader (`archive_utils`, `bgb.py`, `backup_import`).
 ```
 
 Dieselbe Funktion wird von 5 Tests in `test_backup_articles.py`
-ausgefuehrt; alle gruen. Wenn der User-Pfad ein Problem hat,
+ausgeführt; alle grün. Wenn der User-Pfad ein Problem hat,
 dann liegt es **NICHT am Code in `ed2e3ec`**, sondern eine Stufe
-hoeher.
+höher.
 
 ---
 
 ## Hypothesen mit Code-Evidenz
 
-### H1 — Backend laeuft mit altem Code (uvicorn nicht restartet)
+### H1 — Backend läuft mit altem Code (uvicorn nicht restartet)
 
 **Wahrscheinlichkeit: HOCH.**
 
-Aster fuehrt `make dev` aus. uvicorn laeuft mit `--reload`. Das
-sollte automatisch File-Aenderungen sehen, aber:
+Aster führt `make dev` aus. uvicorn läuft mit `--reload`. Das
+sollte automatisch File-Änderungen sehen, aber:
 
 - Wenn `make dev` vor `ed2e3ec` gestartet wurde, sieht der
   Watch-Mechanismus die neuen Imports zwar, aber bereits geladene
   Module bleiben unter Umstaenden gecached, je nach Watcher.
 - `lessons-learned.md` notiert separat: path-installed plugins
-  und Cross-File-Imports koennen `--reload` umgehen.
-- Nach Backend-Aenderungen, die mehrere Module beruehren
+  und Cross-File-Imports können `--reload` umgehen.
+- Nach Backend-Änderungen, die mehrere Module beruehren
   (`backup_export.py` + `backup_import.py` + `serializer.py` +
   `archive_utils.py`), ist ein Hard-Restart sicher.
 
@@ -119,10 +119,10 @@ make dev
 
 `backup_export.py:43` macht `db.query(Article).all()` — liefert
 **alle** Articles inkl. soft-deleted (kein `deleted_at IS NULL`-
-Filter). Wenn Aster Articles hat, landen sie im ZIP unabhaengig
+Filter). Wenn Aster Articles hat, landen sie im ZIP unabhängig
 vom Trash-Status.
 
-Pruefe: ist die Articles-Liste im Articles-Dashboard tatsaechlich
+Prüfe: ist die Articles-Liste im Articles-Dashboard tatsaechlich
 nicht leer?
 
 **Verifikation durch Aster:** Articles-Dashboard zeigt N
@@ -134,12 +134,12 @@ Wenn N + M = 0 → kein Bug, sondern leere DB.
 **Wahrscheinlichkeit: MITTEL.**
 
 Wenn Aster ein `.bgb` aus einer **frueheren Session** angeschaut
-hat (vor `ed2e3ec`), enthaelt dieses ZIP per Definition keine
+hat (vor `ed2e3ec`), enthält dieses ZIP per Definition keine
 Articles und keine `version=2.0`-Manifest. Das ist kein Bug;
 das alte ZIP ist unveraenderbar.
 
 **Verifikation durch Aster:** Den Output der folgenden Befehle
-nachreichen, ausgefuehrt **nach** Hard-Restart auf einem **frisch
+nachreichen, ausgeführt **nach** Hard-Restart auf einem **frisch
 heruntergeladenen** ZIP:
 
 ```bash
@@ -148,7 +148,7 @@ unzip -p <neuestes>.bgb manifest.json
 ```
 
 Wenn `manifest.json` `"version": "2.0"` zeigt aber keine
-`articles/`-Eintraege auftauchen, ist H1/H2 ausgeschlossen und
+`articles/`-Einträge auftauchen, ist H1/H2 ausgeschlossen und
 es liegt ein anderer Bug vor.
 
 Wenn `manifest.json` `"version": "1.0"` zeigt, ist H1 (alter
@@ -159,12 +159,12 @@ Backend-Prozess) belegt.
 **Wahrscheinlichkeit: NIEDRIG bis MITTEL.**
 
 `vite-plugin-pwa` ist installiert. Wenn der Service Worker einen
-alten Bundle cached, koennte der Backup-Button theoretisch noch
+alten Bundle cached, könnte der Backup-Button theoretisch noch
 einen alten URL-Path benutzen. Nur **theoretisch** — der URL-Path
-hat sich seit Monaten nicht geaendert (`/backup/export`). Selbst
+hat sich seit Monaten nicht geändert (`/backup/export`). Selbst
 ein gecachtes Bundle ruft denselben Endpoint.
 
-Auch wenn der Frontend-Cache stale waere, der Backend-Code waere
+Auch wenn der Frontend-Cache stale wäre, der Backend-Code wäre
 trotzdem neu — und der Backend-Code baut das ZIP. Frontend-Cache
 betrifft den Backup-Inhalt nicht.
 
@@ -174,7 +174,7 @@ betrifft den Backup-Inhalt nicht.
 
 **Wahrscheinlichkeit: NIEDRIG.**
 
-Theoretisch koennte der `db: Session = Depends(get_db)` Scope-
+Theoretisch könnte der `db: Session = Depends(get_db)` Scope-
 Issue haben (z.B. eine Session, die nicht den richtigen
 DB-Connection-State sieht). Aber:
 
@@ -189,7 +189,7 @@ Praktisch ausschliessbar ohne Code-Beweis fuers Gegenteil.
 
 ---
 
-## Wahrscheinlichste Ursache + naechster Schritt
+## Wahrscheinlichste Ursache + nächster Schritt
 
 **H1 (alter Backend-Prozess) — Wahrscheinlichkeit ~70%.**
 **H3 (altes Backup angeschaut) — ~20%.**
@@ -229,19 +229,19 @@ Mit diesen drei Outputs ist die Ursache eindeutig zuordenbar.
 ### Forward-Compat-Version-Check fehlt
 
 `backup_import._validate_backup_manifest` (siehe
-`backend/app/services/backup/backup_import.py:83-92`) prueft nur
+`backend/app/services/backup/backup_import.py:83-92`) prüft nur
 `format == "bibliogon-backup"`. **`version` wird gar nicht
 gelesen.** Heisst:
 
 - Backups mit `version: "1.0"` und `version: "2.0"` werden gleich
   behandelt.
-- Ein hypothetisches Backup mit `version: "3.0"` wuerde silently
-  durchlaufen, koennte aber ein neues ZIP-Layout haben, das der
-  Reader nicht versteht — sicherheitsproblematisch fuer kuenftige
+- Ein hypothetisches Backup mit `version: "3.0"` würde silently
+  durchlaufen, könnte aber ein neues ZIP-Layout haben, das der
+  Reader nicht versteht — sicherheitsproblematisch für kuenftige
   Format-Major-Bumps.
 
 **Empfehlung:** In Phase 2 (oder als Add-On) eine warning-only
-Pruefung einbauen:
+Prüfung einbauen:
 
 ```python
 version = manifest_data.get("version", "1.0")
@@ -253,7 +253,7 @@ if version not in {"1.0", "2.0"}:
     )
 ```
 
-Hard-Reject nicht noetig — additive Erweiterungen (`articles/` in
+Hard-Reject nicht nötig — additive Erweiterungen (`articles/` in
 2.0) brechen den 1.0-Reader nicht. Nur logging.
 
 ### Test-Lucke — User-Pfad wurde nicht durch HTTP getestet
@@ -261,15 +261,15 @@ Hard-Reject nicht noetig — additive Erweiterungen (`articles/` in
 Aktuelle 5 Tests in `test_backup_articles.py` rufen
 `export_backup_archive(db)` und `import_backup_archive(upload, db)`
 **direkt** auf. Sie umgehen die FastAPI-Route. Theoretisch
-koennte ein Route-Decorator oder ein Middleware-Fehler den
+könnte ein Route-Decorator oder ein Middleware-Fehler den
 HTTP-Pfad anders verhalten lassen. Praktisch ist die Route
-trivial (siehe `backup.py:27-43`), aber ein User-Pfad-Test ueber
-`TestClient.get("/api/backup/export")` waere die Lucke, die
+trivial (siehe `backup.py:27-43`), aber ein User-Pfad-Test über
+`TestClient.get("/api/backup/export")` wäre die Lucke, die
 jetzige Tests nicht decken.
 
 **Empfehlung Phase 2:** Ein zusaetzlicher Test mit
 ``TestClient(app).get("/api/backup/export")``, ZIP entpacken,
-articles-Eintraege pruefen. Schliesst H1-H5 als Test-Beweis aus.
+articles-Einträge prüfen. Schliesst H1-H5 als Test-Beweis aus.
 
 ---
 
@@ -279,8 +279,8 @@ articles-Eintraege pruefen. Schliesst H1-H5 als Test-Beweis aus.
 
 Kein Code-Fix. Kurze Notiz im
 `docs/help/{de,en}/developers/troubleshooting.md`: nach
-Backup-relevanten Backend-Aenderungen `make dev-down && make dev`
-ausfuehren.
+Backup-relevanten Backend-Änderungen `make dev-down && make dev`
+ausführen.
 
 Plus: User-Pfad-Test (HTTP) als Test-Lucken-Schliesser.
 
@@ -289,7 +289,7 @@ Plus: Forward-Compat warning-only check (Add-On).
 ### Szenario B: H3 belegt (altes Backup)
 
 Kein Code-Fix. Aster sieht im neuen ZIP alle Articles.
-Test-Lucke + Forward-Compat trotzdem ergaenzen.
+Test-Lucke + Forward-Compat trotzdem ergänzen.
 
 ### Szenario C: Manifest zeigt 2.0 aber kein articles/ im ZIP
 
@@ -311,7 +311,7 @@ Pre-Hook untersuchen, der Manifest neu schreibt.
 
 Nichts implementieren bis:
 1. Output 1-3 von oben nachgereicht
-2. Eines der Szenarien A-D bestaetigt
+2. Eines der Szenarien A-D bestätigt
 
 ---
 
@@ -385,7 +385,7 @@ durch Pfad 2.
    - `detect()` zaehlt Articles + Books, Warnung nur wenn beide 0
    - `execute()` / `execute_multi()` ruft Article-Restore-Helpers
      aus `backup_import.py` auf
-   - Neue Felder im `DetectedProject` fuer Article-Counts (oder
+   - Neue Felder im `DetectedProject` für Article-Counts (oder
      `plugin_specific_data`)
 2. HTTP-User-Pfad-Test:
    `TestClient.post("/api/import/upload", files=...)` mit
@@ -395,7 +395,7 @@ durch Pfad 2.
 
 **Optional (auf separaten Commit verschieben):**
 
-- Wizard-UI fuer Articles-Preview (`DetectedBookSummary` →
+- Wizard-UI für Articles-Preview (`DetectedBookSummary` →
   `DetectedArticleSummary` o.ae.). Erstmal nur Restore
   funktional kriegen.
 
@@ -408,9 +408,9 @@ Phase 2 wartet auf explizites Go.
 Phase 2 ist abgeschlossen. Implementierungs-Commits:
 
 - `ca5e57e` — `BgbImportHandler` article-aware: `detect()` zaehlt
-  Articles + Books, `_book_blobs`/`_book_count` ergaenzt um
+  Articles + Books, `_book_blobs`/`_book_count` ergänzt um
   Article-Pendants, `execute()` ruft `_restore_single_book_and_articles`
-  und retourniert `("", N)` fuer articles-only Pfade,
+  und retourniert `("", N)` für articles-only Pfade,
   `execute_multi()` iteriert zusaetzlich `articles_dir`.
 - `ea20fd7` — Wizard `validate_overrides` skip wenn
   `is_articles_only`, sonst blockt der title+author-Gate den
@@ -426,15 +426,15 @@ Phase 2 ist abgeschlossen. Implementierungs-Commits:
   damit `onImported` ohne F5 sichtbar wird.
 
 Alle 7 Flows in [docs/testing/smoke-tests/articles-backup.md](../testing/smoke-tests/articles-backup.md)
-dokumentiert. Backend-Tests gruen am 2026-05-01:
+dokumentiert. Backend-Tests grün am 2026-05-01:
 
 ```
 $ poetry run pytest tests/test_backup_articles.py -q
 13 passed in 0.63s
 ```
 
-UI-Smoke-Verifikation laeuft auf Node 22+ (Aster verwendet Node
-24); fuer Node 18 dokumentiert lessons-learned.md die
+UI-Smoke-Verifikation läuft auf Node 22+ (Aster verwendet Node
+24); für Node 18 dokumentiert lessons-learned.md die
 Vite-7-Inkompatibilitaet. Flows 1-7 in der genannten Smoke-Doc
 sind in einem normalen `make dev-bg`-Lauf abzuhaken.
 

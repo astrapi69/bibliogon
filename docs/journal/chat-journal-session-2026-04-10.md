@@ -1,13 +1,13 @@
 # Chat-Journal: Bibliogon Session 2026-04-10
 
-Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
+Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
 ## 1. ElevenLabs API-Key UI + persistente Audiobook-Ablage (fortgesetzt)
 
 - Fortfuehrung der Session vom 2026-04-09. Commits 263715e + 882aed0 bereits gepusht.
-- Siehe chat-journal-session-2026-04-09.md Eintrag #2 fuer Details.
+- Siehe chat-journal-session-2026-04-09.md Eintrag #2 für Details.
 
 ---
 
@@ -34,7 +34,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 5. Google Cloud TTS Integration - Tranche 1
 
-- Original-Prompt: Ausfuehrlicher Spec fuer Google Cloud TTS als Premium-Engine.
+- Original-Prompt: Ausfuehrlicher Spec für Google Cloud TTS als Premium-Engine.
 - Umfangreiche Rueckfrage-Runde: Scope-Analyse (10 Features in einem Prompt), 7 konkrete Fragen an den User.
 - User-Entscheidungen: (1) Tranchen-Ansatz, (2) Credentials verschluesselt, (3) optionale Dependency mit lazy import, (4) Refactoring als eigener Commit vorab.
 - Zweiter Prompt verwies auf manuscripta v0.7.0 (nicht installiert war 0.6.1). Check auf PyPI: v0.7.0 existiert und hat exakt die API die der Prompt annimmt (create_adapter, TTSAdapter, VoiceInfo, TTSError Hierarchie, tenacity Retry).
@@ -47,7 +47,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ### Commit 2: refactor: delegate engines to manuscripta adapters (e69b4c7)
 - tts_engine.py komplett umgeschrieben: alle 4 Engines delegieren jetzt an manuscripta.audiobook.tts.create_adapter() statt eigene Implementierungen
-- Public API (TTSEngine, get_engine, ENGINES, set_elevenlabs_api_key) unveraendert
+- Public API (TTSEngine, get_engine, ENGINES, set_elevenlabs_api_key) unverändert
 - adapter.speak() -> adapter.synthesize() (deprecated in 0.7.0)
 - Tests: sys.modules-Patching ersetzt durch patch("manuscripta.audiobook.tts.create_adapter")
 
@@ -57,7 +57,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - validate_service_account_json, save_encrypted, load_decrypted, load_to_tempfile, secure_delete, is_configured, get_metadata
 - 16 Unit-Tests inkl. Roundtrip, Wrong-Secret, Null-Overwrite-Verification
 - cryptography als Dependency in Backend + Audiobook-Plugin
-- .gitignore Eintrag fuer google-credentials.enc
+- .gitignore Eintrag für google-credentials.enc
 
 ### Commit 4: feat: Google Cloud TTS engine + credentials UI + voice seeding (e7643c9)
 - GoogleCloudTTSEngine in tts_engine.py (ID: "google-cloud-tts", lazy Import)
@@ -76,19 +76,19 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 6. Google Cloud TTS Integration - Tranche 2
 
 ### Commit 5: feat: content-hash-based regeneration cache (126c1e6)
-- should_regenerate() prueft .meta.json Sidecar (SHA-256 content hash + engine + voice + speed)
+- should_regenerate() prüft .meta.json Sidecar (SHA-256 content hash + engine + voice + speed)
 - generate_audiobook() bekommt cache_dir Parameter, _run_audiobook_job uebergibt uploads/{book_id}/audiobook/chapters/
 - Cache-Hit: MP3 wird aus dem persistenten Verzeichnis kopiert statt neu generiert, "chapter_reused" SSE-Event
 - Cache-Miss: MP3 wird generiert, .meta.json Sidecar geschrieben
 - audiobook_storage.persist_audiobook() kopiert jetzt auch .meta.json Sidecars
-- 8 neue Unit-Tests (should_regenerate fuer jeden Mismatch-Axis + Integration-Test mit gemocktem Engine)
+- 8 neue Unit-Tests (should_regenerate für jeden Mismatch-Axis + Integration-Test mit gemocktem Engine)
 - i18n: event_reused in DE + EN
 
 ### Commit 6: feat: cost estimation and savings tracking (0f9f890)
 - Nach Export: Generator berechnet geschaetzte Kosten via manuscripta adapter.estimate_cost()
 - "done" SSE-Event traegt cost_usd und saved_usd
 - Progress-Dialog rendert: "Generierung abgeschlossen | Wiederverwendet: 12 | Kosten: ~$0.47 | Gespart: ~$1.87"
-- Kostenlose Engines (Edge, gTTS, pyttsx3) geben None zurueck, werden ignoriert
+- Kostenlose Engines (Edge, gTTS, pyttsx3) geben None zurück, werden ignoriert
 - i18n: event_reused_count, event_cost, event_saved in DE + EN
 
 ---
@@ -120,22 +120,22 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ### Commit 7: feat: dry-run mode with sample playback and cost preview (c0e5732)
 - POST /api/books/{id}/audiobook/dry-run generiert ersten Absatz des ersten Kapitels
 - Response-Header: X-Estimated-Cost-USD, X-Estimated-Chapters, X-Sample-Engine, X-Sample-Voice
-- ExportDialog: "Test-Export" Sektion mit Probe-hoeren-Button, inline Audio-Player, Kosten-Summary
+- ExportDialog: "Test-Export" Sektion mit Probe-hören-Button, inline Audio-Player, Kosten-Summary
 - api.bookAudiobook.dryRun() liefert DryRunResult mit Blob-URL
 
 ### Commit 8: feat: quality filter toggle for Google Cloud TTS voices (0d378e3)
-- Checkbox "Nur hochwertige Stimmen (Neural2, Journey, Studio)" ueber dem Voice-Dropdown
+- Checkbox "Nur hochwertige Stimmen (Neural2, Journey, Studio)" über dem Voice-Dropdown
 - Erscheint nur bei google-cloud-tts Engine, default on
 - In BookMetadataEditor und Settings
 
 ### Commit 9: feat: encrypt ElevenLabs key with Fernet (cd5fa1c)
 - ElevenLabs-Key jetzt auch Fernet-verschluesselt wenn BIBLIOGON_CREDENTIALS_SECRET gesetzt
-- Legacy-YAML bleibt als Fallback fuer Installationen ohne Secret
+- Legacy-YAML bleibt als Fallback für Installationen ohne Secret
 - save: encrypt + clear YAML. read: engine -> encrypted -> legacy. delete: both.
 
 ### Commit 10: feat: complete i18n for all 8 languages (b19f3d0)
 - Alle neuen Strings (50+) in ES, FR, EL, PT, TR, JA nachgetragen
-- Ueber einen Hintergrund-Agenten parallel ausgefuehrt
+- Über einen Hintergrund-Agenten parallel ausgeführt
 
 ---
 
@@ -143,7 +143,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Google Cloud TTS vollstaendig integriert (Engine, verschluesselte Credentials, UI, Voice-Seeding)
 - Content-Hash-Cache spart TTS-Kosten bei unveraenderten Kapiteln
 - Kostentransparenz im Progress-Dialog (Kosten + Ersparnisse)
-- Dry-Run: Probe hoeren + Kosten-Preview vor dem echten Export
+- Dry-Run: Probe hören + Kosten-Preview vor dem echten Export
 - Quality-Filter: 300+ Google-Stimmen auf die besten reduziert
 - ElevenLabs-Key verschluesselt (konsistent mit Google SA)
 - i18n komplett in allen 8 Sprachen

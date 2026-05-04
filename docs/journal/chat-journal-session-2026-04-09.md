@@ -1,16 +1,16 @@
 # Chat-Journal: Bibliogon Session 2026-04-09
 
-Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
+Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
 ## 1. Audiobook-Merge: 3-Modi-Enum + Buch-Override (10:30)
 
 - Original-Prompt: "Audiobook-Merge: Buch-Metadaten und dritte Option" - Dropdown
-  in BookMetadataEditor (Audiobook-Tab) hinzufuegen, AudioConfig.merge von
+  in BookMetadataEditor (Audiobook-Tab) hinzufügen, AudioConfig.merge von
   Boolean zu String-Enum (separate, merged, both) mit Migration True->merged,
   False->separate, Settings-Panel und i18n in 8 Sprachen entsprechend updaten,
-  Tests fuer alle drei Modi und Migration.
+  Tests für alle drei Modi und Migration.
 - Optimierter Prompt: Identisch klar, da bereits scope, default, migration und
   tests explizit benannt waren.
 - Ziel: Pro-Buch Audiobook-Merge-Auswahl mit drei Optionen (separate/merged/both)
@@ -69,9 +69,9 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - `sync_edge_tts_voices` ist jetzt `async` und nutzt direkt
     `await edge_tts.list_voices()` statt eigenen Loop.
   - `lifespan` und `POST /api/voices/sync` awaiten die Funktion.
-  - `make seed-voices` ruft sie ueber `asyncio.run(...)` auf
+  - `make seed-voices` ruft sie über `asyncio.run(...)` auf
     (CLI-Kontext, kein laufender Loop).
-  - `make test` weiterhin gruen (87 backend, 135 plugin, 50 vitest).
+  - `make test` weiterhin grün (87 backend, 135 plugin, 50 vitest).
 - Commit: 1c6288d
 
 ---
@@ -87,7 +87,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Optimierter Prompt: "Lege S-08 (backup.py refactor) in der Roadmap an
   und setze ihn direkt um: app/services/backup/-Paket mit serializer,
   markdown_utils, asset_utils, archive_utils, backup_export, backup_import,
-  project_import, markdown_import, smart_import. Router enthaelt nur noch
+  project_import, markdown_import, smart_import. Router enthält nur noch
   duenne Endpoints die delegieren. Maximalfunktionsgroesse <50 Zeilen,
   jede Funktion einzeln testbar."
 - Ziel: God methods aus dem Backup-Router eliminieren, Geschaeftslogik
@@ -126,7 +126,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     nirgends aufgerufen).
   - Laengste Funktion danach: `import_with_section_order` (38 LOC),
     `_import_project_root` (22 LOC Body) - alle unter dem 50-Zeilen-Limit.
-  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+  - Tests: `make test` komplett grün ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest), weil alle Tests via HTTP-Endpoint
     laufen und die Endpoint-API unveraendert ist.
 - Commit: f598a83
@@ -135,13 +135,13 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 4. S-09: scaffolder.py god methods zerlegen (11:35)
 
-- Original-Prompt: "weitermachen" - direkt im Anschluss an S-08, naechster
+- Original-Prompt: "weitermachen" - direkt im Anschluss an S-08, nächster
   Refactor-Kandidat war S-09 (scaffolder.py mit `scaffold_project` 197 LOC
   und `_html_to_markdown` 123 LOC).
 - Optimierter Prompt: "Setze S-09 um. `scaffold_project` in fokussierte
   Step-Helfer aufteilen, der verschachtelte HTMLParser von
   `_html_to_markdown` in ein eigenes Modul `html_to_markdown.py` ausziehen
-  mit per-Tag Open/Close-Handlern via Dispatch-Tabellen statt grosser
+  mit per-Tag Open/Close-Handlern via Dispatch-Tabellen statt großer
   if/elif-Kaskaden."
 - Ziel: Beide god methods in scaffolder.py eliminieren, ohne die externe
   API zu brechen (`scaffold_project` und `_content_to_markdown` werden von
@@ -176,7 +176,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     `_write_partitioned_chapters` 16 LOC, `_write_metadata` 18 LOC,
     `html_to_markdown` 5 LOC. Alle Parser-Handler in
     `_HtmlToMdParser` unter 15 LOC.
-  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+  - Tests: `make test` komplett grün ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest); Test-Imports von
     `scaffold_project` und `_content_to_markdown` weiterhin gueltig.
 - Commit: 809f377
@@ -187,12 +187,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 - Original-Prompt: "ja mach mehr" - User wollte die Refactoring-Welle
   fortsetzen.
-- Optimierter Prompt: "Identifiziere die naechsten echten god methods im
+- Optimierter Prompt: "Identifiziere die nächsten echten god methods im
   Codebase (`translate_book` ~106 LOC, `run_pandoc` ~84 LOC, `validate_toc`
   ~98 LOC) und zerlege sie nach demselben Muster wie S-08/S-09: kleine
   Step-Helfer, jede Funktion einzeln testbar, max ~40 LOC."
 - Ziel: Die letzten drei groesseren god methods im Backend und in den
-  Plugins entfernen, ohne Verhalten oder API zu aendern.
+  Plugins entfernen, ohne Verhalten oder API zu ändern.
 - Ergebnis:
   - S-10 `translate_book` in
     `plugins/bibliogon-plugin-translation/bibliogon_translation/routes.py`:
@@ -221,7 +221,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     `_check_toc_links` plus `_iter_toc_links` Generator. Die
     `_TYPE_ANCHORS`-Map aus dem Funktionskoerper als Modul-Konstante
     rausgezogen - sie wurde vorher bei jedem Aufruf neu allokiert.
-  - Tests: `make test` komplett gruen ohne Test-Anpassungen
+  - Tests: `make test` komplett grün ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest). Translation-Plugin 35,
     Export-Plugin 30, alle HTTP-Tests fuer chapters.py weiterhin gueltig.
 - Commit: abd1fd3
@@ -242,7 +242,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   und Textfeld mit slug-basiertem Default; Textfeld disabled bis die
   Checkbox gesetzt wird; leerer Wert -> Backend speichert null und nutzt
   Default."
-- Ziel: (a) Dual-Save-Buttons-Bug fixen. (b) Pro-Buch Override fuer den
+- Ziel: (a) Dual-Save-Buttons-Bug fixen. (b) Pro-Buch Override für den
   Audiobook-Dateinamen.
 - Ergebnis (Bug):
   - Ursache: `PluginCard` rendert Plugin-Settings in 3 Bloecken (Scalars,
@@ -288,7 +288,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 ## 7. Cover-Bild Upload mit Vorschau im BookEditor (12:30)
 
 - Original-Prompt: "Cover-Bild Upload im BookEditor > Metadaten > Design.
-  Aktuell ist Cover-Image vermutlich ein Textfeld fuer einen Pfad oder URL.
+  Aktuell ist Cover-Image vermutlich ein Textfeld für einen Pfad oder URL.
   Umbauen zu einem echten Upload mit Vorschau." Plus detaillierte Specs:
   Drag&Drop, .jpg/.jpeg/.png/.webp, 10 MB max, Pillow-Validierung,
   Thumbnail max 300px hoch mit X-Button, KDP-Aspect-Warnung, native
@@ -314,7 +314,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     - `DELETE /api/books/{book_id}/cover` -> remove
     - `GET /api/books/{book_id}/cover/limits` -> Frontend kann die
       gleichen Caps anzeigen die das Backend erzwingt
-  - Pillow `^11.0.0` als Backend-Dependency hinzugefuegt (war vorher
+  - Pillow `^11.0.0` als Backend-Dependency hinzugefügt (war vorher
     nur im KDP-Plugin).
   - Frontend `frontend/src/components/CoverUpload.tsx` mit nativer
     HTML5 Drag&Drop (kein react-dropzone, nicht installiert):
@@ -360,7 +360,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Original-Prompt: "Wiederkehrender Bug: Audiobook-Export zeigt immer noch
   keinen Fortschritt. Das wurde bereits spezifiziert (SSE oder Polling
   mit Progress-Modal) aber offensichtlich nicht umgesetzt. Diesmal NICHTS
-  aendern bevor Diagnose steht." Mit detaillierten Specs fuer einen
+  ändern bevor Diagnose steht." Mit detaillierten Specs für einen
   AudioExportProgress-Modal mit SSE-Stream und Regression-Tests.
 - Optimierter Prompt: User-Spec war ausreichend; Diagnose-First-Workflow
   war explizit gefordert.
@@ -467,7 +467,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
       Audiobook-/Export-Routen tatsaechlich mounted (sonst 404 statt 410).
       TTS-Engine wird via `patch("bibliogon_audiobook.generator.get_engine", ...)`
       gemockt - kein echter Edge-TTS-Call in Tests.
-  - Plus 5 neue `JobStore`-Unit-Tests fuer publish_event/subscribe/cleanup.
+  - Plus 5 neue `JobStore`-Unit-Tests für publish_event/subscribe/cleanup.
   - **lessons-learned.md**: Neuer Abschnitt "Audiobook-Export ist
     asynchron mit SSE-Progress" mit den ganzen Reihenfolge-/Race-/
     Test-Fallstricken als Praevention.
@@ -477,9 +477,9 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ---
 
-## 9. BookMetadataEditor UX: feste Tab-Hoehe + groessere Textareas (14:30)
+## 9. BookMetadataEditor UX: feste Tab-Höhe + groessere Textareas (14:30)
 
-- Original-Prompt: Zwei UX-Probleme. (1) Tab-Hoehe springt beim Wechsel
+- Original-Prompt: Zwei UX-Probleme. (1) Tab-Höhe springt beim Wechsel
   weil jeder Tab unterschiedlich viel Inhalt hat - feste min-height
   600px via CSS-Variable `--metadata-tab-min-height`. (2) Textareas im
   Marketing-Tab zu klein - min-height 200, rows=8, resize:vertical,
@@ -489,7 +489,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Optimierter Prompt: User-Specs waren ausreichend, alle Constraints
   und Werte waren explizit benannt.
 - Ziel: Keine Layout-Spruenge mehr beim Tab-Wechsel; vernuenftige
-  Schreibflaeche fuer Marketing-Texte mit Sichtbar-Feedback bei
+  Schreibflaeche für Marketing-Texte mit Sichtbar-Feedback bei
   Plattform-Limits.
 - Ergebnis:
   - **CSS Variable** in `frontend/src/styles/global.css`:
@@ -519,7 +519,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   - **i18n**: Neuer Key `ui.metadata.characters` in allen 8 Sprachen
     (DE: "Zeichen", EN: "characters", ES/FR/PT: "caracteres",
     EL: "χαρακτήρες", TR: "karakter", JA: "文字"), validiert.
-  - Test-Bilanz unveraendert (rein UI-Aenderung, kein neuer Test
+  - Test-Bilanz unverändert (rein UI-Änderung, kein neuer Test
     sinnvoll - die Lengths-Check-Logik ist trivial). `make test`
     durchgehend gruen, `tsc --noEmit` clean.
 - Commit: 26d8d15
@@ -528,12 +528,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 ## 10. Audiobook-Export: Skip-Liste, kein Title-Prefix, Cancel/Minimize, Per-Chapter-Downloads (15:00)
 
-- Original-Prompt: Vier Aenderungen am Audiobook-Export. (1) Skip-Liste
+- Original-Prompt: Vier Änderungen am Audiobook-Export. (1) Skip-Liste
   aus den Settings wird beim Export ignoriert. (2) "Kapitel X:" Prefix
   vor dem Body raus. (3) Abbrechen-Button + Im-Hintergrund-fortsetzen
   Button im Progress-Dialog. (4) ZIP-Download und Liste der einzelnen
   Kapitel mit per-Kapitel-Download-Links bei separate-Mode.
-- Optimierter Prompt: Identisch klar, jede der vier Aenderungen war mit
+- Optimierter Prompt: Identisch klar, jede der vier Änderungen war mit
   Sub-Spec versehen.
 - Ziel: Audiobook-Export-UX vom Setup bis zum Download komplett auf
   User-Niveau bringen.
@@ -548,12 +548,12 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     die Loop liess das auf Default `True` und hat dann jedes Mal den
     Chapter-Titel vor den Body geklatscht - "Kapitel 1: Vorwort. Vorwort
     body..." beim Hoeren.
-  - **#3 Cancel/Minimize**: Modal hatte gar keine Buttons dafuer; das
+  - **#3 Cancel/Minimize**: Modal hatte gar keine Buttons dafür; das
     `Job` Dataclass im job_store hatte keine `asyncio.Task`-Referenz also
     war Cancel auch backend-seitig nicht moeglich. Modal war
     architektonisch in `ExportDialog` lokalisiert -> Minimize unmoeglich
     weil der Dialog beim Schliessen den State verlor.
-  - **#4 ZIP fuer separate**: Eigentlich schon implementiert in
+  - **#4 ZIP für separate**: Eigentlich schon implementiert in
     `bundle_audiobook_output` - "separate" produziert bereits einen
     ZIP. Was wirklich fehlte: Liste der einzelnen Kapitel mit Download-
     Links im Modal.
@@ -674,7 +674,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
   bibliogon `TTSEngine`-Subklassen. Lazy imports mit klaren Fehlern
   wenn die Lib fehlt. Plus: `get_engine` darf bei unbekannten Engine-
   IDs nicht crashen sondern muss auf `edge-tts` zurueckfallen
-  (Legacy-Buecher mit alten `tts_engine`-Werten)."
+  (Legacy-Bücher mit alten `tts_engine`-Werten)."
 - Diagnose:
   - `tts_engine.py:ENGINES` registrierte nur `edge-tts` (1 von 4
     versprochenen).
@@ -749,7 +749,7 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
     - list_voices Fallbacks (Google: 1 Eintrag, ElevenLabs: leer
       ohne Key)
     - Audiobook-Plugin 59 -> 74 Tests, Total 372 -> 387.
-  - `make test` durchgehend gruen, kein Crash-Risiko mehr beim
+  - `make test` durchgehend grün, kein Crash-Risiko mehr beim
     Engine-Wechsel.
 - Commit: 8080e00
 
@@ -762,29 +762,29 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 - Ziel: Datenverlust nach Audiobook-Export verhindern, ElevenLabs ohne .env-Editing nutzbar machen.
 - Ergebnis:
   - Backend: neues Modul `bibliogon_audiobook/audiobook_storage.py` (persist/load/delete + Path-Traversal-Schutz). `tts_engine.set_elevenlabs_api_key()` als process-weite Override mit Env-Var-Fallback. Plugin-`activate()` schiebt den YAML-Key in die Engine.
-  - Neuer Backend-Core-Router `backend/app/routers/audiobook.py` mit Endpoints `GET/POST/DELETE /api/audiobook/config/elevenlabs` und `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}`, `/zip`. WICHTIG: liegen im Core, nicht im premium-Plugin, damit User mit abgelaufener Lizenz ihre bereits generierten Dateien noch downloaden koennen.
+  - Neuer Backend-Core-Router `backend/app/routers/audiobook.py` mit Endpoints `GET/POST/DELETE /api/audiobook/config/elevenlabs` und `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}`, `/zip`. WICHTIG: liegen im Core, nicht im premium-Plugin, damit User mit abgelaufener Lizenz ihre bereits generierten Dateien noch downloaden können.
   - `_run_audiobook_job` ruft `audiobook_storage.persist_audiobook()` nach erfolgreichem `bundle_audiobook_output`, in `try/except` damit Job nicht kippt wenn Persist fehlschlaegt.
   - `export_async` checkt `has_audiobook(book_id)` und antwortet mit 409 + `{code: "audiobook_exists", existing: {...}}` ausser `confirm_overwrite=true` oder Plugin-Setting `overwrite_existing` ist on.
   - `audiobook.yaml`: `elevenlabs.api_key` plus `settings.overwrite_existing: false`.
   - Backup: `GET /api/backup/export?include_audiobook=true` bundelt `uploads/{id}/audiobook/`.
   - Tests: 6 neue Storage-Unit-Tests im Plugin, 13 neue Integration-Tests im Backend (Persistenz, Endpoints, ElevenLabs config mit gefaktem httpx, Backup, Regeneration warning).
-  - Diagnose-Detour: erste Implementation legte die Endpoints in den Audiobook-Plugin-Router; Tests scheiterten mit 404 weil das Plugin premium ist und ohne Lizenz nicht geladen wird. Loesung: Endpoints in Backend-Core verschoben.
-  - Frontend: `ApiError.detailBody` fuer strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` faengt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schliessen ein "Dateien sind unter Metadaten > Audiobook verfuegbar"-Toast.
-  - i18n: vollstaendige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurueck (User wollte explizit nur DE+EN).
+  - Diagnose-Detour: erste Implementation legte die Endpoints in den Audiobook-Plugin-Router; Tests scheiterten mit 404 weil das Plugin premium ist und ohne Lizenz nicht geladen wird. Lösung: Endpoints in Backend-Core verschoben.
+  - Frontend: `ApiError.detailBody` für strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` faengt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schließen ein "Dateien sind unter Metadaten > Audiobook verfügbar"-Toast.
+  - i18n: vollstaendige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurück (User wollte explizit nur DE+EN).
 - Commit: 263715e
 
 ---
 
 ## 3. Audiobook Progress: Prefix-Format und Hintergrund-Fortschritt
 
-- Original-Prompt: User listete vier Dinge: (1) Log-Format umbauen von "Kapitel 1: Vorwort" zu "01 | Vorwort", (2) Hintergrund-Fortschritt nach Minimierung als Badge mit Popover, (3) globaler Store fuer den Job, (4) Tests in 8 Sprachen.
+- Original-Prompt: User listete vier Dinge: (1) Log-Format umbauen von "Kapitel 1: Vorwort" zu "01 | Vorwort", (2) Hintergrund-Fortschritt nach Minimierung als Badge mit Popover, (3) globaler Store für den Job, (4) Tests in 8 Sprachen.
 - Optimierter Prompt: derselbe Inhalt, mit ausdruecklichem Hinweis "die Nummer ist reine Anzeige-Logik, TTS-Engine bekommt weiterhin nur den Titel".
 - Ziel: kein Datenverlust beim Minimieren, sauberes Format ohne 'Kapitel:' Verwirrung, F5-Recovery.
 - Ergebnis:
-  - Backend: `generate_audiobook` misst `time.monotonic()` zwischen `chapter_start` und `chapter_done`, schickt das Ergebnis als `duration_seconds` (auf 0.1 gerundet) im `chapter_done`-Event mit. Test in `test_generator.py` haelt das Feld fest.
+  - Backend: `generate_audiobook` misst `time.monotonic()` zwischen `chapter_start` und `chapter_done`, schickt das Ergebnis als `duration_seconds` (auf 0.1 gerundet) im `chapter_done`-Event mit. Test in `test_generator.py` hält das Feld fest.
   - `AudiobookJobContext` komplett umgebaut: SSE-Listener lebt jetzt im Provider, nicht mehr in der Modal-Komponente. Phase, Events, current/total/currentTitle, downloadUrl, chapterFiles - alles im Context. `start(jobId, bookId, bookTitle)` ruft `openStream(jobId)` auf, `clear()` schliesst es. localStorage-Persistenz unter `bibliogon.audiobook_job` plus Reload-Recovery via `useEffect` beim Mount.
   - `AudioExportProgress` ist jetzt ein reiner Render der Context-State. Eigener `EventSource` weg. Format-Helper `formatChapterPrefix(index, total)` baut "01" oder "003"; `eventLabel` rendert "01 | Vorwort generiert..." statt "Kapitel 1: Vorwort". `chapter_done` zeigt die Dauer mit "(12.3s)".
-  - `AudioExportGate` rebuild: kein nackter Loader-Button mehr, sondern ein klickbarer Badge der bei laufendem Job ein Popover oeffnet (Progress-Bar, Kapitel-Counter, "Aktuell: 03 | Titel", "Dialog oeffnen", "Abbrechen"). Bei Erfolg wechselt der Badge auf gruen, ein Toast erscheint und nach 10s loescht ein Timer den Job. Klick auf den fertigen Badge navigiert zu `/book/{id}?view=metadata`.
+  - `AudioExportGate` rebuild: kein nackter Loader-Button mehr, sondern ein klickbarer Badge der bei laufendem Job ein Popover öffnet (Progress-Bar, Kapitel-Counter, "Aktuell: 03 | Titel", "Dialog öffnen", "Abbrechen"). Bei Erfolg wechselt der Badge auf grün, ein Toast erscheint und nach 10s loescht ein Timer den Job. Klick auf den fertigen Badge navigiert zu `/book/{id}?view=metadata`.
   - `BookEditor` liest `?view=metadata` aus `useSearchParams` und synchronisiert mit `_setShowMetadata`, sodass das Badge dort tief verlinken kann.
   - i18n: 9 neue Strings (event_generating, popover_title, popover_chapter_count, popover_current, popover_open, badge_done, badge_failed, completion_toast, completed_hint) in allen 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA).
   - Tests: 1 neuer pytest-Test (`duration_seconds` im `chapter_done`-Payload), 8 neue Vitest-Tests (formatChapterPrefix Padding, eventLabel format, Regression "Kapitel X:" darf nirgends auftauchen).
@@ -797,14 +797,14 @@ Dokumentation aller Prompts, Optimierungsvorschlaege und Ergebnisse.
 
 - Original-Prompt: "Dropdown zeigt ALLE Stimmen statt nur die passenden". User wollte Diagnose-Schritte und Fix-Vorschlag durchgespielt haben.
 - Optimierter Prompt: derselbe Inhalt aber mit ausdruecklichem Fokus auf den engineabhaengigen Fallback im Frontend (was sich als Wurzel herausstellte).
-- Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurueck - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhaengig davon welche Engine der User gewaehlt hatte. Wer Google TTS oder ElevenLabs auswaehlte, sah trotzdem die Edge-DE-Voices.
+- Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurück - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhängig davon welche Engine der User gewählt hatte. Wer Google TTS oder ElevenLabs auswaehlte, sah trotzdem die Edge-DE-Voices.
 - Fix:
-  - Neuer Helper `api.audiobook.listVoices(engine, language)` im API-Client. Versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin), gibt sonst `[]` zurueck. KEIN engine-agnostischer Fallback mehr.
+  - Neuer Helper `api.audiobook.listVoices(engine, language)` im API-Client. Versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin), gibt sonst `[]` zurück. KEIN engine-agnostischer Fallback mehr.
   - Beide Komponenten rufen den Helper auf und rendern bei leerem Ergebnis einen Empty-State `"Keine Stimmen fuer {engine} in {language} verfuegbar"` statt fingierte Voices anzuzeigen.
-  - `frontend/src/data/edge-tts-voices.ts` komplett geloescht (kein Consumer mehr).
+  - `frontend/src/data/edge-tts-voices.ts` komplett gelöscht (kein Consumer mehr).
   - Backend `get_voices` zweistufig: `de-DE` -> exakter case-insensitiver Match, `de` -> Prefix-Match (`de-DE`/`de-AT`/`de-CH`). Spec-konform, vorher hat es den Region-Suffix immer weggeschnitten.
   - i18n: `no_voices_for_combo` in DE und EN.
-  - Tests: 8 neue Backend-Tests in `test_voice_store.py` (Engine-Isolation, exact vs prefix, case-insensitive, unbekannte Engine/Sprache, English-leakt-nicht-in-de-Regression). 5 neue Vitest-Tests in `client.test.ts` fuer den Helper inklusive expliziter Regression "kein hardcoded Edge-Fallback mehr".
+  - Tests: 8 neue Backend-Tests in `test_voice_store.py` (Engine-Isolation, exact vs prefix, case-insensitive, unbekannte Engine/Sprache, English-leakt-nicht-in-de-Regression). 5 neue Vitest-Tests in `client.test.ts` für den Helper inklusive expliziter Regression "kein hardcoded Edge-Fallback mehr".
   - Tests-Status: Backend 137, audiobook plugin 80, frontend Vitest 63, gesamt 422.
 - Commit: 4af6bac
 

@@ -129,7 +129,7 @@ Two major workstreams shipped: the donation integration (S-series) plus the cont
 - **S-02 One-time onboarding dialog.** Mirrors the `AiSetupWizard` pattern. Trigger: Dashboard's book-creation handlers, gated on `books.length === 0` BEFORE the create and the `bibliogon-donation-onboarding-seen` localStorage flag being unset. Every dismiss path sets the flag. Two-step UX: intro -> channel picker if no `landing_page_url`.
 - **S-03 90-day reminder banner** on Dashboard with pure `shouldShowReminder` helper. 180-day cooldown on "Support", 90 on "Not now" and close. Never during editor/export routes; never before S-02 is seen.
 - **Donation config** added to `app.yaml.example` with `enabled` kill switch, `landing_page_url` override, and the four active channels. Not in the PATCH schema (project-level only).
-- **Help page** `docs/help/{de,en}/support.md` with FAQ (tax-deductibility, anonymity, recurring vs one-time). New top-level nav entry "Support" / "Unterstuetzen" with icon `heart` (nav count 14 -> 15).
+- **Help page** `docs/help/{de,en}/support.md` with FAQ (tax-deductibility, anonymity, recurring vs one-time). New top-level nav entry "Support" / "Unterstützen" with icon `heart` (nav count 14 -> 15).
 - **i18n** for all 8 languages.
 - **31 new Vitest tests** across `SupportSection`, `DonationOnboardingDialog`, `DonationReminderBanner`. 2 new backend tests pin the GET `/api/settings/app` donation shape and kill-switch behavior.
 
