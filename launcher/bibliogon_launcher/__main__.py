@@ -345,12 +345,70 @@ def _retry_pending_cleanup() -> None:
         logger.warning("Pending cleanup still has incomplete steps.")
 
 
+def _check_launcher_target_stale() -> bool:
+    """Pre-install safeguard: warn the user if this launcher targets
+    an older Bibliogon than the latest published release.
+
+    Returns True if the install flow may proceed (target is current,
+    or the user explicitly chose "Continue with older version", or
+    the network check failed open). Returns False if the install
+    must abort (user chose "Open download page" or "Cancel").
+
+    Always runs regardless of the ``auto_update_check`` toggle: the
+    toggle governs only the post-install notification check.
+    First-install on a fresh machine is special; a stale target
+    here causes destructive misalignment (user gets an outdated
+    Bibliogon).
+
+    Strict-newer comparison: any newer release fires the dialog.
+    The "Continue with older version" button preserves agency for
+    users who deliberately want the older version (e.g. testing,
+    pinned compatibility). Network failure is fail-open so a
+    GitHub outage cannot block fresh installs.
+    """
+    latest = update_check.fetch_latest_version()
+    if latest is None:
+        return True  # fail-open
+
+    tag, url = latest
+    if not update_check.is_newer(installer.BIBLIOGON_TARGET_VERSION, tag):
+        return True  # in sync (or this launcher is ahead, weird but proceed)
+
+    choice = ui.three_button_dialog(
+        title="Launcher outdated",
+        message=(
+            f"This launcher installs Bibliogon "
+            f"{installer.BIBLIOGON_TARGET_VERSION}, but the latest "
+            f"release is {tag}.\n\n"
+            "Download a newer launcher to install the current "
+            "Bibliogon, or continue with this older version if "
+            "that is what you want."
+        ),
+        primary_label="Open download page",
+        secondary_label="Continue with older version",
+        cancel_label="Cancel",
+    )
+    if choice == "primary":
+        try:
+            webbrowser.open(url)
+        except OSError as exc:
+            logger.warning("opening release page failed: %s", exc)
+        return False  # abort install
+    if choice == "cancel":
+        return False  # abort install
+    # secondary: user knows what they're doing, proceed
+    return True
+
+
 def _install_or_welcome() -> Path | None:
     """First-run welcome: offer to install Bibliogon or open the guide.
 
     Returns the install directory on success, or None if the user
     cancelled or only opened the guide.
     """
+    if not _check_launcher_target_stale():
+        return None  # user opted to abort due to outdated launcher
+
     choice = ui.three_button_dialog(
         title="Welcome to Bibliogon",
         message=(
