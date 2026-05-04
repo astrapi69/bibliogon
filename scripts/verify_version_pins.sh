@@ -164,6 +164,11 @@ if ! python3 "$ROOT/scripts/sync_versions.py" --check >&2; then
 fi
 
 echo
+echo "Reminder: external Bibliogon-owned deps (manuscripta,"
+echo "pluginforge) are NOT auto-synced. Verify their pins in"
+echo "backend/pyproject.toml + plugins/*/pyproject.toml manually"
+echo "at release time per release-workflow.md Step 4."
+echo
 
 if [[ $errors -gt 0 ]]; then
     echo "$errors version-pin issue(s) found. Fix before tagging."

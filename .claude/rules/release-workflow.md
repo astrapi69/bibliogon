@@ -190,12 +190,48 @@ new literals.
 - [ ] `docs/CONCEPT.md` (if the version is mentioned in prose)
 - [ ] `README.md` (if the version is mentioned in prose)
 
+### External Bibliogon-owned dependencies
+
+Two libraries that the Bibliogon project also maintains are
+pinned via the standard Poetry mechanism, NOT under
+`make sync-versions` automation. They have independent release
+lifecycles:
+
+- `manuscripta` (book-rendering pipeline)
+- `pluginforge` (plugin framework)
+
+At each Bibliogon release, manually verify both:
+
+- [ ] `manuscripta` pin in `backend/pyproject.toml` and every
+      `plugins/*/pyproject.toml` matches the latest released
+      `manuscripta` on PyPI (or whichever version you intend
+      to ship with this Bibliogon release)
+- [ ] `pluginforge` pin in `backend/pyproject.toml` and every
+      `plugins/*/pyproject.toml` matches the latest released
+      `pluginforge`
+
+Quick check:
+
+```bash
+pip index versions manuscripta
+pip index versions pluginforge
+grep -rn "manuscripta\|pluginforge" \
+  backend/pyproject.toml plugins/*/pyproject.toml \
+  | grep "version\|\^"
+```
+
+The current deferral from `make sync-versions` rests on an
+assumption of low drift (verified 2026-05-04: both pinned at
+their latest PyPI release). If you find these drifting more
+than once between Bibliogon releases, bring them under
+`sync-versions` automation. Concrete repeated drift overrides
+the deferral.
+
 ### Other release-time considerations
 
-Check the dependency versions of `manuscripta`, `pluginforge`
-and other Bibliogon-owned libraries. If a new `manuscripta`
-version shipped, update it at the same time as the canonical
-version bump.
+The `make sync-versions` step covers all Bibliogon-internal
+versions. The external-dep block above is the only manual
+checkpoint at release time.
 
 ---
 
