@@ -2,6 +2,37 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.4] - 2026-05-04
+
+Hotfix for v0.26.3. The GitHub Release for v0.26.3 attached only
+the macOS launcher binary; Linux and Windows release-event runs
+both failed with two distinct CI bugs:
+
+**Linux / Windows: verify step ran before `actions/setup-python`.**
+The launcher workflows had the inline release-event verify step
+positioned before the Set-up-Python step, so `python3
+scripts/sync_versions.py` resolved to the runner's system Python
+(3.10 on ubuntu-22.04). `sync_versions.py` imports `tomllib`,
+stdlib in Python 3.11+. Linux failed with
+`ModuleNotFoundError: No module named 'tomllib'`. Fix: move the
+verify step in all three launcher workflows to AFTER setup-python
+(macOS already happened to work because macos-14 ships 3.12 by
+default but had the same step-ordering bug).
+
+**Windows: subprocess.run on .sh script raised WinError 193.**
+`sync_versions.py:regenerate_install_sh` invoked
+`generate_install_sh.sh` via `subprocess.run([str(script),
+"--check"])`. Windows cannot natively exec `.sh` files via
+`subprocess.run`; on Linux/macOS the shebang `#!/usr/bin/env bash`
+handles it. Fix: invoke through bash explicitly
+(`subprocess.run(["bash", str(script), "--check"])`). GitHub
+Actions Windows runners ship Git Bash, which is in PATH. Linux
+and macOS continue to work because bash is also in PATH there.
+
+The v0.26.3 GitHub Release stays in place but ships only the
+macOS asset. v0.26.4 is the version users should install if they
+need Linux or Windows binaries.
+
 ## [0.26.3] - 2026-05-04
 
 Hotfix for v0.26.2. The CI pre-commit step (ruff format) caught

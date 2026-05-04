@@ -158,11 +158,16 @@ def regenerate_install_sh(dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    # Always invoke through bash so the same code path works on
+    # Windows runners (where subprocess.run([str(script)]) raises
+    # WinError 193 because Windows cannot natively exec .sh files).
+    # On Linux/macOS bash is in PATH; on Windows GitHub Actions
+    # runners ship Git Bash which is also in PATH.
     if dry_run:
         # Use the helper's --check mode to detect drift without
         # writing.
         result = subprocess.run(
-            [str(script), "--check"], cwd=REPO, capture_output=True
+            ["bash", str(script), "--check"], cwd=REPO, capture_output=True
         )
         if result.returncode != 0:
             print(
@@ -170,7 +175,7 @@ def regenerate_install_sh(dry_run: bool) -> bool:
             )
             return True
         return False
-    subprocess.run([str(script)], check=True, cwd=REPO)
+    subprocess.run(["bash", str(script)], check=True, cwd=REPO)
     return True
 
 
