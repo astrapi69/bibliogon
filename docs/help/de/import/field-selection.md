@@ -77,5 +77,5 @@ Der Feldauswahl-Schritt schliesst diese Lücke.
 
 - [Import aus einer Git-URL](git-url.md) — das Eingabefeld
   aus Schritt 1.
-- [Metadaten-Editor](../editor/) — vollstaendige Nach-Import-
-  Bearbeitung.
+- [Metadaten-Editor](../editor/uebersicht.md) — vollstaendige
+  Nach-Import-Bearbeitung.

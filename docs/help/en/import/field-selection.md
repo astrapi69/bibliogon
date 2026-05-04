@@ -74,4 +74,4 @@ them. The field-selection step closes that gap.
 ## Related
 
 - [Import from a git URL](git-url.md) — the Step 1 paste box.
-- [Metadata editor](../editor/) — full post-import editing.
+- [Metadata editor](../editor/uebersicht.md) — full post-import editing.

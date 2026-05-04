@@ -61,7 +61,7 @@ URL versuchen.
 
 ## Verwandte Themen
 
-- [Git-Sicherung](../git-backup/) — das Kernfeature, das ein
+- [Git-Sicherung](../git-backup/basics.md) — das Kernfeature, das ein
   Buch versioniert, das du in Bibliogon bearbeitest. Orthogonal
   zum Git-URL-Import: das eine zieht ein Buch rein, das andere
   verfolgt Änderungen an einem bereits in Bibliogon liegenden

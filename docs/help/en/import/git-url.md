@@ -58,7 +58,7 @@ from the trash and try a different URL.
 
 ## Related
 
-- [Git backup](../git-backup/) — the core feature that versions
+- [Git backup](../git-backup/basics.md) — the core feature that versions
   a book you are editing in Bibliogon. Orthogonal to git URL
   import: one pulls a book in, the other tracks changes to one
   that is already in Bibliogon.
