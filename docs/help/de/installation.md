@@ -51,9 +51,21 @@ Bevor der Willkommensdialog auf einem frischen Rechner erscheint, fragt der Laun
 
 Wer lieber im Terminal arbeitet - oder den Bibliogon-Lebenszyklus skripten, auf einem Server laufen lassen oder die Launcher-GUI komplett umgehen will - findet in [Erste Schritte](getting-started.md) den Weg. Der Terminal-Pfad nutzt `start.sh` / `stop.sh` und produziert denselben Docker-Stack auf demselben Port. Du kannst beides mischen: per Launcher installieren, per Skript verwalten - oder umgekehrt.
 
+## Wo Bibliogon deine Daten ablegt
+
+Bücher, Uploads und die SQLite-Datenbank liegen im Benutzerdaten-Verzeichnis:
+
+| Plattform | Pfad |
+|-----------|------|
+| Linux / macOS | `~/.local/share/bibliogon/` |
+| Windows | `%LOCALAPPDATA%\bibliogon\` |
+| Docker | `/app/data/` im benannten Volume `bibliogon-data` |
+
+Das passiert automatisch. Wer von einer älteren Version (v0.25.0 oder früher) aktualisiert, bei der die Daten innerhalb des Projektverzeichnisses lagen (`backend/bibliogon.db`, `backend/uploads/`), für den verschiebt Bibliogon beim ersten Start alles an den neuen Ort und hinterlässt eine `.migrated-YYYY-MM-DD`-Markierung an jedem alten Pfad. So kannst du den Umzug prüfen, bevor du die alten Dateien löschst.
+
 ## Konfigurationsverzeichnis
 
-Jede Plattform speichert den Launcher-Zustand (gemerkter Installationspfad, Aktivitätslog, Update-Einstellung) im Standard-Konfigurationsverzeichnis des Benutzers:
+Der Launcher-Zustand (gemerkter Installationspfad, Aktivitätslog, Update-Einstellung) liegt im Standard-Konfigurationsverzeichnis des Benutzers:
 
 | Plattform | Pfad |
 |-----------|------|

@@ -176,7 +176,8 @@ NOT_TRANSLITERATIONS: set[str] = {
     "Fasse", "Assessment", "Messages",
     "Huerta",  # surname
     # Correct German with -ssen / -ss / no-umlaut
-    "Inhaltsverzeichnisses", "Textpassagen", "Missbrauchs",
+    "Inhaltsverzeichnisses", "Projektverzeichnisses",
+    "Textpassagen", "Missbrauchs",
     "aussehen", "Voraussetzung", "Voraussetzungen",
     "Aufbewahrungsdauer", "Quelltext", "Buchverzeichnisses",
     "Buchverzeichnis", "klassische", "klassisches",

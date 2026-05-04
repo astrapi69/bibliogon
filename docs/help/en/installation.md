@@ -51,9 +51,21 @@ Before showing the welcome dialog on a fresh machine, the launcher contacts GitH
 
 If you would rather use the command line - or want to script Bibliogon's lifecycle, run it on a server, or skip the launcher's GUI altogether - see [Getting Started](getting-started.md). The terminal path uses `start.sh` / `stop.sh` and produces an identical Docker stack on the same port. You can mix the two: install via the launcher, manage via the scripts, or vice versa.
 
+## Where Bibliogon stores your data
+
+Books, uploads, and the SQLite database live in your user data directory:
+
+| Platform | Path |
+|----------|------|
+| Linux / macOS | `~/.local/share/bibliogon/` |
+| Windows | `%LOCALAPPDATA%\bibliogon\` |
+| Docker | `/app/data/` inside the `bibliogon-data` named volume |
+
+This is automatic. If you upgrade from an older version (v0.25.0 or earlier) where data lived inside the project directory (`backend/bibliogon.db`, `backend/uploads/`), Bibliogon migrates everything to the new location on first start and leaves a `.migrated-YYYY-MM-DD` breadcrumb at each old path so you can verify the move before deleting the old files.
+
 ## Config directory
 
-Each platform stores launcher state (remembered install path, activity log, auto-update setting) in the standard user config directory:
+Launcher state (remembered install path, activity log, auto-update setting) lives in the standard user config directory:
 
 | Platform | Path |
 |----------|------|

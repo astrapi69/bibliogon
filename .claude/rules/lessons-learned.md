@@ -606,3 +606,43 @@ When a layout fix requires setting `overflow: hidden` on one of the three, think
 
 - `ef7ce5c`: added `html, body, #root { overflow: hidden; }` as fix for Issue #11 (chapter sidebar at 150% zoom). Broke scroll on Settings, Dashboard, GetStarted, Help pages.
 - `c25483e`: split the rule. Kept html/body locked (preserves zoom fix), restored `#root overflow-y: auto`.
+
+## Filesystem isolation: production data lives outside the project tree
+
+Production Bibliogon data NEVER lives in the project tree. All paths resolve via `app.paths` helpers (`get_data_dir`, `get_config_dir`, `get_cache_dir`, `get_upload_dir`, `get_db_path`) which use platformdirs (XDG-conformant) by default and respect a `BIBLIOGON_DATA_DIR` (etc.) env-var override. Resolution is **always** via fresh function calls, never via frozen module-level imports.
+
+Default locations (Phase 2 swap, 2026-05-04):
+
+- Linux/macOS: `~/.local/share/bibliogon/`
+- Windows: `%LOCALAPPDATA%\bibliogon\`
+- Tests: a `tmp_path_factory`-managed dir, set by `backend/tests/conftest.py` before any `app.*` import
+- Docker: `/app/data/` via `BIBLIOGON_DATA_DIR=/app/data` in compose, mounted as the named `bibliogon-data` volume
+
+Three layers of protection prevent test runs from touching production data:
+
+1. **Production marker file**. Production directories contain a `.bibliogon-production` marker (written by the FastAPI lifespan via `app.paths.mark_data_dir_as_production`). If tests ever see one, the entire run aborts with `pytest.exit(returncode=2)`.
+2. **Test conftest sets `BIBLIOGON_DATA_DIR`** to a tmp dir before any `app.*` import. The autouse session fixture also asserts the resolved path looks like a tmp location.
+3. **All path access via helpers**, never via CWD-relative `Path("foo")` and never via frozen module-level imports.
+
+**Forbidden patterns:**
+
+- `UPLOAD_DIR = Path("uploads")` at module top level
+- `from app.routers.assets import UPLOAD_DIR` (frozen import)
+- `Path("data") / "X"` anywhere in production code
+
+**Required pattern:**
+
+- `upload_dir = get_upload_dir()` inside the function that uses it.
+
+If `make test` aborts with exit code 2, check what path was mounted via `BIBLIOGON_DATA_DIR`. NEVER delete the marker just to make the test pass; investigate why a test pointed at production. Origin: April 2026 data-loss incident — DB tripwire landed in `a4cf7cf`, filesystem tripwire + paths.py in the same period.
+
+### Phase 2 migration
+
+Users with v0.25.0-and-earlier data in the project tree (`backend/bibliogon.db`, `backend/uploads/`) get auto-migrated on first start after the platformdirs swap. Helper: `app.data_dir_migration.migrate_data_dir_if_needed`, run from the FastAPI lifespan BEFORE `init_db()`. Properties:
+
+- Idempotent (`.migration-complete` marker short-circuits)
+- Fail-loud on conflict (RuntimeError if both legacy and target hold the same item; silent merge would corrupt data)
+- Breadcrumb at old paths (`.migrated-YYYY-MM-DD` file beside each moved item)
+- Skipped in test mode (`BIBLIOGON_TEST=1`)
+
+Rule: when adding a new persistent path under `get_data_dir()`, also add it to `_legacy_paths()` in `data_dir_migration.py` if a v0.25.0-and-earlier code path could have written to a different location. Otherwise users lose data on the next upgrade.
