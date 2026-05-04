@@ -1,8 +1,11 @@
+import logging
 import os
 from pathlib import Path
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+logger = logging.getLogger(__name__)
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +23,10 @@ def _resolve_database_url() -> str:
     3. BIBLIOGON_DB_PATH env var lets callers override the on-disk file
        location explicitly. Kept for backwards compatibility with
        deployments that set it directly (e.g. existing
-       docker-compose.prod.yml configurations).
+       docker-compose.prod.yml configurations). DEPRECATED; emits a
+       logger.warning when set without BIBLIOGON_DATA_DIR. A future
+       release flips precedence so BIBLIOGON_DATA_DIR derivation wins,
+       and a later release removes the override entirely.
     4. Default falls through to ``app.paths.get_db_path()``, which
        resolves the canonical path from BIBLIOGON_DATA_DIR or
        platformdirs.
@@ -30,6 +36,14 @@ def _resolve_database_url() -> str:
     if explicit := os.getenv("DATABASE_URL"):
         return explicit
     if db_path_override := os.getenv("BIBLIOGON_DB_PATH"):
+        if not os.getenv("BIBLIOGON_DATA_DIR"):
+            logger.warning(
+                "BIBLIOGON_DB_PATH is deprecated and will be removed in a "
+                "future release. Set BIBLIOGON_DATA_DIR instead; the "
+                "database path is derived as <BIBLIOGON_DATA_DIR>/bibliogon.db. "
+                "Current value: %s",
+                db_path_override,
+            )
         db_path = Path(db_path_override)
     else:
         # Late import: app.paths import is cheap but keeping it inside

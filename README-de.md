@@ -161,7 +161,8 @@ Umgebungsvariablen (in `.env` setzen):
 | `BIBLIOGON_SECRET_KEY` | (generiert) | Geheimnis fuer Lizenz-Validierung |
 | `BIBLIOGON_CREDENTIALS_SECRET` | (generiert) | Geheimnis zur Verschluesselung von API-Keys und Service-Account-Dateien |
 | `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Erlaubte CORS-Origins |
-| `BIBLIOGON_DB_PATH` | /app/data/bibliogon.db | Pfad zur SQLite-Datenbank |
+| `BIBLIOGON_DATA_DIR` | platformdirs-Standard | Wurzelverzeichnis fuer Laufzeitdaten (DB, Uploads). Linux/macOS: `~/.local/share/bibliogon/`. Windows: `%LOCALAPPDATA%\bibliogon\`. Docker: `/app/data` |
+| `BIBLIOGON_DB_PATH` | (abgeleitet aus `BIBLIOGON_DATA_DIR`) | **Veraltet.** Pfad zur SQLite-Datenbank. Stattdessen `BIBLIOGON_DATA_DIR` setzen; gibt zur Laufzeit eine Warnung aus, wenn ohne `BIBLIOGON_DATA_DIR` gesetzt. Wird in einer kuenftigen Version entfernt |
 
 ## Verwandte Projekte
 

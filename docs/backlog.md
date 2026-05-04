@@ -57,13 +57,14 @@ store.
 
 - **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle. Per
   v0.26.6 changelog, the env var still works but is documented
-  as deprecated. Concrete steps: (1) emit a `logger.warning`
-  when `BIBLIOGON_DB_PATH` is set without `BIBLIOGON_DATA_DIR`
-  for one release cycle, (2) flip precedence so
-  `BIBLIOGON_DATA_DIR` derivation wins, (3) remove
-  `BIBLIOGON_DB_PATH` override entirely. Effort: S per step,
-  spread across 2-3 releases. Trigger: any release after
-  v0.27.0.
+  as deprecated. Concrete steps: (1) ~~emit a `logger.warning`
+  when `BIBLIOGON_DB_PATH` is set without `BIBLIOGON_DATA_DIR`~~
+  **shipped, awaiting next release** for one release cycle,
+  (2) flip precedence so `BIBLIOGON_DATA_DIR` derivation wins,
+  (3) remove `BIBLIOGON_DB_PATH` override entirely. Effort: S
+  per step, spread across 2-3 releases. Step (2) trigger: one
+  release after step (1) ships (i.e. v0.28.0+). Step (3) trigger:
+  one release after step (2).
 
 - **DEP-FE-VERSION-01**: frontend version source-of-truth
   runtime cross-check. Currently `__APP_VERSION__` is a Vite
