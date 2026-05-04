@@ -88,9 +88,9 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   und setze ihn direkt um: app/services/backup/-Paket mit serializer,
   markdown_utils, asset_utils, archive_utils, backup_export, backup_import,
   project_import, markdown_import, smart_import. Router enthält nur noch
-  dünne Endpoints die delegieren. Maximalfunktionsgroesse <50 Zeilen,
+  dünne Endpoints die delegieren. Maximalfunktionsgröße <50 Zeilen,
   jede Funktion einzeln testbar."
-- Ziel: God methods aus dem Backup-Router eliminieren, Geschaeftslogik
+- Ziel: God methods aus dem Backup-Router eliminieren, Geschäftslogik
   in testbare Service-Module ziehen, Router auf Routing-Layer reduzieren.
 - Ergebnis:
   - Neuer Eintrag S-08 in docs/ROADMAP.md unter "Technische Schulden",
@@ -191,7 +191,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   Codebase (`translate_book` ~106 LOC, `run_pandoc` ~84 LOC, `validate_toc`
   ~98 LOC) und zerlege sie nach demselben Muster wie S-08/S-09: kleine
   Step-Helfer, jede Funktion einzeln testbar, max ~40 LOC."
-- Ziel: Die letzten drei groesseren god methods im Backend und in den
+- Ziel: Die letzten drei größeren god methods im Backend und in den
   Plugins entfernen, ohne Verhalten oder API zu ändern.
 - Ergebnis:
   - S-10 `translate_book` in
@@ -237,7 +237,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   den default Namen, der deaktiviert ist und sobald die checkbox den
   hacken hat kann der anwender den Namen ändern"
 - Optimierter Prompt: "Bug: Settings > Plugins > Audiobook hat zwei
-  Speichern-Buttons - klaeren ob beabsichtigt und falls nicht, fixen.
+  Speichern-Buttons - klären ob beabsichtigt und falls nicht, fixen.
   Feature: Im BookMetadataEditor Audiobook-Tab Checkbox 'Eigener Dateiname'
   und Textfeld mit slug-basiertem Default; Textfeld disabled bis die
   Checkbox gesetzt wird; leerer Wert -> Backend speichert null und nutzt
@@ -371,8 +371,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   `Job` hatte kein progress-Feld, der Generator emittierte nichts
   zwischendurch (nur logger.info), und das Inline-Status-Pille im
   ExportDialog zeigte 5 Minuten lang denselben Spinner. Die alte
-  sync-Route `GET /export/audiobook` war noch da als Fussangel.
-  User waehlte Variante A (SSE).
+  sync-Route `GET /export/audiobook` war noch da als Fußangel.
+  User wählte Variante A (SSE).
 - Ergebnis:
   - **JobStore erweitert** (`backend/app/job_store.py`):
     - `Job` bekommt `progress: dict`, `events: list[dict]` (Append-only
@@ -477,19 +477,19 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
-## 9. BookMetadataEditor UX: feste Tab-Höhe + groessere Textareas (14:30)
+## 9. BookMetadataEditor UX: feste Tab-Höhe + größere Textareas (14:30)
 
 - Original-Prompt: Zwei UX-Probleme. (1) Tab-Höhe springt beim Wechsel
   weil jeder Tab unterschiedlich viel Inhalt hat - feste min-height
   600px via CSS-Variable `--metadata-tab-min-height`. (2) Textareas im
   Marketing-Tab zu klein - min-height 200, rows=8, resize:vertical,
   Editor-Schriftart, plus Character-Counter unter jedem Feld
-  (4000 / 600 / 2000) der rot wird wenn ueberschritten, ohne harte
+  (4000 / 600 / 2000) der rot wird wenn überschritten, ohne harte
   Begrenzung im Input.
 - Optimierter Prompt: User-Specs waren ausreichend, alle Constraints
   und Werte waren explizit benannt.
-- Ziel: Keine Layout-Spruenge mehr beim Tab-Wechsel; vernuenftige
-  Schreibflaeche für Marketing-Texte mit Sichtbar-Feedback bei
+- Ziel: Keine Layout-Sprünge mehr beim Tab-Wechsel; vernünftige
+  Schreibfläche für Marketing-Texte mit Sichtbar-Feedback bei
   Plattform-Limits.
 - Ergebnis:
   - **CSS Variable** in `frontend/src/styles/global.css`:
@@ -673,7 +673,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   `ElevenLabsAdapter` aus `manuscripta.audiobook.tts.*`) als
   bibliogon `TTSEngine`-Subklassen. Lazy imports mit klaren Fehlern
   wenn die Lib fehlt. Plus: `get_engine` darf bei unbekannten Engine-
-  IDs nicht crashen sondern muss auf `edge-tts` zurueckfallen
+  IDs nicht crashen sondern muss auf `edge-tts` zurückfallen
   (Legacy-Bücher mit alten `tts_engine`-Werten)."
 - Diagnose:
   - `tts_engine.py:ENGINES` registrierte nur `edge-tts` (1 von 4
@@ -757,8 +757,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 2. ElevenLabs API-Key UI + persistente Audiobook-Ablage
 
-- Original-Prompt: User beschrieb zwei Probleme: (1) ElevenLabs API-Key nur via .env setzbar, (2) generierte Audiobook-Dateien gehen verloren wenn der User den Export-Dialog schließt. Gewuenscht waren Settings-UI mit Test-Button + persistente Ablage + Metadaten-Tab Sektion mit Downloads + Backup-Integration + Regeneration-Warnung + i18n.
-- Optimierter Prompt: derselbe Inhalt, aber Architektur-Entscheidungen vorab geklaert (Storage-Pfad: `uploads/{book_id}/audiobook/`, API-Key in `audiobook.yaml` plain, i18n nur DE+EN, Confirm-Dialog plus Plugin-Setting `overwrite_existing` wobei der Frontend-Confirm trotzdem zusätzlich kommt).
+- Original-Prompt: User beschrieb zwei Probleme: (1) ElevenLabs API-Key nur via .env setzbar, (2) generierte Audiobook-Dateien gehen verloren wenn der User den Export-Dialog schließt. Gewünscht waren Settings-UI mit Test-Button + persistente Ablage + Metadaten-Tab Sektion mit Downloads + Backup-Integration + Regeneration-Warnung + i18n.
+- Optimierter Prompt: derselbe Inhalt, aber Architektur-Entscheidungen vorab geklärt (Storage-Pfad: `uploads/{book_id}/audiobook/`, API-Key in `audiobook.yaml` plain, i18n nur DE+EN, Confirm-Dialog plus Plugin-Setting `overwrite_existing` wobei der Frontend-Confirm trotzdem zusätzlich kommt).
 - Ziel: Datenverlust nach Audiobook-Export verhindern, ElevenLabs ohne .env-Editing nutzbar machen.
 - Ergebnis:
   - Backend: neues Modul `bibliogon_audiobook/audiobook_storage.py` (persist/load/delete + Path-Traversal-Schutz). `tts_engine.set_elevenlabs_api_key()` als process-weite Override mit Env-Var-Fallback. Plugin-`activate()` schiebt den YAML-Key in die Engine.
@@ -796,8 +796,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 4. Bug: Stimmen-Dropdown leakt Voices fremder Engines
 
 - Original-Prompt: "Dropdown zeigt ALLE Stimmen statt nur die passenden". User wollte Diagnose-Schritte und Fix-Vorschlag durchgespielt haben.
-- Optimierter Prompt: derselbe Inhalt aber mit ausdrücklichem Fokus auf den engineabhaengigen Fallback im Frontend (was sich als Wurzel herausstellte).
-- Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurück - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhängig davon welche Engine der User gewählt hatte. Wer Google TTS oder ElevenLabs auswaehlte, sah trotzdem die Edge-DE-Voices.
+- Optimierter Prompt: derselbe Inhalt aber mit ausdrücklichem Fokus auf den engineabhängigen Fallback im Frontend (was sich als Wurzel herausstellte).
+- Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurück - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhängig davon welche Engine der User gewählt hatte. Wer Google TTS oder ElevenLabs auswählte, sah trotzdem die Edge-DE-Voices.
 - Fix:
   - Neuer Helper `api.audiobook.listVoices(engine, language)` im API-Client. Versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin), gibt sonst `[]` zurück. KEIN engine-agnostischer Fallback mehr.
   - Beide Komponenten rufen den Helper auf und rendern bei leerem Ergebnis einen Empty-State `"Keine Stimmen fuer {engine} in {language} verfuegbar"` statt fingierte Voices anzuzeigen.

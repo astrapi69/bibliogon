@@ -12,7 +12,7 @@ Ein Artikel ist:
 
 Ein Artikel ist **nicht**:
 
-- Ein Buch (keine Front-Matter, kein ISBN, keine Kapitel, kein Hoerbuch-Export).
+- Ein Buch (keine Front-Matter, kein ISBN, keine Kapitel, kein Hörbuch-Export).
 - Eine Multi-Plattform-Veröffentlichung (Phase 2 bringt Cross-Posting auf Medium / Substack / X / LinkedIn).
 - Ein Promo-Post (Tweets, Threads, LinkedIn-Ankündigungen über den Artikel kommen in Phase 2).
 
@@ -38,7 +38,7 @@ Der Titel lässt sich oben auf der Seite inline editieren. Auf den Titel klicken
 
 ## Thema und SEO
 
-Jeder Artikel hat ein **Thema**-Dropdown in der Metadaten-Sidebar. Themen sind die primaere Kategorie eines Artikels und kommen aus einer einzigen Liste, die unter **Einstellungen → Themen** verwaltet wird. Das Dropdown ist deaktiviert, solange noch kein Thema definiert ist; ein Hinweis verlinkt auf den passenden Einstellungs-Tab.
+Jeder Artikel hat ein **Thema**-Dropdown in der Metadaten-Sidebar. Themen sind die primäre Kategorie eines Artikels und kommen aus einer einzigen Liste, die unter **Einstellungen → Themen** verwaltet wird. Das Dropdown ist deaktiviert, solange noch kein Thema definiert ist; ein Hinweis verlinkt auf den passenden Einstellungs-Tab.
 
 Thema ist einwertig (ein Artikel gehört zu genau einem Thema). Tags bleiben ein separates, mehrwertiges Feld für feinere Quer-Etiketten.
 
@@ -59,7 +59,7 @@ Die Filter-Pills auf der Listenseite engen auf einen Status ein. Die Standard-An
 
 ## Artikel löschen
 
-Der **Löschen**-Button in der Sidebar (rot, unten im Metadaten-Bereich) entfernt den Artikel. Ein Bestaetigungsdialog lässt dich anerkennen, dass die Aktion nicht rückgängig gemacht werden kann — Bibliogon legt Artikel derzeit nicht in einen Papierkorb (das ist ein Phase-2-Polish-Punkt, parallel zum Buch-Papierkorb).
+Der **Löschen**-Button in der Sidebar (rot, unten im Metadaten-Bereich) entfernt den Artikel. Ein Bestätigungsdialog lässt dich anerkennen, dass die Aktion nicht rückgängig gemacht werden kann — Bibliogon legt Artikel derzeit nicht in einen Papierkorb (das ist ein Phase-2-Polish-Punkt, parallel zum Buch-Papierkorb).
 
 ## Publikationen (AR-02 Phase 2)
 
@@ -69,8 +69,8 @@ Eine Publikation verfolgt ein einzelnes Stück Inhalt auf einer Plattform: die H
 
 1. Artikel im Editor öffnen.
 2. In der Sidebar zu **Publikationen** scrollen und **Hinzufügen** klicken.
-3. Plattform aus dem Dropdown wählen. Das Formular fuellt sich mit den Pflicht- + optionalen Feldern dieser Plattform.
-4. Daten ausfuellen (z.B. Medium braucht Titel + Tags; X braucht Body) und absenden.
+3. Plattform aus dem Dropdown wählen. Das Formular füllt sich mit den Pflicht- + optionalen Feldern dieser Plattform.
+4. Daten ausfüllen (z.B. Medium braucht Titel + Tags; X braucht Body) und absenden.
 
 Die Publikation startet im Status **Geplant**. Bibliogon kontaktiert keine Plattform-API — es speichert nur, was du veröffentlichen willst.
 
@@ -104,7 +104,7 @@ Wenn du die Live-Version aktualisiert hast (oder akzeptierst, dass der lokale En
 
 ### Promo-Posts
 
-Eine Publikation mit `is_promo=true` ist ein kurzer Begleit-Post — ein Tweet, Thread oder LinkedIn-Ankuendigung, die auf eine Hauptpublikation auf Medium/Substack zurückverlinkt. Gleicher Lebenszyklus, gleiche Drift-Detection.
+Eine Publikation mit `is_promo=true` ist ein kurzer Begleit-Post — ein Tweet, Thread oder LinkedIn-Ankündigung, die auf eine Hauptpublikation auf Medium/Substack zurückverlinkt. Gleicher Lebenszyklus, gleiche Drift-Detection.
 
 ### SEO-Metadaten
 
@@ -114,11 +114,11 @@ SEO-Titel und SEO-Beschreibung fallen bei leerem Wert zur Veröffentlichung auf 
 
 ### Was weiterhin NICHT im Umfang ist (Phase 3+)
 
-- Plattform-API-Integration (Medium / Substack / X / LinkedIn). Veroeffentlichen bleibt manuell.
+- Plattform-API-Integration (Medium / Substack / X / LinkedIn). Veröffentlichen bleibt manuell.
 - Geplante Veröffentlichung als Background-Job.
 - Cross-Posting-Automatisierung.
 - Analytics-Abruf.
-- Tag-Taxonomie (Tags sind Freitext, kein Autocomplete artikeluebergreifend).
+- Tag-Taxonomie (Tags sind Freitext, kein Autocomplete artikelübergreifend).
 - Papierkorb + Wiederherstellung für Artikel.
 
-Wenn dein Cross-Posting-Workflow eine Friction zeigt, die Bibliogon loesen kann, log sie in `docs/journal/article-workflow-observations.md`, damit der Fall konkret ist bevor Phase-3-Prioritaeten gesetzt werden.
+Wenn dein Cross-Posting-Workflow eine Friction zeigt, die Bibliogon lösen kann, log sie in `docs/journal/article-workflow-observations.md`, damit der Fall konkret ist bevor Phase-3-Prioritäten gesetzt werden.

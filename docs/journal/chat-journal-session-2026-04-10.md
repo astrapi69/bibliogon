@@ -6,7 +6,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 1. ElevenLabs API-Key UI + persistente Audiobook-Ablage (fortgesetzt)
 
-- Fortfuehrung der Session vom 2026-04-09. Commits 263715e + 882aed0 bereits gepusht.
+- Fortführung der Session vom 2026-04-09. Commits 263715e + 882aed0 bereits gepusht.
 - Siehe chat-journal-session-2026-04-09.md Eintrag #2 für Details.
 
 ---
@@ -34,7 +34,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 5. Google Cloud TTS Integration - Tranche 1
 
-- Original-Prompt: Ausfuehrlicher Spec für Google Cloud TTS als Premium-Engine.
+- Original-Prompt: Ausführlicher Spec für Google Cloud TTS als Premium-Engine.
 - Umfangreiche Rückfrage-Runde: Scope-Analyse (10 Features in einem Prompt), 7 konkrete Fragen an den User.
 - User-Entscheidungen: (1) Tranchen-Ansatz, (2) Credentials verschlüsselt, (3) optionale Dependency mit lazy import, (4) Refactoring als eigener Commit vorab.
 - Zweiter Prompt verwies auf manuscripta v0.7.0 (nicht installiert war 0.6.1). Check auf PyPI: v0.7.0 existiert und hat exakt die API die der Prompt annimmt (create_adapter, TTSAdapter, VoiceInfo, TTSError Hierarchie, tenacity Retry).
@@ -85,7 +85,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - i18n: event_reused in DE + EN
 
 ### Commit 6: feat: cost estimation and savings tracking (0f9f890)
-- Nach Export: Generator berechnet geschaetzte Kosten via manuscripta adapter.estimate_cost()
+- Nach Export: Generator berechnet geschätzte Kosten via manuscripta adapter.estimate_cost()
 - "done" SSE-Event trägt cost_usd und saved_usd
 - Progress-Dialog rendert: "Generierung abgeschlossen | Wiederverwendet: 12 | Kosten: ~$0.47 | Gespart: ~$1.87"
 - Kostenlose Engines (Edge, gTTS, pyttsx3) geben None zurück, werden ignoriert
@@ -140,7 +140,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ---
 
 ### Hauptergebnisse
-- Google Cloud TTS vollständig integriert (Engine, verschluesselte Credentials, UI, Voice-Seeding)
+- Google Cloud TTS vollständig integriert (Engine, verschlüsselte Credentials, UI, Voice-Seeding)
 - Content-Hash-Cache spart TTS-Kosten bei unveränderten Kapiteln
 - Kostentransparenz im Progress-Dialog (Kosten + Ersparnisse)
 - Dry-Run: Probe hören + Kosten-Preview vor dem echten Export

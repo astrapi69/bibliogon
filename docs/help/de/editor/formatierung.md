@@ -25,7 +25,7 @@ Die Überschriften werden beim Export automatisch in das Inhaltsverzeichnis übe
 Bibliogon unterstützt zwei Listenarten:
 
 - **Aufzählungsliste** (Ctrl+Shift+8): Ungeordnete Liste mit Aufzählungspunkten. Einrückungen über Tab erzeugen verschachtelte Listen.
-- **Nummerierte Liste** (Ctrl+Shift+9): Geordnete Liste mit automatischer Nummerierung. Die Nummerierung passt sich automatisch an, wenn du Einträge hinzufuegst oder entfernst.
+- **Nummerierte Liste** (Ctrl+Shift+9): Geordnete Liste mit automatischer Nummerierung. Die Nummerierung passt sich automatisch an, wenn du Einträge hinzufügst oder entfernst.
 
 Listen können beliebig tief verschachtelt werden. Jede Einrückungsebene erzeugt eine Unterliste.
 

@@ -34,7 +34,7 @@ beiden Limits hochgesetzt:
 - `fs.inotify.max_user_instances=512`
 
 Der 99-Präfix gewinnt die lexikalische Reihenfolge gegen
-30-tracker, sodass die hoeheren Limits über Neustarts hinweg
+30-tracker, sodass die höheren Limits über Neustarts hinweg
 bestehen bleiben.
 
 Wenn `make fix-watchers` nicht verfügbar ist, die equivalente
@@ -114,7 +114,7 @@ cd backend && poetry run pre-commit run --all-files
 
 Symptom: `make dev` scheitert mit `[Errno 98] Address already in use`.
 
-Ursache: ein frueheres `make dev-bg` hat ein uvicorn am Leben
+Ursache: ein früheres `make dev-bg` hat ein uvicorn am Leben
 gelassen, oder ein anderer Prozess belegt Port 8000.
 
 Lösung:
@@ -123,7 +123,7 @@ Lösung:
 make dev-down
 ```
 
-Falls das nicht aufraeumt, den Prozess von Hand suchen:
+Falls das nicht aufräumt, den Prozess von Hand suchen:
 
 ```bash
 lsof -i :8000
@@ -154,7 +154,7 @@ Datenbank; das trifft nur lokale Entwicklung.
 Symptom: ein Plugin liegt in `plugins/`, `make install-plugins` war
 erfolgreich, aber die Routen liefern 404.
 
-Ursache: das `poetry.lock` des Backends cached die aufgeloesten
+Ursache: das `poetry.lock` des Backends cached die aufgelösten
 transitiven Abhängigkeiten von Path-installierten Plugins. Nach
 einer Änderung der Plugin-pyproject.toml ist der Backend-Lock
 veraltet.
@@ -167,7 +167,7 @@ cd backend && poetry lock && poetry install
 
 Danach `make dev` neu starten.
 
-## Nuetzliche Diagnose-Befehle
+## Nützliche Diagnose-Befehle
 
 ```bash
 # inotify-Limits pruefen

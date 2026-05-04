@@ -16,7 +16,7 @@ Modi im Schritt 3 des Import-Assistenten:
   die `origin`-Remote-URL aus der Quelle bleibt erhalten. Den
   PAT gibst du nach dem Import über den Git-Sicherungs-Dialog
   erneut ein (ein im Quell-`.git/` vorhandener PAT wird aus
-  Sicherheitsgruenden entfernt).
+  Sicherheitsgründen entfernt).
 
 ## Sicherheitsgarantien beim Übernehmen
 
@@ -41,18 +41,18 @@ Commit auf, damit du genau siehst, was entfernt wird.
 
 ## Was nach der Uebernahme passiert
 
-Das uebernommene Buch hat `uploads/<book_id>/.git/` auf der
+Das übernommene Buch hat `uploads/<book_id>/.git/` auf der
 Festplatte. Alle Git-Backup-Endpoints (`commit`, `push`,
 `pull`, `status`, `log`, `merge`) funktionieren sofort.
 
 **Wichtig**: Dein erster Bibliogon-Commit nach der
-Uebernahme ueberschreibt die übernommenen Working-Tree-
+Uebernahme überschreibt die übernommenen Working-Tree-
 Dateien. Bibliogon schreibt `manuscript/*.json` (kanonische
 TipTap-Struktur) und `config/metadata.yaml`. Die
 übernommenen Commits bleiben in der Historie unverändert
 erhalten; nur der Working-Tree ändert sich.
 
-## Nachtraegliche Uebernahme (für Bücher, die vor diesem Feature importiert wurden)
+## Nachträgliche Uebernahme (für Bücher, die vor diesem Feature importiert wurden)
 
 Wenn du ein Buch hast, das vor Einführung des
 Uebernahme-Features importiert wurde, kannst du dessen
@@ -64,7 +64,7 @@ POST /api/books/{book_id}/git-import/adopt
 
 Multipart-Upload: `file` (das ZIP) + Formularfeld
 `preserve_remote`. Der Endpoint verweigert die Uebernahme,
-wenn das Buch bereits ein `.git/` besitzt — loesche das
+wenn das Buch bereits ein `.git/` besitzt — lösche das
 vorhandene Repo zuerst über den Git-Sicherungs-Dialog.
 
 ## Welchen Modus wann
@@ -79,7 +79,7 @@ vorhandene Repo zuerst über den Git-Sicherungs-Dialog.
   weiterhin dorthin pusht. Du brauchst einen PAT
   (Neueingabe im Git-Sicherungs-Dialog).
 
-## Grenzfaelle
+## Grenzfälle
 
 - **Shallow-Clone**: wird unverändert übernommen. `push`
   könnte von manchen Remotes abgelehnt werden; per
@@ -90,7 +90,7 @@ vorhandene Repo zuerst über den Git-Sicherungs-Dialog.
   Kapiteln als defekte Bildreferenzen.
 - **Submodule**: `.gitmodules` wird angezeigt.
   Submodul-Inhalte werden in diesem MVP nicht geladen.
-- **Beschaedigte Quelle**: `git fsck` läuft nach der
+- **Beschädigte Quelle**: `git fsck` läuft nach der
   Sanitize-Stufe. Eine beschädigte Quelle wird mit
   klarer Fehlermeldung abgelehnt; nichts wird in das
   Uploads-Verzeichnis des Buches geschrieben.

@@ -10,7 +10,7 @@ Electronic Publication. Ein offenes Standardformat für E-Books, das vom W3C gep
 
 ## ISBN
 
-International Standard Book Number. Eine weltweit eindeutige Kennung für Bücher. Bibliogon unterstützt die Erfassung mehrerer ISBN-Varianten pro Buch: ISBN für E-Book, Paperback und Hardcover. Die ISBN fliesst in die Export-Metadaten ein.
+International Standard Book Number. Eine weltweit eindeutige Kennung für Bücher. Bibliogon unterstützt die Erfassung mehrerer ISBN-Varianten pro Buch: ISBN für E-Book, Paperback und Hardcover. Die ISBN fließt in die Export-Metadaten ein.
 
 ## manuscripta
 

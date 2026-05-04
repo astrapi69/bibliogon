@@ -2,10 +2,10 @@
 
 Vorlagen sind wiederverwendbare Strukturen, die dir das erneute Aufbauen desselben Skeletts ersparen, wenn du ein neues Buch oder Kapitel anlegst. Bibliogon kennt zwei Arten:
 
-- **Buchvorlagen** füllen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge). Fuenf Genres liegen bei: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie und Memoiren.
+- **Buchvorlagen** füllen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge). Fünf Genres liegen bei: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie und Memoiren.
 - **Kapitelvorlagen** füllen ein einzelnes Kapitel mit einer strukturierten Gliederung im TipTap-JSON-Format. Vier liegen bei: Interview, FAQ, Rezept, Fotoreportage.
 
-Beide Arten unterscheiden **mitgelieferte** Vorlagen (Teil von Bibliogon, schreibgeschuetzt, mit Schloss-Badge) von **eigenen** Vorlagen (aus deinen Büchern oder Kapiteln gespeichert, über den Mülleimer-Button auf der Karte loeschbar).
+Beide Arten unterscheiden **mitgelieferte** Vorlagen (Teil von Bibliogon, schreibgeschützt, mit Schloss-Badge) von **eigenen** Vorlagen (aus deinen Büchern oder Kapiteln gespeichert, über den Mülleimer-Button auf der Karte löschbar).
 
 ## Buch aus einer Vorlage erstellen
 
@@ -15,7 +15,7 @@ Beide Arten unterscheiden **mitgelieferte** Vorlagen (Teil von Bibliogon, schrei
 4. Titel und Autor eintragen. Sprache und Beschreibung sind aus der Vorlage vorbelegt, aber editierbar.
 5. Auf **Erstellen** klicken. Das neue Buch öffnet sich im Editor mit allen Kapiteln.
 
-Im Hintergrund erstellt `POST /api/books/from-template` Buch und Kapitel in einem einzigen Datenbank-Commit. Schlaegt das Einfügen eines Kapitels fehl, wird das ganze Buch zurueckgerollt.
+Im Hintergrund erstellt `POST /api/books/from-template` Buch und Kapitel in einem einzigen Datenbank-Commit. Schlägt das Einfügen eines Kapitels fehl, wird das ganze Buch zurückgerollt.
 
 ## Buch als Vorlage speichern
 
@@ -26,7 +26,7 @@ Im Hintergrund erstellt `POST /api/books/from-template` Buch und Kapitel in eine
    - *Leere Platzhalter* speichert nur die Struktur: Titel, Typen, Reihenfolge. Das Content-Feld bleibt leer. Ideal für wiederverwendbare Blaupausen.
    - *Inhalt übernehmen* kopiert den vollen Kapiteltext in die Vorlage. Sinnvoll, wenn du eine Musterbuchvorlage mit Beispieltexten haben willst.
 5. **Kapitelvorschau** ausklappen, um die Kapitelliste vor dem Speichern zu prüfen.
-6. Auf **Speichern** klicken. Die Vorlage erscheint im Vorlagen-Picker für zukünftige **Aus Vorlage**-Fluesse.
+6. Auf **Speichern** klicken. Die Vorlage erscheint im Vorlagen-Picker für zukünftige **Aus Vorlage**-Flüsse.
 
 Gibt es bereits eine Vorlage mit demselben Namen, antwortet der Server mit 409 und das Namensfeld zeigt einen Inline-Fehler. Einen anderen Namen wählen.
 
@@ -41,7 +41,7 @@ Gibt es bereits eine Vorlage mit demselben Namen, antwortet der Server mit 409 u
 
 1. In der Sidebar mit Rechtsklick auf ein Kapitel das Kontextmenue öffnen.
 2. Auf **Als Vorlage speichern** klicken.
-3. Name, Beschreibung und Content-Modus (leerer Platzhalter / Inhalt übernehmen) funktionieren wie bei Buchvorlagen. Der Name ist aus dem Kapiteltitel vorbelegt; aendere ihn, wenn du einen generischeren Vorlagennamen moechtest.
+3. Name, Beschreibung und Content-Modus (leerer Platzhalter / Inhalt übernehmen) funktionieren wie bei Buchvorlagen. Der Name ist aus dem Kapiteltitel vorbelegt; ändere ihn, wenn du einen generischeren Vorlagennamen möchtest.
 
 ## Eigene Vorlagen verwalten
 
@@ -56,7 +56,7 @@ Vorlagen sind global für deine Installation. Sie gelten für jedes Buch, das du
 | **Interview** | H2 Einleitung, H2 Fragen (3er-Nummerierung), H2 Abschluss |
 | **FAQ** | 3 x (H3 Frage + Absatz-Antwort) |
 | **Rezept** | H2 Zutaten (Aufzählung), H2 Zubereitung (Nummerierung), H2 Notizen |
-| **Fotoreportage** | H2 Ort, leerer Absatz, H2 Eindruecke, Platzhalter-Beschreibung, H2 Reflexion |
+| **Fotoreportage** | H2 Ort, leerer Absatz, H2 Eindrücke, Platzhalter-Beschreibung, H2 Reflexion |
 
 Alle Platzhalter sind kurz und darauf ausgelegt, ersetzt zu werden.
 

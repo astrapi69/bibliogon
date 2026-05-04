@@ -1,7 +1,7 @@
 # Feldauswahl im Import-Assistenten
 
 Ab v0.22 kannst du im Import-Assistenten jedes Buch-Metadaten-
-Feld sehen und konfigurieren, bevor du den Import bestaetigst.
+Feld sehen und konfigurieren, bevor du den Import bestätigst.
 Drei-Schritte-Ablauf:
 
 ## Schritt 1: Quelle
@@ -43,7 +43,7 @@ Metadaten-Editor anbietet:
 - Drei ASINs (E-Book / Taschenbuch / Hardcover).
 
 **Langformige Inhalte**
-- Beschreibung, HTML-Beschreibung, Rueckseitenbeschreibung,
+- Beschreibung, HTML-Beschreibung, Rückseitenbeschreibung,
   Autoren-Bio. Lange Einträge sind zuklappbar.
 
 **Gestaltung**
@@ -52,12 +52,12 @@ Metadaten-Editor anbietet:
 **Keywords** — kommagetrennt.
 
 Jede Zeile außer Pflichtfeldern hat eine Checkbox für
-Einbinden / Ausschliessen:
+Einbinden / Ausschließen:
 
 - Checkbox AN: Das Feld wird mit dem angezeigten (evtl.
   bearbeiteten) Wert importiert.
 - Checkbox AUS: Das Feld wird übersprungen. Die Buch-Spalte
-  behaelt ihren Standard (leer/null, für Sprache `de`).
+  behält ihren Standard (leer/null, für Sprache `de`).
 
 Abschnitte, deren Felder in der Quelle alle leer sind, werden
 unter **+ Felder hinzufügen** zusammengeklappt, damit du

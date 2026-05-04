@@ -38,7 +38,7 @@ Der Schwellwert ist konfigurierbar. Für Sachbücher sind 20 Wörter typisch, f�
 
 ### Wortwiederholungen
 
-Nah aufeinander folgende Wiederholungen des gleichen Wortes wirken ungeschickt. Das Plugin markiert Wörter die innerhalb eines einstellbaren Fensters (Default: 50 Wörter) zweimal oder oefter auftauchen.
+Nah aufeinander folgende Wiederholungen des gleichen Wortes wirken ungeschickt. Das Plugin markiert Wörter die innerhalb eines einstellbaren Fensters (Default: 50 Wörter) zweimal oder öfter auftauchen.
 
 Häufige Ausnahmen wie "der", "die", "das", "und", "ist" werden automatisch ignoriert. Die Stoppwort-Liste ist pro Sprache vorkonfiguriert.
 

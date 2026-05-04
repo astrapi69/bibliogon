@@ -27,8 +27,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 3. Commit anfordern
 
 - 🔹 **Original-Prompt:** "Wir können das commiten gib mir ein git message"
-- 🔸 **Optimierter Prompt:** "Committe alle Änderungen mit einer konventionellen Commit-Message (feat/fix). Fasse die Hauptaenderungen zusammen: Plugin-ZIP-Installation, Radix-Migrationen, Dokumentation."
-- 🎯 Sauberer Commit mit aussagekraeftiger Message
+- 🔸 **Optimierter Prompt:** "Committe alle Änderungen mit einer konventionellen Commit-Message (feat/fix). Fasse die Hauptänderungen zusammen: Plugin-ZIP-Installation, Radix-Migrationen, Dokumentation."
+- 🎯 Sauberer Commit mit aussagekräftiger Message
 - ✅ Commit c463300: "feat: add plugin ZIP installation and complete Radix UI migration"
 
 ---
@@ -46,7 +46,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 5. Kritische Deployment-Fixes
 
 - 🔹 **Original-Prompt:** "ja bitte fixen"
-- 🔸 **Optimierter Prompt:** "Fixe die 4 kritischen Deployment-Blocker: 1) CORS über Umgebungsvariable BIBLIOGON_CORS_ORIGINS konfigurierbar. 2) /api/test/reset nur im Debug-Modus. 3) SQLite-Pfad konfigurierbar mit Docker-Volume-Persistenz. 4) .env.example erstellen, .env in .gitignore. Zusaetzlich: Non-Root User im Dockerfile, Health-Checks in docker-compose.prod.yml."
+- 🔸 **Optimierter Prompt:** "Fixe die 4 kritischen Deployment-Blocker: 1) CORS über Umgebungsvariable BIBLIOGON_CORS_ORIGINS konfigurierbar. 2) /api/test/reset nur im Debug-Modus. 3) SQLite-Pfad konfigurierbar mit Docker-Volume-Persistenz. 4) .env.example erstellen, .env in .gitignore. Zusätzlich: Non-Root User im Dockerfile, Health-Checks in docker-compose.prod.yml."
 - 🎯 Produktionshärtung
 - ✅ Commit 2a8a41d: "feat: production hardening for first deployable release"
 
@@ -64,7 +64,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 7. Installer-Script (One-Liner)
 
 - 🔹 **Original-Prompt:** "nein ich wollte eine deploybare datei die das macht"
-- 🔸 **Optimierter Prompt:** "Erstelle ein install.sh Script das als One-Liner via curl ausfuehrbar ist: `curl -fsSL .../install.sh | bash`. Das Script soll: Bibliogon nach ~/bibliogon herunterladen (git clone oder Tarball-Fallback), .env konfigurieren, Docker-Images bauen und starten. Unterstuetze Updates bei erneutem Ausfuehren."
+- 🔸 **Optimierter Prompt:** "Erstelle ein install.sh Script das als One-Liner via curl ausführbar ist: `curl -fsSL .../install.sh | bash`. Das Script soll: Bibliogon nach ~/bibliogon herunterladen (git clone oder Tarball-Fallback), .env konfigurieren, Docker-Images bauen und starten. Unterstütze Updates bei erneutem Ausführen."
 - 🎯 Einzelne ausführbare Datei für Installation
 - 💡 Nutzer soll ohne git clone auskommen
 - ✅ install.sh erstellt, README mit One-Liner aktualisiert
@@ -83,7 +83,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 9. gh CLI Release erstellen
 
 - 🔹 **Original-Prompt:** "ich hab jetzt gh installiert, versuch es mal"
-- 🔸 **Optimierter Prompt:** "Erstelle ein GitHub Release v0.7.0 mit gh CLI: Titel 'First Deployable Release', Release Notes mit Install-Anleitung, Features, Production Hardening. Nutze --notes-file für laengere Beschreibung."
+- 🔸 **Optimierter Prompt:** "Erstelle ein GitHub Release v0.7.0 mit gh CLI: Titel 'First Deployable Release', Release Notes mit Install-Anleitung, Features, Production Hardening. Nutze --notes-file für längere Beschreibung."
 - 🎯 Offizielles GitHub Release
 - 💡 gh war vorher nicht installiert, jetzt schon
 - ✅ Release erstellt (nach gh auth login)
@@ -104,7 +104,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "ich sehe das beim import die toc in den chapters auftaucht"
 - 🔸 **Optimierter Prompt:** "Das TOC (toc.md) wird als normales Kapitel importiert. Es soll gar nicht importiert werden, da die App das Inhaltsverzeichnis beim Export automatisch generiert. Entferne toc aus dem Import. Teste auch mit dem zweiten Buchprojekt eternity-ebook.zip."
-- 🎯 Kein unnuetzes TOC-Kapitel im Import
+- 🎯 Kein unnützes TOC-Kapitel im Import
 - ✅ TOC aus Import entfernt, next-in-series.md gemappt. Commit fdb2187
 
 ---
@@ -112,7 +112,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 12. TOC als eigener Kapiteltyp
 
 - 🔹 **Original-Prompt:** "Der Anwender sollte ein toc importieren können wenn eins schon existiert und auch wenn eins generiert wird sollte er in der lage sein es zu editieren und prüfen ob die links noch funktionieren"
-- 🔸 **Optimierter Prompt:** "Füge einen neuen Kapiteltyp 'toc' (Table of Contents) hinzu. TOC soll: 1) Beim Import aus toc.md importiert werden. 2) Im Editor editierbar sein. 3) Einen 'TOC prüfen' Button haben der alle Anker-Links gegen Kapitel-Titel und Unterueberschriften validiert. Implementiere: Neuer ChapterType, Import-Mapping, Validierungs-Endpoint POST /api/books/{id}/chapters/validate-toc, Button in Sidebar."
+- 🔸 **Optimierter Prompt:** "Füge einen neuen Kapiteltyp 'toc' (Table of Contents) hinzu. TOC soll: 1) Beim Import aus toc.md importiert werden. 2) Im Editor editierbar sein. 3) Einen 'TOC prüfen' Button haben der alle Anker-Links gegen Kapitel-Titel und Unterüberschriften validiert. Implementiere: Neuer ChapterType, Import-Mapping, Validierungs-Endpoint POST /api/books/{id}/chapters/validate-toc, Button in Sidebar."
 - 🎯 Manuelles TOC mit Link-Validierung
 - ✅ 95 Links validiert, 0 broken (1 echter Fehler gefunden). Commit 6fa75f9
 
@@ -121,7 +121,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 13. Markdown-zu-HTML beim Import
 
 - 🔹 **Original-Prompt:** "ich sehe das beim import die acknowledgment in den front matter hinzugefügt wurde... und es werden wieder md zeichen sichtbar angezeigt"
-- 🔸 **Optimierter Prompt:** "Drei Probleme: 1) acknowledgments faelschlicherweise in Front-Matter (gehört in Back-Matter). 2) Editor zeigt rohe Markdown-Zeichen (#, *, -) statt formatiertem Text - der Import speichert Markdown, aber TipTap erwartet HTML. 3) Bilder werden nicht importiert. Fixe: acknowledgments-Mapping, markdown-Library installieren für MD->HTML-Konvertierung beim Import, Asset-Import aus assets/-Ordner."
+- 🔸 **Optimierter Prompt:** "Drei Probleme: 1) acknowledgments fälschlicherweise in Front-Matter (gehört in Back-Matter). 2) Editor zeigt rohe Markdown-Zeichen (#, *, -) statt formatiertem Text - der Import speichert Markdown, aber TipTap erwartet HTML. 3) Bilder werden nicht importiert. Fixe: acknowledgments-Mapping, markdown-Library installieren für MD->HTML-Konvertierung beim Import, Asset-Import aus assets/-Ordner."
 - 🎯 Korrektes Rendering im Editor nach Import
 - 💡 TipTap kann kein Markdown, nur HTML oder JSON
 - ✅ markdown-Library installiert, HTML-Konvertierung, 8 Assets importiert. Mehrere Commits
@@ -149,7 +149,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 16. EPUB Export Bilder + Buchtyp im Dateinamen
 
-- 🔹 **Original-Prompt:** "im editor werden die Bilder angezeigt. Aber wenn ich exportiere werden die Bilder im epub nicht angezeigt ausserdem werden jetzt zwei tocs exportiert... was noch fehlt ist das... der typ des buches in dem dateinamen ist"
+- 🔹 **Original-Prompt:** "im editor werden die Bilder angezeigt. Aber wenn ich exportiere werden die Bilder im epub nicht angezeigt außerdem werden jetzt zwei tocs exportiert... was noch fehlt ist das... der typ des buches in dem dateinamen ist"
 - 🔸 **Optimierter Prompt:** "Drei Export-Probleme: 1) Bilder fehlen im EPUB - beim Scaffolding Assets aus DB in Projekt kopieren und /api/...-Pfade zurück zu assets/figures/... umschreiben. 2) Doppeltes TOC - wenn manuelles TOC existiert, use_manual_toc an manuscripta durchreichen. 3) Buchtyp im Dateinamen: title-ebook.epub, title-paperback.pdf. Neue Setting type_suffix_in_filename (default: true)."
 - 🎯 Vollständiger EPUB-Export mit Bildern
 - ✅ Assets kopiert, Pfade umgeschrieben, use_manual_toc, Buchtyp-Suffix. Commit c2f20dc
@@ -158,7 +158,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 17. Export-Dialog: TOC Checkbox
 
-- 🔹 **Original-Prompt:** "bei den export dialog sollte eine checkbox sein bei dem ausgewaehlt werden kann ob das inhaltverzeichnis generiert werden kann oder ob das was existiert genommen wird... Schreib noch ein test das alles verifiziert"
+- 🔹 **Original-Prompt:** "bei den export dialog sollte eine checkbox sein bei dem ausgewählt werden kann ob das inhaltverzeichnis generiert werden kann oder ob das was existiert genommen wird... Schreib noch ein test das alles verifiziert"
 - 🔸 **Optimierter Prompt:** "Füge eine Checkbox 'Manuelles Inhaltsverzeichnis verwenden' im Export-Dialog hinzu. Auto-erkannt wenn TOC-Kapitel existiert, User kann umschalten. Reiche use_manual_toc als Query-Parameter an den Export-Endpoint und von dort an manuscripta's compile_book() durch. Schreibe 16+ Tests die verifizieren: TOC-Import, -Validierung, Section-Order, Acknowledgments-Platzierung, Kapiteltyp-Erkennung, Asset-Import, Image-Rewriting, File-Serving, MD-zu-HTML, ISBN/ASIN-Parsing."
 - 🎯 Kein doppeltes TOC + umfassende Tests
 - ✅ Checkbox im Dialog, 16 neue Tests (26 total). Commit b7420d9
@@ -186,16 +186,16 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 20. TOC und Imprint Darstellung
 
-- 🔹 **Original-Prompt:** "das toc und imprint wird nicht richtig angezeigt. beim imprint werden die zeilenumbrueche nicht gezeigt... beim toc sieht es ähnlich"
+- 🔹 **Original-Prompt:** "das toc und imprint wird nicht richtig angezeigt. beim imprint werden die zeilenumbrüche nicht gezeigt... beim toc sieht es ähnlich"
 - 🔸 **Optimierter Prompt:** "Zwei Darstellungsprobleme: 1) TOC: Verschachtelte Listen werden flach dargestellt - Python's markdown-Library braucht 4-Space-Indent, write-book-template nutzt 2-Space. Verdopple die Einrückung vor der Konvertierung. 2) Imprint: Zeilenumbrüche (zwei Leerzeichen am Zeilenende = Hard Break) werden korrekt als <br> konvertiert, aber TipTap braucht @tiptap/extension-link für <a>-Tags. Installiere es."
-- 🎯 Korrekte Darstellung von verschachtelten Listen und Zeilenumbruechen
+- 🎯 Korrekte Darstellung von verschachtelten Listen und Zeilenumbrüchen
 - ✅ Verschachtelte TOC-Listen, @tiptap/extension-link installiert. Commit 0b04a39
 
 ---
 
 ## 21. TOC Baumstruktur im Export
 
-- 🔹 **Original-Prompt:** "die toc hat eine baumstruktur mit einrueckungen die werden beim export platt gemacht"
+- 🔹 **Original-Prompt:** "die toc hat eine baumstruktur mit einrückungen die werden beim export platt gemacht"
 - 🔸 **Optimierter Prompt:** "Der HTML-zu-Markdown Konverter (Regex-basiert) kann verschachtelte <ul>/<li> nicht korrekt verarbeiten. Ersetze den Regex-Ansatz durch einen HTMLParser-basierten Konverter der die Verschachtelungstiefe trackt und korrekte 2-Space-Einrückung pro Level erzeugt."
 - 🎯 TOC-Baumstruktur bleibt beim Export erhalten
 - ✅ HTMLParser-basierter Konverter mit korrekter Einrückung. Commit ef0efb7
@@ -213,10 +213,10 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 23. Figcaption Italic-Styling
 
-- 🔹 **Original-Prompt:** "die figcaption ist immer noch nicht kursiv und die groesse ist auch falsch ich glaube ein oder 2 pixel kleiner mach 1 pixel"
-- 🔸 **Optimierter Prompt:** "Das CSS .tiptap-editor figcaption greift nicht weil TipTap <p class='figcaption'> rendert, nicht <figcaption>. Erhoehe die CSS-Spezifität mit .ProseMirror p.figcaption und nutze !important für font-style: italic. Schriftgroesse: calc(1em - 1px)."
+- 🔹 **Original-Prompt:** "die figcaption ist immer noch nicht kursiv und die größe ist auch falsch ich glaube ein oder 2 pixel kleiner mach 1 pixel"
+- 🔸 **Optimierter Prompt:** "Das CSS .tiptap-editor figcaption greift nicht weil TipTap <p class='figcaption'> rendert, nicht <figcaption>. Erhöhe die CSS-Spezifität mit .ProseMirror p.figcaption und nutze !important für font-style: italic. Schriftgröße: calc(1em - 1px)."
 - 🎯 Kursive Darstellung der Bildunterschrift
-- ✅ Hoehere CSS-Spezifität. Commit e2bf84b
+- ✅ Höhere CSS-Spezifität. Commit e2bf84b
 
 ---
 
@@ -224,7 +224,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "geht immer noch nicht und mir ist aufgefallen wenn ich auf markdown wechsle verschwindet das Bild. Das sollte alles nicht sein bitte mit unit tests verifizieren."
 - 🔸 **Optimierter Prompt:** "Drei Probleme: 1) Figcaption-CSS greift nicht - erstelle eine Custom TipTap Extension die als <figcaption> Element rendert (nicht <p>), damit CSS direkt auf das Element greift. 2) Bilder verschwinden im Markdown-Modus - nodeToMarkdown fehlt Handler für 'image' und 'figcaption' Nodes; markdownToHtml fehlt ![alt](src) Parsing. 3) Schreibe 4 Unit-Tests: figcaption als Klasse gespeichert, figure ohne caption, alt-Text nicht sichtbar, figcaption Export-Roundtrip."
-- 🎯 Zuverlaessiges Bild/Caption-Handling mit Tests
+- 🎯 Zuverlässiges Bild/Caption-Handling mit Tests
 - 💡 CSS-Spezifität reicht nicht - braucht Custom Node
 - ✅ Figcaption Extension, Markdown-Modus Bilder, 4 neue Tests (30 total). Commit 0a2b98b
 
@@ -272,7 +272,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 27. Extensions installieren und Custom-Code ersetzen
 
 - 🔹 **Original-Prompt:** "ja aber zuerst machen wir ein chat-journal... ersetze unseren Custom-Code mit den offiziellen Extensions"
-- 🔸 **Optimierter Prompt:** "Installiere alle identifizierten TipTap-Extensions (v2-kompatibel). Ersetze: 1) Custom figcaption.ts durch @pentestpad/tiptap-extension-figure. 2) Manuelle Wortzaehlung durch @tiptap/extension-character-count. Registriere alle neuen Extensions im Editor. Erweitere die Toolbar um Buttons für: Underline, Highlight, Sub/Superscript, TextAlign (4x), TaskList, Table. Vereinfache Import (figure nativ) und Export (kein p.figcaption Restore). Loesche Custom-Extension. Aktualisiere Tests."
+- 🔸 **Optimierter Prompt:** "Installiere alle identifizierten TipTap-Extensions (v2-kompatibel). Ersetze: 1) Custom figcaption.ts durch @pentestpad/tiptap-extension-figure. 2) Manuelle Wortzählung durch @tiptap/extension-character-count. Registriere alle neuen Extensions im Editor. Erweitere die Toolbar um Buttons für: Underline, Highlight, Sub/Superscript, TextAlign (4x), TaskList, Table. Vereinfache Import (figure nativ) und Export (kein p.figcaption Restore). Lösche Custom-Extension. Aktualisiere Tests."
 - 🎯 Editor-Modernisierung mit offiziellen Extensions
 - 💡 15 neue Extensions, 12 neue Toolbar-Buttons, Custom-Code entfernt
 - ✅ Commit e8473f8: 15 Extensions, Toolbar erweitert, Tests grün (53 total)
@@ -291,7 +291,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 29. Import/Restore und Auto-Migration
 
 - 🔹 **Original-Prompt:** "Buch erstellen, import, restore funkt nicht: Command not found: uvicorn"
-- 🔸 **Optimierter Prompt:** "Backend startet nicht weil Poetry das virtualenv nicht findet. Prüfe poetry env und fuege `poetry env use python3.12` zum Makefile hinzu. Danach: Import/Restore scheitert weil die DB die neuen Spalten (asin_paperback, asin_hardcover) nicht hat. Implementiere eine Auto-Migration in init_db() die fehlende Spalten per ALTER TABLE hinzufuegt."
+- 🔸 **Optimierter Prompt:** "Backend startet nicht weil Poetry das virtualenv nicht findet. Prüfe poetry env und füge `poetry env use python3.12` zum Makefile hinzu. Danach: Import/Restore scheitert weil die DB die neuen Spalten (asin_paperback, asin_hardcover) nicht hat. Implementiere eine Auto-Migration in init_db() die fehlende Spalten per ALTER TABLE hinzufügt."
 - 🎯 App muss starten und Import/Restore funktionieren
 - ✅ Poetry-Fix im Makefile, Auto-Migration in database.py. Commits 5746552, a1846f3
 
@@ -319,7 +319,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "wenn ich zwischen editor und markdown wechsle verschwindet das bild"
 - 🔸 **Optimierter Prompt:** "Bilder verschwinden beim WYSIWYG/Markdown-Toggle. Root Cause: Die Figure-Extension registriert den Node als 'imageFigure', nicht 'figure'. nodeToMarkdown prüft type==='figure' und ignoriert den Node. Fix: Beide Namen prüfen."
-- 🎯 Bilder ueberleben den Markdown-Toggle
+- 🎯 Bilder überleben den Markdown-Toggle
 - ✅ Commit 2fb68a5
 
 ---
@@ -344,9 +344,9 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 35. Core-Plugin-Schutz und White-Label
 
-- 🔹 **Original-Prompt:** "plugins werden mit muelleimer versehen... es fehlt ein icon das diese aktiv und standard sind... alle plugins die noch nicht implementiert sind nicht anzeigen... App-Einstellungen Labels... auch die standard plugins entfernen können"
+- 🔹 **Original-Prompt:** "plugins werden mit mülleimer versehen... es fehlt ein icon das diese aktiv und standard sind... alle plugins die noch nicht implementiert sind nicht anzeigen... App-Einstellungen Labels... auch die standard plugins entfernen können"
 - 🔸 **Optimierter Prompt:** "Vier Änderungen: 1) Core-Plugins (export, help, getstarted) mit 'Standard' Badge, kein Mülleimer/Deaktivieren. 2) Nicht-implementierte Plugins (kdp, kinderbuch) aus UI entfernen. 3) Labels: Titel->App-Name, Untertitel->Beschreibung. 4) White-Label Wizard: aufklappbarer 'App anpassen' Bereich wo Core-Plugins per Checkbox deaktiviert werden können."
-- 🎯 Professionelle Plugin-Verwaltung + White-Label-Faehigkeit
+- 🎯 Professionelle Plugin-Verwaltung + White-Label-Fähigkeit
 - ✅ Commits ddf3aa9, 6969feb, 122defa
 
 ---
@@ -362,7 +362,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 37. make test fixen und offene Punkte abarbeiten
 
-- 🔹 **Original-Prompt:** "was steht als naechstes in unserer Liste?"
+- 🔹 **Original-Prompt:** "was steht als nächstes in unserer Liste?"
 - 🔸 **Optimierter Prompt:** "Arbeite die offenen Punkte ab: 1) make test fixen (Poetry virtualenv in allen Makefile-Targets). 2) i18n-Strings in YAML verschieben. 3) Vitest einrichten. 4) Export-Roundtrip testen."
 - 🎯 Technische Schulden abbauen
 - ✅ Commit a6df0ec: Makefile-Fix für alle Targets
@@ -374,7 +374,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - 🔹 **Original-Prompt:** (Fortsetzung offene Punkte)
 - 🔸 **Optimierter Prompt:** "Erstelle einen useI18n Hook mit t('ui.key') Zugriff und Fallback. Erweitere alle 5 i18n-YAMLs (DE, EN, ES, FR, EL) von 20 auf 177 Strings in 12 Kategorien: dashboard, editor, sidebar, chapter_types, export_dialog, formats, create_book, settings, get_started, languages, common."
 - 🎯 Alle UI-Strings internationalisierbar
-- 💡 127 hardcoded Strings identifiziert, ES/FR/EL parallel via Agents uebersetzt
+- 💡 127 hardcoded Strings identifiziert, ES/FR/EL parallel via Agents übersetzt
 - ✅ Commit 31e45ae: useI18n Hook + 5 YAMLs mit 177 Strings
 
 ---
@@ -382,7 +382,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 39. Frontend-Komponenten auf useI18n migrieren
 
 - 🔹 **Original-Prompt:** "ja weiter"
-- 🔸 **Optimierter Prompt:** "Migriere alle Frontend-Komponenten zum useI18n Hook: ChapterSidebar (TYPE_LABELS, Section-Headers, Tooltips), Editor (Speicherstatus, Wortzaehler), BookEditor (TYPE_LABELS), ExportDialog (Format-Labels, Buchtypen, TOC-Optionen), CreateBookModal (Formular-Labels, Sprachoptionen), Dashboard (Seitentitel, Buttons). Props-Threading für Subkomponenten (SortableGroup, SortableChapterItem)."
+- 🔸 **Optimierter Prompt:** "Migriere alle Frontend-Komponenten zum useI18n Hook: ChapterSidebar (TYPE_LABELS, Section-Headers, Tooltips), Editor (Speicherstatus, Wortzähler), BookEditor (TYPE_LABELS), ExportDialog (Format-Labels, Buchtypen, TOC-Optionen), CreateBookModal (Formular-Labels, Sprachoptionen), Dashboard (Seitentitel, Buttons). Props-Threading für Subkomponenten (SortableGroup, SortableChapterItem)."
 - 🎯 Kein hardcoded Deutsch mehr in den Hauptkomponenten
 - 💡 ExportDialog und CreateBookModal parallel via Agents migriert
 - ✅ Commits 0ecd4af, 985ec9f: 6 Komponenten migriert
@@ -402,7 +402,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 41. Export-Roundtrip verifiziert
 
 - 🔹 **Original-Prompt:** (Fortsetzung offene Punkte)
-- 🔸 **Optimierter Prompt:** "Teste den vollstaendigen Roundtrip: Import (eternity-ebook.zip) -> Scaffold (28 Kapitel, 19 Assets) -> EPUB-Export. Verifiziere: verschachtelte TOC-Links erhalten, keine doppelten H1, Bilder im EPUB, korrekte Dateistruktur."
+- 🔸 **Optimierter Prompt:** "Teste den vollständigen Roundtrip: Import (eternity-ebook.zip) -> Scaffold (28 Kapitel, 19 Assets) -> EPUB-Export. Verifiziere: verschachtelte TOC-Links erhalten, keine doppelten H1, Bilder im EPUB, korrekte Dateistruktur."
 - 🎯 Sicherstellen dass Import-Editor-Export fehlerfrei funktioniert
 - ✅ 8.2 MB EPUB, 31 XHTML-Seiten, 15 Bilder, 149 verschachtelte TOC-Links
 
@@ -420,7 +420,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 43. i18n: Restliche hardcoded Strings migrieren
 
 - 🔹 **Original-Prompt:** "Setze den nächsten Punkt i18n um in der Liste/Tabelle."
-- 🔸 **Optimierter Prompt:** "Finde und migriere alle verbleibenden hardcoded deutschen Strings in Settings.tsx (Plugin-Beschreibungen im White-Label Bereich) und Dashboard.tsx (Confirm-Dialoge für Papierkorb leeren und endgueltig löschen). Füge fehlende i18n-Keys in DE und EN YAML hinzu."
+- 🔸 **Optimierter Prompt:** "Finde und migriere alle verbleibenden hardcoded deutschen Strings in Settings.tsx (Plugin-Beschreibungen im White-Label Bereich) und Dashboard.tsx (Confirm-Dialoge für Papierkorb leeren und endgültig löschen). Füge fehlende i18n-Keys in DE und EN YAML hinzu."
 - 🎯 Null hardcoded Strings in allen Hauptkomponenten
 - ✅ 8 Strings migriert: 3 Plugin-Labels + 3 Plugin-Beschreibungen + 2 Dialog-Texte
 
@@ -465,7 +465,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 48. S-02: BookCard Genre-Badge i18n
 
 - 🔹 **Original-Prompt:** "Setze S-02 um."
-- 🔸 **Optimierter Prompt:** "Genre wird als uebersetzter Text gespeichert (z.B. 'Roman'), muss aber als Key ('novel') gespeichert werden damit BookCard es sprachunabhaengig uebersetzen kann. Fix: CreateBookModal mappt eingegebenen Text zurück auf Key. BookCard nutzt t('ui.genres.{key}', fallback) für die Anzeige."
+- 🔸 **Optimierter Prompt:** "Genre wird als übersetzter Text gespeichert (z.B. 'Roman'), muss aber als Key ('novel') gespeichert werden damit BookCard es sprachunabhängig übersetzen kann. Fix: CreateBookModal mappt eingegebenen Text zurück auf Key. BookCard nutzt t('ui.genres.{key}', fallback) für die Anzeige."
 - 🎯 Genre-Badge zeigt korrekte Übersetzung in jeder Sprache
 - ✅ Key-basierte Speicherung, Reverse-Lookup im Modal, t() in BookCard
 
@@ -494,16 +494,16 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - 🔹 **Original-Prompt:** "Setze U-03 um."
 - 🔸 **Optimierter Prompt:** "Implementiere Bild-Upload per DnD und Paste in den TipTap Editor. Nutze editorProps.handleDrop und handlePaste. Upload via api.assets.upload(), dann editor.setImage() mit API-URL. bookId als neue Editor Prop. editorRef für async Callbacks."
 - 🎯 Autoren können Bilder direkt in den Editor ziehen oder einfügen
-- ✅ DnD + Paste, Asset-Upload, automatische URL-Einfuegung
+- ✅ DnD + Paste, Asset-Upload, automatische URL-Einfügung
 
 ---
 
 ## 52. X-05: Batch-Export alle Formate
 
 - 🔹 **Original-Prompt:** "Setze X-05 um."
-- 🔸 **Optimierter Prompt:** "Neuer GET /api/books/{id}/export/batch Endpoint: Exportiert EPUB+PDF+DOCX, buendelt als ZIP. Route VOR /{fmt} registrieren. ExportDialog: 'Alle Formate (ZIP)' Button neben dem normalen Export-Button. i18n Key export_all."
-- 🎯 Ein-Klick-Export aller gaengigen Formate
-- ✅ Batch-Endpoint, ZIP-Buendelung, ExportDialog Button
+- 🔸 **Optimierter Prompt:** "Neuer GET /api/books/{id}/export/batch Endpoint: Exportiert EPUB+PDF+DOCX, bündelt als ZIP. Route VOR /{fmt} registrieren. ExportDialog: 'Alle Formate (ZIP)' Button neben dem normalen Export-Button. i18n Key export_all."
+- 🎯 Ein-Klick-Export aller gängigen Formate
+- ✅ Batch-Endpoint, ZIP-Bündelung, ExportDialog Button
 
 ---
 
@@ -528,7 +528,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 55. Keywords als editierbare Tag-Liste
 
 - 🔹 **Original-Prompt:** "Keywords im Buch-Metadaten-Editor als editierbare Tag-Liste umbauen."
-- 🔸 **Optimierter Prompt:** (Ausfuehrliche Spec mit 7 Punkten vom User)
+- 🔸 **Optimierter Prompt:** (Ausführliche Spec mit 7 Punkten vom User)
 - 🎯 Professionelle Keyword-Eingabe mit Chips, DnD-Sortierung, 7er-Limit
 - ✅ KeywordInput.tsx Komponente, @dnd-kit Sortierung, Duplikat-Prüfung, i18n 5 Sprachen
 
@@ -537,8 +537,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 56. X-01: epubcheck-Validierung nach EPUB-Export
 
 - 🔹 **Original-Prompt:** "Setze X-01 um."
-- 🔸 **Optimierter Prompt:** "Nach EPUB-Export epubcheck automatisch ausführen (non-blocking). Ergebnis als JSON neben dem EPUB speichern. Neuer GET /api/books/{id}/export/validate-epub Endpoint der exportiert + validiert und JSON zurueckgibt. Graceful: kein Fehler wenn epubcheck nicht installiert."
-- 🎯 Automatische EPUB-Qualitaetssicherung
+- 🔸 **Optimierter Prompt:** "Nach EPUB-Export epubcheck automatisch ausführen (non-blocking). Ergebnis als JSON neben dem EPUB speichern. Neuer GET /api/books/{id}/export/validate-epub Endpoint der exportiert + validiert und JSON zurückgibt. Graceful: kein Fehler wenn epubcheck nicht installiert."
+- 🎯 Automatische EPUB-Qualitätssicherung
 - ✅ epubcheck in run_pandoc, JSON-Results, validate-epub Endpoint
 
 ---
@@ -614,4 +614,4 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 3. **Akzeptanzkriterien:** "Exportiertes EPUB soll Bilder enthalten und nur ein TOC haben"
 4. **Tests einfordern:** "Schreibe Tests die verifizieren dass X, Y, Z"
 5. **Dateien referenzieren:** "In backup.py Zeile 350 wird der Content als Markdown gespeichert"
-6. **Batch-Auftraege:** Mehrere zusammenhaengende Probleme in einem Prompt buendeln
+6. **Batch-Aufträge:** Mehrere zusammenhängende Probleme in einem Prompt bündeln

@@ -31,7 +31,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 4. P-09: Plugin Manuscript Tools (19:25)
 
 - Original-Prompt: "Setze P-09 um"
-- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Wörter DE+EN, Passiv, Satzlänge) und Sanitizer (Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
+- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Wörter DE+EN, Passiv, Satzlänge) und Sanitizer (Anführungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
 - Commit: ee2f4c9
 
 ---
@@ -47,7 +47,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 6. P-11: Lesbarkeits-Metriken (19:36)
 
 - Original-Prompt: "Setze P-11 um"
-- Ergebnis: readability.py Modul - Flesch Reading Ease (4 Sprachen), Flesch-Kincaid Grade, Wiener Sachtextformel, Silbenzaehlung, Lesezeit. 22 neue Tests, POST /api/ms-tools/readability
+- Ergebnis: readability.py Modul - Flesch Reading Ease (4 Sprachen), Flesch-Kincaid Grade, Wiener Sachtextformel, Silbenzählung, Lesezeit. 22 neue Tests, POST /api/ms-tools/readability
 - Commit: 9cf0c69
 
 ---
@@ -173,7 +173,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
-## 22. P-08: Kapitelweise Buchuebersetzung
+## 22. P-08: Kapitelweise Buchübersetzung
 
 - Original-Prompt: "Setze P-08 um"
 - Ergebnis: POST /translate-book, TipTap JSON Text-Extraktion + Rebuild mit Formatierungs-Erhalt, 18 neue Tests
@@ -213,7 +213,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
-## 27. P-05: Vorhoer-Funktion
+## 27. P-05: Vorhör-Funktion
 
 - Original-Prompt: "Setze P-05 um"
 - Ergebnis: POST /api/audiobook/preview, Toolbar Headphones-Button, Audio.play() im Browser, i18n 5 Sprachen
@@ -224,7 +224,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 28. L-01: Freemium-Lizenzsystem
 
 - Original-Prompt: Detaillierte Spezifikation für license_tier (core/premium), Trial-Keys, Settings UI, Tests, Docs
-- Optimierter Prompt: "Erweitere das Lizenzsystem um ein license_tier Attribut auf BasePlugin: core (keine Lizenz) vs premium (Lizenzschluessel). Trial-Key für alle Premium-Plugins. Settings UI mit Premium Badge. 13 Tests."
+- Optimierter Prompt: "Erweitere das Lizenzsystem um ein license_tier Attribut auf BasePlugin: core (keine Lizenz) vs premium (Lizenzschlüssel). Trial-Key für alle Premium-Plugins. Settings UI mit Premium Badge. 13 Tests."
 - Ziel: Freemium-Modell für Bibliogon-Plugins
 - Ergebnis:
   - license_tier auf allen 9 Plugins (4 core, 5 premium)
@@ -336,7 +336,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 41. Audiobook-Settings mit kaskadierten Dropdowns
 
 - Original-Prompt: "Audiobook-Plugin Settings: Textfelder durch Dropdowns ersetzen + i18n Labels"
-- Ergebnis: AudiobookSettingsPanel mit 4 Radix Select (Engine, Language, Voice, Merge), GET /languages Endpoint, 11 i18n-Keys in 8 Sprachen, Voice laedt dynamisch
+- Ergebnis: AudiobookSettingsPanel mit 4 Radix Select (Engine, Language, Voice, Merge), GET /languages Endpoint, 11 i18n-Keys in 8 Sprachen, Voice lädt dynamisch
 - Commits: 4abab63, 19162dc
 
 ---
@@ -367,7 +367,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 45. Error-Toast mit Issue-Link
 
 - Original-Prompt: "Fehler-Toast mit Issue-Button"
-- Ergebnis: notify.error() zeigt "Issue melden" Link mit vorausgefuelltem GitHub Issue (Titel, Body, Label)
+- Ergebnis: notify.error() zeigt "Issue melden" Link mit vorausgefülltem GitHub Issue (Titel, Body, Label)
 - Commit: bbae527
 
 ---

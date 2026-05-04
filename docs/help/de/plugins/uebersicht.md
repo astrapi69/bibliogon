@@ -2,7 +2,7 @@
 
 ## Was sind Plugins?
 
-Bibliogon ist modular aufgebaut. Der Kern der Anwendung umfasst die grundlegenden Funktionen: Bücher und Kapitel verwalten, den TipTap-Editor, Backup und Restore sowie die Benutzeroberflaeche. Alle weitergehenden Funktionen wie Export, Grammatikpruefung, Übersetzung und Audiobook-Generierung sind als Plugins realisiert.
+Bibliogon ist modular aufgebaut. Der Kern der Anwendung umfasst die grundlegenden Funktionen: Bücher und Kapitel verwalten, den TipTap-Editor, Backup und Restore sowie die Benutzeroberfläche. Alle weitergehenden Funktionen wie Export, Grammatikprüfung, Übersetzung und Audiobook-Generierung sind als Plugins realisiert.
 
 Plugins sind eigenständige Pakete, die über das PluginForge-Framework (basierend auf pluggy) geladen werden. Jedes Plugin registriert sich beim Start der Anwendung automatisch und stellt seine Funktionen über API-Endpunkte und UI-Erweiterungen bereit. Plugins können von anderen Plugins abhängen, zum Beispiel baut das Audiobook-Plugin auf dem Export-Plugin auf.
 

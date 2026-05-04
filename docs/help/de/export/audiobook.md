@@ -43,6 +43,6 @@ Der Merge-Modus steuert welche Dateien erzeugt werden:
 
 - **merged**: Eine einzelne MP3-Datei für das gesamte Buch.
 - **separate**: Eine MP3-Datei pro Kapitel.
-- **both**: Sowohl Einzelkapitel als auch eine zusammengefuegte Gesamtdatei.
+- **both**: Sowohl Einzelkapitel als auch eine zusammengefügte Gesamtdatei.
 
 Die generierten Dateien können einzeln heruntergeladen oder als ZIP-Archiv gespeichert werden, und bleiben auch nach einem Browser-Reload oder Neustart des Backends verfügbar. Wenn beim erneuten Export bereits ein Audiobook existiert warnt die UI mit einem Confirm-Dialog bevor sie überschreibt (es sei denn "Bestehende Dateien überschreiben" ist bewusst gesetzt).

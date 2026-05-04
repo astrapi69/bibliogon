@@ -30,7 +30,7 @@ Verwende nicht beide Varianten gleichzeitig, da dies zu einem doppelten Inhaltsv
 
 ## Qualitätskontrolle mit epubcheck
 
-Nach dem Export empfiehlt es sich, die EPUB-Datei mit epubcheck zu validieren. Epubcheck ist ein Open-Source-Werkzeug des W3C, das EPUB-Dateien auf Konformitaet mit dem EPUB-Standard prüft. Es erkennt Strukturfehler, fehlende Metadaten und ungültige Referenzen. Epubcheck ist als Java-Anwendung verfügbar unter [github.com/w3c/epubcheck](https://github.com/w3c/epubcheck).
+Nach dem Export empfiehlt es sich, die EPUB-Datei mit epubcheck zu validieren. Epubcheck ist ein Open-Source-Werkzeug des W3C, das EPUB-Dateien auf Konformität mit dem EPUB-Standard prüft. Es erkennt Strukturfehler, fehlende Metadaten und ungültige Referenzen. Epubcheck ist als Java-Anwendung verfügbar unter [github.com/w3c/epubcheck](https://github.com/w3c/epubcheck).
 
 ## Buchtypen
 

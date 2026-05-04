@@ -1,6 +1,6 @@
 # Import aus einer Git-URL
 
-Bibliogon kann ein oeffentliches Git-Repository klonen, das der
+Bibliogon kann ein öffentliches Git-Repository klonen, das der
 [write-book-template](https://github.com/astrapi69/write-book-template)-Struktur
 folgt, und als neues Buch importieren.
 
@@ -11,7 +11,7 @@ folgt, und als neues Buch importieren.
    oben in Schritt 1 ein.
 3. Klicke auf **Klonen + Importieren**.
 
-Bibliogon klont das Repository in ein temporaeres Staging-
+Bibliogon klont das Repository in ein temporäres Staging-
 Verzeichnis, erkennt das Format wie gewohnt, zeigt das
 Preview-Panel und importiert nach Bestätigung.
 
@@ -25,7 +25,7 @@ Preview-Panel und importiert nach Bestätigung.
 ## Was aktuell nicht unterstützt wird
 
 Die erste Version von plugin-git-sync ist reiner Import für
-**oeffentliche** Repositories. Folgendes ist aufgeschoben:
+**öffentliche** Repositories. Folgendes ist aufgeschoben:
 
 - Authentifizierung für private Repositories (Basic HTTPS,
   SSH-Keys, GitHub-Tokens).

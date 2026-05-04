@@ -292,7 +292,7 @@ Beginne mit dem Help-Plugin als Vorlage, dann ms-tools für Hook-Implementierung
 
 ## Import-Plugin-Muster (aus PGS-01)
 
-Wenn ein Plugin den Import eines neuen Formats oder einer neuen *Quelle* unterstuetzen soll, ist der Core-Import-Orchestrator (`backend/app/import_plugins/`) der Integrationspunkt. Das erste externe Import-Plugin (`plugin-git-sync`, PGS-01) brachte vier Architekturmuster hervor, die künftige Import-Plugins kennen sollten.
+Wenn ein Plugin den Import eines neuen Formats oder einer neuen *Quelle* unterstützen soll, ist der Core-Import-Orchestrator (`backend/app/import_plugins/`) der Integrationspunkt. Das erste externe Import-Plugin (`plugin-git-sync`, PGS-01) brachte vier Architekturmuster hervor, die künftige Import-Plugins kennen sollten.
 
 ### Muster 1: Quell-Adapter statt Format-Neuimplementierung
 
@@ -318,7 +318,7 @@ Wenn ein Plugin den Import eines neuen Formats oder einer neuen *Quelle* unterst
 - `ImportPlugin` (in `backend/app/import_plugins/protocol.py`): Datei-Pfad-Inputs. `can_handle(path) -> bool`, `detect(path)`, `execute(path, ...)`.
 - `RemoteSourceHandler` (in `backend/app/import_plugins/registry.py`, neu in PGS-01): URL-Inputs. `can_handle(url) -> bool`, `clone(url, target_dir) -> Path`. Nach dem Klonen dispatcht der Orchestrator per `find_handler()` auf dem geklonten Pfad — die Format-Erkennung nutzt also das `ImportPlugin`-Registry wieder.
 
-**Beim Hinzufügen einer dritten Input-Shape.** Wenn dein Plugin eine neue Shape bringt, die in keines passt (z. B. "Buch aus SQL-Abfrage-Ergebnis"), abwaegen: (a) im Plugin auf eine der bestehenden Shapes normalisieren, (b) drittes Registry + neuer Endpoint (`POST /api/import/detect/{kind}`). Bevorzuge (a) — hält die Registry-Anzahl klein.
+**Beim Hinzufügen einer dritten Input-Shape.** Wenn dein Plugin eine neue Shape bringt, die in keines passt (z. B. "Buch aus SQL-Abfrage-Ergebnis"), abwägen: (a) im Plugin auf eine der bestehenden Shapes normalisieren, (b) drittes Registry + neuer Endpoint (`POST /api/import/detect/{kind}`). Bevorzuge (a) — hält die Registry-Anzahl klein.
 
 **Anti-Muster.** `if input.startswith("http"): ... elif Path(input).is_dir(): ...` in einem einzelnen `find_handler` mischt Shape-Erkennung in die Abstraktion. Dispatch bleibt semantisch, nicht syntaktisch.
 
@@ -335,7 +335,7 @@ bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
 
 `poetry install` im Plugin-Verzeichnis bindet das andere Plugin in die venv. Imports funktionieren wie bei einem PyPI-Paket.
 
-**PGS-01 Beispiel.** `plugin-git-sync` deklariert `bibliogon-plugin-export` als Path-Dep. Phase 1 nutzt die Abhängigkeit zur Laufzeit noch nicht — sie ist Gerüst für PGS-02 (Export-to-Repo), das per `from bibliogon_export.tiptap_to_md import tiptap_to_markdown` Bücher zurück ins Git-Repo serialisieren wird. Die Deklaration kommt frueh, damit die Architektur sichtbar ist, bevor der Code folgt.
+**PGS-01 Beispiel.** `plugin-git-sync` deklariert `bibliogon-plugin-export` als Path-Dep. Phase 1 nutzt die Abhängigkeit zur Laufzeit noch nicht — sie ist Gerüst für PGS-02 (Export-to-Repo), das per `from bibliogon_export.tiptap_to_md import tiptap_to_markdown` Bücher zurück ins Git-Repo serialisieren wird. Die Deklaration kommt früh, damit die Architektur sichtbar ist, bevor der Code folgt.
 
 **Beim PyPI-Release.** Ein Path-Dep löst bei `pip install bibliogon-plugin-git-sync` außerhalb des Monorepos nicht auf. Der Publish-Schritt muss ihn auf einen Versions-Pin umstellen:
 
@@ -378,21 +378,21 @@ def register_git_handler(handler: object) -> None:
     register_remote_handler(handler)  # type: ignore[arg-type]
 ```
 
-**Warum deferred Imports.** Ein Import von `app.*` auf Modul-Ebene koppelt das Plugin-Modul an das voll geladene Bibliogon-Backend. Das bricht Plugin-Unit-Tests, die nur die Handler-Logik testen wollen. Verlagern in `activate()` (das erst im App-Lifespan feuert) hält das Plugin-Modul eigenstaendig importierbar.
+**Warum deferred Imports.** Ein Import von `app.*` auf Modul-Ebene koppelt das Plugin-Modul an das voll geladene Bibliogon-Backend. Das bricht Plugin-Unit-Tests, die nur die Handler-Logik testen wollen. Verlagern in `activate()` (das erst im App-Lifespan feuert) hält das Plugin-Modul eigenständig importierbar.
 
 **Timing.** PluginForge ruft `activate()` während `manager.discover_plugins()` im App-Lifespan auf, vor dem ersten HTTP-Request. Wenn eine Route feuert, sind alle Registrierungen bereits passiert.
 
-**Anti-Muster.** Side-Effect-Imports auf Modul-Ebene (`register_remote_handler(...)` ganz unten in `plugin.py`) funktionieren in Produktion, brechen aber eigenständige Testlaeufe und machen Import-Ordering fragil. Immer über `activate()`.
+**Anti-Muster.** Side-Effect-Imports auf Modul-Ebene (`register_remote_handler(...)` ganz unten in `plugin.py`) funktionieren in Produktion, brechen aber eigenständige Testläufe und machen Import-Ordering fragil. Immer über `activate()`.
 
 ---
 
 ## Dein erstes Plugin schreiben (PGS-01 als Vorlage)
 
-Schritt-für-Schritt mit der Shape von PGS-01. Endzustand: funktionsfaehiges Plugin-Gerüst zum Ausbauen.
+Schritt-für-Schritt mit der Shape von PGS-01. Endzustand: funktionsfähiges Plugin-Gerüst zum Ausbauen.
 
 ### Schritt 1: Entscheide, was dein Plugin tut
 
-Drei haeufige Shapes:
+Drei häufige Shapes:
 
 | Shape | Protocol | Registriert bei | Beispiel |
 |-------|----------|-----------------|----------|
@@ -423,11 +423,11 @@ plugins/bibliogon-plugin-<name>/
 
 Minimal-`pyproject.toml`: siehe englische Version oben (Struktur identisch).
 
-Ausserdem das Plugin in `backend/pyproject.toml` als Path-Dep eintragen (siehe "Plugin im Backend registrieren" oben). Wer das vergisst, macht das Plugin für CI unsichtbar.
+Außerdem das Plugin in `backend/pyproject.toml` als Path-Dep eintragen (siehe "Plugin im Backend registrieren" oben). Wer das vergisst, macht das Plugin für CI unsichtbar.
 
 ### Schritt 3: Protocol implementieren
 
-Shape vom aehnlichsten Plugin aus Schritt 1 kopieren. Für `RemoteSourceHandler` ist die Minimal-Signatur:
+Shape vom ähnlichsten Plugin aus Schritt 1 kopieren. Für `RemoteSourceHandler` ist die Minimal-Signatur:
 
 ```python
 class <Name>Handler:
@@ -479,7 +479,7 @@ plugins:
 - **Import-Zyklus beim Plugin-Load.** Etwas in `plugin.py` auf Modul-Ebene importiert `app.*`. In `activate()` oder einen anderen Funktionskörper verschieben.
 - **Einzeltests grün, volle Suite mit RecursionError rot.** Per-Test-`TestClient(app)`-Fixtures akkumulieren Plugin-Route-State am geteilten FastAPI-Singleton. `scope="module"` (siehe `.claude/rules/lessons-learned.md`).
 - **Plugin-zu-Plugin-Dep löst nicht auf.** Relativer `path = "../..."` in deiner `pyproject.toml` passt nicht zum tatsächlichen Layout. Korrigieren oder `poetry lock` laufen lassen.
-- **`can_handle` des Handlers feuert nie.** Registrierungs-Reihenfolge prüfen: first-registered wins in `find_handler()`. Wenn ein frueherer Handler alles greift, ist deiner unerreichbar.
+- **`can_handle` des Handlers feuert nie.** Registrierungs-Reihenfolge prüfen: first-registered wins in `find_handler()`. Wenn ein früherer Handler alles greift, ist deiner unerreichbar.
 
 ---
 
@@ -502,13 +502,13 @@ Jeden Diff neben dieser Anleitung studieren.
 
 ## Bidirektionale Sync-Patterns (aus PGS-02..05)
 
-PGS-01 brachte Bücher *in* Bibliogon hinein. Phasen 2-5 schließen den Round-Trip — Buch neu scaffolden und zurück zum Remote pushen. Vier Patterns, die jedes Plugin trifft, das externen State veraendert.
+PGS-01 brachte Bücher *in* Bibliogon hinein. Phasen 2-5 schließen den Round-Trip — Buch neu scaffolden und zurück zum Remote pushen. Vier Patterns, die jedes Plugin trifft, das externen State verändert.
 
 ### Muster 5: Per-Buch-Lock für Cross-Subsystem-Operationen
 
-**Problem.** Klick auf "Commit überall" faechert den Aufruf in zwei Subsysteme auf (Core-Git + plugin-git-sync). Ohne Koordination racen zwei gleichzeitige Faechrungen (alter Dialog in anderem Tab, Re-Click während langsamem ersten Versuch) am Working Tree und am `last_committed_at`-Cursor.
+**Problem.** Klick auf "Commit überall" fächert den Aufruf in zwei Subsysteme auf (Core-Git + plugin-git-sync). Ohne Koordination racen zwei gleichzeitige Fächerungen (alter Dialog in anderem Tab, Re-Click während langsamem ersten Versuch) am Working Tree und am `last_committed_at`-Cursor.
 
-**Lösung.** Schluesselter Lock auf `book_id` mit kurzem Timeout. PGS-05 liefert `app.services.git_sync_lock.book_commit_lock(book_id, timeout=30)`:
+**Lösung.** Schlüsselter Lock auf `book_id` mit kurzem Timeout. PGS-05 liefert `app.services.git_sync_lock.book_commit_lock(book_id, timeout=30)`:
 
 ```python
 from app.services.git_sync_lock import book_commit_lock
@@ -520,13 +520,13 @@ with book_commit_lock(book_id, timeout=30):
 
 Timeout mappt im Router auf HTTP 503, nie 500. Der Nutzer sieht "anderer Commit läuft" und versucht es erneut.
 
-**Wann nutzen.** Immer wenn eine User-Aktion auf >=2 mutierende Subsysteme derselben Resource auffaechert. Lock ist per Resource, nicht per Prozess.
+**Wann nutzen.** Immer wenn eine User-Aktion auf >=2 mutierende Subsysteme derselben Resource auffächert. Lock ist per Resource, nicht per Prozess.
 
-**Anti-Pattern.** Implizit auf "niemand klickt zweimal" zu vertrauen ist der Bug; funktioniert in QA, scheitert wenn SSE-Reconnects denselben Aufruf wiederholen, wenn der Toast eines langsamen ersten Versuchs ablaeuft und der Nutzer neu klickt usw. Immer locken.
+**Anti-Pattern.** Implizit auf "niemand klickt zweimal" zu vertrauen ist der Bug; funktioniert in QA, scheitert wenn SSE-Reconnects denselben Aufruf wiederholen, wenn der Toast eines langsamen ersten Versuchs abläuft und der Nutzer neu klickt usw. Immer locken.
 
 ### Muster 6: Weiche Per-Subsystem-Fehleraggregation
 
-**Problem.** Wenn Core-Git + plugin-git-sync gefaechert werden, ist Teil-Fehlschlag die Norm: eine Seite gelingt, die andere scheitert an Auth, Netzwerk oder "nichts zu committen". Ein hartes `raise HTTPException(500)` verliert den Erfolg und lässt den Nutzer mit generischem Fehler stehen.
+**Problem.** Wenn Core-Git + plugin-git-sync gefächert werden, ist Teil-Fehlschlag die Norm: eine Seite gelingt, die andere scheitert an Auth, Netzwerk oder "nichts zu committen". Ein hartes `raise HTTPException(500)` verliert den Erfolg und lässt den Nutzer mit generischem Fehler stehen.
 
 **Lösung.** Per-Subsystem-Resultat mit stabilem Status-Enum:
 
@@ -564,9 +564,9 @@ finally:
 
 Nach Return ist die URL auf Platte wieder original. Regression-Test (`test_commit_push_uses_per_book_pat_without_persisting_to_git_config`) liest `.git/config` nach dem Push und assertet, dass der Token nie auftaucht.
 
-**Wann nutzen.** Immer wenn ein Secret in ein Config-Feld als temporaerer Auth-Carrier eingebettet wird.
+**Wann nutzen.** Immer wenn ein Secret in ein Config-Feld als temporärer Auth-Carrier eingebettet wird.
 
-**Per-Buch-Credential-Helper.** PGS-02-FU-01 fuegte `app.services.git_credentials` hinzu, sodass mehrere Subsysteme einen einzigen Per-Buch-PAT-Slot teilen. Wenn du Credentials für ein neues Subsystem am selben Buch brauchst, diesen Helper wiederverwenden statt parallelen Store bauen. Encrypted-at-rest via Fernet mit Schlüssel aus `BIBLIOGON_CREDENTIALS_SECRET`.
+**Per-Buch-Credential-Helper.** PGS-02-FU-01 fügte `app.services.git_credentials` hinzu, sodass mehrere Subsysteme einen einzigen Per-Buch-PAT-Slot teilen. Wenn du Credentials für ein neues Subsystem am selben Buch brauchst, diesen Helper wiederverwenden statt parallelen Store bauen. Encrypted-at-rest via Fernet mit Schlüssel aus `BIBLIOGON_CREDENTIALS_SECRET`.
 
 ### Muster 8: Fehlertolerante Lazy-Imports für Side-Effects
 
@@ -587,7 +587,7 @@ def _write_md_side_file(json_path: Path) -> None:
         logger.exception("Markdown side-file: conversion failed; skipping.")
 ```
 
-Der Commit landet trotzdem; das Sidefile vielleicht nicht. Naechster Commit versucht es erneut.
+Der Commit landet trotzdem; das Sidefile vielleicht nicht. Nächster Commit versucht es erneut.
 
 **Wann nutzen.** Immer wenn du ein nicht-kanonisches Begleit-Artefakt produzierst. Wenn das Begleit-Artefakt das einzige Artefakt ist (z.B. EPUB-Output des Export-Plugins), passt das Pattern nicht — Fehler müssen hart hochpoppen.
 
@@ -629,9 +629,9 @@ Ref erst zu Commit auflösen, dann sind die `show`-Aufrufe deterministisch, auch
 
 `diff_book(db, book_id)` ist der dünne Glue, der Inputs liest (via Pattern 9) und in `_classify` einspeist.
 
-**Wann nutzen.** Jede nicht-triviale Entscheidung, die in einer DB-Mutation endet. Die Klassifikations-Haelfte verdient ~10 eigene Unit-Tests für Edge-Cases (`unchanged`, beidseitig-entfernt, identische-Edits-beidseitig, Blank-Line-only-Differenzen, ...). Dieselbe Coverage über End-to-End-Fixtures zu erreichen ist 5x langsamer und 10x sproeder.
+**Wann nutzen.** Jede nicht-triviale Entscheidung, die in einer DB-Mutation endet. Die Klassifikations-Hälfte verdient ~10 eigene Unit-Tests für Edge-Cases (`unchanged`, beidseitig-entfernt, identische-Edits-beidseitig, Blank-Line-only-Differenzen, ...). Dieselbe Coverage über End-to-End-Fixtures zu erreichen ist 5x langsamer und 10x spröder.
 
-**Normalisierungstolerante Vergleiche.** PGS-03s `_normalize` strippt trailing Whitespace pro Zeile, kollabiert Blank-Line-Runs, trimmt fuehrenden/abschliessenden Whitespace vor Equality. Markdown-Round-Trips über TipTap → Markdown → Datei → TipTap fügen oft einen finalen Newline hinzu oder weg; ohne Normalisierung würde jedes "unchanged"-Kapitel als "local_changed" klassifiziert.
+**Normalisierungstolerante Vergleiche.** PGS-03s `_normalize` strippt trailing Whitespace pro Zeile, kollabiert Blank-Line-Runs, trimmt führenden/abschließenden Whitespace vor Equality. Markdown-Round-Trips über TipTap → Markdown → Datei → TipTap fügen oft einen finalen Newline hinzu oder weg; ohne Normalisierung würde jedes "unchanged"-Kapitel als "local_changed" klassifiziert.
 
 ### Muster 11: Post-Process-Collapse für Rename-Detection
 
@@ -676,7 +676,7 @@ class SkippedBranch:
 Zwei Failure-Modes mit eigenen Slugs:
 
 - `no_wbt_layout` — strukturelle Vorbedingung scheiterte (config-Dir fehlt). Branch ist im Scope, aber kein Buch.
-- `import_failed` — innerer Importer warf. Inkl. Exception-Klasse + Message, auf 500 Zeichen gekuerzt.
+- `import_failed` — innerer Importer warf. Inkl. Exception-Klasse + Message, auf 500 Zeichen gekürzt.
 
 Router echot `skipped[]` im Response (default `[]` bei sauberen Imports), Frontend rendert eine "Aufmerksamkeit erforderlich"-Sektion pro Eintrag.
 
