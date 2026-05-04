@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-02
-Latest release: v0.25.0
+Last updated: 2026-05-04
+Latest release: v0.26.6 (foundation cleanup; XDG migration; lock-step versioning; CI gate; Docker upload persistence; pre-install stale-target safeguard)
 Open tasks: 6 active (P3..P5) + 4 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 

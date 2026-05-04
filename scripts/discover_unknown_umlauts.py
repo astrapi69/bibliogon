@@ -204,6 +204,7 @@ NOT_TRANSLITERATIONS: set[str] = {
     # plugins/*/content/de globs (2026-05-04, second productionization
     # batch).
     "Accessible", "Lossless", "successor", "Consequences",
+    "subprocesses",
     # YAML-aware masking surfaced these from de.yaml + _meta.yaml.
     # All correct German / loanwords / English (verified 2026-05-04).
     "Vorschauen", "Fassung", "Fassungen", "neuerer",

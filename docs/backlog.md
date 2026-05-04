@@ -1,7 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-02 (modal sticky-footer audit closed; AiSetupWizard fix)
-Current version: v0.25.0
+Last updated: 2026-05-04 (v0.26.6 released: foundation cleanup, XDG, lock-step, CI gate, Docker upload persistence, stale-target safeguard)
+Current version: v0.26.6
 Open tasks: 4 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
