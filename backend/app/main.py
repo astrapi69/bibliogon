@@ -323,6 +323,13 @@ def _load_installed_plugins() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Bibliogon (debug=%s)", DEBUG)
+    # Migrate v0.25.0-and-earlier project-tree data into the canonical
+    # XDG data dir on first start after the Phase 2 path swap. Runs
+    # BEFORE init_db so a moved SQLite DB is picked up rather than
+    # recreated empty. Idempotent + no-op in test mode.
+    from app.data_dir_migration import migrate_data_dir_if_needed
+
+    migrate_data_dir_if_needed()
     # Stamp the data dir as production so the test conftest tripwire
     # can refuse to run if a test ever points at this same path.
     # No-op in test mode (BIBLIOGON_TEST=1).
