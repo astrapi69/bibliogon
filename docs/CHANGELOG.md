@@ -2,6 +2,130 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.26.0] - 2026-05-04
+
+This release is a foundation cleanup. The user-facing surface
+changes very little; what changes is where Bibliogon stores its
+data, how versions stay in sync across components, and how old
+launchers behave on first run. Two pre-existing bugs are fixed
+along the way.
+
+**Action required for Docker users.** Cover image uploads were
+previously stored at `/app/uploads` inside the container, which
+is part of the COPY'd source tree and was lost on every container
+rebuild. From this release forward, uploads live in the
+`bibliogon-data` named volume and persist across rebuilds. If you
+have been using Docker, you have lost your previous uploads on
+every rebuild without warning. There is nothing you need to do
+to receive the fix; it is automatic when you pull this release.
+
+**Action required for desktop users with project-tree data.**
+Bibliogon now stores books, uploads, and the SQLite database in
+your user data directory: `~/.local/share/bibliogon/` on Linux
+and macOS, `%LOCALAPPDATA%\bibliogon\` on Windows. On first start
+after this update, Bibliogon detects existing project-tree data
+(`backend/bibliogon.db`, `backend/uploads/`) and moves it to the
+new location. Old paths are renamed with a `.migrated-YYYY-MM-DD`
+suffix so you can verify before deleting them manually. Migration
+is automatic and idempotent. If both old and new paths contain
+data, Bibliogon refuses to start and asks you to resolve the
+conflict.
+
+**Action required for users running an old launcher.** Launcher
+binaries shipped before this release target Bibliogon v0.17.0
+and would install that stale version on a fresh machine. The
+launcher now compares its embedded target version against the
+latest GitHub release before showing the install dialog. If a
+newer launcher is available, you are offered three options: open
+the launcher download page, continue with the older version
+anyway, or cancel. Users with current launchers see no change.
+
+**Filesystem isolation and XDG paths.** All Bibliogon path access
+now goes through `app.paths` resolvers (`get_data_dir`,
+`get_upload_dir`, `get_db_path`, `get_config_dir`, `get_cache_dir`)
+which use platformdirs (XDG-conformant) under the hood. The April
+2026 data-loss bug class, where test runs could touch production
+data because of CWD-relative paths and frozen module-level
+imports, is now structurally impossible. Production data
+directories carry a `.bibliogon-production` marker; if a test run
+ever sees one, the entire run aborts with exit code 2.
+`platformdirs` is a direct backend dependency; the
+`BIBLIOGON_DATA_DIR` environment variable continues to win when
+set explicitly (used in Docker and admin scenarios).
+
+**Lock-step versioning across all subsystems.** Backend, frontend,
+launcher, and all 10 core plugins ship with a single synchronized
+version string. Only `backend/pyproject.toml` is edited at release
+time; `make sync-versions` propagates to every other location
+including `install.sh` (now generated from a template) and the
+launcher's macOS bundle metadata. A new CI release-gate workflow
+runs on every tag push and refuses to publish artifacts when any
+version field is out of sync, when the verify script reports
+regressions, or when the tag does not match the canonical source.
+The release workflow's Step 4 collapsed from a multi-file
+checklist to a single hand-edit followed by one make target.
+
+**Pre-install stale-target safeguard in the launcher.** When the
+launcher starts, before any install or welcome dialog, it
+compares its embedded `BIBLIOGON_TARGET_VERSION` against the
+latest GitHub release. The check always runs on first launch
+regardless of the user's auto-update preference (the toggle now
+governs only the post-install notification). Network failures
+fail open: if GitHub is unreachable, the launcher proceeds with
+the embedded target. The "Continue with older version" option
+preserves agency for users who deliberately want an older
+release.
+
+**Backend version is derived, not duplicated.** The backend's
+`__version__` is read from `pyproject.toml` via `tomllib` at
+import time. The deprecated `COMPATIBLE_VERSION` alias in the
+launcher has been removed; use `BIBLIOGON_TARGET_VERSION`
+directly. Frontend bug-report templates derive their version
+string from `package.json` via Vite's `define` instead of
+hardcoding it in two separate constants that had drifted to
+0.12.0 and 0.22.0 respectively. The `bibliogon-plugin-git-sync`
+plugin reads its version via `importlib.metadata`. The launcher's
+target version is injected at PyInstaller build time from the
+canonical source.
+
+**Documentation rewrites.** The Getting Started page no longer
+leads with developer-only commands (`make install`, `make prod`).
+End users see Docker prerequisites, the curl install one-liner,
+manual install via `git clone`, lifecycle commands (`./start.sh`,
+`./stop.sh`, uninstall), and a clearly separated "For developers"
+subsection. The launcher pages no longer claim "the launcher is
+not an installer" — that was always false; the launcher's welcome
+dialog has always been able to download and install Bibliogon on
+first run. Both English and German translations were corrected.
+
+**Deprecated.** `BIBLIOGON_DB_PATH` continues to work but is
+deprecated. New deployments should set `BIBLIOGON_DATA_DIR`; the
+database location is derived as `<BIBLIOGON_DATA_DIR>/bibliogon.db`.
+A future release will emit a warning when `BIBLIOGON_DB_PATH` is
+set, and a later release will remove the override.
+
+**Internal.** `release-workflow.md` Step 4 collapsed to a single
+hand-edit plus `make sync-versions`. `verify_version_pins.sh`
+extends the lock-step check to subsystem propagation and includes
+regression detectors for reintroduced hardcoded literals.
+`lessons-learned.md` documents the SSoT principle for version
+pins and the filesystem isolation rule. The `.dockerignore` was
+expanded to exclude development artifacts (uploads, transient
+DB files, pytest caches, mypy caches, production marker) from
+the Docker build context. Test counts: backend 1273 + 5 new
+migration tests, launcher 142 + 5 stale-target safeguard tests,
+frontend 682 unchanged.
+
+**Known limitations.** `manuscripta` and `pluginforge` versions
+are still updated manually in `backend/pyproject.toml`; both are
+Bibliogon-owned libraries and not yet under sync-versions
+automation. A reminder has been added to the release workflow.
+The launcher cannot replace itself in place; the pre-install
+stale-target safeguard tells the user to download a newer
+launcher manually. A real binary self-replace mechanism (Windows
+non-trivial because a running binary cannot replace itself
+directly) is a future consideration.
+
 ## [0.25.0] - 2026-05-01
 
 Articles reach feature parity with books across the full lifecycle: dashboard chrome, soft-delete + trash, AI-generated SEO metadata, backup format extended to manifest 2.0 with article + publication + asset segments, and CIO-handler restore through the Import Wizard. Three-layer secrets configuration (project YAML < user override < env-var) replaces the old "edit `app.yaml`" advice with a Gradle-style override file. The donations theme ships its first user-visible surface (S-01 Settings tab "Unterstützen" with four-channel grid). T-01 inline-styles refactor migrates 22 components / pages to per-file CSS Modules, eliminating ~700 inline-style call-sites. Plus a mobile-first hamburger for the Settings tabs (F-01) and a sturdier `make dev-bg` that no longer dies silently when the recipe shell exits (F-02).
