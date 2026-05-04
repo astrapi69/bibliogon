@@ -30,3 +30,14 @@ repos:
         files: ^backend/app/
       - id: ruff-format
         files: ^backend/app/
+
+  - repo: local
+    hooks:
+      - id: roadmap-archive-reminder
+        name: Remind about ROADMAP archival
+        entry: scripts/check_roadmap_for_done_items.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        verbose: true

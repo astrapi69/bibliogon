@@ -6,6 +6,7 @@
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
+       check-blockers archive-task archive-task-dry \
        generate-trial-key \
        docs-install docs-build docs-serve \
        clean prod prod-down prod-logs help
@@ -288,6 +289,12 @@ mutmut-results: ## Show mutation testing results
 
 check-blockers: ## Ping upstream sources for every BLOCKED item in docs/backlog.md
 	@bash scripts/check-blockers.sh
+
+archive-task: ## Move completed [x] tasks out of ROADMAP/backlog into docs/roadmap-archive/YYYY-MM.md (interactive)
+	@python3 scripts/archive_completed_task.py
+
+archive-task-dry: ## Same as archive-task but writes nothing (preview)
+	@python3 scripts/archive_completed_task.py --dry-run
 
 # --- Type Checking ---
 
