@@ -75,13 +75,27 @@ check "launcher/bibliogon_launcher/installer.py" \
     '^COMPATIBLE_VERSION = ' \
     "launcher COMPATIBLE_VERSION"
 
-check "frontend/src/components/ErrorReportDialog.tsx" \
-    'APP_VERSION = ' \
-    "frontend ErrorReportDialog APP_VERSION"
+# Frontend `APP_VERSION` is intentionally not checked here.
+# Both ErrorReportDialog.tsx and errorContext.ts now reference
+# `__APP_VERSION__`, a build-time literal Vite injects from
+# `frontend/package.json` (see frontend/vite.config.ts `define`).
+# The package.json version is the only frontend source-of-truth;
+# downstream code cannot drift.
 
-check "frontend/src/components/import-wizard/errorContext.ts" \
-    'APP_VERSION = ' \
-    "frontend errorContext APP_VERSION"
+# Defensive regression check: any new frontend hardcode of
+# `APP_VERSION = "X.Y.Z"` (or similar) is a violation of the
+# single-source-of-truth policy. Future contributors should use
+# `__APP_VERSION__` instead.
+regression=$(grep -rEn "APP_VERSION\s*=\s*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" \
+    "$ROOT/frontend/src" \
+    --include="*.ts" --include="*.tsx" 2>/dev/null || true)
+if [[ -n "$regression" ]]; then
+    echo
+    echo "REGRESSION: hardcoded APP_VERSION constants found in frontend/src/"
+    echo "$regression"
+    echo "Use __APP_VERSION__ (Vite define from package.json) instead."
+    errors=$((errors + 1))
+fi
 
 echo
 

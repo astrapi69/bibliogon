@@ -3,7 +3,16 @@ import {defineConfig} from "vite";
 import react from "@vitejs/plugin-react";
 import {VitePWA} from "vite-plugin-pwa";
 
+import pkg from "./package.json" with {type: "json"};
+
 export default defineConfig({
+    define: {
+        // Single source of truth: package.json. Replaced at build
+        // time (and during vitest runs) by the literal string.
+        // Downstream code reads __APP_VERSION__ instead of
+        // re-declaring a hardcoded constant.
+        __APP_VERSION__: JSON.stringify(pkg.version),
+    },
     plugins: [
         react(),
         VitePWA({

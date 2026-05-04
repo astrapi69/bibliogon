@@ -22,8 +22,6 @@ export interface WizardError {
     retryable: boolean;
 }
 
-const APP_VERSION = "0.25.0";
-
 /** Convert anything thrown into a WizardError. */
 export function toWizardError(
     err: unknown,
@@ -61,7 +59,7 @@ export function formatDetails(error: WizardError): string {
     lines.push("");
     lines.push(`**Failed at:** ${error.context}`);
     lines.push(`**Message:** ${error.message}`);
-    lines.push(`**Bibliogon version:** ${APP_VERSION}`);
+    lines.push(`**Bibliogon version:** ${__APP_VERSION__}`);
     lines.push(
         `**Browser:** ${
             typeof navigator !== "undefined"

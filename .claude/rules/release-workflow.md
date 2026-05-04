@@ -122,8 +122,16 @@ to confirm all of these are aligned):
 - [ ] `backend/app/__init__.py`: `__version__`
 - [ ] `frontend/package.json`: `version`
 - [ ] `launcher/bibliogon_launcher/installer.py`: `COMPATIBLE_VERSION`
-- [ ] `frontend/src/components/ErrorReportDialog.tsx`: `APP_VERSION`
-- [ ] `frontend/src/components/import-wizard/errorContext.ts`: `APP_VERSION`
+
+Frontend usage: NOT a mandatory pin. The frontend reads its
+version from `package.json` at build time via the Vite `define`
+in `frontend/vite.config.ts`, which exposes the literal
+`__APP_VERSION__`. Downstream code (e.g. `ErrorReportDialog`,
+`errorContext`) reads `__APP_VERSION__`; no other frontend file
+should hardcode a version constant. The verification script
+includes a defensive regression check that fails if a new
+`APP_VERSION = "X.Y.Z"` literal appears anywhere under
+`frontend/src/`.
 
 Conditional (only when the corresponding component actually changed):
 
