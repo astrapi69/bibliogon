@@ -39,6 +39,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify version lock-step (release event only)
+        # On release-triggered builds, fail fast if any subsystem is
+        # out of sync with backend/pyproject.toml. Same gate as
+        # release-gate.yml; duplicated here so artifact attachment
+        # cannot proceed past a failed gate. Skipped for push/PR
+        # events (those are CI smoke builds, not release artifacts).
+        if: github.event_name == 'release'
+        working-directory: ${{ github.workspace }}
+        run: |
+          chmod +x scripts/verify_version_pins.sh scripts/sync_versions.py
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./scripts/verify_version_pins.sh "$VERSION"
+          python3 scripts/sync_versions.py --check
+
       - name: Install system dependencies
         # tkinter is not bundled with the manylinux Python wheels used
         # by actions/setup-python on Linux runners. Install the system

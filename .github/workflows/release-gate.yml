@@ -1,0 +1,75 @@
+name: Release Gate
+
+# Validates that every subsystem version is in lock-step with the
+# canonical backend/pyproject.toml AND that the pushed tag matches.
+# Runs on every v*.*.* tag push so failure is visible before the
+# GitHub Release event triggers downstream artifact builds.
+#
+# This workflow is informational + advisory: tag pushes cannot be
+# blocked by CI, so a failure here does NOT prevent the tag from
+# existing on origin. But the launcher build workflows
+# (launcher-{linux,macos,windows}.yml) re-run the same gate as the
+# first step of their release-event jobs, which DOES block artifact
+# attachment on failure.
+#
+# release-workflow.md Step 4 is the human-side checklist; this is
+# the machine-side enforcement.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  verify-versions:
+    name: Verify version lock-step
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tag matches canonical
+        # Strip leading "v" from refs/tags/vX.Y.Z, compare to the
+        # version field in backend/pyproject.toml. Drift here means
+        # someone tagged before bumping (or vice versa).
+        run: |
+          CANONICAL=$(grep -E '^version\s*=' backend/pyproject.toml \
+            | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "Tag:        $GITHUB_REF_NAME"
+          echo "Canonical:  $CANONICAL"
+          if [[ "$CANONICAL" != "$TAG_VERSION" ]]; then
+            echo
+            echo "FATAL: tag $GITHUB_REF_NAME does not match canonical"
+            echo "       version $CANONICAL in backend/pyproject.toml."
+            echo "       Did you forget to bump pyproject before tagging?"
+            exit 1
+          fi
+          echo "OK: tag matches canonical."
+
+      - name: Verify version pins
+        # The same script the release-workflow rule's Step 4 calls
+        # locally before tagging. Catches every regression class:
+        # canonical-pin drift, install.sh template drift, hardcoded
+        # __version__ literals, deprecated COMPATIBLE_VERSION,
+        # frontend APP_VERSION constants.
+        run: |
+          chmod +x scripts/verify_version_pins.sh
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./scripts/verify_version_pins.sh "$VERSION"
+
+      - name: Verify subsystem lock-step
+        # Confirms every derived subsystem (launcher pyproject + spec
+        # plist + __init__, plugin pyprojects, frontend package.json,
+        # install.sh) carries the canonical version. sync-versions
+        # --check exits 1 on any drift.
+        run: |
+          chmod +x scripts/sync_versions.py
+          python3 scripts/sync_versions.py --check

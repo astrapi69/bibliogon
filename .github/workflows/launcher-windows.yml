@@ -36,6 +36,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify version lock-step (release event only)
+        # On release-triggered builds, fail fast if any subsystem is
+        # out of sync with backend/pyproject.toml. Same gate as
+        # release-gate.yml; duplicated here so artifact attachment
+        # cannot proceed past a failed gate.
+        if: github.event_name == 'release'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          chmod +x scripts/verify_version_pins.sh scripts/sync_versions.py
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./scripts/verify_version_pins.sh "$VERSION"
+          python3 scripts/sync_versions.py --check
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
