@@ -18,13 +18,27 @@ def _resolve_database_url() -> str:
        tests/test_test_isolation.py).
     2. DATABASE_URL env var is honoured verbatim.
     3. BIBLIOGON_DB_PATH env var lets callers override the on-disk file
-       location; defaults to backend/bibliogon.db.
+       location explicitly. Kept for backwards compatibility with
+       deployments that set it directly (e.g. existing
+       docker-compose.prod.yml configurations).
+    4. Default falls through to ``app.paths.get_db_path()``, which
+       resolves the canonical path from BIBLIOGON_DATA_DIR or
+       platformdirs.
     """
     if os.getenv("BIBLIOGON_TEST") == "1":
         return os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
     if explicit := os.getenv("DATABASE_URL"):
         return explicit
-    db_path = Path(os.getenv("BIBLIOGON_DB_PATH", str(_BACKEND_DIR / "bibliogon.db")))
+    if db_path_override := os.getenv("BIBLIOGON_DB_PATH"):
+        db_path = Path(db_path_override)
+    else:
+        # Late import: app.paths import is cheap but keeping it inside
+        # the function preserves the historical "database.py imports
+        # are minimal" property and avoids any circular-import risk
+        # with future paths.py extensions.
+        from app.paths import get_db_path
+
+        db_path = get_db_path()
     db_path.parent.mkdir(parents=True, exist_ok=True)
     return f"sqlite:///{db_path}"
 
