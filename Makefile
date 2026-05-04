@@ -7,6 +7,7 @@
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        check-blockers archive-task archive-task-dry \
+       sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
        clean prod prod-down prod-logs help
@@ -317,6 +318,17 @@ test-e2e: ## Run Playwright e2e tests (starts servers automatically)
 
 test-e2e-ui: ## Run e2e tests with Playwright UI
 	cd e2e && npx playwright test --ui
+
+# --- Version sync ---
+
+sync-versions: ## Propagate backend/pyproject.toml version to all subsystems
+	@python3 scripts/sync_versions.py
+
+sync-versions-dry: ## Show what sync-versions would change without writing
+	@python3 scripts/sync_versions.py --dry-run
+
+sync-versions-check: ## Exit non-zero if any subsystem version drifts from canonical
+	@python3 scripts/sync_versions.py --check
 
 # --- License ---
 
