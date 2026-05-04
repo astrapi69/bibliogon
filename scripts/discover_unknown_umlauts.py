@@ -199,6 +199,17 @@ NOT_TRANSLITERATIONS: set[str] = {
     "misst",  # 3rd person sg "messen" - short e, no umlaut
     "influence",  # English
     "Poetry",  # already covered above but reaffirm
+    # Surfaced after dropping .claude/rules/ + adding README, CONCEPT,
+    # plugins/*/content/de globs (2026-05-04, second productionization
+    # batch).
+    "Accessible", "Lossless", "successor", "Consequences",
+    # YAML-aware masking surfaced these from de.yaml + _meta.yaml.
+    # All correct German / loanwords / English (verified 2026-05-04).
+    "Vorschauen", "Fassung", "Fassungen", "neuerer",
+    "assistierte", "assistierten", "Wissenschaftlich",
+    "Quellenverzeichnis", "Schlussbetrachtung", "Passe", "zulassen",
+    "verfassen", "Adresse", "Quellsprache", "eventuell",
+    "Passivanteil", "dauert", "verlassen", "Glossary",
 }
 
 
@@ -223,7 +234,9 @@ def discover(file_list: Path) -> tuple[Counter[str], dict[str, list[str]]]:
             text = f.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        masked, _ = mask_code_regions(text)
+        masked, _ = mask_code_regions(
+            text, indented_code=f.suffix not in {".yaml", ".yml"}
+        )
         for m in token_re.finditer(masked):
             tok = m.group(0)
             if tok in skip:

@@ -476,16 +476,20 @@ readers; the chat is a working channel.
 
 ### Tooling
 
-`scripts/find_umlaut_candidates.py` and
-`scripts/replace_umlauts.py` implement a whitelist-based,
+`scripts/find_umlaut_candidates.py`, `scripts/replace_umlauts.py`,
+`scripts/build_in_scope_list.py`, and
+`scripts/discover_unknown_umlauts.py` implement a whitelist-based,
 reviewable workflow:
 
-1. Build an in-scope file list (one path per line at
-   `/tmp/in-scope-files.txt`).
-2. Run the finder; review the JSON report at
-   `/tmp/umlaut-candidates.json`.
-3. If the finder surfaces obvious German words missing from
-   `KNOWN_WORDS`, surface them, get explicit approval, add them.
+1. Run `python3 scripts/build_in_scope_list.py` to regenerate
+   `/tmp/in-scope-files.txt` from the policy below.
+2. Run `python3 scripts/discover_unknown_umlauts.py` to find any
+   ASCII transliterations NOT yet in `KNOWN_WORDS`. Add real
+   German words to the whitelist (one entry per declined form);
+   add false positives to the script's `NOT_TRANSLITERATIONS`
+   set so future runs stay quiet.
+3. Run `python3 scripts/find_umlaut_candidates.py` against the
+   expanded whitelist; review `/tmp/umlaut-candidates.json`.
 4. Run the replacer with `--dry-run` first; review diffs.
 5. Apply per-file with `y / N / q` prompts; after 5 clean
    replacements the prompt offers `a` (yes-to-all) — only opt in
@@ -493,10 +497,31 @@ reviewable workflow:
 6. Re-run the finder to confirm 0 remaining candidates.
 7. UTF-8 readback every changed file before committing.
 
-Both scripts mask Markdown code regions (fenced + inline +
-indented) before scanning so identifiers and technical strings
-inside code never become candidates. Word-boundary regex
-(`\b...\b`) prevents partial matches inside compound identifiers.
+Scope policy (encoded in `build_in_scope_list.py`):
+
+In scope:
+- `backend/config/i18n/de.yaml`
+- `docs/help/_meta.yaml` (display labels are German prose)
+- `docs/help/de/**/*.md`, `docs/journal/**/*.md`,
+  `docs/explorations/**/*.md`
+- `docs/CHANGELOG.md`, `docs/CONCEPT.md`, `docs/ROADMAP.md`,
+  `docs/backlog.md`
+- `plugins/*/content/de/**/*.md`,
+  `plugins/*/bibliogon_*/content/de/**/*.md`
+- `README.md`
+
+Explicitly NOT in scope (do not add):
+- `.claude/rules/*.md` — rules are English; only the policy
+  examples reference umlauts as illustration.
+- Source code (`*.py`, `*.ts`, `*.tsx`) — identifiers stay ASCII.
+- Auto-translated non-DE i18n YAMLs (es/fr/pt/tr/ja/el/en) —
+  separate diacritic-coverage track (I18N-DIACRITICS-01).
+
+The finder masks Markdown code regions (fenced + inline +
+indented). For YAML / config files (suffix `.yaml` / `.yml`), the
+indented-code rule is skipped because YAML indentation is data,
+not code. Word-boundary regex (`\b...\b`) prevents partial
+matches inside compound identifiers.
 
 ### Why this matters
 

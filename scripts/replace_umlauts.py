@@ -31,9 +31,9 @@ from find_umlaut_candidates import (  # noqa: E402
 )
 
 
-def replace_in_text(text: str) -> str:
+def replace_in_text(text: str, *, indented_code: bool = True) -> str:
     """Apply the KNOWN_WORDS replacements outside code regions."""
-    masked, placeholders = mask_code_regions(text)
+    masked, placeholders = mask_code_regions(text, indented_code=indented_code)
     for ascii_word, replacement in KNOWN_WORDS.items():
         if ascii_word == replacement:
             continue
@@ -117,7 +117,8 @@ def main() -> int:
             print(f"skip (missing): {path}", file=sys.stderr)
             continue
         before = path.read_text(encoding="utf-8")
-        after = replace_in_text(before)
+        indented = path.suffix not in {".yaml", ".yml"}
+        after = replace_in_text(before, indented_code=indented)
         if before == after:
             continue
 

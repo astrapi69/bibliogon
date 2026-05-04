@@ -434,7 +434,7 @@ KNOWN_WORDS: dict[str, str] = {
     "Gewuenscht": "Gewünscht",
     "engineabhaengigen": "engineabhängigen",
     "Fortfuehrung": "Fortführung",
-    "geschaetzte": "geschätzte",
+    "geschaetzte": "geschätzte", "geschaetzten": "geschätzten",
     "verschluesselte": "verschlüsselte",
     "Buecherregalen": "Bücherregalen",
     "muelleimer": "mülleimer",
@@ -455,10 +455,20 @@ INLINE_CODE = re.compile(r"`[^`\n]+`")
 INDENTED_CODE = re.compile(r"(?m)^(?: {4}|\t).*$")
 
 
-def mask_code_regions(text: str) -> tuple[str, list[tuple[int, int, str]]]:
-    """Replace code regions with placeholders. Return masked text + map."""
+def mask_code_regions(
+    text: str, *, indented_code: bool = True
+) -> tuple[str, list[tuple[int, int, str]]]:
+    """Replace code regions with placeholders. Return masked text + map.
+
+    ``indented_code`` toggles the Markdown indented-code-block rule
+    (lines beginning with 4 spaces / a tab). Set False for non-Markdown
+    files (e.g. YAML) where indentation is data, not code.
+    """
     spans: list[tuple[int, int, str]] = []
-    for pat in (FENCED_BLOCK, INLINE_CODE, INDENTED_CODE):
+    patterns: tuple[re.Pattern[str], ...] = (FENCED_BLOCK, INLINE_CODE)
+    if indented_code:
+        patterns = (*patterns, INDENTED_CODE)
+    for pat in patterns:
         for m in pat.finditer(text):
             spans.append((m.start(), m.end(), m.group(0)))
     spans.sort()
@@ -491,7 +501,9 @@ def find_in_file(path: Path) -> list[dict]:
     except (UnicodeDecodeError, OSError) as exc:
         return [{"error": f"cannot read: {exc}"}]
 
-    masked, _placeholders = mask_code_regions(text)
+    # YAML / config files: indented lines are data, not code blocks.
+    indented = path.suffix not in {".yaml", ".yml"}
+    masked, _placeholders = mask_code_regions(text, indented_code=indented)
     findings: list[dict] = []
     for ascii_word, pattern in WORD_PATTERNS.items():
         replacement = KNOWN_WORDS[ascii_word]
