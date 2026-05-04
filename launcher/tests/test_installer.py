@@ -25,7 +25,7 @@ class TestReleaseZipUrl:
 
     def test_default_version(self) -> None:
         url = installer.release_zip_url()
-        assert f"/tags/v{installer.COMPATIBLE_VERSION}.zip" in url
+        assert f"/tags/v{installer.BIBLIOGON_TARGET_VERSION}.zip" in url
 
     def test_explicit_version(self) -> None:
         url = installer.release_zip_url("1.2.3")

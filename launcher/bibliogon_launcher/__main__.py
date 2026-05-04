@@ -131,7 +131,7 @@ def _run_launcher() -> int:
         if config.is_valid_repo(repo):
             # Migrate: write manifest so future starts skip legacy path
             try:
-                manifest.write_manifest(repo, installer.COMPATIBLE_VERSION)
+                manifest.write_manifest(repo, installer.BIBLIOGON_TARGET_VERSION)
             except Exception as exc:
                 logger.warning("Could not write manifest during migration: %s", exc)
             mdata = manifest.read_manifest()
@@ -388,7 +388,7 @@ def _run_install_flow() -> Path | None:
 
     # Show status window during download + extract
     window = ui.StatusWindow()
-    window.set_starting(f"Downloading Bibliogon v{installer.COMPATIBLE_VERSION}...")
+    window.set_starting(f"Downloading Bibliogon v{installer.BIBLIOGON_TARGET_VERSION}...")
 
     result: dict = {}
 
@@ -405,7 +405,7 @@ def _run_install_flow() -> Path | None:
             logger.warning("env file creation: %s", detail2)
         # Write manifest
         try:
-            manifest.write_manifest(target, installer.COMPATIBLE_VERSION)
+            manifest.write_manifest(target, installer.BIBLIOGON_TARGET_VERSION)
         except Exception as exc:
             result["error"] = f"Could not write manifest: {exc}"
             window.after(0, window.destroy)
@@ -456,7 +456,7 @@ def _run_install_flow() -> Path | None:
             choice = ui.two_button_dialog(
                 title="Installation complete",
                 message=(
-                    f"Bibliogon v{installer.COMPATIBLE_VERSION} has been installed.\n\n"
+                    f"Bibliogon v{installer.BIBLIOGON_TARGET_VERSION} has been installed.\n\n"
                     "The application is taking longer than expected to start. "
                     "It may still be starting in the background.\n\n"
                     "Open in browser anyway?"
@@ -468,7 +468,7 @@ def _run_install_flow() -> Path | None:
             choice = ui.two_button_dialog(
                 title="Installation complete",
                 message=(
-                    f"Bibliogon v{installer.COMPATIBLE_VERSION} is installed and running.\n\n"
+                    f"Bibliogon v{installer.BIBLIOGON_TARGET_VERSION} is installed and running.\n\n"
                     f"Opening http://localhost:{port} in your browser."
                 ),
                 primary_label="Open browser",

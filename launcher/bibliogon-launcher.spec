@@ -8,7 +8,40 @@
 #   macOS:   dist/Bibliogon Launcher.app (bundle, icon if bibliogon.icns exists)
 
 import os
+import re
 import sys
+from pathlib import Path
+
+# --- Build-time version injection ------------------------------------
+# Read the target Bibliogon version from backend/pyproject.toml and
+# write a generated module the launcher imports. backend/pyproject.toml
+# is the canonical Python source-of-truth; the launcher's frozen binary
+# bakes the value in at build time so it is offline-evaluable in
+# production. The generated file is gitignored.
+
+_repo_root = Path(__file__).resolve().parent.parent
+_backend_pyproject = _repo_root / "backend" / "pyproject.toml"
+_match = re.search(
+    r'^version\s*=\s*"([^"]+)"',
+    _backend_pyproject.read_text(encoding="utf-8"),
+    re.MULTILINE,
+)
+if _match is None:
+    raise SystemExit(
+        f"FATAL: cannot read version from {_backend_pyproject}"
+    )
+_target_version = _match.group(1)
+
+_build_info = (
+    Path(__file__).resolve().parent / "bibliogon_launcher" / "_build_info.py"
+)
+_build_info.write_text(
+    "# AUTO-GENERATED at PyInstaller build time. Do not edit; regenerate "
+    "via\n# `poetry run pyinstaller bibliogon-launcher.spec`. See spec for "
+    "source.\n"
+    f'BIBLIOGON_TARGET_VERSION = "{_target_version}"\n',
+    encoding="utf-8",
+)
 
 block_cipher = None
 
