@@ -376,17 +376,77 @@ It is NOT a duplicate definition store.
 
 Completed tasks are archived to `docs/roadmap-archive/`:
 
-- `phase-1-complete.md` (v0.1.0..v0.14.0).
+- `phase-1-complete.md` (v0.1.0..v0.14.0). One-time Phase 1 -> 2
+  transition snapshot.
 - `v0.25.0-cleanup-2026-05-02.md` (Phase 2 work shipped between
-  v0.15.0 and v0.25.0).
+  v0.15.0 and v0.25.0). One-time bulk extract.
 - `backlog-recently-closed-2026-05-02.md` (backlog "Recently
-  closed" prose).
+  closed" prose). One-time bulk extract.
+- `YYYY-MM.md` (e.g. `2026-05.md`). Continuous-archival monthly
+  bucket. One file per month, written by
+  `scripts/archive_completed_task.py`. Each session's closures
+  land here under a `## Archived YYYY-MM-DD` section, newest day
+  first.
 
 Active files (`ROADMAP.md` and `backlog.md`) contain ONLY open
 `- [ ]` items. Do not re-add closed tasks to the active files;
 if a closed task needs to come back, create a new ID. Stable IDs
 across the archive boundary mean single-word prompts like
 "implement T-01" still resolve.
+
+### Continuous archival rule
+
+When a task in `ROADMAP.md` or `backlog.md` is marked `[x]` AND
+the work is genuinely done, archive it in the same commit that
+closes it. Active files contain ONLY open work; completed tasks
+live in `docs/roadmap-archive/YYYY-MM.md`.
+
+#### Definition of done
+
+A task is done when ALL of:
+
+- Code is implemented and merged to `main`.
+- Tests for the change are green (`make test`).
+- Documentation is updated (CLAUDE.md, API docs, help articles).
+- CHANGELOG entry exists if the change is user-facing.
+- No follow-up work blocks closing the task (otherwise: split into
+  sub-tasks).
+
+#### Workflow
+
+1. Complete the work.
+2. Mark the task `[x]` in `ROADMAP.md` or `backlog.md`.
+3. Run `make archive-task` (interactive) or
+   `make archive-task-dry` to preview.
+4. Confirm each `[x]` candidate with `y` / `n` / `s` (skip-all).
+5. Confirmed items move to `docs/roadmap-archive/YYYY-MM.md`.
+6. Commit ROADMAP, backlog, archive file together with the same
+   change that closes the task:
+   `feat(scope): implement T-01 (archived)`.
+
+For scripted use (single ID, no prompt):
+`python3 scripts/archive_completed_task.py --id T-01`.
+
+A pre-commit hook (`roadmap-archive-reminder` in
+`.pre-commit-config.yaml`) prints a non-blocking reminder when
+staged changes introduce new `[x]` lines without an accompanying
+archive update. The hook always exits 0; archival is the user's
+responsibility, not a CI gate.
+
+#### What NOT to do
+
+- Do NOT batch up `[x]` items across releases. The 2026-05-02
+  cleanup was a one-time recovery operation; the steady state is
+  one task per archival.
+- Do NOT archive items that are technically done but missing
+  tests or docs. Finish them first.
+- Do NOT delete tasks from active files without archiving. The
+  archive is the audit trail.
+- Do NOT manually edit archived task IDs. They are stable
+  identifiers across history; future single-word prompts depend
+  on them.
+- Do NOT cross-month-consolidate the monthly buckets. An annual
+  rollup is a separate decision; do not pre-empt it.
 
 ### When to update CONCEPT.md
 
