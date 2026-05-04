@@ -9,7 +9,11 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - BIBLIOGON_DEBUG=false
-      - BIBLIOGON_DB_PATH=/app/data/bibliogon.db
+      # Single canonical data dir. DB lives at $DATA_DIR/bibliogon.db
+      # and uploads at $DATA_DIR/uploads/, both inside the named
+      # volume so they survive container rebuilds. The volume mount
+      # at /app/data is the persistence boundary.
+      - BIBLIOGON_DATA_DIR=/app/data
       - BIBLIOGON_CORS_ORIGINS=${BIBLIOGON_CORS_ORIGINS:-http://localhost:7880}
       - BIBLIOGON_SECRET_KEY=${BIBLIOGON_SECRET_KEY:-}
     healthcheck:

@@ -10,6 +10,10 @@ services:
       - bibliogon-data:/app/data
     environment:
       - PYTHONDONTWRITEBYTECODE=1
+      # Single canonical data dir; matches docker-compose.prod.yml.
+      # DB at $DATA_DIR/bibliogon.db, uploads at $DATA_DIR/uploads/,
+      # both inside the named volume.
+      - BIBLIOGON_DATA_DIR=/app/data
 
   frontend:
     image: node:24-slim
