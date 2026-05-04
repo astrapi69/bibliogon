@@ -51,7 +51,7 @@ Metadaten-Editor anbietet:
 
 **Keywords** — kommagetrennt.
 
-Jede Zeile ausser Pflichtfeldern hat eine Checkbox für
+Jede Zeile außer Pflichtfeldern hat eine Checkbox für
 Einbinden / Ausschliessen:
 
 - Checkbox AN: Das Feld wird mit dem angezeigten (evtl.
@@ -66,16 +66,16 @@ sie nicht geliefert hat.
 
 ## Warum das existiert
 
-Frueher zeigte der Assistent in der Vorschau nur Titel, Autor
-und Sprache. Langformige Felder (CSS, Rueckseitentext, Autoren-
+Früher zeigte der Assistent in der Vorschau nur Titel, Autor
+und Sprache. Langformige Felder (CSS, Rückseitentext, Autoren-
 Bio) wurden zwar importiert, aber erst im Metadaten-Editor
 nach dem Import sichtbar. Nutzer meldeten das als "Felder
 werden nicht importiert", weil sie sie nicht sehen konnten.
-Der Feldauswahl-Schritt schliesst diese Lücke.
+Der Feldauswahl-Schritt schließt diese Lücke.
 
 ## Verwandte Themen
 
 - [Import aus einer Git-URL](git-url.md) — das Eingabefeld
   aus Schritt 1.
-- [Metadaten-Editor](../editor/uebersicht.md) — vollstaendige
+- [Metadaten-Editor](../editor/uebersicht.md) — vollständige
   Nach-Import-Bearbeitung.

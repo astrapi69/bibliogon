@@ -41,5 +41,5 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - Commits: 2 (ad122f2, c32f553)
 - Tests: 159 (38 backend, 48 plugin, 21 vitest, 52 e2e) - alle grün
 - Neue Dateien: backend/tests/test_roundtrip.py, .dockerignore
-- Geaenderte Dateien: backend/Dockerfile, docker-compose.yml, docker-compose.prod.yml, docs/ROADMAP.md, CLAUDE.md, .claude/rules/ai-workflow.md, .claude/rules/quality-checks.md
+- Geänderte Dateien: backend/Dockerfile, docker-compose.yml, docker-compose.prod.yml, docs/ROADMAP.md, CLAUDE.md, .claude/rules/ai-workflow.md, .claude/rules/quality-checks.md
 - Hauptergebnisse: Roundtrip-Tests abgedeckt (Q-03), Docker-Image optimiert (S-07)

@@ -161,7 +161,7 @@ Examples:
 - EN: "This section is not typical prose. Review feedback may be
   limited."
 - DE: "Dieser Abschnitt ist kein typischer Prosa-Text. Das Review
-  könnte eingeschraenkt sein."
+  könnte eingeschränkt sein."
 
 ### 3.12 Language support: all 8
 

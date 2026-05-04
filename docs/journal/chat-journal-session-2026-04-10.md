@@ -35,8 +35,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 5. Google Cloud TTS Integration - Tranche 1
 
 - Original-Prompt: Ausfuehrlicher Spec für Google Cloud TTS als Premium-Engine.
-- Umfangreiche Rueckfrage-Runde: Scope-Analyse (10 Features in einem Prompt), 7 konkrete Fragen an den User.
-- User-Entscheidungen: (1) Tranchen-Ansatz, (2) Credentials verschluesselt, (3) optionale Dependency mit lazy import, (4) Refactoring als eigener Commit vorab.
+- Umfangreiche Rückfrage-Runde: Scope-Analyse (10 Features in einem Prompt), 7 konkrete Fragen an den User.
+- User-Entscheidungen: (1) Tranchen-Ansatz, (2) Credentials verschlüsselt, (3) optionale Dependency mit lazy import, (4) Refactoring als eigener Commit vorab.
 - Zweiter Prompt verwies auf manuscripta v0.7.0 (nicht installiert war 0.6.1). Check auf PyPI: v0.7.0 existiert und hat exakt die API die der Prompt annimmt (create_adapter, TTSAdapter, VoiceInfo, TTSError Hierarchie, tenacity Retry).
 
 ### Commit 1: chore: update manuscripta to ^0.7.0 (0949d09)
@@ -53,7 +53,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ### Commit 3: feat: encrypted credential storage (3ab0167)
 - Neues Modul backend/app/credential_store.py
-- Fernet-Verschluesselung (AES-128-CBC + HMAC-SHA256) mit BIBLIOGON_CREDENTIALS_SECRET
+- Fernet-Verschlüsselung (AES-128-CBC + HMAC-SHA256) mit BIBLIOGON_CREDENTIALS_SECRET
 - validate_service_account_json, save_encrypted, load_decrypted, load_to_tempfile, secure_delete, is_configured, get_metadata
 - 16 Unit-Tests inkl. Roundtrip, Wrong-Secret, Null-Overwrite-Verification
 - cryptography als Dependency in Backend + Audiobook-Plugin
@@ -77,7 +77,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ### Commit 5: feat: content-hash-based regeneration cache (126c1e6)
 - should_regenerate() prüft .meta.json Sidecar (SHA-256 content hash + engine + voice + speed)
-- generate_audiobook() bekommt cache_dir Parameter, _run_audiobook_job uebergibt uploads/{book_id}/audiobook/chapters/
+- generate_audiobook() bekommt cache_dir Parameter, _run_audiobook_job übergibt uploads/{book_id}/audiobook/chapters/
 - Cache-Hit: MP3 wird aus dem persistenten Verzeichnis kopiert statt neu generiert, "chapter_reused" SSE-Event
 - Cache-Miss: MP3 wird generiert, .meta.json Sidecar geschrieben
 - audiobook_storage.persist_audiobook() kopiert jetzt auch .meta.json Sidecars
@@ -86,7 +86,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ### Commit 6: feat: cost estimation and savings tracking (0f9f890)
 - Nach Export: Generator berechnet geschaetzte Kosten via manuscripta adapter.estimate_cost()
-- "done" SSE-Event traegt cost_usd und saved_usd
+- "done" SSE-Event trägt cost_usd und saved_usd
 - Progress-Dialog rendert: "Generierung abgeschlossen | Wiederverwendet: 12 | Kosten: ~$0.47 | Gespart: ~$1.87"
 - Kostenlose Engines (Edge, gTTS, pyttsx3) geben None zurück, werden ignoriert
 - i18n: event_reused_count, event_cost, event_saved in DE + EN
@@ -115,7 +115,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - Ende der Session: 430 Tests (Backend 153, Plugins 188, Vitest 68, E2E 52)
 - Neue Tests: +16 credential_store, +8 content-hash cache, +8 voice_store, diverse Test-Updates
 
-## 7. Tranche 2 Fortsetzung: Dry-Run, Quality-Filter, ElevenLabs-Verschluesselung, i18n
+## 7. Tranche 2 Fortsetzung: Dry-Run, Quality-Filter, ElevenLabs-Verschlüsselung, i18n
 
 ### Commit 7: feat: dry-run mode with sample playback and cost preview (c0e5732)
 - POST /api/books/{id}/audiobook/dry-run generiert ersten Absatz des ersten Kapitels
@@ -129,7 +129,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - In BookMetadataEditor und Settings
 
 ### Commit 9: feat: encrypt ElevenLabs key with Fernet (cd5fa1c)
-- ElevenLabs-Key jetzt auch Fernet-verschluesselt wenn BIBLIOGON_CREDENTIALS_SECRET gesetzt
+- ElevenLabs-Key jetzt auch Fernet-verschlüsselt wenn BIBLIOGON_CREDENTIALS_SECRET gesetzt
 - Legacy-YAML bleibt als Fallback für Installationen ohne Secret
 - save: encrypt + clear YAML. read: engine -> encrypted -> legacy. delete: both.
 
@@ -140,12 +140,12 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ---
 
 ### Hauptergebnisse
-- Google Cloud TTS vollstaendig integriert (Engine, verschluesselte Credentials, UI, Voice-Seeding)
-- Content-Hash-Cache spart TTS-Kosten bei unveraenderten Kapiteln
+- Google Cloud TTS vollständig integriert (Engine, verschluesselte Credentials, UI, Voice-Seeding)
+- Content-Hash-Cache spart TTS-Kosten bei unveränderten Kapiteln
 - Kostentransparenz im Progress-Dialog (Kosten + Ersparnisse)
 - Dry-Run: Probe hören + Kosten-Preview vor dem echten Export
 - Quality-Filter: 300+ Google-Stimmen auf die besten reduziert
-- ElevenLabs-Key verschluesselt (konsistent mit Google SA)
+- ElevenLabs-Key verschlüsselt (konsistent mit Google SA)
 - i18n komplett in allen 8 Sprachen
 - manuscripta 0.7.0 als TTS-Backend, eigene Engine-Implementierungen entfernt
 - Voice-Dropdown-Bug gefixt (kein engine-agnostischer Edge-Fallback mehr)

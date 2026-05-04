@@ -66,7 +66,7 @@ Andere Hits sind Reader (`archive_utils`, `bgb.py`, `backup_import`).
 
 ## Fazit der Code-Pfade-Analyse
 
-**Der User-Pfad geht durch den geaenderten Code.**
+**Der User-Pfad geht durch den geänderten Code.**
 
 ```
 [Backup-Button click]
@@ -96,10 +96,10 @@ sollte automatisch File-Änderungen sehen, aber:
 
 - Wenn `make dev` vor `ed2e3ec` gestartet wurde, sieht der
   Watch-Mechanismus die neuen Imports zwar, aber bereits geladene
-  Module bleiben unter Umstaenden gecached, je nach Watcher.
+  Module bleiben unter Umständen gecached, je nach Watcher.
 - `lessons-learned.md` notiert separat: path-installed plugins
   und Cross-File-Imports können `--reload` umgehen.
-- Nach Backend-Änderungen, die mehrere Module beruehren
+- Nach Backend-Änderungen, die mehrere Module berühren
   (`backup_export.py` + `backup_import.py` + `serializer.py` +
   `archive_utils.py`), ist ein Hard-Restart sicher.
 
@@ -122,7 +122,7 @@ make dev
 Filter). Wenn Aster Articles hat, landen sie im ZIP unabhängig
 vom Trash-Status.
 
-Prüfe: ist die Articles-Liste im Articles-Dashboard tatsaechlich
+Prüfe: ist die Articles-Liste im Articles-Dashboard tatsächlich
 nicht leer?
 
 **Verifikation durch Aster:** Articles-Dashboard zeigt N
@@ -133,10 +133,10 @@ Wenn N + M = 0 → kein Bug, sondern leere DB.
 
 **Wahrscheinlichkeit: MITTEL.**
 
-Wenn Aster ein `.bgb` aus einer **frueheren Session** angeschaut
+Wenn Aster ein `.bgb` aus einer **früheren Session** angeschaut
 hat (vor `ed2e3ec`), enthält dieses ZIP per Definition keine
 Articles und keine `version=2.0`-Manifest. Das ist kein Bug;
-das alte ZIP ist unveraenderbar.
+das alte ZIP ist unveränderbar.
 
 **Verifikation durch Aster:** Den Output der folgenden Befehle
 nachreichen, ausgeführt **nach** Hard-Restart auf einem **frisch
@@ -168,7 +168,7 @@ Auch wenn der Frontend-Cache stale wäre, der Backend-Code wäre
 trotzdem neu — und der Backend-Code baut das ZIP. Frontend-Cache
 betrifft den Backup-Inhalt nicht.
 
-**Praktisch ausschliessbar.**
+**Praktisch ausschließbar.**
 
 ### H5 — Articles-Query liefert leeres Ergebnis durch Sessions-Bug
 
@@ -185,7 +185,7 @@ DB-Connection-State sieht). Aber:
 - Wenn Books gehen, gehen Articles auch — selbe Session, selber
   Pool.
 
-Praktisch ausschliessbar ohne Code-Beweis fuers Gegenteil.
+Praktisch ausschließbar ohne Code-Beweis fuers Gegenteil.
 
 ---
 
@@ -224,20 +224,20 @@ Mit diesen drei Outputs ist die Ursache eindeutig zuordenbar.
 
 ---
 
-## Zusaetzliche Findings (nicht User-Bug, aber dokumentenswert)
+## Zusätzliche Findings (nicht User-Bug, aber dokumentenswert)
 
 ### Forward-Compat-Version-Check fehlt
 
 `backup_import._validate_backup_manifest` (siehe
 `backend/app/services/backup/backup_import.py:83-92`) prüft nur
 `format == "bibliogon-backup"`. **`version` wird gar nicht
-gelesen.** Heisst:
+gelesen.** Heißt:
 
 - Backups mit `version: "1.0"` und `version: "2.0"` werden gleich
   behandelt.
 - Ein hypothetisches Backup mit `version: "3.0"` würde silently
   durchlaufen, könnte aber ein neues ZIP-Layout haben, das der
-  Reader nicht versteht — sicherheitsproblematisch für kuenftige
+  Reader nicht versteht — sicherheitsproblematisch für künftige
   Format-Major-Bumps.
 
 **Empfehlung:** In Phase 2 (oder als Add-On) eine warning-only
@@ -267,9 +267,9 @@ trivial (siehe `backup.py:27-43`), aber ein User-Pfad-Test über
 `TestClient.get("/api/backup/export")` wäre die Lucke, die
 jetzige Tests nicht decken.
 
-**Empfehlung Phase 2:** Ein zusaetzlicher Test mit
+**Empfehlung Phase 2:** Ein zusätzlicher Test mit
 ``TestClient(app).get("/api/backup/export")``, ZIP entpacken,
-articles-Einträge prüfen. Schliesst H1-H5 als Test-Beweis aus.
+articles-Einträge prüfen. Schließt H1-H5 als Test-Beweis aus.
 
 ---
 
@@ -301,7 +301,7 @@ Echter Bug. Dann tracen:
 
 ### Szenario D: Manifest zeigt 1.0 nach Hard-Restart
 
-Heisst: der Endpoint ruft eine **andere** Funktion. Dann
+Heißt: der Endpoint ruft eine **andere** Funktion. Dann
 nochmal mit `import` -mocking debuggen + ggf. Plugin-System auf
 Pre-Hook untersuchen, der Manifest neu schreibt.
 
@@ -382,7 +382,7 @@ durch Pfad 2.
 **Pflicht (laut User-Auftrag):**
 
 1. `bgb.py` article-aware machen:
-   - `detect()` zaehlt Articles + Books, Warnung nur wenn beide 0
+   - `detect()` zählt Articles + Books, Warnung nur wenn beide 0
    - `execute()` / `execute_multi()` ruft Article-Restore-Helpers
      aus `backup_import.py` auf
    - Neue Felder im `DetectedProject` für Article-Counts (oder
@@ -407,11 +407,11 @@ Phase 2 wartet auf explizites Go.
 
 Phase 2 ist abgeschlossen. Implementierungs-Commits:
 
-- `ca5e57e` — `BgbImportHandler` article-aware: `detect()` zaehlt
+- `ca5e57e` — `BgbImportHandler` article-aware: `detect()` zählt
   Articles + Books, `_book_blobs`/`_book_count` ergänzt um
   Article-Pendants, `execute()` ruft `_restore_single_book_and_articles`
   und retourniert `("", N)` für articles-only Pfade,
-  `execute_multi()` iteriert zusaetzlich `articles_dir`.
+  `execute_multi()` iteriert zusätzlich `articles_dir`.
 - `ea20fd7` — Wizard `validate_overrides` skip wenn
   `is_articles_only`, sonst blockt der title+author-Gate den
   Continue-Button bei Articles-only-Backups.
@@ -420,7 +420,7 @@ Phase 2 ist abgeschlossen. Implementierungs-Commits:
 - `8043105` — Test-Pyramide: 13 Tests in
   `test_backup_articles.py` decken Export, Roundtrip, Legacy,
   HTTP-User-Path, Idempotenz, Soft-Delete-Revival, Multi-Book,
-  Forward-Compat-Warning. **Schliesst die Test-Lucke aus Phase 1**.
+  Forward-Compat-Warning. **Schließt die Test-Lucke aus Phase 1**.
 - `a415ee9` — Wizard zeigt Article-Counts in DetectedProject-Summary.
 - `128ea16` — Articles-Dashboard refresh auf bfcache + visibility,
   damit `onImported` ohne F5 sichtbar wird.
@@ -435,7 +435,7 @@ $ poetry run pytest tests/test_backup_articles.py -q
 
 UI-Smoke-Verifikation läuft auf Node 22+ (Aster verwendet Node
 24); für Node 18 dokumentiert lessons-learned.md die
-Vite-7-Inkompatibilitaet. Flows 1-7 in der genannten Smoke-Doc
+Vite-7-Inkompatibilität. Flows 1-7 in der genannten Smoke-Doc
 sind in einem normalen `make dev-bg`-Lauf abzuhaken.
 
 **Status: Code-complete. Geschlossen.**

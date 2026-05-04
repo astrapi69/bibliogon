@@ -49,7 +49,7 @@ reorg slipped in just before the release cut.
 - `unified_commit` fans out to core git first, plugin-git-sync
   second; per-subsystem failures land in the response payload
   (`status: ok | skipped | nothing_to_commit | failed`).
-- `GitSyncDialog` shows banner + "Commit ueberall" button when
+- `GitSyncDialog` shows banner + "Commit überall" button when
   both subsystems active. Per-subsystem result list under the
   form; toast tier follows the per-subsystem outcome.
 - 10 backend tests + 4 Vitest tests.

@@ -1,7 +1,7 @@
 # Entwickler-Fehlerbehebung
 
-Haeufige Probleme im Dev-Setup, die `make dev` treffen, und wie man
-sie loest. Produktions-Deploys (Docker `make prod` + nativer
+Häufige Probleme im Dev-Setup, die `make dev` treffen, und wie man
+sie löst. Produktions-Deploys (Docker `make prod` + nativer
 Launcher) sind davon nicht betroffen: das statische Frontend-Build
 und `uvicorn` ohne `--reload` überspringen die File-Watching-
 Schicht komplett.
@@ -33,7 +33,7 @@ beiden Limits hochgesetzt:
 - `fs.inotify.max_user_watches=524288`
 - `fs.inotify.max_user_instances=512`
 
-Der 99-Praefix gewinnt die lexikalische Reihenfolge gegen
+Der 99-Präfix gewinnt die lexikalische Reihenfolge gegen
 30-tracker, sodass die hoeheren Limits über Neustarts hinweg
 bestehen bleiben.
 

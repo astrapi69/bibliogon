@@ -8,7 +8,7 @@ Beim Export konvertiert Bibliogon die TipTap-JSON-Inhalte zunächst in Markdown,
 
 ## Metadaten
 
-Die Metadaten deines Buchs fliessen automatisch in die EPUB-Datei ein. Folgende Felder werden unterstützt:
+Die Metadaten deines Buchs fließen automatisch in die EPUB-Datei ein. Folgende Felder werden unterstützt:
 
 - **Titel und Untertitel**: Erscheinen auf der Titelseite und in den EPUB-Metadaten.
 - **Autor**: Wird als Creator in den EPUB-Metadaten hinterlegt.

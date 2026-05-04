@@ -6,7 +6,7 @@ wartet auf Go.
 
 Auftrag: Smoke-Test hat aufgedeckt, dass `.bgb`-Backups Articles
 nicht enthalten. Datenverlust-Risiko bei Restore. Articles wurden
-in v0.24.0 als first-class Feature eingefuehrt, das
+in v0.24.0 als first-class Feature eingeführt, das
 Backup-System (vor v0.20) kennt sie nicht.
 
 ---
@@ -58,7 +58,7 @@ Backup-System (vor v0.20) kennt sie nicht.
   ein neueres Backup mit `version=2.0` würde aktuell ohne Warnung
   durchlaufen, aber die Articles-Daten ignorieren.
 
-### 1.3 Aktueller Datenumfang Backup (vollstaendige Liste)
+### 1.3 Aktueller Datenumfang Backup (vollständige Liste)
 
 ```
 manifest.json
@@ -73,7 +73,7 @@ books/
 ### 1.4 Aktueller Datenumfang Restore
 
 Identisch zu Export. Skipt Books die `id` schon haben **und live
-sind**; soft-deleted Books werden hard-gelöscht und neu eingefuegt
+sind**; soft-deleted Books werden hard-gelöscht und neu eingefügt
 (siehe `_restore_book_from_dir` Zeilen 129-142).
 
 ### 1.5 Archive-Layout-Helper
@@ -158,17 +158,17 @@ Backup-Export erzeugt keinen Toast (Browser-Download).
 ## 4. CIO-Pfad: BGB Handler (wo der Article-Restore wirklich landet)
 
 `backend/app/import_plugins/handlers/bgb.py` ist **der**
-tatsaechliche Pfad für Restore. Er ruft intern
+tatsächliche Pfad für Restore. Er ruft intern
 `backup_import.import_backup_archive` auf wenn die Datei nach
 manifest.json + books/ aussieht.
 
-Das heißt: **Phase 2 erweitert primaer den
+Das heißt: **Phase 2 erweitert primär den
 `backup_import._restore_book_from_dir` + `backup_export._write_book_dir`
 Service-Code.** Der CIO-Handler delegiert; Wizard-State-Machine
 zeigt das Ergebnis.
 
 `bgb_handler` müsste minimal angepasst werden um Articles-
-Counts zurueckzugeben (DetectedProject/ExecuteResponse-Schema).
+Counts zurückzugeben (DetectedProject/ExecuteResponse-Schema).
 Audit:
 
 ```bash
@@ -243,7 +243,7 @@ Articles müssen **dasselbe** Pattern bekommen
   Article-ORM, Publications-Liste, Asset-Records.
 
 **`backend/app/services/backup/backup_export.py`**:
-- `export_backup_archive` zusaetzlich `db.query(Article)` (analog
+- `export_backup_archive` zusätzlich `db.query(Article)` (analog
   Books).
 - Neu: `_write_article_dir(article, dir, ...)` mit `article.json` +
   `publications.json` + `assets.json` + `assets/<filename>`.
@@ -284,7 +284,7 @@ Articles müssen **dasselbe** Pattern bekommen
   - manifest.json hat `version=2.0` + Article-Counts.
 
 - `backend/tests/test_backup_import.py` (Erweiterung):
-  - **Roundtrip-Schluesseltest:** 5 Articles erzeugen → Backup →
+  - **Roundtrip-Schlüsseltest:** 5 Articles erzeugen → Backup →
     Articles + Publications + Article-Assets aus DB löschen →
     Restore → alles wieder da, alle Felder gleich.
   - Legacy-Backup-Fixture (manifest version=1.0, kein articles/):
@@ -292,7 +292,7 @@ Articles müssen **dasselbe** Pattern bekommen
   - ID-Konflikt: Article mit selber id existiert live → skip.
   - Soft-deleted Article: hard-delete + neu einfügen (mirror Books).
 
-### 6.4 Geschaetzter Aufwand
+### 6.4 Geschätzter Aufwand
 
 - Backend Export: ~45 min
 - Backend Restore + Backwards-Compat: ~60 min
@@ -304,7 +304,7 @@ Articles müssen **dasselbe** Pattern bekommen
 
 ## 7. STOP — Phase 2 wartet auf Go
 
-Bestaetige bitte einen der drei Pfade:
+Bestätige bitte einen der drei Pfade:
 
 - **A) Phase 2 wie geplant.** Articles + Publications + Article-Assets
   ins `.bgb`. format_version 2.0. Backwards-Compat für 1.0.
@@ -312,7 +312,7 @@ Bestaetige bitte einen der drei Pfade:
   Article-Assets). Kommt aber in einem zweiten Schritt.
 - **C) Anderer Plan.** Bitte Korrektur an den Audit-Findings oben.
 
-Open Questions die Phase 2 beruehren:
+Open Questions die Phase 2 berühren:
 
 1. **Soft-deleted Articles im Backup:** mirror Books (alle
    exportieren) — OK?

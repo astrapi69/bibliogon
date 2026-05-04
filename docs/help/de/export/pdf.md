@@ -25,7 +25,7 @@ Der PDF-Export unterstützt die gleichen Optionen wie der EPUB-Export:
 - **Buchtyp** (E-Book, Paperback, Hardcover): Bestimmt die Kapitelreihenfolge und das Inhaltsverzeichnis.
 - **Manuelles Inhaltsverzeichnis**: Falls ein eigenes TOC-Kapitel vorhanden ist.
 - **Cover**: Ein hinterlegtes Coverbild wird als erste Seite eingefügt.
-- **Metadaten**: Titel, Autor, Sprache und ISBN fliessen in die PDF-Metadaten ein.
+- **Metadaten**: Titel, Autor, Sprache und ISBN fließen in die PDF-Metadaten ein.
 
 ## Weitere Formate
 

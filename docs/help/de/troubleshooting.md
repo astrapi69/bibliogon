@@ -44,5 +44,5 @@ Wenn `make dev` oder `make prod` nicht startet:
 
 - Prüfe, ob alle Abhängigkeiten installiert sind: `make install`
 - Prüfe, ob Port 8000 (Backend) und Port 5173 (Frontend) frei sind.
-- Prüfe die Log-Ausgabe auf Fehlermeldungen. Häufige Ursachen: fehlende Python-Pakete, fehlerhafte Plugin-Konfiguration oder beschaedigte SQLite-Datei.
+- Prüfe die Log-Ausgabe auf Fehlermeldungen. Häufige Ursachen: fehlende Python-Pakete, fehlerhafte Plugin-Konfiguration oder beschädigte SQLite-Datei.
 - Im Docker-Modus: Prüfe mit `docker compose logs` die Container-Ausgabe.

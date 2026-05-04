@@ -7,7 +7,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 1. M-12: Auto-Sanitization beim Import
 
 - Original-Prompt: "Setze M-12 um"
-- Optimierter Prompt: "Implementiere M-12 aus docs/ROADMAP.md: beim Import von Markdown/write-book-template-Projekten soll ms-tools automatisch über einen Hook in das Import-System eingehaengt werden und den Rohtext saeubern (unsichtbare Zeichen, typografische Quotes, HTML-Artefakte), bevor er in die DB geschrieben wird. Default: aktiv, per ms-tools Config abschaltbar."
+- Optimierter Prompt: "Implementiere M-12 aus docs/ROADMAP.md: beim Import von Markdown/write-book-template-Projekten soll ms-tools automatisch über einen Hook in das Import-System eingehängt werden und den Rohtext säubern (unsichtbare Zeichen, typografische Quotes, HTML-Artefakte), bevor er in die DB geschrieben wird. Default: aktiv, per ms-tools Config abschaltbar."
 - Ziel: ms-tools Sanitization automatisch auf jedes importierte Kapitel anwenden, ohne dass der User daran denken muss.
 - Ergebnis:
   - Neuer Hookspec `content_pre_import(content, language)` in `backend/app/hookspecs.py` für den Import-Pfad (NICHT `chapter_pre_save`, der für TipTap-JSON gedacht ist).
@@ -22,15 +22,15 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 2. M-16: Pro-Buch Schwellwerte persistieren (DB-Migration)
 
 - Original-Prompt: "Setze M-16 um"
-- Optimierter Prompt: "Implementiere M-16 aus docs/ROADMAP.md: die ms-tools Style-Check-Schwellwerte (max_sentence_length, repetition_window, max_filler_ratio) sollen pro Buch in der Datenbank ueberschreibbar sein. Alembic-Migration, Spalten im Book-Model, Pydantic-Schemas, PATCH /api/books Integration und Ausloesung der Overrides im /ms-tools/check Endpoint inklusive."
+- Optimierter Prompt: "Implementiere M-16 aus docs/ROADMAP.md: die ms-tools Style-Check-Schwellwerte (max_sentence_length, repetition_window, max_filler_ratio) sollen pro Buch in der Datenbank überschreibbar sein. Alembic-Migration, Spalten im Book-Model, Pydantic-Schemas, PATCH /api/books Integration und Auslösung der Overrides im /ms-tools/check Endpoint inklusive."
 - Ziel: Jedes Buch kann seine eigenen Quality-Schwellwerte haben. Ohne Override greifen die Plugin-Defaults.
 - Ergebnis:
-  - Neue Alembic-Migration `d4e5f6a7b8c9_add_ms_tools_thresholds_to_books.py` fuegt drei nullable Spalten in `books`: `ms_tools_max_sentence_length` (Integer), `ms_tools_repetition_window` (Integer), `ms_tools_max_filler_ratio` (Float). Folgt dem `batch_alter_table`-Pattern der bestehenden Migrationen.
+  - Neue Alembic-Migration `d4e5f6a7b8c9_add_ms_tools_thresholds_to_books.py` fügt drei nullable Spalten in `books`: `ms_tools_max_sentence_length` (Integer), `ms_tools_repetition_window` (Integer), `ms_tools_max_filler_ratio` (Float). Folgt dem `batch_alter_table`-Pattern der bestehenden Migrationen.
   - Mapped-Columns im `Book`-Model (`backend/app/models/__init__.py`), `Float`-Import ergänzt.
   - `BookUpdate` und `BookOut` Schemas um die drei Felder erweitert. `PATCH /api/books/{id}` persistiert sie automatisch über `exclude_unset`.
-  - Backup-Serializer (`backend/app/services/backup/serializer.py`) nimmt die Felder in Export und Restore auf, sodass `.bgb`-Backups sie mit uebertragen.
-  - `StyleCheckRequest` in `plugins/bibliogon-plugin-ms-tools/bibliogon_ms_tools/routes.py` akzeptiert jetzt optional `book_id`. Neue `_resolve_thresholds()`-Funktion implementiert die Aufloesung in der Reihenfolge *expliziter Request > Buch-Override > Plugin-Config > Default* (25 / 50). Die Request-Felder sind jetzt `int | None`, damit das Weglassen wirklich "nicht gesetzt" bedeutet.
-  - Tests: 4 Integrationstests in `backend/tests/test_ms_tools_book_thresholds.py`: Persistenz via PATCH, None-Default bei neuen Büchern, Buch-Override schlaegt durch (lange Saetze werden mit niedrigerem Schwellwert geflaggt), Request-Override schlaegt Buch-Override.
+  - Backup-Serializer (`backend/app/services/backup/serializer.py`) nimmt die Felder in Export und Restore auf, sodass `.bgb`-Backups sie mit übertragen.
+  - `StyleCheckRequest` in `plugins/bibliogon-plugin-ms-tools/bibliogon_ms_tools/routes.py` akzeptiert jetzt optional `book_id`. Neue `_resolve_thresholds()`-Funktion implementiert die Auflösung in der Reihenfolge *expliziter Request > Buch-Override > Plugin-Config > Default* (25 / 50). Die Request-Felder sind jetzt `int | None`, damit das Weglassen wirklich "nicht gesetzt" bedeutet.
+  - Tests: 4 Integrationstests in `backend/tests/test_ms_tools_book_thresholds.py`: Persistenz via PATCH, None-Default bei neuen Büchern, Buch-Override schlägt durch (lange Sätze werden mit niedrigerem Schwellwert geflaggt), Request-Override schlägt Buch-Override.
 - Fallstrick: Beim ersten Test-Run schlug die Alembic-Migration in `init_db()` fehl, weil die Test-Konfiguration (`backend/bibliogon.db` mit stamp auf altem Head) das Schema über `Base.metadata.create_all` bereits mit den neuen Spalten angelegt hatte, und Alembic dann per `ALTER TABLE` nochmal hinzufügen wollte ("duplicate column name"). Lösung war ein einmaliges `rm backend/bibliogon.db`; init_db sieht dann keine Tabellen, legt sie an und stampt auf den neuen Head. In lessons-learned.md als "Alembic-Migrationen brauchen frische Test-DB nach Model-Änderung" dokumentiert.
 - POST /api/books liefert 201, mein Test-Template hatte 200 erwartet. Fix: `assert r.status_code in (200, 201)`.
 - ROADMAP: M-16 als `[x]` markiert.
@@ -42,14 +42,14 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - Original-Prompt: "Setze V-02 um"
 - Architektur-Diskussion: Vor der Umsetzung wurde analysiert, dass der aktuelle Versionsgeschichte-Tab nur ein Audit-Log ist (`.bgb`-Dateien werden nicht auf dem Server persistiert) und dass das separate todo-prompts.md die Einführung einer Git-basierten Sicherung plant, die V-01 und V-02 explizit ersetzen soll. Drei Optionen diskutiert:
   - **A)** Persistente Server-Backups mit Retention-Policy (20 auto + unbegrenzt manuell mit Stern-Icon). User-Entwurf war technisch gut durchdacht.
-  - **B)** Zwei Dateien hochladen und vergleichen. Kein Server-State, keine Retention, keine UI-Konflikte mit dem spaeteren Sicherungs-Tab.
+  - **B)** Zwei Dateien hochladen und vergleichen. Kein Server-State, keine Retention, keine UI-Konflikte mit dem späteren Sicherungs-Tab.
   - **C)** Eine Datei gegen aktuellen DB-Stand vergleichen.
-- Entscheidung: **Variante B**. Grund war explizit die Vermeidung von Doppelarbeit zum geplanten Git-Sicherungs-Feature, das bereits einen `/sicherung/vergleichen` Endpoint und die Zwei-Spalten-Diff-Ansicht spezifiziert. Der User hat seine urspruengliche Praeferenz für A auf meinen Rat hin zurueckgezogen.
+- Entscheidung: **Variante B**. Grund war explizit die Vermeidung von Doppelarbeit zum geplanten Git-Sicherungs-Feature, das bereits einen `/sicherung/vergleichen` Endpoint und die Zwei-Spalten-Diff-Ansicht spezifiziert. Der User hat seine ursprüngliche Präferenz für A auf meinen Rat hin zurückgezogen.
 - Ergebnis:
   - Neuer Service `backend/app/services/backup/backup_compare.py`: liest zwei `.bgb`-Uploads in Temp-Dirs, parst die `book.json` + `chapters/*.json`, diffet 25 Buch-Metadaten-Felder und baut Line-Diffs per Kapitel via `difflib.ndiff`. Chapter-Content wird zuerst von HTML zu zeilenorientiertem Plain-Text reduziert (Block-Tags `</p>|</h1-6>|</li>|</blockquote>|</div>` fügen Newlines ein, dann Tag-Strip + Entity-Decode), damit `ndiff` sinnvolle Ergebnisse liefert. Kein DB-Zugriff, alle Uploads werden in `tempfile.mkdtemp` extrahiert und im `finally` gelöscht.
-  - Neuer Endpoint `POST /api/backup/compare` in `backend/app/routers/backup.py` nimmt `file_a` + `file_b` als Multipart. Ablehnung mit HTTP 400 wenn: kein `.bgb`-Dateiname, beschaedigtes ZIP, oder keine gemeinsamen Buch-IDs zwischen den beiden Archiven.
+  - Neuer Endpoint `POST /api/backup/compare` in `backend/app/routers/backup.py` nimmt `file_a` + `file_b` als Multipart. Ablehnung mit HTTP 400 wenn: kein `.bgb`-Dateiname, beschädigtes ZIP, oder keine gemeinsamen Buch-IDs zwischen den beiden Archiven.
   - 7 Integrationstests in `backend/tests/test_backup_compare.py`: identische Backups haben keine Änderungen, Content-Change wird erkannt, neues Kapitel wird als "added" klassifiziert, Metadaten-Änderungen tauchen im Diff auf, Dateityp-Validierung, common-book-id-Validierung, korrupt-Zip-Validierung.
-  - Neuer Frontend-Dialog `BackupCompareDialog.tsx` mit zwei File-Pickern, Hinweis-Text zum geplanten Sicherungs-Feature, Zwei-Spalten-Diff-Ansicht pro geaendertem Kapitel (rot/grün/neutral), Metadaten-Diff als Tabelle, Badges für added/removed/changed. Eintrag über einen neuen "Backups vergleichen"-Button neben dem Versionsgeschichte-Toggle im Dashboard.
+  - Neuer Frontend-Dialog `BackupCompareDialog.tsx` mit zwei File-Pickern, Hinweis-Text zum geplanten Sicherungs-Feature, Zwei-Spalten-Diff-Ansicht pro geändertem Kapitel (rot/grün/neutral), Metadaten-Diff als Tabelle, Badges für added/removed/changed. Eintrag über einen neuen "Backups vergleichen"-Button neben dem Versionsgeschichte-Toggle im Dashboard.
   - API-Client erweitert um `api.backup.compare()` plus typisierte `BackupCompareResult`, `BackupBookDiff`, `BackupChapterDiff`, `BackupDiffLine`, `BackupMetadataChange` Interfaces.
   - 24 neue i18n-Strings in `de.yaml` und `en.yaml` unter `ui.dashboard.compare_backups` und `ui.backup.compare.*`. Die anderen sechs Sprachen (es, fr, el, pt, tr, ja) bekommen Fallback auf DE oder EN durch den useI18n Default-Parameter - bewusste Scope-Verkleinerung für ein Stop-Gap-Feature.
 - Fallstrick: Erster Test-Run schlug fehl weil `_update_chapter` den Chapter-Router unter `/api/chapters/{id}` suchte; der lebt aber unter `/api/books/{book_id}/chapters/{id}`. Fix war die Test-Helper-Signatur zu ändern.
@@ -60,25 +60,25 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 4. Audiobook-Overwrite-Flag: Plugin-global zu per-Buch migrieren
 
-- Original-Prompt: Detaillierte Spezifikation für eine neue "Bestehende Dateien ueberschreiben"-Checkbox im Audiobook-Metadaten-Tab, motiviert als Kostenschutz.
-- Pre-Check gemaess neuer lessons-learned Regel (aus dem V-02-Vorfall): Bevor ich mit dem Bau anfing habe ich die bestehende Audiobook-Infrastruktur geprüft. Das ergab drei bereits funktionale Mechanismen:
+- Original-Prompt: Detaillierte Spezifikation für eine neue "Bestehende Dateien überschreiben"-Checkbox im Audiobook-Metadaten-Tab, motiviert als Kostenschutz.
+- Pre-Check gemäß neuer lessons-learned Regel (aus dem V-02-Vorfall): Bevor ich mit dem Bau anfing habe ich die bestehende Audiobook-Infrastruktur geprüft. Das ergab drei bereits funktionale Mechanismen:
   1. Content-Hash-Cache auf Kapitel-Ebene in `generator.should_regenerate()` (Content + Engine + Voice + Speed Match)
   2. Persistenter Audiobook-Storage unter `uploads/{book_id}/audiobook/chapters/*.mp3` mit Sidecar-`.meta.json`
   3. 409 `audiobook_exists` Warnung in `export_async` vor Job-Start, Frontend zeigt Confirm-Dialog
-  4. Plugin-globales Flag `overwrite_existing: false` in `audiobook.yaml` das die 409 ueberspringt
-- Architektur-Hinweis an den User: Die Kosten-Motivation wird eigentlich schon von Mechanismen 1-3 abgedeckt. Das vorgeschlagene Flag ist invertiert (default off = aktueller Schutz bleibt, on = volle Regen erzwingen). Der Wert liegt aber in Sichtbarkeit + per-Buch-Granularitaet statt einer verborgenen YAML-Einstellung. Habe eine Klaerungsfrage gestellt ob das neue Buch-Flag das plugin-globale Flag ersetzt oder layert.
-- User-Entscheidung: **Buch-Flag ersetzt globales Plugin-Flag.** Beim Migration-Upgrade wird der aktuelle YAML-Wert einmalig als Seed für alle bestehenden Bücher uebernommen, danach wird das Feld aus `audiobook.yaml` entfernt. Begruendung: Single Source of Truth, Konsistenz mit anderen buch-spezifischen Audio-Settings (`tts_engine`, `tts_voice`, `audiobook_merge`, `audiobook_filename` liegen alle auf dem Book-Modell), eindeutige Granularitaet.
+  4. Plugin-globales Flag `overwrite_existing: false` in `audiobook.yaml` das die 409 überspringt
+- Architektur-Hinweis an den User: Die Kosten-Motivation wird eigentlich schon von Mechanismen 1-3 abgedeckt. Das vorgeschlagene Flag ist invertiert (default off = aktueller Schutz bleibt, on = volle Regen erzwingen). Der Wert liegt aber in Sichtbarkeit + per-Buch-Granularität statt einer verborgenen YAML-Einstellung. Habe eine Klärungsfrage gestellt ob das neue Buch-Flag das plugin-globale Flag ersetzt oder layert.
+- User-Entscheidung: **Buch-Flag ersetzt globales Plugin-Flag.** Beim Migration-Upgrade wird der aktuelle YAML-Wert einmalig als Seed für alle bestehenden Bücher übernommen, danach wird das Feld aus `audiobook.yaml` entfernt. Begründung: Single Source of Truth, Konsistenz mit anderen buch-spezifischen Audio-Settings (`tts_engine`, `tts_voice`, `audiobook_merge`, `audiobook_filename` liegen alle auf dem Book-Modell), eindeutige Granularität.
 - Ergebnis:
-  - Neue Alembic-Migration `e5f6a7b8c9d0_add_audiobook_overwrite_to_books.py`: fuegt `audiobook_overwrite_existing` als Boolean nullable=False mit server_default=false hinzu. In `upgrade()` wird der alte YAML-Wert aus `config/plugins/audiobook.yaml` gelesen; falls true, wird mit `UPDATE books SET audiobook_overwrite_existing = 1` der Wert für alle bestehenden Bücher uebernommen. Die Migration ist idempotent und fällt stillschweigend auf False zurück wenn die YAML-Datei fehlt.
+  - Neue Alembic-Migration `e5f6a7b8c9d0_add_audiobook_overwrite_to_books.py`: fügt `audiobook_overwrite_existing` als Boolean nullable=False mit server_default=false hinzu. In `upgrade()` wird der alte YAML-Wert aus `config/plugins/audiobook.yaml` gelesen; falls true, wird mit `UPDATE books SET audiobook_overwrite_existing = 1` der Wert für alle bestehenden Bücher übernommen. Die Migration ist idempotent und fällt stillschweigend auf False zurück wenn die YAML-Datei fehlt.
   - `Book.audiobook_overwrite_existing: Mapped[bool]` mit `default=False` in `models/__init__.py`.
   - `BookUpdate` und `BookOut` Schemas erweitert um das neue Feld.
   - Backup-Serializer ergänzt das Feld in Export und Restore.
   - `audiobook.yaml:38` entfernt, Kommentar hinterlassen der auf die Migration verweist.
   - `export_async` in `plugins/bibliogon-plugin-export/bibliogon_export/routes.py`: neuer Helper `_load_book_overwrite_flag(book_id)` liest nur die eine Spalte ohne das komplette Book zu laden (Pre-flight 409 muss performant bleiben). Die 409-Prüfung nutzt jetzt ausschließlich das Buch-Feld - kein OR mit Plugin-Setting.
-  - `_run_audiobook_job`: wenn `book_data["audiobook_overwrite_existing"]` true ist, wird `cache_dir=None` an `generate_audiobook` weitergegeben. Das deaktiviert den Content-Hash-Cache vollstaendig für diesen Lauf und erzwingt volle Regen. `_serialize_book` im Export-Plugin liest das Feld aus dem ORM.
+  - `_run_audiobook_job`: wenn `book_data["audiobook_overwrite_existing"]` true ist, wird `cache_dir=None` an `generate_audiobook` weitergegeben. Das deaktiviert den Content-Hash-Cache vollständig für diesen Lauf und erzwingt volle Regen. `_serialize_book` im Export-Plugin liest das Feld aus dem ORM.
   - Test `test_async_audiobook_overwrite_existing_setting_skips_warning` umgeschrieben: statt YAML-File zu schreiben patcht er jetzt die Buch-Spalte via PATCH und verifiziert dasselbe Verhalten.
   - Neuer Test `test_book_overwrite_flag_persists_via_patch`: PATCH setzt das Feld, GET liefert es zurück.
-  - Neuer Test `test_book_overwrite_flag_disables_content_hash_cache`: zaehlt `synthesize()`-Calls über drei aufeinanderfolgende Exports. Erster Lauf: Cold-Cache, beide Kapitel werden synthetisiert (2 Calls). Zweiter Lauf mit Flag aus: Cache-Hit, 0 Calls. Dritter Lauf mit Flag an: Cache ignoriert, 2 Calls. Das ist die echte Verhaltens-Verifikation dass das Flag wirklich den Cache deaktiviert.
+  - Neuer Test `test_book_overwrite_flag_disables_content_hash_cache`: zählt `synthesize()`-Calls über drei aufeinanderfolgende Exports. Erster Lauf: Cold-Cache, beide Kapitel werden synthetisiert (2 Calls). Zweiter Lauf mit Flag aus: Cache-Hit, 0 Calls. Dritter Lauf mit Flag an: Cache ignoriert, 2 Calls. Das ist die echte Verhaltens-Verifikation dass das Flag wirklich den Cache deaktiviert.
   - Frontend: neue Checkbox in `AudiobookBookConfig` innerhalb `BookMetadataEditor`. Separater `audiobookOverwrite: boolean` State statt die bestehende string-only `form`-Struktur zu widen'en. `handleSave` setzt `data.audiobook_overwrite_existing = audiobookOverwrite` explizit, saubere Trennung von den anderen String-Feldern.
   - `Book` Interface in `api/client.ts` um `audiobook_overwrite_existing: boolean` erweitert.
   - i18n: zwei neue Keys `ui.audiobook.overwrite_label` und `ui.audiobook.overwrite_description` in `de.yaml` und `en.yaml` mit echten Umlauten.
@@ -95,30 +95,30 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 Alle 8 Plugin-YAMLs in `backend/config/plugins/` plus die bundled grammar.yaml geprüft. Cross-Reference gegen Code-Konsumenten ergab:
 - 4 Felder die Verhalten beeinflussen aber in der UI als String/nicht editierbar sind: `audiobook.read_chapter_number`, `export.type_suffix_in_filename`, `ms-tools.auto_sanitize_on_import`, `translation.deepl_free_api`. Plus `translation.provider` (sollte Select sein) und `translation.deepl_api_key` (sollte Password sein) → Kategorie A, 6 Felder.
 - 3 Felder als Pipeline-Mappings ohne User-Konfigurationsziel: `export.formats`, `export.export_defaults`, `export.ui_formats` → Kategorie B (mit `# INTERNAL` Kommentar markieren).
-- Mehrere Cluster toter Felder: `audiobook.language` (UI-only Voice-Filter, nie konsumiert), `ms-tools.languages` (Code liest hardcoded Modul-Konstanten), die kompletten 11 `kdp.cover/manuscript`-Felder (Routes hardcoden, ignoriert YAML), die bundled `plugins/.../config/grammar.yaml` (wird ueberhaupt nicht geladen weil pluginforge nur `backend/config/plugins/` liest) → Kategorie C.
-- `help.yaml` und `getstarted.yaml` enthalten keine `settings`-Bloecke, nur Content (FAQ, Onboarding-Guide). Aus Audit-Scope.
+- Mehrere Cluster toter Felder: `audiobook.language` (UI-only Voice-Filter, nie konsumiert), `ms-tools.languages` (Code liest hardcoded Modul-Konstanten), die kompletten 11 `kdp.cover/manuscript`-Felder (Routes hardcoden, ignoriert YAML), die bundled `plugins/.../config/grammar.yaml` (wird überhaupt nicht geladen weil pluginforge nur `backend/config/plugins/` liest) → Kategorie C.
+- `help.yaml` und `getstarted.yaml` enthalten keine `settings`-Blöcke, nur Content (FAQ, Onboarding-Guide). Aus Audit-Scope.
 
-User-Entscheidungen via Klaerungs-Fragen:
+User-Entscheidungen via Klärungs-Fragen:
 - **Grammar:** Variante (a) MINIMAL — neue `backend/config/plugins/grammar.yaml` mit nur 3 Feldern: `languagetool_url`, `languagetool_username`, `languagetool_api_key`. Bundled grammar.yaml gelöscht, alle anderen alten Felder weg.
 - **KDP:** Variante (b) — alle 11 dead settings entfernen, hardcoded Werte in `routes.py` als benannte Konstante `KDP_COVER_REQUIREMENTS` mit Kommentar dokumentieren dass Amazon das vorgibt und User es nicht ändern dürfen.
 - **Generic Panel:** Sammelfix statt Per-Feld-Custom-Panel. Render Scalars typisiert: bool→Checkbox, number→Number-Input, string→Text-Input, object→editierbares JSON-Textfeld mit Advanced-Hinweis.
 
 ### Schritt 3: Aktion
-- Neue Helper-Komponenten in `Settings.tsx`: `ScalarSettingField` (typed dispatch), `ComplexSettingField` (JSON textarea, Validierung onBlur, faengt Parse-Errors statt Werte zu verlieren). Loest auf einen Schlag 4 der 6 Kategorie-A-Felder.
+- Neue Helper-Komponenten in `Settings.tsx`: `ScalarSettingField` (typed dispatch), `ComplexSettingField` (JSON textarea, Validierung onBlur, fängt Parse-Errors statt Werte zu verlieren). Löst auf einen Schlag 4 der 6 Kategorie-A-Felder.
 - `AudiobookSettingsPanel`: neue `read_chapter_number` Checkbox + Beschreibungstext, plus `language` aus `handleSave` rausgezogen (lokaler State bleibt für den Voice-Filter, wird nicht persistiert).
 - Neuer `TranslationSettingsPanel`: provider als Radix-Select, deepl_api_key als Password-Input mit show/hide-Toggle (Eye/EyeOff Lucide-Icons), deepl_free_api als Checkbox, lmstudio_temperature als Number-Input. Wired in den generischen Plugin-Card-Switch (`name === "translation" ? <TranslationSettingsPanel/> : ...`).
 - `audiobook.yaml`: `language` Feld entfernt, Kommentar hinterlassen.
 - `ms-tools.yaml`: `languages` Feld entfernt, Kommentar hinterlassen.
 - `kdp.yaml`: kompletter `settings` Block entfernt, Kommentar verweist auf `KDP_COVER_REQUIREMENTS` in `bibliogon_kdp/routes.py`.
-- `kdp/routes.py`: hardcoded Dict aus `validate_cover_endpoint` rausgezogen in eine Modul-Konstante mit ausfuehrlichem Kommentar zur Amazon-Begruendung.
-- `export.yaml`: drei `# INTERNAL` Kommentar-Bloecke vor `formats`, `export_defaults`, `ui_formats`.
-- `bibliogon_grammar/languagetool.py`: `LanguageToolClient.__init__` um `username` und `api_key` Parameter erweitert, beide werden in `_check_single` als POST-Form-Felder `username`/`apiKey` angehaengt wenn beide gesetzt sind. Falls eines fehlt geht der Request anonym raus (Free-Quota).
+- `kdp/routes.py`: hardcoded Dict aus `validate_cover_endpoint` rausgezogen in eine Modul-Konstante mit ausführlichem Kommentar zur Amazon-Begründung.
+- `export.yaml`: drei `# INTERNAL` Kommentar-Blöcke vor `formats`, `export_defaults`, `ui_formats`.
+- `bibliogon_grammar/languagetool.py`: `LanguageToolClient.__init__` um `username` und `api_key` Parameter erweitert, beide werden in `_check_single` als POST-Form-Felder `username`/`apiKey` angehängt wenn beide gesetzt sind. Falls eines fehlt geht der Request anonym raus (Free-Quota).
 - `bibliogon_grammar/plugin.py`: liest `languagetool_username` und `languagetool_api_key` aus dem Settings-Block. Die alten `default_language`/`disabled_rules`/`disabled_categories` Reads sind weg.
 - Neue `backend/config/plugins/grammar.yaml` mit dem 3-Feld-Minimal-Schema. Bundled `plugins/bibliogon-plugin-grammar/config/grammar.yaml` und das jetzt leere `config/` Verzeichnis gelöscht.
 - i18n-Strings: 4 neue Audiobook-Keys (`read_chapter_number_label/description`), 3 neue Settings-Keys (`advanced`, `advanced_hint`, `invalid_json`), 7 neue Translation-Keys, alles in DE und EN.
 
 ### Schritt 5: Architektur-Regel
-Neue Sektion "Plugin-Settings Sichtbarkeit" in `.claude/rules/architecture.md`. Klare Regel: jedes Setting ist entweder UI-sichtbar oder mit `# INTERNAL` markiert. Tote Settings sind verboten. Per-Buch-Werte gehoeren auf das Book-Modell, nicht ins Plugin-YAML.
+Neue Sektion "Plugin-Settings Sichtbarkeit" in `.claude/rules/architecture.md`. Klare Regel: jedes Setting ist entweder UI-sichtbar oder mit `# INTERNAL` markiert. Tote Settings sind verboten. Per-Buch-Werte gehören auf das Book-Modell, nicht ins Plugin-YAML.
 
 Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkbox usw.) als konkrete Umsetzungs-Erinnerung.
 
@@ -137,36 +137,36 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 
 ## 6. Audiobook Skip-Chapter-Types per Buch (Migration analog overwrite_existing)
 
-- Original-Prompt: Detaillierter 9-Schritt-Plan für eine sichtbare und editierbare Skip-Liste der Kapiteltypen im Buch-Metadaten-Tab. User stellt explizit Schritt 1 voran: "Zeig mir das Audit-Ergebnis bevor du etwas aenderst."
-- Audit-Befund: Skip-Logik existiert vollstaendig, ist aber nur plugin-global konfiguriert. Strukturell identisch zur ueberwrite_existing-Migration vom Vortag, nur mit Array-Feld statt Boolean. Alle 21 ChapterType-Werte und alle 21 i18n-Labels sind schon da. Progress-Dialog rendert chapter_skipped Events bereits in muted color (Schritt 6 vom Prompt war schon erledigt). Zwei hardcoded Skip-Sets im Dry-Run-Endpoint ([audiobook.py:415,471](backend/app/routers/audiobook.py)) ignorieren YAML und Buch komplett - das ist ein Cost-Estimation-Bug der mit ins Ticket gehoert.
-- Sechs Klaerungsfragen ans User vorab gestellt; alle Antworten gingen mit meinen Empfehlungen mit:
+- Original-Prompt: Detaillierter 9-Schritt-Plan für eine sichtbare und editierbare Skip-Liste der Kapiteltypen im Buch-Metadaten-Tab. User stellt explizit Schritt 1 voran: "Zeig mir das Audit-Ergebnis bevor du etwas änderst."
+- Audit-Befund: Skip-Logik existiert vollständig, ist aber nur plugin-global konfiguriert. Strukturell identisch zur ueberwrite_existing-Migration vom Vortag, nur mit Array-Feld statt Boolean. Alle 21 ChapterType-Werte und alle 21 i18n-Labels sind schon da. Progress-Dialog rendert chapter_skipped Events bereits in muted color (Schritt 6 vom Prompt war schon erledigt). Zwei hardcoded Skip-Sets im Dry-Run-Endpoint ([audiobook.py:415,471](backend/app/routers/audiobook.py)) ignorieren YAML und Buch komplett - das ist ein Cost-Estimation-Bug der mit ins Ticket gehört.
+- Sechs Klärungsfragen ans User vorab gestellt; alle Antworten gingen mit meinen Empfehlungen mit:
   1. **Migration-Default**: bestehender YAML-Wert wird einmalig für ALLE Bücher über `UPDATE books SET ...` geseedet, neue Bücher bekommen denselben Default
   2. **YAML-Cleanup**: ersatzlos löschen, konsistent mit overwrite_existing-Pattern
-  3. **Dry-Run hardcoded Sets**: ja, im selben Ticket reparieren - sonst luegt die Cost-Estimation
-  4. **Save-UX**: globaler Save-Button statt Auto-Save - die urspruengliche Prompt-Idee wäre inkonsistent mit dem Rest des Metadata-Editors
+  3. **Dry-Run hardcoded Sets**: ja, im selben Ticket reparieren - sonst lügt die Cost-Estimation
+  4. **Save-UX**: globaler Save-Button statt Auto-Save - die ursprüngliche Prompt-Idee wäre inkonsistent mit dem Rest des Metadata-Editors
   5. **UI-Layout**: alle 21 Typen, im Buch vorhandene mit Hervorhebung in eigener Gruppe, kein neuer chapter-types-Endpoint
   6. **`copyright` ChapterType**: existiert nicht im Modell, `imprint` deckt es ab, kein neuer Enum-Wert
 - Architektur-Pattern: Per-Buch-Migration analog `overwrite_existing` (Plugin-global -> Book-Spalte, YAML-Cleanup, Settings-Panel-Cleanup)
 - Ergebnis:
-  - Neue Alembic-Migration `f6a7b8c9d0e1_add_audiobook_skip_chapter_types.py`: fuegt `audiobook_skip_chapter_types` als nullable `Text` hinzu (JSON-encoded list, gleiches Pattern wie `Book.keywords`). Liest beim Upgrade `audiobook.yaml settings.skip_types` einmalig und seedet ALLE bestehenden Bücher mit `UPDATE books SET ...` auf den Wert. Faellt auf `DEFAULT_SKIP_TYPES = [toc, imprint, index, bibliography, endnotes]` zurück wenn die YAML fehlt.
+  - Neue Alembic-Migration `f6a7b8c9d0e1_add_audiobook_skip_chapter_types.py`: fügt `audiobook_skip_chapter_types` als nullable `Text` hinzu (JSON-encoded list, gleiches Pattern wie `Book.keywords`). Liest beim Upgrade `audiobook.yaml settings.skip_types` einmalig und seedet ALLE bestehenden Bücher mit `UPDATE books SET ...` auf den Wert. Fällt auf `DEFAULT_SKIP_TYPES = [toc, imprint, index, bibliography, endnotes]` zurück wenn die YAML fehlt.
   - `Book.audiobook_skip_chapter_types: Mapped[str | None] = mapped_column(Text, nullable=True)`. Gleiches Pattern wie `keywords`, kommentiert.
   - `BookUpdate` und `BookOut` Pydantic-Schemas erweitert. `BookOut` hat einen `field_validator(mode="before")` der die JSON-Text-Spalte beim Laden aus dem ORM in `list[str]` decodiert (kein Type-Mismatch zwischen DB und API). `update_book`-Router serialisiert die eingehende `list[str]` mit `json.dumps` bevor `setattr`, damit der generische Loop sonst unverändert bleibt.
   - Backup-Serializer ergänzt das Feld in Export und Restore.
   - `_run_audiobook_job` in `bibliogon-plugin-export/routes.py`: liest jetzt `book_data["audiobook_skip_chapter_types"]` statt `_read_audiobook_settings().get("skip_types")`. Leere Liste -> `None` -> Generator fällt auf seine eingebaute `SKIP_TYPES`-Konstante zurück (Library-Default für externe Caller, kein User-Setting).
   - Neuer Helper `_decode_skip_chapter_types(raw)` im Export-Plugin der den JSON-Text aus der Spalte robust in eine Liste decodiert. Tolerantes Parsen: `None`, leerer String, malformed JSON, list-already-decoded, alle landen auf `[]`.
   - `_serialize_book` im Export-Plugin nimmt das Feld in das `book_data`-Dict mit auf das an `_run_audiobook_job` gereicht wird.
-  - **Dry-Run-Endpoint**: zwei hardcoded `skip_types = {"toc", ...}` Stellen in `backend/app/routers/audiobook.py:415,471` durch eine neue Hilfsfunktion `_resolve_book_skip_types(book)` ersetzt, die die JSON-Text-Spalte decodiert und auf `DEFAULT_AUDIOBOOK_SKIP_TYPES` zurueckfaellt wenn die Spalte leer ist. Damit ist die Cost-Estimation jetzt ehrlich für alle Bücher die ihre Skip-Liste ueberschrieben haben.
+  - **Dry-Run-Endpoint**: zwei hardcoded `skip_types = {"toc", ...}` Stellen in `backend/app/routers/audiobook.py:415,471` durch eine neue Hilfsfunktion `_resolve_book_skip_types(book)` ersetzt, die die JSON-Text-Spalte decodiert und auf `DEFAULT_AUDIOBOOK_SKIP_TYPES` zurückfällt wenn die Spalte leer ist. Damit ist die Cost-Estimation jetzt ehrlich für alle Bücher die ihre Skip-Liste überschrieben haben.
   - `audiobook.yaml`: `skip_types`-Block entfernt, NOTE-Kommentar verweist auf die Migration und die per-Buch-UI.
   - `AudiobookSettingsPanel`: `skipTypes`-State, save-Schlüssel und OrderedListEditor entfernt. Save-Funktion droppt `skip_types` aus dem `settings`-Dict bevor sie es weiterreicht (gleiches Drop-Pattern wie schon für `language`).
   - **Frontend Skip-Liste**: neue `AudiobookSkipChapterTypes` Sub-Komponente direkt in `BookMetadataEditor.tsx` (kein eigenes File - Schritt-Reduktion vom User akzeptiert). Sortiert die 21 Typen nach typischer Buch-Reihenfolge (front matter -> body -> back matter), splittet in zwei Gruppen: "Im Buch vorhanden" (in Schwarz, fett, oben) und "Weitere Typen" (muted, normal-weight, unten). Pro Typ eine Checkbox + lokalisiertes Label + technischer Key in Klammern. Kein neuer API-Endpoint, die Anwesenheit wird clientseitig aus `book.chapters` (BookDetail) abgeleitet.
-  - `BookMetadataEditor` Prop-Type von `Book` auf `BookDetail` verbreitert, damit `book.chapters` zur Verfuegung steht. Kein Refactor auf der Caller-Seite nötig weil `BookEditor.tsx` ohnehin schon `BookDetail` hält.
+  - `BookMetadataEditor` Prop-Type von `Book` auf `BookDetail` verbreitert, damit `book.chapters` zur Verfügung steht. Kein Refactor auf der Caller-Seite nötig weil `BookEditor.tsx` ohnehin schon `BookDetail` hält.
   - `Book` Interface in `api/client.ts` ergänzt um `audiobook_skip_chapter_types: string[]`.
   - i18n: 5 neue Keys `ui.audiobook.skip_title/description/hint/in_book/other` in DE und EN mit echten Umlauten. Die 21 ChapterType-Labels existierten schon, keine Ergänzung nötig.
 - Test-Migration: Bestehender Test `test_async_audiobook_respects_skip_types_from_config` hat das alte YAML-basierte Verhalten verifiziert. Umbenannt zu `test_async_audiobook_respects_per_book_skip_list`, schreibt jetzt die Skip-Liste via PATCH `audiobook_skip_chapter_types: ["toc", "glossar"]` und verifiziert dass Type-Match (`toc`) und Title-Match (`glossar`, lowercase) beide funktionieren.
 - 5 neue Tests in `backend/tests/test_audiobook_skip_chapter_types.py`:
   1. PATCH round-trip: Liste persistiert, GET liefert sie zurück
   2. Empty list clear: explizit `[]` setzen wird akzeptiert
-  3. Async export filtert per Buch-Liste: `synthesize()`-Calls werden gezaehlt, nur die nicht-gesetzten Kapitel kommen durch
+  3. Async export filtert per Buch-Liste: `synthesize()`-Calls werden gezählt, nur die nicht-gesetzten Kapitel kommen durch
   4. Async export mit leerer Liste fällt auf Generator-Default zurück (toc wird trotzdem geskippt)
   5. Dry-run nutzt per-Buch-Liste: Sample-Text kommt vom ersten nicht-gesetzten Kapitel (testet beide hardcoded Stellen)
 - Skip-Entscheidungen wie mit User vereinbart: keine `AudioSkipChapterTypes.tsx` als separate Datei (Sub-Komponente reicht), keine 21x8 i18n-Strings (existieren bereits), keine Playwright E2E (Backend-Integration + bestehende Vitests reichen).
@@ -177,17 +177,17 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 ## 7. ChapterType Audit + 5 neue Typen
 
 - Original-Prompt: User stellt einen 8-Schritt-Plan vor und nennt 8 angeblich fehlende Pflicht-Typen: foreword, prologue, final_thoughts, part, about_the_author, also_by_author, excerpt, call_to_action.
-- Audit-Befund: Die vom User vorgeschlagene Liste war fehlerhaft. **Drei der acht Typen existieren bereits** (`foreword`, `prologue`, `about_author`), **einer ueberschneidet sich mit einem existierenden Typ aber ist konzeptionell verschieden** (`part` vs `part_intro`), und zwei sind explizit Marketing-Elemente (`excerpt`, `call_to_action`) — die der User selbst als separate "Sonderfaelle"-Kategorie definiert hatte aber dann doch unter "Pflicht" gepackt hatte. Bottom line: maximal 5 echte neue Typen, nicht 8.
-- Vier Klaerungsfragen vorab gestellt; alle Antworten gingen mit meinen Empfehlungen mit. Final 5 neue ChapterType-Werte: `final_thoughts`, `part`, `also_by_author`, `excerpt`, `call_to_action`. Plus expliziter Bug-Fix für Scaffolder-Klassifizierung von `part_intro`/`interlude`/`part`.
+- Audit-Befund: Die vom User vorgeschlagene Liste war fehlerhaft. **Drei der acht Typen existieren bereits** (`foreword`, `prologue`, `about_author`), **einer überschneidet sich mit einem existierenden Typ aber ist konzeptionell verschieden** (`part` vs `part_intro`), und zwei sind explizit Marketing-Elemente (`excerpt`, `call_to_action`) — die der User selbst als separate "Sonderfälle"-Kategorie definiert hatte aber dann doch unter "Pflicht" gepackt hatte. Bottom line: maximal 5 echte neue Typen, nicht 8.
+- Vier Klärungsfragen vorab gestellt; alle Antworten gingen mit meinen Empfehlungen mit. Final 5 neue ChapterType-Werte: `final_thoughts`, `part`, `also_by_author`, `excerpt`, `call_to_action`. Plus expliziter Bug-Fix für Scaffolder-Klassifizierung von `part_intro`/`interlude`/`part`.
 - Ergebnis:
   - Beide ChapterType-Enums (SQLAlchemy in `app/models/__init__.py` und Pydantic in `app/schemas/__init__.py`) um die 5 neuen Werte erweitert. **Kritisch**: beide müssen synchron gehalten werden, sonst akzeptiert die DB-Spalte einen Wert den die API ablehnt oder umgekehrt.
   - `frontend/api/client.ts` ChapterType union um die 5 erweitert. `ChapterSidebar.tsx` BACK_MATTER_TYPES und STRUCTURE_TYPES + TYPE_LABELS map ergänzt. `BookEditor.tsx` hat eine ZWEITE TYPE_LABELS-Map die ebenfalls exhaustiv sein muss - TypeScript hat das beim Compile als Record<ChapterType, string>-Fehler gefangen. `BookMetadataEditor.tsx` AUDIOBOOK_CHAPTER_TYPES Sortier-Liste für den Skip-Picker erweitert mit sinnvoller Buch-Reihenfolge (front -> body -> back).
   - **Scaffolder Bug-Fix**: Neues `_BODY_TYPES = frozenset({chapter, part, part_intro, interlude})`. Der Dispatcher in `_write_partitioned_chapters` checkt jetzt explizit `elif ch_type in _BODY_TYPES: _write_chapter(...)` statt einfach in den Default-Zweig zu fallen. Unbekannte Typen landen weiterhin im Default-Zweig (mit Kommentar).
   - `_BACK_MATTER_TYPES` um die 4 Back-Matter-Newcomer (`final_thoughts`, `also_by_author`, `excerpt`, `call_to_action`) ergänzt mit kebab-case Filenames.
   - `_CHAPTER_TYPE_WRAPPERS` um die 5 + `next_in_series` (war vorher ohne Wrapper) erweitert. Jeder Typ bekommt seinen `<div class="...">` Kontext für EPUB/PDF-Styling.
-  - **`_write_chapter` honoriert jetzt Wrapper auch für Body-Typen** (vorher nur für Front/Back-Special-Chapters). Das ist nötig für `part`, dessen `<div class="part">` Wrapper das Centred-Divider-Page-Styling traegt.
+  - **`_write_chapter` honoriert jetzt Wrapper auch für Body-Typen** (vorher nur für Front/Back-Special-Chapters). Das ist nötig für `part`, dessen `<div class="part">` Wrapper das Centred-Divider-Page-Styling trägt.
   - `_DEFAULT_CHAPTER_TYPE_CSS` um Styles für alle 5 neuen Klassen erweitert: `.part` zentriert mit page-break + große Schrift; `.final-thoughts h1` kursiv; `.also-by-author/.next-in-series` kompakter Stil; `.excerpt` mit border-top + italic title; `.call-to-action` zentriert italic.
-  - `bibliogon_audiobook/generator.py SKIP_TYPES`: marketing types `also_by_author`, `excerpt`, `call_to_action` zur Default-Set hinzugefügt mit Begruendungs-Kommentar (kein "buy my next book" pitch im Audiobook).
+  - `bibliogon_audiobook/generator.py SKIP_TYPES`: marketing types `also_by_author`, `excerpt`, `call_to_action` zur Default-Set hinzugefügt mit Begründungs-Kommentar (kein "buy my next book" pitch im Audiobook).
   - `backend/app/routers/audiobook.py DEFAULT_AUDIOBOOK_SKIP_TYPES`: identisch erweitert damit der Dry-Run-Cost-Estimate konsistent zum echten Export ist.
   - i18n: 5 neue Strings × 8 Sprachen = **40 neue chapter_types Einträge**. Drei Sprachen (ja/pt/tr) haben ihren `chapter_types`-Block mit 8-Space-Indent (zwei Levels) statt 4-Space (ein Level), Indent-Style pro Datei beachtet. Echte Umlaute wo verfügbar (de: "Schlussgedanken", "Aufruf zur Aktion"; el: "Τελικές σκέψεις"; ja: "最後に", "行動の呼びかけ"; usw.).
 - 11 neue Tests in `backend/tests/test_new_chapter_types.py`:
@@ -196,7 +196,7 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
   8. Scaffolder-Smoke-Test: alle 4 Back-Matter-Newcomer landen in `back-matter/`, `part` landet in `chapters/` mit `<div class="part">` wrapper
   9+10. Generator SKIP_TYPES und Router DEFAULT_AUDIOBOOK_SKIP_TYPES enthalten die 3 Marketing-Typen
   11. End-to-end: Buch mit 1 Kapitel + 3 Marketing-Kapiteln, async export läuft, nur das eine reale Kapitel wird synthetisiert (default skip greift)
-- Test-Resultat: 210 backend + 90 frontend grün (vor dieser Aufgabe: 199 backend + 90 frontend). Der part_intro/interlude Bug ist explizit gefixt ohne dass ein bestehender Test gebrochen ist - der Default-Branch verhielt sich bisher zufaellig richtig, jetzt verhaelt er sich explizit richtig.
+- Test-Resultat: 210 backend + 90 frontend grün (vor dieser Aufgabe: 199 backend + 90 frontend). Der part_intro/interlude Bug ist explizit gefixt ohne dass ein bestehender Test gebrochen ist - der Default-Branch verhielt sich bisher zufällig richtig, jetzt verhält er sich explizit richtig.
 - Keine DB-Migration nötig: das `chapter_type`-Feld ist `String(20)`, alle neuen Werte passen rein. Bestehende Bücher behalten ihre alten Typen.
 
 ---
@@ -204,16 +204,16 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 ## 8. Keywords end-to-end auf list[str] migrieren + UX-Upgrade
 
 - Original-Prompt: "BookEditor > Metadaten > Marketing > Keywords als editierbare Liste" - Spec sah eine Ersetzung des vermeintlichen Kommafeldes durch eine vertikale nummerierte Liste mit Drag-and-Drop, Inline-Edit und Undo-Toast vor.
-- Audit-Ergebnis: Die Annahme war falsch. `KeywordInput` existierte bereits als chip-basiertes Component mit @dnd-kit und wurde im BookMetadataEditor genutzt. Die tatsaechlichen Lücken waren:
+- Audit-Ergebnis: Die Annahme war falsch. `KeywordInput` existierte bereits als chip-basiertes Component mit @dnd-kit und wurde im BookMetadataEditor genutzt. Die tatsächlichen Lücken waren:
   1. Schema inkonsistent: `BookUpdate.keywords: str | None` in Pydantic, im Frontend als JSON-String durch `form` Record mit `JSON.parse`/`JSON.stringify` Hacks
   2. Hartes Limit bei 7 statt Soft-Warning
   3. Kein Inline-Edit
   4. Keine Undo-Funktion beim Löschen
   5. Label "(max. 7)" passt nicht zum Soft-Warning Ansatz
 - Optimierter Prompt: "Fix the schema inconsistency (keywords end-to-end as list[str]), add inline-edit via double-click, convert hard 7-cap to soft warning, add undo-toast on delete. Keep the existing horizontal chip layout - a vertical list is worse UX for short tags."
-- Entscheidung: Horizontales Chip-Layout bleibt. Nur die echten Lücken werden gefuellt. Vertikale Liste mit Nummern war ein Prompt-Fehler, bestätigt vom User.
+- Entscheidung: Horizontales Chip-Layout bleibt. Nur die echten Lücken werden gefüllt. Vertikale Liste mit Nummern war ein Prompt-Fehler, bestätigt vom User.
 - Ergebnis:
-  - `BookUpdate.keywords: list[str] | None` mit `mode="before"` Validator der legacy JSON-String/CSV-String Formen akzeptiert, case-insensitive dedupiert und Leereintraege filtert
+  - `BookUpdate.keywords: list[str] | None` mit `mode="before"` Validator der legacy JSON-String/CSV-String Formen akzeptiert, case-insensitive dedupiert und Leereinträge filtert
   - `BookOut.keywords: list[str]` - der vorhandene `_decode_skip_chapter_types` Validator wurde zu `_decode_json_list` generalisiert und deckt beide Felder ab
   - Router `update_book` encodet `keywords` zur JSON-Text im gleichen Schritt wie `audiobook_skip_chapter_types`. ORM-Spalte bleibt `Text`, keine Migration nötig.
   - KDP `metadata_checker` akzeptiert beide Formen (list[str] aus neuer API, JSON-String aus Legacy-Callern mit rohen ORM-Daten)
@@ -225,9 +225,9 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
     - `RECOMMENDED_MAX = 7` ist jetzt Soft-Warning. User darf mehr eingeben, Counter und Chip-Hintergrund werden warning-farbig, Hinweistext "Amazon KDP empfiehlt max. 7 Schluesselwoerter. Andere Plattformen erlauben mehr."
     - Delete zeigt `toast.info` mit "Rueckgaengig" Button das den Chip an seinem urspruenglichen Index wieder einfuegt, 5s AutoClose
     - Footer-Hint: "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren"
-  - i18n: 9 neue Keys (`too_long`, `no_comma`, `over_limit`, `removed`, `undo`, `hint` + geaenderte placeholder/counter/duplicate) und `metadata.keywords` Label "(max. 7)" entfernt in allen 8 Locales (DE, EN, ES, FR, EL, PT, TR, JA)
+  - i18n: 9 neue Keys (`too_long`, `no_comma`, `over_limit`, `removed`, `undo`, `hint` + geänderte placeholder/counter/duplicate) und `metadata.keywords` Label "(max. 7)" entfernt in allen 8 Locales (DE, EN, ES, FR, EL, PT, TR, JA)
   - Tests: 6 Backend Schema-Tests (list/legacy-JSON/legacy-CSV/dedup/empty/storage), 2 neue KDP Metadata-Checker Tests (list[str] Pfad + genug-Keywords kein Warning), 12 Frontend Vitest Tests für `validateKeyword` inkl. `ignoreIndex` Inline-Edit-Verhalten und explizite Regression dass KEIN hartes 7-Cap existiert
-- Export-Pfade-Audit (Step 7 aus Original-Prompt): Kein Change nötig. `plugin-export._serialize_book` liest `keywords` ueberhaupt nicht (pre-existing gap - Keywords sind nie im EPUB `dc:subject`/DOCX-Metadata gelandet). Backup-Serializer, Project-Import und Backup-Compare arbeiten direkt auf der ORM-Spalte und sind von der API-Layer-Änderung unbeeinflusst. Die Export-Integration für Keywords ist ein separates Follow-up.
+- Export-Pfade-Audit (Step 7 aus Original-Prompt): Kein Change nötig. `plugin-export._serialize_book` liest `keywords` überhaupt nicht (pre-existing gap - Keywords sind nie im EPUB `dc:subject`/DOCX-Metadata gelandet). Backup-Serializer, Project-Import und Backup-Compare arbeiten direkt auf der ORM-Spalte und sind von der API-Layer-Änderung unbeeinflusst. Die Export-Integration für Keywords ist ein separates Follow-up.
 - Commits:
   - `125d385` refactor(metadata): expose book keywords as list[str] in the API
   - `4f4c878` feat(metadata): inline edit, soft warning and undo-toast in KeywordInput
@@ -235,7 +235,7 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
   - `c1b0eaa` test(metadata): coverage for the list[str] keywords migration
   - `37d3b9f` chore(i18n): keyword editor strings for all 8 languages
 - Test-Resultat: 234 backend + 102 frontend grün (vor dieser Aufgabe: 228 backend + 90 frontend). +6 backend (Schema-Tests), +2 KDP (bereits in Plugin-Test-Count enthalten), +12 frontend (Validator).
-- Lessons-Learned: Der urspruengliche Prompt war in zwei Punkten falsch. Erstens: die Annahme das Feld sei ein Kommafeld. Audit zeigte ein existierendes KeywordInput Component. Zweitens: vertikale Liste mit Nummern wurde als bessere UX angenommen - horizontales Chip-Layout ist für kurze Tags klar ueberlegen. Der Audit-Schritt vor der Implementation hat beide Fehler gefangen bevor Code geschrieben wurde.
+- Lessons-Learned: Der ursprüngliche Prompt war in zwei Punkten falsch. Erstens: die Annahme das Feld sei ein Kommafeld. Audit zeigte ein existierendes KeywordInput Component. Zweitens: vertikale Liste mit Nummern wurde als bessere UX angenommen - horizontales Chip-Layout ist für kurze Tags klar überlegen. Der Audit-Schritt vor der Implementation hat beide Fehler gefangen bevor Code geschrieben wurde.
 
 ---
 
@@ -243,12 +243,12 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 
 - Features: 8 (M-12, M-16, V-02, Audiobook-Overwrite-per-Buch, Plugin-Settings Audit, Audiobook-Skip-per-Buch, ChapterType-Erweiterung, Keywords list[str] + UX-Upgrade)
 - Neue Dateien: 10 (2 Migrationen, 5 Test-/Service-Module, 1 Frontend-Dialog, 2 neue Test-Files)
-- Geaenderte Dateien: 44
+- Geänderte Dateien: 44
 - Neue Tests: 44 (6 ms-tools Hook + 5 Import-Sanitization + 4 ms-tools Book-Thresholds + 7 Backup-Compare + 2 Audiobook-Overwrite + 6 Backend Keywords-Schema + 2 KDP Keywords-List + 12 Frontend validateKeyword)
 - Testergebnis: 234 backend + 102 frontend grün (vor Session: 181 backend + 90 frontend)
 - ROADMAP: M-12, M-16, V-02 abgehakt. Noch offen in Manuskript-Tools: M-13, M-14, M-15. Audiobook-Overwrite und Keywords-Migration waren keine ROADMAP-Einträge sondern direkte User-Wünsche.
 - Architektur-Entscheidungen dokumentiert:
-  - `audiobook.settings.overwrite_existing` wurde von Plugin-global zu Buch-spezifisch migriert. Begruendung: Single Source of Truth, Konsistenz mit anderen buch-spezifischen Audio-Settings, eindeutige Granularitaet.
+  - `audiobook.settings.overwrite_existing` wurde von Plugin-global zu Buch-spezifisch migriert. Begründung: Single Source of Truth, Konsistenz mit anderen buch-spezifischen Audio-Settings, eindeutige Granularität.
   - Keywords bleiben in der ORM-Spalte als `Text` (JSON-String) gespeichert, sind aber im API-Layer (Pydantic) `list[str]`. Encode/Decode passiert im Router und einem generalisierten `_decode_json_list` Validator der auch `audiobook_skip_chapter_types` abdeckt. Vorteil: keine DB-Migration, kein Bruch für Legacy-Clients die weiterhin JSON-Strings senden können.
 
 ---
@@ -259,21 +259,21 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 - Audit-Ergebnis: Die Spec passte in zwei Punkten nicht zur bestehenden Architektur.
   1. Variable-Namen: Der Code nutzt `--bg-primary/secondary/sidebar/card/hover/editor`, `--text-primary/secondary/muted/inverse/sidebar`, `--accent/-hover/-light/-subtle`, `--border/-strong`, `--danger/-hover`, `--shadow-sm/md/lg`, `--font-display/body/mono`. Der spec-Variable-Set enthielt Namen die nirgendwo im Code referenziert sind (`--bg-tertiary`, `--border-subtle`, `--shadow`, `--code-bg`, `--link*`, `--font-serif/sans`) und liess Variablen weg die Components aktiv nutzen (`--bg-sidebar/card/hover/editor`, `--text-inverse/sidebar`, `--accent-light/subtle`, `--border-strong`, `--danger*`, alle drei `--shadow-*`). Spec-CSS 1:1 einspielen hätte Sidebars, Cards, Hover-States, Shadows und Danger-Buttons gebrochen.
   2. Theme-ID-Schema: Das bestehende System hat zwei orthogonale Achsen: `data-app-theme` (Palette: warm-literary, cool-modern, nord) und `data-theme` (light/dark, unabhängig umschaltbar via ThemeToggle). Flache IDs wie `classic-dark` hätten den ThemeToggle, `useTheme.ts` und alle 185 Zeilen bestehendes Theme-CSS rewriten müssen, plus eine localStorage-Migration für bestehende User.
-- Nach Rueckfrage: Option B gewählt. Bestehende Architektur respektieren, drei neue `data-app-theme` Werte addieren, Variablen auf den realen Contract mappen. User hat Mappings explizit bestätigt:
+- Nach Rückfrage: Option B gewählt. Bestehende Architektur respektieren, drei neue `data-app-theme` Werte addieren, Variablen auf den realen Contract mappen. User hat Mappings explizit bestätigt:
   - `--bg-tertiary` -> `--bg-hover`
-  - `--border-subtle` -> `--border`, mit `--border-strong` für Kontrast-Faelle
+  - `--border-subtle` -> `--border`, mit `--border-strong` für Kontrast-Fälle
   - `--shadow` -> berechnete `--shadow-sm/md/lg` (gleiche Grundfarbe, Alpha 0.05/0.08/0.12 hell, 0.3/0.4/0.5 dunkel)
   - `--font-serif/sans` -> `--font-display/body`
   - `--code-bg/--link/--link-hover` als redundant droppen
 - Ergebnis:
   - **Palette-Registry**: `frontend/src/themes/palettes.ts` als neue Single Source of Truth für die Liste bekannter Paletten. `useTheme.ts` validiert localStorage gegen `isKnownPalette`, stale Werte fallen auf `warm-literary` zurück. 8 Vitest Tests pinnen die Liste, die kebab-case IDs und `isKnownPalette`.
-  - **Klassisch (Light + Dark)**: Warmes Papier-Gefuehl, beige-creme Toene, Bordeaux-Akzent (`#8b3a1f`), Crimson Pro als Serif für display+body. Sidebar in dunklem Braun für Kontrast. Editor bekommt typografische Erst-Zeilen-Einrueckung 1.5em via `[data-app-theme="classic"] .ProseMirror p:not(:first-child) { text-indent: 1.5em; }` - der `:not(:first-child)` Teil respektiert die Konvention dass der erste Absatz nach einer Überschrift nicht eingerueckt wird.
-  - **Studio (Dark primaer + Light)**: Dunkles Anthrazit (`#1c1e22`) mit Mint/Teal-Akzent (`#5eead4`), Inter für UI-Text, Source Serif Pro für Headings. Light-Variante mit dunklerem Mint (`#0d9488`) auf hellem Grau. Spec-Text "Look orientiert sich an professionellen A/V-Schnitt-Programmen" ernst genommen: hoher Kontrast, schlanke Linien, keine Deko.
-  - **Notizbuch (Light primaer + Dark)**: Helles Papier mit Linien-Optik. `[data-app-theme="notebook"] .ProseMirror` bekommt ein `linear-gradient` Background das bei `calc(1.6em - 1px)` eine 1px-Linie zieht, plus `background-size: 100% 1.6em` und zwangs-synchronisiertes `line-height: 1.6em` - sonst driften die Linien nach einigen Absaetzen weg. Dazu ein `border-left: 2px solid var(--notebook-margin)` für den roten Rand-Strich und `padding-left: 2em` um Text freizuraeumen. Die 0.3 Grad Heading-Rotation aus der Spec wurde auf User-Request gedroppt: funktionale Regression auf Text-Selection und Caret-Alignment in TipTap ist für den kosmetischen Effekt nicht vertretbar. Lora als Serif für beide Varianten.
-  - **Notebook-spezifische Variablen**: `--notebook-rule` (Linien-Farbe) und `--notebook-margin` (Rand-Strich) sind pro Palette lokal definiert, nicht in den allgemeinen Variablen-Kontrakt gemischt. So kann die Dark-Variante beide unabhängig tunen ohne `--border` (das auch für unrelated Element-Borders genutzt wird) zu beruehren.
-  - **Fonts**: Google-Fonts-Link in `index.html` um Inter, Lora, Source Serif Pro erweitert. Die Spec wollte Offline-Bundlung, aber der bestehende Stack nutzt für die drei alten Paletten weiterhin Google Fonts. Teil-Offline-Bundlung wäre inkonsistent - entweder alle sechs oder keine. Auslagerung in ROADMAP O-01 (neue Kategorie "O=Offline-Haertung") als separater Haertungs-Task.
-  - **Settings-Dropdown**: Drei Literale hinzugefügt ("Klassisch", "Studio", "Notizbuch"). Struktur nicht angefasst, i18n-Pass auch für die bestehenden drei Paletten wäre inkonsistent-teilweise gewesen und wurde auf einen spaeteren Sweep verschoben.
-  - **Help-Docs**: Neues Top-Level-Menu `themes` in `docs/help/_meta.yaml`, DE und EN Prose unter `docs/help/{de,en}/themes.md` die alle sechs Paletten beschreibt, Hell/Dunkel-Dimension erklaert und Plugin-Autoren auf den CSS-Variable-Kontrakt hinweist. Stale "drei Themes" Hint in `docs/help/de/getting-started.md` korrigiert.
+  - **Klassisch (Light + Dark)**: Warmes Papier-Gefühl, beige-creme Töne, Bordeaux-Akzent (`#8b3a1f`), Crimson Pro als Serif für display+body. Sidebar in dunklem Braun für Kontrast. Editor bekommt typografische Erst-Zeilen-Einrückung 1.5em via `[data-app-theme="classic"] .ProseMirror p:not(:first-child) { text-indent: 1.5em; }` - der `:not(:first-child)` Teil respektiert die Konvention dass der erste Absatz nach einer Überschrift nicht eingerückt wird.
+  - **Studio (Dark primär + Light)**: Dunkles Anthrazit (`#1c1e22`) mit Mint/Teal-Akzent (`#5eead4`), Inter für UI-Text, Source Serif Pro für Headings. Light-Variante mit dunklerem Mint (`#0d9488`) auf hellem Grau. Spec-Text "Look orientiert sich an professionellen A/V-Schnitt-Programmen" ernst genommen: hoher Kontrast, schlanke Linien, keine Deko.
+  - **Notizbuch (Light primär + Dark)**: Helles Papier mit Linien-Optik. `[data-app-theme="notebook"] .ProseMirror` bekommt ein `linear-gradient` Background das bei `calc(1.6em - 1px)` eine 1px-Linie zieht, plus `background-size: 100% 1.6em` und zwangs-synchronisiertes `line-height: 1.6em` - sonst driften die Linien nach einigen Absätzen weg. Dazu ein `border-left: 2px solid var(--notebook-margin)` für den roten Rand-Strich und `padding-left: 2em` um Text freizuräumen. Die 0.3 Grad Heading-Rotation aus der Spec wurde auf User-Request gedroppt: funktionale Regression auf Text-Selection und Caret-Alignment in TipTap ist für den kosmetischen Effekt nicht vertretbar. Lora als Serif für beide Varianten.
+  - **Notebook-spezifische Variablen**: `--notebook-rule` (Linien-Farbe) und `--notebook-margin` (Rand-Strich) sind pro Palette lokal definiert, nicht in den allgemeinen Variablen-Kontrakt gemischt. So kann die Dark-Variante beide unabhängig tunen ohne `--border` (das auch für unrelated Element-Borders genutzt wird) zu berühren.
+  - **Fonts**: Google-Fonts-Link in `index.html` um Inter, Lora, Source Serif Pro erweitert. Die Spec wollte Offline-Bundlung, aber der bestehende Stack nutzt für die drei alten Paletten weiterhin Google Fonts. Teil-Offline-Bundlung wäre inkonsistent - entweder alle sechs oder keine. Auslagerung in ROADMAP O-01 (neue Kategorie "O=Offline-Härtung") als separater Härtungs-Task.
+  - **Settings-Dropdown**: Drei Literale hinzugefügt ("Klassisch", "Studio", "Notizbuch"). Struktur nicht angefasst, i18n-Pass auch für die bestehenden drei Paletten wäre inkonsistent-teilweise gewesen und wurde auf einen späteren Sweep verschoben.
+  - **Help-Docs**: Neues Top-Level-Menu `themes` in `docs/help/_meta.yaml`, DE und EN Prose unter `docs/help/{de,en}/themes.md` die alle sechs Paletten beschreibt, Hell/Dunkel-Dimension erklärt und Plugin-Autoren auf den CSS-Variable-Kontrakt hinweist. Stale "drei Themes" Hint in `docs/help/de/getting-started.md` korrigiert.
 - Nicht gemacht (bewusst):
   - Keine flachen Theme-IDs (Architektur-Rewrite)
   - Keine Offline-Font-Bundlung (O-01 separat)
@@ -293,7 +293,7 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
 
 ## 10. ChapterType UI overflow in sidebar list and add-chapter dropdown
 
-- Original-Prompt: Zwei Overflow-Bugs im ChapterType-UI. (a) Die Kapitel-Liste in der Sidebar scrollt nicht innerhalb ihres Containers, sondern verlaengert die ganze Seite. Bei vielen Kapiteln wird der Metadaten/Export-Footer unter den Viewport geschoben, User muss zoomen. (b) Das "+ Button" Dropdown zum Anlegen eines neuen Kapitels listet alle 26 ChapterTypes mit Section-Labels und Separators; bei normalen Viewports (1080p und darunter) wird das Dropdown unten abgeschnitten.
+- Original-Prompt: Zwei Overflow-Bugs im ChapterType-UI. (a) Die Kapitel-Liste in der Sidebar scrollt nicht innerhalb ihres Containers, sondern verlängert die ganze Seite. Bei vielen Kapiteln wird der Metadaten/Export-Footer unter den Viewport geschoben, User muss zoomen. (b) Das "+ Button" Dropdown zum Anlegen eines neuen Kapitels listet alle 26 ChapterTypes mit Section-Labels und Separators; bei normalen Viewports (1080p und darunter) wird das Dropdown unten abgeschnitten.
 - Audit-Ergebnis: Nur ein Component betroffen - `ChapterSidebar.tsx`. Kein separates `AddChapterMenu`. Kein Test-File.
   - Bug 1: `.sidebar` war korrekt (`height: 100vh`, `flex column`), `.list` hatte bereits `flex: 1, overflow-y: auto` - aber `min-height: 0` fehlte. Flex-Children haben per Default `min-height: auto`, was auf die intrinsic Content-Height expandiert und das `overflow-y: auto` stillschweigend aushebelt. Klassischer CSS-Flexbox-Fallstrick. Dazu fehlten `flex-shrink: 0` auf `.header`, `.manuscriptHeader` und `.exportSection` - ohne die werden die beim "Squeeze" verkleinert statt dass die Liste scrollt.
   - Bug 2: `.chapter-dropdown-content` in `global.css` hatte kein `max-height`, keinen `overflow-y`, und `DropdownMenu.Content` hatte kein `collisionPadding`. Radix's built-in Collision-Detection flippt nur die `side` von bottom auf top, resized aber nicht - also blieb der Content geclippt.
@@ -301,7 +301,7 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
   - `ChapterSidebar.tsx`: `minHeight: 0` auf `.list`, `flexShrink: 0` auf `.header/.manuscriptHeader/.exportSection`, `collisionPadding={16}` auf `DropdownMenu.Content`, `data-testid` auf dem List-Wrapper und der Dropdown-Content für die Tests.
   - `global.css`: `max-height: var(--radix-dropdown-menu-content-available-height)` + `overflow-y: auto` + `overscroll-behavior: contain` + `scrollbar-width: thin` auf `.chapter-dropdown-content`, plus WebKit-Scrollbar-Styles mit einem 8px breiten Thumb passend zum dunklen Sidebar-Theme. Die Radix-CSS-Variable wird vom Popper automatisch on-mount gesetzt und beim Side-Flip neu berechnet - keine explizite Resize-Logik nötig.
   - **Keine** Änderung an Props, Sidebar-API oder der DropdownMenu-Struktur. Rein lokaler Layout-Fix.
-- Tests: Neues `ChapterSidebar.test.tsx` (erstes Render-Test-File mit gemountetem ChapterSidebar). 5 strukturelle Assertions: List hat `data-testid`, `overflow-y: auto`, `min-height: 0` (wobei React `0` statt `"0px"` serialisiert - Test akzeptiert beide), `flex: 1`, und eine Source-Level-Regression die prüft dass `.chapter-dropdown-content` in `global.css` weiterhin `max-height: var(--radix-dropdown-menu-content-available-height)` und `overflow-y: auto` enthält. Letzteres ist eine Quellcode-Prüfung weil jsdom keine Layout-Pass hat - die Radix-CSS-Variable wird erst zur Laufzeit vom Popper aufgeloest, kein runtime-Wert pruefbar im Test. `ResizeObserver` gestubbt weil jsdom keinen liefert und Radix DropdownMenu ihn beim Mount braucht.
+- Tests: Neues `ChapterSidebar.test.tsx` (erstes Render-Test-File mit gemountetem ChapterSidebar). 5 strukturelle Assertions: List hat `data-testid`, `overflow-y: auto`, `min-height: 0` (wobei React `0` statt `"0px"` serialisiert - Test akzeptiert beide), `flex: 1`, und eine Source-Level-Regression die prüft dass `.chapter-dropdown-content` in `global.css` weiterhin `max-height: var(--radix-dropdown-menu-content-available-height)` und `overflow-y: auto` enthält. Letzteres ist eine Quellcode-Prüfung weil jsdom keine Layout-Pass hat - die Radix-CSS-Variable wird erst zur Laufzeit vom Popper aufgelöst, kein runtime-Wert prüfbar im Test. `ResizeObserver` gestubbt weil jsdom keinen liefert und Radix DropdownMenu ihn beim Mount braucht.
 - Was NICHT gemacht:
   - Kein echter 600px/800px/1080px Viewport-Matrix-Test (braucht Human-in-the-Loop Browser, nicht machbar in dieser Umgebung). Flagged als NOT VERIFIED im Closing-Checklist-Report.
   - Kein Playwright E2E-Test hinzugefügt (User hat in vorheriger Session entschieden dass Playwright für non-critical UI-Fixes nicht lohnt).
@@ -310,4 +310,4 @@ Lessons-learned-Eintrag dazu mit dem Generic-Panel-Render-Pattern (bool→Checkb
   - `7e3d0a6` fix(ui): chapter sidebar list and add-chapter dropdown overflow
   - `5e17460` test(ui): render-based tests for sidebar list and dropdown overflow
 - Test-Resultat: 234 backend unverändert, 127 frontend grün (+5 ChapterSidebar-Tests). tsc --noEmit clean, Production-Build clean.
-- Lessons-Learned: Zwei CSS-Fallstricke in einem Commit, beide kosten normalerweise viel Debug-Zeit. (1) Flex-Column mit scrollbarem Child braucht `min-height: 0` - das ist in CSS-Docs versteckt und schlaegt "mein overflow-y geht nicht" normalerweise erstmal eine halbe Stunde Stack-Overflow-Suche. (2) Radix-Popper-Collision resized nicht, nur repositioniert - die `--radix-*-available-height` CSS-Variable ist das offizielle API dafür und einfach zu uebersehen weil sie nicht im allgemeinen Radix-Getting-Started steht. Gehoeren beide in `lessons-learned.md` als Patterns für zukuenftige UI-Arbeit. Nicht in diesem Task gemacht um Scope zu halten.
+- Lessons-Learned: Zwei CSS-Fallstricke in einem Commit, beide kosten normalerweise viel Debug-Zeit. (1) Flex-Column mit scrollbarem Child braucht `min-height: 0` - das ist in CSS-Docs versteckt und schlägt "mein overflow-y geht nicht" normalerweise erstmal eine halbe Stunde Stack-Overflow-Suche. (2) Radix-Popper-Collision resized nicht, nur repositioniert - die `--radix-*-available-height` CSS-Variable ist das offizielle API dafür und einfach zu übersehen weil sie nicht im allgemeinen Radix-Getting-Started steht. Gehören beide in `lessons-learned.md` als Patterns für zukünftige UI-Arbeit. Nicht in diesem Task gemacht um Scope zu halten.

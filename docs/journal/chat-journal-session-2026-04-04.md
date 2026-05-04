@@ -31,12 +31,12 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 4. P-09: Plugin Manuscript Tools (19:25)
 
 - Original-Prompt: "Setze P-09 um"
-- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Wörter DE+EN, Passiv, Satzlaenge) und Sanitizer (Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
+- Ergebnis: Neues MIT-Plugin bibliogon-plugin-ms-tools mit Style Checker (Filler-Wörter DE+EN, Passiv, Satzlänge) und Sanitizer (Anfuehrungszeichen 5 Sprachen, Whitespace, Dashes, Ellipsis). 31 Tests, 4 API-Endpunkte
 - Commit: ee2f4c9
 
 ---
 
-## 5. P-10: Filler-Wörter, Passiv, Satzlaenge (19:35)
+## 5. P-10: Filler-Wörter, Passiv, Satzlänge (19:35)
 
 - Original-Prompt: "Setze P-10 um"
 - Ergebnis: Bereits in P-09 implementiert, nur ROADMAP markiert
@@ -72,7 +72,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 9. U-08: Sidebar-Theme unabhängig (19:55)
 
 - Original-Prompt: "Setze U-08 um"
-- Ergebnis: --bg-sidebar und --text-sidebar Overrides aus allen Dark-Mode-Bloecken entfernt. Sidebar bleibt visuell konstant beim Light/Dark-Toggle
+- Ergebnis: --bg-sidebar und --text-sidebar Overrides aus allen Dark-Mode-Blöcken entfernt. Sidebar bleibt visuell konstant beim Light/Dark-Toggle
 - Commit: 865517f
 
 ---
@@ -112,7 +112,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 14. B-01: Alembic-Migrationen (20:12)
 
 - Original-Prompt: "Setze B-01 um"
-- Ergebnis: Alembic installiert, env.py konfiguriert (render_as_batch für SQLite), Initial Migration generiert, init_db() behandelt 3 Faelle (frisch/ohne Alembic/mit Alembic), _auto_migrate() entfernt
+- Ergebnis: Alembic installiert, env.py konfiguriert (render_as_batch für SQLite), Initial Migration generiert, init_db() behandelt 3 Fälle (frisch/ohne Alembic/mit Alembic), _auto_migrate() entfernt
 - Commit: 165f9ee
 
 ---
@@ -295,7 +295,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 36. Lizenz-Workflow: Autor-Bindung statt Geräte-Lock
 
-- Original-Prompt: "Lizenz-Workflow ueberarbeiten: Dialog ersetzen durch Tab-Navigation + Key-Generierung"
+- Original-Prompt: "Lizenz-Workflow überarbeiten: Dialog ersetzen durch Tab-Navigation + Key-Generierung"
 - Ergebnis: machine_id durch author_name ersetzt, Tab-Navigation statt Modal, 3 Makefile-Targets (trial/plugin/all), 20 Tests, validate_license gibt (payload, warning) Tuple zurück
 - Commit: 6104fe0
 
@@ -304,7 +304,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 37. Plugin-Aktivierung nach Lizenz
 
 - Original-Prompt: "Bug: Plugin wird nach Lizenz-Eingabe nicht angezeigt"
-- Ergebnis: POST /licenses fuegt Plugin zu enabled-Liste hinzu, ruft discover_plugins() auf. Audiobook YAML um language/merge erweitert
+- Ergebnis: POST /licenses fügt Plugin zu enabled-Liste hinzu, ruft discover_plugins() auf. Audiobook YAML um language/merge erweitert
 - Commit: 3ec3338
 
 ---
@@ -397,7 +397,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 49. Smart Import mit Auto-Erkennung
 
-- Original-Prompt: "Import-System ueberarbeiten: Automatische Format-Erkennung"
+- Original-Prompt: "Import-System überarbeiten: Automatische Format-Erkennung"
 - Ergebnis: POST /api/backup/smart-import erkennt .bgb/.bgp/.zip/.md automatisch, ein "Importieren" Button statt drei separate, 5 neue Tests
 - Commit: 9c4ae1f
 

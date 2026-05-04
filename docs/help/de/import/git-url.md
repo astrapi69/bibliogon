@@ -22,7 +22,7 @@ Preview-Panel und importiert nach Bestätigung.
 - `git@github.com:user/repo.git`
 - `ssh://git@host/user/repo.git`
 
-## Was aktuell nicht unterstuetzt wird
+## Was aktuell nicht unterstützt wird
 
 Die erste Version von plugin-git-sync ist reiner Import für
 **oeffentliche** Repositories. Folgendes ist aufgeschoben:
@@ -33,12 +33,12 @@ Die erste Version von plugin-git-sync ist reiner Import für
   Default-Branch wird geklont.
 - Shallow Clones für große Repositories.
 - Git-LFS-Unterstützung.
-- Rueckschreiben von Bibliogon-Änderungen ins Repo
+- Rückschreiben von Bibliogon-Änderungen ins Repo
   ("Sync-back").
 - Smart-Merge beim erneuten Import eines Repositories, das
   sich seit dem letzten Import geändert hat.
 
-## Wenn der Klon fehlschlaegt
+## Wenn der Klon fehlschlägt
 
 Der Assistent bleibt im Fehlerschritt stehen und zeigt die
 Git-Fehlermeldung. Typische Ursachen:
@@ -46,7 +46,7 @@ Git-Fehlermeldung. Typische Ursachen:
 - Tippfehler in der URL.
 - Repository existiert nicht oder ist privat.
 - Netzwerk nicht erreichbar.
-- Server hat laenger als 120 Sekunden gebraucht (Timeout).
+- Server hat länger als 120 Sekunden gebraucht (Timeout).
 
 Ursache beheben und auf **Erneut versuchen** klicken.
 

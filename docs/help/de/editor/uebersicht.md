@@ -26,7 +26,7 @@ Der Editor bietet zwei Modi: WYSIWYG (Standard) und Markdown. Im WYSIWYG-Modus a
 
 ## Autosave
 
-Der Editor speichert deine Änderungen automatisch. Jede Änderung wird mit einem kurzen Verzoegerung (Debounce) an das Backend gesendet und in der SQLite-Datenbank gespeichert. Du musst nicht manuell speichern. Der aktuelle Speicherstatus wird in der Statusleiste angezeigt.
+Der Editor speichert deine Änderungen automatisch. Jede Änderung wird mit einem kurzen Verzögerung (Debounce) an das Backend gesendet und in der SQLite-Datenbank gespeichert. Du musst nicht manuell speichern. Der aktuelle Speicherstatus wird in der Statusleiste angezeigt.
 
 ## Schlüsselwörter im Metadaten-Tab
 

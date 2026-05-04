@@ -65,7 +65,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "nein ich wollte eine deploybare datei die das macht"
 - 🔸 **Optimierter Prompt:** "Erstelle ein install.sh Script das als One-Liner via curl ausfuehrbar ist: `curl -fsSL .../install.sh | bash`. Das Script soll: Bibliogon nach ~/bibliogon herunterladen (git clone oder Tarball-Fallback), .env konfigurieren, Docker-Images bauen und starten. Unterstuetze Updates bei erneutem Ausfuehren."
-- 🎯 Einzelne ausfuehrbare Datei für Installation
+- 🎯 Einzelne ausführbare Datei für Installation
 - 💡 Nutzer soll ohne git clone auskommen
 - ✅ install.sh erstellt, README mit One-Liner aktualisiert
 
@@ -121,7 +121,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 13. Markdown-zu-HTML beim Import
 
 - 🔹 **Original-Prompt:** "ich sehe das beim import die acknowledgment in den front matter hinzugefügt wurde... und es werden wieder md zeichen sichtbar angezeigt"
-- 🔸 **Optimierter Prompt:** "Drei Probleme: 1) acknowledgments faelschlicherweise in Front-Matter (gehoert in Back-Matter). 2) Editor zeigt rohe Markdown-Zeichen (#, *, -) statt formatiertem Text - der Import speichert Markdown, aber TipTap erwartet HTML. 3) Bilder werden nicht importiert. Fixe: acknowledgments-Mapping, markdown-Library installieren für MD->HTML-Konvertierung beim Import, Asset-Import aus assets/-Ordner."
+- 🔸 **Optimierter Prompt:** "Drei Probleme: 1) acknowledgments faelschlicherweise in Front-Matter (gehört in Back-Matter). 2) Editor zeigt rohe Markdown-Zeichen (#, *, -) statt formatiertem Text - der Import speichert Markdown, aber TipTap erwartet HTML. 3) Bilder werden nicht importiert. Fixe: acknowledgments-Mapping, markdown-Library installieren für MD->HTML-Konvertierung beim Import, Asset-Import aus assets/-Ordner."
 - 🎯 Korrektes Rendering im Editor nach Import
 - 💡 TipTap kann kein Markdown, nur HTML oder JSON
 - ✅ markdown-Library installiert, HTML-Konvertierung, 8 Assets importiert. Mehrere Commits
@@ -130,7 +130,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 14. Section-Order aus export-settings.yaml
 
-- 🔹 **Original-Prompt:** "ich sehe das beim import die acknowledgment immer noch in den front matter hinzugefügt wurde die gehoert in back-matter... dann ist die reihenfolge im front matter nicht richtig toc sollte als erstes kommen"
+- 🔹 **Original-Prompt:** "ich sehe das beim import die acknowledgment immer noch in den front matter hinzugefügt wurde die gehört in back-matter... dann ist die reihenfolge im front matter nicht richtig toc sollte als erstes kommen"
 - 🔸 **Optimierter Prompt:** "Der Import ignoriert die Reihenfolge aus export-settings.yaml. Fixe: 1) Lese export-settings.yaml und nutze section_order für die Kapitel-Positionierung. 2) TOC als erstes in Front-Matter. 3) acknowledgments nur in Back-Matter (aus _FRONT_MATTER_MAP entfernen). 4) Fallback auf alphabetische Sortierung wenn keine export-settings.yaml existiert."
 - 🎯 Import-Reihenfolge exakt wie vom Autor definiert
 - ✅ Reihenfolge stimmt exakt mit export-settings.yaml. Commit 94d48c1
@@ -151,7 +151,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "im editor werden die Bilder angezeigt. Aber wenn ich exportiere werden die Bilder im epub nicht angezeigt ausserdem werden jetzt zwei tocs exportiert... was noch fehlt ist das... der typ des buches in dem dateinamen ist"
 - 🔸 **Optimierter Prompt:** "Drei Export-Probleme: 1) Bilder fehlen im EPUB - beim Scaffolding Assets aus DB in Projekt kopieren und /api/...-Pfade zurück zu assets/figures/... umschreiben. 2) Doppeltes TOC - wenn manuelles TOC existiert, use_manual_toc an manuscripta durchreichen. 3) Buchtyp im Dateinamen: title-ebook.epub, title-paperback.pdf. Neue Setting type_suffix_in_filename (default: true)."
-- 🎯 Vollstaendiger EPUB-Export mit Bildern
+- 🎯 Vollständiger EPUB-Export mit Bildern
 - ✅ Assets kopiert, Pfade umgeschrieben, use_manual_toc, Buchtyp-Suffix. Commit c2f20dc
 
 ---
@@ -168,7 +168,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 18. Doppelte H1-Ueberschriften im Export
 
 - 🔹 **Original-Prompt:** "Beim export werden jetzt zwei header angezeigt z.B.: Foreword eine seite inhalt leer und dann folgt der echte Foreword mit inhalt."
-- 🔸 **Optimierter Prompt:** "Der Export-Scaffolder fuegt eine H1-Überschrift hinzu, aber der Content enthält bereits eine (seit wir _remove_first_heading entfernt haben). Fixe: _prepend_title soll prüfen ob der Content bereits mit # oder <h1 beginnt. Dazu: _content_to_markdown muss HTML zurück zu Markdown konvertieren (aktuell wird HTML as-is durchgereicht)."
+- 🔸 **Optimierter Prompt:** "Der Export-Scaffolder fügt eine H1-Überschrift hinzu, aber der Content enthält bereits eine (seit wir _remove_first_heading entfernt haben). Fixe: _prepend_title soll prüfen ob der Content bereits mit # oder <h1 beginnt. Dazu: _content_to_markdown muss HTML zurück zu Markdown konvertieren (aktuell wird HTML as-is durchgereicht)."
 - 🎯 Keine doppelten Ueberschriften
 - ✅ HTMLParser-basierter Konverter, Heading-Duplikat-Check. Commits 3ebe3dd, 10403de
 
@@ -187,7 +187,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 20. TOC und Imprint Darstellung
 
 - 🔹 **Original-Prompt:** "das toc und imprint wird nicht richtig angezeigt. beim imprint werden die zeilenumbrueche nicht gezeigt... beim toc sieht es ähnlich"
-- 🔸 **Optimierter Prompt:** "Zwei Darstellungsprobleme: 1) TOC: Verschachtelte Listen werden flach dargestellt - Python's markdown-Library braucht 4-Space-Indent, write-book-template nutzt 2-Space. Verdopple die Einrueckung vor der Konvertierung. 2) Imprint: Zeilenumbrueche (zwei Leerzeichen am Zeilenende = Hard Break) werden korrekt als <br> konvertiert, aber TipTap braucht @tiptap/extension-link für <a>-Tags. Installiere es."
+- 🔸 **Optimierter Prompt:** "Zwei Darstellungsprobleme: 1) TOC: Verschachtelte Listen werden flach dargestellt - Python's markdown-Library braucht 4-Space-Indent, write-book-template nutzt 2-Space. Verdopple die Einrückung vor der Konvertierung. 2) Imprint: Zeilenumbrüche (zwei Leerzeichen am Zeilenende = Hard Break) werden korrekt als <br> konvertiert, aber TipTap braucht @tiptap/extension-link für <a>-Tags. Installiere es."
 - 🎯 Korrekte Darstellung von verschachtelten Listen und Zeilenumbruechen
 - ✅ Verschachtelte TOC-Listen, @tiptap/extension-link installiert. Commit 0b04a39
 
@@ -196,16 +196,16 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 21. TOC Baumstruktur im Export
 
 - 🔹 **Original-Prompt:** "die toc hat eine baumstruktur mit einrueckungen die werden beim export platt gemacht"
-- 🔸 **Optimierter Prompt:** "Der HTML-zu-Markdown Konverter (Regex-basiert) kann verschachtelte <ul>/<li> nicht korrekt verarbeiten. Ersetze den Regex-Ansatz durch einen HTMLParser-basierten Konverter der die Verschachtelungstiefe trackt und korrekte 2-Space-Einrueckung pro Level erzeugt."
+- 🔸 **Optimierter Prompt:** "Der HTML-zu-Markdown Konverter (Regex-basiert) kann verschachtelte <ul>/<li> nicht korrekt verarbeiten. Ersetze den Regex-Ansatz durch einen HTMLParser-basierten Konverter der die Verschachtelungstiefe trackt und korrekte 2-Space-Einrückung pro Level erzeugt."
 - 🎯 TOC-Baumstruktur bleibt beim Export erhalten
-- ✅ HTMLParser-basierter Konverter mit korrekter Einrueckung. Commit ef0efb7
+- ✅ HTMLParser-basierter Konverter mit korrekter Einrückung. Commit ef0efb7
 
 ---
 
 ## 22. Figure/Figcaption Handling
 
 - 🔹 **Original-Prompt:** "bei den images wird der alt geschrieben das war nicht so und soll nicht so sein. die figcaption wird als code font... angezeigt. in styles.css wird das definiert gleicher font aber cursiv"
-- 🔸 **Optimierter Prompt:** "Drei Bild-Probleme: 1) alt-Text wird als sichtbarer Text angezeigt - <figure> Tags müssen aufgeloest werden da TipTap sie nicht kennt. 2) figcaption wird in Monospace statt Body-Font kursiv gezeigt - CSS für figcaption hinzufügen. 3) Im Export muss <figure><figcaption> wiederhergestellt werden. Implementiere: Import transformiert <figure><img><figcaption> zu <img> + <p class='figcaption'>. Export stellt <figure> wieder her. CSS: body-font, italic, 1px kleiner, zentriert."
+- 🔸 **Optimierter Prompt:** "Drei Bild-Probleme: 1) alt-Text wird als sichtbarer Text angezeigt - <figure> Tags müssen aufgelöst werden da TipTap sie nicht kennt. 2) figcaption wird in Monospace statt Body-Font kursiv gezeigt - CSS für figcaption hinzufügen. 3) Im Export muss <figure><figcaption> wiederhergestellt werden. Implementiere: Import transformiert <figure><img><figcaption> zu <img> + <p class='figcaption'>. Export stellt <figure> wieder her. CSS: body-font, italic, 1px kleiner, zentriert."
 - 🎯 Bilder korrekt im Editor, figcaption gestylt
 - ✅ Import/Export-Transformation, CSS-Styling. Commit 34bc886
 
@@ -214,9 +214,9 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 23. Figcaption Italic-Styling
 
 - 🔹 **Original-Prompt:** "die figcaption ist immer noch nicht kursiv und die groesse ist auch falsch ich glaube ein oder 2 pixel kleiner mach 1 pixel"
-- 🔸 **Optimierter Prompt:** "Das CSS .tiptap-editor figcaption greift nicht weil TipTap <p class='figcaption'> rendert, nicht <figcaption>. Erhoehe die CSS-Spezifitaet mit .ProseMirror p.figcaption und nutze !important für font-style: italic. Schriftgroesse: calc(1em - 1px)."
+- 🔸 **Optimierter Prompt:** "Das CSS .tiptap-editor figcaption greift nicht weil TipTap <p class='figcaption'> rendert, nicht <figcaption>. Erhoehe die CSS-Spezifität mit .ProseMirror p.figcaption und nutze !important für font-style: italic. Schriftgroesse: calc(1em - 1px)."
 - 🎯 Kursive Darstellung der Bildunterschrift
-- ✅ Hoehere CSS-Spezifitaet. Commit e2bf84b
+- ✅ Hoehere CSS-Spezifität. Commit e2bf84b
 
 ---
 
@@ -225,7 +225,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - 🔹 **Original-Prompt:** "geht immer noch nicht und mir ist aufgefallen wenn ich auf markdown wechsle verschwindet das Bild. Das sollte alles nicht sein bitte mit unit tests verifizieren."
 - 🔸 **Optimierter Prompt:** "Drei Probleme: 1) Figcaption-CSS greift nicht - erstelle eine Custom TipTap Extension die als <figcaption> Element rendert (nicht <p>), damit CSS direkt auf das Element greift. 2) Bilder verschwinden im Markdown-Modus - nodeToMarkdown fehlt Handler für 'image' und 'figcaption' Nodes; markdownToHtml fehlt ![alt](src) Parsing. 3) Schreibe 4 Unit-Tests: figcaption als Klasse gespeichert, figure ohne caption, alt-Text nicht sichtbar, figcaption Export-Roundtrip."
 - 🎯 Zuverlaessiges Bild/Caption-Handling mit Tests
-- 💡 CSS-Spezifitaet reicht nicht - braucht Custom Node
+- 💡 CSS-Spezifität reicht nicht - braucht Custom Node
 - ✅ Figcaption Extension, Markdown-Modus Bilder, 4 neue Tests (30 total). Commit 0a2b98b
 
 ---
@@ -233,7 +233,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 25. Bestehende TipTap Extensions nutzen
 
 - 🔹 **Original-Prompt:** "gibt es da keine extension von tiptap? oder welche tiptap extensions sind für uns sinnvoll? Nicht alles selber implementieren wenn andere schon das anbieten"
-- 🔸 **Optimierter Prompt:** "Recherchiere welche offiziellen und Community TipTap-Extensions für eine Buchautoren-Plattform sinnvoll sind. Kategorisiere: 1) Ersetzt Custom-Code (Figure, CharacterCount). 2) Wichtig für Autoren (TextAlign, Table, Sub/Superscript, Underline, Highlight). 3) Nice-to-have (Footnotes, Color, OfficePaste). Zeige Paketnamen, v2-Kompatibilitaet, und ob offiziell oder Community."
+- 🔸 **Optimierter Prompt:** "Recherchiere welche offiziellen und Community TipTap-Extensions für eine Buchautoren-Plattform sinnvoll sind. Kategorisiere: 1) Ersetzt Custom-Code (Figure, CharacterCount). 2) Wichtig für Autoren (TextAlign, Table, Sub/Superscript, Underline, Highlight). 3) Nice-to-have (Footnotes, Color, OfficePaste). Zeige Paketnamen, v2-Kompatibilität, und ob offiziell oder Community."
 - 🎯 Existierende Lösungen nutzen statt neu bauen
 - ✅ 17 Extensions identifiziert, priorisiert nach Nutzen
 
@@ -245,14 +245,14 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - **Commits:** 20+
 - **Tests:** 30 Backend + 23 Export-Plugin = 53 total (war 10)
 - **Neue Dateien:** plugin_install.py, Tooltip.tsx, figcaption.ts, install.sh, start.sh, stop.sh, .env.example, test_import_export.py
-- **Geaenderte Dateien:** 30+
+- **Geänderte Dateien:** 30+
 
 ### Hauptergebnisse
 1. Plugin-ZIP-Installation mit dynamischem Laden
 2. Alle 7 Radix-UI-Migrationen abgeschlossen
 3. Produktionshärtung und Deployment-Scripts
 4. GitHub Release v0.7.0
-5. Vollstaendiger write-book-template Import (getestet mit 2 echten Büchern)
+5. Vollständiger write-book-template Import (getestet mit 2 echten Büchern)
 6. EPUB-Export mit Bildern, manuellem TOC, Buchtyp-Suffix
 7. TOC-Link-Validierung
 8. 15 offizielle TipTap-Extensions (ersetzt Custom-Code)
@@ -263,7 +263,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 26. Offizielle TipTap-Extensions statt Custom-Code
 
 - 🔹 **Original-Prompt:** "gibt es da keine extension von tiptap? oder welche tiptap extensions sind für uns sinnvoll? Nicht alles selber implementieren wenn andere schon das anbieten"
-- 🔸 **Optimierter Prompt:** "Recherchiere welche offiziellen und Community TipTap-Extensions für eine Buchautoren-Plattform sinnvoll sind. Kategorisiere nach: Ersetzt Custom-Code (Figure, CharacterCount), Wichtig für Autoren (TextAlign, Table, Sub/Superscript), Nice-to-have (Footnotes, Color). Zeige Paketnamen und v2-Kompatibilitaet."
+- 🔸 **Optimierter Prompt:** "Recherchiere welche offiziellen und Community TipTap-Extensions für eine Buchautoren-Plattform sinnvoll sind. Kategorisiere nach: Ersetzt Custom-Code (Figure, CharacterCount), Wichtig für Autoren (TextAlign, Table, Sub/Superscript), Nice-to-have (Footnotes, Color). Zeige Paketnamen und v2-Kompatibilität."
 - 🎯 Bestehende Lösungen nutzen statt neu bauen
 - ✅ 17 Extensions identifiziert, 15 installiert
 
@@ -301,7 +301,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** (Fortsetzung der Integration-Tests)
 - 🔸 **Optimierter Prompt:** "Backup exportiert keine Asset-Dateien und keine erweiterten Metadaten (ISBN, Publisher). Beim Restore gehen Bilder und Metadaten verloren. Fixe: 1) Alle Buch-Felder im Backup. 2) Asset-Dateien + Metadaten (assets.json) im .bgb. 3) Restore kopiert Assets zurück auf Disk. 4) TOC-Slugifizierung: Em-Dash/En-Dash zu Hyphen, Apostrophe beide Varianten, HTML-Entities dekodieren."
-- 🎯 Vollstaendiger Backup/Restore Roundtrip
+- 🎯 Vollständiger Backup/Restore Roundtrip
 - ✅ 19/19 Assets nach Restore, alle Metadaten erhalten, 163 TOC-Links 1 broken. Commit c1eb504
 
 ---
@@ -345,7 +345,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 35. Core-Plugin-Schutz und White-Label
 
 - 🔹 **Original-Prompt:** "plugins werden mit muelleimer versehen... es fehlt ein icon das diese aktiv und standard sind... alle plugins die noch nicht implementiert sind nicht anzeigen... App-Einstellungen Labels... auch die standard plugins entfernen können"
-- 🔸 **Optimierter Prompt:** "Vier Änderungen: 1) Core-Plugins (export, help, getstarted) mit 'Standard' Badge, kein Muelleimer/Deaktivieren. 2) Nicht-implementierte Plugins (kdp, kinderbuch) aus UI entfernen. 3) Labels: Titel->App-Name, Untertitel->Beschreibung. 4) White-Label Wizard: aufklappbarer 'App anpassen' Bereich wo Core-Plugins per Checkbox deaktiviert werden können."
+- 🔸 **Optimierter Prompt:** "Vier Änderungen: 1) Core-Plugins (export, help, getstarted) mit 'Standard' Badge, kein Mülleimer/Deaktivieren. 2) Nicht-implementierte Plugins (kdp, kinderbuch) aus UI entfernen. 3) Labels: Titel->App-Name, Untertitel->Beschreibung. 4) White-Label Wizard: aufklappbarer 'App anpassen' Bereich wo Core-Plugins per Checkbox deaktiviert werden können."
 - 🎯 Professionelle Plugin-Verwaltung + White-Label-Faehigkeit
 - ✅ Commits ddf3aa9, 6969feb, 122defa
 
@@ -354,8 +354,8 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 36. Protokoll-Aktualisierung
 
 - 🔹 **Original-Prompt:** "erstelle oder aktualisiere alle protokoll dateien wie chatjournal, concept und claude.md"
-- 🔸 **Optimierter Prompt:** "Aktualisiere: CLAUDE.md (Test-Zahlen 133, ChapterType 14 mit toc), CONCEPT.md (Datenmodell v0.7.0 mit allen Feldern, Phase 7 als erledigt mit vollstaendiger Feature-Liste), Chat-Journal (Einträge 29-36, aktualisierte Statistiken)."
-- 🎯 Dokumentation auf aktuellem Stand gemaess ai-workflow.md Protokoll
+- 🔸 **Optimierter Prompt:** "Aktualisiere: CLAUDE.md (Test-Zahlen 133, ChapterType 14 mit toc), CONCEPT.md (Datenmodell v0.7.0 mit allen Feldern, Phase 7 als erledigt mit vollständiger Feature-Liste), Chat-Journal (Einträge 29-36, aktualisierte Statistiken)."
+- 🎯 Dokumentation auf aktuellem Stand gemäß ai-workflow.md Protokoll
 - ✅ Alle Dateien aktualisiert
 
 ---
@@ -471,11 +471,11 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ---
 
-## 49. T-01: Fussnoten Extension
+## 49. T-01: Fußnoten Extension
 
 - 🔹 **Original-Prompt:** "Setze T-01 um."
-- 🔸 **Optimierter Prompt:** "Installiere tiptap-footnotes (3 Nodes: Footnotes Container, FootnoteReference Inline-Marker, Footnote Einzeleintrag). Registriere im Editor. Toolbar-Button mit FootprintsIcon. CSS für Fussnoten-Bereich (border-top, smaller font, accent-colored reference numbers)."
-- 🎯 Autoren können Fussnoten im Editor einfügen
+- 🔸 **Optimierter Prompt:** "Installiere tiptap-footnotes (3 Nodes: Footnotes Container, FootnoteReference Inline-Marker, Footnote Einzeleintrag). Registriere im Editor. Toolbar-Button mit FootprintsIcon. CSS für Fußnoten-Bereich (border-top, smaller font, accent-colored reference numbers)."
+- 🎯 Autoren können Fußnoten im Editor einfügen
 - ✅ tiptap-footnotes@3.0.1, Toolbar-Button, CSS Styles
 
 ---
@@ -519,9 +519,9 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 54. X-04: Custom CSS pro Buch im Export
 
 - 🔹 **Original-Prompt:** "Setze X-04 um."
-- 🔸 **Optimierter Prompt:** "Der Scaffolder soll book.custom_css an die styles.css anhaengen (nach den Standard-Kapiteltyp-Styles). Füge custom_css zu book_data in der Export-Route hinzu. Autoren können per BookMetadataEditor CSS pro Buch definieren das im Export wirkt."
+- 🔸 **Optimierter Prompt:** "Der Scaffolder soll book.custom_css an die styles.css anhängen (nach den Standard-Kapiteltyp-Styles). Füge custom_css zu book_data in der Export-Route hinzu. Autoren können per BookMetadataEditor CSS pro Buch definieren das im Export wirkt."
 - 🎯 Autoren-spezifische Styles wirken im exportierten EPUB/PDF
-- ✅ custom_css in book_data, angehaengt an styles.css im Scaffolder
+- ✅ custom_css in book_data, angehängt an styles.css im Scaffolder
 
 ---
 
@@ -556,7 +556,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 - 🔹 **Original-Prompt:** "Setze S-04 um."
 - 🔸 **Optimierter Prompt:** "Erweitere tiptap_to_md.py um: Table (GFM Markdown Tabellen mit Header-Separator), TaskList (Checkboxen), imageFigure (mit Caption), underline/subscript/superscript/highlight (als HTML-Tags). Schreibe 7 Tests: task_list, table, underline, subscript, superscript, highlight, image_figure."
-- 🎯 Export unterstuetzt alle installierten TipTap-Extensions
+- 🎯 Export unterstützt alle installierten TipTap-Extensions
 - ✅ 7 neue Konvertierungen + 7 neue Tests (30 Export-Tests total, 109 gesamt)
 
 ---
@@ -582,7 +582,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 61. X-02: Import von Markdown-Dateien ohne Projektstruktur
 
 - 🔹 **Original-Prompt:** "Setze X-02 um."
-- 🔸 **Optimierter Prompt:** "Erweitere import-project Endpoint: 1) Einzelne .md Datei direkt als Buch+Kapitel importieren. 2) ZIP ohne write-book-template Struktur: Alle .md Dateien rekursiv als Kapitel importieren. Fallback wenn _find_project_root fehlschlaegt."
+- 🔸 **Optimierter Prompt:** "Erweitere import-project Endpoint: 1) Einzelne .md Datei direkt als Buch+Kapitel importieren. 2) ZIP ohne write-book-template Struktur: Alle .md Dateien rekursiv als Kapitel importieren. Fallback wenn _find_project_root fehlschlägt."
 - 🎯 Autoren können beliebige Markdown-Dateien importieren
 - ✅ Einzelne .md, ZIP mit .md Dateien, Titel aus H1 oder Dateiname
 
@@ -591,7 +591,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 62. T-04: Bild-Resize per Drag
 
 - 🔹 **Original-Prompt:** "Setze T-04 um."
-- 🔸 **Optimierter Prompt:** "Prüfen ob @pentestpad/tiptap-extension-figure bereits Resize-Handles hat. Ergebnis: Ja - eingebaute Resize-Dots an 4 Ecken, Alignment-Buttons, Caption-Toggle. Nur CSS-Anpassung nötig für Theme-Kompatibilitaet."
+- 🔸 **Optimierter Prompt:** "Prüfen ob @pentestpad/tiptap-extension-figure bereits Resize-Handles hat. Ergebnis: Ja - eingebaute Resize-Dots an 4 Ecken, Alignment-Buttons, Caption-Toggle. Nur CSS-Anpassung nötig für Theme-Kompatibilität."
 - 🎯 Bilder im Editor per Drag resizebar
 - ✅ Bereits eingebaut in Figure-Extension. CSS für Resize-Dots, Alignment, Caption-Controls an Theme angepasst.
 
@@ -606,11 +606,11 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - **Toolbar-Buttons:** 24
 - **ChapterTypes:** 14
 - **Neue Dateien:** useI18n.ts, useI18n.test.ts, setup.ts, 5 erweiterte i18n-YAMLs
-- **Hauptergebnisse (Session gesamt):** Plugin-ZIP-Installation, 7 Radix-Migrationen, Deployment-Haertung, vollstaendiger Import/Export mit Assets, TOC-Validierung, 15 TipTap-Extensions, interaktiver GetStarted-Wizard, Autorenprofil mit Pseudonymen, White-Label-Konfiguration, Auto-DB-Migration, i18n mit 5 Sprachen, Vitest Frontend-Tests, Export-Roundtrip verifiziert
+- **Hauptergebnisse (Session gesamt):** Plugin-ZIP-Installation, 7 Radix-Migrationen, Deployment-Härtung, vollständiger Import/Export mit Assets, TOC-Validierung, 15 TipTap-Extensions, interaktiver GetStarted-Wizard, Autorenprofil mit Pseudonymen, White-Label-Konfiguration, Auto-DB-Migration, i18n mit 5 Sprachen, Vitest Frontend-Tests, Export-Roundtrip verifiziert
 
-### Optimierungsvorschläge für zukuenftige Prompts
+### Optimierungsvorschläge für zukünftige Prompts
 1. **Spezifisch sein:** Statt "geht nicht" -> "figcaption wird in Monospace statt Body-Font angezeigt"
-2. **Kontext mitgeben:** "Das Imprint hat `<br>` Tags aber TipTap rendert keine Zeilenumbrueche"
+2. **Kontext mitgeben:** "Das Imprint hat `<br>` Tags aber TipTap rendert keine Zeilenumbrüche"
 3. **Akzeptanzkriterien:** "Exportiertes EPUB soll Bilder enthalten und nur ein TOC haben"
 4. **Tests einfordern:** "Schreibe Tests die verifizieren dass X, Y, Z"
 5. **Dateien referenzieren:** "In backup.py Zeile 350 wird der Content als Markdown gespeichert"

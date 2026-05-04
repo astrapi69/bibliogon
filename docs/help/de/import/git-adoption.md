@@ -10,7 +10,7 @@ Modi im Schritt 3 des Import-Assistenten:
   Repo über den Git-Sicherungs-Dialog anlegen.
 - **Nur Historie übernehmen**: das `.git/` (mit Historie) wird
   in das Uploads-Verzeichnis des Buches kopiert. Die Remote-URL
-  wird nicht uebernommen; du bindest bei Bedarf manuell eine
+  wird nicht übernommen; du bindest bei Bedarf manuell eine
   neue an.
 - **Historie + Remote übernehmen**: `.git/` wird kopiert UND
   die `origin`-Remote-URL aus der Quelle bleibt erhalten. Den
@@ -30,9 +30,9 @@ Sanitize-Stufe:
    geleert, gefolgt von `git gc --prune=now`, um unerreichbare
    Objekte (die Credential-Fragmente enthalten können) zu
    verwerfen.
-4. Eigene Hooks werden **nicht** uebernommen. Nur die
+4. Eigene Hooks werden **nicht** übernommen. Nur die
    Default-`*.sample`-Dateien wandern mit.
-5. Nicht-standardisierte Refs in `packed-refs` (ausserhalb von
+5. Nicht-standardisierte Refs in `packed-refs` (außerhalb von
    `refs/heads/`, `refs/tags/`, `refs/remotes/`) werden
    entfernt.
 
@@ -46,10 +46,10 @@ Festplatte. Alle Git-Backup-Endpoints (`commit`, `push`,
 `pull`, `status`, `log`, `merge`) funktionieren sofort.
 
 **Wichtig**: Dein erster Bibliogon-Commit nach der
-Uebernahme ueberschreibt die uebernommenen Working-Tree-
+Uebernahme ueberschreibt die übernommenen Working-Tree-
 Dateien. Bibliogon schreibt `manuscript/*.json` (kanonische
 TipTap-Struktur) und `config/metadata.yaml`. Die
-uebernommenen Commits bleiben in der Historie unverändert
+übernommenen Commits bleiben in der Historie unverändert
 erhalten; nur der Working-Tree ändert sich.
 
 ## Nachtraegliche Uebernahme (für Bücher, die vor diesem Feature importiert wurden)
@@ -81,9 +81,9 @@ vorhandene Repo zuerst über den Git-Sicherungs-Dialog.
 
 ## Grenzfaelle
 
-- **Shallow-Clone**: wird unverändert uebernommen. `push`
+- **Shallow-Clone**: wird unverändert übernommen. `push`
   könnte von manchen Remotes abgelehnt werden; per
-  `git fetch --unshallow` im Repo bei Bedarf aufloesen.
+  `git fetch --unshallow` im Repo bei Bedarf auflösen.
 - **Git-LFS-Pointer**: `.gitattributes` mit `filter=lfs`
   wird in den Sicherheitswarnungen angezeigt. LFS-Inhalte
   werden NICHT nachgeladen; Pointer-Dateien erscheinen in
@@ -91,6 +91,6 @@ vorhandene Repo zuerst über den Git-Sicherungs-Dialog.
 - **Submodule**: `.gitmodules` wird angezeigt.
   Submodul-Inhalte werden in diesem MVP nicht geladen.
 - **Beschaedigte Quelle**: `git fsck` läuft nach der
-  Sanitize-Stufe. Eine beschaedigte Quelle wird mit
+  Sanitize-Stufe. Eine beschädigte Quelle wird mit
   klarer Fehlermeldung abgelehnt; nichts wird in das
   Uploads-Verzeichnis des Buches geschrieben.

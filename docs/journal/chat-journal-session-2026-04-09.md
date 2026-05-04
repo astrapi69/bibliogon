@@ -88,7 +88,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   und setze ihn direkt um: app/services/backup/-Paket mit serializer,
   markdown_utils, asset_utils, archive_utils, backup_export, backup_import,
   project_import, markdown_import, smart_import. Router enthält nur noch
-  duenne Endpoints die delegieren. Maximalfunktionsgroesse <50 Zeilen,
+  dünne Endpoints die delegieren. Maximalfunktionsgroesse <50 Zeilen,
   jede Funktion einzeln testbar."
 - Ziel: God methods aus dem Backup-Router eliminieren, Geschaeftslogik
   in testbare Service-Module ziehen, Router auf Routing-Layer reduzieren.
@@ -124,7 +124,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
     Endpoints die jeweils 1-3 Zeilen Service-Aufruf enthalten.
   - Toter Code entfernt: `_remove_first_heading` (definiert aber
     nirgends aufgerufen).
-  - Laengste Funktion danach: `import_with_section_order` (38 LOC),
+  - Längste Funktion danach: `import_with_section_order` (38 LOC),
     `_import_project_root` (22 LOC Body) - alle unter dem 50-Zeilen-Limit.
   - Tests: `make test` komplett grün ohne Test-Anpassungen
     (87 backend, 135 plugin, 50 vitest), weil alle Tests via HTTP-Endpoint
@@ -172,7 +172,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
   - Inline `_html_to_markdown` mit verschachteltem `_MD(HTMLParser)`
     Klasse komplett entfernt; `_content_to_markdown` ruft jetzt
     `html_to_markdown` aus dem neuen Modul auf.
-  - Laengste Funktion danach: `scaffold_project` 17 LOC Body,
+  - Längste Funktion danach: `scaffold_project` 17 LOC Body,
     `_write_partitioned_chapters` 16 LOC, `_write_metadata` 18 LOC,
     `html_to_markdown` 5 LOC. Alle Parser-Handler in
     `_HtmlToMdParser` unter 15 LOC.
@@ -245,7 +245,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 - Ziel: (a) Dual-Save-Buttons-Bug fixen. (b) Pro-Buch Override für den
   Audiobook-Dateinamen.
 - Ergebnis (Bug):
-  - Ursache: `PluginCard` rendert Plugin-Settings in 3 Bloecken (Scalars,
+  - Ursache: `PluginCard` rendert Plugin-Settings in 3 Blöcken (Scalars,
     OrderedLists, Complex). Audiobook-Scalars laufen durch
     `AudiobookSettingsPanel` mit eigenem Save, aber der OrderedList-Block
     feuerte danach trotzdem fuer `skip_types` -> zweiter Save-Button.
@@ -757,20 +757,20 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 
 ## 2. ElevenLabs API-Key UI + persistente Audiobook-Ablage
 
-- Original-Prompt: User beschrieb zwei Probleme: (1) ElevenLabs API-Key nur via .env setzbar, (2) generierte Audiobook-Dateien gehen verloren wenn der User den Export-Dialog schliesst. Gewuenscht waren Settings-UI mit Test-Button + persistente Ablage + Metadaten-Tab Sektion mit Downloads + Backup-Integration + Regeneration-Warnung + i18n.
-- Optimierter Prompt: derselbe Inhalt, aber Architektur-Entscheidungen vorab geklaert (Storage-Pfad: `uploads/{book_id}/audiobook/`, API-Key in `audiobook.yaml` plain, i18n nur DE+EN, Confirm-Dialog plus Plugin-Setting `overwrite_existing` wobei der Frontend-Confirm trotzdem zusaetzlich kommt).
+- Original-Prompt: User beschrieb zwei Probleme: (1) ElevenLabs API-Key nur via .env setzbar, (2) generierte Audiobook-Dateien gehen verloren wenn der User den Export-Dialog schließt. Gewuenscht waren Settings-UI mit Test-Button + persistente Ablage + Metadaten-Tab Sektion mit Downloads + Backup-Integration + Regeneration-Warnung + i18n.
+- Optimierter Prompt: derselbe Inhalt, aber Architektur-Entscheidungen vorab geklaert (Storage-Pfad: `uploads/{book_id}/audiobook/`, API-Key in `audiobook.yaml` plain, i18n nur DE+EN, Confirm-Dialog plus Plugin-Setting `overwrite_existing` wobei der Frontend-Confirm trotzdem zusätzlich kommt).
 - Ziel: Datenverlust nach Audiobook-Export verhindern, ElevenLabs ohne .env-Editing nutzbar machen.
 - Ergebnis:
   - Backend: neues Modul `bibliogon_audiobook/audiobook_storage.py` (persist/load/delete + Path-Traversal-Schutz). `tts_engine.set_elevenlabs_api_key()` als process-weite Override mit Env-Var-Fallback. Plugin-`activate()` schiebt den YAML-Key in die Engine.
   - Neuer Backend-Core-Router `backend/app/routers/audiobook.py` mit Endpoints `GET/POST/DELETE /api/audiobook/config/elevenlabs` und `GET/DELETE /api/books/{id}/audiobook` plus `/merged`, `/chapters/{name}`, `/zip`. WICHTIG: liegen im Core, nicht im premium-Plugin, damit User mit abgelaufener Lizenz ihre bereits generierten Dateien noch downloaden können.
-  - `_run_audiobook_job` ruft `audiobook_storage.persist_audiobook()` nach erfolgreichem `bundle_audiobook_output`, in `try/except` damit Job nicht kippt wenn Persist fehlschlaegt.
-  - `export_async` checkt `has_audiobook(book_id)` und antwortet mit 409 + `{code: "audiobook_exists", existing: {...}}` ausser `confirm_overwrite=true` oder Plugin-Setting `overwrite_existing` ist on.
+  - `_run_audiobook_job` ruft `audiobook_storage.persist_audiobook()` nach erfolgreichem `bundle_audiobook_output`, in `try/except` damit Job nicht kippt wenn Persist fehlschlägt.
+  - `export_async` checkt `has_audiobook(book_id)` und antwortet mit 409 + `{code: "audiobook_exists", existing: {...}}` außer `confirm_overwrite=true` oder Plugin-Setting `overwrite_existing` ist on.
   - `audiobook.yaml`: `elevenlabs.api_key` plus `settings.overwrite_existing: false`.
   - Backup: `GET /api/backup/export?include_audiobook=true` bundelt `uploads/{id}/audiobook/`.
   - Tests: 6 neue Storage-Unit-Tests im Plugin, 13 neue Integration-Tests im Backend (Persistenz, Endpoints, ElevenLabs config mit gefaktem httpx, Backup, Regeneration warning).
   - Diagnose-Detour: erste Implementation legte die Endpoints in den Audiobook-Plugin-Router; Tests scheiterten mit 404 weil das Plugin premium ist und ohne Lizenz nicht geladen wird. Lösung: Endpoints in Backend-Core verschoben.
-  - Frontend: `ApiError.detailBody` für strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` faengt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schließen ein "Dateien sind unter Metadaten > Audiobook verfügbar"-Toast.
-  - i18n: vollstaendige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurück (User wollte explizit nur DE+EN).
+  - Frontend: `ApiError.detailBody` für strukturierte 4xx-Bodies, neue API-Client-Sections `audiobook` + `bookAudiobook`, `ElevenLabsKeyPanel` in Settings (Eye-Toggle, Test, Save, Remove), `AudiobookDownloads` Sub-Komponente im Metadaten-Tab (Empty-State, Liste, Delete-Confirm). `ExportDialog._startAudiobookExport(confirmOverwrite=false)` fängt 409 + audiobook_exists und retried nach Confirm. `AudioExportProgress` zeigt nach Abschluss + Schließen ein "Dateien sind unter Metadaten > Audiobook verfügbar"-Toast.
+  - i18n: vollständige neue Block in DE und EN (api_keys, elevenlabs_*, downloads_*, regen_warning, delete_confirm, audio_progress.saved_hint). Andere 6 Sprachen fallen via Fallback zurück (User wollte explizit nur DE+EN).
 - Commit: 263715e
 
 ---
@@ -778,13 +778,13 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 3. Audiobook Progress: Prefix-Format und Hintergrund-Fortschritt
 
 - Original-Prompt: User listete vier Dinge: (1) Log-Format umbauen von "Kapitel 1: Vorwort" zu "01 | Vorwort", (2) Hintergrund-Fortschritt nach Minimierung als Badge mit Popover, (3) globaler Store für den Job, (4) Tests in 8 Sprachen.
-- Optimierter Prompt: derselbe Inhalt, mit ausdruecklichem Hinweis "die Nummer ist reine Anzeige-Logik, TTS-Engine bekommt weiterhin nur den Titel".
+- Optimierter Prompt: derselbe Inhalt, mit ausdrücklichem Hinweis "die Nummer ist reine Anzeige-Logik, TTS-Engine bekommt weiterhin nur den Titel".
 - Ziel: kein Datenverlust beim Minimieren, sauberes Format ohne 'Kapitel:' Verwirrung, F5-Recovery.
 - Ergebnis:
   - Backend: `generate_audiobook` misst `time.monotonic()` zwischen `chapter_start` und `chapter_done`, schickt das Ergebnis als `duration_seconds` (auf 0.1 gerundet) im `chapter_done`-Event mit. Test in `test_generator.py` hält das Feld fest.
-  - `AudiobookJobContext` komplett umgebaut: SSE-Listener lebt jetzt im Provider, nicht mehr in der Modal-Komponente. Phase, Events, current/total/currentTitle, downloadUrl, chapterFiles - alles im Context. `start(jobId, bookId, bookTitle)` ruft `openStream(jobId)` auf, `clear()` schliesst es. localStorage-Persistenz unter `bibliogon.audiobook_job` plus Reload-Recovery via `useEffect` beim Mount.
+  - `AudiobookJobContext` komplett umgebaut: SSE-Listener lebt jetzt im Provider, nicht mehr in der Modal-Komponente. Phase, Events, current/total/currentTitle, downloadUrl, chapterFiles - alles im Context. `start(jobId, bookId, bookTitle)` ruft `openStream(jobId)` auf, `clear()` schließt es. localStorage-Persistenz unter `bibliogon.audiobook_job` plus Reload-Recovery via `useEffect` beim Mount.
   - `AudioExportProgress` ist jetzt ein reiner Render der Context-State. Eigener `EventSource` weg. Format-Helper `formatChapterPrefix(index, total)` baut "01" oder "003"; `eventLabel` rendert "01 | Vorwort generiert..." statt "Kapitel 1: Vorwort". `chapter_done` zeigt die Dauer mit "(12.3s)".
-  - `AudioExportGate` rebuild: kein nackter Loader-Button mehr, sondern ein klickbarer Badge der bei laufendem Job ein Popover öffnet (Progress-Bar, Kapitel-Counter, "Aktuell: 03 | Titel", "Dialog öffnen", "Abbrechen"). Bei Erfolg wechselt der Badge auf grün, ein Toast erscheint und nach 10s loescht ein Timer den Job. Klick auf den fertigen Badge navigiert zu `/book/{id}?view=metadata`.
+  - `AudioExportGate` rebuild: kein nackter Loader-Button mehr, sondern ein klickbarer Badge der bei laufendem Job ein Popover öffnet (Progress-Bar, Kapitel-Counter, "Aktuell: 03 | Titel", "Dialog öffnen", "Abbrechen"). Bei Erfolg wechselt der Badge auf grün, ein Toast erscheint und nach 10s löscht ein Timer den Job. Klick auf den fertigen Badge navigiert zu `/book/{id}?view=metadata`.
   - `BookEditor` liest `?view=metadata` aus `useSearchParams` und synchronisiert mit `_setShowMetadata`, sodass das Badge dort tief verlinken kann.
   - i18n: 9 neue Strings (event_generating, popover_title, popover_chapter_count, popover_current, popover_open, badge_done, badge_failed, completion_toast, completed_hint) in allen 8 Sprachen (DE, EN, ES, FR, EL, PT, TR, JA).
   - Tests: 1 neuer pytest-Test (`duration_seconds` im `chapter_done`-Payload), 8 neue Vitest-Tests (formatChapterPrefix Padding, eventLabel format, Regression "Kapitel X:" darf nirgends auftauchen).
@@ -796,7 +796,7 @@ Dokumentation aller Prompts, Optimierungsvorschläge und Ergebnisse.
 ## 4. Bug: Stimmen-Dropdown leakt Voices fremder Engines
 
 - Original-Prompt: "Dropdown zeigt ALLE Stimmen statt nur die passenden". User wollte Diagnose-Schritte und Fix-Vorschlag durchgespielt haben.
-- Optimierter Prompt: derselbe Inhalt aber mit ausdruecklichem Fokus auf den engineabhaengigen Fallback im Frontend (was sich als Wurzel herausstellte).
+- Optimierter Prompt: derselbe Inhalt aber mit ausdrücklichem Fokus auf den engineabhaengigen Fallback im Frontend (was sich als Wurzel herausstellte).
 - Diagnose: Der Backend-Filter (`voice_store.get_voices`) und der Plugin-Live-Endpoint (`EdgeTTSEngine.list_voices`) filtern korrekt. Die Leak-Quelle war im Frontend in `BookMetadataEditor.tsx:338` und `Settings.tsx:664`: bei leerem API-Result fiel der Code auf `EDGE_TTS_VOICES[lang]` zurück - eine hardcoded Liste mit 16+ Edge-DE-Voices, unabhängig davon welche Engine der User gewählt hatte. Wer Google TTS oder ElevenLabs auswaehlte, sah trotzdem die Edge-DE-Voices.
 - Fix:
   - Neuer Helper `api.audiobook.listVoices(engine, language)` im API-Client. Versucht erst `/api/voices` (Cache), dann `/api/audiobook/voices` (Live-Plugin), gibt sonst `[]` zurück. KEIN engine-agnostischer Fallback mehr.

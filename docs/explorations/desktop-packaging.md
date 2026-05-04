@@ -11,7 +11,7 @@ Bibliogon currently ships as:
 
 Both require technical knowledge. The Medium article acknowledged
 this directly: "Docker-Installation und Plugin-Verwaltung erfordern
-Grundverstaendnis". This is a real barrier for the self-publishing
+Grundverständnis". This is a real barrier for the self-publishing
 target audience, who are writers, not developers.
 
 A desktop app distribution would lower the barrier significantly.

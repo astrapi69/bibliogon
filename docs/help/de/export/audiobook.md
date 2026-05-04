@@ -22,7 +22,7 @@ Die Engine lässt sich in den Einstellungen unter Audiobook global konfigurieren
 
 Alle audio-spezifischen Einstellungen leben seit v0.11 auf dem Buch selbst, nicht als globale Plugin-Settings. Im **BookEditor > Metadaten > Audiobook**-Tab kannst du pro Buch festlegen:
 
-- Engine, Stimme, Geschwindigkeit, Merge-Modus, Dateiname-Praefix
+- Engine, Stimme, Geschwindigkeit, Merge-Modus, Dateiname-Präfix
 - **Bestehende Dateien überschreiben**: Wenn aktiviert, wird bei der nächsten Generierung der Content-Hash-Cache ignoriert und jedes Kapitel neu erzeugt. Default aus.
 - **Kapiteltypen überspringen**: Checkbox-Liste aller 26 ChapterTypes, sortiert nach "Im Buch vorhanden" und "Weitere Typen". Markierte Typen werden beim Export nicht vertont. Marketing-Typen (also_by_author, excerpt, call_to_action) sind per Default gesetzt.
 - **Kapitel-Nummer ansagen**: Wenn aktiviert, sagt die TTS vor jedem Kapitel ein "Erstes Kapitel", "Zweites Kapitel" usw. an. Default aus.

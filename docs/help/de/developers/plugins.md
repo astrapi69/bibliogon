@@ -292,13 +292,13 @@ Beginne mit dem Help-Plugin als Vorlage, dann ms-tools für Hook-Implementierung
 
 ## Import-Plugin-Muster (aus PGS-01)
 
-Wenn ein Plugin den Import eines neuen Formats oder einer neuen *Quelle* unterstuetzen soll, ist der Core-Import-Orchestrator (`backend/app/import_plugins/`) der Integrationspunkt. Das erste externe Import-Plugin (`plugin-git-sync`, PGS-01) brachte vier Architekturmuster hervor, die kuenftige Import-Plugins kennen sollten.
+Wenn ein Plugin den Import eines neuen Formats oder einer neuen *Quelle* unterstuetzen soll, ist der Core-Import-Orchestrator (`backend/app/import_plugins/`) der Integrationspunkt. Das erste externe Import-Plugin (`plugin-git-sync`, PGS-01) brachte vier Architekturmuster hervor, die künftige Import-Plugins kennen sollten.
 
 ### Muster 1: Quell-Adapter statt Format-Neuimplementierung
 
 **Problem.** Dein Plugin soll Bücher aus einer neuen *Quelle* importieren (Git-URL, Cloud-Link, Gist, ...), aber das zugrundeliegende *Format* hat bereits einen Handler im Core oder in einem anderen Plugin. Den Parser zu duplizieren erzeugt Code, der auseinanderdriftet.
 
-**Lösung.** Dein Plugin wird ein **Quell-Adapter**: es holt/bereitet die Daten in einen Dateisystem-Pfad und uebergibt dann an den bestehenden Format-Handler. Das Format nicht noch einmal parsen.
+**Lösung.** Dein Plugin wird ein **Quell-Adapter**: es holt/bereitet die Daten in einen Dateisystem-Pfad und übergibt dann an den bestehenden Format-Handler. Das Format nicht noch einmal parsen.
 
 **PGS-01 Beispiel.** `GitImportHandler.clone(url, target_dir)` klont in das Staging-Verzeichnis des Orchestrators und gibt den Projekt-Root-Pfad zurück. Der Endpoint ruft danach `find_handler(staged_path)` auf, das den bestehenden `WbtImportHandler` (Core, aus CIO-02) greift. Das Plugin parst weder `config/metadata.yaml` noch läuft es durch `manuscript/` — das macht `WbtImportHandler`.
 
@@ -335,9 +335,9 @@ bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
 
 `poetry install` im Plugin-Verzeichnis bindet das andere Plugin in die venv. Imports funktionieren wie bei einem PyPI-Paket.
 
-**PGS-01 Beispiel.** `plugin-git-sync` deklariert `bibliogon-plugin-export` als Path-Dep. Phase 1 nutzt die Abhängigkeit zur Laufzeit noch nicht — sie ist Geruest für PGS-02 (Export-to-Repo), das per `from bibliogon_export.tiptap_to_md import tiptap_to_markdown` Bücher zurück ins Git-Repo serialisieren wird. Die Deklaration kommt frueh, damit die Architektur sichtbar ist, bevor der Code folgt.
+**PGS-01 Beispiel.** `plugin-git-sync` deklariert `bibliogon-plugin-export` als Path-Dep. Phase 1 nutzt die Abhängigkeit zur Laufzeit noch nicht — sie ist Gerüst für PGS-02 (Export-to-Repo), das per `from bibliogon_export.tiptap_to_md import tiptap_to_markdown` Bücher zurück ins Git-Repo serialisieren wird. Die Deklaration kommt frueh, damit die Architektur sichtbar ist, bevor der Code folgt.
 
-**Beim PyPI-Release.** Ein Path-Dep loest bei `pip install bibliogon-plugin-git-sync` ausserhalb des Monorepos nicht auf. Der Publish-Schritt muss ihn auf einen Versions-Pin umstellen:
+**Beim PyPI-Release.** Ein Path-Dep löst bei `pip install bibliogon-plugin-git-sync` außerhalb des Monorepos nicht auf. Der Publish-Schritt muss ihn auf einen Versions-Pin umstellen:
 
 ```toml
 bibliogon-plugin-export = ">=1.0.0,<2.0.0"
@@ -382,13 +382,13 @@ def register_git_handler(handler: object) -> None:
 
 **Timing.** PluginForge ruft `activate()` während `manager.discover_plugins()` im App-Lifespan auf, vor dem ersten HTTP-Request. Wenn eine Route feuert, sind alle Registrierungen bereits passiert.
 
-**Anti-Muster.** Side-Effect-Imports auf Modul-Ebene (`register_remote_handler(...)` ganz unten in `plugin.py`) funktionieren in Produktion, brechen aber eigenstaendige Testlaeufe und machen Import-Ordering fragil. Immer über `activate()`.
+**Anti-Muster.** Side-Effect-Imports auf Modul-Ebene (`register_remote_handler(...)` ganz unten in `plugin.py`) funktionieren in Produktion, brechen aber eigenständige Testlaeufe und machen Import-Ordering fragil. Immer über `activate()`.
 
 ---
 
 ## Dein erstes Plugin schreiben (PGS-01 als Vorlage)
 
-Schritt-für-Schritt mit der Shape von PGS-01. Endzustand: funktionsfaehiges Plugin-Geruest zum Ausbauen.
+Schritt-für-Schritt mit der Shape von PGS-01. Endzustand: funktionsfaehiges Plugin-Gerüst zum Ausbauen.
 
 ### Schritt 1: Entscheide, was dein Plugin tut
 
@@ -441,7 +441,7 @@ Gib den Pfad zurück, durch den der Orchestrator dispatchen soll (meist ein Unte
 
 ### Schritt 4: Activation verdrahten
 
-Siehe englische Version oben (Code identisch). Deferred Imports sind tragend. Im Funktionskoerper halten.
+Siehe englische Version oben (Code identisch). Deferred Imports sind tragend. Im Funktionskörper halten.
 
 ### Schritt 5: Tests hinzufügen
 
@@ -472,13 +472,13 @@ plugins:
 - `backend/config/plugins/help.yaml`: mindestens einen FAQ-Eintrag ergänzen, der Nutzer auf das neue Feature hinweist.
 - `Makefile`: `test-plugin-<name>`-Target hinzufügen und in `test-plugins`-Liste aufnehmen.
 
-### Schritt 8: Haeufige Fallstricke
+### Schritt 8: Häufige Fallstricke
 
 - **Handler zur Laufzeit nicht registriert.** Plugin nicht in `app.yaml`-enabled-Liste. PluginForge hat den Entry-Point erkannt, aber Activation übersprungen.
 - **Plugin läuft lokal, fällt in CI aus.** Path-Dep fehlt in `backend/pyproject.toml`. Die Backend-venv ist die autoritative Umgebung; CI installiert genau das, was dort deklariert ist.
-- **Import-Zyklus beim Plugin-Load.** Etwas in `plugin.py` auf Modul-Ebene importiert `app.*`. In `activate()` oder einen anderen Funktionskoerper verschieben.
+- **Import-Zyklus beim Plugin-Load.** Etwas in `plugin.py` auf Modul-Ebene importiert `app.*`. In `activate()` oder einen anderen Funktionskörper verschieben.
 - **Einzeltests grün, volle Suite mit RecursionError rot.** Per-Test-`TestClient(app)`-Fixtures akkumulieren Plugin-Route-State am geteilten FastAPI-Singleton. `scope="module"` (siehe `.claude/rules/lessons-learned.md`).
-- **Plugin-zu-Plugin-Dep loest nicht auf.** Relativer `path = "../..."` in deiner `pyproject.toml` passt nicht zum tatsaechlichen Layout. Korrigieren oder `poetry lock` laufen lassen.
+- **Plugin-zu-Plugin-Dep löst nicht auf.** Relativer `path = "../..."` in deiner `pyproject.toml` passt nicht zum tatsächlichen Layout. Korrigieren oder `poetry lock` laufen lassen.
 - **`can_handle` des Handlers feuert nie.** Registrierungs-Reihenfolge prüfen: first-registered wins in `find_handler()`. Wenn ein frueherer Handler alles greift, ist deiner unerreichbar.
 
 ---
@@ -487,9 +487,9 @@ plugins:
 
 Konkretes Beispiel für alles oben: PGS-01-Commits in Reihenfolge lesen — jeder ist ein einzelner atomarer Schritt:
 
-| Commit | Zustaendigkeit |
+| Commit | Zuständigkeit |
 |--------|----------------|
-| `c93d496` | Plugin-Geruest + pyproject + Backend-Path-Dep |
+| `c93d496` | Plugin-Gerüst + pyproject + Backend-Path-Dep |
 | `4fb9e99` | Frontend-Input + API-Client + i18n |
 | `c14c8c7` | Core-Registry + Endpoint (noch kein Plugin-Verhalten) |
 | `a3616f3` | Handler-Implementierung + Plugin-Tests |
@@ -506,7 +506,7 @@ PGS-01 brachte Bücher *in* Bibliogon hinein. Phasen 2-5 schließen den Round-Tr
 
 ### Muster 5: Per-Buch-Lock für Cross-Subsystem-Operationen
 
-**Problem.** Klick auf "Commit ueberall" faechert den Aufruf in zwei Subsysteme auf (Core-Git + plugin-git-sync). Ohne Koordination racen zwei gleichzeitige Faechrungen (alter Dialog in anderem Tab, Re-Click während langsamem ersten Versuch) am Working Tree und am `last_committed_at`-Cursor.
+**Problem.** Klick auf "Commit überall" faechert den Aufruf in zwei Subsysteme auf (Core-Git + plugin-git-sync). Ohne Koordination racen zwei gleichzeitige Faechrungen (alter Dialog in anderem Tab, Re-Click während langsamem ersten Versuch) am Working Tree und am `last_committed_at`-Cursor.
 
 **Lösung.** Schluesselter Lock auf `book_id` mit kurzem Timeout. PGS-05 liefert `app.services.git_sync_lock.book_commit_lock(book_id, timeout=30)`:
 
@@ -526,7 +526,7 @@ Timeout mappt im Router auf HTTP 503, nie 500. Der Nutzer sieht "anderer Commit 
 
 ### Muster 6: Weiche Per-Subsystem-Fehleraggregation
 
-**Problem.** Wenn Core-Git + plugin-git-sync gefaechert werden, ist Teil-Fehlschlag die Norm: eine Seite gelingt, die andere scheitert an Auth, Netzwerk oder "nichts zu committen". Ein hartes `raise HTTPException(500)` verliert den Erfolg und laesst den Nutzer mit generischem Fehler stehen.
+**Problem.** Wenn Core-Git + plugin-git-sync gefaechert werden, ist Teil-Fehlschlag die Norm: eine Seite gelingt, die andere scheitert an Auth, Netzwerk oder "nichts zu committen". Ein hartes `raise HTTPException(500)` verliert den Erfolg und lässt den Nutzer mit generischem Fehler stehen.
 
 **Lösung.** Per-Subsystem-Resultat mit stabilem Status-Enum:
 
@@ -570,7 +570,7 @@ Nach Return ist die URL auf Platte wieder original. Regression-Test (`test_commi
 
 ### Muster 8: Fehlertolerante Lazy-Imports für Side-Effects
 
-**Problem.** Dein Plugin produziert ein Primaer-Artefakt (z.B. einen Commit) und eine "nice to have"-Begleitdatei (z.B. Markdown-Sidefile neben dem kanonischen JSON für lesbare Git-Diffs). Der Begleitschreiber haengt via Path-Dep an einem Konverter eines anderen Plugins. Wenn der Begleitschreiber bricht, muss das Primaer-Artefakt trotzdem rausgehen.
+**Problem.** Dein Plugin produziert ein Primär-Artefakt (z.B. einen Commit) und eine "nice to have"-Begleitdatei (z.B. Markdown-Sidefile neben dem kanonischen JSON für lesbare Git-Diffs). Der Begleitschreiber hängt via Path-Dep an einem Konverter eines anderen Plugins. Wenn der Begleitschreiber bricht, muss das Primär-Artefakt trotzdem rausgehen.
 
 **Lösung.** Helper innerhalb `try/except` lazy importieren, im Fehlerfall loggen und weitermachen. PGS-05s Markdown-Sidefile-Emitter:
 
@@ -591,19 +591,19 @@ Der Commit landet trotzdem; das Sidefile vielleicht nicht. Naechster Commit vers
 
 **Wann nutzen.** Immer wenn du ein nicht-kanonisches Begleit-Artefakt produzierst. Wenn das Begleit-Artefakt das einzige Artefakt ist (z.B. EPUB-Output des Export-Plugins), passt das Pattern nicht — Fehler müssen hart hochpoppen.
 
-**Anti-Pattern.** Eager-Import des Helpers oben im Plugin-Modul: ein zukuenftiger Refactor des Helper-Plugins bricht die Lade-Discovery *deines* Plugins, obwohl deine Primaer-Arbeit nichts damit zu tun hat.
+**Anti-Pattern.** Eager-Import des Helpers oben im Plugin-Modul: ein zukünftiger Refactor des Helper-Plugins bricht die Lade-Discovery *deines* Plugins, obwohl deine Primär-Arbeit nichts damit zu tun hat.
 
 ---
 
 ## Three-Way-Diff-Patterns (aus PGS-03 + PGS-03-FU-01)
 
-Wenn dein Plugin Inhalte aus einer externen Quelle re-importiert, die der Nutzer auch lokal editiert hat, musst du den Diff so aufbereiten, dass der Nutzer aufloesen kann. PGS-03 lieferte einen Three-Way-Diff (base / local / remote) über Kapitel; die Patterns generalisieren.
+Wenn dein Plugin Inhalte aus einer externen Quelle re-importiert, die der Nutzer auch lokal editiert hat, musst du den Diff so aufbereiten, dass der Nutzer auflösen kann. PGS-03 lieferte einen Three-Way-Diff (base / local / remote) über Kapitel; die Patterns generalisieren.
 
 ### Muster 9: Git-Refs ohne Working-Tree-Checkout lesen
 
 **Problem.** Base-vs-Remote-Diff erfordert das Lesen von Dateiinhalt an ZWEI Commits. Naives `git checkout <ref>` wechselt den Working Tree und bricht parallele Commit-to-Repo-Flows.
 
-**Lösung.** `git ls-tree -r --name-only <commit> <prefix>` + `git show <commit>:<path>` sind read-only und beruehren den Working Tree nie. PGS-03s `_read_wbt_at_ref(clone_path, ref)`:
+**Lösung.** `git ls-tree -r --name-only <commit> <prefix>` + `git show <commit>:<path>` sind read-only und berühren den Working Tree nie. PGS-03s `_read_wbt_at_ref(clone_path, ref)`:
 
 ```python
 commit = repo.commit(ref)
@@ -614,20 +614,20 @@ for path in tree:
         # ...
 ```
 
-Ref erst zu Commit aufloesen, dann sind die `show`-Aufrufe deterministisch, auch wenn der Branch unter dir wandert.
+Ref erst zu Commit auflösen, dann sind die `show`-Aufrufe deterministisch, auch wenn der Branch unter dir wandert.
 
 **Wann nutzen.** Immer wenn du Inhalt an mehreren Refs in derselben logischen Operation brauchst. Working Tree als exklusiv für Commit-to-Repo / Merge / Checkout behandeln — nie für Read-Only-Inspektion.
 
 ### Muster 10: Reine Klassifikation + seiteneffektige Anwendung
 
-**Problem.** Ein Diff hat zwei Verantwortungen: herausfinden *was sich geändert hat* (Per-Kapitel-Klassifikation) und *Nutzer-Aufloesung anwenden* (DB mutieren). Vermischen ergibt eine 200-Zeilen-Funktion, untestbar ohne reales Git-Repo + DB.
+**Problem.** Ein Diff hat zwei Verantwortungen: herausfinden *was sich geändert hat* (Per-Kapitel-Klassifikation) und *Nutzer-Auflösung anwenden* (DB mutieren). Vermischen ergibt eine 200-Zeilen-Funktion, untestbar ohne reales Git-Repo + DB.
 
 **Lösung.** Zwei getrennte Funktionen:
 
 - `_classify(base, local, remote) -> list[ChapterDiff]`: rein. Drei dicts identity → content rein, Liste von Klassifikationen raus. Kein Git, keine DB. Unit-testbar aus In-Memory-dicts.
 - `apply_resolutions(db, *, book_id, resolutions)`: seiteneffektig. Mutiert DB nach Per-Kapitel-Wahl und bumpt den Cursor.
 
-`diff_book(db, book_id)` ist der duenne Glue, der Inputs liest (via Pattern 9) und in `_classify` einspeist.
+`diff_book(db, book_id)` ist der dünne Glue, der Inputs liest (via Pattern 9) und in `_classify` einspeist.
 
 **Wann nutzen.** Jede nicht-triviale Entscheidung, die in einer DB-Mutation endet. Die Klassifikations-Haelfte verdient ~10 eigene Unit-Tests für Edge-Cases (`unchanged`, beidseitig-entfernt, identische-Edits-beidseitig, Blank-Line-only-Differenzen, ...). Dieselbe Coverage über End-to-End-Fixtures zu erreichen ist 5x langsamer und 10x sproeder.
 
@@ -647,9 +647,9 @@ def _collapse_renames(diffs: list[ChapterDiff]) -> list[ChapterDiff]:
     # ungepaarte Zeilen unveraendert lassen
 ```
 
-**Nur strikte Body-Matches.** Near-Misses (z.B. kleine Edits im Body während des Renames) bleiben als unabhaengige removed + added stehen, sodass der Nutzer den echten Diff sieht. Fuzzy-Schwellen erzeugen False Positives, die unabhaengige Kapitel falsch paaren.
+**Nur strikte Body-Matches.** Near-Misses (z.B. kleine Edits im Body während des Renames) bleiben als unabhängige removed + added stehen, sodass der Nutzer den echten Diff sieht. Fuzzy-Schwellen erzeugen False Positives, die unabhängige Kapitel falsch paaren.
 
-**Cross-Side-Pairing verboten.** Nie `remote_removed` mit `local_added` paaren, auch bei identischem Body — das ist Zufall, kein Rename, und es als solchen zu behandeln würde unabhaengige Arbeit stillschweigend mergen.
+**Cross-Side-Pairing verboten.** Nie `remote_removed` mit `local_added` paaren, auch bei identischem Body — das ist Zufall, kein Rename, und es als solchen zu behandeln würde unabhängige Arbeit stillschweigend mergen.
 
 **Wann nutzen.** Jede "Rename"-Detection über einem Per-Item-Klassifizierer. Klassifizierer dumm halten, Post-Process gezielt.
 
@@ -694,11 +694,11 @@ Router echot `skipped[]` im Response (default `[]` bei sauberen Imports), Fronte
 
 Jede Phase landete in 1-3 atomaren Commits. In Reihenfolge neben dieser Anleitung lesen:
 
-| Phase | Zustaendigkeit | Commits |
+| Phase | Zuständigkeit | Commits |
 |-------|----------------|---------|
 | PGS-02 | Commit-to-Repo + Push (Overwrite-MVP) | `aa25d74` (Backend) + `782490e` (Frontend) |
 | PGS-02-FU-01 | Per-Buch-PAT shared across Subsysteme | `32137bb` |
-| PGS-03 | Three-Way-Diff + Per-Kapitel-Aufloesung | `c87b7dd` (Backend) + `1338d87` (Frontend) |
+| PGS-03 | Three-Way-Diff + Per-Kapitel-Auflösung | `c87b7dd` (Backend) + `1338d87` (Frontend) |
 | PGS-03-FU-01 | mark_conflict + Rename-Detection | `819e571` + `5bfd76a` + `e58d9e1` |
 | PGS-04 | Translation-Group Multi-Branch-Import | `4aa7153` + `9c8eee5` |
 | PGS-04-FU-01 | Skipped-Branch-Surface + reusable Panel | `06c7c1b` + `75046b9` |

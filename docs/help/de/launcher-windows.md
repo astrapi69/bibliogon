@@ -1,8 +1,8 @@
 # Windows-Launcher
 
-Der Windows-Launcher ist eine kleine `bibliogon-launcher.exe`, die Bibliogon per Doppelklick startet: kein Terminal, keine `docker compose`-Kommandos. Docker Desktop laesst die App weiterhin laufen, der Launcher startet und stoppt sie nur für dich.
+Der Windows-Launcher ist eine kleine `bibliogon-launcher.exe`, die Bibliogon per Doppelklick startet: kein Terminal, keine `docker compose`-Kommandos. Docker Desktop lässt die App weiterhin laufen, der Launcher startet und stoppt sie nur für dich.
 
-> **Wichtig: der Launcher ist kein Installer.** Er setzt voraus, dass Bibliogon bereits auf deinem Rechner installiert ist (Schritte 1 und 2 unten). Wenn du nur die `.exe` herunterlaedst und sie auf einem frischen Rechner startest, erklaert sie dir, dass Bibliogon zuerst installiert werden muss, und beendet sich. Einen "Ein-Klick-alles-installieren"-Weg gibt es heute nicht; das ist als separater zukuenftiger Punkt (D-05) erfasst und haengt von Nutzer-Feedback ab.
+> **Wichtig: der Launcher ist kein Installer.** Er setzt voraus, dass Bibliogon bereits auf deinem Rechner installiert ist (Schritte 1 und 2 unten). Wenn du nur die `.exe` herunterlaedst und sie auf einem frischen Rechner startest, erklärt sie dir, dass Bibliogon zuerst installiert werden muss, und beendet sich. Einen "Ein-Klick-alles-installieren"-Weg gibt es heute nicht; das ist als separater zukünftiger Punkt (D-05) erfasst und hängt von Nutzer-Feedback ab.
 
 Für macOS oder Linux siehe [macOS-Launcher](launcher-macos.md) / [Linux-Launcher](launcher-linux.md). Das Gesamtbild über alle drei Plattformen hinweg: [Installations-Übersicht](installation.md).
 
@@ -75,20 +75,20 @@ Erneuter Doppelklick auf den Launcher. Wenn Bibliogon bereits läuft (z.B. weil 
 Docker Desktop aus dem Startmenue öffnen. Warten, bis das Wal-Symbol in der Taskleiste ruhig steht (nicht animiert). Dann im Launcher-Dialog auf Wiederholen klicken.
 
 **"Bibliogon-Installation nicht gefunden"**
-Der Launcher findet `docker-compose.prod.yml` nicht an der Standard- oder konfigurierten Stelle. Mit OK bestätigen und den Ordner auswaehlen, in dem du Bibliogon geklont oder entpackt hast. Dieser Ordner enthält typischerweise `README.md`, `Makefile` und `docker-compose.prod.yml`.
+Der Launcher findet `docker-compose.prod.yml` nicht an der Standard- oder konfigurierten Stelle. Mit OK bestätigen und den Ordner auswählen, in dem du Bibliogon geklont oder entpackt hast. Dieser Ordner enthält typischerweise `README.md`, `Makefile` und `docker-compose.prod.yml`.
 
 **"Port 7880 wird bereits verwendet"**
 Ein anderes Programm belegt den Bibliogon-Port. Entweder das andere Programm stoppen oder in deinem Bibliogon-Ordner die Datei `.env` bearbeiten und `BIBLIOGON_PORT` auf einen anderen Wert setzen (z.B. `7881`), dann den Launcher erneut starten.
 
 **"Bibliogon ist nicht rechtzeitig gestartet"**
-Der allererste Start einer frischen Installation muss Docker-Images bauen und kann mehrere Minuten dauern. Auf Wiederholen klicken wartet weitere 60 Sekunden. Wenn es weiterhin fehlschlaegt, die letzten Log-Zeilen im Dialog prüfen und in Docker Desktops Container-Ansicht nachsehen.
+Der allererste Start einer frischen Installation muss Docker-Images bauen und kann mehrere Minuten dauern. Auf Wiederholen klicken wartet weitere 60 Sekunden. Wenn es weiterhin fehlschlägt, die letzten Log-Zeilen im Dialog prüfen und in Docker Desktops Container-Ansicht nachsehen.
 
 **Aktivitaetslog**
-Jeder Start schreibt nach `%APPDATA%\bibliogon\install.log` (1 MB Rotation, 1 Backup). Der alte Pfad `%APPDATA%\Bibliogon\launcher.log` wird aus Kompatibilitaetsgruenden weiter befuellt. Bei Bug-Reports bitte die aktuelle Log-Datei anhaengen.
+Jeder Start schreibt nach `%APPDATA%\bibliogon\install.log` (1 MB Rotation, 1 Backup). Der alte Pfad `%APPDATA%\Bibliogon\launcher.log` wird aus Kompatibilitaetsgruenden weiter befuellt. Bei Bug-Reports bitte die aktuelle Log-Datei anhängen.
 
 ## Warum kommt eine Sicherheitswarnung?
 
-Windows zeigt die "unbekannte App"-Warnung für jede ausfuehrbare Datei, die nicht mit einem kostenpflichtigen, von Microsoft anerkannten Code-Signing-Zertifikat signiert ist. Solche Zertifikate kosten einige hundert Euro pro Jahr und erfordern laufende Pflege. Für die aktuelle Nutzerbasis veröffentlichen wir den Launcher unsigniert und liefern eine SHA256-Pruefsumme mit, damit du den Download unabhängig verifizieren kannst.
+Windows zeigt die "unbekannte App"-Warnung für jede ausführbare Datei, die nicht mit einem kostenpflichtigen, von Microsoft anerkannten Code-Signing-Zertifikat signiert ist. Solche Zertifikate kosten einige hundert Euro pro Jahr und erfordern laufende Pflege. Für die aktuelle Nutzerbasis veröffentlichen wir den Launcher unsigniert und liefern eine SHA256-Pruefsumme mit, damit du den Download unabhängig verifizieren kannst.
 
 Wir planen, Code-Signing neu zu bewerten, wenn Bibliogon eine Nutzerbasis hat, die die Kosten und den Aufwand rechtfertigt. Bis dahin ist der "Weitere Informationen" -> "Trotzdem ausführen"-Weg der vorgesehene Ablauf. Der Quellcode des Launchers liegt in `launcher/` im Bibliogon-Repository; du darfst ihn gerne inspizieren oder selbst bauen.
 
