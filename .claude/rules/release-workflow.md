@@ -256,7 +256,13 @@ the stability filter and red-flag rules.
 
 ## Step 5: Tests
 
-Full test suite:
+Full test suite. **Every command in this list is MANDATORY.**
+The 2026-05-04 v0.26.0 → v0.26.3 hotfix chain (four mechanical
+point releases for a chmod bit, a PyInstaller spec NameError,
+a mypy `[no-any-return]`, and a ruff-format nit) happened
+because the local pre-tag verification was skipped in favor of
+running only `make test`. Each hotfix was caught by a CI gate
+that the local sweep would have caught first. Do not skip.
 
 ```bash
 # Backend + all plugins
@@ -268,11 +274,18 @@ cd frontend && npx tsc --noEmit && npm run test
 # Smoke tests (fast Playwright suite)
 npx playwright test --project=smoke
 
-# Linting and type checking
+# Linting and type checking (MANDATORY)
 cd backend && poetry run ruff check app/ && poetry run mypy app/
 
-# Pre-commit hooks on all files
-pre-commit run --all-files
+# Pre-commit hooks on all files (MANDATORY - catches ruff-format
+# nits, trailing whitespace, end-of-file fixes)
+cd backend && poetry run pre-commit run --all-files
+
+# Launcher build smoke (MANDATORY for any release that touches
+# launcher/ or its embedded version - catches PyInstaller spec
+# errors that only surface when the spec is exec'd by
+# pyinstaller, NOT when it is imported as Python).
+cd launcher && poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm
 ```
 
 ALL must be green. On a red test:
@@ -396,10 +409,11 @@ as "done". Missing items block the release.
 - [ ] `npm run test` (Vitest) green
 - [ ] `npx playwright test --project=smoke` green
 - [ ] `ruff check` clean
-- [ ] `mypy` clean (if active)
-- [ ] `pre-commit run --all-files` clean
-- [ ] Backend `poetry build` successful
+- [ ] `mypy app/` clean (MANDATORY since v0.26.x; not "if active")
+- [ ] `poetry run pre-commit run --all-files` clean (MANDATORY)
+- [ ] Backend `poetry build` successful (skipped iff `package-mode = false`)
 - [ ] Frontend `npm run build` successful
+- [ ] `cd launcher && poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm` succeeds (MANDATORY for any release touching launcher/ or its embedded version)
 - [ ] Docker build successful (if active)
 - [ ] Git tag created and pushed
 - [ ] GitHub release published
