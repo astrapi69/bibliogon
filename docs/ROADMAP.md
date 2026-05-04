@@ -66,12 +66,17 @@ upgrades. See backlog for a curated daily-planning view.
 
 ## P4 - Roadmap / Future Phases
 
-- [ ] **D-05**: Full Windows installer (downloads Docker Desktop +
-  Bibliogon repo + generates `.env`, no terminal required at any
-  step). Larger scope than D-01's launcher. Defer until user
-  feedback shows the install (not the start) is the actual
-  friction. See [docs/explorations/desktop-packaging.md](explorations/desktop-packaging.md)
-  for context and triggers for reconsidering.
+- [ ] **D-05**: Auto-install Docker Desktop. The Bibliogon
+  launcher already handles repo download and `.env` generation
+  on first run (verified 2026-05-04, see `_install_or_welcome` /
+  `_run_install_flow` in `launcher/bibliogon_launcher/__main__.py`);
+  only Docker Desktop installation remains terminal-required for
+  fresh-machine setups. Docker EULA likely blocks fully silent
+  install (verify with the installer-discovery session in
+  `docs/explorations/prompt-installer-discovery.md` before any
+  implementation). Decision: keep as P4, re-evaluate after
+  discovery session completes; move to P5 if discovery confirms
+  full silent install is infeasible.
 
 ---
 
