@@ -130,7 +130,7 @@ NOT_TRANSLITERATIONS: set[str] = {
     "Quelle", "Quell", "Quellen", "Quellcode",
     # ---- German "neu" forms (no umlaut) ----
     "neuen", "Neuer", "Neues", "neuer", "neues", "neueste",
-    "neueres",
+    "neueres", "neueren",
     # ---- "passen" forms (short a, no umlaut) ----
     "passt", "passte", "passend", "passen", "anpassen",
     "angepasst", "angepasster", "passiert", "passenden",

@@ -38,6 +38,10 @@ If Docker Desktop is installed and running but Bibliogon itself is not yet on di
 
 On subsequent launches, steps 1-3 are skipped. The launcher detects the existing install via a manifest file, runs `docker compose up`, waits for health, and opens the browser.
 
+## Pre-install update check
+
+Before showing the welcome dialog on a fresh machine, the launcher contacts GitHub to confirm it targets the current Bibliogon. If a newer release is available, a dialog appears with three options: **Open download page** (opens the GitHub release page in your browser so you can grab a newer launcher), **Continue with older version** (proceeds with the install anyway, useful when you deliberately want an older release), or **Cancel**. The check always runs on a fresh machine regardless of the auto-update setting; the auto-update toggle in Settings governs only the post-install notification check that runs after the app is up. If GitHub is unreachable, the launcher fails open and proceeds with the embedded target version.
+
 ## What the launcher does not do
 
 - **It does not install Docker Desktop.** Docker's licensing terms prohibit silent third-party installation, so this step stays manual. The launcher detects and instructs.

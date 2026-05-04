@@ -38,6 +38,10 @@ Wenn Docker Desktop installiert ist und läuft, Bibliogon selbst aber noch nicht
 
 Bei späteren Starts werden Schritte 1-3 übersprungen. Der Launcher erkennt die bestehende Installation über eine Manifest-Datei, führt `docker compose up` aus, wartet auf den Health-Check und öffnet den Browser.
 
+## Vor-Installations-Update-Check
+
+Bevor der Willkommensdialog auf einem frischen Rechner erscheint, fragt der Launcher GitHub, ob er die aktuelle Bibliogon-Version installiert. Ist ein neueres Release verfügbar, erscheint ein Dialog mit drei Optionen: **Download-Seite öffnen** (öffnet die GitHub-Release-Seite im Browser, damit du einen neueren Launcher holen kannst), **Mit älterer Version fortfahren** (bricht den Stale-Check ab und installiert trotzdem, sinnvoll wenn du bewusst eine ältere Version willst), oder **Abbrechen**. Der Check läuft auf einem frischen Rechner immer, unabhängig von der Auto-Update-Einstellung; der Auto-Update-Schalter in den Einstellungen steuert nur die Nach-Installations-Benachrichtigung, die nach dem Start läuft. Ist GitHub nicht erreichbar, läuft der Launcher fail-open und nutzt die eingebettete Zielversion.
+
 ## Was der Launcher nicht macht
 
 - **Er installiert Docker Desktop nicht.** Docker-Lizenzbedingungen verbieten eine stille Drittanbieter-Installation, dieser Schritt bleibt manuell. Der Launcher erkennt nur und weist an.
