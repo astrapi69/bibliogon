@@ -399,6 +399,36 @@ Architecture goal (Java/Maven precedent): ONE version per subsystem in a canonic
 
 **Never** add a hardcoded version constant "for convenience" (e.g. for use in a GitHub-Issue body template, a footer string, or an OpenAPI metadata field). Always reference the derived single source.
 
+## Hotfix cluster tag policy
+
+When a release tag fails CI for a mechanical reason (chmod bit
+missing, formatter nit, type-check escape, build-time spec error)
+and a fix lands quickly via point-release bumps, the failed tag
+stays in the repository as historical record - it does not get
+deleted. Reasons:
+
+- The v0.26.0 release-gate run, even though it failed, is part
+  of the release audit trail (run ID `25328065614`).
+- Deleting a published tag is a force-push class operation per
+  CLAUDE.md security rules; allowed only when nobody pulled the
+  tag and no GitHub Release was published. The latter is
+  satisfied for failed-gate tags but the former requires
+  asserting nobody fetched in the meantime.
+- Each tag's commit reflects the state at the moment of the
+  bump. Future bisects can use them.
+- The shipped tag's `changelog/releases/v0.X.Y.md` file
+  documents the hotfix history (see v0.26.3.md "Hotfix
+  history" section as the template).
+
+Current cluster preserved as-is: `v0.26.0` (release-gate failed
+on chmod), `v0.26.1` (launcher builds failed on PyInstaller
+spec `__file__`, CI failed on mypy), `v0.26.2` (CI failed on
+ruff-format), `v0.26.3` (all green; the shippable tag).
+
+Do delete a tag only when it was pushed in the last few minutes
+and the user explicitly confirms no one could have pulled. The
+default is keep + document.
+
 ## Subsystem lock-step + tooling, not checklists
 
 Per-subsystem SSoT (one canonical pyproject per Python subsystem, one canonical package.json for the JS subsystem) was the first half of the fix. The second half is **lock-step propagation by tooling, not by human attention**. A 7-row checklist that says "edit every file" fails every time someone forgets a row; the 2026-05-04 audit chain found three pins that had drifted by 8, 13, and 3 versions respectively across multiple releases.
