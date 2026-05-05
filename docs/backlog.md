@@ -66,14 +66,17 @@ store.
   release after step (1) ships (i.e. v0.28.0+). Step (3) trigger:
   one release after step (2).
 
-- **DEP-FE-VERSION-01**: frontend version source-of-truth
+- ~~**DEP-FE-VERSION-01**: frontend version source-of-truth
   runtime cross-check. Currently `__APP_VERSION__` is a Vite
   build-time literal from `package.json`. In dev with hot-
   reload of one half but not the other, frontend version and
   backend version can diverge silently. Add a runtime read of
   `/api/health` `version` field; if it differs from
   `__APP_VERSION__`, surface a console warning. Effort: S.
-  Speculative; not blocking.
+  Speculative; not blocking.~~ **Shipped.** `verifyBackendVersion`
+  in `frontend/src/utils/versionCheck.ts`, fired once from
+  `main.tsx`. Fails open on every error path. Archive on next
+  release.
 
 - **CI-PRECOMMIT-HOOK-01**: enforce
   `poetry run pre-commit run --all-files` as a pre-push git
