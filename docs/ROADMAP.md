@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-04
+Last updated: 2026-05-05
 Latest release: v0.26.6 (foundation cleanup; XDG migration; lock-step versioning; CI gate; Docker upload persistence; pre-install stale-target safeguard)
-Open tasks: 6 active (P3..P5) + 4 BLOCKED-on-upstream
+Open tasks: 5 active (P3..P5) + 4 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
@@ -66,22 +66,10 @@ upgrades. See backlog for a curated daily-planning view.
 
 ## P4 - Roadmap / Future Phases
 
-- [ ] **D-05**: Auto-install Docker Desktop. The Bibliogon
-  launcher already handles repo download and `.env` generation
-  on first run (verified 2026-05-04, see `_install_or_welcome` /
-  `_run_install_flow` in `launcher/bibliogon_launcher/__main__.py`);
-  only Docker Desktop installation remains terminal-required for
-  fresh-machine setups. Docker EULA likely blocks fully silent
-  install (verify with the installer-discovery session in
-  `docs/explorations/prompt-installer-discovery.md` before any
-  implementation). Decision: keep as P4, re-evaluate after
-  discovery session completes; move to P5 if discovery confirms
-  full silent install is infeasible.
-  - Rescoped 2026-05-04 (commit `93af0b2`) from "full Windows
-    installer (Docker Desktop + repo + `.env`)" to "Docker
-    Desktop auto-install only". Earlier CHANGELOG and archive
-    entries describe the original framing; this is intentional
-    historical record.
+(D-05 closed as won't-fix 2026-05-05; see
+[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).
+Docker EULA forbids third-party silent install per the
+installer discovery report.)
 
 ---
 

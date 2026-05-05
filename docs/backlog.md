@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-04 (v0.26.6 released: foundation cleanup, XDG, lock-step, CI gate, Docker upload persistence, stale-target safeguard)
+Last updated: 2026-05-05 (installer discovery completed; D-05 closed won't-fix; D-06 + D-07 added)
 Current version: v0.26.6
-Open tasks: 7 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 9 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -89,6 +89,33 @@ store.
   install-hooks` once. Bypass with `git push --no-verify` only
   when explicitly intentional. Archive on next release.
 
+- **D-06**: Phase 2 cross-platform installer scripts (post
+  installer-discovery 2026-05-05). Three deliverables:
+  (1) `install.command` for macOS (≤10-line wrapper that `cd`s to
+  its directory and invokes `bash install.sh` from Finder),
+  (2) `install.ps1` for Windows (PowerShell mirror of
+  `install.sh.template`, ≤80 lines), (3) `install.cmd` for
+  Windows (small batch wrapper that invokes
+  `powershell.exe -ExecutionPolicy Bypass -File install.ps1` so
+  corporate Windows with hard-locked Group Policy ExecutionPolicy
+  still works). Ship UNSIGNED per user decision 2026-05-05;
+  document SmartScreen / Gatekeeper warnings in the README;
+  build reputation organically and re-evaluate signing budget
+  after 4-6 weeks of real user feedback. Effort: 5-7 hours
+  realistic (CC's initial 3-4h estimate omitted fresh-machine VM
+  setup and first-bug iteration). Strongly preferred split:
+  implementation 3-4h + fresh-machine validation 2-3h, because
+  validation needs a test machine that may not be on hand
+  simultaneously. Acceptance criteria: both wrappers work end-
+  to-end on fresh user accounts (macOS user account, Windows 11);
+  any new version literal goes through
+  `scripts/verify_version_pins.sh`'s regression detector. Source
+  of truth for install.sh stays `install.sh.template` +
+  `scripts/generate_install_sh.sh` per release-workflow.md
+  Step 4. See
+  [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md)
+  for the recommendation chain.
+
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
@@ -111,6 +138,18 @@ store.
 
 ## P4 - Roadmap / Future Phases
 
+- **D-07**: Phase 2 follow-up — package-manager discoverability.
+  After D-06 ships, submit a winget manifest to
+  `microsoft/winget-pkgs` and create a Homebrew tap at
+  `astrapi69/homebrew-bibliogon`. Effort: ~2 hours of
+  implementation, plus reviewer latency (winget-pkgs PR review
+  can take days to weeks; do NOT couple to D-06 release timing).
+  Trigger: D-06 shipped + first real user feedback to confirm
+  the wrappers actually work in the wild. Per discovery report,
+  this expands discovery surface meaningfully without changing
+  the underlying install path. See
+  [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md).
+
 - **LAUNCHER-SELFREPLACE-01**: launcher binary self-replace.
   Currently the pre-install stale-target safeguard tells the
   user "download a newer launcher manually" and opens the
@@ -124,7 +163,8 @@ store.
   current safeguard already protects against installing a
   stale Bibliogon.
 
-(D-05 lives in ROADMAP > P4)
+(D-05 closed as won't-fix 2026-05-05; archived in
+[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
 
 ---
 
