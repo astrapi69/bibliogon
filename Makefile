@@ -6,7 +6,7 @@
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
-       check-blockers archive-task archive-task-dry \
+       check-blockers archive-task archive-task-dry install-hooks \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
@@ -296,6 +296,17 @@ archive-task: ## Move completed [x] tasks out of ROADMAP/backlog into docs/roadm
 
 archive-task-dry: ## Same as archive-task but writes nothing (preview)
 	@python3 scripts/archive_completed_task.py --dry-run
+
+# --- Git Hooks ---
+
+install-hooks: ## Install scripts/git-hooks/* into .git/hooks (per-checkout, not committed under .git)
+	@mkdir -p .git/hooks
+	@for hook in scripts/git-hooks/*; do \
+		name=$$(basename $$hook); \
+		ln -sf ../../$$hook .git/hooks/$$name; \
+		echo "linked .git/hooks/$$name -> $$hook"; \
+	done
+	@echo "Hooks installed. They run on every git push; tag pushes trigger pre-commit on all backend files."
 
 # --- Type Checking ---
 

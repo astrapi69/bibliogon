@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Bibliogon pre-push hook.
+#
+# Runs `pre-commit run --all-files` against the backend when a TAG
+# is being pushed. Skipped for branch pushes - those are CI's job.
+# Reasoning: the v0.26.0..v0.26.6 hotfix chain (CI-PRECOMMIT-HOOK-01)
+# proved that release-workflow.md's "run before tagging" rule alone
+# is not enforcement; mechanical formatter/lint failures slipped past
+# every tag push because the verify chain depended on author memory.
+#
+# Installed by `make install-hooks`. Per-checkout, never committed
+# under .git/.
+
+set -euo pipefail
+
+is_tag_push=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [[ "$remote_ref" == refs/tags/* ]]; then
+        is_tag_push=1
+        break
+    fi
+done
+
+if [[ "$is_tag_push" -eq 0 ]]; then
+    exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+echo "[pre-push] tag push detected; running pre-commit on all backend files..."
+echo "[pre-push] (skip with --no-verify if you really know what you're doing)"
+cd "$repo_root/backend"
+if ! poetry run pre-commit run --all-files; then
+    echo
+    echo "[pre-push] FAILED. Fix the issues above and try again."
+    echo "[pre-push] Either commit the autoformat fixes or address lint errors."
+    exit 1
+fi
+
+echo "[pre-push] pre-commit clean. Proceeding with tag push."

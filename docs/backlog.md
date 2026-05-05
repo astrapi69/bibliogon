@@ -78,16 +78,16 @@ store.
   `main.tsx`. Fails open on every error path. Archive on next
   release.
 
-- **CI-PRECOMMIT-HOOK-01**: enforce
+- ~~**CI-PRECOMMIT-HOOK-01**: enforce
   `poetry run pre-commit run --all-files` as a pre-push git
-  hook scoped to tag pushes. Currently the release-workflow
-  rule says "run before tagging" but nothing enforces it; the
-  v0.26.0 -> v0.26.6 hotfix chain proved that workflow rules
-  alone are insufficient. Effort: S. Belongs under
-  `.git/hooks/pre-push` (per-checkout, not committed) plus a
-  Makefile target `make install-hooks` to set it up. Defer if
-  release frequency is low enough that catching at CI is
-  acceptable; revisit if another hotfix chain happens.
+  hook scoped to tag pushes.~~ **Shipped.** `scripts/git-hooks/
+  pre-push` runs `pre-commit run --all-files` against `backend/`
+  whenever a `refs/tags/*` push is detected; branch pushes are a
+  no-op. `make install-hooks` symlinks every script under
+  `scripts/git-hooks/` into `.git/hooks/`. Per-checkout, not
+  committed under `.git/`. Each contributor runs `make
+  install-hooks` once. Bypass with `git push --no-verify` only
+  when explicitly intentional. Archive on next release.
 
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort

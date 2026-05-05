@@ -278,7 +278,11 @@ npx playwright test --project=smoke
 cd backend && poetry run ruff check app/ && poetry run mypy app/
 
 # Pre-commit hooks on all files (MANDATORY - catches ruff-format
-# nits, trailing whitespace, end-of-file fixes)
+# nits, trailing whitespace, end-of-file fixes). The pre-push git
+# hook installed by `make install-hooks` enforces this on every
+# tag push (CI-PRECOMMIT-HOOK-01), but running it explicitly here
+# is still mandatory because the hook fails the push, not the tag
+# creation - skipping the pre-tag step makes a half-tagged repo.
 cd backend && poetry run pre-commit run --all-files
 
 # Launcher build smoke (MANDATORY for any release that touches
