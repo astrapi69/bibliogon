@@ -91,6 +91,7 @@ export const StyleCheckExtension = Extension.create({
     return {
       setStyleFindings:
         (findings: StyleFinding[]) =>
+        // any: TipTap command callback shape, no exported CommandProps type for the v2 API.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ({tr, dispatch}: any) => {
           if (dispatch) {
@@ -102,6 +103,7 @@ export const StyleCheckExtension = Extension.create({
         },
       clearStyleFindings:
         () =>
+        // any: TipTap command callback shape, no exported CommandProps type for the v2 API.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ({tr, dispatch}: any) => {
           if (dispatch) {

@@ -117,7 +117,7 @@
 
 .indicatorDone {
     border-color: var(--accent);
-    color: #fff;
+    color: var(--text-inverse);
     background: var(--accent);
 }
 

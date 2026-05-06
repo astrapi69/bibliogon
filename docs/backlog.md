@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (v0.28.0 cut + DEP-09/SEC-01 Vite 8 upgrade shipped post-tag, awaiting next-release archive)
+Last updated: 2026-05-06 (v0.28.0 + Vite 8 + uuid override on main; DEP-09 + SEC-01 archived per 93a5ed3)
 Current version: v0.28.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -198,6 +198,14 @@ Recurring upkeep, low priority but worth scheduling:
   its theme back into the right theme entry.
 - **Dependency currency** per `lessons-learned.md`: only stable
   releases, no beta/RC/alpha. 2-week soak for new majors.
+- **Systematic audit pass** quarterly (per
+  `ai-workflow.md` "Test coverage audits → When to run"). The
+  drop-in prompt lives at
+  [.claude/prompts/audit.md](../.claude/prompts/audit.md);
+  paste into a fresh Claude Code session at the repo root. It
+  triages against documented standards in 4 sections (Test
+  Validity / Code Quality / Infrastructure / Documentation)
+  and is read-only — no code is modified.
 
 ---
 

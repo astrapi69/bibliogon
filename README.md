@@ -4,7 +4,7 @@ Open-source self-publishing toolkit for authors. Books, articles, and multi-plat
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.26.6**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.28.0**
 
 ## Features
 
