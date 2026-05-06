@@ -10,9 +10,9 @@ For macOS or Linux, see [macOS Launcher](launcher-macos.md) / [Linux Launcher](l
 
 ### 1. Install Docker Desktop
 
-Download and install Docker Desktop from [docs.docker.com/desktop/install/windows-install](https://docs.docker.com/desktop/install/windows-install/). After installation, start Docker Desktop and wait for it to report that the engine is running.
+See the [Bibliogon Docker installation guide](install/docker-desktop.md) for the full Windows walkthrough plus a "Is Docker safe to install?" section. After installation, start Docker Desktop and wait until the whale icon in the system tray turns from amber to blue.
 
-If you skip this step, the launcher detects the missing Docker on startup and shows a dialog with a direct link to the download page, then exits. You can run the launcher again after installing Docker.
+If you skip this step, the launcher detects the missing Docker on startup and shows a three-button dialog (open the Docker download page, open the Bibliogon Docker guide, or quit). You can run the launcher again after installing Docker.
 
 ### 2. Download the launcher
 

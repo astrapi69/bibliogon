@@ -10,9 +10,9 @@ The macOS launcher is a `Bibliogon.app` bundle that starts Bibliogon with a doub
 
 ### 1. Install Docker Desktop
 
-Download and install Docker Desktop for Mac (Apple silicon) from [docs.docker.com/desktop/install/mac-install](https://docs.docker.com/desktop/install/mac-install/). Start it after install and wait until the whale icon in the menu bar reports the engine is running.
+See the [Bibliogon Docker installation guide](install/docker-desktop.md) for the full macOS walkthrough plus a "Is Docker safe to install?" section. Start Docker Desktop after install and wait until the whale icon in the menu bar turns from amber to blue.
 
-If you skip this step, the launcher detects the missing Docker on startup and shows a dialog with a direct link to the download page, then exits. You can run the launcher again after installing Docker.
+If you skip this step, the launcher detects the missing Docker on startup and shows a three-button dialog (open the Docker download page, open the Bibliogon Docker guide, or quit). You can run the launcher again after installing Docker.
 
 ### 2. Download the launcher
 

@@ -6,7 +6,7 @@ Bibliogon ships a desktop launcher for Windows, macOS, and Linux. The launcher i
 
 ## Prerequisites
 
-- [Docker Desktop](https://docs.docker.com/get-docker/) installed and running. The launcher detects this on startup; if Docker Desktop is missing or not started, the launcher shows a dialog with a direct link to the Docker download page and exits cleanly. The Bibliogon launcher does not (and per Docker's licensing terms cannot) install Docker Desktop for you.
+- Docker Desktop installed and running. See the [Bibliogon Docker installation guide](install/docker-desktop.md) for step-by-step instructions per platform plus a "Is Docker safe to install?" section. The launcher detects Docker on startup; if it is missing or not started, the launcher shows a three-button dialog (open the Docker download page, open the Bibliogon Docker guide, or quit). The Bibliogon launcher does not (and per Docker's licensing terms cannot) install Docker Desktop for you.
 
 ## Pick your platform
 
@@ -29,14 +29,15 @@ All three launchers share the same core:
 
 If Docker Desktop is installed and running but Bibliogon itself is not yet on disk, the launcher walks you through the install:
 
-1. **Welcome dialog**: a three-button window appears - "Bibliogon is not installed on this computer yet". Choose **Install** to proceed automatically, **Open install guide** to read the docs in your browser, or **Close** to exit.
-2. **Folder picker**: if you chose Install, the launcher asks where Bibliogon should live (default: `~/bibliogon` on macOS / Linux, `%USERPROFILE%\bibliogon` on Windows). You can override; the choice is remembered.
-3. **Download**: the launcher fetches the Bibliogon release ZIP from GitHub, extracts it, and writes a fresh `.env` with a generated secret. This step is fast (a few seconds on a normal connection).
-4. **Docker build**: Docker downloads base images and builds the Bibliogon stack. First build is the slow part - typically 3-5 minutes depending on your machine and connection. Subsequent starts skip this.
-5. **Health wait**: the launcher waits for the backend to report healthy on port 7880, then opens the browser at `http://localhost:7880`.
-6. **Status window**: a small window stays open showing "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button. Closing the window stops the stack cleanly.
+1. **Welcome dialog**: a "Before you start" window appears on the first ever launch and explains what Bibliogon needs (Docker Desktop, ~800 MB), what the first run looks like (~2 GB / 5-10 minutes), and includes a brief Docker security note plus links to the [Bibliogon Docker installation guide](install/docker-desktop.md). Click **Got it, continue** to proceed.
+2. **Install prompt** (when no Bibliogon copy is on disk): a short "Bibliogon is not installed" dialog with **Install** / **Open install guide** / **Cancel**.
+3. **Folder picker**: if you chose Install, the launcher asks where Bibliogon should live (default: `~/bibliogon` on macOS / Linux, `%USERPROFILE%\bibliogon` on Windows). You can override; the choice is remembered.
+4. **Download**: the launcher fetches the Bibliogon release ZIP from GitHub, extracts it, and writes a fresh `.env` with a generated secret. This step is fast (a few seconds on a normal connection).
+5. **Docker build**: Docker downloads base images and builds the Bibliogon stack. First build is the slow part - typically 3-5 minutes depending on your machine and connection. Subsequent starts skip this.
+6. **Health wait**: the launcher waits for the backend to report healthy on port 7880, then opens the browser at `http://localhost:7880`.
+7. **Status window**: a small window stays open showing "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button. Closing the window stops the stack cleanly.
 
-On subsequent launches, steps 1-3 are skipped. The launcher detects the existing install via a manifest file, runs `docker compose up`, waits for health, and opens the browser.
+On subsequent launches, the welcome dialog and install prompt are skipped. The launcher detects the existing install via a manifest file, runs `docker compose up`, waits for health, and opens the browser.
 
 ## Pre-install update check
 

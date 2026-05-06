@@ -14,7 +14,7 @@ The Linux launcher is a `bibliogon-launcher-linux` ELF binary that starts Biblio
 
 ### 1. Install Docker
 
-Pick one:
+See the [Bibliogon Docker installation guide](install/docker-desktop.md) for the full picture plus a "Is Docker safe to install?" section. On Linux, two routes are common:
 
 - **Docker Engine** (native, recommended for servers and minimal desktops): [docs.docker.com/engine/install](https://docs.docker.com/engine/install/). After install, add your user to the `docker` group and log out/back in:
 

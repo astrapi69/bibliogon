@@ -6,7 +6,7 @@ Bibliogon liefert einen Desktop-Launcher für Windows, macOS und Linux. Der Laun
 
 ## Voraussetzungen
 
-- [Docker Desktop](https://docs.docker.com/get-docker/) installiert und gestartet. Der Launcher prüft das beim Start; wenn Docker Desktop fehlt oder nicht läuft, zeigt er einen Dialog mit Link zur Docker-Download-Seite und beendet sich sauber. Der Bibliogon-Launcher kann (und darf gemäß Docker-Lizenzbedingungen) Docker Desktop nicht für dich installieren.
+- Docker Desktop installiert und gestartet. Eine Schritt-für-Schritt-Anleitung pro Plattform inklusive Abschnitt „Ist Docker sicher zu installieren?" findest du in der [Bibliogon-Anleitung zur Docker-Installation](install/docker-desktop.md). Der Launcher prüft Docker beim Start; falls Docker fehlt oder nicht läuft, zeigt er einen Dialog mit drei Schaltflächen (Docker-Downloadseite öffnen, Bibliogon-Docker-Anleitung öffnen, oder Beenden). Der Bibliogon-Launcher kann (und darf gemäß Docker-Lizenzbedingungen) Docker Desktop nicht für dich installieren.
 
 ## Plattform wählen
 
@@ -29,14 +29,15 @@ Der Kern aller drei Launcher ist gleich:
 
 Wenn Docker Desktop installiert ist und läuft, Bibliogon selbst aber noch nicht auf der Festplatte liegt, führt dich der Launcher durch die Installation:
 
-1. **Willkommensdialog**: Ein Fenster mit drei Schaltflächen erscheint - "Bibliogon ist auf diesem Rechner noch nicht installiert". Wähle **Installieren** für den automatischen Ablauf, **Installationsanleitung öffnen** für die Dokumentation im Browser, oder **Schließen** zum Beenden.
-2. **Ordner-Auswahl**: Wenn du Installieren gewählt hast, fragt der Launcher, wo Bibliogon liegen soll (Standard: `~/bibliogon` auf macOS/Linux, `%USERPROFILE%\bibliogon` auf Windows). Du kannst überschreiben; die Wahl wird gemerkt.
-3. **Download**: Der Launcher holt die Bibliogon-Release-ZIP von GitHub, entpackt sie und schreibt eine frische `.env` mit generiertem Secret. Schnell (wenige Sekunden bei normaler Verbindung).
-4. **Docker-Build**: Docker lädt Basis-Images herunter und baut den Bibliogon-Stack. Der erste Build ist der langsame Teil - typischerweise 3-5 Minuten, je nach Rechner und Verbindung. Spätere Starts überspringen das.
-5. **Health-Wait**: Der Launcher wartet, bis das Backend auf Port 7880 als gesund meldet, und öffnet dann den Browser auf `http://localhost:7880`.
-6. **Statusfenster**: Ein kleines Fenster bleibt offen und zeigt "Bibliogon läuft auf localhost:7880" mit einer Schaltfläche **Bibliogon stoppen**. Wenn du das Fenster schließt, stoppt der Stack sauber.
+1. **Willkommensdialog**: Ein Fenster „Bevor du startest" erscheint beim allerersten Start und erklärt, was Bibliogon braucht (Docker Desktop, ca. 800 MB), wie der erste Start aussieht (ca. 2 GB / 5-10 Minuten), und enthält einen kurzen Hinweis zur Docker-Sicherheit plus Links zur [Bibliogon-Anleitung zur Docker-Installation](install/docker-desktop.md). Klick auf **Verstanden, weiter**, um fortzufahren.
+2. **Installations-Aufforderung** (wenn keine Bibliogon-Kopie auf der Festplatte liegt): Ein kurzer Dialog „Bibliogon ist nicht installiert" mit **Installieren** / **Anleitung öffnen** / **Abbrechen**.
+3. **Ordner-Auswahl**: Wenn du Installieren gewählt hast, fragt der Launcher, wo Bibliogon liegen soll (Standard: `~/bibliogon` auf macOS/Linux, `%USERPROFILE%\bibliogon` auf Windows). Du kannst überschreiben; die Wahl wird gemerkt.
+4. **Download**: Der Launcher holt die Bibliogon-Release-ZIP von GitHub, entpackt sie und schreibt eine frische `.env` mit generiertem Secret. Schnell (wenige Sekunden bei normaler Verbindung).
+5. **Docker-Build**: Docker lädt Basis-Images herunter und baut den Bibliogon-Stack. Der erste Build ist der langsame Teil - typischerweise 3-5 Minuten, je nach Rechner und Verbindung. Spätere Starts überspringen das.
+6. **Health-Wait**: Der Launcher wartet, bis das Backend auf Port 7880 als gesund meldet, und öffnet dann den Browser auf `http://localhost:7880`.
+7. **Statusfenster**: Ein kleines Fenster bleibt offen und zeigt "Bibliogon läuft auf localhost:7880" mit einer Schaltfläche **Bibliogon stoppen**. Wenn du das Fenster schließt, stoppt der Stack sauber.
 
-Bei späteren Starts werden Schritte 1-3 übersprungen. Der Launcher erkennt die bestehende Installation über eine Manifest-Datei, führt `docker compose up` aus, wartet auf den Health-Check und öffnet den Browser.
+Bei späteren Starts werden Willkommensdialog und Installations-Aufforderung übersprungen. Der Launcher erkennt die bestehende Installation über eine Manifest-Datei, führt `docker compose up` aus, wartet auf den Health-Check und öffnet den Browser.
 
 ## Vor-Installations-Update-Check
 

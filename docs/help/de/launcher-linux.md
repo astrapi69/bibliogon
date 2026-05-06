@@ -14,7 +14,7 @@ Der Linux-Launcher ist ein `bibliogon-launcher-linux`-ELF-Binary, das Bibliogon 
 
 ### 1. Docker installieren
 
-Eine der beiden Varianten:
+Den vollständigen Überblick inklusive Abschnitt „Ist Docker sicher zu installieren?" findest du in der [Bibliogon-Anleitung zur Docker-Installation](install/docker-desktop.md). Auf Linux sind zwei Wege üblich:
 
 - **Docker Engine** (nativ, empfohlen für Server und minimale Desktops): [docs.docker.com/engine/install](https://docs.docker.com/engine/install/). Nach der Installation den eigenen Benutzer in die Gruppe `docker` aufnehmen und ab- und wieder anmelden:
 
