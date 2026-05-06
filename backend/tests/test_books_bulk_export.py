@@ -13,12 +13,15 @@ correctness.
 from __future__ import annotations
 
 import io
+import shutil
 import zipfile
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+
+PANDOC_AVAILABLE = shutil.which("pandoc") is not None
 
 
 @pytest.fixture(scope="module")
@@ -91,6 +94,7 @@ class TestValidation:
 # --- ZIP shape --------------------------------------------------
 
 
+@pytest.mark.skipif(not PANDOC_AVAILABLE, reason="pandoc binary not installed")
 class TestZipShape:
     def test_three_books_produce_zip_with_three_files(self, client: TestClient) -> None:
         a = _seed_book(client, "Book Alpha")
@@ -100,8 +104,6 @@ class TestZipShape:
             "/api/books/bulk-export",
             json={"book_ids": [a, b, c], "format": "epub"},
         )
-        if resp.status_code == 502 or resp.status_code == 422:
-            pytest.skip(f"Pandoc/Docker unavailable in test environment: {resp.text[:200]}")
         assert resp.status_code == 200, resp.text
         assert resp.headers["content-type"] == "application/zip"
         with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
@@ -118,8 +120,6 @@ class TestZipShape:
             "/api/books/bulk-export",
             json={"book_ids": [a, b, c], "format": "epub"},
         )
-        if resp.status_code == 502 or resp.status_code == 422:
-            pytest.skip(f"Pandoc unavailable: {resp.text[:200]}")
         assert resp.status_code == 200
         with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
             names = sorted(zf.namelist())
