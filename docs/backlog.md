@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (check-blockers run: DEP-09 + SEC-01 unblocked by vite-plugin-pwa@1.3.0, moved to ROADMAP P3; DEP-02 + DEP-05 stay blocked)
-Current version: v0.27.0
-Open tasks: 12 active (P3..P5) + 2 BLOCKED-on-upstream pointers
+Last updated: 2026-05-06 (v0.28.0 cut; 5 shipped items archived; new D-06-VALIDATION-01 follow-up captured)
+Current version: v0.28.0
+Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -59,44 +59,20 @@ store.
 ## P3 - Infrastructure / Quality
 
 - **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle.
-  Step 1 (deprecation warning) shipped in v0.27.0 and is
-  archived. Step 2 (precedence flip — `BIBLIOGON_DATA_DIR` now
-  always wins when both env vars are set) shipped 2026-05-06,
-  awaiting next release for archive. Step 3 (remove
-  `BIBLIOGON_DB_PATH` override entirely) trigger: one release
-  after step 2 ships.
+  Steps 1 (deprecation warning, v0.27.0) and 2 (precedence flip,
+  v0.28.0) are archived. Step 3 (remove `BIBLIOGON_DB_PATH`
+  override entirely) trigger: one release after v0.28.0 ships
+  (so v0.29.0 earliest).
 
-- ~~**D-06**: Phase 2 cross-platform installer scripts (post
-  installer-discovery 2026-05-05). Three deliverables:
-  (1) `install.command` for macOS (≤10-line wrapper that `cd`s to
-  its directory and invokes `bash install.sh` from Finder),
-  (2) `install.ps1` for Windows (PowerShell mirror of
-  `install.sh.template`, ≤80 lines), (3) `install.cmd` for
-  Windows (small batch wrapper that invokes
-  `powershell.exe -ExecutionPolicy Bypass -File install.ps1`).~~
-  **Implementation shipped 2026-05-06**, awaiting fresh-machine
-  validation + next-release archive. `install.command` ships at
-  10 lines (target met). `install.ps1` ships at 121 lines (over
-  the original ≤80-line target — the spec underestimated; the
-  PowerShell mirror needs the full Docker-check + git-or-tarball
-  + secret-gen + .env + compose-up logic from `install.sh` plus
-  PowerShell-specific `$LASTEXITCODE` handling and
-  `Invoke-WebRequest` / tar-extract fallbacks). `install.cmd`
-  ships at 7 lines. `install.ps1` is generated from
-  `install.ps1.template` by `make sync-versions` (the same
-  pure-Python helper that handles `install.sh`); both
-  artifacts are now part of the lock-step chain.
-  `verify_version_pins.sh` gained a regression detector that
-  rejects any hardcoded version literal in the static wrappers
-  (`install.command` / `install.cmd`).
-  **Validation pending: fresh macOS user account + fresh
-  Windows 11.** Tracked separately as the AR-BULK-PLAYWRIGHT-
-  SMOKE-01 sibling (Q on whether to add an explicit
-  D-06-VALIDATION-01 follow-up; for now this entry stays
-  awaiting-archive-after-validation).
-  See
-  [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md)
-  for the recommendation chain.
+- **D-06-VALIDATION-01**: fresh-machine validation of the
+  v0.28.0 cross-platform installer scripts (`install.command`,
+  `install.ps1`, `install.cmd`). The scripts shipped unsigned
+  per launch decision and were not exercised on a fresh macOS
+  user account or fresh Windows 11 install before tagging.
+  Trigger: first user report OR access to a clean test machine.
+  Effort: S (run each wrapper, capture any Gatekeeper /
+  SmartScreen / ExecutionPolicy edge cases). Folds into the
+  next point release.
 
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
@@ -130,25 +106,6 @@ store.
 
 ## P4 - Roadmap / Future Phases
 
-- ~~**LAUNCHER-I18N-EXTRACT-01**: complete extraction of every
-  remaining hardcoded English string in the launcher into the
-  JSON i18n catalog.~~ **Shipped 2026-05-06.** Every dialog
-  title + message body in `launcher/bibliogon_launcher/__main__.py`
-  now flows through `i18n.t()`: docker-daemon retry / exhausted,
-  env-prep failure, status-window starting / almost-ready,
-  update-available, pending-uninstall cleanup, launcher-stale,
-  install-flow status messages (downloading / preparing config /
-  building images / waiting health), install-failed,
-  install-complete (slow + ok variants), uninstall-confirmation +
-  per-phase status, uninstall-failed, uninstall-complete,
-  installation-moved (with folder-picker + invalid-folder
-  branches), compose-failed, health-timeout, already-running.
-  ~50 new keys added to `locales/{en,de}.json` with real DE
-  umlauts; existing 7 keys preserved unchanged. Five new test
-  assertions in `tests/test_i18n_and_welcome.py` spot-check the
-  new DE strings against ASCII-transliteration regression.
-  Awaiting next-release archive.
-
 - **D-07**: Phase 2 follow-up — package-manager discoverability.
   After D-06 ships, submit a winget manifest to
   `microsoft/winget-pkgs` and create a Homebrew tap at
@@ -160,38 +117,6 @@ store.
   this expands discovery surface meaningfully without changing
   the underlying install path. See
   [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md).
-
-- ~~**AR-BULK-BOOKS-PARITY-01**: bulk export for the books
-  dashboard.~~ **Shipped 2026-05-06.** `POST /api/books/bulk-export`
-  in `plugins/bibliogon-plugin-export/bibliogon_export/routes.py`
-  takes `{book_ids, format}` (epub / pdf / docx) and returns a
-  ZIP-of-individual-files. Reuses the per-book pipeline
-  (`_load_book` + `_scaffold_and_prepare` + `run_pandoc`) so the
-  bulk path is not a parallel reimplementation. Hard 200-book
-  limit; filename collision uses numeric suffix; per-book Pandoc
-  errors surface the offending book's title in the 502 detail.
-  **Combined-multi-book mode is intentionally NOT implemented**
-  — books go through manuscripta + write-book-template
-  scaffolding which produces one project per book; merging N
-  books into one EPUB / PDF would require deciding whose
-  metadata wins and which book contributes the cover, neither
-  of which is a natural user workflow. If demand surfaces, that
-  becomes its own backlog entry. Frontend: Dashboard gains
-  per-tile checkboxes + Select-all + sticky `BookBulkActionBar`
-  (no mode toggle, format dropdown only). 6 backend tests + 5
-  vitest cases + 8 new i18n keys (ui.dashboard.bulk.*) in
-  EN/DE/es/fr/el/pt/tr/ja. Awaiting next-release archive.
-
-- ~~**AR-BULK-PLAYWRIGHT-SMOKE-01**: add Playwright smoke coverage
-  for the bulk article export workflow.~~ **Shipped 2026-05-06.**
-  `e2e/smoke/article-bulk-export.spec.ts` covers three flows:
-  per-tile checkbox + bulk-action-bar + ZIP markdown download;
-  series filter + Select-all selecting only the filtered set;
-  filter change clears selection. Full smoke suite is 191
-  passing (188 + 3 new). Awaiting next-release archive. Caught
-  one real bug while writing the spec: `/api/test/reset` did
-  not clear the `articles` table, leaking state between specs;
-  fixed in the same commit that adds the spec.
 
 - **AR-BULK-CROSSPAGE-SELECT-01**: cross-page Select-all for the
   bulk-export workflow. Articles dashboard does not paginate

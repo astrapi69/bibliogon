@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-06
-Latest release: v0.27.0 (bulk article export; launcher first-run experience overhauled; pre-push tag-pushes hook; D-05 closed won't-fix per Docker EULA)
+Latest release: v0.28.0 (bulk export from Books dashboard; cross-platform installer scripts install.command + install.ps1 + install.cmd; full launcher i18n extraction; BIBLIOGON_DB_PATH precedence flip step 2; DEP-09 + SEC-01 unblocked upstream)
 Open tasks: 7 active (P3..P5) + 2 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
