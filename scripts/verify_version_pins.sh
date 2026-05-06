@@ -73,14 +73,20 @@ check_canonical "frontend/package.json" \
     '"version":' \
     "frontend package.json"
 
-# -------- install.sh sync with template + pyproject --------
+# -------- Installer artifacts sync (install.sh + install.ps1) --------
+#
+# Delegates to scripts/sync_versions.py --check which knows how to
+# regenerate every templated installer artifact. The bash-only
+# generate_install_sh.sh stays as a human-facing helper for ad-hoc
+# regeneration of install.sh; sync_versions.py is the canonical
+# multi-artifact source of truth that release tooling consults.
 
-if "$ROOT/scripts/generate_install_sh.sh" --check >/dev/null 2>&1; then
-    echo "OK: install.sh in sync with template + pyproject"
+if python3 "$ROOT/scripts/sync_versions.py" --check >/dev/null 2>&1; then
+    echo "OK: installer artifacts in sync with templates + pyproject"
 else
-    echo "MISMATCH: install.sh out of sync with install.sh.template +" \
-         "backend/pyproject.toml. Run scripts/generate_install_sh.sh" \
-         "to regenerate."
+    echo "MISMATCH: install.sh and/or install.ps1 out of sync with" \
+         "their templates + backend/pyproject.toml. Run" \
+         "make sync-versions to regenerate."
     errors=$((errors + 1))
 fi
 
@@ -136,6 +142,21 @@ regression_check \
     '^BIBLIOGON_TARGET_VERSION\s*=\s*"[0-9]' \
     'hardcoded BIBLIOGON_TARGET_VERSION literal in source' \
     "$ROOT/launcher/bibliogon_launcher"
+
+# install.command + install.cmd are static wrappers (no version
+# literal). Any v0.X.Y string in them signals someone duplicated
+# version logic that belongs in install.sh.template / install.ps1.template.
+for static_wrapper in "$ROOT/install.command" "$ROOT/install.cmd"; do
+    [[ -f "$static_wrapper" ]] || continue
+    if grep -nE 'v[0-9]+\.[0-9]+\.[0-9]+' "$static_wrapper" >/dev/null 2>&1; then
+        echo
+        echo "REGRESSION (hardcoded version literal in $(basename "$static_wrapper")):"
+        grep -nE 'v[0-9]+\.[0-9]+\.[0-9]+' "$static_wrapper"
+        echo "These wrappers must NOT carry a version literal; they delegate"
+        echo "to install.sh / install.ps1 which carry the canonical version."
+        errors=$((errors + 1))
+    fi
+done
 
 # Frontend hardcoded APP_VERSION (carry-forward from prior session)
 if grep -rnE "APP_VERSION\s*=\s*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" \

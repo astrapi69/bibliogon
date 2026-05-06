@@ -63,11 +63,29 @@ PAT-via-UI ist teilweise verschoben. SSH und der System-Credential-Helper funkti
 
 ### One-Liner
 
+**Linux / macOS:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.sh | bash
 ```
 
-Das laedt Bibliogon nach `~/bibliogon`, baut die Docker-Images und startet die App auf **http://localhost:7880**.
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.ps1 | iex
+```
+
+Beides laedt Bibliogon nach `~/bibliogon` (Linux/macOS) bzw. `%USERPROFILE%\bibliogon` (Windows), baut die Docker-Images und startet die App auf **http://localhost:7880**.
+
+### Doppelklick-Installation (ohne Terminal)
+
+Nach dem Klonen oder Herunterladen des Repos den Wrapper fuer dein Betriebssystem doppelklicken:
+
+| Plattform | Datei | Hinweise |
+|---|---|---|
+| macOS | `install.command` | Finder behandelt `.command` als ausfuehrbar; beim ersten Start fragt Gatekeeper ggf. nach — Rechtsklick > Oeffnen umgeht das |
+| Windows | `install.cmd` | Wrapper um `install.ps1` mit `-ExecutionPolicy Bypass`, damit Firmen-Windows mit per Group Policy gesperrter ExecutionPolicy den Installer trotzdem starten kann |
+| Linux | `bash install.sh` | Kein extra Wrapper noetig |
 
 ### Manuelle Installation
 

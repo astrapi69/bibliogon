@@ -146,75 +146,102 @@ def update_init_version_literal(
     return True
 
 
-_INSTALL_TEMPLATE = REPO / "install.sh.template"
-_INSTALL_TARGET = REPO / "install.sh"
 _INSTALL_PLACEHOLDER = "@@BIBLIOGON_VERSION@@"
 
+# Generated installer artifacts. The template is the editable source;
+# the target is regenerated at release time. ``executable`` controls
+# whether ``chmod 0o755`` is applied after a write - install.sh +
+# install.ps1 both flip the bit on Linux/macOS so they curl-pipe
+# directly without an extra ``chmod`` step. Windows ignores the bit.
+_INSTALL_ARTIFACTS = (
+    {
+        "label": "install.sh",
+        "template": REPO / "install.sh.template",
+        "target": REPO / "install.sh",
+        "executable": True,
+    },
+    {
+        "label": "install.ps1",
+        "template": REPO / "install.ps1.template",
+        "target": REPO / "install.ps1",
+        "executable": False,
+    },
+)
 
-def _render_install_sh(canonical_version: str) -> str:
-    """Pure-Python equivalent of generate_install_sh.sh.
 
-    Reads ``install.sh.template``, substitutes ``@@BIBLIOGON_VERSION@@``
-    with ``v<canonical_version>``, returns the result.
+def _render_template(template_path: Path, canonical_version: str) -> str:
+    """Substitute ``@@BIBLIOGON_VERSION@@`` -> ``v<canonical_version>``.
 
-    Avoids subprocess + bash entirely so the same code path works on
-    Windows runners. Earlier versions invoked the bash script via
-    ``subprocess.run(["bash", str(script), "--check"])``, which on
-    Windows could resolve to either Git Bash or the WSL2 launcher
-    depending on PATH order; the latter mishandles native Windows
-    paths and returned spurious drift.
+    Pure-Python so the same code path works on every platform. The
+    earlier bash-only generator could resolve to either Git Bash or
+    WSL2 on Windows runners depending on PATH order; WSL2 mishandles
+    native Windows paths and returned spurious drift.
     """
-    template_text = _INSTALL_TEMPLATE.read_text(encoding="utf-8")
-    tag = f"v{canonical_version}"
-    return template_text.replace(_INSTALL_PLACEHOLDER, tag)
+    return template_path.read_text(encoding="utf-8").replace(
+        _INSTALL_PLACEHOLDER, f"v{canonical_version}"
+    )
 
 
-def regenerate_install_sh(dry_run: bool) -> bool:
-    """Pure-Python re-implementation of generate_install_sh.sh.
+def _regenerate_one(artifact: dict, canonical: str, dry_run: bool) -> bool:
+    """Regenerate a single artifact from its template. Returns True
+    when the artifact changed (or would change in dry-run)."""
+    template_path: Path = artifact["template"]
+    target_path: Path = artifact["target"]
+    label: str = artifact["label"]
+    executable: bool = artifact["executable"]
 
-    Returns True if install.sh changed (or would change in dry-run).
-    Stays in sync with scripts/generate_install_sh.sh; the bash
-    script is the canonical human-facing tool, this function is the
-    cross-platform equivalent for tooling that does not want to
-    spawn bash subprocesses.
-    """
-    if not _INSTALL_TEMPLATE.is_file():
+    if not template_path.is_file():
         print(
-            f"WARN: {_INSTALL_TEMPLATE.relative_to(REPO)} missing, "
-            "install.sh not regenerated",
+            f"WARN: {template_path.relative_to(REPO)} missing, "
+            f"{label} not regenerated",
             file=sys.stderr,
         )
         return False
 
-    canonical = read_canonical_version()
-    rendered = _render_install_sh(canonical)
+    rendered = _render_template(template_path, canonical)
 
-    if not _INSTALL_TARGET.is_file():
+    if not target_path.is_file():
         if dry_run:
-            print(f"  install.sh would be created from template")
+            print(f"  {label} would be created from template")
         else:
-            _INSTALL_TARGET.write_text(rendered, encoding="utf-8")
-            try:
-                _INSTALL_TARGET.chmod(0o755)
-            except OSError:
-                pass
-            print(f"  install.sh created from template")
+            target_path.write_text(rendered, encoding="utf-8")
+            if executable:
+                try:
+                    target_path.chmod(0o755)
+                except OSError:
+                    pass
+            print(f"  {label} created from template")
         return True
 
-    current = _INSTALL_TARGET.read_text(encoding="utf-8")
-    if current == rendered:
+    if target_path.read_text(encoding="utf-8") == rendered:
         return False
 
     if dry_run:
-        print(f"  install.sh would be regenerated from template")
+        print(f"  {label} would be regenerated from template")
     else:
-        _INSTALL_TARGET.write_text(rendered, encoding="utf-8")
-        try:
-            _INSTALL_TARGET.chmod(0o755)
-        except OSError:
-            pass
-        print(f"  install.sh regenerated from template")
+        target_path.write_text(rendered, encoding="utf-8")
+        if executable:
+            try:
+                target_path.chmod(0o755)
+            except OSError:
+                pass
+        print(f"  {label} regenerated from template")
     return True
+
+
+def regenerate_install_sh(dry_run: bool) -> bool:
+    """Regenerate every installer artifact (install.sh + install.ps1).
+
+    Returns True if any artifact changed (or would change in dry-run).
+    The name is kept for backward compatibility with verify scripts +
+    callers that pre-date install.ps1.
+    """
+    canonical = read_canonical_version()
+    changed = False
+    for artifact in _INSTALL_ARTIFACTS:
+        if _regenerate_one(artifact, canonical, dry_run):
+            changed = True
+    return changed
 
 
 def collect_targets() -> list[tuple[Path, str]]:

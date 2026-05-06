@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (v0.27.0 released; 3 P3 items archived)
+Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 cross-platform installer scripts shipped, awaiting fresh-machine validation + next-release archive)
 Current version: v0.27.0
 Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -63,30 +63,35 @@ store.
   `BIBLIOGON_DB_PATH` override entirely) trigger: one release
   after step 2 ships.
 
-- **D-06**: Phase 2 cross-platform installer scripts (post
+- ~~**D-06**: Phase 2 cross-platform installer scripts (post
   installer-discovery 2026-05-05). Three deliverables:
   (1) `install.command` for macOS (≤10-line wrapper that `cd`s to
   its directory and invokes `bash install.sh` from Finder),
   (2) `install.ps1` for Windows (PowerShell mirror of
   `install.sh.template`, ≤80 lines), (3) `install.cmd` for
   Windows (small batch wrapper that invokes
-  `powershell.exe -ExecutionPolicy Bypass -File install.ps1` so
-  corporate Windows with hard-locked Group Policy ExecutionPolicy
-  still works). Ship UNSIGNED per user decision 2026-05-05;
-  document SmartScreen / Gatekeeper warnings in the README;
-  build reputation organically and re-evaluate signing budget
-  after 4-6 weeks of real user feedback. Effort: 5-7 hours
-  realistic (CC's initial 3-4h estimate omitted fresh-machine VM
-  setup and first-bug iteration). Strongly preferred split:
-  implementation 3-4h + fresh-machine validation 2-3h, because
-  validation needs a test machine that may not be on hand
-  simultaneously. Acceptance criteria: both wrappers work end-
-  to-end on fresh user accounts (macOS user account, Windows 11);
-  any new version literal goes through
-  `scripts/verify_version_pins.sh`'s regression detector. Source
-  of truth for install.sh stays `install.sh.template` +
-  `scripts/generate_install_sh.sh` per release-workflow.md
-  Step 4. See
+  `powershell.exe -ExecutionPolicy Bypass -File install.ps1`).~~
+  **Implementation shipped 2026-05-06**, awaiting fresh-machine
+  validation + next-release archive. `install.command` ships at
+  10 lines (target met). `install.ps1` ships at 121 lines (over
+  the original ≤80-line target — the spec underestimated; the
+  PowerShell mirror needs the full Docker-check + git-or-tarball
+  + secret-gen + .env + compose-up logic from `install.sh` plus
+  PowerShell-specific `$LASTEXITCODE` handling and
+  `Invoke-WebRequest` / tar-extract fallbacks). `install.cmd`
+  ships at 7 lines. `install.ps1` is generated from
+  `install.ps1.template` by `make sync-versions` (the same
+  pure-Python helper that handles `install.sh`); both
+  artifacts are now part of the lock-step chain.
+  `verify_version_pins.sh` gained a regression detector that
+  rejects any hardcoded version literal in the static wrappers
+  (`install.command` / `install.cmd`).
+  **Validation pending: fresh macOS user account + fresh
+  Windows 11.** Tracked separately as the AR-BULK-PLAYWRIGHT-
+  SMOKE-01 sibling (Q on whether to add an explicit
+  D-06-VALIDATION-01 follow-up; for now this entry stays
+  awaiting-archive-after-validation).
+  See
   [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md)
   for the recommendation chain.
 

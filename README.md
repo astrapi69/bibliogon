@@ -63,11 +63,29 @@ PAT-via-UI is partially deferred. SSH and the system credential helper work toda
 
 ### One-liner
 
+**Linux / macOS:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.sh | bash
 ```
 
-This downloads Bibliogon to `~/bibliogon`, builds the Docker images, and starts the app at **http://localhost:7880**.
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/astrapi69/bibliogon/main/install.ps1 | iex
+```
+
+Both download Bibliogon to `~/bibliogon` (Linux/macOS) / `%USERPROFILE%\bibliogon` (Windows), build the Docker images, and start the app at **http://localhost:7880**.
+
+### Double-click install (no terminal)
+
+After cloning or downloading the repo, double-click the wrapper for your OS:
+
+| Platform | File | Notes |
+|---|---|---|
+| macOS | `install.command` | Finder treats `.command` as runnable; on first run, Gatekeeper may prompt — right-click > Open to bypass |
+| Windows | `install.cmd` | Wraps `install.ps1` with `-ExecutionPolicy Bypass` so corporate Windows with Group-Policy-locked ExecutionPolicy still runs the installer |
+| Linux | `bash install.sh` | No special wrapper needed |
 
 ### Manual install
 
