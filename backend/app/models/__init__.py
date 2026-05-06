@@ -443,6 +443,13 @@ class Article(Base):
     seo_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     seo_description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Free-string series name. Mirrors ``Book.series``; flat, no
+    # hierarchy. Drives the bulk-export "filter by series" workflow
+    # and powers an umbrella-series-with-articles use case without
+    # requiring a Series model. If parent/child series ever becomes
+    # required, that lands as its own model + M2M migration.
+    series: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow

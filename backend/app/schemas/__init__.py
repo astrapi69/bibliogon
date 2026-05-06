@@ -494,6 +494,8 @@ class ArticleUpdate(BaseModel):
     topic: str | None = Field(default=None, max_length=100)
     seo_title: str | None = Field(default=None, max_length=200)
     seo_description: str | None = None
+    # Bulk-export filter; flat free-string per Book.series convention.
+    series: str | None = Field(default=None, max_length=300)
 
     @field_validator("status")
     @classmethod
@@ -521,6 +523,7 @@ class ArticleOut(BaseModel):
     topic: str | None = None
     seo_title: str | None = None
     seo_description: str | None = None
+    series: str | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
