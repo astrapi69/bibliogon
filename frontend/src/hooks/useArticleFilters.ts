@@ -33,18 +33,24 @@ export interface ArticleFilters {
     topic: string;
     language: string;
     status: ArticleStatus | "all";
+    series: string;
+    tag: string;
     sortBy: ArticleSortField;
     sortOrder: ArticleSortOrder;
 
     filteredArticles: Article[];
     availableTopics: ArticleFilterOption[];
     availableLanguages: ArticleFilterOption[];
+    availableSeries: ArticleFilterOption[];
+    availableTags: ArticleFilterOption[];
     hasActiveFilters: boolean;
 
     setSearchQuery: (q: string) => void;
     setTopic: (topic: string) => void;
     setLanguage: (lang: string) => void;
     setStatus: (status: ArticleStatus | "all") => void;
+    setSeries: (series: string) => void;
+    setTag: (tag: string) => void;
     setSortBy: (s: ArticleSortField) => void;
     toggleSortOrder: () => void;
     resetFilters: () => void;
@@ -85,6 +91,8 @@ export function useArticleFilters(
         const p = searchParams.get("status");
         return isStatus(p) ? p : "all";
     });
+    const [series, setSeries] = useState(() => searchParams.get("series") || "");
+    const [tag, setTag] = useState(() => searchParams.get("tag") || "");
     const [sortBy, setSortByRaw] = useState<ArticleSortField>(() => {
         const p = searchParams.get("sort");
         if (p === "title" || p === "author" || p === "date") return p;
@@ -107,10 +115,12 @@ export function useArticleFilters(
         if (topic) params.set("topic", topic);
         if (language) params.set("lang", language);
         if (status !== "all") params.set("status", status);
+        if (series) params.set("series", series);
+        if (tag) params.set("tag", tag);
         if (sortBy !== "date") params.set("sort", sortBy);
         if (sortOrder !== defaultOrderFor(sortBy)) params.set("order", sortOrder);
         setSearchParams(params, { replace: true });
-    }, [debouncedQuery, topic, language, status, sortBy, sortOrder, setSearchParams]);
+    }, [debouncedQuery, topic, language, status, series, tag, sortBy, sortOrder, setSearchParams]);
 
     const availableTopics = useMemo<ArticleFilterOption[]>(() => {
         const counts = new Map<string, number>();
@@ -118,6 +128,37 @@ export function useArticleFilters(
             const t_ = (article.topic || "").trim();
             if (!t_) continue;
             counts.set(t_, (counts.get(t_) || 0) + 1);
+        }
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: `${value} (${count})`, count }))
+            .sort((a, b) => a.value.localeCompare(b.value));
+    }, [articles]);
+
+    const availableSeries = useMemo<ArticleFilterOption[]>(() => {
+        const counts = new Map<string, number>();
+        for (const article of articles) {
+            const s = (article.series || "").trim();
+            if (!s) continue;
+            counts.set(s, (counts.get(s) || 0) + 1);
+        }
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: `${value} (${count})`, count }))
+            .sort((a, b) => a.value.localeCompare(b.value));
+    }, [articles]);
+
+    const availableTags = useMemo<ArticleFilterOption[]>(() => {
+        // Articles store tags as a list[str]; the available-tags
+        // facet flattens across the loaded articles and counts each
+        // distinct tag. The dropdown only filters by ONE tag at a
+        // time, but the option list shows the count so users can
+        // pick the most populated tag first.
+        const counts = new Map<string, number>();
+        for (const article of articles) {
+            for (const tagValue of article.tags || []) {
+                const v = tagValue.trim();
+                if (!v) continue;
+                counts.set(v, (counts.get(v) || 0) + 1);
+            }
         }
         return Array.from(counts.entries())
             .map(([value, count]) => ({ value, label: `${value} (${count})`, count }))
@@ -156,6 +197,8 @@ export function useArticleFilters(
                 if (topic && (article.topic || "") !== topic) return false;
                 if (language && article.language !== language) return false;
                 if (status !== "all" && article.status !== status) return false;
+                if (series && (article.series || "") !== series) return false;
+                if (tag && !(article.tags || []).includes(tag)) return false;
                 return true;
             })
             .sort((a, b) => {
@@ -171,7 +214,7 @@ export function useArticleFilters(
                 }
                 return sortOrder === "asc" ? cmp : -cmp;
             });
-    }, [articles, debouncedQuery, topic, language, status, sortBy, sortOrder]);
+    }, [articles, debouncedQuery, topic, language, status, series, tag, sortBy, sortOrder]);
 
     const setSortBy = useCallback((field: ArticleSortField) => {
         setSortByRaw(field);
@@ -188,26 +231,39 @@ export function useArticleFilters(
         setTopic("");
         setLanguage("");
         setStatus("all");
+        setSeries("");
+        setTag("");
     }, []);
 
     const hasActiveFilters =
-        searchQuery !== "" || topic !== "" || language !== "" || status !== "all";
+        searchQuery !== "" ||
+        topic !== "" ||
+        language !== "" ||
+        status !== "all" ||
+        series !== "" ||
+        tag !== "";
 
     return {
         searchQuery,
         topic,
         language,
         status,
+        series,
+        tag,
         sortBy,
         sortOrder,
         filteredArticles,
         availableTopics,
         availableLanguages,
+        availableSeries,
+        availableTags,
         hasActiveFilters,
         setSearchQuery,
         setTopic,
         setLanguage,
         setStatus,
+        setSeries,
+        setTag,
         setSortBy,
         toggleSortOrder,
         resetFilters,

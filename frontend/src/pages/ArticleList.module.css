@@ -301,3 +301,44 @@
     border: 1px solid var(--border);
     border-radius: 8px;
 }
+
+/* Bulk-export selection UI: per-tile checkbox overlay, per-row
+ * leading checkbox cell, sticky "select all" affordance, and a
+ * subtle highlight on selected items so the user can see at a
+ * glance what they've picked. */
+.bulkSelectAll {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.tileWrapper {
+    position: relative;
+}
+
+.tileCheckbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.tileSelected > :global(.card),
+.tileSelected > :global([class*="card"]) {
+    outline: 2px solid var(--accent-bg);
+    outline-offset: -1px;
+}
+
+.gridCellCheckbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.rowSelected {
+    background: var(--accent-bg-subtle, var(--bg-secondary));
+}

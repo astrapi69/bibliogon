@@ -164,6 +164,9 @@ export interface Article {
     topic: string | null
     seo_title: string | null
     seo_description: string | null
+    /** Free-string series name. Mirrors ``Book.series``; flat, no
+     *  hierarchy. Drives the bulk-export "filter by series" workflow. */
+    series: string | null
     created_at: string
     updated_at: string
     /** Trash-bin parity with Book. ISO timestamp when the article
@@ -204,6 +207,7 @@ export interface ArticleUpdate {
     topic?: string | null
     seo_title?: string | null
     seo_description?: string | null
+    series?: string | null
 }
 
 // --- Publication (AR-02 Phase 2) ---
@@ -920,6 +924,41 @@ export const api = {
             request<void>(`/articles/trash/${id}`, {method: "DELETE"}),
         emptyTrash: () =>
             request<void>("/articles/trash/empty", {method: "DELETE"}),
+
+        /** Bulk export. POSTs an explicit ID list (already in display
+         *  order on the dashboard) plus a format and a mode, downloads
+         *  the resulting blob via a synthetic anchor click. The
+         *  request bypasses the JSON wrapper because the response is a
+         *  binary file (ZIP / PDF / DOCX) or a non-JSON document
+         *  (Markdown / HTML); anything other than 200 surfaces as
+         *  ApiError so the caller's catch block can toast the
+         *  fail-loud message coming back from the server (e.g.
+         *  "Failed exporting article 'X': pandoc broke on image Y"). */
+        bulkExport: async (
+            articleIds: string[],
+            format: "markdown" | "html" | "pdf" | "docx",
+            mode: "zip" | "combined",
+        ): Promise<{blob: Blob; filename: string}> => {
+            const res = await fetch(`${BASE}/articles/bulk-export`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({article_ids: articleIds, format, mode}),
+            })
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}))
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string" ? err.detail : "Bulk export failed",
+                    `${BASE}/articles/bulk-export`,
+                    "POST",
+                )
+            }
+            const blob = await res.blob()
+            const filename = _filenameFromContentDisposition(
+                res.headers.get("Content-Disposition"),
+            ) || (mode === "zip" ? "articles.zip" : `articles.${format}`)
+            return {blob, filename}
+        },
     },
 
     /** AR editor-parity Phase 2: translate an Article into a new

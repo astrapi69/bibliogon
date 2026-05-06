@@ -33,6 +33,12 @@ import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
+import ArticleBulkActionBar, {
+    type BulkExportFormat,
+    type BulkExportMode,
+    BULK_LIMIT_HARD,
+} from "../components/articles/ArticleBulkActionBar";
+import { useArticleSelection } from "../components/articles/useArticleSelection";
 import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
@@ -63,7 +69,62 @@ export default function ArticleList() {
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
+    const selection = useArticleSelection();
     const [importWizardOpen, setImportWizardOpen] = useState(false);
+
+    /** Bulk export. Reads the current filtered list in display
+     *  order, restricts to the selected IDs, then POSTs them to the
+     *  backend bulk endpoint. The backend preserves the input order
+     *  in the response (combined sections / ZIP iteration), so the
+     *  user sees exactly what they selected, in the order they saw
+     *  it on screen. Toasts on failure with the server message
+     *  (which includes the offending article title for fail-loud
+     *  pandoc errors). */
+    const handleBulkExport = async (format: BulkExportFormat, mode: BulkExportMode) => {
+        const ordered = filters.filteredArticles
+            .map((a) => a.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        if (ordered.length > BULK_LIMIT_HARD) return; // bar already disables, double-guard.
+        try {
+            const { blob, filename } = await api.articles.bulkExport(ordered, format, mode);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            selection.clear();
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.articles.bulk.export_failed", "Bulk export failed");
+            notify.error(message);
+        }
+    };
+
+    /** Filter changes invalidate selection because a previously-
+     *  selected article may now be hidden by the new filter; keeping
+     *  it selected is confusing. Clear whenever any filter facet
+     *  changes. ``selection.clear`` is wrapped in ``useCallback`` so
+     *  its identity is stable across renders; depending on the
+     *  callback rather than the whole ``selection`` object avoids
+     *  an infinite-render loop. */
+    const clearSelection = selection.clear;
+    useEffect(() => {
+        clearSelection();
+    }, [
+        filters.searchQuery,
+        filters.topic,
+        filters.language,
+        filters.status,
+        filters.series,
+        filters.tag,
+        clearSelection,
+    ]);
 
     /** Project-wide backup export. Same handler as Dashboard.tsx
      *  surfaces; the .bgb is project-scoped (currently books-only,
@@ -551,6 +612,45 @@ export default function ArticleList() {
             ) : null}
 
             {!showTrash ? <ArticleFilterBar filters={filters} /> : null}
+            {!showTrash && selection.count > 0 ? (
+                <ArticleBulkActionBar
+                    count={selection.count}
+                    onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
+                    onClear={selection.clear}
+                    t={t}
+                />
+            ) : null}
+            {!showTrash && filters.filteredArticles.length > 0 ? (
+                <div className={layout.bulkSelectAll}>
+                    <label>
+                        <input
+                            type="checkbox"
+                            data-testid="article-bulk-select-all"
+                            checked={
+                                selection.count > 0 &&
+                                selection.count === filters.filteredArticles.length
+                            }
+                            ref={(el) => {
+                                if (el)
+                                    el.indeterminate =
+                                        selection.count > 0 &&
+                                        selection.count < filters.filteredArticles.length;
+                            }}
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                    selection.selectAll(
+                                        filters.filteredArticles.map((a) => a.id),
+                                    );
+                                } else {
+                                    selection.clear();
+                                }
+                            }}
+                        />
+                        {" "}
+                        {t("ui.articles.bulk.select_all", "Select all")}
+                    </label>
+                </div>
+            ) : null}
 
             {showTrash ? null : loading ? (
                 <p
@@ -582,13 +682,29 @@ export default function ArticleList() {
             ) : viewMode === "grid" ? (
                 <div className={layout.grid} data-testid="article-list">
                     {filters.filteredArticles.map((a) => (
-                        <ArticleCard
+                        <div
                             key={a.id}
-                            article={a}
-                            onClick={() => navigate(`/articles/${a.id}`)}
-                            onDelete={() => void handleDelete(a)}
-                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
-                        />
+                            className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
+                        >
+                            <input
+                                type="checkbox"
+                                className={layout.tileCheckbox}
+                                data-testid={`article-bulk-check-${a.id}`}
+                                checked={selection.isSelected(a.id)}
+                                onChange={() => selection.toggle(a.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={t(
+                                    "ui.articles.bulk.select_all",
+                                    "Select",
+                                )}
+                            />
+                            <ArticleCard
+                                article={a}
+                                onClick={() => navigate(`/articles/${a.id}`)}
+                                onDelete={() => void handleDelete(a)}
+                                onDeletePermanent={() => void handleDeletePermanentFromList(a)}
+                            />
+                        </div>
                     ))}
                 </div>
             ) : (
@@ -600,6 +716,8 @@ export default function ArticleList() {
                             onOpen={() => navigate(`/articles/${a.id}`)}
                             onDelete={() => void handleDelete(a)}
                             onDeletePermanent={() => void handleDeletePermanentFromList(a)}
+                            isSelected={selection.isSelected(a.id)}
+                            onToggleSelect={() => selection.toggle(a.id)}
                         />
                     ))}
                 </ul>
@@ -859,6 +977,44 @@ function ArticleFilterBar({ filters }: { filters: ReturnType<typeof useArticleFi
                 </select>
             ) : null}
 
+            {filters.availableSeries.length > 0 ? (
+                <select
+                    value={filters.series}
+                    onChange={(e) => filters.setSeries(e.target.value)}
+                    data-testid="article-list-filter-series"
+                    className={layout.filterSelect}
+                    aria-label={t("ui.articles.filter_series_label", "Serie")}
+                >
+                    <option value="">
+                        {t("ui.articles.filter_series_any", "Alle Serien")}
+                    </option>
+                    {filters.availableSeries.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            ) : null}
+
+            {filters.availableTags.length > 0 ? (
+                <select
+                    value={filters.tag}
+                    onChange={(e) => filters.setTag(e.target.value)}
+                    data-testid="article-list-filter-tag"
+                    className={layout.filterSelect}
+                    aria-label={t("ui.articles.filter_tag_label", "Tag")}
+                >
+                    <option value="">
+                        {t("ui.articles.filter_tag_any", "Alle Tags")}
+                    </option>
+                    {filters.availableTags.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            ) : null}
+
             <select
                 value={filters.sortBy}
                 onChange={(e) =>
@@ -947,11 +1103,15 @@ function ArticleRow({
     onOpen,
     onDelete,
     onDeletePermanent,
+    isSelected,
+    onToggleSelect,
 }: {
     article: Article;
     onOpen: () => void;
     onDelete?: () => void;
     onDeletePermanent?: () => void;
+    isSelected?: boolean;
+    onToggleSelect?: () => void;
 }) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -970,11 +1130,23 @@ function ArticleRow({
     return (
         <li
             data-testid={`article-list-row-${article.id}`}
-            className={layout.gridRow}
+            className={`${layout.gridRow}${isSelected ? ` ${layout.rowSelected}` : ""}`}
             onClick={() => {
                 if (!menuOpen) onOpen();
             }}
         >
+            {onToggleSelect ? (
+                <div className={layout.gridCellCheckbox}>
+                    <input
+                        type="checkbox"
+                        data-testid={`article-bulk-check-${article.id}`}
+                        checked={!!isSelected}
+                        onChange={onToggleSelect}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Select article"
+                    />
+                </div>
+            ) : null}
             <div className={layout.gridCellCover}>
                 <div className={layout.coverThumb}>
                     {article.featured_image_url ? (

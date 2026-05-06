@@ -117,6 +117,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
         topic: null,
         seo_title: null,
         seo_description: null,
+        series: null,
         created_at: "2026-04-27T10:00:00Z",
         updated_at: "2026-04-27T10:00:00Z",
         ...overrides,
