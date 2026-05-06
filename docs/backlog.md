@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (v0.28.0 cut; 5 shipped items archived; new D-06-VALIDATION-01 follow-up captured)
+Last updated: 2026-05-06 (v0.28.0 cut + DEP-09/SEC-01 Vite 8 upgrade shipped post-tag, awaiting next-release archive)
 Current version: v0.28.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -28,11 +28,6 @@ store.
 ## ROADMAP cross-reference (curated planning view)
 
 - **AR-01 validation log** — see ROADMAP > P3.
-- **DEP-09** (Vite 8) — see ROADMAP > P3. Unblocked 2026-05-06
-  by `vite-plugin-pwa@1.3.0`; pair with SEC-01.
-- **SEC-01** (vite-plugin-pwa CVE chain) — see ROADMAP > P3.
-  Unblocked 2026-05-06 by `vite-plugin-pwa@1.3.0`; pair with
-  DEP-09.
 - **DEP-02** (TipTap 3) — see ROADMAP > Blocked / Upstream Wait.
 - **DEP-05** (elevenlabs 2.x) — see ROADMAP > Blocked / Upstream Wait.
 

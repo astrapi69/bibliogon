@@ -3,7 +3,7 @@
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-06
 Latest release: v0.28.0 (bulk export from Books dashboard; cross-platform installer scripts install.command + install.ps1 + install.cmd; full launcher i18n extraction; BIBLIOGON_DB_PATH precedence flip step 2; DEP-09 + SEC-01 unblocked upstream)
-Open tasks: 7 active (P3..P5) + 2 BLOCKED-on-upstream
+Open tasks: 5 active (P3..P5) + 2 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
@@ -60,27 +60,6 @@ upgrades. See backlog for a curated daily-planning view.
   threshold first, which reopens the readiness audit
   ([docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md)).
   Long-running passive task; fills as the feature is used in anger.
-
-- [ ] **DEP-09**: Vite 7 -> 8 (tracker: GH #6).
-  - Unblocked 2026-05-06: `vite-plugin-pwa@1.3.0` published with
-    Vite 8 in its peer-dep range. Verify with
-    `npm view vite-plugin-pwa peerDependencies` before starting.
-  - Effort: 1 session for the bump + smoke; chained with SEC-01
-    because both clear on the same upstream release.
-  - Caution: do NOT use `--legacy-peer-deps` to force; Vite 8
-    changed plugin APIs and PWA only exercises at `vite build` /
-    SW regen, so a runtime break on the published bundle is hard
-    to detect locally.
-
-- [ ] **SEC-01**: vite-plugin-pwa vulnerability chain.
-  - Unblocked 2026-05-06: `vite-plugin-pwa@1.3.0` updates the
-    transitive `workbox-build` -> `@rollup/plugin-terser` ->
-    `serialize-javascript` chain that carried CVEs
-    GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v
-    (DoS, CVSS 5.9). 4 high-severity dev-only audit findings
-    expected to clear with the upgrade.
-  - Verify with `npm audit --audit-level=high` after the bump.
-  - Pair with DEP-09 in a single Vite 8 upgrade session.
 
 - [ ] **PS-14+**: future polish items, surface as found.
 

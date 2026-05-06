@@ -57,50 +57,67 @@ export default defineConfig({
         setupFiles: ["./src/test/setup.ts"],
     },
     build: {
+        // Vite 8 (Rolldown) accepts only the function form of
+        // ``manualChunks``; the legacy object form Vite 7 supported
+        // is no longer valid. Match each id against the packages-to-
+        // chunk map and return the bucket name so Rolldown emits the
+        // same chunk shape Rollup did under Vite 7.
         rollupOptions: {
             output: {
-                manualChunks: {
-                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-                    'vendor-tiptap': [
-                        '@tiptap/react',
-                        '@tiptap/starter-kit',
-                        '@tiptap/extension-image',
-                        '@tiptap/extension-link',
-                        '@tiptap/extension-table',
-                        '@tiptap/extension-table-row',
-                        '@tiptap/extension-table-cell',
-                        '@tiptap/extension-table-header',
-                        '@tiptap/extension-task-list',
-                        '@tiptap/extension-task-item',
-                        '@tiptap/extension-text-align',
-                        '@tiptap/extension-text-style',
-                        '@tiptap/extension-underline',
-                        '@tiptap/extension-subscript',
-                        '@tiptap/extension-superscript',
-                        '@tiptap/extension-highlight',
-                        '@tiptap/extension-color',
-                        '@tiptap/extension-typography',
-                        '@tiptap/extension-character-count',
-                        '@tiptap/extension-placeholder',
-                        '@tiptap/extension-code-block-lowlight',
-                        '@pentestpad/tiptap-extension-figure',
-                        '@sereneinserenade/tiptap-search-and-replace',
-                        'tiptap-footnotes',
-                    ],
-                    'vendor-ui': [
-                        '@radix-ui/react-context-menu',
-                        '@radix-ui/react-dialog',
-                        '@radix-ui/react-dropdown-menu',
-                        '@radix-ui/react-select',
-                        '@radix-ui/react-tabs',
-                        '@radix-ui/react-toggle',
-                        '@radix-ui/react-tooltip',
-                        '@dnd-kit/core',
-                        '@dnd-kit/sortable',
-                        '@dnd-kit/utilities',
-                        'lucide-react',
-                        'react-toastify',
-                    ],
+                manualChunks: (id: string) => {
+                    if (!id.includes('node_modules')) return undefined;
+                    const chunkMap: Record<string, string[]> = {
+                        'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                        'vendor-tiptap': [
+                            '@tiptap/react',
+                            '@tiptap/starter-kit',
+                            '@tiptap/extension-image',
+                            '@tiptap/extension-link',
+                            '@tiptap/extension-table',
+                            '@tiptap/extension-table-row',
+                            '@tiptap/extension-table-cell',
+                            '@tiptap/extension-table-header',
+                            '@tiptap/extension-task-list',
+                            '@tiptap/extension-task-item',
+                            '@tiptap/extension-text-align',
+                            '@tiptap/extension-text-style',
+                            '@tiptap/extension-underline',
+                            '@tiptap/extension-subscript',
+                            '@tiptap/extension-superscript',
+                            '@tiptap/extension-highlight',
+                            '@tiptap/extension-color',
+                            '@tiptap/extension-typography',
+                            '@tiptap/extension-character-count',
+                            '@tiptap/extension-placeholder',
+                            '@tiptap/extension-code-block-lowlight',
+                            '@pentestpad/tiptap-extension-figure',
+                            '@sereneinserenade/tiptap-search-and-replace',
+                            'tiptap-footnotes',
+                        ],
+                        'vendor-ui': [
+                            '@radix-ui/react-context-menu',
+                            '@radix-ui/react-dialog',
+                            '@radix-ui/react-dropdown-menu',
+                            '@radix-ui/react-select',
+                            '@radix-ui/react-tabs',
+                            '@radix-ui/react-toggle',
+                            '@radix-ui/react-tooltip',
+                            '@dnd-kit/core',
+                            '@dnd-kit/sortable',
+                            '@dnd-kit/utilities',
+                            'lucide-react',
+                            'react-toastify',
+                        ],
+                    };
+                    for (const [chunkName, pkgs] of Object.entries(chunkMap)) {
+                        for (const pkg of pkgs) {
+                            // Trailing slash prevents react matching react-dom etc.
+                            if (id.includes(`/node_modules/${pkg}/`)) {
+                                return chunkName;
+                            }
+                        }
+                    }
+                    return undefined;
                 },
             },
         },
