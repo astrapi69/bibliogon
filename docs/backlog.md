@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-05 (installer discovery completed; D-05 closed won't-fix; D-06 + D-07 added)
+Last updated: 2026-05-05 (launcher first-run UX shipped: welcome + Docker guide + bilingual i18n; LAUNCHER-I18N-EXTRACT-01 added)
 Current version: v0.26.6
-Open tasks: 9 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 10 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -137,6 +137,23 @@ store.
 ---
 
 ## P4 - Roadmap / Future Phases
+
+- **LAUNCHER-I18N-EXTRACT-01**: complete extraction of every
+  remaining hardcoded English string in the launcher into the
+  JSON i18n catalog. The first-run welcome flow + Docker-missing
+  dialog + Settings-language UI shipped 2026-05-05; that is the
+  MVP scope. Roughly 30-40 other dialog titles and message bodies
+  in `launcher/bibliogon_launcher/__main__.py` (manifest-pick,
+  uninstall flow, compose-failure, health-timeout, port-busy,
+  pre-install stale-target, ...) plus a few in
+  `installer.py` / `update_check.py` are still English-only.
+  Effort: 1 session of ~3 hours to enumerate every call site,
+  add catalog keys to `locales/{en,de}.json`, and replace the
+  literals with `i18n.t()` calls. Trigger: any user feedback
+  that surface text on a non-welcome flow is English-only when
+  the user expected German. Defer: there is no concrete report
+  yet, MVP scope already covers the highest-traffic surfaces
+  (welcome + Docker check + Settings).
 
 - **D-07**: Phase 2 follow-up — package-manager discoverability.
   After D-06 ships, submit a winget manifest to
