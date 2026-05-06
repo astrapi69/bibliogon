@@ -12,7 +12,7 @@
  */
 
 import {describe, it, expect, vi, beforeEach} from "vitest";
-import {render, screen, fireEvent} from "@testing-library/react";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import AiSetupWizard from "./AiSetupWizard";
 
@@ -32,10 +32,23 @@ vi.mock("../utils/notify", () => ({
     },
 }));
 
+// vi.mock is hoisted; vi.hoisted lifts the mock fn to the same
+// scope so the factory closure can reference it without TDZ.
+const {mockTestConnection} = vi.hoisted(() => ({
+    mockTestConnection: vi.fn().mockResolvedValue({
+        success: true,
+        error_key: "",
+        error_detail: "",
+    }),
+}));
+
 vi.mock("../api/client", () => ({
     api: {
         settings: {
             updateApp: vi.fn().mockResolvedValue({}),
+        },
+        ai: {
+            testConnection: mockTestConnection,
         },
     },
 }));
@@ -91,5 +104,32 @@ describe("AiSetupWizard secretsManagedExternally branch", () => {
         // key disables Continue.
         const nextButton = screen.getByText(/Weiter|Next/) as HTMLButtonElement;
         expect(nextButton.disabled).toBe(true);
+    });
+});
+
+describe("AiSetupWizard test-connection step", () => {
+    beforeEach(() => {
+        mockTestConnection.mockClear();
+    });
+
+    it("clicking the test button calls api.ai.testConnection (no bare fetch)", async () => {
+        render(
+            <AiSetupWizard
+                open
+                onClose={vi.fn()}
+                secretsManagedExternally
+            />,
+        );
+        // Step 0 (provider) -> step 1 (api-key, externally managed
+        // so Weiter is enabled with empty input) -> step 2 (test).
+        fireEvent.click(screen.getByText(/Weiter|Next/));
+        fireEvent.click(screen.getByText(/Weiter|Next/));
+
+        const testBtn = screen.getByText(/Verbindung testen|Test connection/);
+        fireEvent.click(testBtn);
+
+        await waitFor(() => {
+            expect(mockTestConnection).toHaveBeenCalledTimes(1);
+        });
     });
 });

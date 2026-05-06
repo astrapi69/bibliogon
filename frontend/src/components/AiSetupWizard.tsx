@@ -84,23 +84,17 @@ export default function AiSetupWizard({open, onClose, secretsManagedExternally =
     try {
       // Save first so the backend sees the config
       await api.settings.updateApp({ai: buildAiPayload()})
-      const resp = await fetch("/api/ai/test-connection")
-      if (resp.ok) {
-        const data = await resp.json()
-        if (data.success) {
-          setTestResult("ok")
-          notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"))
-        } else {
-          setTestResult("fail")
-          const detail = data.error_detail || ""
-          const msg = detail
-            ? `${t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")}: ${detail}`
-            : t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")
-          notify.warning(msg)
-        }
+      const data = await api.ai.testConnection()
+      if (data.success) {
+        setTestResult("ok")
+        notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"))
       } else {
         setTestResult("fail")
-        notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"))
+        const detail = data.error_detail || ""
+        const msg = detail
+          ? `${t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")}: ${detail}`
+          : t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen")
+        notify.warning(msg)
       }
     } catch {
       setTestResult("fail")
