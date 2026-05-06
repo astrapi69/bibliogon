@@ -102,6 +102,10 @@ navigation:
           en: Overview
         slug: installation
       - title:
+          de: Docker Desktop installieren
+          en: Install Docker Desktop
+        slug: install/docker-desktop
+      - title:
           de: Windows-Launcher
           en: Windows Launcher
         slug: launcher-windows
