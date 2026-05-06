@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (v0.27.0 ready; bulk article export shipped + Playwright follow-up captured)
+Last updated: 2026-05-06 (v0.27.0 released; 3 P3 items archived)
 Current version: v0.27.0
-Open tasks: 14 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -55,39 +55,14 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle. Per
-  v0.26.6 changelog, the env var still works but is documented
-  as deprecated. Concrete steps: (1) ~~emit a `logger.warning`
-  when `BIBLIOGON_DB_PATH` is set without `BIBLIOGON_DATA_DIR`~~
-  **shipped, awaiting next release** for one release cycle,
-  (2) flip precedence so `BIBLIOGON_DATA_DIR` derivation wins,
-  (3) remove `BIBLIOGON_DB_PATH` override entirely. Effort: S
-  per step, spread across 2-3 releases. Step (2) trigger: one
-  release after step (1) ships (i.e. v0.28.0+). Step (3) trigger:
-  one release after step (2).
-
-- ~~**DEP-FE-VERSION-01**: frontend version source-of-truth
-  runtime cross-check. Currently `__APP_VERSION__` is a Vite
-  build-time literal from `package.json`. In dev with hot-
-  reload of one half but not the other, frontend version and
-  backend version can diverge silently. Add a runtime read of
-  `/api/health` `version` field; if it differs from
-  `__APP_VERSION__`, surface a console warning. Effort: S.
-  Speculative; not blocking.~~ **Shipped.** `verifyBackendVersion`
-  in `frontend/src/utils/versionCheck.ts`, fired once from
-  `main.tsx`. Fails open on every error path. Archive on next
-  release.
-
-- ~~**CI-PRECOMMIT-HOOK-01**: enforce
-  `poetry run pre-commit run --all-files` as a pre-push git
-  hook scoped to tag pushes.~~ **Shipped.** `scripts/git-hooks/
-  pre-push` runs `pre-commit run --all-files` against `backend/`
-  whenever a `refs/tags/*` push is detected; branch pushes are a
-  no-op. `make install-hooks` symlinks every script under
-  `scripts/git-hooks/` into `.git/hooks/`. Per-checkout, not
-  committed under `.git/`. Each contributor runs `make
-  install-hooks` once. Bypass with `git push --no-verify` only
-  when explicitly intentional. Archive on next release.
+- **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle.
+  Step 1 (deprecation warning) shipped in v0.27.0 and is
+  archived. Remaining steps: (2) flip precedence so
+  `BIBLIOGON_DATA_DIR` derivation wins, (3) remove
+  `BIBLIOGON_DB_PATH` override entirely. Effort: S per step,
+  spread across 2-3 releases. Step (2) trigger: one release
+  after v0.27.0 (i.e. v0.28.0+). Step (3) trigger: one release
+  after step (2).
 
 - **D-06**: Phase 2 cross-platform installer scripts (post
   installer-discovery 2026-05-05). Three deliverables:
