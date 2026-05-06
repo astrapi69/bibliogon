@@ -20,36 +20,55 @@ def _resolve_database_url() -> str:
        function, which is the whole point (see tests/conftest.py and
        tests/test_test_isolation.py).
     2. DATABASE_URL env var is honoured verbatim.
-    3. BIBLIOGON_DB_PATH env var lets callers override the on-disk file
-       location explicitly. Kept for backwards compatibility with
-       deployments that set it directly (e.g. existing
-       docker-compose.prod.yml configurations). DEPRECATED; emits a
-       logger.warning when set without BIBLIOGON_DATA_DIR. A future
-       release flips precedence so BIBLIOGON_DATA_DIR derivation wins,
-       and a later release removes the override entirely.
-    4. Default falls through to ``app.paths.get_db_path()``, which
-       resolves the canonical path from BIBLIOGON_DATA_DIR or
-       platformdirs.
+    3. BIBLIOGON_DATA_DIR derivation wins next: when set, the database
+       path is derived as ``<BIBLIOGON_DATA_DIR>/bibliogon.db``. The
+       legacy BIBLIOGON_DB_PATH override is ignored when DATA_DIR is
+       set.
+    4. BIBLIOGON_DB_PATH env var, only when BIBLIOGON_DATA_DIR is NOT
+       set. DEPRECATED; emits a logger.warning every time. Kept as a
+       backward-compatibility shim for deployments that still pass it
+       (e.g. older docker-compose.prod.yml configurations). A later
+       release removes the override entirely.
+    5. Default falls through to ``app.paths.get_db_path()`` which
+       uses platformdirs for the canonical OS-specific data directory.
+
+    Step 2 of DEP-DBPATH-01 (precedence flip): BIBLIOGON_DATA_DIR is
+    now the senior source. Users who set BOTH env vars previously
+    saw BIBLIOGON_DB_PATH win; from this release onward the
+    DATA_DIR-derived path wins. Step 1 (the deprecation warning)
+    shipped in v0.27.0; step 3 (full removal) is queued for the
+    release after this one.
     """
     if os.getenv("BIBLIOGON_TEST") == "1":
         return os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
     if explicit := os.getenv("DATABASE_URL"):
         return explicit
-    if db_path_override := os.getenv("BIBLIOGON_DB_PATH"):
-        if not os.getenv("BIBLIOGON_DATA_DIR"):
-            logger.warning(
-                "BIBLIOGON_DB_PATH is deprecated and will be removed in a "
-                "future release. Set BIBLIOGON_DATA_DIR instead; the "
-                "database path is derived as <BIBLIOGON_DATA_DIR>/bibliogon.db. "
-                "Current value: %s",
-                db_path_override,
-            )
-        db_path = Path(db_path_override)
-    else:
+    if os.getenv("BIBLIOGON_DATA_DIR"):
         # Late import: app.paths import is cheap but keeping it inside
         # the function preserves the historical "database.py imports
         # are minimal" property and avoids any circular-import risk
         # with future paths.py extensions.
+        from app.paths import get_db_path
+
+        if db_path_override := os.getenv("BIBLIOGON_DB_PATH"):
+            logger.warning(
+                "BIBLIOGON_DB_PATH=%s is set but BIBLIOGON_DATA_DIR is also "
+                "set; BIBLIOGON_DATA_DIR wins (precedence flipped in step 2 "
+                "of the deprecation cycle). Remove BIBLIOGON_DB_PATH from "
+                "your environment; it will be ignored.",
+                db_path_override,
+            )
+        db_path = get_db_path()
+    elif db_path_override := os.getenv("BIBLIOGON_DB_PATH"):
+        logger.warning(
+            "BIBLIOGON_DB_PATH is deprecated and will be removed in a "
+            "future release. Set BIBLIOGON_DATA_DIR instead; the "
+            "database path is derived as <BIBLIOGON_DATA_DIR>/bibliogon.db. "
+            "Current value: %s",
+            db_path_override,
+        )
+        db_path = Path(db_path_override)
+    else:
         from app.paths import get_db_path
 
         db_path = get_db_path()

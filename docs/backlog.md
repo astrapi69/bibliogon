@@ -57,12 +57,11 @@ store.
 
 - **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle.
   Step 1 (deprecation warning) shipped in v0.27.0 and is
-  archived. Remaining steps: (2) flip precedence so
-  `BIBLIOGON_DATA_DIR` derivation wins, (3) remove
-  `BIBLIOGON_DB_PATH` override entirely. Effort: S per step,
-  spread across 2-3 releases. Step (2) trigger: one release
-  after v0.27.0 (i.e. v0.28.0+). Step (3) trigger: one release
-  after step (2).
+  archived. Step 2 (precedence flip — `BIBLIOGON_DATA_DIR` now
+  always wins when both env vars are set) shipped 2026-05-06,
+  awaiting next release for archive. Step 3 (remove
+  `BIBLIOGON_DB_PATH` override entirely) trigger: one release
+  after step 2 ships.
 
 - **D-06**: Phase 2 cross-platform installer scripts (post
   installer-discovery 2026-05-05). Three deliverables:
