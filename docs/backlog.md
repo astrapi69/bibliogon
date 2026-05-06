@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (bulk article export shipped; AR-BULK-* follow-ups added)
-Current version: v0.26.6
-Open tasks: 13 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Last updated: 2026-05-06 (v0.27.0 ready; bulk article export shipped + Playwright follow-up captured)
+Current version: v0.27.0
+Open tasks: 14 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -189,6 +189,20 @@ store.
   per-book via manuscripta; the bulk endpoint can iterate or
   build a multi-book write-book-template, decision deferred to
   the implementing session.
+
+- **AR-BULK-PLAYWRIGHT-SMOKE-01**: add Playwright smoke coverage
+  for the bulk article export workflow. The 2026-05-06 v0.27.0
+  release shipped without bulk-export-specific Playwright
+  coverage because the local dev environment runs Node 18 and
+  Vite 7 refuses (Vite 7 needs 20.19+ / 22.12+). CI is on Node
+  24 and the existing article smoke suite is green; this item
+  closes the bulk-export gap. Effort: ~1 hour. Trigger: next
+  session OR Node-24-on-local availability OR first user report
+  of a bulk-export UI regression. Spec scope: select 2 articles
+  via tile checkboxes + click Export ZIP markdown + verify
+  download fires; same with combined PDF if xelatex is on the
+  CI image; filter compose (series + tag) + Select-all + count
+  matches.
 
 - **AR-BULK-CROSSPAGE-SELECT-01**: cross-page Select-all for the
   bulk-export workflow. Articles dashboard does not paginate

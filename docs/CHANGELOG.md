@@ -2,6 +2,185 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.27.0] - 2026-05-06
+
+Bulk article export shipped, the launcher first-run experience
+overhauled with a welcome dialog and bilingual UI, plus a handful
+of release-hardening and lock-step polish items that landed across
+the same window.
+
+### Action required
+
+**If you have set `BIBLIOGON_DB_PATH` manually (uncommon — default
+Docker setups do not):** the env var still works but is now
+deprecated. When set without `BIBLIOGON_DATA_DIR`, the backend
+emits a runtime warning at startup. Migrate by removing
+`BIBLIOGON_DB_PATH` and setting `BIBLIOGON_DATA_DIR` instead; the
+database location is derived as `<BIBLIOGON_DATA_DIR>/bibliogon.db`.
+A future release flips precedence so `BIBLIOGON_DATA_DIR`
+derivation wins, and a later release removes the override
+entirely. Users who never set `BIBLIOGON_DB_PATH` see no change
+and need do nothing.
+
+**Bulk article export.** The Articles dashboard now supports
+selecting multiple articles and exporting them in one operation.
+Each tile and row carries a checkbox; "Select all" picks every
+currently visible article after filters. A sticky bulk-action bar
+appears as soon as the selection is non-empty, with a format
+dropdown (Markdown, HTML, PDF, DOCX), an output-mode toggle (ZIP
+archive of individual files vs one combined document), an Export
+button, and a Clear-selection button. Filter composition uses AND
+across the four facets — status, topic, **series** (new), and
+**tag** (new) — so the typical workflow ("filter by series,
+Select all, Export combined PDF") is exactly that. Combined
+Markdown drops each article's H1 in favour of `## Title` so
+Pandoc's auto-generated TOC has one entry per article; combined
+HTML carries id-anchored sections; combined PDF gives each article
+its own chapter via xelatex's `--top-level-division=chapter`.
+Article order in the response matches the dashboard's display
+order. Filename collisions in ZIP get numeric suffixes
+(`slug-2.md`, `slug-3.md`). Hard limit is 200 articles per export
+with a soft warning at 50. The combined Pandoc invocation gets
+180 seconds (vs 60 for per-article) and fails loud with the
+offending article's title surfaced when an embedded image is
+unreachable. Per-article export, including the per-row Export
+action, is unchanged.
+
+**Article schema gains `series`.** `Article.series` is a flat
+free-string field (mirrors `Book.series`), nullable, exact-string
+match in the new dashboard filter. Hierarchy (parent/child series)
+stays out of scope; if the umbrella-with-sub-series workflow
+grows past flat-string match, a focused follow-up adds a Series
+model + relationship table. The Alembic migration
+(`c0a1b2c3d4e5_add_articles_series`) is idempotent and adds the
+column nullable, so existing rows pick up `NULL` automatically.
+
+**Launcher first-run experience overhauled.** Every new user now
+sees a welcome dialog before any check fires, explaining what
+Bibliogon needs (Docker Desktop, ~800 MB), what the first run
+costs (~2 GB / 5–10 minutes), plus a brief Docker security trust
+statement linking to the new Bibliogon Docker installation guide
+(en + de) under `docs/help/{en,de}/install/docker-desktop.md`. The
+dialog is non-skippable on first ever launch and persists a
+`welcomed` flag so subsequent starts skip it. The launcher's
+internal user-facing strings now live in a JSON i18n catalog
+(`bibliogon_launcher/locales/{en,de}.json`); locale resolution
+follows OS locale by default with an explicit override available
+under Settings > Language. The Docker-missing dialog moved from
+a single-OK error to a three-button choice (open the Docker
+download page, open the Bibliogon Docker installation guide, or
+quit), with locale-aware URL selection. A small set of remaining
+hardcoded English dialogs (manifest pick, uninstall flow,
+compose-failure, health-timeout, etc.) is tracked as
+`LAUNCHER-I18N-EXTRACT-01` for a follow-up extraction pass.
+
+**Frontend / backend version cross-check.** The frontend ships
+`__APP_VERSION__` as a Vite build-time literal from
+`package.json`; the backend reports its own version via
+`/api/health`. In dev with hot-reload of only one half, the two
+diverge silently and bug reports get filed against the wrong
+version. `verifyBackendVersion` in
+`frontend/src/utils/versionCheck.ts` fires once at app start,
+fetches `/api/health`, and `console.warn`s with both versions
+when they differ. Fails open on every error path (network
+failure, missing version field, JSON parse error) so offline boot
+or a backend that hasn't started yet never breaks the app.
+
+**Installer discovery: D-05 closed as won't-fix.** A focused
+discovery session evaluated nine Windows installer candidates and
+four macOS one-click options
+(`docs/explorations/installer-discovery-report.md`, 708 lines, 25
+cited sources). The Docker Subscription Service Agreement Section
+2.1's non-sublicensable license grant forbids third-party silent
+install of Docker Desktop, so the original D-05 framing ("install
+Docker Desktop for the user") is closed as won't-fix; the
+launcher's existing detect-and-instruct flow is the EULA-compliant
+ceiling. Two follow-up backlog items captured the next steps for
+the cross-platform-scripts side: D-06 (`install.command` for
+macOS, `install.ps1` + `install.cmd` for Windows; ship unsigned
+per user decision; 5–7 hours) and D-07 (winget manifest +
+Homebrew tap submissions; ~2 hours plus reviewer latency).
+
+### Internal
+
+**Pre-push hook enforces pre-commit on tag pushes.** A new
+`scripts/git-hooks/pre-push` runs
+`poetry run pre-commit run --all-files` against the backend
+whenever the push refspec contains `refs/tags/*`. Branch pushes
+are a silent no-op so the hook stays out of the way during
+normal development. Per-checkout, not committed under `.git/`;
+each contributor runs `make install-hooks` once. Bypass with
+`git push --no-verify` when explicitly intentional. The pre-tag
+explicit `pre-commit run --all-files` step in
+`release-workflow.md` Step 5 stays mandatory — the hook fails
+the *push*, not the tag creation, so skipping the explicit step
+makes a half-tagged repo. Closes the gap that produced the
+v0.26.0..v0.26.6 hotfix chain.
+
+**Static GitHub release-notes template.** `.github/RELEASE_TEMPLATE.md`
+is a copy-paste reference for `release-workflow.md` Step 8 — no
+automation reads it. Future releases copy the prerequisites
+block (Docker required, install-guide URLs, hash-verify
+commands) into `changelog/releases/vX.Y.Z.md` before invoking
+`gh release create`, so every release page reuses the same
+prerequisites surface instead of being rewritten from memory.
+
+**Article filter quartet at the dashboard list endpoint.**
+`GET /api/articles` accepts `?status=`, `?topic=`, `?series=`,
+and `?tag=` query parameters, AND-composed. The `tag` filter does
+a JSON-string LIKE match (matching `"python"` does not match an
+article tagged `"pythonista"` — the JSON quote-wrapping pins the
+tag literal). The frontend dashboard handles all filtering
+client-side via `useArticleFilters`, but the backend filters keep
+the API surface complete for headless callers and future server-
+side pagination.
+
+**Bilingual UI strings shipped to all locales.** The 12 new
+`ui.articles.bulk.*` and `ui.articles.filter_{series,tag}_*`
+keys exist in EN and DE (real umlauts) and got backfilled into
+the six auto-translated locales (es, fr, el, pt, tr, ja) with
+English fallback values per the existing
+`AUTO_TRANSLATED.md` banner convention. The i18n parity test
+stays green; refining the auto-translated values is captured as
+`I18N-DIACRITICS-01`.
+
+**Tests.** Backend grew from 1278 to 1285 (+7 unit tests on
+the bulk export endpoint and list filter; ZIP / combined for all
+four formats, validation, ID-order preservation, filename
+collision). Frontend grew from 688 to 702 (+14 across the
+selection hook, the bulk action bar, and the filter-compose
+hook). Launcher tests added 18 cases (i18n catalog resolution,
+welcome-flag persistence, Docker-missing dispatch, welcome
+ordering before Docker check). Total in this release: 39 new
+tests covering the user-visible bulk-export contract end to end.
+
+**Backlog churn.** Closed: D-05 (won't-fix, archived to
+`docs/roadmap-archive/2026-05.md`). Added: AR-BULK-SERIES-
+HIERARCHY-01 (P3, parent/child series), AR-BULK-BOOKS-PARITY-01
+(P4, books-dashboard parity), AR-BULK-CROSSPAGE-SELECT-01 (P4,
+gated on pagination), AR-BULK-ASYNC-PROGRESS-01 (P5, gated on
+hang report), LAUNCHER-I18N-EXTRACT-01 (P4, full launcher string
+extraction), D-06 (P3, cross-platform installer scripts), D-07
+(P4, package-manager discoverability).
+
+### Known limitations
+
+The bulk export response is synchronous; selections that exceed
+the 180-second combined-Pandoc timeout fail. The backlog item
+`AR-BULK-ASYNC-PROGRESS-01` (P5) tracks moving the workflow to
+the async-job + SSE-progress pattern used by audiobook export
+when the first user reports a perceived hang.
+
+The Articles dashboard does not paginate today; "Select all"
+selects only the visible filtered set. Cross-page Select-all is
+captured as `AR-BULK-CROSSPAGE-SELECT-01` (P4) and lands when
+pagination does.
+
+The combined PDF assumes Pandoc + xelatex is available. Servers
+without xelatex installed return 502 with the Pandoc stderr
+surfaced; Markdown export needs neither and remains the safe
+fallback.
+
 ## [0.26.6] - 2026-05-04
 
 Hotfix for v0.26.5. v0.26.5's `.gitattributes` fix was correct
