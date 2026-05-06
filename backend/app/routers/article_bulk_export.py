@@ -47,7 +47,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Article
 from app.routers.article_export import (
-    _MEDIA_TYPES,
     _OUTPUT_EXTENSIONS,
     _PANDOC_TARGETS,
     _build_markdown,
@@ -77,9 +76,7 @@ class BulkExportRequest(BaseModel):
     mode: Literal["zip", "combined"]
 
 
-def _load_articles_in_order(
-    article_ids: list[str], db: Session
-) -> list[Article]:
+def _load_articles_in_order(article_ids: list[str], db: Session) -> list[Article]:
     """Fetch the requested rows and return them in the input order.
 
     SQL ``IN`` does not preserve list order; we look up by ID in a
@@ -322,9 +319,7 @@ def _build_zip(articles: list[Article], fmt: str) -> Response:
 
 
 @router.post("")
-def bulk_export(
-    req: BulkExportRequest, db: Session = Depends(get_db)
-) -> Response:
+def bulk_export(req: BulkExportRequest, db: Session = Depends(get_db)) -> Response:
     """Export multiple articles as a ZIP-of-files OR a combined document.
 
     ``article_ids`` order is preserved through to the output (combined
