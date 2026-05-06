@@ -328,7 +328,23 @@ git push origin v0.X.0
 
 ## Step 8: Create the GitHub Release
 
-With the gh CLI (preferred):
+Before invoking `gh release create`, build the per-release notes
+file by combining the static prerequisites template with the
+version-specific changelog:
+
+1. Open `.github/RELEASE_TEMPLATE.md`. Copy the "Before you
+   install", "Download", and "Verifying downloads" sections into
+   `changelog/releases/v0.X.0.md` if not already present.
+2. Replace the trailing `## What's new` placeholder with the
+   per-version changelog excerpt produced in Step 3.
+
+The template is a static reference; nothing reads it
+automatically. The reason it exists at all is to stop every
+release from rewriting the prerequisites block (Docker required,
+guide URLs, hash-verify commands) from memory and producing
+inconsistent or incomplete release pages.
+
+Then with the gh CLI (preferred):
 ```bash
 gh release create v0.X.0 \
   --title "Bibliogon v0.X.0" \
