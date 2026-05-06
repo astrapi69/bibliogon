@@ -1,11 +1,13 @@
 import {useEffect, useState} from "react"
 import {Key, Copy, Trash2, RefreshCw} from "lucide-react"
 import {api, ApiError, SshKeyInfo} from "../api/client"
+import {useDialog} from "./AppDialog"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 
 export default function SshKeySection() {
     const {t} = useI18n()
+    const dialog = useDialog()
     const [info, setInfo] = useState<SshKeyInfo | null>(null)
     const [comment, setComment] = useState("")
     const [busy, setBusy] = useState(false)
@@ -30,12 +32,15 @@ export default function SshKeySection() {
             notify.success(t("ui.ssh.generated", "SSH-Schlüssel erzeugt"))
         } catch (err) {
             if (err instanceof ApiError && err.detailBody?.code === "ssh_key_exists") {
-                if (
-                    confirm(t(
+                const ok = await dialog.confirm(
+                    t("ui.ssh.confirm_overwrite_title", "SSH-Schlüssel überschreiben?"),
+                    t(
                         "ui.ssh.confirm_overwrite",
                         "Vorhandenen Schlüssel überschreiben? Der alte Schlüssel wird ungültig.",
-                    ))
-                ) {
+                    ),
+                    "danger",
+                )
+                if (ok) {
                     await handleGenerate(true)
                 }
                 return
@@ -47,10 +52,15 @@ export default function SshKeySection() {
     }
 
     async function handleDelete() {
-        if (!confirm(t(
-            "ui.ssh.confirm_delete",
-            "Schlüssel löschen? Remote-Pushs über SSH funktionieren erst wieder nach neuer Erzeugung.",
-        ))) {
+        const ok = await dialog.confirm(
+            t("ui.ssh.confirm_delete_title", "SSH-Schlüssel löschen?"),
+            t(
+                "ui.ssh.confirm_delete",
+                "Schlüssel löschen? Remote-Pushs über SSH funktionieren erst wieder nach neuer Erzeugung.",
+            ),
+            "danger",
+        )
+        if (!ok) {
             return
         }
         setBusy(true)

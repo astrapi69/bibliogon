@@ -320,6 +320,7 @@ ui:
     force_push_ok: Force Push erfolgreich - Remote überschrieben
     local_ahead: lokal vorne
     remote_ahead: Remote hat Änderungen
+    confirm_accept_local_title: Auf Remote erzwingen?
     confirm_accept_local: Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.
     conflict_diverged_body: 'Beide Seiten haben eigene Commits. Wähle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.'
     conflict_push_rejected_body: 'Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:'
@@ -330,7 +331,9 @@ ui:
     comment_hint: "Wird im Host-UI als Schlüssel-Label angezeigt."
     generate: "Schlüssel erzeugen"
     generated: "SSH-Schlüssel erzeugt"
+    confirm_overwrite_title: "SSH-Schlüssel überschreiben?"
     confirm_overwrite: "Vorhandenen Schlüssel überschreiben? Der alte Schlüssel wird ungültig."
+    confirm_delete_title: "SSH-Schlüssel löschen?"
     confirm_delete: "Schlüssel löschen? Remote-Pushs über SSH funktionieren erst wieder nach neuer Erzeugung."
     copy: "Öffentlichen Schlüssel kopieren"
     copied: "Schlüssel kopiert"

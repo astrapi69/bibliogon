@@ -285,6 +285,7 @@ ui:
     apply_resolution: Apply resolution
     auth_failed: Échec de l'authentification. Vérifie le PAT.
     behind: behind
+    confirm_accept_local_title: Forcer l'envoi au remote ?
     confirm_accept_local: Forcer l'envoi de la version locale vers le remote ? Les commits distants seront écrasés et perdus.
     conflict_diverged_body: 'Les deux côtés ont leurs propres commits. Choisis : fusionner (décider par fichier en cas de conflit), ignorer le remote (force push) ou annuler.'
     conflict_diverged_title: Diverged history
@@ -330,7 +331,9 @@ ui:
     comment_hint: "Affiché comme libellé de la clé dans l'interface de l'hôte."
     generate: "Generate key"
     generated: "SSH key generated"
+    confirm_overwrite_title: "Écraser la clé SSH ?"
     confirm_overwrite: "Écraser la clé existante ? L'ancienne clé devient invalide."
+    confirm_delete_title: "Supprimer la clé SSH ?"
     confirm_delete: "Supprimer la clé ? Le push/pull SSH cessera de fonctionner jusqu'à ce qu'une nouvelle clé soit générée."
     copy: "Copy public key"
     copied: "Public key copied"

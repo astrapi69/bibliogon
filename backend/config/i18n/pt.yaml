@@ -285,6 +285,7 @@ ui:
     apply_resolution: Apply resolution
     auth_failed: Autenticação falhou. Verifica o PAT.
     behind: behind
+    confirm_accept_local_title: Forçar push ao remoto?
     confirm_accept_local: Forçar o envio da versão local para o remoto? Quaisquer commits remotos serão sobrescritos e perdidos.
     conflict_diverged_body: 'Ambos os lados têm os seus próprios commits. Escolhe: merge (decidir por ficheiro nos conflitos), ignorar remoto (force push) ou cancelar.'
     conflict_diverged_title: Diverged history
@@ -330,7 +331,9 @@ ui:
     comment_hint: "Mostrado como rótulo da chave na interface do host."
     generate: "Generate key"
     generated: "SSH key generated"
+    confirm_overwrite_title: "Sobrescrever chave SSH?"
     confirm_overwrite: "Sobrescrever a chave existente? A chave antiga torna-se inválida."
+    confirm_delete_title: "Eliminar chave SSH?"
     confirm_delete: "Eliminar a chave? O push/pull SSH deixará de funcionar até que uma nova chave seja gerada."
     copy: "Copy public key"
     copied: "Public key copied"
