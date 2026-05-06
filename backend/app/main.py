@@ -669,7 +669,7 @@ def health():
 # Test reset endpoint - only available in debug mode
 if DEBUG:
     from app.database import SessionLocal
-    from app.models import Asset, Book, Chapter
+    from app.models import Article, Asset, Book, Chapter
 
     @app.delete("/api/test/reset")
     def reset_test_db():
@@ -679,6 +679,7 @@ if DEBUG:
             db.query(Asset).delete()
             db.query(Chapter).delete()
             db.query(Book).delete()
+            db.query(Article).delete()
             db.commit()
             return {"status": "reset"}
         finally:

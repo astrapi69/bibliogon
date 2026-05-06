@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 cross-platform installer scripts shipped, awaiting fresh-machine validation + next-release archive)
+Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 shipped; awaiting next-release archive)
 Current version: v0.27.0
 Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -169,19 +169,16 @@ store.
   build a multi-book write-book-template, decision deferred to
   the implementing session.
 
-- **AR-BULK-PLAYWRIGHT-SMOKE-01**: add Playwright smoke coverage
-  for the bulk article export workflow. The 2026-05-06 v0.27.0
-  release shipped without bulk-export-specific Playwright
-  coverage because the local dev environment runs Node 18 and
-  Vite 7 refuses (Vite 7 needs 20.19+ / 22.12+). CI is on Node
-  24 and the existing article smoke suite is green; this item
-  closes the bulk-export gap. Effort: ~1 hour. Trigger: next
-  session OR Node-24-on-local availability OR first user report
-  of a bulk-export UI regression. Spec scope: select 2 articles
-  via tile checkboxes + click Export ZIP markdown + verify
-  download fires; same with combined PDF if xelatex is on the
-  CI image; filter compose (series + tag) + Select-all + count
-  matches.
+- ~~**AR-BULK-PLAYWRIGHT-SMOKE-01**: add Playwright smoke coverage
+  for the bulk article export workflow.~~ **Shipped 2026-05-06.**
+  `e2e/smoke/article-bulk-export.spec.ts` covers three flows:
+  per-tile checkbox + bulk-action-bar + ZIP markdown download;
+  series filter + Select-all selecting only the filtered set;
+  filter change clears selection. Full smoke suite is 191
+  passing (188 + 3 new). Awaiting next-release archive. Caught
+  one real bug while writing the spec: `/api/test/reset` did
+  not clear the `articles` table, leaking state between specs;
+  fixed in the same commit that adds the spec.
 
 - **AR-BULK-CROSSPAGE-SELECT-01**: cross-page Select-all for the
   bulk-export workflow. Articles dashboard does not paginate
