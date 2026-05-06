@@ -27,6 +27,7 @@ from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F40
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import (
     article_assets,
+    article_bulk_export,
     article_export,
     articles,
     assets,
@@ -400,6 +401,7 @@ app.include_router(books.router, prefix="/api")
 app.include_router(articles.router, prefix="/api")
 app.include_router(article_assets.router, prefix="/api")
 app.include_router(article_export.router, prefix="/api")
+app.include_router(article_bulk_export.router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")
 app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")

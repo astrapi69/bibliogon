@@ -134,12 +134,24 @@ def create_article(payload: ArticleCreate, db: Session = Depends(get_db)) -> Art
 @router.get("", response_model=list[ArticleOut])
 def list_articles(
     article_status: str | None = Query(default=None, alias="status"),
+    series: str | None = Query(default=None, max_length=300),
+    tag: str | None = Query(default=None, max_length=100),
+    topic: str | None = Query(default=None, max_length=100),
     db: Session = Depends(get_db),
 ) -> list[Article]:
-    """List live articles, optionally filtered by status.
+    """List live articles with optional filters (status, series, tag, topic).
 
-    Trashed articles (``deleted_at IS NOT NULL``) are excluded -
-    callers reach the trash via ``GET /articles/trash/list``.
+    Filters compose with AND semantics: each one narrows the result
+    set further. Trashed articles (``deleted_at IS NOT NULL``) are
+    always excluded; callers reach the trash via
+    ``GET /articles/trash/list``.
+
+    The ``tag`` filter checks for membership in the JSON-encoded
+    ``tags`` text column. SQLite has no JSON-array operators in the
+    portable SQL surface, so the match is a LIKE on the JSON-string
+    payload with the tag wrapped in quotes - good enough for the
+    typical tag set sizes Bibliogon ships with and avoids a
+    DB-engine-specific operator.
     """
     query = db.query(Article).filter(Article.deleted_at.is_(None))
     if article_status is not None:
@@ -149,6 +161,16 @@ def list_articles(
                 detail=f"status must be one of {_ALLOWED_STATUSES}",
             )
         query = query.filter(Article.status == article_status)
+    if series is not None:
+        query = query.filter(Article.series == series)
+    if topic is not None:
+        query = query.filter(Article.topic == topic)
+    if tag is not None:
+        # JSON-string match: tags column stores `["a", "b", "c"]`;
+        # search for `"<tag>"` literal so we don't accidentally match
+        # a tag that is only a substring of another.
+        needle = json.dumps(tag)
+        query = query.filter(Article.tags.like(f"%{needle}%"))
     return query.order_by(Article.updated_at.desc()).all()
 
 
