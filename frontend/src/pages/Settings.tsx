@@ -829,33 +829,27 @@ function AiAssistantSettings({config, onSave, saving}: {
                                         // Save current settings first so the backend sees the latest config
                                         await onSave(buildSaveData());
 
-                                        const resp = await fetch("/api/ai/test-connection");
-                                        if (resp.ok) {
-                                            const data = await resp.json();
-                                            if (data.success) {
-                                                setAiTestStatus("ok");
-                                                notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
-                                            } else {
-                                                const errorKey = data.error_key || "error";
-                                                const detail = data.error_detail || "";
-                                                setAiTestStatus("fail");
-                                                const errorMessages: Record<string, string> = {
-                                                    auth_error: t("ui.settings.ai_err_auth", "API-Schlüssel ungültig"),
-                                                    rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte später erneut versuchen."),
-                                                    offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
-                                                    timeout: t("ui.settings.ai_err_timeout", "Zeitüberschreitung"),
-                                                    model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfügbar"),
-                                                    invalid_request: t("ui.settings.ai_err_invalid", "Ungültige Anfrage"),
-                                                    server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
-                                                    disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent."),
-                                                };
-                                                const baseMessage = errorMessages[errorKey] || t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
-                                                const fullMessage = detail ? `${baseMessage}: ${detail}` : baseMessage;
-                                                notify.warning(fullMessage);
-                                            }
+                                        const data = await api.ai.testConnection();
+                                        if (data.success) {
+                                            setAiTestStatus("ok");
+                                            notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
                                         } else {
+                                            const errorKey = data.error_key || "error";
+                                            const detail = data.error_detail || "";
                                             setAiTestStatus("fail");
-                                            notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"));
+                                            const errorMessages: Record<string, string> = {
+                                                auth_error: t("ui.settings.ai_err_auth", "API-Schlüssel ungültig"),
+                                                rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte später erneut versuchen."),
+                                                offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
+                                                timeout: t("ui.settings.ai_err_timeout", "Zeitüberschreitung"),
+                                                model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfügbar"),
+                                                invalid_request: t("ui.settings.ai_err_invalid", "Ungültige Anfrage"),
+                                                server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
+                                                disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent."),
+                                            };
+                                            const baseMessage = errorMessages[errorKey] || t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
+                                            const fullMessage = detail ? `${baseMessage}: ${detail}` : baseMessage;
+                                            notify.warning(fullMessage);
                                         }
                                     } catch {
                                         setAiTestStatus("fail");
