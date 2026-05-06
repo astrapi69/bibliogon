@@ -1,0 +1,40 @@
+{
+  "show_details": "Show details",
+  "hide_details": "Hide details",
+  "save_log": "Save log to file...",
+  "copy_clipboard": "Copy to clipboard",
+  "copied": "Copied.",
+  "technical_details": "Technical details",
+  "help": "Help",
+  "save_default_filename": "bibliogon-launcher-error-{ts}.log",
+
+  "welcome.title": "Welcome to Bibliogon",
+  "welcome.heading": "Before you start",
+  "welcome.docker_required": "Bibliogon runs inside Docker, an isolated container system.",
+  "welcome.docker_size": "Docker Desktop is a free program from Docker Inc., about 800 MB to download and install.",
+  "welcome.first_run_size": "On first launch, Bibliogon downloads and builds its containers (about 2 GB of disk space, 5-10 minutes).",
+  "welcome.trust_anchor": "Docker is established (since 2013), free, and used by millions of developers worldwide.",
+  "welcome.trust_link": "More about Docker security",
+  "welcome.continue_button": "Got it, continue",
+  "welcome.guide_link": "Read the Bibliogon Docker installation guide",
+
+  "docker.missing.title": "Docker Desktop not found",
+  "docker.missing.heading": "Bibliogon needs Docker Desktop",
+  "docker.missing.explanation": "Bibliogon runs in an isolated container. The container system is called Docker and is not yet installed on this computer.",
+  "docker.missing.next_step": "After installing Docker Desktop, start it and wait until the whale icon turns blue, then launch Bibliogon again.",
+  "docker.missing.install_button": "Open Docker download page",
+  "docker.missing.guide_button": "Open Bibliogon installation guide",
+  "docker.missing.quit_button": "Quit",
+
+  "install_prompt.title": "Bibliogon is not installed",
+  "install_prompt.message": "Bibliogon is not yet installed on this computer. Install it now?",
+  "install_prompt.install_button": "Install",
+  "install_prompt.guide_button": "Open install guide",
+  "install_prompt.cancel_button": "Cancel",
+
+  "settings.title": "Settings",
+  "settings.language_label": "Language",
+  "settings.language_de": "Deutsch",
+  "settings.language_en": "English",
+  "settings.language_restart_notice": "Restart the launcher to apply a language change."
+}

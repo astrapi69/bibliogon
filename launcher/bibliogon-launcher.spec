@@ -56,7 +56,11 @@ a = Analysis(
     ["bibliogon_launcher/__main__.py"],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        # JSON i18n catalogs read via importlib.resources at runtime.
+        # Without this, the frozen binary loses every translation.
+        ("bibliogon_launcher/locales", "bibliogon_launcher/locales"),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

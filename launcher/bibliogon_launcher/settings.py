@@ -30,6 +30,18 @@ SETTINGS_FILENAME = "settings.json"
 
 DEFAULTS: dict[str, Any] = {
     "auto_update_check": True,
+    # ``language`` None means "use OS locale detection". An explicit
+    # value ("en", "de", ...) overrides detection until the user
+    # changes it again from the Settings dialog. New launchers and
+    # users who never opened Settings always get None here, so the
+    # i18n layer falls through to ``ui._current_lang()``.
+    "language": None,
+    # ``welcomed`` flips True after the user clicks Continue on the
+    # first-ever-launch welcome dialog. Subsequent starts skip the
+    # welcome entirely. Missing or False on existing installs is fine
+    # - they will see the welcome once on next launch and the flag
+    # then sticks.
+    "welcomed": False,
 }
 
 

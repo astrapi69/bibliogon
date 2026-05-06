@@ -15,26 +15,12 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 
-# Minimal DE/EN strings baked into the launcher so the .exe does not
-# need to ship the backend i18n YAML. Other locales fall back to EN
-# until we wire up a fuller translation path.
-_I18N: dict[str, dict[str, str]] = {
-    "show_details": {"en": "Show details", "de": "Details anzeigen"},
-    "hide_details": {"en": "Hide details", "de": "Details verbergen"},
-    "save_log": {"en": "Save log to file...", "de": "Log in Datei speichern..."},
-    "copy_clipboard": {"en": "Copy to clipboard", "de": "In Zwischenablage kopieren"},
-    "copied": {"en": "Copied.", "de": "Kopiert."},
-    "technical_details": {"en": "Technical details", "de": "Technische Details"},
-    "help": {"en": "Help", "de": "Hilfe"},
-    "save_default_filename": {
-        "en": "bibliogon-launcher-error-{ts}.log",
-        "de": "bibliogon-launcher-fehler-{ts}.log",
-    },
-}
-
-
 def _current_lang() -> str:
-    """Return ``"de"`` if the OS locale is German, else ``"en"``."""
+    """Return ``"de"`` if the OS locale is German, else ``"en"``.
+
+    Single source of truth for OS-locale detection across the
+    launcher; ``i18n._resolve_language`` calls this.
+    """
     try:
         code, _ = locale.getlocale()
     except (TypeError, ValueError):
@@ -50,9 +36,15 @@ def _current_lang() -> str:
 
 
 def _t(key: str) -> str:
-    lang = _current_lang()
-    bucket = _I18N.get(key, {})
-    return bucket.get(lang) or bucket.get("en") or key
+    """Backward-compat wrapper that delegates to the JSON-backed i18n.
+
+    Pre-existing callers (``_t("show_details")`` etc.) continue to
+    work; new code should call :func:`bibliogon_launcher.i18n.t`
+    directly so it can interpolate kwargs.
+    """
+    from bibliogon_launcher import i18n
+
+    return i18n.t(key)
 
 
 def error_box(title: str, message: str) -> None:
@@ -413,6 +405,96 @@ def three_button_dialog(
     return result["choice"]
 
 
+def welcome_dialog(*, guide_url: str, security_url: str | None = None) -> None:
+    """First-ever-launch welcome screen.
+
+    Blocks until the user clicks "Continue". Shows what Bibliogon
+    needs (Docker Desktop, ~800 MB), what the first run looks like
+    (~2 GB / 5-10 min), and a brief Docker trust statement so non-
+    technical users understand the install is from a well-known
+    vendor.
+
+    The dialog is non-skippable on purpose: the prompt that asked for
+    it called out that users without prior context need this
+    information up front. Closing the window via the X equals
+    Continue (no harm clicking through; the welcomed flag still
+    flips and they will encounter the Docker-missing dialog next if
+    Docker is absent).
+
+    ``guide_url`` is the URL of the Bibliogon Docker installation
+    guide. ``security_url`` is the optional anchor link to the
+    "Is Docker safe?" section of the same guide; when provided, a
+    second link below the trust sentence opens that anchor.
+    """
+    from bibliogon_launcher import i18n
+
+    _ensure_root()
+    win = tk.Toplevel()
+    win.title(i18n.t("welcome.title"))
+    win.resizable(False, False)
+
+    body = tk.Frame(win, padx=24, pady=20)
+    body.pack(fill="both", expand=True)
+
+    tk.Label(
+        body,
+        text=i18n.t("welcome.heading"),
+        font=("Segoe UI", 14, "bold"),
+        anchor="w",
+        justify="left",
+    ).pack(fill="x", pady=(0, 12))
+
+    paragraph = (
+        f"{i18n.t('welcome.docker_required')}\n\n"
+        f"{i18n.t('welcome.docker_size')}\n\n"
+        f"{i18n.t('welcome.first_run_size')}\n\n"
+        f"{i18n.t('welcome.trust_anchor')}"
+    )
+    tk.Label(
+        body,
+        text=paragraph,
+        wraplength=480,
+        justify="left",
+        anchor="w",
+    ).pack(fill="x", pady=(0, 12))
+
+    if security_url:
+        trust_link = tk.Label(
+            body,
+            text=i18n.t("welcome.trust_link"),
+            fg="#1a73e8",
+            cursor="hand2",
+            anchor="w",
+        )
+        trust_link.pack(fill="x", pady=(0, 4))
+        trust_link.bind("<Button-1>", lambda _e: webbrowser.open(security_url))
+
+    guide_link = tk.Label(
+        body,
+        text=i18n.t("welcome.guide_link"),
+        fg="#1a73e8",
+        cursor="hand2",
+        anchor="w",
+    )
+    guide_link.pack(fill="x", pady=(0, 16))
+    guide_link.bind("<Button-1>", lambda _e: webbrowser.open(guide_url))
+
+    button = tk.Button(
+        body,
+        text=i18n.t("welcome.continue_button"),
+        width=22,
+        command=win.destroy,
+    )
+    button.pack(pady=(4, 0))
+    button.focus_set()
+    win.bind("<Return>", lambda _e: win.destroy())
+    win.protocol("WM_DELETE_WINDOW", win.destroy)
+
+    _center_over_root(win)
+    win.grab_set()
+    win.wait_window()
+
+
 def settings_dialog(current: dict) -> dict | None:
     """Show a settings dialog. Returns the new settings dict on Save,
     or None if the user cancelled.
@@ -422,12 +504,15 @@ def settings_dialog(current: dict) -> dict | None:
     are updated; any other keys in ``current`` pass through unchanged
     so forward-compatibility with future settings is automatic.
     """
+    from bibliogon_launcher import i18n
+
     _ensure_root()
     win = tk.Toplevel()
-    win.title("Settings")
+    win.title(i18n.t("settings.title"))
     win.resizable(False, False)
 
     result: dict = {"saved": None}
+    initial_language = current.get("language")
 
     # Body
     body = tk.Frame(win, padx=20, pady=16)
@@ -447,6 +532,30 @@ def settings_dialog(current: dict) -> dict | None:
         justify="left",
         fg="#555",
         font=("Segoe UI", 9),
+    ).pack(fill="x", pady=(0, 12))
+
+    # Language selector. Maps a friendly label to the ISO code; the
+    # active code keeps the JSON-catalog filename so the wiring stays
+    # trivial.
+    tk.Label(body, text=i18n.t("settings.language_label"), anchor="w").pack(
+        fill="x", pady=(0, 4)
+    )
+    language_codes = i18n.available_languages() or ["en"]
+    language_label_keys = {"de": "settings.language_de", "en": "settings.language_en"}
+    code_to_label = {code: i18n.t(language_label_keys.get(code, code)) for code in language_codes}
+    label_to_code = {label: code for code, label in code_to_label.items()}
+    language_var = tk.StringVar(
+        value=code_to_label.get(initial_language, code_to_label[language_codes[0]])
+        if initial_language
+        else code_to_label[language_codes[0]]
+    )
+    tk.OptionMenu(body, language_var, *code_to_label.values()).pack(fill="x", pady=(0, 4))
+    tk.Label(
+        body,
+        text=i18n.t("settings.language_restart_notice"),
+        justify="left",
+        fg="#555",
+        font=("Segoe UI", 9),
     ).pack(fill="x", pady=(0, 8))
 
     # Footer
@@ -456,6 +565,7 @@ def settings_dialog(current: dict) -> dict | None:
     def _save() -> None:
         new_settings = dict(current)
         new_settings["auto_update_check"] = bool(auto_update_var.get())
+        new_settings["language"] = label_to_code.get(language_var.get(), initial_language)
         result["saved"] = new_settings
         win.destroy()
 

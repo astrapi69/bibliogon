@@ -1,0 +1,40 @@
+{
+  "show_details": "Details anzeigen",
+  "hide_details": "Details verbergen",
+  "save_log": "Log in Datei speichern...",
+  "copy_clipboard": "In Zwischenablage kopieren",
+  "copied": "Kopiert.",
+  "technical_details": "Technische Details",
+  "help": "Hilfe",
+  "save_default_filename": "bibliogon-launcher-fehler-{ts}.log",
+
+  "welcome.title": "Willkommen bei Bibliogon",
+  "welcome.heading": "Bevor du startest",
+  "welcome.docker_required": "Bibliogon läuft in Docker, einem isolierten Container-System.",
+  "welcome.docker_size": "Docker Desktop ist ein kostenloses Programm von Docker Inc., ca. 800 MB zum Herunterladen und Installieren.",
+  "welcome.first_run_size": "Beim ersten Start lädt Bibliogon seine Container herunter und baut sie auf (ca. 2 GB Speicherplatz, 5-10 Minuten).",
+  "welcome.trust_anchor": "Docker ist etabliert (seit 2013), kostenlos und wird weltweit von Millionen Entwicklerinnen und Entwicklern eingesetzt.",
+  "welcome.trust_link": "Mehr zur Sicherheit von Docker",
+  "welcome.continue_button": "Verstanden, weiter",
+  "welcome.guide_link": "Bibliogon-Anleitung zur Docker-Installation lesen",
+
+  "docker.missing.title": "Docker Desktop nicht gefunden",
+  "docker.missing.heading": "Bibliogon benötigt Docker Desktop",
+  "docker.missing.explanation": "Bibliogon läuft in einem isolierten Container. Das Container-System heißt Docker und ist auf diesem Computer noch nicht installiert.",
+  "docker.missing.next_step": "Starte Docker Desktop nach der Installation und warte, bis das Wal-Symbol blau leuchtet. Dann starte Bibliogon erneut.",
+  "docker.missing.install_button": "Docker-Downloadseite öffnen",
+  "docker.missing.guide_button": "Bibliogon-Installationsanleitung öffnen",
+  "docker.missing.quit_button": "Beenden",
+
+  "install_prompt.title": "Bibliogon ist nicht installiert",
+  "install_prompt.message": "Bibliogon ist auf diesem Computer noch nicht installiert. Jetzt installieren?",
+  "install_prompt.install_button": "Installieren",
+  "install_prompt.guide_button": "Anleitung öffnen",
+  "install_prompt.cancel_button": "Abbrechen",
+
+  "settings.title": "Einstellungen",
+  "settings.language_label": "Sprache",
+  "settings.language_de": "Deutsch",
+  "settings.language_en": "English",
+  "settings.language_restart_notice": "Starte den Launcher neu, um die Sprachänderung zu übernehmen."
+}
