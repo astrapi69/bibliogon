@@ -17,6 +17,15 @@ navigation:
       en: Articles
     slug: articles
     icon: file-text
+    children:
+      - title:
+          de: Übersicht
+          en: Overview
+        slug: articles
+      - title:
+          de: Massen-Export
+          en: Bulk export
+        slug: articles/bulk-export
 
   - title:
       de: Editor
