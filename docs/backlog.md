@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 + LAUNCHER-I18N-EXTRACT-01 + AR-BULK-BOOKS-PARITY-01 shipped; awaiting next-release archive)
+Last updated: 2026-05-06 (check-blockers run: DEP-09 + SEC-01 unblocked by vite-plugin-pwa@1.3.0, moved to ROADMAP P3; DEP-02 + DEP-05 stay blocked)
 Current version: v0.27.0
-Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 12 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -28,10 +28,13 @@ store.
 ## ROADMAP cross-reference (curated planning view)
 
 - **AR-01 validation log** — see ROADMAP > P3.
+- **DEP-09** (Vite 8) — see ROADMAP > P3. Unblocked 2026-05-06
+  by `vite-plugin-pwa@1.3.0`; pair with SEC-01.
+- **SEC-01** (vite-plugin-pwa CVE chain) — see ROADMAP > P3.
+  Unblocked 2026-05-06 by `vite-plugin-pwa@1.3.0`; pair with
+  DEP-09.
 - **DEP-02** (TipTap 3) — see ROADMAP > Blocked / Upstream Wait.
 - **DEP-05** (elevenlabs 2.x) — see ROADMAP > Blocked / Upstream Wait.
-- **DEP-09** (Vite 8) — see ROADMAP > Blocked / Upstream Wait.
-- **SEC-01** (vite-plugin-pwa CVE chain) — see ROADMAP > Blocked / Upstream Wait.
 
 ---
 
@@ -249,10 +252,8 @@ summary.
 
 | Item | Blocked on | Unblock condition |
 |------|-----------|-------------------|
-| DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | npm publish OR explicit go-ahead for `prosemirror-search` adapter fallback |
-| DEP-05 (elevenlabs 2.x) | Real paid-API verification | Schedule a dedicated audiobook test session with a live ElevenLabs key |
-| DEP-09 (Vite 8) | `vite-plugin-pwa` peer-dep update | Upstream releases Vite 8 compat |
-| SEC-01 | Same as DEP-09 | Same as DEP-09 |
+| DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | npm publish (default); path B (`prosemirror-search` adapter ~50-80 LOC) available on explicit go-ahead |
+| DEP-05 (elevenlabs 2.x) | Real paid-API verification (substantial 0.2.27 -> 2.45.0 jump, careful audit required) | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | PGS-04-FU-01 | First user report of cross-language structural divergence | User report |
 | Manual launcher smoke tests (#2/#3/#4) | Real hardware (Windows / macOS / Linux) availability | Hardware access |
 | Manual content-safety smoke (#8 Part 2 beforeunload) | Aster's local browser | Manual run |

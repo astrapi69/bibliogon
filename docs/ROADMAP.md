@@ -3,7 +3,7 @@
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-06
 Latest release: v0.27.0 (bulk article export; launcher first-run experience overhauled; pre-push tag-pushes hook; D-05 closed won't-fix per Docker EULA)
-Open tasks: 5 active (P3..P5) + 4 BLOCKED-on-upstream
+Open tasks: 7 active (P3..P5) + 2 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
@@ -54,11 +54,33 @@ upgrades. See backlog for a curated daily-planning view.
 - [ ] **AR-01 validation log**: capture real cross-posting workflow
   data in
   [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
-  during normal publication work. Status 2026-05-02: 0 real entries
-  (template fixture + section markers only). Reaching the 3-5-entry
-  threshold reopens the AR-03+ readiness audit
+  during normal publication work. Status 2026-05-06: 0 real
+  entries (template fixture + section markers only). The AR-03+
+  committed milestones depend on reaching the 3-5-entry
+  threshold first, which reopens the readiness audit
   ([docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md)).
   Long-running passive task; fills as the feature is used in anger.
+
+- [ ] **DEP-09**: Vite 7 -> 8 (tracker: GH #6).
+  - Unblocked 2026-05-06: `vite-plugin-pwa@1.3.0` published with
+    Vite 8 in its peer-dep range. Verify with
+    `npm view vite-plugin-pwa peerDependencies` before starting.
+  - Effort: 1 session for the bump + smoke; chained with SEC-01
+    because both clear on the same upstream release.
+  - Caution: do NOT use `--legacy-peer-deps` to force; Vite 8
+    changed plugin APIs and PWA only exercises at `vite build` /
+    SW regen, so a runtime break on the published bundle is hard
+    to detect locally.
+
+- [ ] **SEC-01**: vite-plugin-pwa vulnerability chain.
+  - Unblocked 2026-05-06: `vite-plugin-pwa@1.3.0` updates the
+    transitive `workbox-build` -> `@rollup/plugin-terser` ->
+    `serialize-javascript` chain that carried CVEs
+    GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v
+    (DoS, CVSS 5.9). 4 high-severity dev-only audit findings
+    expected to clear with the upgrade.
+  - Verify with `npm audit --audit-level=high` after the bump.
+  - Pair with DEP-09 in a single Vite 8 upgrade session.
 
 - [ ] **PS-14+**: future polish items, surface as found.
 
@@ -103,45 +125,23 @@ unblock signal.
     `@sereneinserenade/tiptap-search-and-replace@0.2.0` (issue
     [#19](https://github.com/sereneinserenade/tiptap-search-and-replace/issues/19)).
   - Next re-audit: 2026-06-02.
-  - Unblock condition: upstream publish OR explicit go-ahead to
-    write the `prosemirror-search` adapter (~50-80 LOC) fallback.
+  - Default unblock path: upstream npm publish.
+  - Alternative unblock path (path B): explicit user go-ahead to
+    write the `prosemirror-search` adapter fallback (~50-80 LOC).
+    Available on demand; default is wait for the npm publish.
   - Pre-audit: [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md).
     Estimated effort once unblocked: 4-8h code + 1-2h regression
     verification.
-  - Knock-on: DEP-09 + SEC-01 chain on the same vite-plugin-pwa
-    upstream.
 
-- [ ] **DEP-05**: elevenlabs SDK 0.2 -> 2.x migration (complete SDK
-  rewrite).
+- [ ] **DEP-05**: elevenlabs SDK 0.2.27 -> 2.45.0 migration
+  (complete SDK rewrite; substantial version jump that requires a
+  careful audit when scheduled).
   - Blocks on: paid-API access for migration testing.
   - Next re-audit: when API budget is allocated.
   - Unblock condition: dedicated audiobook test session with a
-    live ElevenLabs key.
-
-- [ ] **DEP-09**: Vite 7 -> 8 (tracker: GH #6).
-  - Blocks on: `vite-plugin-pwa` upstream peer-dep update.
-    `1.2.0` still lists peer deps `vite: ^3 || ^4 || ^5 || ^6 ||
-    ^7`; no Vite 8 PR visible on github.com/vite-pwa/vite-plugin-pwa.
-    Vite latest observed: `8.0.10`.
-  - Next re-audit: monthly via `npm view vite-plugin-pwa
-    peerDependencies`. Last re-check: 2026-05-02 (no change).
-  - Unblock condition: upstream releases Vite 8 compat. Do NOT
-    force with `--legacy-peer-deps` (Vite 8 changed plugin APIs;
-    PWA only exercised at `vite build` / SW regen, runtime break
-    hard to detect).
-
-- [ ] **SEC-01**: vite-plugin-pwa vulnerability chain.
-  - Scope: 4 high-severity vulns in frontend devDependencies, all
-    routed through `vite-plugin-pwa@1.2.0 -> workbox-build ->
-    @rollup/plugin-terser -> serialize-javascript <=7.0.4`. CVEs:
-    GHSA-5c6j-r48x-rmvq (RCE, CVSS 8.1) and GHSA-qj8w-gfj5-8c6v
-    (DoS, CVSS 5.9). Production bundle audit: 0 vulns (dev-only
-    exposure, not shipped to users).
-  - Blocks on: same upstream as DEP-09.
-  - Next re-audit: 2026-06-02 via `npm audit --audit-level=high`.
-  - Unblock condition: upstream resolution. Triggers revisit:
-    vite-plugin-pwa ships new release, any vuln reclassified as
-    production, DEP-09 unblocks (forces migration).
+    live ElevenLabs key. Plan a focused session, not a side
+    bump - the 0.2 -> 2.x rewrite is too large to fold into a
+    routine sweep.
 
 ---
 
