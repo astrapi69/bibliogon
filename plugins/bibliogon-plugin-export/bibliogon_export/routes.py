@@ -5,10 +5,11 @@ import logging
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
+from pydantic import BaseModel, Field
 
 from .pandoc_runner import MissingImagesError, PandocError, run_pandoc
 from .scaffolder import scaffold_project
@@ -788,6 +789,120 @@ async def _run_audiobook_job(
         "chapter_files": download["chapter_files"],
     })
     return download
+
+
+# --- Bulk-export router (AR-BULK-BOOKS-PARITY-01) ---
+#
+# POST /api/books/bulk-export accepts an explicit list of book IDs
+# and a single document format, then returns a ZIP containing the
+# rendered file for each book. Mirrors the articles-bulk-export
+# pattern shipped in v0.27.0 with two scope deltas:
+#
+# 1. ZIP-of-books only. A "combined document" mode is conceptually
+#    wrong for books because the existing per-book pipeline goes
+#    through manuscripta + write-book-template scaffolding and
+#    produces one project per book; merging N books into a single
+#    EPUB / PDF would require deciding whose metadata wins, which
+#    book contributes the cover, etc. - none of which is a natural
+#    user request. Surfaced as a future scope decision in the
+#    backlog if it ever becomes one.
+# 2. No new filter facets here. The Books dashboard already filters
+#    by genre + language + search; adding series + keyword filters
+#    is a separate concern (parallel to articles' series/tag work)
+#    and the bulk endpoint just consumes the dashboard's filtered ID
+#    list either way.
+
+bulk_router = APIRouter(prefix="/books/bulk-export", tags=["export"])
+
+MAX_BULK_BOOKS = 200
+_BULK_FORMATS: tuple[str, ...] = ("epub", "pdf", "docx")
+
+
+class BookBulkExportRequest(BaseModel):
+    book_ids: list[str] = Field(min_length=1, max_length=MAX_BULK_BOOKS)
+    format: Literal["epub", "pdf", "docx"]
+
+
+def _per_book_artifact(
+    book_id: str, fmt: str
+) -> tuple[str, bytes]:
+    """Render one book as ``fmt`` and return (slug, bytes).
+
+    Reuses the existing per-book pipeline: ``_load_book`` ->
+    ``_scaffold_and_prepare`` -> ``run_pandoc``. Wraps any HTTPException
+    raised by the helpers with the offending book's title so the
+    eventual error toast names the broken book directly. Pre-existing
+    ``MissingImagesError`` / ``PandocError`` paths in the per-book
+    route raise their own structured 422; the same shape surfaces
+    from here unchanged.
+    """
+    book_data, chapters, assets = _load_book(book_id)
+    tmp_dir, project_dir, config, settings = _scaffold_and_prepare(
+        book_data, chapters, assets
+    )
+    slug = project_dir.name
+    manual_toc = _detect_manual_toc(chapters)
+    cover = _find_cover(book_data, project_dir)
+    try:
+        produced = run_pandoc(
+            project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover
+        )
+    except MissingImagesError as exc:
+        raise _missing_images_http_exception(exc) from exc
+    except PandocError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                f"Failed exporting book {book_data.get('title') or book_id!r}: "
+                f"{exc}"
+            ),
+        ) from exc
+    return slug, produced.read_bytes()
+
+
+@bulk_router.post("")
+def bulk_export(req: BookBulkExportRequest) -> Response:
+    """Export multiple books as a ZIP-of-individual-files.
+
+    Pydantic validates ``book_ids`` length (min 1, max 200). Empty
+    or over-limit lists return 422 with a structured message rather
+    than a generic 400. Filename collisions on slug get numeric
+    suffixes (``slug-2.epub``) per the same convention used by the
+    articles bulk-export.
+
+    The response carries a date-stamped ZIP filename
+    (``books-YYYY-MM-DD.zip``) so the user can sort multiple bulk
+    exports without renaming.
+    """
+    import zipfile
+    from datetime import UTC, datetime
+
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    zip_filename = f"books-{today}.zip"
+    headers = {"Content-Disposition": f'attachment; filename="{zip_filename}"'}
+    ext = EXT_MAP[req.format].lstrip(".")
+    seen_slugs: dict[str, int] = {}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = Path(tmpdir) / zip_filename
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for book_id in req.book_ids:
+                slug, payload = _per_book_artifact(book_id, req.format)
+                count = seen_slugs.get(slug, 0)
+                seen_slugs[slug] = count + 1
+                if count == 0:
+                    name = f"{slug}.{ext}"
+                else:
+                    name = f"{slug}-{count + 1}.{ext}"
+                zf.writestr(name, payload)
+        zip_bytes = zip_path.read_bytes()
+
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        status_code=status.HTTP_200_OK,
+        headers=headers,
+    )
 
 
 # --- Job polling router ---

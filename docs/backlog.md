@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 + LAUNCHER-I18N-EXTRACT-01 shipped; awaiting next-release archive)
+Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 + LAUNCHER-I18N-EXTRACT-01 + AR-BULK-BOOKS-PARITY-01 shipped; awaiting next-release archive)
 Current version: v0.27.0
 Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -158,18 +158,26 @@ store.
   the underlying install path. See
   [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md).
 
-- **AR-BULK-BOOKS-PARITY-01**: bulk export for the books
-  dashboard. The 2026-05-06 articles bulk-export ships
-  per-tile/per-row checkboxes, a filter quartet (status / topic
-  / series / tag), a sticky bulk-action bar, and a backend
-  endpoint with ZIP and combined modes. Books deserve the same.
-  Effort: ~1 session (less than the article session because the
-  pattern + components + backend helpers exist). Trigger: user
-  demand or natural follow-up after the article workflow proves
-  itself in real use. The book combined-export already exists
-  per-book via manuscripta; the bulk endpoint can iterate or
-  build a multi-book write-book-template, decision deferred to
-  the implementing session.
+- ~~**AR-BULK-BOOKS-PARITY-01**: bulk export for the books
+  dashboard.~~ **Shipped 2026-05-06.** `POST /api/books/bulk-export`
+  in `plugins/bibliogon-plugin-export/bibliogon_export/routes.py`
+  takes `{book_ids, format}` (epub / pdf / docx) and returns a
+  ZIP-of-individual-files. Reuses the per-book pipeline
+  (`_load_book` + `_scaffold_and_prepare` + `run_pandoc`) so the
+  bulk path is not a parallel reimplementation. Hard 200-book
+  limit; filename collision uses numeric suffix; per-book Pandoc
+  errors surface the offending book's title in the 502 detail.
+  **Combined-multi-book mode is intentionally NOT implemented**
+  — books go through manuscripta + write-book-template
+  scaffolding which produces one project per book; merging N
+  books into one EPUB / PDF would require deciding whose
+  metadata wins and which book contributes the cover, neither
+  of which is a natural user workflow. If demand surfaces, that
+  becomes its own backlog entry. Frontend: Dashboard gains
+  per-tile checkboxes + Select-all + sticky `BookBulkActionBar`
+  (no mode toggle, format dropdown only). 6 backend tests + 5
+  vitest cases + 8 new i18n keys (ui.dashboard.bulk.*) in
+  EN/DE/es/fr/el/pt/tr/ja. Awaiting next-release archive.
 
 - ~~**AR-BULK-PLAYWRIGHT-SMOKE-01**: add Playwright smoke coverage
   for the bulk article export workflow.~~ **Shipped 2026-05-06.**

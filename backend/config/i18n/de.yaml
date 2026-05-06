@@ -65,6 +65,15 @@ ui:
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: In den Papierkorb
+    bulk:
+      selected_count: "{count} ausgewählt"
+      format_label: "Format"
+      export_button: "Exportieren"
+      clear_button: "Auswahl aufheben"
+      select_all: "Alle auswählen"
+      limit_warning_50: "Mehr als 50 ausgewählte Bücher können länger dauern."
+      limit_error_200: "Höchstens 200 Bücher pro Export."
+      export_failed: "Massen-Export fehlgeschlagen"
   backup:
     compare:
       title: "Backups vergleichen"

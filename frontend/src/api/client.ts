@@ -801,6 +801,39 @@ export const api = {
 
         emptyTrash: () =>
             request<void>("/books/trash/empty", {method: "DELETE"}),
+
+        /** Bulk export. POSTs an explicit ID list (already in display
+         *  order on the dashboard) plus a format and returns a ZIP-of-
+         *  books. ZIP is the only mode for books — combined-multi-book
+         *  is conceptually wrong because the per-book pipeline already
+         *  goes through manuscripta + write-book-template scaffolding
+         *  (see backend AR-BULK-BOOKS-PARITY-01 commit for reasoning).
+         *  Errors surface as ApiError with the server's fail-loud
+         *  message so the toast names the offending book directly. */
+        bulkExport: async (
+            bookIds: string[],
+            format: "epub" | "pdf" | "docx",
+        ): Promise<{blob: Blob; filename: string}> => {
+            const res = await fetch(`${BASE}/books/bulk-export`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({book_ids: bookIds, format}),
+            })
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}))
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string" ? err.detail : "Bulk book export failed",
+                    `${BASE}/books/bulk-export`,
+                    "POST",
+                )
+            }
+            const blob = await res.blob()
+            const filename = _filenameFromContentDisposition(
+                res.headers.get("Content-Disposition"),
+            ) || `books.zip`
+            return {blob, filename}
+        },
     },
 
     /** AR-02 Phase 2: per-Article publications + drift detection. */

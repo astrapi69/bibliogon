@@ -1,0 +1,59 @@
+/**
+ * Sticky bulk-action bar for book selections on the Dashboard.
+ * Mirrors ArticleBulkActionBar's visual contract; mode toggle is
+ * absent because books only support ZIP-of-books output (see
+ * AR-BULK-BOOKS-PARITY-01 backend commit for reasoning).
+ */
+
+.bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.count {
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    white-space: nowrap;
+}
+
+.label {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-right: 4px;
+}
+
+.select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text-primary);
+}
+
+.spacer {
+    flex: 1;
+}
+
+.warning {
+    color: var(--warning);
+    font-size: 13px;
+}
+
+.error {
+    color: var(--error);
+    font-size: 13px;
+}

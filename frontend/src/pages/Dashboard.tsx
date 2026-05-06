@@ -1,9 +1,14 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {api, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
+import {api, ApiError, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import BookCard from "../components/BookCard";
 import BookListView from "../components/BookListView";
+import BookBulkActionBar, {
+    type BookBulkExportFormat,
+    BOOK_BULK_LIMIT_HARD,
+} from "../components/BookBulkActionBar";
+import {useBookSelection} from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useViewMode } from "../hooks/useViewMode";
 import DashboardFilterBar from "../components/DashboardFilterBar";
@@ -50,7 +55,56 @@ export default function Dashboard() {
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
+    const selection = useBookSelection();
     const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
+
+    /** Bulk export. Reads the current filtered list in display order,
+     *  restricts to the selected IDs, then POSTs them to the backend
+     *  bulk endpoint. The backend preserves the input order in the
+     *  response (ZIP iteration), so the user gets exactly what they
+     *  selected, in the order they saw it on screen. Toasts on
+     *  failure with the server message (which includes the offending
+     *  book's title for fail-loud Pandoc errors). */
+    const handleBulkBookExport = async (format: BookBulkExportFormat) => {
+        const ordered = filters.filteredBooks
+            .map((b) => b.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        if (ordered.length > BOOK_BULK_LIMIT_HARD) return;
+        try {
+            const {blob, filename} = await api.books.bulkExport(ordered, format);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            selection.clear();
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
+            notify.error(message);
+        }
+    };
+
+    /** Filter changes invalidate selection because a previously-
+     *  selected book may now be hidden. Pinning to ``selection.clear``
+     *  (stable callback identity) avoids the infinite-render loop the
+     *  articles dashboard hit when depending on the whole selection
+     *  object. */
+    const clearBookSelection = selection.clear;
+    useEffect(() => {
+        clearBookSelection();
+    }, [
+        filters.searchQuery,
+        filters.genre,
+        filters.language,
+        clearBookSelection,
+    ]);
 
     const loadBooks = async () => {
         try {
@@ -412,7 +466,47 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         ) : (
-                            viewMode === "list" ? (
+                            <>
+                            {selection.count > 0 ? (
+                                <BookBulkActionBar
+                                    count={selection.count}
+                                    onExport={(fmt) => void handleBulkBookExport(fmt)}
+                                    onClear={selection.clear}
+                                    t={t}
+                                />
+                            ) : null}
+                            {filters.filteredBooks.length > 0 ? (
+                                <div className={styles.bulkSelectAll}>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            data-testid="book-bulk-select-all"
+                                            checked={
+                                                selection.count > 0 &&
+                                                selection.count === filters.filteredBooks.length
+                                            }
+                                            ref={(el) => {
+                                                if (el)
+                                                    el.indeterminate =
+                                                        selection.count > 0 &&
+                                                        selection.count < filters.filteredBooks.length;
+                                            }}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    selection.selectAll(
+                                                        filters.filteredBooks.map((b) => b.id),
+                                                    );
+                                                } else {
+                                                    selection.clear();
+                                                }
+                                            }}
+                                        />
+                                        {" "}
+                                        {t("ui.dashboard.bulk.select_all", "Select all")}
+                                    </label>
+                                </div>
+                            ) : null}
+                            {viewMode === "list" ? (
                                 <BookListView
                                     books={filters.filteredBooks}
                                     onClick={(book) => navigate(`/book/${book.id}`)}
@@ -422,16 +516,30 @@ export default function Dashboard() {
                             ) : (
                                 <div className={styles.grid}>
                                     {filters.filteredBooks.map((book) => (
-                                        <BookCard
+                                        <div
                                             key={book.id}
-                                            book={book}
-                                            onClick={() => navigate(`/book/${book.id}`)}
-                                            onDelete={() => handleDelete(book.id)}
-                                            onDeletePermanent={() => handleDeletePermanent(book.id)}
-                                        />
+                                            className={`${styles.tileWrapper}${selection.isSelected(book.id) ? ` ${styles.tileSelected}` : ""}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className={styles.tileCheckbox}
+                                                data-testid={`book-bulk-check-${book.id}`}
+                                                checked={selection.isSelected(book.id)}
+                                                onChange={() => selection.toggle(book.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                aria-label="Select book"
+                                            />
+                                            <BookCard
+                                                book={book}
+                                                onClick={() => navigate(`/book/${book.id}`)}
+                                                onDelete={() => handleDelete(book.id)}
+                                                onDeletePermanent={() => handleDeletePermanent(book.id)}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
-                            )
+                            )}
+                            </>
                         )}
                     </>
                 )}
