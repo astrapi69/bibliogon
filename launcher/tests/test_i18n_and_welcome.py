@@ -1,0 +1,204 @@
+"""Tests for the JSON-backed i18n catalog, welcome-flag handling, and
+the Docker-missing dispatch added to ``__main__._run_launcher``.
+
+UI primitives (``ui.welcome_dialog``, ``ui.three_button_dialog``,
+``ui.error_dialog``) are not exercised end-to-end - they require a
+display. Instead we patch them at the module level and assert on
+arguments / dispatch.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from bibliogon_launcher import i18n, settings
+
+
+# --- i18n -----------------------------------------------------------
+
+
+class TestI18n:
+    """The catalog ships ``en`` and ``de``. Other resolvers fall back."""
+
+    def setup_method(self) -> None:
+        i18n._CATALOG = {}  # force reload
+        i18n.init(None)
+
+    def test_returns_english_when_active_lang_is_en(self) -> None:
+        i18n.set_language("en")
+        assert i18n.t("welcome.title") == "Welcome to Bibliogon"
+
+    def test_returns_german_when_active_lang_is_de(self) -> None:
+        i18n.set_language("de")
+        assert i18n.t("welcome.title") == "Willkommen bei Bibliogon"
+
+    def test_falls_back_to_english_when_key_missing_from_de(self) -> None:
+        i18n.set_language("de")
+        i18n._CATALOG["de"].pop("welcome.title", None)
+        assert i18n.t("welcome.title") == "Welcome to Bibliogon"
+
+    def test_returns_key_itself_when_missing_from_both(self) -> None:
+        i18n.set_language("en")
+        assert i18n.t("definitely.unknown.key") == "definitely.unknown.key"
+
+    def test_set_language_ignores_unknown_codes(self) -> None:
+        i18n.set_language("en")
+        i18n.set_language("klingon")
+        assert i18n.active_language() == "en"
+
+    def test_locale_de_resolves_to_de_catalog(self) -> None:
+        with patch("bibliogon_launcher.ui._current_lang", return_value="de"):
+            assert i18n._resolve_language(None) == "de"
+
+    def test_locale_en_resolves_to_en_catalog(self) -> None:
+        with patch("bibliogon_launcher.ui._current_lang", return_value="en"):
+            assert i18n._resolve_language(None) == "en"
+
+    def test_unknown_locale_falls_back_to_en(self) -> None:
+        with patch("bibliogon_launcher.ui._current_lang", return_value="ja"):
+            assert i18n._resolve_language(None) == "en"
+
+    def test_settings_language_overrides_locale(self) -> None:
+        with patch("bibliogon_launcher.ui._current_lang", return_value="en"):
+            assert i18n._resolve_language("de") == "de"
+
+    def test_german_catalog_uses_real_umlauts(self) -> None:
+        """Per project rule lessons-learned 'German content uses real
+        umlauts' the de catalog must NOT use ASCII transliterations
+        (ae/oe/ue/ss) for any string that should carry an umlaut."""
+        de = i18n._CATALOG["de"]
+        # Spot-check a few strings with known umlauts/sharp-s
+        assert "läuft" in de["welcome.docker_required"]
+        assert "lädt" in de["welcome.first_run_size"]
+        assert "benötigt" in de["docker.missing.heading"]
+        assert "heißt" in de["docker.missing.explanation"]
+
+
+# --- welcome flag ---------------------------------------------------
+
+
+class TestWelcomedFlag:
+    """settings.welcomed defaults False and flips True after first
+    welcome dialog. The flag itself just lives in settings; the
+    write happens in ``__main__._run_launcher``. Cover both."""
+
+    def _patch_path(self, tmp_path: Path):
+        return patch.object(
+            settings, "settings_path", return_value=tmp_path / "settings.json"
+        )
+
+    def test_default_welcomed_is_false(self, tmp_path: Path) -> None:
+        with self._patch_path(tmp_path):
+            assert settings.read_settings()["welcomed"] is False
+
+    def test_update_persists_welcomed_true(self, tmp_path: Path) -> None:
+        with self._patch_path(tmp_path):
+            settings.update("welcomed", True)
+            assert settings.read_settings()["welcomed"] is True
+
+    def test_default_language_is_none(self, tmp_path: Path) -> None:
+        with self._patch_path(tmp_path):
+            assert settings.read_settings()["language"] is None
+
+
+# --- Docker-missing dialog dispatch --------------------------------
+
+
+class TestDockerMissingDialog:
+    """``_run_launcher`` shows a three-button dialog when Docker is
+    not installed. Each button must dispatch to the right URL or to
+    ``return 1`` (quit). Heavy patching: docker checks, ui calls,
+    webbrowser, settings, retry helpers."""
+
+    def _run(self, choice: str):
+        from bibliogon_launcher import __main__ as main_mod
+
+        opens: list[str] = []
+
+        with (
+            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.settings, "get", return_value=True),  # already welcomed
+            patch.object(main_mod.ui, "three_button_dialog", return_value=choice) as dlg,
+            patch.object(main_mod.webbrowser, "open", side_effect=opens.append),
+        ):
+            rc = main_mod._run_launcher()
+        return rc, opens, dlg
+
+    def test_install_button_opens_docker_download_page(self) -> None:
+        from bibliogon_launcher import __main__ as main_mod
+
+        rc, opens, _ = self._run("primary")
+        assert rc == 1
+        assert opens == [main_mod.DOCKER_INSTALL_URL]
+
+    def test_guide_button_opens_bibliogon_docker_guide(self) -> None:
+        rc, opens, _ = self._run("secondary")
+        assert rc == 1
+        assert len(opens) == 1
+        assert "docs/help" in opens[0] and "docker-desktop.md" in opens[0]
+
+    def test_quit_button_returns_without_opening_browser(self) -> None:
+        rc, opens, _ = self._run("cancel")
+        assert rc == 1
+        assert opens == []
+
+
+# --- welcome-then-docker-check ordering ----------------------------
+
+
+class TestWelcomeBeforeDockerCheck:
+    """Welcome dialog fires before the Docker check, never after.
+    Once welcomed=True, the welcome dialog is skipped. Both invariants
+    are essential to the UX contract documented in the prompt."""
+
+    def test_welcome_fires_when_welcomed_false(self, tmp_path: Path) -> None:
+        from bibliogon_launcher import __main__ as main_mod
+
+        seen: dict[str, object] = {}
+
+        def fake_welcome(**kwargs: object) -> None:
+            seen.update(kwargs)
+            seen["called"] = True
+
+        with (
+            patch.object(main_mod.settings, "get", side_effect=lambda k: False if k == "welcomed" else None),
+            patch.object(main_mod.settings, "update") as update_mock,
+            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.ui, "welcome_dialog", side_effect=fake_welcome),
+            patch.object(main_mod.ui, "three_button_dialog", return_value="cancel"),
+            patch.object(main_mod.webbrowser, "open"),
+        ):
+            main_mod._run_launcher()
+        assert seen.get("called") is True
+        update_mock.assert_any_call("welcomed", True)
+
+    def test_welcome_skipped_when_welcomed_true(self) -> None:
+        from bibliogon_launcher import __main__ as main_mod
+
+        with (
+            patch.object(main_mod.settings, "get", return_value=True),
+            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.ui, "welcome_dialog") as welcome_mock,
+            patch.object(main_mod.ui, "three_button_dialog", return_value="cancel"),
+            patch.object(main_mod.webbrowser, "open"),
+        ):
+            main_mod._run_launcher()
+        welcome_mock.assert_not_called()
+
+
+@pytest.fixture(autouse=True)
+def _reset_i18n_state() -> None:
+    """Each test starts with a fresh catalog + active language."""
+    i18n._CATALOG = {}
+    i18n.init(None)
+    yield
+    i18n._CATALOG = {}

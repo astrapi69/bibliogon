@@ -20,18 +20,38 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from bibliogon_launcher import __version__, config, docker, health, installer, lockfile, manifest, settings, ui, update_check
+from bibliogon_launcher import __version__, config, docker, health, i18n, installer, lockfile, manifest, settings, ui, update_check
 
 
 logger = logging.getLogger("bibliogon_launcher")
 
 INSTALL_GUIDE_URL = "https://github.com/astrapi69/bibliogon/blob/main/docs/help/en/launcher-windows.md"
 DOCKER_INSTALL_URL = "https://docs.docker.com/desktop/install/windows-install/"
+DOCKER_GUIDE_URL_EN = "https://github.com/astrapi69/bibliogon/blob/main/docs/help/en/install/docker-desktop.md"
+DOCKER_GUIDE_URL_DE = "https://github.com/astrapi69/bibliogon/blob/main/docs/help/de/install/docker-desktop.md"
+DOCKER_SECURITY_ANCHOR_EN = DOCKER_GUIDE_URL_EN + "#is-docker-safe-to-install"
+DOCKER_SECURITY_ANCHOR_DE = DOCKER_GUIDE_URL_DE + "#ist-docker-sicher-zu-installieren"
+
+
+def _docker_guide_url() -> str:
+    return DOCKER_GUIDE_URL_DE if i18n.active_language() == "de" else DOCKER_GUIDE_URL_EN
+
+
+def _docker_security_url() -> str:
+    return DOCKER_SECURITY_ANCHOR_DE if i18n.active_language() == "de" else DOCKER_SECURITY_ANCHOR_EN
 
 
 def main() -> int:
     _setup_logging()
     logger.info("Bibliogon launcher v%s starting", __version__)
+
+    # i18n must be live before the welcome dialog or any other UI
+    # string is rendered. Reads settings.language; falls back to OS
+    # locale detection via ui._current_lang() inside i18n itself.
+    try:
+        i18n.init(settings.get("language"))
+    except Exception as exc:
+        logger.warning("i18n init failed, continuing in English: %s", exc)
 
     lock_path = config.lockfile_path()
     try:
@@ -61,22 +81,43 @@ def _run_launcher() -> int:
     # 0. Retry pending cleanup from a previously interrupted uninstall.
     _retry_pending_cleanup()
 
+    # 0.5 First-ever-launch welcome. Tells the user what Bibliogon
+    # needs (Docker, ~800 MB) and what the first run looks like
+    # (~2 GB / 5-10 min) BEFORE any check fires. Order matters: the
+    # user should know what is required before being told they don't
+    # have it.
+    if not bool(settings.get("welcomed")):
+        ui.welcome_dialog(
+            guide_url=_docker_guide_url(),
+            security_url=_docker_security_url(),
+        )
+        settings.update("welcomed", True)
+
     # 1. Docker installed?
     ok, detail = docker.docker_installed()
     if not ok:
         logger.error("docker --version failed: %s", detail)
-        ui.error_dialog(
-            title="Docker Desktop is required",
+        choice = ui.three_button_dialog(
+            title=i18n.t("docker.missing.title"),
             message=(
-                "Bibliogon needs Docker Desktop to run.\n\n"
-                f"You can download it from:\n{DOCKER_INSTALL_URL}\n\n"
-                "Install Docker Desktop, start it, then open Bibliogon again."
+                f"{i18n.t('docker.missing.heading')}\n\n"
+                f"{i18n.t('docker.missing.explanation')}\n\n"
+                f"{i18n.t('docker.missing.next_step')}"
             ),
-            actions=[("OK", "ok")],
-            details=f"docker --version check failed:\n{detail}",
-            help_url=DOCKER_INSTALL_URL,
-            initial_show_details=show_details,
+            primary_label=i18n.t("docker.missing.install_button"),
+            secondary_label=i18n.t("docker.missing.guide_button"),
+            cancel_label=i18n.t("docker.missing.quit_button"),
         )
+        if choice == "primary":
+            try:
+                webbrowser.open(DOCKER_INSTALL_URL)
+            except OSError as exc:
+                logger.warning("opening Docker download page failed: %s", exc)
+        elif choice == "secondary":
+            try:
+                webbrowser.open(_docker_guide_url())
+            except OSError as exc:
+                logger.warning("opening Bibliogon Docker guide failed: %s", exc)
         return 1
 
     # 2. Docker daemon running? Retry loop: user may need to start Docker Desktop.
@@ -401,7 +442,14 @@ def _check_launcher_target_stale() -> bool:
 
 
 def _install_or_welcome() -> Path | None:
-    """First-run welcome: offer to install Bibliogon or open the guide.
+    """Offer to install Bibliogon or open the install guide.
+
+    Used for the no-manifest case: either a brand-new install or a
+    re-install after the user removed the previous one. The pre-
+    requisites story (Docker, sizes, trust anchor) was already
+    delivered by the welcome dialog at the top of ``_run_launcher``,
+    so this prompt is intentionally short - just an Install / Open
+    guide / Cancel choice.
 
     Returns the install directory on success, or None if the user
     cancelled or only opened the guide.
@@ -410,15 +458,11 @@ def _install_or_welcome() -> Path | None:
         return None  # user opted to abort due to outdated launcher
 
     choice = ui.three_button_dialog(
-        title="Welcome to Bibliogon",
-        message=(
-            "Bibliogon is not installed on this computer yet.\n\n"
-            "Click 'Install' to download and set up Bibliogon automatically, "
-            "or 'Open install guide' for manual installation instructions."
-        ),
-        primary_label="Install",
-        secondary_label="Open install guide",
-        cancel_label="Close",
+        title=i18n.t("install_prompt.title"),
+        message=i18n.t("install_prompt.message"),
+        primary_label=i18n.t("install_prompt.install_button"),
+        secondary_label=i18n.t("install_prompt.guide_button"),
+        cancel_label=i18n.t("install_prompt.cancel_button"),
     )
     if choice == "cancel":
         return None
