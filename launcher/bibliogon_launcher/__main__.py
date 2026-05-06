@@ -127,12 +127,9 @@ def _run_launcher() -> int:
             break
         logger.warning("docker info failed (attempt %d): %s", attempt + 1, detail)
         choice = ui.error_dialog(
-            title="Docker Desktop is not running",
-            message=(
-                "Docker Desktop needs to be running before Bibliogon can start.\n\n"
-                "Open Docker Desktop, wait for it to finish starting, then click Retry."
-            ),
-            actions=[("Retry", "retry"), ("Cancel", "cancel")],
+            title=i18n.t("docker.daemon.title"),
+            message=i18n.t("docker.daemon.message"),
+            actions=[(i18n.t("common.retry"), "retry"), (i18n.t("common.cancel"), "cancel")],
             details=f"docker info attempt {attempt + 1} failed:\n{detail}",
             help_url=INSTALL_GUIDE_URL,
             initial_show_details=show_details,
@@ -141,12 +138,9 @@ def _run_launcher() -> int:
             return 1
     else:
         ui.error_dialog(
-            title="Docker Desktop is not running",
-            message=(
-                "Docker Desktop is still not running after several attempts.\n\n"
-                "Please start Docker Desktop and open Bibliogon again."
-            ),
-            actions=[("OK", "ok")],
+            title=i18n.t("docker.daemon.title"),
+            message=i18n.t("docker.daemon.exhausted_message"),
+            actions=[(i18n.t("common.ok"), "ok")],
             details="docker info failed on three consecutive retries.",
             help_url=INSTALL_GUIDE_URL,
             initial_show_details=show_details,
@@ -191,13 +185,9 @@ def _run_launcher() -> int:
     if not ok:
         logger.error("env-file preparation failed: %s", detail)
         ui.error_dialog(
-            title="Could not prepare Bibliogon",
-            message=(
-                "Bibliogon's configuration could not be prepared. This is usually a "
-                "file-permissions problem with the Bibliogon folder.\n\n"
-                "Check that you have write access to the Bibliogon folder and try again."
-            ),
-            actions=[("OK", "ok")],
+            title=i18n.t("env_prep.title"),
+            message=i18n.t("env_prep.message"),
+            actions=[(i18n.t("common.ok"), "ok")],
             details=(
                 f"Preparation of configuration in {repo} failed:\n{detail}\n\n"
                 f"Expected template: {config.ENV_EXAMPLE_FILENAME}\n"
@@ -213,7 +203,7 @@ def _run_launcher() -> int:
     # 5. Launch status window, run docker compose + health wait + browser on a
     # background thread so the UI stays responsive.
     window = ui.StatusWindow()
-    window.set_starting("Starting Bibliogon...")
+    window.set_starting(i18n.t("status.starting"))
 
     def worker() -> None:
         ok, up_detail = docker.compose_up(repo, config.COMPOSE_FILENAME)
@@ -222,7 +212,7 @@ def _run_launcher() -> int:
             window.after(0, lambda: _handle_compose_failure(window, port, up_detail, show_details))
             return
 
-        window.after(0, lambda: window.set_starting("Almost ready..."))
+        window.after(0, lambda: window.set_starting(i18n.t("status.almost_ready")))
         if not health.wait_for_healthy(port, timeout_seconds=60.0):
             tail = docker.compose_logs_tail(repo, config.COMPOSE_FILENAME, lines=20)
             logger.error("health timeout; last lines:\n%s", tail)
@@ -306,16 +296,11 @@ def _show_update_notification(tag: str, url: str, current: str) -> None:
     / Don't check for updates (cancel - turns off auto_update_check).
     """
     choice = ui.three_button_dialog(
-        title="Update available",
-        message=(
-            f"A newer version of Bibliogon is available.\n\n"
-            f"Installed: {current}\n"
-            f"Latest: {tag}\n\n"
-            "Open the release page to see what's new and download?"
-        ),
-        primary_label="Open release page",
-        secondary_label="Dismiss",
-        cancel_label="Don't check for updates",
+        title=i18n.t("update.title"),
+        message=i18n.t("update.message", current=current, tag=tag),
+        primary_label=i18n.t("update.primary"),
+        secondary_label=i18n.t("update.dismiss"),
+        cancel_label=i18n.t("update.disable"),
     )
     if choice == "primary":
         try:
@@ -363,12 +348,9 @@ def _retry_pending_cleanup() -> None:
         if not ok and install_dir.exists():
             logger.warning("Pending rmtree still failed: %s", detail)
             ui.error_dialog(
-                title="Previous uninstall incomplete",
-                message=(
-                    f"Bibliogon could not be fully removed from:\n{install_dir}\n\n"
-                    "You may need to delete this folder manually."
-                ),
-                actions=[("OK", "ok")],
+                title=i18n.t("cleanup.title"),
+                message=i18n.t("cleanup.message", path=str(install_dir)),
+                actions=[(i18n.t("common.ok"), "ok")],
                 details=detail,
                 initial_show_details=config.get_show_details_default(),
             )
@@ -416,18 +398,15 @@ def _check_launcher_target_stale() -> bool:
         return True  # in sync (or this launcher is ahead, weird but proceed)
 
     choice = ui.three_button_dialog(
-        title="Launcher outdated",
-        message=(
-            f"This launcher installs Bibliogon "
-            f"{installer.BIBLIOGON_TARGET_VERSION}, but the latest "
-            f"release is {tag}.\n\n"
-            "Download a newer launcher to install the current "
-            "Bibliogon, or continue with this older version if "
-            "that is what you want."
+        title=i18n.t("stale.title"),
+        message=i18n.t(
+            "stale.message",
+            target=installer.BIBLIOGON_TARGET_VERSION,
+            latest=tag,
         ),
-        primary_label="Open download page",
-        secondary_label="Continue with older version",
-        cancel_label="Cancel",
+        primary_label=i18n.t("stale.download"),
+        secondary_label=i18n.t("stale.continue_old"),
+        cancel_label=i18n.t("common.cancel"),
     )
     if choice == "primary":
         try:
@@ -483,14 +462,16 @@ def _run_install_flow() -> Path | None:
     target = config.default_repo_path()
 
     # Let user pick a custom folder (pre-filled with default)
-    picked = ui.pick_folder("Choose installation folder", initial_dir=str(target.parent))
+    picked = ui.pick_folder(i18n.t("install.choose_folder"), initial_dir=str(target.parent))
     if picked is None:
         return None
     target = Path(picked) if picked else target
 
     # Show status window during download + extract
     window = ui.StatusWindow()
-    window.set_starting(f"Downloading Bibliogon v{installer.BIBLIOGON_TARGET_VERSION}...")
+    window.set_starting(
+        i18n.t("install.downloading", version=f"v{installer.BIBLIOGON_TARGET_VERSION}")
+    )
 
     result: dict = {}
 
@@ -501,7 +482,7 @@ def _run_install_flow() -> Path | None:
             result["error"] = detail
             window.after(0, window.destroy)
             return
-        window.after(0, lambda: window.set_starting("Preparing configuration..."))
+        window.after(0, lambda: window.set_starting(i18n.t("install.preparing_config")))
         ok2, detail2 = installer.create_env_file(target)
         if not ok2:
             logger.warning("env file creation: %s", detail2)
@@ -518,7 +499,7 @@ def _run_install_flow() -> Path | None:
         config.save_launcher_config(cfg)
 
         # Phase 2: Build and start Docker stack
-        window.after(0, lambda: window.set_starting("Building Docker images (first time, may take a few minutes)..."))
+        window.after(0, lambda: window.set_starting(i18n.t("install.building_images")))
         ok3, detail3 = docker.compose_build(target, config.COMPOSE_FILENAME)
         if not ok3:
             result["error"] = f"Docker build failed:\n{detail3}"
@@ -526,7 +507,7 @@ def _run_install_flow() -> Path | None:
             return
 
         # Phase 3: Wait for health
-        window.after(0, lambda: window.set_starting("Waiting for Bibliogon to be ready..."))
+        window.after(0, lambda: window.set_starting(i18n.t("install.waiting_health")))
         port = config.read_port(target)
         if not health.wait_for_healthy(port, timeout_seconds=120.0):
             # Not fatal: stack may still be starting
@@ -541,12 +522,9 @@ def _run_install_flow() -> Path | None:
 
     if result.get("error"):
         ui.error_dialog(
-            title="Installation failed",
-            message=(
-                "Bibliogon could not be installed. Check your internet "
-                "connection and try again."
-            ),
-            actions=[("OK", "ok")],
+            title=i18n.t("install.failed.title"),
+            message=i18n.t("install.failed.message"),
+            actions=[(i18n.t("common.ok"), "ok")],
             details=result["error"],
             initial_show_details=show_details,
         )
@@ -554,27 +532,26 @@ def _run_install_flow() -> Path | None:
 
     if result.get("ok"):
         port = result.get("port", config.DEFAULT_PORT)
+        version_label = f"v{installer.BIBLIOGON_TARGET_VERSION}"
         if result.get("slow_start"):
             choice = ui.two_button_dialog(
-                title="Installation complete",
-                message=(
-                    f"Bibliogon v{installer.BIBLIOGON_TARGET_VERSION} has been installed.\n\n"
-                    "The application is taking longer than expected to start. "
-                    "It may still be starting in the background.\n\n"
-                    "Open in browser anyway?"
+                title=i18n.t("install.complete.title"),
+                message=i18n.t(
+                    "install.complete.slow_message", version=version_label
                 ),
-                primary_label="Open browser",
-                secondary_label="Close",
+                primary_label=i18n.t("common.open_browser"),
+                secondary_label=i18n.t("common.close"),
             )
         else:
             choice = ui.two_button_dialog(
-                title="Installation complete",
-                message=(
-                    f"Bibliogon v{installer.BIBLIOGON_TARGET_VERSION} is installed and running.\n\n"
-                    f"Opening http://localhost:{port} in your browser."
+                title=i18n.t("install.complete.title"),
+                message=i18n.t(
+                    "install.complete.ok_message",
+                    version=version_label,
+                    port=port,
                 ),
-                primary_label="Open browser",
-                secondary_label="Close",
+                primary_label=i18n.t("common.open_browser"),
+                secondary_label=i18n.t("common.close"),
             )
         if choice == "primary":
             try:
@@ -590,16 +567,10 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     """Uninstall Bibliogon after user confirmation. Returns True if uninstalled."""
     show_details = config.get_show_details_default()
     choice = ui.two_button_dialog(
-        title="Uninstall Bibliogon",
-        message=(
-            f"This will remove Bibliogon from:\n{install_dir}\n\n"
-            "This also removes all Docker containers, volumes (book data), "
-            "and images.\n\n"
-            "Export your books first if you want to keep them.\n"
-            "Continue?"
-        ),
-        primary_label="Uninstall",
-        secondary_label="Cancel",
+        title=i18n.t("uninstall.title"),
+        message=i18n.t("uninstall.message", path=str(install_dir)),
+        primary_label=i18n.t("uninstall.confirm"),
+        secondary_label=i18n.t("common.cancel"),
     )
     if choice != "primary":
         return False
@@ -610,7 +581,7 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
 
     # Phase 1: Stop Docker stack (best-effort, continue if Docker is not running)
     window = ui.StatusWindow()
-    window.set_starting("Stopping Bibliogon...")
+    window.set_starting(i18n.t("uninstall.stopping"))
 
     def uninstall_worker() -> None:
         ok, detail = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
@@ -618,13 +589,13 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
         if not ok:
             logger.warning("compose down: %s", detail)
 
-        window.after(0, lambda: window.set_starting("Removing data volumes..."))
+        window.after(0, lambda: window.set_starting(i18n.t("uninstall.removing_volumes")))
         ok2, detail2 = docker.remove_volumes()
         manifest.update_cleanup_step("remove_volumes", ok2)
         if not ok2:
             logger.warning("remove volumes: %s", detail2)
 
-        window.after(0, lambda: window.set_starting("Removing Docker images..."))
+        window.after(0, lambda: window.set_starting(i18n.t("uninstall.removing_images")))
         ok3, detail3 = docker.remove_images()
         manifest.update_cleanup_step("remove_images", ok3)
         if not ok3:
@@ -640,13 +611,9 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     manifest.update_cleanup_step("rmtree", ok)
     if not ok:
         ui.error_dialog(
-            title="Uninstall failed",
-            message=(
-                "Bibliogon could not be fully removed. Please stop Docker "
-                "Desktop and close any programs using the Bibliogon folder, "
-                "then try again."
-            ),
-            actions=[("OK", "ok")],
+            title=i18n.t("uninstall.failed.title"),
+            message=i18n.t("uninstall.failed.message"),
+            actions=[(i18n.t("common.ok"), "ok")],
             details=detail,
             initial_show_details=show_details,
         )
@@ -666,9 +633,9 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     manifest.delete_cleanup_pending()
 
     ui.two_button_dialog(
-        title="Uninstall complete",
-        message="Bibliogon has been uninstalled.",
-        primary_label="OK",
+        title=i18n.t("uninstall.complete.title"),
+        message=i18n.t("uninstall.complete.message"),
+        primary_label=i18n.t("common.ok"),
         secondary_label="",
     )
     return True
@@ -680,21 +647,13 @@ def _installation_moved_picker() -> Path | None:
 
     Three buttons: Choose folder / Open install guide / Cancel.
     """
-    message = (
-        "Bibliogon could not be found at the folder we remembered from "
-        "last time.\n\n"
-        "If you moved or renamed the Bibliogon folder, click 'Choose "
-        "folder' and point to the new location.\n\n"
-        "If you removed Bibliogon and have not reinstalled it yet, "
-        "click 'Open install guide'."
-    )
     while True:
         choice = ui.three_button_dialog(
-            title="Bibliogon installation moved",
-            message=message,
-            primary_label="Choose folder",
-            secondary_label="Open install guide",
-            cancel_label="Cancel",
+            title=i18n.t("moved.title"),
+            message=i18n.t("moved.message"),
+            primary_label=i18n.t("moved.choose_folder"),
+            secondary_label=i18n.t("install_prompt.guide_button"),
+            cancel_label=i18n.t("common.cancel"),
         )
         if choice == "cancel":
             return None
@@ -704,7 +663,7 @@ def _installation_moved_picker() -> Path | None:
             except OSError as exc:
                 logger.warning("opening install guide failed: %s", exc)
             return None
-        picked = ui.pick_folder("Choose the Bibliogon folder")
+        picked = ui.pick_folder(i18n.t("moved.choose_folder_picker"))
         if picked is None:
             continue  # back to the three-button dialog
         repo = Path(picked)
@@ -714,9 +673,8 @@ def _installation_moved_picker() -> Path | None:
             config.save_launcher_config(cfg)
             return repo
         retry = ui.ask_retry_quit(
-            "Not a Bibliogon folder",
-            "This folder does not look like a Bibliogon installation.\n\n"
-            "Please choose the folder where you installed Bibliogon.",
+            i18n.t("moved.invalid_title"),
+            i18n.t("moved.invalid_message"),
         )
         if not retry:
             return None
@@ -750,15 +708,9 @@ def _replace_secret_placeholder(env_file: Path) -> None:
 
 def _handle_compose_failure(window: ui.StatusWindow, port: int, detail: str, show_details: bool) -> None:
     ui.error_dialog(
-        title="Could not start Bibliogon",
-        message=(
-            "Bibliogon could not start. This usually happens when another "
-            f"program is using port {port}, or when Docker Desktop is having "
-            "trouble.\n\n"
-            "Try the following: close other programs that might use the same "
-            "port, restart Docker Desktop, then open Bibliogon again."
-        ),
-        actions=[("OK", "ok")],
+        title=i18n.t("start.compose_failed.title"),
+        message=i18n.t("start.compose_failed.message", port=port),
+        actions=[(i18n.t("common.ok"), "ok")],
         details=f"docker compose -f {config.COMPOSE_FILENAME} up -d failed:\n{detail}",
         help_url=INSTALL_GUIDE_URL,
         initial_show_details=show_details,
@@ -774,14 +726,9 @@ def _handle_health_timeout(
     show_details: bool,
 ) -> None:
     choice = ui.error_dialog(
-        title="Bibliogon is taking longer than expected",
-        message=(
-            "Bibliogon did not finish starting within a minute.\n\n"
-            "This can happen on the first start when Docker needs to prepare "
-            "the application for the first time.\n\n"
-            "Click Retry to wait another minute, or Cancel to shut down."
-        ),
-        actions=[("Retry", "retry"), ("Cancel", "cancel")],
+        title=i18n.t("start.health_timeout.title"),
+        message=i18n.t("start.health_timeout.message"),
+        actions=[(i18n.t("common.retry"), "retry"), (i18n.t("common.cancel"), "cancel")],
         details=(
             f"GET http://localhost:{port}/api/health did not respond in 60 s.\n\n"
             f"Last 20 log lines from docker compose -f {config.COMPOSE_FILENAME}:\n{tail}"
@@ -812,8 +759,8 @@ def _handle_already_running() -> None:
     port = config.read_port(repo) if config.is_valid_repo(repo) else config.DEFAULT_PORT
     url = f"http://localhost:{port}"
     ui.info_box(
-        "Bibliogon is already open",
-        "Bibliogon is already running. Your browser will switch to it.",
+        i18n.t("already_running.title"),
+        i18n.t("already_running.message"),
     )
     try:
         webbrowser.open(url)

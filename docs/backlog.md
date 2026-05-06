@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 shipped; awaiting next-release archive)
+Last updated: 2026-05-06 (DEP-DBPATH-01 step 2 + D-06 + AR-BULK-PLAYWRIGHT-SMOKE-01 + LAUNCHER-I18N-EXTRACT-01 shipped; awaiting next-release archive)
 Current version: v0.27.0
 Open tasks: 12 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -127,22 +127,24 @@ store.
 
 ## P4 - Roadmap / Future Phases
 
-- **LAUNCHER-I18N-EXTRACT-01**: complete extraction of every
+- ~~**LAUNCHER-I18N-EXTRACT-01**: complete extraction of every
   remaining hardcoded English string in the launcher into the
-  JSON i18n catalog. The first-run welcome flow + Docker-missing
-  dialog + Settings-language UI shipped 2026-05-05; that is the
-  MVP scope. Roughly 30-40 other dialog titles and message bodies
-  in `launcher/bibliogon_launcher/__main__.py` (manifest-pick,
-  uninstall flow, compose-failure, health-timeout, port-busy,
-  pre-install stale-target, ...) plus a few in
-  `installer.py` / `update_check.py` are still English-only.
-  Effort: 1 session of ~3 hours to enumerate every call site,
-  add catalog keys to `locales/{en,de}.json`, and replace the
-  literals with `i18n.t()` calls. Trigger: any user feedback
-  that surface text on a non-welcome flow is English-only when
-  the user expected German. Defer: there is no concrete report
-  yet, MVP scope already covers the highest-traffic surfaces
-  (welcome + Docker check + Settings).
+  JSON i18n catalog.~~ **Shipped 2026-05-06.** Every dialog
+  title + message body in `launcher/bibliogon_launcher/__main__.py`
+  now flows through `i18n.t()`: docker-daemon retry / exhausted,
+  env-prep failure, status-window starting / almost-ready,
+  update-available, pending-uninstall cleanup, launcher-stale,
+  install-flow status messages (downloading / preparing config /
+  building images / waiting health), install-failed,
+  install-complete (slow + ok variants), uninstall-confirmation +
+  per-phase status, uninstall-failed, uninstall-complete,
+  installation-moved (with folder-picker + invalid-folder
+  branches), compose-failed, health-timeout, already-running.
+  ~50 new keys added to `locales/{en,de}.json` with real DE
+  umlauts; existing 7 keys preserved unchanged. Five new test
+  assertions in `tests/test_i18n_and_welcome.py` spot-check the
+  new DE strings against ASCII-transliteration regression.
+  Awaiting next-release archive.
 
 - **D-07**: Phase 2 follow-up — package-manager discoverability.
   After D-06 ships, submit a winget manifest to

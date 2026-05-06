@@ -70,11 +70,23 @@ class TestI18n:
         umlauts' the de catalog must NOT use ASCII transliterations
         (ae/oe/ue/ss) for any string that should carry an umlaut."""
         de = i18n._CATALOG["de"]
-        # Spot-check a few strings with known umlauts/sharp-s
+        # Spot-check a few strings with known umlauts/sharp-s.
+        # First batch covers the v0.27.0 first-run flow (welcome +
+        # Docker-missing); the second batch covers
+        # LAUNCHER-I18N-EXTRACT-01 strings extracted in v0.28.x.
         assert "läuft" in de["welcome.docker_required"]
         assert "lädt" in de["welcome.first_run_size"]
         assert "benötigt" in de["docker.missing.heading"]
         assert "heißt" in de["docker.missing.explanation"]
+        # New (extraction-pass) strings:
+        assert "läuft" in de["docker.daemon.title"]
+        assert "Schließen" in de["common.close"]
+        assert "öffnen" in de["common.open_browser"]
+        assert "verfügbar" in de["update.message"]
+        assert "Bücher" in de["uninstall.message"]
+        assert "fortfahren" in de["stale.continue_old"]
+        assert "möglicherweise" in de["cleanup.message"]
+        assert "Wiederholen" in de["common.retry"]
 
 
 # --- welcome flag ---------------------------------------------------

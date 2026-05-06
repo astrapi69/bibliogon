@@ -8,6 +8,12 @@
   "help": "Help",
   "save_default_filename": "bibliogon-launcher-error-{ts}.log",
 
+  "common.ok": "OK",
+  "common.cancel": "Cancel",
+  "common.retry": "Retry",
+  "common.close": "Close",
+  "common.open_browser": "Open browser",
+
   "welcome.title": "Welcome to Bibliogon",
   "welcome.heading": "Before you start",
   "welcome.docker_required": "Bibliogon runs inside Docker, an isolated container system.",
@@ -26,6 +32,10 @@
   "docker.missing.guide_button": "Open Bibliogon installation guide",
   "docker.missing.quit_button": "Quit",
 
+  "docker.daemon.title": "Docker Desktop is not running",
+  "docker.daemon.message": "Docker Desktop needs to be running before Bibliogon can start.\n\nOpen Docker Desktop, wait for it to finish starting, then click Retry.",
+  "docker.daemon.exhausted_message": "Docker Desktop is still not running after several attempts.\n\nPlease start Docker Desktop and open Bibliogon again.",
+
   "install_prompt.title": "Bibliogon is not installed",
   "install_prompt.message": "Bibliogon is not yet installed on this computer. Install it now?",
   "install_prompt.install_button": "Install",
@@ -36,5 +46,63 @@
   "settings.language_label": "Language",
   "settings.language_de": "Deutsch",
   "settings.language_en": "English",
-  "settings.language_restart_notice": "Restart the launcher to apply a language change."
+  "settings.language_restart_notice": "Restart the launcher to apply a language change.",
+
+  "env_prep.title": "Could not prepare Bibliogon",
+  "env_prep.message": "Bibliogon's configuration could not be prepared. This is usually a file-permissions problem with the Bibliogon folder.\n\nCheck that you have write access to the Bibliogon folder and try again.",
+
+  "status.starting": "Starting Bibliogon...",
+  "status.almost_ready": "Almost ready...",
+
+  "update.title": "Update available",
+  "update.message": "A newer version of Bibliogon is available.\n\nInstalled: {current}\nLatest: {tag}\n\nOpen the release page to see what's new and download?",
+  "update.primary": "Open release page",
+  "update.dismiss": "Dismiss",
+  "update.disable": "Don't check for updates",
+
+  "cleanup.title": "Previous uninstall incomplete",
+  "cleanup.message": "Bibliogon could not be fully removed from:\n{path}\n\nYou may need to delete this folder manually.",
+
+  "stale.title": "Launcher outdated",
+  "stale.message": "This launcher installs Bibliogon {target}, but the latest release is {latest}.\n\nDownload a newer launcher to install the current Bibliogon, or continue with this older version if that is what you want.",
+  "stale.download": "Open download page",
+  "stale.continue_old": "Continue with older version",
+
+  "install.choose_folder": "Choose installation folder",
+  "install.downloading": "Downloading Bibliogon {version}...",
+  "install.preparing_config": "Preparing configuration...",
+  "install.building_images": "Building Docker images (first time, may take a few minutes)...",
+  "install.waiting_health": "Waiting for Bibliogon to be ready...",
+  "install.failed.title": "Installation failed",
+  "install.failed.message": "Bibliogon could not be installed. Check your internet connection and try again.",
+  "install.complete.title": "Installation complete",
+  "install.complete.slow_message": "Bibliogon {version} has been installed.\n\nThe application is taking longer than expected to start. It may still be starting in the background.\n\nOpen in browser anyway?",
+  "install.complete.ok_message": "Bibliogon {version} is installed and running.\n\nOpening http://localhost:{port} in your browser.",
+
+  "uninstall.title": "Uninstall Bibliogon",
+  "uninstall.message": "This will remove Bibliogon from:\n{path}\n\nThis also removes all Docker containers, volumes (book data), and images.\n\nExport your books first if you want to keep them.\nContinue?",
+  "uninstall.confirm": "Uninstall",
+  "uninstall.stopping": "Stopping Bibliogon...",
+  "uninstall.removing_volumes": "Removing data volumes...",
+  "uninstall.removing_images": "Removing Docker images...",
+  "uninstall.failed.title": "Uninstall failed",
+  "uninstall.failed.message": "Bibliogon could not be fully removed. Please stop Docker Desktop and close any programs using the Bibliogon folder, then try again.",
+  "uninstall.complete.title": "Uninstall complete",
+  "uninstall.complete.message": "Bibliogon has been uninstalled.",
+
+  "moved.title": "Bibliogon installation moved",
+  "moved.message": "Bibliogon could not be found at the folder we remembered from last time.\n\nIf you moved or renamed the Bibliogon folder, click 'Choose folder' and point to the new location.\n\nIf you removed Bibliogon and have not reinstalled it yet, click 'Open install guide'.",
+  "moved.choose_folder": "Choose folder",
+  "moved.choose_folder_picker": "Choose the Bibliogon folder",
+  "moved.invalid_title": "Not a Bibliogon folder",
+  "moved.invalid_message": "This folder does not look like a Bibliogon installation.\n\nPlease choose the folder where you installed Bibliogon.",
+
+  "start.compose_failed.title": "Could not start Bibliogon",
+  "start.compose_failed.message": "Bibliogon could not start. This usually happens when another program is using port {port}, or when Docker Desktop is having trouble.\n\nTry the following: close other programs that might use the same port, restart Docker Desktop, then open Bibliogon again.",
+
+  "start.health_timeout.title": "Bibliogon is taking longer than expected",
+  "start.health_timeout.message": "Bibliogon did not finish starting within a minute.\n\nThis can happen on the first start when Docker needs to prepare the application for the first time.\n\nClick Retry to wait another minute, or Cancel to shut down.",
+
+  "already_running.title": "Bibliogon is already open",
+  "already_running.message": "Bibliogon is already running. Your browser will switch to it."
 }
