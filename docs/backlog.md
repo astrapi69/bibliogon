@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-05 (launcher first-run UX shipped: welcome + Docker guide + bilingual i18n; LAUNCHER-I18N-EXTRACT-01 added)
+Last updated: 2026-05-06 (bulk article export shipped; AR-BULK-* follow-ups added)
 Current version: v0.26.6
-Open tasks: 10 active (P3..P5) + 4 BLOCKED-on-upstream pointers
+Open tasks: 13 active (P3..P5) + 4 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -120,6 +120,16 @@ store.
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
 
+- **AR-BULK-SERIES-HIERARCHY-01**: parent/child series for the
+  bulk-export filter. The 2026-05-06 bulk-export ship landed
+  series as a flat free-string field on Article (mirrors
+  `Book.series`). Hierarchical series ("Cosmos > Astrophysics >
+  Stars") was deferred because no user has asked for it and a
+  Series model + M2M migration is a multi-session investment.
+  Trigger: first concrete user request for sub-series. Effort:
+  1-2 sessions for the model + migration + filter UI nesting.
+  See `docs/help/{en,de}/articles/bulk-export.md` "Series" note.
+
 - **I18N-DIACRITICS-01**: auto-translated non-DE i18n YAMLs (es,
   pt, tr, possibly fr) ship with inconsistent diacritic coverage —
   some entries use proper Unicode (`géneros`, `Décroissant`,
@@ -167,6 +177,28 @@ store.
   the underlying install path. See
   [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md).
 
+- **AR-BULK-BOOKS-PARITY-01**: bulk export for the books
+  dashboard. The 2026-05-06 articles bulk-export ships
+  per-tile/per-row checkboxes, a filter quartet (status / topic
+  / series / tag), a sticky bulk-action bar, and a backend
+  endpoint with ZIP and combined modes. Books deserve the same.
+  Effort: ~1 session (less than the article session because the
+  pattern + components + backend helpers exist). Trigger: user
+  demand or natural follow-up after the article workflow proves
+  itself in real use. The book combined-export already exists
+  per-book via manuscripta; the bulk endpoint can iterate or
+  build a multi-book write-book-template, decision deferred to
+  the implementing session.
+
+- **AR-BULK-CROSSPAGE-SELECT-01**: cross-page Select-all for the
+  bulk-export workflow. Articles dashboard does not paginate
+  today, so "Select all = current page" is moot. When pagination
+  lands (or articles count grows past comfortable scroll), Select-
+  all needs to either select every filtered row across pages or
+  surface an "X of N visible; select all N?" affordance. Effort:
+  S once pagination exists. Trigger: pagination landing OR article
+  counts complaint.
+
 - **LAUNCHER-SELFREPLACE-01**: launcher binary self-replace.
   Currently the pre-install stale-target safeguard tells the
   user "download a newer launcher manually" and opens the
@@ -186,6 +218,17 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **AR-BULK-ASYNC-PROGRESS-01**: async bulk export with progress
+  UI for selections >50 articles. The 2026-05-06 ship runs the
+  request synchronously with a 180s server-side Pandoc timeout,
+  which is fine for the typical workflow (<50 articles). For
+  larger combined PDF runs the user sees a frozen browser tab
+  until completion. Future work: convert to the async-job pattern
+  used by audiobook export (background worker + SSE progress
+  stream + persisted artifact). Effort: 1-2 sessions. Trigger:
+  first user report of perceived hang, OR a real-world selection
+  that exceeds 180s.
 
 - **D-02 follow-ups**: macOS Intel universal2 build + code signing.
   Effort: M each. Deferred until user demand.
