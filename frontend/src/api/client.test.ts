@@ -339,6 +339,54 @@ describe("api.audiobook.listVoices", () => {
     });
 });
 
+// --- AI test connection ---
+
+describe("api.ai.testConnection", () => {
+    it("GETs /api/ai/test-connection and returns the success result", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            success: true,
+            error_key: "",
+            error_detail: "",
+        }));
+        const res = await api.ai.testConnection();
+        expect(res.success).toBe(true);
+        expect(res.error_key).toBe("");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/ai/test-connection",
+            expect.objectContaining({
+                headers: {"Content-Type": "application/json"},
+            }),
+        );
+    });
+
+    it("returns the structured error fields when the backend reports a failure", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            success: false,
+            error_key: "auth_error",
+            error_detail: "Invalid API key",
+        }));
+        const res = await api.ai.testConnection();
+        expect(res.success).toBe(false);
+        expect(res.error_key).toBe("auth_error");
+        expect(res.error_detail).toBe("Invalid API key");
+    });
+
+    it("returns the disabled-AI shape unchanged", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            success: false,
+            error_key: "disabled",
+            error_detail: "",
+        }));
+        const res = await api.ai.testConnection();
+        expect(res.error_key).toBe("disabled");
+    });
+
+    it("throws ApiError on a non-2xx response", async () => {
+        mockFetch.mockReturnValue(errorResponse(500, "internal"));
+        await expect(api.ai.testConnection()).rejects.toThrow();
+    });
+});
+
 // --- formatVoiceLabel ---
 
 import {formatVoiceLabel} from "./client";

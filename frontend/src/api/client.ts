@@ -632,6 +632,12 @@ export interface AiJobStatus {
     result?: {review?: string} & Record<string, unknown>;
 }
 
+export interface AiTestConnectionResult {
+    success: boolean;
+    error_key: string;
+    error_detail: string;
+}
+
 export interface GrammarMatch {
     message: string;
     short_message: string;
@@ -1529,6 +1535,13 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify(request_body),
             }),
+
+        /** Test the current AI configuration with a minimal request.
+         *  Backend GET /api/ai/test-connection returns
+         *  {success, error_key, error_detail}. Consumers branch on
+         *  success and may map error_key to localized strings. */
+        testConnection: () =>
+            request<AiTestConnectionResult>("/ai/test-connection"),
     },
 
     grammar: {
