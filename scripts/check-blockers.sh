@@ -72,21 +72,10 @@ else
   mark_blocked  "tiptap-search-and-replace v0.2.x not on npm yet. Path B (prosemirror-search adapter) requires user go-ahead."
 fi
 
-# -----------------------------------------------------------------------------
-# DEP-09 + SEC-01: Vite 7 -> 8 / vite-plugin-pwa CVE chain
-# Both unblock together when vite-plugin-pwa releases a Vite-8-compatible
-# version. Check its peerDependencies for Vite 8.
-# -----------------------------------------------------------------------------
-print_header "DEP-09 + SEC-01 vite-plugin-pwa Vite-8 compat"
-vp_pwa_peer=$(npm view vite-plugin-pwa peerDependencies --json 2>/dev/null || echo "{}")
-vp_pwa_latest=$(npm view vite-plugin-pwa version 2>/dev/null || echo "?")
-printf "  Latest version: %s\n" "$vp_pwa_latest"
-printf "  peerDependencies: %s\n" "$vp_pwa_peer"
-if printf "%s" "$vp_pwa_peer" | grep -q "8\\.0\\.0"; then
-  mark_unblocked "vite-plugin-pwa peer-dep range now includes Vite 8. DEP-09 + SEC-01 unblock together."
-else
-  mark_blocked  "vite-plugin-pwa peer deps still top out at Vite 7."
-fi
+# DEP-09 (Vite 7 -> 8) + SEC-01 (vite-plugin-pwa CVE chain) shipped on
+# 2026-05-06 in commit 93a5ed3 once vite-plugin-pwa@1.3.0 added Vite 8
+# to its peer-dep range. Both are archived in
+# docs/roadmap-archive/2026-05.md and no longer tracked here.
 
 # -----------------------------------------------------------------------------
 # DEP-05: elevenlabs SDK 0.2 -> 2.x
