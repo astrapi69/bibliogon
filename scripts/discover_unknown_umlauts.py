@@ -216,6 +216,8 @@ NOT_TRANSLITERATIONS: set[str] = {
     "Massen",  # German "masses/bulk" — no umlaut
     "wessen",  # German "whose" — genitive interrogative
     "beisteuert",  # German "contributes" — verb form
+    # Added 2026-05-07 (cross-platform installer DE doc):
+    "Zertifizierungsstelle",  # German "certification authority" — no umlaut
 }
 
 
