@@ -10,6 +10,7 @@
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
+       sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -408,6 +409,18 @@ docs-build: ## Build static documentation site
 docs-serve: ## Serve documentation locally (hot-reload)
 	cd docs && poetry run python ../scripts/generate_mkdocs_nav.py
 	cd docs && poetry run mkdocs serve -f ../mkdocs.yml
+
+sync-mkdocs-nav: ## Regenerate mkdocs.yml nav blocks from docs/help/_meta.yaml
+	cd docs && poetry run python ../scripts/generate_mkdocs_nav.py
+
+verify-mkdocs-nav: ## Check mkdocs.yml is in sync with docs/help/_meta.yaml (CI-friendly)
+	cd docs && poetry run python ../scripts/generate_mkdocs_nav.py --check
+
+check-mkdocs-orphans: ## Adversarial check: fail if mkdocs reports orphan pages
+	bash scripts/check_mkdocs_orphans.sh
+
+verify-docs-discipline: verify-mkdocs-nav check-mkdocs-orphans ## All docs-discipline gates (mandatory in pre-tag chain)
+	@echo "All docs-discipline checks passed."
 
 # --- Clean ---
 

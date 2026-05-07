@@ -43,20 +43,23 @@ plugins:
       name: English
       build: true
       nav_translations:
+        # AUTO-GENERATED-NAV-TRANSLATIONS-START (do not edit; regenerate via make sync-mkdocs-nav)
         Erste Schritte: Getting Started
         Artikel: Articles
-        Bücher: Books
         Übersicht: Overview
+        Massen-Export: Bulk export
+        Bücher: Books
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
         Feldauswahl: Field selection
         Git-Historie übernehmen: Adopt git history
+        Docker Desktop installieren: Install Docker Desktop
+        Plattformübergreifende Installer: Cross-platform installers
         Windows-Launcher: Windows Launcher
         macOS-Launcher: macOS Launcher
         Linux-Launcher: Linux Launcher
-        Plattformübergreifende Installer: Cross-platform installers
         Deinstallieren: Uninstall
         KI-Assistent: AI Assistant
         Tastenkürzel: Keyboard Shortcuts
@@ -66,15 +69,13 @@ plugins:
         Unterstützen: Support
         Glossar: Glossary
         Fehlerbehebung: Troubleshooting
-        Plugin-Entwicklung: Plugin Development
-        Entwickler-Fehlerbehebung: Developer Troubleshooting
-        Architektur-Übersicht: Architecture overview
-        Mitwirken: Contributing
-        Deployment: Deployment
-        API-Referenz: API reference
         Entwickler: Developers
-        Home: Home
-        Massen-Export: Bulk export
+        Architektur-Übersicht: Architecture overview
+        Plugin-Entwicklung: Plugin Development
+        Mitwirken: Contributing
+        API-Referenz: API reference
+        Entwickler-Fehlerbehebung: Developer Troubleshooting
+        # AUTO-GENERATED-NAV-TRANSLATIONS-END
 - git-revision-date-localized:
     enable_creation_date: true
 markdown_extensions:
@@ -95,6 +96,7 @@ extra:
     link: https://github.com/astrapi69/bibliogon
 nav:
 - Home: de/index.md
+# AUTO-GENERATED-NAV-START (do not edit; regenerate via make sync-mkdocs-nav)
 - Erste Schritte: de/getting-started.md
 - Artikel:
   - Übersicht: de/articles.md
@@ -118,7 +120,7 @@ nav:
   - Git-Historie übernehmen: de/import/git-adoption.md
 - Installation:
   - Übersicht: de/installation.md
-  - Docker Desktop: de/install/docker-desktop.md
+  - Docker Desktop installieren: de/install/docker-desktop.md
   - Plattformübergreifende Installer: de/install/cross-platform-installers.md
   - Windows-Launcher: de/launcher-windows.md
   - macOS-Launcher: de/launcher-macos.md
@@ -142,3 +144,4 @@ nav:
   - Deployment: de/developers/deployment.md
   - API-Referenz: de/developers/api-reference.md
   - Entwickler-Fehlerbehebung: de/developers/troubleshooting.md
+# AUTO-GENERATED-NAV-END
