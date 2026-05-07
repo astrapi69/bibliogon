@@ -2,6 +2,183 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.30.0] - 2026-05-07
+
+Launcher localized in 8 languages (en/de/el/es/fr/pt/tr/ja) with
+full parity-test enforcement, the `BIBLIOGON_DB_PATH` deprecation
+cycle closes (warning v0.27.0 → precedence flip v0.28.0 → full
+removal in this release), 5 new bilingual core help pages expand
+the public docs site to cover architecture / contributing /
+deployment / API reference / cross-platform installers / books
+bulk-export, and the plugin dev guide refreshes for Vite 8 +
+Node 24.
+
+### Action required
+
+**If you have `BIBLIOGON_DB_PATH` set in your environment
+(uncommon):** the variable is no longer honoured as a path
+override (DEP-DBPATH-01 step 3, the final step of the cycle that
+began in v0.27.0). The database location is now determined by
+`BIBLIOGON_DATA_DIR` or the platformdirs default. If
+`BIBLIOGON_DB_PATH` is still set when Bibliogon starts, a single
+warning is logged at startup naming the ignored value, but the
+variable has no effect. Action: remove `BIBLIOGON_DB_PATH` from
+your environment; if you intended the database to live at a
+non-default path, set `BIBLIOGON_DATA_DIR=<parent>` instead — the
+database resolves to `<BIBLIOGON_DATA_DIR>/bibliogon.db`. Default
+Docker setups (which set only `BIBLIOGON_DATA_DIR=/app/data`) and
+standard launcher installs are unaffected. The startup warning
+will be removed in a later release once existing deployments have
+migrated.
+
+**Launcher localized in 8 languages.** The launcher's i18n
+catalog grew from 2 languages (en/de) to 8
+(en/de/el/es/fr/pt/tr/ja). The OS-locale resolver in
+`_current_lang()` was expanded from a hardcoded de-or-en branch
+to a prefix-matching loop over all 8 supported languages: locale
+codes `de_DE` / `de_AT` / `de_CH` all resolve to `de`, `pt_BR`
+and `pt_PT` both resolve to `pt`, `ja_JP` resolves to `ja`, with
+`en` as the default fallback. The Settings dialog language
+dropdown gains six new native-name labels (Ελληνικά, Español,
+Français, 日本語, Português, Türkçe). Three of the six new
+catalogs (Greek, French, Spanish) are user-validated; the other
+three (Portuguese, Turkish, Japanese) ship with an explicit
+`_meta.review_status: "pending native speaker"` block and are
+best-effort translations awaiting native-speaker review. The
+marker mechanism is documented in
+`launcher/bibliogon_launcher/locales/REVIEW_STATUS.md` and
+machine-enforced by 31 new launcher i18n parity tests (key
+parity, non-empty values, placeholder parity, marker contracts
+both directions). User self-validation of the el/es/fr catalogs
+surfaced four register / idiom corrections: Greek `containers`
+(Latin) → `κοντέινερ` and `φυλλομετρητής` (formal) → `πρόγραμμα
+περιήγησης`; French `Compris, continuer` → `J'ai compris`;
+Spanish `Internet` → `internet` (RAE 2014+).
+
+**`BIBLIOGON_DB_PATH` deprecation cycle closes.** Step 3 of
+DEP-DBPATH-01 lands in this release: the resolver no longer
+reads `BIBLIOGON_DB_PATH` for path resolution. The priority
+chain collapses to `BIBLIOGON_TEST` → `DATABASE_URL` →
+`BIBLIOGON_DATA_DIR` → platformdirs default. If
+`BIBLIOGON_DB_PATH` is still in env, a single warning at startup
+names the ignored value so the user can see it has no effect.
+The 4 user-facing docs that listed the variable
+(`README.md`, `README-de.md`, the bilingual deployment guide)
+keep the row for one release marked **Removed in v0.30.0** with
+the full timeline.
+
+**MkDocs public site expanded.** Five new bilingual core pages
+address gaps that had accumulated through v0.27.0–v0.29.0.
+`developers/architecture.md` distills
+`.claude/rules/architecture.md` into a public-reader view (four-
+layer model, plugin structure, error-handling chain, persistence
++ tripwire model, lock-step versioning, offline guarantees).
+`developers/contributing.md` is the public version of the
+internal contributor rules. `developers/deployment.md` covers
+operator-side production: two-container Docker topology, env-var
+reference grounded in `docker-compose.prod.yml`, named-volume
+persistence + tar-based backup recipe, reverse-proxy + CORS
+notes, update flow with the lock-step-versioning + Alembic
+migration patterns. `developers/api-reference.md` is a thin
+pointer page to the runtime FastAPI `/api/docs` +
+`/api/openapi.json` + `/api/health` endpoints with the threat
+model spelled out. `books/bulk-export.md` mirrors the existing
+`articles/bulk-export.md` shape but documents the books-specific
+behavior (3 formats vs 4, ZIP-only by design, 200-book hard
+limit). `install/cross-platform-installers.md` documents the
+four-way installer matrix (`install.sh` / `install.ps1` /
+`install.command` / `install.cmd`) shipped in v0.28.0 including
+the unsigned-binary Gatekeeper / SmartScreen behavior. The
+existing plugin dev guide (`developers/plugins.md`) was
+refreshed for the v0.29.0 frontend stack (Vite 7 → Vite 8 with
+the Rolldown bundler, Node 24, `@types/node` ^24 + tsconfig
+ES2022).
+
+**Documentation drift sweep.** Outdated version references
+across the docs corrected: README en + de updated to current
+version, README-de.md ASCII transliterations converted to real
+umlauts via `scripts/replace_umlauts.py` (~50 sites; 26 new
+entries added to `KNOWN_WORDS`, 13 to `NOT_TRANSLITERATIONS`),
+`docs/testing/tester-onboarding.md` Node 20.19+ requirement
+bumped to Node 24 + the v0.25.0+ platformdirs DB-path migration
+documented, test baselines refreshed to v0.29.0 numbers,
+`mkdocs.yml` orphan-page nav entries wired (the
+`articles/bulk-export.md` and `install/docker-desktop.md` pages
+had been silently unreachable from the public docs site since
+v0.27.0 / v0.28.0).
+
+### Internal
+
+- DEP-DBPATH-01 step 3 implementation: `_resolve_database_url`
+  priority chain collapses from 5 levels to 4. Two
+  `BIBLIOGON_DB_PATH` branches removed; a single warning fires
+  when DB_PATH is in env regardless of DATA_DIR state. Path
+  resolution always goes through `app.paths.get_db_path()`.
+  `test_database_url_resolution.py` rewritten: 6 tests covering
+  the new behavior, all green.
+- Launcher resolver expansion: `_OS_LOCALE_PREFIXES` tuple
+  covers all 8 supported languages with prefix matching.
+  Settings dialog `language_label_keys` map expanded from 2 to
+  8 entries with native-name self-labels.
+- Per-language i18n commits: 6 commits, one per language,
+  independently revertable. Each catalog is 95 user-facing keys
+  plus an optional `_meta` block for pending-review languages.
+- Launcher i18n parity test (`test_i18n_parity.py`): 31 new
+  tests. Three contracts (key parity, non-empty values,
+  placeholder parity), two marker-contract tests, two sanity
+  guards. Combined with the 18 existing
+  `test_i18n_and_welcome` tests, total launcher i18n coverage
+  is 49 tests.
+- Pre-v0.30.0 dependency sweep: 3 separate commits per the
+  "discrete commit, not release blocker" pattern. Backend +
+  10 plugins (fastapi 0.135 → 0.136 lock-step across 11
+  pyprojects, uvicorn 0.44 → 0.46, python-multipart 0.0.26 →
+  0.0.27, ruamel-yaml 0.18 → 0.19, plus `poetry update`
+  in-range patches). Frontend (in-range only via `npm
+  update`: dompurify, jsdom, lucide-react, react, react-dom,
+  react-router-dom, vite, xstate). Launcher (pyinstaller
+  6.19 → 6.20, in-range). Deferred per the "major bumps get
+  their own dedicated session" rule: cryptography 46 → 48,
+  elevenlabs 0.2 → 2.x (DEP-05 blocked on paid API), mypy
+  1.20 → 2.0, pillow 11 → 12 in launcher, `@types/node` ^24
+  → ^25, `@vitejs/plugin-react` 5 → 6, all `@tiptap/*` 2.27
+  → 3.22 (DEP-02 blocked).
+- Pre-v0.30.0 retrospective:
+  `docs/journal/retrospective-pre-v0.30.0.md` covers the
+  v0.27.0 → HEAD period (4 calendar days, 3 tagged releases,
+  48 commits) in 6 sections. Five concrete commitments for
+  v0.30.0+ each with what / why / how-enforced /
+  failure-mode-if-abandoned.
+- Tests: backend 1278 → 1299 (+21); frontend 688 → 712
+  (+24); launcher 147 → 196 (+49: i18n parity tests
+  dominate); smoke Playwright 188 → 191 (+3 from bulk-export
+  specs). Total: 117 new tests across the period.
+- Backlog deltas: 7 P3/P4/P5 items shipped including
+  DEP-DBPATH-01 cycle complete, AR-BULK-BOOKS-PARITY-01,
+  AR-BULK-PLAYWRIGHT-SMOKE-01, D-06 cross-platform installer,
+  LAUNCHER-I18N-EXTRACT-01, "Launcher localization beyond
+  EN/DE"; DEP-09 + SEC-01 archived earlier in the period.
+  New: `LAUNCHER-I18N-NATIVE-REVIEW-01` (P5) tracking
+  native-speaker review of pt/tr/ja.
+
+### Known limitations
+
+`install.command`, `install.ps1`, and `install.cmd` still ship
+without fresh-machine validation. The unsigned-binary warnings
+(Gatekeeper on macOS, SmartScreen on Windows) are documented
+inline.
+
+The TipTap 2 → 3 migration (DEP-02) remains BLOCKED on upstream
+`@sereneinserenade/tiptap-search-and-replace@0.2.0`. Next
+re-audit 2026-06-02. Path B (the `prosemirror-search` adapter,
+~50-80 LOC) is the alternative unblock and has not been
+authorized.
+
+The pt / tr / ja launcher i18n catalogs ship with
+`_meta.review_status: "pending native speaker"` markers.
+Native-speaker outreach is out-of-band; corrections land via PR
+(see `launcher/bibliogon_launcher/locales/REVIEW_STATUS.md`).
+
 ## [0.29.0] - 2026-05-07
 
 Frontend toolchain modernized to Vite 8 and `@types/node` 24, the
