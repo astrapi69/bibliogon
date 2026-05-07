@@ -439,6 +439,32 @@ KNOWN_WORDS: dict[str, str] = {
     "Buecherregalen": "Bücherregalen",
     "muelleimer": "mülleimer",
     "Schluesselter": "Schlüsselter",
+    # Added 2026-05-07 during README-de.md umlaut sweep:
+    "unveraenderte": "unveränderte",
+    "Kostenschaetzung": "Kostenschätzung",
+    "Probehoeren": "Probehören",
+    "kontextbewusste": "kontextbewusste",  # identity, no umlaut
+    "Vorschlaege": "Vorschläge",
+    "Verschluesselte": "Verschlüsselte",
+    "Franzoesisch": "Französisch",
+    "Tuerkisch": "Türkisch",
+    "Mobilgeraeten": "Mobilgeräten",
+    "Begleitbeitraege": "Begleitbeiträge",
+    "Manueller": "Manueller",  # identity
+    "oeffentlichen": "öffentlichen",
+    "Buchaenderungen": "Buchänderungen",
+    "Konfliktloesungs": "Konfliktlösungs",
+    "verknuepfte": "verknüpfte",
+    "Bruecke": "Brücke",
+    "zurueckgegeben": "zurückgegeben",
+    "Tastenkuerzeln": "Tastenkürzeln",
+    "Stilpruefungen": "Stilprüfungen",
+    "Verknuepfung": "Verknüpfung",
+    "beruecksichtigt": "berücksichtigt",
+    "kuenftigen": "künftigen",
+    "Zielverzeichnisstruktur": "Zielverzeichnisstruktur",  # identity
+    "Uebersetzungen": "Übersetzungen",
+    "Menue": "Menü",
 }
 
 # Identity entries get filtered at runtime (skip if old == new).
