@@ -41,3 +41,11 @@ repos:
         always_run: true
         stages: [pre-commit]
         verbose: true
+
+      - id: help-meta-completeness
+        name: docs/help pages must be in docs/help/_meta.yaml
+        entry: python3 scripts/check_help_meta_completeness.py
+        language: system
+        files: ^docs/help/(en|de)/.*\.md$
+        pass_filenames: true
+        stages: [pre-commit]
