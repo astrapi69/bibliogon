@@ -11,6 +11,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
+       lock-all-plugins verify-plugin-locks \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -421,6 +422,40 @@ check-mkdocs-orphans: ## Adversarial check: fail if mkdocs reports orphan pages
 
 verify-docs-discipline: verify-mkdocs-nav check-mkdocs-orphans ## All docs-discipline gates (mandatory in pre-tag chain)
 	@echo "All docs-discipline checks passed."
+
+# --- Plugin lockfile discipline (PLUGIN-LOCKFILE-DRIFT-01) ---
+# `make test` installs plugins from the backend's combined poetry.lock
+# (path-deps); CI installs each plugin from its OWN poetry.lock. The two
+# paths drift independently when a shared external pin (e.g. fastapi)
+# bumps in every plugin's pyproject. Catches the divergence before push.
+
+lock-all-plugins: ## Re-lock every plugin's poetry.lock (after a shared-dep pin bump)
+	@for d in plugins/bibliogon-plugin-*/; do \
+		echo ""; echo "=== $$(basename $$d) ==="; \
+		cd "$$d" && poetry lock && cd - >/dev/null; \
+	done
+	@echo ""
+	@echo "Re-locked $$(ls -d plugins/bibliogon-plugin-*/ | wc -l) plugin(s)."
+
+verify-plugin-locks: ## Detect drift between each plugin's pyproject.toml and its poetry.lock
+	@drift=0; \
+	for d in plugins/bibliogon-plugin-*/; do \
+		name=$$(basename $$d); \
+		out=$$(cd "$$d" && poetry install --dry-run --no-interaction --no-ansi 2>&1 | head -3); \
+		if echo "$$out" | grep -q "changed significantly"; then \
+			echo "DRIFT: $$name (run \`make lock-all-plugins\` or \`cd $$d && poetry lock\`)"; \
+			drift=1; \
+		fi; \
+	done; \
+	if [ $$drift -eq 1 ]; then \
+		echo ""; \
+		echo "ERROR: at least one plugin pyproject.toml drifts from its poetry.lock."; \
+		echo "Same shape as the v0.30.0 release CI red-on-main: the backend's"; \
+		echo "combined lock can be in sync while per-plugin locks lag. Run"; \
+		echo "\`make lock-all-plugins\` to bring all plugin locks in sync."; \
+		exit 1; \
+	fi; \
+	echo "OK: all plugin pyproject.toml/poetry.lock pairs in sync."
 
 # --- Clean ---
 
