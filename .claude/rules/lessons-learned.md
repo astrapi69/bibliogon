@@ -704,8 +704,9 @@ This shape bit during the v0.30.0 release: the pre-v0.30.0 dep sweep bumped fast
 
 **Generalization:** any time there are two installation paths for the same code, BOTH must be tested at gate time. The backend's combined lock and the per-plugin locks are different gates; verifying one does not verify the other. The pre-v0.30.0 retro called this out at the meta level ("verify the gate before trusting it"); this is the concrete recurrence.
 
-**Mitigation pattern:**
+**Mitigation pattern (now enforced):**
 
-- Ad-hoc fix today: `for d in plugins/bibliogon-plugin-*/; do (cd "$d" && poetry lock); done` after any shared-dep pyproject bump.
-- Tracked as `PLUGIN-LOCKFILE-DRIFT-01` (P3) in the backlog: a `make lock-all-plugins` target + a pre-commit hook (or CI gate) that fails when a plugin pyproject is staged without a paired lockfile update.
-- Discovery channel: CI red on main, AFTER a release tag has already been cut. The retro's commitment to "discrete pre-release dep sweep commits" still pays off (rollback granularity stays intact), but the better gate is to catch the drift before push, not from the GitHub Actions red badge.
+- `make lock-all-plugins` (Makefile target shipped in PLUGIN-LOCKFILE-DRIFT-01 commit `1b43aec`): iterates `plugins/bibliogon-plugin-*/` and runs `poetry lock` in each. Use after any shared-dep pin bump.
+- `make verify-plugin-locks` (Makefile target shipped in the same commit): runs `poetry install --dry-run --no-interaction --no-ansi` per plugin and greps for "changed significantly". Exits 1 with a remediation hint on drift; manual diagnostic, NOT in the pre-tag chain (the pre-commit hook below + the CI per-plugin matrix already cover the right times).
+- Pre-commit hook `plugin-lock-paired-with-pyproject` (shipped in commit `8f6fcea`): scoped via `files: ^plugins/bibliogon-plugin-[^/]+/pyproject\.toml$`, fails when a staged plugin pyproject lacks a paired staged `poetry.lock`. Catches the operational mistake at commit time. Verified by 6 hook self-check tests in `backend/tests/test_plugin_lock_drift_hook.py` (commit `e31c4fd`), all green at 0.22 s.
+- Discovery channel without these gates: CI red on main, AFTER a release tag has already been cut. The retro's commitment to "discrete pre-release dep sweep commits" pays off (rollback granularity stays intact), but the better gate is to catch the drift before push, not from the GitHub Actions red badge.

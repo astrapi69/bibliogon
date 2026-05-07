@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-07 (v0.30.0 cut + post-release MKDOCS-DISCIPLINE-01 cycle: orphan check + nav SoT + pre-tag chain + pre-commit hook + bilingual parity test; PLUGIN-LOCKFILE-DRIFT-01 added as P3 follow-up after CI hotfix `3232fad`)
+Last updated: 2026-05-07 (v0.30.0 cut + post-release MKDOCS-DISCIPLINE-01 cycle + PLUGIN-LOCKFILE-DRIFT-01 closed: make lock-all-plugins / verify-plugin-locks targets, plugin-lock-paired pre-commit hook, 6 hook self-check tests)
 Current version: v0.30.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -91,24 +91,6 @@ store.
   until DE i18n stable + a native speaker is available per
   language for review.
 
-- **PLUGIN-LOCKFILE-DRIFT-01**: `make test` and per-plugin CI
-  install paths diverge. Backend's combined `poetry.lock` covers
-  every plugin via path-deps + `poetry install` once; CI's plugin
-  matrix runs `poetry install --no-interaction --no-ansi` per
-  plugin against THAT plugin's own `poetry.lock`. When a shared
-  external pin (e.g. fastapi) bumps in every plugin's pyproject
-  but only the backend lock gets regenerated, `make test` is
-  green and CI is red. Trigger: today's CI red-on-main from the
-  v0.30.0 release commit `be4b6f3` — fastapi 0.135 → 0.136 in 11
-  pyproject.toml files but only backend lock regenerated;
-  hotfix `3232fad` re-locked all 10 plugin lockfiles. Scope:
-  add `make lock-all-plugins` target that walks
-  `plugins/bibliogon-plugin-*/` and runs `poetry lock` in each;
-  add a CI gate (or pre-commit hook scoped to plugin pyproject
-  files) that flags a staged plugin pyproject without a paired
-  lockfile update. Pattern: same shape as the mkdocs `--strict`
-  gap (verify-the-gate). Effort: S. Deferred to dedicated
-  session, not bundled into MKDOCS-DISCIPLINE-01.
 
 ---
 
