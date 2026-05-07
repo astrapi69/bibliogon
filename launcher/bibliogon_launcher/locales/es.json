@@ -30,7 +30,7 @@
   "install.complete.slow_message": "Bibliogon {version} se ha instalado.\n\nLa aplicación está tardando más de lo esperado en iniciar. Es posible que aún se esté iniciando en segundo plano.\n\n¿Abrir en el navegador de todos modos?",
   "install.complete.title": "Instalación completada",
   "install.downloading": "Descargando Bibliogon {version}...",
-  "install.failed.message": "No se pudo instalar Bibliogon. Comprueba tu conexión a Internet e inténtalo de nuevo.",
+  "install.failed.message": "No se pudo instalar Bibliogon. Comprueba tu conexión a internet e inténtalo de nuevo.",
   "install.failed.title": "Error en la instalación",
   "install.preparing_config": "Preparando configuración...",
   "install.waiting_health": "Esperando a que Bibliogon esté listo...",

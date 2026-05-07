@@ -85,7 +85,7 @@
   "update.message": "Une nouvelle version de Bibliogon est disponible.\n\nInstallée : {current}\nDernière : {tag}\n\nOuvrir la page de version pour voir les nouveautés et télécharger ?",
   "update.primary": "Ouvrir la page de version",
   "update.title": "Mise à jour disponible",
-  "welcome.continue_button": "Compris, continuer",
+  "welcome.continue_button": "J'ai compris",
   "welcome.docker_required": "Bibliogon s'exécute dans Docker, un système de conteneurs isolés.",
   "welcome.docker_size": "Docker Desktop est un programme gratuit de Docker Inc., environ 800 Mo à télécharger et installer.",
   "welcome.first_run_size": "Au premier lancement, Bibliogon télécharge et construit ses conteneurs (environ 2 Go d'espace disque, 5-10 minutes).",
