@@ -28,6 +28,17 @@ navigation:
         slug: articles/bulk-export
 
   - title:
+      de: Bücher
+      en: Books
+    slug: books/bulk-export
+    icon: book-open
+    children:
+      - title:
+          de: Massen-Export
+          en: Bulk export
+        slug: books/bulk-export
+
+  - title:
       de: Editor
       en: Editor
     slug: editor
@@ -114,6 +125,10 @@ navigation:
           de: Docker Desktop installieren
           en: Install Docker Desktop
         slug: install/docker-desktop
+      - title:
+          de: Plattformübergreifende Installer
+          en: Cross-platform installers
+        slug: install/cross-platform-installers
       - title:
           de: Windows-Launcher
           en: Windows Launcher

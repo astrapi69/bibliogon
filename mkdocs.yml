@@ -45,6 +45,7 @@ plugins:
       nav_translations:
         Erste Schritte: Getting Started
         Artikel: Articles
+        Bücher: Books
         Übersicht: Overview
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
@@ -55,6 +56,7 @@ plugins:
         Windows-Launcher: Windows Launcher
         macOS-Launcher: macOS Launcher
         Linux-Launcher: Linux Launcher
+        Plattformübergreifende Installer: Cross-platform installers
         Deinstallieren: Uninstall
         KI-Assistent: AI Assistant
         Tastenkürzel: Keyboard Shortcuts
@@ -92,6 +94,8 @@ nav:
 - Artikel:
   - Übersicht: de/articles.md
   - Massen-Export: de/articles/bulk-export.md
+- Bücher:
+  - Massen-Export: de/books/bulk-export.md
 - Editor:
   - Übersicht: de/editor/uebersicht.md
   - Formatierung: de/editor/formatierung.md
@@ -110,6 +114,7 @@ nav:
 - Installation:
   - Übersicht: de/installation.md
   - Docker Desktop: de/install/docker-desktop.md
+  - Plattformübergreifende Installer: de/install/cross-platform-installers.md
   - Windows-Launcher: de/launcher-windows.md
   - macOS-Launcher: de/launcher-macos.md
   - Linux-Launcher: de/launcher-linux.md
