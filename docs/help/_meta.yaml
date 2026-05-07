@@ -208,13 +208,32 @@ navigation:
     icon: alert-triangle
 
   - title:
-      de: Plugin-Entwicklung
-      en: Plugin Development
-    slug: developers/plugins
+      de: Entwickler
+      en: Developers
+    slug: developers/architecture
     icon: code
-
-  - title:
-      de: Entwickler-Fehlerbehebung
-      en: Developer Troubleshooting
-    slug: developers/troubleshooting
-    icon: terminal
+    children:
+      - title:
+          de: Architektur-Übersicht
+          en: Architecture overview
+        slug: developers/architecture
+      - title:
+          de: Plugin-Entwicklung
+          en: Plugin Development
+        slug: developers/plugins
+      - title:
+          de: Mitwirken
+          en: Contributing
+        slug: developers/contributing
+      - title:
+          de: Deployment
+          en: Deployment
+        slug: developers/deployment
+      - title:
+          de: API-Referenz
+          en: API reference
+        slug: developers/api-reference
+      - title:
+          de: Entwickler-Fehlerbehebung
+          en: Developer Troubleshooting
+        slug: developers/troubleshooting

@@ -68,6 +68,11 @@ plugins:
         Fehlerbehebung: Troubleshooting
         Plugin-Entwicklung: Plugin Development
         Entwickler-Fehlerbehebung: Developer Troubleshooting
+        Architektur-Übersicht: Architecture overview
+        Mitwirken: Contributing
+        Deployment: Deployment
+        API-Referenz: API reference
+        Entwickler: Developers
         Home: Home
         Massen-Export: Bulk export
 - git-revision-date-localized:
@@ -130,5 +135,10 @@ nav:
 - FAQ: de/faq.md
 - Glossar: de/glossary.md
 - Fehlerbehebung: de/troubleshooting.md
-- Plugin-Entwicklung: de/developers/plugins.md
-- Entwickler-Fehlerbehebung: de/developers/troubleshooting.md
+- Entwickler:
+  - Architektur-Übersicht: de/developers/architecture.md
+  - Plugin-Entwicklung: de/developers/plugins.md
+  - Mitwirken: de/developers/contributing.md
+  - Deployment: de/developers/deployment.md
+  - API-Referenz: de/developers/api-reference.md
+  - Entwickler-Fehlerbehebung: de/developers/troubleshooting.md
