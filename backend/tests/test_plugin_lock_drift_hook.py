@@ -25,7 +25,6 @@ isolated git worktree per test (see the ``isolated_git`` fixture).
 
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -183,6 +182,37 @@ def test_lockfile_only_change_does_not_trigger(
     # No pyproject path in argv (the regex did not match):
     result = _run_hook(isolated_git, [])
     assert result.returncode == 0, result.stderr
+
+
+def test_empty_staged_set_with_pyproject_in_argv_passes(
+    isolated_git: Path,
+) -> None:
+    """`pre-commit run --all-files` (and CI's "Run hooks on all
+    files" step) passes every matching file as argv but does NOT
+    stage anything. The hook's contract is staging-relative —
+    "a staged pyproject must be paired with its staged lock" —
+    so an empty staged set means the contract is vacuous and the
+    hook must exit 0.
+
+    This test pins the regression: without this skip, CI's
+    `pre-commit run --all-files` step would falsely fail on every
+    matching plugin pyproject because none of their lockfiles are
+    "staged" (nothing is). That regression hit on commit
+    `8f6fcea` and was fixed in the follow-up commit that adds
+    this test.
+    """
+    # NOTE: nothing staged on purpose. The hook is invoked with
+    # the plugin pyproject path as if pre-commit's --all-files
+    # mode supplied it, but the staged set is empty.
+    result = _run_hook(
+        isolated_git,
+        ["plugins/bibliogon-plugin-export/pyproject.toml"],
+    )
+    assert result.returncode == 0, (
+        f"expected exit 0 (vacuous contract — no commit happening), "
+        f"got {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 def test_multiple_pyprojects_partial_pairing_fails(

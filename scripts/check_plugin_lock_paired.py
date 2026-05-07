@@ -89,6 +89,16 @@ def main(argv: list[str]) -> int:
         return 0
 
     staged = _staged_files()
+    if not staged:
+        # No commit is happening — argv was supplied by something
+        # other than a real `git commit` (e.g. `pre-commit run
+        # --all-files` running in CI's "Run hooks on all files"
+        # step, which passes every matching file as argv but does
+        # NOT stage anything). The hook's contract — "a staged
+        # plugin pyproject must be paired with its staged lock" —
+        # is vacuous when nothing is staged. Skip silently.
+        return 0
+
     missing: list[tuple[str, str]] = []  # (pyproject_path, expected_lock_path)
 
     for arg in argv:
