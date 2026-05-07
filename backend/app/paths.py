@@ -101,11 +101,11 @@ def get_upload_dir() -> Path:
 def get_db_path() -> Path:
     """SQLite database file path.
 
-    The ``BIBLIOGON_DB_PATH`` env var still wins (consumed in
-    ``app.database``) for backwards compatibility with deployments
-    that set it explicitly. This helper provides the default that
-    ``database.py`` falls back to when neither ``DATABASE_URL`` nor
-    ``BIBLIOGON_DB_PATH`` is set.
+    Returns ``<get_data_dir()>/bibliogon.db``. ``database.py`` calls
+    this helper as the default fallback when ``DATABASE_URL`` is not
+    set; ``BIBLIOGON_DATA_DIR`` controls the resulting location via
+    ``get_data_dir()``. The legacy ``BIBLIOGON_DB_PATH`` env var was
+    removed as a path override in v0.30.0 (DEP-DBPATH-01 step 3).
     """
     return get_data_dir() / "bibliogon.db"
 

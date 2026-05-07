@@ -184,7 +184,7 @@ Environment variables (set in `.env` or shell):
 | `BIBLIOGON_CREDENTIALS_SECRET` | (generated) | Secret for encrypting API keys and service account files |
 | `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Allowed CORS origins |
 | `BIBLIOGON_DATA_DIR` | platformdirs default | Root directory for runtime data (DB, uploads). Linux/macOS: `~/.local/share/bibliogon/`. Windows: `%LOCALAPPDATA%\bibliogon\`. Docker: `/app/data` |
-| `BIBLIOGON_DB_PATH` | (derived from `BIBLIOGON_DATA_DIR`) | **Deprecated.** SQLite database path. As of v0.28.0, `BIBLIOGON_DATA_DIR` always wins when both are set — `BIBLIOGON_DB_PATH` is honored only when `BIBLIOGON_DATA_DIR` is unset and emits a deprecation warning. Will be removed entirely in a future release |
+| `BIBLIOGON_DB_PATH` | (no longer honoured) | **Removed in v0.30.0** (DEP-DBPATH-01 step 3). The variable has no effect on path resolution; if still set in the environment, a single warning is logged at startup naming the ignored value. Set `BIBLIOGON_DATA_DIR` instead — the database resolves to `<BIBLIOGON_DATA_DIR>/bibliogon.db`. Deprecation timeline: warning v0.27.0, precedence flip v0.28.0, removal v0.30.0. |
 
 ## Related Projects
 

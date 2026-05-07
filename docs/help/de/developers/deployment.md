@@ -33,7 +33,7 @@ cd bibliogon
 | `BIBLIOGON_CREDENTIALS_SECRET` | (von `start.sh` generiert) | Fernet-verschlüsselt API-Keys + Service-Account-Dateien at-rest in der DB. Gleiche Auto-Generierung. |
 | `BIBLIOGON_CORS_ORIGINS` | `http://localhost:7880` | Komma-separierte Liste erlaubter Origins. Den Reverse-Proxy-Hostname hinzufügen, wenn hinter einer Domain bereitgestellt wird. |
 | `BIBLIOGON_DATA_DIR` | `/app/data` (im Container) | Container-seitiges Wurzelverzeichnis für Laufzeitdaten: SQLite-DB unter `<dir>/bibliogon.db`, Uploads unter `<dir>/uploads/`. Auf ein Docker-Named-Volume gemappt für Persistenz. |
-| `BIBLIOGON_DB_PATH` | (abgeleitet aus `BIBLIOGON_DATA_DIR`) | **Veraltet.** Seit v0.28.0 gewinnt `BIBLIOGON_DATA_DIR` immer, wenn beide gesetzt sind; `BIBLIOGON_DB_PATH` wird nur berücksichtigt, wenn `BIBLIOGON_DATA_DIR` nicht gesetzt ist, und gibt eine Verwerfungs-Warnung aus. Wird in einer künftigen Version entfernt. |
+| `BIBLIOGON_DB_PATH` | (wird nicht mehr berücksichtigt) | **Entfernt in v0.30.0** (DEP-DBPATH-01 Schritt 3). Die Variable hat keine Wirkung mehr auf die Pfad-Auflösung; ist sie weiterhin in der Umgebung gesetzt, wird beim Start eine einzelne Warnung mit dem ignorierten Wert geloggt. Stattdessen `BIBLIOGON_DATA_DIR` setzen — die Datenbank liegt dann unter `<BIBLIOGON_DATA_DIR>/bibliogon.db`. Verwerfungszyklus: Warnung v0.27.0, Präzedenz-Flip v0.28.0, Entfernung v0.30.0. |
 
 Jede Variable mit einem Default ist optional. Das Startup-Skript generiert die zwei Secrets, falls sie nicht in `.env` stehen — ein frisches `./start.sh` funktioniert ohne Setup.
 

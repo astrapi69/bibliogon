@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-07 (post-v0.29.0 docs+i18n sweep: docs drift refresh, README-de umlaut conversion, 4 new help pages (books bulk-export, cross-platform installers, architecture, contributing, deployment, API reference) + plugin dev guide refresh, launcher i18n expanded from 2 to 8 languages with full parity tests)
+Last updated: 2026-05-07 (post-v0.29.0 docs+i18n sweep + EL/ES/FR launcher i18n corrections + DEP-DBPATH-01 step 3 closing the BIBLIOGON_DB_PATH deprecation cycle started in v0.27.0)
 Current version: v0.29.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -52,12 +52,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **DEP-DBPATH-01**: `BIBLIOGON_DB_PATH` deprecation cycle.
-  Steps 1 (deprecation warning, v0.27.0) and 2 (precedence flip,
-  v0.28.0) are archived. Step 3 (remove `BIBLIOGON_DB_PATH`
-  override entirely) trigger: one release after v0.28.0 ships
-  (so v0.29.0 earliest).
 
 - **D-06-VALIDATION-01**: fresh-machine validation of the
   v0.28.0 cross-platform installer scripts (`install.command`,

@@ -180,7 +180,7 @@ Umgebungsvariablen (in `.env` setzen):
 | `BIBLIOGON_CREDENTIALS_SECRET` | (generiert) | Geheimnis zur Verschlüsselung von API-Keys und Service-Account-Dateien |
 | `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Erlaubte CORS-Origins |
 | `BIBLIOGON_DATA_DIR` | platformdirs-Standard | Wurzelverzeichnis für Laufzeitdaten (DB, Uploads). Linux/macOS: `~/.local/share/bibliogon/`. Windows: `%LOCALAPPDATA%\bibliogon\`. Docker: `/app/data` |
-| `BIBLIOGON_DB_PATH` | (abgeleitet aus `BIBLIOGON_DATA_DIR`) | **Veraltet.** Pfad zur SQLite-Datenbank. Ab v0.28.0 gewinnt `BIBLIOGON_DATA_DIR` immer, wenn beide gesetzt sind — `BIBLIOGON_DB_PATH` wird nur berücksichtigt, wenn `BIBLIOGON_DATA_DIR` nicht gesetzt ist, und gibt eine Verwerfungs-Warnung aus. Wird in einer künftigen Version vollständig entfernt |
+| `BIBLIOGON_DB_PATH` | (wird nicht mehr berücksichtigt) | **Entfernt in v0.30.0** (DEP-DBPATH-01 Schritt 3). Die Variable hat keine Wirkung mehr auf die Pfad-Auflösung; ist sie weiterhin in der Umgebung gesetzt, wird beim Start eine einzelne Warnung mit dem ignorierten Wert geloggt. Stattdessen `BIBLIOGON_DATA_DIR` setzen — die Datenbank liegt dann unter `<BIBLIOGON_DATA_DIR>/bibliogon.db`. Verwerfungszyklus: Warnung v0.27.0, Präzedenz-Flip v0.28.0, Entfernung v0.30.0. |
 
 ## Verwandte Projekte
 

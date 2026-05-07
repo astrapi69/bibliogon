@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-07 (post-v0.29.0 docs+i18n session)
-Latest release: v0.29.0 (audit P1 cleanup: 3 confirm() -> AppDialog + 2 fetch -> api.ai.testConnection(); Vite 7 -> 8 + uuid pin clearing 4 high-severity dev-only audit findings; @types/node ^24 + tsconfig ES2022 alignment; no user-facing behavior change). Post-tag on main: docs+i18n sweep (drift refresh, README-de umlauts, 5 new help pages incl. books bulk-export + cross-platform installer + architecture + contributing + deployment + api-reference, plugin dev guide refreshed, launcher i18n expanded from 2 to 8 languages with full parity tests).
-Open tasks: 5 active (P3..P5) + 2 BLOCKED-on-upstream + 1 new P5 (LAUNCHER-I18N-NATIVE-REVIEW-01)
+Last updated: 2026-05-07 (post-v0.29.0 docs+i18n session + DEP-DBPATH-01 step 3 closing the BIBLIOGON_DB_PATH deprecation cycle)
+Latest release: v0.29.0 (audit P1 cleanup: 3 confirm() -> AppDialog + 2 fetch -> api.ai.testConnection(); Vite 7 -> 8 + uuid pin clearing 4 high-severity dev-only audit findings; @types/node ^24 + tsconfig ES2022 alignment; no user-facing behavior change). Post-tag on main: docs+i18n sweep (drift refresh, README-de umlauts, 5 new help pages incl. books bulk-export + cross-platform installer + architecture + contributing + deployment + api-reference, plugin dev guide refreshed, launcher i18n expanded from 2 to 8 languages with full parity tests), EL/ES/FR i18n self-validation corrections, DEP-DBPATH-01 step 3 (BIBLIOGON_DB_PATH override removed; warning-only on lingering env var).
+Open tasks: 4 active (P3..P5) + 2 BLOCKED-on-upstream + 1 new P5 (LAUNCHER-I18N-NATIVE-REVIEW-01)
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
