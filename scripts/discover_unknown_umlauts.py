@@ -235,6 +235,9 @@ NOT_TRANSLITERATIONS: set[str] = {
     "anschauen",  # German "look at" verb — no umlaut
     "Traefik",  # Reverse-proxy product name — no umlaut
     "ausstehende",  # German "pending" — no umlaut
+    # Added 2026-05-07 (api-reference DE doc):
+    "Vertrauensgrenze",  # German "trust boundary" compound — no umlaut
+    "Konsequenzen",  # German "consequences" — no umlaut
 }
 
 
