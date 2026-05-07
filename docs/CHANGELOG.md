@@ -2,6 +2,136 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.29.0] - 2026-05-07
+
+Frontend toolchain modernized to Vite 8 and `@types/node` 24, the
+four high-severity dev-only audit findings cleared via
+`vite-plugin-pwa@1.3.0` plus a `uuid` pin, and a focused
+audit-driven sweep closed every P1 coding-standards violation
+surfaced at HEAD `5671cde`. No user-facing behavior change; no
+breaking changes; no env-var deprecations this cycle.
+
+**Frontend toolchain modernized.** Vite 7 → Vite 8 (DEP-09) and
+`vite-plugin-pwa` 0.21 → 1.3 (SEC-01) landed in the same step,
+both unblocked upstream by `vite-plugin-pwa@1.3.0`
+(published 2026-05-06) listing Vite 8 in its peer-dep range.
+`vite.config.ts` was updated for Vite 8 / Rolldown:
+`manualChunks` migrated from the object form to the function
+form (Rolldown only accepts functions), with absolute-path
+`id.includes('/node_modules/${pkg}/')` matchers using a trailing
+slash to prevent prefix collisions (`react` vs `react-dom` vs
+`react-router-dom`). The matching-pattern lesson is captured in
+`lessons-learned.md` so the next major Vite bump does not
+re-learn it from a build failure. No source code changes were
+required; runtime is Node 24 / modern browsers as before.
+
+**Security hardening.** `uuid` pinned to `^11.1.1` to clear
+`GHSA-w5hq-g745-h8pq`. Combined with the SEC-01 dev-only chain
+that the Vite 8 upgrade closed
+(`workbox-build` → `@rollup/plugin-terser` → `serialize-javascript`:
+GHSA-5c6j-r48x-rmvq RCE + GHSA-qj8w-gfj5-8c6v DoS),
+`npm audit --audit-level=high` now reports zero high-or-above
+vulnerabilities across the frontend dependency tree.
+
+**Coding-standards cleanup (5 P1 audit findings closed).** A
+systematic audit run at HEAD `5671cde` flagged five P1 violations
+of the documented frontend coding standards in `code-hygiene.md`
+and `architecture.md`. All five are resolved in this release: the
+native browser `confirm()` dialog was replaced by the `AppDialog`
+`useDialog` primitive at three sites — `SshKeySection`
+overwrite-confirm and delete-confirm, plus `GitBackupDialog`
+accept-local force-push confirm — using the `"danger"` variant
+for the destructive operations; the bare
+`fetch("/api/ai/test-connection")` was replaced by
+`api.ai.testConnection()` at two sites — `AiSetupWizard` (with
+one new `onError`-path test asserting the consolidated client
+surface) and `Settings` (rewritten to consume the typed
+`AiTestConnectionResult` shape and translate via the existing
+`t("ai.error_<key>")` lookup, retiring the inline 22-line
+shape-decoder block). The new client method consolidates the
+GET endpoint into a single typed namespace per the architecture
+rule "API calls ONLY through `frontend/src/api/client.ts`". The
+pre-existing `versionCheck.ts` deliberate fail-open carve-out is
+documented in code and intentionally out of scope (P2).
+
+**Toolchain alignment.** `@types/node` bumped from `^22` to `^24`
+to match the project's `engines.node >=24.0.0` declaration and
+the CI runtime. The bump cascaded into a `tsconfig.json` `target`
+and `lib` raise from `ES2020` to `ES2022` because
+`@types/node@24` correctly stops polyfilling
+`Array.prototype.at()` and other ES2022 stdlib globals (the
+older types shipped them under `ES2020` as a convenience that is
+no longer load-bearing). `Array.prototype.at(-1)` typing in
+`PreviewPanel.test.tsx` resolves cleanly under the new target
+with zero call-site changes; `error.cause` typing on standard
+`Error` instances also flows correctly. The cascade pattern is
+captured in `lessons-learned.md` so future `@types/node` major
+bumps treat the lib alignment as paired work, not a separate
+followup.
+
+### Internal
+
+- README `Current version` line corrected from `v0.26.6` to
+  `v0.28.0` (missed at both the v0.27.0 and v0.28.0 release
+  commits).
+- Two TipTap command callbacks in `StyleCheckExtension.ts` carry
+  inline `// any: TipTap command callback shape, no exported
+  CommandProps type for the v2 API.` justifications next to the
+  existing `eslint-disable` line per the coding-standards rule
+  "no `any` without inline justification".
+- `GetStarted.module.css` `.indicatorDone` dropped a hardcoded
+  `#fff` for `var(--text-inverse)`, the semantic CSS variable
+  defined across all six theme variants in `global.css`.
+- `docs/backlog.md` last-updated note tightened to reflect the
+  current main state (DEP-09 + SEC-01 archived in commit
+  `93a5ed3`, no longer "awaiting next-release archive"). The
+  Maintenance / hygiene section gained a pointer to
+  `.claude/prompts/audit.md` per the `ai-workflow.md` "Test
+  coverage audits — When to run" rhythm so the quarterly
+  systematic-audit prompt is discoverable from active docs, not
+  just the prompts directory.
+- New `api.ai.testConnection(): Promise<AiTestConnectionResult>`
+  namespace method in `frontend/src/api/client.ts`. The
+  `AiTestConnectionResult` type carries the three fields the
+  existing `GET /api/ai/test-connection` route returns
+  (`success`, `error_key`, `error_detail`); the backend route in
+  `backend/app/ai/routes.py` is unchanged. Call sites:
+  `AiSetupWizard` step-3 connection test, `Settings` AI tab
+  connection test.
+- Three new title keys (`ui.ssh.confirm_overwrite_title`,
+  `ui.ssh.confirm_delete_title`,
+  `ui.git.confirm_accept_local_title`) added to all 8 i18n
+  YAMLs (de/en/es/fr/el/pt/tr/ja). DE uses real umlauts per the
+  lessons-learned rule. The cross-language pattern follows
+  `LAUNCHER-I18N-EXTRACT-01`: every key lands in every language
+  in the same commit, no mixed-locale states.
+- Tests: backend 1298 unchanged (this release is frontend-side
+  and i18n-side; no new backend test functions); frontend
+  707 -> 712 (+5: four `api.ai.testConnection` cases — happy
+  path, structured failure, disabled-AI shape pass-through,
+  non-2xx `ApiError` throw — plus one `AiSetupWizard`
+  `onError`-path assertion); launcher unchanged at 165; smoke
+  Playwright unchanged at 191.
+- Backlog deltas: 5 P1 audit findings shipped (the three
+  `confirm()` sites + two bare-fetch sites collectively close
+  the audit P1 cleanup plan). DEP-09 + SEC-01 archived as
+  shipped. `@types/node` ^24 + tsconfig ES2022 closed the P2
+  follow-up that the audit explicitly deferred from the
+  mechanical-cleanup commit.
+
+### Known limitations
+
+The TipTap 2 → 3 migration (DEP-02) remains BLOCKED on upstream
+`@sereneinserenade/tiptap-search-and-replace@0.2.0` (issue
+[#19](https://github.com/sereneinserenade/tiptap-search-and-replace/issues/19)).
+The pre-audit at `docs/explorations/tiptap-3-migration.md` is
+current. Two unblock paths exist: Path A is the default — wait
+for the upstream npm publish (next re-audit 2026-06-02 via
+`make check-blockers`). Path B is a `prosemirror-search` adapter
+fallback (~50-80 LOC) that bypasses the unmaintained extension;
+available on demand, requires explicit user go-ahead, has not
+been authorized.
+
 ## [0.28.0] - 2026-05-06
 
 Bulk export now lives on the Books dashboard at parity with
