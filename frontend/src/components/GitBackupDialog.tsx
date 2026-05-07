@@ -20,6 +20,7 @@ import {
     GitSyncStatus,
     GitMergeResult,
 } from "../api/client"
+import {useDialog} from "./AppDialog"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 
@@ -546,6 +547,7 @@ function ConflictResolution({
     onCancel: () => void
 }) {
     const {t} = useI18n()
+    const dialog = useDialog()
     const inResolution = files.length > 0
 
     const title = inResolution
@@ -667,11 +669,16 @@ function ConflictResolution({
                     </button>
                     <button
                         className="btn btn-secondary btn-sm"
-                        onClick={() => {
-                            if (confirm(t(
-                                "ui.git.confirm_accept_local",
-                                "Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.",
-                            ))) {
+                        onClick={async () => {
+                            const ok = await dialog.confirm(
+                                t("ui.git.confirm_accept_local_title", "Auf Remote erzwingen?"),
+                                t(
+                                    "ui.git.confirm_accept_local",
+                                    "Lokale Version auf Remote erzwingen? Die Remote-Commits werden überschrieben und sind danach weg.",
+                                ),
+                                "danger",
+                            )
+                            if (ok) {
                                 onAcceptLocal()
                             }
                         }}
