@@ -1,7 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-07 (post-v0.29.0 docs+i18n sweep + EL/ES/FR launcher i18n corrections + DEP-DBPATH-01 step 3 closing the BIBLIOGON_DB_PATH deprecation cycle started in v0.27.0)
-Current version: v0.29.0
+Last updated: 2026-05-07 (v0.30.0 cut: launcher 8-language i18n + DEP-DBPATH-01 cycle complete + 5 new help pages + plugin dev guide refresh + pre-release dep sweep)
+Current version: v0.30.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
