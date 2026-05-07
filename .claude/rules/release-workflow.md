@@ -285,6 +285,20 @@ cd backend && poetry run ruff check app/ && poetry run mypy app/
 # creation - skipping the pre-tag step makes a half-tagged repo.
 cd backend && poetry run pre-commit run --all-files
 
+# Docs discipline (MANDATORY since v0.30.0+ MKDOCS-DISCIPLINE-01).
+# Two checks aggregated by `make verify-docs-discipline`:
+#   1. verify-mkdocs-nav: mkdocs.yml is in sync with
+#      docs/help/_meta.yaml (single source of truth for help-page
+#      nav). Drift is the failure mode that produced the v0.30.0
+#      docs+i18n drift audit findings.
+#   2. check-mkdocs-orphans: adversarial grep on `mkdocs build
+#      --strict` output for the INFO-level "not included in the
+#      'nav' configuration" message that --strict ignores by
+#      default. The two pages that sat orphan for two release
+#      cycles (articles/bulk-export, install/docker-desktop)
+#      would now be caught here.
+make verify-docs-discipline
+
 # Launcher build smoke (MANDATORY for any release that touches
 # launcher/ or its embedded version - catches PyInstaller spec
 # errors that only surface when the spec is exec'd by
@@ -431,6 +445,7 @@ as "done". Missing items block the release.
 - [ ] `ruff check` clean
 - [ ] `mypy app/` clean (MANDATORY since v0.26.x; not "if active")
 - [ ] `poetry run pre-commit run --all-files` clean (MANDATORY)
+- [ ] `make verify-docs-discipline` clean (MANDATORY since v0.30.0+: aggregates `verify-mkdocs-nav` + `check-mkdocs-orphans`; addresses the v0.30.0 docs+i18n drift audit findings)
 - [ ] Backend `poetry build` successful (skipped iff `package-mode = false`)
 - [ ] Frontend `npm run build` successful
 - [ ] `cd launcher && poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm` succeeds (MANDATORY for any release touching launcher/ or its embedded version)
