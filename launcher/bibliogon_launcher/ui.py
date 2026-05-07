@@ -15,11 +15,25 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 
+_OS_LOCALE_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("de", "de"),
+    ("el", "el"),
+    ("es", "es"),
+    ("fr", "fr"),
+    ("pt", "pt"),
+    ("tr", "tr"),
+    ("ja", "ja"),
+)
+
+
 def _current_lang() -> str:
-    """Return ``"de"`` if the OS locale is German, else ``"en"``.
+    """Return the launcher language matching the OS locale, else ``"en"``.
 
     Single source of truth for OS-locale detection across the
-    launcher; ``i18n._resolve_language`` calls this.
+    launcher; ``i18n._resolve_language`` calls this. Matches the
+    locale code by prefix (``de_DE``, ``de_AT``, ``de_CH`` all
+    resolve to ``de``; ``pt_BR`` and ``pt_PT`` both resolve to
+    ``pt``; etc.).
     """
     try:
         code, _ = locale.getlocale()
@@ -30,8 +44,12 @@ def _current_lang() -> str:
             code = locale.getdefaultlocale()[0]
         except (ValueError, IndexError, TypeError):
             code = None
-    if code and code.lower().startswith("de"):
-        return "de"
+    if not code:
+        return "en"
+    code_lc = code.lower()
+    for prefix, lang in _OS_LOCALE_PREFIXES:
+        if code_lc.startswith(prefix):
+            return lang
     return "en"
 
 
@@ -541,7 +559,16 @@ def settings_dialog(current: dict) -> dict | None:
         fill="x", pady=(0, 4)
     )
     language_codes = i18n.available_languages() or ["en"]
-    language_label_keys = {"de": "settings.language_de", "en": "settings.language_en"}
+    language_label_keys = {
+        "de": "settings.language_de",
+        "el": "settings.language_el",
+        "en": "settings.language_en",
+        "es": "settings.language_es",
+        "fr": "settings.language_fr",
+        "ja": "settings.language_ja",
+        "pt": "settings.language_pt",
+        "tr": "settings.language_tr",
+    }
     code_to_label = {code: i18n.t(language_label_keys.get(code, code)) for code in language_codes}
     label_to_code = {label: code for code, label in code_to_label.items()}
     language_var = tk.StringVar(
