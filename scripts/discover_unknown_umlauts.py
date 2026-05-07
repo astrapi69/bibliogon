@@ -218,6 +218,12 @@ NOT_TRANSLITERATIONS: set[str] = {
     "beisteuert",  # German "contributes" — verb form
     # Added 2026-05-07 (cross-platform installer DE doc):
     "Zertifizierungsstelle",  # German "certification authority" — no umlaut
+    # Added 2026-05-07 (architecture overview DE doc):
+    "Unterklassen", "Unterklasse",  # German "subclasses/-class" — no umlaut
+    "Klassenattribut",  # German "class attribute" — no umlaut
+    "einlassen",  # German "let in / agree to" verb — no umlaut
+    "meinungsstark",  # German "opinionated" — no umlaut
+    "Produktionssetup",  # German "production setup" compound — no umlaut
 }
 
 
