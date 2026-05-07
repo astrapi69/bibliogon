@@ -512,8 +512,9 @@ one long form.
   always opens to "Allgemein").
 
 **User-decided convention:** the metadata editor uses tabs (7
-tabs as of v0.23.0: Allgemein, Verlag, ISBN, Marketing, Design,
-Audiobook, Qualität). Don't fold these back into one long form.
+tabs verified at v0.29.0: Allgemein, Verlag, ISBN, Marketing,
+Design, Audiobook, Qualität). Don't fold these back into one
+long form.
 
 ### 9.2 Breadcrumbs
 

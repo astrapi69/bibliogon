@@ -67,6 +67,7 @@ plugins:
         Plugin-Entwicklung: Plugin Development
         Entwickler-Fehlerbehebung: Developer Troubleshooting
         Home: Home
+        Massen-Export: Bulk export
 - git-revision-date-localized:
     enable_creation_date: true
 markdown_extensions:
@@ -88,7 +89,9 @@ extra:
 nav:
 - Home: de/index.md
 - Erste Schritte: de/getting-started.md
-- Artikel: de/articles.md
+- Artikel:
+  - Übersicht: de/articles.md
+  - Massen-Export: de/articles/bulk-export.md
 - Editor:
   - Übersicht: de/editor/uebersicht.md
   - Formatierung: de/editor/formatierung.md
@@ -106,6 +109,7 @@ nav:
   - Git-Historie übernehmen: de/import/git-adoption.md
 - Installation:
   - Übersicht: de/installation.md
+  - Docker Desktop: de/install/docker-desktop.md
   - Windows-Launcher: de/launcher-windows.md
   - macOS-Launcher: de/launcher-macos.md
   - Linux-Launcher: de/launcher-linux.md

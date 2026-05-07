@@ -4,7 +4,7 @@ Open-Source-Toolkit fuer Self-Publishing-Autorinnen und -Autoren. Buecher, Artik
 
 Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wiederverwendbaren Plugin-Framework auf Basis von [pluggy](https://pluggy.readthedocs.io/).
 
-**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.24.0**
+**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.29.0**
 
 ## Funktionen
 
@@ -49,7 +49,7 @@ Buecher koennen mit externen Git-Repositories synchronisiert werden - fuer Kolla
 - **Mehrsprachig:** Repos mit `main-XX`-Branches (z.B. `main-de`, `main-fr`) werden ueber `Book.translation_group_id` als verknuepfte Uebersetzungen importiert
 - **Core-Git-Bruecke:** Ein Commit fliesst sowohl in die Core-Git-Historie als auch in das plugin-git-sync-Subsystem (unter einem Pro-Buch-Lock)
 
-PAT-via-UI ist teilweise verschoben. SSH und der System-Credential-Helper funktionieren heute; PAT-Eingabe ueber die UI kommt in v0.24.x.
+Alle drei Credential-Pfade lassen sich im Git-Backup-Dialog konfigurieren: SSH-Agent, System-Credential-Helper und Pro-Buch-PAT-Eingabe (verschluesselt gespeichert, nie im Klartext zurueckgegeben).
 
 ## Multi-Buch-Backup-Import
 

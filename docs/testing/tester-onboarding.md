@@ -16,16 +16,16 @@ Makefile is the source of truth.
 | Docker | 24+ | Production deploy via `make prod`; not required for `make dev` |
 | Python | 3.11+ | Backend |
 | Poetry | 1.8+ | Backend dependency manager |
-| Node.js | **20.19+ or 22.12+** | Vite 7 needs `crypto.hash` API |
+| Node.js | **24+** | Pinned in `frontend/package.json` `engines.node >=24.0.0`. `@types/node ^24` + tsconfig `target/lib: ES2022` since v0.29.0 |
 | npm | 10+ | Frontend |
 | git | any | Source |
 | Modern browser | Chrome / Firefox / Safari | Test target |
 
 8 GB RAM minimum. 16 GB if running tests + dev concurrently.
 
-If Node is below 22 LTS, upgrade before continuing — `make dev`
-will start, but `make build` and some tests fail with `crypto.hash
-is not a function`. See [../help/en/developers/troubleshooting.md](../help/en/developers/troubleshooting.md).
+If Node is below 24, upgrade before continuing — `make dev` may
+start, but `make build` and Vite 8 tooling fail. See
+[../help/en/developers/troubleshooting.md](../help/en/developers/troubleshooting.md).
 
 ---
 
@@ -103,17 +103,23 @@ core flows.
 
 ### Reset to clean state
 
-There is **no** `make reset-test-db` target as of v0.24.0. If a
+There is **no** `make reset-test-db` target as of v0.29.0. If a
 test leaves you in a broken state:
 
 ```bash
 make stop
-rm backend/bibliogon.db backend/bibliogon.db-wal backend/bibliogon.db-shm 2>/dev/null
+# Default platformdirs location (Linux/macOS); v0.25.0+ moved
+# data here from the project tree. Adjust for Windows
+# (%LOCALAPPDATA%\bibliogon\) or for a custom BIBLIOGON_DATA_DIR.
+rm "$HOME/.local/share/bibliogon/bibliogon.db" \
+   "$HOME/.local/share/bibliogon/bibliogon.db-wal" \
+   "$HOME/.local/share/bibliogon/bibliogon.db-shm" 2>/dev/null
 make dev
 ```
 
 The database is recreated on next request. Note: this also wipes
-your test fixtures.
+your test fixtures. The `.bibliogon-production` marker file in
+that directory is the test-isolation tripwire — leave it alone.
 
 ### Test fixtures via API
 
@@ -177,14 +183,15 @@ cd frontend && npx playwright test --project=smoke
 cd frontend && npx playwright test --project=full
 ```
 
-Expected baselines as of v0.24.0:
+Expected baselines as of v0.29.0:
 
 | Suite | Count |
 |-------|-------|
-| Backend | 1198 tests |
-| Frontend Vitest | 664 tests |
-| All plugins (sum) | 432 tests |
-| E2E smoke specs | 20 |
+| Backend | 1298 tests |
+| Frontend Vitest | 712 tests |
+| All plugins (sum) | ~409 tests (sum across 10 plugins) |
+| Launcher | 165 tests |
+| E2E smoke specs | 191 |
 | E2E full specs | 0 (currently empty) |
 
 If your local count differs by more than ~5, your install or
@@ -203,7 +210,7 @@ per session under `docs/testing/sessions/YYYY-MM-DD-session-N-{topic}.md`.
 
 Title format: `[Bug][severity] Short description`. Body must include:
 
-- **Bibliogon version** (e.g., `v0.24.0` or commit hash)
+- **Bibliogon version** (e.g., `v0.29.0` or commit hash)
 - **Reproduction steps** (numbered list)
 - **Actual outcome**
 - **Expected outcome**

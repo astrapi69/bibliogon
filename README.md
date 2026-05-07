@@ -4,7 +4,7 @@ Open-source self-publishing toolkit for authors. Books, articles, and multi-plat
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.28.0**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.29.0**
 
 ## Features
 
@@ -49,7 +49,7 @@ Books can be synchronized with external git repositories for collaboration, back
 - **Multi-Language:** repos with `main-XX` branches (e.g. `main-de`, `main-fr`) import as linked translations via `Book.translation_group_id`
 - **Core-Git Bridge:** unified commit fans out to both core git history and the plugin-git-sync subsystem under a per-book lock
 
-PAT-via-UI is partially deferred. SSH and the system credential helper work today; PAT input through the UI lands in v0.24.x.
+All three credential paths are user-configurable from the Git Backup dialog: SSH agent, system credential helper, and per-book PAT input (encrypted, never returned in clear).
 
 ## Multi-Book Backup Import
 
