@@ -687,3 +687,25 @@ Users with v0.25.0-and-earlier data in the project tree (`backend/bibliogon.db`,
 - Skipped in test mode (`BIBLIOGON_TEST=1`)
 
 Rule: when adding a new persistent path under `get_data_dir()`, also add it to `_legacy_paths()` in `data_dir_migration.py` if a v0.25.0-and-earlier code path could have written to a different location. Otherwise users lose data on the next upgrade.
+
+## Two installation paths diverge: `make test` vs per-plugin CI
+
+Bibliogon's plugins are installed two different ways depending on context:
+
+- **`make test` path:** the backend's combined `poetry.lock` resolves every plugin as a path-dep (`bibliogon-plugin-{name} = {path = "../plugins/...", develop = true}`). One `poetry install` from `backend/` brings every plugin's external deps in via the backend's lock.
+- **CI plugin-matrix path:** `.github/workflows/ci.yml` and `.github/workflows/coverage.yml` run `poetry install --no-interaction --no-ansi` **inside each plugin directory** against THAT plugin's own `poetry.lock`. The backend lock is irrelevant here.
+
+When a shared external dep (e.g. fastapi) bumps in every pyproject (backend + 10 plugins), the backend lock and the per-plugin locks drift independently. If only the backend lock gets regenerated:
+
+- `make test` is green (the backend lock satisfies all path-deps; the per-plugin locks are not consulted).
+- CI is red (the per-plugin `poetry install --no-interaction` aborts with `pyproject.toml changed significantly since poetry.lock was last generated`).
+
+This shape bit during the v0.30.0 release: the pre-v0.30.0 dep sweep bumped fastapi `^0.135.0 → ^0.136.0` in 11 pyproject.toml files, but `poetry lock` was only run in `backend/`. Local `make test` passed; CI was red on main from `be4b6f3` until hotfix `3232fad` re-locked all 10 plugin lockfiles.
+
+**Generalization:** any time there are two installation paths for the same code, BOTH must be tested at gate time. The backend's combined lock and the per-plugin locks are different gates; verifying one does not verify the other. The pre-v0.30.0 retro called this out at the meta level ("verify the gate before trusting it"); this is the concrete recurrence.
+
+**Mitigation pattern:**
+
+- Ad-hoc fix today: `for d in plugins/bibliogon-plugin-*/; do (cd "$d" && poetry lock); done` after any shared-dep pyproject bump.
+- Tracked as `PLUGIN-LOCKFILE-DRIFT-01` (P3) in the backlog: a `make lock-all-plugins` target + a pre-commit hook (or CI gate) that fails when a plugin pyproject is staged without a paired lockfile update.
+- Discovery channel: CI red on main, AFTER a release tag has already been cut. The retro's commitment to "discrete pre-release dep sweep commits" still pays off (rollback granularity stays intact), but the better gate is to catch the drift before push, not from the GitHub Actions red badge.
