@@ -1,7 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-06 (v0.28.0 + Vite 8 + uuid override on main; DEP-09 + SEC-01 archived per 93a5ed3)
-Current version: v0.28.0
+Last updated: 2026-05-07 (v0.29.0 cut: audit P1 cleanup + Vite 8 + uuid pin shipped; @types/node ^24 + tsconfig ES2022 closed the deferred P2 follow-up)
+Current version: v0.29.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 

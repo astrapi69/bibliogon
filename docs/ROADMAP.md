@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-06
-Latest release: v0.28.0 (bulk export from Books dashboard; cross-platform installer scripts install.command + install.ps1 + install.cmd; full launcher i18n extraction; BIBLIOGON_DB_PATH precedence flip step 2; DEP-09 + SEC-01 unblocked upstream)
+Last updated: 2026-05-07
+Latest release: v0.29.0 (audit P1 cleanup: 3 confirm() -> AppDialog + 2 fetch -> api.ai.testConnection(); Vite 7 -> 8 + uuid pin clearing 4 high-severity dev-only audit findings; @types/node ^24 + tsconfig ES2022 alignment; no user-facing behavior change)
 Open tasks: 5 active (P3..P5) + 2 BLOCKED-on-upstream
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
