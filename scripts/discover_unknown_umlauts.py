@@ -224,6 +224,13 @@ NOT_TRANSLITERATIONS: set[str] = {
     "einlassen",  # German "let in / agree to" verb — no umlaut
     "meinungsstark",  # German "opinionated" — no umlaut
     "Produktionssetup",  # German "production setup" compound — no umlaut
+    # Added 2026-05-07 (contributing guide DE doc):
+    "zusammengefasst",  # German "summarized" — no umlaut
+    "manueller",  # German "manual" adjective — no umlaut
+    "Verzeichnisse",  # German "directories" plural — no umlaut
+    "Stattdessen",  # German "instead" — no umlaut
+    "quer",  # German "across" — no umlaut
+    "Kurzfassung",  # German "short version" — no umlaut
 }
 
 
