@@ -58,7 +58,10 @@ class TestI18n:
             assert i18n._resolve_language(None) == "en"
 
     def test_unknown_locale_falls_back_to_en(self) -> None:
-        with patch("bibliogon_launcher.ui._current_lang", return_value="ja"):
+        # Use "zh" (Chinese) as a placeholder for an unsupported
+        # language. JA used to play this role before the JA catalog
+        # shipped in v0.30.0.
+        with patch("bibliogon_launcher.ui._current_lang", return_value="zh"):
             assert i18n._resolve_language(None) == "en"
 
     def test_settings_language_overrides_locale(self) -> None:
