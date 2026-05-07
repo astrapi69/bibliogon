@@ -212,6 +212,10 @@ NOT_TRANSLITERATIONS: set[str] = {
     "Quellenverzeichnis", "Schlussbetrachtung", "Passe", "zulassen",
     "verfassen", "Adresse", "Quellsprache", "eventuell",
     "Passivanteil", "dauert", "verlassen", "Glossary",
+    # Added 2026-05-07 (books bulk-export DE doc):
+    "Massen",  # German "masses/bulk" — no umlaut
+    "wessen",  # German "whose" — genitive interrogative
+    "beisteuert",  # German "contributes" — verb form
 }
 
 
