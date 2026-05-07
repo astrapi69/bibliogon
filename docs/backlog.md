@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-07 (v0.29.0 cut: audit P1 cleanup + Vite 8 + uuid pin shipped; @types/node ^24 + tsconfig ES2022 closed the deferred P2 follow-up)
+Last updated: 2026-05-07 (post-v0.29.0 docs+i18n sweep: docs drift refresh, README-de umlaut conversion, 4 new help pages (books bulk-export, cross-platform installers, architecture, contributing, deployment, API reference) + plugin dev guide refresh, launcher i18n expanded from 2 to 8 languages with full parity tests)
 Current version: v0.29.0
 Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -156,8 +156,20 @@ store.
 - **D-02 follow-ups**: macOS Intel universal2 build + code signing.
   Effort: M each. Deferred until user demand.
 
-- **Launcher localization**: launcher UI is English-only. Effort: S
-  per language; defer until user demand.
+- **LAUNCHER-I18N-NATIVE-REVIEW-01**: native-speaker review for
+  the three pending-review launcher i18n catalogs (pt, tr, ja)
+  shipped in v0.30.0. Each catalog carries a
+  `_meta.review_status: "pending native speaker"` block;
+  `launcher/bibliogon_launcher/locales/REVIEW_STATUS.md`
+  documents the per-language status and the PR-based
+  correction submission flow. The
+  `test_pending_review_catalogs_carry_marker` parity test
+  enforces the marker contract, and `test_user_validated_*`
+  enforces that markers are removed in the same change that
+  promotes a language to validated. Trigger: native-speaker
+  contact for any of pt/tr/ja, or a user-reported correction
+  PR. Effort: S per language for an experienced reviewer
+  (95 keys, mostly mechanical drift detection).
 
 ---
 
