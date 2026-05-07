@@ -40,6 +40,8 @@ This means a future native-speaker pass that fixes a translation but leaves the 
 
 ## How to submit corrections
 
+The public call-for-reviewers lives at GitHub issue [#18](https://github.com/astrapi69/bibliogon/issues/18) (labeled `help wanted` + `good first issue` + `documentation`). If you found this file via that issue, welcome — the path below is the one the issue links to.
+
 If you read one of the pending-review catalogs and find errors, the path is:
 
 1. Fork the repo at <https://github.com/astrapi69/bibliogon>.

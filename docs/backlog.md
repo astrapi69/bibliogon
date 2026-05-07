@@ -165,6 +165,19 @@ store.
   contact for any of pt/tr/ja, or a user-reported correction
   PR. Effort: S per language for an experienced reviewer
   (95 keys, mostly mechanical drift detection).
+  - **Public surface:** GitHub issue
+    [#18](https://github.com/astrapi69/bibliogon/issues/18)
+    is the call-for-reviewers, labeled `help wanted` +
+    `good first issue` + `documentation`. A passing-by
+    pt / tr / ja speaker can find it without grepping the
+    repo. Corrections land via PR per the flow in
+    REVIEW_STATUS.md.
+  - **Decision threshold:** 2026-08-07 (3 months after the
+    v0.30.0 release). At that point an explicit decision
+    lands on each marker: drop-the-marker (accept as
+    canonical, with or without a review having happened),
+    or continue-waiting. The threshold is also documented
+    as a watch-list item in the v0.30.0 retrospective.
 
 ---
 
