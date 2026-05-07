@@ -339,7 +339,7 @@ If your plugin needs a dependency not in the core, declare it in your `pyproject
 
 Do NOT add new dependencies to the core without asking. The existing stack:
 - Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, PyYAML, httpx
-- Frontend: React 19, TypeScript 6, Vite 7, TipTap, Radix UI, Lucide
+- Frontend: React 19, TypeScript 6, Vite 8 (Rolldown bundler), TipTap, Radix UI, Lucide. Node.js 24+ required (`engines.node >=24.0.0`).
 
 ## Existing plugins for reference
 

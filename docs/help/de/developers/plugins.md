@@ -274,7 +274,7 @@ Benötigt dein Plugin eine Abhängigkeit, die nicht im Core ist, deklariere sie 
 
 Füge KEINE neuen Abhängigkeiten zum Core hinzu, ohne zu fragen. Aktueller Stack:
 - Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, PyYAML, httpx
-- Frontend: React 19, TypeScript 6, Vite 7, TipTap, Radix UI, Lucide
+- Frontend: React 19, TypeScript 6, Vite 8 (Rolldown-Bundler), TipTap, Radix UI, Lucide. Node.js 24+ erforderlich (`engines.node >=24.0.0`).
 
 ## Vorhandene Plugins als Referenz
 
