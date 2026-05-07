@@ -231,6 +231,10 @@ NOT_TRANSLITERATIONS: set[str] = {
     "Stattdessen",  # German "instead" — no umlaut
     "quer",  # German "across" — no umlaut
     "Kurzfassung",  # German "short version" — no umlaut
+    # Added 2026-05-07 (deployment guide DE doc):
+    "anschauen",  # German "look at" verb — no umlaut
+    "Traefik",  # Reverse-proxy product name — no umlaut
+    "ausstehende",  # German "pending" — no umlaut
 }
 
 
