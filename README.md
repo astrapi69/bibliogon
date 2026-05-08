@@ -4,6 +4,8 @@ Open-source self-publishing toolkit for authors. Books, articles, and multi-plat
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
+[License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.29.0**
 
 ## Features
@@ -194,4 +196,14 @@ Environment variables (set in `.env` or shell):
 
 ## License
 
-MIT. All plugins are free and open source.
+Bibliogon is released under the [MIT License](LICENSE).
+All plugins are free and open source.
+
+## Reporting Security Issues
+
+See [SECURITY.md](SECURITY.md) for the responsible disclosure process.
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
+Reports go to asterios.raptis@web.de.

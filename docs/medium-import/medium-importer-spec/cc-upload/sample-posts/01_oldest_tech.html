@@ -1,0 +1,72 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Migrate a maven project to Gradle</title><style>
+      * {
+        font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        font-size: 50px;
+        margin-bottom: 17px;
+        color: #333;
+      }
+      h2 {
+        font-size: 24px;
+        line-height: 1.6;
+        margin: 30px 0 0 0;
+        margin-bottom: 18px;
+        margin-top: 33px;
+        color: #333;
+      }
+      h3 {
+        font-size: 30px;
+        margin: 10px 0 20px 0;
+        color: #333;
+      }
+      header {
+        width: 640px;
+        margin: auto;
+      }
+      section {
+        width: 640px;
+        margin: auto;
+      }
+      section p {
+        margin-bottom: 27px;
+        font-size: 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+      section img {
+        max-width: 640px;
+      }
+      footer {
+        padding: 0 20px;
+        margin: 50px 0;
+        text-align: center;
+        font-size: 12px;
+      }
+      .aspectRatioPlaceholder {
+        max-width: auto !important;
+        max-height: auto !important;
+      }
+      .aspectRatioPlaceholder-fill {
+        padding-bottom: 0 !important;
+      }
+      header,
+      section[data-field=subtitle],
+      section[data-field=description] {
+        display: none;
+      }
+      </style></head><body><article class="h-entry">
+<header>
+<h1 class="p-name">Migrate a maven project to Gradle</h1>
+</header>
+<section data-field="subtitle" class="p-summary">
+I ‘ve been using maven for many years. It&#39;s a great build system but you write your build script in XML and you can not write program…
+</section>
+<section data-field="body" class="e-content">
+<section name="475c" class="section section--body section--first section--last"><div class="section-divider"><hr class="section-divider"></div><div class="section-content"><div class="section-inner sectionLayout--insetColumn"><h3 name="3f0a" id="3f0a" class="graf graf--h3 graf--leading graf--title">Migrate a maven project to Gradle</h3><p name="ac70" id="ac70" class="graf graf--p graf-after--h3">I ‘ve been using maven for many years. It&#39;s a great build system but you write your build script in XML and you can not write program logic in XML. A workaround, therefore, maven provides the famous maven-plugins</p><figure name="5936" id="5936" class="graf graf--figure graf-after--p"><img class="graf-image" data-image-id="1*cDW3rymJIJxWKQ4asJx1gw.jpeg" data-width="1024" data-height="1024" src="https://cdn-images-1.medium.com/max/800/1*cDW3rymJIJxWKQ4asJx1gw.jpeg"><figcaption class="imageCaption">Comparison Diagram of Maven and Gradle</figcaption></figure><p name="d16d" id="d16d" class="graf graf--p graf-after--figure">In return with Gradle, you write your build script in groovy or Kotlin. Kotlin and groovy are modern programming languages and have high order functions and other cool features that you can not do with XML.</p><figure name="7ae7" id="7ae7" class="graf graf--figure graf-after--p"><img class="graf-image" data-image-id="1*-S5yg9K4MoHrMuc2X-g91w.jpeg" data-width="1024" data-height="1024" src="https://cdn-images-1.medium.com/max/800/1*-S5yg9K4MoHrMuc2X-g91w.jpeg"><figcaption class="imageCaption">Step-by-Step Migration Process</figcaption></figure><p name="a840" id="a840" class="graf graf--p graf-after--figure">You have to install Gradle as the first step. You can find the detailed installation steps on <a href="https://gradle.org/install/." data-href="https://gradle.org/install/." class="markup--anchor markup--p-anchor" rel="noopener" target="_blank">https://gradle.org/install/.</a> When you have successfully installed you can create a new feature branch with a name like ‘migrate-to-gradle’ from the existing maven project</p><p name="319c" id="319c" class="graf graf--p graf-after--p">Go with your preferred command-line program to the main directory from your project where the pom.xml file is and execute the command:</p><pre data-code-block-mode="2" spellcheck="false" data-code-block-lang="bash" name="fcca" id="fcca" class="graf graf--pre graf-after--p graf--preV2"><span class="pre--content">gradle init</span></pre><figure name="8c14" id="8c14" class="graf graf--figure graf-after--pre"><img class="graf-image" data-image-id="1*hzSjqwa99Xx6liifYndlbg.jpeg" data-width="1024" data-height="1024" alt="Code Snippet Comparison" src="https://cdn-images-1.medium.com/max/800/1*hzSjqwa99Xx6liifYndlbg.jpeg"><figcaption class="imageCaption">Code Snippet Comparison</figcaption></figure><p name="9c2d" id="9c2d" class="graf graf--p graf-after--figure">This will start the migration progress and the migration guide will ask you the first question to migrate your maven project. Type <strong class="markup--strong markup--p-strong">yes</strong> to continue your migration. This will generate all Gradle related files and directories like build.gradle and settings.gradle</p><p name="4da3" id="4da3" class="graf graf--p graf-after--p">You can now check if the migration has successfully finished with executing the following command:</p><pre data-code-block-mode="2" spellcheck="false" data-code-block-lang="bash" name="da6e" id="da6e" class="graf graf--pre graf-after--p graf--preV2"><span class="pre--content">gradle build</span></pre><p name="45b3" id="45b3" class="graf graf--p graf-after--pre">This should give the output</p><pre data-code-block-mode="2" spellcheck="false" data-code-block-lang="bash" name="4624" id="4624" class="graf graf--pre graf-after--p graf--preV2"><span class="pre--content">BUILD SUCCESSFUL</span></pre><figure name="9f01" id="9f01" class="graf graf--figure graf-after--pre"><img class="graf-image" data-image-id="1*jpMb7w-35ixb53T9u5SnDg.jpeg" data-width="1024" data-height="1024" src="https://cdn-images-1.medium.com/max/800/1*jpMb7w-35ixb53T9u5SnDg.jpeg"><figcaption class="imageCaption">Conceptual Overview of Gradle Benefits</figcaption></figure><p name="b1da" id="b1da" class="graf graf--p graf-after--figure">Now, some background information if you come from the maven world the dependencies get downloaded in the directory <em class="markup--em markup--p-em">.gradle/caches/modules-2/files-2.1 </em>this is the equivalent of the maven directory <em class="markup--em markup--p-em">.m2</em>. I have consolidated a guide for some Gradle plugins that I was using with maven <a href="https://github.com/lightblueseas/linuxstuff/wiki/Migration-of-maven-projects-to-gradle" data-href="https://github.com/lightblueseas/linuxstuff/wiki/Migration-of-maven-projects-to-gradle" class="markup--anchor markup--p-anchor" rel="noopener" target="_blank">https://github.com/lightblueseas/linuxstuff/wiki/Migration-of-maven-projects-to-gradle</a></p><p name="c91e" id="c91e" class="graf graf--p graf-after--p">So that&#39;s it, folks, I hope your migration to Gradle is easy</p><p name="4b31" id="4b31" class="graf graf--p graf-after--p">Feel free to connect on <a href="https://www.linkedin.com/in/asterios-raptis-46824a31/" data-href="https://www.linkedin.com/in/asterios-raptis-46824a31/" class="markup--anchor markup--p-anchor" rel="noopener" target="_blank">LinkedIn</a> or check out more articles on <a href="https://medium.com/@asterios-raptis" data-href="https://medium.com/@asterios-raptis" class="markup--anchor markup--p-anchor" target="_blank">Medium</a>.</p><p name="5ab1" id="5ab1" class="graf graf--p graf-after--p">Thank you for reading until the end. Before you go:</p><ul class="postList"><li name="e5e8" id="e5e8" class="graf graf--li graf-after--p graf--trailing">Please consider <strong class="markup--strong markup--li-strong">clapping</strong> and <strong class="markup--strong markup--li-strong">following</strong> the writer! 👏</li></ul></div></div></section>
+</section>
+<footer><p>By <a href="https://medium.com/@asterios-raptis" class="p-author h-card">Asterios Raptis</a> on <a href="https://medium.com/p/2f276c4a070e"><time class="dt-published" datetime="2020-02-04T15:46:58.820Z">February 4, 2020</time></a>.</p><p><a href="https://medium.com/@asterios-raptis/migrate-a-maven-project-to-gradle-2f276c4a070e" class="p-canonical">Canonical link</a></p><p>Exported from <a href="https://medium.com">Medium</a> on May 8, 2026.</p></footer></article></body></html>

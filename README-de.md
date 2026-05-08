@@ -4,6 +4,8 @@ Open-Source-Toolkit für Self-Publishing-Autorinnen und -Autoren. Bücher, Artik
 
 Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wiederverwendbaren Plugin-Framework auf Basis von [pluggy](https://pluggy.readthedocs.io/).
 
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
+
 **[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.29.0**
 
 ## Funktionen
@@ -190,4 +192,15 @@ Umgebungsvariablen (in `.env` setzen):
 
 ## Lizenz
 
-MIT. Alle Plugins sind kostenlos und Open Source.
+Bibliogon wird unter der [MIT-Lizenz](LICENSE) veroffentlicht.
+Alle Plugins sind kostenlos und Open Source.
+
+## Sicherheitsrichtlinie
+
+Siehe [SECURITY.md](SECURITY.md) fur den verantwortungsvollen
+Meldeprozess bei Sicherheitsproblemen.
+
+## Verhaltenskodex
+
+Dieses Projekt folgt dem [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
+Meldungen gehen an aster.raptis@gmail.com.

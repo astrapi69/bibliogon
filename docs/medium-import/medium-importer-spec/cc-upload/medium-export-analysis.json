@@ -1,0 +1,88 @@
+{
+  "export_overview": {
+    "total_posts": 209,
+    "date_range": {
+      "oldest": "2020-02-04",
+      "newest": "2026-05-07"
+    },
+    "posts_per_year": {
+      "2020": 4,
+      "2021": 1,
+      "2022": 4,
+      "2023": 4,
+      "2024": 35,
+      "2025": 119,
+      "2026": 42
+    },
+    "total_size_mb": 4.31
+  },
+  "aggregate_findings": {
+    "all_posts_have_canonical_url": true,
+    "all_posts_have_iso_date": true,
+    "subtitle_present_in": 192,
+    "subtitle_missing_in": 17,
+    "tags_present_in_export": 0,
+    "tags_note": "Medium HTML export does NOT include tags. They must be derived from content or set manually after import.",
+    "images_hosted_on": "cdn-images-1.medium.com",
+    "images_total": 668,
+    "images_max_in_one_post": 12,
+    "code_blocks_in_posts": 80,
+    "tables_in_posts": 0,
+    "languages_observed": [
+      "English",
+      "German"
+    ]
+  },
+  "samples": {
+    "01_oldest_tech_post": {
+      "filename": "2020-02-04_Migrate-a-maven-project-to-Gradle-2f276c4a070e.html",
+      "file_size_kb": 8.2,
+      "title": "Migrate a maven project to Gradle",
+      "subtitle": "I ‘ve been using maven for many years. It&#39;s a great build system but you write your build script in XML and you can not write program…",
+      "date_iso": "2020-02-04T15:46:58.820Z",
+      "canonical_url": "https://medium.com/@asterios-raptis/migrate-a-maven-project-to-gradle-2f276c4a070e",
+      "author_name": "Asterios Raptis",
+      "author_url": "https://medium.com/@asterios-raptis"
+    },
+    "02_german_philosophical": {
+      "filename": "2026-02-13_Logos-und-Demokratie--Warum-jeder-Mensch-Elite-ist-49d601861b87.html",
+      "file_size_kb": 18.2,
+      "title": "Logos und Demokratie: Warum jeder Mensch Elite ist",
+      "subtitle": "Dieser Artikel ist der Auftakt zu einem größeren Projekt. Die hier skizzierten Gedanken — Logos, Mündigkeit, die Parallele zwischen…",
+      "date_iso": "2026-02-13T13:38:33.570Z",
+      "canonical_url": "https://medium.com/@asterios-raptis/logos-und-demokratie-warum-jeder-mensch-elite-ist-49d601861b87",
+      "author_name": "Asterios Raptis",
+      "author_url": "https://medium.com/@asterios-raptis"
+    },
+    "03_german_health_series": {
+      "filename": "2026-02-13_Lebende-Gesundheit-und-KI-474beaaf6c25.html",
+      "file_size_kb": 38.9,
+      "title": "Lebende Gesundheit und KI",
+      "subtitle": "KI als Strukturierungspartner — nicht als Diagnostiker",
+      "date_iso": "2026-02-13T09:10:24.970Z",
+      "canonical_url": "https://medium.com/@asterios-raptis/lebende-gesundheit-und-ki-474beaaf6c25",
+      "author_name": "Asterios Raptis",
+      "author_url": "https://medium.com/@asterios-raptis"
+    },
+    "04_english_bibliogon_recent": {
+      "filename": "2026-05-07_Local-First-Book-Authoring--Bibliogon-v0-30-0-94d814554092.html",
+      "file_size_kb": 21.9,
+      "title": "Local-First Book Authoring: Bibliogon v0.30.0",
+      "subtitle": "Local-first. Open source. Eighteen tagged releases in seventeen days.",
+      "date_iso": "2026-05-07T14:47:36.105Z",
+      "canonical_url": "https://medium.com/@asterios-raptis/local-first-book-authoring-bibliogon-v0-30-0-94d814554092",
+      "author_name": "Asterios Raptis",
+      "author_url": "https://medium.com/@asterios-raptis"
+    },
+    "05_english_with_many_images": {
+      "filename": "2024-11-29_French-for-Fun-Loving-Tourists--A-Guide-to-Slang--Expressions--and-Everyday-French-Phrases-7aee60d3af65.html",
+      "file_size_kb": 20.0,
+      "title": "French for Fun-Loving Tourists: A Guide to Slang, Expressions, and Everyday French Phrases",
+      "subtitle": "Planning a trip to France? Add some flavor to your travel experience with this guide to French slang, playful expressions, and everyday…",
+      "date_iso": "2024-11-29T16:51:48.295Z",
+      "canonical_url": "https://medium.com/@asterios-raptis/french-for-fun-loving-tourists-a-guide-to-slang-expressions-and-everyday-french-phrases-7aee60d3af65",
+      "author_name": "Asterios Raptis",
+      "author_url": "https://medium.com/@asterios-raptis"
+    }
+  }
+}
