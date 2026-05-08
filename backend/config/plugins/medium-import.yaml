@@ -1,0 +1,35 @@
+plugin:
+  name: "medium-import"
+  display_name:
+    de: "Medium-Import"
+    en: "Medium Import"
+  description:
+    de: "Importiert ein Medium-HTML-Archiv als Bibliogon-Artikel mit Publication-Eintrag und Provenienz."
+    en: "Imports a Medium HTML archive as Bibliogon Articles with Publication entry and provenance."
+  version: "1.0.0"
+  license: "MIT"
+  depends_on: []
+  api_version: "1"
+
+settings:
+  # Whether to download referenced images from cdn-images-1.medium.com
+  # to local storage (ArticleAsset rows + uploads/articles/{id}/imported_image/).
+  # Default on per the v0.30.0 design decision: data sovereignty over
+  # convenience; remote URLs may break.
+  download_images: true
+
+  # Per-image download timeout in seconds. cdn-images-1.medium.com is
+  # usually fast, but the importer must not hang the whole batch on
+  # one slow image.
+  image_download_timeout_seconds: 30
+
+  # If a canonical URL already matches an existing Article, skip the
+  # import for that post. Set to false to re-import (overwrites
+  # content + bumps imported_at). Application-layer dedup; no DB
+  # uniqueness constraint.
+  skip_existing_canonical_urls: true
+
+  # Default status for imported articles. Medium posts are by
+  # definition published; "published" mirrors that. User can
+  # archive selectively post-import.
+  default_status: "published"
