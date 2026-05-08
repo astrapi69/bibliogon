@@ -55,6 +55,7 @@ plugins:
         Git-URL: Git URL
         Feldauswahl: Field selection
         Git-Historie übernehmen: Adopt git history
+        Medium-Archiv: Medium archive
         Docker Desktop installieren: Install Docker Desktop
         Plattformübergreifende Installer: Cross-platform installers
         Windows-Launcher: Windows Launcher
@@ -118,6 +119,7 @@ nav:
   - Git-URL: de/import/git-url.md
   - Feldauswahl: de/import/field-selection.md
   - Git-Historie übernehmen: de/import/git-adoption.md
+  - Medium-Archiv: de/import/medium.md
 - Installation:
   - Übersicht: de/installation.md
   - Docker Desktop installieren: de/install/docker-desktop.md

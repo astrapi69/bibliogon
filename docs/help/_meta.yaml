@@ -111,6 +111,10 @@ navigation:
           de: Git-Historie übernehmen
           en: Adopt git history
         slug: import/git-adoption
+      - title:
+          de: Medium-Archiv
+          en: Medium archive
+        slug: import/medium
 
   - title:
       de: Installation
