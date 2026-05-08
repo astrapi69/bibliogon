@@ -321,6 +321,93 @@ def _load_installed_plugins() -> None:
                     sys.path.insert(0, path_str)
 
 
+def _enabled_plugins_from_config() -> list[str]:
+    """Return the plugin names listed under ``plugins.enabled`` in
+    the resolved app config.
+
+    Read fresh on every call so test overrides land. The list is
+    snapshotted by the diagnostic logger so a missing entry can be
+    diff-ed against the active set.
+    """
+    return list(_startup_config.get("plugins", {}).get("enabled") or [])
+
+
+def _discovered_entry_points() -> list[str]:
+    """Names of all plugins registered under the ``bibliogon.plugins``
+    entry-point group.
+
+    Distinguishes 'plugin not in entry-point set' (= not installed,
+    container needs rebuild, package name typo) from 'plugin in
+    entry-point set but not enabled in config'. The two failure
+    modes look identical without this snapshot.
+    """
+    try:
+        from importlib.metadata import entry_points
+
+        return sorted(ep.name for ep in entry_points(group="bibliogon.plugins"))
+    except Exception:  # noqa: BLE001 - diagnostic only
+        return []
+
+
+def _log_plugin_diagnostics_pre(*, enabled_in_config: list[str]) -> None:
+    """Log the discovery state BEFORE PluginManager filters by config.
+
+    Surfaces the entry-point set so a user reading the startup log
+    can immediately tell whether their plugin is even installed.
+    """
+    discovered = _discovered_entry_points()
+    logger.info(
+        "Plugin discovery: %d entry points found via 'bibliogon.plugins' group: %s",
+        len(discovered),
+        ", ".join(discovered) if discovered else "none",
+    )
+    logger.info(
+        "Plugins enabled in config (%d): %s",
+        len(enabled_in_config),
+        ", ".join(enabled_in_config) if enabled_in_config else "none",
+    )
+
+
+def _log_plugin_diagnostics_post(
+    *,
+    active: list[str],
+    load_errors: dict[str, object],
+    enabled_in_config: list[str],
+) -> None:
+    """Log the post-discovery state: what loaded, what errored, what's
+    expected but missing.
+
+    Three branches:
+
+    1. INFO 'Plugins loaded (X/Y enabled): ...' - always.
+    2. WARNING per plugin in load_errors - only when errors exist.
+       Surfaces pluginforge load failures so they're visible
+       without debug logging.
+    3. WARNING with rebuild hint - only when enabled_in_config has
+       names that are neither in active nor in load_errors. That's
+       the 'enabled but not discoverable' bug class (entry point
+       not registered, package not installed, container not rebuilt
+       after a path-dep change).
+    """
+    logger.info(
+        "Plugins loaded (%d/%d enabled): %s",
+        len(active),
+        len(enabled_in_config),
+        ", ".join(active) if active else "none",
+    )
+    for plugin_name, err in load_errors.items():
+        logger.warning("Plugin '%s' failed to load: %s", plugin_name, err)
+
+    missing = set(enabled_in_config) - set(active) - set(load_errors)
+    if missing:
+        logger.warning(
+            "Plugins enabled in config but not loaded (no entry point / not installed): %s. "
+            "If this is unexpected, rebuild the container or run "
+            "`poetry install` in backend/ to refresh path-dep installs.",
+            ", ".join(sorted(missing)),
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Bibliogon (debug=%s)", DEBUG)
@@ -371,10 +458,16 @@ async def lifespan(app: FastAPI):
     finally:
         _ct_db.close()
     _load_installed_plugins()
+    _log_plugin_diagnostics_pre(enabled_in_config=_enabled_plugins_from_config())
+
     manager.discover_plugins()
     manager.mount_routes(app)
-    active = [p.name for p in manager.get_active_plugins()]
-    logger.info("Plugins loaded: %s", ", ".join(active) if active else "none")
+    _log_plugin_diagnostics_post(
+        active=[p.name for p in manager.get_active_plugins()],
+        load_errors=dict(manager.get_load_errors()),
+        enabled_in_config=_enabled_plugins_from_config(),
+    )
+
     yield
     logger.info("Shutting down Bibliogon")
     manager.deactivate_all()
