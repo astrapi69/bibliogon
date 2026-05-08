@@ -21,7 +21,7 @@ from app.schemas import ArticleAssetOut
 
 router = APIRouter(prefix="/articles/{article_id}/assets", tags=["article-assets"])
 
-_ALLOWED_ASSET_TYPES = ("featured_image",)
+_ALLOWED_ASSET_TYPES = ("featured_image", "imported_image")
 _ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 
