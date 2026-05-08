@@ -51,6 +51,7 @@ plugins:
   - kinderbuch
   - grammar
   - git-sync
+  - medium-import
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg

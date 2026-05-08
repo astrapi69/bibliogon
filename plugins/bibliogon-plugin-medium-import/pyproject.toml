@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "bibliogon-plugin-medium-import"
+version = "0.30.0"
+description = "Medium archive importer for Bibliogon - converts Medium HTML export to Articles + Publications"
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_medium_import"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.5.0"
+fastapi = "^0.136.0"
+pyyaml = "^6.0"
+beautifulsoup4 = "^4.14.3"
+httpx = "^0.28.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pytest-cov = "^7.1.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+medium-import = "bibliogon_medium_import.plugin:MediumImportPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
