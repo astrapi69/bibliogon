@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-07 (v0.30.0 cut + post-release MKDOCS-DISCIPLINE-01 cycle + PLUGIN-LOCKFILE-DRIFT-01 closed: make lock-all-plugins / verify-plugin-locks targets, plugin-lock-paired pre-commit hook, 6 hook self-check tests)
+Last updated: 2026-05-08 (MEDIUM-IMPORT-MVP-01 shipped: bibliogon-plugin-medium-import + ArticleImportSource table + walker + image downloader + bulk ZIP endpoint + bilingual help + 30 plugin tests + 25 backend tests; v2 follow-ups MEDIUM-IMPORT-V2-01 / V2-02 added under P2)
 Current version: v0.30.0
-Open tasks: 9 active (P3..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 11 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -47,7 +47,26 @@ store.
 
 ## P2 - High-Value User Features
 
-(none)
+- **MEDIUM-IMPORT-V2-01**: dry-run preview UI before bulk import.
+  v1 (shipped 2026-05-08) imports every `posts/*.html` from a
+  Medium archive in one pass; the user archives unwanted articles
+  post-import via the standard dashboard trash flow. v2 should
+  show a per-post table (title / date / language / canonical URL)
+  with checkboxes so the user can deselect specific posts
+  pre-import. Effort: M (frontend table + plumb selection through
+  the existing `import_zip` orchestrator). Trigger: first user
+  report that the post-import archive flow is too tedious for
+  archives with many junk drafts.
+
+- **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
+  Medium's HTML export strips tags. v1 imports articles with an
+  empty tag list and the user adds them manually. v2 should call
+  the existing `backend/app/ai/` core module per imported article
+  with title + first paragraph + body excerpt and propose 3-5
+  tags, surfaced for review in the dry-run table from v01. Effort:
+  S-M depending on tag-quality bar. Trigger: first user report
+  asking for it OR v01 ships and the manual-tagging step is a
+  visible bottleneck in feedback.
 
 ---
 

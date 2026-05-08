@@ -91,6 +91,8 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 | plugin-grammar     | core    | -          | LanguageTool (self-hosted + premium auth support)               |
 | plugin-kinderbuch  | core    | export     | One-image-per-page layout with 4 templates                      |
 | plugin-kdp         | core    | export     | KDP metadata, cover validation, completeness check              |
+| plugin-git-sync    | core    | -          | Git-backed import + sync for write-book-template repositories   |
+| plugin-medium-import | core  | -          | Medium HTML-export importer: Article + Publication + provenance |
 
 Plugin versions are independent of the app version. A plugin is only bumped when the plugin itself changed, not on every app release.
 
