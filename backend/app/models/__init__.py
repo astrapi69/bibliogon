@@ -479,6 +479,12 @@ class Article(Base):
         order_by="ArticleAsset.uploaded_at",
     )
 
+    import_source: Mapped["ArticleImportSource | None"] = relationship(
+        back_populates="article",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
     def __repr__(self) -> str:
         return f"<Article {self.id!r} title={self.title!r} status={self.status}>"
 
@@ -508,6 +514,67 @@ class ArticleAsset(Base):
 
     def __repr__(self) -> str:
         return f"<ArticleAsset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
+
+
+class ArticleImportSource(Base):
+    """Origin record for an imported article.
+
+    Parallel of :class:`BookImportSource`. Written by importer
+    plugins (medium-import is the first; substack/wordpress can
+    follow without schema changes) so re-imports can detect
+    duplicates and the user can answer "where did this article
+    come from?".
+
+    Provenance lives in its own table rather than on a tag because
+    tags are SEO-relevant metadata that ship to publishing
+    platforms when the article is cross-posted; a ``source:medium``
+    tag would leak importer state into Medium/Substack metadata.
+    """
+
+    __tablename__ = "article_import_sources"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    article_id: Mapped[str] = mapped_column(
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    # Stable identifier for dedup. For Medium: the canonical URL
+    # (``a.p-canonical`` href). For future sources: whatever is
+    # both stable and unique per source post.
+    source_identifier: Mapped[str] = mapped_column(String(500), nullable=False)
+    # ``"medium"``, ``"substack"``, ``"wordpress"`` ...
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    # ``"medium_html_export"`` for Medium's settings -> "Download
+    # your information" archive. Differentiates parser variants
+    # within a source_type if a source ever ships multiple export
+    # formats.
+    format_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    # JSON-encoded dict for source-specific data (original
+    # publish date that differs from imported_at, author URL,
+    # source filename, etc.). Forward-compatible with new
+    # fields that don't justify their own column.
+    import_metadata: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    # Plugin version that parsed this article. Lets us identify
+    # articles imported with an older walker if we fix walker
+    # bugs later and want to offer re-import.
+    importer_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # JSON-encoded list[str] of warnings raised during conversion
+    # (unknown Medium embed types, dropped elements, etc.). Empty
+    # list if the import was clean.
+    conversion_warnings: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+
+    article: Mapped["Article"] = relationship(back_populates="import_source")
+
+    def __repr__(self) -> str:
+        return (
+            f"<ArticleImportSource article={self.article_id!r} "
+            f"identifier={self.source_identifier!r} type={self.source_type}>"
+        )
 
 
 class Publication(Base):
