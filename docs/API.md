@@ -82,6 +82,8 @@ always the plugin name:
 | kinderbuch     | `/api/kinderbuch`   | One-image-per-page layouts                       |
 | help           | `/api/help`         | Shortcuts, FAQ, in-app help content              |
 | getstarted     | `/api/get-started`  | Onboarding guide, sample book                    |
+| git-sync       | `/api/git-sync`     | Git-backed import + sync for write-book-template repos |
+| medium-import  | `/api/medium-import`| Bulk import of Medium HTML export ZIP            |
 
 Examples:
 
@@ -92,6 +94,11 @@ Examples:
   or per-book overrides via `book_id`
 - `POST /api/audiobook/config/elevenlabs` - save the ElevenLabs key
   and validate it against the API
+- `POST /api/medium-import/import` - upload a Medium HTML export ZIP
+  (`multipart/form-data` with `file=<zip>`); response is a per-file
+  outcome summary (imported / skipped on canonical-URL dedup /
+  errored). See [docs/help/en/import/medium.md](help/en/import/medium.md)
+  for the user-facing recipe.
 
 ---
 

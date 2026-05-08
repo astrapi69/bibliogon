@@ -1,108 +1,180 @@
 # Aus einem Medium-Archiv importieren
 
-Bibliogon kann ein Medium-HTML-Archiv importieren und daraus
-pro Artikel einen **Artikel** plus einen **Publication**-Eintrag
-erzeugen. Die Herkunft wird in einer eigenen Tabelle gespeichert,
-sodass Mehrfach-Importe Duplikate erkennen.
+Bibliogon importiert ein Medium-HTML-Archiv und erzeugt pro
+Beitrag einen **Artikel**, einen **Publication**-Eintrag und
+einen Provenienz-Datensatz.
 
-## So holst du dein Archiv von Medium
+## Schritt 1 - Archiv von Medium holen
 
 1. Bei [medium.com](https://medium.com) anmelden.
 2. **Einstellungen** → **Konto** → **Lade deine Informationen
    herunter** öffnen.
-3. **ZIP herunterladen** anklicken. Medium schickt dir eine
-   E-Mail mit einem Download-Link; das Archiv ist meist
-   innerhalb weniger Minuten fertig.
-4. Die ZIP lokal speichern. Du musst sie nicht entpacken.
+3. **ZIP herunterladen** anklicken. Medium schickt innerhalb
+   weniger Minuten eine E-Mail mit dem Download-Link.
+4. ZIP lokal speichern. **Nicht** entpacken.
 
-## So importierst du in Bibliogon
+## Schritt 2 - Backend prüfen
 
-1. **Einstellungen** → **Plugins** → **Medium-Import** öffnen.
-2. Die ZIP in das Upload-Feld ziehen, oder mit **Datei auswählen**
-   manuell wählen.
-3. Auf **Importieren** klicken.
+Das Plugin läuft im Backend. Vor dem Import sicherstellen, dass
+das Backend sauber gestartet ist. Diese Log-Zeilen müssen
+erscheinen:
 
-Bibliogon durchläuft jede `posts/*.html`-Datei im Archiv und
-erzeugt pro Artikel:
+```
+INFO  app.main: Plugin discovery: 11 entry points found via 'bibliogon.plugins' group: ..., medium-import, ...
+INFO  app.main: Plugins enabled in config (11): ..., medium-import
+INFO  app.main: Plugins loaded (11/11 enabled): ..., medium-import, ...
+```
 
-- Einen **Artikel** mit Titel, Untertitel, Sprache
-  (standardmäßig Englisch; im Editor pro Artikel umstellbar),
-  TipTap-Inhalt und `status = published`.
-- Einen **Publication**-Eintrag auf der Plattform **Medium**,
-  inklusive Canonical-URL und ursprünglichem Veröffentlichungs-
-  datum.
-- Eine **Artikel-Importquelle** (Provenienz-Eintrag). Wenn du
-  dasselbe Archiv erneut importierst, werden bereits importierte
-  Artikel anhand ihrer Canonical-URL erkannt und übersprungen.
+Wenn die dritte Zeile weniger geladene Plugins zeigt als die
+zweite, oder ein `WARNING: Plugins enabled in config but not
+loaded` erscheint, siehe **Fehlersuche** unten.
+
+## Schritt 3 - Import starten
+
+Die Bulk-Import-API nimmt einen einzelnen `multipart/form-data`
+POST entgegen. Eine in der App eingebettete UI ist für v2 geplant
+(Backlog-Eintrag `MEDIUM-IMPORT-V2-01`); bis dahin per Shell mit
+`curl`:
+
+```bash
+curl -X POST http://localhost:7880/api/medium-import/import \
+  -F "file=@medium-export.zip" \
+  | jq .
+```
+
+`localhost:7880` durch deine Bibliogon-URL ersetzen. Antwort als
+JSON-Zusammenfassung:
+
+```json
+{
+  "imported_count": 207,
+  "skipped_count": 1,
+  "errored_count": 1,
+  "imported": [
+    { "id": "abc123", "title": "Migrate a maven project to Gradle",
+      "canonical_url": "https://medium.com/@.../...",
+      "warnings": [] },
+    ...
+  ],
+  "skipped": [
+    { "filename": "2024-...", "canonical_url": "...",
+      "existing_article_id": "..." }
+  ],
+  "errored": [
+    { "filename": "2025-...html", "error": "post has no canonical URL; cannot dedup or track" }
+  ]
+}
+```
+
+Der Import läuft sequenziell; bei 200 Beiträgen sind es einige
+Minuten, weil die Bilder heruntergeladen werden.
 
 ## Was wird importiert
 
-- Titel, Untertitel, Autorname und Veröffentlichungsdatum.
-- Inhalt: Absätze, Überschriften (H2 / H3 / H4), Zitate,
-  Code-Blöcke (mit Sprache), Aufzählungen und nummerierte Listen,
-  Inline-Auszeichnungen Fett, Kursiv, Inline-Code und Links.
-- Bilder: Standardmäßig wird jedes Bild lokal gespeichert, damit
-  der Artikel auch dann funktioniert, wenn Medium die CDN-URL
-  irgendwann ändert. Bildunterschriften werden als Bildtitel
-  übernommen.
+| Feld | Quelle |
+|---|---|
+| `title` | `<h1 class="p-name">` |
+| `subtitle` | `<section data-field="subtitle">` |
+| `author` | `<a class="p-author">` |
+| `published_at` | `<time class="dt-published">` `datetime` |
+| `canonical_url` | `<a class="p-canonical">` `href` |
+| `content_json` (TipTap) | aus `<section data-field="body">` extrahiert |
+| Bilder | jede `<figure>` wird lokal als `ArticleAsset` abgelegt |
+| Provenienz | `ArticleImportSource` mit `source_type=medium`, `format_name=medium_html_export` |
+| Status | `published` (Medium-Beiträge sind per Definition veröffentlicht) |
+| Sprache | Standard `en` (pro Artikel im Editor anpassbar) |
+| Tags | leere Liste (Medium liefert sie im HTML-Export nicht mit) |
 
-## Was NICHT importiert wird (Medium liefert es nicht)
+## Was NICHT importiert wird
 
-- **Tags**: Im HTML-Export sind keine Tags enthalten. Importierte
-  Artikel haben anfangs eine leere Tag-Liste; trage sie im Editor
-  nach.
-- **Entwürfe**: Nur veröffentlichte Medium-Beiträge sind im
-  Export enthalten.
-- **Lesedauer, Claps, Antworten**: Das sind Plattform-Metriken,
-  kein Inhalt.
-- **Publikationszugehörigkeit**: Wenn ein Beitrag unter einer
-  Medium-Publication erschienen ist, bleibt die Canonical-URL
-  erhalten; der Publication-Name wird aber nicht als eigenes
-  Feld gespeichert.
+| Fehlt | Grund |
+|---|---|
+| Tags | Im HTML-Export von Medium nicht enthalten |
+| Entwürfe | Nur veröffentlichte Beiträge sind im Export |
+| Lesedauer / Claps / Antwortzahl | Plattform-Metriken, kein Inhalt |
+| Publikation-Name (bei Medium-Publications) | Nicht im HTML; nur in der Canonical-URL kodiert |
 
-## Was passiert beim erneuten Import desselben Archivs
+## Schritt 4 - Nach dem Import
 
-Artikel, deren Canonical-URL bereits zu einem bestehenden
-Bibliogon-Artikel gehört, werden beim zweiten Lauf
-**übersprungen**. Die Zusammenfassung am Ende listet jeden
-übersprungenen Beitrag mit der ID des bereits vorhandenen
-Artikels auf, damit du das Duplikat findest.
+Die importierten Artikel erscheinen wie alle anderen im
+Dashboard. Typische Folgeaufgaben:
 
-## Was passiert, wenn ein Beitrag nicht importiert werden kann
-
-Die Zusammenfassung listet jeden fehlgeschlagenen Beitrag mit
-dem Quell-Dateinamen und der Fehlermeldung. Andere Beiträge
-laufen normal weiter; ein einzelner Fehler bricht den ganzen
-Batch nicht ab.
-
-## Nach dem Import
-
-Die importierten Artikel erscheinen im **Dashboard** wie alle
-manuell erstellten Artikel. Typische Folgeaufgaben:
-
-- **Unerwünschte Artikel archivieren**: Im Dashboard auswählen
-  und über **In den Papierkorb verschieben** entfernen. Beiträge,
-  die du nicht in Bibliogon behalten möchtest (verlassene
-  Posts, alte Versuche), kannst du nach dem Import bequem
+- **Unerwünschte Artikel archivieren.** Im Dashboard auswählen
+  und **In den Papierkorb** verschieben. Alte / verlassene
+  Beiträge, die nicht in Bibliogon bleiben sollen, hier
   aussortieren.
-- **Tags ergänzen**: Medium hat keine geliefert; pro Artikel im
+- **Tags ergänzen.** Medium liefert sie nicht; pro Artikel im
   Editor nachtragen.
-- **Sprache anpassen**: Standardmäßig Englisch. Deutsche /
-  spanische / weitere Artikel im Metadaten-Panel des Editors
-  umstellen.
-- **Cross-Posts prüfen**: Der Publication-Eintrag verfolgt die
-  Medium-URL. Wenn du denselben Artikel später auf Substack oder
-  deinem eigenen Blog veröffentlichst, kannst du eine zweite
-  Publication auf dieser Plattform anlegen.
+- **Sprache anpassen.** Nicht-englische Artikel im
+  Metadaten-Panel des Editors umstellen.
+- **Cross-Posts prüfen.** Der Publication-Eintrag verfolgt die
+  Medium-URL. Bei späterer Veröffentlichung auf Substack oder
+  einem eigenen Blog dort eine zweite Publication anlegen.
 
-## Einschränkungen
+## Re-Import-Sicherheit
 
-- Sequenzielle Verarbeitung: Bei 200 Beiträgen dauert der Import
-  einige Minuten, während die Bilder heruntergeladen werden.
-- Bild-Downloads können für einzelne Bilder fehlschlagen
-  (Netzwerkprobleme, gelöschte Originale). Jeder Bild-Fehler
-  wird als Warnung im Provenienz-Eintrag des Artikels
-  festgehalten, bricht aber den Import nicht ab.
-- Selektiver Import (Vorab-Auswahl bestimmter Beiträge) gehört
-  **nicht** zur v1 des Importers. Importiere zunächst alles und
-  archiviere danach, was du nicht behalten willst.
+- Artikel, deren Canonical-URL bereits zu einem bestehenden
+  Bibliogon-Artikel gehört, werden beim zweiten Lauf
+  **übersprungen**. Die Zusammenfassung listet jeden
+  übersprungenen Beitrag mit der ID des bestehenden Artikels.
+- Artikel im Papierkorb gelten weiterhin als „existierend" für
+  die Dedup-Prüfung - ein gelöschter importierter Artikel bleibt
+  beim erneuten Import im Papierkorb und wird als skipped
+  gemeldet.
+- Pro-Beitrag-Fehler landen in der `errored`-Liste der Antwort,
+  brechen aber **nicht** den Batch ab.
+
+## Fehlersuche
+
+### „Plugin enabled in config but not loaded"
+
+Die Startup-Logs zeigen eine WARNING mit genau diesem Wortlaut
+plus dem Rebuild-Hinweis. Ursache: Das Plugin ist in
+`backend/config/app.yaml` unter `plugins.enabled` eingetragen,
+aber sein Paket ist im laufenden Python-Environment nicht
+installiert. Lösung:
+
+- **Docker**: Image neu bauen (`docker compose build`, dann
+  `docker compose up`). Ein `docker compose restart` verwendet
+  das alte Image und nimmt neue Path-Deps nicht auf.
+- **`make dev`** (lokales Poetry-Venv): `poetry install` in
+  `backend/` ausführen, damit der Editable-Install des
+  Path-Deps aktualisiert wird.
+
+### Jeder Endpoint liefert HTTP 502
+
+Der Backend-Prozess läuft nicht. Das Frontend erreicht den
+Proxy, aber der Proxy kann das Backend nicht erreichen.
+Backend-Logs prüfen (`docker logs <backend-container>
+--tail 200`) oder im `make dev`-Terminal nach dem Traceback
+suchen.
+
+### „Config file not found, using empty defaults"
+
+Eine einzelne DEBUG-Zeile beim Start nennt das fehlende YAML.
+Das Plugin lädt trotzdem, aber seine sichtbaren Einstellungen
+(Bild-Download, Default-Status etc.) werden stillschweigend durch
+In-Code-Defaults ersetzt. Lösung: Die Datei muss unter
+`backend/config/plugins/{plugin_slug}.yaml` liegen, nicht im
+Plugin-eigenen Verzeichnis.
+
+### Ein bestimmter Beitrag scheitert beim Import
+
+Im `errored`-Block der Antwort den Quell-Dateinamen und die
+Fehlermeldung nachschlagen. Häufigste Ursache: „post has no
+canonical URL" - das HTML hat keinen
+`<a class="p-canonical">`-Link, was bei sehr alten Medium-Posts
+selten vorkommen kann.
+
+## Einschränkungen (v1)
+
+- Sequenzielle Verarbeitung. Bei 200 Beiträgen dauert es einige
+  Minuten, während die Bilder heruntergeladen werden.
+- Bild-Download-Fehler werden auf Bild-Ebene stumm behandelt
+  (im `conversion_warnings`-Feld der Provenienz festgehalten,
+  nicht in der Response-Zusammenfassung sichtbar).
+- Keine selektive Import-UI. Alles importieren, dann archivieren
+  was nicht behalten werden soll. Die Dry-Run-Vorschau kommt
+  in v2.
+- Keine KI-gestützte Tag-Inferenz. Tags bleiben standardmäßig
+  leer; auf der v2-Roadmap.

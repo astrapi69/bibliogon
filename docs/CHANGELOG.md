@@ -2,6 +2,64 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [Unreleased]
+
+### Added
+
+- **Medium archive import** (`bibliogon-plugin-medium-import`,
+  10th plugin). Imports a Medium HTML export ZIP and produces
+  one Article + one Publication entry + one
+  ArticleImportSource provenance row per `posts/*.html`. New
+  `ArticleImportSource` table mirrors `BookImportSource`. Image
+  references (`cdn-images-1.medium.com`) are downloaded to local
+  `ArticleAsset` storage by default per the data-sovereignty
+  design decision. Re-imports of the same archive are
+  deduplicated against `Article.canonical_url`. Bilingual help
+  page at `docs/help/{en,de}/import/medium.md`. POST
+  `/api/medium-import/import`. v2 follow-ups
+  (`MEDIUM-IMPORT-V2-01` dry-run preview UI,
+  `MEDIUM-IMPORT-V2-02` AI tag inference) are recorded in
+  `docs/backlog.md` under P2.
+
+### Fixed
+
+- **Plugin-load diagnostic logging silenced by Alembic.** Every
+  `logger.info(...)` from `app.main` after `init_db()` was being
+  dropped by Python's `logging.config.fileConfig` invocation in
+  `migrations/env.py`. Default behaviour is `disable_existing_
+  loggers=True` AND root-logger level reset to whatever
+  `alembic.ini`'s `[logger_root]` says (WARNING in this repo).
+  Result: users observed "no plugin loading messages, only
+  alembic" because the alembic config was the only logging
+  source still alive. Fix: `migrations/env.py` skips
+  `fileConfig` when the root logger already has handlers
+  attached - i.e. when the FastAPI app has already configured
+  logging via uvicorn / basicConfig. The standalone `alembic`
+  CLI path (no handlers attached at env.py time) is
+  untouched.
+
+  As part of the fix, three diagnostic helpers landed in
+  `app.main`: `_discovered_entry_points`,
+  `_enabled_plugins_from_config`, and
+  `_log_plugin_diagnostics_pre`/`_post`. Startup now emits
+  `Plugin discovery: <N> entry points found ...`,
+  `Plugins enabled in config (<N>): ...`, and
+  `Plugins loaded (<active>/<enabled>): ...` plus WARNING-level
+  lines for `pluginforge.PluginManager.get_load_errors()` and
+  for the diff between enabled-in-config and actually-active
+  plugins (with a rebuild hint pointing at the most common
+  failure mode). 7 regression tests pin the log shape.
+
+- **Medium-import plugin config file at the wrong path.**
+  Plugin settings (`download_images`,
+  `image_download_timeout_seconds`,
+  `skip_existing_canonical_urls`, `default_status`) were
+  silently replaced by an empty dict at startup because the
+  YAML lived under `plugins/bibliogon-plugin-medium-import/
+  config/` instead of `backend/config/plugins/`. Fix: place the
+  YAML in the canonical backend location PluginForge actually
+  reads.
+
 ## [0.30.0] - 2026-05-07
 
 Launcher localized in 8 languages (en/de/el/es/fr/pt/tr/ja) with
