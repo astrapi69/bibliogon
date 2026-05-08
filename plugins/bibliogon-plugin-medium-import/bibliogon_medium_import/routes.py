@@ -1,17 +1,108 @@
 """FastAPI routes for the Medium-import plugin.
 
-Bulk-import endpoint and any future helper routes go here. The
-walker (HTML → TipTap) and image-download logic live in their
-own modules so they can be unit-tested without spinning up
-FastAPI.
+Single user-facing endpoint: ``POST /api/medium-import/import``.
+Accepts a ZIP from Medium's "Download your information" feature
+and produces one Article + one Publication + one
+ArticleImportSource per ``posts/*.html`` it finds, dedup-ing
+against ``Article.canonical_url``.
 """
 
-from fastapi import APIRouter
+from __future__ import annotations
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
+
+from .importer import ImportResult, import_zip
 
 router = APIRouter(prefix="/medium-import", tags=["medium-import"])
+
+
+# Pydantic response models. Kept here (not in app/schemas/) so the
+# plugin stays self-contained.
+
+
+class _ImportedOut(BaseModel):
+    id: str
+    title: str
+    canonical_url: str
+    warnings: list[str] = Field(default_factory=list)
+
+
+class _SkippedOut(BaseModel):
+    filename: str
+    canonical_url: str
+    existing_article_id: str
+
+
+class _ErroredOut(BaseModel):
+    filename: str
+    error: str
+
+
+class ImportZipResponse(BaseModel):
+    imported_count: int
+    skipped_count: int
+    errored_count: int
+    imported: list[_ImportedOut]
+    skipped: list[_SkippedOut]
+    errored: list[_ErroredOut]
+
+
+def _serialize(result: ImportResult) -> ImportZipResponse:
+    return ImportZipResponse(
+        imported_count=len(result.imported),
+        skipped_count=len(result.skipped),
+        errored_count=len(result.errored),
+        imported=[
+            _ImportedOut(
+                id=a.id,
+                title=a.title,
+                canonical_url=a.canonical_url,
+                warnings=a.warnings,
+            )
+            for a in result.imported
+        ],
+        skipped=[
+            _SkippedOut(
+                filename=s.filename,
+                canonical_url=s.canonical_url,
+                existing_article_id=s.existing_article_id,
+            )
+            for s in result.skipped
+        ],
+        errored=[_ErroredOut(filename=e.filename, error=e.error) for e in result.errored],
+    )
 
 
 @router.get("/health")
 def health() -> dict[str, str]:
     """Minimal liveness probe; confirms the plugin's router is mounted."""
     return {"plugin": "medium-import", "status": "ok"}
+
+
+@router.post("/import", response_model=ImportZipResponse)
+async def import_zip_endpoint(file: UploadFile = File(...)) -> ImportZipResponse:
+    """Bulk-import a Medium HTML export ZIP.
+
+    Returns a per-file outcome summary (imported / skipped / errored).
+    Per-post failures are recorded but never abort the batch; a single
+    bad post should not waste the user's other 200 imports.
+    """
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be a .zip Medium export",
+        )
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+
+    try:
+        result = import_zip(contents)
+    except ValueError as exc:
+        # Bad ZIP / no posts/ dir -> 400 so the frontend can surface
+        # the message verbatim instead of a generic 500.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return _serialize(result)
