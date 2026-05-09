@@ -1,0 +1,37 @@
+name: Question
+description: Ask a question about using or contributing to Bibliogon
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking.
+        For usage questions, also check the documentation: https://astrapi69.github.io/bibliogon/
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: Be as specific as possible. Include context, version, and what you've tried.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Installation / Setup
+        - Usage / Workflow
+        - Plugin Development
+        - Export / Publishing
+        - AI Integration
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+      options:
+        - label: I agree to follow the Code of Conduct
+          required: true
