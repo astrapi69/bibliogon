@@ -206,7 +206,7 @@ See [SECURITY.md](SECURITY.md) for the responsible disclosure process.
 ## Code of Conduct
 
 This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
-Reports go to aster.raptis@gmail.com.
+Reports go to asterios.raptis@web.de.
 
 ## Contributing
 

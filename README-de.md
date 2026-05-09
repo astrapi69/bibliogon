@@ -203,4 +203,4 @@ Meldeprozess bei Sicherheitsproblemen.
 ## Verhaltenskodex
 
 Dieses Projekt folgt dem [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
-Meldungen gehen an aster.raptis@gmail.com.
+Meldungen gehen an asterios.raptis@web.de.
