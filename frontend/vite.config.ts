@@ -127,7 +127,16 @@ export default defineConfig({
         open: true,
         proxy: {
             "/api": {
-                target: "http://localhost:8000",
+                // Default targets the backend on the host (the
+                // `make dev` flow). Inside Docker Compose,
+                // ``localhost`` resolves to the frontend container
+                // itself, not the backend service - so override
+                // via VITE_API_PROXY_TARGET=http://backend:8000 in
+                // docker-compose.yml. The env var is read by Node
+                // when vite.config.ts is evaluated; no client-side
+                // exposure (so the VITE_ prefix is incidental, not
+                // required).
+                target: process.env.VITE_API_PROXY_TARGET || "http://localhost:8000",
                 changeOrigin: true,
             },
         },
