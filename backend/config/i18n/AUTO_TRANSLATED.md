@@ -77,3 +77,29 @@ Placeholders (`{n}`, `{title}`, `{count}`, `{formats}`, `{size}`,
   retain it for consistency even though the coding standards
   discourage em-dashes in code. Changing this is a separate
   editorial pass.
+
+## 2026-05-09 — Medium-import frontend strings (PT, TR, JA)
+
+46 keys under `ui.medium_import.*` for the new
+`/articles/import/medium` page (drop zone, progress, result table,
+settings card, pointer card, toast summaries). EN, DE authored
+fully. ES, FR, EL produced idiomatically and are good for self-
+validation. PT, TR, JA are machine-translated and need native-
+speaker review.
+
+| Key prefix | Languages |
+|-----|-----------|
+| `ui.medium_import.page_title` | PT, TR, JA |
+| `ui.medium_import.nav_label` | PT, TR, JA |
+| `ui.medium_import.back_to_articles` | PT, TR, JA |
+| `ui.medium_import.intro` | PT, TR, JA |
+| `ui.medium_import.upload.*` (10 keys) | PT, TR, JA |
+| `ui.medium_import.progress.*` (3 keys) | PT, TR, JA |
+| `ui.medium_import.result.*` (10 keys) | PT, TR, JA |
+| `ui.medium_import.settings.*` (16 keys) | PT, TR, JA |
+| `ui.medium_import.toast.*` (2 keys) | PT, TR, JA |
+
+Technical terms left in English/Latin script per the existing
+convention: Medium, ZIP, .zip, MB, CDN, URL.
+Placeholders preserved: `{count}`, `{imported}`, `{skipped}`,
+`{errored}`. The parity test enforces placeholder set equality.
