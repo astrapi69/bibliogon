@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-08 (MEDIUM-IMPORT-MVP-01 shipped: bibliogon-plugin-medium-import + ArticleImportSource table + walker + image downloader + bulk ZIP endpoint + bilingual help + 30 plugin tests + 25 backend tests; v2 follow-ups MEDIUM-IMPORT-V2-01 / V2-02 added under P2)
+Last updated: 2026-05-09 (MEDIUM-IMPORT-FRONTEND-UI-01 shipped: dedicated /articles/import/medium page + drop zone + two-phase progress + result table + settings card + Settings pointer + 24 Vitest tests + bilingual help + i18n in 8 languages; follow-ups BACKEND-UPLOAD-SIZE-LIMIT-01 + ASYNC-IMPORT-PROGRESS-01 added)
 Current version: v0.30.0
-Open tasks: 11 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 13 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -58,6 +58,21 @@ store.
   report that the post-import archive flow is too tedious for
   archives with many junk drafts.
 
+- **ASYNC-IMPORT-PROGRESS-01**: real server-side progress for the
+  Medium-import flow. The current frontend shows determinate
+  progress for the upload phase (XHR `upload.onprogress`), then an
+  indeterminate spinner for the server-processing phase because
+  the backend endpoint (`POST /api/medium-import/import`) is
+  synchronous. For a 200+ post archive with image downloads the
+  spinner can run for several minutes. v2 should switch the
+  endpoint to the existing async-job pattern (cf. plugin-export
+  `/export/async/`) with SSE streaming `chapter_done`-style events
+  per imported post. Effort: M (backend job-store integration +
+  frontend EventSource subscriber, similar shape to
+  AudioExportProgress). Trigger: first user complaint about the
+  indeterminate phase, OR when archive sizes routinely exceed 60s
+  processing.
+
 - **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
   Medium's HTML export strips tags. v1 imports articles with an
   empty tag list and the user adds them manually. v2 should call
@@ -71,6 +86,15 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **BACKEND-UPLOAD-SIZE-LIMIT-01**: enforce a backend body-size
+  cap for `POST /api/medium-import/import` (and audit other plugin
+  upload endpoints for the same gap). Frontend currently
+  hard-rejects ZIPs >200MB but the backend has no
+  `Request.body_size` ceiling, so a malicious or buggy client can
+  attempt arbitrary-size uploads. Effort: S (FastAPI middleware or
+  per-router body-size guard, returning HTTP 413). Trigger:
+  defense-in-depth, no specific user report.
 
 - **D-06-VALIDATION-01**: fresh-machine validation of the
   v0.28.0 cross-platform installer scripts (`install.command`,
