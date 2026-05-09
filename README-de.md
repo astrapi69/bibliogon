@@ -192,12 +192,12 @@ Umgebungsvariablen (in `.env` setzen):
 
 ## Lizenz
 
-Bibliogon wird unter der [MIT-Lizenz](LICENSE) veroffentlicht.
+Bibliogon wird unter der [MIT-Lizenz](LICENSE) veröffentlicht.
 Alle Plugins sind kostenlos und Open Source.
 
 ## Sicherheitsrichtlinie
 
-Siehe [SECURITY.md](SECURITY.md) fur den verantwortungsvollen
+Siehe [SECURITY.md](SECURITY.md) für den verantwortungsvollen
 Meldeprozess bei Sicherheitsproblemen.
 
 ## Verhaltenskodex
@@ -207,7 +207,7 @@ Meldungen gehen an asterios.raptis@web.de.
 
 ## Mitwirken
 
-Siehe [CONTRIBUTING.md](CONTRIBUTING.md) fur Einrichtung, Workflow und Erwartungen.
+Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Einrichtung, Workflow und Erwartungen.
 
 ## Issue-Vorlagen
 
