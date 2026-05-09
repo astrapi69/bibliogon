@@ -26,6 +26,10 @@ navigation:
           de: Massen-Export
           en: Bulk export
         slug: articles/bulk-export
+      - title:
+          de: Medium-Import
+          en: Medium import
+        slug: articles/medium-import
 
   - title:
       de: Bücher

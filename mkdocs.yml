@@ -48,6 +48,7 @@ plugins:
         Artikel: Articles
         Übersicht: Overview
         Massen-Export: Bulk export
+        Medium-Import: Medium import
         Bücher: Books
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
@@ -102,6 +103,7 @@ nav:
 - Artikel:
   - Übersicht: de/articles.md
   - Massen-Export: de/articles/bulk-export.md
+  - Medium-Import: de/articles/medium-import.md
 - Bücher:
   - Massen-Export: de/books/bulk-export.md
 - Editor:
