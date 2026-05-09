@@ -763,6 +763,42 @@ function _filenameFromContentDisposition(header: string | null): string | null {
     return ascii ? ascii[1] : null;
 }
 
+// --- Medium Import ---
+
+/** One successfully-imported article from a Medium archive. */
+export interface MediumImportImportedItem {
+    id: string;
+    title: string;
+    canonical_url: string;
+    warnings: string[];
+}
+
+/** A post in the archive that was skipped because an article with
+ *  the same canonical URL already exists. */
+export interface MediumImportSkippedItem {
+    filename: string;
+    canonical_url: string;
+    existing_article_id: string;
+}
+
+/** A post in the archive that the importer could not process. The
+ *  batch continues; per-post failures never abort the import. */
+export interface MediumImportErroredItem {
+    filename: string;
+    error: string;
+}
+
+/** Response of POST /api/medium-import/import. Counts mirror the
+ *  array lengths so consumers can render a summary without iterating. */
+export interface MediumImportResponse {
+    imported_count: number;
+    skipped_count: number;
+    errored_count: number;
+    imported: MediumImportImportedItem[];
+    skipped: MediumImportSkippedItem[];
+    errored: MediumImportErroredItem[];
+}
+
 // --- Books ---
 
 export const api = {
@@ -1756,6 +1792,80 @@ export const api = {
 
         manifests: () =>
             request<Record<string, Record<string, unknown>>>("/plugins/manifests"),
+    },
+
+    /** Medium-import plugin client. The importZip helper is the only
+     *  XHR-based call in the codebase; XHR is required because fetch()
+     *  does not expose upload-progress events and Medium archives can
+     *  be large enough that a determinate progress bar matters. */
+    mediumImport: {
+        importZip: (
+            file: File,
+            onUploadProgress?: (loaded: number, total: number) => void,
+        ): Promise<MediumImportResponse> => {
+            const endpoint = `${BASE}/medium-import/import`;
+            const formData = new FormData();
+            formData.append("file", file);
+
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", endpoint);
+
+                if (onUploadProgress) {
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            onUploadProgress(event.loaded, event.total);
+                        }
+                    };
+                }
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            resolve(JSON.parse(xhr.responseText) as MediumImportResponse);
+                        } catch (parseError) {
+                            reject(
+                                new ApiError(
+                                    xhr.status,
+                                    "Antwort konnte nicht geparst werden",
+                                    endpoint,
+                                    "POST",
+                                    String(parseError),
+                                ),
+                            );
+                        }
+                        return;
+                    }
+                    let detail = xhr.statusText || "Import fehlgeschlagen";
+                    let stacktrace = "";
+                    try {
+                        const body = JSON.parse(xhr.responseText) as {
+                            detail?: string;
+                            stacktrace?: string;
+                        };
+                        if (body.detail) detail = body.detail;
+                        if (body.stacktrace) stacktrace = body.stacktrace;
+                    } catch {
+                        // Non-JSON body; surface the raw status text above.
+                    }
+                    reject(new ApiError(xhr.status, detail, endpoint, "POST", stacktrace));
+                };
+
+                xhr.onerror = () => {
+                    reject(
+                        new ApiError(
+                            0,
+                            "Netzwerkfehler beim Upload",
+                            endpoint,
+                            "POST",
+                            "",
+                        ),
+                    );
+                };
+
+                xhr.send(formData);
+            });
+        },
     },
 
     msTools: {
