@@ -4,7 +4,7 @@ Open-source self-publishing toolkit for authors. Books, articles, and multi-plat
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
-[License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.29.0**
 
@@ -207,3 +207,14 @@ See [SECURITY.md](SECURITY.md) for the responsible disclosure process.
 
 This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
 Reports go to asterios.raptis@web.de.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, workflow, and expectations.
+
+## Issue Templates
+
+Use the appropriate template when opening a new issue:
+- [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml)
+- [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml)
+- [Question](.github/ISSUE_TEMPLATE/question.yml)
