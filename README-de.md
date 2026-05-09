@@ -204,3 +204,14 @@ Meldeprozess bei Sicherheitsproblemen.
 
 Dieses Projekt folgt dem [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
 Meldungen gehen an asterios.raptis@web.de.
+
+## Mitwirken
+
+Siehe [CONTRIBUTING.md](CONTRIBUTING.md) fur Einrichtung, Workflow und Erwartungen.
+
+## Issue-Vorlagen
+
+Verwenden Sie die passende Vorlage beim Erstellen eines neuen Issues:
+- [Fehlerbericht](.github/ISSUE_TEMPLATE/bug_report.yml)
+- [Funktionswunsch](.github/ISSUE_TEMPLATE/feature_request.yml)
+- [Frage](.github/ISSUE_TEMPLATE/question.yml)
