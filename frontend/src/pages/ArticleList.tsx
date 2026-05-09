@@ -454,6 +454,14 @@ export default function ArticleList() {
                             >
                                 <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
                             </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="article-medium-import-btn"
+                                onClick={() => navigate("/articles/import/medium")}
+                                title={t("ui.medium_import.nav_label", "Aus Medium importieren")}
+                            >
+                                <Upload size={14} /> {t("ui.medium_import.nav_label", "Aus Medium importieren")}
+                            </button>
                             <div className={layout.headerSeparator} />
                             <button
                                 className="btn-icon"

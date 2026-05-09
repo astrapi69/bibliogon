@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
 import ArticleList from "./pages/ArticleList";
 import ArticleEditor from "./pages/ArticleEditor";
+import MediumImportPage from "./pages/MediumImportPage";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
@@ -83,6 +84,7 @@ export default function App() {
                 <Route path="/" element={<Dashboard/>}/>
                 <Route path="/book/:bookId" element={<BookEditor/>}/>
                 <Route path="/articles" element={<ArticleList/>}/>
+                <Route path="/articles/import/medium" element={<MediumImportPage/>}/>
                 <Route path="/articles/:id" element={<ArticleEditor/>}/>
                 <Route path="/settings" element={<Settings/>}/>
                 <Route path="/help" element={<Help/>}/>
