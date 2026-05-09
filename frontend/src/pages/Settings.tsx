@@ -1796,6 +1796,7 @@ function PluginCard({name, displayName, description, version, enabled, settings,
     onRemove: () => void;
 }) {
     const {t} = useI18n();
+    const navigate = useNavigate();
     const isCore = CORE_PLUGINS.has(name);
     const [localSettings, setLocalSettings] = useState(settings);
     const [expanded, setExpanded] = useState(false);
@@ -1899,6 +1900,29 @@ function PluginCard({name, displayName, description, version, enabled, settings,
                             settings={localSettings}
                             onSave={onSave}
                         />
+                    ) : name === "medium-import" ? (
+                        <div style={{display: "flex", flexDirection: "column", gap: 8}}>
+                            <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", margin: 0}}>
+                                {t(
+                                    "ui.medium_import.settings.pointer_hint",
+                                    "Einstellungen und Importe werden auf der dedizierten Medium-Import-Seite verwaltet.",
+                                )}
+                            </p>
+                            <div>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => navigate("/articles/import/medium")}
+                                    data-testid="settings-medium-import-pointer"
+                                >
+                                    <Upload size={12} />{" "}
+                                    {t(
+                                        "ui.medium_import.settings.pointer_button",
+                                        "Medium-Import öffnen",
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     ) : scalarSettings.length > 0 && (
                         <>
                             <h4 style={{fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 8}}>
