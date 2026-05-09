@@ -77,7 +77,7 @@ describe("MediumImportSettings", () => {
 
     it("falls back to defaults when the plugin config is missing (404)", async () => {
         getPluginMock.mockImplementation(async () => {
-            throw new ApiError(404, "not found");
+            throw new ApiError(404, "not found", "/api/settings/plugins/medium-import", "GET");
         });
         render(<MediumImportSettings />);
         await waitFor(() => {
