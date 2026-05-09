@@ -1,0 +1,119 @@
+.zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 28px 20px;
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    color: var(--text-secondary);
+}
+
+.zone:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.zone:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.dragOver {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.disabled:hover {
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+.icon {
+    color: var(--accent);
+}
+
+.primary {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.secondary {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.selected {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.selectedInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.filename {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filemeta {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.warning {
+    color: var(--accent);
+    font-size: 0.8125rem;
+    margin-top: 6px;
+}
+
+.error {
+    color: var(--danger);
+    font-size: 0.8125rem;
+    margin-top: 6px;
+}
+
+.clearBtn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+.clearBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
