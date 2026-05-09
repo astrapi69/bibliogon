@@ -58,6 +58,11 @@
 - Provide a scope when it's clear: feat(export): ..., fix(editor): ...
 - One commit per logical change, not everything in one.
 - Branch naming: feature/{name}, fix/{name}, chore/{name}
+- Do not add `Co-Authored-By` trailers attributing non-human
+  collaborators (AI tools, automation bots, MCP agents). Human
+  co-authors are attributed via the standard GitHub mechanism.
+  Exceptions require an explicit note in the commit body
+  stating who authorized the attribution.
 
 ## Function design and cohesion
 
