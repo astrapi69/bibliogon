@@ -531,6 +531,13 @@ class ArticleOut(BaseModel):
     # 0 keeps backwards compatibility with rows seeded before the
     # column existed.
     ai_tokens_used: int = 0
+    # Earliest Publication.published_at across all publications of
+    # this article; None when no publication has a published_at set.
+    # Computed at serialization time via Article.original_published_at
+    # property; not a DB column. Frontend prefers this over
+    # updated_at for date display so imported articles show the
+    # canonical Medium publish date instead of the import timestamp.
+    original_published_at: datetime | None = None
 
     @field_validator("tags", mode="before")
     @classmethod

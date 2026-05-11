@@ -347,6 +347,60 @@ def test_settings_topics_round_trip() -> None:
         )
 
 
+# --- original_published_at computed field ---
+
+
+def test_original_published_at_null_for_native_article_with_no_publications() -> None:
+    """A freshly-created native article has no publications, so the
+    computed field is None. Frontend will fall back to updated_at."""
+    article = _create("Native, no pubs")
+    assert "original_published_at" in article
+    assert article["original_published_at"] is None
+
+
+def _attach_publication(article_id: str, platform: str, published_at_iso: str) -> None:
+    """Insert a Publication row directly via ORM, bypassing the API's
+    per-platform schema validation. The schema validation tests live
+    in test_publications.py; here we only care about the
+    original_published_at computed-field surfacing."""
+    from datetime import datetime
+    from app.database import SessionLocal
+    from app.models import Publication
+
+    db = SessionLocal()
+    try:
+        pub = Publication(
+            article_id=article_id,
+            platform=platform,
+            status="published",
+            platform_metadata="{}",
+            published_at=datetime.fromisoformat(published_at_iso),
+        )
+        db.add(pub)
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_original_published_at_returns_publication_date_when_present() -> None:
+    """When a publication has published_at set, ArticleOut surfaces it."""
+    article = _create("With pub")
+    _attach_publication(article["id"], "medium", "2024-01-15T10:00:00+00:00")
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["original_published_at"] is not None
+    assert fetched["original_published_at"].startswith("2024-01-15T10:00:00")
+
+
+def test_original_published_at_returns_earliest_when_multiple_publications() -> None:
+    """Earliest published_at across all publications wins. Mirrors
+    the semantic "first time this article was published anywhere"."""
+    article = _create("Multi-pub")
+    _attach_publication(article["id"], "medium", "2024-06-15T10:00:00+00:00")
+    _attach_publication(article["id"], "linkedin", "2024-02-01T10:00:00+00:00")
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["original_published_at"].startswith("2024-02-01T10:00:00")
+
+
 def test_article_crud_does_not_create_book_rows() -> None:
     """Sanity: creating articles does not pollute the books table.
     (Article is its own entity, separate from Book.)"""

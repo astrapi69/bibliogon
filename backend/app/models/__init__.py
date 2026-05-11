@@ -485,6 +485,29 @@ class Article(Base):
         uselist=False,
     )
 
+    @property
+    def original_published_at(self) -> datetime | None:
+        """Earliest ``Publication.published_at`` across all publications.
+
+        Surfaced via ``ArticleOut`` so dashboard tiles and the
+        article view can display the canonical publish date (when
+        the post first went live on any platform) instead of the
+        DB-row ``created_at`` (which is the import-into-Bibliogon
+        timestamp for imported posts and would otherwise show e.g.
+        "May 2026" for a Medium article published in 2020).
+
+        Returns None for:
+
+        - Native Bibliogon articles with no publications yet
+        - Articles whose publications are all still in ``planned``
+          / ``scheduled`` status (``published_at is None``)
+
+        Frontend prefers this value over ``updated_at`` for date
+        display; when None it falls back to ``updated_at``.
+        """
+        dates = [p.published_at for p in self.publications if p.published_at]
+        return min(dates) if dates else None
+
     def __repr__(self) -> str:
         return f"<Article {self.id!r} title={self.title!r} status={self.status}>"
 
