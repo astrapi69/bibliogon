@@ -422,3 +422,105 @@ def test_setting_default_status_junk_value_falls_back_to_published(
     )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.status == "published"
+
+
+# ---------------------------------------------------------------------------
+# set_first_image_as_featured — five-scenario behavior matrix
+# ---------------------------------------------------------------------------
+
+
+def _build_zip_with_inline_post(filename: str, html: str) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"posts/{filename}", html.encode("utf-8"))
+    return buf.getvalue()
+
+
+_NO_IMAGE_HTML = """\
+<!DOCTYPE html><html><head><title>Plain post</title></head><body>
+<article>
+<header>
+  <a class="p-canonical" href="https://medium.com/@user/plain-post-abcd1234"></a>
+  <h1 class="p-name">A post with no images</h1>
+</header>
+<section data-field="body">
+  <section><div><p class="graf graf--p">Just text. No body images at all.</p></div></section>
+</section>
+</article>
+</body></html>
+"""
+
+
+def test_featured_image_set_when_on_and_images_present_with_download_on(
+    client: TestClient, db: Session
+) -> None:
+    """Default behavior: download ON + featured ON -> first body image's
+    LOCAL (rewritten) URL becomes featured_image_url."""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"set_first_image_as_featured": True, "download_images": True},
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.featured_image_url is not None
+    assert article.featured_image_url.startswith(f"/api/articles/{article.id}/assets/file/"), (
+        f"expected local-rewritten URL, got {article.featured_image_url!r}"
+    )
+
+
+def test_featured_image_uses_cdn_when_download_off(
+    client: TestClient, db: Session
+) -> None:
+    """download OFF + featured ON -> featured URL stays CDN-hosted
+    (mirrors the body's image URL)."""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"set_first_image_as_featured": True, "download_images": False},
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.featured_image_url is not None
+    assert article.featured_image_url.startswith("https://cdn-images-1.medium.com/"), (
+        f"expected CDN URL when download_images=False, got {article.featured_image_url!r}"
+    )
+
+
+def test_featured_image_null_when_setting_off(
+    client: TestClient, db: Session
+) -> None:
+    """set_first_image_as_featured=False -> featured_image_url stays
+    null even when the post has images."""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"set_first_image_as_featured": False},
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.featured_image_url is None
+
+
+def test_featured_image_null_when_no_images_in_post(
+    client: TestClient, db: Session
+) -> None:
+    """set_first_image_as_featured=True but the post has zero images
+    -> featured_image_url stays null. No error, no warning."""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip_with_inline_post("plain-post.html", _NO_IMAGE_HTML),
+        {"set_first_image_as_featured": True},
+    )
+    assert body["imported_count"] == 1
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.featured_image_url is None
+
+
+def test_featured_image_default_setting_is_on(
+    client: TestClient, db: Session
+) -> None:
+    """An empty settings dict (no key set) must apply the ON default,
+    so users get featured images out of the box without configuring."""
+    body = _post_zip_with_settings(
+        client, _build_zip(["01_oldest_tech.html"]), {}
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.featured_image_url is not None  # default = ON

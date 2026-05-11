@@ -33,3 +33,10 @@ settings:
   # definition published; "published" mirrors that. User can
   # archive selectively post-import.
   default_status: "published"
+
+  # Take the first image in the article body and use its URL as the
+  # Article.featured_image_url. Default on because Medium posts
+  # almost always have a header image and the dashboard's article
+  # tile renders much better with a thumbnail. Disable for authors
+  # who curate featured images manually.
+  set_first_image_as_featured: true

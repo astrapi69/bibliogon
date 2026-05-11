@@ -89,6 +89,7 @@ def import_zip(
     skip_existing: bool = True,
     default_status: str = "published",
     default_language: str = "en",
+    set_first_image_as_featured: bool = True,
     http_client: httpx.Client | None = None,
 ) -> ImportResult:
     """Import every ``posts/*.html`` from the given Medium ZIP."""
@@ -126,6 +127,7 @@ def import_zip(
                     skip_existing=skip_existing,
                     default_status=default_status,
                     default_language=default_language,
+                    set_first_image_as_featured=set_first_image_as_featured,
                     http_client=http_client,
                 )
             except Exception as exc:  # noqa: BLE001 - boundary handler
@@ -144,6 +146,7 @@ def _import_one_post(
     skip_existing: bool,
     default_status: str,
     default_language: str,
+    set_first_image_as_featured: bool,
     http_client: httpx.Client | None,
 ) -> None:
     """Import a single Medium HTML post.
@@ -209,6 +212,7 @@ def _import_one_post(
         db.commit()
 
         warnings: list[str] = list(parsed.warnings)
+        url_rewrites: dict[str, str] = {}
         if download_images_enabled and parsed.images:
             download_result = download_images(
                 parsed.images,
@@ -217,12 +221,27 @@ def _import_one_post(
                 client=http_client,
             )
             warnings.extend(download_result.warnings)
-            if download_result.url_rewrites:
-                rewritten = rewrite_image_urls(parsed.content_doc, download_result.url_rewrites)
+            url_rewrites = download_result.url_rewrites
+            if url_rewrites:
+                rewritten = rewrite_image_urls(parsed.content_doc, url_rewrites)
                 # Update the article's content_json with rewritten doc.
                 article = db.query(Article).filter(Article.id == article_id).one()
                 article.content_json = json.dumps(rewritten)
                 db.commit()
+
+        # Featured image: take the first body image's URL. After the
+        # rewrite block, ``url_rewrites`` maps CDN -> local; when
+        # download_images is OFF or the image failed to download, the
+        # CDN URL falls through. Mirrors the user's mental model:
+        # "the featured image is the same image you see at the top of
+        # the article body". Skipped silently when the post has no
+        # images or the toggle is OFF.
+        if set_first_image_as_featured and parsed.images:
+            first_src = parsed.images[0].src
+            local_src = url_rewrites.get(first_src)
+            article = db.query(Article).filter(Article.id == article_id).one()
+            article.featured_image_url = local_src or first_src
+            db.commit()
 
         # Provenance.
         import_metadata = {
