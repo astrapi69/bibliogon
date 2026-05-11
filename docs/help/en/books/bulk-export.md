@@ -39,9 +39,15 @@ Cover ZIP filename: `books-YYYY-MM-DD.zip`. The date stamp lets you sort multipl
 ## What does not happen
 
 - **No combined-document mode.** Books bulk export ships ZIP-only by design. Merging N books into one EPUB / PDF would have to decide whose metadata wins, which book contributes the cover, what the table of contents looks like — none of which is a natural author workflow. If your use case really needs a combined book, file a backlog request and we will revisit.
-- No bulk delete, bulk publish, or bulk genre reassignment. Bulk export is the only multi-book operation today.
+- No bulk publish or bulk genre reassignment. Bulk export and bulk delete are the only multi-book operations today.
 - No drag-drop ordering inside an export dialog. The order of files in the ZIP follows the order of book IDs in the request, which is the dashboard's current sort order.
 - No per-book format override. All selected books export to the same format.
+
+## Bulk delete
+
+The same selection model that drives bulk export also drives bulk delete on the Books dashboard. Filter, select, click the red **Löschen** button. The dropdown offers **In Papierkorb verschieben** (soft, undoable for ~10 seconds via the toast button) and **Endgültig löschen** (permanent, gated by typing the numeric count to confirm).
+
+Permanent delete cascades to the book's Chapter, Asset and BookImportSource rows. The active filter description appears in the confirm dialog so the scope is explicit (e.g. "Genre=Fantasy, Sprache=de"). The button is disabled when fewer than 2 books are selected; single-book delete still lives on the row menu. Server-side cap is 200 per call.
 
 ## Tips
 

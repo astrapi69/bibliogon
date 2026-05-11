@@ -2,6 +2,23 @@
 
 These rules come from real development and solve problems that would otherwise come back over and over.
 
+## Bulk-action UX: action-bar + selection-hook decoupling stays useful
+
+The bulk-delete feature shipped fast because the existing `ArticleBulkActionBar` / `BookBulkActionBar` + `useArticleSelection` / `useBookSelection` hooks were already decoupled from any specific operation. The hook holds `Set<string>` of selected IDs plus filter-aware `selectAll(ids)` that takes an explicit list. The bar is pure-presentational, taking the count + handlers. The page wires whatever operation it wants.
+
+Adding bulk-delete meant adding two optional props (`onBulkDelete`, `onBulkDeletePermanent`) to each bar and the corresponding handlers in the page. No restructuring; no risk to the existing bulk-export flow; no changes to the selection hook.
+
+Rule for future bulk operations (bulk-edit-status, bulk-tag, bulk-export-variant, etc.):
+
+- Add optional handler props on the bar. Don't push operation-specific UI into the hook.
+- Selection state stays orthogonal to the operations that consume it.
+- Filter-aware `selectAll` callers (`filters.filteredArticles.map(a => a.id)`) are the canonical "operate on the visible-after-filter set" pattern. Don't second-guess; future bulk operations will want exactly this.
+
+What NOT to do:
+- Don't add per-operation state to the selection hook (e.g. `useArticleSelection` should never know whether the current operation is "delete" vs "export").
+- Don't fork the bar into per-operation components (`ArticleBulkDeleteBar` is wrong; one bar that takes operation handlers is right).
+- Don't centralize bulk-operation logic into a higher-order component. The page-level handlers (each with its own toast / refresh / error semantics) are the right place. Centralizing it would force every operation to fit one shape.
+
 ## Medium HTML exports strip every SEO meta tag
 
 Verified across the 209-post production corpus: no `<meta name="description">`, no `og:title`, no `og:description`, no `og:image`, no `<html lang>`. Only `<title>` (which equals the article H1) and `<section data-field="subtitle">` survive.

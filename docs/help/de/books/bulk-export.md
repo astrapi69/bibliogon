@@ -39,9 +39,15 @@ Hülldatei: `books-YYYY-MM-DD.zip`. Das Datum hilft, mehrere Massen-Exporte ohne
 ## Was nicht passiert
 
 - **Kein Modus „kombiniertes Dokument".** Massen-Export von Büchern liefert ausschließlich ZIP — bewusst so. N Bücher in ein einziges EPUB / PDF zu fusionieren müsste entscheiden, wessen Metadaten gewinnen, welches Buch das Cover beisteuert, wie das Inhaltsverzeichnis aussieht — keine davon ist ein natürlicher Autor-Workflow. Wenn dein Anwendungsfall ein kombiniertes Buch wirklich braucht: Backlog-Eintrag öffnen, dann sehen wir es uns an.
-- Kein Massen-Löschen, Massen-Veröffentlichen oder Massen-Genre-Wechsel. Massen-Export ist heute die einzige Mehrfach-Aktion auf Büchern.
+- Kein Massen-Veröffentlichen oder Massen-Genre-Wechsel. Massen-Export und Massen-Löschen sind heute die einzigen Mehrfach-Aktionen auf Büchern.
 - Keine Drag-Drop-Sortierung im Export-Dialog. Die Reihenfolge der Dateien im ZIP folgt der Reihenfolge der Buch-IDs in der Anfrage — also die aktive Dashboard-Sortierung.
 - Kein Pro-Buch-Format. Alle ausgewählten Bücher werden im selben Format exportiert.
+
+## Massen-Löschen
+
+Dasselbe Auswahl-Modell, das Massen-Export antreibt, treibt auch Massen-Löschen auf dem Bücher-Dashboard. Filtern, auswählen, auf den roten **Löschen**-Button klicken. Das Dropdown bietet **In Papierkorb verschieben** (weiches Löschen, ca. 10 Sekunden lang per Toast-Button rückgängig zu machen) und **Endgültig löschen** (endgültig, abgesichert durch Eintippen der Anzahl).
+
+Endgültiges Löschen kaskadiert zu den Kapitel-, Asset- und BookImportSource-Zeilen des Buchs. Die aktive Filter-Beschreibung erscheint im Bestätigungsdialog, damit der Umfang explizit ist (z. B. „Genre=Fantasy, Sprache=de"). Der Button ist deaktiviert, wenn weniger als 2 Bücher ausgewählt sind; Einzelbuch-Löschen liegt weiterhin auf dem Zeilen-Menü. Server-seitige Obergrenze: 200 pro Aufruf.
 
 ## Tipps
 

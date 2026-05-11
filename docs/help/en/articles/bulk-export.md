@@ -69,3 +69,14 @@ Article order in the combined document is the order shown on screen (the dashboa
 - Sort the dashboard by date descending (the default) and select the top N articles for a "recent posts" anthology.
 - Filter by series, click "Select all", export combined PDF for a series collection.
 - Filter by tag, then "Select all", then ZIP markdown if you want to feed the result into another tool.
+
+## Bulk delete
+
+The same selection model that drives bulk export also drives bulk delete. Pick the articles (filter + Select all, or click checkboxes individually), then click the red **Löschen** button next to Export. A dropdown offers two paths:
+
+- **In Papierkorb verschieben** — soft-delete. The articles move to the trash and the success toast offers an Undo button for ~10 seconds. The Undo restores every article that was successfully moved.
+- **Endgültig löschen** — permanent delete. Opens a confirmation dialog that shows the count, the active filter description (e.g. "Status=draft, Sprache=de"), and a numeric input. You must type the count to enable the confirm button. No undo — the data and its cascade children (publications, assets, import-source) are gone.
+
+The bulk-delete button is disabled when fewer than 2 articles are selected. For a single article, use the row-menu delete action — bulk-delete UX would be theater for count=1.
+
+Server-side cap: 200 articles per call (matches bulk export). Selecting more shows a warning over 50, hard-blocks the button over 200.

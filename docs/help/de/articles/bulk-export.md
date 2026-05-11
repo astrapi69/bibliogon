@@ -60,9 +60,20 @@ Reihenfolge der Artikel im kombinierten Dokument: die im Dashboard aktive Sortie
 
 ## Was nicht passiert
 
-- Kein Massen-Löschen, Massen-Veröffentlichen oder Massen-Tagging. Massen-Export ist heute die einzige Mehrfach-Aktion.
+- Kein Massen-Veröffentlichen, Massen-Tagging oder Massen-Status-Wechsel. Massen-Export und Massen-Löschen sind heute die einzigen Mehrfach-Aktionen.
 - Keine Drag-Drop-Sortierung im Export-Dialog. Die Reihenfolge ist die aktive Dashboard-Sortierung.
 - Kein Pro-Artikel-Format. Alle ausgewählten Artikel werden im selben Format exportiert.
+
+## Massen-Löschen
+
+Dasselbe Auswahl-Modell, das Massen-Export antreibt, treibt auch Massen-Löschen an. Wähle die Artikel (Filter + "Alle auswählen" oder Häkchen einzeln), klicke dann auf den roten **Löschen**-Button neben Export. Ein Dropdown bietet zwei Wege:
+
+- **In Papierkorb verschieben** – weiches Löschen. Die Artikel landen im Papierkorb und der Erfolgs-Toast bietet einen Rückgängig-Button für ca. 10 Sekunden. Rückgängig stellt jeden erfolgreich verschobenen Artikel wieder her.
+- **Endgültig löschen** – endgültiges Löschen. Öffnet einen Bestätigungsdialog mit der Anzahl, der aktiven Filter-Beschreibung (z. B. "Status=Entwurf, Sprache=de") und einem Zahleneingabe-Feld. Du musst die Anzahl tippen, damit der Bestätigungs-Button aktiv wird. Kein Rückgängig – die Daten und ihre Cascade-Kinder (Publications, Assets, Import-Source) sind weg.
+
+Der Massen-Löschen-Button ist deaktiviert, wenn weniger als 2 Artikel ausgewählt sind. Für einen einzelnen Artikel den Zeilen-Menü-Lösch-Eintrag nutzen – Massen-Löschen-UX wäre Theater bei Anzahl=1.
+
+Server-seitige Obergrenze: 200 Artikel pro Aufruf (gleich wie Massen-Export). Mehr auswählen zeigt eine Warnung über 50, hart blockiert den Button über 200.
 
 ## Tipps
 
