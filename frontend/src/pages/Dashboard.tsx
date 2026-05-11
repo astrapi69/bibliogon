@@ -8,6 +8,8 @@ import BookBulkActionBar, {
     type BookBulkExportFormat,
     BOOK_BULK_LIMIT_HARD,
 } from "../components/BookBulkActionBar";
+import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
+import { formatActiveBookFilters } from "../utils/formatActiveFilters";
 import {useBookSelection} from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useViewMode } from "../hooks/useViewMode";
@@ -88,6 +90,95 @@ export default function Dashboard() {
                     ? err.detail
                     : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
             notify.error(message);
+        }
+    };
+
+    // Bulk-delete state. Same shape as the Articles dashboard;
+    // see ArticleList.tsx for the rationale + behavior matrix.
+    const [bulkDeleteDialog, setBulkDeleteDialog] = useState<{
+        ids: string[];
+        count: number;
+    } | null>(null);
+
+    const handleBulkBookDelete = async (permanent: false) => {
+        const ordered = filters.filteredBooks
+            .map((b) => b.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2 || ordered.length > BOOK_BULK_LIMIT_HARD) return;
+        try {
+            const result = await api.books.bulkDelete(ordered, permanent);
+            setBooks((prev) =>
+                prev.filter(
+                    (b) =>
+                        !ordered.includes(b.id) ||
+                        result.failed.some((f) => f.id === b.id),
+                ),
+            );
+            loadTrash();
+            selection.clear();
+            const message = t(
+                "ui.bulk_delete.toast_trashed",
+                "{count} in den Papierkorb verschoben",
+            ).replace("{count}", String(result.deleted_count));
+            notify.bulkAction(
+                message,
+                async () => {
+                    try {
+                        const undone = ordered.filter(
+                            (id) =>
+                                !result.skipped_already_trashed.includes(id) &&
+                                !result.failed.some((f) => f.id === id),
+                        );
+                        await Promise.all(undone.map((id) => api.books.restore(id)));
+                        loadBooks();
+                        loadTrash();
+                        notify.info(
+                            t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                        );
+                    } catch (undoErr) {
+                        notify.error(
+                            t("ui.bulk_delete.toast_undo_failed", "Wiederherstellen fehlgeschlagen"),
+                            undoErr,
+                        );
+                    }
+                },
+                t("ui.bulk_delete.undo_label", "Rückgängig"),
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
+                err,
+            );
+        }
+    };
+
+    const handleBulkBookDeletePermanentRequest = () => {
+        const ordered = filters.filteredBooks
+            .map((b) => b.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2 || ordered.length > BOOK_BULK_LIMIT_HARD) return;
+        setBulkDeleteDialog({ ids: ordered, count: ordered.length });
+    };
+
+    const handleBulkBookDeletePermanentConfirmed = async () => {
+        if (!bulkDeleteDialog) return;
+        const { ids } = bulkDeleteDialog;
+        setBulkDeleteDialog(null);
+        try {
+            const result = await api.books.bulkDelete(ids, true);
+            setBooks((prev) => prev.filter((b) => !ids.includes(b.id)));
+            selection.clear();
+            notify.success(
+                t(
+                    "ui.bulk_delete.toast_deleted_permanent",
+                    "{count} endgültig gelöscht",
+                ).replace("{count}", String(result.deleted_count)),
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
+                err,
+            );
         }
     };
 
@@ -471,6 +562,8 @@ export default function Dashboard() {
                                 <BookBulkActionBar
                                     count={selection.count}
                                     onExport={(fmt) => void handleBulkBookExport(fmt)}
+                                    onBulkDelete={() => void handleBulkBookDelete(false)}
+                                    onBulkDeletePermanent={handleBulkBookDeletePermanentRequest}
                                     onClear={selection.clear}
                                     t={t}
                                 />
@@ -627,6 +720,16 @@ export default function Dashboard() {
                     donations={donationsConfig}
                 />
             ) : null}
+            {bulkDeleteDialog && (
+                <TypeToConfirmDialog
+                    open
+                    count={bulkDeleteDialog.count}
+                    filterDescription={formatActiveBookFilters(filters, t)}
+                    itemNoun={t("ui.bulk_delete.items_books", "Bücher")}
+                    onConfirm={() => void handleBulkBookDeletePermanentConfirmed()}
+                    onCancel={() => setBulkDeleteDialog(null)}
+                />
+            )}
         </div>
     );
 }
