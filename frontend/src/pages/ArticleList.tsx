@@ -1123,17 +1123,23 @@ function ArticleRow({
 }) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
+    // Prefer original_published_at (computed server-side as the
+    // earliest Publication.published_at) over updated_at so imported
+    // articles show their canonical Medium publish date instead of
+    // the import timestamp. Native articles with no publications
+    // fall back to updated_at unchanged.
+    const displayDateRaw = article.original_published_at ?? article.updated_at;
     const updated = useMemo(() => {
         try {
-            return new Date(article.updated_at).toLocaleDateString("de-DE", {
+            return new Date(displayDateRaw).toLocaleDateString("de-DE", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
             });
         } catch {
-            return article.updated_at;
+            return displayDateRaw;
         }
-    }, [article.updated_at]);
+    }, [displayDateRaw]);
 
     return (
         <li

@@ -30,15 +30,22 @@ interface Props {
 export default function ArticleCard({ article, onClick, onDelete, onDeletePermanent }: Props) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
+    // Prefer the canonical "first published anywhere" date for
+    // imported articles; fall back to ``updated_at`` for native
+    // articles that have no publications yet. See lessons-learned:
+    // a Medium article published in 2020 should NOT display
+    // ``updated_at`` (the 2026 Bibliogon import timestamp) as its
+    // public date.
+    const displayDateRaw = article.original_published_at ?? article.updated_at;
     const updated = (() => {
         try {
-            return new Date(article.updated_at).toLocaleDateString("de-DE", {
+            return new Date(displayDateRaw).toLocaleDateString("de-DE", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
             });
         } catch {
-            return article.updated_at;
+            return displayDateRaw;
         }
     })();
 

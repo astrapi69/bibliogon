@@ -173,6 +173,14 @@ export interface Article {
      *  was soft-deleted; null while live. The default list endpoint
      *  filters trashed entries out so the dashboard never sees them. */
     deleted_at?: string | null
+    /** Earliest ``Publication.published_at`` across all publications.
+     *  Computed server-side on every read; not a DB column. Null
+     *  for native articles with no publications (or where every
+     *  publication is still ``planned`` / ``scheduled``). Frontend
+     *  prefers this over ``updated_at`` for date display so imported
+     *  articles show the canonical Medium publish date instead of
+     *  the import timestamp. */
+    original_published_at?: string | null
 }
 
 export interface ArticleCreate {
