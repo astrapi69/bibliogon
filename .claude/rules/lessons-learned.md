@@ -2,6 +2,30 @@
 
 These rules come from real development and solve problems that would otherwise come back over and over.
 
+## Walker iterating repeated containers: prefer `find_all` over `find`
+
+The medium-import walker shipped with `section.find("div", class_="section-inner")` which returned only the FIRST match. Medium's standard header-image layout puts THREE `section-inner` divs per `<section class="section--body">` (title, image lane, main body). The bug silently dropped the entire main body of every Medium post that used the standard layout, for ~33% of the production import. The pre-walker tests didn't catch it because the existing fixtures had small inner[2] sections relative to the rest of the body, masking the loss in their pass-rate ratio.
+
+Rule for any future walker / scraper / HTML-shaped consumer:
+
+- Whenever a container can repeat under the same parent (CSS class match, attribute selector, etc.), use `find_all` and iterate. Use `find` only when you have a structural guarantee that there is ONE — i.e. element with a unique id, root element, etc.
+- Tests for repeated-container walks must include at least one fixture where a non-first occurrence carries the bulk of the content. The "all fixtures pass overall ratio check" smoke is not enough; the multi-occurrence-with-content-distributed-late shape is its own structural class.
+- When patching a `find` to `find_all`, immediately check the broader corpus (ideally a real production sample) for cases where the old code silently lost data. Don't trust the existing test pass-rate to confirm the patch was unnecessary.
+
+This generalizes beyond CSS-class lookups. The same shape — "we got the first match and assumed there was one" — appears in: regex `re.search` vs `re.findall`, SQLAlchemy `query.first()` vs `query.all()`, dict-from-list-of-pairs comprehensions that silently dedup keys.
+
+## User impression of scope is anchored on what they noticed, not what's broken
+
+User reported "einige" (a few) Medium articles imported with truncated content. Spotted ONE specific article. Systematic survey before patching revealed 117/209 (56%) had content loss; 9 imported with literally zero text. The user's "einige" was based on how many articles they happened to notice during normal use, not a count of the broken set.
+
+Same session: user reported "some German articles correctly detected as German". DB inspection showed 207 English + 2 German rows, both German rows with `updated_at > created_at` — the user had manually corrected those two. The walker did no language detection at all. The user's "correctly detected" was a false memory of their own manual edits.
+
+Rule:
+
+- When a user reports a bug with quantitative scope ("a few", "most", "sometimes"), treat the count as a starting hint, not authority. Run a systematic survey (DB query, corpus sample, log scrape) BEFORE scoping the fix. The actual scope can easily be 10x what the user noticed.
+- When a user reports MECHANISM ("X is detected as Y"), trust the SYMPTOM but verify the mechanism in code. Users are reliable observers of "it doesn't work as I expected"; their inferences about WHY are often shaped by hopeful priors ("surely there's some detection somewhere"). Read the code path before acting on the inference.
+- The pre-inspection report must include the survey results when the user's report was quantitative. "User said few; survey shows N=X" is a separate bullet, not a parenthetical. The discrepancy itself is information.
+
 ## End-to-end behavior tests are not "kwarg passes through" tests
 
 The MEDIUM-IMPORT-FRONTEND-UI-01 session (2026-05-09) shipped a Settings UI that wrote 4 user-toggleable settings to `backend/config/plugins/medium-import.yaml`. The plugin's `activate()` read them into `self._settings`. The test suite included a smoke test confirming `_settings == {"download_images": False}` was set correctly. **It all looked working.**
