@@ -35,6 +35,7 @@ from app.routers import (
     assets,
     audiobook,
     backup,
+    book_ai_template,
     books,
     bulk_delete,
     chapter_templates,
@@ -501,6 +502,8 @@ app.include_router(article_bulk_export.router, prefix="/api")
 app.include_router(article_ai_template.articles_router, prefix="/api")
 app.include_router(article_ai_template.empty_router, prefix="/api")
 app.include_router(article_ai_fill.router, prefix="/api")
+app.include_router(book_ai_template.books_router, prefix="/api")
+app.include_router(book_ai_template.empty_router, prefix="/api")
 app.include_router(bulk_delete.articles_router, prefix="/api")
 app.include_router(bulk_delete.books_router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")

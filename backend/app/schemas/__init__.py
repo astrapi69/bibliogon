@@ -183,6 +183,10 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # UNIVERSAL-AI-TEMPLATE-01 Session 1 columns. Same JSON-text-as-list
+    # convention as keywords for chapter_summaries.
+    cover_image_prompt: str | None = None
+    chapter_summaries: list[dict] = []
     ai_assisted: bool = False
     ai_tokens_used: int = 0
     tts_engine: str | None = None
@@ -220,6 +224,25 @@ class BookOut(BaseModel):
                 return []
             if isinstance(parsed, list):
                 return [str(v) for v in parsed]
+            return []
+        return []
+
+    @field_validator("chapter_summaries", mode="before")
+    @classmethod
+    def _decode_chapter_summaries(cls, value: Any) -> list[dict]:
+        """chapter_summaries column is JSON-text storing
+        ``[{chapter_id, title, summary}]``. Decode for the API."""
+        if value is None or value == "":
+            return []
+        if isinstance(value, list):
+            return [v for v in value if isinstance(v, dict)]
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+            if isinstance(parsed, list):
+                return [v for v in parsed if isinstance(v, dict)]
             return []
         return []
 
