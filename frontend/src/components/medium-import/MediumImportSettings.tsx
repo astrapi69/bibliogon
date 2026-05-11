@@ -7,10 +7,10 @@
  * incoming keys into the plugin's settings dict, so partial saves
  * are safe.
  *
- * Save is button-driven (no instant-on-change) per Q7. The four
+ * Save is button-driven (no instant-on-change) per Q7. The five
  * fields mirror plugin.yaml keys 1:1: download_images,
  * image_download_timeout_seconds, skip_existing_canonical_urls,
- * default_status.
+ * default_status, set_first_image_as_featured.
  */
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../../api/client";
@@ -27,6 +27,7 @@ interface SettingsState {
     image_download_timeout_seconds: number;
     skip_existing_canonical_urls: boolean;
     default_status: Status;
+    set_first_image_as_featured: boolean;
 }
 
 const DEFAULTS: SettingsState = {
@@ -34,6 +35,7 @@ const DEFAULTS: SettingsState = {
     image_download_timeout_seconds: 30,
     skip_existing_canonical_urls: true,
     default_status: "published",
+    set_first_image_as_featured: true,
 };
 
 function coerceStatus(value: unknown): Status {
@@ -60,6 +62,10 @@ function readState(raw: Record<string, unknown> | undefined): SettingsState {
                 ? settings.skip_existing_canonical_urls
                 : DEFAULTS.skip_existing_canonical_urls,
         default_status: coerceStatus(settings.default_status),
+        set_first_image_as_featured:
+            typeof settings.set_first_image_as_featured === "boolean"
+                ? settings.set_first_image_as_featured
+                : DEFAULTS.set_first_image_as_featured,
     };
 }
 
@@ -108,6 +114,7 @@ export default function MediumImportSettings() {
                 image_download_timeout_seconds: state.image_download_timeout_seconds,
                 skip_existing_canonical_urls: state.skip_existing_canonical_urls,
                 default_status: state.default_status,
+                set_first_image_as_featured: state.set_first_image_as_featured,
             });
             setSavedAt(Date.now());
         } catch (err) {
@@ -217,6 +224,39 @@ export default function MediumImportSettings() {
                         {t(
                             "ui.medium_import.settings.skip_existing_hint",
                             "Artikel mit derselben Medium-URL werden nicht erneut importiert.",
+                        )}
+                    </span>
+                </label>
+            </div>
+
+            <div className={styles.checkboxField}>
+                <input
+                    id="medium-import-set-first-image-as-featured"
+                    type="checkbox"
+                    className={styles.checkbox}
+                    checked={state.set_first_image_as_featured}
+                    onChange={(e) =>
+                        setState((s) => ({
+                            ...s,
+                            set_first_image_as_featured: e.target.checked,
+                        }))
+                    }
+                    data-testid="medium-import-settings-set-first-image-as-featured"
+                />
+                <label
+                    htmlFor="medium-import-set-first-image-as-featured"
+                    className={styles.checkboxLabel}
+                >
+                    <span className={styles.label}>
+                        {t(
+                            "ui.medium_import.settings.set_first_image_as_featured",
+                            "Erstes Bild als Titelbild setzen",
+                        )}
+                    </span>
+                    <span className={styles.hint}>
+                        {t(
+                            "ui.medium_import.settings.set_first_image_as_featured_hint",
+                            "Empfohlen. Das erste Bild im Beitragstext wird als Titelbild des Artikels gespeichert. Posts ohne Bilder bleiben ohne Titelbild.",
                         )}
                     </span>
                 </label>

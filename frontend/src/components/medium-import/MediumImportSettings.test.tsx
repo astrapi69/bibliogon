@@ -56,6 +56,7 @@ describe("MediumImportSettings", () => {
                 image_download_timeout_seconds: 60,
                 skip_existing_canonical_urls: false,
                 default_status: "draft",
+                set_first_image_as_featured: false,
             },
         }));
         render(<MediumImportSettings />);
@@ -73,6 +74,10 @@ describe("MediumImportSettings", () => {
             "medium-import-settings-default-status",
         ) as HTMLSelectElement;
         expect(select.value).toBe("draft");
+        const featured = screen.getByTestId(
+            "medium-import-settings-set-first-image-as-featured",
+        ) as HTMLInputElement;
+        expect(featured.checked).toBe(false);
     });
 
     it("falls back to defaults when the plugin config is missing (404)", async () => {
@@ -104,7 +109,40 @@ describe("MediumImportSettings", () => {
                 image_download_timeout_seconds: 30,
                 skip_existing_canonical_urls: true,
                 default_status: "published",
+                set_first_image_as_featured: true,
             });
+        });
+    });
+
+    it("set_first_image_as_featured defaults to true when key is absent", async () => {
+        getPluginMock.mockImplementation(async () => ({ settings: {} }));
+        render(<MediumImportSettings />);
+        await waitFor(() => {
+            const checkbox = screen.getByTestId(
+                "medium-import-settings-set-first-image-as-featured",
+            ) as HTMLInputElement;
+            expect(checkbox.checked).toBe(true);
+        });
+    });
+
+    it("set_first_image_as_featured toggle persists through save", async () => {
+        getPluginMock.mockImplementation(async () => ({ settings: {} }));
+        render(<MediumImportSettings />);
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("medium-import-settings-save"),
+            ).not.toBeDisabled();
+        });
+        const checkbox = screen.getByTestId(
+            "medium-import-settings-set-first-image-as-featured",
+        ) as HTMLInputElement;
+        fireEvent.click(checkbox);  // flip to off
+        fireEvent.click(screen.getByTestId("medium-import-settings-save"));
+        await waitFor(() => {
+            expect(updatePluginMock).toHaveBeenCalledWith(
+                "medium-import",
+                expect.objectContaining({ set_first_image_as_featured: false }),
+            );
         });
     });
 
