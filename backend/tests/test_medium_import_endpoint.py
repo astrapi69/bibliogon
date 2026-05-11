@@ -576,3 +576,72 @@ def test_language_low_confidence_falls_back_to_default(
     # Walker returns None for too-short text; importer falls back to
     # default_language (currently "en").
     assert article.language == "en"
+
+
+# ---------------------------------------------------------------------------
+# SEO defaults — end-to-end behavior tests
+#
+# Medium HTML exports strip every SEO meta tag (no <meta description>,
+# og:title, og:description, og:image). The walker's only authored
+# SEO-adjacent signals are article title and subtitle. The importer
+# mirrors them into seo_title / seo_description so the dashboard tile
+# + public meta tags have sane defaults on import.
+# ---------------------------------------------------------------------------
+
+
+def test_seo_title_defaults_to_article_title(
+    client: TestClient, db: Session
+) -> None:
+    body = _post_zip(client, _build_zip(["01_oldest_tech.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.seo_title == article.title
+    assert article.seo_title  # non-empty
+
+
+def test_seo_description_defaults_to_subtitle_when_present(
+    client: TestClient, db: Session
+) -> None:
+    body = _post_zip(client, _build_zip(["02_german_philosophical.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.subtitle  # fixture has a subtitle
+    assert article.seo_description == article.subtitle
+
+
+def test_seo_description_null_when_post_has_no_subtitle(
+    client: TestClient, db: Session
+) -> None:
+    """Strict SEO-D: no body-text fallback. When the source has no
+    subtitle, seo_description stays null and the user can either
+    leave it or use the AI-generate button in the editor."""
+    no_subtitle_html = """\
+<!DOCTYPE html><html><head><title>NoSub</title></head><body>
+<article>
+<header>
+  <a class="p-canonical" href="https://medium.com/@u/nosub-zzz9999"></a>
+  <h1 class="p-name">Plain article with no subtitle</h1>
+</header>
+<section data-field="body">
+  <section class="section section--body"><div class="section-content"><div class="section-inner">
+    <p class="graf graf--p">This article body has more than fifty characters so language detection runs cleanly.</p>
+  </div></div></section>
+</section>
+</article>
+</body></html>
+"""
+    body = _post_zip(client, _build_zip_with_inline_post("nosub.html", no_subtitle_html))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.subtitle is None
+    assert article.seo_description is None
+    # seo_title still mirrors title even without subtitle.
+    assert article.seo_title == article.title
+
+
+def test_tags_stay_empty_list_on_import(
+    client: TestClient, db: Session
+) -> None:
+    """Medium HTML strips tags from the export. Per the v1 design,
+    importer always writes tags='[]'; users add tags manually or
+    via the AI-generate-tags button."""
+    body = _post_zip(client, _build_zip(["01_oldest_tech.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.tags == "[]"

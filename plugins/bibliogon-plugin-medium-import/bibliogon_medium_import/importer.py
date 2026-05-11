@@ -197,10 +197,24 @@ def _import_one_post(
         # over the body text is the only signal available.
         language = parsed.detected_language or default_language
 
+        # SEO defaults. Medium HTML export strips every SEO meta tag
+        # (verified across the 209-post production corpus: no <meta
+        # description>, og:title, og:description, or og:image on any
+        # sampled file). So the only authored SEO-adjacent signals
+        # are the article title and the Medium subtitle/kicker. We
+        # mirror them into the dedicated SEO fields so the dashboard
+        # tile and the public meta tags have sane defaults on import.
+        # User can edit either in the editor; the existing AI-generate
+        # button stays available for explicit refinement.
+        title = parsed.title or "(untitled)"
+        subtitle = parsed.subtitle or None
+        seo_title = title  # always populated, mirrors article.title
+        seo_description = subtitle  # NULL when post had no subtitle
+
         # Persist the Article first so we have an id for assets.
         article = Article(
-            title=parsed.title or "(untitled)",
-            subtitle=parsed.subtitle or None,
+            title=title,
+            subtitle=subtitle,
             author=parsed.author or None,
             language=language,
             status=default_status,
@@ -208,6 +222,8 @@ def _import_one_post(
             canonical_url=parsed.canonical_url,
             content_json=json.dumps(parsed.content_doc),
             tags="[]",
+            seo_title=seo_title,
+            seo_description=seo_description,
         )
         db.add(article)
         db.flush()  # populates article.id
