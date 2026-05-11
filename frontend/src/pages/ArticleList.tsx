@@ -39,6 +39,8 @@ import ArticleBulkActionBar, {
     BULK_LIMIT_HARD,
 } from "../components/articles/ArticleBulkActionBar";
 import { useArticleSelection } from "../components/articles/useArticleSelection";
+import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
+import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
 import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
@@ -103,6 +105,97 @@ export default function ArticleList() {
                     ? err.detail
                     : t("ui.articles.bulk.export_failed", "Bulk export failed");
             notify.error(message);
+        }
+    };
+
+    // Bulk-delete state. The permanent-path dialog opens with a
+    // captured count + ID list so the user typing happens against a
+    // snapshot, not the live selection (which they can't change while
+    // the modal is open, but pinning is still cleaner).
+    const [bulkDeleteDialog, setBulkDeleteDialog] = useState<{
+        ids: string[];
+        count: number;
+    } | null>(null);
+
+    const handleBulkDelete = async (permanent: false) => {
+        const ordered = filters.filteredArticles
+            .map((a) => a.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2 || ordered.length > BULK_LIMIT_HARD) return;
+        try {
+            const result = await api.articles.bulkDelete(ordered, permanent);
+            // Optimistic refresh: drop the deleted IDs from the
+            // visible list right away rather than re-fetching the
+            // whole collection.
+            setArticles((prev) =>
+                prev.filter((a) => !ordered.includes(a.id) || result.failed.some((f) => f.id === a.id)),
+            );
+            void loadTrash();
+            selection.clear();
+            const message = t(
+                "ui.bulk_delete.toast_trashed",
+                "{count} in den Papierkorb verschoben",
+            ).replace("{count}", String(result.deleted_count));
+            // Undo restores every successfully-trashed row.
+            notify.bulkAction(
+                message,
+                async () => {
+                    try {
+                        const undone = ordered.filter(
+                            (id) => !result.skipped_already_trashed.includes(id)
+                                && !result.failed.some((f) => f.id === id),
+                        );
+                        await Promise.all(undone.map((id) => api.articles.restore(id)));
+                        const fresh = await api.articles.list();
+                        setArticles(fresh);
+                        void loadTrash();
+                        notify.info(
+                            t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                        );
+                    } catch (undoErr) {
+                        notify.error(
+                            t("ui.bulk_delete.toast_undo_failed", "Wiederherstellen fehlgeschlagen"),
+                            undoErr,
+                        );
+                    }
+                },
+                t("ui.bulk_delete.undo_label", "Rückgängig"),
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
+                err,
+            );
+        }
+    };
+
+    const handleBulkDeletePermanentRequest = () => {
+        const ordered = filters.filteredArticles
+            .map((a) => a.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2 || ordered.length > BULK_LIMIT_HARD) return;
+        setBulkDeleteDialog({ ids: ordered, count: ordered.length });
+    };
+
+    const handleBulkDeletePermanentConfirmed = async () => {
+        if (!bulkDeleteDialog) return;
+        const { ids } = bulkDeleteDialog;
+        setBulkDeleteDialog(null);
+        try {
+            const result = await api.articles.bulkDelete(ids, true);
+            setArticles((prev) => prev.filter((a) => !ids.includes(a.id)));
+            selection.clear();
+            notify.success(
+                t(
+                    "ui.bulk_delete.toast_deleted_permanent",
+                    "{count} endgültig gelöscht",
+                ).replace("{count}", String(result.deleted_count)),
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
+                err,
+            );
         }
     };
 
@@ -624,6 +717,8 @@ export default function ArticleList() {
                 <ArticleBulkActionBar
                     count={selection.count}
                     onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
+                    onBulkDelete={() => void handleBulkDelete(false)}
+                    onBulkDeletePermanent={handleBulkDeletePermanentRequest}
                     onClear={selection.clear}
                     t={t}
                 />
@@ -743,6 +838,16 @@ export default function ArticleList() {
                     void loadTrash();
                 }}
             />
+            {bulkDeleteDialog && (
+                <TypeToConfirmDialog
+                    open
+                    count={bulkDeleteDialog.count}
+                    filterDescription={formatActiveArticleFilters(filters, t)}
+                    itemNoun={t("ui.bulk_delete.items_articles", "Artikel")}
+                    onConfirm={() => void handleBulkDeletePermanentConfirmed()}
+                    onCancel={() => setBulkDeleteDialog(null)}
+                />
+            )}
         </div>
     );
 }

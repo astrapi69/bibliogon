@@ -264,6 +264,20 @@ export interface MarkPublishedRequest {
     published_at?: string | null
 }
 
+/** Response shape of POST /api/articles/bulk-delete and
+ *  POST /api/books/bulk-delete. Mirrors the Pydantic
+ *  ``BulkDeleteResponse`` in backend/app/routers/bulk_delete.py.
+ *  ``deleted_count`` counts soft- OR hard-deleted rows;
+ *  ``skipped_already_trashed`` is non-empty only on the soft path
+ *  when caller's list included rows whose ``deleted_at`` was
+ *  already set. ``failed[]`` carries per-row errors (e.g. "not
+ *  found") so the bulk action never short-circuits on one bad row. */
+export interface BulkDeleteResponse {
+    deleted_count: number
+    skipped_already_trashed: string[]
+    failed: {id: string; error: string}[]
+}
+
 /** Per-platform metadata schema (loaded from
  *  backend/app/data/platform_schemas.yaml). The frontend renders
  *  add-publication forms from this data. */
@@ -852,6 +866,16 @@ export const api = {
         emptyTrash: () =>
             request<void>("/books/trash/empty", {method: "DELETE"}),
 
+        /** Bulk-delete books. ``permanent=false`` moves to trash;
+         *  ``true`` hard-deletes and cascades to Chapter / Asset /
+         *  BookImportSource. Server-side cap MAX_BULK_DELETE=200
+         *  rejects oversize requests with 422. */
+        bulkDelete: (ids: string[], permanent: boolean) =>
+            request<BulkDeleteResponse>("/books/bulk-delete", {
+                method: "POST",
+                body: JSON.stringify({ids, permanent}),
+            }),
+
         /** Bulk export. POSTs an explicit ID list (already in display
          *  order on the dashboard) plus a format and returns a ZIP-of-
          *  books. ZIP is the only mode for books — combined-multi-book
@@ -1007,6 +1031,18 @@ export const api = {
             request<void>(`/articles/trash/${id}`, {method: "DELETE"}),
         emptyTrash: () =>
             request<void>("/articles/trash/empty", {method: "DELETE"}),
+
+        /** Bulk-delete. ``permanent=false`` moves rows to trash; ``true``
+         *  hard-deletes and cascades to children. Response includes
+         *  ``deleted_count``, ``skipped_already_trashed`` (soft path only)
+         *  and ``failed[]`` so the caller's toast can surface partial
+         *  failures transparently. Server-side cap matches MAX_BULK_DELETE
+         *  (200) and rejects oversize requests with 422. */
+        bulkDelete: (ids: string[], permanent: boolean) =>
+            request<BulkDeleteResponse>("/articles/bulk-delete", {
+                method: "POST",
+                body: JSON.stringify({ids, permanent}),
+            }),
 
         /** Bulk export. POSTs an explicit ID list (already in display
          *  order on the dashboard) plus a format and a mode, downloads

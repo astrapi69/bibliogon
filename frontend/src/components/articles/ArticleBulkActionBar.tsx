@@ -17,6 +17,8 @@
  */
 
 import {useState} from "react"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import {ChevronDown, Trash2} from "lucide-react"
 
 import styles from "./ArticleBulkActionBar.module.css"
 
@@ -30,6 +32,15 @@ interface Props {
     count: number
     onExport: (format: BulkExportFormat, mode: BulkExportMode) => void
     onClear: () => void
+    /** Soft-delete path: moves selection to trash. Undo is offered
+     *  in the resulting toast. The bar only invokes this when
+     *  count >= 2 (count=1 falls through to the single-item delete
+     *  path on the row menu — see Q1 of the pre-inspection). */
+    onBulkDelete?: (permanent: false) => void
+    /** Permanent-delete path: opens the TypeToConfirmDialog above
+     *  the parent component; the parent handles the actual deletion
+     *  after the dialog confirms. */
+    onBulkDeletePermanent?: () => void
     t: (key: string, fallback?: string) => string
     /** Optional - lets tests interpolate the count more easily by
      *  exposing the i18n call site. Defaults to the production
@@ -41,6 +52,8 @@ export default function ArticleBulkActionBar({
     count,
     onExport,
     onClear,
+    onBulkDelete,
+    onBulkDeletePermanent,
     t,
     formatCount,
 }: Props) {
@@ -130,6 +143,56 @@ export default function ArticleBulkActionBar({
             >
                 {t("ui.articles.bulk.export_button", "Export")}
             </button>
+            {onBulkDelete && onBulkDeletePermanent && (
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            data-testid="article-bulk-delete-menu"
+                            disabled={count < 2 || overLimit}
+                            title={
+                                count < 2
+                                    ? t(
+                                          "ui.bulk_delete.disabled_min_two",
+                                          "Mindestens 2 Einträge auswählen",
+                                      )
+                                    : undefined
+                            }
+                        >
+                            <Trash2 size={14} />{" "}
+                            {t("ui.bulk_delete.delete_button", "Löschen")}{" "}
+                            <ChevronDown size={12} />
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="hamburger-menu-content"
+                            sideOffset={4}
+                            data-testid="article-bulk-delete-menu-content"
+                        >
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                onSelect={() => onBulkDelete(false)}
+                                data-testid="article-bulk-delete-trash"
+                            >
+                                {t(
+                                    "ui.bulk_delete.option_trash",
+                                    "In Papierkorb verschieben",
+                                )}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                style={{color: "var(--danger)"}}
+                                onSelect={onBulkDeletePermanent}
+                                data-testid="article-bulk-delete-permanent"
+                            >
+                                {t("ui.bulk_delete.option_permanent", "Endgültig löschen")}
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            )}
             <button
                 type="button"
                 className="btn-ghost"
