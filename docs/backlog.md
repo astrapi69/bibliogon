@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-11 (4-thread medium-import session: settings wiring fix + featured_image setting + walker section-inner truncation fix + langdetect language detection. Plus 2 retro-fix scripts (truncation, language) shipped + applied to the 209-post production import. New backlog item BIBLIOGON-DATA-FIX-FRAMEWORK-01 filed under P3 — fourth retro-fix script in two sessions, generic-tooling threshold reached.)
+Last updated: 2026-05-11 (6-bug medium-import session: settings wiring, featured_image, truncation walker fix, langdetect language detection, SEO defaults at import, original_published_at computed field. 4 retro-fix scripts applied to the 209-post production import (truncation, language, SEO, plus earlier imageFigure + featured-image). New backlog item MEDIUM-IMPORT-EXCERPT-AUTOFILL-01 filed under P5.)
 Current version: v0.30.0
-Open tasks: 14 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 15 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -87,13 +87,15 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the four
+- **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the six
   one-shot retro-fix scripts under `scripts/` into a generic
   framework. Existing scripts:
   `fix_medium_import_image_nodes.py`,
   `fix_medium_import_featured_images.py`,
   `fix_medium_import_truncation.py`,
-  `fix_medium_import_language.py`. They share a common shape:
+  `fix_medium_import_language.py`,
+  `fix_medium_import_seo.py`.
+  They share a common shape:
   scope query (Article join ArticleImportSource), per-row
   predicate, per-row mutation, dry-run vs --apply, idempotent
   re-run reports zero changes. The same pattern is the
@@ -196,6 +198,18 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
+  ``Article.excerpt`` on Medium import, mirroring the existing
+  seo_title / seo_description defaults shipped in commit
+  ``2062393``. Trade-off: excerpt is conceptually similar to
+  seo_description (both summarize the article), so duplicating
+  the subtitle into both might feel redundant; alternatively,
+  excerpt could derive from the first paragraph of body text
+  with the existing heuristic-fallback rejection we applied to
+  seo_description. No user complaint yet — the seo_description
+  default covers the dashboard-tile use case. Promote to P2 if
+  a user reports an empty-excerpt issue on imported articles.
 
 - **AR-BULK-ASYNC-PROGRESS-01**: async bulk export with progress
   UI for selections >50 articles. The 2026-05-06 ship runs the
