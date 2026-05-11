@@ -26,6 +26,7 @@ from app.hookspecs import BibliogonHookSpec
 from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F401, E402
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
 from app.routers import (
+    article_ai_fill,
     article_ai_template,
     article_assets,
     article_bulk_export,
@@ -499,6 +500,7 @@ app.include_router(article_export.router, prefix="/api")
 app.include_router(article_bulk_export.router, prefix="/api")
 app.include_router(article_ai_template.articles_router, prefix="/api")
 app.include_router(article_ai_template.empty_router, prefix="/api")
+app.include_router(article_ai_fill.router, prefix="/api")
 app.include_router(bulk_delete.articles_router, prefix="/api")
 app.include_router(bulk_delete.books_router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")

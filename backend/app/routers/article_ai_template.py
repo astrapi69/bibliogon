@@ -27,7 +27,6 @@ Three endpoints:
 
 from __future__ import annotations
 
-import json
 import logging
 import re
 import unicodedata
@@ -38,8 +37,12 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.ai.template_schema import (
+    APPLY_SKIP_EMPTY,
+    APPLY_SKIP_POPULATED,
+    APPLY_UPDATED,
     ArticleTemplate,
     TemplateSchemaError,
+    apply_field,
     build_article_template_from_record,
     build_empty_article_template,
     parse_template_from_yaml,
@@ -64,6 +67,22 @@ empty_router = APIRouter(prefix="/ai-templates", tags=["ai-template-empty"])
 # ---------------------------------------------------------------------------
 
 
+# Mapping from template field name to (article column, is_json_list).
+# Public so the AI-fill router (commit 5) can share the same source of
+# truth for which article columns the template format is allowed to
+# touch.
+ARTICLE_TEMPLATE_FIELD_MAP: list[tuple[str, str, bool]] = [
+    ("title", "title", False),
+    ("seo_title", "seo_title", False),
+    ("seo_description", "seo_description", False),
+    ("excerpt", "excerpt", False),
+    ("tags", "tags", True),
+    ("topic", "topic", False),
+    ("featured_image_prompt", "featured_image_prompt", False),
+    ("inline_image_prompts", "inline_image_prompts", True),
+]
+
+
 def _slugify(title: str) -> str:
     """Folds umlauts to ASCII and keeps the slug RFC 6266-safe.
     Mirrors ``app.routers.article_export._slugify``."""
@@ -81,83 +100,31 @@ def _load_article(article_id: str, db: Session) -> Article:
     return article
 
 
-def _is_template_value_empty(value: Any) -> bool:
-    """An AI-returned value is "empty" (=> always skip) when it
-    is None, the empty string, or an empty list. Whitespace-only
-    strings collapse to empty too: the user has clearly indicated
-    "no content" by leaving only whitespace."""
-    if value is None:
-        return True
-    if isinstance(value, str) and not value.strip():
-        return True
-    if isinstance(value, list) and len(value) == 0:
-        return True
-    return False
-
-
-def _is_column_value_populated(raw: Any, *, is_json_list: bool) -> bool:
-    """Returns True when the article column is currently
-    non-empty - i.e. force=false should preserve it. For JSON-
-    encoded list columns the raw value is a string; we decode
-    and check the list length. For string columns the truthy /
-    non-whitespace check applies."""
-    if is_json_list:
-        if not raw:
-            return False
-        try:
-            decoded = json.loads(raw)
-        except (ValueError, TypeError):
-            return False
-        return isinstance(decoded, list) and len(decoded) > 0
-    if raw is None:
-        return False
-    if isinstance(raw, str):
-        return bool(raw.strip())
-    return bool(raw)
-
-
-# Mapping from template field name to (article column, is_json_list).
-# Kept in one place so the apply loop, the response shape, and the
-# tests reference the same source of truth.
-_ARTICLE_FIELD_MAP: list[tuple[str, str, bool]] = [
-    ("title", "title", False),
-    ("seo_title", "seo_title", False),
-    ("seo_description", "seo_description", False),
-    ("excerpt", "excerpt", False),
-    ("tags", "tags", True),
-    ("topic", "topic", False),
-    ("featured_image_prompt", "featured_image_prompt", False),
-    ("inline_image_prompts", "inline_image_prompts", True),
-]
-
-
 def _apply_template_to_article(
     article: Article, template: ArticleTemplate, *, force: bool
 ) -> tuple[list[str], dict[str, str]]:
     """Apply a parsed template to an article row. Returns
     ``(updated_fields, skipped_with_reasons)``. Caller owns the
-    DB transaction (commit / rollback / refresh)."""
+    DB transaction (commit / rollback / refresh). Uses the
+    shared ``apply_field`` primitive so per-record and AI-fill
+    paths share the force/skip semantics."""
     updated: list[str] = []
     skipped: dict[str, str] = {}
-
-    for tpl_field, col_name, is_json_list in _ARTICLE_FIELD_MAP:
+    for tpl_field, col_name, is_json_list in ARTICLE_TEMPLATE_FIELD_MAP:
         new_value = getattr(template, tpl_field).current_value
-
-        if _is_template_value_empty(new_value):
-            skipped[tpl_field] = "value-is-empty"
-            continue
-
-        existing = getattr(article, col_name)
-        if not force and _is_column_value_populated(existing, is_json_list=is_json_list):
-            skipped[tpl_field] = "field-already-populated"
-            continue
-
-        if is_json_list:
-            setattr(article, col_name, json.dumps(new_value))
-        else:
-            setattr(article, col_name, new_value)
-        updated.append(tpl_field)
-
+        result = apply_field(
+            article,
+            col_name,
+            new_value,
+            force=force,
+            is_json_list=is_json_list,
+        )
+        if result == APPLY_UPDATED:
+            updated.append(tpl_field)
+        elif result == APPLY_SKIP_EMPTY:
+            skipped[tpl_field] = APPLY_SKIP_EMPTY
+        elif result == APPLY_SKIP_POPULATED:
+            skipped[tpl_field] = APPLY_SKIP_POPULATED
     return updated, skipped
 
 
