@@ -2,6 +2,53 @@
 
 These rules come from real development and solve problems that would otherwise come back over and over.
 
+## End-to-end behavior tests are not "kwarg passes through" tests
+
+The MEDIUM-IMPORT-FRONTEND-UI-01 session (2026-05-09) shipped a Settings UI that wrote 4 user-toggleable settings to `backend/config/plugins/medium-import.yaml`. The plugin's `activate()` read them into `self._settings`. The test suite included a smoke test confirming `_settings == {"download_images": False}` was set correctly. **It all looked working.**
+
+What was actually broken: `routes.py` called `import_zip(contents)` with no kwargs. None of the settings ever flowed from the plugin into the importer. Every import ran the hardcoded defaults — for the 209 articles already imported AND for the next year's worth of new imports if nobody had noticed.
+
+The smoke tests passed because they only verified "the dict landed in `self._settings`". They never asserted the settings produced an observable behavioral difference at import time. The wiring gap was invisible to the tests because the tests were testing the wrong layer.
+
+The fix in the `SETTINGS-WIRING-01` session establishes a hard rule: every settings flag MUST have at least one test that flips the flag to a non-default value and asserts an OBSERVABLE behavioral difference. Concretely:
+
+- `default_status="draft"` → assert `Article.status == "draft"` after import
+- `skip_existing_canonical_urls=False` → re-import the same archive and assert a DUPLICATE row appears in the DB
+- `download_images=False` → assert the downloader function is NEVER called (capture all invocations) AND body URLs stay CDN-hosted in the persisted doc
+- `image_download_timeout_seconds=7` → capture the kwargs passed to `download_images` and assert `timeout_seconds == 7.0`
+
+The pattern that the smoke-test class followed:
+
+```python
+# WRONG: this passes whether or not the setting reaches import_zip
+def test_setting_propagates():
+    plugin = make_plugin({"settings": {"default_status": "draft"}})
+    plugin.activate()
+    assert plugin._settings["default_status"] == "draft"
+```
+
+The pattern the behavior tests follow:
+
+```python
+# RIGHT: this fails if the setting doesn't reach the importer
+def test_setting_default_status_propagates_to_article(client, db):
+    body = _post_zip_with_settings(
+        client, _build_zip([fixture]), {"default_status": "draft"}
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.status == "draft"
+```
+
+The behavior test reaches through every layer the production request reaches through (HTTP endpoint → plugin config injection → settings translator → import_zip kwargs → service code → DB) and asserts at the OUTPUT. Smoke tests of intermediate layers are fine to add for diagnostic granularity, but they are NOT a substitute for at-least-one end-to-end behavior test per setting.
+
+This rule generalizes beyond settings:
+
+- Feature flag (`audiobook_overwrite_existing`, etc.) → at least one test flips the flag and asserts observable change in the produced artifact.
+- New endpoint kwarg → at least one test passes a non-default value and asserts the behavior the kwarg controls.
+- Plugin config → at least one test sets the value and asserts the consumer of that value behaves differently.
+
+The 2026-05-09 retroactive fix added 6 such tests to `test_medium_import_endpoint.py`. The smoke-test pattern is not banned (it's still useful for diagnosing where in the chain a regression broke), but it cannot be the only coverage of a flag's behavior.
+
 ## TipTap image node in Bibliogon is `imageFigure`, not `image`
 
 Bibliogon's editor ([frontend/src/components/Editor.tsx](../../frontend/src/components/Editor.tsx)) does NOT load `@tiptap/extension-image`. It loads `@pentestpad/tiptap-extension-figure`, which registers its node under `name: "imageFigure"`. `@tiptap/extension-image` IS in `package.json` but is never imported.
