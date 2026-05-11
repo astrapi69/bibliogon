@@ -2,6 +2,19 @@
 
 These rules come from real development and solve problems that would otherwise come back over and over.
 
+## Medium HTML exports strip every SEO meta tag
+
+Verified across the 209-post production corpus: no `<meta name="description">`, no `og:title`, no `og:description`, no `og:image`, no `<html lang>`. Only `<title>` (which equals the article H1) and `<section data-field="subtitle">` survive.
+
+Implications for importers / scrapers consuming Medium's HTML export:
+
+- Don't bother parsing for `<meta>` or `<og:*>` tags. They're gone.
+- The only authored SEO-adjacent signal is the subtitle/kicker section. Use it as `seo_description` default; leave `seo_description` NULL for posts without one. Don't fall back to body-text slicing — table-of-contents fragments and intro labels poison that.
+- Tags are also stripped. Don't heuristic-derive them. If your app has an AI-generate-tags path, that's the canonical refinement; importer should ship with empty tags.
+- Language detection has to be statistical (langdetect or similar) — Medium's export carries no `lang` attribute on `<html>`, `<body>`, or `<article>`.
+
+This rule generalizes: any "export your data" feature from a SaaS platform tends to strip metadata that the platform considers internal (SEO, analytics tags, A/B-test flags, platform-specific IDs). When auditing an importer for "what signals does the source preserve?" check explicitly for the metadata you assume is there — production sample sweep beats reading the upstream docs.
+
 ## Walker iterating repeated containers: prefer `find_all` over `find`
 
 The medium-import walker shipped with `section.find("div", class_="section-inner")` which returned only the FIRST match. Medium's standard header-image layout puts THREE `section-inner` divs per `<section class="section--body">` (title, image lane, main body). The bug silently dropped the entire main body of every Medium post that used the standard layout, for ~33% of the production import. The pre-walker tests didn't catch it because the existing fixtures had small inner[2] sections relative to the rest of the body, masking the loss in their pass-rate ratio.

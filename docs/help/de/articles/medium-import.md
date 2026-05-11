@@ -43,6 +43,7 @@ Der Importer ist idempotent über die kanonische Medium-URL. Dasselbe Archiv zwe
 ## Was pro Beitrag importiert wird
 
 - Titel, Untertitel (Medium-"Kicker"), Veröffentlichungsdatum, kanonische URL.
+- **SEO-Standardwerte.** `seo_title` wird auf den Artikeltitel gesetzt; `seo_description` auf den Medium-Untertitel, sofern vorhanden. Tags bleiben leer (Mediums HTML-Export liefert keine). Alle drei Felder sind im Editor bearbeitbar; der bestehende AI-Generieren-Button ist der Weg zur Verfeinerung. Bei Artikeln ohne Untertitel bleibt `seo_description` bewusst leer — keine Heuristik-Rätselei aus dem Body-Text.
 - Inhalt, von Medium-HTML in TipTap-JSON (Bibliogons Editor-Format) konvertiert.
 - **Sprache**, automatisch aus dem Beitragstext erkannt mittels `langdetect`. Medium-HTML enthält keine Sprachangabe, daher erfolgt die Erkennung statistisch über den Beitragstext. Sichere Erkennungen (≥0,85) werden in `Article.language` gespeichert; mehrdeutige oder sehr kurze Beiträge fallen auf `default_language` ("en") zurück. Du kannst die Sprache jedes Artikels im Editor ändern; ein erneuter Import überschreibt manuelle Änderungen nicht.
 - Bilder, lokal gespeichert, wenn die Einstellung aktiv ist. Bildreferenzen im Beitragstext werden auf die lokalen Kopien umgeschrieben.
@@ -50,6 +51,8 @@ Der Importer ist idempotent über die kanonische Medium-URL. Dasselbe Archiv zwe
 - Publikationszugehörigkeit: Eine `Publication` wird für jede im Archiv referenzierte Medium-Publikation angelegt (oder gematcht), und der Artikel wird damit verknüpft.
 
 Um die Sprache rückwirkend für vor dem Feature importierte Artikel zu erkennen, das Skript `scripts/fix_medium_import_language.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Manuell korrigierte Zeilen werden übersprungen – das Skript fasst nur Zeilen an, die noch auf dem historischen `"en"`-Default stehen.
+
+Um `seo_title` und `seo_description` rückwirkend für vor Commit `2062393` importierte Artikel zu setzen, das Skript `scripts/fix_medium_import_seo.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Das Skript füllt `seo_title` aus `title` und `seo_description` aus `subtitle` nur dort, wo das Feld aktuell leer ist – manuelle Bearbeitungen bleiben erhalten.
 
 ## Was NICHT importiert wird
 
