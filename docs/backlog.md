@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-09 (MEDIUM-IMPORT-FRONTEND-UI-01 shipped: dedicated /articles/import/medium page + drop zone + two-phase progress + result table + settings card + Settings pointer + 24 Vitest tests + bilingual help + i18n in 8 languages; follow-ups BACKEND-UPLOAD-SIZE-LIMIT-01 + ASYNC-IMPORT-PROGRESS-01 added)
+Last updated: 2026-05-11 (4-thread medium-import session: settings wiring fix + featured_image setting + walker section-inner truncation fix + langdetect language detection. Plus 2 retro-fix scripts (truncation, language) shipped + applied to the 209-post production import. New backlog item BIBLIOGON-DATA-FIX-FRAMEWORK-01 filed under P3 — fourth retro-fix script in two sessions, generic-tooling threshold reached.)
 Current version: v0.30.0
-Open tasks: 13 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 14 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,23 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the four
+  one-shot retro-fix scripts under `scripts/` into a generic
+  framework. Existing scripts:
+  `fix_medium_import_image_nodes.py`,
+  `fix_medium_import_featured_images.py`,
+  `fix_medium_import_truncation.py`,
+  `fix_medium_import_language.py`. They share a common shape:
+  scope query (Article join ArticleImportSource), per-row
+  predicate, per-row mutation, dry-run vs --apply, idempotent
+  re-run reports zero changes. The same pattern is the
+  obvious target for any future Bibliogon data-fix work
+  (book imports, asset migrations, etc.). Effort: M (extract
+  base class + per-fix subclass + tests). Defer until a
+  fifth one-shot is needed; ship the four as one-shots first
+  so the abstraction is informed by real cases. Trigger: 5th
+  one-shot OR a new contributor needs to write one.
 
 - **BACKEND-UPLOAD-SIZE-LIMIT-01**: enforce a backend body-size
   cap for `POST /api/medium-import/import` (and audit other plugin
