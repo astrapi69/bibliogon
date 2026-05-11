@@ -80,11 +80,33 @@ def test_01_captures_images() -> None:
 
 def test_01_image_node_has_src_and_caption() -> None:
     post = _parse("01_oldest_tech.html")
-    images = [n for n in post.content_doc["content"] if n["type"] == "image"]
+    images = [n for n in post.content_doc["content"] if n["type"] == "imageFigure"]
     assert images
     first_img = images[0]
     assert first_img["attrs"]["src"].startswith("https://cdn-images-1.medium.com/")
     assert "title" in first_img["attrs"]  # caption -> title
+
+
+def test_image_node_type_is_imageFigure_not_image() -> None:
+    """Pin the imageFigure node-type contract.
+
+    Bibliogon's editor uses @pentestpad/tiptap-extension-figure which
+    registers node name ``imageFigure``; no @tiptap/extension-image is
+    loaded. Emitting a plain ``image`` node would fail the schema and
+    leave the editor empty for every imported article. This test fails
+    loudly if the walker ever regresses to ``image``.
+    """
+    post = _parse("01_oldest_tech.html")
+    found_image_figure = False
+    for node in post.content_doc["content"]:
+        if node["type"] == "image":
+            raise AssertionError(
+                "Walker emitted a plain 'image' node; Bibliogon's editor "
+                "schema only knows 'imageFigure'. Imports will render empty."
+            )
+        if node["type"] == "imageFigure":
+            found_image_figure = True
+    assert found_image_figure, "Test fixture should contain at least one image"
 
 
 def test_01_links_become_link_marks() -> None:

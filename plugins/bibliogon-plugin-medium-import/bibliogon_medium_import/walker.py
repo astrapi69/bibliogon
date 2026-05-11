@@ -289,7 +289,12 @@ class MediumWalker:
             attrs["alt"] = alt
         if caption:
             attrs["title"] = caption
-        return {"type": "image", "attrs": attrs}
+        # Bibliogon's editor uses @pentestpad/tiptap-extension-figure,
+        # which registers its node as ``imageFigure`` (NOT ``image``).
+        # No standard ``@tiptap/extension-image`` is loaded, so an
+        # ``image``-typed node fails the schema and the whole doc
+        # renders empty. See lessons-learned for the convention.
+        return {"type": "imageFigure", "attrs": attrs}
 
     def _inline(self, parent: Tag) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
