@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.ai.template_schema import extract_body_text
 from app.database import SessionLocal, get_db
 from app.models import Article
 from app.paths import get_upload_dir
@@ -282,36 +283,6 @@ def update_article(
 # --- AI metadata generation (SEO title / SEO description / tags) ---
 
 
-def _extract_plain_text(tiptap_json: str | None) -> str:
-    """Walk a serialised TipTap doc string-tree and return concatenated
-    plain text. Mirrors what the audiobook generator's
-    ``extract_plain_text`` helper does but stays local to avoid a
-    plugin import inside core. Returns ``""`` on parse failure so the
-    caller can decide what "empty" means."""
-    if not tiptap_json:
-        return ""
-    try:
-        doc = json.loads(tiptap_json)
-    except (ValueError, TypeError):
-        return ""
-
-    parts: list[str] = []
-
-    def walk(node: object) -> None:
-        if not isinstance(node, dict):
-            return
-        text = node.get("text")
-        if isinstance(text, str):
-            parts.append(text)
-        children = node.get("content")
-        if isinstance(children, list):
-            for child in children:
-                walk(child)
-
-    walk(doc)
-    return "\n".join(p for p in parts if p).strip()
-
-
 _AI_META_FIELDS = ("seo_title", "seo_description", "tags")
 
 
@@ -359,7 +330,7 @@ async def generate_article_meta(
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    body_text = _extract_plain_text(article.content_json)
+    body_text = extract_body_text(article.content_json)
     if not body_text:
         raise HTTPException(
             status_code=400,
