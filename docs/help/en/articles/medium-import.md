@@ -44,9 +44,12 @@ The importer is idempotent by canonical Medium URL. Running the same archive twi
 
 - Title, subtitle (Medium "kicker"), publish date, canonical URL.
 - Body content, converted from Medium HTML to TipTap JSON (Bibliogon's editor format).
+- **Language**, auto-detected from the body text via `langdetect`. Medium HTML carries no language attribute, so detection runs over the body text statistically. Confident detections (≥0.85) are written to `Article.language`; ambiguous or very-short bodies fall back to `default_language` ("en"). You can change the language on any article in the editor; the importer never overwrites a manual change on re-import.
 - Images, downloaded to local storage when the setting is on. The post body's image references are rewritten to point at the local copies.
 - Provenance: an `ArticleImportSource` row records the source ZIP filename and the post's original HTML filename inside it. Useful for tracing an article back to its Medium origin.
 - Publication membership: a `Publication` is created (or matched) for each Medium publication referenced in the archive, and the article is linked to it.
+
+To retroactively detect language on articles imported before this feature shipped, run `scripts/fix_medium_import_language.py` (dry-run by default; pass `--apply` to write). Manually-corrected rows are skipped — the script only touches rows still at the historical `"en"` default.
 
 ## What does NOT get imported
 

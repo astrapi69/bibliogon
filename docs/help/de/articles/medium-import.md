@@ -44,9 +44,12 @@ Der Importer ist idempotent über die kanonische Medium-URL. Dasselbe Archiv zwe
 
 - Titel, Untertitel (Medium-"Kicker"), Veröffentlichungsdatum, kanonische URL.
 - Inhalt, von Medium-HTML in TipTap-JSON (Bibliogons Editor-Format) konvertiert.
+- **Sprache**, automatisch aus dem Beitragstext erkannt mittels `langdetect`. Medium-HTML enthält keine Sprachangabe, daher erfolgt die Erkennung statistisch über den Beitragstext. Sichere Erkennungen (≥0,85) werden in `Article.language` gespeichert; mehrdeutige oder sehr kurze Beiträge fallen auf `default_language` ("en") zurück. Du kannst die Sprache jedes Artikels im Editor ändern; ein erneuter Import überschreibt manuelle Änderungen nicht.
 - Bilder, lokal gespeichert, wenn die Einstellung aktiv ist. Bildreferenzen im Beitragstext werden auf die lokalen Kopien umgeschrieben.
 - Provenienz: Ein `ArticleImportSource`-Eintrag speichert den Namen der Quell-ZIP und den ursprünglichen HTML-Dateinamen darin. Nützlich, um einen Artikel auf seinen Medium-Ursprung zurückzuführen.
 - Publikationszugehörigkeit: Eine `Publication` wird für jede im Archiv referenzierte Medium-Publikation angelegt (oder gematcht), und der Artikel wird damit verknüpft.
+
+Um die Sprache rückwirkend für vor dem Feature importierte Artikel zu erkennen, das Skript `scripts/fix_medium_import_language.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Manuell korrigierte Zeilen werden übersprungen – das Skript fasst nur Zeilen an, die noch auf dem historischen `"en"`-Default stehen.
 
 ## Was NICHT importiert wird
 
