@@ -1,4 +1,4 @@
-"""Walker tests against the 3 real Medium-export fixtures.
+"""Walker tests against the 4 real Medium-export fixtures.
 
 These fixtures were extracted from a 209-post production export.
 They cover the structural variety the audit identified:
@@ -11,6 +11,13 @@ They cover the structural variety the audit identified:
   03_english_recent_with_code.html - 2026 English post (multiple
                                 code blocks, inline code spans,
                                 multiple headings)
+  04_german_long_with_multi_inner.html - 2026 German long-form post
+                                whose section--first contains three
+                                ``section-inner`` divs (title, image
+                                lane, main body). Triggers the
+                                truncation bug fixed in walker.py
+                                _walk_body. Source: 3567 words; pre-
+                                fix output was 170 words (5%).
 """
 
 from __future__ import annotations
@@ -335,6 +342,7 @@ def test_hard_break_emitted_for_br() -> None:
         "01_oldest_tech.html",
         "02_german_philosophical.html",
         "03_english_recent_with_code.html",
+        "04_german_long_with_multi_inner.html",
     ],
 )
 def test_all_fixtures_produce_valid_doc_shape(fixture: str) -> None:
@@ -346,3 +354,40 @@ def test_all_fixtures_produce_valid_doc_shape(fixture: str) -> None:
     assert post.canonical_url
     assert post.content_doc["type"] == "doc"
     assert post.content_doc["content"], f"{fixture} produced empty doc"
+
+
+def test_04_multi_inner_layout_captures_full_body() -> None:
+    """Regression pin for the section-inner truncation bug.
+
+    Fixture 04 uses Medium's standard header-image layout: the first
+    ``<section class="section--body section--first">`` contains three
+    ``section-inner`` divs — title, image lane, main body. The pre-
+    fix walker called ``section.find("div", class_="section-inner")``
+    which returned only the first inner; the title-skip then dropped
+    that one too, and the main-body inner was never processed. The
+    article imported with 5% of its content (170 words out of 3567).
+
+    The fix iterates over every ``section-inner`` per section. This
+    test fails loudly with an actionable word-count comparison if the
+    walker ever regresses.
+    """
+    post = _parse("04_german_long_with_multi_inner.html")
+    bits: list[str] = []
+
+    def _walk(node: object) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "text":
+                bits.append(str(node.get("text", "")))
+            for child in node.get("content", []) or []:
+                _walk(child)
+
+    _walk(post.content_doc)
+    word_count = len(" ".join(bits).split())
+    # Source body has ~3567 words. Allow a small loss for whitespace
+    # collapsing and skipped boilerplate, but anything below ~3400
+    # means the section-inner fix regressed.
+    assert word_count >= 3400, (
+        f"Expected ~3567 words from the multi-inner fixture; got "
+        f"{word_count}. The walker's section-inner iteration regressed; "
+        f"see test docstring."
+    )

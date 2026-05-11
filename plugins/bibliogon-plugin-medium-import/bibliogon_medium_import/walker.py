@@ -145,18 +145,26 @@ class MediumWalker:
 
         nodes: list[dict[str, Any]] = []
         # The body is split into one-or-more section.section--body
-        # containers, each holding a section-content > section-inner
-        # wrapper around the real graf elements.
+        # containers. Each holds a single ``section-content`` wrapper,
+        # but that wrapper can contain MULTIPLE ``section-inner`` divs:
+        # the first usually carries the duplicated ``graf--title``
+        # heading, the second is often a full-width image lane, and
+        # the third the actual body paragraphs. Using ``.find`` here
+        # caught only the first inner and (after the title-skip
+        # kicked in) silently dropped the rest of the post for every
+        # Medium article that used the standard header-image layout.
+        # 56% of the 209-post import was affected; 9 posts came in
+        # with zero content. See lessons-learned.
         for section in body.find_all("section", class_="section--body", recursive=False):
-            inner = section.find("div", class_="section-inner")
-            if not isinstance(inner, Tag):
-                continue
-            for child in inner.children:
-                if not isinstance(child, Tag):
+            for inner in section.find_all("div", class_="section-inner"):
+                if not isinstance(inner, Tag):
                     continue
-                node = self._walk_block(child)
-                if node is not None:
-                    nodes.append(node)
+                for child in inner.children:
+                    if not isinstance(child, Tag):
+                        continue
+                    node = self._walk_block(child)
+                    if node is not None:
+                        nodes.append(node)
 
         return {"type": "doc", "content": nodes}
 
