@@ -176,10 +176,14 @@ def rewrite_image_urls(doc: dict[str, Any], rewrites: dict[str, str]) -> dict[st
     if not rewrites:
         return doc
 
+    # Walker emits ``imageFigure`` (Bibliogon's editor schema; see
+    # lessons-learned). ``image`` is kept as a defensive fallback so a
+    # second oversight from a future walker rename does not silently
+    # leak CDN URLs into persisted docs.
     def _walk(node: Any) -> None:
         if not isinstance(node, dict):
             return
-        if node.get("type") == "image":
+        if node.get("type") in ("imageFigure", "image"):
             attrs = node.get("attrs") or {}
             current_src = attrs.get("src")
             if isinstance(current_src, str) and current_src in rewrites:

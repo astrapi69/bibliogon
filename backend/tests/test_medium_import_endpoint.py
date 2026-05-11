@@ -188,7 +188,11 @@ def test_image_rewrite_lands_in_persisted_doc(client: TestClient, db: Session) -
     image_srcs: list[str] = []
 
     def _walk(n: dict) -> None:
-        if n.get("type") == "image":
+        # Walker emits ``imageFigure`` to match Bibliogon's editor
+        # schema (see lessons-learned: "TipTap image node in Bibliogon
+        # is imageFigure, not image"). A test that still looks for
+        # ``image`` will silently report zero images.
+        if n.get("type") == "imageFigure":
             image_srcs.append(n["attrs"]["src"])
         for child in n.get("content") or []:
             _walk(child)

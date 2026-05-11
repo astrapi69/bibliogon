@@ -132,3 +132,29 @@ def test_rewrite_image_urls_empty_rewrites_returns_input() -> None:
     doc = {"type": "doc", "content": []}
     out = rewrite_image_urls(doc, {})
     assert out is doc
+
+
+def test_rewrite_image_urls_handles_imageFigure_node_type() -> None:
+    """The walker emits ``imageFigure`` (Bibliogon's editor schema).
+
+    Regression pin against the next-walker-rename-by-itself class of
+    bug: yesterday the walker was renamed image -> imageFigure but
+    the rewrite function still grepped for ``image``, silently
+    leaking CDN URLs into persisted docs. This test fails loudly if
+    the rewriter ever stops handling imageFigure.
+    """
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "imageFigure",
+                "attrs": {"src": "https://cdn-images-1.medium.com/foo.jpg", "alt": "x"},
+            }
+        ],
+    }
+    rewrites = {
+        "https://cdn-images-1.medium.com/foo.jpg": "/api/articles/abc/assets/file/foo.jpg"
+    }
+    out = rewrite_image_urls(doc, rewrites)
+    assert out["content"][0]["attrs"]["src"] == "/api/articles/abc/assets/file/foo.jpg"
+    assert out["content"][0]["attrs"]["alt"] == "x"
