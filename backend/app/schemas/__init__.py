@@ -524,6 +524,11 @@ class ArticleOut(BaseModel):
     seo_title: str | None = None
     seo_description: str | None = None
     series: str | None = None
+    # UNIVERSAL-AI-TEMPLATE-01 Session 1 columns. Mirror the
+    # tags-style JSON decoder so consumers see a decoded list,
+    # not a JSON string.
+    featured_image_prompt: str | None = None
+    inline_image_prompts: list[dict] = []
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
@@ -554,6 +559,25 @@ class ArticleOut(BaseModel):
                 return []
             if isinstance(parsed, list):
                 return [str(v) for v in parsed]
+            return []
+        return []
+
+    @field_validator("inline_image_prompts", mode="before")
+    @classmethod
+    def _decode_inline_image_prompts(cls, value: Any) -> list[dict]:
+        """inline_image_prompts column is JSON-text storing
+        ``[{section_hint, prompt}]``. Decode for the API."""
+        if value is None or value == "":
+            return []
+        if isinstance(value, list):
+            return [v for v in value if isinstance(v, dict)]
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+            if isinstance(parsed, list):
+                return [v for v in parsed if isinstance(v, dict)]
             return []
         return []
 

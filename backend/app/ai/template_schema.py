@@ -248,6 +248,9 @@ def extract_body_preview(
 # ---------------------------------------------------------------------------
 
 
+_OPTIONAL_ROOT_KEYS = ("reference", "language")
+
+
 def serialize_template_to_yaml(
     template: TemplateModel, include_header: bool = True
 ) -> str:
@@ -258,12 +261,19 @@ def serialize_template_to_yaml(
     noise).
 
     Field order is preserved via Pydantic's declaration order +
-    ``sort_keys=False``. None-valued fields at the root are
-    suppressed (``exclude_none``) so empty templates skip the
-    ``reference`` block cleanly; ``current_value: null`` inside
-    individual fields stays in the output because the
-    ``TemplateField`` model itself is never None."""
-    body = template.model_dump(exclude_none=True)
+    ``sort_keys=False``. The three-keys-per-field contract
+    (``description`` + ``example`` + ``current_value``) is
+    preserved verbatim - we do NOT use ``exclude_none``
+    blanket-wide because that would drop ``current_value: null``
+    from unset fields and break the "every field has three keys"
+    invariant. Instead, only the optional ROOT-level keys
+    (``reference`` and ``language``) are dropped when None, so
+    empty templates skip the reference block cleanly while
+    per-field current_value=null stays in the output."""
+    body = template.model_dump()
+    for key in _OPTIONAL_ROOT_KEYS:
+        if body.get(key) is None:
+            body.pop(key, None)
     yaml_body = yaml.safe_dump(
         body,
         sort_keys=False,
