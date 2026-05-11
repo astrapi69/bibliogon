@@ -2,6 +2,20 @@
 
 These rules come from real development and solve problems that would otherwise come back over and over.
 
+## Bulk-operation limits should be per-operation cost-profile
+
+The bulk-delete feature shipped with a 200-row cap copied from the existing `bulk-export` precedent. First real use surfaced the symptom: with 209 imported articles, "Alle auswählen" tripped the cap and both Export AND Löschen disabled. Export's cap is justified (pandoc per row + asset round-trips → minutes); delete's was not (one DB UPDATE / DELETE per row → sub-second).
+
+Rule: every new bulk-operation must justify its limit against its own cost profile, not copy the neighbour's. Concretely:
+
+- **Compute-heavy operations** (pandoc, TTS synth, image processing, AI calls): cap stays. Picked from "what completes in 60-180 s server-side per batch."
+- **DB-bound operations** (soft-delete, hard-delete, status toggle, tag attach): **uncapped** by default. SQL bulk operations scale to thousands of rows trivially; an artificial cap creates the worst-of-both UX where "select all" tells the user they cannot do what they obviously want to.
+- **Network-bound external operations** (publish-to-platform, sync-to-git): cap reflects the slowest external call's timeout, not the local processing.
+
+Anti-pattern observed and rejected: "uniform cap across all bulk operations so the UX is consistent". The cost profile is what dominates the UX; pretending all operations have the same profile **is** the inconsistency.
+
+Concrete change from this incident: `MAX_BULK_DELETE` removed from `backend/app/routers/bulk_delete.py`. Pydantic field keeps `min_length=1` (empty body stays a 422) but drops `max_length`. The frontend Löschen button gates on `count < 2` only — no `overLimit` check. Bulk-export's `BULK_LIMIT_HARD = 200` stays unchanged because pandoc's cost-profile is real.
+
 ## Bulk-action UX: action-bar + selection-hook decoupling stays useful
 
 The bulk-delete feature shipped fast because the existing `ArticleBulkActionBar` / `BookBulkActionBar` + `useArticleSelection` / `useBookSelection` hooks were already decoupled from any specific operation. The hook holds `Set<string>` of selected IDs plus filter-aware `selectAll(ids)` that takes an explicit list. The bar is pure-presentational, taking the count + handlers. The page wires whatever operation it wants.

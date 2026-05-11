@@ -110,7 +110,7 @@ export default function BookBulkActionBar({
                             type="button"
                             className="btn btn-danger btn-sm"
                             data-testid="book-bulk-delete-menu"
-                            disabled={count < 2 || overLimit}
+                            disabled={count < 2}
                             title={
                                 count < 2
                                     ? t(

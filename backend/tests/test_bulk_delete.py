@@ -206,12 +206,18 @@ def test_empty_ids_rejected(client: TestClient) -> None:
     assert resp.status_code == 422  # Pydantic min_length=1
 
 
-def test_over_limit_rejected(client: TestClient) -> None:
-    """201 IDs > MAX_BULK_DELETE=200. The Pydantic max_length cap
-    rejects with 422 - bypasses the frontend warning but the server
-    still says no."""
+def test_over_200_ids_accepted_no_cap(client: TestClient) -> None:
+    """Bulk-delete is uncapped — see the "per-operation cost-profile
+    limits" lesson. 201 non-existent IDs are accepted by Pydantic
+    (no max_length), the backend processes the batch, every row
+    lands in failed[] because none exist. Contrast with bulk-export
+    which keeps its 200-cap for the pandoc cost-profile reason."""
     fake_ids = [f"id-{i}" for i in range(201)]
     resp = client.post(
         "/api/articles/bulk-delete", json={"ids": fake_ids, "permanent": False}
     )
-    assert resp.status_code == 422
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["deleted_count"] == 0
+    assert len(body["failed"]) == 201
+    assert all(f["error"] == "not found" for f in body["failed"])

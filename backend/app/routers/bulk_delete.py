@@ -25,10 +25,13 @@ SQLAlchemy ``cascade="all, delete-orphan"`` handles the children
 Book -> Chapter / Asset / BookImportSource), all verified in
 models/__init__.py.
 
-Hard server-side cap (MAX_BULK_DELETE = 200) backs up the frontend
-warning + hard-block thresholds (BULK_LIMIT_WARNING=50,
-BULK_LIMIT_HARD=200 in components/...). Bypass-via-curl is rejected
-with HTTP 422.
+No hard cap. Bulk-delete is intentionally uncapped (unlike bulk-
+export which keeps its 200-article cap): the cost profile is
+"DB UPDATE / DELETE per row" rather than "spawn pandoc per row +
+network round-trip per asset", so 1000-row deletes complete in
+under a second and don't trip request-timeout limits. See the
+"Bulk-operation limits should be per-operation cost-profile"
+lessons-learned entry for the rule.
 
 The endpoint never short-circuits on a single failing row: per-row
 errors land in ``failed[]`` with the offending ID so the caller's
@@ -39,7 +42,6 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import Final
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -50,8 +52,6 @@ from app.models import Article, Book
 
 logger = logging.getLogger(__name__)
 
-MAX_BULK_DELETE: Final = 200
-
 
 class _FailedItem(BaseModel):
     id: str
@@ -59,7 +59,10 @@ class _FailedItem(BaseModel):
 
 
 class BulkDeleteRequest(BaseModel):
-    ids: list[str] = Field(min_length=1, max_length=MAX_BULK_DELETE)
+    # min_length=1 keeps "empty body" a 422; no upper bound because
+    # the operation is uncapped (see module docstring + the
+    # bulk-operation cost-profile lesson).
+    ids: list[str] = Field(min_length=1)
     permanent: bool = False
 
 

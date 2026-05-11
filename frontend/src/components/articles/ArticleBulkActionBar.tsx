@@ -150,7 +150,7 @@ export default function ArticleBulkActionBar({
                             type="button"
                             className="btn btn-danger btn-sm"
                             data-testid="article-bulk-delete-menu"
-                            disabled={count < 2 || overLimit}
+                            disabled={count < 2}
                             title={
                                 count < 2
                                     ? t(
