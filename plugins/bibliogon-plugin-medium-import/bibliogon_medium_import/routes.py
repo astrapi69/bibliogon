@@ -5,6 +5,11 @@ Accepts a ZIP from Medium's "Download your information" feature
 and produces one Article + one Publication + one
 ArticleImportSource per ``posts/*.html`` it finds, dedup-ing
 against ``Article.canonical_url``.
+
+Plugin configuration is injected via :func:`set_config` from
+``plugin.py.activate()`` (matches the audiobook precedent). The
+import endpoint reads ``_config["settings"]`` at request time and
+passes the values through to ``importer.import_zip`` as kwargs.
 """
 
 from __future__ import annotations
@@ -12,9 +17,42 @@ from __future__ import annotations
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from .importer import ImportResult, import_zip
+from .importer import DEFAULT_TIMEOUT_SECONDS, ImportResult, import_zip
 
 router = APIRouter(prefix="/medium-import", tags=["medium-import"])
+
+# Plugin config injected from ``plugin.py.activate()`` via set_config.
+# Module-global to keep the route handler dependency-free.
+_config: dict = {}
+
+
+def set_config(config: dict) -> None:
+    """Inject the plugin's full config dict (read at activate-time)."""
+    global _config
+    _config = config
+
+
+def _settings_kwargs() -> dict:
+    """Translate plugin settings to ``import_zip`` kwargs.
+
+    Defaults mirror ``import_zip``'s own defaults so a missing or
+    partial settings block degrades to the sane fallback rather
+    than crashing. Type coercion defends against YAML-edited junk.
+    """
+    settings = (_config.get("settings") or {}) if isinstance(_config, dict) else {}
+    timeout_raw = settings.get("image_download_timeout_seconds")
+    try:
+        timeout = float(timeout_raw) if timeout_raw is not None else DEFAULT_TIMEOUT_SECONDS
+    except (TypeError, ValueError):
+        timeout = DEFAULT_TIMEOUT_SECONDS
+    if timeout <= 0:
+        timeout = DEFAULT_TIMEOUT_SECONDS
+    return {
+        "download_images_enabled": bool(settings.get("download_images", True)),
+        "image_timeout_seconds": timeout,
+        "skip_existing": bool(settings.get("skip_existing_canonical_urls", True)),
+        "default_status": str(settings.get("default_status") or "published"),
+    }
 
 
 # Pydantic response models. Kept here (not in app/schemas/) so the
@@ -99,7 +137,7 @@ async def import_zip_endpoint(file: UploadFile = File(...)) -> ImportZipResponse
         raise HTTPException(status_code=400, detail="Uploaded file is empty")
 
     try:
-        result = import_zip(contents)
+        result = import_zip(contents, **_settings_kwargs())
     except ValueError as exc:
         # Bad ZIP / no posts/ dir -> 400 so the frontend can surface
         # the message verbatim instead of a generic 500.

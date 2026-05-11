@@ -13,7 +13,15 @@ class MediumImportPlugin(BasePlugin):
     depends_on: list[str] = []
 
     def activate(self) -> None:
+        from .routes import set_config
+
         self._settings = self.config.get("settings", {})
+        # Push the full config into the route module so the import
+        # endpoint can read settings at request time. Without this
+        # the YAML-configured + UI-editable settings sit dead and
+        # the importer falls back to its hardcoded defaults on
+        # every run.
+        set_config(self.config or {})
 
     def get_routes(self) -> list[Any]:
         from .routes import router

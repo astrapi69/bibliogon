@@ -257,3 +257,168 @@ def test_no_asset_rows_when_download_is_mocked(client: TestClient, db: Session) 
     article_id = body["imported"][0]["id"]
     rows = db.query(ArticleAsset).filter(ArticleAsset.article_id == article_id).all()
     assert rows == []
+
+
+# ---------------------------------------------------------------------------
+# Settings wiring — end-to-end behavior tests
+#
+# Per the v0.30.0 lessons-learned ("End-to-end behavior tests are not
+# 'kwarg passes through' tests"): each of these flips one setting to a
+# non-default value and asserts an OBSERVABLE behavioral difference.
+# Smoke tests that only check "the kwarg arrived in import_zip" would
+# have passed even before the wiring fix landed.
+# ---------------------------------------------------------------------------
+
+
+def _post_zip_with_settings(
+    client: TestClient,
+    zip_bytes: bytes,
+    settings: dict,
+    download_capture: list | None = None,
+) -> dict:
+    """Like _post_zip but injects a custom settings dict via set_config.
+
+    ``download_capture``, when provided, receives one tuple
+    ``(images, article_id, kwargs)`` per call to ``download_images``.
+    Lets the test assert that the kwarg actually reached the
+    downloader (e.g. the timeout value).
+    """
+    from bibliogon_medium_import import routes as mi_routes
+    from bibliogon_medium_import.image_downloader import DownloadResult
+
+    def _fake_download(images, article_id, **kwargs):  # noqa: ANN001
+        if download_capture is not None:
+            download_capture.append((images, article_id, kwargs))
+        rewrites = {
+            img.src: f"/api/articles/{article_id}/assets/file/dummy.jpg"
+            for img in images
+            if img.src
+        }
+        return DownloadResult(url_rewrites=rewrites, saved_filenames=[], warnings=[])
+
+    saved_config = mi_routes._config
+    mi_routes.set_config({"settings": settings})
+    try:
+        with patch("bibliogon_medium_import.importer.download_images", _fake_download):
+            files = {"file": ("medium-export.zip", io.BytesIO(zip_bytes), "application/zip")}
+            return client.post("/api/medium-import/import", files=files).json()
+    finally:
+        mi_routes.set_config(saved_config)
+
+
+def test_setting_default_status_propagates_to_article(
+    client: TestClient, db: Session
+) -> None:
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"default_status": "draft"},
+    )
+    assert body["imported_count"] == 1
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.status == "draft"
+
+
+def test_setting_skip_existing_false_allows_reimport(
+    client: TestClient, db: Session
+) -> None:
+    """Setting skip_existing_canonical_urls=False must let the second
+    pass actually create a NEW article (today's behavior keeps the
+    first one as the dedup target; the toggle was previously dead)."""
+    zip_bytes = _build_zip(["02_german_philosophical.html"])
+    first = _post_zip_with_settings(
+        client, zip_bytes, {"skip_existing_canonical_urls": True}
+    )
+    assert first["imported_count"] == 1
+    canonical = first["imported"][0]["canonical_url"]
+    first_count = (
+        db.query(Article).filter(Article.canonical_url == canonical).count()
+    )
+    assert first_count == 1
+
+    # With skip_existing_canonical_urls=False, the dedup branch in
+    # _import_one_post must NOT short-circuit; another row appears.
+    second = _post_zip_with_settings(
+        client, zip_bytes, {"skip_existing_canonical_urls": False}
+    )
+    assert second["imported_count"] == 1
+    assert second["skipped_count"] == 0
+    second_count = (
+        db.query(Article).filter(Article.canonical_url == canonical).count()
+    )
+    assert second_count == 2  # second pass created a duplicate row
+
+
+def test_setting_download_images_false_skips_download(
+    client: TestClient, db: Session
+) -> None:
+    """When download_images=False, the downloader must NOT be called
+    and the body's image URLs must stay CDN-hosted."""
+    capture: list = []
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"download_images": False},
+        download_capture=capture,
+    )
+    assert body["imported_count"] == 1
+    assert capture == []  # downloader was never invoked
+
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    doc = json.loads(article.content_json)
+    image_srcs = []
+
+    def _walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "imageFigure":
+                image_srcs.append(node.get("attrs", {}).get("src"))
+            for child in node.get("content", []) or []:
+                _walk(child)
+
+    _walk(doc)
+    assert image_srcs, "fixture has at least one image"
+    for src in image_srcs:
+        assert src.startswith("https://cdn-images-1.medium.com/"), (
+            f"expected CDN URL when download_images=False, got {src!r}"
+        )
+
+
+def test_setting_image_download_timeout_seconds_passes_to_downloader(
+    client: TestClient,
+) -> None:
+    capture: list = []
+    _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"image_download_timeout_seconds": 7},
+        download_capture=capture,
+    )
+    assert capture, "downloader should have been invoked"
+    _images, _article_id, kwargs = capture[0]
+    assert kwargs.get("timeout_seconds") == 7.0
+
+
+def test_settings_absent_falls_back_to_safe_defaults(
+    client: TestClient, db: Session
+) -> None:
+    """An empty settings dict must NOT crash the endpoint. The
+    importer's hardcoded defaults (download=True, skip=True,
+    status='published', timeout=30) take effect."""
+    body = _post_zip_with_settings(
+        client, _build_zip(["01_oldest_tech.html"]), {}
+    )
+    assert body["imported_count"] == 1
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.status == "published"  # default
+
+
+def test_setting_default_status_junk_value_falls_back_to_published(
+    client: TestClient, db: Session
+) -> None:
+    """A value the database accepts but that is meaningless to
+    Bibliogon (e.g. None, empty string) must coerce to 'published'."""
+    body = _post_zip_with_settings(
+        client, _build_zip(["01_oldest_tech.html"]), {"default_status": ""}
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.status == "published"
