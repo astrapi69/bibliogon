@@ -32,6 +32,9 @@ Die Einstellungen gelten für jeden Import; Überschreibungen pro Archiv werden 
 - **Timeout pro Bild-Download (Sekunden)** – Standard 30. Auf langsamen Verbindungen erhöhen; bei Timeout überspringt der Importer das Bild und setzt fort.
 - **Bereits importierte Artikel überspringen** – standardmäßig an. Erkennung erfolgt über die kanonische Medium-URL. Nur deaktivieren, wenn du ein korrigiertes Archiv erneut über ein bestehendes laufen lassen willst (siehe "Erneuter Import" unten).
 - **Standardstatus für importierte Artikel** – Entwurf, Veröffentlicht oder Archiviert. Standard ist Veröffentlicht, da Medium-Beiträge per Definition veröffentlicht sind.
+- **Erstes Bild als Titelbild setzen** – standardmäßig an. Das erste Bild im Beitragstext wird als Titelbild des Artikels gespeichert (`Article.featured_image_url`). Beiträge ohne Bilder bleiben ohne Titelbild; kein Fehler, keine Warnung. Deaktivieren, wenn du Titelbilder manuell kuratierst.
+
+Diese Einstellung wirkt nur auf neue Importe. Um Titelbilder rückwirkend auf bereits importierte Artikel zu setzen, das Skript `scripts/fix_medium_import_featured_images.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Artikel mit bereits gesetztem Titelbild werden übersprungen – deine manuelle Kuratierung bleibt erhalten.
 
 ## Erneuter Import desselben Archivs
 

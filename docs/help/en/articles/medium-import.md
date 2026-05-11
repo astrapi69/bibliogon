@@ -32,6 +32,9 @@ Settings apply to every import; per-archive overrides are not supported.
 - **Timeout pro Bild-Download (Sekunden)** (Per-image download timeout) — default 30. Raise on slow connections; the importer skips the image and continues if the timeout fires.
 - **Bereits importierte Artikel überspringen** (Skip already-imported articles) — default on. Detection is by canonical Medium URL. Turn off only when you want to re-import a corrected archive on top of an existing one (see "Re-importing" below).
 - **Standardstatus für importierte Artikel** (Default status for imported articles) — draft, published, or archived. Default is published since Medium posts are by definition published.
+- **Erstes Bild als Titelbild setzen** (Use first image as featured image) — default on. The first image in the article body is assigned to the article's featured image (`Article.featured_image_url`). Posts without body images stay without a featured image; no error, no warning. Disable for authors who curate featured images manually.
+
+This setting affects new imports only. To retroactively set featured images on articles you imported before this feature shipped, run `scripts/fix_medium_import_featured_images.py` (dry-run by default; pass `--apply` to write). Articles with a featured image already set are skipped — your manual curation is preserved.
 
 ## Re-importing the same archive
 
