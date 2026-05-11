@@ -1580,6 +1580,8 @@ ui:
       status_draft: "Rascunho"
       status_published: "Publicado"
       status_archived: "Arquivado"
+      set_first_image_as_featured: "Usar a primeira imagem como imagem em destaque"
+      set_first_image_as_featured_hint: "Recomendado. A primeira imagem no corpo do artigo torna-se a imagem em destaque do artigo. Artigos sem imagens ficam sem imagem em destaque."
       save: "Guardar definições"
       saving: "A guardar …"
       saved: "Guardado"

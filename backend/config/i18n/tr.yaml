@@ -1580,6 +1580,8 @@ ui:
       status_draft: "Taslak"
       status_published: "Yayımlandı"
       status_archived: "Arşivlendi"
+      set_first_image_as_featured: "İlk görseli öne çıkan görsel olarak ayarla"
+      set_first_image_as_featured_hint: "Önerilir. Makale gövdesindeki ilk görsel, makalenin öne çıkan görseli olur. Görseli olmayan makaleler öne çıkan görsel olmadan kalır."
       save: "Ayarları kaydet"
       saving: "Kaydediliyor …"
       saved: "Kaydedildi"

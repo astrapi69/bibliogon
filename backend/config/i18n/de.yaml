@@ -1580,6 +1580,8 @@ ui:
       status_draft: "Entwurf"
       status_published: "Veröffentlicht"
       status_archived: "Archiviert"
+      set_first_image_as_featured: "Erstes Bild als Titelbild setzen"
+      set_first_image_as_featured_hint: "Empfohlen. Das erste Bild im Beitragstext wird als Titelbild des Artikels gespeichert. Posts ohne Bilder bleiben ohne Titelbild."
       save: "Einstellungen speichern"
       saving: "Speichert …"
       saved: "Gespeichert"

@@ -1580,6 +1580,8 @@ ui:
       status_draft: "Brouillon"
       status_published: "Publié"
       status_archived: "Archivé"
+      set_first_image_as_featured: "Utiliser la première image comme image à la une"
+      set_first_image_as_featured_hint: "Recommandé. La première image du corps de l'article devient l'image à la une. Les articles sans images restent sans image à la une."
       save: "Enregistrer les paramètres"
       saving: "Enregistrement …"
       saved: "Enregistré"

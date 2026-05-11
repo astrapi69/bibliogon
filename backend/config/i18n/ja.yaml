@@ -1580,6 +1580,8 @@ ui:
       status_draft: "下書き"
       status_published: "公開済み"
       status_archived: "アーカイブ"
+      set_first_image_as_featured: "最初の画像をアイキャッチ画像として設定"
+      set_first_image_as_featured_hint: "推奨。記事本文の最初の画像が記事のアイキャッチ画像になります。画像のない記事はアイキャッチ画像なしのままです。"
       save: "設定を保存"
       saving: "保存中 …"
       saved: "保存しました"

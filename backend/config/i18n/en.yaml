@@ -1580,6 +1580,8 @@ ui:
       status_draft: "Draft"
       status_published: "Published"
       status_archived: "Archived"
+      set_first_image_as_featured: "Use first image as featured image"
+      set_first_image_as_featured_hint: "Recommended. The first image in the article body becomes the article's featured image. Posts without images stay without one."
       save: "Save settings"
       saving: "Saving …"
       saved: "Saved"

@@ -103,3 +103,19 @@ Technical terms left in English/Latin script per the existing
 convention: Medium, ZIP, .zip, MB, CDN, URL.
 Placeholders preserved: `{count}`, `{imported}`, `{skipped}`,
 `{errored}`. The parity test enforces placeholder set equality.
+
+## 2026-05-09 — Medium-import set_first_image_as_featured (PT, TR, JA)
+
+2 new keys for the new "use first body image as featured image"
+toggle in the Medium-import settings panel. EN, DE authored
+fully. ES, FR, EL produced idiomatically and ready for self-
+validation. PT, TR, JA machine-translated; need native-speaker
+review.
+
+| Key | Languages |
+|-----|-----------|
+| `ui.medium_import.settings.set_first_image_as_featured` | PT, TR, JA |
+| `ui.medium_import.settings.set_first_image_as_featured_hint` | PT, TR, JA |
+
+No placeholders. Technical term "Medium" left untranslated per
+the existing convention.
