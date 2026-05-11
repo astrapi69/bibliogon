@@ -123,6 +123,46 @@ function SaveErrorContent(
   );
 }
 
+/** Content for bulk-action toasts with an Undo action button.
+ *  Mirrors SaveErrorContent's shape but uses the success/info
+ *  toast styling, since bulk-actions succeed by default — the
+ *  Undo is for "oops, I didn't mean that batch" recovery, not
+ *  for error retry. */
+function BulkActionContent(
+  {message, onUndo, undoLabel, closeToast}: {
+    message: string;
+    onUndo: () => void;
+    undoLabel: string;
+    closeToast?: () => void;
+  },
+) {
+  return React.createElement(
+    'div',
+    {style: {display: 'flex', flexDirection: 'column', gap: 8, maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word'}},
+    React.createElement('span', {style: {display: 'block', fontSize: '0.8125rem', lineHeight: 1.4}}, message),
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        'data-testid': 'bulk-action-undo',
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation();
+          onUndo();
+          closeToast?.();
+        },
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600,
+          color: '#fff', background: 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: 4, cursor: 'pointer', alignSelf: 'flex-start',
+        },
+      },
+      undoLabel,
+    ),
+  );
+}
+
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
@@ -151,4 +191,16 @@ export const notify = {
   warning: (message: string) => { recordToast('warning', message); return toast.warning(message, {autoClose: 12000}) },
   info: (message: string) => { recordToast('info', message); return toast.info(message, {autoClose: 10000}) },
   success: (message: string) => { recordToast('success', message); return toast.success(message, {autoClose: 5000}) },
+  /** Success toast with an Undo action button. Used by bulk-delete
+   *  (soft path) so the user can recover from "oops, I selected the
+   *  wrong filter". Hard-delete does NOT call this — the data is
+   *  gone, an Undo button would be a lie. autoClose is longer than
+   *  success() because the user needs time to click Undo. */
+  bulkAction: (message: string, onUndo: () => void, undoLabel: string) => {
+    recordToast('success', message);
+    return toast.success(
+      React.createElement(BulkActionContent, {message, onUndo, undoLabel}),
+      {autoClose: 10000, closeOnClick: false},
+    );
+  },
 }
