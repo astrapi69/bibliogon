@@ -119,3 +119,42 @@ review.
 
 No placeholders. Technical term "Medium" left untranslated per
 the existing convention.
+
+## 2026-05-11 — Bulk-delete strings (PT, TR, JA)
+
+26 new keys under `ui.bulk_delete.*` for the bulk-delete feature
+(Articles + Books dashboards). EN, DE authored fully. ES, FR, EL
+produced idiomatically and ready for self-validation. PT, TR, JA
+machine-translated; need native-speaker review.
+
+| Key prefix | Languages |
+|-----|-----------|
+| `ui.bulk_delete.delete_button` | PT, TR, JA |
+| `ui.bulk_delete.disabled_min_two` | PT, TR, JA |
+| `ui.bulk_delete.option_trash` | PT, TR, JA |
+| `ui.bulk_delete.option_permanent` | PT, TR, JA |
+| `ui.bulk_delete.confirm_permanent_title` | PT, TR, JA |
+| `ui.bulk_delete.confirm_permanent_summary` | PT, TR, JA |
+| `ui.bulk_delete.confirm_permanent_button` | PT, TR, JA |
+| `ui.bulk_delete.filter_clause_label` | PT, TR, JA |
+| `ui.bulk_delete.type_count_prompt` | PT, TR, JA |
+| `ui.bulk_delete.type_count_mismatch` | PT, TR, JA |
+| `ui.bulk_delete.generic_items` | PT, TR, JA |
+| `ui.bulk_delete.items_articles` | PT, TR, JA |
+| `ui.bulk_delete.items_books` | PT, TR, JA |
+| `ui.bulk_delete.toast_trashed` | PT, TR, JA |
+| `ui.bulk_delete.toast_deleted_permanent` | PT, TR, JA |
+| `ui.bulk_delete.toast_undone` | PT, TR, JA |
+| `ui.bulk_delete.toast_undo_failed` | PT, TR, JA |
+| `ui.bulk_delete.toast_failed` | PT, TR, JA |
+| `ui.bulk_delete.undo_label` | PT, TR, JA |
+| `ui.bulk_delete.filter_search` | PT, TR, JA |
+| `ui.bulk_delete.filter_status` | PT, TR, JA |
+| `ui.bulk_delete.filter_topic` | PT, TR, JA |
+| `ui.bulk_delete.filter_language` | PT, TR, JA |
+| `ui.bulk_delete.filter_series` | PT, TR, JA |
+| `ui.bulk_delete.filter_tag` | PT, TR, JA |
+| `ui.bulk_delete.filter_genre` | PT, TR, JA |
+
+Placeholders preserved: `{count}`, `{noun}`. Sentence punctuation
+adapted to each locale (Japanese uses 。and 「」 conventions).
