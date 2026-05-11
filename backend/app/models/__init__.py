@@ -83,6 +83,15 @@ class Book(Base):
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # UNIVERSAL-AI-TEMPLATE-01 Session 1 fields. ``cover_image_prompt`` is the
+    # Stable-Diffusion-style prompt for the book cover. ``chapter_summaries``
+    # is a JSON-encoded list ``[{chapter_id, title, summary}]`` — same
+    # JSON-list-stored-as-text precedent as ``keywords``.
+    cover_image_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    chapter_summaries: Mapped[str] = mapped_column(
+        Text, nullable=False, default="[]", server_default="[]"
+    )
+
     # AI-assisted content flag (for KDP/export metadata)
     ai_assisted: Mapped[bool] = mapped_column(default=False)
     # Cumulative AI token usage for this book (prompt + completion tokens)
@@ -449,6 +458,16 @@ class Article(Base):
     # requiring a Series model. If parent/child series ever becomes
     # required, that lands as its own model + M2M migration.
     series: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
+    # UNIVERSAL-AI-TEMPLATE-01 Session 1 fields. ``featured_image_prompt`` is
+    # the Stable-Diffusion-style prompt for the hero image.
+    # ``inline_image_prompts`` is a JSON-encoded list
+    # ``[{section_hint, prompt}]`` — same JSON-list-stored-as-text
+    # precedent as ``tags``.
+    featured_image_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    inline_image_prompts: Mapped[str] = mapped_column(
+        Text, nullable=False, default="[]", server_default="[]"
+    )
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
