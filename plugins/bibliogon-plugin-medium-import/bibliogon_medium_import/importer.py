@@ -190,12 +190,19 @@ def _import_one_post(
                 )
                 return
 
+        # Language: prefer langdetect's high-confidence call from the
+        # walker; fall back to ``default_language`` when the body was
+        # too short / mixed for confident detection. Medium HTML has
+        # no canonical language attribute, so statistical detection
+        # over the body text is the only signal available.
+        language = parsed.detected_language or default_language
+
         # Persist the Article first so we have an id for assets.
         article = Article(
             title=parsed.title or "(untitled)",
             subtitle=parsed.subtitle or None,
             author=parsed.author or None,
-            language=default_language,
+            language=language,
             status=default_status,
             content_type="article",
             canonical_url=parsed.canonical_url,

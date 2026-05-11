@@ -524,3 +524,55 @@ def test_featured_image_default_setting_is_on(
     )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.featured_image_url is not None  # default = ON
+
+
+# ---------------------------------------------------------------------------
+# Language detection — end-to-end behavior tests
+# ---------------------------------------------------------------------------
+
+
+def test_language_detected_german_lands_on_article(
+    client: TestClient, db: Session
+) -> None:
+    """Walker -> Importer -> DB chain must surface the detected
+    language as Article.language. End-to-end behavior test, not
+    a 'detected_language attribute is set' kwarg-passthrough."""
+    body = _post_zip(client, _build_zip(["02_german_philosophical.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.language == "de"
+
+
+def test_language_detected_english_lands_on_article(
+    client: TestClient, db: Session
+) -> None:
+    body = _post_zip(client, _build_zip(["01_oldest_tech.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.language == "en"
+
+
+def test_language_low_confidence_falls_back_to_default(
+    client: TestClient, db: Session
+) -> None:
+    """A post with too-short body falls back to default_language.
+    Uses an inline synthetic post whose body is below the 50-char
+    floor langdetect treats as confidently detectable."""
+    short_html = """\
+<!DOCTYPE html><html><head><title>Tiny</title></head><body>
+<article>
+<header>
+  <a class="p-canonical" href="https://medium.com/@u/tiny-abc1234"></a>
+  <h1 class="p-name">Tiny</h1>
+</header>
+<section data-field="body">
+  <section class="section section--body"><div class="section-content"><div class="section-inner">
+    <p class="graf graf--p">Hi.</p>
+  </div></div></section>
+</section>
+</article>
+</body></html>
+"""
+    body = _post_zip(client, _build_zip_with_inline_post("tiny.html", short_html))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    # Walker returns None for too-short text; importer falls back to
+    # default_language (currently "en").
+    assert article.language == "en"

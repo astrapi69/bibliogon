@@ -356,6 +356,59 @@ def test_all_fixtures_produce_valid_doc_shape(fixture: str) -> None:
     assert post.content_doc["content"], f"{fixture} produced empty doc"
 
 
+# ---------------------------------------------------------------------------
+# Language detection (langdetect-backed)
+# ---------------------------------------------------------------------------
+
+
+def test_language_detected_as_english_for_english_fixture() -> None:
+    """01_oldest_tech.html is an English technical post; the
+    detector should return ``en`` with high confidence."""
+    post = _parse("01_oldest_tech.html")
+    assert post.detected_language == "en"
+
+
+def test_language_detected_as_german_for_german_fixture() -> None:
+    """02_german_philosophical.html is in German; detector should
+    return ``de``."""
+    post = _parse("02_german_philosophical.html")
+    assert post.detected_language == "de"
+
+
+def test_language_detected_as_german_for_multi_inner_fixture() -> None:
+    """04 was the truncated production article. Its full body (after
+    the section-inner fix recovers it) is in German."""
+    post = _parse("04_german_long_with_multi_inner.html")
+    assert post.detected_language == "de"
+
+
+def test_language_returns_none_for_empty_body() -> None:
+    """Empty content_doc -> None, importer uses default_language."""
+    from bibliogon_medium_import.walker import MediumWalker
+
+    walker = MediumWalker()
+    result = walker._detect_language({"type": "doc", "content": []})
+    assert result is None
+
+
+def test_language_returns_none_for_too_short_body() -> None:
+    """<50 chars of text is too noisy even with the seed pinned;
+    the detector returns None and the importer falls back."""
+    from bibliogon_medium_import.walker import MediumWalker
+
+    walker = MediumWalker()
+    short_doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "Hi there."}],
+            }
+        ],
+    }
+    assert walker._detect_language(short_doc) is None
+
+
 def test_04_multi_inner_layout_captures_full_body() -> None:
     """Regression pin for the section-inner truncation bug.
 

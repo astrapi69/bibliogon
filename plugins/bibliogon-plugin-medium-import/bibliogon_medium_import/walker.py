@@ -44,6 +44,21 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from bs4 import BeautifulSoup, NavigableString, Tag
+from langdetect import DetectorFactory, LangDetectException, detect_langs
+
+# Make detection deterministic across runs and processes. langdetect
+# internally seeds a PRNG; without this, two consecutive runs can
+# return different language codes for the same short input. Setting
+# the seed pins the output.
+DetectorFactory.seed = 0
+
+# A language is only assigned when langdetect's top candidate clears
+# this confidence floor. Threshold picked from the 209-post production
+# corpus: 0.85 cleanly separates German / English / Greek (top
+# candidate ~0.99 each) from genuinely ambiguous mixes (top candidate
+# in the 0.3-0.6 range). Below the threshold, the importer falls back
+# to its ``default_language`` kwarg (currently hardcoded to "en").
+_LANG_CONFIDENCE_THRESHOLD = 0.85
 
 
 @dataclass
@@ -74,6 +89,11 @@ class ParsedPost:
     content_doc: dict[str, Any]
     images: list[ImageRef] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    # Two-letter ISO 639-1 language code detected from the body text
+    # when langdetect's top candidate cleared the confidence floor.
+    # ``None`` means: low-confidence detection or empty body. The
+    # importer falls back to ``default_language`` in that case.
+    detected_language: str | None = None
 
 
 # Medium maps user-typed H2 to graf--h3 in body (the H1 is in the
@@ -98,16 +118,58 @@ class MediumWalker:
 
     def parse(self, html: str) -> ParsedPost:
         soup = BeautifulSoup(html, "html.parser")
+        content_doc = self._walk_body(soup)
         return ParsedPost(
             title=self._extract_title(soup),
             subtitle=self._extract_subtitle(soup),
             canonical_url=self._extract_canonical(soup),
             published_at=self._extract_date(soup),
             author=self._extract_author(soup),
-            content_doc=self._walk_body(soup),
+            content_doc=content_doc,
             images=self.images,
             warnings=self.warnings,
+            detected_language=self._detect_language(content_doc),
         )
+
+    def _detect_language(self, content_doc: dict[str, Any]) -> str | None:
+        """Return the ISO 639-1 code of the dominant body language,
+        or None when detection is not confident enough.
+
+        Medium HTML exports carry no canonical language metadata
+        (verified against the 209-post production corpus: every
+        sample has empty ``<html lang>``, ``<body lang>``,
+        ``<article lang>``, and ``<meta http-equiv>`` attributes),
+        so we have to fall back to statistical detection. Body text
+        is what we score, not title/subtitle: titles can be in a
+        different language than the body and the body is the
+        canonical signal of "what language is this post in".
+        """
+        text_bits: list[str] = []
+
+        def _gather(node: object) -> None:
+            if isinstance(node, dict):
+                if node.get("type") == "text":
+                    text_bits.append(str(node.get("text", "")))
+                for child in node.get("content", []) or []:
+                    _gather(child)
+
+        _gather(content_doc)
+        text = " ".join(b for b in text_bits if b.strip())
+        if len(text) < 50:
+            # Too short for reliable detection; let the importer use
+            # its default. langdetect's behavior on very short text
+            # is too noisy even with the seed pinned.
+            return None
+        try:
+            candidates = detect_langs(text)
+        except LangDetectException:
+            return None
+        if not candidates:
+            return None
+        top = candidates[0]
+        if top.prob < _LANG_CONFIDENCE_THRESHOLD:
+            return None
+        return str(top.lang)
 
     def _extract_title(self, soup: BeautifulSoup) -> str:
         h1 = soup.find("h1", class_="p-name")
