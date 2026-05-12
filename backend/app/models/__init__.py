@@ -504,6 +504,18 @@ class Article(Base):
         uselist=False,
     )
 
+    # MEDIUM-COMMENTS-IMPORT-01. Comments that respond to this
+    # article. Deliberately NOT cascade-delete: comments survive
+    # article deletion as orphans (responds_to_article_id flips
+    # to NULL via the FK's ``ondelete="SET NULL"``). Mirrors the
+    # "preserve for later linkage" intent that drives orphan
+    # comment storage in the first place — deleting an article
+    # doesn't retroactively destroy the discussion around it.
+    comments: Mapped[list["ArticleComment"]] = relationship(
+        back_populates="responds_to_article",
+        order_by="ArticleComment.published_at",
+    )
+
     @property
     def original_published_at(self) -> datetime | None:
         """Earliest ``Publication.published_at`` across all publications.
@@ -616,6 +628,103 @@ class ArticleImportSource(Base):
         return (
             f"<ArticleImportSource article={self.article_id!r} "
             f"identifier={self.source_identifier!r} type={self.source_type}>"
+        )
+
+
+class ArticleComment(Base):
+    """A short user-written response to an article.
+
+    MEDIUM-COMMENTS-IMPORT-01. Modeled as a sibling of the Article
+    rather than a sub-entity of it because:
+
+    - Medium's HTML export gives no parent-article reference, so
+      every imported comment is born an "orphan". A separate
+      table lets us list those orphans for a future linkage
+      workflow without polluting ``Article`` with optional
+      response-target columns.
+    - Future importers (WordPress, Hashnode) will reuse this
+      table; ``imported_from`` is the discriminator.
+
+    The relationship to ``Article`` is nullable (orphan
+    semantics). When the article IS in the same DB, the FK is
+    set; otherwise ``responds_to_url`` preserves the link for
+    later inference.
+    """
+
+    __tablename__ = "article_comments"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    author: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Plain-text rendering of the comment body (the input to the
+    # comment-detection heuristic). Stored explicitly so a future
+    # search index doesn't have to re-parse the JSON.
+    body_text: Mapped[str] = mapped_column(Text, nullable=False)
+    # TipTap JSON serialised to a string. Same convention as
+    # ``Article.content_json`` / ``Chapter.content`` so the
+    # editor can render a comment in read-only mode using the
+    # existing TipTap renderer.
+    body_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Auto-detected via langdetect on import, same approach as
+    # Article. Defaults to ``"en"`` per importer fallback.
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    # Original publication time of the comment on the source
+    # platform. Distinct from ``imported_at``.
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    canonical_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Optional FK to the article being responded to. NULL for
+    # orphans (the dominant case for Medium imports because the
+    # export carries no parent-article reference). Cascade-set to
+    # NULL on article delete so orphan-handling stays consistent
+    # whether the article was deleted or never existed.
+    responds_to_article_id: Mapped[str | None] = mapped_column(
+        String(32),
+        ForeignKey("articles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # The raw URL the comment claims to respond to. Preserved
+    # for orphans + for future re-linking when the responded-to
+    # article gets imported later.
+    responds_to_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Source tracking. v1 ships with ``"medium"`` only;
+    # String(50) leaves room for ``"wordpress"``, ``"hashnode"``,
+    # etc. without a schema change. Enum table would be
+    # overengineering at one value.
+    imported_from: Mapped[str] = mapped_column(String(50), nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    # Filename inside the source export, for traceability.
+    source_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Standard timestamps. ``deleted_at`` follows the rest of
+    # the Bibliogon soft-delete pattern.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=_utcnow,
+        onupdate=_utcnow,
+        nullable=False,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    responds_to_article: Mapped["Article | None"] = relationship(
+        back_populates="comments"
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ArticleComment id={self.id!r} "
+            f"responds_to={self.responds_to_article_id!r} "
+            f"imported_from={self.imported_from!r}>"
         )
 
 
