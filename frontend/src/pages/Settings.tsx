@@ -15,9 +15,10 @@ import {useI18n} from "../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../utils/aiProviders";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import SshKeySection from "../components/SshKeySection";
+import CommentsAdminSection from "../components/CommentsAdminSection";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "ai", "author", "topics", "plugins", "support"] as const;
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "topics", "plugins", "comments", "support"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -110,6 +111,7 @@ export default function Settings() {
                         {value: "author", label: t("ui.settings.tab_author", "Autor")},
                         {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
                         {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins")},
+                        {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
                         ...(getDonationsConfig(appConfig)
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
                             : []),
@@ -287,6 +289,9 @@ export default function Settings() {
                             }
                         }}
                     />
+                </Tabs.Content>
+                <Tabs.Content value="comments">
+                    <CommentsAdminSection />
                 </Tabs.Content>
                 {getDonationsConfig(appConfig) ? (
                     <Tabs.Content value="support">
