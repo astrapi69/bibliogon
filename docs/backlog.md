@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (AI-FILL-CAP-CONFIG-01 promoted from P5 and landed: 1 backend-only commit, +18 backend tests. Bulk AI-fill + bulk AI-template caps configurable via `ai.bulk.max_ai_fill` and `ai.bulk.max_ai_template` in app.yaml; defaults of 50 unchanged. Both Session 1+2 P5 follow-ups now closed; archived to docs/roadmap-archive/2026-05.md.)
+Last updated: 2026-05-12 (MEDIUM-COMMENTS-IMPORT-01 landed: 10 backend commits, +30 backend tests + +15 plugin tests, comment-detection heuristic + new article_comments table + 2 core endpoints + bilingual help docs. Pre-inspection audit on the user's 209-file Medium export refined the spec's heuristic (drop empty-subtitle criterion); detection lifted from 6/209 to 8/209 with zero new false positives. New lessons-learned rule: "Real-world data audit BEFORE implementation prevents spec-vs-reality drift." Frontend follow-up MEDIUM-COMMENTS-UI-01 (P2) filed. Archived to docs/roadmap-archive/2026-05.md.)
 Current version: v0.30.0
-Open tasks: 15 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 16 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -82,6 +82,33 @@ store.
   S-M depending on tag-quality bar. Trigger: first user report
   asking for it OR v01 ships and the manual-tagging step is a
   visible bottleneck in feedback.
+
+- **MEDIUM-COMMENTS-UI-01**: frontend integration for the
+  `article_comments` data layer shipped in
+  MEDIUM-COMMENTS-IMPORT-01 (backend, 2026-05-12). Three
+  surfaces:
+  1. **Comments section in the article editor**: read-only
+     list of `ArticleComment` rows whose
+     `responds_to_article_id` matches the open article, fed
+     by `GET /api/articles/{id}/comments`. Subtle visual
+     distinction from article body (smaller font, indented,
+     muted border). One section per article that has any
+     comments.
+  2. **Count badge on the article list / dashboard tile**:
+     small badge with the comment count, helps users see at
+     a glance which articles have responses without opening
+     the editor.
+  3. **Admin view for orphan management**: dedicated page
+     under Settings or a new top-level route. Lists
+     orphan comments (filterable by
+     `imported_from=medium|wordpress|...`), supports
+     soft-delete via the existing `DELETE /api/comments/{id}`
+     endpoint. Future v2 work in this view: bulk re-link to
+     an article + hard-delete.
+  i18n × 8 strings for all three surfaces. No new backend
+  endpoints — the data layer is complete. Trigger: ship
+  when the editor's read-only comments section + the badge
+  shape feel ready to design.
 
 ---
 

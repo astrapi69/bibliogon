@@ -6,6 +6,35 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **Medium comments: detection + storage** (`MEDIUM-COMMENTS-IMPORT-01`).
+  Medium's HTML export treats user-written responses (short
+  reply-shaped notes to other articles) as standalone HTML
+  files indistinguishable from articles at the file level.
+  The walker now runs a heuristic (body < 500 chars AND no
+  structural elements — heading / codeBlock / bulletList /
+  orderedList / imageFigure) and routes detected comments to
+  a new `article_comments` table instead of polluting the
+  article dashboard. Three modes (`import_comments_mode`):
+  `as_comments` (default), `as_articles` (legacy v0.30.0
+  behaviour), `skip`. Two orphan-handling modes
+  (`orphan_comment_handling`): `store` (default; Medium
+  comments are always orphans because the export carries no
+  parent-article reference at all), `skip`. Two new API
+  endpoints in core: `GET /api/articles/{id}/comments` and
+  `GET /api/comments` (admin, with `imported_from` +
+  `orphans_only` filters + soft-delete via DELETE).
+  `responds_to_article_id` FK uses `ON DELETE SET NULL` so
+  deleting an article preserves its comments as orphans for
+  later re-linkage. Pre-inspection audit on the user's
+  209-file Medium export refined the spec's heuristic (the
+  original empty-subtitle criterion was dropped after
+  finding 2 false negatives caused by Medium auto-filling
+  the subtitle from the reply body); detection lifted from
+  6/209 to 8/209 with zero new false positives. +30 backend
+  tests + 15 plugin tests. Bilingual help-doc update under
+  `docs/help/{en,de}/import/medium.md`. Editor-side surface
+  deferred to follow-up `MEDIUM-COMMENTS-UI-01` (P2).
+
 - **Configurable per-batch caps for bulk AI operations**
   (`AI-FILL-CAP-CONFIG-01`, promoted from P5). New
   `ai.bulk.max_ai_fill` (default 50) and

@@ -1102,3 +1102,65 @@ just consumers of the context.
 When adding the next long-running job type to Bibliogon, the
 pattern to follow is: context provider holds the SSE state +
 persistence, components consume it, never the other way around.
+
+## Real-world data audit BEFORE implementation prevents spec-vs-reality drift
+
+MEDIUM-COMMENTS-IMPORT-01 shipped with a three-criteria
+detection heuristic in the original spec: body_length < 500
+chars **AND** empty subtitle **AND** no structural elements.
+Pre-inspection ran that heuristic against the actual 209-file
+Medium export in the user's home directory before any code
+landed. Two findings forced a spec revision:
+
+1. **6 / 209 matched the original three-criteria heuristic.**
+   That seemed reasonable on paper.
+2. **The user's own reference comment case** ("Thanks for
+   pointing that out — you're right, the link was missing.")
+   was a **false negative**. The audit dug deeper: Medium
+   auto-fills the `data-field="subtitle"` section with the
+   second paragraph of the reply body when the author wrote
+   no explicit subtitle. So the "empty subtitle" criterion
+   never holds for those auto-filled cases, even though they
+   are unambiguously comments.
+
+Dropping the empty-subtitle criterion lifted detection from
+**6 / 209 to 8 / 209** with zero new false positives across
+the corpus. The two cases the original spec would have missed
+both carry Medium's auto-filled subtitle.
+
+The lesson generalizes:
+
+- **Specs that predict a data shape are predictions, not
+  contracts.** A heuristic that looks principled on paper can
+  silently miss the cases that matter once you point it at
+  real data.
+- **Run the audit against actual data BEFORE writing code,
+  not after.** "After" means the code is committed, possibly
+  shipped, and the regression is harder to undo than to
+  prevent. The medium-import walker session (2026-04-23) had
+  the inverse cost: a `find` vs `find_all` bug silently
+  truncated ~33% of imports for an entire release cycle, and
+  the fix needed a one-off data-fix script + a regression-pin
+  test. The MEDIUM-COMMENTS-IMPORT-01 audit caught the same
+  class of bug BEFORE landing — no data-fix script needed,
+  no production rows mis-classified.
+- **The audit input doesn't have to be production data.** In
+  the MEDIUM-COMMENTS-IMPORT-01 session, the production DB
+  was empty (the user had cleared it), so the audit ran
+  directly against the raw Medium HTML export in the user's
+  Downloads directory. Working from the source bytes instead
+  of the parsed-and-imported rows is often cleaner: the audit
+  isolates the heuristic from walker / importer drift.
+- **Surfacing the audit in the pre-inspection report** is
+  what makes the decision visible. Without the report saying
+  "6 / 209 under the spec, 8 / 209 with empty-subtitle
+  dropped, the user's own reference case is in the missing
+  2," the spec would have been confirmed unchanged. The
+  report makes the discrepancy a decision point instead of an
+  implementation surprise.
+
+Concrete rule: when a feature ships with a heuristic, a
+detection rule, a threshold, or any other prediction about
+data shape, run the prediction against real data in
+pre-inspection. Report counts + sample cases. Treat the spec
+as the starting hypothesis, not the final design.
