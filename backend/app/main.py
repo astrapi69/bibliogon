@@ -43,6 +43,7 @@ from app.routers import (
     bulk_delete,
     chapter_templates,
     chapters,
+    comments,
     covers,
     git_backup,
     git_import_backfill,
@@ -514,6 +515,7 @@ app.include_router(ai_template_bulk_fill.articles_router, prefix="/api")
 app.include_router(ai_template_bulk_fill.books_router, prefix="/api")
 app.include_router(bulk_delete.articles_router, prefix="/api")
 app.include_router(bulk_delete.books_router, prefix="/api")
+app.include_router(comments.router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")
 app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
