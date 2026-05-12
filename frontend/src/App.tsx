@@ -14,6 +14,8 @@ import {DialogProvider} from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import OfflineBanner from "./components/OfflineBanner";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
+import {BulkAiFillJobProvider} from "./contexts/BulkAiFillJobContext";
+import BulkAiFillDock from "./components/BulkAiFillDock";
 import {HelpProvider} from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
@@ -78,6 +80,7 @@ export default function App() {
         <I18nProvider>
         <DialogProvider>
         <AudiobookJobProvider>
+        <BulkAiFillJobProvider>
         <HelpProvider>
             <OfflineBanner />
             <Routes>
@@ -92,6 +95,7 @@ export default function App() {
             </Routes>
             <EventRecorderSetup/>
             <AudioExportGate/>
+            <BulkAiFillDock/>
             <HelpPanel/>
             <ErrorReportDialog
                 open={errorReport.open}
@@ -115,6 +119,7 @@ export default function App() {
                 theme="colored"
             />
         </HelpProvider>
+        </BulkAiFillJobProvider>
         </AudiobookJobProvider>
         </DialogProvider>
         </I18nProvider>
