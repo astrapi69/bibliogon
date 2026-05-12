@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-11 (6-bug medium-import session: settings wiring, featured_image, truncation walker fix, langdetect language detection, SEO defaults at import, original_published_at computed field. 4 retro-fix scripts applied to the 209-post production import (truncation, language, SEO, plus earlier imageFigure + featured-image). New backlog item MEDIUM-IMPORT-EXCERPT-AUTOFILL-01 filed under P5.)
+Last updated: 2026-05-12 (UNIVERSAL-AI-TEMPLATE-01 Session 1 landed: 10 commits db1a283..5a01c4f, +108 backend tests. Article + Book ai-template export/import/empty + ai-fill + bulk ZIP + bulk SSE with per-item cost-estimate breakdown. Session 2 frontend filed as UNIVERSAL-AI-TEMPLATE-02 under P2. AI-FILL-CAP-CONFIG-01 filed under P5.)
 Current version: v0.30.0
-Open tasks: 15 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 17 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -46,6 +46,31 @@ store.
 ---
 
 ## P2 - High-Value User Features
+
+- **UNIVERSAL-AI-TEMPLATE-02**: Session 2 frontend for the
+  AI-template feature shipped in Session 1 backend (2026-05-12,
+  10 commits db1a283..5a01c4f). Session 1 landed: DB columns,
+  Pydantic template schema + YAML serializer with self-
+  explanatory header, system prompts per field-class, per-record
+  ai-template export/import/empty endpoints (Article + Book),
+  per-record ai-fill endpoints (Article + Book) with field-class
+  selection, bulk ZIP export/import (cap 50, Article + Book),
+  bulk ai-fill with estimate / start / SSE / per-item cost
+  breakdown (Article + Book). Backend tests: 1531 (+108 from
+  Session 1). Session 2 must ship: AITemplatePanel (three first-
+  class buttons — Fill with AI / Export template / Import filled
+  template) on Article + Book sidebars, FieldClassDialog with
+  force-override toggle, TemplateImportDropZone, bulk-action-bar
+  AI-template buttons, SSE-driven progress dialog with per-item
+  cost-estimate confirm, AI-Provider Settings panel (5 presets +
+  Custom, base_url + model + api_key + Test connection per Q11),
+  "New from template" Article + Book creation endpoints + UI for
+  the empty-template path, bilingual EN+DE help docs filled in
+  with screenshots + LM Studio / Ollama walkthroughs (the
+  Session 1 stub at `docs/help/{en,de}/ai/ai-templates.md` is
+  scaffold-only), i18n keys × 8 catalogs. Effort: L (~10
+  commits per the Session-1 prompt plan). Trigger: Session 2
+  prompt picks this up; do not start ad-hoc.
 
 - **MEDIUM-IMPORT-V2-01**: dry-run preview UI before bulk import.
   v1 (shipped 2026-05-08) imports every `posts/*.html` from a
@@ -198,6 +223,19 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **AI-FILL-CAP-CONFIG-01**: make the per-batch bulk AI-fill cap
+  (`MAX_BULK_AI_FILL = 50` in
+  `backend/app/routers/ai_template_bulk_fill.py`) and the bulk
+  AI-template cap (`MAX_BULK_AI_TEMPLATE = 50` in
+  `backend/app/routers/ai_template_bulk.py`) configurable as
+  plugin settings rather than hardcoded constants. v1 ships
+  hardcoded per S8 to keep the surface small until real usage
+  data justifies the configuration. Power-users who need higher
+  caps can edit the constants in their fork. Trigger: first user
+  report that 50 is too low for a normal batch, or evidence that
+  the rate-limit + AI provider can comfortably handle larger
+  batches in production.
 
 - **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
   ``Article.excerpt`` on Medium import, mirroring the existing

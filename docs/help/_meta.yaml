@@ -159,6 +159,15 @@ navigation:
       en: AI Assistant
     slug: ai
     icon: sparkles
+    children:
+      - title:
+          de: Übersicht
+          en: Overview
+        slug: ai
+      - title:
+          de: KI-Vorlagen (Artikel + Bücher)
+          en: AI Templates (Articles + Books)
+        slug: ai/ai-templates
 
   - title:
       de: Themes

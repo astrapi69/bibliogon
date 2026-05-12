@@ -921,3 +921,57 @@ This shape bit during the v0.30.0 release: the pre-v0.30.0 dep sweep bumped fast
 - `make verify-plugin-locks` (Makefile target shipped in the same commit): runs `poetry install --dry-run --no-interaction --no-ansi` per plugin and greps for "changed significantly". Exits 1 with a remediation hint on drift; manual diagnostic, NOT in the pre-tag chain (the pre-commit hook below + the CI per-plugin matrix already cover the right times).
 - Pre-commit hook `plugin-lock-paired-with-pyproject` (shipped in commit `8f6fcea`): scoped via `files: ^plugins/bibliogon-plugin-[^/]+/pyproject\.toml$`, fails when a staged plugin pyproject lacks a paired staged `poetry.lock`. Catches the operational mistake at commit time. Verified by 6 hook self-check tests in `backend/tests/test_plugin_lock_drift_hook.py` (commit `e31c4fd`), all green at 0.22 s.
 - Discovery channel without these gates: CI red on main, AFTER a release tag has already been cut. The retro's commitment to "discrete pre-release dep sweep commits" pays off (rollback granularity stays intact), but the better gate is to catch the drift before push, not from the GitHub Actions red badge.
+
+## AI-prompts embedded in data files beat per-call system-prompts for portability
+
+UNIVERSAL-AI-TEMPLATE-01 Session 1 (2026-05-12) shipped a
+self-explanatory `.biblio.yaml` template format where every
+fillable field carries three keys (`description`, `example`,
+`current_value`) and a top-of-file comment block carries the
+rules-for-AI text (fill `current_value` only, respond in the
+article's language, real UTF-8 characters, leave null when
+uncertain). The rules live inside the file rather than being
+passed as a system prompt at API call time.
+
+Consequence: the same artefact works across THREE workflows
+without any code branching:
+
+1. Built-in AI: Bibliogon's existing AI-provider abstraction
+   reads the YAML at runtime, builds its own system+user
+   prompts (`backend/app/ai/article_template_prompts.py` /
+   `book_template_prompts.py`), and calls the configured
+   provider. The rules-in-file are redundant here but harmless.
+2. Custom local endpoint (LM Studio / Ollama): same Bibliogon
+   code path; `app.ai.llm_client.LLMClient` is endpoint-
+   agnostic.
+3. External AI via YAML round-trip: the user pastes the YAML
+   into Claude.ai or ChatGPT with zero Bibliogon context. The
+   rules-in-file are load-bearing here — they are the ONLY
+   instruction the AI sees. The AI reads them, fills
+   `current_value` per the rules, returns valid YAML, the user
+   uploads it back, the import pipeline applies it.
+
+Why this matters more broadly: a feature that depends on
+runtime-injected system prompts can only run inside the
+application's call path. A feature whose semantics travel
+WITH the data artifact can run anywhere — paid cloud APIs,
+free-tier playgrounds, local laptops, chat sessions, even
+hand-edits by a human author. The same `.biblio.yaml` exported
+from Bibliogon can be filled in any of those contexts and
+re-imported.
+
+Generalizes to: file formats that consumers might want to
+process outside the originating app. If the file carries its
+own "what this is + how to fill it" preamble, downstream
+tools (AI assistants, scripts, manual editors) work without
+out-of-band documentation. Pure data with no embedded
+instructions forces every consumer to know the schema, which
+is a coordination cost the schema-owner pays forever in
+documentation churn.
+
+Concrete artifact constants in `app.ai.template_schema`:
+`ARTICLE_HEADER` and `BOOK_HEADER`. Each is a multi-line
+comment block written once, regenerated on every export. PyYAML
+silently drops comments on import — that's fine because the
+header is documentation regenerated downstream, not a contract
+the import path enforces.
