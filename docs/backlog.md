@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (UNIVERSAL-AI-TEMPLATE-02 Session 2 landed: 10 commits 026674a..ba1ld10, +152 frontend tests + 19 backend tests + i18n × 8 + bilingual help docs. Three-workflow UI ships: built-in AI / custom-endpoint / external YAML round-trip. Session 1 + Session 2 archived to docs/roadmap-archive/2026-05.md. BULK-AI-FILL-LIVE-COST-01 filed under P5.)
+Last updated: 2026-05-12 (BULK-AI-FILL-LIVE-COST-01 promoted from P5 and landed: 1 frontend-only commit, +7 frontend tests, i18n × 8 in parity. Live "~$X projected" caption in the dock badge + Per-item / Projected pills in the modal totals strip during the running phase. Archived to docs/roadmap-archive/2026-05.md.)
 Current version: v0.30.0
-Open tasks: 17 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 16 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -198,20 +198,6 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
-
-- **BULK-AI-FILL-LIVE-COST-01**: surface the cost-per-item burn
-  rate live in the bulk AI-fill dock during a running job (not
-  only the total at the end). Today the dock shows totals
-  (items / updated / tokens / cost) that fold each ``item_done``
-  event's per-item cost into the running total; an explicit
-  "this run is on pace to cost ~$X" surface would let the user
-  cancel mid-batch if the estimate was wrong. Trade-off: real
-  per-call costs only land after each LLM response, so an
-  early-burn-rate readout is noisy on small batches and only
-  meaningful at 10+ items. Promote when a user reports
-  needing it, or once we have real-world data on the
-  estimate-vs-actual delta. Filed alongside Session 2 commit
-  9.
 
 - **AI-FILL-CAP-CONFIG-01**: make the per-batch bulk AI-fill cap
   (`MAX_BULK_AI_FILL = 50` in

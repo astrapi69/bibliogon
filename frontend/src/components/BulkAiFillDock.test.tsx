@@ -149,6 +149,89 @@ describe("BulkAiFillDock", () => {
         expect(screen.getByTestId("bulk-ai-fill-dock")).toBeTruthy()
     })
 
+    // BULK-AI-FILL-LIVE-COST-01: dock badge shows a live "~$X
+    // projected" caption during a running job; the modal totals
+    // strip exposes per-item + projection pills. Both are
+    // hidden until at least one priced item_done has landed and
+    // are removed on transition to a terminal phase.
+    it("dock badge shows projection caption after a priced item_done", () => {
+        const {start} = renderDock()
+        act(() => start()("j-cost-1", "article"))
+        // Minimize so the dock badge is the visible surface.
+        const minimize = screen.getByTestId(
+            "bulk-ai-fill-modal-minimize",
+        ) as HTMLButtonElement
+        act(() => minimize.click())
+        // Before any priced response, the projection caption is hidden.
+        expect(screen.queryByTestId("bulk-ai-fill-dock-projection")).toBeNull()
+        act(() =>
+            lastES().fire({
+                type: "start",
+                data: {total: 10, field_classes: ["seo"], rate_limit_seconds: 0},
+            }),
+        )
+        act(() =>
+            lastES().fire({
+                type: "item_done",
+                data: {
+                    id: "a1",
+                    index: 0,
+                    updated_fields: ["seo_title"],
+                    skipped_fields: [],
+                    tokens: 100,
+                    cost_usd: 0.005,
+                    field_class_errors: {},
+                },
+            }),
+        )
+        const caption = screen.getByTestId("bulk-ai-fill-dock-projection")
+        // 0.005 * 10 = 0.05 -> formatCost renders as $0.0500
+        expect(caption.textContent).toContain("$0.0500")
+        expect(caption.textContent).toContain("projected")
+    })
+
+    it("modal shows per-item + projected pills during running, hides on terminal", () => {
+        const {start} = renderDock()
+        act(() => start()("j-cost-2", "article"))
+        act(() =>
+            lastES().fire({
+                type: "start",
+                data: {total: 4, field_classes: ["seo"], rate_limit_seconds: 0},
+            }),
+        )
+        // Before any priced response: pills hidden.
+        expect(screen.queryByTestId("bulk-ai-fill-modal-per-item")).toBeNull()
+        expect(screen.queryByTestId("bulk-ai-fill-modal-projected")).toBeNull()
+        act(() =>
+            lastES().fire({
+                type: "item_done",
+                data: {
+                    id: "a1",
+                    index: 0,
+                    updated_fields: ["seo_title"],
+                    skipped_fields: [],
+                    tokens: 100,
+                    cost_usd: 0.01,
+                    field_class_errors: {},
+                },
+            }),
+        )
+        const perItem = screen.getByTestId("bulk-ai-fill-modal-per-item")
+        const projected = screen.getByTestId("bulk-ai-fill-modal-projected")
+        expect(perItem.textContent).toContain("$0.0100")
+        // 0.01 * 4 = 0.04
+        expect(projected.textContent).toContain("$0.0400")
+        // Terminal transition: pills removed.
+        act(() =>
+            lastES().fire({
+                type: "stream_end",
+                data: {status: "completed", error: null},
+            }),
+        )
+        expect(screen.queryByTestId("bulk-ai-fill-modal-per-item")).toBeNull()
+        expect(screen.queryByTestId("bulk-ai-fill-modal-projected")).toBeNull()
+    })
+
     it("modal renders error banner on failed phase", () => {
         const {start} = renderDock()
         act(() => start()("j1", "article"))

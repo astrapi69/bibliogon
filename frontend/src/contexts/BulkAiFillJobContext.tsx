@@ -57,6 +57,20 @@ interface BulkAiFillJobContextValue {
      *  least one priced response lands so the dock can render
      *  "estimating" vs. a real number. */
     totalCostUsd: number | null
+    /** Subset of ``completed`` for which the LLM response
+     *  reported a non-null ``cost_usd``. Drives the live cost
+     *  projection so unpriced models (no entry in the pricing
+     *  table) don't poison the average. */
+    pricedCompletedCount: number
+    /** Running average cost per priced item:
+     *  ``totalCostUsd / pricedCompletedCount``. Null until at
+     *  least one priced response lands. */
+    costPerItemUsd: number | null
+    /** Live "on pace to cost ~$X" projection:
+     *  ``costPerItemUsd * total``. Null when phase is not
+     *  ``running`` or no priced response has landed yet —
+     *  consumers render their own placeholder. */
+    projectedTotalCostUsd: number | null
     /** Last item_start title shown next to the spinner. */
     currentTitle: string
     /** Per-item rows accumulated for the expanded modal view. */
@@ -143,6 +157,7 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
     const [itemsUpdated, setItemsUpdated] = useState<number>(0)
     const [totalTokens, setTotalTokens] = useState<number>(0)
     const [totalCostUsd, setTotalCostUsd] = useState<number | null>(null)
+    const [pricedCompletedCount, setPricedCompletedCount] = useState<number>(0)
     const [currentTitle, setCurrentTitle] = useState<string>("")
     const [items, setItems] = useState<BulkFillItem[]>([])
     const [events, setEvents] = useState<BulkAiFillEvent[]>([])
@@ -157,6 +172,7 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
         setItemsUpdated(0)
         setTotalTokens(0)
         setTotalCostUsd(null)
+        setPricedCompletedCount(0)
         setCurrentTitle("")
         setItems([])
         setEvents([])
@@ -233,6 +249,7 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
                             setTotalCostUsd((c) =>
                                 c == null ? d.cost_usd : (c as number) + (d.cost_usd as number),
                             )
+                            setPricedCompletedCount((n) => n + 1)
                         }
                         upsertItem(d.id, {
                             index: d.index,
@@ -328,6 +345,28 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
     const minimize = useCallback(() => setModalOpen(false), [])
     const expand = useCallback(() => setModalOpen(true), [])
 
+    // Live cost projection (BULK-AI-FILL-LIVE-COST-01).
+    // Average per priced item × total = "on pace to cost ~$X".
+    // Hidden by returning null:
+    //   - until at least one priced response landed
+    //     (totalCostUsd != null && pricedCompletedCount > 0)
+    //   - outside of the running phase: terminal phases already
+    //     show the authoritative final total via `Cost:`, and
+    //     pre-start phases have no data to project from
+    // The dock + modal each decide their own placeholder; the
+    // context just communicates "no projection available yet"
+    // as null.
+    const costPerItemUsd = useMemo<number | null>(() => {
+        if (totalCostUsd == null || pricedCompletedCount === 0) return null
+        return totalCostUsd / pricedCompletedCount
+    }, [totalCostUsd, pricedCompletedCount])
+
+    const projectedTotalCostUsd = useMemo<number | null>(() => {
+        if (phase !== "running") return null
+        if (costPerItemUsd == null || total <= 0) return null
+        return costPerItemUsd * total
+    }, [phase, costPerItemUsd, total])
+
     // F5 recovery: on mount, look at localStorage. If a previous
     // session left a job behind, reconnect with the dock visible
     // (modal stays minimized so we don't pop a dialog in the
@@ -357,6 +396,9 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
             itemsUpdated,
             totalTokens,
             totalCostUsd,
+            pricedCompletedCount,
+            costPerItemUsd,
+            projectedTotalCostUsd,
             currentTitle,
             items,
             events,
@@ -376,6 +418,9 @@ export function BulkAiFillJobProvider({children}: {children: ReactNode}) {
             itemsUpdated,
             totalTokens,
             totalCostUsd,
+            pricedCompletedCount,
+            costPerItemUsd,
+            projectedTotalCostUsd,
             currentTitle,
             items,
             events,

@@ -321,6 +321,179 @@ describe("BulkAiFillJobProvider", () => {
         expect(get().totalCostUsd).toBeNull()
         expect(get().totalTokens).toBe(50)
     })
+
+    // BULK-AI-FILL-LIVE-COST-01: live cost projection during a
+    // running job. The dock + modal consume costPerItemUsd
+    // (running average per priced item) and
+    // projectedTotalCostUsd (average * total). Both must be
+    // null until at least one priced response landed, and the
+    // projection must be null outside the running phase.
+    describe("live cost projection", () => {
+        it("is null before any priced item_done has landed", () => {
+            const {get} = renderWithProvider()
+            act(() => get().start("j-proj-1", "article"))
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "start",
+                    data: {total: 10, field_classes: ["seo"], rate_limit_seconds: 0},
+                }),
+            )
+            expect(get().pricedCompletedCount).toBe(0)
+            expect(get().costPerItemUsd).toBeNull()
+            expect(get().projectedTotalCostUsd).toBeNull()
+        })
+
+        it("projects total = (totalCostUsd / pricedCompletedCount) * total during running", () => {
+            const {get} = renderWithProvider()
+            act(() => get().start("j-proj-2", "article"))
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "start",
+                    data: {total: 20, field_classes: ["seo"], rate_limit_seconds: 0},
+                }),
+            )
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a1",
+                        index: 0,
+                        updated_fields: ["seo_title"],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: 0.004,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a2",
+                        index: 1,
+                        updated_fields: ["seo_title"],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: 0.006,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            // 0.004 + 0.006 = 0.010 ; / 2 priced = 0.005 per item
+            expect(get().pricedCompletedCount).toBe(2)
+            expect(get().costPerItemUsd).toBeCloseTo(0.005)
+            // 0.005 * 20 total = 0.10
+            expect(get().projectedTotalCostUsd).toBeCloseTo(0.1)
+        })
+
+        it("ignores items with null cost_usd in the priced average", () => {
+            const {get} = renderWithProvider()
+            act(() => get().start("j-proj-3", "article"))
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "start",
+                    data: {total: 5, field_classes: ["seo"], rate_limit_seconds: 0},
+                }),
+            )
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a1",
+                        index: 0,
+                        updated_fields: [],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: null,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a2",
+                        index: 1,
+                        updated_fields: [],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: 0.008,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            // Only the second item counts toward the priced average.
+            expect(get().completed).toBe(2)
+            expect(get().pricedCompletedCount).toBe(1)
+            expect(get().costPerItemUsd).toBeCloseTo(0.008)
+            // 0.008 * 5 = 0.040
+            expect(get().projectedTotalCostUsd).toBeCloseTo(0.04)
+        })
+
+        it("hides projection when phase transitions to a terminal state", () => {
+            const {get} = renderWithProvider()
+            act(() => get().start("j-proj-4", "article"))
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "start",
+                    data: {total: 3, field_classes: ["seo"], rate_limit_seconds: 0},
+                }),
+            )
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a1",
+                        index: 0,
+                        updated_fields: ["seo_title"],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: 0.01,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            expect(get().projectedTotalCostUsd).toBeCloseTo(0.03)
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "stream_end",
+                    data: {status: "completed", error: null},
+                }),
+            )
+            // Per-item average stays available for diagnostics, but
+            // the projection is hidden because terminal phases
+            // surface the authoritative final totalCostUsd.
+            expect(get().phase).toBe("completed")
+            expect(get().costPerItemUsd).toBeCloseTo(0.01)
+            expect(get().projectedTotalCostUsd).toBeNull()
+        })
+
+        it("is null when total is zero (no projection possible)", () => {
+            const {get} = renderWithProvider()
+            act(() => get().start("j-proj-5", "article"))
+            // No `start` event, so total stays at 0. An item_done
+            // arriving before `start` is degenerate but the
+            // projection must not crash or return Infinity.
+            act(() =>
+                lastEventSource?.fireEvent({
+                    type: "item_done",
+                    data: {
+                        id: "a1",
+                        index: 0,
+                        updated_fields: [],
+                        skipped_fields: [],
+                        tokens: 100,
+                        cost_usd: 0.005,
+                        field_class_errors: {},
+                    },
+                }),
+            )
+            expect(get().total).toBe(0)
+            expect(get().projectedTotalCostUsd).toBeNull()
+        })
+    })
 })
 
 describe("useBulkAiFillJob outside provider", () => {

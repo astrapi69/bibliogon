@@ -6,6 +6,22 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **Bulk AI-fill: live cost projection in the dock**
+  (`BULK-AI-FILL-LIVE-COST-01`, promoted from P5). While a
+  bulk AI-fill job is running, the minimized dock badge shows
+  a small "~${total} projected" caption derived from the
+  running average of the priced per-item responses. The
+  expanded modal totals strip gains two new pills, "Per item:
+  ~${avg}" and "Projected: ~${total}". Both surfaces are
+  hidden until the first priced `item_done` event lands and
+  on transition to a terminal phase (where the authoritative
+  final `Cost:` row replaces the projection). Items whose
+  model is not in the pricing table (`cost_usd: null`) are
+  excluded from the priced average so they don't poison the
+  projection. i18n × 8 in parity, native German +
+  English wording; +7 frontend tests pin the projection math
+  and visibility gates.
+
 - **Medium archive import** (`bibliogon-plugin-medium-import`,
   10th plugin). Imports a Medium HTML export ZIP and produces
   one Article + one Publication entry + one

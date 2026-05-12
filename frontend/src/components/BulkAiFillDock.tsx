@@ -147,6 +147,21 @@ export default function BulkAiFillDock() {
                             }}
                         />
                     </div>
+                    {job.projectedTotalCostUsd != null && job.phase === "running" && (
+                        <div
+                            data-testid="bulk-ai-fill-dock-projection"
+                            style={{
+                                fontSize: "0.75rem",
+                                color: "var(--text-muted, #6b7280)",
+                                marginTop: 4,
+                            }}
+                        >
+                            {t(
+                                "ui.bulk_ai_fill.dock.projected",
+                                "~{cost} projected",
+                            ).replace("{cost}", formatCost(job.projectedTotalCostUsd))}
+                        </div>
+                    )}
                     {job.currentTitle && job.phase === "running" && (
                         <div
                             style={{
@@ -235,6 +250,28 @@ export default function BulkAiFillDock() {
                                 </strong>{" "}
                                 {formatCost(job.totalCostUsd)}
                             </div>
+                            {job.phase === "running" && job.costPerItemUsd != null && (
+                                <div data-testid="bulk-ai-fill-modal-per-item">
+                                    <strong>
+                                        {t(
+                                            "ui.bulk_ai_fill.modal.per_item_label",
+                                            "Per item:",
+                                        )}
+                                    </strong>{" "}
+                                    ~{formatCost(job.costPerItemUsd)}
+                                </div>
+                            )}
+                            {job.phase === "running" && job.projectedTotalCostUsd != null && (
+                                <div data-testid="bulk-ai-fill-modal-projected">
+                                    <strong>
+                                        {t(
+                                            "ui.bulk_ai_fill.modal.projected_label",
+                                            "Projected:",
+                                        )}
+                                    </strong>{" "}
+                                    ~{formatCost(job.projectedTotalCostUsd)}
+                                </div>
+                            )}
                         </div>
 
                         {job.errorMessage && (
