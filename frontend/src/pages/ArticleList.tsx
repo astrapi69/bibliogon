@@ -44,6 +44,7 @@ import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
 import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
+import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import layout from "./ArticleList.module.css";
 import { useViewMode } from "../hooks/useViewMode";
 import { useArticleFilters } from "../hooks/useArticleFilters";
@@ -510,6 +511,13 @@ export default function ArticleList() {
                                 {t("ui.articles.new", "Neuer Artikel")}
                             </span>
                         </button>
+                        <NewFromTemplateButton
+                            kind="article"
+                            defaultLanguage="de"
+                            triggerClassName="btn btn-secondary btn-sm hide-mobile"
+                            triggerTestId="article-list-new-from-template"
+                            onCreated={(created) => navigate(`/articles/${created.id}`)}
+                        />
                         {/* Symmetric cross-nav to Books dashboard.
                             Mirrors the ``articles-nav-btn`` button in
                             Dashboard.tsx (text-only, hide-mobile,

@@ -34,6 +34,7 @@ import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
+import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useAuthorProfile } from "../hooks/useAuthorProfile";
@@ -830,6 +831,22 @@ export default function ArticleEditor() {
                         }}
                     />
                     <PublicationsPanel articleId={article.id} />
+
+                    <h4 className={layout.sectionHeading}>
+                        {t("ui.ai_template.editor_section", "KI-Vorlage")}
+                    </h4>
+                    <AITemplatePanel
+                        kind="article"
+                        id={article.id}
+                        onApplied={() => {
+                            // Re-fetch so updated metadata + tokens used
+                            // appear in the sidebar immediately.
+                            void api.articles
+                                .get(article.id)
+                                .then((fresh) => setArticle(fresh))
+                                .catch(() => {})
+                        }}
+                    />
 
                     <h4 className={layout.sectionHeading}>
                         {t("ui.articles.export_section", "Exportieren")}

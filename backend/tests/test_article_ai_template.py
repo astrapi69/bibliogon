@@ -495,3 +495,193 @@ def test_export_then_import_is_a_no_op_with_default_force(client):
     # Empty fields (seo_description, excerpt, ...) are skipped
     # because the export's current_value is null.
     assert body["updated_fields"] == []
+
+
+# ---------------------------------------------------------------------------
+# POST from-ai-template (UNIVERSAL-AI-TEMPLATE-02 Session 2 commit 4)
+# ---------------------------------------------------------------------------
+
+
+def _empty_filled_template_yaml(
+    *,
+    title: str = "AI-Generated Article",
+    language: str = "en",
+    seo_title: str | None = "AI SEO Title",
+    tags: list[str] | None = None,
+    topic: str | None = None,
+) -> str:
+    """Build a YAML body shaped like the empty-template export
+    (no reference block; language at root), with some fields
+    pre-filled to simulate an AI run."""
+    body = {
+        "type": "article",
+        "schema_version": SCHEMA_VERSION,
+        "language": language,
+        "title": {"description": "x", "example": "x", "current_value": title},
+        "seo_title": {"description": "x", "example": "x", "current_value": seo_title},
+        "seo_description": {"description": "x", "example": "x", "current_value": None},
+        "excerpt": {"description": "x", "example": "x", "current_value": None},
+        "tags": {
+            "description": "x",
+            "example": [],
+            "current_value": tags if tags is not None else [],
+        },
+        "topic": {"description": "x", "example": "x", "current_value": topic},
+        "featured_image_prompt": {
+            "description": "x",
+            "example": "x",
+            "current_value": None,
+        },
+        "inline_image_prompts": {
+            "description": "x",
+            "example": [],
+            "current_value": [],
+        },
+    }
+    return yaml.safe_dump(body, sort_keys=False, allow_unicode=True)
+
+
+def test_from_template_creates_new_article_with_title(client):
+    yaml_text = _empty_filled_template_yaml(
+        title="New Article Title",
+        seo_title="SEO Title",
+        tags=["x", "y"],
+        topic="Build Tools",
+    )
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml_text,
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["title"] == "New Article Title"
+    assert body["seo_title"] == "SEO Title"
+    assert body["tags"] == ["x", "y"]
+    assert body["topic"] == "Build Tools"
+    assert body["language"] == "en"
+    new_id = body["id"]
+
+    # Article must persist; a follow-up GET sees it live.
+    refreshed = client.get(f"/api/articles/{new_id}").json()
+    assert refreshed["title"] == "New Article Title"
+
+
+def test_from_template_uses_reference_language_when_present(client):
+    body = yaml.safe_load(_empty_filled_template_yaml(title="x", language="en"))
+    body.pop("language")
+    body["reference"] = {
+        "id": "ignored-on-create",
+        "language": "de",
+        "body_word_count": 0,
+        "body_preview": "",
+    }
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml.safe_dump(body, sort_keys=False),
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["language"] == "de"
+
+
+def test_from_template_defaults_to_english_when_language_missing(client):
+    body = yaml.safe_load(_empty_filled_template_yaml(title="x"))
+    body.pop("language", None)
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml.safe_dump(body, sort_keys=False),
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["language"] == "en"
+
+
+def test_from_template_rejects_missing_title(client):
+    yaml_text = _empty_filled_template_yaml(title="")
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml_text,
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 400
+    assert "title" in resp.json()["detail"].lower()
+
+
+def test_from_template_rejects_whitespace_only_title(client):
+    yaml_text = _empty_filled_template_yaml(title="   ")
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml_text,
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 400
+
+
+def test_from_template_rejects_book_template(client):
+    # Fully-shaped book template so the type-mismatch check fires
+    # before the Pydantic structural validator. A minimal book stub
+    # would also reject with 400 but on a different detail string;
+    # this test pins the type-discriminator branch specifically.
+    book_body = {
+        "type": "book",
+        "schema_version": SCHEMA_VERSION,
+        "title": {"description": "x", "example": "x", "current_value": "T"},
+        "subtitle": {"description": "x", "example": "x", "current_value": None},
+        "description": {"description": "x", "example": "x", "current_value": None},
+        "genre": {"description": "x", "example": "x", "current_value": None},
+        "keywords": {"description": "x", "example": [], "current_value": []},
+        "html_description": {"description": "x", "example": "x", "current_value": None},
+        "backpage_description": {"description": "x", "example": "x", "current_value": None},
+        "backpage_author_bio": {"description": "x", "example": "x", "current_value": None},
+        "cover_image_prompt": {"description": "x", "example": "x", "current_value": None},
+        "chapter_summaries": {"description": "x", "example": [], "current_value": []},
+    }
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml.safe_dump(book_body, sort_keys=False),
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 400
+    assert "article" in resp.json()["detail"].lower()
+
+
+def test_from_template_rejects_unknown_schema_version(client):
+    body = "type: article\nschema_version: 99\n"
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=body,
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 400
+
+
+def test_from_template_rejects_empty_body(client):
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data="",
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert resp.status_code == 400
+
+
+def test_from_template_applies_force_to_freshly_created_article(client):
+    """Force=True is implicit because every column starts empty.
+    The endpoint should write every non-empty current_value, not
+    skip any with 'field-already-populated'."""
+    yaml_text = _empty_filled_template_yaml(
+        title="X",
+        seo_title="Forced SEO",
+        tags=["t1"],
+        topic="Topic",
+    )
+    resp = client.post(
+        "/api/articles/from-ai-template",
+        data=yaml_text,
+        headers={"Content-Type": "text/yaml"},
+    )
+    body = resp.json()
+    # All non-empty current_values landed on the new article.
+    assert body["seo_title"] == "Forced SEO"
+    assert body["tags"] == ["t1"]
+    assert body["topic"] == "Topic"

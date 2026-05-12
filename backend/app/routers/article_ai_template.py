@@ -50,6 +50,7 @@ from app.ai.template_schema import (
 )
 from app.database import get_db
 from app.models import Article
+from app.schemas import ArticleOut
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +223,82 @@ async def import_article_template(
         "skip_reasons": skipped,
         "force": force,
     }
+
+
+@articles_router.post(
+    "/from-ai-template",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ArticleOut,
+)
+async def create_article_from_ai_template(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Article:
+    """Create a new Article from a filled ``.biblio.yaml``
+    template. The "New from template" workflow: user exports
+    an empty template, fills it (manually or via AI), uploads
+    it back here, and lands in the article editor with all the
+    template fields applied.
+
+    The template's ``title`` field is required (the only field
+    that cannot be null on a new article). Other fields are
+    applied via the same ``_apply_template_to_article`` pipeline
+    used by the per-article import endpoint; force=True since
+    every column starts empty on a fresh row."""
+    raw_body = await request.body()
+    if not raw_body:
+        raise HTTPException(status_code=400, detail="Empty request body")
+    try:
+        yaml_text = raw_body.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Request body is not valid UTF-8: {exc}",
+        ) from exc
+
+    try:
+        template = parse_template_from_yaml(yaml_text)
+    except TemplateSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not isinstance(template, ArticleTemplate):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Template type is {template.type!r}; this endpoint "
+                "accepts only article templates"
+            ),
+        )
+
+    title_value = template.title.current_value
+    if not isinstance(title_value, str) or not title_value.strip():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Article template's title field has no current_value; "
+                "set a title in the template before importing it as a new article"
+            ),
+        )
+
+    # Language: prefer reference.language (per-record export path)
+    # over the root-level language (empty/new-idea template path).
+    # Default to "en" so the article model's NOT NULL stays valid
+    # even if both are missing.
+    language = "en"
+    if template.reference is not None and template.reference.language:
+        language = template.reference.language
+    elif template.language:
+        language = template.language
+
+    article = Article(title=title_value.strip(), language=language)
+    db.add(article)
+    db.flush()  # populate article.id before _apply_template_to_article reads it
+
+    _apply_template_to_article(article, template, force=True)
+
+    db.commit()
+    db.refresh(article)
+    return article
 
 
 @empty_router.get("/article")

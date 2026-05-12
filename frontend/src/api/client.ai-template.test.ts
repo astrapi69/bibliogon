@@ -424,3 +424,55 @@ describe("api.books.bulkAiFill", () => {
         )
     })
 })
+
+// ---------------------------------------------------------------------------
+// fromAiTemplate (Session 2 commit 4 endpoint)
+// ---------------------------------------------------------------------------
+
+describe("api.articles.fromAiTemplate", () => {
+    it("POSTs raw YAML body with text/yaml content type", async () => {
+        mockFetch.mockReturnValue(
+            jsonResponse({
+                id: "abc",
+                title: "New Article",
+                language: "en",
+                content_type: "article",
+                content_json: "",
+                status: "draft",
+                subtitle: null,
+                author: null,
+                canonical_url: null,
+                featured_image_url: null,
+                excerpt: null,
+                tags: [],
+                topic: null,
+                seo_title: null,
+                seo_description: null,
+                series: null,
+                created_at: "2026-05-12T00:00:00",
+                updated_at: "2026-05-12T00:00:00",
+            }),
+        )
+        const yaml = "type: article\nschema_version: 1\n"
+        const article = await api.articles.fromAiTemplate(yaml)
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/articles/from-ai-template",
+            expect.objectContaining({
+                method: "POST",
+                headers: {"Content-Type": "text/yaml"},
+                body: yaml,
+            }),
+        )
+        expect(article.id).toBe("abc")
+        expect(article.title).toBe("New Article")
+    })
+
+    it("throws ApiError with backend detail on 400", async () => {
+        mockFetch.mockReturnValue(
+            errorResponse(400, "Article template's title field has no current_value"),
+        )
+        await expect(
+            api.articles.fromAiTemplate("type: article\nschema_version: 1\n"),
+        ).rejects.toThrow(/title field has no current_value/)
+    })
+})

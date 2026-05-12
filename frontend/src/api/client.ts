@@ -1209,6 +1209,32 @@ export const api = {
             },
         },
 
+        /** Create a fresh book from a filled ``.biblio.yaml``
+         *  template ("New from template" workflow). Symmetric
+         *  with ``api.articles.fromAiTemplate``; backend endpoint
+         *  lands in commit 5 of Session 2. Calling this before
+         *  the backend is up returns 404; the typed surface is
+         *  already here so the frontend doesn't churn at commit
+         *  5 ship time. */
+        fromAiTemplate: async (yamlText: string): Promise<BookDetail> => {
+            const url = `${BASE}/books/from-ai-template`
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "text/yaml"},
+                body: yamlText,
+            })
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}))
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string" ? err.detail : "Create-from-template failed",
+                    url,
+                    "POST",
+                )
+            }
+            return (await res.json()) as BookDetail
+        },
+
         /** AI-fill one book. Per-class failure is isolated; the
          *  response carries ``field_class_errors`` so the UI can
          *  surface which classes failed. Tokens used bump
@@ -1514,6 +1540,31 @@ export const api = {
                 ) || `new-article-${language}.biblio.yaml`
                 return {blob, filename}
             },
+        },
+
+        /** Create a fresh article from a filled
+         *  ``.biblio.yaml`` template (the "New from template"
+         *  workflow). Backend mirrors the per-record import
+         *  pipeline but with force=True implicit since every
+         *  column starts empty. Requires the template's
+         *  title.current_value to be a non-empty string. */
+        fromAiTemplate: async (yamlText: string): Promise<Article> => {
+            const url = `${BASE}/articles/from-ai-template`
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "text/yaml"},
+                body: yamlText,
+            })
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({detail: res.statusText}))
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string" ? err.detail : "Create-from-template failed",
+                    url,
+                    "POST",
+                )
+            }
+            return (await res.json()) as Article
         },
 
         aiFill: (id: string, req: AiFillRequest) =>
