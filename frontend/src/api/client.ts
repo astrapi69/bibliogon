@@ -181,6 +181,36 @@ export interface Article {
      *  articles show the canonical Medium publish date instead of
      *  the import timestamp. */
     original_published_at?: string | null
+    /** MEDIUM-COMMENTS-UI-01. Computed server-side via
+     *  ``Article.comments_count`` (non-soft-deleted only); not
+     *  a DB column. Drives the article-list count badge so the
+     *  dashboard can render counts without an N+1 fetch per
+     *  article. Defaults to 0 server-side. */
+    comments_count?: number
+}
+
+/** MEDIUM-COMMENTS-IMPORT-01 + UI-01. Short user-written response
+ *  to an article. Imported by per-source plugins (Medium is the
+ *  first) and surfaced read-only in the editor + admin views.
+ *  responds_to_article_id is nullable because some import sources
+ *  (notably Medium) carry no parent-article reference at all -
+ *  every Medium-imported comment is an orphan with the URL
+ *  preserved in responds_to_url for later re-linkage. */
+export interface ArticleComment {
+    id: string
+    author: string | null
+    body_text: string
+    body_json: string | null
+    language: string
+    published_at: string | null
+    canonical_url: string | null
+    responds_to_article_id: string | null
+    responds_to_url: string | null
+    imported_from: string
+    imported_at: string
+    source_filename: string | null
+    created_at: string
+    updated_at: string
 }
 
 export interface ArticleCreate {
@@ -1429,6 +1459,15 @@ export const api = {
                 body: JSON.stringify({field}),
             }),
 
+        /** MEDIUM-COMMENTS-UI-01. Read-only listing of comments
+         *  that respond to this article. Returns a soft-delete-
+         *  filtered list ordered by ``published_at`` ASC (NULLs
+         *  last). 404 when the article id is unknown - distinct
+         *  from "no comments yet" (200 + []). Drives the editor
+         *  sidebar's read-only comments section. */
+        getComments: (id: string) =>
+            request<ArticleComment[]>(`/articles/${id}/comments`),
+
         // Trash bin parity with books. ``delete`` above moves to
         // trash by default (or hard-deletes when
         // ``app.delete_permanently`` is true in app.yaml). The trash
@@ -1766,6 +1805,40 @@ export const api = {
          *  serves files by filename via ``GET /file/{filename}``. */
         urlFor: (articleId: string, filename: string): string =>
             `/api/articles/${articleId}/assets/file/${encodeURIComponent(filename)}`,
+    },
+
+    /** MEDIUM-COMMENTS-UI-01. Admin-side comments management.
+     *  Article-scoped read access lives on api.articles.getComments
+     *  (where it semantically belongs with the article). This
+     *  namespace is for cross-article admin operations: filtered
+     *  listing + soft-delete. Future v2 work in this namespace:
+     *  bulk-delete, re-link to article, hard-delete. */
+    comments: {
+        /** List comments across all articles. ``importedFrom``
+         *  narrows to one source (e.g. ``"medium"``);
+         *  ``orphansOnly=true`` restricts to comments with
+         *  ``responds_to_article_id IS NULL``. Soft-deleted
+         *  comments are excluded by the backend. Server cap is
+         *  500; default is 100. */
+        list: (params: {
+            importedFrom?: string
+            orphansOnly?: boolean
+            limit?: number
+        } = {}) => {
+            const qs = new URLSearchParams()
+            if (params.importedFrom)
+                qs.set("imported_from", params.importedFrom)
+            if (params.orphansOnly) qs.set("orphans_only", "true")
+            if (params.limit != null) qs.set("limit", String(params.limit))
+            const suffix = qs.toString() ? `?${qs.toString()}` : ""
+            return request<ArticleComment[]>(`/comments${suffix}`)
+        },
+
+        /** Soft-delete a single comment. Idempotent: re-deletes
+         *  return 204 so a bulk-by-id flow stays clean. 404 only
+         *  when the id is unknown. */
+        delete: (id: string) =>
+            request<void>(`/comments/${id}`, {method: "DELETE"}),
     },
 
     chapters: {

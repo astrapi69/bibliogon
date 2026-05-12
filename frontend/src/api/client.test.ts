@@ -419,3 +419,102 @@ describe("formatVoiceLabel", () => {
         expect(formatVoiceLabel({id: "voice-id-only", name: ""})).toBe("voice-id-only");
     });
 });
+
+
+// --- MEDIUM-COMMENTS-UI-01 commit 2: comments API client ---
+
+describe("api.articles.getComments", () => {
+    it("GETs /api/articles/{id}/comments", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.articles.getComments("article-123");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/articles/article-123/comments",
+            expect.objectContaining({
+                headers: {"Content-Type": "application/json"},
+            }),
+        );
+    });
+
+    it("returns the array verbatim (preserves order)", async () => {
+        mockFetch.mockReturnValue(
+            jsonResponse([
+                {id: "c1", body_text: "First", imported_from: "medium"},
+                {id: "c2", body_text: "Second", imported_from: "medium"},
+            ]),
+        );
+        const out = await api.articles.getComments("a1");
+        expect(out.map((c) => c.id)).toEqual(["c1", "c2"]);
+    });
+});
+
+describe("api.comments.list", () => {
+    it("GETs /api/comments with no params when none provided", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list();
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments",
+            expect.objectContaining({
+                headers: {"Content-Type": "application/json"},
+            }),
+        );
+    });
+
+    it("encodes importedFrom as imported_from query param", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list({importedFrom: "medium"});
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments?imported_from=medium",
+            expect.any(Object),
+        );
+    });
+
+    it("encodes orphansOnly=true only when true (omits when false)", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list({orphansOnly: true});
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments?orphans_only=true",
+            expect.any(Object),
+        );
+        mockFetch.mockClear();
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list({orphansOnly: false});
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments",
+            expect.any(Object),
+        );
+    });
+
+    it("encodes limit as integer query param", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list({limit: 250});
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments?limit=250",
+            expect.any(Object),
+        );
+    });
+
+    it("combines all params into a single query string", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.comments.list({
+            importedFrom: "medium",
+            orphansOnly: true,
+            limit: 50,
+        });
+        const calledUrl = mockFetch.mock.calls[0][0] as string;
+        expect(calledUrl.startsWith("/api/comments?")).toBe(true);
+        expect(calledUrl).toContain("imported_from=medium");
+        expect(calledUrl).toContain("orphans_only=true");
+        expect(calledUrl).toContain("limit=50");
+    });
+});
+
+describe("api.comments.delete", () => {
+    it("issues DELETE /api/comments/{id}", async () => {
+        mockFetch.mockReturnValue(emptyResponse(204));
+        await api.comments.delete("c1");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/c1",
+            expect.objectContaining({method: "DELETE"}),
+        );
+    });
+});
