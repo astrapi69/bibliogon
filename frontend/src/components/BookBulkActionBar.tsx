@@ -13,7 +13,7 @@
 
 import {useState} from "react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import {ChevronDown, Trash2} from "lucide-react"
+import {ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import styles from "./BookBulkActionBar.module.css"
 
@@ -21,6 +21,11 @@ export type BookBulkExportFormat = "epub" | "pdf" | "docx"
 
 export const BOOK_BULK_LIMIT_WARNING = 50
 export const BOOK_BULK_LIMIT_HARD = 200
+
+/** Server-side cap for bulk AI-template + AI-fill batches (per
+ *  S8). Selections above this trigger 422 on the backend, so we
+ *  disable the AI dropdown items past it. */
+export const BOOK_AI_BULK_LIMIT = 50
 
 interface Props {
     count: number
@@ -30,6 +35,14 @@ interface Props {
     onBulkDelete?: (permanent: false) => void
     /** Permanent-delete: opens TypeToConfirmDialog (parent renders). */
     onBulkDeletePermanent?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02: open the per-selection bulk
+     *  AI-template export flow. Both AI handlers are optional; the
+     *  bar only renders the AI dropdown when both are wired so a
+     *  partial wiring does not produce a half-broken UI. */
+    onBulkAiTemplateExport?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template import
+     *  dialog. */
+    onBulkAiTemplateImport?: () => void
     t: (key: string, fallback?: string) => string
 }
 
@@ -39,6 +52,8 @@ export default function BookBulkActionBar({
     onClear,
     onBulkDelete,
     onBulkDeletePermanent,
+    onBulkAiTemplateExport,
+    onBulkAiTemplateImport,
     t,
 }: Props) {
     const [format, setFormat] = useState<BookBulkExportFormat>("epub")
@@ -103,6 +118,59 @@ export default function BookBulkActionBar({
             >
                 {t("ui.dashboard.bulk.export_button", "Export")}
             </button>
+            {onBulkAiTemplateExport && onBulkAiTemplateImport && (
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            data-testid="book-bulk-ai-menu"
+                            disabled={count === 0 || count > BOOK_AI_BULK_LIMIT}
+                            title={
+                                count > BOOK_AI_BULK_LIMIT
+                                    ? t(
+                                          "ui.ai_template.bulk.over_cap",
+                                          "Maximum 50 books per AI batch",
+                                      )
+                                    : undefined
+                            }
+                        >
+                            <Sparkles size={14}/>{" "}
+                            {t("ui.ai_template.bulk.menu_button", "KI")}
+                            {" "}
+                            <ChevronDown size={12}/>
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="hamburger-menu-content"
+                            sideOffset={4}
+                            data-testid="book-bulk-ai-menu-content"
+                        >
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                onSelect={onBulkAiTemplateExport}
+                                data-testid="book-bulk-ai-template-export"
+                            >
+                                {t(
+                                    "ui.ai_template.bulk.menu_export",
+                                    "Vorlagen exportieren (ZIP)",
+                                )}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                onSelect={onBulkAiTemplateImport}
+                                data-testid="book-bulk-ai-template-import"
+                            >
+                                {t(
+                                    "ui.ai_template.bulk.menu_import",
+                                    "Gefüllte Vorlagen importieren (ZIP)",
+                                )}
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            )}
             {onBulkDelete && onBulkDeletePermanent && (
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>

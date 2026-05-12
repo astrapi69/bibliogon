@@ -45,6 +45,7 @@ import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
+import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import layout from "./ArticleList.module.css";
 import { useViewMode } from "../hooks/useViewMode";
 import { useArticleFilters } from "../hooks/useArticleFilters";
@@ -108,6 +109,47 @@ export default function ArticleList() {
             notify.error(message);
         }
     };
+
+    // UNIVERSAL-AI-TEMPLATE-02: bulk AI-template ZIP export.
+    // Cap of 50 enforced by the bar's disabled state; the
+    // server-side 422 surfaces via toast if the gate is
+    // somehow bypassed.
+    const handleBulkArticleAiTemplateExport = async () => {
+        const ordered = filters.filteredArticles
+            .map((a) => a.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        try {
+            const { blob, filename } = await api.articles.bulkAiTemplate.export(ordered);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            notify.success(
+                t(
+                    "ui.ai_template.bulk.export_success",
+                    "{count} template(s) exported as {filename}",
+                )
+                    .replace("{count}", String(ordered.length))
+                    .replace("{filename}", filename),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.ai_template.bulk.export_failed",
+                          "Bulk template export failed",
+                      );
+            notify.error(message, err);
+        }
+    };
+
+    const [bulkArticleAiImportOpen, setBulkArticleAiImportOpen] = useState(false);
 
     // Bulk-delete state. The permanent-path dialog opens with a
     // captured count + ID list so the user typing happens against a
@@ -725,6 +767,8 @@ export default function ArticleList() {
                 <ArticleBulkActionBar
                     count={selection.count}
                     onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
+                    onBulkAiTemplateExport={() => void handleBulkArticleAiTemplateExport()}
+                    onBulkAiTemplateImport={() => setBulkArticleAiImportOpen(true)}
                     onBulkDelete={() => void handleBulkDelete(false)}
                     onBulkDeletePermanent={handleBulkDeletePermanentRequest}
                     onClear={selection.clear}
@@ -856,6 +900,18 @@ export default function ArticleList() {
                     onCancel={() => setBulkDeleteDialog(null)}
                 />
             )}
+            <BulkTemplateImportDialog
+                open={bulkArticleAiImportOpen}
+                kind="article"
+                onClose={() => setBulkArticleAiImportOpen(false)}
+                onApplied={() => {
+                    selection.clear();
+                    void api.articles
+                        .list()
+                        .then(setArticles)
+                        .catch(() => {});
+                }}
+            />
         </div>
     );
 }

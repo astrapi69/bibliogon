@@ -18,7 +18,7 @@
 
 import {useState} from "react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import {ChevronDown, Trash2} from "lucide-react"
+import {ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import styles from "./ArticleBulkActionBar.module.css"
 
@@ -27,6 +27,11 @@ export type BulkExportMode = "zip" | "combined"
 
 export const BULK_LIMIT_WARNING = 50
 export const BULK_LIMIT_HARD = 200
+
+/** Server-side cap for bulk AI-template + AI-fill batches (per
+ *  S8). Selections above this trigger 422 on the backend, so we
+ *  disable the AI dropdown items past it. */
+export const ARTICLE_AI_BULK_LIMIT = 50
 
 interface Props {
     count: number
@@ -41,6 +46,14 @@ interface Props {
      *  the parent component; the parent handles the actual deletion
      *  after the dialog confirms. */
     onBulkDeletePermanent?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template export
+     *  flow. Both AI handlers are optional; the bar only renders
+     *  the AI dropdown when both are wired so a partial wiring
+     *  does not produce a half-broken UI. */
+    onBulkAiTemplateExport?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template import
+     *  dialog. */
+    onBulkAiTemplateImport?: () => void
     t: (key: string, fallback?: string) => string
     /** Optional - lets tests interpolate the count more easily by
      *  exposing the i18n call site. Defaults to the production
@@ -54,6 +67,8 @@ export default function ArticleBulkActionBar({
     onClear,
     onBulkDelete,
     onBulkDeletePermanent,
+    onBulkAiTemplateExport,
+    onBulkAiTemplateImport,
     t,
     formatCount,
 }: Props) {
@@ -143,6 +158,59 @@ export default function ArticleBulkActionBar({
             >
                 {t("ui.articles.bulk.export_button", "Export")}
             </button>
+            {onBulkAiTemplateExport && onBulkAiTemplateImport && (
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            data-testid="article-bulk-ai-menu"
+                            disabled={count === 0 || count > ARTICLE_AI_BULK_LIMIT}
+                            title={
+                                count > ARTICLE_AI_BULK_LIMIT
+                                    ? t(
+                                          "ui.ai_template.bulk.over_cap",
+                                          "Maximum 50 articles per AI batch",
+                                      )
+                                    : undefined
+                            }
+                        >
+                            <Sparkles size={14}/>{" "}
+                            {t("ui.ai_template.bulk.menu_button", "KI")}
+                            {" "}
+                            <ChevronDown size={12}/>
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="hamburger-menu-content"
+                            sideOffset={4}
+                            data-testid="article-bulk-ai-menu-content"
+                        >
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                onSelect={onBulkAiTemplateExport}
+                                data-testid="article-bulk-ai-template-export"
+                            >
+                                {t(
+                                    "ui.ai_template.bulk.menu_export",
+                                    "Vorlagen exportieren (ZIP)",
+                                )}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                onSelect={onBulkAiTemplateImport}
+                                data-testid="article-bulk-ai-template-import"
+                            >
+                                {t(
+                                    "ui.ai_template.bulk.menu_import",
+                                    "Gefüllte Vorlagen importieren (ZIP)",
+                                )}
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            )}
             {onBulkDelete && onBulkDeletePermanent && (
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>

@@ -3,6 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {api, ApiError, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
+import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import BookCard from "../components/BookCard";
 import BookListView from "../components/BookListView";
 import BookBulkActionBar, {
@@ -93,6 +94,47 @@ export default function Dashboard() {
             notify.error(message);
         }
     };
+
+    // UNIVERSAL-AI-TEMPLATE-02: bulk AI-template ZIP export.
+    // Cap of 50 enforced by the action bar's disabled state;
+    // server-side 422 surfaces here as a toast if the bar gate
+    // is somehow bypassed (e.g. e2e replay).
+    const handleBulkBookAiTemplateExport = async () => {
+        const ordered = filters.filteredBooks
+            .map((b) => b.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        try {
+            const {blob, filename} = await api.books.bulkAiTemplate.export(ordered);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            notify.success(
+                t(
+                    "ui.ai_template.bulk.export_success",
+                    "{count} template(s) exported as {filename}",
+                )
+                    .replace("{count}", String(ordered.length))
+                    .replace("{filename}", filename),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.ai_template.bulk.export_failed",
+                          "Bulk template export failed",
+                      );
+            notify.error(message, err);
+        }
+    };
+
+    const [bulkBookAiImportOpen, setBulkBookAiImportOpen] = useState(false);
 
     // Bulk-delete state. Same shape as the Articles dashboard;
     // see ArticleList.tsx for the rationale + behavior matrix.
@@ -572,6 +614,8 @@ export default function Dashboard() {
                                     onExport={(fmt) => void handleBulkBookExport(fmt)}
                                     onBulkDelete={() => void handleBulkBookDelete(false)}
                                     onBulkDeletePermanent={handleBulkBookDeletePermanentRequest}
+                                    onBulkAiTemplateExport={() => void handleBulkBookAiTemplateExport()}
+                                    onBulkAiTemplateImport={() => setBulkBookAiImportOpen(true)}
                                     onClear={selection.clear}
                                     t={t}
                                 />
@@ -738,6 +782,15 @@ export default function Dashboard() {
                     onCancel={() => setBulkDeleteDialog(null)}
                 />
             )}
+            <BulkTemplateImportDialog
+                open={bulkBookAiImportOpen}
+                kind="book"
+                onClose={() => setBulkBookAiImportOpen(false)}
+                onApplied={() => {
+                    selection.clear();
+                    void loadBooks();
+                }}
+            />
         </div>
     );
 }

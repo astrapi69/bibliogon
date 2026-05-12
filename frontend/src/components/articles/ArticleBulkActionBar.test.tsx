@@ -85,3 +85,73 @@ describe("ArticleBulkActionBar", () => {
         expect(spy).toHaveBeenCalled()
     })
 })
+
+// --- UNIVERSAL-AI-TEMPLATE-02 Session 2 commit 6: AI dropdown ---
+
+describe("ArticleBulkActionBar AI dropdown", () => {
+    it("does NOT render the AI dropdown when handlers are absent", () => {
+        render(
+            <ArticleBulkActionBar
+                count={3}
+                onExport={() => {}}
+                onClear={() => {}}
+                t={t}
+            />,
+        )
+        expect(screen.queryByTestId("article-bulk-ai-menu")).toBeNull()
+    })
+
+    it("renders the AI dropdown when both AI handlers are passed", () => {
+        render(
+            <ArticleBulkActionBar
+                count={3}
+                onExport={() => {}}
+                onClear={() => {}}
+                onBulkAiTemplateExport={() => {}}
+                onBulkAiTemplateImport={() => {}}
+                t={t}
+            />,
+        )
+        expect(screen.getByTestId("article-bulk-ai-menu")).toBeTruthy()
+    })
+
+    it("disables the AI dropdown over the 50-article cap", () => {
+        render(
+            <ArticleBulkActionBar
+                count={51}
+                onExport={() => {}}
+                onClear={() => {}}
+                onBulkAiTemplateExport={() => {}}
+                onBulkAiTemplateImport={() => {}}
+                t={t}
+            />,
+        )
+        const trigger = screen.getByTestId("article-bulk-ai-menu") as HTMLButtonElement
+        expect(trigger.disabled).toBe(true)
+    })
+
+    it("AI dropdown trigger is enabled within the cap so onSelect handlers can fire", () => {
+        // Radix DropdownMenu portals its items behind a pointer-
+        // event open gesture that happy-dom does not reproduce.
+        // The Playwright smoke spec covers the actual menu
+        // open + click; here we pin the prop-threading contract.
+        const exportSpy = vi.fn()
+        const importSpy = vi.fn()
+        render(
+            <ArticleBulkActionBar
+                count={3}
+                onExport={() => {}}
+                onClear={() => {}}
+                onBulkAiTemplateExport={exportSpy}
+                onBulkAiTemplateImport={importSpy}
+                t={t}
+            />,
+        )
+        const trigger = screen.getByTestId(
+            "article-bulk-ai-menu",
+        ) as HTMLButtonElement
+        expect(trigger.disabled).toBe(false)
+        expect(exportSpy).not.toHaveBeenCalled()
+        expect(importSpy).not.toHaveBeenCalled()
+    })
+})
