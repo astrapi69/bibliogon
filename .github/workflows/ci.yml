@@ -40,7 +40,11 @@ jobs:
 
       - name: Run backend tests
         working-directory: backend
-        run: poetry run pytest tests/ -v
+        # ``-q`` instead of ``-v``: 1601 tests printed verbose is
+        # noise on a green run. Test-infrastructure audit
+        # finding 0.5.4. Failures still print full traceback;
+        # ``-q`` only quietens the per-test pass logs.
+        run: poetry run pytest tests/ -q
 
   plugin-tests:
     name: Plugin Tests
