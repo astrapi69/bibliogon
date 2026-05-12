@@ -669,6 +669,12 @@ ui:
     ai_key_hint: "Το κλειδί αποθηκεύεται τοπικά και αποστέλλεται μόνο στην υπηρεσία του 'Base URL'."
     ai_api_key_external_note: "Το κλειδί API διαβάζεται από εξωτερική διαμόρφωση (~/.config/bibliogon/secrets.yaml ή μεταβλητή περιβάλλοντος BIBLIOGON_AI_API_KEY). Επεξεργάσου το αρχείο απευθείας ή όρισε τη μεταβλητή για να αλλάξεις το κλειδί."
     ai_lmstudio_hint: "Εκτελείται τοπικά, δεν απαιτείται κλειδί API. Τα μοντέλα παρέχονται από τον διακομιστή LM Studio."
+    ai_provider_anthropic: "Anthropic (Claude)"
+    ai_provider_openai: "OpenAI (GPT)"
+    ai_provider_google: "Google (Gemini)"
+    ai_provider_mistral: "Mistral"
+    ai_provider_lmstudio: "LM Studio (τοπικό)"
+    ai_provider_custom: "Προσαρμοσμένο (συμβατό με OpenAI)"
     ai_test: "Δοκιμή σύνδεσης"
     ai_test_ok: "Σύνδεση επιτυχής"
     ai_test_fail: "Σύνδεση απέτυχε"
@@ -965,6 +971,7 @@ ui:
     tab_design: "Σχεδίαση"
     tab_audiobook: "Ηχητικό βιβλίο"
     tab_quality: "Ποιότητα"
+    tab_ai_template: "AI Template"
     quality_error: "Η ανάλυση ποιότητας απέτυχε"
     quality_empty: "Δεν υπάρχουν κεφάλαια με κείμενο."
     quality_chapters: "Κεφάλαια"
@@ -1619,3 +1626,152 @@ ui:
     filter_series: "Σειρά"
     filter_tag: "Ετικέτα"
     filter_genre: "Είδος"
+  ai_template:
+    editor_section: "AI Template"
+    panel:
+      title: "AI Template"
+      fill: "Fill with AI"
+      export: "Export template"
+      import: "Import filled template"
+    fill_dialog:
+      title: "Fill with AI"
+      description: "Select which field-classes the AI should fill. Each class is one LLM call."
+      submit: "Fill with AI"
+      force: "Overwrite existing values"
+      force_hint: "Without this, fields that already have a value stay unchanged."
+      inline_image_count: "Inline image prompts (override)"
+      inline_image_count_auto: "auto (h2 count, max 5)"
+    field_class:
+      seo:
+        label: "SEO"
+        desc: "SEO title (max 60 chars) and meta description (150-160 chars)."
+        targets: "seo_title, seo_description"
+      tags:
+        label: "Tags"
+        desc: "5-10 lowercase tags reflecting the article's topics."
+        targets: "tags"
+      topic:
+        label: "Topic"
+        desc: "One-word or short-phrase primary topic."
+        targets: "topic"
+      excerpt:
+        label: "Excerpt"
+        desc: "200-300 character conversational summary for the article list."
+        targets: "excerpt"
+      image_prompts:
+        label: "Image prompts"
+        desc: "Stable-Diffusion-style prompts: one hero + one per H2 section."
+        targets: "featured_image_prompt, inline_image_prompts"
+      marketing_copy:
+        label: "Marketing copy"
+        desc: "Back-cover description + author bio + Amazon HTML description."
+        targets: "backpage_description, backpage_author_bio, html_description"
+      book_tags:
+        label: "Keywords"
+        desc: "5-10 marketplace keywords."
+        targets: "keywords"
+      description_genre:
+        label: "Description & genre"
+        desc: "Internal description and primary genre."
+        targets: "description, genre"
+      cover_prompt:
+        label: "Cover prompt"
+        desc: "Stable-Diffusion-style prompt for the book cover."
+        targets: "cover_image_prompt"
+      chapter_summaries:
+        label: "Chapter summaries"
+        desc: "One-sentence summary per existing chapter, matched by chapter id."
+        targets: "chapter_summaries"
+    fill:
+      toast:
+        success: "AI-fill: {updated} field(s) updated, {skipped} skipped ({tokens} tokens)"
+        partial: "AI-fill: {updated} updated, {skipped} skipped, {errors} class errors"
+        error: "AI-fill failed"
+    export:
+      toast:
+        success: "Template exported: {filename}"
+        error: "Export failed"
+    import:
+      toast:
+        success: "Import complete: {updated} field(s) updated, {skipped} skipped"
+        noop: "Import complete: no fields updated ({skipped} skipped)"
+        dropped_summaries: "{dropped} chapter summary entr(y/ies) could not be matched and were dropped"
+        error: "Import failed"
+    import_dialog:
+      title: "Import filled template"
+      description: "Drop a filled .biblio.yaml here. The template's reference.id must match this record."
+      force: "Overwrite existing values"
+      force_hint: "Without this, populated fields stay unchanged."
+      submit: "Import"
+    new_from_template:
+      button: "New from template"
+      dialog_title: "New from template"
+      description: "Download an empty template, fill it, then upload the result."
+      step1: "Download an empty template"
+      step2: "Upload the filled template"
+      language: "Language"
+      download_button: "Download empty template"
+      download_success: "Empty template downloaded: {filename}"
+      download_error: "Failed to download empty template"
+      create_success: "Created from template: {title}"
+      create_error: "Could not create from template"
+      submit: "Create"
+    dropzone:
+      label_single: "Drop a .biblio.yaml here, or click to choose a file"
+      label_bulk: "Drop a .zip of templates here, or click to choose a file"
+      error_single: "Please drop a .biblio.yaml file."
+      error_bulk: "Please drop a .zip file produced by 'Bulk export templates'."
+    bulk:
+      menu_button: "AI"
+      menu_export: "Export templates (ZIP)"
+      menu_import: "Import filled templates (ZIP)"
+      menu_fill: "Fill with AI..."
+      over_cap: "Maximum 50 entries per AI batch"
+      export_success: "{count} template(s) exported as {filename}"
+      export_failed: "Bulk template export failed"
+    bulk_import:
+      title: "Bulk import filled templates"
+      description: "Drop a .zip of filled .biblio.yaml files. Each entry is matched to its target record by reference.id; up to 50 entries per batch."
+      force: "Overwrite existing values"
+      force_hint: "Without this, populated fields on each target stay unchanged."
+      submit: "Import"
+      toast:
+        success: "Bulk import: {imported} entr(y/ies) applied"
+        partial: "Bulk import: {imported} applied, {failed} failed"
+        all_failed: "Bulk import: all {failed} entries failed"
+        error: "Bulk import failed"
+  bulk_ai_fill:
+    field_class_dialog_title: "Bulk AI fill: pick field-classes"
+    field_class_dialog_submit: "Continue to estimate"
+    confirm:
+      title: "Confirm AI-fill estimate"
+      description: "The AI will be called once per item per selected class. Review the cost below before confirming."
+      start: "Start AI-fill"
+      starting: "Starting..."
+    estimate:
+      loading: "Estimating cost..."
+      error: "Could not fetch the cost estimate"
+      items_label: "Items"
+      calls_label: "LLM calls"
+      input_tokens_label: "Input tok"
+      output_tokens_label: "Output tok"
+      cost_label: "Estimated cost"
+      model_label: "Model"
+      cost_unknown: "Cost is unknown because the configured model is not in the pricing table."
+      breakdown_toggle: "Per-item breakdown"
+    start:
+      error: "Could not start the bulk AI-fill job"
+    dock:
+      running: "AI-fill: {done}/{total}"
+      completed: "AI-fill complete: {updated}/{total} updated"
+      failed: "AI-fill failed"
+      cancelled: "AI-fill cancelled"
+    modal:
+      description: "Live progress per item. The job keeps running if you close this modal."
+      total_label: "Items:"
+      updated_label: "Updated:"
+      tokens_label: "Tokens:"
+      cost_label: "Cost:"
+      no_items_yet: "Waiting for the first item to start..."
+      minimize: "Minimize"
+      dismiss: "Dismiss"

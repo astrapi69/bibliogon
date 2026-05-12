@@ -58,8 +58,25 @@ export const AI_PROVIDER_PRESETS: Record<string, ProviderPreset> = {
   },
   lmstudio: {
     id: 'lmstudio',
-    label: 'LM Studio (lokal)',
+    label: 'LM Studio (local)',
     base_url: 'http://localhost:1234/v1',
+    default_model: '',
+    model_suggestions: [],
+    requires_api_key: false,
+  },
+  // UNIVERSAL-AI-TEMPLATE-02 Session 2 commit 9 (Q11 (a)+(b)):
+  // explicit "Custom" option for arbitrary OpenAI-compatible
+  // endpoints (Ollama, vLLM, self-hosted gateways, ...). The
+  // backend's ``detect_provider`` already returns "custom" for
+  // any URL not matching a known preset; this entry just gives
+  // the UI a labelled dropdown option so users don't have to
+  // hand-type a base_url onto an existing preset and rely on
+  // detection. base_url + default_model start empty so the
+  // preset-select handler does not overwrite user input.
+  custom: {
+    id: 'custom',
+    label: 'Custom (OpenAI-compatible)',
+    base_url: '',
     default_model: '',
     model_suggestions: [],
     requires_api_key: false,

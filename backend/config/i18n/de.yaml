@@ -679,6 +679,12 @@ ui:
     ai_key_hint: "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen."
     ai_api_key_external_note: "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern."
     ai_lmstudio_hint: "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt."
+    ai_provider_anthropic: "Anthropic (Claude)"
+    ai_provider_openai: "OpenAI (GPT)"
+    ai_provider_google: "Google (Gemini)"
+    ai_provider_mistral: "Mistral"
+    ai_provider_lmstudio: "LM Studio (lokal)"
+    ai_provider_custom: "Eigener Endpoint (OpenAI-kompatibel)"
     ai_test: "Verbindung testen"
     ai_test_ok: "Verbindung erfolgreich"
     ai_test_fail: "Verbindung fehlgeschlagen"
@@ -965,6 +971,7 @@ ui:
     tab_design: "Design"
     tab_audiobook: "Audiobook"
     tab_quality: "Qualität"
+    tab_ai_template: "KI-Vorlage"
     quality_error: "Qualitätsanalyse fehlgeschlagen"
     quality_empty: "Keine Kapitel mit Textinhalt."
     quality_chapters: "Kapitel"
@@ -1619,3 +1626,152 @@ ui:
     filter_series: "Serie"
     filter_tag: "Tag"
     filter_genre: "Genre"
+  ai_template:
+    editor_section: "KI-Vorlage"
+    panel:
+      title: "KI-Vorlage"
+      fill: "Mit KI füllen"
+      export: "Vorlage exportieren"
+      import: "Gefüllte Vorlage importieren"
+    fill_dialog:
+      title: "Mit KI füllen"
+      description: "Wähle die Feldgruppen, die die KI füllen soll. Jede Gruppe ist ein LLM-Aufruf."
+      submit: "Mit KI füllen"
+      force: "Bestehende Werte überschreiben"
+      force_hint: "Ohne diese Option bleiben Felder mit bestehendem Wert unverändert."
+      inline_image_count: "Inline-Bildprompts (manuell)"
+      inline_image_count_auto: "auto (H2-Zähler, max. 5)"
+    field_class:
+      seo:
+        label: "SEO"
+        desc: "SEO-Titel (max. 60 Zeichen) und Meta-Beschreibung (150-160 Zeichen)."
+        targets: "seo_title, seo_description"
+      tags:
+        label: "Tags"
+        desc: "5-10 kleingeschriebene Tags, die die Themen des Artikels widerspiegeln."
+        targets: "tags"
+      topic:
+        label: "Thema"
+        desc: "Ein Wort oder ein kurzer Ausdruck als Hauptthema."
+        targets: "topic"
+      excerpt:
+        label: "Auszug"
+        desc: "200-300 Zeichen lange Kurzfassung für die Artikelliste."
+        targets: "excerpt"
+      image_prompts:
+        label: "Bildprompts"
+        desc: "Stable-Diffusion-Prompts: ein Hero-Bild + eines pro H2-Abschnitt."
+        targets: "featured_image_prompt, inline_image_prompts"
+      marketing_copy:
+        label: "Marketing-Text"
+        desc: "Backcover-Beschreibung + Autorenbio + Amazon-HTML-Beschreibung."
+        targets: "backpage_description, backpage_author_bio, html_description"
+      book_tags:
+        label: "Keywords"
+        desc: "5-10 Marktplatz-Keywords."
+        targets: "keywords"
+      description_genre:
+        label: "Beschreibung & Genre"
+        desc: "Interne Beschreibung und Hauptgenre."
+        targets: "description, genre"
+      cover_prompt:
+        label: "Cover-Prompt"
+        desc: "Stable-Diffusion-Prompt für das Buchcover."
+        targets: "cover_image_prompt"
+      chapter_summaries:
+        label: "Kapitel-Zusammenfassungen"
+        desc: "Ein-Satz-Zusammenfassung pro bestehendem Kapitel, zugeordnet über chapter_id."
+        targets: "chapter_summaries"
+    fill:
+      toast:
+        success: "KI-Füllung: {updated} Feld(er) aktualisiert, {skipped} übersprungen ({tokens} Tokens)"
+        partial: "KI-Füllung: {updated} aktualisiert, {skipped} übersprungen, {errors} Klassenfehler"
+        error: "KI-Füllung fehlgeschlagen"
+    export:
+      toast:
+        success: "Vorlage exportiert: {filename}"
+        error: "Export fehlgeschlagen"
+    import:
+      toast:
+        success: "Import abgeschlossen: {updated} Feld(er) aktualisiert, {skipped} übersprungen"
+        noop: "Import abgeschlossen: keine Felder aktualisiert ({skipped} übersprungen)"
+        dropped_summaries: "{dropped} Kapitel-Zusammenfassung(en) konnten nicht zugeordnet werden und wurden verworfen"
+        error: "Import fehlgeschlagen"
+    import_dialog:
+      title: "Gefüllte Vorlage importieren"
+      description: "Lege eine gefüllte .biblio.yaml hier ab. Die reference.id der Vorlage muss zu diesem Datensatz passen."
+      force: "Bestehende Werte überschreiben"
+      force_hint: "Ohne diese Option bleiben gefüllte Felder unverändert."
+      submit: "Importieren"
+    new_from_template:
+      button: "Aus Vorlage neu"
+      dialog_title: "Aus Vorlage neu"
+      description: "Leere Vorlage herunterladen, ausfüllen, dann das Ergebnis hochladen."
+      step1: "Leere Vorlage herunterladen"
+      step2: "Gefüllte Vorlage hochladen"
+      language: "Sprache"
+      download_button: "Leere Vorlage herunterladen"
+      download_success: "Leere Vorlage heruntergeladen: {filename}"
+      download_error: "Leere Vorlage konnte nicht heruntergeladen werden"
+      create_success: "Aus Vorlage erstellt: {title}"
+      create_error: "Erstellung aus Vorlage fehlgeschlagen"
+      submit: "Erstellen"
+    dropzone:
+      label_single: "Lege eine .biblio.yaml hier ab oder klicke, um eine Datei zu wählen"
+      label_bulk: "Lege ein .zip mit Vorlagen hier ab oder klicke, um eine Datei zu wählen"
+      error_single: "Bitte eine .biblio.yaml-Datei ablegen."
+      error_bulk: "Bitte eine .zip-Datei aus 'Massen-Export Vorlagen' ablegen."
+    bulk:
+      menu_button: "KI"
+      menu_export: "Vorlagen exportieren (ZIP)"
+      menu_import: "Gefüllte Vorlagen importieren (ZIP)"
+      menu_fill: "Mit KI füllen..."
+      over_cap: "Maximal 50 Einträge pro KI-Stapel"
+      export_success: "{count} Vorlage(n) exportiert als {filename}"
+      export_failed: "Massen-Vorlagen-Export fehlgeschlagen"
+    bulk_import:
+      title: "Gefüllte Vorlagen im Stapel importieren"
+      description: "Lege ein .zip mit gefüllten .biblio.yaml-Dateien ab. Jeder Eintrag wird über reference.id seinem Datensatz zugeordnet; max. 50 Einträge pro Stapel."
+      force: "Bestehende Werte überschreiben"
+      force_hint: "Ohne diese Option bleiben gefüllte Felder pro Ziel unverändert."
+      submit: "Importieren"
+      toast:
+        success: "Massen-Import: {imported} Eintrag/Einträge angewendet"
+        partial: "Massen-Import: {imported} angewendet, {failed} fehlgeschlagen"
+        all_failed: "Massen-Import: alle {failed} Einträge fehlgeschlagen"
+        error: "Massen-Import fehlgeschlagen"
+  bulk_ai_fill:
+    field_class_dialog_title: "Massen-KI-Füllung: Feldgruppen wählen"
+    field_class_dialog_submit: "Weiter zur Kostenschätzung"
+    confirm:
+      title: "KI-Füllung bestätigen"
+      description: "Die KI wird einmal pro Eintrag und gewählter Gruppe aufgerufen. Prüfe die Kosten unten vor dem Bestätigen."
+      start: "KI-Füllung starten"
+      starting: "Wird gestartet..."
+    estimate:
+      loading: "Kosten werden geschätzt..."
+      error: "Kostenschätzung konnte nicht abgerufen werden"
+      items_label: "Einträge"
+      calls_label: "LLM-Aufrufe"
+      input_tokens_label: "Input-Tok"
+      output_tokens_label: "Output-Tok"
+      cost_label: "Geschätzte Kosten"
+      model_label: "Modell"
+      cost_unknown: "Kosten unbekannt, weil das konfigurierte Modell nicht in der Preistabelle steht."
+      breakdown_toggle: "Aufschlüsselung pro Eintrag"
+    start:
+      error: "KI-Füllung konnte nicht gestartet werden"
+    dock:
+      running: "KI-Füllung: {done}/{total}"
+      completed: "KI-Füllung fertig: {updated}/{total} aktualisiert"
+      failed: "KI-Füllung fehlgeschlagen"
+      cancelled: "KI-Füllung abgebrochen"
+    modal:
+      description: "Live-Fortschritt pro Eintrag. Der Job läuft weiter, wenn du dieses Modal schließt."
+      total_label: "Einträge:"
+      updated_label: "Aktualisiert:"
+      tokens_label: "Tokens:"
+      cost_label: "Kosten:"
+      no_items_yet: "Warte auf ersten Eintrag..."
+      minimize: "Minimieren"
+      dismiss: "Schließen"

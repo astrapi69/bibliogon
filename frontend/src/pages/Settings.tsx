@@ -730,7 +730,13 @@ function AiAssistantSettings({config, onSave, saving}: {
                                 onValueChange={(val) => {
                                     setAiProvider(val);
                                     const preset = getProviderPreset(val);
-                                    if (preset) {
+                                    // The "custom" preset has empty
+                                    // base_url + default_model on purpose -
+                                    // do not wipe the user's input. For all
+                                    // other presets, auto-fill from the
+                                    // preset so users land in a working
+                                    // state with one click.
+                                    if (preset && val !== "custom") {
                                         setAiBaseUrl(preset.base_url);
                                         setAiModel(preset.default_model);
                                         setAiApiKey("");
@@ -738,7 +744,10 @@ function AiAssistantSettings({config, onSave, saving}: {
                                 }}
                                 options={AI_PROVIDER_IDS.map((pid) => ({
                                     value: pid,
-                                    label: AI_PROVIDER_PRESETS[pid].label,
+                                    label: t(
+                                        `ui.settings.ai_provider_${pid}`,
+                                        AI_PROVIDER_PRESETS[pid].label,
+                                    ),
                                 }))}
                             />
                         </div>

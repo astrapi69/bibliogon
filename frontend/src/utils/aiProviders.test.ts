@@ -6,19 +6,37 @@ import {
 } from './aiProviders'
 
 describe('AI Provider Presets', () => {
-  it('has five providers', () => {
-    expect(AI_PROVIDER_IDS).toHaveLength(5)
-    expect(AI_PROVIDER_IDS).toEqual(['anthropic', 'openai', 'google', 'mistral', 'lmstudio'])
+  it('has six providers (five named + custom)', () => {
+    expect(AI_PROVIDER_IDS).toHaveLength(6)
+    expect(AI_PROVIDER_IDS).toEqual([
+      'anthropic',
+      'openai',
+      'google',
+      'mistral',
+      'lmstudio',
+      'custom',
+    ])
   })
 
-  it('every provider ID has a matching preset', () => {
+  it('every named provider ID has a matching preset with base_url', () => {
     for (const pid of AI_PROVIDER_IDS) {
       const preset = AI_PROVIDER_PRESETS[pid]
       expect(preset).toBeDefined()
       expect(preset.id).toBe(pid)
       expect(preset.label).toBeTruthy()
-      expect(preset.base_url).toBeTruthy()
+      // "custom" starts with an empty base_url on purpose; the
+      // user fills it in. All other presets are pre-filled.
+      if (pid !== 'custom') {
+        expect(preset.base_url).toBeTruthy()
+      }
     }
+  })
+
+  it('custom preset starts empty so it does not overwrite user input', () => {
+    expect(AI_PROVIDER_PRESETS.custom).toBeDefined()
+    expect(AI_PROVIDER_PRESETS.custom.base_url).toBe('')
+    expect(AI_PROVIDER_PRESETS.custom.default_model).toBe('')
+    expect(AI_PROVIDER_PRESETS.custom.requires_api_key).toBe(false)
   })
 
   it('getProviderPreset returns preset for known ID', () => {
