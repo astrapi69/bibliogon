@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+# Opt every JavaScript-runtime action (actions/checkout,
+# actions/setup-python, actions/setup-node) into Node 24.
+# Default Node 20 is deprecated per
+# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+# (forced default June 2nd 2026, removed September 16th 2026).
+# Bibliogon's repo + plugins already pin Node 24 for app code;
+# this env-var clears the matching warning from the runner.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   backend-tests:
     name: Backend Tests

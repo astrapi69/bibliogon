@@ -25,6 +25,14 @@ on:
 permissions:
   contents: write
 
+# Opt every JavaScript-runtime action (actions/checkout,
+# actions/setup-python, actions/setup-node) into Node 24.
+# Default Node 20 is deprecated per
+# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+# (forced default June 2nd 2026, removed September 16th 2026).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     name: Build launcher.exe
