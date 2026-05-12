@@ -94,6 +94,56 @@ Minuten, weil die Bilder heruntergeladen werden.
 | Lesedauer / Claps / Antwortzahl | Plattform-Metriken, kein Inhalt |
 | Publikation-Name (bei Medium-Publications) | Nicht im HTML; nur in der Canonical-URL kodiert |
 
+## Kommentare vs. Artikel
+
+Medium speichert von Nutzern geschriebene Antworten (kurze
+Reaktionen auf andere Artikel) im HTML-Export als eigenständige
+Dateien, die auf Dateiebene nicht von Artikeln unterscheidbar
+sind. Der Bibliogon-Importer wendet auf jeden Beitrag eine
+Heuristik an und leitet kommentar-förmige Antworten in eine
+separate **Kommentare**-Tabelle, statt das Artikel-Dashboard zu
+fluten.
+
+Erkennungskriterien (alle müssen zutreffen):
+
+- Fließtext kürzer als 500 Zeichen
+- Keine strukturellen Elemente (keine Überschriften,
+  Code-Blöcke, Bilder oder Listen)
+
+Sobald eines davon fehlt, gilt der Beitrag als Langform-Artikel.
+Das ist bewusst konservativ: Ein kurzer Artikel ohne Struktur
+bleibt ein Artikel; nur die eindeutige Antwort-Form wird
+umklassifiziert.
+
+Konfiguration über `import_comments_mode` in
+`backend/config/plugins/medium-import.yaml`:
+
+| Wert | Verhalten |
+|---|---|
+| `as_comments` (Standard) | Erkannte Kommentare landen in der Tabelle `article_comments` |
+| `as_articles` | Legacy-Modus: Jeder Beitrag wird Artikel, Heuristik ignoriert |
+| `skip` | Erkannte Kommentare werden stillschweigend verworfen |
+
+### Verwaiste Kommentare
+
+Der HTML-Export von Medium enthält **keinerlei Referenz auf den
+Eltern-Artikel** — jeder importierte Medium-Kommentar ist von
+Anfang an verwaist (`responds_to_article_id` ist `NULL`). Das
+Feld `responds_to_url` bewahrt die eigene Canonical-URL des
+Kommentars für einen späteren Verknüpfungs-Workflow auf.
+
+Die Einstellung `orphan_comment_handling` steuert das:
+
+| Wert | Verhalten |
+|---|---|
+| `store` (Standard) | Verwaiste Kommentare bleiben erhalten (NULL-FK + URL); sichtbar über `GET /api/comments?orphans_only=true` |
+| `skip` | Verwaiste Kommentare werden ganz verworfen (bei Medium-Imports überspringt das alle Kommentare) |
+
+Importierte Kommentare erscheinen noch nicht im Artikel-Editor;
+ein Kommentar-Bereich ist für ein späteres Release geplant. Sie
+sind programmatisch über `GET /api/articles/{id}/comments` und
+den Admin-Endpunkt `GET /api/comments` erreichbar.
+
 ## Schritt 4 - Nach dem Import
 
 Die importierten Artikel erscheinen wie alle anderen im

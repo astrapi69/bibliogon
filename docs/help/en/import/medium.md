@@ -91,6 +91,55 @@ archive while images download.
 | Reading time / claps / response counts | platform metrics, not content |
 | Publication membership name | not in the HTML; the canonical URL still encodes the slug |
 
+## Comments vs articles
+
+Medium's HTML export treats user-written responses (short replies
+to other articles) as standalone HTML files indistinguishable
+from articles at the file level. Bibliogon's importer runs a
+heuristic on each post and routes comment-shaped responses to a
+separate **comments** table instead of polluting the article
+dashboard.
+
+Detection criteria (all must match):
+
+- Body text shorter than 500 characters
+- No structural elements (no headings, code blocks, images,
+  or lists)
+
+If either fails, the post is treated as a long-form article.
+This is intentionally conservative: a short article without
+structure stays an Article; only the unambiguous reply-shape
+gets reclassified.
+
+Configure via `import_comments_mode` in
+`backend/config/plugins/medium-import.yaml`:
+
+| Value | Behaviour |
+|---|---|
+| `as_comments` (default) | Detected comments go to the `article_comments` table |
+| `as_articles` | Legacy mode: every post becomes an Article, ignoring the heuristic |
+| `skip` | Detected comments are dropped silently |
+
+### Orphan comments
+
+Medium's HTML export carries **no parent-article reference at
+all** — every imported Medium comment is born an orphan
+(`responds_to_article_id` is `NULL`). The `responds_to_url` field
+preserves the comment's own canonical URL for a future
+re-linkage workflow.
+
+The `orphan_comment_handling` setting controls this:
+
+| Value | Behaviour |
+|---|---|
+| `store` (default) | Persist orphans with NULL FK + URL preserved; surface them via `GET /api/comments?orphans_only=true` |
+| `skip` | Drop orphan comments entirely (for Medium imports this effectively skips all comments) |
+
+Imported comments are not visible in the article editor yet;
+a comments section is planned for a future release. They are
+accessible programmatically through `GET /api/articles/{id}/comments`
+and the admin endpoint `GET /api/comments`.
+
 ## Step 4 - After the import
 
 The imported articles appear in your dashboard like any other
