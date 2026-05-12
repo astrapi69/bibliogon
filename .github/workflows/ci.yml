@@ -10,6 +10,7 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -44,6 +45,7 @@ jobs:
   plugin-tests:
     name: Plugin Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       # Test-infrastructure audit finding 0.5.2: default
       # fail-fast=true makes a flake in one plugin mask real
@@ -95,6 +97,7 @@ jobs:
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -123,6 +126,7 @@ jobs:
   pre-commit:
     name: Pre-commit hooks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -136,6 +140,7 @@ jobs:
   lint-and-type-check:
     name: Backend ruff + mypy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
