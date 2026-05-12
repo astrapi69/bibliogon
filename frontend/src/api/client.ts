@@ -278,6 +278,244 @@ export interface BulkDeleteResponse {
     failed: {id: string; error: string}[]
 }
 
+// --- UNIVERSAL-AI-TEMPLATE-02 Session 2 types -------------------------
+//
+// AI template format (Article + Book) + AI-fill + bulk endpoints. The
+// backend shapes are pinned by the Session 1 endpoints; these mirror
+// them so the frontend can consume the JSON responses with full type
+// safety.
+
+/** Per-field skip reason returned by the apply pipeline. Mirrors
+ *  the constants in backend/app/ai/template_schema. The book
+ *  "all-entries-dropped" variant fires when chapter_summaries
+ *  receives entries that all fail reconciliation - distinct from
+ *  "value-is-empty" so the UI can render the right message. */
+export type ApplySkipReason =
+    | "value-is-empty"
+    | "field-already-populated"
+    | "all-entries-dropped"
+
+export type ApplySkipReasons = Record<string, ApplySkipReason>
+
+export type ArticleFieldClass =
+    | "seo"
+    | "tags"
+    | "topic"
+    | "excerpt"
+    | "image_prompts"
+
+export type BookFieldClass =
+    | "marketing_copy"
+    | "tags"
+    | "description_genre"
+    | "cover_prompt"
+    | "chapter_summaries"
+
+/** One chapter_summaries entry the import / fill pipeline rejected.
+ *  Reason is one of the documented values; other strings are
+ *  forward-compatible. The shape varies slightly by reason
+ *  (no-matching-chapter carries chapter_id + title; summary-empty
+ *  carries the original entry; not-a-mapping carries the raw entry). */
+export interface DroppedChapterSummary {
+    reason:
+        | "no-matching-chapter"
+        | "summary-empty"
+        | "not-a-mapping"
+        | string
+    chapter_id?: string | null
+    title?: string | null
+    entry?: unknown
+}
+
+/** Per-record import response. ``article_id`` / ``book_id`` is
+ *  present depending on the endpoint. Force flag echoes the caller's
+ *  choice so a test or audit can verify the request. */
+export interface AiTemplateImportResult {
+    article_id?: string
+    book_id?: string
+    updated_fields: string[]
+    skipped_fields: string[]
+    skip_reasons: ApplySkipReasons
+    /** Book-only. Empty list for article imports. */
+    dropped_chapter_summaries?: DroppedChapterSummary[]
+    force: boolean
+}
+
+export interface AiFillRequest {
+    field_classes: string[]
+    force?: boolean
+    /** Article-only. Backend ignores for book fills. None means
+     *  "use the H2 heuristic, clamped to [1, 5]". */
+    inline_image_count?: number | null
+}
+
+export interface AiFillFieldClassResult {
+    updated: string[]
+    skipped: ApplySkipReasons
+    tokens: number
+    cost_usd: number | null
+    error: string | null
+    /** Present only on the book chapter_summaries class. */
+    dropped_chapter_summaries?: DroppedChapterSummary[]
+}
+
+export interface AiFillResponse {
+    article_id?: string
+    book_id?: string
+    updated_fields: string[]
+    skipped_fields: string[]
+    skip_reasons: ApplySkipReasons
+    field_class_results: Record<string, AiFillFieldClassResult>
+    field_class_errors: Record<string, string>
+    /** Book-only aggregate across all classes. Empty for articles. */
+    dropped_chapter_summaries?: DroppedChapterSummary[]
+    tokens_used: number
+    estimated_cost_usd: number | null
+    force: boolean
+    /** Article-only. */
+    inline_image_count?: number
+}
+
+/** Per-entry result inside a bulk ZIP import response. */
+export interface BulkAiTemplateImportItem {
+    filename: string
+    article_id?: string
+    book_id?: string
+    updated_fields: string[]
+    skipped_fields: string[]
+    skip_reasons: ApplySkipReasons
+    dropped_chapter_summaries?: DroppedChapterSummary[]
+}
+
+export interface BulkAiTemplateImportResult {
+    imported: BulkAiTemplateImportItem[]
+    failed: {filename: string; error: string}[]
+    force: boolean
+}
+
+export interface BulkAiFillRequest {
+    ids: string[]
+    field_classes: string[]
+    force?: boolean
+    /** Article-only. */
+    inline_image_count?: number | null
+}
+
+/** Per-class entry inside the bulk estimate response. ``cost_usd``
+ *  is null when the configured model is unknown to the backend
+ *  pricing table. ``note`` is present only when the worker WILL
+ *  skip the class (e.g. book chapter_summaries on a book with no
+ *  chapters). */
+export interface BulkAiFillPerClassEstimate {
+    input_tokens: number
+    output_tokens: number
+    cost_usd: number | null
+    note?: string
+}
+
+export interface BulkAiFillEstimateItem {
+    id: string
+    title: string
+    language: string
+    /** Book-only. Drives the chapter_summaries output-token
+     *  heuristic of 50 tokens per chapter. */
+    chapter_count?: number
+    field_class_calls: number
+    per_class: Record<string, BulkAiFillPerClassEstimate>
+    estimated_input_tokens: number
+    estimated_output_tokens: number
+    estimated_cost_usd: number | null
+}
+
+export interface BulkAiFillEstimateTotals {
+    total_items: number
+    total_field_class_calls: number
+    estimated_input_tokens: number
+    estimated_output_tokens: number
+    estimated_cost_usd: number | null
+}
+
+export interface BulkAiFillEstimate {
+    model: string
+    field_classes: string[]
+    items: BulkAiFillEstimateItem[]
+    totals: BulkAiFillEstimateTotals
+}
+
+export interface BulkAiFillStartResponse {
+    job_id: string
+}
+
+/** SSE event payload union. Event types mirror the backend
+ *  job_store events plus the synthetic stream_end appended on
+ *  terminal status. */
+export type BulkAiFillEvent =
+    | {
+          type: "start"
+          data: {
+              total: number
+              field_classes: string[]
+              rate_limit_seconds: number
+          }
+      }
+    | {type: "item_start"; data: {id: string; index: number; title: string}}
+    | {
+          type: "item_done"
+          data: {
+              id: string
+              index: number
+              updated_fields: string[]
+              skipped_fields: string[]
+              tokens: number
+              cost_usd: number | null
+              field_class_errors: Record<string, string>
+              dropped_chapter_summaries?: DroppedChapterSummary[]
+          }
+      }
+    | {
+          type: "item_skipped"
+          data: {
+              id: string
+              index: number
+              reason: "not-found" | "no-content" | string
+          }
+      }
+    | {
+          type: "item_error"
+          data: {id: string; index: number; error: string}
+      }
+    | {
+          type: "done"
+          data: {
+              total_items: number
+              items_updated: number
+              total_tokens: number
+              total_cost_usd: number | null
+          }
+      }
+    | {
+          type: "stream_end"
+          data: {
+              status: "completed" | "failed" | "cancelled"
+              error: string | null
+          }
+      }
+
+export type BulkAiFillJobStatusName =
+    | "pending"
+    | "running"
+    | "completed"
+    | "failed"
+    | "cancelled"
+
+export interface BulkAiFillJobStatus {
+    id: string
+    status: BulkAiFillJobStatusName
+    progress: Record<string, unknown>
+    result: Record<string, unknown>
+    error: string | null
+}
+
 /** Per-platform metadata schema (loaded from
  *  backend/app/data/platform_schemas.yaml). The frontend renders
  *  add-publication forms from this data. */
@@ -908,6 +1146,151 @@ export const api = {
             ) || `books.zip`
             return {blob, filename}
         },
+
+        /** UNIVERSAL-AI-TEMPLATE-02: AI-template export / import /
+         *  empty + AI-fill for one book. The .biblio.yaml template
+         *  format is self-explanatory; see docs/help/{en,de}/ai/
+         *  ai-templates.md. */
+        aiTemplate: {
+            /** Download the book's filled template as a
+             *  ``.biblio.yaml`` blob. */
+            export: async (id: string): Promise<{blob: Blob; filename: string}> => {
+                const res = await fetch(`${BASE}/books/${id}/ai-template`)
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Book template export failed",
+                        `${BASE}/books/${id}/ai-template`,
+                        "GET",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || `book-${id}.biblio.yaml`
+                return {blob, filename}
+            },
+
+            /** Import a filled template YAML against an existing book.
+             *  Force=true overwrites populated fields; the AI-null /
+             *  AI-empty branch always skips regardless of force. */
+            import: (id: string, yamlText: string, force = false) =>
+                request<AiTemplateImportResult>(
+                    `/books/${id}/ai-template?force=${force}`,
+                    {
+                        method: "POST",
+                        headers: {"Content-Type": "text/yaml"},
+                        body: yamlText,
+                    },
+                ),
+
+            /** Download an empty (new-idea) book template in the
+             *  requested language. No reference block. */
+            empty: async (
+                language = "en",
+            ): Promise<{blob: Blob; filename: string}> => {
+                const url = `${BASE}/ai-templates/book?language=${encodeURIComponent(language)}`
+                const res = await fetch(url)
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Empty template failed",
+                        url,
+                        "GET",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || `new-book-${language}.biblio.yaml`
+                return {blob, filename}
+            },
+        },
+
+        /** AI-fill one book. Per-class failure is isolated; the
+         *  response carries ``field_class_errors`` so the UI can
+         *  surface which classes failed. Tokens used bump
+         *  ``Book.ai_tokens_used``. */
+        aiFill: (id: string, req: AiFillRequest) =>
+            request<AiFillResponse>(`/books/${id}/ai-fill`, {
+                method: "POST",
+                body: JSON.stringify(req),
+            }),
+
+        /** Bulk template export / import for books. Cap is 50 per
+         *  request (S8). Import is multipart with a ZIP file. */
+        bulkAiTemplate: {
+            export: async (ids: string[]): Promise<{blob: Blob; filename: string}> => {
+                const res = await fetch(`${BASE}/books/bulk-ai-template/export`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ids}),
+                })
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Bulk template export failed",
+                        `${BASE}/books/bulk-ai-template/export`,
+                        "POST",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || "books-ai-templates.zip"
+                return {blob, filename}
+            },
+
+            import: async (
+                zipFile: File,
+                force = false,
+            ): Promise<BulkAiTemplateImportResult> => {
+                const form = new FormData()
+                form.append("file", zipFile)
+                const url = `${BASE}/books/bulk-ai-template/import?force=${force}`
+                const res = await fetch(url, {method: "POST", body: form})
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Bulk template import failed",
+                        url,
+                        "POST",
+                    )
+                }
+                return (await res.json()) as BulkAiTemplateImportResult
+            },
+        },
+
+        /** Bulk AI-fill with per-item cost-estimate breakdown,
+         *  async job, and SSE streaming. ``estimate`` does NOT run
+         *  the LLM; it builds the same prompts a real run would and
+         *  applies the pricing heuristic. ``start`` submits the job
+         *  and returns its id; subscribe to ``streamUrl(jobId)`` via
+         *  ``EventSource`` for live progress. ``status`` is a poll
+         *  fallback when SSE isn't available. */
+        bulkAiFill: {
+            estimate: (req: BulkAiFillRequest) =>
+                request<BulkAiFillEstimate>("/books/bulk-ai-fill/estimate", {
+                    method: "POST",
+                    body: JSON.stringify(req),
+                }),
+
+            start: (req: BulkAiFillRequest) =>
+                request<BulkAiFillStartResponse>("/books/bulk-ai-fill/start", {
+                    method: "POST",
+                    body: JSON.stringify(req),
+                }),
+
+            streamUrl: (jobId: string) =>
+                `${BASE}/books/bulk-ai-fill/jobs/${jobId}/stream`,
+
+            status: (jobId: string) =>
+                request<BulkAiFillJobStatus>(`/books/bulk-ai-fill/jobs/${jobId}`),
+        },
     },
 
     /** AR-02 Phase 2: per-Article publications + drift detection. */
@@ -1077,6 +1460,130 @@ export const api = {
                 res.headers.get("Content-Disposition"),
             ) || (mode === "zip" ? "articles.zip" : `articles.${format}`)
             return {blob, filename}
+        },
+
+        /** UNIVERSAL-AI-TEMPLATE-02: AI-template export / import /
+         *  empty + AI-fill for one article. Symmetrical with
+         *  ``api.books.aiTemplate``. */
+        aiTemplate: {
+            export: async (id: string): Promise<{blob: Blob; filename: string}> => {
+                const res = await fetch(`${BASE}/articles/${id}/ai-template`)
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Article template export failed",
+                        `${BASE}/articles/${id}/ai-template`,
+                        "GET",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || `article-${id}.biblio.yaml`
+                return {blob, filename}
+            },
+
+            import: (id: string, yamlText: string, force = false) =>
+                request<AiTemplateImportResult>(
+                    `/articles/${id}/ai-template?force=${force}`,
+                    {
+                        method: "POST",
+                        headers: {"Content-Type": "text/yaml"},
+                        body: yamlText,
+                    },
+                ),
+
+            empty: async (
+                language = "en",
+            ): Promise<{blob: Blob; filename: string}> => {
+                const url = `${BASE}/ai-templates/article?language=${encodeURIComponent(language)}`
+                const res = await fetch(url)
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Empty template failed",
+                        url,
+                        "GET",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || `new-article-${language}.biblio.yaml`
+                return {blob, filename}
+            },
+        },
+
+        aiFill: (id: string, req: AiFillRequest) =>
+            request<AiFillResponse>(`/articles/${id}/ai-fill`, {
+                method: "POST",
+                body: JSON.stringify(req),
+            }),
+
+        bulkAiTemplate: {
+            export: async (ids: string[]): Promise<{blob: Blob; filename: string}> => {
+                const res = await fetch(`${BASE}/articles/bulk-ai-template/export`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ids}),
+                })
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Bulk template export failed",
+                        `${BASE}/articles/bulk-ai-template/export`,
+                        "POST",
+                    )
+                }
+                const blob = await res.blob()
+                const filename = _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || "articles-ai-templates.zip"
+                return {blob, filename}
+            },
+
+            import: async (
+                zipFile: File,
+                force = false,
+            ): Promise<BulkAiTemplateImportResult> => {
+                const form = new FormData()
+                form.append("file", zipFile)
+                const url = `${BASE}/articles/bulk-ai-template/import?force=${force}`
+                const res = await fetch(url, {method: "POST", body: form})
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({detail: res.statusText}))
+                    throw new ApiError(
+                        res.status,
+                        typeof err.detail === "string" ? err.detail : "Bulk template import failed",
+                        url,
+                        "POST",
+                    )
+                }
+                return (await res.json()) as BulkAiTemplateImportResult
+            },
+        },
+
+        bulkAiFill: {
+            estimate: (req: BulkAiFillRequest) =>
+                request<BulkAiFillEstimate>("/articles/bulk-ai-fill/estimate", {
+                    method: "POST",
+                    body: JSON.stringify(req),
+                }),
+
+            start: (req: BulkAiFillRequest) =>
+                request<BulkAiFillStartResponse>("/articles/bulk-ai-fill/start", {
+                    method: "POST",
+                    body: JSON.stringify(req),
+                }),
+
+            streamUrl: (jobId: string) =>
+                `${BASE}/articles/bulk-ai-fill/jobs/${jobId}/stream`,
+
+            status: (jobId: string) =>
+                request<BulkAiFillJobStatus>(`/articles/bulk-ai-fill/jobs/${jobId}`),
         },
     },
 
