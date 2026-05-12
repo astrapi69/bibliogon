@@ -33,6 +33,7 @@ import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
+import CommentsCountBadge from "../components/articles/CommentsCountBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
     type BulkExportMode,
@@ -1400,7 +1401,23 @@ function ArticleRow({
             </div>
             <div className={layout.gridCellMain}>
                 <div className={layout.titleCell}>
-                    <span className={layout.title}>{article.title}</span>
+                    <div className={layout.titleRow}>
+                        <span className={layout.title}>{article.title}</span>
+                        {/* LIST-VIEW-COMMENTS-COUNT-PARITY-01:
+                            badge integrated into the title row
+                            rather than added as a 10th grid column.
+                            The 720px fixed-column budget + the
+                            ~768px tablet breakpoint left no room
+                            for another fixed column without
+                            crushing the 1fr title column. Putting
+                            the badge inside the 1fr main cell uses
+                            space that's already there. */}
+                        <CommentsCountBadge
+                            count={article.comments_count}
+                            testId={`article-list-row-comments-count-${article.id}`}
+                            className={layout.commentsBadgeInline}
+                        />
+                    </div>
                     {article.subtitle ? (
                         <span className={layout.subtitle}>{article.subtitle}</span>
                     ) : null}

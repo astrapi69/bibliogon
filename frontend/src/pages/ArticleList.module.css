@@ -268,13 +268,35 @@
     min-width: 0;
 }
 
+/* LIST-VIEW-COMMENTS-COUNT-PARITY-01: row that contains
+   the title plus the optional comments-count badge. The
+   title gets the remaining space (flex: 1 + overflow
+   ellipsis); the badge sits at the right edge of the cell
+   without competing for width. */
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
 .title {
+    flex: 1 1 auto;
     font-weight: 600;
     font-size: 0.9375rem;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+}
+
+/* Comments-count badge in the list view. ``flex: 0 0 auto``
+   keeps the badge at its natural width and prevents it
+   from squashing the title's flex-grow on long titles. */
+.commentsBadgeInline {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
 }
 
 .subtitle {

@@ -201,6 +201,39 @@ describe("ArticleList", () => {
         expect(row.className).toMatch(/gridRowSelectable/);
     });
 
+    it("list row shows comments-count badge when comments_count > 0 (LIST-VIEW-COMMENTS-COUNT-PARITY-01)", async () => {
+        // Parity with the grid view's ArticleCard badge (shipped in
+        // 87ab959). The badge is integrated into the title cell so
+        // the grid template stays at 9 columns - adding a 10th
+        // fixed column would have crushed the 1fr title column at
+        // ~768px tablet width.
+        await renderList([
+            makeArticle({ id: "with-comments", title: "Has comments", comments_count: 5 }),
+            makeArticle({ id: "no-comments", title: "Zero comments", comments_count: 0 }),
+        ]);
+        await screen.findByTestId("article-list-row-with-comments");
+        const badge = screen.getByTestId(
+            "article-list-row-comments-count-with-comments",
+        );
+        expect(badge.textContent).toContain("5");
+        // Zero-count row does NOT render the badge.
+        expect(
+            screen.queryByTestId("article-list-row-comments-count-no-comments"),
+        ).toBeNull();
+    });
+
+    it("list row badge is hidden when comments_count is undefined (legacy API responses)", async () => {
+        // Pre-MEDIUM-COMMENTS-UI-01 commit 1 (fa0427d) backends
+        // didn't emit comments_count. The component must hide the
+        // badge in that case (not display "0" or render an empty
+        // span).
+        await renderList([makeArticle({ id: "legacy", title: "Legacy" })]);
+        await screen.findByTestId("article-list-row-legacy");
+        expect(
+            screen.queryByTestId("article-list-row-comments-count-legacy"),
+        ).toBeNull();
+    });
+
     it("status filter narrows the rendered list (client-side)", async () => {
         // Cluster E: filtering moved from server-side query to client-side
         // ``useArticleFilters``. Seed two rows with different statuses,
