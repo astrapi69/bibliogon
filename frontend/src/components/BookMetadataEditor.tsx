@@ -17,6 +17,7 @@ import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
 import QualityTab, {NavigableFindingType} from "./QualityTab";
 import TranslationLinks from "./TranslationLinks";
+import AITemplatePanel from "./AITemplatePanel";
 import styles from "./BookMetadataEditor.module.css";
 
 interface Props {
@@ -25,9 +26,15 @@ interface Props {
     onBack: () => void;
     allBooks?: Book[];
     onNavigateToIssue?: (chapterId: string, findingType: NavigableFindingType) => void;
+    /** Optional refresh callback. Invoked by the AI-template panel
+     *  after a successful Fill or Import so the parent can re-fetch
+     *  the book and re-pass it via the ``book`` prop. The form's
+     *  ``useEffect`` on ``book`` resets state when a fresh book
+     *  lands. */
+    onRefresh?: () => void;
 }
 
-export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNavigateToIssue}: Props) {
+export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNavigateToIssue, onRefresh}: Props) {
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [keywords, setKeywords] = useState<string[]>([]);
@@ -200,6 +207,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     <Tabs.Trigger value="design" className="radix-tab-trigger">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
                     <Tabs.Trigger value="audiobook" className="radix-tab-trigger">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
                     <Tabs.Trigger value="quality" className="radix-tab-trigger">{t("ui.metadata.tab_quality", "Qualitaet")}</Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="ai_template"
+                        className="radix-tab-trigger"
+                        data-testid="metadata-tab-ai-template"
+                    >
+                        {t("ui.metadata.tab_ai_template", "KI-Vorlage")}
+                    </Tabs.Trigger>
                 </Tabs.List>
 
                 <Tabs.Content value="general">
@@ -371,6 +385,15 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 <Tabs.Content value="quality">
                     <div className={styles.tabContent}>
                         <QualityTab bookId={book.id} onNavigateToIssue={onNavigateToIssue} />
+                    </div>
+                </Tabs.Content>
+                <Tabs.Content value="ai_template">
+                    <div className={styles.tabContent}>
+                        <AITemplatePanel
+                            kind="book"
+                            id={book.id}
+                            onApplied={onRefresh}
+                        />
                     </div>
                 </Tabs.Content>
             </Tabs.Root>

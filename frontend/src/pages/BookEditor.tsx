@@ -513,6 +513,12 @@ export default function BookEditor() {
                     onBack={() => _setShowMetadata(false)}
                     allBooks={allBooks}
                     onNavigateToIssue={handleNavigateToIssue}
+                    onRefresh={() => {
+                        void api.books
+                            .get(book.id, true)
+                            .then((fresh) => setBook(fresh))
+                            .catch(() => {})
+                    }}
                 />
             ) : activeChapterMeta && loadedContent?.id === activeChapterMeta.id && !contentLoading ? (
                 <Editor

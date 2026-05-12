@@ -43,6 +43,7 @@ from app.ai.template_schema import (
 )
 from app.database import get_db
 from app.models import Book
+from app.schemas import BookOut
 
 logger = logging.getLogger(__name__)
 
@@ -287,6 +288,92 @@ async def import_book_template(
         "dropped_chapter_summaries": dropped,
         "force": force,
     }
+
+
+@books_router.post(
+    "/from-ai-template",
+    status_code=201,
+    response_model=BookOut,
+)
+async def create_book_from_ai_template(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Book:
+    """Create a new Book from a filled ``.biblio.yaml`` template
+    (the "New from template" workflow for books). Symmetric with
+    the Article side: parse YAML, validate it's a BookTemplate,
+    require title.current_value to be a non-empty string,
+    create the row, then run all template fields through
+    ``_apply_template_to_book`` with force=True.
+
+    Author is sourced from the per-book template structure when
+    that lands (a future schema extension); for now, the new
+    book starts with author=None, which is accepted when
+    ``app.allow_books_without_author`` is true in Settings and
+    rejected with the standard 400 otherwise. Users on the
+    default config can either flip the setting in Settings or
+    set the author via the editor after creation."""
+    from app.routers.books import (
+        _allow_books_without_author,
+        _validate_author,
+    )
+
+    raw_body = await request.body()
+    if not raw_body:
+        raise HTTPException(status_code=400, detail="Empty request body")
+    try:
+        yaml_text = raw_body.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Request body is not valid UTF-8: {exc}",
+        ) from exc
+
+    try:
+        template = parse_template_from_yaml(yaml_text)
+    except TemplateSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not isinstance(template, BookTemplate):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Template type is {template.type!r}; this endpoint "
+                "accepts only book templates"
+            ),
+        )
+
+    title_value = template.title.current_value
+    if not isinstance(title_value, str) or not title_value.strip():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Book template's title field has no current_value; "
+                "set a title in the template before importing it as a new book"
+            ),
+        )
+
+    language = "en"
+    if template.reference is not None and template.reference.language:
+        language = template.reference.language
+    elif template.language:
+        language = template.language
+
+    # Standard author validation: None is accepted when the
+    # advanced setting allows it, else 400 with the same message
+    # used by ``POST /api/books``. The template format doesn't
+    # carry author today; deferring is fine.
+    author = _validate_author(None, _allow_books_without_author())
+
+    book = Book(title=title_value.strip(), language=language, author=author)
+    db.add(book)
+    db.flush()
+
+    _apply_template_to_book(book, template, force=True)
+
+    db.commit()
+    db.refresh(book)
+    return book
 
 
 @empty_router.get("/book")

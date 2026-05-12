@@ -477,3 +477,240 @@ def test_export_then_import_is_a_no_op(client):
     )
     body = import_resp.json()
     assert body["updated_fields"] == []
+
+
+# ---------------------------------------------------------------------------
+# POST /api/books/from-ai-template (Session 2 commit 5 endpoint)
+# ---------------------------------------------------------------------------
+
+
+def _empty_filled_book_template_yaml(
+    *,
+    title: str = "AI-Generated Book",
+    language: str = "en",
+    genre: str | None = "Non-Fiction",
+    keywords: list[str] | None = None,
+    cover_image_prompt: str | None = None,
+) -> str:
+    """Build a YAML body shaped like the empty-template export
+    (no reference; language at root) with some fields pre-
+    filled to simulate an AI run."""
+    body = {
+        "type": "book",
+        "schema_version": SCHEMA_VERSION,
+        "language": language,
+        "title": {"description": "x", "example": "x", "current_value": title},
+        "subtitle": {"description": "x", "example": "x", "current_value": None},
+        "description": {"description": "x", "example": "x", "current_value": None},
+        "genre": {"description": "x", "example": "x", "current_value": genre},
+        "keywords": {
+            "description": "x",
+            "example": [],
+            "current_value": keywords if keywords is not None else [],
+        },
+        "html_description": {
+            "description": "x",
+            "example": "x",
+            "current_value": None,
+        },
+        "backpage_description": {
+            "description": "x",
+            "example": "x",
+            "current_value": None,
+        },
+        "backpage_author_bio": {
+            "description": "x",
+            "example": "x",
+            "current_value": None,
+        },
+        "cover_image_prompt": {
+            "description": "x",
+            "example": "x",
+            "current_value": cover_image_prompt,
+        },
+        "chapter_summaries": {
+            "description": "x",
+            "example": [],
+            "current_value": [],
+        },
+    }
+    return yaml.safe_dump(body, sort_keys=False, allow_unicode=True)
+
+
+def _allow_books_without_author_env(client, allow: bool):
+    """Patch the books module's allow-null-author check for the
+    duration of one test. The endpoint imports the helper at
+    call time so a single patch covers both inbound paths."""
+    return _patch("app.routers.books._allow_books_without_author", return_value=allow)
+
+
+import unittest.mock  # noqa: E402
+
+_patch = unittest.mock.patch
+
+
+def test_from_template_creates_new_book_with_title(client):
+    yaml_text = _empty_filled_book_template_yaml(
+        title="New Book Title",
+        language="en",
+        genre="Non-Fiction / Reference",
+        keywords=["alpha", "beta"],
+        cover_image_prompt="vintage map, no text",
+    )
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml_text,
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["title"] == "New Book Title"
+    assert body["genre"] == "Non-Fiction / Reference"
+    assert body["keywords"] == ["alpha", "beta"]
+    assert body["cover_image_prompt"] == "vintage map, no text"
+    assert body["language"] == "en"
+    assert body["author"] is None  # allow-null toggle was on
+    new_id = body["id"]
+
+    refreshed = client.get(f"/api/books/{new_id}").json()
+    assert refreshed["title"] == "New Book Title"
+
+
+def test_from_template_uses_reference_language_when_present(client):
+    body = yaml.safe_load(_empty_filled_book_template_yaml(title="T", language="en"))
+    body.pop("language")
+    body["reference"] = {
+        "id": "ignored-on-create",
+        "language": "de",
+        "body_word_count": 0,
+        "body_preview": "",
+    }
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml.safe_dump(body, sort_keys=False),
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 201
+    assert resp.json()["language"] == "de"
+
+
+def test_from_template_defaults_to_english_when_language_missing(client):
+    body = yaml.safe_load(_empty_filled_book_template_yaml(title="T"))
+    body.pop("language", None)
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml.safe_dump(body, sort_keys=False),
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 201
+    assert resp.json()["language"] == "en"
+
+
+def test_from_template_rejects_missing_title(client):
+    yaml_text = _empty_filled_book_template_yaml(title="")
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml_text,
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+    assert "title" in resp.json()["detail"].lower()
+
+
+def test_from_template_rejects_whitespace_only_title(client):
+    yaml_text = _empty_filled_book_template_yaml(title="   ")
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml_text,
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+
+
+def test_from_template_rejects_article_template(client):
+    # Fully-shaped article template so the type-mismatch fires
+    # before the Pydantic structural validator.
+    article_body = {
+        "type": "article",
+        "schema_version": SCHEMA_VERSION,
+        "title": {"description": "x", "example": "x", "current_value": "T"},
+        "seo_title": {"description": "x", "example": "x", "current_value": None},
+        "seo_description": {"description": "x", "example": "x", "current_value": None},
+        "excerpt": {"description": "x", "example": "x", "current_value": None},
+        "tags": {"description": "x", "example": [], "current_value": []},
+        "topic": {"description": "x", "example": "x", "current_value": None},
+        "featured_image_prompt": {"description": "x", "example": "x", "current_value": None},
+        "inline_image_prompts": {"description": "x", "example": [], "current_value": []},
+    }
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml.safe_dump(article_body, sort_keys=False),
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+    assert "book" in resp.json()["detail"].lower()
+
+
+def test_from_template_rejects_unknown_schema_version(client):
+    body = "type: book\nschema_version: 99\n"
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=body,
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+
+
+def test_from_template_rejects_empty_body(client):
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data="",
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+
+
+def test_from_template_returns_400_when_author_required_and_missing(client):
+    """Default install has allow_books_without_author=False;
+    the from-template endpoint never sees an author in the
+    template, so the standard validator rejects the create
+    with the same 400 message the per-book POST uses."""
+    yaml_text = _empty_filled_book_template_yaml(title="T")
+    with _allow_books_without_author_env(client, False):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml_text,
+            headers={"Content-Type": "text/yaml"},
+        )
+    assert resp.status_code == 400
+    assert "author" in resp.json()["detail"].lower()
+
+
+def test_from_template_applies_force_to_freshly_created_book(client):
+    """Every column starts empty on a fresh book row; force=True
+    is implicit. Verifies the non-empty current_values land on
+    the new book without skip-because-populated."""
+    yaml_text = _empty_filled_book_template_yaml(
+        title="X",
+        genre="Forced Genre",
+        keywords=["k1"],
+        cover_image_prompt="forced prompt",
+    )
+    with _allow_books_without_author_env(client, True):
+        resp = client.post(
+            "/api/books/from-ai-template",
+            data=yaml_text,
+            headers={"Content-Type": "text/yaml"},
+        )
+    body = resp.json()
+    assert body["genre"] == "Forced Genre"
+    assert body["keywords"] == ["k1"]
+    assert body["cover_image_prompt"] == "forced prompt"

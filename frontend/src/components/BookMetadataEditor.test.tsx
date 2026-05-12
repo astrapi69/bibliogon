@@ -231,7 +231,8 @@ describe("BookMetadataEditor", () => {
   it("all tab panels are present in the DOM", () => {
     renderEditor()
     const panels = document.querySelectorAll('[role="tabpanel"]')
-    expect(panels.length).toBe(7)
+    // 7 original tabs + 1 new "AI Template" tab (Session 2 commit 5)
+    expect(panels.length).toBe(8)
   })
 
   // --- Save ---

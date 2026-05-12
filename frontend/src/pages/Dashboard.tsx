@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api, ApiError, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
+import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BookCard from "../components/BookCard";
 import BookListView from "../components/BookListView";
 import BookBulkActionBar, {
@@ -315,6 +316,13 @@ export default function Dashboard() {
                         <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
                             <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
                         </button>
+                        <NewFromTemplateButton
+                            kind="book"
+                            defaultLanguage="de"
+                            triggerClassName="btn btn-secondary btn-sm hide-mobile"
+                            triggerTestId="new-book-from-template-btn"
+                            onCreated={(created) => navigate(`/books/${created.id}`)}
+                        />
                         <button
                             className="btn btn-secondary btn-sm hide-mobile"
                             data-testid="articles-nav-btn"
