@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Test-infrastructure audit + Phase 1 CI hardening landed: audit report at docs/test-infrastructure-audit.md, 9 surgical commits (Poetry cache, fail-fast: false, timeout-minutes, pytest -q, lint-job cache, Node 24 env on all 8 workflows, mypy fix on bulk_delete, plus CI red unblock). Phase 2 (mutmut triage) in progress. 3 new P5 backlog entries filed from audit: TESTCLIENT-HARMONIZE-01, WALKER-HYPOTHESIS-01, TESTCONTAINERS-EVAL-01. Each with explicit trigger language matching the COMMENTS-COUNT-PERF-01 pattern.)
 Current version: v0.30.0
-Open tasks: 21 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 22 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -223,6 +223,31 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **MEDIUM-COMMENT-MANUAL-ENTRY-01**: manual "Add
+  comment" UI in the article editor that creates an
+  ``ArticleComment`` with ``imported_from = "manual"``
+  rather than ``"medium"``. The schema already supports
+  this via the ``imported_from String(50)`` column; no
+  migration needed. Trigger: user demand for capturing
+  comments-on-my-articles in Bibliogon for archival.
+  Surfaced 2026-05-12 after the user verified Medium's
+  HTML export is "your data only" by design — replies
+  others left on the user's articles are not included
+  in the export, and Bibliogon cannot import what
+  Medium doesn't expose. The manual-entry workflow is
+  the only forward-compatible path to archive incoming
+  comments. Scope hint: editor sidebar gains an "Add
+  comment" button next to the existing
+  ``ArticleCommentsPanel`` heading; on click opens a
+  small modal collecting author + body_text +
+  optional published_at + optional responds_to_url
+  (the URL of the source thread the user is
+  transcribing from). The ``responds_to_article_id``
+  is pre-filled with the open article's id. Effort: S
+  (one new component + one POST endpoint that the
+  comments router currently lacks; the GET / DELETE
+  paths exist already).
 
 - **LIST-VIEW-COMMENTS-COUNT-PARITY-01**: surface the
   ``Article.comments_count`` badge in the article list

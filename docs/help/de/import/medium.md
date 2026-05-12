@@ -93,6 +93,17 @@ Minuten, weil die Bilder heruntergeladen werden.
 | Entwürfe | Nur veröffentlichte Beiträge sind im Export |
 | Lesedauer / Claps / Antwortzahl | Plattform-Metriken, kein Inhalt |
 | Publikation-Name (bei Medium-Publications) | Nicht im HTML; nur in der Canonical-URL kodiert |
+| Kommentare, die andere unter deine Artikel geschrieben haben | Mediums Export enthält per Design nur DEINE Daten — Antworten anderer auf deine Artikel sind nicht dabei |
+
+Der Medium-HTML-Export ist per Design ein "nur deine
+Daten"-Export: deine Beiträge, deine Claps, deine
+Bookmarks, deine Antworten auf andere Autoren.
+Kommentare, die andere unter deine Artikel geschrieben
+haben, sind NICHT im Export. Wenn du eingehende
+Kommentare archivieren willst, musst du sie manuell
+erfassen, bevor sie auf Medium altern; siehe
+`MEDIUM-COMMENT-MANUAL-ENTRY-01` im Backlog für einen
+künftigen manuellen Eingabe-Workflow.
 
 ## Kommentare vs. Artikel
 

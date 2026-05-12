@@ -1287,3 +1287,64 @@ Concrete rules:
   carry X" finding, every doc surface that mentions X in
   the resulting code should explicitly reference the
   audit finding. The audit is the spec.
+
+## Export semantics audit: "comprehensive export" usually means "your data only"
+
+Surfaced 2026-05-12 after a user verification on Medium's
+HTML export. The 8 imported comments in the production
+corpus are all replies the user wrote on OTHER people's
+articles (visible under ``posts/`` like any other post).
+Comments OTHER people wrote on the user's articles ("Wow,
+I am very impressed", a real-world example) are NOT in the
+export. Medium's own README.html says it plainly:
+"posts: Posts you've written" — every folder description
+follows the same "your data" framing.
+
+This is the canonical pattern across consumer platforms:
+
+- Medium: your posts, your claps, your replies-to-others,
+  your bookmarks. NOT replies-to-you.
+- Twitter / X: your tweets, your DMs you sent, your
+  likes. NOT replies-to-your-tweets unless you screenshot
+  them.
+- Reddit: your posts, your comments. NOT the comments
+  others left on YOUR submissions, unless they're in the
+  same thread you replied in.
+- Discord: your messages out. NOT messages others sent
+  IN your servers.
+
+The user's mental model — "give me everything connected
+to my account, including how others interacted with me" —
+is a reasonable expectation but rarely how data export
+features work. Platforms ship "your data" exports for
+GDPR / data-portability reasons; "everyone else's data on
+your content" is someone else's data, not yours, so it
+stays.
+
+Concrete rules for any importer surface in Bibliogon:
+
+- **Help-doc expectations management.** When a platform's
+  export is "your data only", the help doc's "What is NOT
+  imported" section must explicitly say so. The
+  "comments-other-people-wrote" gap is exactly the kind
+  of thing users discover by smoke-test and report as a
+  Bibliogon bug; a one-paragraph disclaimer in the help
+  doc pre-empts that.
+- **The schema can still support the missing data type
+  for forward compatibility.** Bibliogon's
+  ``ArticleComment.imported_from String(50)`` column can
+  carry ``"manual"`` for a future user-entry workflow.
+  The column doesn't have to wait for a platform that
+  exports incoming-comments; manual entry IS the
+  workaround, and the schema is already prepared.
+- **The "no Bibliogon bug" distinction matters.** When a
+  user reports "X is missing", the diagnosis should
+  separate "Bibliogon failed to import X" from "the
+  source export never contained X." The second is a
+  platform limitation, not a Bibliogon limitation; the
+  fix is documentation + maybe a follow-up manual-entry
+  workflow, NOT an importer change.
+
+Concrete filed follow-up: ``MEDIUM-COMMENT-MANUAL-ENTRY-01``
+(P5) captures the manual-entry path for the incoming-
+comment archive use case.

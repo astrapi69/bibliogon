@@ -57,8 +57,31 @@ Um `seo_title` und `seo_description` rückwirkend für vor Commit `2062393` impo
 
 ## Was NICHT importiert wird
 
+Der HTML-Export von Medium enthält **nur Daten, die du
+selbst erzeugt hast** — deine Beiträge, deine Claps,
+deine Antworten auf Artikel anderer, deine Bookmarks.
+Per Design **nicht** enthalten:
+
+- **Kommentare, die andere unter deine Artikel
+  geschrieben haben.** Das sind Plattform-Interaktionen,
+  die den Kommentierenden gehören; sie zählen nicht zu
+  "deinen Daten" im Sinne des Medium-Exports. Die
+  "Wow, sehr beeindruckend"-Antwort, die jemand unter
+  deinen Artikel geschrieben hat, ist nicht im ZIP.
+  Wenn du Antworten auf deine Artikel archivieren
+  willst, müsstest du sie manuell erfassen, bevor sie
+  auf Medium altern; siehe Backlog-Eintrag
+  `MEDIUM-COMMENT-MANUAL-ENTRY-01` für einen künftigen
+  manuellen Eingabe-Workflow.
+
+  Hinweis: deine EIGENEN Antworten auf fremde Artikel
+  SIND im Export (unter `posts/` wie jeder andere
+  Beitrag). Diese werden von der Heuristik in die
+  Tabelle `article_comments` einsortiert, wenn
+  `import_comments_mode=as_comments` gesetzt ist.
+
 - Entwürfe, die nie auf Medium veröffentlicht wurden (Medium nimmt sie nicht ins Archiv auf).
-- Kommentare, Claps, Follower-Listen.
+- Claps, Follower-Listen, Statistiken.
 - Eigenes CSS oder Formatierungen, die Medium über Inline-Styles außerhalb des Body-Elements behandelt.
 - Member-only-Paywall-Flags. Alle importierten Artikel erhalten den gewählten Standardstatus; Medium-spezifische Paywall-Metadaten werden nicht übernommen.
 

@@ -57,8 +57,29 @@ To retroactively populate `seo_title` and `seo_description` on articles imported
 
 ## What does NOT get imported
 
+Medium's HTML export contains **only data you produced** —
+your posts, your claps, your replies to other people's
+articles, your bookmarks. By design it does **not** include:
+
+- **Comments that other people wrote on your articles.**
+  These are interactions on Medium's platform that belong
+  to the commenters; they are not part of "your data"
+  the way Medium's export defines it. The "Wow, I am
+  very impressed" reply someone left on your article is
+  not in the ZIP. If you need to archive replies to your
+  articles, you would need to capture them manually
+  before they age out on Medium itself; see follow-up
+  `MEDIUM-COMMENT-MANUAL-ENTRY-01` in the backlog for a
+  future manual-entry workflow.
+
+  Note: your OWN replies to other people's articles ARE
+  in the export (under `posts/` like any other post).
+  These are what the comment-detection heuristic
+  classifies into the `article_comments` table when
+  `import_comments_mode=as_comments` is set.
+
 - Drafts that were never published on Medium (Medium does not include them in the archive).
-- Comments, claps, follower lists.
+- Claps, follower lists, statistics.
 - Custom CSS or formatting that Medium handles via inline styles outside the body element.
 - Member-only paywall flags. All imported articles default to your chosen status; nothing carries the Medium-specific paywall metadata.
 

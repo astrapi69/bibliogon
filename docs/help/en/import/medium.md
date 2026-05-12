@@ -90,6 +90,16 @@ archive while images download.
 | Drafts | only published posts are in the export |
 | Reading time / claps / response counts | platform metrics, not content |
 | Publication membership name | not in the HTML; the canonical URL still encodes the slug |
+| Comments other people wrote on your articles | Medium's export contains your data only — replies left on your articles are not included by design |
+
+Medium's HTML export is "your data only" by design: your
+posts, your claps, your bookmarks, your replies to
+other authors. Comments other people left on your
+articles are NOT in the export. If you need to archive
+incoming comments, you would need to capture them
+manually before they age out on Medium itself; see
+`MEDIUM-COMMENT-MANUAL-ENTRY-01` in the backlog for a
+future manual-entry workflow.
 
 ## Comments vs articles
 
