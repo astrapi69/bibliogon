@@ -1164,3 +1164,59 @@ detection rule, a threshold, or any other prediction about
 data shape, run the prediction against real data in
 pre-inspection. Report counts + sample cases. Treat the spec
 as the starting hypothesis, not the final design.
+
+## Operational gaps masquerade as wired infrastructure
+
+The 2026-05-12 test-infrastructure audit surfaced a concrete
+example: the mutmut workflow at
+``.github/workflows/mutation-import.yml`` had been WIRED in
+the repo for 10 days (since 2026-05-02, commit ``28fe59c``)
+but had NEVER produced a successful run. The nightly cron
+was gated by the ``ENABLE_NIGHTLY_MUTATION`` repo variable
+(not enabled); no maintainer had manually
+``workflow_dispatch``-ed the workflow either. The audit
+trigger was the first invocation.
+
+The job completed in 1m12s (vs. 20-40min expected) because
+``mutmut run`` errored during its initial
+``run_stats_collection`` phase with
+``BadTestExecutionCommandsException``. The exact pytest
+invocation mutmut used (``--rootdir=. --tb=native -x -q
+tests/``) succeeded cleanly when run by hand — so the
+failure was inside mutmut's own pytest plugin, not pytest.
+But until the workflow was actually triggered, this bug was
+invisible: the YAML existed, the audit-doc
+(``docs/audits/mutmut-2026-05-02-import.md``) carried the
+note "TBD — pending first CI run", and the AGAR-feeling of
+having mutation-testing-infra was at full strength.
+
+The lesson generalizes:
+
+- **"Wired" ≠ "working".** A workflow / hook / cron /
+  scheduled job that was committed without being executed
+  end-to-end is a hypothesis, not a feature. Audits should
+  validate that wired infrastructure actually runs to
+  completion, not just that the YAML / config exists.
+- **The right time to flip such switches is at wire time,
+  not at audit time.** A maintainer who wires mutmut /
+  Hypothesis / any new pipeline should
+  ``workflow_dispatch`` the workflow at least once before
+  declaring the work done, and surface the artifact + result
+  in the same PR / commit. The 2026-05-02 mutmut wiring
+  shipped without this validation; the bug then lay dormant
+  for 10 days.
+- **Audits that find these gaps are doing their job.** The
+  audit didn't fail to "implement mutmut"; it accurately
+  reported that the wired mutmut workflow is operationally
+  blocked, which is a more useful data point than another
+  abstract "we should adopt mutmut" recommendation.
+
+Concrete rule: when wiring a new CI workflow, schedule it,
+or otherwise add infrastructure that runs on a delayed
+trigger (nightly cron, on-tag, on-paths-only, gated by repo
+variable), trigger it manually at least once in the same
+session, download the artifact, and confirm the result is
+what you intended. Document the first run's outcome in the
+PR description or the related audit doc. A workflow that
+ships without a known-good first run is technical debt
+masquerading as feature delivery.

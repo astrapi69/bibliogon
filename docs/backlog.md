@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (MEDIUM-COMMENTS-UI-01 landed: 8 commits (1 backend + 7 frontend), +3 backend tests + ~37 frontend tests, i18n × 8 keys. Three UI surfaces ship: editor-sidebar read-only ArticleCommentsPanel, dashboard count badge on ArticleCard, Settings comments-admin tab with list + filter + pagination + per-row delete. Both Medium-comments tracks (import + UI) now closed; new P5 COMMENTS-COUNT-PERF-01 filed for future JOIN-counted-subquery rewrite if per-article counts grow. Archived to docs/roadmap-archive/2026-05.md.)
+Last updated: 2026-05-12 (Test-infrastructure audit + Phase 1 CI hardening landed: audit report at docs/test-infrastructure-audit.md, 9 surgical commits (Poetry cache, fail-fast: false, timeout-minutes, pytest -q, lint-job cache, Node 24 env on all 8 workflows, mypy fix on bulk_delete, plus CI red unblock). Phase 2 (mutmut triage) in progress. 3 new P5 backlog entries filed from audit: TESTCLIENT-HARMONIZE-01, WALKER-HYPOTHESIS-01, TESTCONTAINERS-EVAL-01. Each with explicit trigger language matching the COMMENTS-COUNT-PERF-01 pattern.)
 Current version: v0.30.0
-Open tasks: 16 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 20 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,31 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **MUTMUT-STATS-COLLECTION-BUG-01**: fix the
+  ``BadTestExecutionCommandsException`` that mutmut raises
+  during its ``run_stats_collection`` phase on Bibliogon's
+  test harness. Surfaced 2026-05-12 when the
+  test-infrastructure audit ran the existing
+  ``mutation-import.yml`` workflow via ``workflow_dispatch``
+  for the first time since it was wired on 2026-05-02. Both
+  CI (run 25735467415, 1m12s, never executed any mutants) and
+  local ``poetry run mutmut run`` reproduce. The exact pytest
+  invocation mutmut uses
+  (``pytest --rootdir=. --tb=native -x -q tests/``) succeeds
+  cleanly on its own (1601 passed in 2:26), so the failure is
+  inside mutmut's stats-collection plugin, not pytest itself.
+  Without this fix, the existing mutmut workflow can't
+  produce a survivor count, the
+  ``docs/audits/mutmut-2026-05-02-import.md`` triage table
+  stays empty, and the
+  ``app/import_plugins/`` >= 60% mutation-score acceptance
+  criterion stays unmeasurable. Effort: M (local repro of the
+  inner exception, likely some interaction between mutmut's
+  pytest plugin and our session-scope autouse fixtures in
+  ``conftest.py``). Trigger: any session that wants to
+  produce mutation-score evidence for ANY scope. Filed by
+  test-infrastructure audit 2026-05-12 Phase 2.
 
 - **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the six
   one-shot retro-fix scripts under `scripts/` into a generic
@@ -210,6 +235,52 @@ store.
   stay 0-5. The subquery rewrite is a drop-in replacement on
   the model side; no schema change, no API change. Filed
   alongside MEDIUM-COMMENTS-UI-01 commit 1.
+
+- **TESTCLIENT-HARMONIZE-01**: harmonise the 89 backend
+  ``TestClient`` instantiation sites onto the lifespan-aware
+  fixture pattern. Test-infrastructure audit 2026-05-12
+  finding 0.4: 23 files use module-level
+  ``client = TestClient(app)`` (no ``with``, so the FastAPI
+  lifespan never fires and plugin routes are not mounted),
+  34 files use the fixture-with-``with`` pattern correctly,
+  3 files use inline-per-test. The lessons-learned rule
+  "Tests must run through ``with TestClient(app) as c:``"
+  documents the lifespan requirement but the heterogeneity
+  persists. Trigger: a real "plugin route returns 404 in
+  test" surprise from a no-lifespan file, OR a session
+  dedicated to test-fixture cleanup. Refactor blast radius:
+  large (89 sites, hidden state risks from shared
+  session-scope clients). Filed by test-infrastructure
+  audit 2026-05-12.
+
+- **WALKER-HYPOTHESIS-01**: introduce Hypothesis
+  property-based tests for the Medium-import walker
+  (``plugins/bibliogon-plugin-medium-import/bibliogon_medium_import/walker.py``).
+  Test-infrastructure audit 2026-05-12 finding 0.7
+  (Hypothesis option): zero ``@given`` usages today; the
+  walker's example-based + regression-pin coverage is
+  adequate. Candidate invariants if promoted:
+  ``imageFigure`` count equals source ``<img>`` count;
+  body-text length never changes more than 1% across
+  re-parses; ``ParsedPost.is_comment`` is stable across
+  whitespace-only HTML variations. Trigger: a third
+  walker bug class slips through example-based tests
+  (already had two: ``find`` vs ``find_all``,
+  ``imageFigure`` vs ``image``). Effort: M, payoff
+  dependent on bug rate. Filed by test-infrastructure
+  audit 2026-05-12.
+
+- **TESTCONTAINERS-EVAL-01**: evaluate Postgres-via-
+  Testcontainers for backend integration tests.
+  Test-infrastructure audit 2026-05-12 finding 0.7
+  (Testcontainers option): Bibliogon ships SQLite as
+  default and intended production DB (CLAUDE.md); no bug
+  history of SQLite-vs-Postgres divergence; adopting
+  Testcontainers would add 5-30s startup per CI run for
+  zero documented payoff. Trigger: production-DB
+  migration to Postgres, OR a documented SQLite-vs-Postgres
+  divergence bug surfaces in production. Filed by
+  test-infrastructure audit 2026-05-12.
 
 - **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
   ``Article.excerpt`` on Medium import, mirroring the existing

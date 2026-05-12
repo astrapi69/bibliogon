@@ -4,6 +4,24 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Changed
+
+- **CI hardening pass** (test-infrastructure audit
+  2026-05-12). Poetry virtualenv cache on the backend test
+  job, lint-and-type-check job, and the 9-job plugin matrix
+  (~30-60s expected steady-state savings per push once
+  caches warm). ``fail-fast: false`` on ``ci.yml``'s plugin
+  matrix for parity with ``coverage.yml``. Per-job
+  ``timeout-minutes`` caps (15m / 10m) guard against hung
+  jobs. Backend test job switched from ``pytest -v`` to
+  ``-q``. All 8 workflows opt into Node 24 runtime via
+  ``FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"`` ahead of
+  GitHub's June 2nd 2026 forced-default + September 16th
+  2026 Node-20 removal. ``.claude/scheduled_tasks.lock``
+  removed from tracking (per-session runtime artifact that
+  was turning CI red on every push). Audit report at
+  ``docs/test-infrastructure-audit.md``.
+
 ### Added
 
 - **Medium comments: editor + dashboard + admin surfaces**
