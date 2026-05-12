@@ -6,11 +6,12 @@
  * (parity with BookCard's recent additions can come later).
  */
 import { useState } from "react";
-import { AlertTriangle, Clock, MessageSquare, MoreVertical, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import CoverPlaceholder from "../CoverPlaceholder";
+import CommentsCountBadge from "./CommentsCountBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -97,28 +98,17 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                         <Clock size={12} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />
                         {updated}
                     </span>
-                    {/* MEDIUM-COMMENTS-UI-01 commit 4: count badge.
-                        Rendered only when the server-computed
-                        comments_count is > 0. Lucide MessageSquare
-                        matches the existing icon stack; no new
-                        dependency. */}
-                    {(article.comments_count ?? 0) > 0 && (
-                        <span
-                            className={styles.commentsBadge}
-                            data-testid={`article-card-comments-count-${article.id}`}
-                            title={t(
-                                "ui.comments.dashboard.badge_tooltip",
-                                "{count} imported comments",
-                            ).replace("{count}", String(article.comments_count))}
-                        >
-                            <MessageSquare
-                                size={12}
-                                aria-hidden
-                                style={{ verticalAlign: -2, marginRight: 4 }}
-                            />
-                            {article.comments_count}
-                        </span>
-                    )}
+                    {/* MEDIUM-COMMENTS-UI-01 commit 4 / 87ab959:
+                        count badge. Visibility + tooltip + icon
+                        are owned by the shared CommentsCountBadge
+                        component since LIST-VIEW-COMMENTS-COUNT-
+                        PARITY-01 extracted the inline version
+                        here for re-use in the list view. */}
+                    <CommentsCountBadge
+                        count={article.comments_count}
+                        testId={`article-card-comments-count-${article.id}`}
+                        className={styles.commentsBadge}
+                    />
                     {onDelete ? (
                         <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                             <DropdownMenu.Trigger asChild>
