@@ -63,6 +63,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Per-plugin Poetry virtualenv cache, keyed on the
+      # plugin's own poetry.lock. With 9 matrix jobs running in
+      # parallel, this saves ~15-30s per matrix job on cache
+      # hits. The plugin name in the key prevents cross-plugin
+      # cache pollution (different deps per plugin).
+      - name: Cache Poetry virtualenv (${{ matrix.plugin }})
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-${{ hashFiles(format('plugins/{0}/poetry.lock', matrix.plugin)) }}
+          restore-keys: |
+            poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-
+
       - name: Install Poetry
         run: pip install poetry
 
