@@ -17,6 +17,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Cache Poetry's virtualenv keyed on poetry.lock + python
+      # version. Saves ~15-30s per run on the backend job
+      # (test-infrastructure-audit 2026-05-12 finding 0.5.1).
+      # The frontend job already does this via setup-node's
+      # ``cache: "npm"``; backend was the asymmetry.
+      - name: Cache Poetry virtualenv (backend)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
+
       - name: Install Poetry
         run: pip install poetry
 
