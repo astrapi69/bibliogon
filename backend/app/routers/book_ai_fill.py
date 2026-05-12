@@ -185,44 +185,24 @@ class _AiFillRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Endpoint
+# Service function (reused by single-book endpoint + bulk worker)
 # ---------------------------------------------------------------------------
 
 
-@router.post("/{book_id}/ai-fill")
-async def ai_fill_book(
-    book_id: str,
-    request: _AiFillRequest,
-    db: Session = Depends(get_db),
+async def fill_book_with_ai(
+    book: Book,
+    body_text: str,
+    chapters_input: list[dict[str, str]],
+    field_classes: list[str],
+    *,
+    force: bool,
+    client: Any,
 ) -> dict[str, Any]:
-    """Run the configured LLM against the book and fill the
-    requested field-classes. Per-class failure is isolated.
-    chapter_summaries entries returned by the AI are reconciled
-    against the book's chapter rows before being written - same
-    pipeline as the per-book import endpoint."""
+    """Apply one LLM call per field-class to the given book row.
+    Caller owns the DB transaction. Returns the same response
+    shape as the single-book endpoint - the bulk worker forwards
+    individual items through here."""
     from app.ai.llm_client import LLMError
-    from app.ai.routes import _get_client, _is_ai_enabled
-
-    if not _is_ai_enabled():
-        raise HTTPException(status_code=403, detail="AI features are disabled")
-
-    unknown = [c for c in request.field_classes if c not in _FIELD_CLASSES]
-    if unknown:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown field_classes: {unknown}. Valid: {list(_FIELD_CLASSES)}",
-        )
-
-    book = _load_book(book_id, db)
-    body_text = _aggregate_book_body(book)
-    chapters_input = _build_chapter_input(book)
-    if not body_text and not chapters_input:
-        raise HTTPException(
-            status_code=400,
-            detail="Book has no chapter content to generate from",
-        )
-
-    client = _get_client()
 
     all_updated: list[str] = []
     all_skipped: dict[str, str] = {}
@@ -233,7 +213,7 @@ async def ai_fill_book(
     total_cost_usd = 0.0
     any_cost_known = False
 
-    for class_name in request.field_classes:
+    for class_name in field_classes:
         spec = _FIELD_CLASSES[class_name]
         if spec.is_chapter_summaries:
             if not chapters_input:
@@ -300,7 +280,7 @@ async def ai_fill_book(
                 book,
                 col_name,
                 ai_value,
-                force=request.force,
+                force=force,
                 is_json_list=is_json_list,
             )
             if result == APPLY_UPDATED:
@@ -334,9 +314,6 @@ async def ai_fill_book(
 
     if total_tokens:
         book.ai_tokens_used = (book.ai_tokens_used or 0) + total_tokens
-        db.add(book)
-        db.commit()
-        db.refresh(book)
 
     return {
         "book_id": book.id,
@@ -348,8 +325,65 @@ async def ai_fill_book(
         "dropped_chapter_summaries": dropped_chapter_summaries,
         "tokens_used": total_tokens,
         "estimated_cost_usd": round(total_cost_usd, 4) if any_cost_known else None,
-        "force": request.force,
+        "force": force,
     }
 
 
-__all__ = ["router", "FIELD_CLASS_NAMES"]
+# ---------------------------------------------------------------------------
+# Endpoint (thin wrapper around fill_book_with_ai)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/{book_id}/ai-fill")
+async def ai_fill_book(
+    book_id: str,
+    request: _AiFillRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Run the configured LLM against the book and fill the
+    requested field-classes. Per-class failure is isolated."""
+    from app.ai.routes import _get_client, _is_ai_enabled
+
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    unknown = [c for c in request.field_classes if c not in _FIELD_CLASSES]
+    if unknown:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown field_classes: {unknown}. Valid: {list(_FIELD_CLASSES)}",
+        )
+
+    book = _load_book(book_id, db)
+    body_text = _aggregate_book_body(book)
+    chapters_input = _build_chapter_input(book)
+    if not body_text and not chapters_input:
+        raise HTTPException(
+            status_code=400,
+            detail="Book has no chapter content to generate from",
+        )
+
+    client = _get_client()
+    result = await fill_book_with_ai(
+        book,
+        body_text,
+        chapters_input,
+        request.field_classes,
+        force=request.force,
+        client=client,
+    )
+    if result["tokens_used"]:
+        db.add(book)
+        db.commit()
+        db.refresh(book)
+    return result
+
+
+__all__ = [
+    "router",
+    "FIELD_CLASS_NAMES",
+    "fill_book_with_ai",
+    "_FIELD_CLASSES",
+    "_aggregate_book_body",
+    "_build_chapter_input",
+]

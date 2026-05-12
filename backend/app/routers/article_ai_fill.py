@@ -220,47 +220,28 @@ class _AiFillRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Endpoint
+# Service function (reused by single-article endpoint + bulk worker)
 # ---------------------------------------------------------------------------
 
 
-@router.post("/{article_id}/ai-fill")
-async def ai_fill_article(
-    article_id: str,
-    request: _AiFillRequest,
-    db: Session = Depends(get_db),
+async def fill_article_with_ai(
+    article: Article,
+    body_text: str,
+    field_classes: list[str],
+    *,
+    force: bool,
+    inline_image_count: int | None,
+    client: Any,
 ) -> dict[str, Any]:
-    """Run the configured LLM against the article and fill the
-    requested field-classes. Each class is one LLM call;
-    per-class failure is isolated so one outage doesn't kill
-    the whole batch."""
-    # Lazy import to keep this module free of the cyclic
-    # ai/routes <-> app.main pull during test collection.
-    from app.ai.llm_client import LLMError
-    from app.ai.routes import _get_client, _is_ai_enabled
+    """Apply one LLM call per field-class to the given article
+    row. Caller owns the DB transaction (the function never
+    commits or refreshes). Returns the same response shape as
+    the single-article endpoint exposes - the bulk worker
+    forwards individual items through here so the per-record
+    semantics stay identical between single and bulk paths."""
+    from app.ai.llm_client import LLMError  # local import (cyclic)
 
-    if not _is_ai_enabled():
-        raise HTTPException(status_code=403, detail="AI features are disabled")
-
-    # Validate field-class names up front so a typo doesn't
-    # waste an LLM call before failing.
-    unknown = [c for c in request.field_classes if c not in _FIELD_CLASSES]
-    if unknown:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown field_classes: {unknown}. Valid: {list(_FIELD_CLASSES)}",
-        )
-
-    article = _load_article(article_id, db)
-    body_text = extract_body_text(article.content_json)
-    if not body_text:
-        raise HTTPException(
-            status_code=400,
-            detail="Article has no content to generate from",
-        )
-
-    inline_count = _inline_image_count(article, request.inline_image_count)
-    client = _get_client()
+    inline_count = _inline_image_count(article, inline_image_count)
 
     all_updated: list[str] = []
     all_skipped: dict[str, str] = {}
@@ -270,7 +251,7 @@ async def ai_fill_article(
     total_cost_usd = 0.0
     any_cost_known = False
 
-    for class_name in request.field_classes:
+    for class_name in field_classes:
         spec = _FIELD_CLASSES[class_name]
         if spec.needs_inline_count:
             system_prompt, user_prompt = spec.builder(
@@ -317,7 +298,7 @@ async def ai_fill_article(
                 article,
                 col_name,
                 ai_value,
-                force=request.force,
+                force=force,
                 is_json_list=is_json_list,
             )
             if result == APPLY_UPDATED:
@@ -343,10 +324,11 @@ async def ai_fill_article(
             any_cost_known = True
 
     if total_tokens:
+        # Increment ai_tokens_used on the row but let the caller
+        # decide when to flush. The single endpoint commits
+        # immediately; the bulk worker commits per-item too,
+        # via its own session.
         article.ai_tokens_used = (article.ai_tokens_used or 0) + total_tokens
-        db.add(article)
-        db.commit()
-        db.refresh(article)
 
     return {
         "article_id": article.id,
@@ -357,9 +339,60 @@ async def ai_fill_article(
         "field_class_errors": class_errors,
         "tokens_used": total_tokens,
         "estimated_cost_usd": round(total_cost_usd, 4) if any_cost_known else None,
-        "force": request.force,
+        "force": force,
         "inline_image_count": inline_count,
     }
 
 
-__all__ = ["router", "FIELD_CLASS_NAMES"]
+# ---------------------------------------------------------------------------
+# Endpoint (thin wrapper around fill_article_with_ai)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/{article_id}/ai-fill")
+async def ai_fill_article(
+    article_id: str,
+    request: _AiFillRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Run the configured LLM against the article and fill the
+    requested field-classes. Each class is one LLM call;
+    per-class failure is isolated so one outage doesn't kill
+    the whole batch."""
+    from app.ai.routes import _get_client, _is_ai_enabled
+
+    if not _is_ai_enabled():
+        raise HTTPException(status_code=403, detail="AI features are disabled")
+
+    unknown = [c for c in request.field_classes if c not in _FIELD_CLASSES]
+    if unknown:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown field_classes: {unknown}. Valid: {list(_FIELD_CLASSES)}",
+        )
+
+    article = _load_article(article_id, db)
+    body_text = extract_body_text(article.content_json)
+    if not body_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Article has no content to generate from",
+        )
+
+    client = _get_client()
+    result = await fill_article_with_ai(
+        article,
+        body_text,
+        request.field_classes,
+        force=request.force,
+        inline_image_count=request.inline_image_count,
+        client=client,
+    )
+    if result["tokens_used"]:
+        db.add(article)
+        db.commit()
+        db.refresh(article)
+    return result
+
+
+__all__ = ["router", "FIELD_CLASS_NAMES", "fill_article_with_ai", "_FIELD_CLASSES"]
