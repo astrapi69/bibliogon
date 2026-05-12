@@ -4,6 +4,8 @@ import {api, ApiError, Book, BookCreate, BookFromTemplateCreate} from "../api/cl
 import CreateBookModal from "../components/CreateBookModal";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
+import FieldClassDialog, {type FieldClassDialogResult} from "../components/FieldClassDialog";
+import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import BookCard from "../components/BookCard";
 import BookListView from "../components/BookListView";
 import BookBulkActionBar, {
@@ -135,6 +137,19 @@ export default function Dashboard() {
     };
 
     const [bulkBookAiImportOpen, setBulkBookAiImportOpen] = useState(false);
+
+    // UNIVERSAL-AI-TEMPLATE-02 commit 8: bulk-AI-fill flow state.
+    // The "Bulk AI fill" dropdown item opens a FieldClassDialog;
+    // submitting that opens the BulkAiFillConfirmDialog; confirm
+    // calls /start and hands off to BulkAiFillJobContext (the
+    // dock takes over from there).
+    const [bulkBookAiFillFieldsOpen, setBulkBookAiFillFieldsOpen] = useState(false);
+    const [bulkBookAiFillConfirm, setBulkBookAiFillConfirm] = useState<{
+        ids: string[];
+        fieldClasses: string[];
+        force: boolean;
+        inlineImageCount?: number | null;
+    } | null>(null);
 
     // Bulk-delete state. Same shape as the Articles dashboard;
     // see ArticleList.tsx for the rationale + behavior matrix.
@@ -616,6 +631,7 @@ export default function Dashboard() {
                                     onBulkDeletePermanent={handleBulkBookDeletePermanentRequest}
                                     onBulkAiTemplateExport={() => void handleBulkBookAiTemplateExport()}
                                     onBulkAiTemplateImport={() => setBulkBookAiImportOpen(true)}
+                                    onBulkAiFill={() => setBulkBookAiFillFieldsOpen(true)}
                                     onClear={selection.clear}
                                     t={t}
                                 />
@@ -791,6 +807,40 @@ export default function Dashboard() {
                     void loadBooks();
                 }}
             />
+            <FieldClassDialog
+                open={bulkBookAiFillFieldsOpen}
+                kind="book"
+                onClose={() => setBulkBookAiFillFieldsOpen(false)}
+                onSubmit={(req: FieldClassDialogResult) => {
+                    const ids = filters.filteredBooks
+                        .map((b) => b.id)
+                        .filter((id) => selection.isSelected(id));
+                    if (ids.length === 0) {
+                        setBulkBookAiFillFieldsOpen(false);
+                        return;
+                    }
+                    setBulkBookAiFillFieldsOpen(false);
+                    setBulkBookAiFillConfirm({
+                        ids,
+                        fieldClasses: req.field_classes,
+                        force: req.force,
+                        inlineImageCount: req.inline_image_count,
+                    });
+                }}
+                title={t("ui.bulk_ai_fill.field_class_dialog_title", "Bulk AI fill: pick field-classes")}
+                submitLabel={t("ui.bulk_ai_fill.field_class_dialog_submit", "Continue to estimate")}
+            />
+            {bulkBookAiFillConfirm && (
+                <BulkAiFillConfirmDialog
+                    open
+                    onClose={() => setBulkBookAiFillConfirm(null)}
+                    kind="book"
+                    ids={bulkBookAiFillConfirm.ids}
+                    fieldClasses={bulkBookAiFillConfirm.fieldClasses}
+                    force={bulkBookAiFillConfirm.force}
+                    inlineImageCount={bulkBookAiFillConfirm.inlineImageCount}
+                />
+            )}
         </div>
     );
 }

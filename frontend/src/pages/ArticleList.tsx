@@ -46,6 +46,8 @@ import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
+import FieldClassDialog, {type FieldClassDialogResult} from "../components/FieldClassDialog";
+import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useViewMode } from "../hooks/useViewMode";
 import { useArticleFilters } from "../hooks/useArticleFilters";
@@ -150,6 +152,15 @@ export default function ArticleList() {
     };
 
     const [bulkArticleAiImportOpen, setBulkArticleAiImportOpen] = useState(false);
+
+    // UNIVERSAL-AI-TEMPLATE-02 commit 8: bulk AI-fill flow state.
+    const [bulkArticleAiFillFieldsOpen, setBulkArticleAiFillFieldsOpen] = useState(false);
+    const [bulkArticleAiFillConfirm, setBulkArticleAiFillConfirm] = useState<{
+        ids: string[];
+        fieldClasses: string[];
+        force: boolean;
+        inlineImageCount?: number | null;
+    } | null>(null);
 
     // Bulk-delete state. The permanent-path dialog opens with a
     // captured count + ID list so the user typing happens against a
@@ -769,6 +780,7 @@ export default function ArticleList() {
                     onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
                     onBulkAiTemplateExport={() => void handleBulkArticleAiTemplateExport()}
                     onBulkAiTemplateImport={() => setBulkArticleAiImportOpen(true)}
+                    onBulkAiFill={() => setBulkArticleAiFillFieldsOpen(true)}
                     onBulkDelete={() => void handleBulkDelete(false)}
                     onBulkDeletePermanent={handleBulkDeletePermanentRequest}
                     onClear={selection.clear}
@@ -912,6 +924,40 @@ export default function ArticleList() {
                         .catch(() => {});
                 }}
             />
+            <FieldClassDialog
+                open={bulkArticleAiFillFieldsOpen}
+                kind="article"
+                onClose={() => setBulkArticleAiFillFieldsOpen(false)}
+                onSubmit={(req: FieldClassDialogResult) => {
+                    const ids = filters.filteredArticles
+                        .map((a) => a.id)
+                        .filter((id) => selection.isSelected(id));
+                    if (ids.length === 0) {
+                        setBulkArticleAiFillFieldsOpen(false);
+                        return;
+                    }
+                    setBulkArticleAiFillFieldsOpen(false);
+                    setBulkArticleAiFillConfirm({
+                        ids,
+                        fieldClasses: req.field_classes,
+                        force: req.force,
+                        inlineImageCount: req.inline_image_count,
+                    });
+                }}
+                title={t("ui.bulk_ai_fill.field_class_dialog_title", "Bulk AI fill: pick field-classes")}
+                submitLabel={t("ui.bulk_ai_fill.field_class_dialog_submit", "Continue to estimate")}
+            />
+            {bulkArticleAiFillConfirm && (
+                <BulkAiFillConfirmDialog
+                    open
+                    onClose={() => setBulkArticleAiFillConfirm(null)}
+                    kind="article"
+                    ids={bulkArticleAiFillConfirm.ids}
+                    fieldClasses={bulkArticleAiFillConfirm.fieldClasses}
+                    force={bulkArticleAiFillConfirm.force}
+                    inlineImageCount={bulkArticleAiFillConfirm.inlineImageCount}
+                />
+            )}
         </div>
     );
 }

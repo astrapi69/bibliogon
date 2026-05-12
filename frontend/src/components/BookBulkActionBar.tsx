@@ -36,13 +36,19 @@ interface Props {
     /** Permanent-delete: opens TypeToConfirmDialog (parent renders). */
     onBulkDeletePermanent?: () => void
     /** UNIVERSAL-AI-TEMPLATE-02: open the per-selection bulk
-     *  AI-template export flow. Both AI handlers are optional; the
-     *  bar only renders the AI dropdown when both are wired so a
+     *  AI-template export flow. AI handlers are optional; the
+     *  bar only renders the AI dropdown when at least the
+     *  template-export + template-import pair is wired so a
      *  partial wiring does not produce a half-broken UI. */
     onBulkAiTemplateExport?: () => void
     /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template import
      *  dialog. */
     onBulkAiTemplateImport?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02 commit 8: open the bulk AI-fill
+     *  flow (FieldClassDialog -> BulkAiFillConfirmDialog ->
+     *  start). Optional; the dropdown still renders without it
+     *  but the third menu item is hidden. */
+    onBulkAiFill?: () => void
     t: (key: string, fallback?: string) => string
 }
 
@@ -54,6 +60,7 @@ export default function BookBulkActionBar({
     onBulkDeletePermanent,
     onBulkAiTemplateExport,
     onBulkAiTemplateImport,
+    onBulkAiFill,
     t,
 }: Props) {
     const [format, setFormat] = useState<BookBulkExportFormat>("epub")
@@ -167,6 +174,18 @@ export default function BookBulkActionBar({
                                     "Gefüllte Vorlagen importieren (ZIP)",
                                 )}
                             </DropdownMenu.Item>
+                            {onBulkAiFill && (
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    onSelect={onBulkAiFill}
+                                    data-testid="book-bulk-ai-fill"
+                                >
+                                    {t(
+                                        "ui.ai_template.bulk.menu_fill",
+                                        "Mit KI füllen...",
+                                    )}
+                                </DropdownMenu.Item>
+                            )}
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>

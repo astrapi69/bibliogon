@@ -47,13 +47,19 @@ interface Props {
      *  after the dialog confirms. */
     onBulkDeletePermanent?: () => void
     /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template export
-     *  flow. Both AI handlers are optional; the bar only renders
-     *  the AI dropdown when both are wired so a partial wiring
-     *  does not produce a half-broken UI. */
+     *  flow. AI handlers are optional; the bar only renders the
+     *  AI dropdown when at least the template-export +
+     *  template-import pair is wired so a partial wiring does
+     *  not produce a half-broken UI. */
     onBulkAiTemplateExport?: () => void
     /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template import
      *  dialog. */
     onBulkAiTemplateImport?: () => void
+    /** UNIVERSAL-AI-TEMPLATE-02 commit 8: open the bulk AI-fill
+     *  flow (FieldClassDialog -> BulkAiFillConfirmDialog ->
+     *  start). Optional; the dropdown still renders without it
+     *  but the third menu item is hidden. */
+    onBulkAiFill?: () => void
     t: (key: string, fallback?: string) => string
     /** Optional - lets tests interpolate the count more easily by
      *  exposing the i18n call site. Defaults to the production
@@ -69,6 +75,7 @@ export default function ArticleBulkActionBar({
     onBulkDeletePermanent,
     onBulkAiTemplateExport,
     onBulkAiTemplateImport,
+    onBulkAiFill,
     t,
     formatCount,
 }: Props) {
@@ -207,6 +214,18 @@ export default function ArticleBulkActionBar({
                                     "Gefüllte Vorlagen importieren (ZIP)",
                                 )}
                             </DropdownMenu.Item>
+                            {onBulkAiFill && (
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    onSelect={onBulkAiFill}
+                                    data-testid="article-bulk-ai-fill"
+                                >
+                                    {t(
+                                        "ui.ai_template.bulk.menu_fill",
+                                        "Mit KI füllen...",
+                                    )}
+                                </DropdownMenu.Item>
+                            )}
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
