@@ -9,10 +9,13 @@
  * list + filter + pagination only.
  */
 
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {Trash2} from "lucide-react";
 
 import {api, ApiError, type ArticleComment} from "../api/client";
+import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
+import {notify} from "../utils/notify";
 
 const PAGE_SIZE = 100;
 
@@ -40,56 +43,60 @@ function formatDate(iso: string | null, lang: string): string {
 
 export default function CommentsAdminSection() {
     const {t, lang} = useI18n();
+    const dialog = useDialog();
     const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
     const [rows, setRows] = useState<ArticleComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [pendingDelete, setPendingDelete] = useState<string | null>(null);
     // ``pageLimit`` only grows; "Load more" bumps it by PAGE_SIZE.
     // The backend caps at 500, so the UI caps at 500 too.
     const [pageLimit, setPageLimit] = useState(PAGE_SIZE);
 
-    const fetchRows = useCallback(
-        (currentFilters: FilterState, currentLimit: number) => {
-            let cancelled = false;
-            setLoading(true);
-            setLoadError(null);
-            api.comments
-                .list({
-                    importedFrom: currentFilters.importedFrom || undefined,
-                    orphansOnly: currentFilters.orphansOnly,
-                    limit: currentLimit,
-                })
-                .then((data) => {
-                    if (!cancelled) {
-                        setRows(data);
-                        setLoading(false);
-                    }
-                })
-                .catch((err) => {
-                    if (cancelled) return;
-                    if (err instanceof ApiError) {
-                        setLoadError(err.detail);
-                    } else {
-                        setLoadError(
-                            t(
-                                "ui.comments.admin.load_error",
-                                "Could not load comments",
-                            ),
-                        );
-                    }
-                    setLoading(false);
-                });
-            return () => {
-                cancelled = true;
-            };
-        },
-        [t],
-    );
+    // Hold the latest ``t`` in a ref so the fetch effect can reach
+    // the i18n fallback without re-running every time ``t``'s
+    // identity changes. Per the lessons-learned rule
+    // "React useEffect deps + i18n test mocks: the t function
+    // isn't stable", including ``t`` in the dep array makes the
+    // effect re-fire on every render under the test mock and
+    // overwrite optimistic state changes (e.g. delete).
+    const tRef = useRef(t);
+    tRef.current = t;
 
     useEffect(() => {
-        const cancel = fetchRows(filters, pageLimit);
-        return cancel;
-    }, [filters, pageLimit, fetchRows]);
+        let cancelled = false;
+        setLoading(true);
+        setLoadError(null);
+        api.comments
+            .list({
+                importedFrom: filters.importedFrom || undefined,
+                orphansOnly: filters.orphansOnly,
+                limit: pageLimit,
+            })
+            .then((data) => {
+                if (!cancelled) {
+                    setRows(data);
+                    setLoading(false);
+                }
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                if (err instanceof ApiError) {
+                    setLoadError(err.detail);
+                } else {
+                    setLoadError(
+                        tRef.current(
+                            "ui.comments.admin.load_error",
+                            "Could not load comments",
+                        ),
+                    );
+                }
+                setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [filters, pageLimit]);
 
     const updateFilter = (patch: Partial<FilterState>) => {
         // Resetting the page limit on filter change is intentional:
@@ -104,6 +111,47 @@ export default function CommentsAdminSection() {
         !loading &&
         rows.length === pageLimit &&
         pageLimit < 500; // backend cap
+
+    const handleDelete = async (row: ArticleComment) => {
+        // Single-item delete uses the simple confirm dialog
+        // (Promise<boolean>) rather than the bulk-delete
+        // type-to-confirm pattern. Per the S6 design decision:
+        // single-comment deletion is low-stakes vs. bulk-delete's
+        // potential mass-damage, so the lighter UX is enough.
+        const preview = row.body_text.length > 80
+            ? row.body_text.slice(0, 80) + "..."
+            : row.body_text;
+        const ok = await dialog.confirm(
+            t("ui.comments.admin.delete_title", "Delete comment?"),
+            t(
+                "ui.comments.admin.delete_message",
+                'This will move the comment to trash. Body preview: "{preview}"',
+            ).replace("{preview}", preview),
+        );
+        if (!ok) return;
+        setPendingDelete(row.id);
+        try {
+            await api.comments.delete(row.id);
+            // Optimistically drop from the visible list; cheaper
+            // than a full refetch and matches the
+            // "delete-and-move-on" mental model.
+            setRows((prev) => prev.filter((c) => c.id !== row.id));
+            notify.success(
+                t("ui.comments.admin.delete_success", "Comment deleted."),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.delete_error",
+                          "Could not delete the comment.",
+                      );
+            notify.error(message);
+        } finally {
+            setPendingDelete(null);
+        }
+    };
 
     return (
         <section data-testid="comments-admin-section">
@@ -286,6 +334,22 @@ export default function CommentsAdminSection() {
                             >
                                 {t("ui.comments.admin.col_date", "Imported")}
                             </th>
+                            <th
+                                style={{
+                                    textAlign: "right",
+                                    borderBottom:
+                                        "1px solid var(--border, #e5e7eb)",
+                                    padding: "8px 6px",
+                                    width: 60,
+                                }}
+                            >
+                                <span className="sr-only">
+                                    {t(
+                                        "ui.comments.admin.col_actions",
+                                        "Actions",
+                                    )}
+                                </span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -337,6 +401,28 @@ export default function CommentsAdminSection() {
                                 </td>
                                 <td style={{padding: "6px"}}>
                                     {formatDate(row.imported_at, lang)}
+                                </td>
+                                <td style={{padding: "6px", textAlign: "right"}}>
+                                    <button
+                                        type="button"
+                                        className="btn-icon"
+                                        data-testid={`comments-admin-delete-${row.id}`}
+                                        onClick={() => {
+                                            void handleDelete(row);
+                                        }}
+                                        disabled={pendingDelete === row.id}
+                                        aria-label={t(
+                                            "ui.comments.admin.delete_action",
+                                            "Delete comment",
+                                        )}
+                                        title={t(
+                                            "ui.comments.admin.delete_action",
+                                            "Delete comment",
+                                        )}
+                                        style={{color: "var(--danger, #b91c1c)"}}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}

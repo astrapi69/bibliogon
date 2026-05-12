@@ -36,6 +36,14 @@ const listMock = vi.fn<
     }) => Promise<ArticleComment[]>
 >(async () => []);
 
+const deleteMock = vi.fn<(id: string) => Promise<void>>(async () => {});
+
+const notifySuccess = vi.fn();
+const notifyError = vi.fn();
+const confirmMock = vi.fn<(...args: unknown[]) => Promise<boolean>>(
+    async () => true,
+);
+
 vi.mock("../api/client", async () => {
     const actual = await vi.importActual<typeof import("../api/client")>(
         "../api/client",
@@ -51,18 +59,46 @@ vi.mock("../api/client", async () => {
                         limit?: number;
                     },
                 ) => listMock(params),
+                delete: (id: string) => deleteMock(id),
             },
         },
     };
 });
 
+vi.mock("./AppDialog", () => ({
+    useDialog: () => ({
+        confirm: (...args: unknown[]) => confirmMock(...args),
+        prompt: vi.fn(),
+        alert: vi.fn(),
+        choose: vi.fn(),
+    }),
+}));
+
+vi.mock("../utils/notify", () => ({
+    notify: {
+        success: (...args: unknown[]) => notifySuccess(...args),
+        error: (...args: unknown[]) => notifyError(...args),
+        info: vi.fn(),
+    },
+}));
+
 beforeEach(() => {
     listMock.mockClear();
     listMock.mockImplementation(async () => []);
+    deleteMock.mockClear();
+    deleteMock.mockImplementation(async () => {});
+    notifySuccess.mockClear();
+    notifyError.mockClear();
+    confirmMock.mockClear();
+    confirmMock.mockImplementation(async () => true);
 });
 
 afterEach(() => {
     listMock.mockClear();
+    deleteMock.mockClear();
+    notifySuccess.mockClear();
+    notifyError.mockClear();
+    confirmMock.mockClear();
 });
 
 function mkRow(over: Partial<ArticleComment> = {}): ArticleComment {
@@ -227,5 +263,111 @@ describe("CommentsAdminSection", () => {
         render(<CommentsAdminSection />);
         const error = await screen.findByTestId("comments-admin-error");
         expect(error.textContent).toContain("Could not load comments");
+    });
+});
+
+
+// ---------------------------------------------------------------------------
+// MEDIUM-COMMENTS-UI-01 commit 6: single-item delete flow
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection delete flow", () => {
+    it("renders a delete button per row", async () => {
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        expect(btn).toBeTruthy();
+    });
+
+    it("opens the confirm dialog when delete is clicked", async () => {
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it("does not call api.comments.delete when the user cancels confirm", async () => {
+        confirmMock.mockResolvedValueOnce(false);
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalledTimes(1);
+        });
+        // Give any pending microtasks a chance to drain.
+        await Promise.resolve();
+        expect(deleteMock).not.toHaveBeenCalled();
+    });
+
+    it("removes the row from the list on successful delete", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "alpha", body_text: "First"}),
+            mkRow({id: "beta", body_text: "Second"}),
+        ]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(deleteMock).toHaveBeenCalledWith("alpha");
+        });
+        await waitFor(() => {
+            expect(screen.queryByTestId("comments-admin-row-alpha")).toBeNull();
+        });
+        // Beta remains untouched.
+        expect(screen.getByTestId("comments-admin-row-beta")).toBeTruthy();
+        expect(notifySuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows an error toast and keeps the row when delete fails", async () => {
+        deleteMock.mockRejectedValueOnce(new Error("server down"));
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(notifyError).toHaveBeenCalledTimes(1);
+        });
+        // Row stays in the list because the delete failed.
+        expect(screen.getByTestId("comments-admin-row-alpha")).toBeTruthy();
+        // No success toast on failure.
+        expect(notifySuccess).not.toHaveBeenCalled();
+    });
+
+    it("substitutes the body preview into the confirm message", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "alpha", body_text: "Hello there"}),
+        ]);
+        confirmMock.mockResolvedValueOnce(false);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalled();
+        });
+        // confirm(title, message) signature - args[1] is the
+        // message with the preview substituted.
+        const [, message] = confirmMock.mock.calls[0] as [string, string];
+        expect(message).toContain("Hello there");
+    });
+
+    it("truncates long body previews at 80 chars in the confirm message", async () => {
+        const long = "x".repeat(200);
+        listMock.mockResolvedValue([mkRow({id: "long", body_text: long})]);
+        confirmMock.mockResolvedValueOnce(false);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-delete-long");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalled();
+        });
+        const [, message] = confirmMock.mock.calls[0] as [string, string];
+        // Truncated to 80 chars + ellipsis -> the full 200 chars
+        // do NOT appear, and an ellipsis IS present.
+        expect(message).not.toContain("x".repeat(200));
+        expect(message).toContain("...");
     });
 });
