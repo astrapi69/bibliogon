@@ -40,3 +40,31 @@ settings:
   # tile renders much better with a thumbnail. Disable for authors
   # who curate featured images manually.
   set_first_image_as_featured: true
+
+  # MEDIUM-COMMENTS-IMPORT-01: how to handle posts that the walker
+  # heuristic classifies as comments (short reply-shaped responses
+  # with no structural elements; ~3-4% of a typical export).
+  #
+  #   - "as_comments" (default): route detected comments to the
+  #     article_comments table. Keeps the article dashboard
+  #     focused on long-form pieces while preserving the
+  #     reply-shaped notes for a future comments admin view.
+  #   - "as_articles": import every post as an Article, ignoring
+  #     the heuristic. Legacy behaviour pre-v0.31.0.
+  #   - "skip": discard comment-shaped posts entirely. For users
+  #     who treat short replies as noise.
+  import_comments_mode: "as_comments"
+
+  # MEDIUM-COMMENTS-IMPORT-01: how to handle comments with no
+  # responded-to article in the Bibliogon DB. Medium's HTML
+  # export carries NO parent-article reference, so every
+  # imported Medium comment is born an orphan; this setting
+  # only matters for future importers that may carry parent
+  # links.
+  #
+  #   - "store" (default): persist orphans with responds_to_
+  #     article_id = NULL and responds_to_url preserved. The
+  #     admin /api/comments endpoint surfaces them for later
+  #     re-linkage when the responded-to article gets imported.
+  #   - "skip": discard orphan comments entirely.
+  orphan_comment_handling: "store"

@@ -53,3 +53,68 @@ def test_health_endpoint_signature() -> None:
     """The health route should be registered under /medium-import."""
     paths = [route.path for route in router.routes]
     assert "/medium-import/health" in paths
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-COMMENTS-IMPORT-01 commit 3+4: settings normalization
+# ---------------------------------------------------------------------------
+
+
+from bibliogon_medium_import.routes import (  # noqa: E402
+    _normalize_comments_mode,
+    _normalize_orphan_handling,
+    _settings_kwargs,
+    set_config,
+)
+
+
+def test_normalize_comments_mode_accepts_each_valid_value() -> None:
+    assert _normalize_comments_mode("as_comments") == "as_comments"
+    assert _normalize_comments_mode("as_articles") == "as_articles"
+    assert _normalize_comments_mode("skip") == "skip"
+
+
+def test_normalize_comments_mode_falls_back_to_default() -> None:
+    """Unknown values / typos / wrong types fall back to the
+    default ``as_comments`` rather than crashing or silently
+    inheriting whatever YAML carried."""
+    assert _normalize_comments_mode("invalid") == "as_comments"
+    assert _normalize_comments_mode(None) == "as_comments"
+    assert _normalize_comments_mode(42) == "as_comments"
+    assert _normalize_comments_mode("") == "as_comments"
+
+
+def test_normalize_orphan_handling_accepts_each_valid_value() -> None:
+    assert _normalize_orphan_handling("store") == "store"
+    assert _normalize_orphan_handling("skip") == "skip"
+
+
+def test_normalize_orphan_handling_falls_back_to_default() -> None:
+    assert _normalize_orphan_handling("invalid") == "store"
+    assert _normalize_orphan_handling(None) == "store"
+    assert _normalize_orphan_handling(True) == "store"
+
+
+def test_settings_kwargs_threads_comment_kwargs_through() -> None:
+    """The two new comment settings must reach ``_settings_kwargs``'
+    output so ``import_zip`` receives them. Default missing-key
+    behaviour returns the canonical defaults."""
+    set_config({})
+    kw = _settings_kwargs()
+    assert kw["import_comments_mode"] == "as_comments"
+    assert kw["orphan_comment_handling"] == "store"
+
+
+def test_settings_kwargs_passes_custom_values_through() -> None:
+    set_config(
+        {
+            "settings": {
+                "import_comments_mode": "skip",
+                "orphan_comment_handling": "skip",
+            }
+        }
+    )
+    kw = _settings_kwargs()
+    assert kw["import_comments_mode"] == "skip"
+    assert kw["orphan_comment_handling"] == "skip"
+    set_config({})  # Reset the module-level state for sibling tests.

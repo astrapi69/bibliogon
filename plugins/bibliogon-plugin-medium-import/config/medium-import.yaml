@@ -33,3 +33,20 @@ settings:
   # definition published; "published" mirrors that. User can
   # archive selectively post-import.
   default_status: "published"
+
+  # MEDIUM-COMMENTS-IMPORT-01: how to handle posts that the
+  # walker heuristic classifies as comments. See
+  # docs/help/{en,de}/import/medium.md.
+  #   - "as_comments" (default): route to article_comments table
+  #   - "as_articles": legacy, every post becomes an Article
+  #   - "skip": discard comment-shaped posts entirely
+  import_comments_mode: "as_comments"
+
+  # MEDIUM-COMMENTS-IMPORT-01: comments whose responded-to
+  # article isn't in the local DB. Medium emits no
+  # parent-article link so every imported Medium comment is
+  # an orphan; this matters mostly for future importers that
+  # carry parent references.
+  #   - "store" (default): keep with NULL FK + responds_to_url
+  #   - "skip": discard orphan comments entirely
+  orphan_comment_handling: "store"

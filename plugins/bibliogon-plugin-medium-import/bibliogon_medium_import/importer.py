@@ -90,6 +90,13 @@ def import_zip(
     default_status: str = "published",
     default_language: str = "en",
     set_first_image_as_featured: bool = True,
+    # MEDIUM-COMMENTS-IMPORT-01 commit 3+4: surface only. The
+    # commit 5 wiring step interprets these and routes
+    # comment-shaped posts to the ArticleComment table.
+    #   import_comments_mode: "as_comments" | "as_articles" | "skip"
+    #   orphan_comment_handling: "store" | "skip"
+    import_comments_mode: str = "as_comments",
+    orphan_comment_handling: str = "store",
     http_client: httpx.Client | None = None,
 ) -> ImportResult:
     """Import every ``posts/*.html`` from the given Medium ZIP."""

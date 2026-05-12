@@ -32,6 +32,28 @@ def set_config(config: dict) -> None:
     _config = config
 
 
+# MEDIUM-COMMENTS-IMPORT-01 commit 3+4. Valid enum values for the
+# two comment-handling settings. Anything else falls back to the
+# default with a warning log so a YAML typo doesn't silently
+# change the import behaviour.
+_VALID_COMMENTS_MODES: frozenset[str] = frozenset(
+    {"as_comments", "as_articles", "skip"}
+)
+_VALID_ORPHAN_HANDLING: frozenset[str] = frozenset({"store", "skip"})
+
+
+def _normalize_comments_mode(raw: object) -> str:
+    if isinstance(raw, str) and raw in _VALID_COMMENTS_MODES:
+        return raw
+    return "as_comments"
+
+
+def _normalize_orphan_handling(raw: object) -> str:
+    if isinstance(raw, str) and raw in _VALID_ORPHAN_HANDLING:
+        return raw
+    return "store"
+
+
 def _settings_kwargs() -> dict:
     """Translate plugin settings to ``import_zip`` kwargs.
 
@@ -54,6 +76,12 @@ def _settings_kwargs() -> dict:
         "default_status": str(settings.get("default_status") or "published"),
         "set_first_image_as_featured": bool(
             settings.get("set_first_image_as_featured", True)
+        ),
+        "import_comments_mode": _normalize_comments_mode(
+            settings.get("import_comments_mode")
+        ),
+        "orphan_comment_handling": _normalize_orphan_handling(
+            settings.get("orphan_comment_handling")
         ),
     }
 
