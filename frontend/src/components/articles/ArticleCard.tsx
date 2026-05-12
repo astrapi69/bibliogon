@@ -6,7 +6,7 @@
  * (parity with BookCard's recent additions can come later).
  */
 import { useState } from "react";
-import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, MessageSquare, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
@@ -97,6 +97,28 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                         <Clock size={12} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />
                         {updated}
                     </span>
+                    {/* MEDIUM-COMMENTS-UI-01 commit 4: count badge.
+                        Rendered only when the server-computed
+                        comments_count is > 0. Lucide MessageSquare
+                        matches the existing icon stack; no new
+                        dependency. */}
+                    {(article.comments_count ?? 0) > 0 && (
+                        <span
+                            className={styles.commentsBadge}
+                            data-testid={`article-card-comments-count-${article.id}`}
+                            title={t(
+                                "ui.comments.dashboard.badge_tooltip",
+                                "{count} imported comments",
+                            ).replace("{count}", String(article.comments_count))}
+                        >
+                            <MessageSquare
+                                size={12}
+                                aria-hidden
+                                style={{ verticalAlign: -2, marginRight: 4 }}
+                            />
+                            {article.comments_count}
+                        </span>
+                    )}
                     {onDelete ? (
                         <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
                             <DropdownMenu.Trigger asChild>

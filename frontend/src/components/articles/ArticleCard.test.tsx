@@ -71,3 +71,41 @@ describe("ArticleCard date display", () => {
         expect(screen.getByText(/2026/)).toBeInTheDocument();
     });
 });
+
+
+describe("ArticleCard comments-count badge (MEDIUM-COMMENTS-UI-01)", () => {
+    it("hides the badge when comments_count is 0", () => {
+        const article = makeArticle({ comments_count: 0 });
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        expect(
+            screen.queryByTestId(`article-card-comments-count-${article.id}`),
+        ).toBeNull();
+    });
+
+    it("hides the badge when comments_count is undefined (legacy responses)", () => {
+        const article = makeArticle({});
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        expect(
+            screen.queryByTestId(`article-card-comments-count-${article.id}`),
+        ).toBeNull();
+    });
+
+    it("renders the badge with the count when comments_count > 0", () => {
+        const article = makeArticle({ comments_count: 7 });
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        const badge = screen.getByTestId(
+            `article-card-comments-count-${article.id}`,
+        );
+        expect(badge.textContent).toContain("7");
+    });
+
+    it("badge title carries the i18n tooltip with the count substituted", () => {
+        const article = makeArticle({ comments_count: 3 });
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        const badge = screen.getByTestId(
+            `article-card-comments-count-${article.id}`,
+        );
+        // i18n fallback resolves "{count} imported comments" -> "3 imported comments"
+        expect(badge.getAttribute("title")).toBe("3 imported comments");
+    });
+});

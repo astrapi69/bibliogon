@@ -91,3 +91,13 @@
 .date {
     margin-left: auto;
 }
+
+/* MEDIUM-COMMENTS-UI-01 commit 4: comments count badge.
+   Rendered only when comments_count > 0; muted monochrome
+   treatment so it sits unobtrusively next to the date. */
+.commentsBadge {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
