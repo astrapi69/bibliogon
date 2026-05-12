@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (UNIVERSAL-AI-TEMPLATE-01 Session 1 landed: 10 commits db1a283..5a01c4f, +108 backend tests. Article + Book ai-template export/import/empty + ai-fill + bulk ZIP + bulk SSE with per-item cost-estimate breakdown. Session 2 frontend filed as UNIVERSAL-AI-TEMPLATE-02 under P2. AI-FILL-CAP-CONFIG-01 filed under P5.)
+Last updated: 2026-05-12 (UNIVERSAL-AI-TEMPLATE-02 Session 2 landed: 10 commits 026674a..ba1ld10, +152 frontend tests + 19 backend tests + i18n × 8 + bilingual help docs. Three-workflow UI ships: built-in AI / custom-endpoint / external YAML round-trip. Session 1 + Session 2 archived to docs/roadmap-archive/2026-05.md. BULK-AI-FILL-LIVE-COST-01 filed under P5.)
 Current version: v0.30.0
 Open tasks: 17 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -46,31 +46,6 @@ store.
 ---
 
 ## P2 - High-Value User Features
-
-- **UNIVERSAL-AI-TEMPLATE-02**: Session 2 frontend for the
-  AI-template feature shipped in Session 1 backend (2026-05-12,
-  10 commits db1a283..5a01c4f). Session 1 landed: DB columns,
-  Pydantic template schema + YAML serializer with self-
-  explanatory header, system prompts per field-class, per-record
-  ai-template export/import/empty endpoints (Article + Book),
-  per-record ai-fill endpoints (Article + Book) with field-class
-  selection, bulk ZIP export/import (cap 50, Article + Book),
-  bulk ai-fill with estimate / start / SSE / per-item cost
-  breakdown (Article + Book). Backend tests: 1531 (+108 from
-  Session 1). Session 2 must ship: AITemplatePanel (three first-
-  class buttons — Fill with AI / Export template / Import filled
-  template) on Article + Book sidebars, FieldClassDialog with
-  force-override toggle, TemplateImportDropZone, bulk-action-bar
-  AI-template buttons, SSE-driven progress dialog with per-item
-  cost-estimate confirm, AI-Provider Settings panel (5 presets +
-  Custom, base_url + model + api_key + Test connection per Q11),
-  "New from template" Article + Book creation endpoints + UI for
-  the empty-template path, bilingual EN+DE help docs filled in
-  with screenshots + LM Studio / Ollama walkthroughs (the
-  Session 1 stub at `docs/help/{en,de}/ai/ai-templates.md` is
-  scaffold-only), i18n keys × 8 catalogs. Effort: L (~10
-  commits per the Session-1 prompt plan). Trigger: Session 2
-  prompt picks this up; do not start ad-hoc.
 
 - **MEDIUM-IMPORT-V2-01**: dry-run preview UI before bulk import.
   v1 (shipped 2026-05-08) imports every `posts/*.html` from a
@@ -223,6 +198,20 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **BULK-AI-FILL-LIVE-COST-01**: surface the cost-per-item burn
+  rate live in the bulk AI-fill dock during a running job (not
+  only the total at the end). Today the dock shows totals
+  (items / updated / tokens / cost) that fold each ``item_done``
+  event's per-item cost into the running total; an explicit
+  "this run is on pace to cost ~$X" surface would let the user
+  cancel mid-batch if the estimate was wrong. Trade-off: real
+  per-call costs only land after each LLM response, so an
+  early-burn-rate readout is noisy on small batches and only
+  meaningful at 10+ items. Promote when a user reports
+  needing it, or once we have real-world data on the
+  estimate-vs-actual delta. Filed alongside Session 2 commit
+  9.
 
 - **AI-FILL-CAP-CONFIG-01**: make the per-batch bulk AI-fill cap
   (`MAX_BULK_AI_FILL = 50` in

@@ -975,3 +975,130 @@ comment block written once, regenerated on every export. PyYAML
 silently drops comments on import — that's fine because the
 header is documentation regenerated downstream, not a contract
 the import path enforces.
+
+## React `useEffect` deps + i18n test mocks: the `t` function isn't stable
+
+Symptom: a component's fetch-on-open effect kept failing in tests
+because the `setError` call in the rejection branch never landed.
+Looked like a race condition but wasn't. The effect's dep array
+included the i18n `t` helper:
+
+```typescript
+useEffect(() => {
+    let cancelled = false
+    api.something.fetch(...)
+        .then(...)
+        .catch((err) => {
+            if (cancelled) return
+            setError(...)
+        })
+    return () => { cancelled = true }
+}, [open, kind, ids, t])  // <-- t here
+```
+
+In production the i18n provider memoises `t` so the dep is stable.
+In the test setup, the i18n mock returns a fresh `t` function on
+every render:
+
+```typescript
+vi.mock("../hooks/useI18n", () => ({
+    useI18n: () => ({t: (_k, fallback) => fallback, ...}),
+}))
+```
+
+Result: every parent re-render produces a new `t`, so the effect
+cancels its prior run and refetches. The rejection from the
+previous run lands while the new run's `cancelled` closure is
+still false, BUT the previous run set `cancelled=true` in its own
+closure. The catch sees `if (cancelled) return` and bails out
+before `setError` fires. The error never surfaces to the user.
+
+Fix: omit `t` from the dep array when the request shape doesn't
+actually depend on it (the fallback string in the toast was the
+only consumer). Add an `eslint-disable-next-line` with a comment
+explaining why:
+
+```typescript
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [open, kind, ids])
+```
+
+Generalises to any hook function the i18n mock returns fresh per
+render — `useDialog`, `useNavigate` (when its callback closure
+captures state), etc. When a test fails because a state update
+"never happens" but the production code looks correct, check the
+effect dep array against the hooks consumed inside it.
+
+The right fix is NOT to memoise the mock's `t` per-render (that
+defeats the point of mocks). The right fix is to scope the
+effect's deps to what genuinely affects the request.
+
+## Three-workflows-share-one-format pattern (UI side)
+
+UNIVERSAL-AI-TEMPLATE-02 Session 2 (2026-05-12) shipped the
+frontend for the three-workflow feature whose backend Session 1
+landed. The validating insight from Session 1's lessons-learned
+("AI-prompts embedded in data files beat per-call system-prompts
+for portability") plays out cleanly on the UI side too:
+
+The same `AITemplatePanel` component drives all three workflows
+without branching on the workflow:
+
+- Workflow A (built-in AI): `Fill with AI` button -> internal
+  `aiFill` API call.
+- Workflow B (custom endpoint): same `Fill with AI` button, no
+  code change; the existing AI client routes through whatever
+  base_url is configured in Settings.
+- Workflow C (external roundtrip): `Export template` +
+  `Import filled template` buttons hand the user a `.biblio.yaml`
+  and accept it back. Zero new UI surface for workflow C
+  compared to A/B.
+
+The component code knows nothing about WHICH workflow the user
+is on. It just exposes three first-class buttons and the API
+client picks the right backend endpoint. Workflow B is achieved
+purely through configuration (Settings AI tab's "Custom"
+preset); workflow C is achieved purely through the file format.
+
+Generalises: when a feature has multiple "modes" that share an
+underlying data contract, ship ONE UI component and let the
+backend / config / file-format layer pick the mode. Branching
+the UI by workflow ("if workflow A then show button X else
+button Y") produces:
+
+- N × the surface area to test
+- N × the i18n strings
+- N × the chance for the UI and the backend to drift
+
+The `AITemplatePanel`'s three buttons + the unchanged
+`api.{type}.aiFill` call cover all three workflows. No
+`workflow: 'A' | 'B' | 'C'` prop anywhere in the component tree.
+
+## SSE-in-context-not-in-modal (re-validated)
+
+The AudiobookJobContext lessons-learned ("the SSE listener
+belongs in the context, not in the modal") came up cleanly again
+when designing `BulkAiFillJobContext`. The pattern works the
+same way:
+
+- Context provider holds the `EventSource` ref in `useRef`.
+- `start(jobId, kind)` opens the stream + persists
+  `{jobId, kind}` to localStorage.
+- `useEffect` on mount checks localStorage and reconnects if a
+  job is mid-flight (F5 recovery).
+- Stream-end clears persistence.
+- Dock + expanded modal are pure consumers that render based on
+  context state; minimizing the modal doesn't disturb the SSE
+  listener.
+
+The cost is one global Context per long-running job type
+(audiobook, bulk-AI-fill, future: bulk export with progress).
+The benefit is that the user can navigate freely while the job
+runs, the badge persists across route changes, and reloading
+the browser doesn't drop the connection. Both surfaces (dock
+badge + expanded modal) are trivially testable because they're
+just consumers of the context.
+
+When adding the next long-running job type to Bibliogon, the
+pattern to follow is: context provider holds the SSE state +
+persistence, components consume it, never the other way around.
