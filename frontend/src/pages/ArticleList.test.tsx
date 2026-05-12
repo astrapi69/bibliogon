@@ -182,6 +182,25 @@ describe("ArticleList", () => {
         expect(navigateMock).toHaveBeenCalledWith("/articles/a-99");
     });
 
+    it("list row renders exactly 9 grid children when bulk-select is enabled (status+lang overlap regression pin)", async () => {
+        // Regression pin for 6818b88 -> bug surfaced 2026-05-12:
+        // bulk-select introduced a leading checkbox cell, taking the
+        // rendered child count to 9, but grid-template-columns
+        // stayed at 8 columns. CSS Grid auto-flow then shifted every
+        // cell left by one column, causing the status badge to
+        // overflow the 60px lang column visually. The fix adds a
+        // ``.gridRowSelectable`` modifier that bumps the template to
+        // 9 columns; this test pins that the JSX still emits 9
+        // direct children when ``onToggleSelect`` is supplied, so a
+        // future commit that removes a cell (e.g. drops the topic
+        // column) is forced to re-evaluate the template.
+        await renderList([makeArticle({ id: "row-shape", title: "Layout" })]);
+        const row = await screen.findByTestId("article-list-row-row-shape");
+        expect(row.children.length).toBe(9);
+        // The class modifier carries the 9-column grid template.
+        expect(row.className).toMatch(/gridRowSelectable/);
+    });
+
     it("status filter narrows the rendered list (client-side)", async () => {
         // Cluster E: filtering moved from server-side query to client-side
         // ``useArticleFilters``. Seed two rows with different statuses,

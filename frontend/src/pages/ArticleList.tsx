@@ -1359,7 +1359,13 @@ function ArticleRow({
     return (
         <li
             data-testid={`article-list-row-${article.id}`}
-            className={`${layout.gridRow}${isSelected ? ` ${layout.rowSelected}` : ""}`}
+            className={[
+                layout.gridRow,
+                onToggleSelect ? layout.gridRowSelectable : "",
+                isSelected ? layout.rowSelected : "",
+            ]
+                .filter(Boolean)
+                .join(" ")}
             onClick={() => {
                 if (!menuOpen) onOpen();
             }}

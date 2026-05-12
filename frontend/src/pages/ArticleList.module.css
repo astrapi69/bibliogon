@@ -199,6 +199,22 @@
     list-style: none;
 }
 
+/*
+ * Modifier applied when the row renders a leading bulk-select
+ * checkbox cell (i.e. when ArticleRow is called with
+ * onToggleSelect). The base 8-column template above assumes
+ * cover / main / author / topic / status / lang / date / actions;
+ * adding the checkbox pushes the cell count to 9. Without this
+ * modifier the cells shift left by one column, the status badge
+ * lands in the 60px lang column, and the rendered status text
+ * overflows into the language cell visually. Regression
+ * introduced in 6818b88 (bulk export + checkboxes) and fixed
+ * here.
+ */
+.gridRowSelectable {
+    grid-template-columns: 50px 50px 1fr 160px 120px 100px 60px 130px 50px;
+}
+
 .gridCellCover {
     width: 50px;
 }
