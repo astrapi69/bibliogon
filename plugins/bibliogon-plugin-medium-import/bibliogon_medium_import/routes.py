@@ -108,6 +108,25 @@ class _ErroredOut(BaseModel):
     error: str
 
 
+class _ImportedCommentOut(BaseModel):
+    """MEDIUM-COMMENTS-IMPORT-01 commit 5: one comment that
+    landed in the article_comments table."""
+
+    id: str
+    filename: str
+    body_preview: str
+    responds_to_article_id: str | None = None
+
+
+class _SkippedCommentOut(BaseModel):
+    """A heuristic-classified comment dropped without persisting.
+    ``reason`` is ``"mode_skip"`` (import_comments_mode=skip) or
+    ``"orphan_skip"`` (orphan_comment_handling=skip)."""
+
+    filename: str
+    reason: str
+
+
 class ImportZipResponse(BaseModel):
     imported_count: int
     skipped_count: int
@@ -115,6 +134,11 @@ class ImportZipResponse(BaseModel):
     imported: list[_ImportedOut]
     skipped: list[_SkippedOut]
     errored: list[_ErroredOut]
+    # MEDIUM-COMMENTS-IMPORT-01 commit 5: comment-routing counters.
+    imported_comments_count: int = 0
+    skipped_comments_count: int = 0
+    imported_comments: list[_ImportedCommentOut] = Field(default_factory=list)
+    skipped_comments: list[_SkippedCommentOut] = Field(default_factory=list)
 
 
 def _serialize(result: ImportResult) -> ImportZipResponse:
@@ -140,6 +164,21 @@ def _serialize(result: ImportResult) -> ImportZipResponse:
             for s in result.skipped
         ],
         errored=[_ErroredOut(filename=e.filename, error=e.error) for e in result.errored],
+        imported_comments_count=len(result.imported_comments),
+        skipped_comments_count=len(result.skipped_comments),
+        imported_comments=[
+            _ImportedCommentOut(
+                id=c.id,
+                filename=c.filename,
+                body_preview=c.body_preview,
+                responds_to_article_id=c.responds_to_article_id,
+            )
+            for c in result.imported_comments
+        ],
+        skipped_comments=[
+            _SkippedCommentOut(filename=c.filename, reason=c.reason)
+            for c in result.skipped_comments
+        ],
     )
 
 

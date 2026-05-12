@@ -503,11 +503,20 @@ def test_featured_image_null_when_no_images_in_post(
     client: TestClient, db: Session
 ) -> None:
     """set_first_image_as_featured=True but the post has zero images
-    -> featured_image_url stays null. No error, no warning."""
+    -> featured_image_url stays null. No error, no warning.
+
+    Forces ``import_comments_mode=as_articles`` so the tiny inline
+    fixture (post-MEDIUM-COMMENTS-IMPORT-01 the heuristic would
+    classify it as a comment) stays on the article path the test
+    is actually about.
+    """
     body = _post_zip_with_settings(
         client,
         _build_zip_with_inline_post("plain-post.html", _NO_IMAGE_HTML),
-        {"set_first_image_as_featured": True},
+        {
+            "set_first_image_as_featured": True,
+            "import_comments_mode": "as_articles",
+        },
     )
     assert body["imported_count"] == 1
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
@@ -571,7 +580,14 @@ def test_language_low_confidence_falls_back_to_default(
 </article>
 </body></html>
 """
-    body = _post_zip(client, _build_zip_with_inline_post("tiny.html", short_html))
+    # Force as_articles so the tiny fixture stays on the article
+    # path (post-MEDIUM-COMMENTS-IMPORT-01 the heuristic would
+    # otherwise classify it as a comment).
+    body = _post_zip_with_settings(
+        client,
+        _build_zip_with_inline_post("tiny.html", short_html),
+        {"import_comments_mode": "as_articles"},
+    )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     # Walker returns None for too-short text; importer falls back to
     # default_language (currently "en").
@@ -628,7 +644,14 @@ def test_seo_description_null_when_post_has_no_subtitle(
 </article>
 </body></html>
 """
-    body = _post_zip(client, _build_zip_with_inline_post("nosub.html", no_subtitle_html))
+    # Force as_articles so the short fixture stays on the article
+    # path (post-MEDIUM-COMMENTS-IMPORT-01 the heuristic would
+    # otherwise classify it as a comment).
+    body = _post_zip_with_settings(
+        client,
+        _build_zip_with_inline_post("nosub.html", no_subtitle_html),
+        {"import_comments_mode": "as_articles"},
+    )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.subtitle is None
     assert article.seo_description is None

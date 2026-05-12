@@ -75,10 +75,38 @@ class ErroredArticle:
 
 
 @dataclass
+class ImportedComment:
+    """MEDIUM-COMMENTS-IMPORT-01 commit 5. One short reply-shaped
+    post that the heuristic classified as a comment and the
+    importer routed to the ``article_comments`` table."""
+
+    id: str
+    filename: str
+    body_preview: str
+    responds_to_article_id: str | None
+
+
+@dataclass
+class SkippedComment:
+    """A heuristic-classified comment that was dropped without
+    persisting. ``reason`` is one of ``"mode_skip"``,
+    ``"orphan_skip"``."""
+
+    filename: str
+    reason: str
+
+
+@dataclass
 class ImportResult:
     imported: list[ImportedArticle] = field(default_factory=list)
     skipped: list[SkippedArticle] = field(default_factory=list)
     errored: list[ErroredArticle] = field(default_factory=list)
+    # MEDIUM-COMMENTS-IMPORT-01 commit 5: comment-routing counters.
+    # Comments use their own lists so the article-side counts stay
+    # comparable across imports made with different
+    # ``import_comments_mode`` settings.
+    imported_comments: list[ImportedComment] = field(default_factory=list)
+    skipped_comments: list[SkippedComment] = field(default_factory=list)
 
 
 def import_zip(
@@ -135,6 +163,8 @@ def import_zip(
                     default_status=default_status,
                     default_language=default_language,
                     set_first_image_as_featured=set_first_image_as_featured,
+                    import_comments_mode=import_comments_mode,
+                    orphan_comment_handling=orphan_comment_handling,
                     http_client=http_client,
                 )
             except Exception as exc:  # noqa: BLE001 - boundary handler
@@ -154,6 +184,8 @@ def _import_one_post(
     default_status: str,
     default_language: str,
     set_first_image_as_featured: bool,
+    import_comments_mode: str,
+    orphan_comment_handling: str,
     http_client: httpx.Client | None,
 ) -> None:
     """Import a single Medium HTML post.
@@ -162,11 +194,36 @@ def _import_one_post(
     test runs that don't put the backend on the path.
     """
     from app.database import SessionLocal
-    from app.models import Article, ArticleImportSource, Publication
+    from app.models import Article, ArticleComment, ArticleImportSource, Publication
 
     html = path.read_text(encoding="utf-8")
     walker = MediumWalker()
     parsed: ParsedPost = walker.parse(html)
+
+    # MEDIUM-COMMENTS-IMPORT-01 commit 5: comment routing.
+    # ``as_articles`` ignores the heuristic and falls through to
+    # the legacy article path; ``skip`` drops detected comments
+    # silently; ``as_comments`` (default) routes to the
+    # ArticleComment table. For Medium imports the comment is
+    # always an orphan because the HTML carries no parent-article
+    # reference.
+    if parsed.is_comment and import_comments_mode != "as_articles":
+        if import_comments_mode == "skip":
+            result.skipped_comments.append(
+                SkippedComment(filename=path.name, reason="mode_skip")
+            )
+            return
+        # import_comments_mode == "as_comments"
+        if orphan_comment_handling == "skip":
+            # Medium's export carries no parent-article reference,
+            # so every comment is an orphan. orphan_handling=skip
+            # therefore drops every detected comment.
+            result.skipped_comments.append(
+                SkippedComment(filename=path.name, reason="orphan_skip")
+            )
+            return
+        _persist_comment(path, parsed, result, default_language=default_language)
+        return
 
     if not parsed.canonical_url:
         result.errored.append(
@@ -325,6 +382,80 @@ def _import_one_post(
         raise
     finally:
         db.close()
+
+
+def _persist_comment(
+    path: Path,
+    parsed: ParsedPost,
+    result: ImportResult,
+    *,
+    default_language: str,
+) -> None:
+    """Insert one ArticleComment row + record it in the result.
+
+    Medium-specific assumption: ``responds_to_article_id`` is
+    always NULL because the HTML export carries no parent-article
+    reference. ``responds_to_url`` is left NULL too in v1 (no
+    inference); future importers that DO carry a parent reference
+    can populate it. Image downloads + Publication / provenance
+    rows are deliberately NOT created for comments - they're
+    article-only concerns.
+    """
+    from app.database import SessionLocal
+    from app.models import ArticleComment
+
+    body_text = _flatten_body_text(parsed.content_doc)
+    language = parsed.detected_language or default_language
+
+    db = SessionLocal()
+    try:
+        comment = ArticleComment(
+            author=parsed.author or None,
+            body_text=body_text,
+            body_json=json.dumps(parsed.content_doc),
+            language=language,
+            published_at=_parse_iso(parsed.published_at),
+            canonical_url=parsed.canonical_url or None,
+            # Medium: always orphan.
+            responds_to_article_id=None,
+            responds_to_url=None,
+            imported_from="medium",
+            source_filename=path.name,
+        )
+        db.add(comment)
+        db.flush()
+        comment_id = comment.id
+        db.commit()
+        result.imported_comments.append(
+            ImportedComment(
+                id=comment_id,
+                filename=path.name,
+                body_preview=body_text[:120],
+                responds_to_article_id=None,
+            )
+        )
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def _flatten_body_text(content_doc: dict[str, Any]) -> str:
+    """Concatenate all ``text`` node values inside a TipTap doc.
+    Mirrors the heuristic's text extraction so the persisted
+    ``body_text`` matches what the heuristic measured."""
+    parts: list[str] = []
+
+    def _walk(node: object) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "text":
+                parts.append(str(node.get("text", "")))
+            for child in node.get("content", []) or []:
+                _walk(child)
+
+    _walk(content_doc)
+    return " ".join(p for p in parts if p.strip())
 
 
 def _find_posts_dir(root: Path) -> Path | None:
