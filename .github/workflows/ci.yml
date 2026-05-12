@@ -150,6 +150,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Reuse the same backend Poetry cache as the test job
+      # (same key). Mypy needs the SQLAlchemy + Pydantic
+      # stub-bearing venv that ``poetry install`` produces.
+      - name: Cache Poetry virtualenv (backend)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
       - name: Install Poetry
         run: pip install poetry
       - name: Install backend dependencies
