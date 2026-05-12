@@ -146,9 +146,7 @@ excerpt: "..."
     return _system_prompt(article), user
 
 
-def build_image_prompts_prompt(
-    article: Any, body: str, inline_count: int = 3
-) -> tuple[str, str]:
+def build_image_prompts_prompt(article: Any, body: str, inline_count: int = 3) -> tuple[str, str]:
     """Field-class ``image_prompts``: fills
     ``featured_image_prompt`` plus ``inline_image_prompts``.
 

@@ -170,9 +170,7 @@ def _apply_template_to_book(
 
     for tpl_field, col_name, is_json_list in BOOK_TEMPLATE_FIELD_MAP:
         new_value = getattr(template, tpl_field).current_value
-        result = apply_field(
-            book, col_name, new_value, force=force, is_json_list=is_json_list
-        )
+        result = apply_field(book, col_name, new_value, force=force, is_json_list=is_json_list)
         if result == APPLY_UPDATED:
             updated.append(tpl_field)
         elif result == APPLY_SKIP_EMPTY:
@@ -223,9 +221,7 @@ def _build_yaml_response(yaml_text: str, slug: str) -> Response:
 
 
 @books_router.get("/{book_id}/ai-template")
-def export_book_template(
-    book_id: str, db: Session = Depends(get_db)
-) -> Response:
+def export_book_template(book_id: str, db: Session = Depends(get_db)) -> Response:
     """Export the book as a ``.biblio.yaml`` template with
     reference block carrying id, language, body_word_count and
     a 500-word body preview aggregated from all chapters."""
@@ -268,8 +264,7 @@ async def import_book_template(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Template type is {template.type!r}; this endpoint accepts "
-                "only book templates"
+                f"Template type is {template.type!r}; this endpoint accepts only book templates"
             ),
         )
 
@@ -338,8 +333,7 @@ async def create_book_from_ai_template(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Template type is {template.type!r}; this endpoint "
-                "accepts only book templates"
+                f"Template type is {template.type!r}; this endpoint accepts only book templates"
             ),
         )
 

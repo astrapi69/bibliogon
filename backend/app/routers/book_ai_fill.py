@@ -257,9 +257,7 @@ async def fill_book_with_ai(
         usage = llm_result.get("usage") or {}
         prompt_tokens = int(usage.get("prompt_tokens", 0) or 0)
         completion_tokens = int(usage.get("completion_tokens", 0) or 0)
-        class_tokens = int(
-            usage.get("total_tokens", prompt_tokens + completion_tokens) or 0
-        )
+        class_tokens = int(usage.get("total_tokens", prompt_tokens + completion_tokens) or 0)
         model_name = llm_result.get("model", "")
         class_cost = estimate_cost_usd(model_name, prompt_tokens, completion_tokens)
 

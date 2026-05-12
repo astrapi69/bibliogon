@@ -223,9 +223,7 @@ def extract_body_text(tiptap_json: str | None) -> str:
     return "\n".join(p for p in parts if p).strip()
 
 
-def extract_body_preview(
-    tiptap_json: str | None, word_limit: int = 500
-) -> tuple[str, int]:
+def extract_body_preview(tiptap_json: str | None, word_limit: int = 500) -> tuple[str, int]:
     """Return ``(preview, total_word_count)`` for the body.
 
     The preview is the first ``word_limit`` words of the body
@@ -324,9 +322,7 @@ def apply_field(
 _OPTIONAL_ROOT_KEYS = ("reference", "language")
 
 
-def serialize_template_to_yaml(
-    template: TemplateModel, include_header: bool = True
-) -> str:
+def serialize_template_to_yaml(template: TemplateModel, include_header: bool = True) -> str:
     """Render a template as YAML. With ``include_header=True``
     (default) the top-of-file rules-for-AI comment block is
     prepended; otherwise pure YAML body is returned (used by
@@ -395,9 +391,7 @@ def parse_template_from_yaml(yaml_str: str) -> TemplateModel:
     elif type_ == "book":
         model_cls = BookTemplate
     else:
-        raise TemplateSchemaError(
-            f"Unknown template type {type_!r}; expected 'article' or 'book'"
-        )
+        raise TemplateSchemaError(f"Unknown template type {type_!r}; expected 'article' or 'book'")
 
     try:
         return model_cls.model_validate(body)
@@ -562,8 +556,7 @@ def _book_field_specs() -> dict[str, dict[str, Any]]:
         },
         "genre": {
             "description": (
-                "Primary genre. Single word or short phrase. Used for "
-                "marketplace categorization."
+                "Primary genre. Single word or short phrase. Used for marketplace categorization."
             ),
             "example": "Non-Fiction / Reference",
             "current_value": None,
@@ -597,8 +590,7 @@ def _book_field_specs() -> dict[str, dict[str, Any]]:
         },
         "backpage_description": {
             "description": (
-                "Back-cover blurb. 100-200 words. Hook -> conflict -> stakes. "
-                "No spoilers."
+                "Back-cover blurb. 100-200 words. Hook -> conflict -> stakes. No spoilers."
             ),
             "example": (
                 "When the city decided to pave over the last green corridor, "
@@ -647,8 +639,7 @@ def _book_field_specs() -> dict[str, dict[str, Any]]:
                     "chapter_id": "abc123",
                     "title": "The First Survey",
                     "summary": (
-                        "Marta arrives in Lisbon and lays out the methodology "
-                        "for the survey."
+                        "Marta arrives in Lisbon and lays out the methodology for the survey."
                     ),
                 },
             ],
@@ -710,16 +701,10 @@ def build_article_template_from_record(
     specs["excerpt"]["current_value"] = article.excerpt or None
     specs["tags"]["current_value"] = _decode_json_list(article.tags)
     specs["topic"]["current_value"] = article.topic or None
-    specs["featured_image_prompt"]["current_value"] = (
-        article.featured_image_prompt or None
-    )
-    specs["inline_image_prompts"]["current_value"] = _decode_json_list(
-        article.inline_image_prompts
-    )
+    specs["featured_image_prompt"]["current_value"] = article.featured_image_prompt or None
+    specs["inline_image_prompts"]["current_value"] = _decode_json_list(article.inline_image_prompts)
 
-    preview, word_count = extract_body_preview(
-        article.content_json, word_limit=body_word_limit
-    )
+    preview, word_count = extract_body_preview(article.content_json, word_limit=body_word_limit)
     data: dict[str, Any] = {
         "type": "article",
         "schema_version": SCHEMA_VERSION,
@@ -734,9 +719,7 @@ def build_article_template_from_record(
     return ArticleTemplate.model_validate(data)
 
 
-def build_book_template_from_record(
-    book: Any, *, body_word_limit: int = 500
-) -> BookTemplate:
+def build_book_template_from_record(book: Any, *, body_word_limit: int = 500) -> BookTemplate:
     """Construct a Book template populated with the live values
     of the given DB record. ``book`` is the ``app.models.Book``
     instance."""
@@ -751,9 +734,7 @@ def build_book_template_from_record(
     specs["backpage_description"]["current_value"] = book.backpage_description or None
     specs["backpage_author_bio"]["current_value"] = book.backpage_author_bio or None
     specs["cover_image_prompt"]["current_value"] = book.cover_image_prompt or None
-    specs["chapter_summaries"]["current_value"] = _decode_json_list(
-        book.chapter_summaries
-    )
+    specs["chapter_summaries"]["current_value"] = _decode_json_list(book.chapter_summaries)
 
     chapter_texts = [_chapter_to_text(c) for c in book.chapters]
     joined = "\n\n".join(t for t in chapter_texts if t)

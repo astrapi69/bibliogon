@@ -204,8 +204,7 @@ async def import_article_template(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Template type is {template.type!r}; this endpoint accepts "
-                "only article templates"
+                f"Template type is {template.type!r}; this endpoint accepts only article templates"
             ),
         )
 
@@ -265,8 +264,7 @@ async def create_article_from_ai_template(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Template type is {template.type!r}; this endpoint "
-                "accepts only article templates"
+                f"Template type is {template.type!r}; this endpoint accepts only article templates"
             ),
         )
 

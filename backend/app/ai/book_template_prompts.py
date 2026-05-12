@@ -167,9 +167,7 @@ cover_image_prompt: |
     return _system_prompt(book), user
 
 
-def build_chapter_summaries_prompt(
-    book: Any, chapters: list[dict[str, str]]
-) -> tuple[str, str]:
+def build_chapter_summaries_prompt(book: Any, chapters: list[dict[str, str]]) -> tuple[str, str]:
     """Field-class ``chapter_summaries``: one summary per
     chapter, matched by chapter_id.
 
@@ -181,9 +179,7 @@ def build_chapter_summaries_prompt(
     for ch in chapters:
         excerpt = (ch.get("excerpt") or "")[:_CHAPTER_EXCERPT_LIMIT]
         chapter_blocks.append(
-            f"chapter_id: {ch['chapter_id']}\n"
-            f"title: {ch['title']}\n"
-            f"excerpt: {excerpt}"
+            f"chapter_id: {ch['chapter_id']}\ntitle: {ch['title']}\nexcerpt: {excerpt}"
         )
     chapters_text = "\n\n---\n\n".join(chapter_blocks)
 
