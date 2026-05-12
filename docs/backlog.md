@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Test-infrastructure audit + Phase 1 CI hardening landed: audit report at docs/test-infrastructure-audit.md, 9 surgical commits (Poetry cache, fail-fast: false, timeout-minutes, pytest -q, lint-job cache, Node 24 env on all 8 workflows, mypy fix on bulk_delete, plus CI red unblock). Phase 2 (mutmut triage) in progress. 3 new P5 backlog entries filed from audit: TESTCLIENT-HARMONIZE-01, WALKER-HYPOTHESIS-01, TESTCONTAINERS-EVAL-01. Each with explicit trigger language matching the COMMENTS-COUNT-PERF-01 pattern.)
 Current version: v0.30.0
-Open tasks: 20 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 21 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -223,6 +223,25 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **LIST-VIEW-COMMENTS-COUNT-PARITY-01**: surface the
+  ``Article.comments_count`` badge in the article list
+  view (``ArticleRow`` in ``frontend/src/pages/ArticleList.tsx``).
+  Currently only the grid/card view
+  (``ArticleCard.tsx``) renders the Lucide MessageSquare
+  count badge added by MEDIUM-COMMENTS-UI-01 commit 4
+  (87ab959). The list view never received the parity
+  treatment. Surfaced during the 2026-05-12 list-view
+  badge-overlap diagnosis; the spec's stop condition
+  ("the comments-count badge was added but never made it
+  into the list view") fired. Trigger: user request OR
+  the list view becomes the primary article browsing
+  surface (today it's the secondary view, default is
+  grid). Effort: S, but blocked on a grid-template column
+  budget decision (the row already has 9 fixed-width
+  columns summing to ~720px; adding a count cell either
+  steals from an existing column or grows the row past
+  small-tablet width).
 
 - **COMMENTS-COUNT-PERF-01**: switch
   ``Article.comments_count`` from a ``len()``-on-relationship
