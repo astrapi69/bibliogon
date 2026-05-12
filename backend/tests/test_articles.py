@@ -471,6 +471,79 @@ def test_get_comments_returns_linked_comments_ordered_by_published_at() -> None:
     assert "Orphan from another article" not in [c["body_text"] for c in body]
 
 
+def test_article_out_carries_comments_count_zero_by_default() -> None:
+    """MEDIUM-COMMENTS-UI-01: ArticleOut exposes a computed
+    ``comments_count`` so the dashboard tile can render a badge
+    without N+1 calls. New articles default to 0."""
+    article = _create("Fresh article")
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["comments_count"] == 0
+
+
+def test_article_out_comments_count_reflects_linked_comments() -> None:
+    """Inserting comments linked to the article via the model
+    must bump the computed comments_count returned by
+    GET /api/articles/{id}."""
+    from app.database import SessionLocal
+    from app.models import ArticleComment
+
+    article = _create("Article that earns comments")
+    db = SessionLocal()
+    try:
+        db.add_all(
+            [
+                ArticleComment(
+                    body_text="Reply 1",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+                ArticleComment(
+                    body_text="Reply 2",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["comments_count"] == 2
+
+
+def test_article_out_comments_count_excludes_soft_deleted() -> None:
+    """Soft-deleted comments must NOT bump the count, mirroring
+    the GET /api/articles/{id}/comments listing's filter."""
+    from datetime import datetime, timezone
+
+    from app.database import SessionLocal
+    from app.models import ArticleComment
+
+    article = _create("Article 3")
+    db = SessionLocal()
+    try:
+        db.add_all(
+            [
+                ArticleComment(
+                    body_text="Live",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+                ArticleComment(
+                    body_text="Soft-deleted",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                    deleted_at=datetime.now(timezone.utc),
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+    fetched = client.get(f"/api/articles/{article['id']}").json()
+    assert fetched["comments_count"] == 1
+
+
 def test_get_comments_excludes_soft_deleted() -> None:
     """A comment with deleted_at set is omitted from the listing."""
     from datetime import datetime, timezone

@@ -539,6 +539,24 @@ class Article(Base):
         dates = [p.published_at for p in self.publications if p.published_at]
         return min(dates) if dates else None
 
+    @property
+    def comments_count(self) -> int:
+        """Number of non-soft-deleted comments linked to this article.
+
+        MEDIUM-COMMENTS-UI-01. Surfaced via ``ArticleOut`` so the
+        article dashboard tile can render a count badge without
+        an N+1 fetch from ``GET /api/articles/{id}/comments``.
+
+        Implementation uses ``len()`` on the relationship list,
+        which is acceptable while comment counts per article stay
+        small (typical case: 0-5). If a future use case pushes
+        per-article counts above ~50 routinely, switch to a
+        JOIN-counted subquery against ``article_comments`` to
+        avoid SQLAlchemy materialising every row just to count
+        it. Backlog: ``COMMENTS-COUNT-PERF-01`` (P5).
+        """
+        return sum(1 for c in self.comments if c.deleted_at is None)
+
     def __repr__(self) -> str:
         return f"<Article {self.id!r} title={self.title!r} status={self.status}>"
 

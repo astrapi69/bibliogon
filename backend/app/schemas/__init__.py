@@ -566,6 +566,13 @@ class ArticleOut(BaseModel):
     # updated_at for date display so imported articles show the
     # canonical Medium publish date instead of the import timestamp.
     original_published_at: datetime | None = None
+    # MEDIUM-COMMENTS-UI-01. Number of non-soft-deleted comments
+    # linked to this article. Computed via Article.comments_count
+    # property; not a DB column. Drives the dashboard tile's
+    # count badge without an N+1 fetch from
+    # GET /api/articles/{id}/comments. Defaults to 0 so callers
+    # never have to defensively check for missing key.
+    comments_count: int = 0
 
     @field_validator("tags", mode="before")
     @classmethod
