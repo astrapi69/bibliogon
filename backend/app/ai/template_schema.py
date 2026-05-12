@@ -140,9 +140,9 @@ _RULES_BLOCK = """\
 # 2. If `current_value` already has a value, leave it alone
 #    unless the user explicitly asks for re-generation.
 # 3. Return valid YAML. No commentary outside YAML comments.
-# 4. Use real UTF-8 characters (ae oe ue ss umlauts, accents,
+# 4. Use real UTF-8 characters (ä ö ü ß umlauts, accents,
 #    CJK characters). Do NOT escape them and do NOT substitute
-#    ASCII transliterations.
+#    ASCII transliterations like 'ae' for 'ä' or 'ss' for 'ß'.
 # 5. Respond in the article's language. If `reference.language`
 #    is set, use that. If only `language` at root is set (empty
 #    new-idea template), use that. Default to English if
