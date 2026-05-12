@@ -408,3 +408,98 @@ def test_article_crud_does_not_create_book_rows() -> None:
     _create("Independent")
     after = client.get("/api/books").json()
     assert {b["id"] for b in before} == {b["id"] for b in after}
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-COMMENTS-IMPORT-01 commit 6: GET /articles/{id}/comments
+# ---------------------------------------------------------------------------
+
+
+def test_get_comments_returns_empty_list_when_no_comments() -> None:
+    """Article exists but has no linked comments -> 200 + []."""
+    article = _create("Article without comments")
+    resp = client.get(f"/api/articles/{article['id']}/comments")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_get_comments_404_when_article_missing() -> None:
+    """Unknown article id -> 404 (distinct from no-comments)."""
+    resp = client.get("/api/articles/does-not-exist/comments")
+    assert resp.status_code == 404
+    assert "not found" in resp.json()["detail"].lower()
+
+
+def test_get_comments_returns_linked_comments_ordered_by_published_at() -> None:
+    """Comments linked to the article surface in published_at
+    ascending order (oldest first)."""
+    from datetime import datetime, timezone
+
+    from app.database import SessionLocal
+    from app.models import ArticleComment
+
+    article = _create("Host article for comments")
+    db = SessionLocal()
+    try:
+        db.add_all(
+            [
+                ArticleComment(
+                    body_text="Second response",
+                    published_at=datetime(2026, 3, 1, tzinfo=timezone.utc),
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+                ArticleComment(
+                    body_text="First response",
+                    published_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+                # Unrelated orphan that should NOT surface in the article-scoped listing.
+                ArticleComment(
+                    body_text="Orphan from another article",
+                    responds_to_url="https://example.com/other",
+                    imported_from="medium",
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+    body = client.get(f"/api/articles/{article['id']}/comments").json()
+    assert [c["body_text"] for c in body] == ["First response", "Second response"]
+    assert "Orphan from another article" not in [c["body_text"] for c in body]
+
+
+def test_get_comments_excludes_soft_deleted() -> None:
+    """A comment with deleted_at set is omitted from the listing."""
+    from datetime import datetime, timezone
+
+    from app.database import SessionLocal
+    from app.models import ArticleComment
+
+    article = _create("Host article 2")
+    db = SessionLocal()
+    try:
+        db.add_all(
+            [
+                ArticleComment(
+                    body_text="Visible",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                ),
+                ArticleComment(
+                    body_text="Soft-deleted",
+                    responds_to_article_id=article["id"],
+                    imported_from="medium",
+                    deleted_at=datetime.now(timezone.utc),
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+    body = client.get(f"/api/articles/{article['id']}/comments").json()
+    texts = [c["body_text"] for c in body]
+    assert "Visible" in texts
+    assert "Soft-deleted" not in texts

@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.template_schema import extract_body_text
 from app.database import SessionLocal, get_db
-from app.models import Article
+from app.models import Article, ArticleComment
 from app.paths import get_upload_dir
 from app.schemas import ArticleCreate, ArticleOut, ArticleUpdate
 
@@ -250,6 +250,58 @@ def get_article(article_id: str, db: Session = Depends(get_db)) -> Article:
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-COMMENTS-IMPORT-01 commit 6: article-scoped comments listing
+# ---------------------------------------------------------------------------
+
+
+class CommentOut(BaseModel):
+    """Read-only view of an ArticleComment. Lives in core (not
+    in the medium-import plugin) because future importers
+    (WordPress, Hashnode) reuse the same table and shouldn't
+    have to go through a Medium-plugin-prefixed route."""
+
+    id: str
+    author: str | None
+    body_text: str
+    body_json: str | None
+    language: str
+    published_at: datetime | None
+    canonical_url: str | None
+    responds_to_article_id: str | None
+    responds_to_url: str | None
+    imported_from: str
+    imported_at: datetime
+    source_filename: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/{article_id}/comments", response_model=list[CommentOut])
+def list_article_comments(
+    article_id: str, db: Session = Depends(get_db)
+) -> list[ArticleComment]:
+    """List comments that respond to this article.
+
+    Returns soft-deleted-filtered comments ordered by their
+    original ``published_at`` (NULL last). 404 when the article
+    doesn't exist so the editor can distinguish "no comments
+    yet" (200 + []) from "wrong article id" (404).
+    """
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return (
+        db.query(ArticleComment)
+        .filter(ArticleComment.responds_to_article_id == article_id)
+        .filter(ArticleComment.deleted_at.is_(None))
+        .order_by(ArticleComment.published_at.asc().nullslast())
+        .all()
+    )
 
 
 @router.patch("/{article_id}", response_model=ArticleOut)
