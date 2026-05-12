@@ -6,6 +6,27 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **Medium comments: editor + dashboard + admin surfaces**
+  (`MEDIUM-COMMENTS-UI-01`). Three frontend surfaces make the
+  comments data layer from MEDIUM-COMMENTS-IMPORT-01 visible
+  to users: (1) a read-only `ArticleCommentsPanel` in the
+  editor sidebar (plain-text body with `white-space: pre-wrap`;
+  loading is invisible, empty state explicit, error banner on
+  failure), (2) a Lucide-MessageSquare count badge on
+  `ArticleCard` when `Article.comments_count > 0` (new
+  computed field on `ArticleOut`), (3) a Settings "comments"
+  tab between Plugins and Support with source filter
+  (Any / Medium / WordPress / Hashnode), orphans-only
+  checkbox, paginated table (Author / Body / Source / Status /
+  Imported), "Load more" up to the 500 backend cap, and a
+  per-row simple-confirm delete (optimistic row removal +
+  success toast, row preserved + error toast on failure).
+  i18n × 8 catalogs (native de + en, English literals carried
+  to el / es / fr / ja / pt / tr). No new backend endpoints;
+  the only backend change is the `comments_count` computed
+  field on `ArticleOut` (same precedent as
+  `original_published_at`). +3 backend + ~37 frontend tests.
+
 - **Medium comments: detection + storage** (`MEDIUM-COMMENTS-IMPORT-01`).
   Medium's HTML export treats user-written responses (short
   reply-shaped notes to other articles) as standalone HTML

@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (MEDIUM-COMMENTS-IMPORT-01 landed: 10 backend commits, +30 backend tests + +15 plugin tests, comment-detection heuristic + new article_comments table + 2 core endpoints + bilingual help docs. Pre-inspection audit on the user's 209-file Medium export refined the spec's heuristic (drop empty-subtitle criterion); detection lifted from 6/209 to 8/209 with zero new false positives. New lessons-learned rule: "Real-world data audit BEFORE implementation prevents spec-vs-reality drift." Frontend follow-up MEDIUM-COMMENTS-UI-01 (P2) filed. Archived to docs/roadmap-archive/2026-05.md.)
+Last updated: 2026-05-12 (MEDIUM-COMMENTS-UI-01 landed: 8 commits (1 backend + 7 frontend), +3 backend tests + ~37 frontend tests, i18n × 8 keys. Three UI surfaces ship: editor-sidebar read-only ArticleCommentsPanel, dashboard count badge on ArticleCard, Settings comments-admin tab with list + filter + pagination + per-row delete. Both Medium-comments tracks (import + UI) now closed; new P5 COMMENTS-COUNT-PERF-01 filed for future JOIN-counted-subquery rewrite if per-article counts grow. Archived to docs/roadmap-archive/2026-05.md.)
 Current version: v0.30.0
 Open tasks: 16 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -82,33 +82,6 @@ store.
   S-M depending on tag-quality bar. Trigger: first user report
   asking for it OR v01 ships and the manual-tagging step is a
   visible bottleneck in feedback.
-
-- **MEDIUM-COMMENTS-UI-01**: frontend integration for the
-  `article_comments` data layer shipped in
-  MEDIUM-COMMENTS-IMPORT-01 (backend, 2026-05-12). Three
-  surfaces:
-  1. **Comments section in the article editor**: read-only
-     list of `ArticleComment` rows whose
-     `responds_to_article_id` matches the open article, fed
-     by `GET /api/articles/{id}/comments`. Subtle visual
-     distinction from article body (smaller font, indented,
-     muted border). One section per article that has any
-     comments.
-  2. **Count badge on the article list / dashboard tile**:
-     small badge with the comment count, helps users see at
-     a glance which articles have responses without opening
-     the editor.
-  3. **Admin view for orphan management**: dedicated page
-     under Settings or a new top-level route. Lists
-     orphan comments (filterable by
-     `imported_from=medium|wordpress|...`), supports
-     soft-delete via the existing `DELETE /api/comments/{id}`
-     endpoint. Future v2 work in this view: bulk re-link to
-     an article + hard-delete.
-  i18n × 8 strings for all three surfaces. No new backend
-  endpoints — the data layer is complete. Trigger: ship
-  when the editor's read-only comments section + the badge
-  shape feel ready to design.
 
 ---
 
@@ -225,6 +198,18 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **COMMENTS-COUNT-PERF-01**: switch
+  ``Article.comments_count`` from a ``len()``-on-relationship
+  property to a JOIN-counted subquery against
+  ``article_comments``. Trigger: per-article comment counts
+  routinely above ~50, where SQLAlchemy materialising every
+  row just to count it becomes wasteful. Today the property
+  ships with a ``len()`` over the relationship list filtered
+  by ``deleted_at IS NULL``; acceptable while typical counts
+  stay 0-5. The subquery rewrite is a drop-in replacement on
+  the model side; no schema change, no API change. Filed
+  alongside MEDIUM-COMMENTS-UI-01 commit 1.
 
 - **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
   ``Article.excerpt`` on Medium import, mirroring the existing
