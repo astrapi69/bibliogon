@@ -45,6 +45,11 @@ jobs:
     name: Plugin Tests
     runs-on: ubuntu-latest
     strategy:
+      # Test-infrastructure audit finding 0.5.2: default
+      # fail-fast=true makes a flake in one plugin mask real
+      # failures in the others. coverage.yml already sets
+      # this to false; the asymmetry with ci.yml was a bug.
+      fail-fast: false
       matrix:
         plugin:
           - bibliogon-plugin-audiobook
