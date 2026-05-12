@@ -282,9 +282,7 @@ class CommentOut(BaseModel):
 
 
 @router.get("/{article_id}/comments", response_model=list[CommentOut])
-def list_article_comments(
-    article_id: str, db: Session = Depends(get_db)
-) -> list[ArticleComment]:
+def list_article_comments(article_id: str, db: Session = Depends(get_db)) -> list[ArticleComment]:
     """List comments that respond to this article.
 
     Returns soft-deleted-filtered comments ordered by their

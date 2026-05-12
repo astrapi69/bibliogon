@@ -687,9 +687,7 @@ class ArticleComment(Base):
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
     # Original publication time of the comment on the source
     # platform. Distinct from ``imported_at``.
-    published_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Optional FK to the article being responded to. NULL for
@@ -730,13 +728,9 @@ class ArticleComment(Base):
         onupdate=_utcnow,
         nullable=False,
     )
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    responds_to_article: Mapped["Article | None"] = relationship(
-        back_populates="comments"
-    )
+    responds_to_article: Mapped["Article | None"] = relationship(back_populates="comments")
 
     def __repr__(self) -> str:
         return (

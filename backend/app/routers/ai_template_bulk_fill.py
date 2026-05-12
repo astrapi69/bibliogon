@@ -114,6 +114,7 @@ def _enforce_bulk_ai_fill_cap(id_count: int) -> None:
             detail=f"Request contains {id_count} ids; cap is {cap}",
         )
 
+
 articles_router = APIRouter(prefix="/articles/bulk-ai-fill", tags=["article-ai-fill"])
 books_router = APIRouter(prefix="/books/bulk-ai-fill", tags=["book-ai-fill"])
 

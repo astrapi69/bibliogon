@@ -83,3 +83,8 @@ frontend/dev-dist/
 /e2e/test-results/
 /e2e/playwright-report/
 tmp/
+
+# Claude Code runtime artifacts (per-session lock + scheduled-task state).
+# Pre-commit's end-of-file-fixer would otherwise endlessly modify the
+# lock file, turning CI red on every push.
+/.claude/scheduled_tasks.lock
