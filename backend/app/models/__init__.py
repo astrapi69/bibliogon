@@ -665,8 +665,11 @@ class ArticleComment(Base):
 
     The relationship to ``Article`` is nullable (orphan
     semantics). When the article IS in the same DB, the FK is
-    set; otherwise ``responds_to_url`` preserves the link for
-    later inference.
+    set. The companion ``responds_to_url`` field is reserved
+    for future importers (WordPress, Hashnode) whose export
+    formats carry a parent-article link; the v1 Medium
+    importer leaves it ``None`` because the Medium HTML export
+    has no such link at all.
     """
 
     __tablename__ = "article_comments"
@@ -701,9 +704,19 @@ class ArticleComment(Base):
         nullable=True,
         index=True,
     )
-    # The raw URL the comment claims to respond to. Preserved
-    # for orphans + for future re-linking when the responded-to
-    # article gets imported later.
+    # URL of the parent article this comment responds to, when
+    # extractable from the source export. For Medium imports
+    # (v1) this is universally NULL because Medium's HTML
+    # export strips parent-references entirely - verified
+    # against the user's 209-file production export during the
+    # MEDIUM-COMMENTS-IMPORT-01 pre-inspection audit. Future
+    # importers (WordPress, Hashnode, ...) may populate this
+    # when their export format includes parent links; admin
+    # workflows can then re-link the comment to a freshly
+    # imported article via responds_to_article_id.
+    #
+    # NOT the comment's own canonical URL (that lives in
+    # ``canonical_url``).
     responds_to_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Source tracking. v1 ships with ``"medium"`` only;

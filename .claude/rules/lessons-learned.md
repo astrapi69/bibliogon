@@ -1220,3 +1220,70 @@ what you intended. Document the first run's outcome in the
 PR description or the related audit doc. A workflow that
 ships without a known-good first run is technical debt
 masquerading as feature delivery.
+
+## Schema "preserved" / "always set" claims must survive real-data audit before becoming spec
+
+MEDIUM-COMMENTS-IMPORT-01 shipped with prose in three
+places (model docstring, English help doc, German help doc,
+archive entry) describing the ``ArticleComment.responds_to_url``
+field as "preserved for orphans + for future re-linking"
+or "preserves the comment's own canonical URL." Both shapes
+imply the field carries data. Reality, verified after the
+fact: the v1 Medium importer sets the field to ``None``
+universally (line ``responds_to_url=None`` in
+``plugins/bibliogon-plugin-medium-import/bibliogon_medium_import/importer.py``),
+and the pre-inspection audit on the user's 209-file export
+already showed Medium's HTML carries no parent-reference
+data to extract.
+
+The drift was caught after the feature shipped, not before:
+
+- Sometime AFTER MEDIUM-COMMENTS-IMPORT-01 closed, a smoke
+  check surfaced 8 imported comments all with
+  ``responds_to_url`` ``None``. The user asked to correct
+  the spec.
+- The factual error in the help docs was a separate
+  mis-statement: the English wording conflated
+  ``responds_to_url`` with the comment's own
+  ``canonical_url``, which is a different field entirely.
+  The pre-inspection had distinguished them but the help
+  doc author (Claude Code, same session) merged the two
+  concepts in the user-facing prose.
+
+Two distinct anti-patterns surfaced:
+
+1. **"Future-compatible" prose presented as current
+   behaviour.** "Preserved for orphans" is true for the
+   schema (the column is nullable, the storage path
+   exists), but FALSE for the user's actual data (every
+   row has ``None``). When the gap is 100%, calling the
+   field "preserved" is misleading: the user reads the doc
+   and expects data they will never find. Either say
+   "reserved for future importers; v1 imports always
+   ``NULL``", or say nothing and let the type signature
+   carry the meaning.
+
+2. **Help-doc prose drifting from importer-comment prose.**
+   The importer comment in ``_persist_comment`` correctly
+   said "responds_to_url is left NULL too in v1 (no
+   inference); future importers that DO carry a parent
+   reference can populate it." The help docs in the same
+   commit chain disagreed. Single-pass authoring across
+   three places drifted in two of them.
+
+Concrete rules:
+
+- When a schema field's actual production value is
+  always-NULL / always-empty / always-zero for the only
+  v1 use case, the docstring must say so explicitly.
+  Pretending the field is populated leaks the schema's
+  forward-compatibility ambition into the user's
+  expectations.
+- Help-doc prose that names a field MUST be cross-checked
+  against the importer / writer code that populates it.
+  A 30-second grep for the field name in the importer
+  catches the drift; this audit caught it weeks later.
+- When a pre-inspection audit produces a "Medium doesn't
+  carry X" finding, every doc surface that mentions X in
+  the resulting code should explicitly reference the
+  audit finding. The audit is the spec.

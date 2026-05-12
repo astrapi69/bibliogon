@@ -129,8 +129,13 @@ Konfiguration über `import_comments_mode` in
 Der HTML-Export von Medium enthält **keinerlei Referenz auf den
 Eltern-Artikel** — jeder importierte Medium-Kommentar ist von
 Anfang an verwaist (`responds_to_article_id` ist `NULL`). Das
-Feld `responds_to_url` bewahrt die eigene Canonical-URL des
-Kommentars für einen späteren Verknüpfungs-Workflow auf.
+Feld `responds_to_url` ist für künftige Importer-Quellen
+vorgesehen, deren Exportformat den Eltern-Link enthält; bei
+v1-Medium-Importen bleibt es ebenfalls `NULL`, weil schlicht
+kein Link zu speichern existiert. Die eigene Canonical-URL des
+Kommentars (ein separates Konzept — die URL des Kommentars
+selbst, nicht des Artikels, auf den er antwortet) bleibt im
+Feld `canonical_url` erhalten.
 
 Die Einstellung `orphan_comment_handling` steuert das:
 

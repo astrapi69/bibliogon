@@ -124,9 +124,13 @@ Configure via `import_comments_mode` in
 
 Medium's HTML export carries **no parent-article reference at
 all** — every imported Medium comment is born an orphan
-(`responds_to_article_id` is `NULL`). The `responds_to_url` field
-preserves the comment's own canonical URL for a future
-re-linkage workflow.
+(`responds_to_article_id` is `NULL`). The `responds_to_url`
+field is reserved for future importers whose export formats
+include the parent link; v1 Medium imports leave it `NULL` too
+because there is no link to record. The comment's own canonical
+URL (a distinct concept — the URL of the comment itself, not of
+the article it responds to) is preserved separately in the
+`canonical_url` field.
 
 The `orphan_comment_handling` setting controls this:
 
