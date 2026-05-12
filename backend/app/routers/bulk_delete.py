@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import cast
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -77,7 +78,7 @@ books_router = APIRouter(prefix="/books", tags=["books"])
 
 
 def _bulk_delete(
-    model: type,
+    model: type[Article] | type[Book],
     ids: list[str],
     permanent: bool,
     db: Session,
@@ -91,8 +92,15 @@ def _bulk_delete(
     # Single query loads every requested row in one round-trip. We
     # don't pre-filter ``deleted_at`` here because both code paths
     # need to know whether a requested ID actually exists.
-    rows = db.query(model).filter(model.id.in_(ids)).all()
-    by_id = {row.id: row for row in rows}
+    # ``cast`` because SQLAlchemy's ``db.query(model).all()`` returns
+    # ``list[Base]`` (the declarative-base superclass), but the caller
+    # always passes Article or Book so the runtime rows DO carry the
+    # expected attributes.
+    rows = cast(
+        "list[Article | Book]",
+        db.query(model).filter(model.id.in_(ids)).all(),
+    )
+    by_id: dict[str, Article | Book] = {row.id: row for row in rows}
 
     for row_id in ids:
         row = by_id.get(row_id)
