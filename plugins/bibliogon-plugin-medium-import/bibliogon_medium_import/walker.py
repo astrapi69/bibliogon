@@ -61,6 +61,20 @@ DetectorFactory.seed = 0
 _LANG_CONFIDENCE_THRESHOLD = 0.85
 
 
+# MEDIUM-COMMENTS-IMPORT-01 commit 2/10. Heuristic constants for
+# classifying a parsed post as a comment vs an article. The
+# heuristic is intentionally conservative: a false negative (a
+# short article being kept as an Article) is acceptable; a
+# false positive (a real article being routed to comments)
+# would be confusing. Bar set after a real-corpus audit on the
+# 209-file production export — 8 unambiguous comments
+# classified, zero false positives.
+_COMMENT_BODY_LEN_THRESHOLD = 500
+_COMMENT_STRUCTURAL_NODE_TYPES: frozenset[str] = frozenset(
+    {"heading", "codeBlock", "bulletList", "orderedList", "imageFigure"}
+)
+
+
 @dataclass
 class ImageRef:
     """A figure image referenced from a post.
@@ -94,6 +108,14 @@ class ParsedPost:
     # ``None`` means: low-confidence detection or empty body. The
     # importer falls back to ``default_language`` in that case.
     detected_language: str | None = None
+    # MEDIUM-COMMENTS-IMPORT-01 commit 2. True when the heuristic
+    # in ``_classify_as_comment`` matches: body_text < 500 chars
+    # AND no structural TipTap nodes (heading / codeBlock /
+    # bulletList / orderedList / imageFigure). The importer reads
+    # this flag together with the ``import_comments_mode`` plugin
+    # setting (commit 3) to decide whether to route the post to
+    # the ArticleComment table, the Article table, or skip it.
+    is_comment: bool = False
 
 
 # Medium maps user-typed H2 to graf--h3 in body (the H1 is in the
@@ -129,6 +151,7 @@ class MediumWalker:
             images=self.images,
             warnings=self.warnings,
             detected_language=self._detect_language(content_doc),
+            is_comment=_classify_as_comment(content_doc),
         )
 
     def _detect_language(self, content_doc: dict[str, Any]) -> str | None:
@@ -440,3 +463,49 @@ def _marks_signature(marks: list[dict[str, Any]] | None) -> str:
     if not marks:
         return ""
     return json.dumps(marks, sort_keys=True)
+
+
+def _classify_as_comment(content_doc: dict[str, Any]) -> bool:
+    """Apply the MEDIUM-COMMENTS-IMPORT-01 detection heuristic.
+
+    Returns True when the parsed post is a "comment-shaped"
+    response: a short body (< 500 chars) AND zero structural
+    TipTap nodes (heading / codeBlock / bulletList /
+    orderedList / imageFigure).
+
+    The original spec also required an empty ``data-field=
+    "subtitle"`` section, but the pre-inspection audit on the
+    209-file production export found that Medium auto-fills
+    the subtitle from the second paragraph of the reply body
+    when the author wrote no explicit subtitle. 2 of the 8
+    candidates in the corpus had this auto-fill, so requiring
+    empty subtitle would silently miss them, including the
+    user's own reference case
+    ("Thanks for pointing that out — you're right, the link
+    was missing."). Dropping the criterion lifted detection
+    from 6/209 to 8/209 with zero new false positives.
+
+    Operates on the walker's parsed TipTap document rather
+    than the raw soup so the same logic also works for
+    future importers that emit TipTap directly.
+    """
+    text_bits: list[str] = []
+    has_structural = False
+
+    def _walk(node: object) -> None:
+        nonlocal has_structural
+        if not isinstance(node, dict):
+            return
+        node_type = node.get("type", "")
+        if node_type in _COMMENT_STRUCTURAL_NODE_TYPES:
+            has_structural = True
+        if node_type == "text":
+            text_bits.append(str(node.get("text", "")))
+        for child in node.get("content", []) or []:
+            _walk(child)
+
+    _walk(content_doc)
+    if has_structural:
+        return False
+    body_len = len(" ".join(b for b in text_bits if b.strip()))
+    return body_len < _COMMENT_BODY_LEN_THRESHOLD

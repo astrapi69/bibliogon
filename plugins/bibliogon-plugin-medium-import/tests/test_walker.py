@@ -444,3 +444,145 @@ def test_04_multi_inner_layout_captures_full_body() -> None:
         f"{word_count}. The walker's section-inner iteration regressed; "
         f"see test docstring."
     )
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-COMMENTS-IMPORT-01 commit 2: comment-detection heuristic
+# ---------------------------------------------------------------------------
+
+
+from bibliogon_medium_import.walker import _classify_as_comment  # noqa: E402
+
+
+def _doc(*paragraphs: str) -> dict:
+    """Build a TipTap doc with the given plain-text paragraphs."""
+    return {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": p}],
+            }
+            for p in paragraphs
+        ],
+    }
+
+
+def test_classifier_short_plain_text_is_comment() -> None:
+    """A 50-char single-paragraph doc is the canonical comment
+    shape."""
+    doc = _doc("Thanks for the writeup!")
+    assert _classify_as_comment(doc) is True
+
+
+def test_classifier_long_plain_text_is_article() -> None:
+    """Same shape as the comment case but >= 500 chars body
+    becomes an article."""
+    long_para = "x " * 300  # 600 chars
+    doc = _doc(long_para)
+    assert _classify_as_comment(doc) is False
+
+
+def test_classifier_heading_disqualifies_short_post() -> None:
+    """A heading is a structural element. Even a 30-char body
+    with a single h2 is an article."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "heading",
+                "attrs": {"level": 1},
+                "content": [{"type": "text", "text": "Section"}],
+            },
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "Short body"}],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_classifier_codeblock_disqualifies_short_post() -> None:
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "Quick note"}],
+            },
+            {
+                "type": "codeBlock",
+                "content": [{"type": "text", "text": "print('hi')"}],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_classifier_image_figure_disqualifies_short_post() -> None:
+    """imageFigure is Bibliogon's image node type (not 'image' —
+    see the regression-pin in test_image_node_type_is_imageFigure_not_image
+    above). The heuristic must check the same name."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "See chart"}],
+            },
+            {
+                "type": "imageFigure",
+                "attrs": {"src": "x.png"},
+                "content": [],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_classifier_list_disqualifies_short_post() -> None:
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "bulletList",
+                "content": [
+                    {
+                        "type": "listItem",
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": "one"}],
+                            }
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_classifier_threshold_boundary() -> None:
+    """At exactly 500 chars: NOT a comment (strict `<` cutoff)."""
+    body = "x" * 500
+    assert _classify_as_comment(_doc(body)) is False
+    assert _classify_as_comment(_doc("x" * 499)) is True
+
+
+def test_parsed_post_carries_is_comment_flag() -> None:
+    """End-to-end: the walker sets is_comment on the dataclass.
+    None of the 4 production fixtures are comments; they all
+    have structure and / or long bodies."""
+    for name in (
+        "01_oldest_tech.html",
+        "02_german_philosophical.html",
+        "03_english_recent_with_code.html",
+        "04_german_long_with_multi_inner.html",
+    ):
+        post = _parse(name)
+        assert post.is_comment is False, (
+            f"Fixture {name} should not classify as a comment "
+            f"(has structure and / or long body)."
+        )
