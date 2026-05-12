@@ -1348,3 +1348,47 @@ Concrete rules for any importer surface in Bibliogon:
 Concrete filed follow-up: ``MEDIUM-COMMENT-MANUAL-ENTRY-01``
 (P5) captures the manual-entry path for the incoming-
 comment archive use case.
+
+## Run vitest from `frontend/`, not the repo root
+
+Vitest's config lives in ``frontend/vite.config.ts``.
+Running ``npx vitest run`` from the repo root finds no
+config, defaults to the `node` environment, and produces
+``ReferenceError: document is not defined`` across every
+test that touches the DOM. In a real 2026-05-12 incident,
+**101 of 120 test files failed** with this error before
+I noticed the cwd was wrong — completely misleading red
+flag suggesting something I'd just edited broke the entire
+test environment.
+
+Tells in the failure output:
+
+- Per-file ``setup: 0ms`` (happy-dom didn't initialise).
+- ``environment: 0ms`` in the summary line.
+- The error itself: ``ReferenceError: document is not
+  defined`` (or ``window`` / ``HTMLElement`` / similar).
+- Files that passed earlier in the same session
+  suddenly all fail.
+
+Three reliable invocations:
+
+- ``make test-frontend`` from anywhere (the Makefile
+  cd's into ``frontend/`` before running vitest).
+- ``cd frontend && npx vitest run`` — direct, fast,
+  same result as the Makefile target.
+- ``cd frontend && npx vitest run src/path/to/file.test.tsx``
+  for a targeted re-run.
+
+Failure modes:
+
+- ``npx vitest run`` from repo root → no config found
+  → wrong environment → 100% red flag on DOM-touching
+  tests.
+- ``poetry run vitest`` (mixed up with backend tooling)
+  → vitest not in the Python venv → command-not-found.
+
+Concrete rule: when a recent edit "breaks every vitest
+file at once," check the cwd before suspecting the code.
+A green run minutes ago in the same session and a red
+run now with ``setup: 0ms`` is the cwd diagnostic, not a
+regression.
