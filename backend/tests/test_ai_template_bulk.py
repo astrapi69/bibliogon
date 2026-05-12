@@ -25,6 +25,7 @@ from __future__ import annotations
 import io
 import json
 import zipfile
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -213,6 +214,60 @@ def test_article_bulk_export_cap_enforced_by_pydantic(client):
         "/api/articles/bulk-ai-template/export", json={"ids": ids}
     )
     assert resp.status_code == 422
+
+
+def test_article_bulk_export_cap_respects_runtime_config(client):
+    """AI-FILL-CAP-CONFIG-01: lowering the cap below the
+    request size must fire 422 with the cap surfaced in the
+    error detail (not just a generic Pydantic message)."""
+    ids = [f"id-{i}" for i in range(10)]
+    with patch(
+        "app.routers.ai_template_bulk._get_active_bulk_ai_template_cap",
+        return_value=5,
+    ):
+        resp = client.post(
+            "/api/articles/bulk-ai-template/export", json={"ids": ids}
+        )
+    assert resp.status_code == 422
+    assert "cap is 5" in resp.json()["detail"]
+
+
+def test_article_bulk_export_raised_cap_lets_larger_batch_through(client):
+    """Conversely, raising the cap above the request size lets
+    a 51-id batch reach the next gate (404 because the
+    synthesized ids don't exist)."""
+    ids = [f"id-{i}" for i in range(51)]
+    with patch(
+        "app.routers.ai_template_bulk._get_active_bulk_ai_template_cap",
+        return_value=200,
+    ):
+        resp = client.post(
+            "/api/articles/bulk-ai-template/export", json={"ids": ids}
+        )
+    assert resp.status_code != 422
+    assert resp.status_code == 404
+
+
+def test_article_bulk_import_cap_respects_runtime_config(client):
+    """The import path also reads the cap fresh per request.
+    Lower the cap and confirm a 6-entry ZIP fails with the
+    "ZIP contains 6 templates; cap is 5" phrasing."""
+    entries = [
+        (f"a{i}.biblio.yaml", _article_template_yaml(f"id-{i}"))
+        for i in range(6)
+    ]
+    zip_bytes = _zip_from(entries)
+    with patch(
+        "app.routers.ai_template_bulk._get_active_bulk_ai_template_cap",
+        return_value=5,
+    ):
+        resp = client.post(
+            "/api/articles/bulk-ai-template/import",
+            files={"file": ("bulk.zip", zip_bytes, "application/zip")},
+        )
+    assert resp.status_code == 422
+    assert "ZIP contains 6 templates" in resp.json()["detail"]
+    assert "cap is 5" in resp.json()["detail"]
 
 
 def test_article_bulk_export_empty_ids_returns_422(client):

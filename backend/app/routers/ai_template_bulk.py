@@ -67,18 +67,42 @@ from app.routers.book_ai_template import _apply_template_to_book
 
 logger = logging.getLogger(__name__)
 
+# Default cap on the number of items per bulk AI-template
+# request. Configurable at runtime via
+# ``ai.bulk.max_ai_template`` in app.yaml
+# (AI-FILL-CAP-CONFIG-01). Stays exported for the documented
+# default; the active cap is resolved per request.
 MAX_BULK_AI_TEMPLATE: Final = 50
 
-articles_router = APIRouter(
-    prefix="/articles/bulk-ai-template", tags=["article-ai-template"]
-)
-books_router = APIRouter(
-    prefix="/books/bulk-ai-template", tags=["book-ai-template"]
-)
+articles_router = APIRouter(prefix="/articles/bulk-ai-template", tags=["article-ai-template"])
+books_router = APIRouter(prefix="/books/bulk-ai-template", tags=["book-ai-template"])
+
+
+def _get_active_bulk_ai_template_cap() -> int:
+    """Resolve the active per-batch cap. Reads
+    ``ai.bulk.max_ai_template`` from the merged config; falls
+    back to ``MAX_BULK_AI_TEMPLATE`` when the key is missing or
+    carries an invalid value."""
+    from app.ai.routes import _get_bulk_ai_caps
+
+    return _get_bulk_ai_caps()[1]
+
+
+def _enforce_bulk_ai_template_cap(id_count: int) -> None:
+    """Raise HTTP 422 when the request exceeds the runtime cap.
+    Used by the export endpoints. The import endpoint runs the
+    same check inline so it can include the user-facing
+    "ZIP contains N templates" phrasing."""
+    cap = _get_active_bulk_ai_template_cap()
+    if id_count > cap:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Request contains {id_count} ids; cap is {cap}",
+        )
 
 
 class _BulkExportRequest(BaseModel):
-    ids: list[str] = Field(min_length=1, max_length=MAX_BULK_AI_TEMPLATE)
+    ids: list[str] = Field(min_length=1)
 
 
 # ---------------------------------------------------------------------------
@@ -137,9 +161,7 @@ def _iter_yaml_entries(
     try:
         zf = zipfile.ZipFile(io.BytesIO(upload_bytes))
     except zipfile.BadZipFile as exc:
-        raise HTTPException(
-            status_code=400, detail=f"Upload is not a valid ZIP: {exc}"
-        ) from exc
+        raise HTTPException(status_code=400, detail=f"Upload is not a valid ZIP: {exc}") from exc
 
     with zf:
         names = [n for n in zf.namelist() if n.endswith(".biblio.yaml")]
@@ -148,13 +170,11 @@ def _iter_yaml_entries(
                 status_code=400,
                 detail="ZIP contains no .biblio.yaml files",
             )
-        if len(names) > MAX_BULK_AI_TEMPLATE:
+        cap = _get_active_bulk_ai_template_cap()
+        if len(names) > cap:
             raise HTTPException(
                 status_code=422,
-                detail=(
-                    f"ZIP contains {len(names)} templates; "
-                    f"cap is {MAX_BULK_AI_TEMPLATE}"
-                ),
+                detail=(f"ZIP contains {len(names)} templates; cap is {cap}"),
             )
         for name in names:
             raw = zf.read(name)
@@ -178,12 +198,7 @@ def _load_articles_by_id(article_ids: list[str], db: Session) -> dict[str, Artic
 
 
 def _load_books_by_id(book_ids: list[str], db: Session) -> dict[str, Book]:
-    rows = (
-        db.query(Book)
-        .filter(Book.id.in_(book_ids))
-        .filter(Book.deleted_at.is_(None))
-        .all()
-    )
+    rows = db.query(Book).filter(Book.id.in_(book_ids)).filter(Book.deleted_at.is_(None)).all()
     return {b.id: b for b in rows}
 
 
@@ -193,12 +208,11 @@ def _load_books_by_id(book_ids: list[str], db: Session) -> dict[str, Book]:
 
 
 @articles_router.post("/export")
-def bulk_export_articles(
-    request: _BulkExportRequest, db: Session = Depends(get_db)
-) -> Response:
+def bulk_export_articles(request: _BulkExportRequest, db: Session = Depends(get_db)) -> Response:
     """Build a ZIP containing one ``.biblio.yaml`` per article
     in the request's ``ids`` list. Missing IDs raise 404 with
     the first few surfaced for diagnosis."""
+    _enforce_bulk_ai_template_cap(len(request.ids))
     articles_by_id = _load_articles_by_id(request.ids, db)
     missing = [aid for aid in request.ids if aid not in articles_by_id]
     if missing:
@@ -243,9 +257,7 @@ async def bulk_import_articles(
 
     for filename, yaml_text, decode_error in entries:
         if decode_error is not None:
-            failed.append(
-                {"filename": filename, "error": f"UTF-8 decode failed: {decode_error}"}
-            )
+            failed.append({"filename": filename, "error": f"UTF-8 decode failed: {decode_error}"})
             continue
         try:
             template = parse_template_from_yaml(yaml_text)
@@ -319,9 +331,8 @@ async def bulk_import_articles(
 
 
 @books_router.post("/export")
-def bulk_export_books(
-    request: _BulkExportRequest, db: Session = Depends(get_db)
-) -> Response:
+def bulk_export_books(request: _BulkExportRequest, db: Session = Depends(get_db)) -> Response:
+    _enforce_bulk_ai_template_cap(len(request.ids))
     books_by_id = _load_books_by_id(request.ids, db)
     missing = [bid for bid in request.ids if bid not in books_by_id]
     if missing:
@@ -362,9 +373,7 @@ async def bulk_import_books(
 
     for filename, yaml_text, decode_error in entries:
         if decode_error is not None:
-            failed.append(
-                {"filename": filename, "error": f"UTF-8 decode failed: {decode_error}"}
-            )
+            failed.append({"filename": filename, "error": f"UTF-8 decode failed: {decode_error}"})
             continue
         try:
             template = parse_template_from_yaml(yaml_text)

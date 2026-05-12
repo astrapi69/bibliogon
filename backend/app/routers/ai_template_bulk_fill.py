@@ -79,12 +79,42 @@ from app.routers.book_ai_fill import (
 
 logger = logging.getLogger(__name__)
 
+# Default cap on the number of items per bulk AI-fill request.
+# Configurable at runtime via ``ai.bulk.max_ai_fill`` in
+# app.yaml (AI-FILL-CAP-CONFIG-01). Stays exported for callers
+# that want the documented default without reaching into the
+# config. The active runtime cap is resolved per request via
+# ``_get_active_bulk_ai_fill_cap()`` so a YAML edit takes
+# effect immediately without a restart.
 MAX_BULK_AI_FILL: Final = 50
 DEFAULT_RATE_LIMIT_SECONDS: Final = 1.0
 
-articles_router = APIRouter(
-    prefix="/articles/bulk-ai-fill", tags=["article-ai-fill"]
-)
+
+def _get_active_bulk_ai_fill_cap() -> int:
+    """Resolve the active per-batch cap. Reads
+    ``ai.bulk.max_ai_fill`` from the merged config; falls back
+    to ``MAX_BULK_AI_FILL`` when the key is missing or carries
+    an invalid value. Lazy import to keep the routes.py <->
+    main.py cycle off the import path."""
+    from app.ai.routes import _get_bulk_ai_caps
+
+    return _get_bulk_ai_caps()[0]
+
+
+def _enforce_bulk_ai_fill_cap(id_count: int) -> None:
+    """Raise HTTP 422 when the request exceeds the runtime cap.
+    The cap is read inside the handler so a YAML edit takes
+    effect on the next request; this is intentionally NOT a
+    Pydantic field-level ``max_length`` constraint (the
+    constraint would freeze the cap at import time)."""
+    cap = _get_active_bulk_ai_fill_cap()
+    if id_count > cap:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Request contains {id_count} ids; cap is {cap}",
+        )
+
+articles_router = APIRouter(prefix="/articles/bulk-ai-fill", tags=["article-ai-fill"])
 books_router = APIRouter(prefix="/books/bulk-ai-fill", tags=["book-ai-fill"])
 
 
@@ -150,7 +180,7 @@ def _get_configured_model() -> str:
 
 
 class _BulkFillRequest(BaseModel):
-    ids: list[str] = Field(min_length=1, max_length=MAX_BULK_AI_FILL)
+    ids: list[str] = Field(min_length=1)
     field_classes: list[str] = Field(min_length=1)
     force: bool = False
     inline_image_count: int | None = Field(default=None, ge=1, le=10)
@@ -166,12 +196,7 @@ class _BulkFillStartResponse(BaseModel):
 
 
 def _load_articles_in_order(ids: list[str], db: Session) -> list[Article]:
-    rows = (
-        db.query(Article)
-        .filter(Article.id.in_(ids))
-        .filter(Article.deleted_at.is_(None))
-        .all()
-    )
+    rows = db.query(Article).filter(Article.id.in_(ids)).filter(Article.deleted_at.is_(None)).all()
     by_id = {a.id: a for a in rows}
     missing = [aid for aid in ids if aid not in by_id]
     if missing:
@@ -186,20 +211,14 @@ def _load_articles_in_order(ids: list[str], db: Session) -> list[Article]:
 
 
 def _load_books_in_order(ids: list[str], db: Session) -> list[Book]:
-    rows = (
-        db.query(Book)
-        .filter(Book.id.in_(ids))
-        .filter(Book.deleted_at.is_(None))
-        .all()
-    )
+    rows = db.query(Book).filter(Book.id.in_(ids)).filter(Book.deleted_at.is_(None)).all()
     by_id = {b.id: b for b in rows}
     missing = [bid for bid in ids if bid not in by_id]
     if missing:
         raise HTTPException(
             status_code=404,
             detail=(
-                f"Books not found: {', '.join(missing[:5])}"
-                + ("..." if len(missing) > 5 else "")
+                f"Books not found: {', '.join(missing[:5])}" + ("..." if len(missing) > 5 else "")
             ),
         )
     return [by_id[bid] for bid in ids]
@@ -211,8 +230,7 @@ def _validate_article_field_classes(field_classes: list[str]) -> None:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Unknown article field_classes: {unknown}. "
-                f"Valid: {list(_ARTICLE_FIELD_CLASSES)}"
+                f"Unknown article field_classes: {unknown}. Valid: {list(_ARTICLE_FIELD_CLASSES)}"
             ),
         )
 
@@ -222,10 +240,7 @@ def _validate_book_field_classes(field_classes: list[str]) -> None:
     if unknown:
         raise HTTPException(
             status_code=400,
-            detail=(
-                f"Unknown book field_classes: {unknown}. "
-                f"Valid: {list(_BOOK_FIELD_CLASSES)}"
-            ),
+            detail=(f"Unknown book field_classes: {unknown}. Valid: {list(_BOOK_FIELD_CLASSES)}"),
         )
 
 
@@ -250,9 +265,7 @@ def _estimate_article_item(
     for class_name in field_classes:
         spec = _ARTICLE_FIELD_CLASSES[class_name]
         if spec.needs_inline_count:
-            system, user = spec.builder(
-                article, body_text, inline_count=inline_count
-            )
+            system, user = spec.builder(article, body_text, inline_count=inline_count)
         else:
             system, user = spec.builder(article, body_text)
         input_tokens = estimate_tokens(system) + estimate_tokens(user)
@@ -304,9 +317,7 @@ def _estimate_book_item(
                 }
                 continue
             system, user = spec.builder(book, chapters_input)
-            output_tokens = (
-                len(chapters_input) * _BOOK_CHAPTER_SUMMARIES_PER_CHAPTER
-            )
+            output_tokens = len(chapters_input) * _BOOK_CHAPTER_SUMMARIES_PER_CHAPTER
         else:
             system, user = spec.builder(book, body_text)
             output_tokens = _BOOK_OUTPUT_TOKENS_NON_CHAPTER.get(class_name, 200)
@@ -347,6 +358,7 @@ def estimate_article_bulk_fill(
     the UI can show the user the full breakdown before they
     confirm. Carries the carry-forward Q6 contract: every item
     contributes its own line; the total is the sum."""
+    _enforce_bulk_ai_fill_cap(len(request.ids))
     _validate_article_field_classes(request.field_classes)
     articles = _load_articles_in_order(request.ids, db)
     model = _get_configured_model()
@@ -394,6 +406,7 @@ async def start_article_bulk_fill(
 
     if not _is_ai_enabled():
         raise HTTPException(status_code=403, detail="AI features are disabled")
+    _enforce_bulk_ai_fill_cap(len(request.ids))
     _validate_article_field_classes(request.field_classes)
     # Verify every ID resolves; raises 404 with the missing IDs.
     _load_articles_in_order(request.ids, db)
@@ -462,6 +475,7 @@ def get_article_bulk_fill_job(job_id: str) -> dict[str, Any]:
 def estimate_book_bulk_fill(
     request: _BulkFillRequest, db: Session = Depends(get_db)
 ) -> dict[str, Any]:
+    _enforce_bulk_ai_fill_cap(len(request.ids))
     _validate_book_field_classes(request.field_classes)
     books = _load_books_in_order(request.ids, db)
     model = _get_configured_model()
@@ -475,9 +489,7 @@ def estimate_book_bulk_fill(
     for book in books:
         body_text = _aggregate_book_body(book)
         chapters_input = _build_chapter_input(book)
-        item = _estimate_book_item(
-            book, body_text, chapters_input, request.field_classes, model
-        )
+        item = _estimate_book_item(book, body_text, chapters_input, request.field_classes, model)
         items.append(item)
         total_input += item["estimated_input_tokens"]
         total_output += item["estimated_output_tokens"]
@@ -507,6 +519,7 @@ async def start_book_bulk_fill(
 
     if not _is_ai_enabled():
         raise HTTPException(status_code=403, detail="AI features are disabled")
+    _enforce_bulk_ai_fill_cap(len(request.ids))
     _validate_book_field_classes(request.field_classes)
     _load_books_in_order(request.ids, db)
 
@@ -609,9 +622,7 @@ async def _run_article_bulk_fill_job(
                     "item_skipped",
                     {"id": article_id, "index": index, "reason": "not-found"},
                 )
-                items_done.append(
-                    {"id": article_id, "index": index, "skipped": "not-found"}
-                )
+                items_done.append({"id": article_id, "index": index, "skipped": "not-found"})
                 continue
 
             body_text = extract_body_text(article.content_json)
@@ -621,9 +632,7 @@ async def _run_article_bulk_fill_job(
                     "item_skipped",
                     {"id": article_id, "index": index, "reason": "no-content"},
                 )
-                items_done.append(
-                    {"id": article_id, "index": index, "skipped": "no-content"}
-                )
+                items_done.append({"id": article_id, "index": index, "skipped": "no-content"})
                 continue
 
             job_store.publish_event(
@@ -649,9 +658,7 @@ async def _run_article_bulk_fill_job(
                     "item_error",
                     {"id": article_id, "index": index, "error": str(exc)},
                 )
-                items_done.append(
-                    {"id": article_id, "index": index, "error": str(exc)}
-                )
+                items_done.append({"id": article_id, "index": index, "error": str(exc)})
                 continue
 
             if item_result["tokens_used"]:
@@ -724,10 +731,7 @@ async def _run_book_bulk_fill_job(
     with SessionLocal() as db:
         for index, book_id in enumerate(ids):
             book = (
-                db.query(Book)
-                .filter(Book.id == book_id)
-                .filter(Book.deleted_at.is_(None))
-                .first()
+                db.query(Book).filter(Book.id == book_id).filter(Book.deleted_at.is_(None)).first()
             )
             if book is None:
                 job_store.publish_event(
@@ -735,9 +739,7 @@ async def _run_book_bulk_fill_job(
                     "item_skipped",
                     {"id": book_id, "index": index, "reason": "not-found"},
                 )
-                items_done.append(
-                    {"id": book_id, "index": index, "skipped": "not-found"}
-                )
+                items_done.append({"id": book_id, "index": index, "skipped": "not-found"})
                 continue
 
             body_text = _aggregate_book_body(book)
@@ -748,9 +750,7 @@ async def _run_book_bulk_fill_job(
                     "item_skipped",
                     {"id": book_id, "index": index, "reason": "no-content"},
                 )
-                items_done.append(
-                    {"id": book_id, "index": index, "skipped": "no-content"}
-                )
+                items_done.append({"id": book_id, "index": index, "skipped": "no-content"})
                 continue
 
             job_store.publish_event(
@@ -776,9 +776,7 @@ async def _run_book_bulk_fill_job(
                     "item_error",
                     {"id": book_id, "index": index, "error": str(exc)},
                 )
-                items_done.append(
-                    {"id": book_id, "index": index, "error": str(exc)}
-                )
+                items_done.append({"id": book_id, "index": index, "error": str(exc)})
                 continue
 
             if item_result["tokens_used"]:
@@ -804,9 +802,7 @@ async def _run_book_bulk_fill_job(
                     "tokens": item_result["tokens_used"],
                     "cost_usd": item_result["estimated_cost_usd"],
                     "field_class_errors": item_result["field_class_errors"],
-                    "dropped_chapter_summaries": item_result[
-                        "dropped_chapter_summaries"
-                    ],
+                    "dropped_chapter_summaries": item_result["dropped_chapter_summaries"],
                 },
             )
             items_done.append(item_result)

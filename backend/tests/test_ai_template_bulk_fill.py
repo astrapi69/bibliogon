@@ -253,6 +253,48 @@ def test_article_estimate_cap_enforced(client):
     assert resp.status_code == 422
 
 
+def test_article_estimate_cap_respects_runtime_config(client):
+    """AI-FILL-CAP-CONFIG-01: a user editing
+    ``ai.bulk.max_ai_fill`` in app.yaml raises the active cap
+    without a restart. 51 ids previously rejected as 422
+    now succeed end-to-end (404 because the synthesized ids
+    don't exist in the DB, which is what we expect once the
+    cap check has been cleared)."""
+    ids = [f"id-{i}" for i in range(51)]
+    with patch(
+        "app.routers.ai_template_bulk_fill._get_active_bulk_ai_fill_cap",
+        return_value=100,
+    ):
+        resp = client.post(
+            "/api/articles/bulk-ai-fill/estimate",
+            json={"ids": ids, "field_classes": ["seo"]},
+        )
+    # Cap is no longer the gate; the next check (article
+    # existence) takes over and surfaces 404. The 422 path is
+    # gone for this batch size under the elevated cap.
+    assert resp.status_code != 422
+    assert resp.status_code == 404
+
+
+def test_article_start_cap_respects_runtime_config(client):
+    """Same insurance for the /start endpoint. The runtime cap
+    is read fresh per request, so lowering it via the helper
+    must immediately reject a 5-id batch that the default 50
+    would accept."""
+    a = _create_article(client, title="Alpha")
+    ids = [a["id"]] * 5  # ignore content; the cap check fires first
+    with patch(
+        "app.routers.ai_template_bulk_fill._get_active_bulk_ai_fill_cap",
+        return_value=3,
+    ):
+        resp = client.post(
+            "/api/articles/bulk-ai-fill/start",
+            json={"ids": ids, "field_classes": ["seo"]},
+        )
+    assert resp.status_code == 422
+    assert "cap is 3" in resp.json()["detail"]
+
+
 # ---------------------------------------------------------------------------
 # Article start + SSE
 # ---------------------------------------------------------------------------

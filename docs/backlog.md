@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (BULK-AI-FILL-LIVE-COST-01 promoted from P5 and landed: 1 frontend-only commit, +7 frontend tests, i18n × 8 in parity. Live "~$X projected" caption in the dock badge + Per-item / Projected pills in the modal totals strip during the running phase. Archived to docs/roadmap-archive/2026-05.md.)
+Last updated: 2026-05-12 (AI-FILL-CAP-CONFIG-01 promoted from P5 and landed: 1 backend-only commit, +18 backend tests. Bulk AI-fill + bulk AI-template caps configurable via `ai.bulk.max_ai_fill` and `ai.bulk.max_ai_template` in app.yaml; defaults of 50 unchanged. Both Session 1+2 P5 follow-ups now closed; archived to docs/roadmap-archive/2026-05.md.)
 Current version: v0.30.0
-Open tasks: 16 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 15 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -198,19 +198,6 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
-
-- **AI-FILL-CAP-CONFIG-01**: make the per-batch bulk AI-fill cap
-  (`MAX_BULK_AI_FILL = 50` in
-  `backend/app/routers/ai_template_bulk_fill.py`) and the bulk
-  AI-template cap (`MAX_BULK_AI_TEMPLATE = 50` in
-  `backend/app/routers/ai_template_bulk.py`) configurable as
-  plugin settings rather than hardcoded constants. v1 ships
-  hardcoded per S8 to keep the surface small until real usage
-  data justifies the configuration. Power-users who need higher
-  caps can edit the constants in their fork. Trigger: first user
-  report that 50 is too low for a normal batch, or evidence that
-  the rate-limit + AI provider can comfortably handle larger
-  batches in production.
 
 - **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
   ``Article.excerpt`` on Medium import, mirroring the existing

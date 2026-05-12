@@ -6,6 +6,18 @@ ai:
   max_tokens: 2048
   model: ''
   temperature: 0.7
+  bulk:
+    # INTERNAL: per-batch caps for bulk AI operations. No Settings UI;
+    # power users raise via YAML when their AI provider + configured
+    # rate-limit comfortably absorb larger batches.
+    # - max_ai_fill: cap on /articles|books/bulk-ai-fill (one LLM call
+    #   per item per selected field-class). Conservative default of 50
+    #   keeps a single run bounded.
+    # - max_ai_template: cap on /articles|books/bulk-ai-template
+    #   export+import (no LLM calls; ZIP packing only). Same default
+    #   for UX consistency with the AI-fill cap.
+    max_ai_fill: 50
+    max_ai_template: 50
 editor:
   autosave_debounce_ms: 800
   draft_save_debounce_ms: 2000

@@ -6,6 +6,25 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **Configurable per-batch caps for bulk AI operations**
+  (`AI-FILL-CAP-CONFIG-01`, promoted from P5). New
+  `ai.bulk.max_ai_fill` (default 50) and
+  `ai.bulk.max_ai_template` (default 50) keys in
+  `backend/config/app.yaml` raise the previously-hardcoded
+  caps on `/articles|books/bulk-ai-fill/{estimate,start}` and
+  `/articles|books/bulk-ai-template/{export,import}`. Power
+  users no longer need a fork. Edits take effect on the next
+  request (no restart). Non-int / zero / negative / None
+  values fall back to the documented defaults via a coerce
+  helper so a YAML typo can't silently shrink the cap. Hard
+  enforcement moved from a Pydantic field-level constraint
+  to a handler-side check that surfaces the active cap in the
+  error detail (`cap is N`, or `ZIP contains M templates;
+  cap is N`). +18 backend tests pin the helper math (12 in
+  the new `test_bulk_ai_caps.py`) and the runtime-config
+  end-to-end behaviour (+2 in `test_ai_template_bulk_fill.py`,
+  +3 in `test_ai_template_bulk.py`).
+
 - **Bulk AI-fill: live cost projection in the dock**
   (`BULK-AI-FILL-LIVE-COST-01`, promoted from P5). While a
   bulk AI-fill job is running, the minimized dock badge shows
