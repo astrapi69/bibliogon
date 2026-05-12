@@ -34,6 +34,7 @@ import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
+import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
@@ -847,6 +848,8 @@ export default function ArticleEditor() {
                                 .catch(() => {})
                         }}
                     />
+
+                    <ArticleCommentsPanel articleId={article.id} />
 
                     <h4 className={layout.sectionHeading}>
                         {t("ui.articles.export_section", "Exportieren")}
