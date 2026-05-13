@@ -4,7 +4,211 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-05-13
+
+The "deep features" release: universal AI templates (per-field-class
+selection, three workflow modes including external-AI YAML
+round-trip), bulk-delete (article + book, no-cap with destructive
+type-to-confirm gate + soft-delete Undo toast), Medium HTML archive
+importer (10th plugin), Medium comments detection routing, and a
+sweep of theme tokens + i18n review-status hardening. 157 commits
+since v0.30.0 (2026-05-07). Pre-release audit (verification +
+coverage + UX/UI) covered every new surface; the audit reports live
+at ``docs/audits/pre-release-{verification,coverage,ux}-2026-05-12.md``.
+
+### Added
+
+- **Universal AI templates** for Articles + Books
+  (`UNIVERSAL-AI-TEMPLATE-01` Session 1 + `UNIVERSAL-AI-TEMPLATE-02`
+  Session 2). A self-explanatory YAML template format ships with
+  three first-class workflows: (A) the built-in AI provider,
+  (B) a custom local endpoint (LM Studio / Ollama configured via a
+  new "Custom" preset in Settings → AI), and (C) external AI via
+  YAML round-trip (export the template, paste into Claude.ai /
+  ChatGPT / any LLM playground, upload the filled YAML back).
+  Backend: 8 endpoints across `/articles` + `/books`
+  (`/ai-template/{export,import,empty}` + `/ai-fill` with
+  per-field-class selection) + `/bulk-ai-template/{export,import}`
+  + `/bulk-ai-fill/{estimate,start}` with SSE progress. New DB
+  columns on Article + Book (`featured_image_prompt`,
+  `inline_image_prompts`, `cover_image_prompt`,
+  `chapter_summaries`) with a single Alembic revision. Header
+  rules embedded inside the YAML itself (the AI reads
+  fill-rules + style-rules from the file, not a system prompt)
+  so workflow C produces valid output without out-of-band
+  instructions. Frontend: `AITemplatePanel` tab in the editor +
+  Dashboard "New from template" entry point, `FieldClassDialog`
+  for per-field-class selection (cover prompt / SEO / tags /
+  excerpt / etc.), `TemplateImportDropZone` for re-import,
+  `BulkAiFillJobContext` with a persistent SSE dock (badge +
+  expanded modal), bulk AI-fill confirm dialog with per-item
+  cost breakdown, live cost projection during a running batch
+  (`~$total projected` badge + per-item average pill, hidden
+  until first priced response, replaced by the authoritative
+  final total on terminal phase). Configurable per-batch caps
+  (`ai.bulk.max_ai_fill` / `ai.bulk.max_ai_template`, default 50
+  each) in `backend/config/app.yaml`. i18n × 8 catalogs
+  (ai_template / bulk_ai_fill namespaces). 178 backend tests
+  across the 8-file ai-template package + 78 Vitest tests + 5
+  Playwright smoke specs.
+
+- **Bulk-delete for Articles and Books** (`BULK-DELETE-01`). New
+  POST `/api/articles/bulk-delete` + POST `/api/books/bulk-delete`
+  endpoints accept a list of IDs and a `permanent` flag (`false`
+  = move to trash, `true` = hard-delete). Dashboard surfaces:
+  per-tile checkboxes + bulk-action-bar select-all (filter-aware)
+  + `BookBulkActionBar` / `ArticleBulkActionBar` delete-dropdown
+  with two options ("In Papierkorb verschieben" / "Endgültig
+  löschen"). Permanent-delete path opens
+  `TypeToConfirmDialog` (reusable dialog primitive) with a
+  numeric type-to-confirm gate — the user must type the exact
+  count to enable the confirm button; the dialog also shows the
+  active-filter description so the deleted scope is visible.
+  Soft-delete path raises a `notify.bulkAction` toast with an
+  Undo button that restores every soft-deleted row. The 200-row
+  cap that was copied from `bulk-export` was removed for delete
+  (per the new "Bulk-operation limits should be per-operation
+  cost-profile" rule in lessons-learned: SQL bulk DELETE is sub-
+  second per 1000 rows; the cap was UX-hostile). The
+  bulk-delete dropdown trigger stays disabled at count < 2 so
+  the single-item delete flow stays on the per-card menu. i18n
+  × 8 catalogs (`ui.bulk_delete.*`). A1 Playwright smoke spec
+  (`e2e/smoke/bulk-delete.spec.ts`) pins the three guards
+  (count=1 fallthrough, soft-delete Undo restore,
+  type-to-confirm gate with empty / wrong / correct input).
+
+- **Medium HTML archive importer** (10th plugin,
+  `bibliogon-plugin-medium-import`). Imports a Medium HTML
+  export ZIP (Settings → "Download your information") and
+  produces one Article + one Publication entry + one
+  `ArticleImportSource` provenance row per `posts/*.html`. New
+  `ArticleImportSource` table mirrors `BookImportSource`. Image
+  references (`cdn-images-1.medium.com`) download to local
+  `ArticleAsset` storage by default per the data-sovereignty
+  design decision (off-by-toggle for users who want CDN URLs).
+  Re-imports of the same archive deduplicate against
+  `Article.canonical_url`. Bilingual help page at
+  `docs/help/{en,de}/import/medium.md`. POST
+  `/api/medium-import/import` + dedicated
+  `/articles/import/medium` page route (chosen over modal
+  because the typical Medium archive runs minutes; per-route
+  surface + structured-results table + help-doc deep-link
+  all benefit). Frontend: `MediumImportUploadZone`,
+  `MediumImportProgress` two-phase indicator,
+  `MediumImportResult` collapsible-section panel,
+  `MediumImportSettings` save-button form. Auto language
+  detection (langdetect-based, no Medium meta hint exists).
+  First body image becomes the article's `featured_image_url`
+  (off-by-toggle). SEO `seo_description` defaults to the
+  Medium subtitle when present. Walker iterates ALL
+  `section--body > section-inner` divs (the v0.30.x bug was
+  picking only the first, silently truncating 33% of imports).
+  TipTap node type is `imageFigure` (matches Bibliogon's
+  editor schema; a plain `image` node fails ProseMirror
+  validation and breaks the whole doc). 89 backend tests
+  (round-trip + walker + bulk endpoint + dedup).
+
+- **Medium comments: detection + routing** (`MEDIUM-COMMENTS-IMPORT-01`).
+  Medium's HTML export treats user-written responses (short
+  reply-shaped notes to other articles) as standalone HTML
+  files indistinguishable from articles at the file level.
+  The walker now runs a heuristic (body < 500 chars AND no
+  structural elements — heading / codeBlock / bulletList /
+  orderedList / imageFigure) and routes detected comments to
+  a new `article_comments` table instead of polluting the
+  article dashboard. Three modes (`import_comments_mode`):
+  `as_comments` (default), `as_articles` (legacy v0.30.0
+  behaviour), `skip`. Two orphan-handling modes
+  (`orphan_comment_handling`): `store` (default; Medium
+  comments are always orphans because the export carries no
+  parent-article reference at all), `skip`. Two new API
+  endpoints in core: `GET /api/articles/{id}/comments` and
+  `GET /api/comments` (admin, with `imported_from` +
+  `orphans_only` filters + soft-delete via DELETE).
+  `responds_to_article_id` FK uses `ON DELETE SET NULL` so
+  deleting an article preserves its comments as orphans for
+  later re-linkage. Pre-inspection audit on the user's
+  209-file Medium export refined the spec's heuristic (the
+  original empty-subtitle criterion was dropped after
+  finding 2 false negatives caused by Medium auto-filling
+  the subtitle from the reply body); detection lifted from
+  6/209 to 8/209 with zero new false positives. +30 backend
+  tests + 15 plugin tests. Bilingual help-doc update under
+  `docs/help/{en,de}/import/medium.md`.
+
+- **Medium comments: editor + dashboard + admin surfaces**
+  (`MEDIUM-COMMENTS-UI-01`). Three frontend surfaces make the
+  comments data layer visible: (1) read-only
+  `ArticleCommentsPanel` in the editor sidebar (plain-text
+  body with `white-space: pre-wrap`; loading invisible, empty
+  state explicit, error banner on failure), (2) Lucide
+  MessageSquare count badge on `ArticleCard` AND in the
+  article list view when `Article.comments_count > 0` (new
+  computed field on `ArticleOut`; shared `CommentsCountBadge`
+  component), (3) Settings "comments" tab between Plugins and
+  Support with source filter (Any / Medium / WordPress /
+  Hashnode), orphans-only checkbox, paginated table (Author
+  / Body / Source / Status / Imported), "Load more" up to the
+  500 backend cap, and per-row simple-confirm delete
+  (optimistic row removal + success toast). i18n × 8 catalogs.
+
+- **TypeToConfirmDialog**: reusable destructive-confirm primitive
+  with a numeric type-to-confirm gate. Built around the rule
+  "force the user to LOOK at the count, which combined with the
+  filter-description text gives a real sanity check". Numeric
+  strategy chosen over a localized confirm-word so translation
+  maintenance is zero and the dialog works on every keyboard
+  layout (no Greek / Japanese typing friction). Test IDs
+  (`type-to-confirm-dialog/input/confirm/cancel/error`) pinned
+  in 18 Vitest tests + the A1 bulk-delete Playwright spec.
+
+- **Theme tokens**: 4 new CSS variables defined across all 6
+  palette / dark-mode combinations in
+  `frontend/src/styles/global.css`. `--surface-2` (soft alternate
+  surface one step deeper than `--bg-card`), `--danger-bg` (pale
+  tint of `--danger` for warning regions), `--success` /
+  `--warning` (status glyph colors for done / skipped
+  indicators). The D3 pre-release UX audit caught 9 new
+  components referencing these tokens with hex fallbacks; every
+  consumer was silently falling through to its light-mode hex
+  fallback under Cool Modern / Nord / Classic / Studio /
+  Notebook themes. Defining the tokens completes the
+  "All styles MUST work through CSS variables" architecture
+  rule for the v0.31.0 surface.
+
+- **A1 Bulk-delete E2E smoke spec**
+  (`e2e/smoke/bulk-delete.spec.ts`, 203 lines). Closes the
+  critical gap identified by the v0.31.0 pre-release coverage
+  audit. Three tests pinning the data-destructive guards:
+  count=1 dropdown disabled + dropdown content stays hidden;
+  soft-delete + Undo restore (verifying trash list before /
+  after Undo); permanent delete type-to-confirm gate
+  (disabled-when-empty → disabled+error on wrong count →
+  enabled on correct count → all rows gone with empty trash
+  list confirming permanent path skips trash). Books used over
+  Articles because the surface is structurally identical
+  (same dialog + same toast) but Books carry the larger UX
+  shell (Dashboard + tile checkboxes + dual AI + delete
+  dropdown bars).
+
 ### Changed
+
+- **i18n review-status markers in 6 catalogs** (es, fr, el, pt,
+  tr, ja). Three v0.31.0 namespaces (`ai_template`,
+  `bulk_ai_fill`, `comments`) ship passthru-English in those
+  catalogs; translations were deferred to ship v0.31.0 on
+  schedule rather than holding the release on six native-speaker
+  contacts. Each affected catalog now carries a top-level
+  `_meta:` block (`review_status`, `translator`,
+  `translation_date`, `reference_lang`, explicit
+  `pending_namespaces` list) following the launcher precedent
+  (`LAUNCHER-I18N-NATIVE-REVIEW-01`). Parity test updated to
+  ignore the top-level `_meta` block AND enforce the marker's
+  documented shape; `en.yaml` / `de.yaml` must NOT carry it.
+  Companion docs file at `backend/config/i18n/REVIEW_STATUS.md`
+  explains the marker + the PR-based correction workflow.
+  Follow-up `I18N-NATIVE-REVIEW-V031-01` (P3) tracks the
+  native-speaker pass.
 
 - **CI hardening pass** (test-infrastructure audit
   2026-05-12). Poetry virtualenv cache on the backend test
@@ -21,6 +225,104 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   removed from tracking (per-session runtime artifact that
   was turning CI red on every push). Audit report at
   ``docs/test-infrastructure-audit.md``.
+
+- **Bulk-delete cap removed**: `MAX_BULK_DELETE = 200` deleted
+  from `backend/app/routers/bulk_delete.py`. The Pydantic
+  schema still rejects empty payloads (`min_length=1`) but
+  drops `max_length`. SQL bulk DELETE is sub-second on
+  thousands of rows; the cap was UX-hostile when "Select all"
+  with 209 imported Medium articles tripped both Export AND
+  Delete. Reasoning documented in lessons-learned
+  ("Bulk-operation limits should be per-operation cost-
+  profile").
+
+### Fixed
+
+- **Path isolation: `backup_history.json` + `plugins/installed/`**
+  now resolve via `app.paths.get_data_dir()` per the explicit
+  "Filesystem isolation: production data lives outside the
+  project tree" rule. Both previously used CWD-relative or
+  `BASE_DIR`-relative paths (`"config/backup_history.json"` and
+  `BASE_DIR / "plugins" / "installed"`), which crashed in
+  dev-docker (`PermissionError`) because the bind-mounted
+  project tree inherits the host's UID instead of the
+  container's `bibliogon` user. Production Docker (named volume
+  + `chown -R bibliogon`) was never affected, so this is
+  defense-in-depth aligned with the architecture rule rather
+  than a production data-loss bug. Migration auto-moves the
+  legacy locations on first boot for users who developed
+  outside Docker before v0.31.0. The broader pattern (10+
+  similar writes in `settings.py`) is filed as
+  `PROD-WRITES-ARCHITECTURE-01` (P3).
+
+- **`__version__` literal drift in medium-import plugin**: the
+  scaffold shipped with `__version__ = "1.0.0"` hardcoded in
+  `bibliogon_medium_import/__init__.py`, which failed
+  `make sync-versions-check` against the canonical 0.30.0 +
+  would have rejected the v0.31.0 tag push at the
+  release-gate. Replaced with the
+  `importlib.metadata.version(...)` pattern already used by
+  `plugin-git-sync` so the value cannot drift from the
+  packaging metadata.
+
+- **mkdocs.yml nav out of sync with `_meta.yaml`**: the new AI
+  Templates help-section was declared in
+  `docs/help/_meta.yaml` and the EN + DE Markdown files
+  existed under `docs/help/{en,de}/ai/ai-templates.md` but
+  `mkdocs.yml` was not regenerated. `make sync-mkdocs-nav`
+  closes the loop; the existing pre-tag chain
+  (`make verify-docs-discipline`) catches the regression
+  going forward.
+
+- **Plugin-load diagnostic logging silenced by Alembic.** Every
+  `logger.info(...)` from `app.main` after `init_db()` was being
+  dropped by Python's `logging.config.fileConfig` invocation in
+  `migrations/env.py`. Default behaviour is `disable_existing_
+  loggers=True` AND root-logger level reset to whatever
+  `alembic.ini`'s `[logger_root]` says (WARNING in this repo).
+  Result: users observed "no plugin loading messages, only
+  alembic" because the alembic config was the only logging
+  source still alive. Fix: `migrations/env.py` skips
+  `fileConfig` when the root logger already has handlers
+  attached - i.e. when the FastAPI app has already configured
+  logging via uvicorn / basicConfig. The standalone `alembic`
+  CLI path (no handlers attached at env.py time) is
+  untouched.
+
+  As part of the fix, three diagnostic helpers landed in
+  `app.main`: `_discovered_entry_points`,
+  `_enabled_plugins_from_config`, and
+  `_log_plugin_diagnostics_pre`/`_post`. Startup now emits
+  `Plugin discovery: <N> entry points found ...`,
+  `Plugins enabled in config (<N>): ...`, and
+  `Plugins loaded (<active>/<enabled>): ...` plus WARNING-level
+  lines for `pluginforge.PluginManager.get_load_errors()` and
+  for the diff between enabled-in-config and actually-active
+  plugins (with a rebuild hint pointing at the most common
+  failure mode). 7 regression tests pin the log shape.
+
+- **Medium-import plugin config file at the wrong path.**
+  Plugin settings (`download_images`,
+  `image_download_timeout_seconds`,
+  `skip_existing_canonical_urls`, `default_status`) were
+  silently replaced by an empty dict at startup because the
+  YAML lived under `plugins/bibliogon-plugin-medium-import/
+  config/` instead of `backend/config/plugins/`. Fix: place the
+  YAML in the canonical backend location PluginForge actually
+  reads.
+
+- **`BulkAiFillDock` hardcoded status hex colors** swapped for
+  `var(--success, …)` / `var(--warning, …)` theme tokens. Three
+  literal hex values (`#16a34a`, `#a16207` x2) violated the
+  "No Tailwind. Custom properties in
+  frontend/src/styles/global.css" architecture rule.
+
+- **MediumImportPage Home icon button**: added `aria-label`
+  (using the same i18n key as the existing `title` attribute,
+  so all 8 catalogs already cover it) and `data-testid` for
+  E2E hooks. Icon-only buttons require either of the two per
+  the coding-standards rule + the ai-workflow E2E selector
+  rule; the button had `title` only.
 
 ### Added
 
