@@ -159,6 +159,11 @@
     --bg-hover: #f5f0ea;
     --bg-editor: #ffffff;
 
+    /* Secondary surface for soft panels/cards/code blocks. Sits one
+       step "deeper" than --bg-card without flipping to --bg-secondary
+       (which is the page/sidebar fill). */
+    --surface-2: #f5f0ea;
+
     --text-primary: #1c1917;
     --text-secondary: #57534e;
     --text-muted: #78716c;
@@ -175,6 +180,14 @@
 
     --danger: #dc2626;
     --danger-hover: #b91c1c;
+    --danger-bg: #fef2f2;
+
+    /* Status colors for success/warning glyphs. Light-mode defaults;
+       all light palettes inherit these via :root. Dark variants
+       override in [data-theme="dark"] below; per-palette tuning can
+       layer on top if a specific theme warrants it. */
+    --success: #16a34a;
+    --warning: #a16207;
 
     --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
     --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
@@ -204,6 +217,8 @@
     --bg-card: #ffffff;
     --bg-hover: #e2e8f0;
     --bg-editor: #ffffff;
+
+    --surface-2: #f1f5f9;
 
     --text-primary: #0f172a;
     --text-secondary: #475569;
@@ -235,6 +250,8 @@
     --bg-hover: #d8dee9;
     --bg-editor: #ffffff;
 
+    --surface-2: #e5e9f0;
+
     --text-primary: #2e3440;
     --text-secondary: #4c566a;
     --text-muted: #7b88a1;
@@ -251,6 +268,7 @@
 
     --danger: #bf616a;
     --danger-hover: #a5444d;
+    --danger-bg: #f5e0e2;
 
     --shadow-sm: 0 1px 2px rgba(46, 52, 64, 0.06);
     --shadow-md: 0 4px 12px rgba(46, 52, 64, 0.08);
@@ -268,6 +286,8 @@
     --bg-hover: #2a2a2a;
     --bg-editor: #1e1e1e;
 
+    --surface-2: #2a2a2a;
+
     --text-primary: #e8e6e3;
     --text-secondary: #a8a29e;
     --text-muted: #6b6560;
@@ -284,6 +304,13 @@
 
     --danger: #ef4444;
     --danger-hover: #dc2626;
+    --danger-bg: rgba(239, 68, 68, 0.12);
+
+    /* Status colors (dark): brighter to maintain contrast against
+       darker surfaces. Inherited by every [data-app-theme=...][data-theme="dark"]
+       variant unless overridden per palette. */
+    --success: #4ade80;
+    --warning: #fbbf24;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -299,6 +326,8 @@
     --bg-hover: #334155;
     --bg-editor: #0f172a;
 
+    --surface-2: #334155;
+
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
     --text-muted: #475569;
@@ -312,6 +341,8 @@
 
     --border: #334155;
     --border-strong: #475569;
+
+    --danger-bg: rgba(239, 68, 68, 0.12);
 }
 
 /* --- Dark Mode (Nord) --- */
@@ -322,6 +353,8 @@
     --bg-card: #3b4252;
     --bg-hover: #434c5e;
     --bg-editor: #2e3440;
+
+    --surface-2: #434c5e;
 
     --text-primary: #eceff4;
     --text-secondary: #d8dee9;
@@ -339,6 +372,7 @@
 
     --danger: #bf616a;
     --danger-hover: #d08770;
+    --danger-bg: rgba(191, 97, 106, 0.18);
 }
 
 /* --- Classic Theme (Light) ---
@@ -352,6 +386,8 @@
     --bg-card: #faf6eb;
     --bg-hover: #e0d5c0;
     --bg-editor: #faf6eb;
+
+    --surface-2: #ebe1d0;
 
     --text-primary: #2a1f15;
     --text-secondary: #5c4733;
@@ -369,6 +405,7 @@
 
     --danger: #b8372a;
     --danger-hover: #8f2a1f;
+    --danger-bg: #f5e0d8;
 
     --shadow-sm: 0 1px 2px rgba(60, 40, 20, 0.06);
     --shadow-md: 0 4px 12px rgba(60, 40, 20, 0.10);
@@ -387,6 +424,8 @@
     --bg-hover: #2f2418;
     --bg-editor: #1a140d;
 
+    --surface-2: #2f2418;
+
     --text-primary: #e8d8c0;
     --text-secondary: #b8a583;
     --text-muted: #8b7855;
@@ -403,6 +442,7 @@
 
     --danger: #e67e6d;
     --danger-hover: #f08a79;
+    --danger-bg: rgba(230, 126, 109, 0.15);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -422,6 +462,8 @@
     --bg-hover: #e4e7ed;
     --bg-editor: #ffffff;
 
+    --surface-2: #eef0f4;
+
     --text-primary: #1a1d23;
     --text-secondary: #4a5159;
     --text-muted: #8b929c;
@@ -438,6 +480,7 @@
 
     --danger: #dc2626;
     --danger-hover: #b91c1c;
+    --danger-bg: #fef2f2;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -456,6 +499,8 @@
     --bg-hover: #2e3239;
     --bg-editor: #1c1e22;
 
+    --surface-2: #2e3239;
+
     --text-primary: #e4e6eb;
     --text-secondary: #9ba3af;
     --text-muted: #6b7280;
@@ -472,6 +517,7 @@
 
     --danger: #ef4444;
     --danger-hover: #dc2626;
+    --danger-bg: rgba(239, 68, 68, 0.12);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -491,6 +537,8 @@
     --bg-hover: #f0ede0;
     --bg-editor: #fdfcf7;
 
+    --surface-2: #f7f5ed;
+
     --text-primary: #1f2937;
     --text-secondary: #4b5563;
     --text-muted: #6b7280;
@@ -507,6 +555,7 @@
 
     --danger: #dc2626;
     --danger-hover: #b91c1c;
+    --danger-bg: #fdedea;
 
     --shadow-sm: 0 1px 2px rgba(60, 50, 30, 0.05);
     --shadow-md: 0 4px 12px rgba(60, 50, 30, 0.08);
@@ -532,6 +581,8 @@
     --bg-hover: #353228;
     --bg-editor: #1f1d18;
 
+    --surface-2: #353228;
+
     --text-primary: #f0ede0;
     --text-secondary: #b8b29a;
     --text-muted: #807a65;
@@ -548,6 +599,7 @@
 
     --danger: #ef4444;
     --danger-hover: #dc2626;
+    --danger-bg: rgba(239, 68, 68, 0.12);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
