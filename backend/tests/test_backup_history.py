@@ -113,6 +113,60 @@ def test_persistence_roundtrip(tmp_path):
     assert entries[0]["book_count"] == 2
 
 
+def test_list_sees_writes_from_other_instance_on_same_path(tmp_path):
+    """BACKUP-HISTORY-SINGLETON-01 regression pin.
+
+    Three modules each instantiate their own BackupHistory() at
+    import time (routers/backup.py, services/backup/backup_export.py,
+    services/backup/backup_import.py). Before the fix, a long-lived
+    instance B that was constructed BEFORE instance A wrote would
+    return its stale in-memory entries on ``list()``, never seeing
+    A's write. The smoke spec
+    ``import-flows.spec.ts::backup export adds a history entry``
+    failed for exactly this reason.
+
+    list() now reloads from disk so all instances converge through
+    the JSON file.
+    """
+    history_path = tmp_path / "history.json"
+
+    reader = BackupHistory(path=history_path)
+    assert reader.list() == []  # baseline; reader's in-memory cache is empty
+
+    writer = BackupHistory(path=history_path)
+    writer.add(action="backup", filename="late.bgb")
+
+    # Without the fix, reader.list() returns [] because reader's
+    # _entries was set at __init__ and writer's add() never touched it.
+    entries = reader.list()
+    assert len(entries) == 1, "reader did not see writer's add()"
+    assert entries[0]["filename"] == "late.bgb"
+
+
+def test_add_picks_up_writes_from_other_instance(tmp_path):
+    """Multi-worker safety: instance A writes, then instance B adds.
+    Without the fix, B's add() would re-save its stale in-memory list
+    (empty at __init__) and clobber A's entry.
+    """
+    history_path = tmp_path / "history.json"
+
+    worker_b = BackupHistory(path=history_path)
+    # worker_b's _entries is currently [].
+
+    worker_a = BackupHistory(path=history_path)
+    worker_a.add(action="backup", filename="first.bgb")
+
+    worker_b.add(action="restore", filename="second.bgb")
+
+    # Both entries must persist; without the _load() in add(), worker_b
+    # would have clobbered worker_a's write.
+    entries = json.loads(history_path.read_text(encoding="utf-8"))
+    filenames = [e["filename"] for e in entries]
+    assert "first.bgb" in filenames
+    assert "second.bgb" in filenames
+    assert len(entries) == 2
+
+
 def test_save_creates_parent_directory(tmp_path):
     """A nested path without an existing parent directory is created on save."""
     history_path = tmp_path / "nested" / "deeper" / "history.json"
