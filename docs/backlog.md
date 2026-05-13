@@ -180,15 +180,6 @@ store.
   so the abstraction is informed by real cases. Trigger: 5th
   one-shot OR a new contributor needs to write one.
 
-- **BACKEND-UPLOAD-SIZE-LIMIT-01**: enforce a backend body-size
-  cap for `POST /api/medium-import/import` (and audit other plugin
-  upload endpoints for the same gap). Frontend currently
-  hard-rejects ZIPs >200MB but the backend has no
-  `Request.body_size` ceiling, so a malicious or buggy client can
-  attempt arbitrary-size uploads. Effort: S (FastAPI middleware or
-  per-router body-size guard, returning HTTP 413). Trigger:
-  defense-in-depth, no specific user report.
-
 - **D-06-VALIDATION-01**: fresh-machine validation of the
   v0.28.0 cross-platform installer scripts (`install.command`,
   `install.ps1`, `install.cmd`). The scripts shipped unsigned
