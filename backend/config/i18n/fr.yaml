@@ -1,3 +1,13 @@
+_meta:
+  review_status: "partial: pending native speaker for new namespaces"
+  translator: "Claude (Anthropic)"
+  translation_date: "2026-05-12"
+  reference_lang: en
+  pending_namespaces:
+    - ai_template
+    - bulk_ai_fill
+    - comments
+
 ui:
   dashboard:
     title: "Mes livres"

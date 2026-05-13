@@ -37,6 +37,21 @@ def _flatten(value: object, prefix: str = "") -> dict[str, object]:
 def _load(lang: str) -> dict[str, object]:
     path = I18N_DIR / f"{lang}.yaml"
     assert path.exists(), f"Missing i18n file: {path}"
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    # The top-level ``_meta`` block is catalog metadata (review status,
+    # translator credits, reference language). Treat it like JSON
+    # comments — silent for parity / placeholder / structural checks.
+    # A dedicated test below verifies its shape when present.
+    if isinstance(raw, dict):
+        raw.pop("_meta", None)
+    return raw
+
+
+def _load_raw_with_meta(lang: str) -> dict[str, object]:
+    """Same as _load but preserves the _meta block. Used by the
+    review-status check below."""
+    path = I18N_DIR / f"{lang}.yaml"
+    assert path.exists(), f"Missing i18n file: {path}"
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
@@ -219,3 +234,55 @@ def test_advisory_untranslated_en(
                 terminalreporter.write_line(f"  - {k}")
             if len(suspects) > 10:
                 terminalreporter.write_line(f"  ... and {len(suspects) - 10} more")
+
+
+# --- Review-status marker (matches launcher i18n precedent) ----------------
+#
+# Catalogs whose translations were produced without a native-speaker pass
+# carry an explicit ``_meta`` block at the top of the YAML. Two-way contract:
+#
+#   1. If a marker is present, it MUST conform to the shape below.
+#   2. The reference catalog (en) and maintainer-validated catalog (de) MUST
+#      NOT carry the marker.
+#
+# REVIEW_STATUS.md (alongside the YAML files) is the human-readable companion.
+
+_VALID_REVIEW_STATUSES = {
+    "pending native speaker",
+    "partial: pending native speaker for new namespaces",
+}
+_MARKER_FORBIDDEN_FOR = {"en", "de"}
+
+
+@pytest.mark.parametrize("lang", [REFERENCE_LANG, *TARGET_LANGS])
+def test_review_status_marker_shape(lang: str) -> None:
+    """Verify the optional _meta block, when present, has the expected shape."""
+    raw = _load_raw_with_meta(lang)
+    meta = raw.get("_meta") if isinstance(raw, dict) else None
+    if lang in _MARKER_FORBIDDEN_FOR:
+        assert meta is None, (
+            f"{lang}: must not carry a _meta block — it is the reference or "
+            f"a maintainer-validated catalog. Remove _meta: from "
+            f"backend/config/i18n/{lang}.yaml."
+        )
+        return
+    if meta is None:
+        # Catalog has no marker; that's allowed for any catalog the
+        # maintainer treats as user-validated. Nothing to assert.
+        return
+    assert isinstance(meta, dict), (
+        f"{lang}: _meta must be a mapping, got {type(meta).__name__}."
+    )
+    status = meta.get("review_status")
+    assert status in _VALID_REVIEW_STATUSES, (
+        f"{lang}: _meta.review_status must be one of {sorted(_VALID_REVIEW_STATUSES)}, "
+        f"got {status!r}."
+    )
+    pending = meta.get("pending_namespaces")
+    assert isinstance(pending, list) and pending, (
+        f"{lang}: _meta.pending_namespaces must be a non-empty list naming the "
+        f"top-level ui.* sub-namespaces whose values are still passthru English."
+    )
+    assert all(isinstance(ns, str) for ns in pending), (
+        f"{lang}: _meta.pending_namespaces entries must be strings."
+    )
