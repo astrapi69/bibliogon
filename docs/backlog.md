@@ -87,6 +87,22 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
+  three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
+  ``comments``) that ship passthru-English in es / fr / el / pt /
+  tr / ja. Each affected catalog carries a top-level ``_meta:``
+  block with ``review_status``, ``translator``,
+  ``translation_date``, ``reference_lang``, and the explicit
+  ``pending_namespaces`` list.
+  ``backend/config/i18n/REVIEW_STATUS.md`` documents the
+  per-language status and the PR-based correction submission
+  flow (parallel to the v0.30.0 launcher precedent in
+  ``launcher/bibliogon_launcher/locales/REVIEW_STATUS.md``).
+  Trigger: native-speaker contact for any of the six pending
+  languages, OR pair with LAUNCHER-I18N-NATIVE-REVIEW-01's
+  reviewer outreach.
+  Filed by D3 pre-release UX audit 2026-05-12.
+
 - **CRYPTOGRAPHY-V48-MIGRATION-01**: bump
   ``cryptography`` from 46.0.7 to 48.x. Major bump of
   the crypto stack. Used by app/licensing.py (HMAC-SHA256
