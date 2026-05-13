@@ -465,4 +465,3 @@ red-lined had this shipped. The discipline of
 "`make test` ≠ per-plugin CI" continues to pay off —
 catching the conflict at lock-time is cheaper than
 catching it at CI time.
-
