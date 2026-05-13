@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 _PROJECT_BACKEND_DIR = Path(__file__).resolve().parent.parent
 _LEGACY_DB = _PROJECT_BACKEND_DIR / "bibliogon.db"
 _LEGACY_UPLOADS = _PROJECT_BACKEND_DIR / "uploads"
+_LEGACY_BACKUP_HISTORY = _PROJECT_BACKEND_DIR / "config" / "backup_history.json"
+_LEGACY_INSTALLED_PLUGINS = _PROJECT_BACKEND_DIR / "plugins" / "installed"
 
 MIGRATION_MARKER_FILENAME = ".migration-complete"
 
@@ -57,6 +59,19 @@ def _legacy_paths(target: Path) -> list[tuple[str, Path, Path]]:
     return [
         ("bibliogon.db", _LEGACY_DB, target / "bibliogon.db"),
         ("uploads", _LEGACY_UPLOADS, target / "uploads"),
+        # Pre-v0.31.0 the two paths below resolved CWD-relative
+        # ("config/..." for backup_history.json, "plugins/installed"
+        # for installed-plugin extraction) and crashed in Docker.
+        # Local dev paths (the only deployment that ever wrote one)
+        # live in the project tree under backend/. Migrate them
+        # under get_data_dir() per the "Filesystem isolation" rule
+        # in .claude/rules/lessons-learned.md.
+        ("backup_history.json", _LEGACY_BACKUP_HISTORY, target / "backup_history.json"),
+        (
+            "plugins/installed",
+            _LEGACY_INSTALLED_PLUGINS,
+            target / "plugins" / "installed",
+        ),
     ]
 
 

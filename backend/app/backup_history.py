@@ -1,4 +1,15 @@
-"""Backup history store: logs every backup and restore with metadata."""
+"""Backup history store: logs every backup and restore with metadata.
+
+Path resolution: the default ``path`` is ``None`` and resolved
+lazily via ``app.paths.get_data_dir()`` at instance construction.
+The previous default (``"config/backup_history.json"``,
+CWD-relative) was a path-isolation violation per
+``.claude/rules/lessons-learned.md`` ("Filesystem isolation:
+production data lives outside the project tree") and crashed
+with ``PermissionError`` for any deployment whose CWD pointed
+at a read-only project tree — the standard Docker setup is one
+such deployment. Tests may still pass an explicit path.
+"""
 
 import json
 import logging
@@ -6,16 +17,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.paths import get_data_dir
+
 logger = logging.getLogger(__name__)
 
-_DEFAULT_PATH = "config/backup_history.json"
 _MAX_ENTRIES = 100
 
 
 class BackupHistory:
     """Stores a chronological log of backup and restore operations."""
 
-    def __init__(self, path: str | Path = _DEFAULT_PATH) -> None:
+    def __init__(self, path: str | Path | None = None) -> None:
+        if path is None:
+            path = get_data_dir() / "backup_history.json"
         self.path = Path(path)
         self._entries: list[dict[str, Any]] = []
         self._load()

@@ -52,11 +52,19 @@ def sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
     legacy_root.mkdir()
     legacy_db = legacy_root / "bibliogon.db"
     legacy_uploads = legacy_root / "uploads"
+    legacy_backup_history = legacy_root / "config" / "backup_history.json"
+    legacy_installed_plugins = legacy_root / "plugins" / "installed"
 
     target = tmp_path / "target_data"
 
     monkeypatch.setattr(data_dir_migration, "_LEGACY_DB", legacy_db)
     monkeypatch.setattr(data_dir_migration, "_LEGACY_UPLOADS", legacy_uploads)
+    monkeypatch.setattr(
+        data_dir_migration, "_LEGACY_BACKUP_HISTORY", legacy_backup_history
+    )
+    monkeypatch.setattr(
+        data_dir_migration, "_LEGACY_INSTALLED_PLUGINS", legacy_installed_plugins
+    )
     monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(target))
     monkeypatch.delenv("BIBLIOGON_TEST", raising=False)
 
@@ -64,6 +72,8 @@ def sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
         "target": target,
         "legacy_db": legacy_db,
         "legacy_uploads": legacy_uploads,
+        "legacy_backup_history": legacy_backup_history,
+        "legacy_installed_plugins": legacy_installed_plugins,
     }
 
 

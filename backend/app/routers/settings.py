@@ -277,7 +277,9 @@ def _collect_available_plugins(active: set[str]) -> set[str]:
         available = set()
     available |= active
 
-    installed_dir = _base_dir / "plugins" / "installed"
+    from app.routers.plugin_install import get_installed_plugins_dir
+
+    installed_dir = get_installed_plugins_dir()
     if installed_dir.exists():
         for d in installed_dir.iterdir():
             if d.is_dir() and (d / "plugin.yaml").exists():

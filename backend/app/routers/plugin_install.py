@@ -1,4 +1,13 @@
-"""Plugin installation API - upload, install, uninstall ZIP plugins."""
+"""Plugin installation API - upload, install, uninstall ZIP plugins.
+
+The installed-plugin directory lives under ``get_data_dir() /
+"plugins" / "installed"`` so it does not depend on the project
+tree being writable. The previous location
+(``BASE_DIR / "plugins" / "installed"`` = ``backend/plugins/
+installed/``) crashed in Docker because the bind-mounted project
+tree was not writable by the container's user — see the
+"Filesystem isolation" rule in ``.claude/rules/lessons-learned.md``.
+"""
 
 import importlib
 import re
@@ -11,6 +20,7 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from app.paths import get_data_dir
 from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 router = APIRouter(prefix="/plugins", tags=["plugin-install"])
@@ -20,11 +30,21 @@ _manager: Any = None
 _installed_dir: Path = Path(".")
 
 
+def get_installed_plugins_dir() -> Path:
+    """Canonical writable directory for user-installed plugin ZIPs.
+
+    Always re-resolved via ``get_data_dir()`` so test env-var
+    overrides (``BIBLIOGON_DATA_DIR``) take effect even after this
+    module is imported.
+    """
+    return get_data_dir() / "plugins" / "installed"
+
+
 def configure(base_dir: Path, manager: Any) -> None:
     global _base_dir, _manager, _installed_dir
     _base_dir = base_dir
     _manager = manager
-    _installed_dir = base_dir / "plugins" / "installed"
+    _installed_dir = get_installed_plugins_dir()
     _installed_dir.mkdir(parents=True, exist_ok=True)
 
 
