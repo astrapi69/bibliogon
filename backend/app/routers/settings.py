@@ -1,15 +1,22 @@
-"""Settings API for reading and writing app and plugin configurations."""
+"""Settings API for reading and writing app and plugin configurations.
+
+All writes route through ``app.config_overlay`` so the project
+tree (``backend/config/...``) stays untouched at runtime. Reads
+deep-merge project defaults + the user-overlay layer under
+``get_data_dir() / "config"``. See the overlay module docstring
+for the full rationale (dev-docker write-permission quirk +
+filesystem-isolation rule).
+"""
 
 import logging
 import os
 from pathlib import Path
 from typing import Any
 
-import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app import config_overlay
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -71,8 +78,7 @@ def get_app_settings() -> dict[str, Any]:
     Underscore prefix on the flag marks it as a meta-field that the
     PATCH endpoint does NOT round-trip back into ``app.yaml``.
     """
-    path = _base_dir / "config" / "app.yaml"
-    config = _read_yaml(path) if path.exists() else {}
+    config = config_overlay.read_app_config_merged()
     config["_secrets_managed_externally"] = _secrets_managed_externally()
     return config
 
@@ -120,12 +126,11 @@ def add_pen_name(body: AddPenNameRequest) -> dict[str, Any]:
     if not cleaned:
         raise HTTPException(status_code=400, detail="name must be non-empty")
 
-    path = _base_dir / "config" / "app.yaml"
-    current = _read_yaml(path) if path.exists() else {}
+    current = config_overlay.load_app_config_for_edit()
     author = current.setdefault("author", {})
     name = (author.get("name") or "").strip()
     pen_names_raw = author.get("pen_names") or []
-    pen_names = [str(n).strip() for n in pen_names_raw if isinstance(n, str) and str(n).strip()]
+    pen_names = [n.strip() for n in pen_names_raw if isinstance(n, str) and n.strip()]
 
     if cleaned == name:
         return {"name": name, "pen_names": pen_names}
@@ -138,9 +143,8 @@ def add_pen_name(body: AddPenNameRequest) -> dict[str, Any]:
         pen_names.append(cleaned)
         author["pen_names"] = pen_names
 
-    _write_yaml(path, current)
-    if _manager:
-        _manager.reload_config()
+    config_overlay.write_user_app_config(current)
+    _refresh_manager_app_config()
 
     return {
         "name": author.get("name", "") or "",
@@ -159,8 +163,7 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
     Stripping prevents the project ``app.yaml`` from clobbering an
     externally-managed value.
     """
-    path = _base_dir / "config" / "app.yaml"
-    current = _read_yaml(path) if path.exists() else {}
+    current = config_overlay.load_app_config_for_edit()
 
     if _secrets_managed_externally():
         for parent_key, child_key in _SECRET_FIELDS:
@@ -200,11 +203,10 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
             cleaned.append(t)
         current["topics"] = cleaned
 
-    _write_yaml(path, current)
+    config_overlay.write_user_app_config(current)
 
     # Reload config in the manager so changes take effect
-    if _manager:
-        _manager.reload_config()
+    _refresh_manager_app_config()
 
     # Invalidate the plugin-status cache so the editor sees fresh state
     from app.main import invalidate_plugin_status_cache
@@ -219,18 +221,14 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
 
 @router.get("/plugins")
 def list_plugin_configs() -> dict[str, Any]:
-    """List all plugin configurations with their settings."""
-    plugins_dir = _base_dir / "config" / "plugins"
+    """List all plugin configurations with their settings.
+
+    Returns the merged view (bundled defaults + user-overlay
+    overrides) per plugin known via either layer.
+    """
     result: dict[str, Any] = {}
-
-    if not plugins_dir.exists():
-        return result
-
-    for yaml_file in sorted(plugins_dir.glob("*.yaml")):
-        plugin_name = yaml_file.stem
-        config = _read_yaml(yaml_file)
-        result[plugin_name] = config
-
+    for plugin_name in config_overlay.list_merged_plugin_names():
+        result[plugin_name] = config_overlay.read_plugin_config_merged(plugin_name)
     return result
 
 
@@ -240,8 +238,10 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     if not _manager:
         return []
 
-    plugins_dir = _base_dir / "config" / "plugins"
-    app_config = _manager.get_app_config()
+    # Plugin discovery uses the MERGED app config so the UI reflects
+    # Settings writes (enabled/disabled toggles, etc.) immediately
+    # after a PATCH without waiting for a restart.
+    app_config = config_overlay.read_app_config_merged()
     plugins_cfg = app_config.get("plugins", {})
     enabled = set(plugins_cfg.get("enabled", []) or [])
     disabled = set(plugins_cfg.get("disabled", []) or [])
@@ -249,23 +249,22 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     available = _collect_available_plugins(active)
 
     result = []
-    if plugins_dir.exists():
-        for yaml_file in sorted(plugins_dir.glob("*.yaml")):
-            name = yaml_file.stem
-            if name not in available:
-                continue
-            tier = _read_license_tier(yaml_file)
-            has_license = _check_plugin_license(name, tier)
-            result.append(
-                {
-                    "name": name,
-                    "has_config": True,
-                    "enabled": name in enabled and name not in disabled,
-                    "loaded": name in active,
-                    "license_tier": tier,
-                    "has_license": has_license,
-                }
-            )
+    for name in config_overlay.list_merged_plugin_names():
+        if name not in available:
+            continue
+        cfg = config_overlay.read_plugin_config_merged(name)
+        tier = _resolve_license_tier(cfg)
+        has_license = _check_plugin_license(name, tier)
+        result.append(
+            {
+                "name": name,
+                "has_config": True,
+                "enabled": name in enabled and name not in disabled,
+                "loaded": name in active,
+                "license_tier": tier,
+                "has_license": has_license,
+            }
+        )
     return result
 
 
@@ -296,19 +295,19 @@ def _collect_available_plugins(active: set[str]) -> set[str]:
     return available
 
 
-def _read_license_tier(yaml_path: Path) -> str:
-    """Read license tier from a plugin YAML config file."""
-    try:
-        with open(yaml_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        meta = cfg.get("plugin", {})
-        explicit = meta.get("license_tier", "")
-        if explicit in ("core", "premium"):
-            return str(explicit)
-        license_type = meta.get("license", "MIT")
-        return "premium" if license_type not in ("MIT", "free", "Free") else "core"
-    except Exception:
-        return "core"
+def _resolve_license_tier(cfg: dict[str, Any]) -> str:
+    """Resolve the license tier from a plugin's merged config dict.
+
+    Explicit ``plugin.license_tier`` (``"core"`` / ``"premium"``)
+    wins; otherwise fall back to ``plugin.license`` (``MIT``,
+    ``Free`` -> ``core``; anything else -> ``premium``).
+    """
+    meta = cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
+    explicit = meta.get("license_tier", "")
+    if explicit in ("core", "premium"):
+        return str(explicit)
+    license_type = meta.get("license", "MIT")
+    return "premium" if license_type not in ("MIT", "free", "Free") else "core"
 
 
 def _check_plugin_license(name: str, tier: str) -> bool:
@@ -345,11 +344,8 @@ class PluginCreate(BaseModel):
 
 @router.post("/plugins")
 def create_plugin_config(body: PluginCreate) -> dict[str, Any]:
-    """Create a new plugin configuration file."""
-    plugins_dir = _base_dir / "config" / "plugins"
-    path = plugins_dir / f"{body.name}.yaml"
-
-    if path.exists():
+    """Create a new plugin configuration file in the user overlay."""
+    if config_overlay.plugin_config_exists(body.name):
         raise HTTPException(status_code=409, detail=f"Plugin config '{body.name}' already exists")
 
     config: dict[str, Any] = {
@@ -365,43 +361,46 @@ def create_plugin_config(body: PluginCreate) -> dict[str, Any]:
         "settings": body.settings,
     }
 
-    _write_yaml(path, config)
+    config_overlay.write_user_plugin_config(body.name, config)
     return config
 
 
 @router.delete("/plugins/{plugin_name}")
 def delete_plugin_config(plugin_name: str) -> dict[str, str]:
-    """Delete a plugin configuration file and disable the plugin."""
-    plugins_dir = _base_dir / "config" / "plugins"
-    path = plugins_dir / f"{plugin_name}.yaml"
+    """Delete a plugin configuration and disable the plugin.
 
-    if not path.exists():
+    Only the user-overlay copy is removed; bundled defaults in the
+    project tree are left untouched. If the plugin only exists in
+    the user overlay, this removes it entirely; if it has a bundled
+    counterpart, subsequent reads will fall back to the bundled
+    defaults.
+    """
+    if not config_overlay.plugin_config_exists(plugin_name):
         raise HTTPException(status_code=404, detail=f"Plugin config '{plugin_name}' not found")
 
     # Deactivate if active
     if _manager and plugin_name in _active_plugin_names():
         _manager.deactivate_plugin(plugin_name)
 
-    # Remove from enabled list
-    app_path = _base_dir / "config" / "app.yaml"
-    if app_path.exists():
-        app_config = _read_yaml(app_path)
-        enabled = app_config.get("plugins", {}).get("enabled", [])
-        if plugin_name in enabled:
-            enabled.remove(plugin_name)
-            _write_yaml(app_path, app_config)
+    # Remove from enabled list in the user overlay so the deletion
+    # survives a restart.
+    app_config = config_overlay.load_app_config_for_edit()
+    enabled = app_config.get("plugins", {}).get("enabled", [])
+    if plugin_name in enabled:
+        enabled.remove(plugin_name)
+        config_overlay.write_user_app_config(app_config)
+        _refresh_manager_app_config()
 
-    path.unlink()
+    config_overlay.delete_user_plugin_config(plugin_name)
     return {"plugin": plugin_name, "status": "removed"}
 
 
 @router.get("/plugins/{plugin_name}")
 def get_plugin_config(plugin_name: str) -> dict[str, Any]:
-    """Get configuration for a specific plugin."""
-    path = _base_dir / "config" / "plugins" / f"{plugin_name}.yaml"
-    if not path.exists():
+    """Get configuration for a specific plugin (merged view)."""
+    if not config_overlay.plugin_config_exists(plugin_name):
         raise HTTPException(status_code=404, detail=f"Plugin config '{plugin_name}' not found")
-    return _read_yaml(path)
+    return config_overlay.read_plugin_config_merged(plugin_name)
 
 
 class PluginSettingsUpdate(BaseModel):
@@ -410,14 +409,19 @@ class PluginSettingsUpdate(BaseModel):
 
 @router.patch("/plugins/{plugin_name}")
 def update_plugin_settings(plugin_name: str, body: PluginSettingsUpdate) -> dict[str, Any]:
-    """Update settings section of a plugin config (merges with existing)."""
-    path = _base_dir / "config" / "plugins" / f"{plugin_name}.yaml"
-    if not path.exists():
+    """Update the ``settings`` section of a plugin config.
+
+    Writes to the user-overlay layer only. The bundled defaults
+    file in the project tree is never modified, so a future
+    upstream change to ``settings:`` defaults reappears whenever
+    the user-overlay file is removed.
+    """
+    if not config_overlay.plugin_config_exists(plugin_name):
         raise HTTPException(status_code=404, detail=f"Plugin config '{plugin_name}' not found")
 
-    current = _read_yaml(path)
+    current = config_overlay.load_plugin_config_for_edit(plugin_name)
     current.setdefault("settings", {}).update(body.settings)
-    _write_yaml(path, current)
+    config_overlay.write_user_plugin_config(plugin_name, current)
 
     # Update loaded plugin config if active
     if _manager:
@@ -433,9 +437,8 @@ def update_plugin_settings(plugin_name: str, body: PluginSettingsUpdate) -> dict
 
 @router.post("/plugins/{plugin_name}/enable")
 def enable_plugin(plugin_name: str) -> dict[str, str]:
-    """Enable a plugin in app config."""
-    app_path = _base_dir / "config" / "app.yaml"
-    config = _read_yaml(app_path) if app_path.exists() else {}
+    """Enable a plugin in the user-overlay app config."""
+    config = config_overlay.load_app_config_for_edit()
 
     enabled = config.setdefault("plugins", {}).setdefault("enabled", [])
     disabled = config["plugins"].setdefault("disabled", [])
@@ -445,15 +448,15 @@ def enable_plugin(plugin_name: str) -> dict[str, str]:
     if plugin_name in disabled:
         disabled.remove(plugin_name)
 
-    _write_yaml(app_path, config)
+    config_overlay.write_user_app_config(config)
+    _refresh_manager_app_config()
     return {"plugin": plugin_name, "status": "enabled"}
 
 
 @router.post("/plugins/{plugin_name}/disable")
 def disable_plugin(plugin_name: str) -> dict[str, str]:
-    """Disable a plugin in app config."""
-    app_path = _base_dir / "config" / "app.yaml"
-    config = _read_yaml(app_path) if app_path.exists() else {}
+    """Disable a plugin in the user-overlay app config."""
+    config = config_overlay.load_app_config_for_edit()
 
     enabled = config.setdefault("plugins", {}).setdefault("enabled", [])
     disabled = config["plugins"].setdefault("disabled", [])
@@ -463,7 +466,8 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
     if plugin_name not in disabled:
         disabled.append(plugin_name)
 
-    _write_yaml(app_path, config)
+    config_overlay.write_user_app_config(config)
+    _refresh_manager_app_config()
 
     # Deactivate the plugin if currently active
     if _manager and plugin_name in _active_plugin_names():
@@ -475,10 +479,26 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
 # --- Helpers ---
 
 
-def _read_yaml(path: Path) -> dict[str, Any]:
-    data = read_yaml_roundtrip(path)
-    return data if isinstance(data, dict) else {}
+def _refresh_manager_app_config() -> None:
+    """Reload the plugin manager's app-config snapshot.
 
-
-def _write_yaml(path: Path, data: dict[str, Any]) -> None:
-    write_yaml_roundtrip(path, data)
+    The manager's ``reload_config()`` reads from its own
+    ``_config_path`` (project app.yaml); after a write to the user
+    overlay we then overwrite the in-memory snapshot with the merged
+    view so subsequent ``manager.get_app_config()`` callers see the
+    user's changes without a backend restart.
+    """
+    if not _manager:
+        return
+    try:
+        _manager.reload_config()
+    except Exception:  # noqa: BLE001 - diagnostic only; reload best-effort
+        logger.exception("Plugin manager reload_config() failed; continuing.")
+    merged = config_overlay.read_app_config_merged()
+    try:
+        _manager._app_config = merged  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - manager API change protection
+        logger.warning(
+            "Could not patch _manager._app_config after overlay write; "
+            "the manager's view may be stale until the next restart."
+        )

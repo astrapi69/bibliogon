@@ -18,6 +18,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 
+from app import config_overlay
 from app.main import app
 from app.routers import plugin_install as pi_module
 
@@ -92,21 +93,33 @@ def temp_base(tmp_path):
 
 
 @pytest.fixture
-def client(temp_base):
-    """TestClient with plugin_install module pointing at temp dirs."""
+def client(temp_base, monkeypatch):
+    """TestClient with plugin_install module pointing at temp dirs.
+
+    After PROD-WRITES-ARCHITECTURE-01 the install path writes the
+    extracted ``plugin.yaml`` through ``config_overlay`` (data-dir
+    user-overlay) and the ``plugins.enabled`` mutation likewise.
+    Tests collapse the two overlay layers onto ``temp_base /
+    "config"`` so the existing seed remains the source of truth
+    and the assertions about written files still hold.
+    """
     original_base = pi_module._base_dir
     original_installed = pi_module._installed_dir
     original_manager = pi_module._manager
+    original_project_cfg = config_overlay.get_project_config_dir()
 
     pi_module._base_dir = temp_base
     pi_module._installed_dir = temp_base / "plugins" / "installed"
     pi_module._manager = None  # skip dynamic registration
+    config_overlay.set_project_config_dir(temp_base / "config")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(temp_base))
 
     yield TestClient(app)
 
     pi_module._base_dir = original_base
     pi_module._installed_dir = original_installed
     pi_module._manager = original_manager
+    config_overlay.set_project_config_dir(original_project_cfg)
 
 
 # --- POST /api/plugins/install ---

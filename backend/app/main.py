@@ -194,22 +194,32 @@ def _load_override_file(path: Path) -> dict[str, Any]:
 
 
 def _load_app_config() -> dict[str, Any]:
-    """Read app.yaml + user override + env-vars fresh from disk.
+    """Read app.yaml + user overlay + secrets override + env-vars.
 
-    Three-layer merge: project ``app.yaml`` (defaults) ← user override
-    file (~/.config/bibliogon/secrets.yaml or %APPDATA%/...) ← env-vars
-    (BIBLIOGON_*). Override-wins semantics; env-vars beat both.
+    Four-layer merge:
 
-    Called per-request where freshness matters; cheap (small yaml
-    files, no caching needed).
+    1. Project ``app.yaml`` (defaults shipped with the app).
+    2. User-overlay ``<data_dir>/config/app.yaml`` (Settings UI
+       writes; see ``app.config_overlay``).
+    3. Secrets override ``~/.config/bibliogon/secrets.yaml``
+       (long-standing user-home secrets file).
+    4. Environment variables (``BIBLIOGON_AI_API_KEY`` etc.).
+
+    Higher layers win. Lists REPLACE; dicts deep-merge. Called
+    per-request where freshness matters; cheap (small yaml files,
+    no caching needed).
     """
+    from app import config_overlay
+
     try:
         with open(CONFIG_PATH, encoding="utf-8") as f:
             project = yaml.safe_load(f) or {}
     except Exception:
         project = {}
+    user_overlay = config_overlay._read_yaml(config_overlay._user_app_path())
     override = _load_override_file(_get_user_override_path())
-    merged = _deep_merge(project, override)
+    merged = _deep_merge(project, user_overlay)
+    merged = _deep_merge(merged, override)
     return _apply_env_overrides(merged)
 
 
@@ -299,6 +309,33 @@ manager = PluginManager(
     api_version="1",
 )
 manager.register_hookspecs(BibliogonHookSpec)
+
+
+def _sync_manager_with_overlay() -> None:
+    """Overwrite ``manager._app_config`` with the merged overlay view.
+
+    Pluginforge's ``PluginManager`` reads its app config snapshot
+    directly from ``_config_path`` (project app.yaml). Bibliogon
+    layers a user-overlay on top of that (see
+    ``app.config_overlay``), so the manager's snapshot would be
+    stale right after import. Call this once at startup before
+    ``discover_plugins`` runs so the enabled / disabled lists
+    reflect Settings-UI changes made on a previous run, and again
+    after any reload to keep state coherent.
+    """
+    from app import config_overlay
+
+    merged = config_overlay.read_app_config_merged()
+    try:
+        manager._app_config = merged  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - pluginforge API change protection
+        logger.warning(
+            "Could not patch PluginManager._app_config with overlay view; "
+            "Settings-UI changes will not take effect until next restart."
+        )
+
+
+_sync_manager_with_overlay()
 
 # Configure routes with manager and licensing
 licenses.configure(manager, license_validator, license_store)
@@ -501,8 +538,7 @@ try:
     _max_upload_bytes = _resolve_max_bytes_from_config(_load_app_config())
 except Exception as _cfg_exc:
     logging.getLogger(__name__).warning(
-        "BodySizeLimitMiddleware: config load failed (%s); "
-        "falling back to default cap.",
+        "BodySizeLimitMiddleware: config load failed (%s); falling back to default cap.",
         _cfg_exc,
     )
     _max_upload_bytes = 500 * 1024 * 1024

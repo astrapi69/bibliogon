@@ -27,14 +27,21 @@ def project_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     and monkeypatch the loader so it reads from there. Returns the
     project yaml path so tests can write content to it.
 
-    Each test gets its own tmp_path so override-file presence and
-    env-var state are isolated.
+    Each test gets its own tmp_path so override-file presence,
+    env-var state, AND the v0.32.x ``config_overlay`` user-overlay
+    file are isolated from any state a previous test may have
+    written into the session-scope ``BIBLIOGON_DATA_DIR``.
     """
     project = tmp_path / "app.yaml"
     project.write_text("", encoding="utf-8")
     monkeypatch.setattr(main_module, "CONFIG_PATH", project)
     override = tmp_path / "secrets.yaml"
     monkeypatch.setattr(main_module, "_get_user_override_path", lambda: override)
+    # Isolate the v0.32.x config-overlay layer too: point
+    # BIBLIOGON_DATA_DIR at a per-test tmp so leftover writes from
+    # earlier tests (Settings PATCH, plugin install/uninstall) do
+    # not pollute the merged view this loader returns.
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path / "user-data"))
     # Always start with a clean env so env-var tests opt-in.
     monkeypatch.delenv("BIBLIOGON_AI_API_KEY", raising=False)
     return project

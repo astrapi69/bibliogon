@@ -7,9 +7,15 @@ tree being writable. The previous location
 installed/``) crashed in Docker because the bind-mounted project
 tree was not writable by the container's user — see the
 "Filesystem isolation" rule in ``.claude/rules/lessons-learned.md``.
+
+Plugin metadata writes (the YAML config inside the ZIP and the
+``plugins.enabled`` mutation in app.yaml) route through
+``app.config_overlay`` for the same reason; see that module's
+docstring.
 """
 
 import importlib
+import logging
 import re
 import shutil
 import sys
@@ -20,9 +26,10 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from app import config_overlay
 from app.paths import get_data_dir
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/plugins", tags=["plugin-install"])
 
 _base_dir: Path = Path(".")
@@ -142,7 +149,14 @@ def _validate_plugin_zip(zf: zipfile.ZipFile) -> tuple[str, str, dict]:
 
 
 def _extract_plugin(zf: zipfile.ZipFile, plugin_name: str) -> Path:
-    """Extract plugin ZIP to installed directory and copy config."""
+    """Extract plugin ZIP to installed directory and copy config.
+
+    Plugin code lands under ``get_data_dir() / "plugins" / "installed"
+    / <plugin_name>``. The ZIP's ``plugin.yaml`` is then routed
+    through the config overlay (``get_data_dir() / "config" /
+    "plugins" / <plugin_name>.yaml``) so the install path never
+    writes into the project tree.
+    """
     install_path = _installed_dir / plugin_name
     if install_path.exists():
         shutil.rmtree(install_path)
@@ -158,8 +172,12 @@ def _extract_plugin(zf: zipfile.ZipFile, plugin_name: str) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(zf.read(info.filename))
 
-    config_dest = _base_dir / "config" / "plugins" / f"{plugin_name}.yaml"
-    shutil.copy2(install_path / "plugin.yaml", config_dest)
+    extracted_yaml = install_path / "plugin.yaml"
+    if extracted_yaml.exists():
+        with open(extracted_yaml, encoding="utf-8") as f:
+            plugin_yaml = yaml.safe_load(f) or {}
+        if isinstance(plugin_yaml, dict):
+            config_overlay.write_user_plugin_config(plugin_name, plugin_yaml)
 
     install_str = str(install_path)
     if install_str not in sys.path:
@@ -194,18 +212,16 @@ def _register_plugin(plugin_name: str, package_name: str, plugin_config: dict) -
 
 
 def _enable_plugin_in_config(plugin_name: str) -> None:
-    """Add plugin to enabled list in app.yaml."""
-    app_yaml_path = _base_dir / "config" / "app.yaml"
-    if not app_yaml_path.exists():
-        return
-    app_config = _read_yaml(app_yaml_path)
+    """Add plugin to the enabled list in the user-overlay app.yaml."""
+    app_config = config_overlay.load_app_config_for_edit()
     enabled = app_config.setdefault("plugins", {}).setdefault("enabled", [])
     disabled = app_config["plugins"].setdefault("disabled", [])
     if plugin_name not in enabled:
         enabled.append(plugin_name)
     if plugin_name in disabled:
         disabled.remove(plugin_name)
-    _write_yaml(app_yaml_path, app_config)
+    config_overlay.write_user_app_config(app_config)
+    _refresh_manager_app_config()
 
 
 @router.delete("/install/{plugin_name}")
@@ -226,21 +242,18 @@ def uninstall_plugin(plugin_name: str) -> dict[str, str]:
         if plugin_name in active_names:
             _manager.deactivate_plugin(plugin_name)
 
-    # Remove from enabled list
-    app_yaml_path = _base_dir / "config" / "app.yaml"
-    if app_yaml_path.exists():
-        app_config = _read_yaml(app_yaml_path)
-        enabled = app_config.get("plugins", {}).get("enabled", [])
-        # Ensure `plugins.disabled` exists in the YAML even if unused here.
-        app_config.get("plugins", {}).setdefault("disabled", [])
-        if plugin_name in enabled:
-            enabled.remove(plugin_name)
-        _write_yaml(app_yaml_path, app_config)
+    # Remove from enabled list in the user-overlay app config.
+    app_config = config_overlay.read_app_config_merged()
+    enabled = app_config.get("plugins", {}).get("enabled", [])
+    # Ensure `plugins.disabled` exists in the YAML even if unused here.
+    app_config.setdefault("plugins", {}).setdefault("disabled", [])
+    if plugin_name in enabled:
+        enabled.remove(plugin_name)
+    config_overlay.write_user_app_config(app_config)
+    _refresh_manager_app_config()
 
-    # Remove plugin config
-    config_path = _base_dir / "config" / "plugins" / f"{plugin_name}.yaml"
-    if config_path.exists():
-        config_path.unlink()
+    # Remove plugin config from the user overlay.
+    config_overlay.delete_user_plugin_config(plugin_name)
 
     # Remove installed files
     shutil.rmtree(install_path)
@@ -267,7 +280,10 @@ def list_installed_plugins() -> list[dict[str, Any]]:
         if not yaml_path.exists():
             continue
 
-        config = _read_yaml(yaml_path)
+        with open(yaml_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        if not isinstance(config, dict):
+            config = {}
         meta = config.get("plugin", {})
         active_names = set()
         if _manager:
@@ -291,10 +307,25 @@ def list_installed_plugins() -> list[dict[str, Any]]:
 # --- Helpers ---
 
 
-def _read_yaml(path: Path) -> dict[str, Any]:
-    data = read_yaml_roundtrip(path)
-    return data if isinstance(data, dict) else {}
+def _refresh_manager_app_config() -> None:
+    """Reload + re-merge the plugin manager's app-config snapshot.
 
-
-def _write_yaml(path: Path, data: dict[str, Any]) -> None:
-    write_yaml_roundtrip(path, data)
+    Mirrors ``settings._refresh_manager_app_config`` so plugin
+    install / uninstall updates take effect without a restart.
+    Best-effort: reload failures + manager-API drift log a warning
+    but never raise.
+    """
+    if not _manager:
+        return
+    try:
+        _manager.reload_config()
+    except Exception:  # noqa: BLE001 - reload best-effort
+        logger.exception("Plugin manager reload_config() failed; continuing.")
+    merged = config_overlay.read_app_config_merged()
+    try:
+        _manager._app_config = merged  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - manager API change protection
+        logger.warning(
+            "Could not patch _manager._app_config after overlay write; "
+            "the manager's view may be stale until the next restart."
+        )

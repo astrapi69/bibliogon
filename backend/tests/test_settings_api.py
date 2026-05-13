@@ -18,6 +18,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 
+from app import config_overlay
 from app.main import app
 from app.routers import settings as settings_module
 
@@ -57,7 +58,14 @@ def temp_base(tmp_path):
 
 @pytest.fixture
 def client(temp_base, monkeypatch):
-    """TestClient with settings module pointing at temp dir.
+    """TestClient with config overlay collapsed to ``temp_base``.
+
+    After PROD-WRITES-ARCHITECTURE-01 (v0.32.x) the production
+    settings router reads ``_PROJECT_CONFIG_DIR / "app.yaml"`` and
+    merges ``<data_dir>/config/app.yaml`` on top. The two paths
+    differ in production (project tree vs platformdirs data dir)
+    but in tests we point both at ``temp_base / "config"`` so the
+    existing single-file seed remains the source of truth.
 
     Also redirects the user-override path resolution to ``temp_base``
     so the secrets-refactor flag (T-XX) does not see the developer's
@@ -68,9 +76,12 @@ def client(temp_base, monkeypatch):
 
     original_base = settings_module._base_dir
     original_manager = settings_module._manager
+    original_project_cfg = config_overlay.get_project_config_dir()
 
     settings_module._base_dir = temp_base
     settings_module._manager = None
+    config_overlay.set_project_config_dir(temp_base / "config")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(temp_base))
 
     monkeypatch.setattr(
         main_module,
@@ -83,6 +94,7 @@ def client(temp_base, monkeypatch):
 
     settings_module._base_dir = original_base
     settings_module._manager = original_manager
+    config_overlay.set_project_config_dir(original_project_cfg)
 
 
 # --- GET /api/settings/app ---
@@ -559,12 +571,18 @@ def test_add_pen_name_sets_real_name_when_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(settings_module, "_base_dir", tmp_path)
     monkeypatch.setattr(settings_module, "_manager", None)
 
-    c = TestClient(app)
-    resp = c.post("/api/settings/author/pen-name", json={"name": "First"})
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["name"] == "First"
-    assert body["pen_names"] == []
+    original_project_cfg = config_overlay.get_project_config_dir()
+    config_overlay.set_project_config_dir(tmp_path / "config")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
+    try:
+        c = TestClient(app)
+        resp = c.post("/api/settings/author/pen-name", json={"name": "First"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["name"] == "First"
+        assert body["pen_names"] == []
+    finally:
+        config_overlay.set_project_config_dir(original_project_cfg)
 
 
 def test_add_pen_name_rejects_blank(client):

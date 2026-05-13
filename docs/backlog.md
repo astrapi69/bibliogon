@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 26 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 25 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,26 +86,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **PROD-WRITES-ARCHITECTURE-01**: route ALL runtime writes through
-  ``get_data_dir() / "user-overrides.yaml"`` (or analogous per-domain
-  paths) with merge-on-read semantics. Covers the 10+ call sites in
-  ``backend/app/routers/settings.py`` that read+write
-  ``_base_dir / "config" / "app.yaml"`` (Settings UI writes for
-  language, theme, plugin enable/disable, plugin YAML config) plus
-  the install/uninstall write paths in
-  ``backend/app/routers/plugin_install.py:198,230``. v0.31.0 Phase 2
-  fixed ``backup_history.json`` and ``plugins/installed/`` but left
-  the broader pattern. Production Docker is currently fine — the
-  ``USER bibliogon`` + ``chown -R bibliogon:bibliogon /app`` in
-  ``backend/Dockerfile`` makes ``/app/config/`` writable — but
-  dev-docker (with ``./backend:/app`` bind mount inheriting the
-  host's astrapi69 UID) crashes plugin install + Settings updates.
-  Trigger: dev-docker write failures persist beyond Phase 2 + new
-  contributors stumble on it, OR plugin-install path becomes
-  production-affecting (e.g. if the prod Dockerfile drops the
-  config chown). Filed by Phase 2 v0.31.0 release session
-  2026-05-13.
 
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,

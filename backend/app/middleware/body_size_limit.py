@@ -72,8 +72,7 @@ def _resolve_max_bytes_from_config(app_config: dict[str, Any] | None) -> int:
         return DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
     if mb <= 0:
         logger.warning(
-            "BodySizeLimitMiddleware: app.max_upload_mb=%d is "
-            "non-positive; falling back to %d MB.",
+            "BodySizeLimitMiddleware: app.max_upload_mb=%d is non-positive; falling back to %d MB.",
             mb,
             DEFAULT_MAX_UPLOAD_MB,
         )
@@ -133,8 +132,7 @@ class BodySizeLimitMiddleware:
         content_length = _content_length_from_scope(scope)
         if content_length is not None and content_length > self.max_bytes:
             logger.warning(
-                "BodySizeLimitMiddleware: rejected upload via "
-                "Content-Length: %d > %d (path=%s)",
+                "BodySizeLimitMiddleware: rejected upload via Content-Length: %d > %d (path=%s)",
                 content_length,
                 self.max_bytes,
                 scope.get("path"),

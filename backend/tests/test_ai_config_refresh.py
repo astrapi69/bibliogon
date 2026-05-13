@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app import config_overlay
 from app.main import app, invalidate_plugin_status_cache
 from app.routers import settings as settings_module
 
@@ -42,13 +43,24 @@ def temp_base(tmp_path):
 
 
 @pytest.fixture
-def client(temp_base):
-    """TestClient with settings and main.py both reading from temp dir."""
+def client(temp_base, monkeypatch):
+    """TestClient with overlay layers collapsed to ``temp_base``.
+
+    After PROD-WRITES-ARCHITECTURE-01 the settings router writes
+    through ``config_overlay`` and reads via the merged view.
+    Pointing both the project layer (``_PROJECT_CONFIG_DIR``) and
+    the user-overlay layer (``BIBLIOGON_DATA_DIR``) at
+    ``temp_base / "config"`` lets the existing single-file seed
+    keep working end-to-end.
+    """
     original_base = settings_module._base_dir
     original_manager = settings_module._manager
+    original_project_cfg = config_overlay.get_project_config_dir()
 
     settings_module._base_dir = temp_base
     settings_module._manager = None
+    config_overlay.set_project_config_dir(temp_base / "config")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(temp_base))
 
     config_path = temp_base / "config" / "app.yaml"
 
@@ -68,6 +80,7 @@ def client(temp_base):
 
     settings_module._base_dir = original_base
     settings_module._manager = original_manager
+    config_overlay.set_project_config_dir(original_project_cfg)
 
 
 # --- Regression: stale config ---
