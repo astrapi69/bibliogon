@@ -1484,3 +1484,68 @@ Concrete rule for any bulk-bump pass:
    appear when you actually run that plugin's
    ``poetry install``. Per-plugin CI catches this; a
    one-time pre-flight runs faster.
+
+## Audit findings need production-vs-dev environment classification before urgency-tier
+
+Surfaced during the v0.31.0 pre-release verification (2026-05-13).
+
+The D2 verification audit reported "GET /api/backup/export
+returns HTTP 500 with `PermissionError: 'config/backup_history.json'`
+in Docker" and classified it as a data-loss-class release-
+blocker. The technical finding was correct: the path was a
+CWD-relative literal that violated the explicit
+"Filesystem isolation: production data lives outside the
+project tree" rule. But the urgency classification was
+overstated by one environment-class. The actual breakdown:
+
+- **Dev Docker** (the `docker-compose.yml` bind-mount path
+  `./backend:/app`): the bind mount inherits the host's UID,
+  so the container's `bibliogon` user cannot write to the
+  project tree. The endpoint crashes; the bug is real for
+  every contributor who runs `docker compose up` from the dev
+  compose.
+- **Production Docker** (`docker-compose.prod.yml`, no bind
+  mount on `/app`): the Dockerfile does
+  `RUN groupadd -r bibliogon && useradd -r -g bibliogon
+  bibliogon && mkdir -p /app/data && chown -R bibliogon:bibliogon
+  /app` then `USER bibliogon`. The container's user OWNS the
+  entire `/app/` tree including `config/`. The CWD-relative
+  write happens to land in a writable directory. The bug
+  **never fired in production**.
+
+The fix still ships (defense-in-depth + the filesystem-
+isolation rule still applies + alignment to a consistent
+behaviour across both environments), but the urgency tier is
+"correct architectural cleanup" not "data-loss class
+release-blocker". Verification command for any future audit
+that suspects a Docker write-path failure:
+
+```bash
+docker exec <prod-container> sh -c \
+    "ls -la /app/<the-path-under-suspicion> && \
+     touch /app/<dir>/probe-write && rm /app/<dir>/probe-write && \
+     echo WRITABLE || echo READONLY"
+```
+
+This separates "broken in dev only" from "broken in prod
+also" before scope-setting any fix.
+
+**Rule for future audit reports**: when a finding is "X
+crashes with PermissionError in Docker", the audit MUST
+distinguish which Docker setup (dev with bind mount vs prod
+with named volume) before assigning urgency. The same code
+path can be fatal in one and harmless in the other. Audit
+reports that omit the environment distinction will lead to
+either over- or under-urgent triage.
+
+**Concrete artefact from the v0.31.0 cycle**: the Phase 2
+path-isolation fix (commit `a341b57`) is correct, ships,
+and is properly motivated by the architecture rule. But the
+"prod blocker" framing was wrong — it was a dev-environment
+blocker AND an architecture-consistency improvement, NOT a
+production data-loss bug. The broader fix for the 10+
+remaining `_base_dir / "config" / "app.yaml"` writes in
+`backend/app/routers/settings.py` was deferred as
+`PROD-WRITES-ARCHITECTURE-01` (P3) on the same reasoning:
+production is fine, dev quirk eventually deserves the
+broader cleanup but not at v0.31.0 release-blocker urgency.
