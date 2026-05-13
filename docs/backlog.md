@@ -123,19 +123,6 @@ store.
   reviewer outreach.
   Filed by D3 pre-release UX audit 2026-05-12.
 
-- **CRYPTOGRAPHY-V48-MIGRATION-01**: bump
-  ``cryptography`` from 46.0.7 to 48.x. Major bump of
-  the crypto stack. Used by app/licensing.py (HMAC-SHA256
-  for license-key signing) and transitively by httpx,
-  PyJWT, etc. 48.0 dropped Python 3.7 support (we're on
-  3.12, fine) and removed some legacy hashes; the
-  HMAC-SHA256 path is stable across versions BUT the
-  licensing-test suite should be re-run with extra
-  attention. Trigger: any CVE in 46.x, OR pair with
-  ``pip audit`` security review session (the
-  audit-itself yields independent value). Filed by
-  dep-update audit 2026-05-12.
-
 - **MUTMUT-STATS-COLLECTION-BUG-01**: fix the
   ``BadTestExecutionCommandsException`` that mutmut raises
   during its ``run_stats_collection`` phase on Bibliogon's
