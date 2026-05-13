@@ -250,7 +250,7 @@ lxml = ["lxml"]
 
 [[package]]
 name = "bibliogon-plugin-export"
-version = "0.30.0"
+version = "0.31.0"
 description = "EPUB, PDF and project structure export plugin for Bibliogon"
 optional = false
 python-versions = "^3.11"
