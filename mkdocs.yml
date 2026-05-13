@@ -64,6 +64,7 @@ plugins:
         Linux-Launcher: Linux Launcher
         Deinstallieren: Uninstall
         KI-Assistent: AI Assistant
+        KI-Vorlagen (Artikel + Bücher): AI Templates (Articles + Books)
         Tastenkürzel: Keyboard Shortcuts
         Git-Sicherung: Git Backup
         Grundlagen: Basics
@@ -130,7 +131,9 @@ nav:
   - macOS-Launcher: de/launcher-macos.md
   - Linux-Launcher: de/launcher-linux.md
   - Deinstallieren: de/uninstall.md
-- KI-Assistent: de/ai.md
+- KI-Assistent:
+  - Übersicht: de/ai.md
+  - KI-Vorlagen (Artikel + Bücher): de/ai/ai-templates.md
 - Themes: de/themes.md
 - Tastenkürzel: de/shortcuts.md
 - Git-Sicherung:
