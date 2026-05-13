@@ -28,9 +28,9 @@ function statusGlyph(status: BulkFillItem["status"]) {
         case "running":
             return <Loader2 size={14} className="spin" aria-hidden="true"/>
         case "done":
-            return <CheckCircle size={14} style={{color: "#16a34a"}} aria-hidden="true"/>
+            return <CheckCircle size={14} style={{color: "var(--success, #16a34a)"}} aria-hidden="true"/>
         case "skipped":
-            return <Clock size={14} style={{color: "#a16207"}} aria-hidden="true"/>
+            return <Clock size={14} style={{color: "var(--warning, #a16207)"}} aria-hidden="true"/>
         case "error":
             return <AlertCircle size={14} style={{color: "var(--danger, #b91c1c)"}} aria-hidden="true"/>
     }
@@ -357,7 +357,7 @@ export default function BulkAiFillDock() {
                                             </span>
                                         )}
                                         {it.status === "skipped" && (
-                                            <span style={{color: "#a16207", fontSize: "0.75rem"}}>
+                                            <span style={{color: "var(--warning, #a16207)", fontSize: "0.75rem"}}>
                                                 {it.skipReason}
                                             </span>
                                         )}
