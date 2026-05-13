@@ -111,6 +111,8 @@ export default function MediumImportPage() {
                             className="btn-icon"
                             onClick={() => navigate("/")}
                             title={t("ui.dashboard.title", "Dashboard")}
+                            aria-label={t("ui.dashboard.title", "Dashboard")}
+                            data-testid="medium-import-home-btn"
                         >
                             <Home size={18} />
                         </button>
