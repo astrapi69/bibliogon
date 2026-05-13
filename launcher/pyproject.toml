@@ -19,7 +19,7 @@ platformdirs = "^4.9.6"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
 pyinstaller = "^6.11.0"
-pillow = "^11.2.1"  # Used only by the icon-generation script
+pillow = "^12.2.0"  # Used only by the icon-generation script; bumped from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}
 
 [tool.poetry.scripts]
 bibliogon-launcher = "bibliogon_launcher.__main__:main"
