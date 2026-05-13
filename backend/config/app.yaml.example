@@ -45,6 +45,10 @@ app:
   # for converting source documents to audiobooks where author info
   # is genuinely absent.
   allow_books_without_author: false
+  # Defense-in-depth body-size cap enforced by
+  # BodySizeLimitMiddleware. Applies to every POST / PUT / PATCH
+  # request. Editing requires a server restart.
+  max_upload_mb: 500
   version: 0.11.0
 author:
   name: ''

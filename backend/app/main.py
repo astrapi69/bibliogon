@@ -490,6 +490,25 @@ app = FastAPI(
     redoc_url="/api/redoc" if DEBUG else None,
 )
 
+from app.middleware.body_size_limit import (
+    BodySizeLimitMiddleware,
+    _resolve_max_bytes_from_config,
+)
+
+# Resolved once at startup. Editing app.max_upload_mb in app.yaml
+# requires a restart per the BodySizeLimitMiddleware docstring.
+try:
+    _max_upload_bytes = _resolve_max_bytes_from_config(_load_app_config())
+except Exception as _cfg_exc:
+    logging.getLogger(__name__).warning(
+        "BodySizeLimitMiddleware: config load failed (%s); "
+        "falling back to default cap.",
+        _cfg_exc,
+    )
+    _max_upload_bytes = 500 * 1024 * 1024
+
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=_max_upload_bytes)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in CORS_ORIGINS.split(",") if o.strip()],
