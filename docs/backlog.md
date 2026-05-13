@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-12 (Test-infrastructure audit + Phase 1 CI hardening landed: audit report at docs/test-infrastructure-audit.md, 9 surgical commits (Poetry cache, fail-fast: false, timeout-minutes, pytest -q, lint-job cache, Node 24 env on all 8 workflows, mypy fix on bulk_delete, plus CI red unblock). Phase 2 (mutmut triage) in progress. 3 new P5 backlog entries filed from audit: TESTCLIENT-HARMONIZE-01, WALKER-HYPOTHESIS-01, TESTCONTAINERS-EVAL-01. Each with explicit trigger language matching the COMMENTS-COUNT-PERF-01 pattern.)
+Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 21 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 26 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,19 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **CRYPTOGRAPHY-V48-MIGRATION-01**: bump
+  ``cryptography`` from 46.0.7 to 48.x. Major bump of
+  the crypto stack. Used by app/licensing.py (HMAC-SHA256
+  for license-key signing) and transitively by httpx,
+  PyJWT, etc. 48.0 dropped Python 3.7 support (we're on
+  3.12, fine) and removed some legacy hashes; the
+  HMAC-SHA256 path is stable across versions BUT the
+  licensing-test suite should be re-run with extra
+  attention. Trigger: any CVE in 46.x, OR pair with
+  ``pip audit`` security review session (the
+  audit-itself yields independent value). Filed by
+  dep-update audit 2026-05-12.
 
 - **MUTMUT-STATS-COLLECTION-BUG-01**: fix the
   ``BadTestExecutionCommandsException`` that mutmut raises
@@ -183,6 +196,19 @@ store.
 
 ## P4 - Roadmap / Future Phases
 
+- **MYPY-V2-MIGRATION-01**: bump ``mypy`` from 1.20.2 to
+  2.x. Major bump of the type checker. mypy 2.0 changed
+  several inference defaults and dropped legacy
+  behaviours; Bibliogon's existing
+  ``[tool.mypy.overrides]`` blocks in ``backend/pyproject.toml``
+  + the test-infrastructure-audit-added CI gate
+  (``lint-and-type-check`` job) mean a 2.x bump that
+  surfaces new errors would red-line CI immediately.
+  Effort: M (re-run mypy, classify new errors, add
+  overrides or fix source). Trigger: mypy 1.x reaches
+  end-of-life status, OR ~6 months of latency pressure.
+  Filed by dep-update audit 2026-05-12.
+
 - **D-07**: Phase 2 follow-up — package-manager discoverability.
   After D-06 ships, submit a winget manifest to
   `microsoft/winget-pkgs` and create a Homebrew tap at
@@ -223,6 +249,55 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **STARLETTE-V1-AWAIT-FASTAPI-01** (BLOCKED, upstream):
+  bump ``starlette`` from 0.46.2 to 1.0.0 across the
+  backend + 11 plugins. Blocked on FastAPI shipping a
+  release whose upper-bound for starlette opens to
+  ``>=1.0``. Surfaced during the dep-update audit
+  2026-05-12 Phase 3: ``poetry update`` (bare) on a
+  plugin pulled starlette 1.0.0 because fastapi 0.136.1
+  apparently relaxed its starlette range. We reverted
+  that plugin's lock; the starlette 1.0 upgrade is a
+  cross-surface coordinated bump (FastAPI + Starlette +
+  all 11 plugins + backend, all at once) and should not
+  ship piecemeal. Trigger: FastAPI ships a release that
+  pins ``starlette = ">=1.0"`` as its lower bound (not
+  just relaxes the upper bound), making the bump a
+  forced upgrade. Filed by dep-update audit 2026-05-12.
+
+- **PLUGIN-PYDANTIC-COORDINATED-BUMP-01**: realign
+  plugin Pydantic versions with the backend. Audit
+  2026-05-12 found 9 of 11 plugins still at pydantic
+  2.12.5 while backend is at 2.13.3 (now 2.13.4 after
+  the medium-import plugin's lock got re-resolved
+  during the audit). Not a runtime conflict (both 2.x
+  compatible), just a "plugins lag backend" doc
+  finding. The naive fix (``make lock-all-plugins``)
+  is a no-op when nothing in plugin pyprojects
+  changed; ``poetry update`` (bare) per plugin pulls
+  the latest pydantic BUT also surfaces high-risk
+  transitives like starlette 1.0 via fastapi 0.136.1.
+  Mandatory: per-plugin ``poetry update pydantic
+  pydantic-core`` (allowlist subset, NOT bare). 11
+  plugins × 2 packages = 11 commits or one bundled
+  commit. Trigger: ANY of (a) plugin CI fails due to
+  pydantic version drift, (b) a backend feature needs
+  a pydantic 2.13+ API that plugins also need, (c) a
+  coordinated dep-update session is planned (where
+  starlette + FastAPI + Pydantic bump together as a
+  unit). Filed by dep-update audit 2026-05-12 Phase 3.
+
+- **CLICK-V8-3-AWAIT-GTTS-01** (BLOCKED, upstream):
+  bump ``click`` from 8.1.8 to 8.3.3 in the backend
+  (and transitively across plugins). Blocked on gtts
+  (Google Text-to-Speech) opening its pin
+  ``click >=7.1,<8.2``. Used by the audiobook plugin's
+  TTS adapter path. Trigger: gtts releases a version
+  that opens its click upper bound to ``<9`` or
+  ``<8.4``. Filed by dep-update audit 2026-05-12
+  Phase 4.5 (click was in the medium-risk batch but
+  poetry refused to move it due to the upstream pin).
 
 - **MEDIUM-COMMENT-MANUAL-ENTRY-01**: manual "Add
   comment" UI in the article editor that creates an

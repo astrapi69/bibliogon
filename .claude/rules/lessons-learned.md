@@ -1392,3 +1392,95 @@ file at once," check the cwd before suspecting the code.
 A green run minutes ago in the same session and a red
 run now with ``setup: 0ms`` is the cwd diagnostic, not a
 regression.
+
+## `poetry update` vs `poetry lock` semantics
+
+Surfaced during the 2026-05-12 dep-update audit Phase 3.
+The ``make lock-all-plugins`` target runs ``poetry lock``
+per plugin. ``poetry lock`` validates that existing
+resolutions still satisfy current pyproject constraints —
+it does NOT refresh transitives to their latest within the
+allowed range. ``poetry update`` does that.
+
+So:
+
+- **``poetry lock``** = "re-resolve from pyproject specs."
+  Only meaningful after a pyproject pin changed. No-op when
+  nothing in pyproject changed (the existing lock is still
+  a valid resolution).
+- **``poetry update <pkg>``** = "move this package (and its
+  transitives) to the latest within range." Touches the
+  lock; pyproject is unchanged unless the new version
+  exceeds the caret.
+- **``poetry update`` (bare)** = "move EVERY package within
+  every range." Maximally aggressive; pulls every patch +
+  every minor + every transitive-of-transitive. Risky:
+  one low-risk direct bump can pull a high-risk transitive
+  via the upstream's relaxed bounds (see next rule below).
+
+The ``make lock-all-plugins`` target serves the "pyproject
+changed" case (e.g. after a shared-dep pin bump propagated
+to every plugin via ``sync-versions``). It is NOT a "pull
+patch transitives" tool. Use ``poetry update <allowlist>``
+per plugin for that purpose.
+
+Concrete rule: when "the lockfile didn't change after
+``make lock-all-plugins``", check whether any pyproject
+changed. If none, the no-op is correct. If patch
+transitives are still wanted, switch to a per-plugin
+``poetry update`` with an explicit allowlist.
+
+## Transitive deps can surface high-risk packages from low-risk direct bumps
+
+Surfaced during the 2026-05-12 dep-update audit Phase 3,
+on a single test plugin run before going wider.
+
+Bare ``poetry update`` on ``bibliogon-plugin-help`` (one of
+11 plugins, used as a pre-flight test) pulled:
+
+- ✅ ``pydantic 2.12.5 -> 2.13.4`` (low-risk patch)
+- ✅ ``idna``, ``packaging``, ``coverage``, ``pygments``
+  (audit-low-risk batch)
+- ⚠️ ``fastapi 0.135.3 -> 0.136.1`` (the plugin pins
+  ``^0.136.0``, so 0.136.1 is in-range; backend is at
+  0.136.0)
+- 🚨 ``starlette 0.46.2 -> 1.0.0`` — explicitly
+  audit-deferred as high-risk
+
+Cause: FastAPI 0.136.1 relaxed its upper bound on
+starlette. A transitive walk through this relaxed bound
+pulled starlette 1.0, the package the audit had
+specifically deferred. The plugin's lock was reverted
+immediately (``git checkout`` + ``poetry install``
+downgraded back to 0.46.2).
+
+The general shape: **low-risk direct bumps can pull
+high-risk packages transitively when the upstream
+relaxes a bound.** Even an audit that correctly
+categorised packages by direct risk can miss this if
+the audit didn't model transitive cascades.
+
+Concrete rule for any bulk-bump pass:
+
+1. **Pre-flight a single instance before bulk-applying.**
+   One test plugin / one test environment, never blind
+   bulk. The 2026-05-12 audit caught the starlette
+   surfacing on plugin #1 of 11; revert was cheap.
+2. **Prefer ``poetry update <allowlist>`` over bare
+   ``poetry update``.** The allowlist constrains which
+   packages can move; transitives only move if their
+   own version constraint demands it. Example for the
+   plugin-Pydantic alignment use case:
+   ``poetry update pydantic pydantic-core`` (NOT
+   ``poetry update``).
+3. **If the audit deferred a package as high-risk, add
+   a regression check.** Grep for the package name in
+   the resulting lock-diff before committing; if it
+   appears in the diff despite not being in your
+   allowlist, surface and revert.
+4. **The "two installation paths" rule still applies.**
+   A backend-only lock-resolution test is not enough;
+   a transitive surfacing in a plugin lock would only
+   appear when you actually run that plugin's
+   ``poetry install``. Per-plugin CI catches this; a
+   one-time pre-flight runs faster.
