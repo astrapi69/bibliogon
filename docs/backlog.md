@@ -107,23 +107,6 @@ store.
   config chown). Filed by Phase 2 v0.31.0 release session
   2026-05-13.
 
-- **BACKUP-HISTORY-SINGLETON-01**: three modules
-  (``backend/app/routers/backup.py:24``,
-  ``backend/app/services/backup/backup_export.py:22``,
-  ``backend/app/services/backup/backup_import.py:26``) each
-  instantiate their own ``BackupHistory()`` at module import time.
-  The GET ``/api/backup/history`` endpoint reads from the router's
-  in-memory ``_history._entries`` list which is never refreshed
-  from disk after construction, so it never sees writes made by
-  the export-service's separate instance. Fix: either re-load from
-  disk on each GET (cheap; small JSON file), or refactor to a
-  single shared singleton with proper write-through semantics.
-  Trigger: user report of "I just exported a backup but the
-  history list is empty", OR Playwright smoke
-  ``import-flows.spec.ts::backup export adds a history entry``
-  remains red after Phase 2. Filed by Phase 2 v0.31.0 release
-  session 2026-05-13.
-
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
   ``comments``) that ship passthru-English in es / fr / el / pt /
