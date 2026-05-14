@@ -170,16 +170,21 @@ carry the remaining "raise mutation score further" work.
 | ``handlers.markdown_folder`` | 148 | 0 | 0 | Tests covered every flag (no "no tests" entries) but boolean / numeric-literal mutations escape. |
 | ``handlers.markdown`` | 33 | 0 | 0 | Healthy. Survivors are edge-case fall-throughs in HTML conversion. |
 | ``handlers.bgb`` | 24 | 22 | 6 | The 6 timeouts are the SHA-256 hash loop (mutmut's range mutation can keep loops alive past the test timeout); explicit "expected" finding. The 22 "no tests" hit the ``_first_book_blob`` ZIP-iteration helper. |
-| ``overrides`` | ~30 | 4 | 0 | ``_allow_books_without_author_from_yaml`` mutmut_5..34 — almost every boolean variant survives. The function reads a single bool flag with permissive coercion; tests pin the strict cases only. Easy add. |
+| ``overrides`` | ~30 | 4 | 0 | ``_allow_books_without_author_from_yaml`` mutmut_5..34 — almost every boolean variant survived in the 2026-05-14 run. Closed 2026-05-14 by ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``: 13 targeted unit tests in ``tests/test_overrides_yaml_loader.py`` covering the missing-file / empty-yaml / missing-key / true / false / null / truthy-string / empty-string / nonzero-int / zero / malformed-yaml / unreadable-path branches. Re-run on next mutmut pass to confirm the survivors are killed. |
 | ``protocol`` | 0 | 2 | 0 | ``ImportPlugin.execute`` is an abstract method; mutmut mutates the docstring-only body. Not actionable. |
 
 ### Filed follow-ups (P5)
 
-- ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``: add 5–10
-  targeted unit tests for the bool-coercion paths in
-  ``import_plugins.overrides._allow_books_without_author_from_yaml``
-  to pin the ~30 survivors. Mechanical, ~30 minutes of work.
-  Defer until ``overrides.py`` next changes for any reason.
+- ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``: **closed
+  2026-05-14**. 13 targeted unit tests landed in
+  ``backend/tests/test_overrides_yaml_loader.py`` covering
+  every branch of ``_allow_books_without_author_from_yaml``
+  (missing file, empty yaml, missing app section, missing
+  flag key, true/false/null values, truthy/empty string,
+  nonzero/zero int, malformed yaml, unreadable path). New
+  file registered in ``[tool.mutmut] tests_dir`` so the
+  next mutation pass exercises it. Original count: ~30
+  survivors mutmut_5..34.
 - ``MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01``: triage the
   ``handlers.office`` + ``handlers.wbt`` survivor pools
   (~375 combined) and decide which are real test gaps vs

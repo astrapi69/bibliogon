@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 27 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 26 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -102,16 +102,6 @@ store.
   languages, OR pair with LAUNCHER-I18N-NATIVE-REVIEW-01's
   reviewer outreach.
   Filed by D3 pre-release UX audit 2026-05-12.
-
-- **MUTMUT-OVERRIDES-COERCION-COVERAGE-01** (P5): add 5–10
-  targeted unit tests for the bool-coercion paths in
-  ``app/import_plugins/overrides.py``
-  (``_allow_books_without_author_from_yaml``) to pin the
-  ~30 mutmut survivors mutmut_5..34. The function reads a
-  single bool flag with permissive coercion; current tests
-  pin only the strict ``True`` / ``False`` cases. Effort: S
-  (~30 min). Trigger: next time ``overrides.py`` changes
-  for any reason. Filed by mutmut 2026-05-14 first run.
 
 - **MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01** (P5): triage
   the ``handlers.office`` + ``handlers.wbt`` mutmut

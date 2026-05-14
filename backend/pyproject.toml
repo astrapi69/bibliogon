@@ -137,6 +137,7 @@ tests_dir = [
     "tests/test_wbt_multi_branch_import.py",
     "tests/test_wbt_multi_cover.py",
     "tests/test_backup_articles.py",
+    "tests/test_overrides_yaml_loader.py",
 ]
 do_not_mutate = ["app/main.py", "app/database.py"]
 
