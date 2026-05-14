@@ -2064,3 +2064,48 @@ Same shape applies to:
   and Dashboard already handle via ``clearSelection`` /
   ``clearBookSelection`` callbacks bound to filter state changes.
   Pin tests for both patterns when adding a new list page.
+
+### Bibliogon's bar-visibility convention at count===0
+
+Both bulk-action bars (``ArticleBulkActionBar``,
+``BookBulkActionBar``) are rendered conditionally on
+``selection.count > 0`` from the surrounding page. When the count
+drops to zero, the bar UNMOUNTS — no disabled-state, no
+placeholder. This matches the widespread convention in Gmail,
+Linear, Notion, etc.
+
+This is a UI-rendering decision orthogonal to the selection-
+cleanup rule above: the cleanup happens regardless; the
+unmounting is a consequence of the count going to 0. Future
+bulk-action surfaces in Bibliogon should follow the same shape:
+
+```typescript
+{selection.count > 0 ? (
+  <XYZBulkActionBar count={selection.count} ... />
+) : null}
+```
+
+If a future surface wants a different convention (e.g. always
+visible with disabled buttons), that's a deliberate exception and
+should ship with a doc comment explaining why; otherwise pin to
+the convention so the user experience stays consistent across the
+app's dashboards.
+
+### Audit recipe for finding all bulk-selection surfaces
+
+```
+grep -rln 'useSelection\|useArticleSelection\|useBookSelection' \
+  frontend/src/ | grep -v '\.test\.'
+```
+
+As of 2026-05-14 there are exactly two such surfaces:
+``pages/ArticleList.tsx`` and ``pages/Dashboard.tsx``. Any new
+match should immediately be audited against the rule above —
+specifically: does every single-item destructive handler in that
+page call ``selection.remove(id)`` after the API call succeeds
+and before the success toast?
+
+CommentsAdminSection has only a single-row delete and no
+bulk-selection checkboxes (the "orphans only" checkbox there is a
+FILTER, not a selection — easy to misread on first audit).
+ArticleEditor has neither.
