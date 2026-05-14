@@ -2109,3 +2109,67 @@ CommentsAdminSection has only a single-row delete and no
 bulk-selection checkboxes (the "orphans only" checkbox there is a
 FILTER, not a selection — easy to misread on first audit).
 ArticleEditor has neither.
+
+## Every bug-fix commit ships its regression-pin test
+
+Established 2026-05-14 after the BulkActionBar selection-cleanup
+fix (commit 02553fb) shipped with hook-level Vitest coverage but
+NO E2E test for the user-facing flow that surfaced the bug.
+
+### Rule
+
+For every bug fixed, the following test coverage is MANDATORY,
+not optional:
+
+1. **Regression-pin unit test** at the layer the bug lived in
+   (Vitest for frontend, pytest for backend). Asserts the bug's
+   specific behaviour is correct. Named to reference the bug. A
+   one-line comment in the test references the discovery context.
+
+2. **Integration test if the fix crosses layers.** Frontend
+   handler + API client + backend endpoint all exercised; state
+   changes verified end-to-end.
+
+3. **E2E Playwright test if the bug was user-facing smoke-
+   discovered.** Replicates the exact user flow that surfaced
+   the bug. Future-regression-prevention is the load-bearing
+   value here.
+
+4. **Cross-surface tests if the bug-class might exist
+   elsewhere.** For an Articles bug, verify Books doesn't have
+   the same. For a service-worker / routing bug, verify all
+   parallel API surfaces have correct routes.
+
+### Stop-condition
+
+If a fix is shipped without the corresponding tests, that is a
+**stop condition**: add the tests before closing the commit (or
+in an immediately-following commit if the original is already
+pushed). Tests don't ride in a follow-up "later" backlog item —
+they ride with the fix.
+
+### Retroactive application
+
+When a previous bug-fix is found without regression-pin tests,
+file a backlog item to add them. Don't let the gap survive into
+the next release.
+
+### Example application (2026-05-14 cycle)
+
+| Bug | Tests shipped |
+|---|---|
+| BulkActionBar stale state (commit 02553fb) | Vitest hook tests (14 cases) ✓ ; E2E backfilled in a follow-up commit |
+| Articles-Trash Restore (reported as SW bug) | Vitest hook tests for trash flow exist ; backend pytest tests pin /restore ; E2E positive regression-pin added (e2e/smoke/articles-trash.spec.ts) |
+| Medium-import button state (phase-1 v0.32.0) | 2 Vitest tests pin success + failure paths ✓ |
+
+### Why this rule earns the citation cost
+
+The 02553fb regression — orphan selection ids after row-delete —
+shipped to main with a Vitest-only safety net. The fix is correct
+but the failure mode it prevents is a user-visible UI bug that
+only manifests in a browser, not in a unit test. Without an E2E,
+a future refactor (e.g. moving the selection hook into a context
+provider, or changing the deletion order) could silently break
+the wiring while the unit tests still pass — exactly the bug
+class the original fix was meant to prevent. E2E coverage closes
+that gap.
