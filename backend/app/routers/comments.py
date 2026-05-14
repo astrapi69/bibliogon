@@ -23,6 +23,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -81,3 +82,68 @@ def delete_comment(comment_id: str, db: Session = Depends(get_db)) -> None:
         return
     comment.deleted_at = datetime.now(UTC)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# v0.32.0 F2b: reciprocal of POST /api/articles/{id}/reclassify-as-comment
+# ---------------------------------------------------------------------------
+
+
+class ReclassifyAsArticleResponse(BaseModel):
+    """Response from ``POST /api/comments/{id}/reclassify-as-article``.
+
+    ``article_id`` is the newly-inserted Article — the frontend
+    navigates straight to ``/articles/{article_id}`` so the user
+    can edit the auto-derived title. ``deleted_comment_id``
+    lets the comments-admin view drop the comment from its
+    local list.
+    """
+
+    success: bool
+    article_id: str
+    deleted_comment_id: str
+
+
+@router.post(
+    "/{comment_id}/reclassify-as-article",
+    response_model=ReclassifyAsArticleResponse,
+)
+def reclassify_comment_as_article(
+    comment_id: str,
+    db: Session = Depends(get_db),
+) -> ReclassifyAsArticleResponse:
+    """Move an ArticleComment to Article.
+
+    Mirrors ``POST /api/articles/{id}/reclassify-as-comment``.
+    No request body is required: the Article's title is
+    auto-derived from the comment body (first 200 chars, trimmed
+    at word boundary, plus "..." when truncated). The user
+    edits the title afterwards if the auto-derivation reads
+    awkwardly.
+
+    When the comment was an imported one (``imported_from !=
+    "manual"`` and ``canonical_url`` is set), a paired
+    ``ArticleImportSource`` row is created so the
+    "where did this come from?" provenance survives the move.
+
+    404 when the comment doesn't exist or has been hard-
+    deleted. Soft-deleted comments ARE eligible — the user can
+    notice a misclassification post-trash.
+
+    Field translation lives in
+    ``app.services.reclassify.comment_to_article``.
+    """
+    from app.services.reclassify import comment_to_article
+
+    comment = db.query(ArticleComment).filter(ArticleComment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    article = comment_to_article(comment, db)
+    db.commit()
+
+    return ReclassifyAsArticleResponse(
+        success=True,
+        article_id=article.id,
+        deleted_comment_id=comment_id,
+    )

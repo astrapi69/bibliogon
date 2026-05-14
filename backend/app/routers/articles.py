@@ -302,6 +302,93 @@ def list_article_comments(article_id: str, db: Session = Depends(get_db)) -> lis
     )
 
 
+# ---------------------------------------------------------------------------
+# v0.32.0 F2b: Article ⇄ ArticleComment reclassify (one direction; the
+# reciprocal Comment → Article path lives in ``app.routers.comments``)
+# ---------------------------------------------------------------------------
+
+
+class ReclassifyAsCommentRequest(BaseModel):
+    """Request body for ``POST /api/articles/{id}/reclassify-as-comment``.
+
+    Both fields are optional. When the caller knows the parent
+    article URL or id, supply it so the new ArticleComment is
+    immediately linked. Omitted fields default to None (orphan
+    semantics, the dominant case for ad-hoc reclassifies).
+    """
+
+    responds_to_url: str | None = None
+    responds_to_article_id: str | None = None
+
+
+class ReclassifyAsCommentResponse(BaseModel):
+    """Response from ``POST /api/articles/{id}/reclassify-as-comment``.
+
+    The frontend uses ``comment_id`` to deep-link a "View in
+    Comments admin" toast action; ``deleted_article_id`` lets it
+    drop the article from any local cache it holds.
+    """
+
+    success: bool
+    comment_id: str
+    deleted_article_id: str
+
+
+@router.post(
+    "/{article_id}/reclassify-as-comment",
+    response_model=ReclassifyAsCommentResponse,
+)
+def reclassify_article_as_comment(
+    article_id: str,
+    payload: ReclassifyAsCommentRequest,
+    db: Session = Depends(get_db),
+) -> ReclassifyAsCommentResponse:
+    """Move an Article to ArticleComment.
+
+    The two writes (insert comment + delete article) commit
+    together — never half-applied. Field translation is
+    documented in ``app.services.reclassify.article_to_comment``.
+
+    404 when the article doesn't exist or is hard-deleted. The
+    endpoint accepts soft-deleted articles too: a user could
+    notice the misclassification only after trashing the
+    article, and the reciprocal move should still work.
+
+    400 when ``responds_to_article_id`` references an article
+    that doesn't exist — silently flipping the FK to NULL would
+    confuse the user.
+    """
+    from app.services.reclassify import article_to_comment
+
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    if payload.responds_to_article_id is not None:
+        target = db.query(Article).filter(Article.id == payload.responds_to_article_id).first()
+        if target is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"responds_to_article_id {payload.responds_to_article_id!r} does not exist"
+                ),
+            )
+
+    comment = article_to_comment(
+        article,
+        db,
+        responds_to_url=payload.responds_to_url,
+        responds_to_article_id=payload.responds_to_article_id,
+    )
+    db.commit()
+
+    return ReclassifyAsCommentResponse(
+        success=True,
+        comment_id=comment.id,
+        deleted_article_id=article_id,
+    )
+
+
 @router.patch("/{article_id}", response_model=ArticleOut)
 def update_article(
     article_id: str, payload: ArticleUpdate, db: Session = Depends(get_db)
