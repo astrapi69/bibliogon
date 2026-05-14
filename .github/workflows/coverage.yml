@@ -20,7 +20,7 @@ jobs:
     name: Backend Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -77,7 +77,7 @@ jobs:
           - plugin: bibliogon-plugin-translation
             package: bibliogon_translation
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -112,7 +112,7 @@ jobs:
     name: Frontend Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
