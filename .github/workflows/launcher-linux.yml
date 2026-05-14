@@ -32,7 +32,7 @@ permissions:
 # Defensive opt-in: any JavaScript-runtime action still declaring
 # Node 20 (third-party or stragglers) is coerced to Node 24. After
 # the 2026-05-14 standard-action bumps (checkout v5, setup-python v6,
-# setup-node v5, upload-artifact v5, cache v5, configure-pages v5,
+# setup-node v5, upload-artifact v6, cache v5, configure-pages v6,
 # upload-pages-artifact v5, deploy-pages v5, softprops/action-gh-release v3)
 # every action we use natively runs on Node 24, so this is now a
 # safety net for future additions rather than an active fix.
