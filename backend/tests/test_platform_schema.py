@@ -26,7 +26,20 @@ from app.services.platform_schema import (
 
 
 @pytest.fixture(autouse=True)
-def _clear_cache() -> None:
+def _clear_cache():
+    """Clear the LRU cache both BEFORE and AFTER each test.
+
+    Clearing only before would leave the fake-schema fixture's result
+    cached at module exit, poisoning the cache for the next test file
+    (e.g. ``test_publications.py``) that calls
+    ``load_platform_schemas()`` via the real
+    ``/api/article-platforms`` endpoint. monkeypatch reverts the
+    ``_SCHEMA_PATH`` attribute at test teardown, but the LRU cache
+    survives module boundaries — explicit post-teardown clear is the
+    only honest fix.
+    """
+    load_platform_schemas.cache_clear()
+    yield
     load_platform_schemas.cache_clear()
 
 
