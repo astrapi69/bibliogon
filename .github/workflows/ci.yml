@@ -34,7 +34,7 @@ jobs:
       # The frontend job already does this via setup-node's
       # ``cache: "npm"``; backend was the asymmetry.
       - name: Cache Poetry virtualenv (backend)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
@@ -90,7 +90,7 @@ jobs:
       # hits. The plugin name in the key prevents cross-plugin
       # cache pollution (different deps per plugin).
       - name: Cache Poetry virtualenv (${{ matrix.plugin }})
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-${{ hashFiles(format('plugins/{0}/poetry.lock', matrix.plugin)) }}
@@ -164,7 +164,7 @@ jobs:
       # (same key). Mypy needs the SQLAlchemy + Pydantic
       # stub-bearing venv that ``poetry install`` produces.
       - name: Cache Poetry virtualenv (backend)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}

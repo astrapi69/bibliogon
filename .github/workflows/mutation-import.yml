@@ -65,7 +65,7 @@ jobs:
         run: poetry install --no-interaction --no-ansi
 
       - name: Restore mutmut cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: backend/mutants/
           key: mutmut-import-${{ hashFiles('backend/app/import_plugins/**', 'backend/app/routers/import_orchestrator.py', 'backend/tests/**') }}
