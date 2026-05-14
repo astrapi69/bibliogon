@@ -38,11 +38,32 @@ const listMock = vi.fn<
 
 const deleteMock = vi.fn<(id: string) => Promise<void>>(async () => {});
 
+const reclassifyAsArticleMock = vi.fn<
+    (id: string) => Promise<{
+        success: boolean;
+        article_id: string;
+        deleted_comment_id: string;
+    }>
+>(async (id) => ({success: true, article_id: "art-from-" + id, deleted_comment_id: id}));
+
+const navigateMock = vi.fn();
+
 const notifySuccess = vi.fn();
 const notifyError = vi.fn();
+const notifyBulkAction = vi.fn();
 const confirmMock = vi.fn<(...args: unknown[]) => Promise<boolean>>(
     async () => true,
 );
+
+vi.mock("react-router-dom", async () => {
+    const actual = await vi.importActual<typeof import("react-router-dom")>(
+        "react-router-dom",
+    );
+    return {
+        ...actual,
+        useNavigate: () => navigateMock,
+    };
+});
 
 vi.mock("../api/client", async () => {
     const actual = await vi.importActual<typeof import("../api/client")>(
@@ -60,6 +81,7 @@ vi.mock("../api/client", async () => {
                     },
                 ) => listMock(params),
                 delete: (id: string) => deleteMock(id),
+                reclassifyAsArticle: (id: string) => reclassifyAsArticleMock(id),
             },
         },
     };
@@ -79,6 +101,7 @@ vi.mock("../utils/notify", () => ({
         success: (...args: unknown[]) => notifySuccess(...args),
         error: (...args: unknown[]) => notifyError(...args),
         info: vi.fn(),
+        bulkAction: (...args: unknown[]) => notifyBulkAction(...args),
     },
 }));
 
@@ -87,8 +110,16 @@ beforeEach(() => {
     listMock.mockImplementation(async () => []);
     deleteMock.mockClear();
     deleteMock.mockImplementation(async () => {});
+    reclassifyAsArticleMock.mockClear();
+    reclassifyAsArticleMock.mockImplementation(async (id) => ({
+        success: true,
+        article_id: "art-from-" + id,
+        deleted_comment_id: id,
+    }));
+    navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
+    notifyBulkAction.mockClear();
     confirmMock.mockClear();
     confirmMock.mockImplementation(async () => true);
 });
@@ -96,8 +127,11 @@ beforeEach(() => {
 afterEach(() => {
     listMock.mockClear();
     deleteMock.mockClear();
+    reclassifyAsArticleMock.mockClear();
+    navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
+    notifyBulkAction.mockClear();
     confirmMock.mockClear();
 });
 
@@ -369,5 +403,104 @@ describe("CommentsAdminSection delete flow", () => {
         // do NOT appear, and an ellipsis IS present.
         expect(message).not.toContain("x".repeat(200));
         expect(message).toContain("...");
+    });
+});
+
+
+// ---------------------------------------------------------------------------
+// v0.32.0 F2c: reclassify-as-article (Comment → Article)
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection reclassify flow", () => {
+    it("renders a reclassify button per row", async () => {
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        expect(btn).toBeTruthy();
+    });
+
+    it("opens the confirm dialog when reclassify is clicked", async () => {
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalledTimes(1);
+        });
+        const [title] = confirmMock.mock.calls[0] as [string, string];
+        expect(title).toContain("Move comment to articles");
+    });
+
+    it("does not call api.comments.reclassifyAsArticle when the user cancels", async () => {
+        confirmMock.mockResolvedValueOnce(false);
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(confirmMock).toHaveBeenCalledTimes(1);
+        });
+        await Promise.resolve();
+        expect(reclassifyAsArticleMock).not.toHaveBeenCalled();
+    });
+
+    it("removes the row + fires the bulkAction toast on success", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "alpha", body_text: "First"}),
+            mkRow({id: "beta", body_text: "Second"}),
+        ]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(reclassifyAsArticleMock).toHaveBeenCalledWith("alpha");
+        });
+        await waitFor(() => {
+            expect(screen.queryByTestId("comments-admin-row-alpha")).toBeNull();
+        });
+        // Beta still present.
+        expect(screen.getByTestId("comments-admin-row-beta")).toBeTruthy();
+        // Success toast fired (the action-button variant).
+        expect(notifyBulkAction).toHaveBeenCalledTimes(1);
+    });
+
+    it("the success toast's action callback navigates to the new article", async () => {
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        reclassifyAsArticleMock.mockResolvedValueOnce({
+            success: true,
+            article_id: "new-article-id",
+            deleted_comment_id: "alpha",
+        });
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(notifyBulkAction).toHaveBeenCalledTimes(1);
+        });
+        // bulkAction signature: (message, onAction, label)
+        const args = notifyBulkAction.mock.calls[0] as [
+            string,
+            () => void,
+            string,
+        ];
+        const onAction = args[1];
+        // Invoke the callback the toast button would call.
+        onAction();
+        expect(navigateMock).toHaveBeenCalledWith("/articles/new-article-id");
+    });
+
+    it("shows an error toast and keeps the row when reclassify fails", async () => {
+        reclassifyAsArticleMock.mockRejectedValueOnce(new Error("server boom"));
+        listMock.mockResolvedValue([mkRow({id: "alpha"})]);
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(notifyError).toHaveBeenCalledTimes(1);
+        });
+        // Row stays — the move did not happen.
+        expect(screen.getByTestId("comments-admin-row-alpha")).toBeTruthy();
+        // No success toast on failure.
+        expect(notifyBulkAction).not.toHaveBeenCalled();
     });
 });

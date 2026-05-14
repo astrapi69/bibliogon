@@ -24,7 +24,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2, Save, ArrowLeft, Trash2, Home, AlertCircle, Languages, Download } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+    Loader2,
+    Save,
+    ArrowLeft,
+    Trash2,
+    Home,
+    AlertCircle,
+    Languages,
+    Download,
+    MessageSquare,
+    MoreVertical,
+} from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus } from "../api/client";
 import Editor from "../components/Editor";
@@ -463,6 +475,60 @@ export default function ArticleEditor() {
         }
     }
 
+    async function handleReclassifyAsComment(): Promise<void> {
+        if (!article) return;
+        // Single-item move uses the simple confirm dialog. The move is
+        // reversible from the Comments admin tab, so type-to-confirm
+        // would be overkill. The dialog spells out the lossy fields
+        // (title, tags, SEO meta, etc.) so the user can't be surprised.
+        const ok = await confirm(
+            t(
+                "ui.articles.reclassify_title",
+                "Move article to comments?",
+            ),
+            t(
+                "ui.articles.reclassify_body",
+                "The article will be moved to the comments list. Title, subtitle, tags, SEO metadata, publications, and assets are dropped on the move. The action is reversible from Settings → Comments admin.",
+            ),
+            "danger",
+            {
+                confirmLabel: t(
+                    "ui.articles.reclassify_confirm",
+                    "Move to comments",
+                ),
+            },
+        );
+        if (!ok) return;
+        try {
+            await api.articles.reclassifyAsComment(article.id);
+            // The article no longer exists locally; navigate away and
+            // surface a toast with a deep-link to the Comments admin
+            // tab so the user can verify the move landed.
+            navigate("/articles");
+            notify.bulkAction(
+                t(
+                    "ui.articles.reclassify_success",
+                    "Article moved to comments.",
+                ),
+                () => navigate("/settings?tab=comments"),
+                t(
+                    "ui.articles.reclassify_view",
+                    "Open Comments admin",
+                ),
+            );
+        } catch (err) {
+            if (err instanceof ApiError) {
+                notify.error(
+                    t(
+                        "ui.articles.reclassify_failed",
+                        "Could not move the article.",
+                    ),
+                    err,
+                );
+            }
+        }
+    }
+
     if (loading || !article) {
         return (
             <div data-testid="article-editor-loading" className={layout.loading}>
@@ -509,6 +575,47 @@ export default function ArticleEditor() {
                     )}
                 />
                 <SaveIndicator status={saveStatus} />
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            type="button"
+                            className="btn-icon"
+                            data-testid="article-editor-actions-menu"
+                            aria-label={t(
+                                "ui.articles.actions_menu",
+                                "Aktionen",
+                            )}
+                            title={t(
+                                "ui.articles.actions_menu",
+                                "Aktionen",
+                            )}
+                        >
+                            <MoreVertical size={16} />
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="hamburger-menu-content"
+                            align="end"
+                            sideOffset={4}
+                        >
+                            <DropdownMenu.Item
+                                className="hamburger-menu-item"
+                                data-testid="article-editor-menu-reclassify"
+                                onSelect={(e) => {
+                                    e.preventDefault();
+                                    void handleReclassifyAsComment();
+                                }}
+                            >
+                                <MessageSquare size={14} />{" "}
+                                {t(
+                                    "ui.articles.reclassify_action",
+                                    "Move to comments",
+                                )}
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
                 <ThemeToggle />
             </header>
 

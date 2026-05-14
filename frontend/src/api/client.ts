@@ -1439,6 +1439,31 @@ export const api = {
         delete: (id: string) =>
             request<void>(`/articles/${id}`, {method: "DELETE"}),
 
+        /** Reclassify an article as an ArticleComment. Transactional
+         *  move (insert comment + delete article in one commit).
+         *  Returns the new comment id + the deleted article id so the
+         *  caller can deep-link a "View in Comments admin" toast and
+         *  drop the article from any local cache. Companion to the
+         *  reciprocal ``comments.reclassifyAsArticle``. */
+        reclassifyAsComment: (
+            id: string,
+            payload: {
+                respondsToUrl?: string
+                respondsToArticleId?: string
+            } = {},
+        ) =>
+            request<{
+                success: boolean
+                comment_id: string
+                deleted_article_id: string
+            }>(`/articles/${id}/reclassify-as-comment`, {
+                method: "POST",
+                body: JSON.stringify({
+                    responds_to_url: payload.respondsToUrl ?? null,
+                    responds_to_article_id: payload.respondsToArticleId ?? null,
+                }),
+            }),
+
         /** Single-shot AI generation for SEO title / description /
          *  tags. Backend extracts plain text from the article body,
          *  builds a language-aware prompt, calls the configured AI
@@ -1839,6 +1864,22 @@ export const api = {
          *  when the id is unknown. */
         delete: (id: string) =>
             request<void>(`/comments/${id}`, {method: "DELETE"}),
+
+        /** Reciprocal of ``articles.reclassifyAsComment``: move an
+         *  ArticleComment to Article. Article.title is auto-derived
+         *  from the comment body (truncated at 200 chars + ``"..."``).
+         *  The caller typically navigates straight to
+         *  ``/articles/{article_id}`` so the user can edit the title
+         *  if the auto-derivation reads awkwardly. */
+        reclassifyAsArticle: (id: string) =>
+            request<{
+                success: boolean
+                article_id: string
+                deleted_comment_id: string
+            }>(`/comments/${id}/reclassify-as-article`, {
+                method: "POST",
+                body: JSON.stringify({}),
+            }),
     },
 
     chapters: {

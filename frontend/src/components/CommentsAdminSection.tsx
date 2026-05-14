@@ -10,7 +10,8 @@
  */
 
 import {useEffect, useRef, useState} from "react";
-import {Trash2} from "lucide-react";
+import {useNavigate} from "react-router-dom";
+import {FileText, Trash2} from "lucide-react";
 
 import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
@@ -44,11 +45,13 @@ function formatDate(iso: string | null, lang: string): string {
 export default function CommentsAdminSection() {
     const {t, lang} = useI18n();
     const dialog = useDialog();
+    const navigate = useNavigate();
     const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
     const [rows, setRows] = useState<ArticleComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+    const [pendingReclassify, setPendingReclassify] = useState<string | null>(null);
     // ``pageLimit`` only grows; "Load more" bumps it by PAGE_SIZE.
     // The backend caps at 500, so the UI caps at 500 too.
     const [pageLimit, setPageLimit] = useState(PAGE_SIZE);
@@ -111,6 +114,58 @@ export default function CommentsAdminSection() {
         !loading &&
         rows.length === pageLimit &&
         pageLimit < 500; // backend cap
+
+    const handleReclassifyAsArticle = async (row: ArticleComment) => {
+        // Single-item move uses the simple confirm dialog. The move is
+        // reversible (the reciprocal "Move to Comments" action exists
+        // in the ArticleEditor), so a heavier type-to-confirm pattern
+        // would just slow the user down. See lessons-learned rule on
+        // simple-confirm vs type-to-confirm tradeoffs.
+        const preview = row.body_text.length > 80
+            ? row.body_text.slice(0, 80) + "..."
+            : row.body_text;
+        const ok = await dialog.confirm(
+            t(
+                "ui.comments.admin.reclassify_title",
+                "Move comment to articles?",
+            ),
+            t(
+                "ui.comments.admin.reclassify_message",
+                'This will move the comment to the articles list with an auto-derived title. Body preview: "{preview}"',
+            ).replace("{preview}", preview),
+        );
+        if (!ok) return;
+        setPendingReclassify(row.id);
+        try {
+            const result = await api.comments.reclassifyAsArticle(row.id);
+            // Optimistically drop from the visible list — the comment
+            // no longer exists.
+            setRows((prev) => prev.filter((c) => c.id !== row.id));
+            // ``bulkAction`` shape (message + action callback + label)
+            // matches what we want here even though the internal type
+            // names reference "undo" — re-use rather than fork a
+            // near-identical helper.
+            notify.bulkAction(
+                t(
+                    "ui.comments.admin.reclassify_success",
+                    "Comment moved to articles.",
+                ),
+                () => navigate(`/articles/${result.article_id}`),
+                t("ui.comments.admin.reclassify_view", "View article"),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.reclassify_error",
+                          "Could not move the comment.",
+                      );
+            notify.error(message);
+        } finally {
+            setPendingReclassify(null);
+        }
+    };
 
     const handleDelete = async (row: ArticleComment) => {
         // Single-item delete uses the simple confirm dialog
@@ -340,7 +395,7 @@ export default function CommentsAdminSection() {
                                     borderBottom:
                                         "1px solid var(--border, #e5e7eb)",
                                     padding: "8px 6px",
-                                    width: 60,
+                                    width: 110,
                                 }}
                             >
                                 <span className="sr-only">
@@ -402,7 +457,30 @@ export default function CommentsAdminSection() {
                                 <td style={{padding: "6px"}}>
                                     {formatDate(row.imported_at, lang)}
                                 </td>
-                                <td style={{padding: "6px", textAlign: "right"}}>
+                                <td style={{padding: "6px", textAlign: "right", whiteSpace: "nowrap"}}>
+                                    <button
+                                        type="button"
+                                        className="btn-icon"
+                                        data-testid={`comments-admin-reclassify-${row.id}`}
+                                        onClick={() => {
+                                            void handleReclassifyAsArticle(row);
+                                        }}
+                                        disabled={
+                                            pendingReclassify === row.id ||
+                                            pendingDelete === row.id
+                                        }
+                                        aria-label={t(
+                                            "ui.comments.admin.reclassify_action",
+                                            "Move to articles",
+                                        )}
+                                        title={t(
+                                            "ui.comments.admin.reclassify_action",
+                                            "Move to articles",
+                                        )}
+                                        style={{marginRight: 4}}
+                                    >
+                                        <FileText size={14} />
+                                    </button>
                                     <button
                                         type="button"
                                         className="btn-icon"
@@ -410,7 +488,10 @@ export default function CommentsAdminSection() {
                                         onClick={() => {
                                             void handleDelete(row);
                                         }}
-                                        disabled={pendingDelete === row.id}
+                                        disabled={
+                                            pendingDelete === row.id ||
+                                            pendingReclassify === row.id
+                                        }
                                         aria-label={t(
                                             "ui.comments.admin.delete_action",
                                             "Delete comment",
