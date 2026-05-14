@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload smoke artifact (push / PR / dispatch)
         if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bibliogon-launcher-linux
           path: |

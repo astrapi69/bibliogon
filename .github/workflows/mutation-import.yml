@@ -123,7 +123,7 @@ jobs:
         run: poetry run mutmut html || true
 
       - name: Upload mutmut artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: mutmut-import-${{ github.run_id }}
