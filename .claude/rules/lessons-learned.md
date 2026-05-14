@@ -2236,3 +2236,89 @@ tier" rules. All three share the same root cause: acting on a
 mental model that doesn't match the current state. The fix in
 all cases is "verify against the authoritative source before
 acting".
+
+## Workbox "No route found" is benign info, not a bug indicator
+
+Established 2026-05-14 after Bug A's user-reported Articles-Trash
+Restore-Button "broken" symptom resolved as **not a code bug** —
+the restore worked end-to-end; the workbox console message was
+misread as causal.
+
+### The trap
+
+Bibliogon's SW config has a single `urlPattern: /^\/api\//`
+runtime-cache rule registered for `'GET'` only. **Every non-GET
+API call** (every POST, PATCH, DELETE) triggers a Workbox
+`No route found for: <url>` console message. **This is
+informational — it means "no runtime-cache rule applied,
+falling through to default fetch"**, which is exactly the
+intended pass-through behavior.
+
+Bibliogon ALSO has `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` in
+workflows and SW dev-tools that show precaching-attempt logs for
+every API URL. None of those messages indicate an error.
+
+### What an actual SW block looks like
+
+If Workbox were genuinely blocking a request, you'd see:
+- The request NEVER appearing in the Network tab (filtered to
+  XHR/Fetch).
+- A console error like `Failed to fetch` from the application
+  code that initiated the request.
+- The application code's `.catch()` branch firing.
+
+You would NOT see a successful 2xx response in the Network tab
+AND a "No route found" workbox info line — those two together
+prove the request DID reach the network and DID succeed.
+
+### Diagnostic recognition pattern
+
+When a user reports "feature X is broken" + cites a workbox
+console message as evidence:
+
+1. **Verify the network actually fired**: open Network tab, look
+   for the expected request, check its status code.
+2. **Verify the backend processed it**: hit the relevant API
+   endpoint via curl to check current state.
+3. **Cross-check with the parallel feature**: if Books works
+   and Articles doesn't, see whether the SW route is actually
+   asymmetric in `vite.config.ts` (in Bibliogon's case it's not
+   — single rule covers all `/api/*`).
+4. **Read the workbox doc text literally**: "No route found"
+   ≠ "blocked"; it's "no special handling, default fetch
+   proceeds".
+
+### Bug A reframe (the actual 2026-05-14 finding)
+
+Once the workbox red-herring was cleared, the real signal was
+the `[Violation] 'click' handler took 419ms` log entry. The
+restore worked correctly; it just felt sluggish because
+`handleRestore` chains two network roundtrips (`POST .../restore`
++ `GET /articles`) inside a single click handler with `setTrash`
++ `setArticles` synchronous state updates in between. 419ms is
+within "perceived as slow" range for UI feedback.
+
+The user-reported "broken" was actually "feels broken due to
+perception lag + subtle feedback". Real fix path is optimistic
+update + clearer post-restore feedback (filed as
+`RESTORE-UX-FEEDBACK-01` in the backlog).
+
+### Rule
+
+When triaging a "feature broken" report that includes a workbox
+console message:
+
+- Don't accept the workbox log as bug-causal evidence without
+  the corroborating Network-tab + backend-state check.
+- Re-frame the symptom: ask "what did the user actually
+  observe?" vs "what diagnostic message did the user notice?".
+  The two often don't match — users tend to grep the console
+  for red-looking text and report that as "the bug".
+
+### Pairs with
+
+The existing "Audit findings need production-vs-dev environment
+classification before urgency-tier" rule. Same root cause:
+acting on surface-level evidence without verifying against the
+authoritative source (in that case, the dev vs prod Docker
+config; here, the actual network state).

@@ -9,6 +9,10 @@
 
 **🚧 IN PROGRESS** — Group 1 (Core Editors) walked; Groups 2-5 pending direction.
 
+**Related bug closures during this audit cycle:**
+
+- **Bug A (Articles-Trash Restore "broken" user report)** — resolved as **not a code bug**. Manual smoke against the running dev instance + corpus showed the restore POST fires correctly (workbox "No route found" was misread as blocking; the message is benign pass-through). The real signal in the user's report was the `[Violation] 'click' handler took 419ms` console line — perception-lag from chained roundtrips in `handleRestore`. Filed as `RESTORE-UX-FEEDBACK-01` (P3 IMPROVEMENT) in backlog; lessons-learned entry "Workbox 'No route found' is benign info, not a bug indicator" added.
+
 ## Severity rollup (Group 1 only, partial)
 
 | Severity | Count |
