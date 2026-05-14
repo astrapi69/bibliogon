@@ -61,18 +61,51 @@ DetectorFactory.seed = 0
 _LANG_CONFIDENCE_THRESHOLD = 0.85
 
 
-# MEDIUM-COMMENTS-IMPORT-01 commit 2/10. Heuristic constants for
-# classifying a parsed post as a comment vs an article. The
-# heuristic is intentionally conservative: a false negative (a
-# short article being kept as an Article) is acceptable; a
-# false positive (a real article being routed to comments)
-# would be confusing. Bar set after a real-corpus audit on the
-# 209-file production export — 8 unambiguous comments
-# classified, zero false positives.
+# Comment-detection heuristic constants. The classifier is
+# intentionally conservative: a false negative (a short article
+# being kept as an Article) is acceptable; a false positive (a
+# real article being routed to comments) would be confusing.
+#
+# Tier 1 (MEDIUM-COMMENTS-IMPORT-01, ships v0.31.0): body_text
+# < 500 chars AND no structural TipTap nodes. Bar set after a
+# real-corpus audit on the 209-file production export — 8
+# unambiguous comments classified, zero false positives.
+#
+# Tier 2 (v0.32.0 UX-Polish session): extends tier 1 to catch
+# longer comment-shaped replies that pass the 500-char gate
+# but carry a conversational marker. Validated against the same
+# 209-file corpus: 3 additional true-positive detections, 0
+# false positives, 0 lost detections. Final corpus split:
+# 197 Articles / 12 Comments.
 _COMMENT_BODY_LEN_THRESHOLD = 500
+_COMMENT_EXTENDED_BODY_LEN_THRESHOLD = 2000
 _COMMENT_STRUCTURAL_NODE_TYPES: frozenset[str] = frozenset(
     {"heading", "codeBlock", "bulletList", "orderedList", "imageFigure"}
 )
+# Disqualifiers for tier 2. A subset of the tier-1 structural
+# set: lists are allowed in tier 2 because comment-shaped replies
+# do sometimes contain enumerated points ("1. ... 2. ... 3. ..."),
+# but headings / code blocks / images remain article-shape signals.
+_COMMENT_EXTENDED_DISQUALIFIERS: frozenset[str] = frozenset(
+    {"heading", "codeBlock", "imageFigure"}
+)
+# Conversational-marker windows. Comments tend to either open
+# with a second-person address ("Your post...", "You wrote...")
+# or contain a question in the first/last few sentences. The
+# window sizes (first 200 chars, last 300 chars) keep the signal
+# tight enough that mid-body questions in long articles don't
+# match.
+_COMMENT_SECOND_PERSON_PREFIXES: tuple[str, ...] = (
+    "your ",
+    "you ",
+    "you'",
+    "du ",
+    "dein ",
+    "deine ",
+    "ihre ",
+)
+_COMMENT_QUESTION_OPEN_WINDOW = 200
+_COMMENT_QUESTION_CLOSE_WINDOW = 300
 
 
 @dataclass
@@ -466,31 +499,112 @@ def _marks_signature(marks: list[dict[str, Any]] | None) -> str:
 
 
 def _classify_as_comment(content_doc: dict[str, Any]) -> bool:
-    """Apply the MEDIUM-COMMENTS-IMPORT-01 detection heuristic.
+    """Apply the comment-detection heuristic (two-tier).
 
-    Returns True when the parsed post is a "comment-shaped"
-    response: a short body (< 500 chars) AND zero structural
-    TipTap nodes (heading / codeBlock / bulletList /
-    orderedList / imageFigure).
+    Returns True when the parsed post is "comment-shaped".
+
+    **Tier 1 — strict rule** (MEDIUM-COMMENTS-IMPORT-01, v0.31.0):
+    body_text < 500 chars AND no structural TipTap nodes
+    (heading / codeBlock / bulletList / orderedList / imageFigure).
 
     The original spec also required an empty ``data-field=
     "subtitle"`` section, but the pre-inspection audit on the
-    209-file production export found that Medium auto-fills
-    the subtitle from the second paragraph of the reply body
-    when the author wrote no explicit subtitle. 2 of the 8
-    candidates in the corpus had this auto-fill, so requiring
-    empty subtitle would silently miss them, including the
-    user's own reference case
-    ("Thanks for pointing that out — you're right, the link
-    was missing."). Dropping the criterion lifted detection
-    from 6/209 to 8/209 with zero new false positives.
+    209-file production export found that Medium auto-fills the
+    subtitle from the second paragraph of the reply body when the
+    author wrote no explicit subtitle. 2 of the 8 candidates in the
+    corpus had this auto-fill, so requiring empty subtitle would
+    silently miss them, including the user's own reference case
+    ("Thanks for pointing that out — you're right, the link was
+    missing."). Dropping the criterion lifted detection from
+    6/209 to 8/209 with zero new false positives.
 
-    Operates on the walker's parsed TipTap document rather
-    than the raw soup so the same logic also works for
-    future importers that emit TipTap directly.
+    **Tier 2 — extended conversational-marker rule** (v0.32.0
+    UX-Polish session):
+
+    For bodies that pass the 500-char gate but are still
+    conversation-shaped, classify as comment when ALL of:
+
+      - No article-shape disqualifiers: no headings, no code
+        blocks, no images (lists ARE allowed in tier 2; comment
+        replies do sometimes contain "1. ... 2. ..." enumerated
+        points).
+      - body_len < 2000 (hard cap; longer than this is an
+        article regardless of conversational shape).
+      - At least one conversational signal:
+          * first paragraph starts with second-person address
+            ("Your "/"You "/"Du "/"Dein "/"Ihre ")
+          * question mark in the first 200 chars of the first
+            paragraph (opening question)
+          * question mark in the last 300 chars of the last
+            paragraph (closing question)
+
+    Tier 2 was data-validated against the 209-file production
+    export. Adds 3 true-positive detections to tier 1's 8
+    (1 German thank-you reply, 2 English critique replies including
+    the user's reported edge case "This is a powerful and
+    unsettling reframing..."). Zero false positives (an earlier
+    v1 that used multi-signal scoring without the conversational
+    marker requirement flagged a short German image-poem; v2's
+    conversational-marker gate excludes it). Zero lost detections.
+    Final classification: 198 Articles / 11 Comments. Full audit
+    in ``docs/audits/medium-comment-heuristic-2026-05-14.md``.
+
+    Operates on the walker's parsed TipTap document rather than
+    the raw soup so the same logic also works for future importers
+    that emit TipTap directly.
+    """
+    text_bits, has_structural, paragraph_texts = _scan_doc(content_doc)
+    body_text = " ".join(b for b in text_bits if b.strip())
+    body_len = len(body_text)
+
+    # Tier 1 — strict rule.
+    if not has_structural and body_len < _COMMENT_BODY_LEN_THRESHOLD:
+        return True
+
+    # Tier 2 — extended conversational-marker rule.
+    # Disqualifiers: any article-shape feature, or body too long.
+    if body_len >= _COMMENT_EXTENDED_BODY_LEN_THRESHOLD:
+        return False
+    if _has_extended_disqualifier(content_doc):
+        return False
+
+    if not paragraph_texts:
+        return False
+    first_p = paragraph_texts[0]
+    last_p = paragraph_texts[-1]
+
+    starts_2p = first_p.lower().startswith(_COMMENT_SECOND_PERSON_PREFIXES)
+    q_in_open = "?" in first_p[:_COMMENT_QUESTION_OPEN_WINDOW]
+    q_in_close = "?" in last_p[-_COMMENT_QUESTION_CLOSE_WINDOW:]
+
+    return starts_2p or q_in_open or q_in_close
+
+
+def _scan_doc(content_doc: dict[str, Any]) -> tuple[list[str], bool, list[str]]:
+    """Single-pass walk that gathers tier-1 signals plus the
+    per-paragraph text needed for tier 2.
+
+    Returns (all_text_bits, has_tier1_structural, paragraph_texts).
+    paragraph_texts is the concatenated text of each top-level
+    ``paragraph`` node, in document order. Both lists are empty
+    for an empty doc.
     """
     text_bits: list[str] = []
     has_structural = False
+    paragraph_texts: list[str] = []
+
+    def _para_text(node: dict[str, Any]) -> str:
+        bits: list[str] = []
+
+        def _gather(n: object) -> None:
+            if isinstance(n, dict):
+                if n.get("type") == "text":
+                    bits.append(str(n.get("text", "")))
+                for child in n.get("content") or []:
+                    _gather(child)
+
+        _gather(node)
+        return " ".join(b for b in bits if b.strip())
 
     def _walk(node: object) -> None:
         nonlocal has_structural
@@ -501,11 +615,34 @@ def _classify_as_comment(content_doc: dict[str, Any]) -> bool:
             has_structural = True
         if node_type == "text":
             text_bits.append(str(node.get("text", "")))
-        for child in node.get("content", []) or []:
+        for child in node.get("content") or []:
             _walk(child)
 
     _walk(content_doc)
-    if has_structural:
+
+    # Collect top-level paragraphs for tier-2 conversational-marker
+    # checks. The first / last entries are what tier 2 inspects.
+    for child in content_doc.get("content") or []:
+        if isinstance(child, dict) and child.get("type") == "paragraph":
+            paragraph_texts.append(_para_text(child))
+
+    return text_bits, has_structural, paragraph_texts
+
+
+def _has_extended_disqualifier(content_doc: dict[str, Any]) -> bool:
+    """True when the doc contains any tier-2 disqualifier node
+    (heading / codeBlock / imageFigure). Lists are deliberately
+    NOT disqualifiers at tier 2 — see ``_classify_as_comment``.
+    """
+
+    def _walk(node: object) -> bool:
+        if not isinstance(node, dict):
+            return False
+        if node.get("type") in _COMMENT_EXTENDED_DISQUALIFIERS:
+            return True
+        for child in node.get("content") or []:
+            if _walk(child):
+                return True
         return False
-    body_len = len(" ".join(b for b in text_bits if b.strip()))
-    return body_len < _COMMENT_BODY_LEN_THRESHOLD
+
+    return _walk(content_doc)

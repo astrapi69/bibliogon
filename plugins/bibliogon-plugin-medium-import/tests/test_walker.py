@@ -586,3 +586,249 @@ def test_parsed_post_carries_is_comment_flag() -> None:
             f"Fixture {name} should not classify as a comment "
             f"(has structure and / or long body)."
         )
+
+
+# ---------------------------------------------------------------------------
+# v0.32.0 UX-Polish session: tier-2 conversational-marker rule
+# ---------------------------------------------------------------------------
+#
+# Tier 1 (strict, < 500 chars + no structure) is fully covered by
+# the tests above. The tier-2 cases below cover the extension that
+# catches longer comment-shaped replies. See the audit doc at
+# docs/audits/medium-comment-heuristic-2026-05-14.md.
+
+
+def test_tier2_closing_question_in_long_comment() -> None:
+    """The user-reported edge case shape: ~940 chars, one
+    paragraph, ends with a question. Tier 1 misses it (body >=
+    500); tier 2 catches it via the closing-question marker."""
+    long_body = (
+        "This is a powerful and unsettling reframing of longevity "
+        "and youth despair as a class struggle rather than a purely "
+        "medical or psychological issue. " * 6
+    ).strip() + " Where do we go from here?"
+    assert len(long_body) >= 500
+    assert _classify_as_comment(_doc(long_body)) is True
+
+
+def test_tier2_second_person_opener_in_long_comment() -> None:
+    """German thank-you reply shape: opens with second-person
+    address. No question marks anywhere — second-person opener
+    alone is enough to fire tier 2."""
+    body = (
+        "Your insight on contemplative practice resonated with my "
+        "own experience. The way you connect the morning ritual to "
+        "the rest of the day is something I have been trying to "
+        "articulate for months. " * 3
+    ).strip()
+    assert len(body) >= 500
+    assert "?" not in body
+    assert _classify_as_comment(_doc(body)) is True
+
+
+def test_tier2_opening_question_in_long_comment() -> None:
+    """Question in the first 200 chars also fires tier 2."""
+    body = (
+        "Have you considered the alternative framing where the "
+        "subject is its own observer? "
+    ) + ("Filler content. " * 30)
+    assert len(body) >= 500
+    assert _classify_as_comment(_doc(body)) is True
+
+
+def test_tier2_no_marker_keeps_article_classification() -> None:
+    """The Vollmond-poem class: 600-1000 char doc with no
+    conversational marker (no question marks, no second-person
+    opener). Stays Article. Without this rule, v1's multi-signal
+    scoring promoted it to comment — the regression-pin.
+    """
+    body = (
+        "Zwischen Schienen und Schatten erhebt sich der Mond. "
+        "Lichter flackern, Stahl reflektiert das blasse Licht. " * 10
+    ).strip()
+    assert len(body) >= 500
+    assert _classify_as_comment(_doc(body)) is False
+
+
+def test_tier2_heading_disqualifies_long_comment() -> None:
+    """A heading is a hard tier-2 disqualifier even when a
+    conversational marker is present."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "heading",
+                "attrs": {"level": 2},
+                "content": [{"type": "text", "text": "Section"}],
+            },
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Your point about the framing is interesting "
+                            "but I want to push back on this. " * 6
+                        ),
+                    }
+                ],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_tier2_code_block_disqualifies_long_comment() -> None:
+    """Code blocks are a tier-2 disqualifier — code = article."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Your snippet doesn't compile on my machine. "
+                            "Here's the error trace I get? " * 4
+                        ),
+                    }
+                ],
+            },
+            {
+                "type": "codeBlock",
+                "content": [{"type": "text", "text": "error: undefined"}],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_tier2_image_disqualifies_long_comment() -> None:
+    """Image-bearing posts are articles even if the prose looks
+    conversational (regression-pin for the Vollmond-class case
+    when the image is present)."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Your moonlit Ludwigsburg shot is gorgeous. "
+                            "How long was the exposure? " * 6
+                        ),
+                    }
+                ],
+            },
+            {
+                "type": "imageFigure",
+                "attrs": {"src": "moon.jpg"},
+                "content": [],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is False
+
+
+def test_tier2_lists_allowed_in_comments() -> None:
+    """Unlike tier 1, tier 2 does NOT disqualify on lists.
+    Numbered/bulleted replies ("1. ... 2. ... 3. ...") are a
+    real comment pattern and should classify as comments when
+    a conversational marker is present."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Your point is well-taken but I see a few "
+                            "concerns. Let me lay them out: " * 4
+                        ),
+                    }
+                ],
+            },
+            {
+                "type": "orderedList",
+                "content": [
+                    {
+                        "type": "listItem",
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [
+                                    {"type": "text", "text": "First concern"},
+                                ],
+                            }
+                        ],
+                    },
+                    {
+                        "type": "listItem",
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [
+                                    {"type": "text", "text": "Second concern"},
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What do you think?",
+                    }
+                ],
+            },
+        ],
+    }
+    assert _classify_as_comment(doc) is True
+
+
+def test_tier2_body_over_2000_chars_is_article() -> None:
+    """Hard cap at 2000 chars — past that, even a closing
+    question doesn't promote to comment. This prevents long-form
+    rhetorical-question articles from being mis-classified."""
+    long_body = "Filler content sentence number ${i}. " * 80
+    long_body = long_body.strip() + " What does this all mean?"
+    assert len(long_body) >= 2000
+    assert _classify_as_comment(_doc(long_body)) is False
+
+
+def test_tier2_question_must_be_in_window() -> None:
+    """A question mid-body (outside both windows) is not a tier-2
+    signal. Regression-pin for the "long article asks a rhetorical
+    question in para 5" case.
+    """
+    # Three paragraphs: first/last have no question, middle does.
+    # _classify_as_comment inspects only the first and last top-level
+    # paragraph, so the middle question must NOT fire.
+    para1 = "Opening statement about a topic. " * 10
+    para_middle = "But what does it mean? Let me explain. "
+    para_last = "Concluding remarks without any conversational marker. " * 5
+    doc = {
+        "type": "doc",
+        "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": para1}]},
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": para_middle}],
+            },
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": para_last}],
+            },
+        ],
+    }
+    body_len = len(para1 + " " + para_middle + " " + para_last)
+    assert body_len >= 500
+    assert _classify_as_comment(doc) is False
