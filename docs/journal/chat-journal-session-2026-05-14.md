@@ -272,3 +272,68 @@ GitHub-platform deprecation announcement.
   in-memory caches survive test boundaries).
 
 Session tagged closing.
+
+---
+
+## Session continuation #2: UX-Full-Audit Group 1 (Core Editors)
+
+Third major block of the day after v0.32.0 work + the CI-hygiene
+sweep. User requested a systematic UX audit of the full Bibliogon
+frontend (8 routes, 5 surface groups), explicitly Audit-B style
+(running Bibliogon + 209-corpus + Playwright walkthrough), with
+STOP gates between each surface group.
+
+### Setup recorded for resume
+
+```bash
+# 1. Backend + frontend already running on :8000 / :5173 via the
+#    user's local `make dev` (do NOT re-start without checking
+#    `ss -tlnp | grep -E ':(8000|5173)'`).
+# 2. Corpus already imported. Idempotency check (skip-on-reimport):
+curl -F "file=@tmp/medium-export-2b0d2a60a17096f8a5eda39b89fe9722e92245fab55862dc870ab3754baeaaf4.zip" \
+  http://localhost:8000/api/medium-import/import \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('imported:', d['imported_count'], 'skipped:', d['skipped_count'])"
+# Expected after first import: imported: 198, skipped: 0
+# Expected on re-import:       imported: 0,   skipped: 198
+#
+# 3. Run the audit walkthrough:
+cd e2e && npx playwright test tests/ux-audit-group1.spec.ts --project=chromium --reporter=line
+# Expected: 4 passed, 1 timed out (the BookEditor case — G1-F2 evidence)
+```
+
+### Group 1 — Complete
+
+Findings: 4 IMPROVEMENT + 1 DEFER, 0 BLOCKER.
+
+| ID | Severity | Title |
+|---|---|---|
+| G1-F1 | IMPROVEMENT | BookEditor lacks ALL testids (0 in 700 LOC vs 38 in ArticleEditor) |
+| G1-F2 | IMPROVEMENT | BookEditor no empty-state UX for 0-chapter books |
+| G1-F3 | IMPROVEMENT | No shared `<EmptyState>` component (4 ad-hoc impls) |
+| G1-F4 | DEFER | Toolbar copy testid naming inconsistency |
+| G1-F5 | DEFER | Save-badge i18n verification deferred to Group 4 |
+
+Artifacts:
+- `docs/audits/ux-full-audit-2026-05-14.md` (partial — Groups 2-5
+  pending)
+- `docs/audits/ux-full-audit-2026-05-14-screenshots/` (6 PNGs)
+- `e2e/tests/ux-audit-group1.spec.ts` (walkthrough spec)
+
+### Decision deferrals (per user direction)
+
+- **Backlog filing for G1-F1/F2/F3 deferred until full audit
+  complete** — Group 4's cross-cutting findings may re-prioritize
+  Group 1 items.
+- **Lessons-learned candidate parked for close-out**: the
+  Articles-vs-Books asymmetry pattern now has 3 occurrences in
+  today's data (bulk-delete cap removal, comments-count badge
+  parity, BookEditor zero-testids). Candidate for a periodic
+  parity-audit hygiene rule.
+
+### Pause
+
+3-4 more hours of audit deferred to a future session. Resume
+cost is ~30s (dev backend + corpus import idempotent); the audit
+spec + screenshots are reproducible.
+
+Session re-closing.
