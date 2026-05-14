@@ -2173,3 +2173,66 @@ provider, or changing the deletion order) could silently break
 the wiring while the unit tests still pass — exactly the bug
 class the original fix was meant to prevent. E2E coverage closes
 that gap.
+
+## Multi-tool collaboration tracking: re-sync before accepting new orders
+
+When an external agent (e.g. a separate planning session, the
+user's "Claude planning" workspace) loses sight of git state, the
+executor agent (Claude Code working in the repo) MUST explicitly
+re-sync before accepting new orders. Status corrections mid-
+session prevent compound stale-state from creating phantom work.
+
+### Concrete trigger (2026-05-14)
+
+A consolidated v0.32.0 UX-Polish session plan arrived after the
+v0.32.0 release tag had already shipped (commit `a432a77`)
+including Phases B–F as "pending". All five phases had actually
+shipped before the tag:
+
+- Phase B (BulkActionBar selection cleanup): `02553fb` +
+  `926decb`
+- Phase C (Heuristic v2): `95c72c8`
+- Phase D (Reciprocal reclassify endpoints): `3288ba5`
+- Phase E (UI reclassify actions): `bb4a820`
+- Phase F (Copy split-button): `3cedf78`
+
+The plan was self-consistent but acted on a stale view of repo
+state. Without a sync gate, the executor would have re-implemented
+shipped features.
+
+### Rule
+
+Before starting any non-trivial session (especially one whose
+plan was written by a different agent / a different session):
+
+1. **`git log --oneline -<N>`** where N covers the time gap
+   since the plan was written. Look for commit messages that
+   match the planned work items.
+2. **`grep -rln '<feature name>'`** for each pending item. A
+   recent match in production code (not just tests/docs)
+   suggests the work shipped.
+3. **Reconcile**: if items appear shipped, report back to the
+   planner with the commit hash + verification artifact (test
+   pass count, audit-doc reference, etc.) BEFORE starting any
+   re-implementation work.
+
+### How to surface a status correction
+
+Don't quietly skip items the planner thought were pending —
+explicit "STOP — status correction" with a table of:
+- What the plan called pending
+- Commit hash where it actually shipped
+- Verification artifact (test count, audit-doc reference)
+
+This way the planner can re-prioritize the remaining work
+deliberately rather than discover at end-of-session that 4 hours
+of work was already done.
+
+### Pairs with
+
+The existing "Numeric claims verification" and "Audit findings
+need production-vs-dev environment classification before urgency-
+tier" rules. All three share the same root cause: acting on a
+mental model that doesn't match the current state. The fix in
+all cases is "verify against the authoritative source before
+acting".
