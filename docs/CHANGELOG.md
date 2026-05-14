@@ -4,6 +4,219 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-05-14
+
+The "UX-polish + safety net" release: three findings from a manual
+smoke test of v0.31.0 land as user-facing improvements, plus a
+batch of security / dependency / infra hardening that accumulated
+between v0.31.0 and today. 21 commits since v0.31.0.
+
+### Added
+
+- **Reciprocal Article ⇄ ArticleComment reclassify endpoints**
+  (`F2b`). When the comment-detection heuristic misclassifies (in
+  either direction), the user reclassifies via two new endpoints
+  that perform a transactional MOVE — the source row is deleted
+  in the same commit as the destination row is inserted, so an
+  interrupted call leaves both rows OR neither, never a
+  half-state. `POST /api/articles/{id}/reclassify-as-comment`
+  body `{responds_to_url?, responds_to_article_id?}` returns
+  `{success, comment_id, deleted_article_id}`.
+  `POST /api/comments/{id}/reclassify-as-article` returns
+  `{success, article_id, deleted_comment_id}`. The Comment→Article
+  path auto-derives the new article title from the first 200
+  chars of body text (word-boundary trim + "..." when truncated;
+  "Reclassified comment" fallback for empty body). When the
+  comment had a non-`"manual"` `imported_from` AND a
+  `canonical_url`, a paired `ArticleImportSource` row is created
+  so the "where did this come from?" provenance survives the
+  move. Service module
+  `backend/app/services/reclassify.py` holds the pure
+  field-translation functions; routers stay thin. 14 integration
+  tests pin happy path both directions, target linking, external
+  URL pointer, 404 on missing source, 400 on missing target
+  article (with original untouched), provenance preservation,
+  title truncation + empty-body stub, import-source re-creation
+  skip for native comments, atomicity, and an
+  Article→Comment→Article round-trip that proves `body_json`
+  survives the two moves intact.
+
+- **UI actions for reclassify** (`F2c`). Two surfaces:
+  - ArticleEditor header kebab menu `(...)` → "Move to
+    comments" — confirm dialog spells out the lossy fields
+    (title, subtitle, tags, SEO meta, publications, assets),
+    on confirm navigates back to `/articles` and surfaces a
+    deep-link toast with an "Open Comments admin" action button
+    that navigates to `/settings?tab=comments`.
+  - Settings → Comments admin per-row "Move to articles"
+    button (Lucide `FileText` icon, paired with the existing
+    trash icon) — same shape: confirm dialog with body
+    preview → on confirm, row drops from the list and a
+    deep-link toast offers "View article" that navigates to
+    `/articles/{new_id}`.
+  Both surfaces use the simple confirm dialog (not
+  `TypeToConfirmDialog`) because the move is reversible via
+  the reciprocal direction — the heavier pattern would be
+  wasted friction. Kebab placement rather than a primary
+  toolbar button keeps destructive data-move actions one
+  click away from accidental triggering.
+
+- **Toolbar "Copy" split-button** (`F3`). Primary click copies
+  the article / chapter body as Markdown (the default, since
+  Markdown preserves headings + lists + links + images for
+  paste-targets that render it). Chevron disclosure exposes
+  "Copy as plain text" for paste-targets that mangle Markdown
+  (email, notes, chat). Both modes prepend a document title (+
+  optional subtitle) so the paste-target keeps the article
+  context, not just the body: Markdown emits
+  `# Title\n\n*Subtitle*\n\n{body}`; plain text emits
+  `Title\nSubtitle\n\n{body}`. ArticleEditor wires
+  `article.title` + `article.subtitle`; BookEditor's existing
+  `chapterTitle` flows through automatically via a
+  `documentTitle ?? chapterTitle` fallback in Editor's
+  Toolbar-props mapping. Plain-text rendering choices: headings
+  drop their `#` marker, bold / italic / strike / code marks
+  silently stripped, links rendered as `text (url)` so the
+  reference survives the paste (with a guard to avoid
+  duplicating bare-URL links where text already equals href),
+  lists keep their `-` / `1.` prefixes, blockquotes keep their
+  `>` prefixes, images become `[Image: alt — caption]` so the
+  prose still reads even though the binary content can't paste,
+  code blocks become plain text without the fence. The
+  TipTap-to-Markdown converter was extracted from Editor.tsx
+  into a new shared `utils/tiptap-markdown.ts` module so the
+  same code powers both the existing WYSIWYG ↔ Markdown toggle
+  and the new Copy action; Editor.tsx's reverse
+  `markdownToHtml` stays put (only used internally). 27 tests
+  cover both converters end-to-end; 7 tests cover the Toolbar
+  Copy button surface.
+
+- **Body size limit middleware**
+  (`BodySizeLimitMiddleware`, closes
+  `BACKEND-UPLOAD-SIZE-LIMIT-01`). Caps POST / PUT / PATCH
+  bodies at 500 MB before any route handler sees the request,
+  so the worst-case unauthenticated upload can't exhaust
+  memory. Closes the open security gap noted in v0.31.0's
+  Medium-import upload-zone helper text (the 200 MB frontend
+  guard had no backend twin).
+
+- **Two-tier comment-detection heuristic** (`F2a`). Catches
+  longer comment-shaped replies that pass v0.31.0's strict
+  500-char gate but still carry a conversational marker. Tier 1
+  is unchanged: body_text < 500 chars AND no structural TipTap
+  nodes. Tier 2 fires when (a) no article-shape disqualifiers
+  (no headings, no code blocks, no images, body_len < 2000)
+  AND (b) at least one conversational signal: the first
+  paragraph starts with second-person address
+  (Your/You/Du/Dein/Deine/Ihre), OR a question mark in the
+  first 200 chars of the first paragraph, OR a question mark
+  in the last 300 chars of the last paragraph. Lists are
+  allowed in tier 2 (comment replies do sometimes contain
+  numbered points). Data-validated against the 209-file
+  production Medium export:
+  v0.31.0 misclassified 8 of 8 detectable comments; v0.32.0
+  catches 11/11 — 3 new true-positive detections, 0 false
+  positives, 0 lost detections. Audit at
+  `docs/audits/medium-comment-heuristic-2026-05-14.md`. An
+  earlier v1 multi-signal heuristic that scored 3+ generic
+  signals (without requiring a conversational marker) flagged
+  a German image-poem as a comment; v2's conversational-marker
+  gate excludes that false positive while still catching the
+  user-reported edge case ("This is a powerful and unsettling
+  reframing..." — a 941-char reply with a closing question
+  that tier 1 missed). 10 new tier-2 walker tests.
+
+### Fixed
+
+- **Medium-import Start button stayed enabled after a successful
+  import** (`F1`). The page returned to phase `"idle"` but kept
+  the selected file in state, so the Start button remained
+  enabled with the same ZIP loaded — a second click triggered a
+  re-import (backend deduped safely, but the UX read as "did it
+  really import?"). The file is now auto-cleared on success;
+  the result panel's "Weiteres ZIP importieren" button covers
+  the back-to-idle path. Failure paths are unchanged: a failed
+  import keeps the file selected so the user can retry without
+  re-picking.
+
+- **Medium-import progress UI's "up to one minute" claim was
+  false for large archives.** A 500 MB Medium export takes
+  substantially longer than 60 s on the same hardware that
+  handles a 50 MB archive in under 10 s — the hard time bound
+  created a "false-crash" impression for any input that broke
+  the promise. All 8 i18n catalogs now frame the wait as
+  "larger archives may take longer" without a specific time
+  bound. Promoted to a lessons-learned rule
+  (`User-facing time estimates must scale with input size or be
+  omitted`).
+
+- **BookEditor load effect's promise chain ran twice under
+  React StrictMode remount**, occasionally landing a stale book
+  on top of a freshly-loaded one. The fix adds a `cancelled`
+  flag captured by the effect's cleanup so the in-flight
+  promise no-ops when StrictMode tears down its first-pass
+  instance.
+
+- **`backup_history.json` lost entries when the JobStore wrote
+  from a second worker** (closes
+  `BACKUP-HISTORY-SINGLETON-01`). The in-memory list cached the
+  state of the first writer; subsequent reads from a second
+  process saw the cached list, not the on-disk file. `list()`
+  and `add()` now reload from disk on every call. Multi-worker
+  uvicorn / gunicorn deployments converge cleanly.
+
+### Changed
+
+- **Frontend Editor `documentTitle` + `documentSubtitle` props.**
+  New optional props consumed by the Toolbar Copy action.
+  BookEditor's existing `chapterTitle` flows through
+  unchanged via a `documentTitle ?? chapterTitle` fallback,
+  so the BookEditor wiring is unaltered. ArticleEditor
+  passes both `article.title` and `article.subtitle`.
+
+- **User-overlay write path for `settings.py` and
+  `plugin-install`.** The remaining two CWD-relative writes
+  flagged in v0.31.0's `PROD-WRITES-ARCHITECTURE-01` (P3) now
+  resolve via `app.paths.get_data_dir()` and a new
+  user-overlay file for hand-edited config. Production Docker
+  was never affected; the dev-Docker bind-mount path now
+  works without `chmod` workarounds.
+
+### Security
+
+- **Dependency bumps.** Pillow 11.3.0 → 12.2.0 in launcher
+  (CVE batch); cryptography 46.0.7 → 48.0.0
+  (`CRYPTOGRAPHY-V48-MIGRATION-01` closed). Both upstream
+  releases ship the audited CVE patches.
+
+### Internal
+
+- **Mutation testing unblocked.** First successful mutmut run
+  on the `app/import_plugins/` audit scope produces a 77.8%
+  mutation score (2156 / 2770 mutants killed; clears the
+  >= 60% acceptance bar in `quality-checks.md`). Three of the
+  four root causes from the v0.31.0 audit ship in
+  `2ac3002` + the conftest seeding / sibling symlinks /
+  recursion-limit bump / scope narrow in `1569f58`. The
+  CI mutation workflow at
+  `.github/workflows/mutation-import.yml` had been wired
+  for 10 days without ever running successfully; the first
+  manual `workflow_dispatch` ran 1m12s and exposed the
+  `BadTestExecutionCommandsException` that the fix
+  resolves. Promoted to a lessons-learned rule
+  (`Operational gaps masquerade as wired infrastructure`).
+
+- **E2E smoke flake unblocks.** Two pre-release smokes
+  cleaned up (`aed9544`) ahead of v0.31.0 cut; carried
+  forward to v0.32.0's stable baseline.
+
+- **Two new E2E smoke specs.** `e2e/smoke/reclassify.spec.ts`
+  pins the Article → Comment and Comment → Article round-trip
+  through the kebab and the admin row. `e2e/smoke/copy-toolbar.spec.ts`
+  pins the Copy split-button surface and the chevron menu's
+  two items. Both written by Claude Code for Aster to run per
+  the standing E2E protocol.
+
 ## [0.31.0] - 2026-05-13
 
 The "deep features" release: universal AI templates (per-field-class

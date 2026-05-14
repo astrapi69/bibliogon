@@ -1608,3 +1608,148 @@ fixed in the same commit that filed this rule. All 8
 catalogs updated in a single sweep, including 6 that had
 local-idiom translations of the same false claim (not
 passthru-English).
+
+## Radix DropdownMenu + happy-dom is brittle for Vitest
+
+Surfaced 2026-05-14 across the v0.32.0 F2c (ArticleEditor
+kebab) and F3 (Toolbar Copy chevron) sessions. Radix
+DropdownMenu (`@radix-ui/react-dropdown-menu`) renders its
+menu content through a portal and uses pointer events plus
+focus-scope state for the open transition. happy-dom's
+portal + focus-scope simulation is incomplete, so a Vitest
+that mounts a component using DropdownMenu can:
+
+- Render the trigger button correctly (works).
+- Open the menu on `fireEvent.click(trigger)` —
+  intermittent. Sometimes the menu content never lands in
+  the DOM; sometimes it lands but `findByTestId` for an
+  item inside `<DropdownMenu.Portal>` returns nothing.
+- Throw `setState during render` from
+  `@radix-ui/react-focus-scope` when both
+  `fireEvent.pointerDown` + `fireEvent.click` fire in
+  rapid succession (the workaround pattern most
+  documentation suggests).
+
+The F2c session burned ~30 min trying every combination of
+`fireEvent.click`, `fireEvent.pointerDown` +
+`fireEvent.pointerUp`, `userEvent.click`, and adding
+`act()` wrappers. None of them produced a stable test.
+
+Concrete rule for new Vitest files that exercise a Radix
+DropdownMenu:
+
+1. **Test the trigger button's existence** via
+   `findByTestId` on the trigger. This works reliably and
+   pins regressions where the trigger disappears entirely
+   (e.g. the kebab gets accidentally hidden behind a
+   conditional).
+2. **Do NOT attempt to assert on the menu content** via
+   `findByTestId` inside `<DropdownMenu.Portal>`. The portal
+   timing in happy-dom makes this flaky. Defer the assertion
+   to an E2E spec in a real browser.
+3. **Test the action handler in isolation** when the
+   handler is non-trivial — pass the handler in by prop or
+   extract it from the component so the unit test can invoke
+   it directly. The F3 Toolbar tests do this: the primary
+   Copy button (not behind a portal) gets full Vitest
+   coverage including clipboard write and toast assertions;
+   the chevron dropdown's two items are covered only by the
+   matching Playwright spec.
+
+If a future test needs reliable DropdownMenu-open in unit
+tests, consider:
+
+- A test-only `defaultOpen` prop on the wrapping component.
+- A controlled-open variant in production code that the test
+  can force open.
+- Switching to a non-portal alternative for the menu.
+
+None of these is worth the complexity for the current use
+cases; the E2E split is the cleaner answer.
+
+## Split-button (default + chevron disclosure) for primary + alternative outputs
+
+Surfaced 2026-05-14 designing the v0.32.0 F3 Copy button.
+When a feature has two outputs where one is the obvious
+90%-case default and the other is a discrete alternative
+("Copy as Markdown" vs "Copy as plain text"), use a
+split-button: a primary action button glued to a chevron
+disclosure that exposes the alternative.
+
+Anti-patterns this avoids:
+
+- **Two equal-weight buttons** ("[Copy MD] [Copy plain]"):
+  forces the user to make a format decision in technical
+  jargon every time, even when they know they want the
+  default. Doubles the toolbar footprint.
+- **A modal "Copy options" dialog**: extra round-trip for
+  the 90%-case; users have to read + click to confirm what
+  they already wanted.
+- **Right-click context menu only**: invisible to anyone
+  who doesn't know to right-click. Discoverability dies.
+
+Implementation pattern (verified in F3):
+
+- Primary button + chevron use the same Radix
+  DropdownMenu trigger that's already in the codebase.
+- The dropdown menu has the primary action first (so a
+  user who opens the menu by mistake doesn't have to
+  re-orient) plus the alternative below it.
+- The primary button's default click bypasses the menu
+  entirely — one click, no flicker.
+- Tooltip on the chevron says "More options" / "Copy
+  options" so users know it expands the action set.
+
+Cross-platform precedent: GitHub's "Squash and merge" /
+"Create a merge commit" / "Rebase and merge" split button,
+Notion's "Copy" → "Copy link" / "Copy as Markdown" picker,
+Linear's view-switcher. The pattern is well-understood.
+
+When NOT to use a split-button:
+
+- Three or more alternatives at roughly equal weight: use
+  a full menu, not a split. Cognitive load of "pick one of
+  three" is higher than "default plus one alternative".
+- The alternatives have no clear primary: use a regular
+  dropdown.
+- The action is destructive: a split-button can fire the
+  primary by accident. Use a confirm dialog instead.
+
+## Real-corpus audit catches arithmetic drift before it ships
+
+Surfaced 2026-05-14 in the v0.32.0 F2a session. My
+pre-inspection report told the user the v2 heuristic
+produced "197 Articles / 12 Comments" on the 209-file
+corpus. The verification step — running the COMMITTED
+walker against the corpus — produced 198 / 11.
+
+The discrepancy: the audit script reported "11 comments"
+in its summary; I computed `209 - 11 = 197` in the report
+text. Off-by-one arithmetic; the audit script's data was
+correct. The same drift bled into the audit doc and the
+docstring (both said "197/12" until the verification
+caught it).
+
+Concrete rule:
+
+- **Always run a verification pass against the COMMITTED
+  code** before propagating numbers into docs, docstrings,
+  and CHANGELOG entries. A `verify_committed.py` that
+  asserts on the expected counts is the right shape — if
+  the assertion fails, the wrong numbers cannot land.
+- **Match every quantitative claim against an
+  authoritative source** (the audit script, the test
+  output, a `git ls-files | wc -l` count). Recomputing
+  from a different number that "should be" related is the
+  failure mode this rule prevents.
+- **Treat docstrings + docs as ONE artifact**. If the
+  docstring says "197/12" and the audit doc says "197/12",
+  they're not two confirmations of the same truth — they're
+  two copies of the same draft. The verification step is
+  the only independent witness.
+
+Pairs with the existing "Numeric claims verification" rule
+in `.claude/rules/ai-workflow.md`: that rule covers the
+broader case (any number in any document); this one is the
+specific tactic that catches arithmetic drift in a
+multi-doc rollout of the same finding.
