@@ -1787,16 +1787,74 @@ runtime/platform deprecation announcement)
    ```
 2. For each, check the latest released major against the pin via
    `gh release list --repo <owner>/<repo> --limit 5`.
-3. For each major bump candidate, read the release notes via
+3. **For each candidate version, read the action.yml runtime
+   declaration directly** (not the release-note prose). This is
+   the authoritative source for "does this action actually run
+   on Node N?":
+   ```
+   gh api "repos/<owner>/<repo>/contents/action.yml?ref=<tag>" \
+     --jq '.content' | base64 -d | grep '^[[:space:]]*using:'
+   ```
+   Returns e.g. `using: 'node24'` (or `node20`, or `composite`).
+   This is the field GitHub Actions reads to pick the runtime.
+4. Cross-reference the release notes via
    `gh api repos/<owner>/<repo>/releases/tags/v<N>.0.0 --jq .body`
-   and classify as: Node-runtime-only (safe), additive features
-   only (safe), or behavioural breaking (audit individually).
-4. Pin to the **lowest** new major that satisfies the deprecation
-   target. The latest major often bundles additional unrelated
-   breaking changes — taking the minimum-Node-N major lets you
-   adopt those changes deliberately later, not by accident.
-5. One commit per action class for traceable bisect; push as a
+   for breaking-change context, but treat the notes as
+   advisory — see "Release-notes-vs-action.yml trap" below.
+5. Pin to the **lowest** new major that satisfies the deprecation
+   target AND declares the target Node version in its
+   action.yml. The latest major often bundles additional
+   unrelated breaking changes — taking the minimum-Node-N major
+   lets you adopt those changes deliberately later, not by
+   accident.
+6. One commit per action class for traceable bisect; push as a
    batch.
+
+### Release-notes-vs-action.yml trap
+
+Release notes describe **intent and feature changes**. action.yml
+declares the **actual runtime**. The two can diverge across a
+major version when an action adds preliminary Node 24 support
+without flipping the default. Always trust action.yml for audit
+purposes.
+
+Concrete examples from the 2026-05-14 sweep that caught this:
+
+- **`actions/upload-artifact@v5.0.0`** — release notes said
+  *"preliminary support for Node.js 24"* and the bump from v4
+  was marked **BREAKING CHANGE**. Both signals pointed at "v5 is
+  the Node-24 baseline". But `action.yml` at v5 declared
+  `runs.using: 'node20'`. v6 was the actual transition (declared
+  `node24`).
+- **`actions/configure-pages@v5.0.0`** — release notes talked
+  about Next.js breaking changes without mentioning the Node
+  runtime at all, leading to inference (from sibling pages
+  actions on Node 24) that v5 was Node-24. But `action.yml`
+  declared `node20`. v6 added Node 24.
+
+The trap is amplified by the `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`
+env-var: if it's already in place, runtime tests look green
+because the env-var coerces Node 24 regardless of the action.yml
+declaration. The action.yml read is the only honest signal.
+
+### Composite-action transitivity
+
+Some actions declare `runs.using: composite` (e.g.
+`actions/upload-pages-artifact@v5`). Composite actions don't run
+on any Node runtime directly — they wrap calls to other actions.
+For those, the audit must read the composite's internal `uses:`
+references and check THOSE actions' runtimes:
+
+```
+gh api "repos/<owner>/<repo>/contents/action.yml?ref=<tag>" \
+  --jq '.content' | base64 -d | grep 'uses:'
+```
+
+Example: `actions/upload-pages-artifact@v5` internally calls
+`actions/upload-artifact@v7`, which declares `node24`. So
+upload-pages-artifact@v5 is effectively on Node 24 via its
+internal dependency — no bump needed at our level even though
+its own action.yml says `composite`.
 
 ### Difference between "external action" warnings
 
