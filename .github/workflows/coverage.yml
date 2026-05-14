@@ -47,7 +47,7 @@ jobs:
             --cov-report=term
 
       - name: Upload backend coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: backend-coverage
           path: |
@@ -104,7 +104,7 @@ jobs:
             --cov-report=term
 
       - name: Upload plugin coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.plugin }}-coverage
           path: |
@@ -133,7 +133,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload frontend coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: frontend-coverage
           path: frontend/coverage/

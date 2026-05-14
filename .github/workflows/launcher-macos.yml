@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload smoke artifact (push / PR / dispatch)
         if: github.event_name != 'release'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: bibliogon-launcher-macos
           path: |
