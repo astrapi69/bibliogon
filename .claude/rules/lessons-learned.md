@@ -1880,3 +1880,90 @@ future additions (especially third-party actions that may lag) —
 not an active correction. Keep it in the workflow heads; it costs
 nothing and prevents reintroduction of the warning when a future
 contributor adds an old-major action by habit.
+
+## Module-level caches survive test boundaries (test isolation,
+   in-memory edition)
+
+Bibliogon's filesystem and DB test isolation is well-documented
+in `CLAUDE.md` ("Test isolation" section) — the `BIBLIOGON_TEST=1`
++ `BIBLIOGON_DATA_DIR` chain plus the production marker tripwire
+cover those layers. But **in-memory caches in service modules
+have no equivalent guard**, and they survive ALL test boundaries
+inside a single pytest process.
+
+The 2026-05-14 platform_schema regression is the canonical
+example. `app/services/platform_schema.py` decorates
+`load_platform_schemas` with `@lru_cache(maxsize=1)` (intentional
+— production wants the YAML read once at startup). The new
+`tests/test_platform_schema.py` introduced fixtures that
+monkeypatch `_SCHEMA_PATH` to a tmp file with a fake schema and
+calls `load_platform_schemas.cache_clear()` once in an autouse
+fixture. Symptoms:
+
+- The autouse fixture cleared the cache **before** each test
+  but not **after** — `return None` instead of `yield`.
+- The fake-schema dict from the last test in the file got
+  cached; monkeypatch reverted `_SCHEMA_PATH` at teardown but
+  the LRU cache stayed populated.
+- The NEXT test file that called `load_platform_schemas()` via
+  the real `/api/article-platforms` endpoint hit the LRU cache,
+  saw the stale fake dict, and 5 publications tests failed with
+  `ResponseValidationError: 'twitter' missing display_name` (the
+  shape `test_validate_max_chars_enforced` had written).
+
+Caught only in CI (the local pytest invocation in the same
+session ran `test_platform_schema.py` in isolation, missing the
+cross-file poisoning). Fix: change the autouse fixture from
+`return None` to `yield`, and clear the cache on both sides.
+
+### Rule
+
+Any service module that uses module-level mutable state visible
+to multiple tests needs a teardown hook in the fixtures that
+touch it. Concretely:
+
+- `@functools.lru_cache` decorators → tests that monkeypatch the
+  underlying read must `cache_clear()` in BOTH the setup AND the
+  teardown of every fixture/test that touches them. The
+  `yield`-based autouse fixture pattern is the simplest shape:
+  ```python
+  @pytest.fixture(autouse=True)
+  def _clear_module_cache():
+      module.cached_function.cache_clear()
+      yield
+      module.cached_function.cache_clear()
+  ```
+- Module-level globals (singletons, registries, dicts assigned
+  at import time) → same shape, reset state in both directions.
+- Class-level state on a service singleton → same.
+
+### Anti-pattern
+
+Setup-only cache clears (`return None` instead of `yield`) look
+correct in isolation — the test file's own tests pass green —
+but pytest runs all collected tests in one process. The cache
+written by the LAST test in your file is what subsequent test
+files see. The bug is invisible inside the file's own boundary,
+which is exactly why CI catches it and local single-file runs
+don't.
+
+### Detection heuristic
+
+When adding a new test file that fakes out a service module's
+inputs, grep that service module for:
+```
+grep -E '@(lru_|.*_)cache|_cache *=|^[A-Z_]+ *= *' \
+  backend/app/services/<module>.py
+```
+
+Any match is a candidate for state-survival-across-tests. Either
+add the bidirectional `cache_clear()` fixture pattern, or
+document why the state is OK to leak (rare, but
+``platform_schema``'s `lru_cache(maxsize=1)` IS production
+behaviour we wanted, so tests need to isolate, not remove).
+
+### Pairs with
+
+The existing `CLAUDE.md` "Test isolation" section covers
+filesystem + DB. This rule covers the third layer: in-process
+in-memory state. All three layers need explicit handling.
