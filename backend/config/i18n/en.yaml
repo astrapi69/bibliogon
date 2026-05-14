@@ -1564,7 +1564,7 @@ ui:
     progress:
       uploading: "Uploading …"
       uploading_aria: "Upload progress"
-      processing: "Processing on the server … this can take up to a minute."
+      processing: "Processing on the server. Larger archives may take longer."
     result:
       header: "Import complete"
       imported_count: "{count} articles imported"

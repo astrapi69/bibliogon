@@ -1549,3 +1549,62 @@ remaining `_base_dir / "config" / "app.yaml"` writes in
 `PROD-WRITES-ARCHITECTURE-01` (P3) on the same reasoning:
 production is fine, dev quirk eventually deserves the
 broader cleanup but not at v0.31.0 release-blocker urgency.
+
+## User-facing time estimates must scale with input size or be omitted
+
+Surfaced 2026-05-14 from a manual smoke test of v0.31.0.
+
+The Medium-import upload UI shipped with the message
+"Verarbeitung auf dem Server … das kann bis zu einer Minute
+dauern." (and direct translations in all 7 other catalogs).
+The "up to one minute" claim is false for large archives — a
+500MB Medium export takes substantially longer than 60s on
+the same hardware that handles a 50MB archive in under 10s.
+User sees no progress feedback past the minute mark and
+assumes Bibliogon has crashed.
+
+Wrong:
+
+- "X seconds" / "X minutes" / "up to N minutes" claims in
+  user-facing strings for any operation whose cost scales
+  with input size: uploads, imports, exports, bulk
+  operations, AI batch calls.
+
+Right:
+
+- Omit the time bound, OR
+- Frame the dependency: "Larger archives may take longer."
+  / "Bei großen Archiven kann das länger dauern." / etc.
+- For operations with truly bounded cost (sub-second SQL
+  bulk DELETE, single-record fetch), no time language is
+  needed.
+
+A user-facing string with a hard time bound is a promise to
+the user. Promising "≤ 1 minute" creates a "false-crash"
+impression for any input that breaks the promise. The cost
+of the bound is the trust the user loses; the value is near
+zero because they would have waited regardless.
+
+This pairs with the existing rule **Bulk-operation limits
+should be per-operation cost-profile**. Same principle —
+cost depends on input — applied to text rather than caps.
+
+Audit checkpoint: at release time, grep i18n catalogs for
+hard time bounds:
+
+```bash
+grep -rniE "minute|sekund|second|dakika|分" \
+  backend/config/i18n/*.yaml | grep -iE "dauer|takes|tardar|prendre|demor|sürebilir|かかります"
+```
+
+False-positives: config-field labels (e.g. "Timeout
+(Sekunden)") and ordinal markers (e.g. "First chapter").
+True positives: any wait-time claim a user reads while
+waiting.
+
+**Concrete artefact**: the v0.31.0 medium-import processing
+message in ``ui.medium_import.progress.processing`` was
+fixed in the same commit that filed this rule. All 8
+catalogs updated in a single sweep, including 6 that had
+local-idiom translations of the same false claim (not
+passthru-English).

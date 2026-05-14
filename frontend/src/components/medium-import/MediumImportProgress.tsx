@@ -73,7 +73,7 @@ export default function MediumImportProgress({
             <div className={styles.processing}>
                 {t(
                     "ui.medium_import.progress.processing",
-                    "Verarbeitung auf dem Server … das kann bis zu einer Minute dauern.",
+                    "Verarbeitung auf dem Server. Bei großen Archiven kann das länger dauern.",
                 )}
             </div>
             <div className={styles.bar}>

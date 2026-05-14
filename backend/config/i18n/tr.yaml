@@ -1574,7 +1574,7 @@ ui:
     progress:
       uploading: "Yükleniyor …"
       uploading_aria: "Yükleme ilerlemesi"
-      processing: "Sunucuda işleniyor … bu işlem bir dakika kadar sürebilir."
+      processing: "Sunucuda işleniyor. Büyük arşivler daha uzun sürebilir."
     result:
       header: "İçe aktarma tamamlandı"
       imported_count: "{count} makale içe aktarıldı"

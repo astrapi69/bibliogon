@@ -1574,7 +1574,7 @@ ui:
     progress:
       uploading: "Téléversement …"
       uploading_aria: "Progression du téléversement"
-      processing: "Traitement sur le serveur … cela peut prendre jusqu'à une minute."
+      processing: "Traitement sur le serveur. Les archives volumineuses peuvent prendre plus de temps."
     result:
       header: "Import terminé"
       imported_count: "{count} articles importés"

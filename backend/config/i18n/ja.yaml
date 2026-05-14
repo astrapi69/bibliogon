@@ -1574,7 +1574,7 @@ ui:
     progress:
       uploading: "アップロード中 …"
       uploading_aria: "アップロードの進行状況"
-      processing: "サーバーで処理中 … 最大 1 分ほどかかります。"
+      processing: "サーバーで処理中。大きなアーカイブでは時間がかかる場合があります。"
     result:
       header: "インポート完了"
       imported_count: "{count} 件の記事をインポート"
