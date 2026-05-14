@@ -109,8 +109,35 @@ module = "manuscripta.*"
 ignore_missing_imports = true
 
 [tool.mutmut]
-paths_to_mutate = ["app/"]
-tests_dir = ["tests/"]
+# Audit scope per ``docs/audits/mutmut-2026-05-02-import.md``:
+# the import_plugins/ + import_orchestrator surface is what the
+# nightly workflow ``.github/workflows/mutation-import.yml`` was
+# wired for. Mutating the full ``app/`` is feasible on dedicated
+# CI hardware but the trampoline-wrapped 1648-test baseline
+# overwhelms an 8GB-class dev machine (OOM-kill seen 2026-05-14).
+# Keep the production paths_to_mutate narrow until either CI
+# hardware proves it can run the full sweep or someone explicitly
+# audits a broader module.
+paths_to_mutate = ["app/import_plugins/"]
+tests_dir = [
+    "tests/test_import_plugins_protocol.py",
+    "tests/test_import_duplicate_flows.py",
+    "tests/test_import_source_identifiers.py",
+    "tests/test_import_staging_gc.py",
+    "tests/test_import_git_endpoint.py",
+    "tests/test_bgb_handler.py",
+    "tests/test_markdown_handler.py",
+    "tests/test_markdown_folder_handler.py",
+    "tests/test_office_handlers.py",
+    "tests/test_wbt_handler.py",
+    "tests/test_wbt_css_bug.py",
+    "tests/test_wbt_css_cover_propagation.py",
+    "tests/test_wbt_author_assets.py",
+    "tests/test_wbt_metadata_propagation.py",
+    "tests/test_wbt_multi_branch_import.py",
+    "tests/test_wbt_multi_cover.py",
+    "tests/test_backup_articles.py",
+]
 do_not_mutate = ["app/main.py", "app/database.py"]
 
 [build-system]

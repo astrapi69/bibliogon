@@ -62,6 +62,29 @@ if _THIS_CONFTEST.parent.parent.name == "mutants":
         _target = _REPO_ROOT / _link_name
         if not _link.exists() and _target.exists():
             os.symlink(_target, _link, target_is_directory=True)
+    # Narrow-scope mutmut (``paths_to_mutate = ["app/import_plugins/"]``)
+    # copies only the mutated subdirectory into ``mutants/app/``;
+    # everything else under ``app/`` is missing. Tests immediately
+    # crash on ``from app.database import ...``. Symlink the
+    # missing siblings back to the real ``app/`` so the test
+    # harness boots while keeping the mutated path (``app/
+    # import_plugins/``) as the real copy mutmut writes mutants
+    # into.
+    _REAL_APP = _REAL_BACKEND / "app"
+    _MUTANT_APP = _MUTANT_BACKEND / "app"
+    if _MUTANT_APP.exists() and _REAL_APP.exists():
+        # Also link the package marker so ``import app`` resolves.
+        for _app_entry in _REAL_APP.iterdir():
+            if _app_entry.name == "import_plugins":
+                continue  # this one mutmut copies and mutates
+            if _app_entry.name == "__pycache__":
+                continue
+            _dst = _MUTANT_APP / _app_entry.name
+            if _dst.exists():
+                continue
+            os.symlink(
+                _app_entry, _dst, target_is_directory=_app_entry.is_dir()
+            )
 
 # MUST run before any `from app.* import ...` statement in this file
 # or in any test module that pytest collects.
@@ -86,7 +109,17 @@ if "BIBLIOGON_DATA_DIR" not in os.environ:
 # which surfaces as RecursionError in downstream test modules whose
 # tests individually pass in isolation. Raising the limit is a
 # test-infra concession, not a production setting.
-sys.setrecursionlimit(5000)
+#
+# Mutmut adds another ~10-15 frames per call via its trampoline
+# wrappers (every method goes through ``_mutmut_trampoline`` plus
+# ``object.__getattribute__`` indirection). Detect mutmut via
+# ``MUTANT_UNDER_TEST`` and triple the limit so deeply nested
+# ``merged_lifespan`` chains in fixtures don't hit RecursionError
+# during stats collection.
+if "MUTANT_UNDER_TEST" in os.environ:
+    sys.setrecursionlimit(15000)
+else:
+    sys.setrecursionlimit(5000)
 
 import pytest  # noqa: E402
 
