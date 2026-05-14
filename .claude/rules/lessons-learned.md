@@ -1753,3 +1753,72 @@ in `.claude/rules/ai-workflow.md`: that rule covers the
 broader case (any number in any document); this one is the
 specific tactic that catches arithmetic drift in a
 multi-doc rollout of the same finding.
+
+## External GitHub Action major-version drift
+
+Standard GitHub Actions (`actions/checkout`, `actions/setup-*`,
+`actions/upload-artifact`, `actions/cache`, the pages trio, plus
+common third-parties like `softprops/action-gh-release`) release new
+majors periodically — usually triggered by Node runtime
+deprecations or other GitHub-platform shifts. An audit finding "all
+standard actions are at their current majors" is correct AT THE
+TIME but stales within weeks-to-months after a deprecation
+announcement.
+
+Concrete trigger from the 2026-05-14 sweep: GitHub deprecated the
+Node 20 runtime on 2025-09-19 (forced default 2026-06-02, removed
+2026-09-16). Within 6 months, EVERY standard action listed above
+released a new major moving to Node 24. The previous CI-hygiene
+audit's `actions/checkout@v4` etc. was accurate at audit time but
+the warnings re-appeared in CI within weeks.
+
+The original test-infrastructure audit categorized "all standard
+actions at current majors" as **no action needed** — accurate at the
+moment, no longer accurate weeks later. Re-classify as a periodic
+check, not a one-time verification.
+
+### Periodic CI-hygiene check (every ~quarter, or after any GitHub
+runtime/platform deprecation announcement)
+
+1. List every pinned action:
+   ```
+   grep -rE 'uses: [a-zA-Z][a-zA-Z0-9-]+/[a-zA-Z][a-zA-Z0-9-]+@v[0-9]+' \
+     .github/workflows/ | sort -u
+   ```
+2. For each, check the latest released major against the pin via
+   `gh release list --repo <owner>/<repo> --limit 5`.
+3. For each major bump candidate, read the release notes via
+   `gh api repos/<owner>/<repo>/releases/tags/v<N>.0.0 --jq .body`
+   and classify as: Node-runtime-only (safe), additive features
+   only (safe), or behavioural breaking (audit individually).
+4. Pin to the **lowest** new major that satisfies the deprecation
+   target. The latest major often bundles additional unrelated
+   breaking changes — taking the minimum-Node-N major lets you
+   adopt those changes deliberately later, not by accident.
+5. One commit per action class for traceable bisect; push as a
+   batch.
+
+### Difference between "external action" warnings
+
+Two distinct sources of "external" warnings in CI:
+
+- **In-repo action pins**: workflow files reference outdated
+  majors. Fixable in `.github/workflows/`. This rule covers them.
+- **GitHub-managed services**: e.g. the Dependabot scheduled
+  service that's configured under *Settings → Code security →
+  Dependabot*, not in workflow files. Annotations from those jobs
+  are GitHub's responsibility, NOT the repo maintainer's. Don't
+  conflate the two — always grep the codebase to confirm a warning
+  has a local source before assuming a fix is locally
+  implementable.
+
+### Defensive env-var as a safety net
+
+`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"` in each workflow's
+`env:` block coerces any JavaScript-runtime action declaring Node
+20 to run on Node 24. After all our standard-action pins are at
+Node-24-native majors, this env-var becomes a **safety net** for
+future additions (especially third-party actions that may lag) —
+not an active correction. Keep it in the workflow heads; it costs
+nothing and prevents reintroduction of the warning when a future
+contributor adds an old-major action by habit.

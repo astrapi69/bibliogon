@@ -25,11 +25,15 @@ on:
 permissions:
   contents: write
 
-# Opt every JavaScript-runtime action (actions/checkout,
-# actions/setup-python, actions/setup-node) into Node 24.
-# Default Node 20 is deprecated per
+# Defensive opt-in: any JavaScript-runtime action still declaring
+# Node 20 (third-party or stragglers) is coerced to Node 24. After
+# the 2026-05-14 standard-action bumps (checkout v5, setup-python v6,
+# setup-node v5, upload-artifact v5, cache v5, configure-pages v5,
+# upload-pages-artifact v5, deploy-pages v5, softprops/action-gh-release v3)
+# every action we use natively runs on Node 24, so this is now a
+# safety net for future additions rather than an active fix.
+# Default Node 20 is removed September 16th 2026 per
 # https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-# (forced default June 2nd 2026, removed September 16th 2026).
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
