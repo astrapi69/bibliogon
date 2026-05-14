@@ -118,7 +118,13 @@ ignore_missing_imports = true
 # Keep the production paths_to_mutate narrow until either CI
 # hardware proves it can run the full sweep or someone explicitly
 # audits a broader module.
-paths_to_mutate = ["app/import_plugins/"]
+#
+# 2026-05-14 expansion (``MUTMUT-EXPAND-SCOPE-01``): ``app/services/``
+# added as the next-most-critical surface per
+# ``.claude/rules/quality-checks.md``. The relevant services tests
+# are appended to ``tests_dir`` below. If a future expansion OOM-
+# kills, revert this addition and run the two scopes separately.
+paths_to_mutate = ["app/import_plugins/", "app/services/"]
 tests_dir = [
     "tests/test_import_plugins_protocol.py",
     "tests/test_import_duplicate_flows.py",
@@ -138,6 +144,28 @@ tests_dir = [
     "tests/test_wbt_multi_cover.py",
     "tests/test_backup_articles.py",
     "tests/test_overrides_yaml_loader.py",
+    # app/services/ tests (MUTMUT-EXPAND-SCOPE-01, 2026-05-14):
+    "tests/test_backup_compare.py",
+    "tests/test_backup_history.py",
+    "tests/test_backup_import_revive.py",
+    "tests/test_backup_utils.py",
+    "tests/test_backup_utils_direct.py",
+    "tests/test_cover_import.py",
+    "tests/test_covers.py",
+    "tests/test_credential_store.py",
+    "tests/test_git_backup.py",
+    "tests/test_git_credentials.py",
+    "tests/test_git_import_adopter.py",
+    "tests/test_git_import_inspector.py",
+    "tests/test_git_sync.py",
+    "tests/test_git_sync_diff.py",
+    "tests/test_git_sync_unified.py",
+    "tests/test_import_backup_parity.py",
+    "tests/test_import_git_adoption_execute.py",
+    "tests/test_reclassify_endpoints.py",
+    "tests/test_ssh_keys.py",
+    "tests/test_translation_groups.py",
+    "tests/test_platform_schema.py",
 ]
 do_not_mutate = ["app/main.py", "app/database.py"]
 

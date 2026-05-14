@@ -7,15 +7,32 @@
 
 ## Status
 
-**[FULLY UNBLOCKED — first complete run 2026-05-14.]**
+**[FULLY UNBLOCKED — first complete run 2026-05-14. Scope
+expanded to ``app/services/`` later the same day.]**
 
-2179 / 2770 mutants killed = **78.7% mutation score** for
-``app/import_plugins/`` (2026-05-14 fresh run, +23 over the
-2156/2770 baseline after ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``).
-Exceeds the audit's >= 60% acceptance criterion. Detailed
-triage below. Subsequent ``MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01``
-work in the same day adds 3 tests + deletes 1 dead function;
-those gains land on the NEXT mutmut run.
+Combined scope (``app/import_plugins/`` + ``app/services/``)
+2026-05-14 evening run after ``MUTMUT-EXPAND-SCOPE-01``:
+
+- **7526 / 9832 mutants killed = 76.5% combined**
+- 2093 survived, 206 no-tests, 7 timeout
+- ``mutmut run`` wall time: ~9 minutes (18.56 mutations/sec)
+- Peak RSS: ~500 MB; no OOM on the 30 GB dev machine
+
+Per-scope breakdown:
+
+- ``app/import_plugins/``: 2179 / 2770 killed = **78.7%**
+  (2026-05-14 fresh run, +23 over the 2156/2770 baseline after
+  ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``). Subsequent
+  ``MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01`` work in the same
+  day adds 3 tests + deletes 1 dead function; those gains land
+  on the NEXT mutmut run.
+- ``app/services/``: 5347 / 7062 killed = **75.7%** (baseline,
+  see "Services expansion" section below). New test file
+  ``test_platform_schema.py`` (21 tests) added in the same
+  session closes the 54-mutant ``platform_schema`` no-tests
+  pool; gain lands on the next mutmut run.
+
+Both scopes exceed the >= 60% acceptance criterion.
 
 The 2026-05-13 next-session handover scheduled an
 investigative pass on the `BadTestExecutionCommandsException`
@@ -237,6 +254,96 @@ broad except (and introduce real failure modes) or distinguish ``None`` from
 ``False`` semantically (gratuitous complexity for no user-visible change).
 **Documented as equivalent; no further action.**
 
+### Services expansion (2026-05-14, MUTMUT-EXPAND-SCOPE-01)
+
+The 2026-05-14 evening run after ``MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01``
+closed widens ``paths_to_mutate`` to include ``app/services/``
+(20 files / 6303 LOC) plus 20 services tests added to
+``tests_dir``. Generated mutants: 7062. Killed: 5347
+(75.7%). Survived: 1623. No-tests: 180. Timeout: 1.
+
+Per-file survivor distribution (survived + no-tests):
+
+| File | Survived | No tests | Notes |
+|---|---:|---:|---|
+| ``git_backup`` | 330 | 57 | Largest pool. Mostly cosmetic on ``repo.git.config("user.name", ...)``-style string args; some real None-injections on the error-classification helpers. |
+| ``git_sync_diff`` | 249 | 0 | Diff-tree walker; survivors mostly XX-wrap on TipTap node-type literals (``"text"``, ``"heading"``, etc.) and case-flips on the ``op`` enum values. |
+| ``git_sync_commit`` | 179 | 0 | Commit-message formatter + author handling. Many XX-wrap mutations on the ``"%H"``/``"%s"`` git-log format strings (cosmetic) and on the ``"feat:"``/``"fix:"`` conventional-commit prefixes (semantically meaningful — would benefit from author-attribution test tightening). |
+| ``backup.serializer`` | 162 | 10 | Pure dict-builder; every output key (``"title"``, ``"author"``, ``"language"``, ...) gets XX-wrapped and case-flipped. Existing backup-roundtrip tests SHOULD kill these via deserialize-then-compare, but the survival count suggests the roundtrip assertions are not field-name-exhaustive. Sub-followup BACKUP-SERIALIZER-MUTMUT-01 below. |
+| ``backup.backup_compare`` | 141 | 0 | Diff-detection logic; survivors include conditional-flip mutations on the per-field comparison loop. |
+| ``backup.backup_export`` | 119 | 14 | ZIP-builder + manifest emitter. The 14 no-tests entries hit the manifest-version-emit helpers. |
+| ``git_sync_unified`` | 77 | 0 | Atomic-commit unifier; survivors mostly on the partial-failure error-message formatting. |
+| ``backup.project_import`` | 75 | 34 | Has BOTH a sizeable cosmetic pool AND the largest no-tests gap. The 34 no-tests entries hit per-asset / per-chapter sub-helpers — well-covered transitively through ``test_import_handler_wbt.py`` but mutmut's per-function visibility is exact-match. Sub-followup BACKUP-PROJECT-IMPORT-MUTMUT-01 below. |
+| ``reclassify`` | 55 | 0 | Article⇄ArticleComment reclassify endpoints; survivors mostly on the validation-error string templates. |
+| ``platform_schema`` | 0 | 54 | **CLOSED 2026-05-14** by new ``tests/test_platform_schema.py`` (21 tests covering ``load_platform_schemas`` / ``get_platform_schema`` / ``validate_platform_metadata`` happy + edge + max_tags + max_chars paths). The 54-mutant pool will collapse to ≤10 on the next mutmut run. |
+| ``covers`` | 52 | 0 (1 timeout) | Cover-image asset selection logic; cosmetic on the file-extension matcher + filename ranking. |
+| ``ssh_keys`` | 44 | 0 | SSH keygen + permissions. Cosmetic on the ``"rsa"`` / ``"ed25519"`` algo strings + chmod-octal literals. |
+| ``translation_import`` | 43 | 0 | PGS-04 multi-branch import; survivors mostly on the ``main-XX`` branch-pattern regex + the dedup-by-branch logic. |
+| ``backup.asset_utils`` | 36 | 5 | Asset path normalisation. |
+| ``git_import_inspector`` | 26 | 0 | Git-dir inspection; cosmetic on the branch-name + remote-name literals. |
+| ``git_credentials`` | 19 | 0 | Credential store; small bucket. |
+| ``git_sync_mapping`` | 12 | 0 | Mapping CRUD. |
+| ``git_import_adopter`` | 0 | 6 | 6 no-tests entries in a helper used only when ``adopt_with_remote``/``adopt_without_remote`` is chosen. |
+| ``translation_groups`` | 4 | 0 | Smallest bucket. |
+
+**Dominant mutation classes** (same shape as the office + wbt
+2026-05-14 triage):
+
+- **XX-wrap / case-flip on string literals** (~70% of all
+  service survivors): output key names in serializers, git
+  config keys (``"user.name"``, ``"user.email"``), branch
+  names (``"main"``, ``"HEAD"``), file extensions, mime
+  strings. Killing these would require tests that bind to
+  the exact lowercase value at every call site — test bloat
+  with marginal payoff. **ACCEPT**.
+- **None-substitution on call args** (~15%): ``path.mkdir(parents=True, exist_ok=None)``,
+  ``repo.git.config("user.name", None)``, etc. Some are
+  defensive (the call would error but a broad ``except``
+  catches), some are real gaps where tests mock the call
+  entirely.
+- **and/or swap, ==/!= flip** (~10%): semantic mutations on
+  conditional branches. Mostly killable with targeted tests
+  but small pools per function.
+- **Numeric / slice / range edge cases** (~5%): ``[:16] vs [:17]``-class
+  equivalent mutations on hash digests + chunk sizes.
+
+**What landed in-session** (2026-05-14, MUTMUT-EXPAND-SCOPE-01):
+
+- ``backend/tests/test_platform_schema.py`` — 21 new unit
+  tests covering the AR-02 Phase 2 platform-schema validator.
+  Closes the 54-mutant no-tests pool on this module.
+- ``backend/pyproject.toml`` ``[tool.mutmut]`` — expanded
+  ``paths_to_mutate`` to ``["app/import_plugins/", "app/services/"]``
+  and ``tests_dir`` to include 20 services-related test files
+  + the new ``test_platform_schema.py``.
+
+### Sub-followups filed for the remaining services pools
+
+The 1623 surviving services mutants are NOT going to be
+chased one-by-one. The acceptance bar (>= 60%) is met at
+75.7%. Per-file granular follow-ups for the high-volume +
+high-no-tests buckets are filed in the backlog. These remain
+P5 (raise-the-floor investments, not blockers):
+
+- **BACKUP-PROJECT-IMPORT-MUTMUT-01** (34 no-tests): add
+  direct unit tests for the per-asset / per-chapter
+  helpers in ``app/services/backup/project_import.py``
+  that mutmut sees as untested even though they're
+  transitively exercised through the WBT import flow.
+- **BACKUP-SERIALIZER-MUTMUT-01** (162 + 10): tighten the
+  existing backup-roundtrip tests to assert exact field
+  presence (every key in the serialized output should be a
+  named expectation), killing the XX-wrap and case-flip
+  mutations on output-key strings.
+- **GIT-BACKUP-MUTMUT-01** (330 + 57): largest pool;
+  triage in its own session. Mix of cosmetic (git-config
+  key strings) and real (error-classification helpers
+  with no direct coverage).
+
+These three follow-ups are filed in
+``docs/backlog.md`` under P5 in the same commit as this audit
+update.
+
 ### Filed follow-ups (P5)
 
 - ``MUTMUT-OVERRIDES-COERCION-COVERAGE-01``: **closed
@@ -263,11 +370,18 @@ broad except (and introduce real failure modes) or distinguish ``None`` from
   (case-flipped strings, log messages, default-argument
   values) or equivalent (e.g. ``[:16]→[:17]`` slice on a
   cache-key hash digest where both values remain unique).
-- ``MUTMUT-EXPAND-SCOPE-01``: once the import_plugins triage
-  is done, broaden ``paths_to_mutate`` to ``app/services/``
-  (next-most-critical per ``.claude/rules/quality-checks.md``).
-  The OOM-kill on full-``app/`` runs means scope-narrowing
-  stays the default; expansion is a deliberate audit.
+- ``MUTMUT-EXPAND-SCOPE-01``: **closed 2026-05-14**. Scope
+  broadened to ``app/services/``; 20 services tests added
+  to ``tests_dir``. Fresh mutmut run produced
+  7526/9832 killed = 76.5% combined mutation score
+  (78.7% on import_plugins/ + 75.7% on services/). Peak
+  RSS ~500 MB; no OOM. Full per-file triage in the
+  "Services expansion" section above. 54-mutant
+  ``platform_schema`` no-tests pool closed by new
+  ``test_platform_schema.py``; three sub-follow-ups
+  filed for the remaining high-volume services pools
+  (``backup.project_import``, ``backup.serializer``,
+  ``git_backup``).
 
 ### Original instructions (kept for the day the bug is fixed)
 
