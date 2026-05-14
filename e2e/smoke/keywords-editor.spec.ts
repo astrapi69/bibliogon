@@ -35,6 +35,12 @@ async function addKeyword(page: Page, value: string) {
     const input = page.getByTestId("keyword-add-input");
     await input.fill(value);
     await input.press("Enter");
+    // Wait for the editor to commit the keyword (input clears on
+    // successful commit). Without this, rapid back-to-back
+    // addKeyword calls can race React's render cycle; the
+    // 2026-05-13 full-smoke run flaked here, dropping the first
+    // keyword from a 3-keyword sequence.
+    await expect(input).toHaveValue("");
 }
 
 /** Fetches the persisted keyword list straight from the API. Used

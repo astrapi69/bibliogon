@@ -119,10 +119,15 @@ test.describe("AI-template Workflow C (external YAML round-trip)", () => {
         });
 
         await page.goto("/articles");
-        // Use the per-card selection checkbox - it's data-testid-ed
-        // article-select-{id} per the bulk-delete commit.
-        await page.locator(`[data-testid="article-select-${a1.id}"]`).click();
-        await page.locator(`[data-testid="article-select-${a2.id}"]`).click();
+        // Per-card selection checkbox testid is article-bulk-check-{id}
+        // (see frontend/src/pages/ArticleList.tsx). Earlier comment
+        // here said "article-select-" which was a typo — the
+        // bulk-delete commit actually shipped article-bulk-check-.
+        // The sibling article-bulk-export.spec.ts has used the
+        // correct testid since the bulk-delete commit; only this
+        // spec drifted.
+        await page.locator(`[data-testid="article-bulk-check-${a1.id}"]`).click();
+        await page.locator(`[data-testid="article-bulk-check-${a2.id}"]`).click();
 
         await expect(
             page.getByTestId("article-bulk-action-bar"),
