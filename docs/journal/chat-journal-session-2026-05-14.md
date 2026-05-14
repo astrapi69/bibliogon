@@ -194,3 +194,81 @@ drift catch and F2c's Radix-happy-dom brittleness were the
 two surprises that turned into lessons-learned rules; both
 got documented before the close-out so the next session
 benefits.
+
+---
+
+## Session continuation: CI-hygiene + mutmut audits (later same day)
+
+Five additional work blocks landed after the v0.32.0 work
+documented above. Closed in one extended session; tagged here for
+completeness.
+
+### 1. MUTMUT-OVERRIDES-COERCION-COVERAGE-01 (closed)
+
+13 targeted unit tests added to
+``backend/tests/test_overrides_yaml_loader.py`` covering every
+branch of ``_allow_books_without_author_from_yaml``. Score lift
+visible in the next mutmut run as 2156/2770 → 2179/2770 (77.8%
+→ 78.7%). Commit ``c1eea87``.
+
+### 2. MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01 (closed)
+
+Full triage of the office + wbt survivor pool (333 mutants).
+Deleted dead ``_is_zip_epub`` (14 mutants gone), pinned
+``_hard_delete_book`` overwrite paths in both handlers (24
+mutants), tightened the primary_cover rejection test (3-4
+mutants). Per-function verdict table in
+``docs/audits/mutmut-2026-05-02-import.md``. Commit ``fd94117``.
+
+### 3. MUTMUT-EXPAND-SCOPE-01 (closed)
+
+Broadened mutmut scope to ``app/services/`` alongside
+``app/import_plugins/``. Fresh run: 7526/9832 = 76.5% combined.
+New ``test_platform_schema.py`` (21 tests) closes the 54-mutant
+no-tests pool on the AR-02 Phase 2 platform validator. Three sub-
+follow-ups filed (BACKUP-PROJECT-IMPORT-MUTMUT-01,
+BACKUP-SERIALIZER-MUTMUT-01, GIT-BACKUP-MUTMUT-01). Commit
+``0c8d24d``.
+
+### 4. CI-hygiene Node 24 sweep (8 commits)
+
+Standard GitHub Actions bumped to Node-24-native majors. Initial
+sweep was 7 commits (``36dc56d..341dc82``) based on release-note
+prose. Follow-up audit caught two pins (``upload-artifact@v5``,
+``configure-pages@v5``) that still declared
+``runs.using: 'node20'`` in their action.yml despite release-note
+"Node 24 support" wording. Corrective commits ``098a54a`` +
+``4bb79b0``, plus a lessons-learned correction (``413e7bb``) and
+backlog filings. The
+``FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`` env-var stayed in place,
+now genuinely defensive.
+
+### 5. Test-isolation regression + closing rules
+
+The ``test_platform_schema.py`` autouse cache-clear fixture used
+``return None`` instead of ``yield``, leaving the fake-schema
+result in ``functools.lru_cache`` between test files. Cross-file
+pytest ordering poisoned ``test_publications.py`` → 5 failures
+caught by CI (Coverage run 25866316011), invisible to local
+single-file runs. Hotfix ``48d3ffe`` flipped the fixture to
+``yield`` for bidirectional clear. New lessons-learned section
+(``f0c4be1``) + new backlog item ``TEST-ISOLATION-MODULE-STATE-01``
+(P3) + ``CLAUDE.md`` "In-memory caches (third isolation layer)"
+guidance for the institutional knowledge.
+
+Plus periodic-audit reminder filed:
+``GH-ACTIONS-PERIODIC-AUDIT-01`` (P5), trigger 2026-08-14 or any
+GitHub-platform deprecation announcement.
+
+### Session-end state
+
+- Tip commit: this commit (closing-session housekeeping).
+- ``main`` ahead of upstream until pushed.
+- Open backlog tasks: 30 active (P2..P5) + 2 BLOCKED-on-upstream.
+- CI green on the hotfix push (CI + Coverage both success at
+  ``48d3ffec``).
+- Three lessons-learned rules added today (action.yml
+  authoritative for runtime, External GH Action drift,
+  in-memory caches survive test boundaries).
+
+Session tagged closing.

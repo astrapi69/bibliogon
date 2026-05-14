@@ -164,6 +164,48 @@ Path conventions:
   at import time). Use `from app.paths import get_upload_dir`
   instead.
 
+### In-memory caches (third isolation layer)
+
+The two layers above cover filesystem and DB state. The third layer
+— module-level mutable state in service modules — is NOT covered by
+env-vars or marker files. Production keeps these caches; tests must
+reset them explicitly.
+
+Any service module using `functools.lru_cache`, `cached_property`,
+or module-level mutable state (singletons, registries, dicts
+assigned at import time) needs its own teardown hook in the
+fixtures that exercise it. The bidirectional `yield`-based autouse
+pattern is the simplest shape:
+
+```python
+@pytest.fixture(autouse=True)
+def _clear_module_cache():
+    module.cached_function.cache_clear()
+    yield
+    module.cached_function.cache_clear()
+```
+
+Setup-only clears (the `return None` variant) look correct in
+isolation — single-file pytest runs pass — but cross-file ordering
+poisons the cache for any later test file that hits the same
+service. Today's `platform_schema` regression broke 5
+`test_publications.py` tests via this exact path: the fake-schema
+result from the last test in `test_platform_schema.py` stayed in
+`load_platform_schemas`'s LRU cache; the publications endpoint
+served the stale fake dict to the next test file.
+
+Detection grep:
+```
+grep -E '@(lru_|.*_)cache|_cache *=|^[A-Z_]+ *= *' \
+  backend/app/services/<module>.py
+```
+
+Any match in a module that tests fake out is a candidate for
+state-survival-across-tests. See
+`.claude/rules/lessons-learned.md` "Module-level caches survive
+test boundaries" for the full pattern + anti-pattern. Audit
+backlog item: `TEST-ISOLATION-MODULE-STATE-01` (P3).
+
 ## Pre-commit hooks
 
 The repo uses pre-commit for formatting and linting. Contributors install once:

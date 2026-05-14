@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 28 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 30 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,38 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **TEST-ISOLATION-MODULE-STATE-01**: audit all module-level
+  mutable state in ``backend/app/`` for test-isolation gaps.
+  The 2026-05-14 platform_schema regression (5 publications
+  tests broken via `functools.lru_cache` poisoning) exposed
+  that Bibliogon's existing test-isolation guidance covers
+  filesystem + DB but NOT in-process state. Service modules
+  decorated with `@lru_cache` / `@cached_property` or holding
+  module-level dicts/lists/sets that are touched by test
+  fixtures need bidirectional teardown hooks. Concrete scope:
+  ```
+  grep -rE '@(lru_|.*_)cache|@cached_property|^[A-Z_]+ *= *' \
+    backend/app/services/ backend/app/routers/
+  ```
+  For each match: identify exercising tests, verify
+  cache_clear() on both setup AND teardown, OR convert to
+  instance-level with DI. Sub-tasks:
+  1. Sweep `backend/app/services/` for `@lru_cache` decorators
+     and module-level mutable state.
+  2. For each, identify the test fixtures that monkeypatch the
+     underlying data path.
+  3. Add `yield`-based autouse fixture with bidirectional
+     clear, OR refactor the cache to take an explicit cache
+     parameter that tests can pass a fresh instance of.
+  4. Document any cache that's intentionally process-lifetime
+     (and verify no test exercises a fake input through it).
+  CLAUDE.md "In-memory caches (third isolation layer)" already
+  added in the same commit as this filing. Effort: M (broad
+  audit + targeted fixes). Filed by the 2026-05-14 CI-hygiene
+  session after a cross-file LRU-cache poisoning surfaced 5
+  publications-test failures that local single-file pytest
+  runs missed.
 
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
@@ -246,6 +278,31 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **GH-ACTIONS-PERIODIC-AUDIT-01**: recurring CI-hygiene audit
+  for GitHub Actions version drift. The 2026-05-14 sweep
+  found that within 6 months of GitHub's 2025-09-19 Node 20
+  deprecation, EVERY standard action we use released a new
+  major. The pattern (deprecation announcement → cascade of
+  major bumps across actions/* + common third-parties) is
+  predictable, not exceptional. Filing it explicitly prevents
+  the "we should have checked sooner" surprise on the next
+  cycle.
+  Trigger: 3 months since the last full CI-hygiene audit
+  (last: 2026-05-14 → next due 2026-08-14), OR any Node
+  runtime / platform deprecation announcement from GitHub
+  before then (subscribe-able via
+  https://github.blog/changelog/?tag=actions).
+  Scope: re-run the full audit per the methodology in
+  `.claude/rules/lessons-learned.md` "External GitHub Action
+  major-version drift" — specifically the **action.yml
+  `runs.using:` read**, not release-note prose (per the trap
+  documented in the same lesson). Includes the deferred
+  `GH-ACTIONS-OPTIONAL-BUMPS-01` items if their triggers have
+  fired by then.
+  Effort: S-M depending on what's drifted. Filed by the
+  2026-05-14 CI-hygiene session as the explicit
+  next-touchpoint.
 
 - **GH-ACTIONS-OPTIONAL-BUMPS-01**: two optional standard-action
   bumps deferred from the 2026-05-14 CI-hygiene full audit
