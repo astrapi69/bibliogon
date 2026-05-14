@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 26 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 25 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -103,16 +103,8 @@ store.
   reviewer outreach.
   Filed by D3 pre-release UX audit 2026-05-12.
 
-- **MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01** (P5): triage
-  the ``handlers.office`` + ``handlers.wbt`` mutmut
-  survivor pools (~375 combined) and decide which are real
-  test gaps vs. cosmetic-mutation noise. The 60%
-  acceptance bar for ``app/import_plugins/`` is already
-  met at 77.8%; this is a "raise the floor" investment.
-  Effort: M. Filed by mutmut 2026-05-14 first run.
-
-- **MUTMUT-EXPAND-SCOPE-01** (P5): once the
-  ``app/import_plugins/`` triage is complete, broaden
+- **MUTMUT-EXPAND-SCOPE-01** (P5): UNBLOCKED 2026-05-14
+  (``MUTMUT-HANDLERS-OFFICE-WBT-COVERAGE-01`` closed). Broaden
   ``[tool.mutmut] paths_to_mutate`` to ``app/services/``
   (next-most-critical per
   ``.claude/rules/quality-checks.md``). The 2026-05-14

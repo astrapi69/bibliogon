@@ -17,8 +17,8 @@ from app.database import SessionLocal
 from app.import_plugins.handlers.office import (
     DocxImportHandler,
     EpubImportHandler,
-    _split_into_chapters,
     _extract_title,
+    _split_into_chapters,
 )
 from app.models import Asset, Book, Chapter
 
@@ -88,9 +88,7 @@ def test_detect_splits_on_h1(tmp_path: Path, monkeypatch) -> None:
     assert detected.source_identifier.startswith("sha256:")
 
 
-def test_detect_without_h1_yields_single_chapter(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_detect_without_h1_yields_single_chapter(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
         _fake_conversion("Just some text with no H1 at all."),
@@ -103,9 +101,7 @@ def test_detect_without_h1_yields_single_chapter(
     assert detected.title == "book"  # path.stem fallback
 
 
-def test_detect_warns_on_long_single_chapter(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_detect_warns_on_long_single_chapter(tmp_path: Path, monkeypatch) -> None:
     markdown = "Body text.\n" * 10_000
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
@@ -120,9 +116,7 @@ def test_detect_warns_on_long_single_chapter(
 # --- execute ---
 
 
-def test_execute_creates_book_and_chapters(
-    tmp_path: Path, db: Session, monkeypatch
-) -> None:
+def test_execute_creates_book_and_chapters(tmp_path: Path, db: Session, monkeypatch) -> None:
     monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
@@ -134,18 +128,11 @@ def test_execute_creates_book_and_chapters(
     detected = handler.detect(str(f))
     book_id = handler.execute(str(f), detected, overrides={})
 
-    chapters = (
-        db.query(Chapter)
-        .filter(Chapter.book_id == book_id)
-        .order_by(Chapter.position)
-        .all()
-    )
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
     assert [c.title for c in chapters] == ["Chapter A", "Chapter B"]
 
 
-def test_execute_with_overrides_updates_book(
-    tmp_path: Path, db: Session, monkeypatch
-) -> None:
+def test_execute_with_overrides_updates_book(tmp_path: Path, db: Session, monkeypatch) -> None:
     monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
@@ -165,9 +152,7 @@ def test_execute_with_overrides_updates_book(
     assert book.language == "en"
 
 
-def test_execute_rejects_unknown_override_key(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_execute_rejects_unknown_override_key(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "app.import_plugins.handlers.office._convert_to_markdown",
         _fake_conversion("# A\n\nBody."),
@@ -180,9 +165,72 @@ def test_execute_rejects_unknown_override_key(
         handler.execute(str(f), detected, overrides={"bogus": "nope"})
 
 
-def test_execute_copies_pandoc_extracted_media(
+def test_execute_overwrite_removes_existing_chapters_and_assets(
     tmp_path: Path, db: Session, monkeypatch
 ) -> None:
+    """``duplicate_action="overwrite"`` must hard-delete the existing
+    Book's chapters AND assets before the new rows land, so the
+    overwritten Book ends up with exactly the new content. Regression
+    pin for `_hard_delete_book`: previous coverage left both DELETE
+    statements untested, so mutating either filter to a no-op would
+    silently leak old data into the overwritten Book.
+    """
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
+
+    def _convert_with_media(path: Path, fmt: str):
+        media = tmp_path / "media_first"
+        media.mkdir(exist_ok=True)
+        (media / "old.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+        return "# Old Chapter\n\nOld body.\n", media
+
+    monkeypatch.setattr(
+        "app.import_plugins.handlers.office._convert_to_markdown",
+        _convert_with_media,
+    )
+    src = tmp_path / "book.docx"
+    src.write_bytes(b"PK\x03\x04")
+    handler = DocxImportHandler()
+    detected_first = handler.detect(str(src))
+    first_id = handler.execute(str(src), detected_first, overrides={})
+
+    assert db.query(Chapter).filter(Chapter.book_id == first_id).count() == 1
+    assert db.query(Asset).filter(Asset.book_id == first_id).count() == 1
+
+    def _convert_second(path: Path, fmt: str):
+        media = tmp_path / "media_second"
+        media.mkdir(exist_ok=True)
+        (media / "new.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+        return "# New A\n\nA body.\n\n# New B\n\nB body.\n", media
+
+    monkeypatch.setattr(
+        "app.import_plugins.handlers.office._convert_to_markdown",
+        _convert_second,
+    )
+    detected_second = handler.detect(str(src))
+    second_id = handler.execute(
+        str(src),
+        detected_second,
+        overrides={},
+        duplicate_action="overwrite",
+        existing_book_id=first_id,
+    )
+    db.expire_all()
+
+    overwritten_chapters = db.query(Chapter).filter(Chapter.book_id == first_id).all()
+    assert [c.title for c in overwritten_chapters] == []
+    overwritten_assets = db.query(Asset).filter(Asset.book_id == first_id).all()
+    assert overwritten_assets == []
+
+    new_chapters = (
+        db.query(Chapter).filter(Chapter.book_id == second_id).order_by(Chapter.position).all()
+    )
+    assert [c.title for c in new_chapters] == ["New A", "New B"]
+    new_assets = db.query(Asset).filter(Asset.book_id == second_id).all()
+    assert any(a.filename == "new.png" for a in new_assets)
+    assert not any(a.filename == "old.png" for a in new_assets)
+
+
+def test_execute_copies_pandoc_extracted_media(tmp_path: Path, db: Session, monkeypatch) -> None:
     """When Pandoc writes images into the --extract-media dir, the handler
     copies them into uploads/{book}/figure/ and records Asset rows."""
     import shutil
@@ -205,11 +253,7 @@ def test_execute_copies_pandoc_extracted_media(
     detected = handler.detect(str(f))
     book_id = handler.execute(str(f), detected, overrides={})
 
-    figures = (
-        db.query(Asset)
-        .filter(Asset.book_id == book_id, Asset.asset_type == "figure")
-        .all()
-    )
+    figures = db.query(Asset).filter(Asset.book_id == book_id, Asset.asset_type == "figure").all()
     assert any(a.filename == "figure1.png" for a in figures)
 
     # cleanup shared between mock invocations
@@ -237,17 +281,15 @@ def test_extract_title_returns_first_h1() -> None:
 # --- pandoc availability failover ---
 
 
-def test_detect_raises_pandoc_missing_when_binary_absent(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_detect_raises_pandoc_missing_when_binary_absent(tmp_path: Path, monkeypatch) -> None:
     """If ``pandoc`` is not on PATH, detect must fail with a dedicated
     ``_PandocMissing`` exception (mapped to a 500 with a clear message
     by the orchestrator). Regression guard: a bare 500 with a generic
     subprocess traceback is not acceptable - users need to know they
     must install pandoc."""
     from app.import_plugins.handlers.office import (
-        _PandocMissing,
         _convert_to_markdown,
+        _PandocMissing,
     )
 
     def _fake_run(*args, **kwargs):
@@ -260,16 +302,14 @@ def test_detect_raises_pandoc_missing_when_binary_absent(
         _convert_to_markdown(f, "docx")
 
 
-def test_detect_raises_pandoc_failure_on_nonzero_exit(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_detect_raises_pandoc_failure_on_nonzero_exit(tmp_path: Path, monkeypatch) -> None:
     """Pandoc present but conversion fails: the handler must surface
     the stderr so users can diagnose the input file."""
     import subprocess
 
     from app.import_plugins.handlers.office import (
-        _PandocFailure,
         _convert_to_markdown,
+        _PandocFailure,
     )
 
     def _fake_run(*args, **kwargs):

@@ -21,7 +21,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import zipfile
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -318,20 +317,3 @@ class _PandocFailure(RuntimeError):
 
 class _DuplicateCancelled(Exception):
     """Raised by execute when the user chose to cancel a duplicate import."""
-
-
-# Expose for external visibility in the epub-file-extension check below.
-def _is_zip_epub(path: Path) -> bool:
-    """Best-effort sanity check for .epub files (they are ZIP archives).
-
-    Used only by tests + potential future smart dispatch. Not called
-    from the hot path.
-    """
-    if not path.is_file():
-        return False
-    try:
-        with zipfile.ZipFile(path, "r") as zf:
-            names = zf.namelist()
-    except zipfile.BadZipFile:
-        return False
-    return any(n == "mimetype" for n in names)

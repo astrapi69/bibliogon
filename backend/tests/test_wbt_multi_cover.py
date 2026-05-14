@@ -38,9 +38,7 @@ def _zip_with_covers(
             yaml_body += f'cover-image: "{cover_image_key}"\n'
         zf.writestr("book/config/metadata.yaml", yaml_body)
         for name in cover_filenames:
-            zf.writestr(
-                f"book/assets/covers/{name}", b"\x89PNG\r\n\x1a\n"
-            )
+            zf.writestr(f"book/assets/covers/{name}", b"\x89PNG\r\n\x1a\n")
         zf.writestr("book/manuscript/chapters/01.md", "# C\n\nBody.\n")
     path = tmp_dir / "multi.zip"
     path.write_bytes(buf.getvalue())
@@ -87,9 +85,7 @@ def test_metadata_cover_image_key_picks_primary(tmp_path: Path) -> None:
     """metadata.yaml's ``cover-image`` key names the primary. The
     named file must land on book.cover_image even when the
     alphabetical default would pick a different one."""
-    zip_path = _zip_with_covers(
-        tmp_path, cover_image_key="b-paperback.png"
-    )
+    zip_path = _zip_with_covers(tmp_path, cover_image_key="b-paperback.png")
     book_id = _import(zip_path)
     with SessionLocal() as session:
         book = session.query(Book).filter(Book.id == book_id).one()
@@ -117,12 +113,8 @@ def test_alphabetical_fallback_when_no_metadata_key(tmp_path: Path) -> None:
 def test_primary_cover_override_picks_named_file(tmp_path: Path) -> None:
     """User's wizard choice overrides everything: the named file
     wins regardless of metadata.yaml or alphabetical ordering."""
-    zip_path = _zip_with_covers(
-        tmp_path, cover_image_key="a-ebook.png"
-    )
-    book_id = _import(
-        zip_path, overrides={"primary_cover": "c-hardcover.png"}
-    )
+    zip_path = _zip_with_covers(tmp_path, cover_image_key="a-ebook.png")
+    book_id = _import(zip_path, overrides={"primary_cover": "c-hardcover.png"})
     with SessionLocal() as session:
         book = session.query(Book).filter(Book.id == book_id).one()
         assert book.cover_image is not None
@@ -133,12 +125,14 @@ def test_primary_cover_override_rejects_unknown_filename(
     tmp_path: Path,
 ) -> None:
     """Override referencing a non-imported cover filename must
-    raise; silently falling back to another cover would mask a
-    UI bug."""
+    raise KeyError mentioning the missing filename and the
+    available alternatives; silently falling back to another
+    cover would mask a UI bug. The exact wording + KeyError type
+    are pinned so mutations to the helper's filter / sort /
+    f-string survive only if they preserve the error contract.
+    """
     import pytest
 
     zip_path = _zip_with_covers(tmp_path)
-    with pytest.raises(Exception):  # noqa: BLE001 - any deny is fine
-        _import(
-            zip_path, overrides={"primary_cover": "nonexistent.png"}
-        )
+    with pytest.raises(KeyError, match=r"primary_cover=.*nonexistent\.png"):
+        _import(zip_path, overrides={"primary_cover": "nonexistent.png"})
