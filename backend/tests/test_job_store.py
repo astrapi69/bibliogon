@@ -174,7 +174,18 @@ def test_subscribe_unknown_job_yields_nothing():
 
 
 def test_subscribe_cleanup_removes_subscriber():
-    """Disconnect mid-stream must remove the notify Event from the job."""
+    """Disconnect mid-stream must remove the notify Event from the job.
+
+    Cleanup happens in the async generator's ``finally`` clause when
+    ``aclosing()`` runs. Mutmut wraps every async generator in an
+    outer trampoline generator that iterates the mutated original;
+    when ``aclose()`` runs on the outer, the inner's ``finally`` is
+    scheduled through the event loop but may not have completed when
+    the immediately-following assertion fires. Poll with a small
+    timeout so the test stays meaningful under mutmut's trampoline
+    overhead and is robust to scheduler noise without losing what it
+    actually verifies (the subscriber list returns to empty).
+    """
     from contextlib import aclosing
 
     store = JobStore()
@@ -183,16 +194,20 @@ def test_subscribe_cleanup_removes_subscriber():
         job = store.create()
 
         async def consume():
-            # aclosing() guarantees the generator's finally runs - mirrors
-            # how Starlette closes the SSE generator when the client
-            # disconnects.
             async with aclosing(store.subscribe(job.id)) as gen:
                 async for _ in gen:
                     break  # disconnect after first event
 
         store.publish_event(job.id, "start", {"total": 1})
         await consume()
-        # Subscriber list must be back to empty
-        assert store.get(job.id)._subscribers == []
+        # Yield to the event loop so the inner async generator's
+        # ``finally`` (where ``_subscribers.remove(notify)`` happens)
+        # gets a chance to run before we assert. One yield is enough
+        # under normal pytest; the loop with a tiny timeout covers
+        # mutmut's trampoline-induced scheduler perturbation.
+        deadline = asyncio.get_running_loop().time() + 0.5
+        while job._subscribers and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        assert job._subscribers == []
 
     asyncio.run(run())

@@ -136,37 +136,55 @@ export default function BookEditor() {
         }
     }, [bookId]);
 
-    const loadBook = useCallback(async () => {
-        if (!bookId) return;
-        try {
-            const data = await api.books.get(bookId);
-            setBook(data);
-            // Select first chapter if none active or active no longer exists
-            if (data.chapters.length > 0) {
-                setActiveChapterId((prev) => {
-                    if (prev && data.chapters.some((c) => c.id === prev)) return prev;
-                    return data.chapters[0].id;
-                });
-            } else {
-                setActiveChapterId(null);
-            }
-            void refreshGitSync();
-            void refreshGitSyncMapping();
-        } catch (err) {
-            console.error("Failed to load book:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [bookId]);
-
+    // Bootstrap effect: load book + app settings + book list.
+    //
+    // StrictMode in dev mode (frontend/src/main.tsx) re-runs effects
+    // after a synthetic unmount/remount cycle. Without the cancel
+    // guard below, both mounts trigger ``loadBook``; the second
+    // response calls ``setBook`` after the user has already started
+    // editing, and the new ``book`` object reference cascades into
+    // BookMetadataEditor's ``useEffect([book])`` which resets the
+    // user's local form/keyword state. The keywords-editor smoke
+    // tests caught this as "the first keyword added is dropped".
     useEffect(() => {
-        loadBook();
+        let cancelled = false;
+        const runLoad = async () => {
+            if (!bookId) return;
+            try {
+                const data = await api.books.get(bookId);
+                if (cancelled) return;
+                setBook(data);
+                if (data.chapters.length > 0) {
+                    setActiveChapterId((prev) => {
+                        if (prev && data.chapters.some((c) => c.id === prev)) return prev;
+                        return data.chapters[0].id;
+                    });
+                } else {
+                    setActiveChapterId(null);
+                }
+                void refreshGitSync();
+                void refreshGitSyncMapping();
+            } catch (err) {
+                if (!cancelled) console.error("Failed to load book:", err);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        void runLoad();
         api.settings.getApp().then((cfg) => {
+            if (cancelled) return;
             const ed = (cfg as Record<string, unknown>).editor as Record<string, number> | undefined;
             if (ed) setEditorSettings(ed);
         }).catch(() => {});
-        api.books.list().then(setAllBooks).catch(() => {});
-    }, [loadBook]);
+        api.books.list().then((list) => {
+            if (cancelled) return;
+            setAllBooks(list);
+        }).catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bookId]);
 
     const handleNavigateToIssue = (chapterId: string, findingType: NavigableFindingType) => {
         setPendingFocus((prev) => ({
