@@ -23,9 +23,45 @@ real data.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
+
+# Mutmut copies ``app/``, ``tests/`` and ``pyproject.toml`` to a
+# ``mutants/`` tree but NOT ``config/`` / ``migrations/``. Without
+# them:
+#   * ``app.yaml.example`` is missing → ``PluginManager`` defaults
+#     ``entry_point_group`` to ``"pluginforge.plugins"``,
+#     mismatching ``HookspecMarker("bibliogon.plugins")`` and
+#     crashing ``register_hookspecs`` with
+#     ``ValueError: did not find any 'pluginforge.plugins' hooks``.
+#   * Alembic env.py can't find ``script_location: migrations/`` →
+#     ``CommandError: Path doesn't exist``.
+# Seed both directories from the real backend tree so the mutated
+# ``app.main`` boots cleanly. No-op outside the ``mutants/`` tree.
+_THIS_CONFTEST = Path(__file__).resolve()
+if _THIS_CONFTEST.parent.parent.name == "mutants":
+    _REAL_BACKEND = _THIS_CONFTEST.parent.parent.parent  # backend/
+    _MUTANT_BACKEND = _THIS_CONFTEST.parent.parent  # backend/mutants/
+    for _seed_dir in ("config", "migrations"):
+        _src = _REAL_BACKEND / _seed_dir
+        _dst = _MUTANT_BACKEND / _seed_dir
+        if not _dst.exists() and _src.exists():
+            shutil.copytree(_src, _dst)
+    # ``tests/test_docs_parity.py`` (and any other test that uses
+    # ``Path(__file__).resolve().parent.parent.parent`` to reach
+    # the repo root) resolves to ``backend/`` inside ``mutants/``,
+    # because ``mutants/tests/`` is two levels above ``backend/``,
+    # not three. Symlink the real ``docs/`` + ``plugins/`` next to
+    # ``mutants/`` so the test's REPO_ROOT computation lands on a
+    # real ``docs/help/`` tree.
+    _REPO_ROOT = _REAL_BACKEND.parent
+    for _link_name in ("docs", "plugins"):
+        _link = _MUTANT_BACKEND / _link_name
+        _target = _REPO_ROOT / _link_name
+        if not _link.exists() and _target.exists():
+            os.symlink(_target, _link, target_is_directory=True)
 
 # MUST run before any `from app.* import ...` statement in this file
 # or in any test module that pytest collects.

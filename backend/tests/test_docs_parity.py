@@ -18,7 +18,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+# Walk up to the first ancestor that contains ``docs/help``. The
+# usual ``parent.parent.parent`` shortcut lands at the repo root
+# when the file lives under ``backend/tests/`` but resolves to
+# ``backend/`` when mutmut copies the suite into ``mutants/tests/``.
+REPO_ROOT = next(p for p in Path(__file__).resolve().parents if (p / "docs" / "help").is_dir())
 DOCS_HELP_EN = REPO_ROOT / "docs" / "help" / "en"
 DOCS_HELP_DE = REPO_ROOT / "docs" / "help" / "de"
 

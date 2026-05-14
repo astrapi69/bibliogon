@@ -27,6 +27,8 @@ file-level OS locks would be a separate hardening pass (filed as
 follow-up if a hot-loop add() collision is ever observed).
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from datetime import UTC, datetime

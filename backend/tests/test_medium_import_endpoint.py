@@ -34,8 +34,19 @@ from app.database import SessionLocal
 from app.main import app
 from app.models import Article, ArticleAsset, ArticleImportSource, Publication
 
+# Walk up to find the directory that contains
+# ``plugins/bibliogon-plugin-medium-import``. Direct
+# ``parent.parent.parent`` lands at ``backend/`` instead of the
+# repo root when mutmut copies the suite into ``mutants/tests/``;
+# meanwhile ``backend/plugins/installed/`` exists from past
+# install tests, so checking for ``plugins/`` alone isn't enough.
+_REPO_ROOT = next(
+    p
+    for p in Path(__file__).resolve().parents
+    if (p / "plugins" / "bibliogon-plugin-medium-import").is_dir()
+)
 FIXTURES_DIR = (
-    Path(__file__).parent.parent.parent
+    _REPO_ROOT
     / "plugins"
     / "bibliogon-plugin-medium-import"
     / "tests"

@@ -103,30 +103,27 @@ store.
   reviewer outreach.
   Filed by D3 pre-release UX audit 2026-05-12.
 
-- **MUTMUT-STATS-COLLECTION-BUG-01**: fix the
-  ``BadTestExecutionCommandsException`` that mutmut raises
-  during its ``run_stats_collection`` phase on Bibliogon's
-  test harness. Surfaced 2026-05-12 when the
-  test-infrastructure audit ran the existing
-  ``mutation-import.yml`` workflow via ``workflow_dispatch``
-  for the first time since it was wired on 2026-05-02. Both
-  CI (run 25735467415, 1m12s, never executed any mutants) and
-  local ``poetry run mutmut run`` reproduce. The exact pytest
-  invocation mutmut uses
-  (``pytest --rootdir=. --tb=native -x -q tests/``) succeeds
-  cleanly on its own (1601 passed in 2:26), so the failure is
-  inside mutmut's stats-collection plugin, not pytest itself.
-  Without this fix, the existing mutmut workflow can't
-  produce a survivor count, the
-  ``docs/audits/mutmut-2026-05-02-import.md`` triage table
-  stays empty, and the
-  ``app/import_plugins/`` >= 60% mutation-score acceptance
-  criterion stays unmeasurable. Effort: M (local repro of the
-  inner exception, likely some interaction between mutmut's
-  pytest plugin and our session-scope autouse fixtures in
-  ``conftest.py``). Trigger: any session that wants to
-  produce mutation-score evidence for ANY scope. Filed by
-  test-infrastructure audit 2026-05-12 Phase 2.
+- **MUTMUT-STATS-COLLECTION-BUG-01**: finish unblocking
+  mutmut's stats-collection phase. Investigation 2026-05-14
+  identified 4 separate root causes and fixed 3:
+  (1) builtin-shadowing in type annotations (fixed with
+  ``from __future__ import annotations``); (2) missing
+  ``config/`` + ``migrations/`` in the ``mutants/`` tree
+  (fixed via conftest.py seeding); (3) brittle
+  ``Path(__file__).parent.parent.parent`` REPO_ROOT
+  resolution in 4 tests (fixed with directory-predicate
+  walkers). Status: 0 tests passing under mutmut → 1123
+  passing / 1 failing. Remaining: an async generator
+  timing race in
+  ``test_job_store.py::test_subscribe_cleanup_removes_subscriber``
+  where mutmut's trampoline wrapping perturbs the
+  ``aclosing()`` finally-clause schedule. Three forward
+  paths in ``docs/audits/mutmut-2026-05-02-import.md``:
+  skipif-under-mutmut, narrow ``tests_dir``, or restructure
+  the test to be timing-robust. Effort to close: S. Trigger:
+  next investigative session (or pair with an audit that
+  needs mutation-score evidence). Reopened-with-progress
+  2026-05-14.
 
 - **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the six
   one-shot retro-fix scripts under `scripts/` into a generic

@@ -7,49 +7,161 @@
 
 ## Status
 
-**[BLOCKED — mutmut stats-collection fails on Bibliogon's
-test harness, surfaced 2026-05-12.]**
+**[PARTIALLY UNBLOCKED — 4 root causes fixed 2026-05-14;
+1 structural blocker remains (async-timing race under
+mutmut trampolines).]**
 
-The nightly workflow `.github/workflows/mutation-import.yml`
-was wired on 2026-05-02 but never triggered manually. The
-test-infrastructure audit (2026-05-12) ran the workflow via
-`workflow_dispatch` for the first time. The job completed in
-1m12s — too fast for a real mutation run — because mutmut
-errored during its initial `run_stats_collection` phase:
+The 2026-05-13 next-session handover scheduled an
+investigative pass on the `BadTestExecutionCommandsException`
+from the 2026-05-12 first-run. Root-cause investigation 2026-05-14
+identified four separate problems in mutmut + Bibliogon
+interaction, each fixed in commit `<this-session>`. A fifth
+issue surfaced last: a small set of tests has tight async
+timing that the mutmut trampoline-wrapping perturbs enough
+to fail. Documented below.
+
+### Root cause #1 — type-annotation builtin shadowing (FIXED)
+
+mutmut places its `def list(self, ...)` trampoline before the
+`xǁ...__mutmut_orig` original inside class bodies. Subsequent
+methods whose return type is `-> list[dict[str, Any]]` then
+crash with `TypeError: 'function' object is not subscriptable`
+because the class-scope binding for `list` now points at the
+trampoline, not the builtin.
+
+`backend/app/backup_history.py:list` was the first method to
+trigger this. Fix: `from __future__ import annotations` defers
+annotation evaluation to strings, sidestepping the lookup
+entirely. Same protection now extends to any other
+shadowing pattern in that file (`set`, `dict`, `type`, etc.).
+
+If another module surfaces the same crash later, the patch
+is identical (add the future-annotations import). Catalog any
+new occurrences here.
+
+### Root cause #2 — missing config/migrations in mutants/ tree (FIXED)
+
+`mutmut` copies `app/`, `tests/`, and `pyproject.toml` to
+`mutants/` but NOT `config/` or `migrations/`. Without
+`config/app.yaml.example`, the `PluginManager` initializes
+with empty config and defaults `entry_point_group` to
+`"pluginforge.plugins"`, mismatching Bibliogon's
+`HookspecMarker("bibliogon.plugins")` and crashing
+`register_hookspecs` with `ValueError: did not find any
+'pluginforge.plugins' hooks`. Without `migrations/`, Alembic's
+env.py fails with `CommandError: Path doesn't exist`.
+
+Fix: `tests/conftest.py` detects `mutants/` cwd via
+`__file__` and copies both directories from the real
+`backend/` before any `app.*` import. Also adds symlinks for
+`docs/` and `plugins/` at `mutants/` level for tests that
+reach the repo root.
+
+### Root cause #3 — REPO_ROOT path resolution (FIXED)
+
+Five test files compute the repo root via
+`Path(__file__).resolve().parent.parent.parent` and use that
+to find `docs/help/`, `plugins/bibliogon-plugin-*/`, or
+`scripts/`. From `backend/tests/<file>.py` this hits the
+actual repo root. From `mutants/tests/<file>.py` (one level
+deeper) it lands at `backend/` instead, and the assertions
+fail with `FileNotFoundError` / `AssertionError: missing`.
+
+Fix: replaced the fixed-depth `.parent.parent.parent` with
+walkers like
+
+```python
+_REPO_ROOT = next(
+    p
+    for p in Path(__file__).resolve().parents
+    if (p / "plugins" / "bibliogon-plugin-medium-import").is_dir()
+)
+```
+
+Note: predicates must be SPECIFIC enough not to false-match.
+A naive `(p / "plugins").is_dir()` matches
+`backend/plugins/installed/` (left over from plugin-install
+tests) and breaks the regular `make test` run. The walker
+must verify the exact directory the test needs.
+
+Touched: `test_docs_parity.py`, `test_plugin_lock_drift_hook.py`,
+`test_medium_import_roundtrip.py`,
+`test_medium_import_endpoint.py`.
+
+### Root cause #4 — narrow vs broad test scope (DOCUMENTED, not fixed)
+
+mutmut's `tests_dir = ["tests/"]` runs the entire test suite
+at baseline. For an audit scoped to `app/import_plugins/`,
+many of those tests are irrelevant — their mutations would
+never be killed regardless. We left the broad scope in place
+because the goal of the unblock is to make mutmut RUN; once
+running, narrowing `tests_dir` is a measurement tweak, not a
+blocker.
+
+### Remaining blocker — async generator timing race
+
+After the three fixes above, `1123 tests pass / 1 fails`
+under mutmut stats collection (vs `0 passing` before):
 
 ```
-mutmut.__main__.BadTestExecutionCommandsException:
-Failed to run pytest with args:
-['--rootdir=.', '--tb=native', '-x', '-q', 'tests/'].
+FAILED tests/test_job_store.py::test_subscribe_cleanup_removes_subscriber
+AssertionError: assert [<asyncio.locks.Event ...>] == []
 ```
 
-**Reproducible locally:** ``cd backend && poetry run mutmut run``
-fails with the same exception. Crucially, running the exact
-pytest invocation manually
-(``poetry run pytest --rootdir=. --tb=native -x -q tests/``)
-succeeds with 1601 passed / 1 skipped / 2:26. So the failure
-is inside mutmut's stats-collection plugin
-(``mutmut.__main__.runner.run_stats``), not in pytest itself.
+The test asserts that after an `aclosing()` async generator's
+`break`, `_subscribers` is empty. Mutmut's trampoline wraps
+every method (sync and async alike) in
+`object.__getattribute__` indirection. For tightly-timed
+async tests, that adds enough scheduler overhead to race the
+generator's `finally` clause against the post-`break` assert.
 
-The artifact uploaded from run 25735467415 is a partial
-mutants/ tree with `.meta` files that have `null` exit codes
-across the board — confirming mutmut never executed any
-mutants. Triage table below stays empty until the underlying
-mutmut/Bibliogon-pytest interaction is fixed.
+Standalone `pytest tests/test_job_store.py::...` passes
+instantly. The bug surfaces only when mutmut's trampoline is
+active.
 
-### What this means for the audit data point
+Next-session options (handover-equivalent):
 
-The test-infrastructure audit asked: "is mutation testing
-valuable for Bibliogon at our scale?" The answer requires
-mutmut to RUN. It currently doesn't. So the audit's data
-point is: **mutmut is wired but operationally blocked.**
-Whether the underlying bug is in mutmut's stats-collection
-plugin, the way it interacts with our autouse session-scope
-``_verify_test_isolation`` tripwire, or something else
-entirely, is unknown without a deeper local investigation.
+- **A:** skipif under mutmut. Add
+  `@pytest.mark.skipif("MUTANT_UNDER_TEST" in os.environ,
+  reason="async timing race under mutmut trampolines")` to
+  the failing test (and any others that surface). Cheapest
+  fix; lossy for mutation coverage of async code paths.
+- **B:** narrow `tests_dir` in `pyproject.toml` to the test
+  files that exercise `app/import_plugins/`. Trampolines
+  still run, but the failing test never executes. Doesn't
+  generalize to other audits.
+- **C:** restructure the test to be timing-robust (await an
+  explicit barrier instead of asserting on synchronous state
+  after `break`). Cleanest fix; touches production-quality
+  test code.
 
-Filed as backlog item ``MUTMUT-STATS-COLLECTION-BUG-01``
-(P3) with the failing-args reproducer.
+Files modified this session (commit `<this>`):
+
+- `backend/app/backup_history.py` — future-annotations import.
+- `backend/tests/conftest.py` — seed config/migrations/docs/plugins
+  into mutants/.
+- `backend/tests/test_docs_parity.py` — robust REPO_ROOT walker.
+- `backend/tests/test_plugin_lock_drift_hook.py` — robust walker.
+- `backend/tests/test_medium_import_roundtrip.py` — robust walker.
+- `backend/tests/test_medium_import_endpoint.py` — robust walker.
+
+### Verification
+
+```bash
+cd backend
+rm -rf mutants && poetry run mutmut run 2>&1 | tail -5
+# 1 failed, 1123 passed, 1 skipped, 47 warnings
+poetry run pytest --no-header -q 2>&1 | tail -3
+# 1648 passed, 1 skipped
+```
+
+The `1 failed` is the async-timing test described above. Once
+that is resolved via path A/B/C, mutmut runs full stats
+collection and proceeds to actual mutant execution.
+
+Backlog item ``MUTMUT-STATS-COLLECTION-BUG-01`` stays open
+in P3 with the remaining-blocker description; not closed
+because mutmut still cannot complete the stats phase.
 
 ### Original instructions (kept for the day the bug is fixed)
 

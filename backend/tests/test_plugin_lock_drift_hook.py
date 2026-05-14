@@ -31,7 +31,13 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+# Walk up to the first ancestor that contains ``scripts/``. The
+# usual ``parent.parent.parent`` shortcut resolves to ``backend/``
+# instead of the repo root when mutmut copies the suite into
+# ``mutants/tests/``.
+REPO_ROOT = next(
+    p for p in Path(__file__).resolve().parents if (p / "scripts").is_dir()
+)
 SCRIPT_PATH = REPO_ROOT / "scripts" / "check_plugin_lock_paired.py"
 
 
