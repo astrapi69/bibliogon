@@ -305,6 +305,9 @@ export default function ArticleList() {
         try {
             await api.articles.delete(article.id);
             setArticles((prev) => prev.filter((a) => a.id !== article.id));
+            // Reconcile bulk-selection state: the row that just
+            // disappeared must not stay in the BulkActionBar count.
+            selection.remove(article.id);
             void loadTrash();
             notify.info(
                 t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
@@ -343,6 +346,9 @@ export default function ArticleList() {
                 /* already in trash or already gone */
             }
             setArticles((prev) => prev.filter((a) => a.id !== article.id));
+            // Reconcile bulk-selection state: the row that just
+            // disappeared must not stay in the BulkActionBar count.
+            selection.remove(article.id);
             void loadTrash();
             notify.success(
                 t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
@@ -392,6 +398,11 @@ export default function ArticleList() {
         try {
             await api.articles.permanentDelete(article.id);
             setTrash((prev) => prev.filter((a) => a.id !== article.id));
+            // Defensive: if the row was soft-deleted in another tab and
+            // its id was still in the live-list selection here, drop it
+            // now so the BulkActionBar count never references an
+            // article that no longer exists anywhere.
+            selection.remove(article.id);
             notify.success(
                 t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
             );

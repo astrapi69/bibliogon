@@ -19,6 +19,11 @@ export interface BookSelection {
     toggle: (id: string) => void
     selectAll: (ids: string[]) => void
     clear: () => void
+    /** Delete a single id from the set (idempotent; no-op if absent).
+     *  Used by row-destructive handlers (handleDelete /
+     *  handleDeletePermanent) to keep the BulkActionBar count from
+     *  referencing an orphan id after the row disappears. */
+    remove: (id: string) => void
 }
 
 export function useBookSelection(): BookSelection {
@@ -44,6 +49,15 @@ export function useBookSelection(): BookSelection {
         setSelectedIds(new Set())
     }, [])
 
+    const remove = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+        })
+    }, [])
+
     const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds])
 
     return {
@@ -53,5 +67,6 @@ export function useBookSelection(): BookSelection {
         toggle,
         selectAll,
         clear,
+        remove,
     }
 }

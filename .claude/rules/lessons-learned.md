@@ -1967,3 +1967,100 @@ behaviour we wanted, so tests need to isolate, not remove).
 The existing `CLAUDE.md` "Test isolation" section covers
 filesystem + DB. This rule covers the third layer: in-process
 in-memory state. All three layers need explicit handling.
+
+## Destructive row-actions must reconcile collection state
+
+When a row-action (delete, archive, move-to-trash) modifies an
+item that may be a member of a multi-select collection state, the
+post-action handler MUST reconcile the collection so its consumers
+(bulk-action bar, counters, batch-operation forms) never reference
+an orphan id that no longer corresponds to a visible row.
+
+Pattern surfaced 2026-05-14: ArticlesList + Dashboard each had a
+selection hook (``useArticleSelection`` / ``useBookSelection``)
+holding a ``Set<string>`` of selected row ids. A row-delete handler
+removed the row from the page-level list state but left the id in
+the selection Set. The BulkActionBar reads ``count > 0`` from the
+selection hook → bar stays visible → buttons claim to operate on
+"1 selected" → but the underlying row is gone. Soft-delete /
+permanent-delete handlers (both live-list AND trash-view) all
+exhibit the same bug class.
+
+### Rule
+
+Every single-item destructive handler that fires from a list view
+backed by a selection hook MUST call the hook's ``remove(id)`` (or
+equivalent idempotent delete) after the API call succeeds, BEFORE
+the success notification. The order matters: reconcile state first,
+notify second, so the user never reads "moved to trash" while the
+bar still shows them as the operand.
+
+```typescript
+async function handleDelete(item: Item) {
+  try {
+    await api.items.delete(item.id);
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    selection.remove(item.id);  // <-- reconcile BEFORE notify
+    notify.success(...);
+  } catch (err) { ... }
+}
+```
+
+### Anti-pattern
+
+```typescript
+// WRONG — selection still contains item.id after this returns
+async function handleDelete(item: Item) {
+  await api.items.delete(item.id);
+  setItems((prev) => prev.filter((i) => i.id !== item.id));
+  // Forgot selection.remove(item.id) here → bar stays at "1 selected"
+}
+```
+
+### Hook contract
+
+Selection hooks should expose a dedicated ``remove(id)`` method
+that is idempotent (no-op when the id is absent), not just
+``toggle(id)`` with a guard at the callsite. Reasons:
+
+- ``toggle`` flips state — calling it on an unselected id ADDS the
+  id, which is the opposite of what destructive handlers want.
+- A dedicated ``remove`` makes the intent obvious at the callsite
+  and lets the hook's React state machinery short-circuit
+  (return the same Set reference on no-op) to skip a re-render.
+- The signature reads better in tests: ``selection.remove(id)``
+  asserts the operation; ``isSelected(id) && toggle(id)`` is
+  noise that obscures the contract.
+
+### Detection heuristic
+
+When auditing a list page for this bug class, grep for every
+mutator on the list state and check whether selection.remove (or
+equivalent) appears nearby:
+
+```
+grep -E 'setBooks\(|setArticles\(|setItems\(' \
+  frontend/src/pages/<page>.tsx \
+  | grep -B0 -A2 '\.filter'
+```
+
+For each match: confirm a paired ``selection.remove(`` or
+``selection.clear()`` call in the same handler. Missing pair is
+the bug.
+
+### Other affected operations
+
+Same shape applies to:
+
+- **Bulk operations on the SAME page** that internally use single-
+  item APIs in a loop (each successful delete in the loop must
+  remove that id from selection so a partial failure leaves a
+  clean post-state).
+- **Cross-tab updates** received via WebSocket / SSE / polling:
+  when the server pushes "item X was deleted", the receiver must
+  reconcile its local selection state, not just the list.
+- **Filter changes that hide rows**: this is a separate decision
+  (clear-on-filter-change vs preserve-and-warn) that both Article
+  and Dashboard already handle via ``clearSelection`` /
+  ``clearBookSelection`` callbacks bound to filter state changes.
+  Pin tests for both patterns when adding a new list page.

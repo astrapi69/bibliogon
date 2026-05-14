@@ -11,6 +11,10 @@
  *   by the "Select all" control which always operates on the
  *   currently-visible filtered list).
  * - ``clear()`` empties the selection.
+ * - ``remove(id)`` deletes a single id from the set (idempotent;
+ *   no-op if absent). Used by row-destructive handlers to reconcile
+ *   selection state after the underlying article disappears, so the
+ *   BulkActionBar's count never references an orphan id.
  *
  * The set is wrapped in React state so component re-renders pick up
  * changes; consumers can rely on ``isSelected`` and ``count`` as
@@ -26,6 +30,7 @@ export interface ArticleSelection {
     toggle: (id: string) => void
     selectAll: (ids: string[]) => void
     clear: () => void
+    remove: (id: string) => void
 }
 
 export function useArticleSelection(): ArticleSelection {
@@ -51,6 +56,15 @@ export function useArticleSelection(): ArticleSelection {
         setSelectedIds(new Set())
     }, [])
 
+    const remove = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+        })
+    }, [])
+
     const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds])
 
     return {
@@ -60,5 +74,6 @@ export function useArticleSelection(): ArticleSelection {
         toggle,
         selectAll,
         clear,
+        remove,
     }
 }

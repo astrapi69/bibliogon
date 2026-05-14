@@ -321,6 +321,9 @@ export default function Dashboard() {
     const handleDelete = async (id: string) => {
         await api.books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
+        // Reconcile bulk-selection state: the row that just
+        // disappeared must not stay in the BulkActionBar count.
+        selection.remove(id);
         loadTrash();
         notify.info(t("ui.dashboard.moved_to_trash", "In den Papierkorb verschoben"));
     };
@@ -334,6 +337,8 @@ export default function Dashboard() {
         await api.books.delete(id);
         try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
         setBooks((prev) => prev.filter((b) => b.id !== id));
+        // Reconcile bulk-selection state.
+        selection.remove(id);
         notify.success(t("ui.dashboard.deleted_permanently", "Buch endgültig gelöscht"));
     };
 
@@ -347,6 +352,11 @@ export default function Dashboard() {
         if (!await dialog.confirm(t("ui.dashboard.delete_permanent_title", "Endgültig löschen"), t("ui.dashboard.delete_permanent_warning", "Buch endgültig löschen? Dies kann nicht rückgaengig gemacht werden."), "danger")) return;
         await api.books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
+        // Defensive: same as ArticleList — if the book was soft-deleted
+        // in another tab and the id was still in this tab's live-list
+        // selection, drop it so the BulkActionBar count never
+        // references a row that's gone everywhere.
+        selection.remove(id);
     };
 
     const handleEmptyTrash = async () => {
