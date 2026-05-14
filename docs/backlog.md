@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 27 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 28 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -246,6 +246,25 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **GH-ACTIONS-OPTIONAL-BUMPS-01**: two optional standard-action
+  bumps deferred from the 2026-05-14 CI-hygiene full audit
+  (neither blocks Node-24 coverage; both are already on Node 24
+  at the v5 pin):
+  - ``actions/checkout`` v5 → v6: v6 introduces "persist creds
+    to a separate file" (security improvement for jobs that
+    checkout multiple repos in the same runner). No-op for
+    single-checkout jobs, which is most of our workflows.
+  - ``actions/setup-node`` v5 → v6: v6 narrows automatic
+    caching from "any package manager" to "npm only".
+    `frontend/package.json` does not declare a `packageManager`
+    field, so the auto-caching path is dormant either way.
+  Trigger: next periodic CI-hygiene audit (~2-3 months from
+  2026-05-14), OR a specific need surfaces (e.g. credential
+  isolation becomes relevant for a security review, or the
+  frontend starts using npm via the auto-cache path). Effort:
+  S per bump (single sed + commit each). Filed by the 2026-05-14
+  full-audit session.
 
 - **STARLETTE-V1-AWAIT-FASTAPI-01** (BLOCKED, upstream):
   bump ``starlette`` from 0.46.2 to 1.0.0 across the
