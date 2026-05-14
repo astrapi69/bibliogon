@@ -1,5 +1,13 @@
 import {Editor} from "@tiptap/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
+import {notify} from "../utils/notify";
+import {copyToClipboard} from "../utils/clipboard";
+import {
+    editorToMarkdown,
+    editorToPlainText,
+    type DocumentMetadata,
+} from "../utils/tiptap-markdown";
 import styles from "./Toolbar.module.css";
 import {
     Bold,
@@ -35,6 +43,8 @@ import {
     Headphones,
     Sparkles,
     Wrench,
+    Copy,
+    ChevronDown,
 } from "lucide-react";
 
 interface Props {
@@ -59,11 +69,50 @@ interface Props {
     styleCheckActive?: boolean;
     styleCheckLoading?: boolean;
     onToggleStyleCheck?: () => void;
+    /** Document title prepended to the Copy action's output. When
+     *  set, Markdown copies emit ``# Title\n\n{body}``; plain-text
+     *  copies emit ``Title\n\n{body}``. Empty / undefined skips the
+     *  prepend so the user copies the body alone. */
+    documentTitle?: string;
+    /** Optional subtitle, rendered beneath the title in both
+     *  modes. ArticleEditor passes ``article.subtitle``;
+     *  BookEditor leaves it unset. */
+    documentSubtitle?: string;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
     const {t} = useI18n();
     if (!editor) return null;
+
+    const handleCopy = async (mode: "markdown" | "plain") => {
+        const metadata: DocumentMetadata = {
+            title: documentTitle,
+            subtitle: documentSubtitle,
+        };
+        const text =
+            mode === "markdown"
+                ? editorToMarkdown(editor, metadata)
+                : editorToPlainText(editor, metadata);
+        const ok = await copyToClipboard(text);
+        if (ok) {
+            const message =
+                mode === "markdown"
+                    ? t("ui.toolbar.copy_success_markdown", "Copied as Markdown.")
+                    : t("ui.toolbar.copy_success_plain", "Copied as plain text.");
+            notify.success(message);
+        } else {
+            // The native clipboard API needs a secure context (HTTPS
+            // / localhost) and explicit permission. Both are normal in
+            // production; surface the failure rather than silently
+            // swallow it.
+            notify.error(
+                t(
+                    "ui.toolbar.copy_failed",
+                    "Could not copy to clipboard.",
+                ),
+            );
+        }
+    };
 
     const items = [
         // Text formatting
@@ -314,6 +363,87 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
 
             {/* Spacer */}
             <div className={styles.spacer}/>
+
+            {/* Copy split-button: default action copies as Markdown;
+             *  the chevron exposes "Copy as plain text" for paste-
+             *  targets that mangle Markdown (email, notes, chat).
+             *  Hidden in markdown-edit mode — the textarea already
+             *  shows Markdown and the user can select-all + Ctrl-C. */}
+            {!markdownMode && (
+                <div className={styles.copyGroup} data-testid="toolbar-copy-group">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            void handleCopy("markdown");
+                        }}
+                        title={t(
+                            "ui.toolbar.copy_markdown_tooltip",
+                            "Copy as Markdown",
+                        )}
+                        aria-label={t(
+                            "ui.toolbar.copy_markdown_tooltip",
+                            "Copy as Markdown",
+                        )}
+                        data-testid="toolbar-copy-markdown"
+                        className={styles.button}
+                    >
+                        <Copy size={16}/>
+                    </button>
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                type="button"
+                                title={t(
+                                    "ui.toolbar.copy_more_tooltip",
+                                    "Copy options",
+                                )}
+                                aria-label={t(
+                                    "ui.toolbar.copy_more_tooltip",
+                                    "Copy options",
+                                )}
+                                data-testid="toolbar-copy-chevron"
+                                className={styles.copyChevron}
+                            >
+                                <ChevronDown size={12}/>
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                className="hamburger-menu-content"
+                                align="end"
+                                sideOffset={4}
+                            >
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    data-testid="toolbar-copy-markdown-item"
+                                    onSelect={(e) => {
+                                        e.preventDefault();
+                                        void handleCopy("markdown");
+                                    }}
+                                >
+                                    {t(
+                                        "ui.toolbar.copy_as_markdown",
+                                        "Copy as Markdown",
+                                    )}
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                    className="hamburger-menu-item"
+                                    data-testid="toolbar-copy-plain-item"
+                                    onSelect={(e) => {
+                                        e.preventDefault();
+                                        void handleCopy("plain");
+                                    }}
+                                >
+                                    {t(
+                                        "ui.toolbar.copy_as_plain",
+                                        "Copy as plain text",
+                                    )}
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                </div>
+            )}
 
             {/* Search toggle */}
             {onToggleSearch && !markdownMode && (

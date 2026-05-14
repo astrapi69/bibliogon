@@ -77,3 +77,32 @@
     color: var(--accent);
     border-color: var(--accent);
 }
+
+/* Copy split-button: a primary action button glued to a chevron
+ * disclosure that exposes the plain-text alternative. The two
+ * elements visually read as one control (no gap) but each gets its
+ * own hover state. */
+.copyGroup {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.copyChevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 150ms;
+}
+
+.copyChevron:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+}

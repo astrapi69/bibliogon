@@ -42,6 +42,7 @@ import Toolbar from "./Toolbar";
 import {useI18n} from "../hooks/useI18n";
 import {api, ApiError, SaveAbortedError} from "../api/client";
 import {notify} from "../utils/notify";
+import {editorToMarkdown} from "../utils/tiptap-markdown";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -82,6 +83,17 @@ interface Props {
      *  path gets version from the parent via `onSave`. */
     chapterVersion?: number;
     bookContext?: BookContext;
+    /** When set, the toolbar's "Copy" action prepends this string
+     *  as a heading (Markdown: ``# documentTitle\n\n``; plain text:
+     *  ``documentTitle\n\n``). Set by ArticleEditor with the
+     *  article title, by BookEditor with the chapter title. */
+    documentTitle?: string;
+    /** Optional companion to ``documentTitle``. Rendered in
+     *  Markdown as ``*subtitle*`` on its own line; in plain text
+     *  on its own line beneath the title. ArticleEditor passes
+     *  ``article.subtitle``; BookEditor leaves it unset (chapters
+     *  have no subtitle field). */
+    documentSubtitle?: string;
     autosaveDebounceMs?: number;
     draftSaveDebounceMs?: number;
     draftMaxAgeDays?: number;
@@ -94,7 +106,7 @@ interface Props {
     initialFocus?: {type: string; seq: number};
 }
 
-export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
+export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
     const gates = pluginsForKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
@@ -968,6 +980,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 styleCheckActive={styleCheckActive}
                 styleCheckLoading={styleCheckLoading}
                 onToggleStyleCheck={isPluginAvailable(pluginStatus, "ms-tools") ? handleToggleStyleCheck : undefined}
+                documentTitle={documentTitle ?? chapterTitle}
+                documentSubtitle={documentSubtitle}
             />
 
             {/* TTS Preview Player */}
@@ -1336,94 +1350,6 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             </div>
         </div>
     );
-}
-
-function editorToMarkdown(editor: TiptapEditor | null): string {
-    if (!editor) return "";
-    // Simple text extraction - the full TipTap-JSON to Markdown conversion
-    // happens server-side in the export plugin. This is a lightweight preview.
-    const doc = editor.getJSON();
-    return nodeToMarkdown(doc);
-}
-
-function nodeToMarkdown(node: Record<string, unknown>): string {
-    if (!node) return "";
-    const type = node.type as string;
-    const content = node.content as Record<string, unknown>[] | undefined;
-    const attrs = node.attrs as Record<string, unknown> | undefined;
-
-    if (type === "doc") {
-        return (content || []).map(nodeToMarkdown).join("\n\n");
-    }
-    if (type === "paragraph") {
-        return inlineToMarkdown(content || []);
-    }
-    if (type === "heading") {
-        const level = (attrs?.level as number) || 1;
-        return "#".repeat(level) + " " + inlineToMarkdown(content || []);
-    }
-    if (type === "bulletList") {
-        return (content || []).map((item) => {
-            const inner = (item.content as Record<string, unknown>[] || []).map(nodeToMarkdown).join("\n");
-            return "- " + inner;
-        }).join("\n");
-    }
-    if (type === "orderedList") {
-        return (content || []).map((item, i) => {
-            const inner = (item.content as Record<string, unknown>[] || []).map(nodeToMarkdown).join("\n");
-            return `${i + 1}. ${inner}`;
-        }).join("\n");
-    }
-    if (type === "blockquote") {
-        const inner = (content || []).map(nodeToMarkdown).join("\n");
-        return inner.split("\n").map((l) => "> " + l).join("\n");
-    }
-    if (type === "codeBlock") {
-        const lang = (attrs?.language as string) || "";
-        const code = (content || []).map((n) => (n.text as string) || "").join("");
-        return "```" + lang + "\n" + code + "\n```";
-    }
-    if (type === "imageFigure" || type === "figure") {
-        const src = (attrs?.src as string) || "";
-        const alt = (attrs?.alt as string) || "";
-        const caption = content ? inlineToMarkdown(content) : "";
-        let md = `![${alt}](${src})`;
-        if (caption) {
-            md += `\n*${caption}*`;
-        }
-        return md;
-    }
-    if (type === "image") {
-        const src = (attrs?.src as string) || "";
-        const alt = (attrs?.alt as string) || "";
-        return `![${alt}](${src})`;
-    }
-    if (type === "horizontalRule") {
-        return "---";
-    }
-    if (type === "text") {
-        let text = (node.text as string) || "";
-        const marks = node.marks as Record<string, unknown>[] | undefined;
-        if (marks) {
-            for (const mark of marks) {
-                const mt = mark.type as string;
-                if (mt === "bold") text = `**${text}**`;
-                else if (mt === "italic") text = `*${text}*`;
-                else if (mt === "strike") text = `~~${text}~~`;
-                else if (mt === "code") text = "`" + text + "`";
-                else if (mt === "link") {
-                    const href = (mark.attrs as Record<string, unknown>)?.href as string || "";
-                    text = `[${text}](${href})`;
-                }
-            }
-        }
-        return text;
-    }
-    return "";
-}
-
-function inlineToMarkdown(nodes: Record<string, unknown>[]): string {
-    return nodes.map(nodeToMarkdown).join("");
 }
 
 /**

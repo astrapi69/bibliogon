@@ -1124,6 +1124,8 @@ export default function ArticleEditor() {
                         onSave={persistContent}
                         chapterId={article.id}
                         chapterTitle={article.title}
+                        documentTitle={article.title}
+                        documentSubtitle={article.subtitle ?? undefined}
                         bookContext={{
                             title: article.title,
                             author: article.author ?? "",
