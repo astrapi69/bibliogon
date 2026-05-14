@@ -54,6 +54,15 @@ export default function MediumImportPage() {
             });
             setResult(response);
             setPhase("idle");
+            // Clear the file selection so the "Import starten" button
+            // becomes disabled (gated on `!file`). Without this, a user
+            // who clicks "Import starten" a second time would trigger a
+            // re-import of the same ZIP — backend dedupes safely, but
+            // the UX impression is "did it really import?".
+            // The result panel's "Weiteres ZIP importieren" then clears
+            // the result and the user is back in the idle state ready
+            // to pick a new file.
+            setFile(null);
             const summary = t(
                 "ui.medium_import.toast.imported_summary",
                 "Import abgeschlossen: {imported} importiert, {skipped} übersprungen, {errored} Fehler.",
