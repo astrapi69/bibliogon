@@ -16,7 +16,8 @@ import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
-import {Menu} from "lucide-react";
+import {BookOpen, Menu, Plus} from "lucide-react";
+import {EmptyState} from "../components/EmptyState";
 import styles from "./BookEditor.module.css";
 
 export default function BookEditor() {
@@ -574,72 +575,27 @@ export default function BookEditor() {
                     <p>{t("ui.common.loading", "Laden...")}</p>
                 </div>
             ) : (
-                <div className={styles.noChapter} data-testid="book-editor-empty-state">
-                    <p
-                        className={styles.noChapterText}
-                        data-testid="book-editor-empty-state-text"
-                    >
-                        Erstelle dein erstes Kapitel, um zu beginnen.
-                    </p>
-
-                    <div className={styles.chapterTypeGrid}>
-                        <div
-                            className={styles.typeGroup}
-                            data-testid="book-editor-front-matter-group"
+                <EmptyState
+                    testId="book-editor-empty-state"
+                    icon={<BookOpen size={56} strokeWidth={1} color="var(--text-muted)" />}
+                    title={t(
+                        "ui.editor.empty_title",
+                        "Erstelle dein erstes Kapitel, um zu beginnen.",
+                    )}
+                    body={t(
+                        "ui.editor.empty_hint",
+                        "Klicke unten auf \"Neues Kapitel\" oder waehle einen anderen Kapiteltyp aus der Seitenleiste.",
+                    )}
+                    actions={
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => handleAddChapter("chapter")}
+                            data-testid="book-editor-add-chapter-chapter"
                         >
-                            <span className={styles.typeGroupLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
-                            {(["toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction"] as ChapterType[]).map((ct) => (
-                                <button
-                                    key={ct}
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => handleAddChapter(ct)}
-                                    data-testid={`book-editor-add-chapter-${ct}`}
-                                >
-                                    {TYPE_LABELS[ct]}
-                                </button>
-                            ))}
-                        </div>
-                        <div
-                            className={styles.typeGroup}
-                            data-testid="book-editor-chapter-group"
-                        >
-                            <span className={styles.typeGroupLabel}>{t("ui.chapter_types.chapter", "Kapitel")}</span>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => handleAddChapter("chapter")}
-                                data-testid="book-editor-add-chapter-chapter"
-                            >
-                                {t("ui.editor.new_chapter", "Neues Kapitel")}
-                            </button>
-                            {(["part_intro", "interlude"] as ChapterType[]).map((ct) => (
-                                <button
-                                    key={ct}
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => handleAddChapter(ct)}
-                                    data-testid={`book-editor-add-chapter-${ct}`}
-                                >
-                                    {TYPE_LABELS[ct]}
-                                </button>
-                            ))}
-                        </div>
-                        <div
-                            className={styles.typeGroup}
-                            data-testid="book-editor-back-matter-group"
-                        >
-                            <span className={styles.typeGroupLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
-                            {(["epilogue", "afterword", "about_author", "acknowledgments", "appendix", "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series"] as ChapterType[]).map((ct) => (
-                                <button
-                                    key={ct}
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => handleAddChapter(ct)}
-                                    data-testid={`book-editor-add-chapter-${ct}`}
-                                >
-                                    {TYPE_LABELS[ct]}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                            <Plus size={16} /> {t("ui.editor.new_chapter", "Neues Kapitel")}
+                        </button>
+                    }
+                />
             )}
 
             {bookId && (

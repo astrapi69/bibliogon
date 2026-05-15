@@ -112,6 +112,8 @@ ui:
       error_generic: "Karsilastirma basarisiz"
   editor:
     new_chapter: "Yeni bolum"
+    empty_title: "Baslamak icin ilk bolumunu olustur."
+    empty_hint: "Asagidaki \"Yeni bolum\" dugmesine bas veya kenar cubugundan baska bir bolum turu sec."
     new_chapter_from_template: "Sablondan..."
     confirm_delete_chapter: "Bu bolumu silmek istediginizden emin misiniz?"
     placeholder: "Yazmaya baslayin..."

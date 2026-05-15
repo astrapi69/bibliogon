@@ -112,6 +112,8 @@ ui:
       error_generic: "比較に失敗しました"
   editor:
     new_chapter: "新しい章"
+    empty_title: "最初の章を作成して始めましょう。"
+    empty_hint: "下の「新しい章」をクリックするか、サイドバーから別の章タイプを選んでください。"
     new_chapter_from_template: "テンプレートから..."
     confirm_delete_chapter: "この章を本当に削除しますか?"
     placeholder: "書き始めましょう..."

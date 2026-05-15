@@ -102,6 +102,8 @@ ui:
       error_generic: "Vergleich fehlgeschlagen"
   editor:
     new_chapter: "Neues Kapitel"
+    empty_title: "Erstelle dein erstes Kapitel, um zu beginnen."
+    empty_hint: "Klicke unten auf \"Neues Kapitel\" oder wähle einen anderen Kapiteltyp aus der Seitenleiste."
     new_chapter_from_template: "Aus Vorlage..."
     confirm_delete_chapter: "Kapitel wirklich löschen?"
     placeholder: "Beginne zu schreiben..."

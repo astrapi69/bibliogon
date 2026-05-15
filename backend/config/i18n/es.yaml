@@ -112,6 +112,8 @@ ui:
       error_generic: "Error en la comparacion"
   editor:
     new_chapter: "Nuevo capitulo"
+    empty_title: "Crea tu primer capítulo para comenzar."
+    empty_hint: "Haz clic en \"Nuevo capítulo\" abajo, o elige otro tipo de capítulo en la barra lateral."
     new_chapter_from_template: "Desde plantilla..."
     confirm_delete_chapter: "Seguro que quieres eliminar este capitulo?"
     placeholder: "Comienza a escribir..."

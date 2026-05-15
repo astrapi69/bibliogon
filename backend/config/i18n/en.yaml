@@ -102,6 +102,8 @@ ui:
       error_generic: "Comparison failed"
   editor:
     new_chapter: "New Chapter"
+    empty_title: "Create your first chapter to get started."
+    empty_hint: "Click \"New Chapter\" below, or pick a different chapter type from the sidebar."
     new_chapter_from_template: "From template..."
     confirm_delete_chapter: "Really delete this chapter?"
     placeholder: "Start writing..."
