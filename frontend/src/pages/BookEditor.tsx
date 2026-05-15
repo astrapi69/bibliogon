@@ -456,7 +456,7 @@ export default function BookEditor() {
 
     if (loading) {
         return (
-            <div className={styles.loading}>
+            <div className={styles.loading} data-testid="book-editor-loading">
                 <p>Laden...</p>
             </div>
         );
@@ -464,25 +464,29 @@ export default function BookEditor() {
 
     if (!book) {
         return (
-            <div className={styles.loading}>
+            <div className={styles.loading} data-testid="book-editor-not-found">
                 <p>Buch nicht gefunden.</p>
             </div>
         );
     }
 
     return (
-        <div className={styles.layout}>
+        <div className={styles.layout} data-testid="book-editor">
             {/* Mobile sidebar toggle */}
             {!sidebarOpen && (
                 <button
                     className="show-mobile-only btn-icon"
+                    data-testid="book-editor-sidebar-toggle"
                     style={{position: "fixed", top: 12, left: 12, zIndex: 100, background: "var(--bg-card)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)"}}
                     onClick={() => setSidebarOpen(true)}
                 >
                     <Menu size={20}/>
                 </button>
             )}
-            <div className={sidebarOpen ? "sidebar-wrapper sidebar-open" : "sidebar-wrapper sidebar-closed"}>
+            <div
+                className={sidebarOpen ? "sidebar-wrapper sidebar-open" : "sidebar-wrapper sidebar-closed"}
+                data-testid="book-editor-sidebar"
+            >
             <ChapterSidebar
                 bookTitle={book.title}
                 chapters={book.chapters}
@@ -563,37 +567,73 @@ export default function BookEditor() {
                     initialFocus={pendingFocus && pendingFocus.chapterId === activeChapterMeta.id ? {type: pendingFocus.type, seq: pendingFocus.seq} : undefined}
                 />
             ) : activeChapterMeta && contentLoading ? (
-                <div className={styles.loading}><p>{t("ui.common.loading", "Laden...")}</p></div>
+                <div
+                    className={styles.loading}
+                    data-testid="book-editor-content-loading"
+                >
+                    <p>{t("ui.common.loading", "Laden...")}</p>
+                </div>
             ) : (
-                <div className={styles.noChapter}>
-                    <p className={styles.noChapterText}>
+                <div className={styles.noChapter} data-testid="book-editor-empty-state">
+                    <p
+                        className={styles.noChapterText}
+                        data-testid="book-editor-empty-state-text"
+                    >
                         Erstelle dein erstes Kapitel, um zu beginnen.
                     </p>
 
                     <div className={styles.chapterTypeGrid}>
-                        <div className={styles.typeGroup}>
+                        <div
+                            className={styles.typeGroup}
+                            data-testid="book-editor-front-matter-group"
+                        >
                             <span className={styles.typeGroupLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
                             {(["toc", "dedication", "epigraph", "preface", "foreword", "prologue", "introduction"] as ChapterType[]).map((ct) => (
-                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                <button
+                                    key={ct}
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => handleAddChapter(ct)}
+                                    data-testid={`book-editor-add-chapter-${ct}`}
+                                >
                                     {TYPE_LABELS[ct]}
                                 </button>
                             ))}
                         </div>
-                        <div className={styles.typeGroup}>
+                        <div
+                            className={styles.typeGroup}
+                            data-testid="book-editor-chapter-group"
+                        >
                             <span className={styles.typeGroupLabel}>{t("ui.chapter_types.chapter", "Kapitel")}</span>
-                            <button className="btn btn-primary" onClick={() => handleAddChapter("chapter")}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleAddChapter("chapter")}
+                                data-testid="book-editor-add-chapter-chapter"
+                            >
                                 {t("ui.editor.new_chapter", "Neues Kapitel")}
                             </button>
                             {(["part_intro", "interlude"] as ChapterType[]).map((ct) => (
-                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                <button
+                                    key={ct}
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => handleAddChapter(ct)}
+                                    data-testid={`book-editor-add-chapter-${ct}`}
+                                >
                                     {TYPE_LABELS[ct]}
                                 </button>
                             ))}
                         </div>
-                        <div className={styles.typeGroup}>
+                        <div
+                            className={styles.typeGroup}
+                            data-testid="book-editor-back-matter-group"
+                        >
                             <span className={styles.typeGroupLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
                             {(["epilogue", "afterword", "about_author", "acknowledgments", "appendix", "bibliography", "endnotes", "glossary", "index", "imprint", "next_in_series"] as ChapterType[]).map((ct) => (
-                                <button key={ct} className="btn btn-secondary btn-sm" onClick={() => handleAddChapter(ct)}>
+                                <button
+                                    key={ct}
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => handleAddChapter(ct)}
+                                    data-testid={`book-editor-add-chapter-${ct}`}
+                                >
                                     {TYPE_LABELS[ct]}
                                 </button>
                             ))}
