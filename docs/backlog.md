@@ -87,19 +87,6 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **BOOKEDITOR-TESTIDS-01** (P3, IMPROVEMENT): filed by
-  UX-Full-Audit 2026-05-15 (G1-F1). ``BookEditor.tsx`` is
-  700 LOC with **zero** ``data-testid`` attributes — parallel
-  ``ArticleEditor.tsx`` has 38. Add testids to chapter
-  sidebar root, chapter list items, editor pane, metadata
-  toggle, save badge, save button, kebab menu,
-  version-history modal trigger. Mirror the
-  ``article-editor-{role}`` naming convention as
-  ``book-editor-{role}``. Effort: S-M (mechanical
-  addition). Trigger: paired with BookEditor's next
-  user-facing change OR addressed alongside
-  PLUGIN-SETTINGS-TESTID-COVERAGE-01.
-
 - **BOOKEDITOR-EMPTY-STATE-01** (P3, IMPROVEMENT): filed by
   UX-Full-Audit 2026-05-15 (G1-F2). BookEditor has no
   empty-state UX for 0-chapter books — navigating to
