@@ -198,32 +198,6 @@ store.
   incrementally. Same shape as EMPTYSTATE-EXTRACT-01.
   Effort: M.
 
-- **RESTORE-UX-FEEDBACK-01**: optimistic update + clearer
-  post-restore feedback for both trash views (Articles + Books).
-  Surfaced 2026-05-14 when Bug A (Articles-Trash Restore "broken"
-  user report) resolved as a perception-lag issue rather than a
-  code bug. ``handleRestore`` in both ``ArticleList.tsx`` and
-  ``Dashboard.tsx`` chains two network roundtrips inside a single
-  click handler (POST .../restore + GET /articles or /books)
-  plus two synchronous setState calls, producing a ~400ms click-
-  handler duration that browsers flag as
-  ``[Violation] 'click' handler took 419ms``. Combined with the
-  intentional "stay in trash view" pattern post-restore (so users
-  can restore multiple items in a row), the feedback signal to
-  the user is just a transient toast + the trash row vanishing —
-  subtle enough that users have reported it as "doesn't work".
-  Fix path: (a) optimistic update — remove the trash row from
-  local state BEFORE awaiting the restore call; revert on error;
-  (b) skip the full /articles re-fetch — the restored entity is
-  already returned by POST /restore so prepend it to local state
-  instead; (c) optional: keep a "1 restored" sticky banner with
-  "View in active list" CTA for ~5s instead of the transient
-  toast. Effort: M (both surfaces + Vitest unit tests pinning
-  optimistic-update and revert-on-error + E2E updates). Trigger:
-  next UX-Polish cycle OR another user report.
-  Pairs with the audit's anticipated Group 2 "Dashboards"
-  findings on perceived responsiveness.
-
 - **TEST-ISOLATION-MODULE-STATE-01**: audit all module-level
   mutable state in ``backend/app/`` for test-isolation gaps.
   The 2026-05-14 platform_schema regression (5 publications
