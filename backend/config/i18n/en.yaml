@@ -51,6 +51,8 @@ ui:
     empty_trash: "Empty trash"
     trash_empty: "Trash is empty"
     restore_book: "Restore"
+    restored: "Book restored."
+    restore_failed: "Restore failed."
     delete_permanent: "Delete permanently"
     welcome: "Welcome to Bibliogon"
     welcome_text: "Create your first book, import an existing project, or check out the getting started guide."

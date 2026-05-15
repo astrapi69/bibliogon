@@ -51,6 +51,8 @@ ui:
     empty_trash: "Papierkorb leeren"
     trash_empty: "Papierkorb ist leer"
     restore_book: "Wiederherstellen"
+    restored: "Buch wiederhergestellt."
+    restore_failed: "Wiederherstellen fehlgeschlagen."
     delete_permanent: "Endgültig löschen"
     welcome: "Willkommen bei Bibliogon"
     welcome_text: "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an."

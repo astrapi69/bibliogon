@@ -61,6 +61,8 @@ ui:
     empty_trash: "Cop kutusunu bosalt"
     trash_empty: "Cop kutusu bos"
     restore_book: "Geri yukle"
+    restored: "Kitap geri yuklendi."
+    restore_failed: "Geri yukleme basarisiz."
     delete_permanent: "Kalici olarak sil"
     welcome: "Bibliogon'a hos geldiniz"
     welcome_text: "Ilk kitabinizi olusturun, mevcut bir projeyi iceri aktarin veya baslangic rehberine goz atin."

@@ -364,24 +364,37 @@ export default function ArticleList() {
     }
 
     async function handleRestore(article: Article): Promise<void> {
+        // Optimistic update: drop the trash row immediately so the
+        // user sees the restore land before the network roundtrip
+        // completes. The POST returns the restored entity which we
+        // splice into the live list without a separate /articles
+        // refetch — chained roundtrips inside one click handler
+        // were the source of the 419ms perception-lag the
+        // 2026-05-14 user report surfaced.
+        setTrash((prev) => prev.filter((a) => a.id !== article.id));
         try {
-            await api.articles.restore(article.id);
-            setTrash((prev) => prev.filter((a) => a.id !== article.id));
-            // Reload the live list so the restored article appears
-            // immediately. useArticleFilters re-derives from
-            // ``articles`` so filters keep applying without a refetch.
-            const fresh = await api.articles.list();
-            setArticles(fresh);
+            const restored = await api.articles.restore(article.id);
+            setArticles((prev) => {
+                // Defensive: if the article was already in articles
+                // (extremely rare race), do not duplicate it.
+                if (prev.some((a) => a.id === restored.id)) return prev;
+                return [restored, ...prev];
+            });
             notify.success(
                 t("ui.articles.restored", "Artikel wiederhergestellt."),
             );
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."),
-                    err,
-                );
-            }
+            // Revert the optimistic trash removal so the user
+            // does not lose visibility of the row that failed to
+            // restore.
+            setTrash((prev) => {
+                if (prev.some((a) => a.id === article.id)) return prev;
+                return [article, ...prev];
+            });
+            notify.error(
+                t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."),
+                err,
+            );
         }
     }
 

@@ -981,4 +981,3 @@ function TopicsSettings({config, onSave, saving}: {
         </div>
     );
 }
-

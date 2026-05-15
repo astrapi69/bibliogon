@@ -61,6 +61,8 @@ ui:
     empty_trash: "Vaciar papelera"
     trash_empty: "La papelera esta vacia"
     restore_book: "Restaurar"
+    restored: "Libro restaurado."
+    restore_failed: "Restauración fallida."
     delete_permanent: "Eliminar permanentemente"
     welcome: "Bienvenido a Bibliogon"
     welcome_text: "Crea tu primer libro, importa un proyecto existente o consulta la guia de primeros pasos."

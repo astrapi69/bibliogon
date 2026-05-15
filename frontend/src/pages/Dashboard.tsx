@@ -342,10 +342,30 @@ export default function Dashboard() {
         notify.success(t("ui.dashboard.deleted_permanently", "Buch endgültig gelöscht"));
     };
 
-    const handleRestore = async (id: string) => {
-        await api.books.restore(id);
-        setTrash((prev) => prev.filter((b) => b.id !== id));
-        loadBooks();
+    const handleRestore = async (book: Book) => {
+        // Optimistic update: drop the trash row first so the
+        // user sees the restore land before the network round-
+        // trip. The POST returns the restored entity which we
+        // splice into the live list — skipping the full
+        // /api/books refetch that produced the 419ms-class
+        // perception-lag the 2026-05-14 user report surfaced.
+        setTrash((prev) => prev.filter((b) => b.id !== book.id));
+        try {
+            const restored = await api.books.restore(book.id);
+            setBooks((prev) => {
+                if (prev.some((b) => b.id === restored.id)) return prev;
+                return [restored, ...prev];
+            });
+            notify.success(t("ui.dashboard.restored", "Buch wiederhergestellt"));
+        } catch (err) {
+            // Revert the optimistic trash removal so a failed
+            // restore does not vanish the row entirely.
+            setTrash((prev) => {
+                if (prev.some((b) => b.id === book.id)) return prev;
+                return [book, ...prev];
+            });
+            notify.error(t("ui.dashboard.restore_failed", "Wiederherstellen fehlgeschlagen"), err);
+        }
     };
 
     const handlePermanentDelete = async (id: string) => {
@@ -527,7 +547,7 @@ export default function Dashboard() {
                                         key={book.id}
                                         title={book.title}
                                         subtitle={book.author}
-                                        onRestore={() => handleRestore(book.id)}
+                                        onRestore={() => handleRestore(book)}
                                         onPermanentDelete={() => handlePermanentDelete(book.id)}
                                         restoreLabel={t("ui.dashboard.restore_book", "Wiederherstellen")}
                                         deletePermanentLabel={t("ui.dashboard.delete_permanent", "Endgültig löschen")}
@@ -552,7 +572,7 @@ export default function Dashboard() {
                                         <button
                                             className="btn btn-primary btn-sm"
                                             data-testid={`trash-restore-${book.id}`}
-                                            onClick={() => handleRestore(book.id)}
+                                            onClick={() => handleRestore(book)}
                                         >
                                             <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
                                         </button>
