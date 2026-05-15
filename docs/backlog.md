@@ -121,16 +121,6 @@ store.
   / ``nav-back`` testids. Side benefit: discoverability
   for screen-reader users. Effort: trivial.
 
-- **LOADING-INDICATOR-EXTRACT-01** (P3, IMPROVEMENT):
-  filed by UX-Full-Audit 2026-05-15 (G4-F2). No shared
-  ``<LoadingIndicator>`` component; 24 ad-hoc ``loading``
-  state vars per-component. Inconsistent visual treatment
-  (button-disabled, inline text, ad-hoc CSS spinner).
-  Extract ``<LoadingIndicator>`` with standard spinner +
-  ``aria-busy`` + optional label; migrate the 24 callsites
-  incrementally. Same shape as EMPTYSTATE-EXTRACT-01.
-  Effort: M.
-
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
   ``comments``) that ship passthru-English in es / fr / el / pt /
