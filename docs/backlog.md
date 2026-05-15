@@ -47,20 +47,6 @@ store.
 
 ## P2 - High-Value User Features
 
-- **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (P2-elevated,
-  IMPROVEMENT): filed by UX-Full-Audit 2026-05-15 (G3-F1 +
-  G3-F2 + G3-F8 coupled). Extract Settings.tsx's inline
-  ``PluginSettings`` + ``AuthorSettings`` to their own
-  component files, add testids matching established
-  conventions, add E2E tests for plugin enable/disable/
-  install/remove + author management. Target:
-  Settings.tsx <800 LOC remaining (down from 2338).
-  Triggers: (1) **release-gate before v0.33.0** — defensive
-  coverage for the Articles-Trash-Restore-class bug pattern
-  that fired twice this week; (2) immediately promote to
-  BLOCKER + hotfix if any plugin-flow bug is reported before
-  v0.33.0 ships. Effort: M.
-
 - **NOTIFY-ERROR-APIERROR-COVERAGE-01** (P2-elevated,
   IMPROVEMENT): filed by UX-Full-Audit 2026-05-15 (G4-F1).
   99 of 159 ``notify.error`` callsites bypass the structured
@@ -117,6 +103,23 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **SETTINGS-INLINE-TABS-EXTRACT-01** (P3, IMPROVEMENT): filed
+  2026-05-15 as the follow-up from PLUGIN-SETTINGS-TESTID-
+  COVERAGE-01. The audit's aspirational <800 LOC target on
+  Settings.tsx requires extracting the 3 still-inline tab
+  components: ``AppSettings`` (~350 LOC), ``AiAssistantSettings``
+  (~225 LOC), ``TopicsSettings`` (~103 LOC). Total remaining
+  inline-tab cluster is ~680 LOC plus shared parent scaffolding;
+  extracting all three would land Settings.tsx near ~300 LOC.
+  Same shape as the closed predecessor: extract to
+  ``components/settings/{tab}.tsx``, add per-tab testids matching
+  established conventions, add Vitest unit specs + Playwright
+  smoke specs per tab. Effort: M-L (more total surface than the
+  predecessor because three tab clusters instead of two).
+  Trigger: paired with the next non-trivial Settings.tsx change
+  OR as proactive hygiene if the file is touched by another
+  release-gate item.
 
 - **BOOKEDITOR-TESTIDS-01** (P3, IMPROVEMENT): filed by
   UX-Full-Audit 2026-05-15 (G1-F1). ``BookEditor.tsx`` is
