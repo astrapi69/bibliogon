@@ -2567,3 +2567,109 @@ The "Audit findings need production-vs-dev environment
 classification before urgency-tier" rule. Same family: separating
 "this looks scary" from "this is actually broken" requires
 verifying against authoritative sources before urgency-triage.
+
+## Testid namespace pinning prevents silent E2E skips
+
+Surfaced 2026-05-15 as the positive discipline derived from the
+G2-F2 silent-skip incident (recorded inside
+"Articles-vs-Books parallel-surface asymmetry"). The G2-F2 entry
+documents what went wrong: ``book-card-{id}`` in the grid view
+vs ``book-list-row-{id}`` in the list view; an E2E spec written
+for one view-mode resolves all its testids cleanly when the
+fixture happens to persist the same view-mode, and silently
+finds nothing — passing on a no-op — when a different view-mode
+persists. The bug was invisible for two release cycles.
+
+This rule is the positive discipline that prevents the
+recurrence: namespace your testids deliberately and exercise
+every one positively in the E2E spec.
+
+### Rule
+
+For any non-trivial UI component that an E2E spec will drive
+(wizards, multi-step forms, dialogs with multiple slots, bulk-
+action bars, settings tabs):
+
+1. **Choose a single namespace string at component creation
+   time.** A 2-3 dot-prefix or hyphen-prefix that uniquely
+   identifies the component family is enough:
+   ``convert-to-book-wizard-{step}-{slot}``,
+   ``article-bulk-{action}``,
+   ``settings-tab-{tab-id}-{slot}``. Document the schema in
+   the component's header docstring or a short JSDoc block
+   above the first testid use site.
+
+2. **Every interactive surface gets a testid in that
+   namespace.** No exceptions for "the button is obvious".
+   Buttons, inputs, selects, toggles, dropzones, drag
+   handles, list rows — each addressable element has an
+   id under the component's namespace.
+
+3. **List every testid in the component's header comment
+   or in a sibling ``*.testids.md`` file.** The list is the
+   contract: it tells the E2E author what's pinned and tells
+   future maintainers what they must keep stable when they
+   refactor.
+
+4. **The E2E spec exercises every testid in the namespace at
+   least once positively.** "Positively" means
+   ``await expect(page.getByTestId(...)).toBeVisible()`` —
+   not a negative assertion like ``not.toBeNull()`` and not
+   a fragile partial-match. The spec walks the happy path
+   from first user surface to last, asserting each pinned
+   testid resolves to exactly one visible element.
+
+5. **When the namespace evolves, the spec's positive
+   coverage walk is the safety net.** Renaming a testid or
+   forgetting to apply the namespace to a new surface
+   triggers a spec failure on the very next CI run — not
+   a silent skip on the next view-mode flip.
+
+### Concrete artefacts
+
+- **First feature shipped under this discipline**: Phase 2 of
+  the article-to-book conversion (commit ``9261acd`` for the
+  component, commit ``7440564`` for the E2E spec). Component
+  header docstring carries the namespace schema; E2E happy
+  path positively asserts every step's slot resolves; 11
+  Vitest specs cross-check the same testid names from a
+  component-rendering angle.
+
+- **Negative incident the discipline prevents**: G2-F2
+  view-mode testid namespace split, documented in
+  "Articles-vs-Books parallel-surface asymmetry"
+  occurrence list.
+
+### Anti-patterns
+
+- **No namespace at all** — ad-hoc testids like ``submit-btn``,
+  ``confirm``, ``ok``. Two sibling components collide; specs
+  resolve to the wrong element. Cure: prefix.
+- **Namespace drifts across view-modes / branches** — same
+  visual concept, different testid in card vs list view, in
+  draft vs published state, in mobile vs desktop layout. Cure:
+  one testid per conceptual element regardless of which branch
+  renders it. The E2E spec's positive walk would have caught
+  the drift on the very next run.
+- **Specs that only assert negatively** —
+  ``await page.getByTestId(...).not.toBeNull()`` passes when
+  the element doesn't exist at all. Cure: use ``toBeVisible``
+  (or ``toHaveCount(1)`` when uniqueness matters).
+- **Partial-prefix selectors that overmatch** —
+  ``[data-testid^="book-card-"]`` matches both the root
+  ``book-card-{id}`` AND every nested ``book-card-menu-{id}``.
+  Documented earlier in "Prefix testid selectors match every
+  nested testid that shares the prefix". The positive-coverage
+  discipline complements that fix.
+
+### Pairs with
+
+- "Articles-vs-Books parallel-surface asymmetry" — the G2-F2
+  occurrence list captures the negative side; this rule is
+  the positive prevention.
+- "Prefix testid selectors match every nested testid that
+  shares the prefix" — same testid-discipline family,
+  different failure mode.
+- The two rules together cover the "namespace your testids +
+  exercise them positively + don't overmatch with prefix
+  selectors" trifecta.
