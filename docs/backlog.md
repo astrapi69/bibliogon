@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 43 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 46 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,31 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **CONVERT-TO-BOOK-ASSET-CLONE-01** (P3): asset-clone walker
+  for the article-to-book conversion feature.
+  Trigger: first user report that book images break after they
+  deleted a source article post-conversion.
+  Scope: walk the source articles' `content_json`, find every
+  `imageFigure` node, copy the referenced `ArticleAsset` files
+  into a new `Asset` row scoped to the new book, rewrite the
+  TipTap JSON `src` attribute from
+  `/articles/{article_id}/assets/...` to
+  `/books/{book_id}/assets/file/...`. Hook into the existing
+  `POST /api/books/from-articles` endpoint so the clone happens
+  in the same transaction as the chapter inserts (rollback
+  semantics preserved). Plus an asset-cleanup branch in the
+  book-delete handler that removes the cloned files (book
+  assets are book-scoped so cascade-delete already handles the
+  DB rows; the on-disk files need explicit cleanup).
+  Effort: 2-3 commits (walker + endpoint integration + delete
+  handler + tests).
+  Defer reason: hypothetical until user-impact verified. The
+  decoupled-lifecycle design assumes users do NOT delete source
+  articles they've already converted; the help-doc workaround
+  ("re-upload affected images via the Book editor") is
+  acceptable while we have zero broken-image reports. Filed by
+  Phase 1 Q9 deferral, 2026-05-15.
 
 - **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
   by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
@@ -256,6 +281,63 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **CONVERT-TO-BOOK-REVERSE-LINK-01** (P5): restore the
+  `preserve_article_id_metadata` setting that Phase 1 dropped
+  to satisfy the "kwargs without behaviour are forbidden"
+  rule.
+  Trigger: user requests a reverse-link or provenance feature
+  for converted books, OR a "pull updates from source articles"
+  affordance.
+  Scope: add a nullable `Chapter.source_article_id` column
+  (FK with `ondelete='SET NULL'` so deleting a source article
+  surfaces the broken link instead of cascading the chapter
+  away). Alembic revision populates as `NULL` for every
+  pre-existing chapter (data not retained from past
+  conversions). Re-introduce the
+  `BookFromArticlesChapterSettings.preserve_article_id_metadata`
+  field with a non-trivial behaviour test (per the
+  lessons-learned "End-to-end behavior tests are not
+  'kwarg passes through' tests"). Wire the wizard's Step 4 to
+  expose the toggle. Use cases this unlocks: "show me which
+  articles built this book" (Book-Editor sidebar), "update this
+  chapter from its source article" (manual sync action),
+  "find books that include this article" (Article-Editor
+  sidebar).
+  Effort: 3-5 commits (migration + schema + endpoint +
+  wizard wiring + Book/Article-Editor surfaces + tests).
+  Defer reason: speculative until user reports needing
+  provenance. The current decoupled-lifecycle design is
+  intentional; a reverse-link is opt-in and orthogonal to
+  the v1 wizard flow. Filed by Phase 1 implementation
+  decision, 2026-05-15.
+
+- **CONVERT-TO-BOOK-CHAPTER-TYPE-DETECTION-01** (P5):
+  smart `chapter_type` assignment for the article-to-book
+  conversion. Phase 1 defaults every converted chapter to
+  `chapter`; the user retypes via the Book-Editor sidebar
+  after conversion.
+  Trigger: user requests smart-typing during conversion, OR
+  a pattern emerges across multiple bug reports of
+  "manuscripta export treated my introduction as a regular
+  chapter".
+  Scope: heuristic in the wizard's Step 4 (or the backend
+  endpoint) that maps common article-title patterns to
+  `chapter_type` overrides. Candidate mappings (informed by
+  the 209-article Medium corpus): `^introduction|intro$|^getting started` ->
+  `introduction`; `^epilogue|conclusion|wrap[- ]?up$` ->
+  `epilogue`; `^appendix` -> `appendix`;
+  `^acknowledgments?` -> `acknowledgments`. The wizard's
+  review step shows the planned mapping with per-row
+  override before submit. Backend stays the same; the
+  payload's `chapter_settings` block grows a
+  `per_article_chapter_types: dict[str, ChapterType]`.
+  Effort: 2-3 commits (heuristic + wizard surface + tests).
+  Defer reason: ChapterType is reversible per-row in the
+  Book-Editor at zero friction (3 clicks); the v1 default
+  is the safer floor (no false-positive auto-types breaking
+  manuscripta export). Filed by Phase 1 Q17 deferral,
+  2026-05-15.
 
 - **GH-ACTIONS-PERIODIC-AUDIT-01**: recurring CI-hygiene audit
   for GitHub Actions version drift. The 2026-05-14 sweep
