@@ -73,3 +73,11 @@ repos:
         files: ^frontend/src/.*\.(ts|tsx|css)$
         pass_filenames: false
         stages: [pre-commit]
+
+      - id: module-state-audit
+        name: new @lru_cache / @cached_property must be audited + allowlisted
+        entry: python3 scripts/audit_module_state.py --enforce --quiet
+        language: system
+        files: ^backend/app/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]
