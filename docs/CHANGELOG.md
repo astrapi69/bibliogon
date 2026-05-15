@@ -4,6 +4,49 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.33.0] - YYYY-MM-DD
+
+### Added
+
+- **Article-to-Book conversion feature.** Select multiple articles
+  on the Articles dashboard via the bulk-action bar and compile
+  them into a brand-new book via a guided 6-step wizard. Original
+  articles stay untouched on the dashboard (decoupled lifecycle);
+  the book holds an independent TipTap-JSON copy of each
+  article's body as a chapter. Steps: (0) Selection with
+  drag-reorder + sort dropdown (date asc/desc, title asc/desc,
+  manual) + tag-helper buttons that narrow the working set to a
+  specific tag; (1) Metadata (title + author required; single-
+  article conversions pre-fill subtitle from `Article.subtitle`
+  and cover image from `Article.featured_image_url`); (2)
+  Front-matter (title page / dedication / introduction,
+  skippable); (3) Back-matter (acknowledgments / about-author,
+  skippable); (4) Chapter settings (use article title as chapter
+  title, on by default); (5) Review + Create. Backend endpoint
+  `POST /api/books/from-articles` performs the whole creation
+  in one transaction; rollback semantics inherited from the
+  existing `/from-template` precedent. Validation gates collect
+  ALL offending article ids in one 422 response (trashed,
+  non-`"article"` content_type, not-found) so the user fixes the
+  whole selection in one pass instead of iterating through
+  per-row rejections. Tag aggregation: keywords across all
+  selected articles dedupe (case-insensitive) into
+  `Book.keywords`; shared `series` value across every selected
+  article pre-fills `Book.series`. 37 backend integration tests
+  + 11 Vitest specs + 3 Playwright smoke specs. 50-key i18n
+  namespace `convert_to_book` lands in all 8 catalogs (DE +
+  EN native; ES / FR / EL / PT / TR / JA passthru per the
+  existing `_meta.pending_namespaces` convention). Bilingual
+  help doc at `docs/help/{en,de}/articles/convert-to-book.md`
+  covers walkthrough + decoupled-lifecycle explanation + known
+  limitations + 5-question FAQ. Three deferred follow-ups
+  filed: `CONVERT-TO-BOOK-ASSET-CLONE-01` (P3,
+  asset-clone walker for embedded images),
+  `CONVERT-TO-BOOK-REVERSE-LINK-01` (P5, restore
+  `Chapter.source_article_id` column for provenance tracking),
+  `CONVERT-TO-BOOK-CHAPTER-TYPE-DETECTION-01` (P5, smart
+  chapter_type assignment by title pattern).
+
 ## [0.32.0] - 2026-05-14
 
 The "UX-polish + safety net" release: three findings from a manual
