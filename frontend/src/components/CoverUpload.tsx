@@ -5,6 +5,7 @@ import {ApiError, api} from "../api/client";
 import type {CoverUploadResponse} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {EmptyState} from "./EmptyState";
 import styles from "./CoverUpload.module.css";
 
 interface Props {
@@ -124,7 +125,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                         disabled={uploading}
                     />
                 ) : (
-                    <EmptyState dragging={dragging} uploading={uploading} />
+                    <CoverEmptyState dragging={dragging} uploading={uploading} />
                 )}
 
                 <input
@@ -208,19 +209,17 @@ function CoverPreview({
     );
 }
 
-function EmptyState({dragging, uploading}: {dragging: boolean; uploading: boolean}) {
+function CoverEmptyState({dragging, uploading}: {dragging: boolean; uploading: boolean}) {
     const {t} = useI18n();
     return (
-        <div className={styles.emptyState}>
-            <ImageIcon size={42} color="var(--text-muted)" />
-            <div className={styles.emptyHint}>
-                {uploading
-                    ? t("ui.cover.uploading", "Wird hochgeladen...")
-                    : dragging
-                        ? t("ui.cover.drop_here", "Hier ablegen")
-                        : t("ui.cover.drop_hint", "Bild hierher ziehen oder klicken")}
-            </div>
-        </div>
+        <EmptyState
+            icon={<ImageIcon size={42} color="var(--text-muted)" />}
+            body={uploading
+                ? t("ui.cover.uploading", "Wird hochgeladen...")
+                : dragging
+                    ? t("ui.cover.drop_here", "Hier ablegen")
+                    : t("ui.cover.drop_hint", "Bild hierher ziehen oder klicken")}
+        />
     );
 }
 

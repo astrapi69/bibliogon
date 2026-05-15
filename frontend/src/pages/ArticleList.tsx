@@ -57,6 +57,7 @@ import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
+import { EmptyState } from "../components/EmptyState";
 
 export default function ArticleList() {
     const navigate = useNavigate();
@@ -846,25 +847,26 @@ export default function ArticleList() {
                     {t("ui.common.loading", "Laedt...")}
                 </p>
             ) : articles.length === 0 ? (
-                <EmptyState onCreate={() => void handleCreate()} />
+                <ArticleListEmptyState onCreate={() => void handleCreate()} />
             ) : filters.filteredArticles.length === 0 ? (
-                <div data-testid="article-list-filter-empty" className={layout.empty}>
-                    <Search size={32} className="muted" />
-                    <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                        {t(
-                            "ui.articles.empty_filtered",
-                            "Keine Artikel passen zu den aktuellen Filtern.",
-                        )}
-                    </p>
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={filters.resetFilters}
-                        data-testid="article-list-filter-reset"
-                    >
-                        {t("ui.articles.reset_filters", "Filter zurücksetzen")}
-                    </button>
-                </div>
+                <EmptyState
+                    testId="article-list-filter-empty"
+                    icon={<Search size={32} className="muted" />}
+                    body={t(
+                        "ui.articles.empty_filtered",
+                        "Keine Artikel passen zu den aktuellen Filtern.",
+                    )}
+                    actions={
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={filters.resetFilters}
+                            data-testid="article-list-filter-reset"
+                        >
+                            {t("ui.articles.reset_filters", "Filter zurücksetzen")}
+                        </button>
+                    }
+                />
             ) : viewMode === "grid" ? (
                 <div className={layout.grid} data-testid="article-list">
                     {filters.filteredArticles.map((a) => (
@@ -1132,48 +1134,41 @@ function TrashPanel({
     );
 }
 
-function EmptyState({ onCreate }: { onCreate: () => void }) {
+function ArticleListEmptyState({ onCreate }: { onCreate: () => void }) {
     const { t } = useI18n();
     const navigate = useNavigate();
     return (
-        <div data-testid="article-list-empty" className={layout.empty}>
-            <FileText size={32} className="muted" />
-            <h3 style={{ margin: 0 }}>
-                {t("ui.articles.empty_heading", "Noch keine Artikel")}
-            </h3>
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: "0.875rem",
-                    color: "var(--text-muted)",
-                }}
-            >
-                {t(
-                    "ui.articles.empty_subtitle",
-                    "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen.",
-                )}
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={onCreate}
-                    data-testid="article-list-empty-cta"
-                >
-                    <Plus size={14} />
-                    {t("ui.articles.new", "Neuer Artikel")}
-                </button>
-                <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => navigate("/get-started")}
-                    data-testid="article-list-empty-get-started"
-                >
-                    <Rocket size={14} />
-                    {t("ui.get_started.title", "Erste Schritte")}
-                </button>
-            </div>
-        </div>
+        <EmptyState
+            testId="article-list-empty"
+            icon={<FileText size={32} className="muted" />}
+            title={t("ui.articles.empty_heading", "Noch keine Artikel")}
+            body={t(
+                "ui.articles.empty_subtitle",
+                "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen.",
+            )}
+            actions={
+                <>
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={onCreate}
+                        data-testid="article-list-empty-cta"
+                    >
+                        <Plus size={14} />
+                        {t("ui.articles.new", "Neuer Artikel")}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => navigate("/get-started")}
+                        data-testid="article-list-empty-get-started"
+                    >
+                        <Rocket size={14} />
+                        {t("ui.get_started.title", "Erste Schritte")}
+                    </button>
+                </>
+            }
+        />
     );
 }
 

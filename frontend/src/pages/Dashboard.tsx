@@ -40,6 +40,7 @@ import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
 import DonationReminderBanner, {shouldShowReminder} from "../components/DonationReminderBanner";
+import {EmptyState} from "../components/EmptyState";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -536,10 +537,11 @@ export default function Dashboard() {
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {trash.length === 0 ? (
-                            <div className={styles.emptyState} data-testid="trash-empty-state">
-                                <Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>
-                                <p className={styles.emptyTitle}>{t("ui.dashboard.trash_empty", "Papierkorb ist leer")}</p>
-                            </div>
+                            <EmptyState
+                                testId="trash-empty-state"
+                                icon={<Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>}
+                                title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
+                            />
                         ) : viewMode === "grid" ? (
                             <div className={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
@@ -591,24 +593,37 @@ export default function Dashboard() {
                 ) : loading ? (
                     <p className={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
                 ) : books.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <BookOpen size={56} strokeWidth={1} color="var(--text-muted)"/>
-                        <p className={styles.emptyTitle}>{t("ui.dashboard.welcome", "Willkommen bei Bibliogon")}</p>
-                        <p className={styles.emptyText}>
-                            {t("ui.dashboard.welcome_text", "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an.")}
-                        </p>
-                        <div style={{display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap", justifyContent: "center"}}>
-                            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                                <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
-                            </button>
-                            <button className="btn btn-secondary" onClick={() => setImportWizardOpen(true)}>
-                                <FolderUp size={16}/> {t("ui.dashboard.import_project", "Projekt importieren")}
-                            </button>
-                            <button className="btn btn-secondary" onClick={() => navigate("/get-started")}>
-                                <Rocket size={16}/> {t("ui.get_started.title", "Erste Schritte")}
-                            </button>
-                        </div>
-                    </div>
+                    <EmptyState
+                        testId="dashboard-empty-state"
+                        icon={<BookOpen size={56} strokeWidth={1} color="var(--text-muted)"/>}
+                        title={t("ui.dashboard.welcome", "Willkommen bei Bibliogon")}
+                        body={t("ui.dashboard.welcome_text", "Erstelle dein erstes Buch, importiere ein bestehendes Projekt, oder schaue dir die Erste-Schritte-Anleitung an.")}
+                        actions={
+                            <>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => setShowModal(true)}
+                                    data-testid="dashboard-empty-create-book"
+                                >
+                                    <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setImportWizardOpen(true)}
+                                    data-testid="dashboard-empty-import"
+                                >
+                                    <FolderUp size={16}/> {t("ui.dashboard.import_project", "Projekt importieren")}
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => navigate("/get-started")}
+                                    data-testid="dashboard-empty-get-started"
+                                >
+                                    <Rocket size={16}/> {t("ui.get_started.title", "Erste Schritte")}
+                                </button>
+                            </>
+                        }
+                    />
                 ) : (
                     <>
                         <div className={styles.mainHeader}>
@@ -637,20 +652,21 @@ export default function Dashboard() {
                             </>
                         )}
                         {filters.filteredBooks.length === 0 && books.length > 0 && !loading ? (
-                            <div className={styles.emptyState} data-testid="filter-empty-state">
-                                <Search size={48} strokeWidth={1} color="var(--text-muted)"/>
-                                <p className={styles.emptyTitle}>{t("ui.dashboard.empty_filtered", "Keine Treffer")}</p>
-                                <p className={styles.emptyText}>
-                                    {t("ui.dashboard.empty_filtered_hint", "Es gibt keine Bücher die zu den aktuellen Filtern passen.")}
-                                </p>
-                                <button
-                                    className="btn btn-secondary"
-                                    data-testid="filter-reset-empty"
-                                    onClick={filters.resetFilters}
-                                >
-                                    {t("ui.dashboard.reset_filters", "Filter zurücksetzen")}
-                                </button>
-                            </div>
+                            <EmptyState
+                                testId="filter-empty-state"
+                                icon={<Search size={48} strokeWidth={1} color="var(--text-muted)"/>}
+                                title={t("ui.dashboard.empty_filtered", "Keine Treffer")}
+                                body={t("ui.dashboard.empty_filtered_hint", "Es gibt keine Bücher die zu den aktuellen Filtern passen.")}
+                                actions={
+                                    <button
+                                        className="btn btn-secondary"
+                                        data-testid="filter-reset-empty"
+                                        onClick={filters.resetFilters}
+                                    >
+                                        {t("ui.dashboard.reset_filters", "Filter zurücksetzen")}
+                                    </button>
+                                }
+                            />
                         ) : (
                             <>
                             {selection.count > 0 ? (
