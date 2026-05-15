@@ -198,23 +198,6 @@ store.
   incrementally. Same shape as EMPTYSTATE-EXTRACT-01.
   Effort: M.
 
-- **THEME-TOKEN-COMPLETENESS-AUDIT-01** (P3, IMPROVEMENT):
-  filed by UX-Full-Audit 2026-05-15 (G4-F4) as RECURRING-
-  ISSUE-CLASS. Same theme-token-completeness bug class
-  fired in v0.31.0 Pre-Release Audit (9 components needed
-  ``--surface-2``, ``--danger-bg``, ``--success``,
-  ``--warning``). 2026-05-15 inventory: 111 callsites of
-  the ``var(--token, #hex-fallback)`` pattern across 5
-  palettes × 2 modes = 10 theme variants. Audit each
-  unique ``--token`` against the per-palette CSS blocks in
-  ``global.css``; define any missing tokens; optionally
-  add an ESLint rule that flags ``var(--token, #fallback)``
-  to require either ``var(--token)`` (forcing token
-  existence) or a documented exception comment. Effort: M
-  (mechanical audit + cleanup). Trigger: pre-release
-  hygiene for every release cycle (see lessons-learned
-  "Periodic theme-token completeness audit").
-
 - **RESTORE-UX-FEEDBACK-01**: optimistic update + clearer
   post-restore feedback for both trash views (Articles + Books).
   Surfaced 2026-05-14 when Bug A (Articles-Trash Restore "broken"
