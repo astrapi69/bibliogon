@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.30.0
-Open tasks: 31 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 43 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -47,6 +47,37 @@ store.
 
 ## P2 - High-Value User Features
 
+- **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (P2-elevated,
+  IMPROVEMENT): filed by UX-Full-Audit 2026-05-15 (G3-F1 +
+  G3-F2 + G3-F8 coupled). Extract Settings.tsx's inline
+  ``PluginSettings`` + ``AuthorSettings`` to their own
+  component files, add testids matching established
+  conventions, add E2E tests for plugin enable/disable/
+  install/remove + author management. Target:
+  Settings.tsx <800 LOC remaining (down from 2338).
+  Triggers: (1) **release-gate before v0.33.0** — defensive
+  coverage for the Articles-Trash-Restore-class bug pattern
+  that fired twice this week; (2) immediately promote to
+  BLOCKER + hotfix if any plugin-flow bug is reported before
+  v0.33.0 ships. Effort: M.
+
+- **NOTIFY-ERROR-APIERROR-COVERAGE-01** (P2-elevated,
+  IMPROVEMENT): filed by UX-Full-Audit 2026-05-15 (G4-F1).
+  99 of 159 ``notify.error`` callsites bypass the structured
+  ``ApiError``-with-Report-Issue affordance (only 34 check
+  ``err instanceof ApiError``). The wrapper supports rich
+  error rendering with a "Report Issue" GitHub-issue-prefill
+  button; the ~62% of error paths that pass plain strings
+  silently degrade to the unrich path. Degrades Bibliogon's
+  "every-error-actionable" promise from ``code-hygiene.md``
+  "Error reporting" rule. Recommendation: ESLint rule that
+  flags ``notify.error("string")`` without a paired
+  ``ApiError`` argument in code that calls ``await api.*``;
+  cleanup pass on the 99 plain-string callsites. Effort: M.
+  Trigger: pair with the v0.33.0 hygiene work OR file
+  separately. Coupled with possible wrapper-API enhancement
+  (auto-extract ApiError from a thrown error).
+
 - **MEDIUM-IMPORT-V2-01**: dry-run preview UI before bulk import.
   v1 (shipped 2026-05-08) imports every `posts/*.html` from a
   Medium archive in one pass; the user archives unwanted articles
@@ -86,6 +117,117 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **BOOKEDITOR-TESTIDS-01** (P3, IMPROVEMENT): filed by
+  UX-Full-Audit 2026-05-15 (G1-F1). ``BookEditor.tsx`` is
+  700 LOC with **zero** ``data-testid`` attributes — parallel
+  ``ArticleEditor.tsx`` has 38. Add testids to chapter
+  sidebar root, chapter list items, editor pane, metadata
+  toggle, save badge, save button, kebab menu,
+  version-history modal trigger. Mirror the
+  ``article-editor-{role}`` naming convention as
+  ``book-editor-{role}``. Effort: S-M (mechanical
+  addition). Trigger: paired with BookEditor's next
+  user-facing change OR addressed alongside
+  PLUGIN-SETTINGS-TESTID-COVERAGE-01.
+
+- **BOOKEDITOR-EMPTY-STATE-01** (P3, IMPROVEMENT): filed by
+  UX-Full-Audit 2026-05-15 (G1-F2). BookEditor has no
+  empty-state UX for 0-chapter books — navigating to
+  ``/book/{id}`` for a book with no chapters renders the
+  editor shell but no ``.ProseMirror`` (the audit
+  walkthrough timed out on this case). Wire an
+  ``<EmptyState>`` block + prominent "Add your first
+  chapter" CTA. Effort: S.
+
+- **EMPTYSTATE-EXTRACT-01** (P3, IMPROVEMENT): filed by
+  UX-Full-Audit 2026-05-15 (G1-F3). No shared
+  ``<EmptyState>`` component; 4 ad-hoc implementations
+  across Dashboard, ArticleList, CoverUpload, HelpPanel.
+  Extract a generic ``<EmptyState title icon? body? cta?>``
+  component to ``frontend/src/components/EmptyState.tsx``,
+  migrate the 4 callsites, set as the canonical pattern for
+  future surfaces. Effort: S-M.
+
+- **ARTICLEFILTERBAR-EXTRACT-01** (P3, IMPROVEMENT): filed
+  by UX-Full-Audit 2026-05-15 (G2-F1). ``ArticleFilterBar``
+  is an inline function in ``ArticleList.tsx:1128`` (~200
+  LOC). Move to ``frontend/src/components/articles/ArticleFilterBar.tsx``.
+  Reduces ArticleList.tsx by ~200 LOC and unblocks
+  per-component test additions. Effort: S (mechanical
+  extraction).
+
+- **VIEW-MODE-TESTID-PARITY-01** (P3, IMPROVEMENT): filed
+  by UX-Full-Audit 2026-05-15 (G2-F2). View-mode testid
+  namespace asymmetry between BookCard (``book-card-{id}``)
+  and BookListView (``book-list-row-{id}``). E2E specs
+  silently skip when wrong view-mode is persisted —
+  confirmed during the audit walkthrough itself. Add a
+  stable view-agnostic testid (``book-{id}`` or
+  ``book-tile-{id}``) to BOTH BookCard and BookListView
+  wrappers, alongside the existing view-specific testids.
+  Same audit for articles if applicable. Effort: S.
+
+- **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
+  by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
+  renders all comments in a single DOM table without
+  pagination or virtualization. At current scale (49) it's
+  fine; at 500+ comments the initial render and DOM weight
+  will degrade. Add pagination OR virtualization OR a hard
+  cap with "Show all" affordance. Effort: S-M. Trigger:
+  first user >200 comments OR Settings sluggishness
+  complaint.
+
+- **MEDIUM-IMPORT-TESTIDS-01** (P3, IMPROVEMENT): filed by
+  UX-Full-Audit 2026-05-15 (G2-F6). 3 of 7+ interactive
+  elements on the Medium Import page have testids; file
+  input + result-table counts (imported / skipped /
+  errored) lack them. Add ``medium-import-file``,
+  ``medium-import-result-imported-count``,
+  ``medium-import-result-skipped-count``, etc. Effort: S.
+
+- **SETTINGS-TABS-TESTID-COMPLETE-01** (P3, IMPROVEMENT):
+  filed by UX-Full-Audit 2026-05-15 (G3-F3). 3 of 7
+  Settings tab triggers lack ``testId`` in the
+  tabs-definition array (Settings.tsx:109-115): ``app``,
+  ``author``, ``plugins``. E2E specs need label-based
+  fallback selectors. Add explicit ``testId`` to all 7.
+  Effort: trivial.
+
+- **SETTINGS-TOPBAR-TESTIDS-01** (P3, IMPROVEMENT): filed
+  by UX-Full-Audit 2026-05-15 (G3-F6). The 2 top-bar
+  buttons preceding ``theme-toggle`` in the Settings page
+  keyboard-nav focus chain lack testids and identifying
+  text. Likely back-to-dashboard + logo. Add ``nav-home``
+  / ``nav-back`` testids. Side benefit: discoverability
+  for screen-reader users. Effort: trivial.
+
+- **LOADING-INDICATOR-EXTRACT-01** (P3, IMPROVEMENT):
+  filed by UX-Full-Audit 2026-05-15 (G4-F2). No shared
+  ``<LoadingIndicator>`` component; 24 ad-hoc ``loading``
+  state vars per-component. Inconsistent visual treatment
+  (button-disabled, inline text, ad-hoc CSS spinner).
+  Extract ``<LoadingIndicator>`` with standard spinner +
+  ``aria-busy`` + optional label; migrate the 24 callsites
+  incrementally. Same shape as EMPTYSTATE-EXTRACT-01.
+  Effort: M.
+
+- **THEME-TOKEN-COMPLETENESS-AUDIT-01** (P3, IMPROVEMENT):
+  filed by UX-Full-Audit 2026-05-15 (G4-F4) as RECURRING-
+  ISSUE-CLASS. Same theme-token-completeness bug class
+  fired in v0.31.0 Pre-Release Audit (9 components needed
+  ``--surface-2``, ``--danger-bg``, ``--success``,
+  ``--warning``). 2026-05-15 inventory: 111 callsites of
+  the ``var(--token, #hex-fallback)`` pattern across 5
+  palettes × 2 modes = 10 theme variants. Audit each
+  unique ``--token`` against the per-palette CSS blocks in
+  ``global.css``; define any missing tokens; optionally
+  add an ESLint rule that flags ``var(--token, #fallback)``
+  to require either ``var(--token)`` (forcing token
+  existence) or a documented exception comment. Effort: M
+  (mechanical audit + cleanup). Trigger: pre-release
+  hygiene for every release cycle (see lessons-learned
+  "Periodic theme-token completeness audit").
 
 - **RESTORE-UX-FEEDBACK-01**: optimistic update + clearer
   post-restore feedback for both trash views (Articles + Books).
