@@ -105,14 +105,6 @@ store.
   migrate the 4 callsites, set as the canonical pattern for
   future surfaces. Effort: S-M.
 
-- **ARTICLEFILTERBAR-EXTRACT-01** (P3, IMPROVEMENT): filed
-  by UX-Full-Audit 2026-05-15 (G2-F1). ``ArticleFilterBar``
-  is an inline function in ``ArticleList.tsx:1128`` (~200
-  LOC). Move to ``frontend/src/components/articles/ArticleFilterBar.tsx``.
-  Reduces ArticleList.tsx by ~200 LOC and unblocks
-  per-component test additions. Effort: S (mechanical
-  extraction).
-
 - **VIEW-MODE-TESTID-PARITY-01** (P3, IMPROVEMENT): filed
   by UX-Full-Audit 2026-05-15 (G2-F2). View-mode testid
   namespace asymmetry between BookCard (``book-card-{id}``)
