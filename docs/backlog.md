@@ -87,15 +87,6 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **BOOKEDITOR-EMPTY-STATE-01** (P3, IMPROVEMENT): filed by
-  UX-Full-Audit 2026-05-15 (G1-F2). BookEditor has no
-  empty-state UX for 0-chapter books — navigating to
-  ``/book/{id}`` for a book with no chapters renders the
-  editor shell but no ``.ProseMirror`` (the audit
-  walkthrough timed out on this case). Wire an
-  ``<EmptyState>`` block + prominent "Add your first
-  chapter" CTA. Effort: S.
-
 - **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
   by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
   renders all comments in a single DOM table without
