@@ -92,8 +92,17 @@ export default function ArticleList() {
     };
 
     const handleBookCreated = (book: BookDetail) => {
+        // Page-level cleanup after a successful conversion. Runs
+        // unconditionally so the dashboard is in a clean state
+        // regardless of whether the user follows the toast CTA.
+        // Navigation lives on ``handleViewBook`` (toast action),
+        // not here.
+        void book;
         selection.clear();
         setConvertToBookArticles(null);
+    };
+
+    const handleViewBook = (book: BookDetail) => {
         navigate(`/book/${book.id}`);
     };
 
@@ -953,6 +962,7 @@ export default function ArticleList() {
                     articles={convertToBookArticles}
                     onClose={() => setConvertToBookArticles(null)}
                     onConverted={handleBookCreated}
+                    onViewBook={handleViewBook}
                 />
             )}
             {bulkDeleteDialog && (

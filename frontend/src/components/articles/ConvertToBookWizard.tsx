@@ -26,7 +26,7 @@
  * highlighted so the user fixes the whole selection in one pass.
  */
 
-import {useMemo, useState} from "react"
+import {useEffect, useMemo, useRef, useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {
     BookOpen,
@@ -74,9 +74,17 @@ interface Props {
      *  selection state. */
     articles: Article[]
     onClose: () => void
-    /** Fires after a successful POST. The page typically navigates
-     *  to ``/book/{id}`` and clears the source bulk-selection. */
+    /** Fires immediately after a successful POST. The page clears
+     *  the bulk-selection + any wizard-local state; it does NOT
+     *  navigate. Navigation lives on the toast CTA (see
+     *  ``onViewBook``) so the user can choose to follow the link
+     *  or stay on the Articles dashboard. */
     onConverted: (book: BookDetail) => void
+    /** Fires when the user clicks the success toast's "View book"
+     *  CTA. Typically navigates to ``/book/{id}``. Separated from
+     *  ``onConverted`` so the page-level cleanup runs unconditionally
+     *  while navigation is opt-in by the user. */
+    onViewBook: (book: BookDetail) => void
 }
 
 const TOTAL_STEPS = 6
@@ -191,6 +199,7 @@ export default function ConvertToBookWizard({
     articles,
     onClose,
     onConverted,
+    onViewBook,
 }: Props) {
     const {t} = useI18n()
     const [step, setStep] = useState(0)
@@ -237,6 +246,22 @@ export default function ConvertToBookWizard({
     const [submitting, setSubmitting] = useState(false)
     const [validationError, setValidationError] =
         useState<BookFromArticlesValidationError | null>(null)
+
+    // Focus management on step transitions (WARN-A2). On every change to
+    // ``step``, focus the first interactive element inside the step
+    // container so keyboard users land on something actionable without
+    // tabbing through dialog chrome. Replaces the per-input autoFocus
+    // pattern which only fired on initial mount and missed Back-navigation
+    // returns to a step.
+    const stepContentRef = useRef<HTMLDivElement | null>(null)
+    useEffect(() => {
+        const container = stepContentRef.current
+        if (!container) return
+        const focusable = container.querySelector<HTMLElement>(
+            "input:not([type='hidden']), select, textarea, button",
+        )
+        focusable?.focus()
+    }, [step])
 
     // Derived selection ------------------------------------------------
 
@@ -389,8 +414,19 @@ export default function ConvertToBookWizard({
         setSubmitting(true)
         try {
             const book = await api.books.fromArticles(buildPayload())
-            notify.success(
+            // WARN-I1 fix: toast-with-CTA per Phase 2 spec letter.
+            // The wizard closes immediately and clears the bulk
+            // selection (via ``onConverted`` page-level callback);
+            // navigation to the new book lives on the toast's
+            // "View book" action so the user can choose to follow
+            // the link or dismiss the toast and stay on the
+            // Articles dashboard. Replaces the prior auto-navigate
+            // pattern that bypassed the documented UX.
+            notify.successAction(
                 t("ui.convert_to_book.success", "Buch erstellt."),
+                t("ui.convert_to_book.success_view_book", "Buch öffnen"),
+                () => onViewBook(book),
+                "convert-to-book-success-view-book",
             )
             onConverted(book)
             onClose()
@@ -415,7 +451,13 @@ export default function ConvertToBookWizard({
     // Renders ---------------------------------------------------------
 
     const renderStepIndicator = () => (
-        <div style={styles.steps} aria-label="Wizard progress">
+        <div
+            style={styles.steps}
+            aria-label={t(
+                "ui.convert_to_book.step_indicator_aria",
+                "Wizard progress",
+            )}
+        >
             {Array.from({length: TOTAL_STEPS}).map((_, i) => (
                 <div
                     key={i}
@@ -598,7 +640,6 @@ export default function ConvertToBookWizard({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     data-testid="convert-to-book-wizard-metadata-title"
-                    autoFocus
                 />
                 {title.trim() === "" && (
                     <small style={styles.fieldError}>
@@ -988,7 +1029,7 @@ export default function ConvertToBookWizard({
 
                     {renderStepIndicator()}
                     {renderValidationBanner()}
-                    {renderCurrentStep()}
+                    <div ref={stepContentRef}>{renderCurrentStep()}</div>
 
                     <div style={styles.nav}>
                         <div style={{display: "flex", gap: 8}}>

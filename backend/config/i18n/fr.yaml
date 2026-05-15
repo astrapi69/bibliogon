@@ -1877,3 +1877,5 @@ ui:
     review_sort: "Sort"
     review_submitting: "Converting ..."
     review_confirm: "Create book"
+    step_indicator_aria: "Wizard progress"
+    success_view_book: "View book"

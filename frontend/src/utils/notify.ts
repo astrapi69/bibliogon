@@ -163,6 +163,47 @@ function BulkActionContent(
   );
 }
 
+/** Content for success toasts with a forward action button.
+ *  Mirrors ``BulkActionContent`` shape but the action semantics
+ *  are forward navigation, not undo. testId is parameterised so
+ *  the article-to-book "View book" CTA and any future
+ *  successAction callsites get distinct E2E hooks. */
+function SuccessActionContent(
+  {message, actionLabel, onAction, testId, closeToast}: {
+    message: string;
+    actionLabel: string;
+    onAction: () => void;
+    testId: string;
+    closeToast?: () => void;
+  },
+) {
+  return React.createElement(
+    'div',
+    {style: {display: 'flex', flexDirection: 'column', gap: 8, maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word'}},
+    React.createElement('span', {style: {display: 'block', fontSize: '0.8125rem', lineHeight: 1.4}}, message),
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        'data-testid': testId,
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation();
+          onAction();
+          closeToast?.();
+        },
+        style: {
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600,
+          color: '#fff', background: 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: 4, cursor: 'pointer', alignSelf: 'flex-start',
+        },
+      },
+      actionLabel,
+    ),
+  );
+}
+
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
@@ -200,6 +241,29 @@ export const notify = {
     recordToast('success', message);
     return toast.success(
       React.createElement(BulkActionContent, {message, onUndo, undoLabel}),
+      {autoClose: 10000, closeOnClick: false},
+    );
+  },
+  /** Success toast with a generic forward action button. Used by
+   *  the article-to-book conversion wizard ("View book"); semantics
+   *  differ from ``bulkAction`` (which is undo / cancel). The
+   *  testid is parameterised so multiple distinct successAction
+   *  callsites do not collide in E2E specs. autoClose 10s gives
+   *  the user time to read + click before the toast disappears. */
+  successAction: (
+    message: string,
+    actionLabel: string,
+    onAction: () => void,
+    testId: string = 'success-action',
+  ) => {
+    recordToast('success', message);
+    return toast.success(
+      React.createElement(SuccessActionContent, {
+        message,
+        actionLabel,
+        onAction,
+        testId,
+      }),
       {autoClose: 10000, closeOnClick: false},
     );
   },

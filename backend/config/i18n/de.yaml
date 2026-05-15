@@ -1866,3 +1866,5 @@ ui:
     review_sort: "Sortierung"
     review_submitting: "Wird konvertiert ..."
     review_confirm: "Buch erstellen"
+    step_indicator_aria: "Assistent-Fortschritt"
+    success_view_book: "Buch öffnen"

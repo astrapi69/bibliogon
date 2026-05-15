@@ -152,15 +152,19 @@ test.describe("Article-to-book conversion", () => {
             page.getByTestId("convert-to-book-wizard-review-chapter-count"),
         ).toContainText("3")
 
-        // Convert. The page navigates to the new /book/{id} route.
+        // Convert. The wizard closes + the success toast appears
+        // with a "View book" CTA; clicking the CTA navigates to
+        // /book/{id} (WARN-I1 fix — no auto-navigate, the user
+        // owns the navigation step).
+        await page.getByTestId("convert-to-book-wizard-review-confirm").click()
+        const viewBookCta = page.getByTestId(
+            "convert-to-book-success-view-book",
+        )
+        await expect(viewBookCta).toBeVisible()
         await Promise.all([
             page.waitForURL(/\/book\/[^/]+$/),
-            page.getByTestId("convert-to-book-wizard-review-confirm").click(),
+            viewBookCta.click(),
         ])
-
-        // The Book-Editor renders the new book — title is in the
-        // document somewhere (BookEditor surfaces it via its
-        // own routing).
         await expect(page).toHaveURL(/\/book\/[^/]+$/)
     })
 
@@ -190,12 +194,16 @@ test.describe("Article-to-book conversion", () => {
         await page.getByTestId("convert-to-book-wizard-step-2-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-3-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-4-next").click()
-        await Promise.all([
-            page.waitForURL(/\/book\/[^/]+$/),
-            page
-                .getByTestId("convert-to-book-wizard-review-confirm")
-                .click(),
-        ])
+        await page
+            .getByTestId("convert-to-book-wizard-review-confirm")
+            .click()
+        // Wait for the success toast (the wizard closes + clears
+        // selection). We don't click the CTA here — this spec
+        // specifically tests that source articles persist EVEN IF
+        // the user doesn't follow the toast link.
+        await expect(
+            page.getByTestId("convert-to-book-success-view-book"),
+        ).toBeVisible()
 
         // Navigate back to the articles dashboard; both source rows
         // still exist (decoupled lifecycle).
@@ -246,11 +254,18 @@ test.describe("Article-to-book conversion", () => {
             const match = url.match(/\/book\/([^/?#]+)/)
             if (match) bookId = match[1]
         })
+        // Submit + follow the toast's "View book" CTA to navigate
+        // (WARN-I1 fix — auto-navigate replaced with user-owned CTA).
+        await page
+            .getByTestId("convert-to-book-wizard-review-confirm")
+            .click()
+        const viewBookCta = page.getByTestId(
+            "convert-to-book-success-view-book",
+        )
+        await expect(viewBookCta).toBeVisible()
         await Promise.all([
             page.waitForURL(/\/book\/[^/]+$/),
-            page
-                .getByTestId("convert-to-book-wizard-review-confirm")
-                .click(),
+            viewBookCta.click(),
         ])
 
         // Re-fetch the book from the API and verify position 0 is the

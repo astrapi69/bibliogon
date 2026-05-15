@@ -34,6 +34,7 @@ vi.mock("../../utils/notify", () => ({
         success: vi.fn(),
         warning: vi.fn(),
         error: vi.fn(),
+        successAction: vi.fn(),
     },
 }))
 
@@ -150,6 +151,7 @@ describe("ConvertToBookWizard navigation", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         const list = screen.getByTestId("convert-to-book-wizard-selection-list")
@@ -173,6 +175,7 @@ describe("ConvertToBookWizard navigation", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         // Step 0 -> 1
@@ -221,6 +224,7 @@ describe("ConvertToBookWizard navigation", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         // Step 0: no skip.
@@ -255,6 +259,7 @@ describe("ConvertToBookWizard sort + tag-helpers", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         const select = screen.getByTestId(
@@ -277,6 +282,7 @@ describe("ConvertToBookWizard sort + tag-helpers", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         const select = screen.getByTestId(
@@ -301,6 +307,7 @@ describe("ConvertToBookWizard sort + tag-helpers", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         // "health" appears on a-zebra + a-alpha; clicking the tag
@@ -333,6 +340,7 @@ describe("ConvertToBookWizard validation + pre-fill", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-0-next"))
@@ -361,6 +369,7 @@ describe("ConvertToBookWizard validation + pre-fill", () => {
                 articles={single}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-0-next"))
@@ -384,6 +393,7 @@ describe("ConvertToBookWizard validation + pre-fill", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-0-next"))
@@ -403,12 +413,14 @@ describe("ConvertToBookWizard submit", () => {
 
         const onConverted = vi.fn()
         const onClose = vi.fn()
+        const onViewBook = vi.fn()
         render(
             <ConvertToBookWizard
                 open
                 articles={multi}
                 onClose={onClose}
                 onConverted={onConverted}
+                onViewBook={onViewBook}
             />,
         )
         // Use a deterministic sort first so manual_order is null.
@@ -442,6 +454,67 @@ describe("ConvertToBookWizard submit", () => {
         )
     })
 
+    it("Toast 'View book' CTA invokes onViewBook with the new book", async () => {
+        // WARN-I1 regression-pin. The wizard MUST fire onConverted +
+        // close (page-level cleanup) but MUST NOT auto-navigate.
+        // Navigation lives on the toast CTA, which the
+        // successAction mock receives as its 3rd arg. Invoking the
+        // captured action proves the CTA wiring is intact end-to-end.
+        const {notify} = await import("../../utils/notify")
+        mockFromArticles.mockResolvedValue({
+            id: "new-book-id",
+            title: "My New Book",
+            chapters: [],
+        })
+
+        const onConverted = vi.fn()
+        const onClose = vi.fn()
+        const onViewBook = vi.fn()
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={onClose}
+                onConverted={onConverted}
+                onViewBook={onViewBook}
+            />,
+        )
+        fireEvent.change(
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            {target: {value: "title_asc"}},
+        )
+        clickNext(0)
+        setStandardMetadata()
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        await waitFor(() => expect(notify.successAction).toHaveBeenCalled())
+
+        // Page-level callback ran; wizard requested close.
+        expect(onConverted).toHaveBeenCalledWith(
+            expect.objectContaining({id: "new-book-id"}),
+        )
+        expect(onClose).toHaveBeenCalled()
+        // onViewBook is NOT called yet — the user hasn't clicked
+        // the CTA. Auto-navigation regression would fire it here.
+        expect(onViewBook).not.toHaveBeenCalled()
+
+        // Invoke the captured toast action (3rd arg). The CTA wiring
+        // should call onViewBook with the new book. Take the LAST
+        // call (notify mock accumulates across the suite; the
+        // previous payload test also fires successAction).
+        const calls = (
+            notify.successAction as unknown as {mock: {calls: unknown[][]}}
+        ).mock.calls
+        const [, , toastOnAction] = calls[calls.length - 1]
+        ;(toastOnAction as () => void)()
+        expect(onViewBook).toHaveBeenCalledWith(
+            expect.objectContaining({id: "new-book-id"}),
+        )
+    })
+
     it("422 validation routes the user back to Step 0 with a banner", async () => {
         const {ApiError} = await vi.importActual<
             typeof import("../../api/client")
@@ -468,6 +541,7 @@ describe("ConvertToBookWizard submit", () => {
                 articles={multi}
                 onClose={vi.fn()}
                 onConverted={vi.fn()}
+                onViewBook={vi.fn()}
             />,
         )
         clickNext(0)
