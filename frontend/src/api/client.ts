@@ -574,6 +574,69 @@ export interface BookFromTemplateCreate extends BookCreate {
     template_id: string;
 }
 
+// --- Article-to-book conversion (Phase 2 wizard) ---
+
+export type BookFromArticlesSortStrategy =
+    | "date_asc"
+    | "date_desc"
+    | "title_asc"
+    | "title_desc"
+    | "manual";
+
+export interface BookFromArticlesFrontMatter {
+    include_title_page?: boolean;
+    title_page_title?: string | null;
+    include_dedication?: boolean;
+    dedication_title?: string | null;
+    dedication_text?: string | null;
+    include_introduction?: boolean;
+    introduction_title?: string | null;
+    introduction_text?: string | null;
+}
+
+export interface BookFromArticlesBackMatter {
+    include_acknowledgments?: boolean;
+    acknowledgments_title?: string | null;
+    acknowledgments_text?: string | null;
+    include_author_bio?: boolean;
+    author_bio_title?: string | null;
+    author_bio_text?: string | null;
+}
+
+export interface BookFromArticlesChapterSettings {
+    use_article_title_as_chapter_title?: boolean;
+}
+
+export interface BookFromArticlesCreate {
+    article_ids: string[];
+    title: string;
+    subtitle?: string | null;
+    author?: string | null;
+    language?: string;
+    series?: string | null;
+    series_index?: number | null;
+    keywords?: string[];
+    cover_image?: string | null;
+    sort_strategy?: BookFromArticlesSortStrategy;
+    manual_order?: string[] | null;
+    front_matter?: BookFromArticlesFrontMatter | null;
+    back_matter?: BookFromArticlesBackMatter | null;
+    chapter_settings?: BookFromArticlesChapterSettings;
+}
+
+/** Shape of the 422 ``detail`` body when the validation gates reject
+ *  one or more article ids. Every list surfaces in a single response
+ *  so the wizard can show the user every offending row at once. */
+export interface BookFromArticlesValidationError {
+    code: "invalid_articles" | "manual_order_required" | "manual_order_mismatch";
+    message: string;
+    not_found_ids?: string[];
+    trashed?: Array<{id: string; title: string}>;
+    non_article?: Array<{id: string; title: string; content_type: string}>;
+    expected_ids?: string[];
+    received_ids?: string[];
+}
+
 export interface BookTemplateChapter {
     position: number;
     title: string;
@@ -1106,6 +1169,19 @@ export const api = {
 
         createFromTemplate: (data: BookFromTemplateCreate) =>
             request<BookDetail>("/books/from-template", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        /** Article-to-book conversion (Phase 2 wizard). Copies the
+         *  selected Articles into a brand-new Book as Chapters; the
+         *  original Articles are left untouched (decoupled lifecycle).
+         *
+         *  On 422 the wizard inspects ``ApiError.detailBody`` for the
+         *  ``BookFromArticlesValidationError`` shape so it can list
+         *  every offending article in a single review screen. */
+        fromArticles: (data: BookFromArticlesCreate) =>
+            request<BookDetail>("/books/from-articles", {
                 method: "POST",
                 body: JSON.stringify(data),
             }),
