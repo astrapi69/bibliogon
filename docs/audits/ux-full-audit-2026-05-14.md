@@ -231,12 +231,324 @@ cd e2e && npx playwright test tests/ux-audit-group2.spec.ts --project=chromium -
 # docs/audits/ux-full-audit-2026-05-14-screenshots/group2-*.png
 ```
 
-## Pending groups (awaiting direction)
+## Surface Group 3: Settings
 
-- **Group 3 Settings** — 7 tabs (app / ai / author / topics / plugins / comments / support), AI provider panel, plugin enable/disable, theme switcher
-- **Group 4 Cross-Cutting** — dark mode parity, loading states, error states, empty states, toasts, dialogs, keyboard nav, i18n coverage
-- **Group 5 Articles-vs-Books Parity** — table of parallel features with status per side. Will absorb the Articles-vs-Books findings from Groups 1 and 2 (BookEditor zero testids, ArticleFilterBar inline duplication, view-mode testid asymmetry).
+Surfaces audited 2026-05-15: 7 Settings tabs (`app` / `ai` / `author` / `topics` / `plugins` / `comments` / `support`), AI provider panel, plugin enable/disable flow, theme switcher, keyboard-nav of the Settings page.
+
+Walkthrough spec: `e2e/tests/ux-audit-group3.spec.ts` (10 specs; all pass). 11 screenshots captured.
+
+### G3-F1 — BLOCKER candidate — `PluginSettings` inline function has zero testids
+
+**Evidence:** Settings.tsx:887 defines `function PluginSettings({...})` — a ~200 LOC inline component that renders the entire Plugin tab content (plugin list, enable/disable toggles, install dialog, remove flow). Grep for `data-testid` across lines 887-1100 returns **zero matches**.
+
+Audit walkthrough at spec 06: `Plugin tab testids: []` + `checkboxes on plugin tab: 0`. The zero-checkboxes count suggests the plugin toggles aren't even rendered as `<input type="checkbox">` — they're likely Radix Switch components, but I can't audit them via testid.
+
+**Why this matters:**
+- Plugins are a **core extensibility feature**. Enable / disable / install / remove are user-facing flows. None can be E2E-tested via testid selectors.
+- Falls back to brittle text-based selectors (e.g. `button:has-text("Aktivieren")`) which break on i18n locale changes.
+- The Bug A class (silent UI breakage during a deploy) is exactly the kind of bug that would surface as "I clicked Enable on the audiobook plugin but nothing happened" — and there's no E2E pin against it.
+
+**Why BLOCKER candidate, not IMPROVEMENT:** unlike G1-F1 (BookEditor zero testids), the plugin flow is where users actually toggle state, install/remove third-party code, and configure paid plugins (license keys). A silent breakage here is higher user-impact than an editor rendering bug.
+
+**Triage decision (2026-05-15):** **IMPROVEMENT-elevated (P2)**, not BLOCKER. Reasoning: BLOCKER-tier per the audit's own definition requires "visibility impaired OR data integrity at risk OR core flow broken" — nothing is currently broken. But standard P3 IMPROVEMENT underweights the risk given (a) zero E2E coverage on the core extensibility model, (b) the bug-class pattern has fired twice this week. The split-the-difference is a pre-v0.33.0 trigger.
+
+**Coupled with G3-F2 and G3-F8** as a single backlog item — see "G3 Coupled Symptoms" below.
+
+### G3-F2 — IMPROVEMENT — `AuthorSettings` inline function also has zero testids
+
+**Evidence:** Spec 04 query: `Author tab testids: []` — the entire Author tab content (inline in Settings.tsx) has no `data-testid` attributes. Same shape as PluginSettings.
+
+**Why this matters:** Author tab manages author identity (display name, social links, bio). Lower-impact than plugins, but same testability gap.
+
+**Recommendation:** `AUTHORSETTINGS-TESTIDS-01` (P3, IMPROVEMENT). Effort: S.
+
+### G3-F3 — IMPROVEMENT — 3 of 7 tab triggers lack `testId` in the tabs-definition array
+
+**Evidence:** Settings.tsx:109-115 defines:
+
+```ts
+{value: "app", label: t("...", "Allgemein")},               // no testId
+{value: "ai", label: t("...", "KI-Assistent"), testId: "settings-tab-ai"},
+{value: "author", label: t("...", "Autor")},                // no testId
+{value: "topics", label: t("...", "Themen"), testId: "settings-tab-topics"},
+{value: "plugins", label: t("...", "Plugins")},             // no testId
+{value: "comments", label: t("...", "Kommentare"), testId: "settings-tab-comments"},
+// + conditional support tab with testId
+```
+
+Spec 01 confirmed the asymmetry: `app/author/plugins` tab triggers exist (label-counted via `button:has-text("...")`) but lack stable testid selectors. The `"Allgemein"` label returned 2 matches because of desktop + mobile-menu duplication — label-based selectors are fragile across this surface.
+
+**Recommendation:** add explicit `testId` to all 7 tabs. Trivial 3-line change.
+
+**Suggested resolution:** `SETTINGS-TABS-TESTID-COMPLETE-01` (P3, IMPROVEMENT). Effort: trivial.
+
+### G3-F4 — informational (not a finding) — AI key input branches correctly on external-config presence
+
+**Evidence:** Spec 03 reported `ai-api-key-input: 0, ai-api-key-external-note: 1`. The user has either `~/.config/bibliogon/secrets.yaml` or `BIBLIOGON_AI_API_KEY` env var set, so the input is replaced with a read-only note pointing at the external source. Both branches have testids. This is correct UX — input + external-note are mutually exclusive depending on config state.
+
+**No action needed.**
+
+### G3-F5 — informational — Theme toggle works as expected
+
+**Evidence:** Spec 09: theme attribute on `<html>` flipped `light → dark` after clicking `[data-testid="theme-toggle"]`. Captured both screenshots. No-action finding.
+
+### G3-F6 — IMPROVEMENT — Top-bar buttons preceding theme-toggle lack testids
+
+**Evidence:** Spec 10 (keyboard nav) focus chain:
+
+```
+1. button (no testid, no useful text)
+2. button (no testid, no useful text)
+3. button[theme-toggle]
+4. button 'Allgemein' (first Settings tab)
+5. div (role=tabpanel, focusable per ARIA)
+6+. tab content (palette, view-mode, language, etc.)
+```
+
+The first two focus stops are buttons without testids and without identifying text. Likely the top-bar back-to-dashboard + logo buttons. They're tab-stops in the keyboard flow but undiscoverable by tests.
+
+**Recommendation:** add `testId` for these (probably `nav-home`, `nav-back` or similar). Side benefit: also useful for accessibility — screen readers benefit from named landmarks, though testid ≠ aria-label.
+
+**Suggested resolution:** `SETTINGS-TOPBAR-TESTIDS-01` (P3, IMPROVEMENT). Effort: trivial.
+
+### G3-F7 — informational — Topics tab empty state
+
+**Evidence:** Spec 05: `topics: rows=0 add-input=1 add-btn=1 save-btn=1`. Topics tab is empty in the dev DB; the add-input + add-btn remain present (correct empty-state UX — user can type a new topic). Save button also visible.
+
+**No action — empty state is correctly designed.** But: this should still go in the Articles-vs-Books parity table (Group 5) because the same shape applies elsewhere.
+
+### G3-F8 — IMPROVEMENT — Settings.tsx monolithic structure (2338 LOC, multiple inline component functions)
+
+**Evidence:** `Settings.tsx` is 2338 lines with inline function definitions for at least: PluginSettings (line 887), AuthorSettings, the tabs-definition array, etc. Multiple Tabs.Content blocks contain large embedded JSX.
+
+**Why this matters:** ties G3-F1 + G3-F2 + G3-F3 together. The monolithic page makes it hard to add testids in one PR per tab — each change cascades through 2000+ lines. Extracting each tab's content into its own component (`AppSettingsTab.tsx`, `AISettingsTab.tsx`, etc.) would let testid additions land per-tab as small PRs.
+
+**Recommendation:** structural refactor — extract each tab's content into its own component file. This is the kind of cleanup that should happen alongside the testid additions in G3-F1/F2/F3, not separately.
+
+**Coupled with G3-F1 and G3-F2** as a single backlog item — see "G3 Coupled Symptoms" below.
+
+### G3 Coupled Symptoms — `PLUGIN-SETTINGS-TESTID-COVERAGE-01` (P2-elevated)
+
+G3-F1, G3-F2, G3-F8 are three symptoms of the same root cause: Settings.tsx is 2338 LOC of inline tab content with zero component-extraction discipline AND zero testid coverage in the PluginSettings + AuthorSettings inline functions. The fix is **coupled** — you can't sensibly add testids to 200-LOC inline functions without first extracting them to their own files. Filing all three under a single backlog entry:
+
+**`PLUGIN-SETTINGS-TESTID-COVERAGE-01`** (P2-elevated, IMPROVEMENT)
+
+Scope:
+- Extract `PluginSettings` inline function → `frontend/src/components/settings/PluginSettings.tsx`
+- Extract `AuthorSettings` inline function → `frontend/src/components/settings/AuthorSettings.tsx`
+- Add testids to extracted components matching established conventions (`plugin-row-{slug}`, `plugin-toggle-{slug}`, `plugin-install-trigger`, `author-display-name`, etc.)
+- Add E2E test for plugin enable / disable / install / remove flow
+- Add E2E test for author-settings management
+- Verify Settings.tsx LOC reduction (target: <800 LOC remaining)
+
+Triggers (escalation gates):
+1. **Pre-v0.33.0 release-gate**: must be addressed before the next major release. Defensive coverage for the bug-class pattern (Bug A + BulkActionBar both fired this week).
+2. **Plugin-flow bug report**: if any user reports a plugin-flow regression before v0.33.0 ships, immediately promote to BLOCKER + hotfix.
+
+Effort: M (extraction + testids + 2 E2E specs).
+
+### Pattern class emerging: "Monolithic component extraction discipline gap"
+
+Two occurrences observed so far in this audit:
+
+| Surface | LOC | Inline structure |
+|---|---:|---|
+| `Settings.tsx` | 2338 | 7 tab contents inline; `PluginSettings` + `AuthorSettings` as inline `function` definitions in the same file |
+| `ArticleList.tsx` | 1541 | `ArticleFilterBar` (~200 LOC) as inline `function` definition (G2-F1) |
+
+This is a second pattern class to track alongside the Articles-vs-Books asymmetry. Both classes share a similar mitigation shape (extract to own component file + add testids), and both increase the cost of testid-discipline work. Pattern-consolidation candidate for the lessons-learned write-up at full-audit close-out.
+
+---
+
+## Group 3 summary
+
+8 findings: 1 BLOCKER candidate (G3-F1, pending user judgment) + 5 IMPROVEMENT + 2 informational.
+
+**Top priority:** G3-F1 (PluginSettings testids). User decides BLOCKER vs IMPROVEMENT based on whether plugin-flow stability is a release-quality concern.
+
+## Group 3 reproduction commands
+
+```bash
+cd e2e && npx playwright test tests/ux-audit-group3.spec.ts --project=chromium --reporter=line
+# 10 specs pass. Screenshots in docs/audits/ux-full-audit-2026-05-14-screenshots/group3-*.png
+```
 
 ## STOP gate
 
-Group 2 complete. Awaiting direction.
+Group 3 complete. Per yesterday's direction, continuing into Group 4 (Cross-Cutting) in this session without intermediate commit. Group 4 will fold these findings into the dark-mode / loading / error / empty / toast / dialog / keyboard / i18n tables.
+
+## Surface Group 4: Cross-Cutting Concerns
+
+Methodology: per-concern code-grep + targeted Playwright probes. Findings consolidate evidence from Groups 1-3 surfaces.
+
+### Toast pattern
+
+| Pattern | Count | Verdict |
+|---|---:|---|
+| `notify.error` calls | 159 | ✓ uses central wrapper |
+| `notify.success` calls | 86 | ✓ |
+| `notify.info` calls | 21 | ✓ |
+| `notify.warn` calls | 18 | ✓ |
+| `notify.bulkAction` calls | 4 | ✓ (Undo-toast wrapper) |
+| Direct `toast.info` bypass | 1 | KeywordInput.tsx:218 — deliberate (renders custom JSX with inline Undo button; `notify.info` only takes strings) |
+| `notify.error` callsites NOT checking `err instanceof ApiError` | ~99 of 159 (≈62%) | **IMPROVEMENT** — see G4-F1 below |
+| `window.alert`/`confirm`/`prompt` | 0 | ✓ forbidden-pattern check clean |
+| `console.log` outside test files | 0 | ✓ |
+| `console.error` outside test files | 10 | mostly debug paths — acceptable |
+
+### G4-F1 — IMPROVEMENT — 99 of 159 `notify.error` callsites pass plain strings, bypassing the structured `ApiError`-with-"Report Issue" affordance
+
+**Evidence:** The `notify.ts` wrapper supports a rich error shape (`ErrorContent({message, apiError}: {message: string; apiError?: ApiError})`) — when called with an `ApiError`, the toast renders a "Report Issue" button that opens a GitHub issue prefilled with endpoint, status, stacktrace, and environment context. But only ~34 of the 133 `notify.error` callsites (≈26%) actually check `err instanceof ApiError` before calling. The other ~99 pass a plain string OR a generic error.
+
+**Why this matters:** the entire purpose of the rich-error UX (per the coding-standards rule "Error reporting" section in `.claude/rules/code-hygiene.md`) is to make every user-visible error actionable as a GitHub issue. The 99 plain-string callsites silently degrade to the unrich path. Users hitting those errors can't easily file useful bug reports.
+
+**Recommendation:** add an ESLint rule OR a pre-commit grep that flags `notify.error("string")` without a paired `ApiError` argument in code that calls `await api.*`. Effort: M (lint rule + cleanup pass).
+
+**Suggested resolution:** `NOTIFY-ERROR-APIERROR-COVERAGE-01` (P3, IMPROVEMENT). Effort: M. Coupled with: a possible follow-up to make the wrapper itself smarter (auto-extract ApiError from a thrown error when called inside a `.catch(err => notify.error(t("..."), err))` pattern — opt-in via a second argument shape).
+
+### Dialog pattern
+
+| Pattern | Count |
+|---|---:|
+| `AppDialog` / `useDialog` callsites | 17 |
+| `TypeToConfirmDialog` callsites | 5 |
+| Files using `DialogPrimitive` or `@radix-ui/react-dialog` directly | 9 (legitimate complex modals: ChapterVersionsModal, ChapterTemplatePickerModal, BulkAiFillConfirmDialog, BackupCompareDialog, NewFromTemplateButton, DonationOnboardingDialog, FieldClassDialog, ExportDialog, DashboardFilterSheet) |
+
+**No finding** — Bibliogon's dialog convention is followed: `AppDialog` for simple confirms, `TypeToConfirmDialog` for bulk-destructive, direct Radix Dialog for complex modals. The 9 direct-Radix callsites are all justifiably complex (multi-step wizards, large form modals, filter sheets).
+
+### Loading state
+
+| Pattern | Count |
+|---|---:|
+| `useState` vars named `*Loading*` | 24 |
+| `<Spinner>` component usage | 0 (no shared spinner component) |
+| Inline "Wird geladen..." / "Loading..." text | scattered |
+
+### G4-F2 — IMPROVEMENT — No shared loading indicator; 24 ad-hoc `loading` state vars per-component
+
+**Evidence:** Grep for `useState` with "loading" in the name returned 24 files. No shared `<Spinner>` or `<LoadingIndicator>` component. Each surface implements its own (usually a `disabled` button + inline text or a CSS spinner via `@keyframes spin`).
+
+**Why this matters:** same shape as G1-F3 (no shared `<EmptyState>` component). Inconsistent visual treatment across surfaces (one loading uses a button-disabled state, another uses inline text, another uses a CSS spinner). First-time users see different "this is loading" affordances per page.
+
+**Recommendation:** extract a `<LoadingIndicator>` component with a standard small-spinner + accessible aria-busy + optional label. Migrate the 24 callsites incrementally.
+
+**Suggested resolution:** `LOADING-INDICATOR-EXTRACT-01` (P3, IMPROVEMENT). Effort: M.
+
+### Empty state
+
+(See G1-F3 — no shared `<EmptyState>` component, 4 ad-hoc implementations. Re-affirmed in Group 4.)
+
+### Dark mode + theme tokens
+
+| Probe | Result |
+|---|---|
+| Theme palettes defined in `global.css` | **5** (`classic`, `cool-modern`, `nord`, `notebook`, `studio`) |
+| Per-palette modes | light + dark |
+| **Actual total variants** | **5 × 2 = 10** |
+| CLAUDE.md documented count | **3 × 2 = 6** ❌ STALE |
+| Files using `var(--*)` CSS variables | 109 |
+| **`var(--token, #hex-fallback)` callsites** | **111** |
+
+### G4-F3 — IMPROVEMENT — CLAUDE.md docs are stale on theme count
+
+**Evidence:** `CLAUDE.md` (and `.claude/rules/architecture.md`) document "3 themes × light/dark = 6 variants" — but `global.css` defines 5 palettes (`classic`, `cool-modern`, `nord`, `notebook`, `studio`). Actual count is **10 theme variants**, not 6.
+
+**Why this matters:** future contributors reading CLAUDE.md will miss `notebook` and `studio` when adding new theme tokens. Lessons-learned already cited this exact class ("Four new CSS theme tokens (...) defined across all 6 palette × dark-mode combos") — but at the time of writing, the count was 4 palettes; now it's 5.
+
+**Recommendation:** update `CLAUDE.md` and `.claude/rules/architecture.md` to reflect 5 palettes. Trivial doc fix.
+
+**Suggested resolution:** `THEME-COUNT-DOCS-01` (DEFER — can fold into the next docs-touch commit). Effort: trivial.
+
+### G4-F4 — IMPROVEMENT — 111 `var(--token, #hex-fallback)` callsites are vulnerable to silent fall-through
+
+**Evidence:** Cross-codebase grep found 111 instances of `var(--token, #hex)` — the fallback-hex pattern. If a `--token` is undefined in any of the 10 theme combos, the hex falls through silently → that palette renders with the wrong color. The v0.31.0 release notes already document this class of bug ("closing a silent fall-through-to-hex regression on 9 v0.30.x-shipped components" after adding `--surface-2`, `--danger-bg`, `--success`, `--warning`).
+
+**Why this matters:** this is the same bug class fired in v0.31.0 audit. With 5 palettes (10 combos) and 111 callsites, the audit surface is now larger than when the v0.31.0 patch landed. **A systematic per-token-per-palette audit would catch missing definitions before users see them in production.**
+
+**Recommendation:**
+1. Inventory every unique `--token` referenced via `var(--token, ...)` in components.
+2. Cross-check each token against the 10 palette × mode CSS blocks in `global.css`.
+3. Define any missing tokens (defensive completeness — same shape as the v0.31.0 fix).
+4. Optional: ESLint rule that flags `var(--token, #fallback)` to require either a no-fallback `var(--token)` (forcing the token to exist) or a documented exception comment.
+
+**Suggested resolution:** `THEME-TOKEN-COMPLETENESS-AUDIT-01` (P3, IMPROVEMENT). Effort: M (mechanical audit + cleanup).
+
+### i18n coverage
+
+| Language | Lines in catalog |
+|---|---:|
+| de.yaml | 1813 |
+| en.yaml | 1813 |
+| el.yaml | 1823 |
+| es.yaml | 1823 |
+| fr.yaml | 1823 |
+| ja.yaml | 1823 |
+| pt.yaml | 1823 |
+| tr.yaml | 1823 |
+
+**No finding** — all 8 languages within 10-line variance of each other (≈0.5% delta). Structure is well-synchronized. Native-speaker quality is a separate concern tracked in the existing `I18N-NATIVE-REVIEW-V031-01` + `I18N-DIACRITICS-01` backlog items.
+
+### Hardcoded UI strings outside i18n catalogs
+
+**Probe:** grep for `>Word Word Word<` (3+ capitalized German words inside JSX) in `frontend/src/` — finds only test fixtures, no real hardcoded UI strings. ✓
+
+### Keyboard navigation
+
+(See G3 spec 10 — focus chain inspected on Settings page. Result: tab-stops include 2 unlabeled top-bar buttons before reaching `theme-toggle` + the first tab. The `<div>` tabpanel receives focus per Radix's ARIA-conformant pattern — not a bug. **Already filed as G3-F6.**)
+
+### Articles-vs-Books asymmetry — current tally (5 occurrences, all from this audit + recent history)
+
+| Occurrence | Where surfaced |
+|---|---|
+| 1 | Bulk-delete cap removal (historical — both surfaces needed simultaneous update) |
+| 2 | Comments-Count badge (historical — Card view first, List view parity later) |
+| 3 | BookEditor zero testids vs ArticleEditor 38 (G1-F1) |
+| 4 | ArticleFilterBar inline vs Books' shared DashboardFilterBar (G2-F1) |
+| 5 | View-mode testid namespace split (`book-card-` grid vs `book-list-row-` list — G2-F2) |
+
+This pattern is now **load-bearing**. The Group 5 parity table will consolidate these into a single rolled-up surface table + a lessons-learned candidate.
+
+### Pattern class 2: "Monolithic component extraction discipline gap" — current tally (2 occurrences)
+
+| Occurrence | Where surfaced |
+|---|---|
+| 1 | Settings.tsx 2338 LOC with inline `PluginSettings` (~200 LOC) + `AuthorSettings` (G3-F1 + G3-F2 + G3-F8) |
+| 2 | ArticleList.tsx 1541 LOC with inline `ArticleFilterBar` (~200 LOC) (G2-F1) |
+
+Same mitigation shape (extract to own file + add testids). Second pattern class to be lessons-learned-d at audit close.
+
+---
+
+## Group 4 summary
+
+4 IMPROVEMENT findings (G4-F1 through G4-F4) plus 1 stale-docs note (G4-F3 — could also be tagged DEFER).
+
+**Top priority candidates from Group 4:**
+- **G4-F1** (notify.error ApiError coverage) — affects every error path in the app
+- **G4-F4** (theme-token completeness) — fired as a bug in v0.31.0 already; recurrence prevention
+
+## Group 4 reproduction commands
+
+```bash
+# All probes are bash-grep-based (no Playwright spec for Group 4):
+
+# Toast pattern
+grep -rhoE 'notify\.(success|error|info|warn|bulkAction)' frontend/src/ | sort | uniq -c
+
+# ApiError coverage
+echo "instanceof checks: $(grep -rln 'err instanceof ApiError' frontend/src/ | grep -v test | wc -l)"
+echo "notify.error calls: $(grep -rE 'notify\.error\(' frontend/src/ | grep -v test | wc -l)"
+
+# Hex fallback inventory
+grep -rhE 'var\(--[a-z-]+, *#' frontend/src/ --include='*.tsx' --include='*.ts' | grep -v test | wc -l
+
+# Theme palette inventory
+grep -oE 'data-app-theme="[a-z-]+"' frontend/src/styles/global.css | sort -u
+
+# i18n line counts
+for f in backend/config/i18n/*.yaml; do printf "%-30s %s\n" "$(basename $f)" "$(wc -l < $f)"; done
+```
+
+## STOP gate
+
+Group 4 complete. Group 5 (consolidated Articles-vs-Books parity table) is the final group — natural place to break or push through.
