@@ -7,19 +7,21 @@
 
 ## Status
 
-**🚧 IN PROGRESS** — Group 1 (Core Editors) walked; Groups 2-5 pending direction.
+**✅ COMPLETE** — all 5 surface groups walked. 23 findings total: 0 BLOCKER / 3 IMPROVEMENT-elevated / 13 IMPROVEMENT / 7 DEFER-or-INFO. Backlog filings + lessons-learned land in separate follow-up commits per established protocol.
 
 **Related bug closures during this audit cycle:**
 
 - **Bug A (Articles-Trash Restore "broken" user report)** — resolved as **not a code bug**. Manual smoke against the running dev instance + corpus showed the restore POST fires correctly (workbox "No route found" was misread as blocking; the message is benign pass-through). The real signal in the user's report was the `[Violation] 'click' handler took 419ms` console line — perception-lag from chained roundtrips in `handleRestore`. Filed as `RESTORE-UX-FEEDBACK-01` (P3 IMPROVEMENT) in backlog; lessons-learned entry "Workbox 'No route found' is benign info, not a bug indicator" added.
 
-## Severity rollup (Group 1 only, partial)
+## Severity rollup (finalized after Group 5)
 
-| Severity | Count |
-|---|---:|
-| BLOCKER | 0 |
-| IMPROVEMENT | 4 |
-| DEFER | 1 |
+| Severity | Count | Notes |
+|---|---:|---|
+| BLOCKER | 0 | Well under the 5-BLOCKER stop-condition |
+| IMPROVEMENT-elevated (P2) | 3 | G3-F1+F2+F8 (coupled as PLUGIN-SETTINGS-TESTID-COVERAGE-01), G4-F1 (NOTIFY-ERROR-APIERROR-COVERAGE-01) |
+| IMPROVEMENT (P3) | 13 | G1-F1, G1-F2, G1-F3, G2-F1, G2-F2, G2-F3, G2-F6, G3-F3, G3-F6, G4-F2, G4-F3, G4-F4 |
+| DEFER / INFO | 7 | G1-F4, G1-F5, G2-F4, G2-F5, G3-F4, G3-F5, G3-F7 |
+| **Total** | **23** | Within audit stop-condition (<30) |
 
 ## Conventions to audit against (Pre-Inspection Step 0.2)
 
@@ -549,6 +551,110 @@ grep -oE 'data-app-theme="[a-z-]+"' frontend/src/styles/global.css | sort -u
 for f in backend/config/i18n/*.yaml; do printf "%-30s %s\n" "$(basename $f)" "$(wc -l < $f)"; done
 ```
 
-## STOP gate
+## Surface Group 5: Articles-vs-Books Parity (synthesis)
 
-Group 4 complete. Group 5 (consolidated Articles-vs-Books parity table) is the final group — natural place to break or push through.
+Synthesis group: rolls up findings from Groups 1-4 into a single parity matrix, then promotes pattern-class observations to lessons-learned candidates.
+
+### Articles-vs-Books parity matrix
+
+| Surface / feature | Articles side | Books side | Status |
+|---|---|---|---|
+| **Primary editor** | `ArticleEditor.tsx` (1494 LOC, **38 testids**) | `BookEditor.tsx` (700 LOC, **0 testids**) | ❌ **ASYMMETRY** (G1-F1) |
+| **Dashboard list view** | `ArticleList.tsx` `<ul>` row with `article-trash-row-{id}`, etc. | `BookListView.tsx` with `book-list-row-{id}` | ✓ both have testids — different namespaces |
+| **Dashboard card view** | `ArticleCard.tsx` with `article-card-*` testids | `BookCard.tsx` with `book-card-*` testids | ✓ symmetric |
+| **View-mode toggle** | Articles uses `useViewMode("articles")` | Books uses `useViewMode("books")` | ✓ symmetric hook usage |
+| **Per-view testid namespace** | grid: `article-card-{id}`, list: `article-trash-row-{id}` | grid: `book-card-{id}`, list: `book-list-row-{id}` | ❌ **ASYMMETRY** (G2-F2) — different namespaces per view-mode mean E2E specs targeting one mode silently skip in the other |
+| **Filter bar** | `ArticleFilterBar` inline in ArticleList.tsx:1128 (~200 LOC, 6 filter slots, `article-list-*` testids) | `DashboardFilterBar` shared component (1 filter slot + sort, `filter-*` testids) | ❌ **ASYMMETRY** (G2-F1) — different components, different testid namespaces, different feature surfaces |
+| **Trash view** | `article-trash-row-{id}`, `article-trash-restore-{id}`, `article-trash-permanent-{id}` | `trash-card-{id}`, `trash-restore-{id}`, etc. (BookCard-based) | ✓ both have testids, different namespaces |
+| **Bulk action bar** | `article-bulk-action-bar`, `article-bulk-count`, `article-bulk-check-{id}`, `article-bulk-select-all` | `book-bulk-action-bar`, `book-bulk-count`, `book-bulk-check-{id}`, `book-bulk-select-all` | ✓ **symmetric** (post-`02553fb`) |
+| **Selection hook** | `useArticleSelection` (added `remove(id)` in `02553fb`) | `useBookSelection` (added `remove(id)` in `02553fb`) | ✓ symmetric (yesterday's fix) |
+| **Bulk-delete cap** | Removed v0.31.0 — symmetric in `bulk-delete.spec.ts` | Removed v0.31.0 — symmetric | ✓ symmetric (historical fix) |
+| **Comments-Count badge** | Card view: badge ✓ ; List view: badge ✓ (parity work) | N/A (books don't have comments) | ✓ (per-Articles-internal parity) |
+| **Trash restore flow** | `handleRestore` reloads `/api/articles` (419ms click handler) | `handleRestore` reloads `/api/books` | ⚠️ both have the perception-lag (`RESTORE-UX-FEEDBACK-01`) |
+| **Permanent-delete from trash** | `handlePermanentDelete` (no confirm in current code) | `handlePermanentDelete` w/ AppDialog confirm | ⚠️ **POSSIBLE ASYMMETRY** — needs verification |
+| **Empty-state UX** | ArticleList has `article-list-empty` testid + CTA | Dashboard has empty-state in Welcome card | ⚠️ different shapes; folded into G1-F3 (no shared `<EmptyState>`) |
+
+**Tally:** 3 confirmed asymmetries (G1-F1, G2-F1, G2-F2) + 1 historical (bulk-delete cap, now resolved) + 1 partial (comments-count badge, now resolved) + 2 from Bug A path (perception lag is symmetric — same shape on both sides). **5 occurrences of the parallel-surface asymmetry pattern** total.
+
+### Severity rollup (full audit, finalized)
+
+| Severity | Count | IDs |
+|---|---:|---|
+| BLOCKER | 0 | — |
+| **IMPROVEMENT-elevated (P2)** | **3** | G3-F1 + G3-F2 + G3-F8 (coupled as `PLUGIN-SETTINGS-TESTID-COVERAGE-01`), G4-F1 (`NOTIFY-ERROR-APIERROR-COVERAGE-01`) |
+| IMPROVEMENT (P3) | 13 | G1-F1, G1-F2, G1-F3, G2-F1, G2-F2, G2-F3, G2-F6, G3-F3, G3-F6, G4-F2, G4-F3, G4-F4 (+ G4-F3 promoted to "fix in this commit chain") |
+| DEFER / INFO | 7 | G1-F4, G1-F5, G2-F4, G2-F5, G3-F4, G3-F5, G3-F7 |
+| **Total** | **23** | (within audit stop-condition `<30`) |
+
+### G4-F1 elevation (per user direction)
+
+G4-F1 promoted from IMPROVEMENT to **IMPROVEMENT-elevated (P2)** — parity with G3-F1:
+
+- 62% of error paths bypass the ApiError-with-Report-Issue affordance.
+- **User-impact**: users hitting those errors can't file useful bug reports because error context isn't carried through. This degrades Bibliogon's "every error is actionable" promise that the `code-hygiene.md` "Error reporting" rule establishes.
+- Same scoping pattern as G3-F1: not BLOCKER-tier (nothing currently broken) but P3 underweights the user-facing risk.
+
+Backlog item: `NOTIFY-ERROR-APIERROR-COVERAGE-01` (P2, IMPROVEMENT-elevated).
+
+### G4-F3 elevation: fix in this audit-close commit chain
+
+G4-F3 (CLAUDE.md stale theme docs) promoted from DEFER to **DOCS-IMPROVEMENT** with priority "fix in same session as audit close". Reasoning: CLAUDE.md drives every Claude Code session's discipline reference. If theme architecture description is wrong, future audits start from false assumptions about palette count. Will land in the lessons-learned commit (not as a separate backlog item — direct doc fix).
+
+### G4-F4 reframed: recurring-issue-class
+
+The 111 `var(--token, #hex)` callsites are not just a one-off audit finding — they're the **second occurrence of the same theme-token-completeness bug class** in two release cycles:
+
+- **v0.31.0 Pre-Release Audit D3** (per the existing release notes) found 9 components silently falling through to hex when `--surface-2`, `--danger-bg`, `--success`, `--warning` were undefined in some palettes. Fixed by defining the tokens.
+- **2026-05-15 (this audit)** found 111 callsites of the same `var(--token, #hex-fallback)` pattern. Whether they all need new tokens is unverified — but the inventory itself is a recurring-issue signal.
+
+Lessons-learned candidate: **"Theme token completeness audit should be periodic hygiene, not ad-hoc when issues fire."** Audit cadence: every release cycle's pre-release sweep should include the `grep -rhE 'var\(--[a-z-]+, *#' frontend/src/` probe + cross-check against the per-palette CSS blocks in `global.css`.
+
+### Pattern-class causality (NEW: explicit cause-effect chain)
+
+The two pattern classes from earlier groups are **NOT independent**. They have a cause-and-effect relationship:
+
+```
+[Monolithic component]
+        ↓ blocks
+[Component extraction discipline]
+        ↓ absence creates
+[Duplication across parallel surfaces]
+        ↓ amplifies
+[Articles-vs-Books asymmetry when updates touch one surface only]
+```
+
+Concrete instances of this chain:
+
+| Monolithic source | Inline component | Resulting asymmetry |
+|---|---|---|
+| `Settings.tsx` 2338 LOC | `PluginSettings` inline (G3-F1), `AuthorSettings` inline (G3-F2) | No Articles-vs-Books parallel here, but: blocks the per-tab testid discipline (G3-F8) |
+| `ArticleList.tsx` 1541 LOC | `ArticleFilterBar` inline (~200 LOC, G2-F1) | Articles got 6 filter slots while Books' shared `DashboardFilterBar` stayed at 1. Inline structure made it easier to add Articles-only filters without considering Books parity. |
+
+**The implication:** fixing the monolithic-component-extraction-gap (the upstream cause) addresses the root cause of multiple Articles-vs-Books asymmetries simultaneously. Extraction work has compounding parity value, not just code-cleanup value.
+
+Lessons-learned candidate: **"Inline-component duplication is the upstream cause of parallel-surface asymmetry. Component extraction is parity insurance, not just code hygiene."**
+
+### Audit acceptance criteria check
+
+Per the audit's own stop-conditions (Pre-Inspection Step 0.3):
+
+- [x] Every surface in scope has been walked through (8 routes × 5 surface groups)
+- [x] Every cross-cutting concern checked across all surfaces (toast, dialog, loading, empty, theme, i18n, keyboard, console)
+- [x] All findings have severity + evidence + suggested resolution
+- [x] Findings table allows quick prioritization decision
+- [x] 23 findings total (well under the 30-finding stop-condition)
+- [x] 0 BLOCKERs (well under the 5-BLOCKER stop-condition)
+
+### Audit close-out
+
+**Status:** ✅ **COMPLETE** (was 🚧 IN PROGRESS in Groups 1-4).
+
+Post-audit deliverables landing in separate commits per the established protocol:
+
+1. **Backlog filings** — one entry per IMPROVEMENT finding with explicit triggers
+2. **Lessons-learned** — three new sections (Articles-vs-Books asymmetry pattern, monolithic-component-extraction-gap pattern, periodic theme-token-completeness audit) + the cause-effect chain note + the Bug A perception-lag class
+3. **CLAUDE.md update** — G4-F3 fix (5 palettes × 2 modes = 10 variants, not 3 × 2 = 6)
+4. **Journal update** — full-audit close entry with the 23-finding summary
+5. **Resume notes for future audits** — running tally of pattern occurrences, the probe commands used, the screenshot inventory
+
+All findings categorized by surface group above; backlog items ready to file in the next commit.
