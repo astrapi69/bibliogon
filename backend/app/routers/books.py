@@ -7,14 +7,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Book, BookTemplate, Chapter
+from app.models import Article, Book, BookTemplate, Chapter
 from app.schemas import (
     BookCreate,
     BookDetail,
+    BookFromArticlesBackMatter,
+    BookFromArticlesCreate,
+    BookFromArticlesFrontMatter,
+    BookFromArticlesSortStrategy,
     BookFromTemplateCreate,
     BookOut,
     BookUpdate,
 )
+from app.schemas import ChapterType as ChapterTypeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +192,371 @@ def create_book_from_template(payload: BookFromTemplateCreate, db: Session = Dep
                 content=tpl_chapter.content or "",
             )
         )
+
+    db.commit()
+    db.refresh(book)
+    return book
+
+
+# --- Article-to-book conversion (Phase 1) ---
+
+
+def _wrap_text_as_tiptap_doc(text: str | None) -> str:
+    """Wrap a plain-text string as a single-paragraph TipTap JSON doc.
+
+    Empty / None input becomes an empty content string so the user
+    sees an empty editor in the Book-Editor and fills it in.
+    """
+    if not text:
+        return ""
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": text}],
+                }
+            ],
+        }
+    )
+
+
+def _resolve_articles_or_422(article_ids: list[str], db: Session) -> list[Article]:
+    """Load articles and validate every input id.
+
+    All offending ids surface in a single 422 (Q10 + Q11 confirmation:
+    "surface ALL offending IDs in single response, not first-found-
+    first-failed"). Returned articles are ordered by the input
+    ``article_ids`` so downstream sort logic can rely on a stable
+    starting permutation when ``sort_strategy=manual`` reuses the
+    input order.
+    """
+    rows = db.query(Article).filter(Article.id.in_(article_ids)).all()
+    by_id: dict[str, Article] = {a.id: a for a in rows}
+
+    not_found_ids = [aid for aid in article_ids if aid not in by_id]
+    trashed = [a for a in rows if a.deleted_at is not None]
+    non_article = [a for a in rows if a.content_type != "article"]
+
+    if not_found_ids or trashed or non_article:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "invalid_articles",
+                "message": "Some articles cannot be converted.",
+                "not_found_ids": not_found_ids,
+                "trashed": [{"id": a.id, "title": a.title} for a in trashed],
+                "non_article": [
+                    {
+                        "id": a.id,
+                        "title": a.title,
+                        "content_type": a.content_type,
+                    }
+                    for a in non_article
+                ],
+            },
+        )
+
+    return [by_id[aid] for aid in article_ids]
+
+
+def _validate_manual_order_or_422(
+    article_ids: list[str], manual_order: list[str] | None
+) -> list[str]:
+    """For ``sort_strategy=manual``, ensure ``manual_order`` is a
+    permutation of ``article_ids`` and return it. Raise 422 otherwise.
+    """
+    if manual_order is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "manual_order_required",
+                "message": (
+                    "sort_strategy=manual requires a manual_order list "
+                    "containing every article id exactly once."
+                ),
+            },
+        )
+    if set(manual_order) != set(article_ids) or len(manual_order) != len(article_ids):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "manual_order_mismatch",
+                "message": (
+                    "manual_order must be a permutation of article_ids "
+                    "(same set, same length, no duplicates)."
+                ),
+                "expected_ids": sorted(article_ids),
+                "received_ids": sorted(manual_order),
+            },
+        )
+    return manual_order
+
+
+def _sort_articles(
+    articles: list[Article],
+    sort_strategy: BookFromArticlesSortStrategy,
+    manual_order: list[str] | None,
+) -> list[Article]:
+    """Apply the chosen sort strategy. ``date_*`` falls back to
+    ``created_at`` when ``original_published_at`` is None (native
+    Bibliogon articles with no publications)."""
+    if sort_strategy is BookFromArticlesSortStrategy.MANUAL:
+        # manual_order is already validated as a permutation; index lookup
+        # is faster than repeated .index() calls for large selections.
+        order_index = {aid: i for i, aid in enumerate(manual_order or [])}
+        return sorted(articles, key=lambda a: order_index[a.id])
+
+    if sort_strategy is BookFromArticlesSortStrategy.DATE_ASC:
+        return sorted(articles, key=lambda a: a.original_published_at or a.created_at)
+    if sort_strategy is BookFromArticlesSortStrategy.DATE_DESC:
+        return sorted(
+            articles,
+            key=lambda a: a.original_published_at or a.created_at,
+            reverse=True,
+        )
+    if sort_strategy is BookFromArticlesSortStrategy.TITLE_ASC:
+        return sorted(articles, key=lambda a: a.title.casefold())
+    if sort_strategy is BookFromArticlesSortStrategy.TITLE_DESC:
+        return sorted(articles, key=lambda a: a.title.casefold(), reverse=True)
+
+    return articles  # pragma: no cover - exhaustive enum match
+
+
+def _generate_front_matter_chapters(
+    front_matter: BookFromArticlesFrontMatter | None,
+    book: Book,
+    start_position: int,
+) -> list[Chapter]:
+    """Build front-matter Chapter rows in standard publishing order:
+    Title-Page -> Dedication -> Introduction.
+
+    Title-Page has no ``*_text`` field — the user customises the
+    cover/title chapter in the Book-Editor after conversion. The
+    chapter title defaults to the book title when not provided.
+    """
+    if front_matter is None:
+        return []
+
+    chapters: list[Chapter] = []
+    pos = start_position
+
+    if front_matter.include_title_page:
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=front_matter.title_page_title or book.title,
+                content="",
+                position=pos,
+                chapter_type=ChapterTypeEnum.TITLE_PAGE.value,
+            )
+        )
+        pos += 1
+
+    if front_matter.include_dedication:
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=front_matter.dedication_title or "Dedication",
+                content=_wrap_text_as_tiptap_doc(front_matter.dedication_text),
+                position=pos,
+                chapter_type=ChapterTypeEnum.DEDICATION.value,
+            )
+        )
+        pos += 1
+
+    if front_matter.include_introduction:
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=front_matter.introduction_title or "Introduction",
+                content=_wrap_text_as_tiptap_doc(front_matter.introduction_text),
+                position=pos,
+                chapter_type=ChapterTypeEnum.INTRODUCTION.value,
+            )
+        )
+        pos += 1
+
+    return chapters
+
+
+def _generate_back_matter_chapters(
+    back_matter: BookFromArticlesBackMatter | None,
+    book: Book,
+    start_position: int,
+) -> list[Chapter]:
+    """Build back-matter Chapter rows: Acknowledgments -> Author Bio."""
+    if back_matter is None:
+        return []
+
+    chapters: list[Chapter] = []
+    pos = start_position
+
+    if back_matter.include_acknowledgments:
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=back_matter.acknowledgments_title or "Acknowledgments",
+                content=_wrap_text_as_tiptap_doc(back_matter.acknowledgments_text),
+                position=pos,
+                chapter_type=ChapterTypeEnum.ACKNOWLEDGMENTS.value,
+            )
+        )
+        pos += 1
+
+    if back_matter.include_author_bio:
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=back_matter.author_bio_title or "About the Author",
+                content=_wrap_text_as_tiptap_doc(back_matter.author_bio_text),
+                position=pos,
+                chapter_type=ChapterTypeEnum.ABOUT_AUTHOR.value,
+            )
+        )
+        pos += 1
+
+    return chapters
+
+
+def _decode_tags_to_list(tags_json: str) -> list[str]:
+    """Article.tags is a JSON-encoded Text column. Return list[str]."""
+    if not tags_json:
+        return []
+    try:
+        parsed = json.loads(tags_json)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [str(t) for t in parsed]
+
+
+def _aggregate_keywords(explicit_keywords: list[str], articles: list[Article]) -> list[str]:
+    """Build the Book.keywords list as the deduped union of the
+    explicit keywords from the wizard plus every Article.tags entry.
+
+    Order: explicit-keywords first (user intent), then article tags in
+    first-seen order. Case-insensitive deduplication, original casing
+    preserved.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+
+    for kw in list(explicit_keywords) + [
+        t for article in articles for t in _decode_tags_to_list(article.tags)
+    ]:
+        text = kw.strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+
+    return out
+
+
+def _shared_series(articles: list[Article]) -> str | None:
+    """Return the series shared by every article, or None if mixed."""
+    series_values = {a.series for a in articles if a.series}
+    if len(series_values) == 1 and len(articles) == len([a for a in articles if a.series]):
+        return series_values.pop()
+    return None
+
+
+@router.post(
+    "/from-articles",
+    response_model=BookDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Depends(get_db)):
+    """Create a Book by copying selected Articles into Chapters.
+
+    Article-to-book conversion (Phase 1). Original Articles are left
+    untouched - the new Book holds an independent copy of each
+    Article's ``content_json`` as ``Chapter.content``. Optional
+    front-matter / back-matter chapters frame the article chapters.
+    The whole creation is one transaction: any failure rolls the
+    entire Book + Chapters insert back.
+
+    Validation gates run before the Book is created so the user can
+    fix the entire selection in one pass (Q10 + Q11 confirmation):
+
+    - 404-ish "not found" article ids,
+    - articles in the trash (``deleted_at IS NOT NULL``),
+    - articles with ``content_type != "article"``,
+    - ``sort_strategy=manual`` with missing / mismatched
+      ``manual_order``.
+
+    All offending ids surface in a single 422 ``detail`` payload.
+    """
+    author = _validate_author(payload.author, _allow_books_without_author())
+
+    articles = _resolve_articles_or_422(payload.article_ids, db)
+
+    manual_order = (
+        _validate_manual_order_or_422(payload.article_ids, payload.manual_order)
+        if payload.sort_strategy is BookFromArticlesSortStrategy.MANUAL
+        else None
+    )
+
+    sorted_articles = _sort_articles(articles, payload.sort_strategy, manual_order)
+    single_article = articles[0] if len(articles) == 1 else None
+
+    book = Book(
+        title=payload.title,
+        # Q13: pre-fill subtitle from the single source article when the
+        # wizard did not override it.
+        subtitle=(
+            payload.subtitle
+            if payload.subtitle is not None
+            else (single_article.subtitle if single_article else None)
+        ),
+        author=author,
+        language=payload.language,
+        # Series auto-fill: explicit wizard value wins; otherwise the
+        # shared series across every selected article (None if mixed).
+        series=payload.series if payload.series is not None else _shared_series(articles),
+        series_index=payload.series_index,
+        keywords=json.dumps(_aggregate_keywords(payload.keywords, articles)),
+        # Q15: pre-fill cover_image from the single source article's
+        # featured_image_url when the wizard did not override it.
+        cover_image=(
+            payload.cover_image
+            if payload.cover_image is not None
+            else (single_article.featured_image_url if single_article else None)
+        ),
+    )
+    db.add(book)
+    db.flush()  # assign book.id for chapter FKs
+
+    use_article_title = payload.chapter_settings.use_article_title_as_chapter_title
+
+    chapters: list[Chapter] = _generate_front_matter_chapters(
+        payload.front_matter, book, start_position=0
+    )
+
+    article_start = len(chapters)
+    for offset, article in enumerate(sorted_articles):
+        chapters.append(
+            Chapter(
+                book_id=book.id,
+                title=article.title if use_article_title else f"Chapter {offset + 1}",
+                content=article.content_json or "",
+                position=article_start + offset,
+                chapter_type=ChapterTypeEnum.CHAPTER.value,
+            )
+        )
+
+    chapters.extend(
+        _generate_back_matter_chapters(payload.back_matter, book, start_position=len(chapters))
+    )
+
+    for chapter in chapters:
+        db.add(chapter)
 
     db.commit()
     db.refresh(book)

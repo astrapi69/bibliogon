@@ -155,6 +155,109 @@ class BookFromTemplateCreate(BaseModel):
     description: str | None = None
 
 
+# --- BookFromArticles schemas (article-to-book conversion, Phase 1) ---
+
+
+class BookFromArticlesSortStrategy(str, Enum):
+    """Sort strategy for article-to-chapter ordering."""
+
+    DATE_ASC = "date_asc"
+    DATE_DESC = "date_desc"
+    TITLE_ASC = "title_asc"
+    TITLE_DESC = "title_desc"
+    MANUAL = "manual"
+
+
+class BookFromArticlesFrontMatter(BaseModel):
+    """Optional front-matter chapters prepended before article chapters.
+
+    Each ``include_*`` flag gates one chapter; the matching ``*_title``
+    overrides the server's English default; the matching ``*_text`` becomes
+    the chapter body (wrapped as a single-paragraph TipTap doc).
+    Title-Page has no text input — the user customises the cover/title
+    chapter via the Book-Editor afterwards.
+
+    Order at generation time: Title-Page -> Dedication -> Introduction
+    (standard publishing convention).
+    """
+
+    include_title_page: bool = False
+    title_page_title: str | None = Field(default=None, max_length=500)
+
+    include_dedication: bool = False
+    dedication_title: str | None = Field(default=None, max_length=500)
+    dedication_text: str | None = None
+
+    include_introduction: bool = False
+    introduction_title: str | None = Field(default=None, max_length=500)
+    introduction_text: str | None = None
+
+
+class BookFromArticlesBackMatter(BaseModel):
+    """Optional back-matter chapters appended after article chapters.
+
+    Order at generation time: Acknowledgments -> Author Bio
+    (Author Bio is conventionally the last back-matter item).
+    """
+
+    include_acknowledgments: bool = False
+    acknowledgments_title: str | None = Field(default=None, max_length=500)
+    acknowledgments_text: str | None = None
+
+    include_author_bio: bool = False
+    author_bio_title: str | None = Field(default=None, max_length=500)
+    author_bio_text: str | None = None
+
+
+class BookFromArticlesChapterSettings(BaseModel):
+    """Settings governing the article-to-chapter mapping.
+
+    Notes on dropped fields: ``preserve_article_id_metadata`` was in
+    the original Pre-Inspection spec but there is no
+    ``Chapter.source_article_id`` column to hold the value, which would
+    make it a kwarg-without-behaviour (forbidden by the lessons-learned
+    "End-to-end behavior tests" rule). Reintroduce alongside the
+    schema migration that adds the reverse-link column
+    (``CONVERT-TO-BOOK-REVERSE-LINK-01``, P5).
+    """
+
+    use_article_title_as_chapter_title: bool = True
+
+
+class BookFromArticlesCreate(BaseModel):
+    """Payload for ``POST /api/books/from-articles``.
+
+    Selected Articles are copied into a new Book as Chapters. Original
+    Articles are left untouched (decoupled lifecycle by design — see
+    the article-to-book design notes in the Phase 1 commit).
+
+    Sort strategies operate on the resolved Article rows:
+    - ``date_*`` uses :attr:`Article.original_published_at` (earliest
+      publication date) with fallback to ``created_at`` for native
+      Bibliogon articles that have no publications.
+    - ``title_*`` is a case-insensitive lexical sort.
+    - ``manual`` requires ``manual_order`` to be a permutation of
+      ``article_ids``.
+    """
+
+    article_ids: list[str] = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=500)
+    subtitle: str | None = Field(default=None, max_length=500)
+    author: str | None = Field(default=None, max_length=300)
+    language: str = Field(default="en", min_length=2, max_length=10)
+    series: str | None = Field(default=None, max_length=300)
+    series_index: int | None = None
+    keywords: list[str] = Field(default_factory=list)
+    cover_image: str | None = Field(default=None, max_length=500)
+    sort_strategy: BookFromArticlesSortStrategy = BookFromArticlesSortStrategy.DATE_ASC
+    manual_order: list[str] | None = None
+    front_matter: BookFromArticlesFrontMatter | None = None
+    back_matter: BookFromArticlesBackMatter | None = None
+    chapter_settings: BookFromArticlesChapterSettings = Field(
+        default_factory=BookFromArticlesChapterSettings
+    )
+
+
 class BookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
