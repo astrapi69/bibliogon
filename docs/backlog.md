@@ -105,17 +105,6 @@ store.
   migrate the 4 callsites, set as the canonical pattern for
   future surfaces. Effort: S-M.
 
-- **VIEW-MODE-TESTID-PARITY-01** (P3, IMPROVEMENT): filed
-  by UX-Full-Audit 2026-05-15 (G2-F2). View-mode testid
-  namespace asymmetry between BookCard (``book-card-{id}``)
-  and BookListView (``book-list-row-{id}``). E2E specs
-  silently skip when wrong view-mode is persisted —
-  confirmed during the audit walkthrough itself. Add a
-  stable view-agnostic testid (``book-{id}`` or
-  ``book-tile-{id}``) to BOTH BookCard and BookListView
-  wrappers, alongside the existing view-specific testids.
-  Same audit for articles if applicable. Effort: S.
-
 - **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
   by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
   renders all comments in a single DOM table without
