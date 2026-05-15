@@ -42,21 +42,30 @@ export default function MediumImportResult({ result, onReset }: MediumImportResu
                     {t("ui.medium_import.result.header", "Import abgeschlossen")}
                 </h2>
                 <div className={styles.summaryCounts}>
-                    <span className={styles.summaryCount}>
+                    <span
+                        className={styles.summaryCount}
+                        data-testid="medium-import-result-imported-count"
+                    >
                         <CheckCircle2 size={14} className={styles.triggerImported} />
                         {t(
                             "ui.medium_import.result.imported_count",
                             "{count} Artikel importiert",
                         ).replace("{count}", String(result.imported_count))}
                     </span>
-                    <span className={styles.summaryCount}>
+                    <span
+                        className={styles.summaryCount}
+                        data-testid="medium-import-result-skipped-count"
+                    >
                         <SkipForward size={14} />
                         {t(
                             "ui.medium_import.result.skipped_count",
                             "{count} übersprungen",
                         ).replace("{count}", String(result.skipped_count))}
                     </span>
-                    <span className={styles.summaryCount}>
+                    <span
+                        className={styles.summaryCount}
+                        data-testid="medium-import-result-errored-count"
+                    >
                         <AlertTriangle size={14} className={styles.triggerErrored} />
                         {t(
                             "ui.medium_import.result.errored_count",

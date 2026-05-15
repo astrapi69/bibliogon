@@ -83,13 +83,24 @@ export default function Settings() {
             <header className={styles.header}>
                 <div className={styles.headerInner}>
                     <div className={styles.headerLeft}>
-                        <button className={styles.backBtn} onClick={() => navigate("/")}>
+                        <button
+                            className={styles.backBtn}
+                            onClick={() => navigate("/")}
+                            data-testid="settings-nav-back"
+                            aria-label={t("ui.dashboard.back", "Zurück")}
+                        >
                             <ChevronLeft size={18}/>
                         </button>
                         <h1 className={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
                     <div className="icon-row">
-                        <button className="btn-icon" onClick={() => navigate("/")} title={t("ui.dashboard.title", "Dashboard")}>
+                        <button
+                            className="btn-icon"
+                            onClick={() => navigate("/")}
+                            data-testid="settings-nav-home"
+                            aria-label={t("ui.dashboard.title", "Dashboard")}
+                            title={t("ui.dashboard.title", "Dashboard")}
+                        >
                             <Home size={18}/>
                         </button>
                         <ThemeToggle/>
@@ -103,12 +114,12 @@ export default function Settings() {
                     // mobile DropdownMenu render the same set of options. The
                     // dropdown items call ``handleTabChange`` directly because
                     // they are not Tabs.Trigger nodes.
-                    const tabDefs: {value: SettingsTab; label: string; testId?: string}[] = [
-                        {value: "app", label: t("ui.settings.tab_general", "Allgemein")},
+                    const tabDefs: {value: SettingsTab; label: string; testId: string}[] = [
+                        {value: "app", label: t("ui.settings.tab_general", "Allgemein"), testId: "settings-tab-app"},
                         {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
-                        {value: "author", label: t("ui.settings.tab_author", "Autor")},
+                        {value: "author", label: t("ui.settings.tab_author", "Autor"), testId: "settings-tab-author"},
                         {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
-                        {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins")},
+                        {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                         {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
                         ...(getDonationsConfig(appConfig)
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
@@ -147,7 +158,7 @@ export default function Settings() {
                                                 <DropdownMenu.Item
                                                     key={d.value}
                                                     className="hamburger-menu-item"
-                                                    data-testid={d.testId ? `${d.testId}-mobile` : `settings-tab-${d.value}-mobile`}
+                                                    data-testid={`${d.testId}-mobile`}
                                                     onSelect={() => handleTabChange(d.value)}
                                                 >
                                                     {d.label}
