@@ -97,30 +97,6 @@ store.
   first user >200 comments OR Settings sluggishness
   complaint.
 
-- **MEDIUM-IMPORT-TESTIDS-01** (P3, IMPROVEMENT): filed by
-  UX-Full-Audit 2026-05-15 (G2-F6). 3 of 7+ interactive
-  elements on the Medium Import page have testids; file
-  input + result-table counts (imported / skipped /
-  errored) lack them. Add ``medium-import-file``,
-  ``medium-import-result-imported-count``,
-  ``medium-import-result-skipped-count``, etc. Effort: S.
-
-- **SETTINGS-TABS-TESTID-COMPLETE-01** (P3, IMPROVEMENT):
-  filed by UX-Full-Audit 2026-05-15 (G3-F3). 3 of 7
-  Settings tab triggers lack ``testId`` in the
-  tabs-definition array (Settings.tsx:109-115): ``app``,
-  ``author``, ``plugins``. E2E specs need label-based
-  fallback selectors. Add explicit ``testId`` to all 7.
-  Effort: trivial.
-
-- **SETTINGS-TOPBAR-TESTIDS-01** (P3, IMPROVEMENT): filed
-  by UX-Full-Audit 2026-05-15 (G3-F6). The 2 top-bar
-  buttons preceding ``theme-toggle`` in the Settings page
-  keyboard-nav focus chain lack testids and identifying
-  text. Likely back-to-dashboard + logo. Add ``nav-home``
-  / ``nav-back`` testids. Side benefit: discoverability
-  for screen-reader users. Effort: trivial.
-
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
   ``comments``) that ship passthru-English in es / fr / el / pt /
