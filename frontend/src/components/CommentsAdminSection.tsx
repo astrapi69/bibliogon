@@ -17,6 +17,7 @@ import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {LoadingIndicator} from "./LoadingIndicator";
 
 const PAGE_SIZE = 100;
 
@@ -289,16 +290,11 @@ export default function CommentsAdminSection() {
             )}
 
             {loading && rows.length === 0 && (
-                <p
-                    data-testid="comments-admin-loading"
-                    style={{
-                        marginTop: 16,
-                        color: "var(--text-muted, #6b7280)",
-                        fontSize: "0.875rem",
-                    }}
-                >
-                    {t("ui.comments.admin.loading", "Loading...")}
-                </p>
+                <LoadingIndicator
+                    testId="comments-admin-loading"
+                    label={t("ui.comments.admin.loading", "Loading...")}
+                    className="mt-1"
+                />
             )}
 
             {!loading && rows.length === 0 && !loadError && (

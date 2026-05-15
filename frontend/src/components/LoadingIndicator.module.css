@@ -1,0 +1,21 @@
+.root {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 16px;
+    color: var(--text-muted);
+}
+
+.label {
+    font-size: 0.875rem;
+    margin: 0;
+}

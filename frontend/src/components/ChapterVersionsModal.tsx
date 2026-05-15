@@ -13,6 +13,7 @@ import {X, RotateCcw, History} from "lucide-react";
 import {api, type ChapterVersionSummary} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {LoadingIndicator} from "./LoadingIndicator";
 import styles from "./ChapterVersionsModal.module.css";
 
 interface Props {
@@ -75,7 +76,11 @@ export default function ChapterVersionsModal({open, bookId, chapterId, onClose, 
             {t("ui.versions.description", "Die letzten 20 gespeicherten Fassungen dieses Kapitels. Wiederherstellen überschreibt den aktuellen Inhalt - die aktuelle Fassung wird zuvor als neue Version gesichert.")}
           </Dialog.Description>
           {loading ? (
-            <p className={styles.emptyState}>{t("ui.common.loading", "Laden...")}</p>
+            <LoadingIndicator
+                testId="chapter-versions-loading"
+                variant="block"
+                label={t("ui.common.loading", "Laden...")}
+            />
           ) : versions && versions.length === 0 ? (
             <p className={styles.emptyState} data-testid="chapter-versions-empty">
               {t("ui.versions.empty", "Noch keine älteren Fassungen vorhanden.")}

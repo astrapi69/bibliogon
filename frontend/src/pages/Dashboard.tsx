@@ -41,6 +41,7 @@ import {getDonationsConfig, type DonationsConfig} from "../components/SupportSec
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
 import DonationReminderBanner, {shouldShowReminder} from "../components/DonationReminderBanner";
 import {EmptyState} from "../components/EmptyState";
+import {LoadingIndicator} from "../components/LoadingIndicator";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -591,7 +592,11 @@ export default function Dashboard() {
                         )}
                     </div>
                 ) : loading ? (
-                    <p className={styles.empty}>{t("ui.common.loading", "Laden...")}</p>
+                    <LoadingIndicator
+                        testId="dashboard-loading"
+                        variant="block"
+                        label={t("ui.common.loading", "Laden...")}
+                    />
                 ) : books.length === 0 ? (
                     <EmptyState
                         testId="dashboard-empty-state"

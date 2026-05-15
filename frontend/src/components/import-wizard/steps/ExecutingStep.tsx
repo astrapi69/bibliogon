@@ -104,7 +104,6 @@ export function ExecutingStep({
                     "This may take a moment for large imports.",
                 )}
             </p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

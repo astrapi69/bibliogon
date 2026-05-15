@@ -151,7 +151,6 @@ export function DetectingStep({
             >
                 {t("ui.common.cancel", "Cancel")}
             </button>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

@@ -12,6 +12,7 @@ import {useEffect, useState} from "react"
 import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
+import {LoadingIndicator} from "./LoadingIndicator"
 import styles from "./QualityTab.module.css"
 
 export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
@@ -51,7 +52,7 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
     }, [bookId])
 
     if (loading) {
-        return <p style={{color: "var(--text-muted)", padding: 16}}>{t("ui.common.loading", "Laden...")}</p>
+        return <LoadingIndicator testId="quality-tab-loading" variant="block" label={t("ui.common.loading", "Laden...")} />
     }
 
     if (error) {

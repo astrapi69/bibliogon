@@ -8,6 +8,7 @@ import {useI18n} from "../hooks/useI18n";
 import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
 import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
 import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
+import {LoadingIndicator} from "./LoadingIndicator";
 import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
@@ -1237,7 +1238,10 @@ function AudiobookDownloads({bookId, bookChapters}: {bookId: string; bookChapter
     if (!data) {
         return (
             <div className={styles.audiobookSection}>
-                <div className={styles.audiobookMuted}>{t("ui.common.loading", "Laden...")}</div>
+                <LoadingIndicator
+                    testId="audiobook-loading"
+                    label={t("ui.common.loading", "Laden...")}
+                />
             </div>
         );
     }

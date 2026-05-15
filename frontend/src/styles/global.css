@@ -974,6 +974,23 @@ body {
     to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
+/* --- Spinner animation ---
+   Used by ``className="spin"`` on lucide-react Loader / Loader2
+   icons inside buttons + the shared <LoadingIndicator>
+   component. Previously defined locally in DetectingStep.tsx +
+   ExecutingStep.tsx; 8+ other callsites referenced the .spin
+   class without a definition (unstyled fall-through). Global
+   definition unifies the visual treatment. */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
 /* --- Radix DropdownMenu (Chapter Sidebar) ---
    The 26 chapter types plus section labels and separators easily
    exceed the viewport height on small screens. Radix emits the

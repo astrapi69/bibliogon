@@ -18,6 +18,7 @@ import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {BookOpen, Menu, Plus} from "lucide-react";
 import {EmptyState} from "../components/EmptyState";
+import {LoadingIndicator} from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
 
 export default function BookEditor() {
@@ -457,16 +458,19 @@ export default function BookEditor() {
 
     if (loading) {
         return (
-            <div className={styles.loading} data-testid="book-editor-loading">
-                <p>Laden...</p>
-            </div>
+            <LoadingIndicator
+                testId="book-editor-loading"
+                variant="block"
+                label={t("ui.common.loading", "Laden...")}
+                className={styles.loading}
+            />
         );
     }
 
     if (!book) {
         return (
             <div className={styles.loading} data-testid="book-editor-not-found">
-                <p>Buch nicht gefunden.</p>
+                <p>{t("ui.editor.book_not_found", "Buch nicht gefunden.")}</p>
             </div>
         );
     }
@@ -568,12 +572,12 @@ export default function BookEditor() {
                     initialFocus={pendingFocus && pendingFocus.chapterId === activeChapterMeta.id ? {type: pendingFocus.type, seq: pendingFocus.seq} : undefined}
                 />
             ) : activeChapterMeta && contentLoading ? (
-                <div
+                <LoadingIndicator
+                    testId="book-editor-content-loading"
+                    variant="block"
+                    label={t("ui.common.loading", "Laden...")}
                     className={styles.loading}
-                    data-testid="book-editor-content-loading"
-                >
-                    <p>{t("ui.common.loading", "Laden...")}</p>
-                </div>
+                />
             ) : (
                 <EmptyState
                     testId="book-editor-empty-state"

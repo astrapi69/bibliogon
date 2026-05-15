@@ -9,6 +9,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import {api, HelpNavItem} from "../../api/client";
 import {useHelp} from "../../contexts/HelpContext";
 import {useI18n} from "../../hooks/useI18n";
+import {LoadingIndicator} from "../LoadingIndicator";
 
 /**
  * Full-screen slide-over help panel mounted at the App root.
@@ -244,9 +245,10 @@ export default function HelpPanel() {
                             </div>
 
                             {loading ? (
-                                <div style={{color: "var(--text-muted)", fontSize: "0.875rem"}}>
-                                    {t("ui.common.loading", "Laden...")}
-                                </div>
+                                <LoadingIndicator
+                                    testId="help-content-loading"
+                                    label={t("ui.common.loading", "Laden...")}
+                                />
                             ) : (
                                 <div className="help-content">
                                     <Markdown
