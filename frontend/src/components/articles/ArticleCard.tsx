@@ -53,6 +53,12 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
     return (
         <div
             data-testid={`article-card-${article.id}`}
+            // View-agnostic id attribute — paired with the
+            // ``data-article-id`` on ArticleRow's wrapper so E2E
+            // specs can target an article without knowing whether
+            // grid or list view is active. See
+            // VIEW-MODE-TESTID-PARITY-01.
+            data-article-id={article.id}
             className={styles.card}
             onClick={() => {
                 if (!menuOpen) onClick();

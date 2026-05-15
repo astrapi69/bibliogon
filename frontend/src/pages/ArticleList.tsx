@@ -1215,6 +1215,12 @@ function ArticleRow({
     return (
         <li
             data-testid={`article-list-row-${article.id}`}
+            // View-agnostic id attribute — paired with the
+            // ``data-article-id`` on ArticleCard so E2E specs can
+            // target an article without knowing whether grid or
+            // list view is active. See
+            // VIEW-MODE-TESTID-PARITY-01.
+            data-article-id={article.id}
             className={[
                 layout.gridRow,
                 onToggleSelect ? layout.gridRowSelectable : "",

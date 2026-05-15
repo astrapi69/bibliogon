@@ -86,6 +86,12 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
         <div
             role="row"
             data-testid={`book-list-row-${book.id}`}
+            // View-agnostic id attribute — paired with the
+            // ``data-book-id`` on BookCard so E2E specs can
+            // target a book wrapper without knowing whether
+            // grid or list view is active. See
+            // VIEW-MODE-TESTID-PARITY-01.
+            data-book-id={book.id}
             className={styles.row}
             onClick={() => {
                 if (!menuOpen) onClick();
