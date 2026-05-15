@@ -2322,3 +2322,248 @@ classification before urgency-tier" rule. Same root cause:
 acting on surface-level evidence without verifying against the
 authoritative source (in that case, the dev vs prod Docker
 config; here, the actual network state).
+
+## Articles-vs-Books parallel-surface asymmetry
+
+**Pattern class observed 5 times across 2 release cycles.** Each
+occurrence: a feature (or fix) lands on one of the parallel
+surfaces (Articles list/editor vs Books list/editor) and the
+mirror surface lags behind, gets a different shape, or gets
+no update at all.
+
+### Concrete occurrences (2026-05 audit cycle)
+
+1. **Bulk-delete cap removal** (v0.31.0). Both Articles + Books
+   needed the 200-row cap removed simultaneously. Articles
+   adoption lagged briefly until a paired update.
+2. **Comments-Count badge** (v0.31.0). Card view shipped first;
+   List view parity in a follow-up — same Articles surface but
+   different view-modes.
+3. **BookEditor zero testids** (UX-Full-Audit G1-F1, 2026-05-15):
+   ``ArticleEditor.tsx`` has 38 testids over 1494 LOC;
+   ``BookEditor.tsx`` has 0 over 700 LOC.
+4. **ArticleFilterBar inline duplication** (UX-Full-Audit G2-F1):
+   Articles uses a 200-LOC inline ``ArticleFilterBar`` (in
+   ArticleList.tsx) with 6 filter slots; Books uses the shared
+   ``DashboardFilterBar`` component with 1 filter slot.
+5. **View-mode testid namespace split** (UX-Full-Audit G2-F2):
+   ``book-card-{id}`` (grid) vs ``book-list-row-{id}`` (list).
+   E2E specs silently skip when wrong view-mode persisted.
+
+### Rule
+
+**Every parallel-surface feature (Articles ↔ Books) gets an
+explicit parity verification step in its development workflow.**
+Before merging a PR that touches one of the parallel surfaces:
+
+1. **List the parallel features the change affects** (e.g.
+   "this is a delete-confirm dialog change → applies to both
+   Articles and Books").
+2. **Verify the mirror surface received the equivalent
+   treatment** (or explicitly document why it's intentionally
+   asymmetric).
+3. **Add cross-surface E2E coverage** if the bug class is
+   user-visible (yesterday's BulkActionBar fix in ``02553fb``
+   shipped Vitest hook tests for both surfaces — the right
+   shape).
+
+### Periodic hygiene
+
+**Articles-vs-Books-Parity audit** as quarterly hygiene OR after
+any feature wave that touches list/editor surfaces. Audit recipe:
+
+```bash
+# Find inline implementations on one side that have a shared
+# counterpart on the other.
+grep -rln 'useArticleSelection\|useArticleFilters' frontend/src/
+grep -rln 'useBookSelection\|useBookFilters' frontend/src/
+
+# Find testid-namespace inconsistencies via column counts.
+for f in $(grep -rln 'data-testid' frontend/src/pages/*.tsx); do
+  echo "$f: $(grep -c 'data-testid' $f)"
+done
+```
+
+The 2026-05-15 audit's Articles-vs-Books parity matrix
+(``docs/audits/ux-full-audit-2026-05-14.md``) is the template:
+13 features compared, 3 confirmed asymmetries documented + 2
+historical resolutions noted.
+
+## Inline-component duplication is the upstream cause of parallel-surface asymmetry
+
+**Pattern class observed 2 times so far (2026-05-15 audit).**
+Inline component definitions inside large monolithic page files
+amplify the Articles-vs-Books asymmetry pattern above. They have
+a cause-effect relationship:
+
+```
+[Monolithic component file]
+        ↓ blocks
+[Component extraction discipline]
+        ↓ absence creates
+[Duplication across parallel surfaces]
+        ↓ amplifies
+[Articles-vs-Books asymmetry when updates touch one surface only]
+```
+
+### Concrete occurrences
+
+1. **Settings.tsx 2338 LOC** with inline ``function
+   PluginSettings(...)`` + inline ``function AuthorSettings(...)``
+   (UX-Full-Audit G3-F1 + G3-F2 + G3-F8). The inline structure
+   makes per-tab testid additions land as cross-2000-line PRs;
+   neither inline component has testids.
+2. **ArticleList.tsx 1541 LOC** with inline ``function
+   ArticleFilterBar(...)`` ~200 LOC (UX-Full-Audit G2-F1). The
+   inline structure made it easy to grow Articles-specific filters
+   (6 slots) without considering Books parity (1 slot in the
+   shared ``DashboardFilterBar``).
+
+### Rule
+
+**Extract inline component functions to their own files when they
+exceed 50 LOC OR span a logical sub-feature** (a panel, a tab
+content, a filter bar, etc.). The extraction enables:
+
+1. **Per-component testid additions** as small, scoped PRs.
+2. **Cross-surface reuse** (the extracted Articles-side component
+   becomes a candidate for the Books side to import or model).
+3. **Independent test files** (Vitest unit tests per component vs
+   monolithic page tests).
+
+### The compounding insight
+
+**Fixing the monolithic-component-extraction-gap addresses the
+root cause of multiple Articles-vs-Books asymmetries
+simultaneously.** Extraction work has compounding parity value,
+not just code-cleanup value. Backlog items
+``PLUGIN-SETTINGS-TESTID-COVERAGE-01`` (Settings extraction +
+testids + E2E) and ``ARTICLEFILTERBAR-EXTRACT-01`` (ArticleList
+extraction) are the targeted fixes for the two observed
+instances.
+
+## Periodic theme-token completeness audit as pre-release hygiene
+
+**Recurring-issue-class observed 2 times across 2 release cycles.**
+
+Bibliogon's theming system uses CSS custom properties
+(``var(--token, #hex-fallback)``) for color, spacing, and shadow
+tokens. Each token must be defined in all 10 theme variants
+(5 palettes × light/dark). When a token is undefined in one
+palette, the hex fallback leaks through, producing visually
+wrong rendering that's invisible to all UI tests because the
+fallback IS a valid color.
+
+### Concrete occurrences
+
+1. **v0.31.0 Pre-Release Audit D3** identified 9 components
+   silently falling through to hex when ``--surface-2``,
+   ``--danger-bg``, ``--success``, ``--warning`` were undefined
+   in some palettes. Fix: added the missing tokens.
+2. **2026-05-15 UX-Full-Audit (G4-F4)** inventory:
+   ``grep -rhE 'var\(--[a-z-]+, *#' frontend/src/`` returned
+   **111 callsites** of the same fall-through-vulnerable pattern.
+   Token-vs-palette cross-check not yet performed.
+
+### Rule
+
+**Theme-token completeness audit MUST be part of every
+release-cycle pre-release sweep** — alongside ``poetry show
+--outdated`` and the test-count verification.
+
+### Audit recipe
+
+```bash
+# 1. Inventory every var(--token, #fallback) callsite.
+grep -rhE 'var\(--[a-z-]+, *#' frontend/src/ \
+  --include='*.tsx' --include='*.ts' --include='*.css'
+
+# 2. Extract the unique --token names referenced.
+grep -rhoE 'var\(--[a-z-]+' frontend/src/ \
+  --include='*.tsx' --include='*.ts' --include='*.css' \
+  | sort -u
+
+# 3. For each --token, check it's defined in all 10 palette
+#    × mode combinations in frontend/src/styles/global.css.
+#    Missing definitions = the fall-through bug.
+
+# 4. Optionally: add an ESLint rule that flags
+#    var(--token, #fallback) usage and require either
+#    var(--token) (no fallback — forces existence) OR a
+#    documented exception comment.
+```
+
+### Pairs with
+
+The existing "Boy Scout rule" + the audit's filed
+``THEME-TOKEN-COMPLETENESS-AUDIT-01`` backlog item. Together they
+formalize the cadence: ad-hoc fix when an issue fires (the v0.31.0
+patch) is reactive; pre-release sweep with the grep recipe above
+is proactive.
+
+## User-perceived bug ≠ code bug: the perception-lag class
+
+Surfaced 2026-05-14 when "Articles-Trash Restore button broken"
+turned out to be a **419ms click handler with subtle post-restore
+feedback**, not a functional failure.
+
+### The pattern
+
+A user reports "feature X doesn't work" or "X is broken" + cites
+a console message or symptom as evidence. The diagnostic chain
+that follows often surfaces multiple non-bugs before reaching the
+real cause:
+
+1. **Surface symptom** the user actually noticed (visual lag,
+   missing feedback, console warning).
+2. **Diagnostic gut-read** (often workbox messages, network 404s,
+   etc.) that look causal but aren't.
+3. **Actual cause** which is usually a UX-quality issue, not a
+   functional break.
+
+Bug A's progression (2026-05-14):
+
+- User report: "Articles-Trash Restore broken; workbox blocks"
+- My audit: SW config is symmetric for books/articles; workbox
+  "No route found" is benign info, not blocking
+- Manual smoke: restore POST fires, backend processes, frontend
+  reloads — backend confirms article is restored
+- **Actual cause**: 419ms click-handler + post-restore feedback
+  too subtle (stay-in-trash-view + transient toast + filtered-out
+  row vanishing). User-perceived "broken" = user-perceived "lag
+  + no clear success signal".
+
+### Rule
+
+**Before patching a code bug, verify the bug is in the code
+layer the user thinks it is.** Specifically:
+
+1. **Check the Network tab + backend state FIRST.** If the
+   action's backend artifact exists (article restored, book
+   created, etc.), the user's symptom is at a different layer.
+2. **Console messages are diagnostic clues, not bug citations.**
+   Workbox passthrough logs, React StrictMode warnings, and
+   browser violation reports often accompany correct behavior.
+   Verify the cited message is causal, not coincidental.
+3. **Re-frame "doesn't work" as "what did the user actually
+   observe?"** vs "what diagnostic message did the user notice?".
+   The two often diverge; the second can mask the first.
+
+### The audit-tier output
+
+Perception-lag bugs ARE real UX bugs — they degrade users' trust
+even when the code is correct. But they belong in a different
+backlog tier than functional regressions: **IMPROVEMENT (UX
+performance)**, not BLOCKER. The filed
+``RESTORE-UX-FEEDBACK-01`` (P3, optimistic update + post-restore
+feedback) is the proper response. Promoting it to BLOCKER would
+have made the audit miss the real lesson — which is that
+perception is a UX dimension worth fixing, even when nothing is
+broken.
+
+### Pairs with
+
+The "Audit findings need production-vs-dev environment
+classification before urgency-tier" rule. Same family: separating
+"this looks scary" from "this is actually broken" requires
+verifying against authoritative sources before urgency-triage.
