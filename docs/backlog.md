@@ -96,15 +96,6 @@ store.
   ``<EmptyState>`` block + prominent "Add your first
   chapter" CTA. Effort: S.
 
-- **EMPTYSTATE-EXTRACT-01** (P3, IMPROVEMENT): filed by
-  UX-Full-Audit 2026-05-15 (G1-F3). No shared
-  ``<EmptyState>`` component; 4 ad-hoc implementations
-  across Dashboard, ArticleList, CoverUpload, HelpPanel.
-  Extract a generic ``<EmptyState title icon? body? cta?>``
-  component to ``frontend/src/components/EmptyState.tsx``,
-  migrate the 4 callsites, set as the canonical pattern for
-  future surfaces. Effort: S-M.
-
 - **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
   by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
   renders all comments in a single DOM table without
