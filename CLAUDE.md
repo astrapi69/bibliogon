@@ -109,7 +109,7 @@ bibliogon/
 │   ├── api/client.ts      # typed API client
 │   ├── components/        # Editor, Toolbar, ChapterSidebar, dialogs
 │   ├── pages/             # Dashboard, BookEditor, Settings, Help, GetStarted
-│   └── styles/global.css  # CSS variables, 3 themes x light/dark
+│   └── styles/global.css  # CSS variables, 5 themes x light/dark (10 variants)
 ├── e2e/
 │   ├── smoke/             # fast smoke tests (per feature)
 │   └── full/              # full regression suite

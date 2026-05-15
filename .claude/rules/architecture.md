@@ -82,7 +82,7 @@ Rejected: shadcn/ui (requires Tailwind), MUI (too opinionated), Ant Design (too 
 
 ### Theming
 
-- 3 themes: Warm Literary, Cool Modern, Nord (each with Light + Dark = 6 variants).
+- 5 themes: Classic, Cool Modern, Nord, Notebook, Studio (each with Light + Dark = 10 variants). Notebook + Studio were added after the original "3 themes" doc. Audit recipe to verify the current count: `grep -oE 'data-app-theme="[a-z-]+"' frontend/src/styles/global.css | sort -u`.
 - Everything via CSS variables. New UI elements MUST use CSS variables.
 - No Tailwind. Custom properties in frontend/src/styles/global.css.
 
