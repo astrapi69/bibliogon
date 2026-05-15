@@ -149,38 +149,6 @@ store.
   incrementally. Same shape as EMPTYSTATE-EXTRACT-01.
   Effort: M.
 
-- **TEST-ISOLATION-MODULE-STATE-01**: audit all module-level
-  mutable state in ``backend/app/`` for test-isolation gaps.
-  The 2026-05-14 platform_schema regression (5 publications
-  tests broken via `functools.lru_cache` poisoning) exposed
-  that Bibliogon's existing test-isolation guidance covers
-  filesystem + DB but NOT in-process state. Service modules
-  decorated with `@lru_cache` / `@cached_property` or holding
-  module-level dicts/lists/sets that are touched by test
-  fixtures need bidirectional teardown hooks. Concrete scope:
-  ```
-  grep -rE '@(lru_|.*_)cache|@cached_property|^[A-Z_]+ *= *' \
-    backend/app/services/ backend/app/routers/
-  ```
-  For each match: identify exercising tests, verify
-  cache_clear() on both setup AND teardown, OR convert to
-  instance-level with DI. Sub-tasks:
-  1. Sweep `backend/app/services/` for `@lru_cache` decorators
-     and module-level mutable state.
-  2. For each, identify the test fixtures that monkeypatch the
-     underlying data path.
-  3. Add `yield`-based autouse fixture with bidirectional
-     clear, OR refactor the cache to take an explicit cache
-     parameter that tests can pass a fresh instance of.
-  4. Document any cache that's intentionally process-lifetime
-     (and verify no test exercises a fake input through it).
-  CLAUDE.md "In-memory caches (third isolation layer)" already
-  added in the same commit as this filing. Effort: M (broad
-  audit + targeted fixes). Filed by the 2026-05-14 CI-hygiene
-  session after a cross-file LRU-cache poisoning surfaced 5
-  publications-test failures that local single-file pytest
-  runs missed.
-
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
   ``comments``) that ship passthru-English in es / fr / el / pt /
