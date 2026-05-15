@@ -1025,7 +1025,7 @@ export default function ArticleEditor() {
                                             data-testid="article-editor-translate-no-providers"
                                             style={{
                                                 fontSize: "0.75rem",
-                                                color: "var(--error, #b91c1c)",
+                                                color: "var(--danger)",
                                                 margin: 0,
                                             }}
                                         >
@@ -1176,7 +1176,7 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
                 data-testid="article-editor-save-status"
                 data-state="error"
                 style={{
-                    color: "var(--error, #b91c1c)",
+                    color: "var(--danger)",
                     fontSize: "0.8125rem",
                     display: "inline-flex",
                     alignItems: "center",

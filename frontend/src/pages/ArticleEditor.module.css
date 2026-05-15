@@ -92,7 +92,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: var(--error, #b91c1c);
+    color: var(--danger);
 }
 
 .loading {

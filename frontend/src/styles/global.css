@@ -187,7 +187,11 @@
        override in [data-theme="dark"] below; per-palette tuning can
        layer on top if a specific theme warrants it. */
     --success: #16a34a;
+    --success-light: #dcfce7;
     --warning: #a16207;
+    --warning-light: #fef3c7;
+    --warning-dark: #b45309;
+    --bg-warning: #fff8e6;
 
     --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
     --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
@@ -310,7 +314,11 @@
        darker surfaces. Inherited by every [data-app-theme=...][data-theme="dark"]
        variant unless overridden per palette. */
     --success: #4ade80;
+    --success-light: rgba(74, 222, 128, 0.15);
     --warning: #fbbf24;
+    --warning-light: rgba(251, 191, 36, 0.15);
+    --warning-dark: #fbbf24;
+    --bg-warning: rgba(251, 191, 36, 0.10);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);

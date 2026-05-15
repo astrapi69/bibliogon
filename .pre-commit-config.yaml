@@ -65,3 +65,11 @@ repos:
         files: ^frontend/src/.*\.(ts|tsx)$
         pass_filenames: false
         stages: [pre-commit]
+
+      - id: theme-token-completeness
+        name: var(--token, #fallback) must be defined in every palette x mode
+        entry: python3 scripts/audit_theme_tokens.py --enforce --quiet
+        language: system
+        files: ^frontend/src/.*\.(ts|tsx|css)$
+        pass_filenames: false
+        stages: [pre-commit]

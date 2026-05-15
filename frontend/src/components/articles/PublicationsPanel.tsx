@@ -326,7 +326,7 @@ function PublicationRow({
                     className="btn btn-ghost btn-sm"
                     onClick={() => void handleDelete()}
                     data-testid={`publication-delete-${publication.id}`}
-                    style={{ color: "var(--error, #b91c1c)" }}
+                    style={{ color: "var(--danger)" }}
                 >
                     <Trash2 size={12} />
                 </button>

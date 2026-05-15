@@ -242,7 +242,7 @@ export default function AiSetupWizard({open, onClose, secretsManagedExternally =
                   {testing ? t("ui.common.loading", "Laden...") : t("ui.settings.ai_test", "Verbindung testen")}
                 </button>
                 {testResult === "ok" && <span style={{color: "var(--success, #22c55e)", display: "flex", alignItems: "center", gap: 4}}><Check size={16}/> {t("ui.settings.ai_test_ok", "Verbindung erfolgreich")}</span>}
-                {testResult === "fail" && <span style={{color: "var(--error, #ef4444)", fontSize: "0.8125rem"}}>{t("ui.settings.ai_test_fail", "Fehlgeschlagen")}</span>}
+                {testResult === "fail" && <span style={{color: "var(--danger)", fontSize: "0.8125rem"}}>{t("ui.settings.ai_test_fail", "Fehlgeschlagen")}</span>}
               </div>
             </div>
           )}

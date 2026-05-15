@@ -146,7 +146,7 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                             borderRadius: 4,
                             padding: 4,
                             cursor: "pointer",
-                            color: "var(--error, #b91c1c)",
+                            color: "var(--danger)",
                         }}
                     >
                         <X size={14} />
