@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-import { api, ApiError, Article, ArticleStatus } from "../api/client";
+import { api, ApiError, Article, ArticleStatus, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
@@ -40,6 +40,7 @@ import ArticleBulkActionBar, {
     BULK_LIMIT_HARD,
 } from "../components/articles/ArticleBulkActionBar";
 import { useArticleSelection } from "../components/articles/useArticleSelection";
+import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
 import CoverPlaceholder from "../components/CoverPlaceholder";
@@ -73,6 +74,28 @@ export default function ArticleList() {
     const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
     const [importWizardOpen, setImportWizardOpen] = useState(false);
+
+    /** Article-to-book conversion wizard. Snapshot the user's selected
+     *  Article[] when opening so the wizard's working copy is stable
+     *  even if the parent selection changes (it shouldn't, the page
+     *  freezes interactions behind the dialog, but the snapshot
+     *  decouples the two state machines). */
+    const [convertToBookArticles, setConvertToBookArticles] = useState<
+        Article[] | null
+    >(null);
+
+    const handleOpenConvertToBook = () => {
+        const ids = new Set(selection.selectedIds);
+        const snapshot = filters.filteredArticles.filter((a) => ids.has(a.id));
+        if (snapshot.length === 0) return;
+        setConvertToBookArticles(snapshot);
+    };
+
+    const handleBookCreated = (book: BookDetail) => {
+        selection.clear();
+        setConvertToBookArticles(null);
+        navigate(`/book/${book.id}`);
+    };
 
     /** Bulk export. Reads the current filtered list in display
      *  order, restricts to the selected IDs, then POSTs them to the
@@ -803,6 +826,7 @@ export default function ArticleList() {
                     onBulkAiFill={() => setBulkArticleAiFillFieldsOpen(true)}
                     onBulkDelete={() => void handleBulkDelete(false)}
                     onBulkDeletePermanent={handleBulkDeletePermanentRequest}
+                    onConvertToBook={handleOpenConvertToBook}
                     onClear={selection.clear}
                     t={t}
                 />
@@ -923,6 +947,14 @@ export default function ArticleList() {
                     void loadTrash();
                 }}
             />
+            {convertToBookArticles && (
+                <ConvertToBookWizard
+                    open
+                    articles={convertToBookArticles}
+                    onClose={() => setConvertToBookArticles(null)}
+                    onConverted={handleBookCreated}
+                />
+            )}
             {bulkDeleteDialog && (
                 <TypeToConfirmDialog
                     open

@@ -18,7 +18,7 @@
 
 import {useState} from "react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import {ChevronDown, Sparkles, Trash2} from "lucide-react"
+import {BookOpen, ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import styles from "./ArticleBulkActionBar.module.css"
 
@@ -60,6 +60,12 @@ interface Props {
      *  start). Optional; the dropdown still renders without it
      *  but the third menu item is hidden. */
     onBulkAiFill?: () => void
+    /** Article-to-book conversion (Phase 2). Opens the
+     *  ConvertToBookWizard with the current selection as input.
+     *  Optional so the bar still renders without it; the button
+     *  is hidden when not wired. count>=1 is enough — a single
+     *  article can become a one-chapter book. */
+    onConvertToBook?: () => void
     t: (key: string, fallback?: string) => string
     /** Optional - lets tests interpolate the count more easily by
      *  exposing the i18n call site. Defaults to the production
@@ -76,6 +82,7 @@ export default function ArticleBulkActionBar({
     onBulkAiTemplateExport,
     onBulkAiTemplateImport,
     onBulkAiFill,
+    onConvertToBook,
     t,
     formatCount,
 }: Props) {
@@ -229,6 +236,22 @@ export default function ArticleBulkActionBar({
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
+            )}
+            {onConvertToBook && (
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    data-testid="article-bulk-convert-to-book"
+                    onClick={onConvertToBook}
+                    disabled={count === 0}
+                    title={t(
+                        "ui.convert_to_book.bar_button_tooltip",
+                        "Ausgewählte Artikel als Buch zusammenfassen",
+                    )}
+                >
+                    <BookOpen size={14} />{" "}
+                    {t("ui.convert_to_book.bar_button", "Als Buch")}
+                </button>
             )}
             {onBulkDelete && onBulkDeletePermanent && (
                 <DropdownMenu.Root>
