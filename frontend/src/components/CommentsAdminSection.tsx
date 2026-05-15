@@ -161,7 +161,7 @@ export default function CommentsAdminSection() {
                           "ui.comments.admin.reclassify_error",
                           "Could not move the comment.",
                       );
-            notify.error(message);
+            notify.error(message, err);
         } finally {
             setPendingReclassify(null);
         }
@@ -202,7 +202,7 @@ export default function CommentsAdminSection() {
                           "ui.comments.admin.delete_error",
                           "Could not delete the comment.",
                       );
-            notify.error(message);
+            notify.error(message, err);
         } finally {
             setPendingDelete(null);
         }

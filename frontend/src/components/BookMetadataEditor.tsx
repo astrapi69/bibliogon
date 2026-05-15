@@ -149,7 +149,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             }
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
+            notify.error(detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"), err);
         }
         setAiGenerating(null);
     };

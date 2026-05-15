@@ -39,7 +39,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
             setResult(data);
         } catch (err) {
             const msg = err instanceof ApiError ? err.detail : t("ui.backup.compare.error_generic", "Vergleich fehlgeschlagen");
-            notify.error(msg);
+            notify.error(msg, err);
             setResult(null);
         } finally {
             setLoading(false);

@@ -297,7 +297,7 @@ export default function BookEditor() {
             // A newer rename superseded this one; the later one will
             // resolve state. No user-visible error.
             if (err instanceof SaveAbortedError) return;
-            notify.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"));
+            notify.error(t("ui.editor.rename_failed", "Umbenennen fehlgeschlagen"), err);
         }
     };
 

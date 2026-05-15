@@ -629,7 +629,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             }
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"));
+            notify.error(detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"), err);
             setSpellcheckResults([]);
         }
         setSpellcheckLoading(false);
@@ -681,7 +681,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 setPreviewAudioUrl(URL.createObjectURL(blob));
             } catch (err) {
                 const detail = err instanceof ApiError ? err.detail : null;
-                notify.error(detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
+                notify.error(detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"), err);
                 setPreviewLoading(false);
                 return;
             }
@@ -807,7 +807,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             setAiSuggestion(data.content || "");
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
+            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"), err);
             setAiSuggestion("");
         }
         setAiLoading(false);
@@ -856,7 +856,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             jobId = submitted.job_id;
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"));
+            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"), err);
             setAiLoading(false);
             setReviewStatusMsg(null);
             return;

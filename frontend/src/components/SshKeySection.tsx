@@ -20,7 +20,7 @@ export default function SshKeySection() {
         try {
             setInfo(await api.ssh.info())
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         }
     }
 
@@ -45,7 +45,7 @@ export default function SshKeySection() {
                 }
                 return
             }
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -69,7 +69,7 @@ export default function SshKeySection() {
             setInfo({exists: false})
             notify.success(t("ui.ssh.deleted", "Schlüssel gelöscht"))
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }

@@ -93,7 +93,7 @@ export default function Dashboard() {
                 err instanceof ApiError
                     ? err.detail
                     : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
-            notify.error(message);
+            notify.error(message, err);
         }
     };
 

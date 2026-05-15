@@ -57,3 +57,11 @@ repos:
         files: ^plugins/bibliogon-plugin-[^/]+/pyproject\.toml$
         pass_filenames: true
         stages: [pre-commit]
+
+      - id: notify-error-apierror-coverage
+        name: notify.error in catch blocks must pass the caught error
+        entry: python3 scripts/audit_notify_error_calls.py --enforce --quiet
+        language: system
+        files: ^frontend/src/.*\.(ts|tsx)$
+        pass_filenames: false
+        stages: [pre-commit]

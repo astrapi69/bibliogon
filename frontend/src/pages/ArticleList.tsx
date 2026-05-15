@@ -109,7 +109,7 @@ export default function ArticleList() {
                 err instanceof ApiError
                     ? err.detail
                     : t("ui.articles.bulk.export_failed", "Bulk export failed");
-            notify.error(message);
+            notify.error(message, err);
         }
     };
 

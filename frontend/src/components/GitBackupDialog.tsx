@@ -71,7 +71,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                 setSync(null)
             }
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         }
     }
 
@@ -82,7 +82,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             notify.success(t("ui.git.init_ok", "Repository initialisiert"))
             await refresh()
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -100,7 +100,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                 notify.warning(t("ui.git.nothing_to_commit", "Keine Änderungen zu committen"))
                 return
             }
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -119,7 +119,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             setRemotePatDraft("")
             await refresh()
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -132,7 +132,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             notify.success(t("ui.git.remote_deleted", "Remote entfernt"))
             await refresh()
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -156,10 +156,10 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                 return
             }
             if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
-                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."))
+                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."), err)
                 return
             }
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -189,7 +189,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                 ))
             }
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -205,7 +205,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             setResolutions({})
             await refresh()
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -221,7 +221,7 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
             setResolutions({})
             await refresh()
         } catch (err) {
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
@@ -244,10 +244,10 @@ export default function GitBackupDialog({open, bookId, onClose}: Props) {
                 return
             }
             if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
-                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."))
+                notify.error(t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."), err)
                 return
             }
-            notify.error(describeError(err))
+            notify.error(describeError(err), err)
         } finally {
             setBusy(false)
         }
