@@ -87,23 +87,6 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **SETTINGS-INLINE-TABS-EXTRACT-01** (P3, IMPROVEMENT): filed
-  2026-05-15 as the follow-up from PLUGIN-SETTINGS-TESTID-
-  COVERAGE-01. The audit's aspirational <800 LOC target on
-  Settings.tsx requires extracting the 3 still-inline tab
-  components: ``AppSettings`` (~350 LOC), ``AiAssistantSettings``
-  (~225 LOC), ``TopicsSettings`` (~103 LOC). Total remaining
-  inline-tab cluster is ~680 LOC plus shared parent scaffolding;
-  extracting all three would land Settings.tsx near ~300 LOC.
-  Same shape as the closed predecessor: extract to
-  ``components/settings/{tab}.tsx``, add per-tab testids matching
-  established conventions, add Vitest unit specs + Playwright
-  smoke specs per tab. Effort: M-L (more total surface than the
-  predecessor because three tab clusters instead of two).
-  Trigger: paired with the next non-trivial Settings.tsx change
-  OR as proactive hygiene if the file is touched by another
-  release-gate item.
-
 - **BOOKEDITOR-TESTIDS-01** (P3, IMPROVEMENT): filed by
   UX-Full-Audit 2026-05-15 (G1-F1). ``BookEditor.tsx`` is
   700 LOC with **zero** ``data-testid`` attributes — parallel
