@@ -30,6 +30,10 @@ navigation:
           de: Medium-Import
           en: Medium import
         slug: articles/medium-import
+      - title:
+          de: Als Buch zusammenfassen
+          en: Convert to book
+        slug: articles/convert-to-book
 
   - title:
       de: Bücher

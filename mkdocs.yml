@@ -49,6 +49,7 @@ plugins:
         Übersicht: Overview
         Massen-Export: Bulk export
         Medium-Import: Medium import
+        Als Buch zusammenfassen: Convert to book
         Bücher: Books
         Formatierung: Formatting
         Manuskript-Tools: Manuscript Tools
@@ -105,6 +106,7 @@ nav:
   - Übersicht: de/articles.md
   - Massen-Export: de/articles/bulk-export.md
   - Medium-Import: de/articles/medium-import.md
+  - Als Buch zusammenfassen: de/articles/convert-to-book.md
 - Bücher:
   - Massen-Export: de/books/bulk-export.md
 - Editor:
