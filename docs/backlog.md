@@ -47,23 +47,6 @@ store.
 
 ## P2 - High-Value User Features
 
-- **NOTIFY-ERROR-APIERROR-COVERAGE-01** (P2-elevated,
-  IMPROVEMENT): filed by UX-Full-Audit 2026-05-15 (G4-F1).
-  99 of 159 ``notify.error`` callsites bypass the structured
-  ``ApiError``-with-Report-Issue affordance (only 34 check
-  ``err instanceof ApiError``). The wrapper supports rich
-  error rendering with a "Report Issue" GitHub-issue-prefill
-  button; the ~62% of error paths that pass plain strings
-  silently degrade to the unrich path. Degrades Bibliogon's
-  "every-error-actionable" promise from ``code-hygiene.md``
-  "Error reporting" rule. Recommendation: ESLint rule that
-  flags ``notify.error("string")`` without a paired
-  ``ApiError`` argument in code that calls ``await api.*``;
-  cleanup pass on the 99 plain-string callsites. Effort: M.
-  Trigger: pair with the v0.33.0 hygiene work OR file
-  separately. Coupled with possible wrapper-API enhancement
-  (auto-extract ApiError from a thrown error).
-
 - **MEDIUM-IMPORT-V2-01**: dry-run preview UI before bulk import.
   v1 (shipped 2026-05-08) imports every `posts/*.html` from a
   Medium archive in one pass; the user archives unwanted articles
