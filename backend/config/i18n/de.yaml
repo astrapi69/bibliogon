@@ -1905,6 +1905,8 @@ ui:
     metadata_subtitle_prefill: "Wird aus Artikel-Untertitel übernommen, wenn leer."
     metadata_author: "Autor"
     metadata_author_required: "Autor ist erforderlich"
+    metadata_add_to_authors_db: "„{name}\" zur Autoren-Datenbank hinzufügen"
+    add_to_authors_error: "Autor konnte nicht zur Datenbank hinzugefügt werden."
     metadata_language: "Sprache"
     metadata_series: "Serie"
     metadata_series_prefill: "Alle ausgewählten Artikel teilen diese Serie."

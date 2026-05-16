@@ -38,13 +38,17 @@ vi.mock("../../utils/notify", () => ({
     },
 }))
 
-const {mockFromArticles, mockListAuthors} = vi.hoisted(() => ({
+const {mockFromArticles, mockListAuthors, mockCreateAuthor} = vi.hoisted(() => ({
     mockFromArticles: vi.fn(),
     // Bug 8 Phase 2: api.authors.list is called once on wizard mount
     // to fetch the global Authors-Database for the Step-2 datalist.
     // Default returns [] so existing tests behave as before; per-test
     // overrides land via ``mockListAuthors.mockResolvedValueOnce(...)``.
     mockListAuthors: vi.fn(),
+    // Bug 8 Phase 2 Commit 3: api.authors.create is called from
+    // handleSubmit when the Add-to-Authors-DB checkbox is checked
+    // AND the typed name is not already in the DB.
+    mockCreateAuthor: vi.fn(),
 }))
 
 vi.mock("../../api/client", async () => {
@@ -65,6 +69,7 @@ vi.mock("../../api/client", async () => {
             authors: {
                 ...actual.api.authors,
                 list: mockListAuthors,
+                create: mockCreateAuthor,
             },
         },
     }
@@ -133,6 +138,18 @@ beforeEach(() => {
     // ``mockListAuthors.mockResolvedValueOnce(...)`` seed concrete
     // suggestion fixtures.
     mockListAuthors.mockResolvedValue([])
+    mockCreateAuthor.mockReset()
+    // Default: api.authors.create returns a successful Author row
+    // (the typed name + a slug + the standard fields). Tests that
+    // need failure paths use ``mockCreateAuthor.mockRejectedValueOnce``.
+    mockCreateAuthor.mockImplementation(async ({name}: {name: string}) => ({
+        id: "author-" + Math.random().toString(36).slice(2, 8),
+        name,
+        slug: name.toLowerCase().replace(/\s+/g, "-"),
+        bio: null,
+        created_at: "2026-05-16T00:00:00Z",
+        updated_at: "2026-05-16T00:00:00Z",
+    }))
 })
 
 // --- helpers -------------------------------------------------------------
@@ -817,5 +834,274 @@ describe("ConvertToBookWizard author datalist (Bug 8 Phase 2)", () => {
         // Even if a new sharedAuthor signal arrived later, the
         // pre-fill effect must NOT overwrite non-empty user input.
         expect(input.value).toBe("Custom Author")
+    })
+})
+
+// ---------------------------------------------------------------------------
+// Bug 8 Phase 2 Commit 3: Add-to-Authors-DB checkbox + submit-flow integration
+// ---------------------------------------------------------------------------
+
+describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
+    function advanceToMetadata() {
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-0-next"))
+    }
+
+    function setAuthorOnly(name: string) {
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: name}})
+    }
+
+    it("checkbox hidden when the author field is empty", () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        // Default author is empty (multi has no shared author).
+        expect(
+            screen.queryByTestId(
+                "convert-to-book-wizard-add-to-authors-checkbox",
+            ),
+        ).toBeNull()
+    })
+
+    it("checkbox visible (and checked) when typed name is new", async () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        setAuthorOnly("Brand New Person")
+        const cb = (await screen.findByTestId(
+            "convert-to-book-wizard-add-to-authors-checkbox",
+        )) as HTMLInputElement
+        expect(cb).toBeTruthy()
+        expect(cb.checked).toBe(true)
+    })
+
+    it("checkbox hidden when typed name matches an existing DB entry (case-insensitive)", async () => {
+        mockListAuthors.mockResolvedValue([
+            {
+                id: "db-1",
+                name: "Asterios Raptis",
+                slug: "asterios-raptis",
+                bio: null,
+                created_at: "2024-01-01T00:00:00Z",
+                updated_at: "2024-01-01T00:00:00Z",
+            },
+        ])
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        // Wait for the DB fetch to resolve so authorAlreadyInDb
+        // can correctly compare against the loaded set.
+        await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+        // Type the same name in different casing.
+        setAuthorOnly("ASTERIOS RAPTIS")
+        await waitFor(() => {
+            expect(
+                screen.queryByTestId(
+                    "convert-to-book-wizard-add-to-authors-checkbox",
+                ),
+            ).toBeNull()
+        })
+    })
+
+    it("checkbox label interpolates the typed name", async () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        setAuthorOnly("Jane New")
+        const cb = (await screen.findByTestId(
+            "convert-to-book-wizard-add-to-authors-checkbox",
+        )) as HTMLInputElement
+        // Label sits in the same <label> wrapper. Grab text.
+        const label = cb.closest("label")
+        expect(label?.textContent).toContain("Jane New")
+    })
+
+    it("submit creates author then book when checkbox is checked + name is new", async () => {
+        mockFromArticles.mockResolvedValue({
+            id: "new-book-id",
+            title: "My New Book",
+            chapters: [],
+        })
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        // Use a deterministic sort first so the article ordering is
+        // predictable for the payload assertion.
+        fireEvent.change(
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            {target: {value: "title_asc"}},
+        )
+        clickNext(0)
+        setStandardMetadata()
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        // Author was created first, then book.
+        await waitFor(() =>
+            expect(mockCreateAuthor).toHaveBeenCalledWith({name: "An Author"}),
+        )
+        await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
+        // Order matters: author POST must complete before book POST.
+        const createOrder = mockCreateAuthor.mock.invocationCallOrder[0]
+        const bookOrder = mockFromArticles.mock.invocationCallOrder[0]
+        expect(createOrder).toBeLessThan(bookOrder)
+    })
+
+    it("submit skips author create when the checkbox is unchecked", async () => {
+        mockFromArticles.mockResolvedValue({
+            id: "new-book-id",
+            title: "My New Book",
+            chapters: [],
+        })
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        fireEvent.change(
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            {target: {value: "title_asc"}},
+        )
+        clickNext(0)
+        setStandardMetadata()
+        // Uncheck the checkbox.
+        const cb = screen.getByTestId(
+            "convert-to-book-wizard-add-to-authors-checkbox",
+        ) as HTMLInputElement
+        fireEvent.click(cb)
+        expect(cb.checked).toBe(false)
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
+        expect(mockCreateAuthor).not.toHaveBeenCalled()
+    })
+
+    it("submit skips author create when the typed name is already in the DB", async () => {
+        mockListAuthors.mockResolvedValue([
+            {
+                id: "db-1",
+                name: "An Author",
+                slug: "an-author",
+                bio: null,
+                created_at: "2024-01-01T00:00:00Z",
+                updated_at: "2024-01-01T00:00:00Z",
+            },
+        ])
+        mockFromArticles.mockResolvedValue({
+            id: "new-book-id",
+            title: "My New Book",
+            chapters: [],
+        })
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        fireEvent.change(
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            {target: {value: "title_asc"}},
+        )
+        clickNext(0)
+        await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+        setStandardMetadata()
+        // Checkbox must be hidden because "An Author" is in the DB.
+        await waitFor(() => {
+            expect(
+                screen.queryByTestId(
+                    "convert-to-book-wizard-add-to-authors-checkbox",
+                ),
+            ).toBeNull()
+        })
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
+        expect(mockCreateAuthor).not.toHaveBeenCalled()
+    })
+
+    it("book create still proceeds when author create fails", async () => {
+        mockCreateAuthor.mockRejectedValue(new Error("DB write failed"))
+        mockFromArticles.mockResolvedValue({
+            id: "new-book-id",
+            title: "My New Book",
+            chapters: [],
+        })
+        const {notify} = await import("../../utils/notify")
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        fireEvent.change(
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            {target: {value: "title_asc"}},
+        )
+        clickNext(0)
+        setStandardMetadata()
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        await waitFor(() => expect(mockCreateAuthor).toHaveBeenCalled())
+        // Book create proceeds despite the author-create failure.
+        await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
+        // Error toast fired for the author-create failure.
+        expect(notify.error).toHaveBeenCalled()
     })
 })

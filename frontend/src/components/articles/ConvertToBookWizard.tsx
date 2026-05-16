@@ -353,6 +353,27 @@ export default function ConvertToBookWizard({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sharedAuthor])
 
+    // Bug 8 Phase 2: "Add to Authors-Database" checkbox state.
+    // Default-checked per D7 (the typical case is "I typed a name
+    // and want it remembered"). User unchecks for one-off
+    // contributors. State persists across renders so unchecking
+    // sticks even as the user edits the field.
+    const [addToAuthorsDb, setAddToAuthorsDb] = useState(true)
+
+    // Visibility: the checkbox only shows when the typed author
+    // doesn't match any existing Authors-DB entry (trim + case-
+    // insensitive). Hiding the checkbox when the name is already
+    // in the DB avoids the confusing "Add X to author list?" UX
+    // for a name that's already there.
+    const authorAlreadyInDb = useMemo(() => {
+        const typed = author.trim().toLowerCase()
+        if (!typed) return true // hide the checkbox for empty input
+        return globalAuthors.some(
+            (a) => a.name.trim().toLowerCase() === typed,
+        )
+    }, [author, globalAuthors])
+    const showAddToAuthorsCheckbox = !authorAlreadyInDb
+
     const isSingleArticle = selectedArticles.length === 1
     const singleArticle = isSingleArticle ? selectedArticles[0] : null
 
@@ -479,6 +500,35 @@ export default function ConvertToBookWizard({
     const handleSubmit = async () => {
         setValidationError(null)
         setSubmitting(true)
+        // Bug 8 Phase 2: optionally create the typed author in the
+        // global Authors-Database BEFORE the book POST. The Author
+        // create is non-blocking: a failed POST surfaces an error
+        // toast but the book create still proceeds with the free-
+        // text author. Slug is server-generated + collision-
+        // suffixed; we only need to send the name.
+        if (showAddToAuthorsCheckbox && addToAuthorsDb && author.trim()) {
+            try {
+                const created = await api.authors.create({
+                    name: author.trim(),
+                })
+                // Update local mirror so the dropdown reflects the
+                // new entry without a re-fetch round-trip + so
+                // subsequent ``authorAlreadyInDb`` reads see it.
+                setGlobalAuthors((prev) => [...prev, created])
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError
+                        ? err.detail
+                        : t(
+                              "ui.convert_to_book.add_to_authors_error",
+                              "Konnte Autor nicht zur Datenbank hinzufügen.",
+                          )
+                notify.error(detail, err)
+                // Continue with the book create — the author was
+                // a "nice to have" addition; the book is the
+                // user's primary objective.
+            }
+        }
         try {
             const book = await api.books.fromArticles(buildPayload())
             // WARN-I1 fix: toast-with-CTA per Phase 2 spec letter.
@@ -780,6 +830,38 @@ export default function ConvertToBookWizard({
                             "Autor ist erforderlich",
                         )}
                     </small>
+                )}
+                {/* Bug 8 Phase 2: Add-to-Authors-Database checkbox.
+                    Default-checked. Visible only when the typed
+                    author is not already in the global DB, so the
+                    user isn't prompted to "add" a name that's
+                    already there. Submit-flow handles the create
+                    (graceful fallback if the create fails: the
+                    book still creates with the free-text author). */}
+                {showAddToAuthorsCheckbox && (
+                    <label
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            marginTop: 8,
+                            fontSize: "0.875rem",
+                            color: "var(--text-secondary)",
+                        }}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={addToAuthorsDb}
+                            onChange={(e) => setAddToAuthorsDb(e.target.checked)}
+                            data-testid="convert-to-book-wizard-add-to-authors-checkbox"
+                        />
+                        <span>
+                            {t(
+                                "ui.convert_to_book.metadata_add_to_authors_db",
+                                "„{name}\" zur Autoren-Datenbank hinzufügen",
+                            ).replace("{name}", author.trim())}
+                        </span>
+                    </label>
                 )}
             </div>
             <div className="field">

@@ -1916,6 +1916,8 @@ ui:
     metadata_subtitle_prefill: "Inherits from the article subtitle when blank."
     metadata_author: "Author"
     metadata_author_required: "Author is required"
+    metadata_add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     metadata_language: "Language"
     metadata_series: "Series"
     metadata_series_prefill: "All selected articles share this series."
