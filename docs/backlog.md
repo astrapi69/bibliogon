@@ -301,6 +301,25 @@ store.
   Filed by Hotfix-Session 2026-05-16 evening (after Bug-4 ship)
   per user instruction.
 
+- **KDP-CATEGORIES-CATALOG-SYNC-01** (P3, IMPROVEMENT): sync the
+  KDP plugin's 25-category catalog in
+  ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` with the
+  10-category subset hardcoded in
+  ``plugins/bibliogon-plugin-kdp/bibliogon_kdp/routes.py``.
+  Trigger: a scheduled Settings-Polish-Session OR a user report
+  that the KDP categories shown in the UI don't match what the
+  request handler accepts.
+  Scope: pick one source-of-truth (the yaml is the natural
+  choice — it's the user-editable catalog), drop the inline
+  subset in routes.py, route validation through a helper that
+  reads the yaml. Single-commit fix; ship paired with a
+  regression test that flags any future divergence.
+  Defer reason: pre-existing minor drift surfaced during the
+  Bug-9 Pre-Inspection audit. Not blocking Bug 8 or Bug 9
+  scope; routes.py + yaml have coexisted in this drifted state
+  since the KDP plugin shipped. Filed for the next polish
+  session.
+
 
 ---
 
@@ -670,6 +689,30 @@ store.
     canonical, with or without a review having happened),
     or continue-waiting. The threshold is also documented
     as a watch-list item in the v0.30.0 retrospective.
+
+- **BISAC-DATABASE-LOOKUP-01** (P5): bundle the BISAC subject
+  headings catalog with autocomplete + validation against real
+  codes (vs. the current Bug-9 MVP's free-text + 9-char
+  alphanumeric format check).
+  Trigger: Bibliogon obtains a BISG license, OR a user requests
+  autocomplete strongly enough to justify the license cost
+  (~$590/year for the under-$1M-revenue tier as of 2026-05).
+  Scope: ship the BISAC catalog as a JSON / SQLite resource
+  inside the KDP plugin (or a new lightweight ``plugin-bisac``
+  if licensing requires a separation), wire an autocomplete
+  combobox into the BookMetadataEditor Marketing tab, replace
+  the format-only validator with code-existence validation,
+  surface the human-readable subject heading next to the code
+  in the UI.
+  Defer reason: BISG license terms are incompatible with
+  Bibliogon's local-first + donation-based model in the v0.33.0
+  state. The free-text + format-validation MVP (Bug 9 D3) is
+  sufficient for the current user base — KDP best practice is
+  ≤ 3 codes per book, and the format check catches the most
+  common typo class (transposed letter / digit). Filed during
+  the Bug 8 + Bug 9 Pre-Inspection so the deferred
+  enhancement-path is visible if the licensing landscape
+  shifts.
 
 ---
 

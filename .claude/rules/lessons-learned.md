@@ -2356,19 +2356,26 @@ no update at all.
    ``BulkActionBar`` appeared on Articles list-view but never on
    Books list-view; bulk-delete on BD list-view was impossible
    for two release cycles before user-smoke surfaced the gap.
-7. **AD-Trash + BD-Trash view-mode defaults missing** (v0.33.0
-   manual smoke, fixed in commit ``5767289``). User-configurable
-   default view-mode existed for AD and BD active surfaces but
-   not for their trash surfaces; the trash views silently shared
-   the active surface's viewMode state so toggling view-mode in
-   trash also flipped the active surface. New ``useTrashViewMode``
-   hook with local-only setMode closes the gap with a deliberate
-   semantic difference (active = persisted, trash = ephemeral
-   session-local).
+7. **Comments-Admin bulk-delete** (Bug 4a, filed 2026-05-16,
+   pending implementation). The Comments-Admin section in
+   Settings has single-row delete but no bulk-selection +
+   bulk-delete affordance, while the parallel AD / BD
+   list-views both ship the
+   ``BulkActionBar`` + ``useSelection``-hook pattern. Confirms
+   Comments-Admin as a third parallel surface to AD / BD for
+   bulk-action capabilities; the fix re-introduces parity
+   instead of treating Comments-Admin as a separate concern.
 
-Bug 4a (Comments-Admin bulk-delete, filed for the next session)
-will be the 8th instance if Comments-Admin classifies as a
-parallel-surface to AD/BD bulk-action capabilities.
+> **Footnote on Bug 3 (Trash-View-Mode-Settings):** an earlier
+> mid-session report tagged Bug 3 as occurrence #7 of this
+> pattern class. Reclassified out of this tally: Bug 3 was
+> symmetric across AD and BD (both surfaces had the same
+> missing per-tab default), not asymmetric between them. It
+> belongs to a Settings-Granularity-Pattern (Class B,
+> currently single-instance, not yet formalized as its own
+> lessons-learned class per the "single instance is incident,
+> not pattern" discipline). Tally above reflects the
+> corrected classification.
 
 ### Rule
 
@@ -2461,6 +2468,87 @@ not just code-cleanup value. Backlog items
 testids + E2E) and ``ARTICLEFILTERBAR-EXTRACT-01`` (ArticleList
 extraction) are the targeted fixes for the two observed
 instances.
+
+## Intentional asymmetry between Articles and Books must be documented
+
+The "Articles-vs-Books parallel-surface asymmetry" rule above is
+about ACCIDENTAL drift: one surface gets a feature, the mirror
+surface doesn't, nobody noticed. The corollary is that some
+asymmetries are DELIBERATE — Articles and Books have genuinely
+different conceptual shapes, and forcing parity would degrade
+the product. When the asymmetry is intentional, document it
+explicitly so a future audit doesn't flag it as a regression
+and the next contributor doesn't "fix" it by accident.
+
+### The trigger pattern
+
+When you ship a feature on one surface and an audit asks "why
+not the other side too?", there are three possible answers:
+
+1. **Accidental drift** — the other side just didn't get it
+   yet. Fix per the parallel-surface-asymmetry rule above.
+2. **Intentional asymmetry, undocumented** — the other side
+   genuinely shouldn't have it for conceptual reasons. The next
+   audit will surface the same question, get the same verbal
+   "oh right, that's intentional" answer, and the loop repeats.
+3. **Intentional asymmetry, documented** — the why lives in the
+   commit message + a lessons-learned entry, so the next audit
+   sees the documentation and closes the question immediately.
+
+The middle case is the one this rule prevents. The cost of
+documentation is small; the cost of re-running the same audit
+every quarter is large.
+
+### Rule
+
+When a feature ships on Articles XOR Books and the asymmetry
+is intentional:
+
+1. **Commit message must call it out.** A sentence like
+   "Books-only by design — Articles use Topic (single enum)
+   + Tags (free-text), Books use Categories (free-text JSON
+   list) + BISAC; the two domains have different metadata
+   shapes" is enough.
+2. **Add a one-line note to this section.** Lists the feature,
+   which surface has it, and the one-sentence "why" — so future
+   audits can grep this section before raising the asymmetry.
+
+### Documented intentional asymmetries
+
+- **Categories + BISAC (Bug 9)**: Books-only. Articles use
+  ``Article.topic`` (single, settings-managed enum, drives
+  the per-platform publishing workflow) and ``Article.tags``
+  (free-text). Books use the new ``Book.categories`` (free-text
+  JSON list, KDP-aligned) and ``Book.bisac_codes`` (BISAC
+  9-char codes, validated for format only — see
+  ``BISAC-DATABASE-LOOKUP-01`` for the deferred bundled-catalog
+  path). The two domains have fundamentally different
+  metadata shapes: an article ships to N platforms each with
+  its own tagging norms; a book targets retail catalogues
+  (KDP / Apple Books / Kobo) with industry-standard subject
+  hierarchies. Forcing the same field set on both would help
+  neither.
+
+- **Authors-Database (Bug 8)**: Books-only at the
+  wizard-integration layer in v0.33.0+. The new Authors-DB +
+  Settings tab IS global (no Article / Book scoping), but the
+  Phase 2 wizard-datalist integration only lands on the
+  Article-to-Book conversion wizard. ArticleEditor + BookEditor
+  free-text author inputs stay plain text per D8 — the wizard
+  is the high-leverage surface (multi-article selection
+  surfaces multiple authors at once); single-record editors
+  ship the datalist later. Future session promotes the pattern
+  to both editors.
+
+### Anti-pattern
+
+Removing or weakening a feature on one surface just to "match"
+the other surface, when the surfaces have genuinely different
+needs. Symmetry-for-symmetry's-sake is wrong; symmetry-in-
+service-of-the-user is right. The asymmetry tally above tracks
+the bugs of the second kind (accidental missing parity); this
+section catalogues the cases where asymmetry IS the right
+answer.
 
 ## Periodic theme-token completeness audit as pre-release hygiene
 
