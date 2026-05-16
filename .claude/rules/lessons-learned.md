@@ -2325,7 +2325,7 @@ config; here, the actual network state).
 
 ## Articles-vs-Books parallel-surface asymmetry
 
-**Pattern class observed 7 times across 3 release cycles.** Each
+**Pattern class observed 8 times across 3 release cycles.** Each
 occurrence: a feature (or fix) lands on one of the parallel
 surfaces (Articles list/editor vs Books list/editor) and the
 mirror surface lags behind, gets a different shape, or gets
@@ -2365,6 +2365,24 @@ no update at all.
    Comments-Admin as a third parallel surface to AD / BD for
    bulk-action capabilities; the fix re-introduces parity
    instead of treating Comments-Admin as a separate concern.
+8. **Comments trash-lifecycle** (Bug 10, fixed 2026-05-16,
+   commits ``f09f0c2..acdee4a``). Articles + Books shipped the
+   full trash lifecycle (soft-delete + list-trashed + restore +
+   permanent-delete-from-trash + empty-trash) from day one;
+   Comments shipped only the soft-delete half in v0.32.0 with
+   the rest filed as ``v2`` in the
+   ``MEDIUM-COMMENTS-IMPORT-01`` commit 7 docstring. The
+   deferred half was never picked up. Production smoke
+   surfaced **61 soft-deleted comments stuck in invisible
+   purgatory** — the user pressed "Move to Trash", got
+   "moved to trash" feedback, and then found no trash to
+   look in. Closed by Bug 10: new
+   ``/api/comments/trash/list``, ``/api/comments/trash/{id}/restore``,
+   ``/api/comments/trash/empty``, ``/api/comments/trash/{id}``,
+   ``/api/comments/trash/bulk-restore`` endpoints + a
+   ``viewMode`` toggle on CommentsAdminSection + the trash-view
+   bulk-action bar. See the "Half-wired trash lifecycle" rule
+   below for the generalized pattern.
 
 > **Footnote on Bug 3 (Trash-View-Mode-Settings):** an earlier
 > mid-session report tagged Bug 3 as occurrence #7 of this
@@ -2415,6 +2433,178 @@ The 2026-05-15 audit's Articles-vs-Books parity matrix
 (``docs/audits/ux-full-audit-2026-05-14.md``) is the template:
 13 features compared, 3 confirmed asymmetries documented + 2
 historical resolutions noted.
+
+## Half-wired trash lifecycle: soft-delete shipped without the restore-surface is purgatory, not a feature
+
+When a feature ships the "move to trash" half of a soft-delete
+lifecycle (the DELETE endpoint that flips ``deleted_at``) but
+NOT the "see + restore + permanent-delete-from-trash" half (the
+``/trash/list`` + ``/trash/{id}/restore`` + ``/trash/{id}`` +
+``/trash/empty`` endpoints), the user experiences silent data
+purgatory: their data still exists in the DB but they can't
+find it, restore it, or finally delete it. The feature was
+**half-shipped**; the partial implementation actively destroys
+trust because the word "trash" implies "I can go look at it".
+
+### Concrete occurrence
+
+The MEDIUM-COMMENTS-IMPORT-01 v1 admin surface (2026-05)
+shipped soft-delete on ``DELETE /api/comments/{id}`` and bulk-
+soft-delete on ``POST /api/comments/bulk-delete`` (``permanent
+= false``). The original commit's docstring even called it
+out: *"Hard-delete and re-linkage endpoints are out of scope
+for v1; v2 ships them when MEDIUM-COMMENTS-UI-01 builds the
+admin view."* The "v2" work was filed in prose, NOT in a
+load-bearing backlog item; nobody picked it up. Production
+smoke at the v0.33.0 release surfaced **61 user-trashed
+comments stuck in invisible purgatory** — the user had to
+ask "where did my comments go?" before the gap was visible.
+Closed by Bug 10 in this same session.
+
+### Rule
+
+When a feature ships any half of a lifecycle (soft-delete
+without restore-surface, "save draft" without "see drafts",
+"schedule" without "see scheduled", "archive" without "see
+archive", etc.), the deferred half MUST be filed as a
+**load-bearing backlog item** with an explicit blocker
+relationship to the shipping half:
+
+1. Open a P-tier backlog entry (NOT just a docstring TODO)
+   with ID + scope + trigger.
+2. Cross-reference in the docstring of the shipping half —
+   so anyone reading the code sees the backlog reference,
+   not just the prose "v2 will do it".
+3. Set the trigger to be **observable from real use** (user
+   reports the gap, monitor alert, follow-up audit), not a
+   silent "we'll get to it".
+
+### Detection grep
+
+Audit existing partial implementations:
+
+```bash
+grep -rnE 'out of scope|v2 ships|deferred to v2|filed for v2|TODO.*v2' \
+  backend/app/ frontend/src/ plugins/ \
+  --include='*.py' --include='*.tsx' --include='*.ts'
+```
+
+Each hit is a candidate for the half-wired pattern. Cross-
+check whether the deferred half is in the backlog with a
+real ID; if not, file one now.
+
+### Anti-pattern
+
+The original ``v1 ships half, v2 ships the other half``
+docstring is fine **IF** v2 has an open backlog item with an
+ID that anyone scanning the backlog can find. The failure
+mode is the docstring-only deferral that never makes it into
+``docs/backlog.md``, ``docs/ROADMAP.md``, or any other
+tracked list. Out of sight, out of mind, in production for a
+release cycle, user reports "data loss".
+
+### Pairs with
+
+- "Articles-vs-Books parallel-surface asymmetry" — the Bug 10
+  case appears under BOTH patterns. The asymmetry rule fires
+  on "Articles + Books have it, Comments doesn't"; this rule
+  fires on "Comments shipped half the contract". Same fix,
+  two different audit lenses.
+
+## Test-isolation discipline: never run integration smoke-tests outside pytest
+
+The Bibliogon harness ships three protective layers against
+test runs hitting production data:
+
+1. ``BIBLIOGON_TEST=1`` env-var, set by
+   ``backend/tests/conftest.py`` BEFORE any ``app.*`` import.
+2. ``TEST_DATABASE_URL=sqlite:///:memory:`` env-var, set in
+   the same place.
+3. ``.bibliogon-production`` marker file in real data dirs,
+   plus a session-scoped autouse tripwire that aborts the
+   pytest run with ``returncode=2`` if it ever sees the
+   marker.
+
+**All three only fire under pytest.** A free-standing
+``poetry run python -c "from app.main import app; ..."``
+script bypasses every one of them — conftest never executes
+for direct-Python invocations, so the FastAPI app points at
+the real production DB at ``~/.local/share/bibliogon/bibliogon.db``.
+
+### Concrete incident
+
+2026-05-16, during Bug 10 Commit 1. A smoke-test of the new
+``DELETE /api/comments/trash/empty`` endpoint was run via a
+direct ``poetry run python -c "..."`` script (NOT pytest)
+against ``TestClient(app)``. The script ran successfully ―
+and emptied the user's real production ``article_comments``
+table, hard-deleting all 61 soft-deleted comments in one
+``empty_trash`` call. The 14:25 ``.bgb`` backup did not
+carry comments (Bibliogon backup format only persists
+Article + Publication + ArticleAsset), so .bgb-based
+recovery was impossible.
+
+The dev-mode context prevented worst-case impact: the data
+was reproducible from the original Medium archive. **But
+the discipline violation was real and the harness was
+working correctly — the test script ran outside its scope,
+not the harness failing.** Frame the incident as a process
+breach, not a harness defect, so the project doesn't acquire
+a "harness is unreliable" mental model.
+
+### Rule
+
+For any integration smoke-test against FastAPI ``TestClient``
+or any code path that imports ``app.main`` /
+``app.database`` / ``app.routers.*``:
+
+- **Default**: write the smoke-test as a one-off pytest file
+  under ``backend/tests/``. Conftest fixtures (session-scoped
+  env-var setup + the marker tripwire) fire automatically.
+  This is the right shape for anything more than a single
+  trivial assertion.
+
+- **Acceptable shortcut for trivial probes**: prefix the
+  command with the env-vars manually:
+
+  ```bash
+  BIBLIOGON_TEST=1 TEST_DATABASE_URL=sqlite:///:memory: \
+    poetry run python -c "..."
+  ```
+
+  Use only when the probe is genuinely a one-line check (e.g.
+  "does this import succeed?"). Anything that makes API calls
+  or mutates DB state must go through pytest.
+
+- **NEVER**: bare ``poetry run python -c "from app.main
+  import app; ..."``. The FastAPI app's lifespan fires
+  ``init_db()``, which connects to the production DB via
+  ``app.database.DATABASE_URL`` (resolved at import time
+  from ``BIBLIOGON_DATABASE_URL`` / ``DATABASE_URL`` env
+  vars — neither of which the bare command sets).
+
+### Detection grep
+
+For self-audit before running any one-off probe:
+
+```bash
+# Grep your own command history for bare python -c imports.
+history | grep -E 'python -c.*app\.main|python -c.*import app'
+```
+
+If a hit lacks the ``BIBLIOGON_TEST=1`` prefix, do not run
+it. Rewrite as a pytest file.
+
+### Pairs with
+
+- The existing CLAUDE.md "Test isolation" section documents
+  the three-layer harness. This rule is the discipline that
+  keeps the harness load-bearing — without it, the harness
+  exists but isn't exercised on the paths that need it most.
+- "Operational gaps masquerade as wired infrastructure" — same
+  family. The harness is wired, but only triggered on the
+  pytest path; a script outside that path is operationally
+  unprotected even though the protection exists.
 
 ## Inline-component duplication is the upstream cause of parallel-surface asymmetry
 

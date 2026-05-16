@@ -4,6 +4,73 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.33.1] - 2026-05-16
+
+The "Comments-Trash recovery + Authors-Database foundation"
+point release. Patch bump closing two open items.
+
+### Added
+
+- **Comments trash-lifecycle (Bug 10 fix).** Comments shipped
+  soft-delete in v0.32.0 but the counterparts (list-trashed,
+  restore, permanent-delete-from-trash, empty-trash, bulk-
+  restore) were filed as "v2" in the original commit docstring
+  and never picked up. Production smoke surfaced 61 user-
+  trashed comments stuck in invisible purgatory. Closed with:
+  - 5 new backend endpoints under ``/api/comments/trash/*`` +
+    ``POST /api/comments/trash/bulk-restore``.
+  - A new view-mode toggle on Settings → Comments
+    (``comments-active-toggle`` / ``comments-trash-toggle``),
+    a trash badge with live count, per-row Restore +
+    Permanent-Delete actions, an Empty-Trash CTA, plus a
+    dedicated trash-view bulk-action bar with bulk-Restore +
+    bulk-Permanent-Delete affordances.
+  - 22 new backend pytest cases + 22 new frontend Vitest
+    cases + 4 Playwright smoke specs covering the full
+    user-visible flow.
+
+- **Authors-Database foundation (Bug 8 Phase 1).** New
+  standalone ``authors`` table + ``/api/authors`` CRUD + a
+  new Settings "Autoren-Datenbank" / "Authors Database" tab
+  sibling to the existing personal-identity "Autor" tab.
+  Decoupled from existing free-text ``Book.author`` /
+  ``Article.author`` columns (no FK, no backfill — opt-in
+  suggestion layer). Wizard datalist integration ships in
+  Bug 8 Phase 2 in a follow-up release. Slug auto-generation
+  handles German + Nordic diacritics + general Latin NFKD-
+  fold + emoji fallback. Coverage: 52 backend pytest cases,
+  24 frontend Vitest cases, 16 i18n keys across all 8
+  catalogs.
+
+### Fixed
+
+- **Trash data is retrievable again.** Users who pressed
+  "Move to Trash" on comments in v0.32.0 / v0.33.0 will see
+  their previously-trashed rows under Settings → Comments →
+  Papierkorb / Trash after upgrading. Per-row Restore +
+  bulk-Restore both available.
+
+### Changed
+
+- Articles-vs-Books parallel-surface asymmetry tally promoted
+  to 8 confirmed instances (Bug 10 = #8; Bug 4a = #7).
+
+### Lessons learned (2 new rules)
+
+- **"Half-wired trash lifecycle"**: soft-delete shipped
+  without the restore-surface is data purgatory, not a
+  feature. Deferred-half work MUST be filed as a load-bearing
+  backlog item with a real ID, not as docstring prose.
+  Detection grep:
+  ``grep -rnE 'out of scope|v2 ships|deferred to v2'``.
+- **"Test-isolation discipline"**: never run integration
+  smoke-tests outside pytest. The harness's three-layer
+  isolation (``BIBLIOGON_TEST=1``, ``:memory:`` DB URL,
+  ``.bibliogon-production`` marker tripwire) only fires
+  under pytest. A bare ``poetry run python -c "from
+  app.main import app"`` bypasses every guard and points
+  at the real DB.
+
 ## [0.33.0] - 2026-05-16
 
 The "Article-to-Book + UX-polish" release. Major user-facing
