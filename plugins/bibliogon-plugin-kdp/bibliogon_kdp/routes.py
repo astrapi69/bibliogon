@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from .changelog import add_entry, export_changelog_markdown, get_changelog
-from .cover_validator import CoverValidationResult, generate_kdp_metadata, validate_cover
+from .cover_validator import generate_kdp_metadata, validate_cover
 from .metadata_checker import check_metadata_completeness
 
 router = APIRouter(prefix="/kdp", tags=["kdp"])
@@ -120,6 +120,12 @@ class CheckMetadataRequest(BaseModel):
     publisher: str | None = None
     backpage_description: str | None = None
     chapters: list[dict] = []
+    # Bug 9: Books-only subject categorisation. Surfaced through
+    # the checker so the "Check metadata for KDP" panel can flag
+    # missing / over-cap / malformed BISAC codes before the user
+    # uploads to KDP and Amazon rejects the listing.
+    categories: list[str] = []
+    bisac_codes: list[str] = []
 
 
 @router.post("/check-metadata")
