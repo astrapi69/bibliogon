@@ -63,6 +63,21 @@ class Book(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     genre: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Phase-4 discriminator. Splits the editor + export pipeline AND
+    # identifies the owning plugin:
+    #   "prose"        -> chapter-based editor + pandoc/manuscripta
+    #                     export (core).
+    #   "picture_book" -> page-based editor + Playwright renderer
+    #                     (plugin-kinderbuch). v1 active.
+    #   "comic_book"   -> reserved for future plugin-comics. The
+    #                     value is defined in the Pydantic schema
+    #                     layer so a comics plugin can ship without
+    #                     migrating this column.
+    # Immutable after creation; enforced by the books PATCH handler.
+    book_type: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="prose", server_default="prose"
+    )
+
     # Publishing metadata
     edition: Mapped[str | None] = mapped_column(String(100), nullable=True)
     publisher: Mapped[str | None] = mapped_column(String(300), nullable=True)
@@ -148,9 +163,12 @@ class Book(Base):
     assets: Mapped[list["Asset"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
+    pages: Mapped[list["Page"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan", order_by="Page.position"
+    )
 
     def __repr__(self) -> str:
-        return f"<Book {self.id!r} title={self.title!r}>"
+        return f"<Book {self.id!r} title={self.title!r} type={self.book_type}>"
 
 
 class Chapter(Base):
@@ -222,6 +240,45 @@ class Asset(Base):
 
     def __repr__(self) -> str:
         return f"<Asset {self.id!r} filename={self.filename!r} type={self.asset_type}>"
+
+
+class Page(Base):
+    """A single page in a picture book (Book.book_type == "picture_book").
+
+    A picture book has zero Chapter rows and N Page rows. Page 1 is the
+    cover (no separate Cover entity). ``text_content`` stores short
+    plain text (one to three sentences per page); no TipTap roundtrip.
+    ``layout`` is the layout-key string (e.g. "speech_bubble",
+    "image_top_text_bottom") validated at the Pydantic schema layer,
+    matching the Chapter.chapter_type pattern. ``speech_bubble_config``
+    holds the anchor variant + position for Layout-A pages and is a
+    JSON-encoded string (same pattern as books.keywords /
+    books.chapter_summaries).
+    """
+
+    __tablename__ = "pages"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    layout: Mapped[str] = mapped_column(String(50), nullable=False)
+    text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_asset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
+    )
+    speech_bubble_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    book: Mapped["Book"] = relationship(back_populates="pages")
+    image_asset: Mapped["Asset | None"] = relationship(foreign_keys=[image_asset_id])
+
+    def __repr__(self) -> str:
+        return f"<Page {self.id!r} book={self.book_id!r} pos={self.position} layout={self.layout}>"
 
 
 class BookImportSource(Base):
