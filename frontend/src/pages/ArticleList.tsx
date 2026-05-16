@@ -51,7 +51,7 @@ import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, {type FieldClassDialogResult} from "../components/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
-import { useViewMode } from "../hooks/useViewMode";
+import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import { useArticleFilters } from "../hooks/useArticleFilters";
 import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
@@ -69,6 +69,12 @@ export default function ArticleList() {
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
+    // Trash surface keeps an INDEPENDENT view-mode read from a separate
+    // YAML key (``ui.dashboard.articles_trash_view``). In-trash toggles
+    // are session-local (no YAML write); persistence is only via the
+    // Settings UI. See ``useTrashViewMode`` for the rationale.
+    const { mode: trashViewMode, setMode: setTrashViewMode } =
+        useTrashViewMode("articles");
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
@@ -816,8 +822,8 @@ export default function ArticleList() {
             {showTrash ? (
                 <TrashPanel
                     trash={trash}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
+                    viewMode={trashViewMode}
+                    setViewMode={setTrashViewMode}
                     onBack={() => setShowTrash(false)}
                     onRestore={(a) => void handleRestore(a)}
                     onPermanentDelete={(a) => void handlePermanentDelete(a)}

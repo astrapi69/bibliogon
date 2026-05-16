@@ -30,6 +30,17 @@ export function AppSettings({config, onSave, saving}: {
     const [articlesView, setArticlesView] = useState(
         (uiDashboard.articles_view as string) === "list" ? "list" : "grid",
     );
+    // Bug 3: parity for the trash surfaces. Stored under
+    // ``ui.dashboard.{books,articles}_trash_view``. Mid-trash toggles
+    // are session-local — the YAML value here is the *default* the
+    // trash surface picks up at mount; ``useTrashViewMode`` does not
+    // write back on toggle.
+    const [booksTrashView, setBooksTrashView] = useState(
+        (uiDashboard.books_trash_view as string) === "list" ? "list" : "grid",
+    );
+    const [articlesTrashView, setArticlesTrashView] = useState(
+        (uiDashboard.articles_trash_view as string) === "list" ? "list" : "grid",
+    );
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
     const [trashDays, setTrashDays] = useState(String(Number(app.trash_auto_delete_days ?? 30)));
     const [deletePermanently, setDeletePermanently] = useState(Boolean(app.delete_permanently));
@@ -53,6 +64,12 @@ export function AppSettings({config, onSave, saving}: {
         const dashboardCfg = (ui.dashboard || {}) as Record<string, unknown>;
         setBooksView((dashboardCfg.books_view as string) === "list" ? "list" : "grid");
         setArticlesView((dashboardCfg.articles_view as string) === "list" ? "list" : "grid");
+        setBooksTrashView(
+            (dashboardCfg.books_trash_view as string) === "list" ? "list" : "grid",
+        );
+        setArticlesTrashView(
+            (dashboardCfg.articles_trash_view as string) === "list" ? "list" : "grid",
+        );
         setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
         setDeletePermanently(Boolean(app.delete_permanently));
@@ -96,6 +113,8 @@ export function AppSettings({config, onSave, saving}: {
                 dashboard: {
                     books_view: booksView,
                     articles_view: articlesView,
+                    books_trash_view: booksTrashView,
+                    articles_trash_view: articlesTrashView,
                 },
             },
             plugins: {enabled},
@@ -168,6 +187,52 @@ export function AppSettings({config, onSave, saving}: {
                         value={articlesView}
                         onValueChange={setArticlesView}
                         testId="settings-articles-view"
+                        options={[
+                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                        ]}
+                    />
+                </div>
+                <div className="field">
+                    <label
+                        className="label"
+                        title={t(
+                            "ui.settings.dashboard_books_trash_view_tooltip",
+                            "Standard-Ansicht für den Bücher-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
+                        )}
+                    >
+                        {t(
+                            "ui.settings.dashboard_books_trash_view_label",
+                            "Bücher-Papierkorb: Standard-Ansicht",
+                        )}
+                    </label>
+                    <RadixSelect
+                        value={booksTrashView}
+                        onValueChange={setBooksTrashView}
+                        testId="settings-books-trash-view"
+                        options={[
+                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                        ]}
+                    />
+                </div>
+                <div className="field">
+                    <label
+                        className="label"
+                        title={t(
+                            "ui.settings.dashboard_articles_trash_view_tooltip",
+                            "Standard-Ansicht für den Artikel-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
+                        )}
+                    >
+                        {t(
+                            "ui.settings.dashboard_articles_trash_view_label",
+                            "Artikel-Papierkorb: Standard-Ansicht",
+                        )}
+                    </label>
+                    <RadixSelect
+                        value={articlesTrashView}
+                        onValueChange={setArticlesTrashView}
+                        testId="settings-articles-trash-view"
                         options={[
                             {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
                             {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},

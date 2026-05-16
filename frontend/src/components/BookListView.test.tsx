@@ -56,7 +56,7 @@ function makeBook(id: string, title: string): Book {
         cover_image: null,
         created_at: "2026-05-16T10:00:00Z",
         updated_at: "2026-05-16T10:00:00Z",
-    } as Book;
+    } as unknown as Book;
 }
 
 const BOOKS = [makeBook("b1", "First Book"), makeBook("b2", "Second Book")];

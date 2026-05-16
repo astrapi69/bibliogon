@@ -16,7 +16,7 @@ import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveBookFilters } from "../utils/formatActiveFilters";
 import {useBookSelection} from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
-import { useViewMode } from "../hooks/useViewMode";
+import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
@@ -65,6 +65,12 @@ export default function Dashboard() {
     const filters = useBookFilters(books, t);
     const selection = useBookSelection();
     const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
+    // Trash surface keeps an INDEPENDENT view-mode read from a separate
+    // YAML key (``ui.dashboard.books_trash_view``). In-trash toggles
+    // are session-local (no YAML write); persistence is only via the
+    // Settings UI. See ``useTrashViewMode`` for the rationale.
+    const { mode: trashViewMode, setMode: setTrashViewMode } =
+        useTrashViewMode("books");
 
     /** Bulk export. Reads the current filtered list in display order,
      *  restricts to the selected IDs, then POSTs them to the backend
@@ -535,7 +541,7 @@ export default function Dashboard() {
                                     <Trash size={14}/> {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
                                 </button>
                             )}
-                            <ViewToggle mode={viewMode} onChange={setViewMode} />
+                            <ViewToggle mode={trashViewMode} onChange={setTrashViewMode} />
                         </div>
                         {trash.length === 0 ? (
                             <EmptyState
@@ -543,7 +549,7 @@ export default function Dashboard() {
                                 icon={<Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>}
                                 title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
                             />
-                        ) : viewMode === "grid" ? (
+                        ) : trashViewMode === "grid" ? (
                             <div className={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
                                     <TrashCard
