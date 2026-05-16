@@ -3,7 +3,7 @@
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-07 (v0.30.0 cut)
 Latest release: v0.30.0 (launcher localized in 8 languages with full parity-test enforcement; DEP-DBPATH-01 cycle closes — BIBLIOGON_DB_PATH no longer honoured as a path override, warning-only on lingering env var; 5 new bilingual core help pages — books bulk-export, cross-platform installers, architecture, contributing, deployment, API reference; plugin dev guide refreshed for Vite 8 + Node 24; pre-release dependency sweep with fastapi 0.135 → 0.136 lock-step + in-range patches across all subsystems).
-Open tasks: 4 active (P3..P5) + 2 BLOCKED-on-upstream + 1 P5 (LAUNCHER-I18N-NATIVE-REVIEW-01, public call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18))
+Open tasks: 1 P2 (KB-PHASE4) + 3 active (P3..P5) + 2 BLOCKED-on-upstream + 1 P5 (LAUNCHER-I18N-NATIVE-REVIEW-01, public call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18))
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
@@ -45,7 +45,32 @@ upgrades. See backlog for a curated daily-planning view.
 
 ## P2 - High-Value User Features
 
-(none)
+- [ ] **KB-PHASE4**: Picture-book (Kinderbuch) plugin — Sessions
+  2-7 per the exploration. Promoted from P5 on 2026-05-16 after
+  user direct ask (Aster authoring a new picture book is a valid
+  go-signal per the exploration's "Triggers for reconsidering"
+  list).
+  - Architecture: [docs/explorations/children-book-plugin.md](explorations/children-book-plugin.md)
+  - Readiness audit: [docs/audits/kinderbuch-phase4-readiness-2026-05-16.md](audits/kinderbuch-phase4-readiness-2026-05-16.md)
+  - Session status:
+    - [x] Session 1 — Architecture exploration (delivered via
+      existing plugin v1.0.0 + the exploration doc).
+    - [ ] Session 2 — Backend data model: `Book.book_type` column
+      + `pages` table + Pydantic schemas + CRUD routes + tests.
+      In progress 2026-05-16.
+    - [ ] Session 3 — Frontend page-based editor (three-pane
+      layout, layout picker, drag-reorder, inline image upload).
+      Mandatory go/no-go after Aster authors a 4-page test book.
+    - [ ] Session 4 — Speech-bubble layout (Layout A) + Playwright
+      Chromium PDF export pipeline.
+    - [ ] Session 5 — Image-top-text-bottom layout (Layout B) +
+      KDP page-count validation + AI-disclosure badge.
+    - [ ] Session 6 — EPUB3 Fixed-Layout export + epubcheck.
+    - [ ] Session 7 — Polish + onboarding (new-children-book
+      starter template, in-app help, builtin BookTemplate).
+  - Out of scope for v1: convert prose <-> children_book,
+    user-uploaded bubble graphics, two-page spreads, AI-generated
+    illustrations.
 
 ---
 
@@ -87,9 +112,10 @@ installer discovery report.)
   via plugin-git-sync, parallel to the book path. Deferred — only
   on user demand.
 
-- [ ] **Phase 4 kinderbuch single-page article variant**: single-
-  page layout for the kinderbuch use case. Deferred — only on
-  user demand.
+(KB-PHASE4 promoted to P2 on 2026-05-16 with the exploration's
+full Sessions 2-7 scope, replacing the narrower
+"kinderbuch single-page article variant" entry that previously
+sat here.)
 
 ---
 
@@ -141,8 +167,9 @@ captures the decision history.
 - Help docs: [docs/help/en/articles.md](help/en/articles.md), [docs/help/de/articles.md](help/de/articles.md)
 
 The active AR-01 validation log is the only open AR task; it sits
-in P3 above. Phase 4 article-as-WBT and Phase 4 kinderbuch
-single-page variant are deferred-on-user-demand items in P5.
+in P3 above. Phase 4 article-as-WBT is a deferred-on-user-demand
+item in P5; the kinderbuch picture-book work has been promoted
+to P2 as KB-PHASE4.
 
 ---
 
