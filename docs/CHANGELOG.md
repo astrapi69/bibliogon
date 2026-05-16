@@ -4,7 +4,15 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
-## [0.33.0] - YYYY-MM-DD
+## [0.33.0] - 2026-05-16
+
+The "Article-to-Book + UX-polish" release. Major user-facing
+feature (article-to-book conversion wizard) lands alongside a
+sustained pass on the v0.32.0 UX-Full-Audit backlog (14 items
+closed). Plus a Node-24 GitHub-Actions migration sweep across
+every workflow, a mutation-testing scope expansion, several
+test-isolation hardenings, and 5 new lessons-learned sections.
+~78 commits since v0.32.0.
 
 ### Added
 
@@ -33,19 +41,221 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   selected articles dedupe (case-insensitive) into
   `Book.keywords`; shared `series` value across every selected
   article pre-fills `Book.series`. 37 backend integration tests
-  + 11 Vitest specs + 3 Playwright smoke specs. 50-key i18n
-  namespace `convert_to_book` lands in all 8 catalogs (DE +
-  EN native; ES / FR / EL / PT / TR / JA passthru per the
-  existing `_meta.pending_namespaces` convention). Bilingual
-  help doc at `docs/help/{en,de}/articles/convert-to-book.md`
-  covers walkthrough + decoupled-lifecycle explanation + known
+  + 12 Vitest specs + 3 Playwright smoke specs + smoke +
+  bilingual manual test docs under
+  `docs/testing/smoke-tests/article-to-book-conversion*.md`.
+  52-key i18n namespace `convert_to_book` lands in all 8
+  catalogs (DE + EN native; ES / FR / EL / PT / TR / JA
+  passthru per the existing `_meta.pending_namespaces`
+  convention). Bilingual help doc at
+  `docs/help/{en,de}/articles/convert-to-book.md` covers
+  walkthrough + decoupled-lifecycle explanation + known
   limitations + 5-question FAQ. Three deferred follow-ups
-  filed: `CONVERT-TO-BOOK-ASSET-CLONE-01` (P3,
-  asset-clone walker for embedded images),
+  filed: `CONVERT-TO-BOOK-ASSET-CLONE-01` (P3, asset-clone
+  walker for embedded images),
   `CONVERT-TO-BOOK-REVERSE-LINK-01` (P5, restore
   `Chapter.source_article_id` column for provenance tracking),
   `CONVERT-TO-BOOK-CHAPTER-TYPE-DETECTION-01` (P5, smart
   chapter_type assignment by title pattern).
+
+- **Success-toast with action CTA** (`notify.successAction`).
+  New shared helper + `SuccessActionContent` component in
+  `frontend/src/utils/notify.ts` for "X succeeded; here's the
+  forward action" toasts. First consumer is the article-to-book
+  wizard's "Buch öffnen" / "View book" CTA after a successful
+  conversion (10-second autoClose so the user has time to read +
+  click). Distinct from the existing `notify.bulkAction` Undo
+  helper — semantically forward, not undo. Parameterised testid
+  prevents collisions across future successAction call-sites.
+
+- **BookEditor empty-state surface** (`BOOKEDITOR-EMPTY-STATE-01`).
+  Books with zero chapters now render an EmptyState with a
+  "Create first chapter" CTA matching the ArticleEditor pattern
+  (Articles-vs-Books parity per the UX-Full-Audit).
+
+- **View-agnostic `data-{book,article}-id` attributes**
+  (`VIEW-MODE-TESTID-PARITY-01`). Both card-view and list-view
+  tiles now carry a stable `data-{book,article}-id="<id>"`
+  attribute alongside their view-specific testids. E2E specs can
+  target either view-mode with one selector, closing the G2-F2
+  silent-skip class for both surfaces.
+
+### Changed
+
+- **UX-Full-Audit 2026-05-14/15 closure batch (14 items).** Net
+  effect: every actionable P3 finding from the audit's Groups 1-5
+  is shipped. Remaining items are trigger-gated P3/P5 backlog
+  entries (`COMMENTS-ADMIN-PAGINATION-01`, `I18N-NATIVE-REVIEW-V031-01`,
+  etc.) waiting on user signal. Concrete closures this release:
+  - `LOADING-INDICATOR-EXTRACT-01` — shared `<LoadingIndicator>`
+    component + global `.spin` class fix.
+  - `EMPTYSTATE-EXTRACT-01` — shared `<EmptyState>` + 6
+    call-sites migrated.
+  - `BOOKEDITOR-EMPTY-STATE-01` — BookEditor empty-state UX.
+  - `ARTICLEFILTERBAR-EXTRACT-01` — `ArticleFilterBar` moved
+    from inline-in-ArticleList.tsx to its own component file.
+  - `SETTINGS-INLINE-TABS-EXTRACT-01` — `AppSettings` +
+    `AiAssistantSettings` + `TopicsSettings` extracted from the
+    Settings monolith.
+  - `PLUGIN-SETTINGS-TESTID-COVERAGE-01` — `PluginSettings` +
+    `AuthorSettings` extracted with testid coverage.
+  - `BOOKEDITOR-TESTIDS-01` — full testid coverage for the
+    BookEditor (was 0 testids over 700 LOC pre-audit).
+  - `VIEW-MODE-TESTID-PARITY-01` — view-agnostic
+    `data-{book,article}-id` attributes (also under Added).
+  - `MEDIUM-IMPORT-TESTIDS-01` — result-table count-span testids.
+  - `SETTINGS-TABS-TESTID-COMPLETE-01` — 3 of 7 settings tabs
+    gained testids; type tightened from `testId?: string` to
+    `testId: string`.
+  - `SETTINGS-TOPBAR-TESTIDS-01` — back-arrow + Home button
+    testids + aria-labels.
+  - `THEME-TOKEN-COMPLETENESS-AUDIT-01` — 5 theme-token gaps
+    closed across the 111 callsites, audit script added.
+  - `NOTIFY-ERROR-APIERROR-COVERAGE-01` — 62 % of `notify.error`
+    catch blocks fixed to pass the caught error as the 2nd arg
+    so the rich Issue-Melden affordance fires; pre-commit hook
+    added (and caught one regression at the end of this cycle).
+  - `TEST-ISOLATION-MODULE-STATE-01` — audit script + allowlist
+    for in-process module-level mutable state that survives
+    test boundaries (lessons-learned promotion of the
+    platform_schema LRU cache incident).
+
+- **Mutation-testing scope expansion**
+  (commits `c1eea87` / `fd94117` / `0c8d24d`). `import_plugins`
+  overrides.py bool-coercion survivors killed; office + wbt
+  triage closed; services scope expanded with the
+  platform_schema regression fix landing as a paired test-
+  isolation hardening (`48d3ffe`).
+
+### Fixed
+
+- **BulkActionBar stale state when a row-delete targets a
+  selected item** (`02553fb` + `926decb`, "Bug B" from the
+  v0.32.0 cycle). Single-item destructive handlers now call
+  `selection.remove(id)` after the API call succeeds and before
+  the success notification so the bar's count never references
+  an orphan id. 14 Vitest hook tests pin behaviour for both
+  `useArticleSelection` and `useBookSelection`; E2E backfill
+  added in commit `926decb`.
+
+- **Restore-button "broken" perception lag**
+  (`RESTORE-UX-FEEDBACK-01`, was "Bug A" misdiagnosis). The
+  Articles-trash restore handler chained two network round-trips
+  (`POST .../restore` + `GET /articles`) with synchronous state
+  updates between, registering as "feels broken" (419 ms
+  click handler). Fix: optimistic update + use the response
+  entity directly (`7d68126`). Workbox log-misread was
+  recorded as not-a-code-bug (`70406d2`) and promoted to a
+  lessons-learned rule.
+
+- **`platform_schema` LRU cache survives test boundaries**
+  (`48d3ffe`). Setup-only `cache_clear()` in a fixture left a
+  fake schema cached for downstream test files; the publications
+  endpoint then served the stale dict to 5 unrelated tests.
+  Fix: bidirectional clear (before + after each test). Lessons-
+  learned section promoted.
+
+- **`notify.error` 2nd-arg pass-through gaps**
+  (`NOTIFY-ERROR-APIERROR-COVERAGE-01`). 62 % of catch sites
+  called `notify.error(message)` without forwarding the caught
+  error, suppressing the Issue-Melden affordance. Fixed across
+  the codebase; pre-commit hook installed to prevent
+  regression.
+
+- **Theme-token completeness across 9 palette × mode variants**
+  (`THEME-TOKEN-COMPLETENESS-AUDIT-01`). 5 token-vs-palette
+  gaps closed; audit script added so future drift surfaces in
+  the pre-release sweep.
+
+- **`Settings.tsx` trailing blank line + `ConvertToBookWizard.tsx`
+  missing 2nd-arg in `notify.error`** (`0ca8b32`). Caught by the
+  pre-commit CI gate during the v0.33.0 release run; both
+  trivial; surfaced + closed as a single fix-now commit.
+
+### Internal
+
+- **GitHub Actions Node-24 migration** across every workflow.
+  10 action-major bumps applied per the
+  `External GitHub Action major-version drift` lessons-learned
+  rule (action.yml `runs.using:` declarations as the
+  authoritative source, NOT release-note prose):
+  `actions/checkout` v4 → v5,
+  `actions/setup-python` v5 → v6,
+  `actions/setup-node` v4 → v5,
+  `actions/upload-artifact` v4 → v5 → v6,
+  `actions/cache` v4 → v5,
+  `softprops/action-gh-release` v2 → v3,
+  GitHub Pages action trio v4 → v5,
+  `actions/configure-pages` v5 → v6.
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env-var kept as a
+  safety net for any future third-party action lag.
+  `GH-ACTIONS-OPTIONAL-BUMPS-01` filed for the two deferred
+  bumps (`actions/checkout` v6, `actions/setup-node` v6).
+
+- **5 new lessons-learned sections**:
+  1. Multi-tool collaboration tracking (re-sync before
+     accepting new orders) — promoted after a planning-vs-repo
+     state drift incident.
+  2. Workbox "No route found" is benign info, not a bug
+     indicator — promoted from the Bug A misdiagnosis.
+  3. User-perceived bug ≠ code bug: the perception-lag class
+     — promoted with the same trigger.
+  4. In-memory caches survive test boundaries — promoted from
+     the `platform_schema` LRU regression.
+  5. External GitHub Action major-version drift — `action.yml`
+     is the authoritative runtime source; release-note prose
+     can lie; composite actions need transitivity checks.
+  Plus: testid namespace pinning prevents silent E2E skips
+  (positive discipline derived from the G2-F2 incident).
+
+- **UX-Full-Audit 2026-05-14/15** documented in 5 group files
+  under `docs/audits/` (Core Editors, Dashboards, Settings,
+  Cross-Cutting, Synthesis). 23 findings catalogued, 26
+  screenshots captured by Aster, 3 supplementary Playwright
+  specs landed. Synthesis at
+  `docs/audits/ux-full-audit-2026-05-14.md`.
+
+- **12 backlog items filed** with full Trigger / Scope /
+  Effort / Defer-reason quadrants:
+  `CONVERT-TO-BOOK-ASSET-CLONE-01` (P3),
+  `CONVERT-TO-BOOK-REVERSE-LINK-01` (P5),
+  `CONVERT-TO-BOOK-CHAPTER-TYPE-DETECTION-01` (P5),
+  `COMMENTS-ADMIN-PAGINATION-01` (P3),
+  `RESTORE-UX-FEEDBACK-01` (P3, now closed in this release),
+  `TEST-ISOLATION-MODULE-STATE-01` (P3, now closed),
+  `GH-ACTIONS-OPTIONAL-BUMPS-01` (P5),
+  `GH-ACTIONS-PERIODIC-AUDIT-01` (P5),
+  `NOTIFY-ERROR-APIERROR-COVERAGE-01` (P3, now closed),
+  `THEME-TOKEN-COMPLETENESS-AUDIT-01` (P3, now closed),
+  plus 2 from the UX-Full-Audit's trigger-gated tail.
+
+- **v0.32.0 cycle archived** in
+  `docs/roadmap-archive/2026-05.md`: Phase B-F mapping
+  (planning labels ↔ repo F1/F2a/F2b/F2c/F3) + UX-Full-Audit
+  close-out summary + Bug A close-out retrospective. One
+  indexed entry per archival day, newest first, per the
+  Continuous Archival Rule.
+
+- **`CLAUDE.md` + `architecture.md` theme-count correction**
+  (`2608865`) — bumped from "3 themes" prose to the audit-
+  recipe-verified actual count (5 palettes × light/dark =
+  10 variants; Notebook + Studio were added post the original
+  doc and never propagated until the audit caught it).
+
+- **Dependency patches** (this release):
+  - Backend: ruff 0.15.12 → 0.15.13, virtualenv 21.3.2 →
+    21.3.3, python-discovery 1.2.2 → 1.3.1 (transitive).
+  - Frontend: vite 8.0.12 → 8.0.13, dompurify 3.4.2 → 3.4.3,
+    lucide-react 1.14.0 → 1.16.0, react-router-dom 7.15.0 →
+    7.15.1, @types/node 24.12.2 → 24.12.4. Lockfile-only
+    moves (no manifest churn).
+  - Deferred per existing backlog: elevenlabs 2.x
+    (`ELEVENLABS-SDK-V2-MIGRATION-01`), mypy 2.x
+    (`MYPY-V2-MIGRATION-01`), click 8.3 (`CLICK-V8-3-AWAIT-GTTS-01`),
+    python-multipart 0.0.28 (paired-plugin-bump), TipTap 3.x
+    (`DEP-02`), @types/node 25 + @vitejs/plugin-react 6
+    (cascading lessons-learned: tsconfig `lib` alignment
+    + Vite/Vitest review).
 
 ## [0.32.0] - 2026-05-14
 
