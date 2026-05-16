@@ -38,8 +38,13 @@ vi.mock("../../utils/notify", () => ({
     },
 }))
 
-const {mockFromArticles} = vi.hoisted(() => ({
+const {mockFromArticles, mockListAuthors} = vi.hoisted(() => ({
     mockFromArticles: vi.fn(),
+    // Bug 8 Phase 2: api.authors.list is called once on wizard mount
+    // to fetch the global Authors-Database for the Step-2 datalist.
+    // Default returns [] so existing tests behave as before; per-test
+    // overrides land via ``mockListAuthors.mockResolvedValueOnce(...)``.
+    mockListAuthors: vi.fn(),
 }))
 
 vi.mock("../../api/client", async () => {
@@ -56,6 +61,10 @@ vi.mock("../../api/client", async () => {
             books: {
                 ...actual.api.books,
                 fromArticles: mockFromArticles,
+            },
+            authors: {
+                ...actual.api.authors,
+                list: mockListAuthors,
             },
         },
     }
@@ -119,6 +128,11 @@ const single: Article[] = [
 
 beforeEach(() => {
     mockFromArticles.mockReset()
+    mockListAuthors.mockReset()
+    // Default: no global Authors-DB rows. Per-test overrides via
+    // ``mockListAuthors.mockResolvedValueOnce(...)`` seed concrete
+    // suggestion fixtures.
+    mockListAuthors.mockResolvedValue([])
 })
 
 // --- helpers -------------------------------------------------------------
@@ -563,5 +577,245 @@ describe("ConvertToBookWizard submit", () => {
         expect(
             screen.getByTestId("convert-to-book-wizard-selection-list"),
         ).toBeTruthy()
+    })
+})
+
+// ---------------------------------------------------------------------------
+// Bug 8 Phase 2: author datalist + pre-fill behaviour
+// ---------------------------------------------------------------------------
+
+describe("ConvertToBookWizard author datalist (Bug 8 Phase 2)", () => {
+    function advanceToMetadata() {
+        // Step 0 → Step 1 (metadata).
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-0-next"))
+    }
+
+    it("renders the datalist + author input on Step 1", () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        expect(
+            screen.getByTestId("convert-to-book-wizard-metadata-author"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("convert-to-book-wizard-author-datalist"),
+        ).toBeTruthy()
+    })
+
+    it("input carries the ``list`` attribute pointing at the datalist id", () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        expect(input.getAttribute("list")).toBe(
+            "convert-to-book-wizard-author-suggestions",
+        )
+    })
+
+    it("pre-fills author when every selected article shares the same author", async () => {
+        const shared: Article[] = [
+            makeArticle({id: "s1", author: "Asterios Raptis"}),
+            makeArticle({id: "s2", author: "Asterios Raptis"}),
+            makeArticle({id: "s3", author: "Asterios Raptis"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={shared}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        await waitFor(() => {
+            expect(input.value).toBe("Asterios Raptis")
+        })
+    })
+
+    it("pre-fills author from a single-article selection", async () => {
+        const solo: Article[] = [
+            makeArticle({id: "solo", title: "Solo", author: "Solo Writer"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={solo}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        await waitFor(() => {
+            expect(input.value).toBe("Solo Writer")
+        })
+    })
+
+    it("leaves author empty when the selected articles mix authors", async () => {
+        const mixed: Article[] = [
+            makeArticle({id: "m1", author: "Alice"}),
+            makeArticle({id: "m2", author: "Bob"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={mixed}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        expect(input.value).toBe("")
+    })
+
+    it("leaves author empty when any selected article has a null author", async () => {
+        const partial: Article[] = [
+            makeArticle({id: "p1", author: "Alice"}),
+            makeArticle({id: "p2", author: null}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={partial}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        expect(input.value).toBe("")
+    })
+
+    it("datalist surfaces every distinct author from selected articles", async () => {
+        const mixed: Article[] = [
+            makeArticle({id: "m1", author: "Alice"}),
+            makeArticle({id: "m2", author: "Bob"}),
+            makeArticle({id: "m3", author: "Charlie"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={mixed}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const datalist = screen.getByTestId(
+            "convert-to-book-wizard-author-datalist",
+        )
+        const optionValues = Array.from(
+            datalist.querySelectorAll("option"),
+        ).map((o) => (o as HTMLOptionElement).value)
+        expect(optionValues).toEqual(["Alice", "Bob", "Charlie"])
+    })
+
+    it("datalist surfaces both article-authors and global-DB authors", async () => {
+        mockListAuthors.mockResolvedValue([
+            {
+                id: "db-1",
+                name: "DB Writer",
+                slug: "db-writer",
+                bio: null,
+                created_at: "2024-01-01T00:00:00Z",
+                updated_at: "2024-01-01T00:00:00Z",
+            },
+        ])
+        const arts: Article[] = [
+            makeArticle({id: "a1", author: "Article Author"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={arts}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        await waitFor(() => {
+            const datalist = screen.getByTestId(
+                "convert-to-book-wizard-author-datalist",
+            )
+            const optionValues = Array.from(
+                datalist.querySelectorAll("option"),
+            ).map((o) => (o as HTMLOptionElement).value)
+            expect(optionValues).toEqual(["Article Author", "DB Writer"])
+        })
+    })
+
+    it("free-text typing still works alongside the datalist", () => {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: "Custom Typed Name"}})
+        expect(input.value).toBe("Custom Typed Name")
+    })
+
+    it("typing custom text does NOT get overwritten by a subsequent shared-author detection", async () => {
+        // Render with mixed authors so sharedAuthor is null on mount.
+        const mixed: Article[] = [
+            makeArticle({id: "m1", author: "Alice"}),
+            makeArticle({id: "m2", author: "Bob"}),
+        ]
+        render(
+            <ConvertToBookWizard
+                open
+                articles={mixed}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        advanceToMetadata()
+        const input = screen.getByTestId(
+            "convert-to-book-wizard-metadata-author",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: "Custom Author"}})
+        // Even if a new sharedAuthor signal arrived later, the
+        // pre-fill effect must NOT overwrite non-empty user input.
+        expect(input.value).toBe("Custom Author")
     })
 })

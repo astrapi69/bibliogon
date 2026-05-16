@@ -57,6 +57,7 @@ import {CSS} from "@dnd-kit/utilities"
 import {
     Article,
     ApiError,
+    Author,
     BookDetail,
     BookFromArticlesCreate,
     BookFromArticlesSortStrategy,
@@ -65,6 +66,7 @@ import {
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/notify"
+import {computeAuthorSuggestions} from "../../utils/computeAuthorSuggestions"
 
 interface Props {
     open: boolean
@@ -247,6 +249,28 @@ export default function ConvertToBookWizard({
     const [validationError, setValidationError] =
         useState<BookFromArticlesValidationError | null>(null)
 
+    // Bug 8 Phase 2: global Authors-Database snapshot fetched on
+    // wizard mount. Powers the Step-2 author datalist alongside
+    // the author values pulled from the selected articles. Silent
+    // fallback on fetch error — the datalist still works from
+    // article authors alone, and the input is always free-text.
+    const [globalAuthors, setGlobalAuthors] = useState<Author[]>([])
+    useEffect(() => {
+        if (!open) return
+        let cancelled = false
+        api.authors
+            .list()
+            .then((rows) => {
+                if (!cancelled) setGlobalAuthors(rows)
+            })
+            .catch(() => {
+                /* non-critical; datalist degrades to article-only */
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [open])
+
     // Focus management on step transitions (WARN-A2). On every change to
     // ``step``, focus the first interactive element inside the step
     // container so keyboard users land on something actionable without
@@ -291,16 +315,59 @@ export default function ConvertToBookWizard({
         return [...values][0]
     }, [selectedArticles])
 
+    // Bug 8 Phase 2: shared-author detection. If every selected
+    // article carries the SAME author (trim+case-insensitive
+    // compare), pre-fill the wizard's author field with that
+    // value. If the selection mixes authors or any row has an
+    // empty author, leave the field blank — the datalist still
+    // surfaces every distinct value as a suggestion.
+    const sharedAuthor = useMemo(() => {
+        if (selectedArticles.length === 0) return null
+        const trimmed = selectedArticles.map((a) => (a.author ?? "").trim())
+        if (trimmed.some((v) => v === "")) return null
+        const keys = new Set(trimmed.map((v) => v.toLowerCase()))
+        if (keys.size !== 1) return null
+        return trimmed[0]
+    }, [selectedArticles])
+
+    // Bug 8 Phase 2: union of article-authors + global Authors-DB
+    // names, deduped + ordered (article authors first). Powers the
+    // ``<datalist>`` attached to the Step-2 author input.
+    const authorSuggestions = useMemo(
+        () => computeAuthorSuggestions(selectedArticles, globalAuthors),
+        [selectedArticles, globalAuthors],
+    )
+
+    // Bug 8 Phase 2: pre-fill author state when (a) the wizard
+    // opens, OR (b) the selection narrows such that all remaining
+    // articles share a single author — but ONLY when the user
+    // hasn't already typed something. The empty-author guard
+    // protects user input: once the user has typed, ``sharedAuthor``
+    // changes (e.g. they go back to Step 0 + change selection) do
+    // NOT overwrite their value. Clearing the field re-arms the
+    // pre-fill on the next selection change.
+    useEffect(() => {
+        if (sharedAuthor && author === "") {
+            setAuthor(sharedAuthor)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sharedAuthor])
+
     const isSingleArticle = selectedArticles.length === 1
     const singleArticle = isSingleArticle ? selectedArticles[0] : null
 
     // Auto-populate metadata defaults on entering Step 1 ---------------
     // We compute defaults derived from the current selection but never
     // overwrite user input. Single-article subtitle / cover_image are
-    // initialised here per Q13/Q15.
+    // initialised here per Q13/Q15. ``sharedAuthor`` is initialised
+    // here per Bug 8 Phase 2 D6 — the same "single-value default"
+    // shape applied to author, with the multi-article case
+    // generalised (any number of articles sharing the same author
+    // triggers pre-fill, not just N=1).
     const subtitleDefault = singleArticle?.subtitle ?? ""
     const coverImageDefault = singleArticle?.featured_image_url ?? ""
     const seriesDefault = sharedSeries ?? ""
+    const authorDefault = sharedAuthor ?? ""
 
     // dnd-kit sensors --------------------------------------------------
 
@@ -672,15 +739,40 @@ export default function ConvertToBookWizard({
                 )}
             </div>
             <div className="field">
-                <label className="label">
+                <label
+                    className="label"
+                    htmlFor="convert-to-book-wizard-metadata-author"
+                >
                     {t("ui.convert_to_book.metadata_author", "Autor")} *
                 </label>
                 <input
+                    id="convert-to-book-wizard-metadata-author"
                     className="input"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
+                    list="convert-to-book-wizard-author-suggestions"
+                    autoComplete="off"
                     data-testid="convert-to-book-wizard-metadata-author"
                 />
+                {/* Bug 8 Phase 2: datalist powered by
+                    computeAuthorSuggestions(selectedArticles,
+                    globalAuthors). Empty list still renders so a
+                    browser that respects ``list`` attaches an empty
+                    dropdown rather than ignoring the attribute — the
+                    test surface is consistent regardless of
+                    suggestion count. */}
+                <datalist
+                    id="convert-to-book-wizard-author-suggestions"
+                    data-testid="convert-to-book-wizard-author-datalist"
+                >
+                    {authorSuggestions.map((name) => (
+                        <option
+                            key={name}
+                            value={name}
+                            data-testid={`convert-to-book-wizard-author-suggestion-${name}`}
+                        />
+                    ))}
+                </datalist>
                 {author.trim() === "" && (
                     <small style={styles.fieldError}>
                         {t(
