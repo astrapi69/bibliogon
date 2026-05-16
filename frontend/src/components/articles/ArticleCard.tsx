@@ -137,10 +137,7 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
                                         data-testid={`article-card-menu-delete-${article.id}`}
-                                        onSelect={(e) => {
-                                            e.preventDefault();
-                                            onDelete();
-                                        }}
+                                        onSelect={() => onDelete()}
                                     >
                                         <Trash2 size={14} />{" "}
                                         {t("ui.articles.move_to_trash", "In den Papierkorb")}
@@ -151,10 +148,7 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                                             <DropdownMenu.Item
                                                 className="hamburger-menu-item"
                                                 data-testid={`article-card-menu-delete-permanent-${article.id}`}
-                                                onSelect={(e) => {
-                                                    e.preventDefault();
-                                                    onDeletePermanent();
-                                                }}
+                                                onSelect={() => onDeletePermanent()}
                                                 style={{ color: "var(--danger)" }}
                                             >
                                                 <AlertTriangle size={14} />{" "}

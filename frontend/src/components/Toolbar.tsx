@@ -416,10 +416,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                                 <DropdownMenu.Item
                                     className="hamburger-menu-item"
                                     data-testid="toolbar-copy-markdown-item"
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        void handleCopy("markdown");
-                                    }}
+                                    onSelect={() => void handleCopy("markdown")}
                                 >
                                     {t(
                                         "ui.toolbar.copy_as_markdown",
@@ -429,10 +426,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                                 <DropdownMenu.Item
                                     className="hamburger-menu-item"
                                     data-testid="toolbar-copy-plain-item"
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        void handleCopy("plain");
-                                    }}
+                                    onSelect={() => void handleCopy("plain")}
                                 >
                                     {t(
                                         "ui.toolbar.copy_as_plain",

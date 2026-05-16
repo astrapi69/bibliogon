@@ -500,7 +500,7 @@ export default function Dashboard() {
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setShowTrash(!showTrash)}>
                                         <Trash2 size={16}/> {t("ui.dashboard.trash", "Papierkorb")} {trash.length > 0 && `(${trash.length})`}
                                     </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={(e) => { e.preventDefault(); toggleTheme(); }}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => toggleTheme()}>
                                         {theme === "dark"
                                             ? <><Sun size={16}/> {t("ui.dashboard.light_mode", "Light Mode")}</>
                                             : <><Moon size={16}/> {t("ui.dashboard.dark_mode", "Dark Mode")}</>}

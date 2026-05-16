@@ -602,10 +602,7 @@ export default function ArticleEditor() {
                             <DropdownMenu.Item
                                 className="hamburger-menu-item"
                                 data-testid="article-editor-menu-reclassify"
-                                onSelect={(e) => {
-                                    e.preventDefault();
-                                    void handleReclassifyAsComment();
-                                }}
+                                onSelect={() => void handleReclassifyAsComment()}
                             >
                                 <MessageSquare size={14} />{" "}
                                 {t(

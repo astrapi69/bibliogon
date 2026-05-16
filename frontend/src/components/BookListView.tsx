@@ -202,10 +202,7 @@ function BookListRow({
                             <DropdownMenu.Item
                                 className="hamburger-menu-item"
                                 data-testid={`book-list-row-menu-delete-${book.id}`}
-                                onSelect={(e) => {
-                                    e.preventDefault();
-                                    onDelete();
-                                }}
+                                onSelect={() => onDelete()}
                             >
                                 <Trash2 size={14} /> {t("ui.dashboard.move_to_trash", "In den Papierkorb")}
                             </DropdownMenu.Item>
@@ -215,10 +212,7 @@ function BookListRow({
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
                                         data-testid={`book-list-row-menu-delete-permanent-${book.id}`}
-                                        onSelect={(e) => {
-                                            e.preventDefault();
-                                            onDeletePermanent();
-                                        }}
+                                        onSelect={() => onDeletePermanent()}
                                         style={{ color: "var(--danger)" }}
                                     >
                                         <AlertTriangle size={14} />{" "}
