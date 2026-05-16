@@ -2693,3 +2693,121 @@ action bars, settings tabs):
 - The two rules together cover the "namespace your testids +
   exercise them positively + don't overmatch with prefix
   selectors" trifecta.
+
+## Menu-Dialog Lifecycle: do not `preventDefault` inside `onSelect`
+
+Radix `DropdownMenu.Item` (and the sibling `ContextMenu.Item`)
+auto-closes the surrounding menu on item-select by default —
+that's the desired UX. Calling `e.preventDefault()` inside the
+`onSelect` handler suppresses the close. If the handler then
+opens a dialog (AppDialog confirm, TypeToConfirmDialog, any
+Radix Dialog the parent controls imperatively), the dialog
+floats above a still-visible menu — overlapping UI, confused
+focus management, and a violation of the "one modal surface at
+a time" UX contract.
+
+### Rule
+
+A `DropdownMenu.Item`'s `onSelect` MUST NOT call
+`e.preventDefault()` when the handler triggers a dialog. The
+default close-on-select is what you want. Let Radix close the
+menu; THEN the dialog mounts against a clean stage.
+
+### Why this trap is easy to fall into
+
+Two common mental models lead developers to add the
+`preventDefault`:
+
+1. **"I want the menu to stay open while the dialog confirms."**
+   A reasonable instinct, but it's the wrong UX contract. Once
+   the user picks "Endgültig löschen", the menu's job is done —
+   the next decision happens in the dialog. Leaving the menu
+   visible behind the dialog adds visual noise and competes for
+   focus.
+2. **"I'm worried about double-fires or focus-bouncing."**
+   Radix handles that internally. The auto-close transition
+   precedes the imperative dialog open in your handler, so the
+   focus moves from menu trigger → dialog confirm button cleanly.
+
+### Positive precedent (the bulk-action bars)
+
+The Article / Book / Comment bulk-action bars (see
+`frontend/src/components/articles/ArticleBulkActionBar.tsx`,
+`BookBulkActionBar.tsx`,
+`comments/CommentBulkActionBar.tsx`) all use the correct
+pattern:
+
+```tsx
+<DropdownMenu.Item onSelect={() => onBulkDeletePermanent()}>
+    Endgültig löschen
+</DropdownMenu.Item>
+```
+
+No event arg, no `preventDefault`. The dialog opens after the
+menu has finished closing. This pattern has been in production
+since 2026-04 and works correctly — it's the precedent every
+other surface should match.
+
+### Anti-pattern
+
+```tsx
+// WRONG — menu lingers around the dialog
+<DropdownMenu.Item onSelect={(e) => {
+    e.preventDefault();
+    onDeletePermanent();
+}}>
+    Endgültig löschen
+</DropdownMenu.Item>
+```
+
+Bug 6 (2026-05-16) shipped this anti-pattern across 6 surfaces:
+`ArticleCard`, `BookCard`, `BookListView` (the trash + permanent
+items), `pages/ArticleEditor` (reclassify), `Toolbar` (Copy
+split-button items), `pages/Dashboard` (theme toggle). The fix
+in commit `02fc66b` simplified each callsite to
+`onSelect={() => handler()}`.
+
+### Detection recipe (automatable)
+
+```bash
+grep -rnE 'onSelect.*e\.preventDefault|onSelect=\{?\(e\)' \
+  frontend/src/components/ frontend/src/pages/ \
+  --include='*.tsx' --include='*.ts'
+```
+
+Any match outside of a clearly-justified case (e.g. a Copy
+menu where the user *intentionally* wants the menu to stay
+open for a follow-up copy-action AND the handler does NOT
+trigger a dialog) is a Bug-6 regression candidate. Future
+audits can wire this grep into a pre-commit hook or a CI
+check; the fix is mechanical (remove `preventDefault`, drop
+the `(e) =>` wrapper) and the regression-pin lives in
+`e2e/smoke/menu-dialog-close.spec.ts`.
+
+### Exceptions
+
+The rule covers `onSelect` handlers that **trigger dialogs**.
+The same `preventDefault` call would be the *right* answer in
+narrowly-scoped cases where you legitimately need Radix to NOT
+auto-close — for example:
+
+- An "advanced options" sub-flow where the menu stays open
+  while a popover-style inline panel expands beneath the
+  item. (Not currently used in Bibliogon.)
+- A multi-step picker where each click reveals another tier
+  of the same menu. (Use Radix `DropdownMenu.Sub` instead —
+  the composed sub-menu has the right semantics natively.)
+
+If you're about to add `preventDefault` for any other reason,
+the answer is almost always that you want a different Radix
+primitive (Sub, Popover) — not a workaround.
+
+### Pairs with
+
+- "Radix DropdownMenu + happy-dom is brittle for Vitest" —
+  the reason this rule's regression pin lives in E2E
+  (`e2e/smoke/menu-dialog-close.spec.ts`), not Vitest.
+- "Split-button (default + chevron disclosure) for primary +
+  alternative outputs" — the Toolbar Copy split-button is one
+  of the Bug-6 surfaces; the fix preserves the split-button
+  pattern while removing the lingering-menu UX smell.
