@@ -126,6 +126,8 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     asin_paperback: null,
     asin_hardcover: null,
     keywords: ["fantasy", "adventure"],
+    categories: [],
+    bisac_codes: [],
     html_description: null,
     backpage_description: null,
     backpage_author_bio: null,
@@ -249,6 +251,10 @@ describe("BookMetadataEditor", () => {
     const savedData = onSave.mock.calls[0][0]
     expect(savedData.subtitle).toBe("A Subtitle")
     expect(savedData.keywords).toEqual(["fantasy", "adventure"])
+    // Bug 9: categories + bisac_codes also flow through onSave so
+    // the backend PATCH receives the full Marketing-tab state.
+    expect(savedData.categories).toEqual([])
+    expect(savedData.bisac_codes).toEqual([])
   })
 
   it("save shows success notification", async () => {
@@ -665,4 +671,96 @@ describe("AuthorAssetsPanel", () => {
       expect(screen.queryByTestId("author-asset-portrait.png")).not.toBeInTheDocument(),
     )
   })
+})
+
+// ---------------------------------------------------------------------------
+// Bug 9: Categories + BISAC fields in the Marketing tab
+// ---------------------------------------------------------------------------
+
+describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
+    const localOnSave = vi.fn().mockResolvedValue(undefined)
+    const localOnBack = vi.fn()
+
+    beforeEach(() => {
+        localOnSave.mockClear()
+        localOnBack.mockClear()
+    })
+
+    function renderBookMeta(overrides: Partial<BookDetail> = {}) {
+        return render(
+            <BookMetadataEditor
+                book={makeBook(overrides)}
+                onSave={localOnSave}
+                onBack={localOnBack}
+            />,
+        )
+    }
+
+    it("renders both fields in the Marketing tab", () => {
+        renderBookMeta()
+        // Radix Tabs.Content renders inactive panels in the DOM
+        // too, so testid queries find the marketing-tab children
+        // without needing to fire a click on the trigger first.
+        expect(screen.getByTestId("metadata-categories-field")).toBeTruthy()
+        expect(screen.getByTestId("metadata-bisac-field")).toBeTruthy()
+        expect(screen.getByTestId("category-input")).toBeTruthy()
+        expect(screen.getByTestId("bisac-input")).toBeTruthy()
+    })
+
+    it("seeds CategoryInput + BisacCodeInput from book.categories + book.bisac_codes", () => {
+        renderBookMeta({
+            categories: ["Fiction", "Fantasy"],
+            bisac_codes: ["FIC022020", "BIO000000"],
+        })
+        expect(screen.getByTestId("category-chip-0").textContent).toContain(
+            "Fiction",
+        )
+        expect(screen.getByTestId("category-chip-1").textContent).toContain(
+            "Fantasy",
+        )
+        expect(screen.getByTestId("bisac-chip-0").textContent).toContain(
+            "FIC022020",
+        )
+        expect(screen.getByTestId("bisac-chip-1").textContent).toContain(
+            "BIO000000",
+        )
+    })
+
+    it("adding a category and saving sends it through onSave", async () => {
+        renderBookMeta()
+        const input = screen.getByTestId(
+            "category-input-add",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: "Coming of Age"}})
+        fireEvent.click(screen.getByTestId("category-input-add-button"))
+        fireEvent.click(screen.getByTestId("metadata-save"))
+        await waitFor(() => expect(localOnSave).toHaveBeenCalled())
+        const savedData = localOnSave.mock.calls[0][0]
+        expect(savedData.categories).toEqual(["Coming of Age"])
+    })
+
+    it("adding a BISAC code (lowercased) saves it uppercased", async () => {
+        renderBookMeta()
+        const input = screen.getByTestId(
+            "bisac-input-add",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: "fic022020"}})
+        fireEvent.click(screen.getByTestId("bisac-input-add-button"))
+        fireEvent.click(screen.getByTestId("metadata-save"))
+        await waitFor(() => expect(localOnSave).toHaveBeenCalled())
+        const savedData = localOnSave.mock.calls[0][0]
+        expect(savedData.bisac_codes).toEqual(["FIC022020"])
+    })
+
+    it("pre-existing categories + bisac_codes survive a no-touch save", async () => {
+        renderBookMeta({
+            categories: ["Pre-existing Category"],
+            bisac_codes: ["FIC022020"],
+        })
+        fireEvent.click(screen.getByTestId("metadata-save"))
+        await waitFor(() => expect(localOnSave).toHaveBeenCalled())
+        const savedData = localOnSave.mock.calls[0][0]
+        expect(savedData.categories).toEqual(["Pre-existing Category"])
+        expect(savedData.bisac_codes).toEqual(["FIC022020"])
+    })
 })

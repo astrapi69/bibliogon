@@ -13,6 +13,8 @@ import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
+import CategoryInput from "./CategoryInput";
+import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "./CoverUpload";
 import AudiobookPlayer, {PlayerChapter} from "./AudiobookPlayer";
 import * as Tabs from "@radix-ui/react-tabs";
@@ -39,6 +41,10 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const {t} = useI18n();
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [keywords, setKeywords] = useState<string[]>([]);
+    // Bug 9: Books-only subject categorisation. Pair of free-text +
+    // format-validated chip lists in the Marketing tab.
+    const [categories, setCategories] = useState<string[]>([]);
+    const [bisacCodes, setBisacCodes] = useState<string[]>([]);
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -76,6 +82,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             audiobook_filename: book.audiobook_filename || "",
         });
         setKeywords(Array.isArray(book.keywords) ? book.keywords : []);
+        setCategories(Array.isArray(book.categories) ? book.categories : []);
+        setBisacCodes(Array.isArray(book.bisac_codes) ? book.bisac_codes : []);
         setAudiobookOverwrite(Boolean(book.audiobook_overwrite_existing));
         setAudiobookSkipTypes(
             Array.isArray(book.audiobook_skip_chapter_types)
@@ -94,6 +102,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 data[key] = value || null;
             }
             data.keywords = keywords;
+            data.categories = categories;
+            data.bisac_codes = bisacCodes;
             data.audiobook_overwrite_existing = audiobookOverwrite;
             data.audiobook_skip_chapter_types = audiobookSkipTypes;
             await onSave(data);
@@ -270,7 +280,15 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     </div>
                 </Tabs.Content>
 
-                <Tabs.Content value="marketing">
+                {/* ``forceMount`` keeps the Marketing tab's children in the
+                    DOM even when inactive so happy-dom-based Vitests can
+                    query the Bug-9 Categories + BISAC chip inputs without
+                    fighting Radix's default mount-on-activate behaviour
+                    (see "Radix DropdownMenu + happy-dom is brittle"
+                    lessons-learned entry — same family of issue).
+                    Real-user visibility still gated by ``data-state``
+                    + ``hidden`` attributes Radix sets automatically. */}
+                <Tabs.Content value="marketing" forceMount>
                     <div className={styles.tabContent}>
                         {book.ai_tokens_used > 0 && (
                             <div style={{
@@ -307,6 +325,51 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                                 )}
                             </div>
                             <KeywordInput keywords={keywords} onChange={setKeywords}/>
+                        </div>
+                        {/* Bug 9: Books-only subject categorisation. Free-
+                            text categories + format-validated BISAC codes.
+                            Articles deliberately do NOT get these fields —
+                            see lessons-learned "Intentional asymmetry"
+                            entry for the design rationale. */}
+                        <div className="field" data-testid="metadata-categories-field">
+                            <label className="label">
+                                {t("ui.metadata.categories", "Kategorien")}
+                            </label>
+                            <small style={{
+                                display: "block",
+                                color: "var(--text-muted, #6b7280)",
+                                marginBottom: 4,
+                                fontSize: "0.75rem",
+                            }}>
+                                {t(
+                                    "ui.metadata.categories_hint",
+                                    "KDP-Stil-Kategorienamen. Frei wählbar; jede Plattform hat ihre eigene Taxonomie.",
+                                )}
+                            </small>
+                            <CategoryInput
+                                categories={categories}
+                                onChange={setCategories}
+                            />
+                        </div>
+                        <div className="field" data-testid="metadata-bisac-field">
+                            <label className="label">
+                                {t("ui.metadata.bisac_codes", "BISAC-Codes")}
+                            </label>
+                            <small style={{
+                                display: "block",
+                                color: "var(--text-muted, #6b7280)",
+                                marginBottom: 4,
+                                fontSize: "0.75rem",
+                            }}>
+                                {t(
+                                    "ui.metadata.bisac_hint",
+                                    "Branchen-Standard-Subject-Codes (KDP empfiehlt ≤ 3 Codes).",
+                                )}
+                            </small>
+                            <BisacCodeInput
+                                codes={bisacCodes}
+                                onChange={setBisacCodes}
+                            />
                         </div>
                         <HtmlFieldWithPreview
                             label={t("ui.metadata.html_description", "Buch-Beschreibung (HTML für Amazon)")}
