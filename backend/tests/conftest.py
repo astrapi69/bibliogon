@@ -119,7 +119,14 @@ if "BIBLIOGON_DATA_DIR" not in os.environ:
 if "MUTANT_UNDER_TEST" in os.environ:
     sys.setrecursionlimit(15000)
 else:
-    sys.setrecursionlimit(5000)
+    # 5000 -> 7500 bump to absorb test_pages_routes.py (VB-PHASE4
+    # Session 2). The 5000 ceiling was set when the suite hovered
+    # around 41 modules with TestClient lifespan-chained startup;
+    # adding the pages-routes test pushed the chain past the limit
+    # and surfaced as RecursionError in downstream modules
+    # (test_medium_import_*, test_translate_article.py, etc) whose
+    # tests individually pass in isolation.
+    sys.setrecursionlimit(7500)
 
 import pytest  # noqa: E402
 
