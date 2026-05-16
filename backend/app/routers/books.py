@@ -1,9 +1,10 @@
 import json
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import yaml
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -584,12 +585,36 @@ def get_book(book_id: str, include_content: bool = True, db: Session = Depends(g
     return book
 
 
+_IMMUTABLE_BOOK_FIELDS = ("book_type",)
+
+
 @router.patch("/{book_id}", response_model=BookOut)
-def update_book(book_id: str, payload: BookUpdate, db: Session = Depends(get_db)):
+def update_book(
+    book_id: str,
+    payload: dict[str, Any] = Body(...),
+    db: Session = Depends(get_db),
+):
+    # Phase-4 immutability guard. book_type is set at book creation
+    # and never changes. The BookUpdate Pydantic schema deliberately
+    # omits it, so Pydantic's default extra='ignore' would silently
+    # drop it. A loud 400 instead so callers learn the rule rather
+    # than being puzzled by missing effects.
+    forbidden = [key for key in _IMMUTABLE_BOOK_FIELDS if key in payload]
+    if forbidden:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Fields {forbidden} are immutable after book creation. "
+                "Books cannot change book_type; create a new book of the "
+                "desired type instead."
+            ),
+        )
+
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    update_data = payload.model_dump(exclude_unset=True)
+    update = BookUpdate.model_validate(payload)
+    update_data = update.model_dump(exclude_unset=True)
     if "author" in update_data:
         update_data["author"] = _validate_author(
             update_data["author"], _allow_books_without_author()
