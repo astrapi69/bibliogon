@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.33.0
-Open tasks: 46 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 47 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -281,6 +281,28 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **RENAME-PLUGIN-KINDERBUCH-TO-VISUAL-BOOKS-01** (P5): rename
+  `bibliogon-plugin-kinderbuch` to `bibliogon-plugin-visual-books`
+  once Comic + Graphic-Novel sub-types have substantive volume
+  in the codebase and the German-only plugin name has become a
+  discoverability blocker.
+  Trigger: 3+ Comic books authored, OR a contributor reports
+  confusion about the plugin name covering Comics, OR the plugin
+  ships its own user-visible UI strings beyond the current
+  template list (where the German name leaks into the UI).
+  Scope: rename plugin directory + package + entry-point +
+  config YAML + path-dep in backend pyproject + all routes
+  (`/api/kinderbuch/*` -> `/api/visual-books/*`) + all i18n
+  keys + the route prefix used by Bibliogon's plugin loader.
+  Cost: disruptive; existing routes, config, and 8 tests all
+  rename in lock-step.
+  Deferred reason: plugin rename is breaking-change class for
+  external integrations (third-party plugin authors depending on
+  hookspecs that route through the kinderbuch plugin). v1 keeps
+  the name and the plugin handles every `visual_book` sub-type
+  generically; the rename is purely a discoverability fix that
+  doesn't change behaviour.
 
 - **CONVERT-TO-BOOK-REVERSE-LINK-01** (P5): restore the
   `preserve_article_id_metadata` setting that Phase 1 dropped
