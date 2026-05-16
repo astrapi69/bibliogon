@@ -2811,3 +2811,79 @@ primitive (Sub, Popover) — not a workaround.
   alternative outputs" — the Toolbar Copy split-button is one
   of the Bug-6 surfaces; the fix preserves the split-button
   pattern while removing the lingering-menu UX smell.
+
+## New-hook + new-mock-key contract drift in EXISTING test files
+
+When a feature introduces a new hook (or new API client method,
+or new behavior that depends on a mocked API), the new hook's
+data contract is fresh — but the EXISTING test files that mock
+that API are not automatically aware of it. If the existing mocks
+return a response shape that doesn't include the new key/field
+the new hook reads, the hook silently falls back to its hardcoded
+default and consumer tests in those existing files assert against
+the wrong state.
+
+### Concrete incident
+
+Bug 3 (2026-05-16, commit `5767289`) shipped a new
+`useTrashViewMode` hook that reads
+`ui.dashboard.articles_trash_view` from the mocked
+`api.settings.getApp()` response. The companion test commit
+(`8cf6ed0`) added an "AD-Trash view-mode default" test inside
+the EXISTING `ArticleList.test.tsx`, but the existing
+`vi.mock("../api/client", ...)` block was returning only
+`{articles_view: "list"}`. The new hook looked for
+`articles_trash_view`, found nothing, kept its hardcoded
+`"grid"` initial state, and the test's "list visible by default"
+assertion failed. The red was invisible at commit time of
+`8cf6ed0` (we don't know whether the test author ran the full
+suite then) and stayed red on `main` for 24+ hours until the
+follow-up session's `make test` surfaced it. Fix (Bug 7,
+2026-05-16, commit `5728e71`) extended the mock to include
+`articles_trash_view: "list"`.
+
+### Rule
+
+When introducing a new hook or new API consumer that reads from
+a key of an already-mocked API response, do BOTH of these in
+the same commit:
+
+1. **Grep every test file that mocks the same API** and verify
+   the mock's return value includes the new key. Recipe:
+
+   ```bash
+   grep -rn 'vi\.mock.*api/client\|getApp:\s*vi\.fn' \
+     frontend/src --include='*.test.ts*' \
+     --include='*.test.tsx'
+   ```
+
+   Or, scoped to the specific API method:
+
+   ```bash
+   grep -rn '<METHOD_NAME>:\s*vi\.fn\|<METHOD_NAME>(' \
+     frontend/src --include='*.test.*'
+   ```
+
+2. **Run the FULL `make test` before commit-time green-claim**,
+   not just the targeted file you just wrote. A new hook
+   transitively touches every file whose consumers render it;
+   targeted-only verification misses cross-file failures.
+
+### Why this trap is easy
+
+The new test the author writes for the new hook is green —
+they mock what the new hook reads. But the *existing* test
+file (the one that's been working for months) keeps its old
+mock. The author often doesn't think to revisit it because
+"that test doesn't touch the new feature." It does, transitively,
+via the shared component (here, the `ArticleList` page renders
+both `useViewMode` and the new `useTrashViewMode` simultaneously).
+
+### Pairs with
+
+- The CLAUDE.md "make test must stay green after every change"
+  rule is the parent discipline; this rule is the concrete
+  failure mode that violates it most quietly.
+- "End-to-end behavior tests are not 'kwarg passes through'
+  tests" — both rules pin "test the OBSERVABLE OUTPUT through
+  the full component tree", not just the new code's inputs.
