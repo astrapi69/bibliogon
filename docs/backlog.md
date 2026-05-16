@@ -301,6 +301,34 @@ store.
   Filed by Hotfix-Session 2026-05-16 evening (after Bug-4 ship)
   per user instruction.
 
+- **AUTHOR-DATALIST-EXTEND-EDITORS-01** (P3): extend the Bug 8
+  Phase 2 Wizard Author-Dropdown pattern (``<input>`` +
+  ``<datalist>`` + "Add to Authors-Database" checkbox) to the
+  remaining author input surfaces:
+  - ``ArticleEditor.tsx`` author field
+  - ``BookEditor.tsx`` author field
+  - ``BookEditor.tsx`` backpage author-bio sidebar
+  Trigger: user-feedback that one of those surfaces is friction
+  to type into OR positive validation that the Wizard Author-
+  Dropdown pattern works well in production. Bug 8 Phase 2
+  deliberately ships the pattern on the Wizard ONLY (per D8 —
+  the Wizard is the high-leverage surface because multi-article
+  selection surfaces multiple authors at once; single-record
+  editors get the pattern later).
+  Scope: ~4-5 commits. Mirror the Wizard's
+  ``computeAuthorSuggestions`` helper for each surface (the
+  helper itself stays reusable; only the inputs change — for
+  the Article/Book editor cases there's no multi-row selection,
+  so the suggestion pool is just the global Authors-DB).
+  Re-use the same Add-to-Authors-DB checkbox shape + the same
+  ``api.authors.create`` call shape. Vitest + E2E for each
+  surface.
+  Defer reason: scope-control. The Wizard pattern is novel
+  enough that shipping it to one surface and letting Aster
+  validate the UX is the right next step before duplicating it
+  across three more editor surfaces. Filed during the Bug 8
+  Phase 2 close-out.
+
 - **KDP-CATEGORIES-CATALOG-SYNC-01** (P3, IMPROVEMENT): sync the
   KDP plugin's 25-category catalog in
   ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` with the
