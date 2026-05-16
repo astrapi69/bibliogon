@@ -931,3 +931,42 @@ class PagesReorder(BaseModel):
     """
 
     page_ids: list[str]
+
+
+# --- Author schemas (Bug 8 Phase 1) ---
+
+
+class AuthorCreate(BaseModel):
+    """Payload for ``POST /api/authors``.
+
+    ``slug`` is server-generated from ``name`` (lowercase +
+    hyphenated, German umlauts transliterated, NFKD-fold for
+    other diacritics). On collision the router appends a
+    numeric suffix.
+    """
+
+    name: str = Field(min_length=1, max_length=300)
+    bio: str | None = None
+
+
+class AuthorUpdate(BaseModel):
+    """Payload for ``PATCH /api/authors/{id}``.
+
+    ``slug`` is immutable after create — name edits do NOT
+    regenerate it. Keeping the slug stable protects any future
+    URL routing that points at ``/authors/{slug}``.
+    """
+
+    name: str | None = Field(default=None, min_length=1, max_length=300)
+    bio: str | None = None
+
+
+class AuthorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    slug: str
+    bio: str | None
+    created_at: datetime
+    updated_at: datetime
