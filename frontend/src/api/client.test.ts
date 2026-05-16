@@ -519,6 +519,59 @@ describe("api.comments.delete", () => {
     });
 });
 
+// --- Bug 10: trash-lifecycle methods on api.comments ---
+
+describe("api.comments trash-lifecycle", () => {
+    it("listTrashed fetches /api/comments/trash/list", async () => {
+        mockFetch.mockReturnValue(jsonResponse([{id: "c1", body_text: "trashed"}]));
+        const rows = await api.comments.listTrashed();
+        expect(rows).toHaveLength(1);
+        expect(rows[0].id).toBe("c1");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/trash/list",
+            expect.anything(),
+        );
+    });
+
+    it("restore issues POST /api/comments/trash/{id}/restore", async () => {
+        mockFetch.mockReturnValue(jsonResponse({id: "c1", body_text: "alive again"}));
+        const restored = await api.comments.restore("c1");
+        expect(restored.id).toBe("c1");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/trash/c1/restore",
+            expect.objectContaining({method: "POST"}),
+        );
+    });
+
+    it("permanentDelete issues DELETE /api/comments/trash/{id}", async () => {
+        mockFetch.mockReturnValue(emptyResponse(204));
+        await api.comments.permanentDelete("c1");
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/trash/c1",
+            expect.objectContaining({method: "DELETE"}),
+        );
+    });
+
+    it("emptyTrash issues DELETE /api/comments/trash/empty", async () => {
+        mockFetch.mockReturnValue(emptyResponse(204));
+        await api.comments.emptyTrash();
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/trash/empty",
+            expect.objectContaining({method: "DELETE"}),
+        );
+    });
+
+    it("restore propagates 404 as an ApiError", async () => {
+        mockFetch.mockReturnValue(errorResponse(404, "Comment not found in trash"));
+        await expect(api.comments.restore("missing")).rejects.toThrow();
+    });
+
+    it("permanentDelete propagates 404 on live (not-in-trash) row", async () => {
+        mockFetch.mockReturnValue(errorResponse(404, "Comment not found in trash"));
+        await expect(api.comments.permanentDelete("live-id")).rejects.toThrow();
+    });
+});
+
 // --- Authors (Bug 8 Phase 1) ---
 
 describe("api.authors", () => {

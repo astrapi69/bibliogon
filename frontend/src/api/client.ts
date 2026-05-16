@@ -1994,6 +1994,36 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify({ids, permanent}),
             }),
+
+        // --- Bug 10: trash-lifecycle methods ---
+
+        /** List every comment currently in the trash, newest-trashed
+         *  first. Mirror of ``articles.listTrash`` / ``books`` trash
+         *  list. Soft-deleted comments only — the active ``list``
+         *  endpoint filters them out by ``deleted_at IS NULL``. */
+        listTrashed: () => request<ArticleComment[]>("/comments/trash/list"),
+
+        /** Restore a trashed comment. Returns the restored row.
+         *  404 when the id is unknown OR not currently in trash
+         *  (protects multi-tab races where another tab restored
+         *  first). */
+        restore: (id: string) =>
+            request<ArticleComment>(`/comments/trash/${id}/restore`, {
+                method: "POST",
+            }),
+
+        /** Permanently remove one comment from the trash. 404 when
+         *  the id is not currently in trash — the caller MUST
+         *  soft-delete first via ``delete()``. No single-step
+         *  hard-delete-without-trash path exists by design. */
+        permanentDelete: (id: string) =>
+            request<void>(`/comments/trash/${id}`, {method: "DELETE"}),
+
+        /** Permanently delete every comment currently in trash.
+         *  Returns 204 even when the trash was already empty
+         *  (idempotent). */
+        emptyTrash: () =>
+            request<void>("/comments/trash/empty", {method: "DELETE"}),
     },
 
     authors: {
