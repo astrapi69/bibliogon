@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/kinderbuch", tags=["kinderbuch"])
@@ -21,38 +21,39 @@ class PagePreview(BaseModel):
     layout: str = "image-top-text-bottom"
 
 
+def _plugin_templates() -> list[dict[str, Any]]:
+    """Return the activated plugin's templates list.
+
+    Reads from the loaded plugin instance, which in turn reads from
+    backend/config/plugins/kinderbuch.yaml at activate-time. Raises
+    503 if the plugin manager is not initialised (typical in unit
+    tests that import routes directly).
+    """
+    try:
+        from app.main import manager  # type: ignore[import-not-found]
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Kinderbuch plugin manager not available.",
+        ) from e
+    plugin = manager.get_plugin("kinderbuch")
+    if plugin is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Kinderbuch plugin is not active.",
+        )
+    return plugin.templates
+
+
 @router.get("/templates", response_model=list[TemplateOut])
 def list_templates() -> list[dict[str, Any]]:
-    """List available children's book page templates."""
-    from .plugin import KinderbuchPlugin
-    # Templates are loaded from config
-    # In a real setup this would come from the activated plugin instance
-    return [
-        {
-            "id": "picture-top",
-            "label": {"de": "Bild oben", "en": "Picture top"},
-            "description": {"de": "Bild oben, Text unten", "en": "Image on top, text below"},
-            "layout": "image-top-text-bottom",
-        },
-        {
-            "id": "picture-left",
-            "label": {"de": "Bild links", "en": "Picture left"},
-            "description": {"de": "Bild links, Text rechts", "en": "Image left, text right"},
-            "layout": "image-left-text-right",
-        },
-        {
-            "id": "picture-full",
-            "label": {"de": "Ganzseitiges Bild", "en": "Full-page image"},
-            "description": {"de": "Bild ganzseitig mit Text-Overlay", "en": "Full-page image with text overlay"},
-            "layout": "image-full-text-overlay",
-        },
-        {
-            "id": "text-only",
-            "label": {"de": "Nur Text", "en": "Text only"},
-            "description": {"de": "Reiner Textinhalt", "en": "Text content only"},
-            "layout": "text-only",
-        },
-    ]
+    """List available children's book page templates.
+
+    Templates are loaded from backend/config/plugins/kinderbuch.yaml
+    at plugin-activate time. Returns the YAML's ``templates`` list
+    verbatim (each entry: id, label, description, layout).
+    """
+    return _plugin_templates()
 
 
 @router.post("/preview")
