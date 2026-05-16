@@ -255,6 +255,52 @@ store.
   until DE i18n stable + a native speaker is available per
   language for review.
 
+- **SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01** (P3, IMPROVEMENT):
+  Settings → "Allgemein" tab requires scroll to reach all
+  settings below the initial three Kacheln/cards. Should be
+  reorganized for better discoverability.
+
+  Recommended approach (CC decides at implementation time):
+  - Option B preferred: split "Allgemein" into multiple top-level
+    tabs (consistent with the existing tab pattern, avoids
+    tab-in-tab cognitive load).
+  - Option A acceptable: sub-tabs within "Allgemein" if Option B's
+    tab-bar becomes too wide.
+  - Option C fallback: cards-layout optimization only
+    (Collapsible-Sections, denser grid).
+
+  Scope:
+  - Audit current "Allgemein" tab structure (which settings are
+    grouped there).
+  - Decide grouping strategy: Erscheinung / Verhalten / Daten / etc.
+  - Implementation: extract relevant settings into separate tab
+    components OR sub-navigation.
+  - i18n: new tab labels in 8 languages.
+  - Tests: Vitest + E2E for navigation between new tabs.
+
+  Effort estimate: 4-6 commits (substantial Settings refactor).
+
+  Trigger: builds on the v0.33.0 Settings-monolith extraction work
+  shipped 2026-05-15 (archived: ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``,
+  ``SETTINGS-INLINE-TABS-EXTRACT-01``, both in
+  ``docs/roadmap-archive/2026-05.md``). Now that the per-tab
+  components exist (AppSettings / AiAssistantSettings /
+  TopicsSettings / PluginSettings / AuthorSettings), reorganization
+  sits cleanly on top — no extraction prerequisite remaining.
+  Trigger this item when a Settings-Polish-Session is convened OR a
+  user complaint about Settings scroll friction surfaces.
+
+  Defer reason:
+  - Not user-blocking (existing scroll works, just friction).
+  - Today's Sprint-Velocity is at the upper edge (23+ commits since
+    v0.33.0); this is the 8th surface-pattern instance manual
+    smoke-testing has surfaced.
+  - Bug 4 (Comments-Admin restructure) + Kinderbuch test-discipline
+    deliverables are this session's defined scope.
+
+  Filed by Hotfix-Session 2026-05-16 evening (after Bug-4 ship)
+  per user instruction.
+
 
 ---
 

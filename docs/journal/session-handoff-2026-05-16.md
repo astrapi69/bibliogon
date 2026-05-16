@@ -6,6 +6,26 @@ ran: Phase-4 Kinderbuch Session 2 (backend Pages-Foundation) +
 Hotfix Bugs 1-3 (Frontend UX). Both green; no carry-over
 technical debt.
 
+**UPDATE 2026-05-16 (late evening, post-Bug-4 close):** a
+follow-up Hotfix-Session shipped Bug 4 (Comments-Admin
+restructure) as a 7-commit atomic sequence: `6f9cd08` (backend
+bulk-delete endpoint) → `028b219` (api.comments.bulkDelete) →
+`c209a7a` (selection hook + bar) → `188d607` (selection +
+TypeToConfirmDialog wired into the section) → `e03d3a1`
+(CommentPreviewModal + click-row-to-open + JS truncation) →
+`758f852` (Bug 4c: Reclassify moved out of the list row into the
+modal only) → `1173397` (8-language i18n + Playwright E2E). 4
+backend pytest cases added (test_bulk_delete.py expanded), 17
+new Vitest cases added (useCommentSelection + CommentBulkActionBar
++ CommentPreviewModal + integration), 2 E2E specs touched
+(reclassify.spec.ts retrofitted; new
+comments-admin-bulk-delete.spec.ts). All comments-surface tests
+green: 13 pytest + 53 Vitest. Plus `SETTINGS-ALLGEMEIN-TAB-
+REORGANIZATION-01` (P3) filed in `docs/backlog.md` per Bug-5
+deferral. The Bug-4 section below describes work that has now
+SHIPPED — kept as historical reference for the next session's
+continuity.
+
 Full narrative: [chat-journal-session-2026-05-16.md](chat-journal-session-2026-05-16.md).
 
 This doc enumerates ONLY the work explicitly deferred to a fresh
@@ -227,3 +247,65 @@ one session was sustainable because Pre-Inspection STOP gates +
 atomic-green commits + test-discipline-per-fix held throughout.
 The disciplinary patterns are not overhead — they are the speed
 multiplier.
+
+---
+
+## Post-Bug-4 update (2026-05-16 late evening)
+
+### Bug 4 closed
+
+7-commit atomic sequence shipped between `c0b9c60` and `1173397`.
+See the top-of-file UPDATE block for hashes + counts. The Bug-4
+section above is now historical; treat it as the closed-work
+record.
+
+### Status correction (multi-tool re-sync)
+
+The mid-Bug-4 user prompt referenced three IDs as "P2-elevated"
+open items. All three are actually **archived (closed 2026-05-15)**:
+
+| ID | Status |
+|---|---|
+| `PLUGIN-SETTINGS-TESTID-COVERAGE-01` | Archived 2026-05-15 |
+| `SETTINGS-INLINE-TABS-EXTRACT-01` | Archived 2026-05-15 |
+| `ARTICLEFILTERBAR-EXTRACT-01` | Archived 2026-05-15 |
+
+References live in `docs/roadmap-archive/2026-05.md` and
+`docs/CHANGELOG.md` (the Settings monolith extraction work is
+recorded under v0.33.0 closure batch). The "Settings is now the
+surface with three concurrent backlog items" framing in the
+prompt was based on stale state. Applied correction:
+
+- Bug 5 backlog item (`SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01`)
+  filed standalone in P3, with the Trigger field rewritten to
+  reference the closed work as foundation rather than a
+  concurrent bundle. The bundle-note add to
+  `PLUGIN-SETTINGS-TESTID-COVERAGE-01` was dropped because
+  archived items are frozen.
+
+### New standing items for the next session
+
+- **Phase-4 Kinderbuch Session 2 test-discipline deliverables**
+  remain unwritten (smoke-test plan, bilingual manual guide,
+  12-area quality-check audit). Outlined in the original handoff
+  body above (sections 2 + 3); pair with whatever session
+  takes them on.
+- **`SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01`** (P3) — newly
+  filed in `docs/backlog.md`. Trigger: a Settings-Polish-Session
+  is convened OR a user complaint about Settings scroll friction
+  surfaces. Not user-blocking.
+- **Asymmetry tally**: Bug 4a confirmed as occurrence **#7** of
+  the Articles-vs-Books-parallel-surface-asymmetry pattern
+  (Comments-Admin as a third parallel surface to AD/BD bulk
+  capabilities, where the missing bulk-delete was the asymmetry).
+  No rule-text update needed; the existing "5 instances and
+  counting" framing absorbed the +2 already.
+
+### Pattern continuity (the speed multiplier still holds)
+
+The 7-commit Bug-4 sequence + the status correction + the Bug-5
+filing all happened inside one session because Pre-Inspection
+STOP gate + atomic-green commits + test-discipline-per-fix +
+explicit-status-correction-when-state-drifts each fired at the
+right moment. The discipline is not overhead — it is the speed
+multiplier. Keep applying it.
