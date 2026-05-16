@@ -11,7 +11,7 @@
 
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {FileText, Trash2} from "lucide-react";
+import {Trash2} from "lucide-react";
 
 import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
@@ -630,29 +630,12 @@ export default function CommentsAdminSection() {
                                     style={{padding: "6px", textAlign: "right", whiteSpace: "nowrap"}}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <button
-                                        type="button"
-                                        className="btn-icon"
-                                        data-testid={`comments-admin-reclassify-${row.id}`}
-                                        onClick={() => {
-                                            void handleReclassifyAsArticle(row);
-                                        }}
-                                        disabled={
-                                            pendingReclassify === row.id ||
-                                            pendingDelete === row.id
-                                        }
-                                        aria-label={t(
-                                            "ui.comments.admin.reclassify_action",
-                                            "Move to articles",
-                                        )}
-                                        title={t(
-                                            "ui.comments.admin.reclassify_action",
-                                            "Move to articles",
-                                        )}
-                                        style={{marginRight: 4}}
-                                    >
-                                        <FileText size={14} />
-                                    </button>
+                                    {/* Bug 4c: Reclassify lives ONLY in the
+                                        preview modal. The row keeps the
+                                        single-item delete button — bulk
+                                        delete is the menu in the bar; the
+                                        per-row Trash is the quick path for
+                                        a single removal without selecting. */}
                                     <button
                                         type="button"
                                         className="btn-icon"
@@ -660,10 +643,7 @@ export default function CommentsAdminSection() {
                                         onClick={() => {
                                             void handleDelete(row);
                                         }}
-                                        disabled={
-                                            pendingDelete === row.id ||
-                                            pendingReclassify === row.id
-                                        }
+                                        disabled={pendingDelete === row.id}
                                         aria-label={t(
                                             "ui.comments.admin.delete_action",
                                             "Delete comment",

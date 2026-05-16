@@ -432,21 +432,28 @@ describe("CommentsAdminSection delete flow", () => {
 
 
 // ---------------------------------------------------------------------------
-// v0.32.0 F2c: reclassify-as-article (Comment → Article)
+// v0.32.0 F2c → Bug 4c: reclassify-as-article migrated from row button
+// to the preview modal. The row no longer surfaces the action; tests
+// fire it through ``comment-preview-reclassify`` after opening the modal
+// via row click.
 // ---------------------------------------------------------------------------
 
-describe("CommentsAdminSection reclassify flow", () => {
-    it("renders a reclassify button per row", async () => {
+describe("CommentsAdminSection reclassify flow (via preview modal)", () => {
+    it("Bug 4c regression pin: the row does NOT render a reclassify button", async () => {
         listMock.mockResolvedValue([mkRow({id: "alpha"})]);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
-        expect(btn).toBeTruthy();
+        await screen.findByTestId("comments-admin-row-alpha");
+        expect(
+            screen.queryByTestId("comments-admin-reclassify-alpha"),
+        ).toBeNull();
     });
 
-    it("opens the confirm dialog when reclassify is clicked", async () => {
+    it("opens the confirm dialog when reclassify is clicked in the preview modal", async () => {
         listMock.mockResolvedValue([mkRow({id: "alpha"})]);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
+        const row = await screen.findByTestId("comments-admin-row-alpha");
+        fireEvent.click(row);
+        const btn = screen.getByTestId("comment-preview-reclassify");
         fireEvent.click(btn);
         await waitFor(() => {
             expect(confirmMock).toHaveBeenCalledTimes(1);
@@ -459,8 +466,9 @@ describe("CommentsAdminSection reclassify flow", () => {
         confirmMock.mockResolvedValueOnce(false);
         listMock.mockResolvedValue([mkRow({id: "alpha"})]);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
-        fireEvent.click(btn);
+        const row = await screen.findByTestId("comments-admin-row-alpha");
+        fireEvent.click(row);
+        fireEvent.click(screen.getByTestId("comment-preview-reclassify"));
         await waitFor(() => {
             expect(confirmMock).toHaveBeenCalledTimes(1);
         });
@@ -474,8 +482,8 @@ describe("CommentsAdminSection reclassify flow", () => {
             mkRow({id: "beta", body_text: "Second"}),
         ]);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
-        fireEvent.click(btn);
+        fireEvent.click(await screen.findByTestId("comments-admin-row-alpha"));
+        fireEvent.click(screen.getByTestId("comment-preview-reclassify"));
         await waitFor(() => {
             expect(reclassifyAsArticleMock).toHaveBeenCalledWith("alpha");
         });
@@ -486,6 +494,10 @@ describe("CommentsAdminSection reclassify flow", () => {
         expect(screen.getByTestId("comments-admin-row-beta")).toBeTruthy();
         // Success toast fired (the action-button variant).
         expect(notifyBulkAction).toHaveBeenCalledTimes(1);
+        // Modal closed (subject row no longer exists).
+        await waitFor(() => {
+            expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
+        });
     });
 
     it("the success toast's action callback navigates to the new article", async () => {
@@ -496,19 +508,17 @@ describe("CommentsAdminSection reclassify flow", () => {
             deleted_comment_id: "alpha",
         });
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
-        fireEvent.click(btn);
+        fireEvent.click(await screen.findByTestId("comments-admin-row-alpha"));
+        fireEvent.click(screen.getByTestId("comment-preview-reclassify"));
         await waitFor(() => {
             expect(notifyBulkAction).toHaveBeenCalledTimes(1);
         });
-        // bulkAction signature: (message, onAction, label)
         const args = notifyBulkAction.mock.calls[0] as [
             string,
             () => void,
             string,
         ];
         const onAction = args[1];
-        // Invoke the callback the toast button would call.
         onAction();
         expect(navigateMock).toHaveBeenCalledWith("/articles/new-article-id");
     });
@@ -517,8 +527,8 @@ describe("CommentsAdminSection reclassify flow", () => {
         reclassifyAsArticleMock.mockRejectedValueOnce(new Error("server boom"));
         listMock.mockResolvedValue([mkRow({id: "alpha"})]);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-alpha");
-        fireEvent.click(btn);
+        fireEvent.click(await screen.findByTestId("comments-admin-row-alpha"));
+        fireEvent.click(screen.getByTestId("comment-preview-reclassify"));
         await waitFor(() => {
             expect(notifyError).toHaveBeenCalledTimes(1);
         });
@@ -526,6 +536,8 @@ describe("CommentsAdminSection reclassify flow", () => {
         expect(screen.getByTestId("comments-admin-row-alpha")).toBeTruthy();
         // No success toast on failure.
         expect(notifyBulkAction).not.toHaveBeenCalled();
+        // Modal stays open on failure so the user can retry.
+        expect(screen.getByTestId("comment-preview-modal")).toBeTruthy();
     });
 });
 
@@ -679,11 +691,12 @@ describe("CommentsAdminSection preview modal + row truncation", () => {
         expect(screen.getByTestId("comment-bulk-action-bar")).toBeTruthy();
     });
 
-    it("clicking a per-row action button does NOT open the modal", async () => {
+    it("clicking the per-row delete button does NOT open the modal", async () => {
         listMock.mockResolvedValue([mkRow({id: "row-Z"})]);
-        confirmMock.mockResolvedValue(false); // cancel the confirm dialog
+        // Cancel the confirm dialog so the row isn't actually deleted.
+        confirmMock.mockResolvedValue(false);
         render(<CommentsAdminSection />);
-        const btn = await screen.findByTestId("comments-admin-reclassify-row-Z");
+        const btn = await screen.findByTestId("comments-admin-delete-row-Z");
         fireEvent.click(btn);
         // Modal must NOT have opened.
         expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
