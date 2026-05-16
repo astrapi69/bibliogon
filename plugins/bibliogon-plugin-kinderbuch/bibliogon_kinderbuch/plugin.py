@@ -22,8 +22,10 @@ class KinderbuchPlugin(BasePlugin):
         return [router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
+        # ``editor_extensions`` slot will be re-added in Session 3 when the
+        # frontend PageEditor lands. v1.0.0 previously declared a
+        # ``kinderbuch-page-layout`` slot that no frontend code consumed.
         return {
-            "editor_extensions": ["kinderbuch-page-layout"],
             "templates": getattr(self, "_templates", []),
             "settings": {
                 "image_position": getattr(self, "_settings", {}).get("image_position", "top"),
