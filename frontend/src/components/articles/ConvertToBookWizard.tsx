@@ -437,10 +437,11 @@ export default function ConvertToBookWizard({
                 )
                 setStep(0)
             } else if (err instanceof ApiError) {
-                notify.error(err.detail)
+                notify.error(err.detail, err)
             } else {
                 notify.error(
                     t("ui.convert_to_book.error_generic", "Konvertierung fehlgeschlagen"),
+                    err,
                 )
             }
         } finally {
