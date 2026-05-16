@@ -20,6 +20,8 @@ see also [`../smoke-end-of-day-2026-04-30.md`](../smoke-end-of-day-2026-04-30.md
 | 2026-04-30 | Inline-styles migration (T-01 Phase A + B) | [inline-styles-migration.md](./inline-styles-migration.md) |
 | 2026-04-30 | DONATE.md/DONATE-de.md rebrand | [phylax-rebrand.md](./phylax-rebrand.md) |
 | 2026-04-30 | Articles backup + import (manifest 2.0) | [articles-backup.md](./articles-backup.md) |
+| 2026-05-15 | Article-to-Book conversion (deterministic) | [article-to-book-conversion.md](./article-to-book-conversion.md) |
+| 2026-05-15 | Article-to-Book conversion (bilingual manual) | [article-to-book-conversion-manual.md](./article-to-book-conversion-manual.md) |
 
 ## Archived
 

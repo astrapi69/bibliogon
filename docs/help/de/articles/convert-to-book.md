@@ -59,3 +59,7 @@ Keine feste Grenze. Die Konvertierung ist ein einziger transaktionaler Datenbank
 
 **Was wird aus den Quellartikeln ins Buch übernommen?**
 Tags aller ausgewählten Artikel werden dedupliziert (Groß-/Kleinschreibung wird ignoriert) und in `Book.keywords` zusammengeführt. Teilen alle ausgewählten Artikel denselben `series`-Wert, wird dieser als `Book.series` vorbefüllt (in Schritt 1 überschreibbar). Andere Per-Artikel-Felder (canonical_url, excerpt, SEO-Meta) werden nicht aggregiert - sie gehören nur zu den Original-Artikeln.
+
+## Zum manuellen Testen dieses Features
+
+Wenn du die Konvertierung end-to-end manuell verifizieren möchtest (z.B. nach einem Upgrade oder vor einem Bug-Report), folge der [bilingualen manuellen Test-Anleitung](https://github.com/astrapi69/bibliogon/blob/main/docs/testing/smoke-tests/article-to-book-conversion-manual.md). Für die deterministische / CI-artige Checkliste siehe den [Smoke-Test-Plan](https://github.com/astrapi69/bibliogon/blob/main/docs/testing/smoke-tests/article-to-book-conversion.md). Beide Dateien liegen im Repo unter `docs/testing/smoke-tests/` (sie sind nicht Teil der In-App-Hilfe, nur des GitHub-Repos).

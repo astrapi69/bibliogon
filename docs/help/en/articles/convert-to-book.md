@@ -59,3 +59,7 @@ No fixed cap. The conversion is one transactional database write per book + N ch
 
 **What gets aggregated from the source articles into the book?**
 Tags from all selected articles are deduplicated (case-insensitive) and merged into `Book.keywords`. If all selected articles share the same `series` value, that value is pre-filled as `Book.series` (you can override it in Step 1). Other per-article fields (canonical_url, excerpt, SEO meta) are not aggregated - they belong to the original articles only.
+
+## For testing this feature
+
+If you want to manually verify the conversion end-to-end (e.g. after upgrading or before reporting a bug), follow the [bilingual manual test guide](https://github.com/astrapi69/bibliogon/blob/main/docs/testing/smoke-tests/article-to-book-conversion-manual.md). For the deterministic / CI-style checklist, see the [smoke-test plan](https://github.com/astrapi69/bibliogon/blob/main/docs/testing/smoke-tests/article-to-book-conversion.md). Both files live in the repo under `docs/testing/smoke-tests/` (they are not part of the in-app help site, only of the GitHub repo).
