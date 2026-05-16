@@ -96,7 +96,7 @@ export default function CategoryInput({categories, onChange, suggestions = []}: 
                                 onClick={() => removeAt(i)}
                                 data-testid={`category-chip-${i}-delete`}
                                 aria-label={t(
-                                    "ui.book_meta.category_remove",
+                                    "ui.metadata.category_remove",
                                     "Kategorie entfernen",
                                 )}
                                 style={{
@@ -123,7 +123,7 @@ export default function CategoryInput({categories, onChange, suggestions = []}: 
                     onKeyDown={handleKeyDown}
                     list={suggestions.length > 0 ? datalistId : undefined}
                     placeholder={t(
-                        "ui.book_meta.category_placeholder",
+                        "ui.metadata.category_placeholder",
                         "Kategorie hinzufügen…",
                     )}
                     data-testid="category-input-add"

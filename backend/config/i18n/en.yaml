@@ -1026,6 +1026,20 @@ ui:
     publisher: "Publisher"
     publisher_city: "City"
     keywords: "Keywords"
+    # Bug 9: Books-only subject categorisation. Articles use Topic
+    # + Tags per design (see lessons-learned "Intentional asymmetry"
+    # entry). These keys are Books-only by intent.
+    categories: "Categories"
+    categories_hint: "KDP-style category names. Free-text; every retailer has its own taxonomy."
+    bisac_codes: "BISAC Codes"
+    bisac_hint: "Industry-standard subject codes (KDP recommends ≤ 3)."
+    # Chip-input internals (CategoryInput + BisacCodeInput).
+    category_remove: "Remove category"
+    category_placeholder: "Add category…"
+    bisac_remove: "Remove BISAC code"
+    bisac_placeholder: "e.g. FIC022020"
+    bisac_format_error: "Invalid format. Expected: 3 uppercase letters + 6 digits (e.g. FIC022020)."
+    bisac_helper: "Complete BISAC code list:"
     html_description: "Book Description (HTML for Amazon)"
     backpage_description: "Back Cover Description"
     author_bio: "Author Bio"

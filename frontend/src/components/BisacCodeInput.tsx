@@ -101,7 +101,7 @@ export default function BisacCodeInput({codes, onChange}: Props) {
                                 onClick={() => removeAt(i)}
                                 data-testid={`bisac-chip-${i}-delete`}
                                 aria-label={t(
-                                    "ui.book_meta.bisac_remove",
+                                    "ui.metadata.bisac_remove",
                                     "BISAC-Code entfernen",
                                 )}
                                 style={{
@@ -127,7 +127,7 @@ export default function BisacCodeInput({codes, onChange}: Props) {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={t(
-                        "ui.book_meta.bisac_placeholder",
+                        "ui.metadata.bisac_placeholder",
                         "z. B. FIC022020",
                     )}
                     maxLength={9}
@@ -156,7 +156,7 @@ export default function BisacCodeInput({codes, onChange}: Props) {
                     }}
                 >
                     {t(
-                        "ui.book_meta.bisac_format_error",
+                        "ui.metadata.bisac_format_error",
                         "Ungültiges Format. Erwartet: 3 Großbuchstaben + 6 Ziffern (z. B. FIC022020).",
                     )}
                 </small>
@@ -170,7 +170,7 @@ export default function BisacCodeInput({codes, onChange}: Props) {
                 }}
             >
                 {t(
-                    "ui.book_meta.bisac_helper",
+                    "ui.metadata.bisac_helper",
                     "Vollständige Liste der BISAC-Codes:",
                 )}{" "}
                 <a

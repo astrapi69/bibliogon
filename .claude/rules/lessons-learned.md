@@ -2705,19 +2705,29 @@ is intentional:
 
 ### Documented intentional asymmetries
 
-- **Categories + BISAC (Bug 9)**: Books-only. Articles use
+- **Categories + BISAC (Bug 9, shipped 2026-05-16, commits
+  ``032a1c7..148be6b``)**: Books-only. Articles use
   ``Article.topic`` (single, settings-managed enum, drives
   the per-platform publishing workflow) and ``Article.tags``
-  (free-text). Books use the new ``Book.categories`` (free-text
-  JSON list, KDP-aligned) and ``Book.bisac_codes`` (BISAC
-  9-char codes, validated for format only — see
-  ``BISAC-DATABASE-LOOKUP-01`` for the deferred bundled-catalog
-  path). The two domains have fundamentally different
+  (free-text). Books use ``Book.categories`` (free-text JSON
+  list, KDP-aligned) and ``Book.bisac_codes`` (BISAC 9-char
+  codes ``^[A-Z]{3}[0-9]{6}$``, validated for format only —
+  see ``BISAC-DATABASE-LOOKUP-01`` for the deferred bundled-
+  catalog path). The two domains have fundamentally different
   metadata shapes: an article ships to N platforms each with
   its own tagging norms; a book targets retail catalogues
   (KDP / Apple Books / Kobo) with industry-standard subject
   hierarchies. Forcing the same field set on both would help
-  neither.
+  neither. **Canonical concrete example for this rule**: a
+  future audit that grep's the accidental-asymmetry tally and
+  asks "why aren't categories on Articles too?" should find
+  this entry as the answer and close the question without a
+  re-investigation. The KDP plugin's metadata checker
+  (``plugin-kdp/bibliogon_kdp/metadata_checker.py``) is the
+  only place that validates BISAC codes at write-time —
+  the backend schema validator (``app.schemas.BISAC_CODE_RE``)
+  is the canonical regex and the plugin duplicates it
+  intentionally for loose coupling.
 
 - **Authors-Database (Bug 8)**: Books-only at the
   wizard-integration layer in v0.33.0+. The new Authors-DB +
