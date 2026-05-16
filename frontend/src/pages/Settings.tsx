@@ -12,11 +12,12 @@ import CommentsAdminSection from "../components/CommentsAdminSection";
 import {AppSettings} from "../components/settings/AppSettings";
 import {AiAssistantSettings} from "../components/settings/AiAssistantSettings";
 import {AuthorSettings} from "../components/settings/AuthorSettings";
+import {AuthorsDatabase} from "../components/settings/AuthorsDatabase";
 import {TopicsSettings} from "../components/settings/TopicsSettings";
 import {PluginSettings} from "../components/settings/PluginSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "ai", "author", "topics", "plugins", "comments", "support"] as const;
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "support"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -132,6 +133,7 @@ export default function Settings() {
                         {value: "app", label: t("ui.settings.tab_general", "Allgemein"), testId: "settings-tab-app"},
                         {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
                         {value: "author", label: t("ui.settings.tab_author", "Autor"), testId: "settings-tab-author"},
+                        {value: "authors_database", label: t("ui.settings.tab_authors_database", "Autoren-Datenbank"), testId: "settings-tab-authors-database"},
                         {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
                         {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                         {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
@@ -241,6 +243,9 @@ export default function Settings() {
                         }}
                         saving={saving}
                     />
+                </Tabs.Content>
+                <Tabs.Content value="authors_database">
+                    <AuthorsDatabase/>
                 </Tabs.Content>
                 <Tabs.Content value="topics">
                     <TopicsSettings
