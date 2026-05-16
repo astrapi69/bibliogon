@@ -37,6 +37,8 @@ function makeBook(overrides: Partial<Book> = {}): Book {
         asin_paperback: null,
         asin_hardcover: null,
         keywords: [],
+        categories: [],
+        bisac_codes: [],
         html_description: null,
         backpage_description: null,
         backpage_author_bio: null,

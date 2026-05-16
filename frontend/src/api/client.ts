@@ -54,6 +54,13 @@ export interface Book {
     asin_paperback: string | null;
     asin_hardcover: string | null;
     keywords: string[];
+    // Bug 9: Books-only subject categorisation. ``categories`` are
+    // free-text (KDP-style names + any string the user types);
+    // ``bisac_codes`` are 9-char industry codes (``^[A-Z]{3}[0-9]{6}$``,
+    // validated server-side). Both default to ``[]`` so callers can
+    // assume the arrays exist even on pre-Bug-9 rows.
+    categories: string[];
+    bisac_codes: string[];
     html_description: string | null;
     backpage_description: string | null;
     backpage_author_bio: string | null;
