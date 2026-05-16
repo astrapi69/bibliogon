@@ -6,6 +6,53 @@
 
 ---
 
+## Re-scope amendment (2026-05-16, mid-session)
+
+After commit `393560f` (the second pre-Session-2 prep commit
+landing the dead-slot drop), the user re-scoped Phase 4 from
+"Kinderbuch only" to the **Visual-Books umbrella** (Picture
+Book v1, Comic + Graphic Novel future).
+
+The amendment changes ONE structural decision in this audit:
+the `book_type` discriminator becomes the **umbrella**, not the
+variant. Specifically:
+
+- §1 line "Data model" — table cell:
+  - **Before:** `Book.book_type ∈ {"prose", "children_book"}`
+  - **After:** `Book.book_type ∈ {"prose", "visual_book"}` plus
+    a new nullable `Book.visual_sub_type ∈ {"picture_book",
+    "comic_book", "graphic_novel"}` column (only set when
+    `book_type='visual_book'`; v1 defines only `picture_book`).
+- §4 "Open decisions" item 2 — Pydantic `Literal` types now
+  cover BOTH columns:
+  - `Literal["prose", "visual_book"]` for `book_type`
+  - `Literal["picture_book", "comic_book", "graphic_novel"] | None`
+    for `visual_sub_type`
+- §4 item 4 — immutability rule extends to BOTH columns
+  (PATCH on book that attempts to change either returns 400).
+- §5 "Session 2 scope" — Alembic migration adds BOTH columns
+  (not just `book_type`); the Page model and the Pydantic
+  schemas reflect both; Pages CRUD gates on
+  `book.book_type == "visual_book"` (any sub_type — in v1 that
+  is just `picture_book`).
+
+Comic-specific entities (panels + speech_bubbles tables, panel
+CRUD, bubble CRUD, the page/panel-XOR CHECK constraint) are
+**out of Session 2** and land in **Session 2.5**.
+
+Reasoning for the umbrella decision: when Comic-Book + Graphic-
+Novel support eventually ships, the discriminator (`book_type`)
+should NOT migrate again. By scoping the discriminator broadly
+from day one, only `Book.visual_sub_type` values are added in
+Session 2.5 — not a column rename, not a value enum widen.
+
+The body of this audit otherwise stays correct (PluginForge
+config loader, Page entity design, Playwright decision, cover-
+as-page-1, immutable book type, etc.). Read sections below
+with the §1 + §4 + §5 amendments in mind.
+
+---
+
 ## 1. What the exploration specified
 
 The exploration is complete and load-bearing. All major decisions are frozen:
