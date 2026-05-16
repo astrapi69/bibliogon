@@ -1,9 +1,35 @@
 # Children's Book Plugin Exploration
 
-Status: Architecture decided. Implementation deferred.
-Last updated: 2026-04-20
-Revived when: user demand justifies the investment (see "Triggers for reconsidering").
-Source prompt: [prompt-children-book-plugin-exploration.md](prompt-children-book-plugin-exploration.md)
+Status: Architecture decided. Session 2 in progress (2026-05-16).
+Last updated: 2026-05-16 (re-scope header annotation; body unchanged).
+Source prompt: [prompt-children-book-plugin-exploration.md](archive/prompt-children-book-plugin-exploration.md)
+
+### Re-scope note (2026-05-16)
+
+The body of this doc describes the original Picture-Book-only
+scope (Sessions 1-7). After Session 2's foundation lands, the
+scope expands to **Visual Books** — Picture Book (v1) + Comic
+Book + Graphic Novel — using the schema discriminator pattern:
+
+- `Book.book_type ∈ {prose, visual_book}` (one column for the
+  whole umbrella; never re-migrated when comic + graphic-novel
+  support land).
+- `Book.visual_sub_type ∈ {picture_book, comic_book, graphic_novel}`
+  (nullable; only set when `book_type == "visual_book"`; v1
+  only defines `picture_book`).
+
+Session 2 lands the Page entity + the two columns above + Pages
+CRUD. Session 2.5 adds the `panels` and `speech_bubbles` tables +
+their CRUD + the `comic_book` and `graphic_novel` sub_type values.
+The future session-roadmap therefore extends to Sessions 2-10+
+rather than the original 2-7.
+
+This doc gets a full rename + body rewrite (`children-book-plugin.md`
+→ `visual-books-plugin.md`) AFTER Session 2 lands, not now. The
+header annotation flags the directional shift without disturbing
+the body's frozen architectural decisions, which all carry over
+unchanged to the Visual-Books umbrella (Playwright renderer,
+page-as-cover, single-page model, etc.).
 
 ---
 
