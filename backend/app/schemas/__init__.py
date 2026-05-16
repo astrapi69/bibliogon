@@ -1,9 +1,21 @@
 import json
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Bug 9: BISAC subject heading code format. 3 uppercase letters
+# identifying the subject prefix (FIC, BIO, SCI, etc.) followed by
+# 6 digits identifying the leaf subject within that prefix. The
+# regex is the format check ONLY — Bibliogon does NOT bundle the
+# BISG catalogue so we can't validate that the code actually exists
+# (per D3, free-text + format-validation MVP; bundled lookup is
+# the deferred ``BISAC-DATABASE-LOOKUP-01`` P5 item). The format
+# check catches the most common typo class (transposed letter /
+# digit, lowercase, wrong segment length).
+BISAC_CODE_RE = re.compile(r"^[A-Z]{3}[0-9]{6}$")
 
 # --- Enums ---
 
@@ -97,6 +109,13 @@ class BookUpdate(BaseModel):
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
     keywords: list[str] | None = None
+    # Bug 9: subject categorisation. ``categories`` is free-text
+    # (KDP-style names + any string the user types); ``bisac_codes``
+    # is format-validated against ``BISAC_CODE_RE`` per entry, raising
+    # 422 on the offending row. Both follow the same JSON-text-as-list
+    # storage as ``keywords``.
+    categories: list[str] | None = None
+    bisac_codes: list[str] | None = None
     html_description: str | None = None
     backpage_description: str | None = None
     backpage_author_bio: str | None = None
@@ -138,6 +157,85 @@ class BookUpdate(BaseModel):
             if key in seen:
                 continue
             seen.add(key)
+            cleaned.append(text)
+        return cleaned
+
+    # Bug 9: categories accept the same JSON-string / comma-list /
+    # list input shapes as keywords. Dedup is case-insensitive +
+    # trim-aware so "Fiction" and " fiction " collapse to one entry.
+    @field_validator("categories", mode="before")
+    @classmethod
+    def _coerce_categories_in(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    value = parsed
+                else:
+                    value = [raw]
+            except json.JSONDecodeError:
+                value = [part.strip() for part in raw.split(",")]
+        if not isinstance(value, list):
+            return value
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            text = str(item).strip()
+            if not text:
+                continue
+            key = text.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(text)
+        return cleaned
+
+    # Bug 9: BISAC codes get the same coercion shape PLUS a per-entry
+    # format check against the 9-char ``[A-Z]{3}[0-9]{6}`` pattern.
+    # Lowercase letters are auto-uppercased (BISAC codes are
+    # canonically uppercase but users typing them by hand often type
+    # lowercase); the resulting uppercased form is then re-checked.
+    # An invalid entry raises ValueError → Pydantic 422 with the
+    # offending code in the error detail so the user can see exactly
+    # what failed.
+    @field_validator("bisac_codes", mode="before")
+    @classmethod
+    def _coerce_bisac_codes_in(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    value = parsed
+                else:
+                    value = [raw]
+            except json.JSONDecodeError:
+                value = [part.strip() for part in raw.split(",")]
+        if not isinstance(value, list):
+            return value
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            text = str(item).strip().upper()
+            if not text:
+                continue
+            if not BISAC_CODE_RE.match(text):
+                raise ValueError(
+                    f"Invalid BISAC code {text!r}. Expected 3 uppercase "
+                    f"letters followed by 6 digits (e.g. FIC022020)."
+                )
+            if text in seen:
+                continue
+            seen.add(text)
             cleaned.append(text)
         return cleaned
 
@@ -304,6 +402,12 @@ class BookOut(BaseModel):
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
     keywords: list[str] = []
+    # Bug 9: subject categorisation. Same JSON-text-as-list convention
+    # as keywords. The ``_decode_json_list`` validator below is
+    # registered against both new fields so the storage Text value
+    # parses cleanly into list[str] for the API response.
+    categories: list[str] = []
+    bisac_codes: list[str] = []
     html_description: str | None = None
     backpage_description: str | None = None
     backpage_author_bio: str | None = None
@@ -329,7 +433,13 @@ class BookOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("audiobook_skip_chapter_types", "keywords", mode="before")
+    @field_validator(
+        "audiobook_skip_chapter_types",
+        "keywords",
+        "categories",
+        "bisac_codes",
+        mode="before",
+    )
     @classmethod
     def _decode_json_list(cls, value: Any) -> list[str]:
         """Decode a JSON-encoded Text column into a list for the API.

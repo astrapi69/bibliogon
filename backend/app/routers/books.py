@@ -5,6 +5,7 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -613,17 +614,43 @@ def update_book(
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    update = BookUpdate.model_validate(payload)
+    # The router validates the payload manually (instead of via a
+    # ``payload: BookUpdate`` dependency) so the immutability guard
+    # above can fire BEFORE Pydantic touches the dict. A Pydantic
+    # ``ValidationError`` raised here would otherwise propagate as
+    # a 500 because we are outside FastAPI's auto-422 path; translate
+    # it back to a 422 so callers see the validator's message
+    # (e.g. Bug 9 BISAC format errors carry the offending code).
+    try:
+        update = BookUpdate.model_validate(payload)
+    except ValidationError as exc:
+        # ``exc.errors()`` includes a ``ctx`` field referencing the
+        # raw ValueError instance, which is NOT JSON-serializable.
+        # ``exc.errors(include_url=False)`` still carries ctx; the
+        # cleanest path is to flatten to {loc, msg, type} per error
+        # which matches FastAPI's own auto-422 shape exactly.
+        raise HTTPException(
+            status_code=422,
+            detail=[
+                {"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]} for e in exc.errors()
+            ],
+        ) from exc
     update_data = update.model_dump(exclude_unset=True)
     if "author" in update_data:
         update_data["author"] = _validate_author(
             update_data["author"], _allow_books_without_author()
         )
     for key, value in update_data.items():
-        # ``audiobook_skip_chapter_types`` and ``keywords`` are exposed as
-        # list[str] in the API but stored as JSON-encoded Text columns.
-        # Encode here so the rest of the loop stays generic.
-        if key in ("audiobook_skip_chapter_types", "keywords") and isinstance(value, list):
+        # ``audiobook_skip_chapter_types``, ``keywords``, ``categories``
+        # and ``bisac_codes`` are exposed as list[str] in the API but
+        # stored as JSON-encoded Text columns. Encode here so the rest
+        # of the loop stays generic.
+        if key in (
+            "audiobook_skip_chapter_types",
+            "keywords",
+            "categories",
+            "bisac_codes",
+        ) and isinstance(value, list):
             value = json.dumps(value)
         setattr(book, key, value)
     db.commit()
