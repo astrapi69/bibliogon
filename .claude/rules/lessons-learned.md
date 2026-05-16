@@ -2325,7 +2325,7 @@ config; here, the actual network state).
 
 ## Articles-vs-Books parallel-surface asymmetry
 
-**Pattern class observed 5 times across 2 release cycles.** Each
+**Pattern class observed 7 times across 3 release cycles.** Each
 occurrence: a feature (or fix) lands on one of the parallel
 surfaces (Articles list/editor vs Books list/editor) and the
 mirror surface lags behind, gets a different shape, or gets
@@ -2349,6 +2349,26 @@ no update at all.
 5. **View-mode testid namespace split** (UX-Full-Audit G2-F2):
    ``book-card-{id}`` (grid) vs ``book-list-row-{id}`` (list).
    E2E specs silently skip when wrong view-mode persisted.
+6. **BookDashboard list-view missing selection checkboxes**
+   (v0.33.0 manual smoke, fixed in commit ``711aef0``).
+   ``BookListView`` was rebuilt later than ``ArticleRow`` and
+   shipped without ArticleRow's selection-checkbox feature.
+   ``BulkActionBar`` appeared on Articles list-view but never on
+   Books list-view; bulk-delete on BD list-view was impossible
+   for two release cycles before user-smoke surfaced the gap.
+7. **AD-Trash + BD-Trash view-mode defaults missing** (v0.33.0
+   manual smoke, fixed in commit ``5767289``). User-configurable
+   default view-mode existed for AD and BD active surfaces but
+   not for their trash surfaces; the trash views silently shared
+   the active surface's viewMode state so toggling view-mode in
+   trash also flipped the active surface. New ``useTrashViewMode``
+   hook with local-only setMode closes the gap with a deliberate
+   semantic difference (active = persisted, trash = ephemeral
+   session-local).
+
+Bug 4a (Comments-Admin bulk-delete, filed for the next session)
+will be the 8th instance if Comments-Admin classifies as a
+parallel-surface to AD/BD bulk-action capabilities.
 
 ### Rule
 
