@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -45,6 +45,17 @@ class ChapterType(str, Enum):
 # --- Book schemas ---
 
 
+# Phase-4 discriminator. Flat (no umbrella + sub_type pair). Each
+# visual book_type is owned by its own plugin:
+#   "prose"        - chapter-based core path.
+#   "picture_book" - plugin-kinderbuch. v1 active.
+#   "comic_book"   - reserved for future plugin-comics; the value is
+#                    defined here so a comics plugin can ship its
+#                    panels + speech_bubbles migration WITHOUT
+#                    re-migrating this column.
+BookType = Literal["prose", "picture_book", "comic_book"]
+
+
 class BookCreate(BaseModel):
     title: str
     subtitle: str | None = None
@@ -54,9 +65,18 @@ class BookCreate(BaseModel):
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
+    # Default "prose" keeps existing clients backward-compatible: any
+    # caller that omits book_type creates a prose book.
+    book_type: BookType = "prose"
 
 
 class BookUpdate(BaseModel):
+    # Phase-4 immutability rule: book_type is immutable after
+    # creation. It is deliberately ABSENT from this schema so any
+    # PATCH payload that includes it is silently dropped by Pydantic's
+    # default extra='ignore' behaviour. A loud 400 on explicit attempts
+    # is enforced in the books PATCH handler before this schema is
+    # constructed (see app/routers/books.py).
     title: str | None = None
     subtitle: str | None = None
     author: str | None = None
@@ -270,6 +290,9 @@ class BookOut(BaseModel):
     series: str | None
     series_index: int | None
     description: str | None
+    # Phase-4 discriminator. Defaults to "prose" for back-compat with
+    # existing pre-migration rows.
+    book_type: str = "prose"
     edition: str | None = None
     publisher: str | None = None
     publisher_city: str | None = None
@@ -820,3 +843,91 @@ class PlatformSchemaOut(BaseModel):
     max_chars_per_post: int | None = None
     publishing_method: str = "manual"
     notes: str | None = None
+
+
+# --- Page schemas (Phase 4 Session 2, picture-book plugin) ---
+
+
+# Picture-Book layout names. Future plugin-comics will define its own
+# panel-grid layouts on a separate Panel entity, not on Page.
+PageLayout = Literal[
+    "speech_bubble",
+    "image_top_text_bottom",
+    "image_left_text_right",
+    "image_full_text_overlay",
+    "text_only",
+]
+
+
+class PageCreate(BaseModel):
+    """Payload for POST /api/books/{id}/pages.
+
+    Position is NOT in the create payload: a new page appends to the
+    end of the book (next available position). Use POST .../reorder
+    to move pages around after creation.
+    """
+
+    layout: PageLayout
+    text_content: str | None = None
+    image_asset_id: str | None = None
+    # JSON-encoded {anchor_position, ...} for Picture-Book Layout A.
+    # Passed through verbatim to the DB; renderer reads at export time.
+    speech_bubble_config: dict[str, Any] | None = None
+
+
+class PageUpdate(BaseModel):
+    """Payload for PATCH /api/books/{id}/pages/{page_id}.
+
+    Position is NOT mutable through this schema. Use POST .../reorder
+    for position changes so the entire reorder runs in one atomic
+    transaction instead of a series of single-row PATCHes that each
+    leave a partially-reordered state visible.
+    """
+
+    layout: PageLayout | None = None
+    text_content: str | None = None
+    image_asset_id: str | None = None
+    speech_bubble_config: dict[str, Any] | None = None
+
+
+class PageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    book_id: str
+    position: int
+    layout: str
+    text_content: str | None = None
+    image_asset_id: str | None = None
+    # speech_bubble_config is stored as JSON-encoded Text in the DB.
+    # Decoded for the API per the books.keywords / chapter_summaries
+    # convention.
+    speech_bubble_config: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("speech_bubble_config", mode="before")
+    @classmethod
+    def _decode_speech_bubble_config(cls, value: Any) -> dict[str, Any] | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return None
+            return parsed if isinstance(parsed, dict) else None
+        return None
+
+
+class PagesReorder(BaseModel):
+    """List of page IDs in the desired order.
+
+    Same shape as ChapterReorder. The route handler runs the position
+    updates in a single transaction so a partial failure leaves no
+    rows half-reordered.
+    """
+
+    page_ids: list[str]
