@@ -259,9 +259,7 @@ class Page(Base):
     __tablename__ = "pages"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
-    book_id: Mapped[str] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), nullable=False
-    )
+    book_id: Mapped[str] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     layout: Mapped[str] = mapped_column(String(50), nullable=False)
     text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -863,3 +861,37 @@ class Publication(Base):
             f"<Publication {self.id!r} article={self.article_id} "
             f"platform={self.platform} status={self.status}>"
         )
+
+
+class Author(Base):
+    """Bibliogon's global Authors-Database (Bug 8 Phase 1).
+
+    Standalone catalogue of people who can be cited as the author of
+    a Book (Phase 2 wizard datalist source) or an Article (future
+    session). NOT a foreign-key target — ``Book.author``,
+    ``Article.author`` and ``ArticleComment.author`` stay free-text
+    String columns per D5. The Authors-DB is an opt-in suggestion
+    layer; the free-text columns continue to accept any value the
+    user types (one-off contributors, historical imports, etc.).
+
+    Surfaced in Settings via a new "Authors-Database" tab sibling
+    to the existing personal-identity "Author" tab (Finding 1).
+    """
+
+    __tablename__ = "authors"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    name: Mapped[str] = mapped_column(String(300), nullable=False, index=True)
+    # Lowercase + hyphenated derivation from name. Unique across the
+    # table; the create endpoint appends a numeric suffix on
+    # collision. Stored explicitly rather than computed on read so
+    # the unique index is enforceable at the DB layer.
+    slug: Mapped[str] = mapped_column(String(300), nullable=False, unique=True)
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return f"<Author {self.id!r} name={self.name!r} slug={self.slug!r}>"
