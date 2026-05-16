@@ -294,8 +294,9 @@ export interface MarkPublishedRequest {
     published_at?: string | null
 }
 
-/** Response shape of POST /api/articles/bulk-delete and
- *  POST /api/books/bulk-delete. Mirrors the Pydantic
+/** Response shape of POST /api/articles/bulk-delete,
+ *  POST /api/books/bulk-delete, and POST /api/comments/bulk-delete.
+ *  Mirrors the Pydantic
  *  ``BulkDeleteResponse`` in backend/app/routers/bulk_delete.py.
  *  ``deleted_count`` counts soft- OR hard-deleted rows;
  *  ``skipped_already_trashed`` is non-empty only on the soft path
@@ -1955,6 +1956,18 @@ export const api = {
             }>(`/comments/${id}/reclassify-as-article`, {
                 method: "POST",
                 body: JSON.stringify({}),
+            }),
+
+        /** Bulk soft- (default) or permanent-delete a list of comment
+         *  ids. Mirrors ``articles.bulkDelete`` and
+         *  ``books.bulkDelete``. Uncapped — comments-admin selections
+         *  can run into the hundreds and the backend is DB-bound
+         *  (sub-second). Response carries per-row outcomes so the
+         *  caller's toast can surface partial failures. */
+        bulkDelete: (ids: string[], permanent: boolean) =>
+            request<BulkDeleteResponse>("/comments/bulk-delete", {
+                method: "POST",
+                body: JSON.stringify({ids, permanent}),
             }),
     },
 
