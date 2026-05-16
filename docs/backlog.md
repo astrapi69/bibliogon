@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.33.0
-Open tasks: 47 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 49 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -86,6 +86,38 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
+  hook that encapsulates the `location.key === 'default'` fallback
+  pattern, and migrate the current hardcoded `navigate(-1)` /
+  `navigate('/')` sites to use it.
+  Trigger: a fourth 'global' page (i.e. one reachable from both
+  AD and BD) appears with a back-button, OR a contributor adds a
+  new top-level page that needs origin-tracking.
+  Scope: extract the helper into `frontend/src/hooks/`; refactor
+  Settings, Help, GetStarted to call it; add Vitest for the
+  helper. Drop-in replacement; no user-visible behavior change.
+  Effort: 3-5 commits.
+  Deferred reason: the current 3-page direct-`navigate(-1)` form
+  is acceptable. Utility extraction adds value at scale (4+ sites),
+  not at 3. Filed during the v0.33.0 Bug 1 hotfix where the
+  pattern emerged across Settings + Help + GetStarted.
+
+- **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (P3): extract a shared
+  `<ListViewRow>` base component that `ArticleRow` and
+  `BookListRow` can both consume.
+  Trigger: a third instance of duplicate list-view-row code
+  appears (e.g. a new Comments-Admin list view, or a Publications
+  list view), OR a styling drift between Articles and Books list
+  views surfaces in production.
+  Scope: extract shared base component with selection + actions
+  + content slots; migrate ArticleRow and BookListRow to consume
+  it; preserve all existing testids; keep the per-row click
+  guards (stopPropagation on checkbox/menu).
+  Effort: 5-8 commits (substantial refactor).
+  Deferred reason: not blocking the user-visible v0.33.0 Bug 2
+  fix; would inflate that hotfix session. The current per-page
+  list-row duplication is the price of the speed-of-fix tradeoff.
 
 - **CONVERT-TO-BOOK-ASSET-CLONE-01** (P3): asset-clone walker
   for the article-to-book conversion feature.
