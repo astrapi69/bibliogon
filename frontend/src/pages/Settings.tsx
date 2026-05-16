@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Check, Home, Menu} from "lucide-react";
@@ -25,6 +25,20 @@ function isSettingsTab(value: string | null): value is SettingsTab {
 
 export default function Settings() {
     const navigate = useNavigate();
+    const location = useLocation();
+    // ``location.key`` is the react-router v6/v7 sentinel for "this
+    // is the first entry in the app's history stack" - it equals
+    // "default" until a programmatic navigation runs. When the user
+    // reached Settings via a direct URL (deep link, bookmark,
+    // refresh), navigate(-1) would leave the app entirely; fall back
+    // to the Books-Dashboard root in that case.
+    const handleBack = () => {
+        if (location.key === "default") {
+            navigate("/");
+        } else {
+            navigate(-1);
+        }
+    };
     const [searchParams, setSearchParams] = useSearchParams();
     const {setLang: setGlobalLang} = useI18n();
     const {t} = useI18n();
@@ -85,7 +99,7 @@ export default function Settings() {
                     <div className={styles.headerLeft}>
                         <button
                             className={styles.backBtn}
-                            onClick={() => navigate("/")}
+                            onClick={handleBack}
                             data-testid="settings-nav-back"
                             aria-label={t("ui.dashboard.back", "Zurück")}
                         >

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Keyboard, HelpCircle, Info, Home} from "lucide-react";
@@ -9,6 +9,19 @@ import styles from "./Help.module.css";
 
 export default function Help() {
     const navigate = useNavigate();
+    const location = useLocation();
+    // ``location.key === "default"`` is react-router v6/v7's sentinel
+    // for "this is the initial entry in the app's history stack" -
+    // i.e. the user landed here via direct URL / bookmark / refresh.
+    // In that case navigate(-1) would leave the app entirely, so fall
+    // back to the Books-Dashboard root.
+    const handleBack = () => {
+        if (location.key === "default") {
+            navigate("/");
+        } else {
+            navigate(-1);
+        }
+    };
     const {t, lang} = useI18n();
     const [shortcuts, setShortcuts] = useState<{keys: string; action: string}[]>([]);
     const [faq, setFaq] = useState<{question: string; answer: string}[]>([]);
@@ -25,7 +38,12 @@ export default function Help() {
             <header className={styles.header}>
                 <div className={styles.headerInner}>
                     <div className={styles.headerLeft}>
-                        <button className={styles.backBtn} onClick={() => navigate("/")}>
+                        <button
+                            className={styles.backBtn}
+                            onClick={handleBack}
+                            data-testid="help-nav-back"
+                            aria-label={t("ui.dashboard.back", "Zurück")}
+                        >
                             <ChevronLeft size={18}/>
                         </button>
                         <h1 className={styles.title}>{t("ui.help.title", "Hilfe")}</h1>

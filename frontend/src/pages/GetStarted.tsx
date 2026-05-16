@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import ThemeToggle from "../components/ThemeToggle";
@@ -30,6 +30,19 @@ interface GuideStep {
 
 export default function GetStarted() {
     const navigate = useNavigate();
+    const location = useLocation();
+    // ``location.key === "default"`` is react-router v6/v7's sentinel
+    // for "this is the initial entry in the app's history stack" -
+    // i.e. the user landed here via direct URL / bookmark / refresh.
+    // In that case navigate(-1) would leave the app entirely, so fall
+    // back to the Books-Dashboard root.
+    const handleBack = () => {
+        if (location.key === "default") {
+            navigate("/");
+        } else {
+            navigate(-1);
+        }
+    };
     const {t} = useI18n();
     const [steps, setSteps] = useState<GuideStep[]>([]);
     const [currentStep, setCurrentStep] = useState(0);
@@ -101,7 +114,12 @@ export default function GetStarted() {
             <header className={styles.header}>
                 <div className={styles.headerInner}>
                     <div className={styles.headerLeft}>
-                        <button className={styles.backBtn} onClick={() => navigate("/")}>
+                        <button
+                            className={styles.backBtn}
+                            onClick={handleBack}
+                            data-testid="getstarted-nav-back"
+                            aria-label={t("ui.dashboard.back", "Zurück")}
+                        >
                             <ChevronLeft size={18}/>
                         </button>
                         <Rocket size={22} style={{color: "var(--accent)"}}/>
