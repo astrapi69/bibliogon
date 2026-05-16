@@ -23,6 +23,31 @@
     border-bottom: 1px solid var(--border);
 }
 
+/* Variant when the list shows bulk-selection checkboxes (Bibliogon
+   parity with ArticleRow). Adds a leading 36px column for the
+   checkbox in front of the existing 6 columns. */
+.table.tableSelectable .headerRow,
+.table.tableSelectable .row {
+    grid-template-columns: 36px 50px 1fr 180px 80px 160px 50px;
+}
+
+.colCheckbox {
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.rowSelected {
+    background: var(--accent-light);
+}
+
 .headerRow {
     background: var(--bg-secondary);
     font-size: 0.8125rem;

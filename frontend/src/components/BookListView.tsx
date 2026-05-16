@@ -20,18 +20,39 @@ interface Props {
     onClick: (book: Book) => void;
     onDelete: (book: Book) => void;
     onDeletePermanent?: (book: Book) => void;
+    // Per-row selection state. When BOTH are provided the row renders
+    // a leading checkbox cell wired to the parent's selection store
+    // (matching ArticleRow's checkbox shape). When omitted (e.g. the
+    // trash view's read-only listings) the checkbox column is hidden.
+    isSelected?: (book: Book) => boolean;
+    onToggleSelect?: (book: Book) => void;
 }
 
-export default function BookListView({ books, onClick, onDelete, onDeletePermanent }: Props) {
+export default function BookListView({
+    books,
+    onClick,
+    onDelete,
+    onDeletePermanent,
+    isSelected,
+    onToggleSelect,
+}: Props) {
     const { t } = useI18n();
+    const showSelection = isSelected != null && onToggleSelect != null;
     return (
         <div
             data-testid="book-list-view"
             role="table"
             aria-label={t("ui.dashboard.list_aria_label", "Bücherliste")}
-            className={styles.table}
+            className={`${styles.table}${showSelection ? ` ${styles.tableSelectable}` : ""}`}
         >
             <div role="row" className={styles.headerRow}>
+                {showSelection ? (
+                    <div
+                        role="columnheader"
+                        className={styles.colCheckbox}
+                        aria-label={t("ui.dashboard.col_select", "Auswählen")}
+                    />
+                ) : null}
                 <div role="columnheader" className={styles.colCover}>
                     {t("ui.dashboard.col_cover", "Cover")}
                 </div>
@@ -56,6 +77,8 @@ export default function BookListView({ books, onClick, onDelete, onDeletePermane
                     onClick={() => onClick(book)}
                     onDelete={() => onDelete(book)}
                     onDeletePermanent={onDeletePermanent ? () => onDeletePermanent(book) : undefined}
+                    isSelected={isSelected ? isSelected(book) : undefined}
+                    onToggleSelect={onToggleSelect ? () => onToggleSelect(book) : undefined}
                 />
             ))}
         </div>
@@ -67,9 +90,21 @@ interface RowProps {
     onClick: () => void;
     onDelete: () => void;
     onDeletePermanent?: () => void;
+    // Mirrors ArticleRow's selection props. When ``onToggleSelect`` is
+    // provided the row renders a leading checkbox cell; when omitted
+    // the cell is hidden (callers that want read-only listings).
+    isSelected?: boolean;
+    onToggleSelect?: () => void;
 }
 
-function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
+function BookListRow({
+    book,
+    onClick,
+    onDelete,
+    onDeletePermanent,
+    isSelected,
+    onToggleSelect,
+}: RowProps) {
     const { t } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const updated = new Date(book.updated_at).toLocaleDateString("de-DE", {
@@ -82,6 +117,7 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
         ? `/api/books/${book.id}/assets/file/${coverFilename}`
         : null;
 
+    const showSelection = onToggleSelect != null;
     return (
         <div
             role="row"
@@ -92,11 +128,24 @@ function BookListRow({ book, onClick, onDelete, onDeletePermanent }: RowProps) {
             // grid or list view is active. See
             // VIEW-MODE-TESTID-PARITY-01.
             data-book-id={book.id}
-            className={styles.row}
+            className={`${styles.row}${isSelected ? ` ${styles.rowSelected}` : ""}`}
             onClick={() => {
                 if (!menuOpen) onClick();
             }}
         >
+            {showSelection ? (
+                <div role="cell" className={styles.colCheckbox}>
+                    <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        data-testid={`book-bulk-check-${book.id}`}
+                        checked={!!isSelected}
+                        onChange={onToggleSelect}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={t("ui.dashboard.bulk.select_row", "Buch auswählen")}
+                    />
+                </div>
+            ) : null}
             <div role="cell" className={styles.colCover}>
                 <div className={styles.coverThumb}>
                     {coverUrl ? (

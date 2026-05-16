@@ -724,6 +724,8 @@ export default function Dashboard() {
                                     onClick={(book) => navigate(`/book/${book.id}`)}
                                     onDelete={(book) => handleDelete(book.id)}
                                     onDeletePermanent={(book) => handleDeletePermanent(book.id)}
+                                    isSelected={(book) => selection.isSelected(book.id)}
+                                    onToggleSelect={(book) => selection.toggle(book.id)}
                                 />
                             ) : (
                                 <div className={styles.grid}>
