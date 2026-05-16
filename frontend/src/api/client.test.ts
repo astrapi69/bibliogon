@@ -518,3 +518,71 @@ describe("api.comments.delete", () => {
         );
     });
 });
+
+// --- Authors (Bug 8 Phase 1) ---
+
+describe("api.authors", () => {
+    it("list fetches /api/authors with no params", async () => {
+        mockFetch.mockReturnValue(jsonResponse([{id: "a1", name: "Asterios", slug: "asterios"}]));
+        const authors = await api.authors.list();
+        expect(authors).toHaveLength(1);
+        expect(authors[0].slug).toBe("asterios");
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors", expect.anything());
+    });
+
+    it("list appends ``search`` and ``limit`` as query params", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.authors.list({search: "räp", limit: 50});
+        const [calledUrl] = mockFetch.mock.calls[0];
+        expect(calledUrl).toContain("/api/authors?");
+        expect(calledUrl).toContain("search=r%C3%A4p");
+        expect(calledUrl).toContain("limit=50");
+    });
+
+    it("list omits ``search`` when undefined and ``limit`` when null", async () => {
+        mockFetch.mockReturnValue(jsonResponse([]));
+        await api.authors.list({});
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors", expect.anything());
+    });
+
+    it("get fetches /api/authors/{id}", async () => {
+        mockFetch.mockReturnValue(jsonResponse({id: "a1", name: "X", slug: "x"}));
+        const author = await api.authors.get("a1");
+        expect(author.id).toBe("a1");
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors/a1", expect.anything());
+    });
+
+    it("create sends POST with JSON body", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            id: "a1",
+            name: "New",
+            slug: "new",
+            bio: "test",
+            created_at: "2026-05-16T00:00:00Z",
+            updated_at: "2026-05-16T00:00:00Z",
+        }));
+        const author = await api.authors.create({name: "New", bio: "test"});
+        expect(author.slug).toBe("new");
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors", expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({name: "New", bio: "test"}),
+        }));
+    });
+
+    it("update sends PATCH with partial body", async () => {
+        mockFetch.mockReturnValue(jsonResponse({id: "a1", name: "X", slug: "x", bio: "updated"}));
+        await api.authors.update("a1", {bio: "updated"});
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors/a1", expect.objectContaining({
+            method: "PATCH",
+            body: JSON.stringify({bio: "updated"}),
+        }));
+    });
+
+    it("delete issues DELETE /api/authors/{id}", async () => {
+        mockFetch.mockReturnValue(emptyResponse(204));
+        await api.authors.delete("a1");
+        expect(mockFetch).toHaveBeenCalledWith("/api/authors/a1", expect.objectContaining({
+            method: "DELETE",
+        }));
+    });
+});

@@ -220,6 +220,31 @@ export interface ArticleCreate {
     language?: string
 }
 
+// --- Author (Bug 8 Phase 1) ---
+// The Authors-Database is decoupled from the free-text ``author``
+// columns on Book / Article / ArticleComment per D5. Surfaced as
+// the Wizard datalist source (Phase 2) and the new Settings
+// "Authors-Database" tab.
+
+export interface Author {
+    id: string
+    name: string
+    slug: string
+    bio: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface AuthorCreate {
+    name: string
+    bio?: string | null
+}
+
+export interface AuthorUpdate {
+    name?: string
+    bio?: string | null
+}
+
 /** UX-FU-02: a file uploaded against an Article (currently only
  *  featured_image). Mirrors the Asset type but article-scoped. */
 export interface ArticleAsset {
@@ -1969,6 +1994,45 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify({ids, permanent}),
             }),
+    },
+
+    authors: {
+        /** List authors ordered by name. ``search`` is a
+         *  case-insensitive substring filter on ``name``;
+         *  whitespace-only is treated as omitted. ``limit``
+         *  defaults to 200, capped at 1000 server-side. */
+        list: (params: {search?: string; limit?: number} = {}) => {
+            const qs = new URLSearchParams()
+            if (params.search) qs.set("search", params.search)
+            if (params.limit != null) qs.set("limit", String(params.limit))
+            const suffix = qs.toString() ? `?${qs.toString()}` : ""
+            return request<Author[]>(`/authors${suffix}`)
+        },
+
+        get: (id: string) => request<Author>(`/authors/${id}`),
+
+        /** Slug is server-generated from ``name`` (lowercase +
+         *  hyphenated, German + Nordic diacritics transliterated,
+         *  NFKD-fold for other diacritics). Collisions append a
+         *  numeric suffix (``-2``, ``-3`` ...). Empty result (all-
+         *  emoji input) falls back to ``"author"``. */
+        create: (data: AuthorCreate) =>
+            request<Author>("/authors", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        /** Partial update. Slug is immutable; name edits do NOT
+         *  regenerate it. */
+        update: (id: string, data: AuthorUpdate) =>
+            request<Author>(`/authors/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify(data),
+            }),
+
+        /** Hard-delete. Idempotent: 204 even on already-gone. */
+        delete: (id: string) =>
+            request<void>(`/authors/${id}`, {method: "DELETE"}),
     },
 
     chapters: {
