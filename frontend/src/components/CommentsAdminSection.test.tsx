@@ -631,3 +631,61 @@ describe("CommentsAdminSection bulk-delete wiring", () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Bug 4b: row-click opens the CommentPreviewModal + body is JS-truncated.
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection preview modal + row truncation", () => {
+    it("body cell renders truncated text past 120 chars + ellipsis", async () => {
+        const long = "x".repeat(200);
+        listMock.mockResolvedValue([mkRow({id: "long-1", body_text: long})]);
+        render(<CommentsAdminSection />);
+        const cell = await screen.findByTestId("comments-admin-body-long-1");
+        // 120 chars + the ellipsis character.
+        expect(cell.textContent!.length).toBe(121);
+        expect(cell.textContent!.endsWith("…")).toBe(true);
+        // Native title carries the full text for hover users.
+        expect(cell.getAttribute("title")).toBe(long);
+    });
+
+    it("body cell renders full text when length <= 120", async () => {
+        const short = "Short body";
+        listMock.mockResolvedValue([mkRow({id: "short-1", body_text: short})]);
+        render(<CommentsAdminSection />);
+        const cell = await screen.findByTestId("comments-admin-body-short-1");
+        expect(cell.textContent).toBe(short);
+    });
+
+    it("clicking a row opens the CommentPreviewModal with the full body", async () => {
+        const long = "Full body text " + "y".repeat(200);
+        listMock.mockResolvedValue([mkRow({id: "row-X", body_text: long})]);
+        render(<CommentsAdminSection />);
+        const row = await screen.findByTestId("comments-admin-row-row-X");
+        fireEvent.click(row);
+        const modal = screen.getByTestId("comment-preview-modal");
+        expect(modal).toBeTruthy();
+        // Modal body carries the FULL text — no truncation.
+        expect(screen.getByTestId("comment-preview-body").textContent).toBe(long);
+    });
+
+    it("clicking the row's checkbox does NOT open the modal (stopPropagation)", async () => {
+        listMock.mockResolvedValue([mkRow({id: "row-Y"})]);
+        render(<CommentsAdminSection />);
+        const cb = await screen.findByTestId("comments-admin-select-row-Y");
+        fireEvent.click(cb);
+        expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
+        // Selection toggled (bar appears).
+        expect(screen.getByTestId("comment-bulk-action-bar")).toBeTruthy();
+    });
+
+    it("clicking a per-row action button does NOT open the modal", async () => {
+        listMock.mockResolvedValue([mkRow({id: "row-Z"})]);
+        confirmMock.mockResolvedValue(false); // cancel the confirm dialog
+        render(<CommentsAdminSection />);
+        const btn = await screen.findByTestId("comments-admin-reclassify-row-Z");
+        fireEvent.click(btn);
+        // Modal must NOT have opened.
+        expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
+    });
+});

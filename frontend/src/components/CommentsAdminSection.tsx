@@ -19,8 +19,20 @@ import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {LoadingIndicator} from "./LoadingIndicator";
 import CommentBulkActionBar from "./comments/CommentBulkActionBar";
+import CommentPreviewModal from "./comments/CommentPreviewModal";
 import {useCommentSelection} from "./comments/useCommentSelection";
 import TypeToConfirmDialog from "./dialogs/TypeToConfirmDialog";
+
+/** Single-line truncation length used on the body cell. Keeps the
+ *  admin table dense; the full text lives in the preview modal that
+ *  opens on row click. 120 chars matches D1 in the pre-inspection
+ *  (single-line cell, max-width: 400, ellipsis is real DOM). */
+const ROW_BODY_TRUNCATE_AT = 120;
+
+function truncateBody(text: string): string {
+    if (text.length <= ROW_BODY_TRUNCATE_AT) return text;
+    return text.slice(0, ROW_BODY_TRUNCATE_AT).trimEnd() + "…";
+}
 
 const PAGE_SIZE = 100;
 
@@ -69,6 +81,13 @@ export default function CommentsAdminSection() {
         ids: string[];
         count: number;
     } | null>(null);
+    // Preview modal: ``null`` means closed. Set to a row to open;
+    // set back to null to close. The modal is the only surface for
+    // reclassify (Bug 4c) and for reading the full body text past
+    // the row's 120-char truncation (Bug 4b).
+    const [previewComment, setPreviewComment] = useState<ArticleComment | null>(
+        null,
+    );
 
     // Hold the latest ``t`` in a ref so the fetch effect can reach
     // the i18n fallback without re-running every time ``t``'s
@@ -163,6 +182,9 @@ export default function CommentsAdminSection() {
             // rule).
             setRows((prev) => prev.filter((c) => c.id !== row.id));
             selection.remove(row.id);
+            // Close the preview modal if it was open against this
+            // row — the modal's subject has just been moved.
+            setPreviewComment((prev) => (prev?.id === row.id ? null : prev));
             // ``bulkAction`` shape (message + action callback + label)
             // matches what we want here even though the internal type
             // names reference "undo" — re-use rather than fork a
@@ -215,6 +237,8 @@ export default function CommentsAdminSection() {
             // so the bar's count stays consistent.
             setRows((prev) => prev.filter((c) => c.id !== row.id));
             selection.remove(row.id);
+            // Close the preview modal if it was open against this row.
+            setPreviewComment((prev) => (prev?.id === row.id ? null : prev));
             notify.success(
                 t("ui.comments.admin.delete_success", "Comment deleted."),
             );
@@ -542,9 +566,14 @@ export default function CommentsAdminSection() {
                                 style={{
                                     borderBottom:
                                         "1px solid var(--border, #f3f4f6)",
+                                    cursor: "pointer",
                                 }}
+                                onClick={() => setPreviewComment(row)}
                             >
-                                <td style={{padding: "6px", width: 32}}>
+                                <td
+                                    style={{padding: "6px", width: 32}}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
                                     <input
                                         type="checkbox"
                                         data-testid={`comments-admin-select-${row.id}`}
@@ -572,8 +601,9 @@ export default function CommentsAdminSection() {
                                         textOverflow: "ellipsis",
                                     }}
                                     title={row.body_text}
+                                    data-testid={`comments-admin-body-${row.id}`}
                                 >
-                                    {row.body_text}
+                                    {truncateBody(row.body_text)}
                                 </td>
                                 <td style={{padding: "6px"}}>{row.imported_from}</td>
                                 <td style={{padding: "6px"}}>
@@ -596,7 +626,10 @@ export default function CommentsAdminSection() {
                                 <td style={{padding: "6px"}}>
                                     {formatDate(row.imported_at, lang)}
                                 </td>
-                                <td style={{padding: "6px", textAlign: "right", whiteSpace: "nowrap"}}>
+                                <td
+                                    style={{padding: "6px", textAlign: "right", whiteSpace: "nowrap"}}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
                                     <button
                                         type="button"
                                         className="btn-icon"
@@ -674,6 +707,21 @@ export default function CommentsAdminSection() {
                 )}
                 onConfirm={() => void handleBulkDeletePermanentConfirmed()}
                 onCancel={() => setBulkDeleteDialog(null)}
+            />
+
+            <CommentPreviewModal
+                comment={previewComment}
+                onClose={() => setPreviewComment(null)}
+                onReclassify={(c) => void handleReclassifyAsArticle(c)}
+                onDelete={(c) => void handleDelete(c)}
+                pendingReclassify={
+                    previewComment != null && pendingReclassify === previewComment.id
+                }
+                pendingDelete={
+                    previewComment != null && pendingDelete === previewComment.id
+                }
+                t={t}
+                lang={lang}
             />
         </section>
     );
