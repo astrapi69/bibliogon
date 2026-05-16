@@ -50,8 +50,27 @@ vi.mock("../api/client", () => ({
             // Existing row-based assertions assume the list view is
             // active. Default the dashboard preference to "list" in
             // the mock so useViewMode resolves the same way.
+            //
+            // Bug 3 (commit 5767289) introduced a deliberate
+            // decoupling: trash uses ``useTrashViewMode`` which reads
+            // a SEPARATE YAML key (``articles_trash_view``). Without
+            // a mock value for that key the hook stays at its
+            // hard-coded ``"grid"`` initial state, and the trash-list
+            // assertions in the "trash view respects viewMode toggle"
+            // test fall through (Bug 7 from 2026-05-16). The trash key
+            // is mirrored here so both view-mode hooks resolve to
+            // "list" cleanly. The TrashPanel renders its own
+            // ViewToggle (the global one is hidden in trash mode), so
+            // ``view-toggle-grid`` in the trash flow flips the trash
+            // view via setTrashViewMode — the test's assertions are
+            // correct against that local toggle.
             getApp: vi.fn().mockResolvedValue({
-                ui: { dashboard: { articles_view: "list" } },
+                ui: {
+                    dashboard: {
+                        articles_view: "list",
+                        articles_trash_view: "list",
+                    },
+                },
             }),
             updateApp: vi.fn().mockResolvedValue({}),
         },
@@ -329,9 +348,13 @@ describe("ArticleList", () => {
             screen.getByTestId("article-trash-row-tr-1"),
         ).toBeInTheDocument();
 
-        // Flip to grid via the global ViewToggle. The trash branch
-        // must follow the same setting; before this commit it stayed
-        // on <ul> regardless.
+        // Flip to grid via the TrashPanel's local ViewToggle.
+        // ArticleList hides the global ViewToggle when ``showTrash``
+        // is true (ArticleList.tsx renders it inside a
+        // ``{!showTrash && ...}`` block), so ``view-toggle-grid``
+        // here resolves to the trash-panel's own ViewToggle, which
+        // calls ``setTrashViewMode("grid")`` per Bug 3's decoupled
+        // hook contract.
         fireEvent.click(screen.getByTestId("view-toggle-grid"));
         await waitFor(() =>
             expect(screen.getByTestId("article-trash-grid")).toBeInTheDocument(),
