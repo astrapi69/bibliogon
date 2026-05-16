@@ -3,7 +3,7 @@
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-07 (v0.30.0 cut)
 Latest release: v0.30.0 (launcher localized in 8 languages with full parity-test enforcement; DEP-DBPATH-01 cycle closes — BIBLIOGON_DB_PATH no longer honoured as a path override, warning-only on lingering env var; 5 new bilingual core help pages — books bulk-export, cross-platform installers, architecture, contributing, deployment, API reference; plugin dev guide refreshed for Vite 8 + Node 24; pre-release dependency sweep with fastapi 0.135 → 0.136 lock-step + in-range patches across all subsystems).
-Open tasks: 1 P2 (VB-PHASE4) + 3 active (P3..P5) + 2 BLOCKED-on-upstream + 1 P5 (LAUNCHER-I18N-NATIVE-REVIEW-01, public call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18))
+Open tasks: 1 P2 (PB-PHASE4) + 3 active (P3..P5) + 2 BLOCKED-on-upstream + 1 P5 (LAUNCHER-I18N-NATIVE-REVIEW-01, public call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18))
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
@@ -45,59 +45,45 @@ upgrades. See backlog for a curated daily-planning view.
 
 ## P2 - High-Value User Features
 
-- [ ] **VB-PHASE4**: Visual-Books support (Picture Book v1,
-  Comic + Graphic Novel future) — Sessions 2-10+ per the
-  exploration (originally Kinderbuch-only / Sessions 2-7;
-  re-scoped 2026-05-16 to the Visual-Books umbrella so the
-  schema discriminator is built once for every page-based
-  visual format). Promoted from P5 on 2026-05-16 after user
-  direct ask (Aster authoring a new picture book is a valid
+- [ ] **PB-PHASE4**: Picture-Book plugin (kinderbuch) — Sessions
+  2-7 per the exploration. Promoted from P5 on 2026-05-16 after
+  user direct ask (Aster authoring a new picture book is a valid
   go-signal per the exploration's "Triggers for reconsidering"
-  list).
+  list). Comic-book support is a separate future plugin
+  (`plugin-comics`), not a continuation of this phase.
   - Architecture: [docs/explorations/children-book-plugin.md](explorations/children-book-plugin.md)
-    (rename + body rewrite to visual-books-plugin.md deferred
-    until Session 2 lands).
   - Readiness audit: [docs/audits/kinderbuch-phase4-readiness-2026-05-16.md](audits/kinderbuch-phase4-readiness-2026-05-16.md)
-  - Schema discriminator pattern (introduced in Session 2 so
-    Session 2.5 needs no second migration on `book_type`):
-    - `Book.book_type ∈ {prose, visual_book}` — umbrella.
-    - `Book.visual_sub_type ∈ {picture_book, comic_book, graphic_novel}`
-      — variant. Nullable. Only set when `book_type='visual_book'`.
-      v1 defines only `picture_book`; comic + graphic-novel land
-      as values in Session 2.5.
+  - Schema discriminator pattern (flat, one column):
+    - `Book.book_type ∈ {prose, picture_book, comic_book}`.
+      `picture_book` is v1 active in `plugin-kinderbuch`.
+      `comic_book` is reserved at the schema layer so a future
+      `plugin-comics` can ship its own `panels` and
+      `speech_bubbles` migration without re-migrating
+      `book_type`.
   - Session status:
     - [x] Session 1 — Architecture exploration (delivered via
       existing plugin v1.0.0 + the exploration doc).
-    - [ ] Session 2 — Backend data model: `Book.book_type` +
-      `Book.visual_sub_type` columns + `pages` table + Pydantic
-      schemas + Pages CRUD routes + tests. In progress 2026-05-16.
-    - [ ] Session 2.5 — Comic + graphic-novel foundation:
-      `panels` table + `speech_bubbles` table + their CRUD +
-      adds the `comic_book` and `graphic_novel` `visual_sub_type`
-      values + the comic-specific validation gates.
+    - [x] Session 2 — Backend data model: `Book.book_type` column
+      + `pages` table + Pydantic schemas + Pages CRUD routes +
+      tests + books PATCH immutability guard. Shipped 2026-05-16.
     - [ ] Session 3 — Frontend page-based editor (three-pane
       layout, layout picker, drag-reorder, inline image upload).
-      Re-planned after Session 2 + 2.5 land. Mandatory go/no-go
-      after Aster authors a 4-page test book.
+      Mandatory go/no-go after Aster authors a 4-page test book.
     - [ ] Session 4 — Speech-bubble layout (Layout A) + Playwright
       Chromium PDF export pipeline.
     - [ ] Session 5 — Image-top-text-bottom layout (Layout B) +
       KDP page-count validation + AI-disclosure badge.
     - [ ] Session 6 — EPUB3 Fixed-Layout export + epubcheck.
-    - [ ] Session 7 — Picture-book polish + onboarding
-      (new-children-book starter template, in-app help, builtin
-      BookTemplate).
-    - [ ] Sessions 8-10+ — Comic-side renderer + editor variants
-      (panel-grid templates, Comic-archive export, KDP comic
-      submission). Re-planned after Session 2.5 lands.
-  - Plugin name: `bibliogon-plugin-kinderbuch` stays in v1 and
-    handles all `visual_book` sub-types generically. A plugin
-    rename to `bibliogon-plugin-visual-books` is a future P5
-    decision (filed in backlog) once comic volume substantiates
-    the breaking-change cost.
-  - Out of scope for v1: convert prose <-> visual_book,
+    - [ ] Session 7 — Polish + onboarding (new-children-book
+      starter template, in-app help, builtin BookTemplate).
+  - Plugin separation: `bibliogon-plugin-kinderbuch` owns
+    `picture_book` exclusively. A separate
+    `bibliogon-plugin-comics` will own `comic_book` once
+    user-demand triggers the work (see backlog
+    `COMIC-BOOK-PLUGIN-01`).
+  - Out of scope for v1: convert prose <-> picture_book,
     user-uploaded bubble graphics, two-page spreads, AI-generated
-    illustrations, manga right-to-left reading order.
+    illustrations.
 
 ---
 
@@ -139,10 +125,11 @@ installer discovery report.)
   via plugin-git-sync, parallel to the book path. Deferred — only
   on user demand.
 
-(VB-PHASE4 promoted to P2 on 2026-05-16 with the Visual-Books
-umbrella scope — Picture Book v1, Comic + Graphic Novel future,
-Sessions 2-10+ — replacing the narrower "kinderbuch single-page
-article variant" entry that previously sat here.)
+(PB-PHASE4 promoted to P2 on 2026-05-16 — Picture-Book plugin,
+Sessions 2-7 — replacing the narrower "kinderbuch single-page
+article variant" entry that previously sat here. Comic-Book
+support is a separate future plugin track, not part of
+PB-PHASE4.)
 
 ---
 
@@ -196,7 +183,8 @@ captures the decision history.
 The active AR-01 validation log is the only open AR task; it sits
 in P3 above. Phase 4 article-as-WBT is a deferred-on-user-demand
 item in P5; the picture-book work has been promoted to P2 as
-VB-PHASE4 (Visual-Books umbrella scope).
+PB-PHASE4 (Picture-Book plugin scope; Comic-Book is filed
+separately in the backlog).
 
 ---
 

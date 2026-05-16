@@ -282,27 +282,29 @@ store.
 
 ## P5 - Speculative / Nice-to-have
 
-- **RENAME-PLUGIN-KINDERBUCH-TO-VISUAL-BOOKS-01** (P5): rename
-  `bibliogon-plugin-kinderbuch` to `bibliogon-plugin-visual-books`
-  once Comic + Graphic-Novel sub-types have substantive volume
-  in the codebase and the German-only plugin name has become a
-  discoverability blocker.
-  Trigger: 3+ Comic books authored, OR a contributor reports
-  confusion about the plugin name covering Comics, OR the plugin
-  ships its own user-visible UI strings beyond the current
-  template list (where the German name leaks into the UI).
-  Scope: rename plugin directory + package + entry-point +
-  config YAML + path-dep in backend pyproject + all routes
-  (`/api/kinderbuch/*` -> `/api/visual-books/*`) + all i18n
-  keys + the route prefix used by Bibliogon's plugin loader.
-  Cost: disruptive; existing routes, config, and 8 tests all
-  rename in lock-step.
-  Deferred reason: plugin rename is breaking-change class for
-  external integrations (third-party plugin authors depending on
-  hookspecs that route through the kinderbuch plugin). v1 keeps
-  the name and the plugin handles every `visual_book` sub-type
-  generically; the rename is purely a discoverability fix that
-  doesn't change behaviour.
+- **COMIC-BOOK-PLUGIN-01** (P5): build a separate
+  `bibliogon-plugin-comics` to own `book_type == "comic_book"`.
+  The value is already reserved at the Pydantic schema layer
+  (PB-PHASE4 Session 2) so the comics plugin can ship its own
+  migration adding `panels` and `speech_bubbles` tables WITHOUT
+  re-migrating the `book_type` column.
+  Trigger: 3+ Comic-book authoring sessions reported, OR user
+  pre-commits to a comics project, OR a contributor steps up
+  with intent to build the plugin.
+  Scope: new `plugin-comics` package + Panel entity migration
+  (per-page panel rows, panel_grid_4 / panel_grid_6 / panel_grid_9
+  layouts) + SpeechBubble entity migration (with page-OR-panel
+  XOR CHECK constraint) + CRUD routes under
+  `/api/books/{id}/{panels,speech_bubbles}` + comic-specific
+  Playwright renderer for KDP / Comic-archive (CBZ) export.
+  Frontend variant follows after the Picture-Book PageEditor lands
+  in PB-PHASE4 Session 3. Plugin-discriminator is `book_type ==
+  "comic_book"` (no umbrella required).
+  Deferred reason: no current Comic-book authoring demand.
+  PB-PHASE4 (Picture-Book) is the active user need; building two
+  plugins in parallel splits attention and risks shipping neither
+  well. Reserve the schema value, ship the picture-book MVP,
+  validate it end-to-end with Aster, then revisit.
 
 - **CONVERT-TO-BOOK-REVERSE-LINK-01** (P5): restore the
   `preserve_article_id_metadata` setting that Phase 1 dropped
