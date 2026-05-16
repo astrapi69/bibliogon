@@ -1873,6 +1873,10 @@ ui:
       empty_trash_message: "Alle {count} Kommentare im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
       empty_trash_success: "Papierkorb geleert."
       empty_trash_error: "Papierkorb leeren fehlgeschlagen."
+      bulk_restore_button: "Wiederherstellen"
+      bulk_restore_success: "{count} Kommentare wiederhergestellt"
+      bulk_restore_error: "Bulk-Wiederherstellung fehlgeschlagen"
+      bulk_permanent_button: "Endgültig löschen"
   convert_to_book:
     bar_button: "Als Buch"
     bar_button_tooltip: "Ausgewählte Artikel als Buch zusammenfassen"

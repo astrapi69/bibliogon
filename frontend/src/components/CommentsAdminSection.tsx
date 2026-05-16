@@ -436,6 +436,55 @@ export default function CommentsAdminSection() {
         }
     };
 
+    const handleBulkRestore = async () => {
+        const ordered = rows
+            .map((r) => r.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        try {
+            const result = await api.comments.bulkRestore(ordered);
+            setRows((prev) =>
+                prev.filter(
+                    (r) =>
+                        !ordered.includes(r.id) ||
+                        result.failed.some((f) => f.id === r.id),
+                ),
+            );
+            selection.clear();
+            refreshTrashCount();
+            notify.success(
+                t(
+                    "ui.comments.admin.bulk_restore_success",
+                    "{count} Kommentare wiederhergestellt",
+                ).replace("{count}", String(result.restored_count)),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.bulk_restore_error",
+                          "Bulk-Wiederherstellung fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        }
+    };
+
+    // Bulk-permanent inside trash view reuses the existing
+    // ``bulkDelete`` endpoint with ``permanent=true`` — the backend
+    // hard-deletes already-trashed rows cleanly. The type-to-confirm
+    // dialog from the active-view path is wired against
+    // ``bulkDeleteDialog`` so we re-use that same state. The handler
+    // that runs on confirm (``handleBulkDeletePermanentConfirmed``)
+    // already calls the right endpoint shape.
+    const handleBulkPermanentInTrashRequest = () => {
+        const ordered = rows
+            .map((r) => r.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length === 0) return;
+        setBulkDeleteDialog({ids: ordered, count: ordered.length});
+    };
+
     const handleEmptyTrash = async () => {
         if (trashCount === 0) return;
         const ok = await dialog.confirm(
@@ -678,9 +727,7 @@ export default function CommentsAdminSection() {
                 </p>
             )}
 
-            {/* Bulk-action bar is active-view-only in Commit 4.
-                Commit 5 adds a trash-view bulk bar with bulk-Restore
-                + bulk-Permanent-Delete affordances. */}
+            {/* Active-view bulk bar: Move-to-Trash + Permanent. */}
             {viewMode === "active" && selection.count > 0 && (
                 <CommentBulkActionBar
                     count={selection.count}
@@ -689,6 +736,82 @@ export default function CommentsAdminSection() {
                     onClear={selection.clear}
                     t={t}
                 />
+            )}
+
+            {/* Trash-view bulk bar: Restore + Permanent. Distinct
+                from the active-view bar because the affordances are
+                different — there's no "move to trash" for an already
+                trashed row, and Restore is the new affordance. */}
+            {viewMode === "trash" && selection.count > 0 && (
+                <div
+                    role="region"
+                    aria-label={t(
+                        "ui.comments.admin.bulk.region_label",
+                        "Bulk-Aktionen",
+                    )}
+                    data-testid="comments-trash-bulk-action-bar"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: 12,
+                        padding: 10,
+                        background: "var(--surface-2, #f5f5f5)",
+                        borderRadius: 6,
+                    }}
+                >
+                    <span
+                        data-testid="comments-trash-bulk-count"
+                        style={{flex: 1, fontWeight: 500}}
+                    >
+                        {t(
+                            "ui.comments.admin.bulk.selected_count",
+                            "{count} ausgewählt",
+                        ).replace("{count}", String(selection.count))}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        data-testid="comments-trash-bulk-restore"
+                        onClick={() => void handleBulkRestore()}
+                        style={{display: "flex", alignItems: "center", gap: 6}}
+                    >
+                        <RotateCcw size={14} />
+                        {t(
+                            "ui.comments.admin.bulk_restore_button",
+                            "Wiederherstellen",
+                        )}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        data-testid="comments-trash-bulk-permanent"
+                        onClick={handleBulkPermanentInTrashRequest}
+                        style={{
+                            color: "var(--danger, #b91c1c)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                        }}
+                    >
+                        <Trash2 size={14} />
+                        {t(
+                            "ui.comments.admin.bulk_permanent_button",
+                            "Endgültig löschen",
+                        )}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        data-testid="comments-trash-bulk-clear"
+                        onClick={selection.clear}
+                    >
+                        {t(
+                            "ui.comments.admin.bulk.clear_button",
+                            "Auswahl aufheben",
+                        )}
+                    </button>
+                </div>
             )}
 
             {rows.length > 0 && (
@@ -703,7 +826,6 @@ export default function CommentsAdminSection() {
                 >
                     <thead>
                         <tr>
-                            {viewMode === "active" && (
                             <th
                                 style={{
                                     textAlign: "left",
@@ -715,7 +837,11 @@ export default function CommentsAdminSection() {
                             >
                                 <input
                                     type="checkbox"
-                                    data-testid="comments-admin-select-all"
+                                    data-testid={
+                                        viewMode === "trash"
+                                            ? "comments-trash-select-all"
+                                            : "comments-admin-select-all"
+                                    }
                                     aria-label={t(
                                         "ui.comments.admin.select_all_visible",
                                         "Alle sichtbaren auswählen",
@@ -730,7 +856,6 @@ export default function CommentsAdminSection() {
                                     }}
                                 />
                             </th>
-                            )}
                             <th
                                 style={{
                                     textAlign: "left",
@@ -833,14 +958,17 @@ export default function CommentsAdminSection() {
                                     if (viewMode === "active") setPreviewComment(row);
                                 }}
                             >
-                                {viewMode === "active" && (
                                 <td
                                     style={{padding: "6px", width: 32}}
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <input
                                         type="checkbox"
-                                        data-testid={`comments-admin-select-${row.id}`}
+                                        data-testid={
+                                            viewMode === "trash"
+                                                ? `comments-trash-select-${row.id}`
+                                                : `comments-admin-select-${row.id}`
+                                        }
                                         aria-label={t(
                                             "ui.comments.admin.select_row",
                                             "Auswählen",
@@ -849,7 +977,6 @@ export default function CommentsAdminSection() {
                                         onChange={() => selection.toggle(row.id)}
                                     />
                                 </td>
-                                )}
                                 <td style={{padding: "6px"}}>
                                     {row.author?.trim() ||
                                         t(

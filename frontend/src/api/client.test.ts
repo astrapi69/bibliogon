@@ -570,6 +570,34 @@ describe("api.comments trash-lifecycle", () => {
         mockFetch.mockReturnValue(errorResponse(404, "Comment not found in trash"));
         await expect(api.comments.permanentDelete("live-id")).rejects.toThrow();
     });
+
+    it("bulkRestore POSTs ids to /comments/trash/bulk-restore", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            restored_count: 2,
+            skipped_not_in_trash: [],
+            failed: [],
+        }));
+        const result = await api.comments.bulkRestore(["a", "b"]);
+        expect(result.restored_count).toBe(2);
+        expect(mockFetch).toHaveBeenCalledWith(
+            "/api/comments/trash/bulk-restore",
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({ids: ["a", "b"]}),
+            }),
+        );
+    });
+
+    it("bulkRestore surfaces skipped + failed entries", async () => {
+        mockFetch.mockReturnValue(jsonResponse({
+            restored_count: 1,
+            skipped_not_in_trash: ["already-live"],
+            failed: [{id: "missing", error: "not found"}],
+        }));
+        const result = await api.comments.bulkRestore(["a", "already-live", "missing"]);
+        expect(result.skipped_not_in_trash).toEqual(["already-live"]);
+        expect(result.failed[0].error).toBe("not found");
+    });
 });
 
 // --- Authors (Bug 8 Phase 1) ---

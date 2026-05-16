@@ -348,6 +348,103 @@ def test_empty_trash_idempotent_when_already_empty() -> None:
     assert second.status_code == 204
 
 
+# --- Bug 10 Commit 5: bulk-restore --------------------------------------
+
+
+def test_bulk_restore_happy_path_restores_all() -> None:
+    ids = _seed_comments()
+    _trash_comment(ids["linked_medium"])
+    _trash_comment(ids["orphan_medium"])
+    resp = client.post(
+        "/api/comments/trash/bulk-restore",
+        json={"ids": [ids["linked_medium"], ids["orphan_medium"]]},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 2
+    assert body["skipped_not_in_trash"] == []
+    assert body["failed"] == []
+    # Both rows reappear in the active list.
+    live_ids = {row["id"] for row in client.get("/api/comments?limit=500").json()}
+    assert {ids["linked_medium"], ids["orphan_medium"]}.issubset(live_ids)
+
+
+def test_bulk_restore_skips_already_live_ids() -> None:
+    """Idempotency: sending a live id is not an error — it lands
+    in ``skipped_not_in_trash``."""
+    ids = _seed_comments()
+    _trash_comment(ids["orphan_medium"])
+    resp = client.post(
+        "/api/comments/trash/bulk-restore",
+        json={"ids": [ids["linked_medium"], ids["orphan_medium"]]},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 1
+    assert body["skipped_not_in_trash"] == [ids["linked_medium"]]
+
+
+def test_bulk_restore_reports_unknown_ids_as_failed() -> None:
+    ids = _seed_comments()
+    _trash_comment(ids["orphan_medium"])
+    resp = client.post(
+        "/api/comments/trash/bulk-restore",
+        json={"ids": ["nonexistent-id", ids["orphan_medium"]]},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 1
+    assert body["failed"] == [{"id": "nonexistent-id", "error": "not found"}]
+
+
+def test_bulk_restore_empty_ids_returns_422() -> None:
+    resp = client.post("/api/comments/trash/bulk-restore", json={"ids": []})
+    assert resp.status_code == 422
+
+
+def test_bulk_restore_then_active_list_includes_rows() -> None:
+    ids = _seed_comments()
+    _trash_comment(ids["linked_medium"])
+    client.post(
+        "/api/comments/trash/bulk-restore",
+        json={"ids": [ids["linked_medium"]]},
+    )
+    db = SessionLocal()
+    try:
+        row = db.query(ArticleComment).filter_by(id=ids["linked_medium"]).one()
+        assert row.deleted_at is None
+    finally:
+        db.close()
+
+
+# --- Bug 10 Commit 5: bulk-permanent reuses bulk-delete?permanent=true ------
+
+
+def test_bulk_permanent_delete_in_trash_via_existing_bulk_delete() -> None:
+    """Bulk-permanent in trash view sends the existing
+    ``POST /comments/bulk-delete`` with ``permanent=true``. Pinning
+    that the existing endpoint hard-deletes already-trashed rows
+    cleanly (no double-handling for the soft-deleted state).
+    """
+    ids = _seed_comments()
+    _trash_comment(ids["linked_medium"])
+    _trash_comment(ids["orphan_medium"])
+    resp = client.post(
+        "/api/comments/bulk-delete",
+        json={"ids": [ids["linked_medium"], ids["orphan_medium"]], "permanent": True},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["deleted_count"] == 2
+    # Both rows are gone from the DB entirely.
+    db = SessionLocal()
+    try:
+        for cid in (ids["linked_medium"], ids["orphan_medium"]):
+            assert db.query(ArticleComment).filter_by(id=cid).first() is None
+    finally:
+        db.close()
+
+
 def test_trash_lifecycle_full_round_trip() -> None:
     """Backend regression-pin for the user-visible flow that Bug 10
     closes: soft-delete → trash list shows row → restore → row

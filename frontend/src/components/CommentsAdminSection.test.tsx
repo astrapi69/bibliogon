@@ -85,6 +85,17 @@ const permanentDeleteMock = vi.fn<(id: string) => Promise<void>>(
     async () => {},
 );
 const emptyTrashMock = vi.fn<() => Promise<void>>(async () => {});
+const bulkRestoreMock = vi.fn<
+    (ids: string[]) => Promise<{
+        restored_count: number;
+        skipped_not_in_trash: string[];
+        failed: {id: string; error: string}[];
+    }>
+>(async (ids) => ({
+    restored_count: ids.length,
+    skipped_not_in_trash: [],
+    failed: [],
+}));
 
 const navigateMock = vi.fn();
 
@@ -128,6 +139,7 @@ vi.mock("../api/client", async () => {
                 restore: (id: string) => restoreMock(id),
                 permanentDelete: (id: string) => permanentDeleteMock(id),
                 emptyTrash: () => emptyTrashMock(),
+                bulkRestore: (ids: string[]) => bulkRestoreMock(ids),
             },
         },
     };
@@ -175,6 +187,12 @@ beforeEach(() => {
     permanentDeleteMock.mockImplementation(async () => {});
     emptyTrashMock.mockClear();
     emptyTrashMock.mockImplementation(async () => {});
+    bulkRestoreMock.mockClear();
+    bulkRestoreMock.mockImplementation(async (ids) => ({
+        restored_count: ids.length,
+        skipped_not_in_trash: [],
+        failed: [],
+    }));
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -192,6 +210,7 @@ afterEach(() => {
     restoreMock.mockClear();
     permanentDeleteMock.mockClear();
     emptyTrashMock.mockClear();
+    bulkRestoreMock.mockClear();
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -790,7 +809,7 @@ describe("CommentsAdminSection trash view", () => {
         expect(screen.queryByTestId("comments-admin-row-t-row-1")).toBeNull();
     });
 
-    it("trash view hides the filter bar + select-all + bulk bar", async () => {
+    it("trash view hides the filter bar but namespaces selection under comments-trash-*", async () => {
         listTrashedMock.mockImplementation(async () => [mkRow({id: "tx"})]);
         render(<CommentsAdminSection />);
         await waitFor(() =>
@@ -802,12 +821,17 @@ describe("CommentsAdminSection trash view", () => {
         );
         // Filter bar is active-view-only.
         expect(screen.queryByTestId("comments-admin-filters")).toBeNull();
-        // Select-all + per-row checkbox are active-view-only in Commit 4
-        // (Commit 5 brings them back for bulk-restore + bulk-permanent).
+        // Commit 5: select-all + per-row checkboxes ARE present in
+        // trash view but under the ``comments-trash-*`` namespace so
+        // they don't collide with active-view selectors.
+        expect(screen.getByTestId("comments-trash-select-all")).toBeTruthy();
+        expect(screen.getByTestId("comments-trash-select-tx")).toBeTruthy();
         expect(screen.queryByTestId("comments-admin-select-all")).toBeNull();
         expect(screen.queryByTestId("comments-admin-select-tx")).toBeNull();
-        // Bulk bar can't appear without selection in trash view.
+        // Active-view bulk bar must not appear in trash view; trash-
+        // view bulk bar only renders when selection.count > 0.
         expect(screen.queryByTestId("comment-bulk-action-bar")).toBeNull();
+        expect(screen.queryByTestId("comments-trash-bulk-action-bar")).toBeNull();
     });
 
     it("renders the trash-empty CTA when trash has rows", async () => {
@@ -1002,5 +1026,133 @@ describe("CommentsAdminSection trash view", () => {
         await waitFor(() => expect(notifyError).toHaveBeenCalled());
         // Row stays since the optimistic drop is gated on success.
         expect(screen.getByTestId("comments-trash-row-rerr")).toBeTruthy();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Bug 10 Commit 5: bulk-restore + bulk-permanent-delete in trash view
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection trash bulk actions", () => {
+    it("checking the trash select-all selects every trashed row", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "t1"}),
+            mkRow({id: "t2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-select-all")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-select-all"));
+        // Trash bulk-action bar appears with count = 2.
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-bulk-action-bar")).toBeTruthy(),
+        );
+        expect(screen.getByTestId("comments-trash-bulk-count").textContent).toContain("2");
+    });
+
+    it("bulk-restore button POSTs the selected ids + clears + toasts", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "tb1"}),
+            mkRow({id: "tb2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-select-tb1")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-select-tb1"));
+        fireEvent.click(screen.getByTestId("comments-trash-select-tb2"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-bulk-restore")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-bulk-restore"));
+        await waitFor(() =>
+            expect(bulkRestoreMock).toHaveBeenCalledWith(["tb1", "tb2"]),
+        );
+        // Rows drop optimistically + bar closes (selection.clear).
+        await waitFor(() =>
+            expect(screen.queryByTestId("comments-trash-row-tb1")).toBeNull(),
+        );
+        expect(notifySuccess).toHaveBeenCalled();
+    });
+
+    it("bulk-permanent in trash opens the type-to-confirm dialog and uses bulkDelete?permanent=true on confirm", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "td1"}),
+            mkRow({id: "td2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-select-all")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-select-all"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-bulk-permanent")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-bulk-permanent"));
+        // The shared TypeToConfirmDialog opens. The user must type
+        // the count (``"2"`` here) into the input to enable the
+        // confirm button.
+        await screen.findByTestId("type-to-confirm-dialog");
+        const input = screen.getByTestId(
+            "type-to-confirm-input",
+        ) as HTMLInputElement;
+        fireEvent.change(input, {target: {value: "2"}});
+        fireEvent.click(screen.getByTestId("type-to-confirm-confirm"));
+        await waitFor(() =>
+            expect(bulkDeleteMock).toHaveBeenCalledWith(["td1", "td2"], true),
+        );
+    });
+
+    it("bulk-restore error path surfaces a toast + leaves rows", async () => {
+        bulkRestoreMock.mockImplementation(async () => {
+            throw new Error("boom");
+        });
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "fail"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-select-fail")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-select-fail"));
+        fireEvent.click(screen.getByTestId("comments-trash-bulk-restore"));
+        await waitFor(() => expect(notifyError).toHaveBeenCalled());
+        // Row stays because the optimistic drop is gated on success.
+        expect(screen.getByTestId("comments-trash-row-fail")).toBeTruthy();
+    });
+
+    it("Clear button in the trash bulk-bar resets selection", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "tc1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-select-tc1")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-select-tc1"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-bulk-clear")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-bulk-clear"));
+        await waitFor(() =>
+            expect(screen.queryByTestId("comments-trash-bulk-action-bar")).toBeNull(),
+        );
     });
 });

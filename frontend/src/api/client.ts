@@ -2024,6 +2024,22 @@ export const api = {
          *  (idempotent). */
         emptyTrash: () =>
             request<void>("/comments/trash/empty", {method: "DELETE"}),
+
+        /** Bulk-restore the given trashed ids. Per-id outcomes:
+         *  ``restored_count`` (success), ``skipped_not_in_trash``
+         *  (already live — idempotent), ``failed`` (unknown id or
+         *  unexpected error). Bulk-permanent-delete is NOT a
+         *  separate endpoint — use ``bulkDelete(ids, true)`` which
+         *  hard-deletes regardless of soft-delete state. */
+        bulkRestore: (ids: string[]) =>
+            request<{
+                restored_count: number
+                skipped_not_in_trash: string[]
+                failed: {id: string; error: string}[]
+            }>("/comments/trash/bulk-restore", {
+                method: "POST",
+                body: JSON.stringify({ids}),
+            }),
     },
 
     authors: {

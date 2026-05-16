@@ -1884,6 +1884,10 @@ ui:
       empty_trash_message: "All {count} comments in the trash will be permanently deleted. This action cannot be undone."
       empty_trash_success: "Trash emptied."
       empty_trash_error: "Could not empty the trash."
+      bulk_restore_button: "Restore"
+      bulk_restore_success: "{count} comments restored"
+      bulk_restore_error: "Bulk restore failed"
+      bulk_permanent_button: "Delete permanently"
   convert_to_book:
     bar_button: "As book"
     bar_button_tooltip: "Combine selected articles into a new book"

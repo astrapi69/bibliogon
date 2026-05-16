@@ -42,15 +42,18 @@ Endpoints:
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import ArticleComment
 from app.routers.articles import CommentOut
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
@@ -200,6 +203,86 @@ def permanent_delete_comment(comment_id: str, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=404, detail="Comment not found in trash")
     db.delete(comment)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Bug 10 Commit 5: bulk-restore (counterpart to the existing bulk-delete).
+# Bulk-permanent-delete-from-trash reuses ``POST /api/comments/bulk-delete``
+# with ``permanent=true`` (the existing endpoint accepts any comment id and
+# hard-deletes when ``permanent`` is True, regardless of soft-delete state),
+# so no separate bulk-permanent endpoint is added here.
+# ---------------------------------------------------------------------------
+
+
+class BulkRestoreRequest(BaseModel):
+    ids: list[str] = Field(min_length=1)
+
+
+class _BulkRestoreFailed(BaseModel):
+    id: str
+    error: str
+
+
+class BulkRestoreResponse(BaseModel):
+    """Per-id outcome of a bulk-restore. Mirrors the shape of
+    ``BulkDeleteResponse``: a single count of successful operations,
+    a list of ids that were not eligible (idempotency-skip), and a
+    list of unexpected per-id failures.
+    """
+
+    restored_count: int
+    skipped_not_in_trash: list[str]
+    failed: list[_BulkRestoreFailed]
+
+
+@router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
+def bulk_restore_comments(
+    body: BulkRestoreRequest,
+    db: Session = Depends(get_db),
+) -> BulkRestoreResponse:
+    """Restore multiple trashed comments in one round-trip.
+
+    Per-id semantics match the existing bulk-delete:
+
+    - Unknown id → ``failed`` entry (``"not found"``).
+    - Id exists but is already live (``deleted_at IS NULL``) →
+      ``skipped_not_in_trash`` entry; idempotent so a caller that
+      sends a hand-built list including already-restored ids
+      doesn't raise.
+    - Id exists and is trashed → clear ``deleted_at``; increment
+      ``restored_count``.
+
+    Uncapped (same cost profile as bulk-delete: one DB UPDATE per
+    row; sub-second for thousands).
+    """
+    restored_count = 0
+    skipped: list[str] = []
+    failed: list[_BulkRestoreFailed] = []
+
+    rows = db.query(ArticleComment).filter(ArticleComment.id.in_(body.ids)).all()
+    by_id = {row.id: row for row in rows}
+
+    for row_id in body.ids:
+        row = by_id.get(row_id)
+        if row is None:
+            failed.append(_BulkRestoreFailed(id=row_id, error="not found"))
+            continue
+        if row.deleted_at is None:
+            skipped.append(row_id)
+            continue
+        try:
+            row.deleted_at = None
+            restored_count += 1
+        except Exception as exc:  # noqa: BLE001 - boundary handler
+            logger.exception("bulk-restore: failed on %s", row_id)
+            failed.append(_BulkRestoreFailed(id=row_id, error=str(exc)))
+
+    db.commit()
+    return BulkRestoreResponse(
+        restored_count=restored_count,
+        skipped_not_in_trash=skipped,
+        failed=failed,
+    )
 
 
 # ---------------------------------------------------------------------------
