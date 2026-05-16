@@ -1,16 +1,18 @@
-"""End-to-end tests for POST /api/articles/bulk-delete and
-POST /api/books/bulk-delete.
+"""End-to-end tests for POST /api/articles/bulk-delete,
+POST /api/books/bulk-delete, and POST /api/comments/bulk-delete.
 
 Covers both soft (default) and permanent paths plus the edge
 cases the user spec'd: empty body rejected, over-limit rejected,
 missing IDs land in ``failed``, already-trashed IDs land in
 ``skipped_already_trashed`` on the soft path, cascade-deletes
-children on the permanent path.
+children on the permanent path. ArticleComment is a leaf (no
+cascade children) so its permanent path just removes the row.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.main import app
-from app.models import Article, ArticleAsset, Book, Chapter, Publication
+from app.models import Article, ArticleAsset, ArticleComment, Book, Chapter, Publication
 
 
 @pytest.fixture(scope="module")
@@ -52,6 +54,25 @@ def _make_book(client: TestClient, title: str = "Bulk-test book") -> str:
     resp = client.post("/api/books", json={"title": title, "author": "Tester"})
     assert resp.status_code in (200, 201), resp.text
     return resp.json()["id"]
+
+
+def _make_comment(
+    db: Session,
+    body_text: str = "Bulk-test comment",
+    imported_from: str = "medium",
+) -> str:
+    """Insert an ArticleComment directly via SQLAlchemy. Comments don't
+    have a create-endpoint — they arrive via the Medium-import plugin
+    in production; tests seed them through the ORM, mirroring the
+    pattern used in ``test_comments_admin.py``."""
+    row = ArticleComment(
+        body_text=body_text,
+        imported_from=imported_from,
+        imported_at=datetime(2026, 4, 1, tzinfo=timezone.utc),
+    )
+    db.add(row)
+    db.commit()
+    return row.id
 
 
 # ---------------------------------------------------------------------------
@@ -192,6 +213,72 @@ def test_books_bulk_delete_permanent_cascades_chapters(
     assert body["deleted_count"] == 1
     assert db.query(Book).filter(Book.id == bid).first() is None
     assert db.query(Chapter).filter(Chapter.book_id == bid).count() == 0
+
+
+# ---------------------------------------------------------------------------
+# Comments — soft + permanent paths (leaf model, no cascade children)
+# ---------------------------------------------------------------------------
+
+
+def test_comments_bulk_delete_soft_path_moves_to_trash(
+    client: TestClient, db: Session
+) -> None:
+    ids = [_make_comment(db, f"Soft comment {i}") for i in range(3)]
+    body = client.post(
+        "/api/comments/bulk-delete", json={"ids": ids, "permanent": False}
+    ).json()
+    assert body["deleted_count"] == 3
+    assert body["skipped_already_trashed"] == []
+    assert body["failed"] == []
+    for cid in ids:
+        row = db.query(ArticleComment).filter(ArticleComment.id == cid).one()
+        assert row.deleted_at is not None
+
+
+def test_comments_bulk_delete_soft_path_skips_already_trashed(
+    client: TestClient, db: Session
+) -> None:
+    """Mixed list: half already trashed, half live. Soft path skips
+    the trashed ones and surfaces them under skipped_already_trashed."""
+    live_ids = [_make_comment(db, f"Live comment {i}") for i in range(2)]
+    trashed_ids = [_make_comment(db, f"Pre-trashed comment {i}") for i in range(2)]
+    for tid in trashed_ids:
+        assert client.delete(f"/api/comments/{tid}").status_code == 204
+
+    all_ids = [*live_ids, *trashed_ids]
+    body = client.post(
+        "/api/comments/bulk-delete", json={"ids": all_ids, "permanent": False}
+    ).json()
+    assert body["deleted_count"] == 2
+    assert set(body["skipped_already_trashed"]) == set(trashed_ids)
+    assert body["failed"] == []
+
+
+def test_comments_bulk_delete_missing_id_lands_in_failed(
+    client: TestClient, db: Session
+) -> None:
+    real_id = _make_comment(db, "Real comment")
+    body = client.post(
+        "/api/comments/bulk-delete",
+        json={"ids": [real_id, "fake-comment-id"], "permanent": False},
+    ).json()
+    assert body["deleted_count"] == 1
+    assert {f["id"] for f in body["failed"]} == {"fake-comment-id"}
+    assert body["failed"][0]["error"] == "not found"
+
+
+def test_comments_bulk_delete_permanent_path_hard_deletes(
+    client: TestClient, db: Session
+) -> None:
+    """ArticleComment is a leaf — no cascade children to check, just
+    verify the row is gone from the DB entirely."""
+    ids = [_make_comment(db, f"Permanent comment {i}") for i in range(2)]
+    body = client.post(
+        "/api/comments/bulk-delete", json={"ids": ids, "permanent": True}
+    ).json()
+    assert body["deleted_count"] == 2
+    for cid in ids:
+        assert db.query(ArticleComment).filter(ArticleComment.id == cid).first() is None
 
 
 # ---------------------------------------------------------------------------

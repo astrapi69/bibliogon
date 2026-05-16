@@ -1,11 +1,12 @@
-"""Bulk delete for Articles and Books.
+"""Bulk delete for Articles, Books, and ArticleComments.
 
-Two endpoints, mirrored:
+Three endpoints, mirrored:
 
     POST /api/articles/bulk-delete
     POST /api/books/bulk-delete
+    POST /api/comments/bulk-delete
 
-Body shape (both endpoints):
+Body shape (all endpoints):
 
     {"ids": ["...", "..."], "permanent": false}
 
@@ -23,7 +24,9 @@ Permanent path (``permanent=true``): hard-deletes the row.
 SQLAlchemy ``cascade="all, delete-orphan"`` handles the children
 (Article -> Publication / ArticleAsset / ArticleImportSource;
 Book -> Chapter / Asset / BookImportSource), all verified in
-models/__init__.py.
+models/__init__.py. ArticleComment is a leaf in the data model
+(no cascade children), so the permanent path just removes the
+row.
 
 No hard cap. Bulk-delete is intentionally uncapped (unlike bulk-
 export which keeps its 200-article cap): the cost profile is
@@ -49,7 +52,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Article, Book
+from app.models import Article, ArticleComment, Book
 
 logger = logging.getLogger(__name__)
 
@@ -75,16 +78,18 @@ class BulkDeleteResponse(BaseModel):
 
 articles_router = APIRouter(prefix="/articles", tags=["articles"])
 books_router = APIRouter(prefix="/books", tags=["books"])
+comments_router = APIRouter(prefix="/comments", tags=["comments"])
 
 
 def _bulk_delete(
-    model: type[Article] | type[Book],
+    model: type[Article] | type[Book] | type[ArticleComment],
     ids: list[str],
     permanent: bool,
     db: Session,
 ) -> BulkDeleteResponse:
-    """Shared core. Same shape for Article and Book; the SQLAlchemy
-    cascade configuration on each model handles child rows."""
+    """Shared core. Same shape for Article / Book / ArticleComment;
+    the SQLAlchemy cascade configuration on each model handles child
+    rows (ArticleComment is a leaf — no children to cascade)."""
     deleted_count = 0
     skipped: list[str] = []
     failed: list[_FailedItem] = []
@@ -94,13 +99,13 @@ def _bulk_delete(
     # need to know whether a requested ID actually exists.
     # ``cast`` because SQLAlchemy's ``db.query(model).all()`` returns
     # ``list[Base]`` (the declarative-base superclass), but the caller
-    # always passes Article or Book so the runtime rows DO carry the
-    # expected attributes.
+    # always passes Article / Book / ArticleComment so the runtime
+    # rows DO carry the expected attributes.
     rows = cast(
-        "list[Article | Book]",
+        "list[Article | Book | ArticleComment]",
         db.query(model).filter(model.id.in_(ids)).all(),
     )
-    by_id: dict[str, Article | Book] = {row.id: row for row in rows}
+    by_id: dict[str, Article | Book | ArticleComment] = {row.id: row for row in rows}
 
     for row_id in ids:
         row = by_id.get(row_id)
@@ -153,3 +158,11 @@ def bulk_delete_books(
     db: Session = Depends(get_db),
 ) -> BulkDeleteResponse:
     return _bulk_delete(Book, body.ids, body.permanent, db)
+
+
+@comments_router.post("/bulk-delete", response_model=BulkDeleteResponse)
+def bulk_delete_comments(
+    body: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+) -> BulkDeleteResponse:
+    return _bulk_delete(ArticleComment, body.ids, body.permanent, db)
