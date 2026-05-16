@@ -18,6 +18,9 @@ import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {LoadingIndicator} from "./LoadingIndicator";
+import CommentBulkActionBar from "./comments/CommentBulkActionBar";
+import {useCommentSelection} from "./comments/useCommentSelection";
+import TypeToConfirmDialog from "./dialogs/TypeToConfirmDialog";
 
 const PAGE_SIZE = 100;
 
@@ -56,6 +59,16 @@ export default function CommentsAdminSection() {
     // ``pageLimit`` only grows; "Load more" bumps it by PAGE_SIZE.
     // The backend caps at 500, so the UI caps at 500 too.
     const [pageLimit, setPageLimit] = useState(PAGE_SIZE);
+    const selection = useCommentSelection();
+    // Snapshot of {ids, count} captured the moment the user opens the
+    // type-to-confirm dialog. The selection can still change in
+    // theory while the dialog is open (filter change clears
+    // selection), so the snapshot is what gets deleted, not the live
+    // selection.
+    const [bulkDeleteDialog, setBulkDeleteDialog] = useState<{
+        ids: string[];
+        count: number;
+    } | null>(null);
 
     // Hold the latest ``t`` in a ref so the fetch effect can reach
     // the i18n fallback without re-running every time ``t``'s
@@ -106,9 +119,13 @@ export default function CommentsAdminSection() {
         // Resetting the page limit on filter change is intentional:
         // a new filter shouldn't inherit the prior "load more"
         // expansions, which would otherwise produce confusing
-        // mid-page jumps.
+        // mid-page jumps. Selection also clears because filtered-out
+        // rows would otherwise stay in the count as orphans (per the
+        // "destructive row-actions must reconcile collection state"
+        // rule applied to filter-change too).
         setFilters((prev) => ({...prev, ...patch}));
         setPageLimit(PAGE_SIZE);
+        selection.clear();
     };
 
     const showLoadMore =
@@ -140,8 +157,12 @@ export default function CommentsAdminSection() {
         try {
             const result = await api.comments.reclassifyAsArticle(row.id);
             // Optimistically drop from the visible list — the comment
-            // no longer exists.
+            // no longer exists. Also reconcile selection so the bar's
+            // count never references an orphan id (per the
+            // "destructive row-actions must reconcile collection state"
+            // rule).
             setRows((prev) => prev.filter((c) => c.id !== row.id));
+            selection.remove(row.id);
             // ``bulkAction`` shape (message + action callback + label)
             // matches what we want here even though the internal type
             // names reference "undo" — re-use rather than fork a
@@ -190,8 +211,10 @@ export default function CommentsAdminSection() {
             await api.comments.delete(row.id);
             // Optimistically drop from the visible list; cheaper
             // than a full refetch and matches the
-            // "delete-and-move-on" mental model.
+            // "delete-and-move-on" mental model. Reconcile selection
+            // so the bar's count stays consistent.
             setRows((prev) => prev.filter((c) => c.id !== row.id));
+            selection.remove(row.id);
             notify.success(
                 t("ui.comments.admin.delete_success", "Comment deleted."),
             );
@@ -208,6 +231,78 @@ export default function CommentsAdminSection() {
             setPendingDelete(null);
         }
     };
+
+    // Bulk-delete: gather currently-selected ids (in visible-list
+    // order so the toast count matches the user's intuition), call
+    // the backend, drop the rows + selection optimistically.
+    const handleBulkDelete = async (_permanent: false) => {
+        const ordered = rows
+            .map((r) => r.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2) return;
+        try {
+            const result = await api.comments.bulkDelete(ordered, false);
+            setRows((prev) =>
+                prev.filter(
+                    (r) =>
+                        !ordered.includes(r.id) ||
+                        result.failed.some((f) => f.id === r.id),
+                ),
+            );
+            selection.clear();
+            notify.success(
+                t(
+                    "ui.bulk_delete.toast_trashed",
+                    "{count} in den Papierkorb verschoben",
+                ).replace("{count}", String(result.deleted_count)),
+            );
+        } catch (err) {
+            notify.error(
+                t(
+                    "ui.bulk_delete.toast_failed",
+                    "Bulk-Löschen fehlgeschlagen",
+                ),
+                err,
+            );
+        }
+    };
+
+    const handleBulkDeletePermanentRequest = () => {
+        const ordered = rows
+            .map((r) => r.id)
+            .filter((id) => selection.isSelected(id));
+        if (ordered.length < 2) return;
+        setBulkDeleteDialog({ids: ordered, count: ordered.length});
+    };
+
+    const handleBulkDeletePermanentConfirmed = async () => {
+        if (!bulkDeleteDialog) return;
+        const {ids} = bulkDeleteDialog;
+        setBulkDeleteDialog(null);
+        try {
+            const result = await api.comments.bulkDelete(ids, true);
+            setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
+            selection.clear();
+            notify.success(
+                t(
+                    "ui.bulk_delete.toast_deleted_permanent",
+                    "{count} endgültig gelöscht",
+                ).replace("{count}", String(result.deleted_count)),
+            );
+        } catch (err) {
+            notify.error(
+                t(
+                    "ui.bulk_delete.toast_failed",
+                    "Bulk-Löschen fehlgeschlagen",
+                ),
+                err,
+            );
+        }
+    };
+
+    const visibleIds = rows.map((r) => r.id);
+    const allVisibleSelected =
+        visibleIds.length > 0 && visibleIds.every((id) => selection.isSelected(id));
 
     return (
         <section data-testid="comments-admin-section">
@@ -314,6 +409,16 @@ export default function CommentsAdminSection() {
                 </p>
             )}
 
+            {selection.count > 0 && (
+                <CommentBulkActionBar
+                    count={selection.count}
+                    onBulkDelete={() => void handleBulkDelete(false)}
+                    onBulkDeletePermanent={handleBulkDeletePermanentRequest}
+                    onClear={selection.clear}
+                    t={t}
+                />
+            )}
+
             {rows.length > 0 && (
                 <table
                     data-testid="comments-admin-table"
@@ -326,6 +431,32 @@ export default function CommentsAdminSection() {
                 >
                     <thead>
                         <tr>
+                            <th
+                                style={{
+                                    textAlign: "left",
+                                    borderBottom:
+                                        "1px solid var(--border, #e5e7eb)",
+                                    padding: "8px 6px",
+                                    width: 32,
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    data-testid="comments-admin-select-all"
+                                    aria-label={t(
+                                        "ui.comments.admin.select_all_visible",
+                                        "Alle sichtbaren auswählen",
+                                    )}
+                                    checked={allVisibleSelected}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            selection.selectAll(visibleIds);
+                                        } else {
+                                            selection.clear();
+                                        }
+                                    }}
+                                />
+                            </th>
                             <th
                                 style={{
                                     textAlign: "left",
@@ -413,6 +544,18 @@ export default function CommentsAdminSection() {
                                         "1px solid var(--border, #f3f4f6)",
                                 }}
                             >
+                                <td style={{padding: "6px", width: 32}}>
+                                    <input
+                                        type="checkbox"
+                                        data-testid={`comments-admin-select-${row.id}`}
+                                        aria-label={t(
+                                            "ui.comments.admin.select_row",
+                                            "Auswählen",
+                                        )}
+                                        checked={selection.isSelected(row.id)}
+                                        onChange={() => selection.toggle(row.id)}
+                                    />
+                                </td>
                                 <td style={{padding: "6px"}}>
                                     {row.author?.trim() ||
                                         t(
@@ -521,6 +664,17 @@ export default function CommentsAdminSection() {
                     </button>
                 </div>
             )}
+
+            <TypeToConfirmDialog
+                open={bulkDeleteDialog !== null}
+                count={bulkDeleteDialog?.count ?? 0}
+                itemNoun={t(
+                    "ui.comments.admin.bulk.item_noun",
+                    "Kommentare",
+                )}
+                onConfirm={() => void handleBulkDeletePermanentConfirmed()}
+                onCancel={() => setBulkDeleteDialog(null)}
+            />
         </section>
     );
 }

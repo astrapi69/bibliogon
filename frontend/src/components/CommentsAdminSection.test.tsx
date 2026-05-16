@@ -46,6 +46,21 @@ const reclassifyAsArticleMock = vi.fn<
     }>
 >(async (id) => ({success: true, article_id: "art-from-" + id, deleted_comment_id: id}));
 
+const bulkDeleteMock = vi.fn<
+    (
+        ids: string[],
+        permanent: boolean,
+    ) => Promise<{
+        deleted_count: number;
+        skipped_already_trashed: string[];
+        failed: {id: string; error: string}[];
+    }>
+>(async (ids) => ({
+    deleted_count: ids.length,
+    skipped_already_trashed: [],
+    failed: [],
+}));
+
 const navigateMock = vi.fn();
 
 const notifySuccess = vi.fn();
@@ -82,6 +97,8 @@ vi.mock("../api/client", async () => {
                 ) => listMock(params),
                 delete: (id: string) => deleteMock(id),
                 reclassifyAsArticle: (id: string) => reclassifyAsArticleMock(id),
+                bulkDelete: (ids: string[], permanent: boolean) =>
+                    bulkDeleteMock(ids, permanent),
             },
         },
     };
@@ -116,6 +133,12 @@ beforeEach(() => {
         article_id: "art-from-" + id,
         deleted_comment_id: id,
     }));
+    bulkDeleteMock.mockClear();
+    bulkDeleteMock.mockImplementation(async (ids) => ({
+        deleted_count: ids.length,
+        skipped_already_trashed: [],
+        failed: [],
+    }));
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -128,6 +151,7 @@ afterEach(() => {
     listMock.mockClear();
     deleteMock.mockClear();
     reclassifyAsArticleMock.mockClear();
+    bulkDeleteMock.mockClear();
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -502,5 +526,108 @@ describe("CommentsAdminSection reclassify flow", () => {
         expect(screen.getByTestId("comments-admin-row-alpha")).toBeTruthy();
         // No success toast on failure.
         expect(notifyBulkAction).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Bug 4a: bulk-delete wiring. Pins the selection-checkbox surface +
+// the bar visibility rule + the row-delete reconciliation. The
+// dropdown-menu open + permanent-delete confirm dialog interaction
+// goes through Radix DropdownMenu + a portal, which happy-dom does
+// not reliably simulate (see the lessons-learned rule about Radix +
+// happy-dom). Those flows are pinned by the E2E spec instead.
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection bulk-delete wiring", () => {
+    it("renders per-row + select-all checkboxes when rows are present", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "row-1"}),
+            mkRow({id: "row-2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await screen.findByTestId("comments-admin-row-row-1");
+        expect(
+            screen.getByTestId("comments-admin-select-all"),
+        ).toBeTruthy();
+        expect(screen.getByTestId("comments-admin-select-row-1")).toBeTruthy();
+        expect(screen.getByTestId("comments-admin-select-row-2")).toBeTruthy();
+        // Bar starts hidden — count == 0.
+        expect(screen.queryByTestId("comment-bulk-action-bar")).toBeNull();
+    });
+
+    it("toggling rows surfaces the bar at count >= 1", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "row-1"}),
+            mkRow({id: "row-2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        const cb = await screen.findByTestId("comments-admin-select-row-1");
+        fireEvent.click(cb);
+        expect(screen.getByTestId("comment-bulk-action-bar")).toBeTruthy();
+        // Delete trigger disabled at count 1.
+        const trigger = screen.getByTestId(
+            "comment-bulk-delete-menu",
+        ) as HTMLButtonElement;
+        expect(trigger.disabled).toBe(true);
+    });
+
+    it("select-all + delete trigger enabled at count >= 2", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "row-1"}),
+            mkRow({id: "row-2"}),
+            mkRow({id: "row-3"}),
+        ]);
+        render(<CommentsAdminSection />);
+        const all = await screen.findByTestId("comments-admin-select-all");
+        fireEvent.click(all);
+        const bar = screen.getByTestId("comment-bulk-action-bar");
+        expect(bar.textContent).toContain("3");
+        const trigger = screen.getByTestId(
+            "comment-bulk-delete-menu",
+        ) as HTMLButtonElement;
+        expect(trigger.disabled).toBe(false);
+    });
+
+    it("single-row delete also removes the row from selection (reconcile rule)", async () => {
+        listMock.mockResolvedValue([
+            mkRow({id: "row-1"}),
+            mkRow({id: "row-2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        // Select both rows.
+        fireEvent.click(await screen.findByTestId("comments-admin-select-row-1"));
+        fireEvent.click(screen.getByTestId("comments-admin-select-row-2"));
+        // Bar count == 2.
+        expect(screen.getByTestId("comment-bulk-action-bar").textContent).toContain(
+            "2",
+        );
+        // Delete row-1 via the per-row Trash button.
+        fireEvent.click(screen.getByTestId("comments-admin-delete-row-1"));
+        await waitFor(() =>
+            expect(deleteMock).toHaveBeenCalledWith("row-1"),
+        );
+        // Bar count drops to 1 (row-1 removed from selection AND
+        // visible list). Trigger therefore disabled at count 1.
+        await waitFor(() => {
+            const trigger = screen.queryByTestId(
+                "comment-bulk-delete-menu",
+            ) as HTMLButtonElement | null;
+            // Bar still visible because row-2 still selected.
+            expect(trigger).not.toBeNull();
+            expect(trigger!.disabled).toBe(true);
+        });
+    });
+
+    it("filter change clears the selection", async () => {
+        listMock.mockResolvedValue([mkRow({id: "row-1"})]);
+        render(<CommentsAdminSection />);
+        fireEvent.click(await screen.findByTestId("comments-admin-select-row-1"));
+        expect(screen.getByTestId("comment-bulk-action-bar")).toBeTruthy();
+        // Flip orphans-only — the filter-change handler clears the
+        // selection so the count drops to 0 and the bar hides.
+        fireEvent.click(screen.getByTestId("comments-admin-filter-orphans"));
+        await waitFor(() => {
+            expect(screen.queryByTestId("comment-bulk-action-bar")).toBeNull();
+        });
     });
 });
