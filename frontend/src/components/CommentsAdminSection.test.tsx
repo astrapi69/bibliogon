@@ -61,6 +61,31 @@ const bulkDeleteMock = vi.fn<
     failed: [],
 }));
 
+// Bug 10: trash-lifecycle method mocks.
+const listTrashedMock = vi.fn<() => Promise<ArticleComment[]>>(async () => []);
+const restoreMock = vi.fn<(id: string) => Promise<ArticleComment>>(
+    async (id) => ({
+        id,
+        author: null,
+        body_text: "restored",
+        body_json: null,
+        language: "en",
+        published_at: null,
+        canonical_url: null,
+        responds_to_article_id: null,
+        responds_to_url: null,
+        imported_from: "medium",
+        imported_at: "2026-05-16T00:00:00+00:00",
+        source_filename: null,
+        created_at: "2026-05-16T00:00:00+00:00",
+        updated_at: "2026-05-16T00:00:00+00:00",
+    }),
+);
+const permanentDeleteMock = vi.fn<(id: string) => Promise<void>>(
+    async () => {},
+);
+const emptyTrashMock = vi.fn<() => Promise<void>>(async () => {});
+
 const navigateMock = vi.fn();
 
 const notifySuccess = vi.fn();
@@ -99,6 +124,10 @@ vi.mock("../api/client", async () => {
                 reclassifyAsArticle: (id: string) => reclassifyAsArticleMock(id),
                 bulkDelete: (ids: string[], permanent: boolean) =>
                     bulkDeleteMock(ids, permanent),
+                listTrashed: () => listTrashedMock(),
+                restore: (id: string) => restoreMock(id),
+                permanentDelete: (id: string) => permanentDeleteMock(id),
+                emptyTrash: () => emptyTrashMock(),
             },
         },
     };
@@ -139,6 +168,13 @@ beforeEach(() => {
         skipped_already_trashed: [],
         failed: [],
     }));
+    listTrashedMock.mockClear();
+    listTrashedMock.mockImplementation(async () => []);
+    restoreMock.mockClear();
+    permanentDeleteMock.mockClear();
+    permanentDeleteMock.mockImplementation(async () => {});
+    emptyTrashMock.mockClear();
+    emptyTrashMock.mockImplementation(async () => {});
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -152,6 +188,10 @@ afterEach(() => {
     deleteMock.mockClear();
     reclassifyAsArticleMock.mockClear();
     bulkDeleteMock.mockClear();
+    listTrashedMock.mockClear();
+    restoreMock.mockClear();
+    permanentDeleteMock.mockClear();
+    emptyTrashMock.mockClear();
     navigateMock.mockClear();
     notifySuccess.mockClear();
     notifyError.mockClear();
@@ -700,5 +740,267 @@ describe("CommentsAdminSection preview modal + row truncation", () => {
         fireEvent.click(btn);
         // Modal must NOT have opened.
         expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Bug 10: trash view-toggle + Restore / Permanent-Delete row actions +
+// Empty-Trash CTA
+// ---------------------------------------------------------------------------
+
+describe("CommentsAdminSection trash view", () => {
+    it("renders the trash-toggle button + badge when trash is non-empty", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "t1"}),
+            mkRow({id: "t2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() => {
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy();
+        });
+        // Badge shows the count from the initial trash probe.
+        await waitFor(() => {
+            const badge = screen.queryByTestId("comments-trash-badge");
+            expect(badge?.textContent).toBe("2");
+        });
+    });
+
+    it("hides the badge when trash is empty", async () => {
+        listTrashedMock.mockImplementation(async () => []);
+        render(<CommentsAdminSection />);
+        await waitFor(() => {
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy();
+        });
+        expect(screen.queryByTestId("comments-trash-badge")).toBeNull();
+    });
+
+    it("clicking the trash toggle fetches listTrashed + renders trash rows", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "t-row-1", body_text: "in trash"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() => {
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy();
+        });
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() => {
+            expect(screen.getByTestId("comments-trash-row-t-row-1")).toBeTruthy();
+        });
+        // Active-view row testid namespace is NOT used in trash view.
+        expect(screen.queryByTestId("comments-admin-row-t-row-1")).toBeNull();
+    });
+
+    it("trash view hides the filter bar + select-all + bulk bar", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "tx"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-tx")).toBeTruthy(),
+        );
+        // Filter bar is active-view-only.
+        expect(screen.queryByTestId("comments-admin-filters")).toBeNull();
+        // Select-all + per-row checkbox are active-view-only in Commit 4
+        // (Commit 5 brings them back for bulk-restore + bulk-permanent).
+        expect(screen.queryByTestId("comments-admin-select-all")).toBeNull();
+        expect(screen.queryByTestId("comments-admin-select-tx")).toBeNull();
+        // Bulk bar can't appear without selection in trash view.
+        expect(screen.queryByTestId("comment-bulk-action-bar")).toBeNull();
+    });
+
+    it("renders the trash-empty CTA when trash has rows", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "t1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-t1")).toBeTruthy(),
+        );
+        expect(screen.getByTestId("comments-trash-empty")).toBeTruthy();
+    });
+
+    it("renders empty-state copy when trash is empty", async () => {
+        listTrashedMock.mockImplementation(async () => []);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() => {
+            expect(screen.getByTestId("comments-trash-empty")).toBeTruthy();
+        });
+    });
+
+    it("Restore row action calls api.comments.restore + drops row + toasts", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "tr1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-tr1")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-restore-tr1"));
+        await waitFor(() => expect(restoreMock).toHaveBeenCalledWith("tr1"));
+        await waitFor(() =>
+            expect(screen.queryByTestId("comments-trash-row-tr1")).toBeNull(),
+        );
+        expect(notifySuccess).toHaveBeenCalled();
+    });
+
+    it("Permanent-Delete row action confirms then calls api.comments.permanentDelete", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "pd1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-pd1")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-permanent-pd1"));
+        await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+        await waitFor(() =>
+            expect(permanentDeleteMock).toHaveBeenCalledWith("pd1"),
+        );
+        await waitFor(() =>
+            expect(screen.queryByTestId("comments-trash-row-pd1")).toBeNull(),
+        );
+        expect(notifySuccess).toHaveBeenCalled();
+    });
+
+    it("Permanent-Delete cancel keeps the row + skips the API", async () => {
+        confirmMock.mockImplementation(async () => false);
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "safe"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-safe")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-permanent-safe"));
+        await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+        expect(permanentDeleteMock).not.toHaveBeenCalled();
+        expect(screen.getByTestId("comments-trash-row-safe")).toBeTruthy();
+    });
+
+    it("Empty-Trash CTA confirms then calls api.comments.emptyTrash", async () => {
+        listTrashedMock.mockImplementation(async () => [
+            mkRow({id: "e1"}),
+            mkRow({id: "e2"}),
+        ]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-empty")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-empty"));
+        await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+        await waitFor(() => expect(emptyTrashMock).toHaveBeenCalled());
+        // Rows wiped optimistically.
+        await waitFor(() =>
+            expect(screen.queryByTestId("comments-trash-row-e1")).toBeNull(),
+        );
+        expect(notifySuccess).toHaveBeenCalled();
+    });
+
+    it("Empty-Trash cancel skips the API", async () => {
+        confirmMock.mockImplementation(async () => false);
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "e1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-empty")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-empty"));
+        await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+        expect(emptyTrashMock).not.toHaveBeenCalled();
+    });
+
+    it("trash-view row click does NOT open the preview modal", async () => {
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "rc"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        const row = await screen.findByTestId("comments-trash-row-rc");
+        fireEvent.click(row);
+        expect(screen.queryByTestId("comment-preview-modal")).toBeNull();
+    });
+
+    it("toggling back to active re-fetches the active list", async () => {
+        listMock.mockImplementation(async () => [mkRow({id: "act-1"})]);
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "tr-1"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-admin-row-act-1")).toBeTruthy(),
+        );
+        const initialListCalls = listMock.mock.calls.length;
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-tr-1")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-active-toggle"));
+        await waitFor(() =>
+            expect(listMock.mock.calls.length).toBeGreaterThan(initialListCalls),
+        );
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-admin-row-act-1")).toBeTruthy(),
+        );
+    });
+
+    it("soft-delete from active view triggers a trash-count refresh", async () => {
+        listMock.mockImplementation(async () => [mkRow({id: "live-1"})]);
+        // Initial probe: 0 trashed. After delete: 1 trashed.
+        let trashRows: ArticleComment[] = [];
+        listTrashedMock.mockImplementation(async () => trashRows);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-admin-row-live-1")).toBeTruthy(),
+        );
+        // No badge initially.
+        expect(screen.queryByTestId("comments-trash-badge")).toBeNull();
+        // Click the per-row delete; mock the backend to soft-delete.
+        trashRows = [mkRow({id: "live-1"})];
+        fireEvent.click(screen.getByTestId("comments-admin-delete-live-1"));
+        await waitFor(() => expect(deleteMock).toHaveBeenCalled());
+        // Badge should reappear with count 1 after the refresh probe.
+        await waitFor(() => {
+            const badge = screen.queryByTestId("comments-trash-badge");
+            expect(badge?.textContent).toBe("1");
+        });
+    });
+
+    it("Restore error path surfaces a toast", async () => {
+        restoreMock.mockImplementation(async () => {
+            throw new Error("boom");
+        });
+        listTrashedMock.mockImplementation(async () => [mkRow({id: "rerr"})]);
+        render(<CommentsAdminSection />);
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-toggle")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-toggle"));
+        await waitFor(() =>
+            expect(screen.getByTestId("comments-trash-row-rerr")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("comments-trash-restore-rerr"));
+        await waitFor(() => expect(notifyError).toHaveBeenCalled());
+        // Row stays since the optimistic drop is gated on success.
+        expect(screen.getByTestId("comments-trash-row-rerr")).toBeTruthy();
     });
 });

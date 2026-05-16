@@ -1856,6 +1856,23 @@ ui:
       preview:
         title: "Kommentar-Details"
         parent_url: "Antwort auf"
+      # Bug 10: Papierkorb-Lifecycle-Ansicht + Aktionen.
+      view_active: "Aktive"
+      view_trash: "Papierkorb"
+      trash_empty: "Der Papierkorb ist leer."
+      restore_action: "Wiederherstellen"
+      restore_success: "Kommentar wiederhergestellt."
+      restore_error: "Wiederherstellen fehlgeschlagen."
+      permanent_delete_action: "Endgültig löschen"
+      permanent_delete_title: "Endgültig löschen?"
+      permanent_delete_message: "Der Kommentar wird unwiderruflich entfernt. Body preview: \"{preview}\""
+      permanent_delete_success: "Kommentar endgültig gelöscht."
+      permanent_delete_error: "Endgültiges Löschen fehlgeschlagen."
+      empty_trash_button: "Papierkorb leeren"
+      empty_trash_title: "Papierkorb leeren"
+      empty_trash_message: "Alle {count} Kommentare im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+      empty_trash_success: "Papierkorb geleert."
+      empty_trash_error: "Papierkorb leeren fehlgeschlagen."
   convert_to_book:
     bar_button: "Als Buch"
     bar_button_tooltip: "Ausgewählte Artikel als Buch zusammenfassen"

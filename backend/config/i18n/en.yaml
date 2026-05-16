@@ -1856,6 +1856,23 @@ ui:
       preview:
         title: "Comment details"
         parent_url: "In reply to"
+      # Bug 10: trash-lifecycle view + actions.
+      view_active: "Active"
+      view_trash: "Trash"
+      trash_empty: "Trash is empty."
+      restore_action: "Restore"
+      restore_success: "Comment restored."
+      restore_error: "Restore failed."
+      permanent_delete_action: "Delete permanently"
+      permanent_delete_title: "Delete permanently?"
+      permanent_delete_message: "The comment will be removed permanently. Body preview: \"{preview}\""
+      permanent_delete_success: "Comment permanently deleted."
+      permanent_delete_error: "Permanent delete failed."
+      empty_trash_button: "Empty trash"
+      empty_trash_title: "Empty trash"
+      empty_trash_message: "All {count} comments in the trash will be permanently deleted. This action cannot be undone."
+      empty_trash_success: "Trash emptied."
+      empty_trash_error: "Could not empty the trash."
   convert_to_book:
     bar_button: "As book"
     bar_button_tooltip: "Combine selected articles into a new book"

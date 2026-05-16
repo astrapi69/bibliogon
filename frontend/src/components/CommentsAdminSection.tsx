@@ -11,7 +11,7 @@
 
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {Trash2} from "lucide-react";
+import {RotateCcw, Trash, Trash2} from "lucide-react";
 
 import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
@@ -58,12 +58,25 @@ function formatDate(iso: string | null, lang: string): string {
     }
 }
 
+type ViewMode = "active" | "trash";
+
 export default function CommentsAdminSection() {
     const {t, lang} = useI18n();
     const dialog = useDialog();
     const navigate = useNavigate();
     const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
     const [rows, setRows] = useState<ArticleComment[]>([]);
+    // Bug 10: view-mode toggle. ``"active"`` is the historical
+    // CommentsAdmin behaviour (lists rows with ``deleted_at IS
+    // NULL``); ``"trash"`` lists soft-deleted rows via
+    // ``api.comments.listTrashed`` and swaps per-row Delete for
+    // Restore + Permanent-Delete. Mirrors the AD / BD
+    // ``trash-toggle`` pattern (see Dashboard.tsx / ArticleList.tsx).
+    const [viewMode, setViewMode] = useState<ViewMode>("active");
+    const [trashCount, setTrashCount] = useState(0);
+    const [pendingRestore, setPendingRestore] = useState<string | null>(null);
+    const [pendingPermanent, setPendingPermanent] = useState<string | null>(null);
+    const [emptyingTrash, setEmptyingTrash] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -103,15 +116,21 @@ export default function CommentsAdminSection() {
         let cancelled = false;
         setLoading(true);
         setLoadError(null);
-        api.comments
-            .list({
-                importedFrom: filters.importedFrom || undefined,
-                orphansOnly: filters.orphansOnly,
-                limit: pageLimit,
-            })
+        const fetcher =
+            viewMode === "trash"
+                ? api.comments.listTrashed()
+                : api.comments.list({
+                      importedFrom: filters.importedFrom || undefined,
+                      orphansOnly: filters.orphansOnly,
+                      limit: pageLimit,
+                  });
+        fetcher
             .then((data) => {
                 if (!cancelled) {
                     setRows(data);
+                    if (viewMode === "trash") {
+                        setTrashCount(data.length);
+                    }
                     setLoading(false);
                 }
             })
@@ -132,7 +151,28 @@ export default function CommentsAdminSection() {
         return () => {
             cancelled = true;
         };
-    }, [filters, pageLimit]);
+    }, [filters, pageLimit, viewMode]);
+
+    // Bug 10: keep the trash-toggle badge count fresh even while
+    // viewing the active list. Fires once on mount + after any
+    // mutation that may change the trash population (single
+    // soft-delete, restore, permanent-delete, empty-trash). Cheap:
+    // the backend returns the full trash list; ``length`` is the
+    // count. If trash size ever crosses ~thousands the right move
+    // is a dedicated ``GET /comments/trash/count`` endpoint; until
+    // then the existing list endpoint is sufficient.
+    const refreshTrashCount = () => {
+        api.comments
+            .listTrashed()
+            .then((rows) => setTrashCount(rows.length))
+            .catch(() => {
+                /* badge is non-critical; silent failure is OK */
+            });
+    };
+
+    useEffect(() => {
+        refreshTrashCount();
+    }, []);
 
     const updateFilter = (patch: Partial<FilterState>) => {
         // Resetting the page limit on filter change is intentional:
@@ -239,6 +279,8 @@ export default function CommentsAdminSection() {
             selection.remove(row.id);
             // Close the preview modal if it was open against this row.
             setPreviewComment((prev) => (prev?.id === row.id ? null : prev));
+            // Bug 10: trash population changed, refresh the badge.
+            refreshTrashCount();
             notify.success(
                 t("ui.comments.admin.delete_success", "Comment deleted."),
             );
@@ -274,6 +316,7 @@ export default function CommentsAdminSection() {
                 ),
             );
             selection.clear();
+            refreshTrashCount();
             notify.success(
                 t(
                     "ui.bulk_delete.toast_trashed",
@@ -307,6 +350,7 @@ export default function CommentsAdminSection() {
             const result = await api.comments.bulkDelete(ids, true);
             setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
             selection.clear();
+            refreshTrashCount();
             notify.success(
                 t(
                     "ui.bulk_delete.toast_deleted_permanent",
@@ -322,6 +366,123 @@ export default function CommentsAdminSection() {
                 err,
             );
         }
+    };
+
+    // --- Bug 10: trash-view row actions ---
+
+    const handleRestore = async (row: ArticleComment) => {
+        setPendingRestore(row.id);
+        try {
+            await api.comments.restore(row.id);
+            // Optimistically drop from the trash list; the row is
+            // now alive in the active list.
+            setRows((prev) => prev.filter((c) => c.id !== row.id));
+            selection.remove(row.id);
+            refreshTrashCount();
+            notify.success(
+                t("ui.comments.admin.restore_success", "Kommentar wiederhergestellt"),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.restore_error",
+                          "Wiederherstellen fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        } finally {
+            setPendingRestore(null);
+        }
+    };
+
+    const handlePermanentDelete = async (row: ArticleComment) => {
+        const preview =
+            row.body_text.length > 80
+                ? row.body_text.slice(0, 80) + "..."
+                : row.body_text;
+        const ok = await dialog.confirm(
+            t("ui.comments.admin.permanent_delete_title", "Endgültig löschen?"),
+            t(
+                "ui.comments.admin.permanent_delete_message",
+                'Der Kommentar wird unwiderruflich entfernt. Body preview: "{preview}"',
+            ).replace("{preview}", preview),
+            "danger",
+        );
+        if (!ok) return;
+        setPendingPermanent(row.id);
+        try {
+            await api.comments.permanentDelete(row.id);
+            setRows((prev) => prev.filter((c) => c.id !== row.id));
+            selection.remove(row.id);
+            refreshTrashCount();
+            notify.success(
+                t(
+                    "ui.comments.admin.permanent_delete_success",
+                    "Kommentar endgültig gelöscht",
+                ),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.permanent_delete_error",
+                          "Endgültiges Löschen fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        } finally {
+            setPendingPermanent(null);
+        }
+    };
+
+    const handleEmptyTrash = async () => {
+        if (trashCount === 0) return;
+        const ok = await dialog.confirm(
+            t("ui.comments.admin.empty_trash_title", "Papierkorb leeren"),
+            t(
+                "ui.comments.admin.empty_trash_message",
+                "Alle {count} Kommentare im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+            ).replace("{count}", String(trashCount)),
+            "danger",
+        );
+        if (!ok) return;
+        setEmptyingTrash(true);
+        try {
+            await api.comments.emptyTrash();
+            setRows([]);
+            setTrashCount(0);
+            selection.clear();
+            notify.success(
+                t(
+                    "ui.comments.admin.empty_trash_success",
+                    "Papierkorb geleert",
+                ),
+            );
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.comments.admin.empty_trash_error",
+                          "Papierkorb leeren fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        } finally {
+            setEmptyingTrash(false);
+        }
+    };
+
+    const switchViewMode = (next: ViewMode) => {
+        if (next === viewMode) return;
+        // Reset everything that scoped to the previous view: rows
+        // (re-fetched by the effect), selection (don't leak ids
+        // across views — they're in different lifecycle states),
+        // and the page limit (active-view-only).
+        setRows([]);
+        selection.clear();
+        setPageLimit(PAGE_SIZE);
+        setViewMode(next);
     };
 
     const visibleIds = rows.map((r) => r.id);
@@ -344,6 +505,80 @@ export default function CommentsAdminSection() {
                 )}
             </p>
 
+            {/* Bug 10: view-mode toggle. Mirrors AD / BD trash-toggle.
+                Always shows the trash button (even when count = 0)
+                so the affordance is discoverable; the badge only
+                renders when there's something to see. */}
+            <div
+                data-testid="comments-admin-view-toggle"
+                style={{
+                    display: "flex",
+                    gap: 8,
+                    marginTop: 12,
+                    alignItems: "center",
+                }}
+            >
+                <button
+                    type="button"
+                    className={
+                        viewMode === "active" ? "btn btn-primary" : "btn btn-secondary"
+                    }
+                    data-testid="comments-active-toggle"
+                    onClick={() => switchViewMode("active")}
+                    aria-pressed={viewMode === "active"}
+                >
+                    {t("ui.comments.admin.view_active", "Aktive")}
+                </button>
+                <button
+                    type="button"
+                    className={
+                        viewMode === "trash" ? "btn btn-primary" : "btn btn-secondary"
+                    }
+                    data-testid="comments-trash-toggle"
+                    onClick={() => switchViewMode("trash")}
+                    aria-pressed={viewMode === "trash"}
+                    style={{display: "flex", alignItems: "center", gap: 6}}
+                >
+                    <Trash size={14} />
+                    {t("ui.comments.admin.view_trash", "Papierkorb")}
+                    {trashCount > 0 && (
+                        <span
+                            data-testid="comments-trash-badge"
+                            style={{
+                                background: "var(--danger, #b91c1c)",
+                                color: "#fff",
+                                borderRadius: 10,
+                                padding: "0 6px",
+                                fontSize: "0.75rem",
+                                marginLeft: 4,
+                            }}
+                        >
+                            {trashCount}
+                        </span>
+                    )}
+                </button>
+                {viewMode === "trash" && rows.length > 0 && (
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        data-testid="comments-trash-empty"
+                        onClick={() => void handleEmptyTrash()}
+                        disabled={emptyingTrash}
+                        style={{
+                            marginLeft: "auto",
+                            color: "var(--danger, #b91c1c)",
+                        }}
+                    >
+                        <Trash size={14} />{" "}
+                        {t(
+                            "ui.comments.admin.empty_trash_button",
+                            "Papierkorb leeren",
+                        )}
+                    </button>
+                )}
+            </div>
+
+            {viewMode === "active" && (
             <div
                 data-testid="comments-admin-filters"
                 style={{
@@ -391,6 +626,7 @@ export default function CommentsAdminSection() {
                     )}
                 </label>
             </div>
+            )}
 
             {loadError && (
                 <div
@@ -418,7 +654,11 @@ export default function CommentsAdminSection() {
 
             {!loading && rows.length === 0 && !loadError && (
                 <p
-                    data-testid="comments-admin-empty"
+                    data-testid={
+                        viewMode === "trash"
+                            ? "comments-trash-empty"
+                            : "comments-admin-empty"
+                    }
                     style={{
                         marginTop: 16,
                         color: "var(--text-muted, #6b7280)",
@@ -426,14 +666,22 @@ export default function CommentsAdminSection() {
                         fontStyle: "italic",
                     }}
                 >
-                    {t(
-                        "ui.comments.admin.empty",
-                        "No comments match the current filters.",
-                    )}
+                    {viewMode === "trash"
+                        ? t(
+                              "ui.comments.admin.trash_empty",
+                              "Der Papierkorb ist leer.",
+                          )
+                        : t(
+                              "ui.comments.admin.empty",
+                              "No comments match the current filters.",
+                          )}
                 </p>
             )}
 
-            {selection.count > 0 && (
+            {/* Bulk-action bar is active-view-only in Commit 4.
+                Commit 5 adds a trash-view bulk bar with bulk-Restore
+                + bulk-Permanent-Delete affordances. */}
+            {viewMode === "active" && selection.count > 0 && (
                 <CommentBulkActionBar
                     count={selection.count}
                     onBulkDelete={() => void handleBulkDelete(false)}
@@ -455,6 +703,7 @@ export default function CommentsAdminSection() {
                 >
                     <thead>
                         <tr>
+                            {viewMode === "active" && (
                             <th
                                 style={{
                                     textAlign: "left",
@@ -481,6 +730,7 @@ export default function CommentsAdminSection() {
                                     }}
                                 />
                             </th>
+                            )}
                             <th
                                 style={{
                                     textAlign: "left",
@@ -562,14 +812,28 @@ export default function CommentsAdminSection() {
                         {rows.map((row) => (
                             <tr
                                 key={row.id}
-                                data-testid={`comments-admin-row-${row.id}`}
+                                data-testid={
+                                    viewMode === "trash"
+                                        ? `comments-trash-row-${row.id}`
+                                        : `comments-admin-row-${row.id}`
+                                }
                                 style={{
                                     borderBottom:
                                         "1px solid var(--border, #f3f4f6)",
-                                    cursor: "pointer",
+                                    cursor: viewMode === "active" ? "pointer" : "default",
                                 }}
-                                onClick={() => setPreviewComment(row)}
+                                onClick={() => {
+                                    // Preview modal is active-view-only.
+                                    // Its actions (Reclassify, Delete)
+                                    // assume a live row; a trash-aware
+                                    // variant lands later. In trash
+                                    // view the per-row title attribute
+                                    // on the body cell shows the full
+                                    // text on hover, which is enough.
+                                    if (viewMode === "active") setPreviewComment(row);
+                                }}
                             >
+                                {viewMode === "active" && (
                                 <td
                                     style={{padding: "6px", width: 32}}
                                     onClick={(e) => e.stopPropagation()}
@@ -585,6 +849,7 @@ export default function CommentsAdminSection() {
                                         onChange={() => selection.toggle(row.id)}
                                     />
                                 </td>
+                                )}
                                 <td style={{padding: "6px"}}>
                                     {row.author?.trim() ||
                                         t(
@@ -630,32 +895,76 @@ export default function CommentsAdminSection() {
                                     style={{padding: "6px", textAlign: "right", whiteSpace: "nowrap"}}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    {/* Bug 4c: Reclassify lives ONLY in the
-                                        preview modal. The row keeps the
-                                        single-item delete button — bulk
-                                        delete is the menu in the bar; the
-                                        per-row Trash is the quick path for
-                                        a single removal without selecting. */}
-                                    <button
-                                        type="button"
-                                        className="btn-icon"
-                                        data-testid={`comments-admin-delete-${row.id}`}
-                                        onClick={() => {
-                                            void handleDelete(row);
-                                        }}
-                                        disabled={pendingDelete === row.id}
-                                        aria-label={t(
-                                            "ui.comments.admin.delete_action",
-                                            "Delete comment",
-                                        )}
-                                        title={t(
-                                            "ui.comments.admin.delete_action",
-                                            "Delete comment",
-                                        )}
-                                        style={{color: "var(--danger, #b91c1c)"}}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    {viewMode === "active" ? (
+                                        /* Bug 4c: Reclassify lives ONLY in the
+                                            preview modal. The row keeps the
+                                            single-item delete button — bulk
+                                            delete is the menu in the bar; the
+                                            per-row Trash is the quick path for
+                                            a single removal without selecting. */
+                                        <button
+                                            type="button"
+                                            className="btn-icon"
+                                            data-testid={`comments-admin-delete-${row.id}`}
+                                            onClick={() => {
+                                                void handleDelete(row);
+                                            }}
+                                            disabled={pendingDelete === row.id}
+                                            aria-label={t(
+                                                "ui.comments.admin.delete_action",
+                                                "Delete comment",
+                                            )}
+                                            title={t(
+                                                "ui.comments.admin.delete_action",
+                                                "Delete comment",
+                                            )}
+                                            style={{color: "var(--danger, #b91c1c)"}}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    ) : (
+                                        <span style={{display: "inline-flex", gap: 4}}>
+                                            <button
+                                                type="button"
+                                                className="btn-icon"
+                                                data-testid={`comments-trash-restore-${row.id}`}
+                                                onClick={() => {
+                                                    void handleRestore(row);
+                                                }}
+                                                disabled={pendingRestore === row.id}
+                                                aria-label={t(
+                                                    "ui.comments.admin.restore_action",
+                                                    "Wiederherstellen",
+                                                )}
+                                                title={t(
+                                                    "ui.comments.admin.restore_action",
+                                                    "Wiederherstellen",
+                                                )}
+                                            >
+                                                <RotateCcw size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-icon"
+                                                data-testid={`comments-trash-permanent-${row.id}`}
+                                                onClick={() => {
+                                                    void handlePermanentDelete(row);
+                                                }}
+                                                disabled={pendingPermanent === row.id}
+                                                aria-label={t(
+                                                    "ui.comments.admin.permanent_delete_action",
+                                                    "Endgültig löschen",
+                                                )}
+                                                title={t(
+                                                    "ui.comments.admin.permanent_delete_action",
+                                                    "Endgültig löschen",
+                                                )}
+                                                style={{color: "var(--danger, #b91c1c)"}}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -663,7 +972,7 @@ export default function CommentsAdminSection() {
                 </table>
             )}
 
-            {showLoadMore && (
+            {viewMode === "active" && showLoadMore && (
                 <div style={{marginTop: 16, textAlign: "center"}}>
                     <button
                         type="button"
