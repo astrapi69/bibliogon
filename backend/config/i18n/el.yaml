@@ -1830,6 +1830,24 @@ ui:
       delete_message: "This will move the comment to trash. Body preview: \"{preview}\""
       delete_success: "Comment deleted."
       delete_error: "Could not delete the comment."
+      # Bug 4: bulk-delete + preview modal + Reclassify-in-modal (passthru, pending native review).
+      reclassify_title: "Move comment to articles?"
+      reclassify_message: "This will move the comment to the articles list with an auto-derived title. Body preview: \"{preview}\""
+      reclassify_action: "Move to articles"
+      reclassify_view: "View article"
+      reclassify_success: "Comment moved to articles."
+      reclassify_error: "Could not move the comment."
+      reclassify_tooltip: "This action moves the comment to the articles collection. Use it when the import heuristic mis-classified an article as a comment."
+      select_row: "Select"
+      select_all_visible: "Select all visible"
+      bulk:
+        selected_count: "{count} selected"
+        region_label: "Bulk actions"
+        clear_button: "Clear selection"
+        item_noun: "comments"
+      preview:
+        title: "Comment details"
+        parent_url: "In reply to"
   convert_to_book:
     bar_button: "As book"
     bar_button_tooltip: "Combine selected articles into a new book"

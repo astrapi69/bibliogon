@@ -68,11 +68,9 @@ test.describe("Reclassify Article ⇄ ArticleComment (F2c)", () => {
         expect(articleRes.status).toBe(404);
     });
 
-    test("Comment → Article: comments admin row reclassifies and surfaces a deep-link toast", async ({page}) => {
-        // Seed via the test-reset path is not available here; create
-        // a comment by reclassifying a fresh article, then reverse
-        // the move from the admin tab. This round-trips the
-        // workflow the user would do.
+    test("Comment → Article: preview modal reclassify surfaces a deep-link toast", async ({page}) => {
+        // Bug 4c: the row button was removed. The action now lives
+        // only inside the preview modal that opens on row click.
         const article = await postJson<{id: string}>("/articles", {
             title: "Comment about something",
             author: "Asterios",
@@ -88,11 +86,27 @@ test.describe("Reclassify Article ⇄ ArticleComment (F2c)", () => {
         const row = page.getByTestId(`comments-admin-row-${commentId}`);
         await expect(row).toBeVisible({timeout: 5000});
 
-        await page.getByTestId(`comments-admin-reclassify-${commentId}`).click();
+        // Bug 4c regression pin: the row-level reclassify button does
+        // not exist. Only the modal carries the action.
+        await expect(
+            page.getByTestId(`comments-admin-reclassify-${commentId}`),
+        ).toHaveCount(0);
 
-        const confirmDialog = page.getByRole("dialog");
+        // Click-to-open the preview modal.
+        await row.click();
+        const modal = page.getByTestId("comment-preview-modal");
+        await expect(modal).toBeVisible();
+
+        // Modal carries the reclassify action.
+        await page.getByTestId("comment-preview-reclassify").click();
+
+        // AppDialog confirm. Same name-matcher as the article-to-comment
+        // direction so this stays tolerant of i18n.
+        const confirmDialog = page.getByRole("dialog").last();
         await expect(confirmDialog).toBeVisible();
-        await confirmDialog.getByRole("button", {name: /Move to articles|Confirm|Bestätigen/i}).click();
+        await confirmDialog
+            .getByRole("button", {name: /Move to articles|Confirm|Bestätigen/i})
+            .click();
 
         // Row drops from the admin list.
         await expect(row).not.toBeVisible({timeout: 5000});

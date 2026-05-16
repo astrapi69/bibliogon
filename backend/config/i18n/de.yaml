@@ -1819,6 +1819,24 @@ ui:
       delete_message: "Der Kommentar wird in den Papierkorb verschoben. Vorschau: \"{preview}\""
       delete_success: "Kommentar gelöscht."
       delete_error: "Der Kommentar konnte nicht gelöscht werden."
+      # Bug 4: bulk-delete + preview modal + Reclassify-in-modal.
+      reclassify_title: "Kommentar zu Artikeln verschieben?"
+      reclassify_message: "Der Kommentar wird als Artikel mit automatisch abgeleitetem Titel hinzugefügt. Vorschau: \"{preview}\""
+      reclassify_action: "In Artikel verschieben"
+      reclassify_view: "Artikel öffnen"
+      reclassify_success: "Kommentar zu Artikeln verschoben."
+      reclassify_error: "Der Kommentar konnte nicht verschoben werden."
+      reclassify_tooltip: "Diese Aktion verschiebt den Kommentar in die Artikel-Sammlung. Nutze sie wenn die Import-Heuristik einen Artikel fälschlich als Kommentar klassifiziert hat."
+      select_row: "Auswählen"
+      select_all_visible: "Alle sichtbaren auswählen"
+      bulk:
+        selected_count: "{count} ausgewählt"
+        region_label: "Bulk-Aktionen"
+        clear_button: "Auswahl aufheben"
+        item_noun: "Kommentare"
+      preview:
+        title: "Kommentar-Details"
+        parent_url: "Antwort auf"
   convert_to_book:
     bar_button: "Als Buch"
     bar_button_tooltip: "Ausgewählte Artikel als Buch zusammenfassen"
