@@ -90,6 +90,21 @@ class Book(Base):
     asin_paperback: Mapped[str | None] = mapped_column(String(20), nullable=True)
     asin_hardcover: Mapped[str | None] = mapped_column(String(20), nullable=True)
     keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    # Bug 9: Books-only subject categorisation. Categories is free-
+    # text (KDP-style category names like "Fiction > Fantasy >
+    # Coming of Age" — the KDP plugin's yaml catalogue ships 25
+    # canonical suggestions, but any string is valid because
+    # platforms beyond KDP have their own taxonomies). BISAC codes
+    # are the industry-standard 9-char identifier (3 letters +
+    # 6 digits, e.g. ``FIC022020`` for Fantasy/Coming of Age) used
+    # by every retail catalogue (KDP, Apple Books, Kobo, Ingram).
+    # Both stored as JSON-encoded list[str] in Text columns,
+    # following the ``keywords`` precedent. Articles deliberately
+    # do NOT get these columns — they use Topic (single enum) +
+    # Tags (free-text) per D9; see the "Intentional asymmetry"
+    # lessons-learned entry for the rationale.
+    categories: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    bisac_codes: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     html_description: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # Amazon book description
