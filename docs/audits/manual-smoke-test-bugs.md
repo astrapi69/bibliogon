@@ -116,6 +116,7 @@ trigger-gated — none start until the trigger fires.
 | BISAC-DATABASE-LOOKUP-01 | P5 | Bug 9 (filed 2026-05-17) | Bundled BISAC catalogue + autocomplete + code-existence validation (vs current free-text + format-only check) | Bibliogon obtains BISG license OR user requests autocomplete strongly enough to justify ~$590/year cost |
 | KDP-CATEGORIES-CATALOG-SYNC-01 | P3 | Bug 9 (filed 2026-05-17) | Sync KDP plugin's 25-category yaml with the 10-category subset hardcoded in routes.py | Scheduled Settings-Polish-Session OR user reports KDP categories mismatch |
 | PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 | P3 | PB-PHASE4 Session 4 Pre-Inspection audit (filed 2026-05-17) | Drag-to-position UI for `Page.speech_bubble_config.anchor_position` (closes the write-path of the field whose read-path Session 4 D2a closed with a fixed bottom-center default) | User-feedback that default bubble position doesn't match content OR first author requests reposition capability |
+| PICTURE-BOOK-KDP-SPECIFIC-FIELDS-01 | P3 | PB-PHASE4 Session 5 D5 sub-decision (filed 2026-05-17) | KDP picture-book-specific fields: `age_range` column + UI, `page_count` derived display, `print_format` column + UI; future comic-book likely shares the shape | User-feedback that current Book-Metadata fields are insufficient for KDP picture-book publishing OR first KDP picture-book upload attempt reveals the field gap |
 
 ## Session cross-references
 

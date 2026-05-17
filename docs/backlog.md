@@ -87,6 +87,44 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **PICTURE-BOOK-KDP-SPECIFIC-FIELDS-01** (P3): add three KDP-
+  specific metadata fields for picture-books (and likely future
+  comic-books): `age_range` (e.g. "3-6", "4-8"), `page_count`
+  (derived display from `len(pages)`, no schema change needed),
+  and `print_format` (e.g. "square_8.5x8.5", "landscape_8.5x11").
+  Surfaced during PB-PHASE4 Session 5 D5 sub-decision; deferred
+  because (a) age_range + print_format require backend schema +
+  Alembic migration outside the "expose existing fields" core
+  ask of Session 5, (b) including them would push commit count
+  beyond the stop-condition, (c) the user feedback was about
+  Book-Metadata access for KDP publishing, not new KDP fields —
+  closing the access gap was the primary win.
+  Trigger: user-feedback that current Book-Metadata fields are
+  insufficient for KDP picture-book publishing OR first KDP
+  picture-book upload attempt reveals the field gap. NOT
+  schedule-tied — concrete user-signal so the work lands when
+  the gap is real.
+  Scope:
+    - `Book.age_range` column (nullable string, e.g. "3-6") +
+      Pydantic schema + Alembic migration; UI surface on the
+      General tab when `book_type === "picture_book"`.
+    - `page_count` display-only (computed from `len(pages)`) on
+      the General tab; no schema change.
+    - `Book.print_format` column (enum-style string, e.g.
+      "square_8.5x8.5") + Pydantic + Alembic + UI on the
+      Publisher tab.
+    - i18n for new labels across 8 catalogs (~6-9 keys).
+    - Vitest for the field-rendering + persistence; E2E for the
+      full edit-save-reload flow.
+  Effort: 5-7 commits.
+  Strategic note: when implementing, consider whether shared
+  `book_type`-conditional fields make sense (e.g. age_range
+  might apply to picture-books AND comic-books for children's
+  segments) vs. separate `sub_type`-specific surfaces. Future
+  comic-book editor likely has similar specific KDP needs
+  (panel-count, page-count, format). One consistent shape
+  reduces future drift.
+
 - **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01** (P3): build the
   write-path UI for `Page.speech_bubble_config.anchor_position`
   on picture-book pages that use the `speech_bubble` layout.
