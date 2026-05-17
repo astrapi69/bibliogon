@@ -344,3 +344,76 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         )
     })
 })
+
+// --- Session 4c Commit 3: handleUpdateLayoutConfig wiring ---
+
+describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
+    it("LayoutConfig mounts in the properties pane when a page is active", async () => {
+        mockList.mockResolvedValue([makePage({id: "p1", position: 1})])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("layout-config-root")).toBeTruthy(),
+        )
+    })
+
+    it("LayoutConfig does NOT mount when no page is active (no pages)", async () => {
+        mockList.mockResolvedValue([])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-properties-empty")).toBeTruthy(),
+        )
+        expect(screen.queryByTestId("layout-config-root")).toBeNull()
+    })
+
+    it("data-layout on LayoutConfig matches the active page's layout", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "image_left_text_right"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("layout-config-root").getAttribute("data-layout"),
+            ).toBe("image_left_text_right"),
+        )
+    })
+
+    it("data-layout flips when the user picks a different layout", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "speech_bubble"}),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({id: "p1", layout: "image_top_text_bottom"}),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("layout-config-root")).toBeTruthy(),
+        )
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
+        )
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("layout-config-root").getAttribute("data-layout"),
+            ).toBe("image_top_text_bottom"),
+        )
+    })
+
+    it("data-config-keys reflects the active page's persisted layout_config keys", async () => {
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                layout: "speech_bubble",
+                layout_config: {anchor_position: "top-right", opacity: 0.7},
+            }),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() => {
+            const keys = screen
+                .getByTestId("layout-config-root")
+                .getAttribute("data-config-keys")!
+                .split(",")
+                .sort()
+            expect(keys).toEqual(["anchor_position", "opacity"])
+        })
+    })
+})

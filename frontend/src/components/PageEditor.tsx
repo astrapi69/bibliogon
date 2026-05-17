@@ -4,6 +4,7 @@ import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
+import LayoutConfig from "./LayoutConfig"
 import PageCanvas from "./PageCanvas"
 import styles from "./PageEditor.module.css"
 
@@ -82,6 +83,36 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
         async (updates: PageUpdate) => {
             if (!activePage) return
             const updated = await api.pages.update(bookId, activePage.id, updates)
+            setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        },
+        [bookId, activePage],
+    )
+
+    /**
+     * PB-PHASE4 Session 4c Commit 3: per-page layout_config writer.
+     *
+     * Merges `partial` over the active page's current `layout_config`
+     * (null treated as empty) and persists the merged dict. Optimistic
+     * state update keeps the properties pane snappy: discrete controls
+     * see the new value immediately, the API roundtrip lands a moment
+     * later and the canonical updated row replaces the optimistic one.
+     *
+     * Auto-save discipline: callers control timing — discrete controls
+     * (radio, dropdown) call this directly; continuous controls
+     * (slider) wrap through `useDebouncedCallback(_, 300)`.
+     */
+    const handleUpdateLayoutConfig = useCallback(
+        async (partial: Record<string, unknown>) => {
+            if (!activePage) return
+            const merged = {...(activePage.layout_config ?? {}), ...partial}
+            setPages((prev) =>
+                prev.map((p) =>
+                    p.id === activePage.id ? {...p, layout_config: merged} : p,
+                ),
+            )
+            const updated = await api.pages.update(bookId, activePage.id, {
+                layout_config: merged,
+            })
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
         [bookId, activePage],
@@ -182,10 +213,16 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                     aria-label={t("ui.page_editor.properties_pane", "Page properties")}
                 >
                     {activePage ? (
-                        <LayoutPicker
-                            selected={activePage.layout as PageLayout}
-                            onChange={handleChangeLayout}
-                        />
+                        <>
+                            <LayoutPicker
+                                selected={activePage.layout as PageLayout}
+                                onChange={handleChangeLayout}
+                            />
+                            <LayoutConfig
+                                page={activePage}
+                                onChange={handleUpdateLayoutConfig}
+                            />
+                        </>
                     ) : (
                         <div
                             data-testid="page-editor-properties-empty"
