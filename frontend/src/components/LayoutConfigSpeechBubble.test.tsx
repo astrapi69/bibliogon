@@ -213,3 +213,66 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
         expect(onChange).toHaveBeenCalledWith({opacity: 0.85})
     })
 })
+
+// --- Session 4c refinement: bubble-size slider ---
+
+describe("LayoutConfigSpeechBubble - size slider", () => {
+    it("renders the size slider + value display", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        const slider = screen.getByTestId(
+            "speech-bubble-size-slider",
+        ) as HTMLInputElement
+        expect(slider.type).toBe("range")
+        expect(slider.min).toBe("20")
+        expect(slider.max).toBe("60")
+        expect(slider.step).toBe("5")
+        expect(screen.getByTestId("speech-bubble-size-value")).toBeTruthy()
+    })
+
+    it("default size is 40% when config is NULL", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        expect(
+            screen.getByTestId("speech-bubble-size-value").textContent,
+        ).toBe("40%")
+    })
+
+    it("dragging the size slider fires onChange DEBOUNCED (300ms)", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigSpeechBubble config={null} onChange={onChange} />,
+        )
+        const slider = screen.getByTestId(
+            "speech-bubble-size-slider",
+        ) as HTMLInputElement
+        fireEvent.change(slider, {target: {value: "30"}})
+        expect(onChange).not.toHaveBeenCalled()
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({size: 30})
+    })
+
+    it("clamps out-of-range size into [20, 60] for display", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{size: 90}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-size-value").textContent,
+        ).toBe("60%")
+    })
+
+    it("pre-filled size echoes the persisted value", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{size: 50}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-size-value").textContent,
+        ).toBe("50%")
+    })
+})

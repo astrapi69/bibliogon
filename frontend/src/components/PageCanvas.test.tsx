@@ -828,6 +828,51 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
         ).toBe("top-left")
     })
 
+    it("default width is 40% when layout_config has no size key (Session 4c refinement)", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("width: 40%")
+    })
+
+    it("size=30 produces width:30% in the inline style", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {size: 30},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("width: 30%")
+    })
+
+    it("size out-of-range clamps to [20, 60] in the inline style", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {size: 90},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("width: 60%")
+    })
+
     it("non-speech-bubble layouts: speech-bubble inline style does NOT apply", () => {
         render(
             <PageCanvas

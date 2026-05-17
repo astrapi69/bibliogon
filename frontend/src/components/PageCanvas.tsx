@@ -34,16 +34,22 @@ function speechBubbleInlineStyle(
         typeof config?.opacity === "number" ? config.opacity : 1
     const opacity = Math.max(0.3, Math.min(1, rawOpacity))
     const bg = `rgba(255, 255, 255, ${opacity})`
+    // Session 4c refinement: bubble-size slider. Default 40% matches
+    // the Session 4 D2a width; clamped to [20, 60].
+    const rawSize =
+        typeof config?.size === "number" ? config.size : 40
+    const sizePct = Math.max(20, Math.min(60, rawSize))
+    const width = `${sizePct}%`
     const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
     switch (anchor) {
         case "top-left":
-            return {...reset, top: 16, left: 16, transform: "none", background: bg}
+            return {...reset, top: 16, left: 16, transform: "none", background: bg, width}
         case "top-right":
-            return {...reset, top: 16, right: 16, transform: "none", background: bg}
+            return {...reset, top: 16, right: 16, transform: "none", background: bg, width}
         case "bottom-left":
-            return {...reset, bottom: 16, left: 16, transform: "none", background: bg}
+            return {...reset, bottom: 16, left: 16, transform: "none", background: bg, width}
         case "bottom-right":
-            return {...reset, bottom: 16, right: 16, transform: "none", background: bg}
+            return {...reset, bottom: 16, right: 16, transform: "none", background: bg, width}
         case "center":
             return {
                 ...reset,
@@ -51,6 +57,7 @@ function speechBubbleInlineStyle(
                 left: "50%",
                 transform: "translate(-50%, -50%)",
                 background: bg,
+                width,
             }
         case "bottom-center":
         default:
@@ -60,6 +67,7 @@ function speechBubbleInlineStyle(
                 left: "50%",
                 transform: "translateX(-50%)",
                 background: bg,
+                width,
             }
     }
 }

@@ -1981,6 +1981,7 @@ ui:
         heading: "Sprechblase"
         anchor: "Position"
         opacity: "Deckkraft"
+        size: "Größe"
       image_top_text_bottom:
         heading: "Bild oben, Text unten"
       image_left_text_right:

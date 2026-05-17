@@ -38,6 +38,15 @@ const OPACITY_MIN = 0.3
 const OPACITY_MAX = 1.0
 const OPACITY_STEP = 0.05
 
+// Session 4c refinement: bubble-size slider. Default 40% matches
+// the Session 4 D2a width; range 20-60% covers tight-quote
+// bubbles all the way to wide-narrative bubbles without making
+// the bubble dominate the image.
+const SIZE_MIN = 20
+const SIZE_MAX = 60
+const SIZE_STEP = 5
+const DEFAULT_SIZE = 40
+
 /** Returns the picked preset, or null when no preset has been
  *  chosen yet (PageCanvas falls back to "bottom-center" per
  *  Session 4 D2a default in that case). null means "no radio is
@@ -56,6 +65,14 @@ function readAnchor(
     return null
 }
 
+function readSize(config: Record<string, unknown> | null): number {
+    const value = config?.size
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(SIZE_MIN, Math.min(SIZE_MAX, value))
+    }
+    return DEFAULT_SIZE
+}
+
 function readOpacity(config: Record<string, unknown> | null): number {
     const value = config?.opacity
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -68,9 +85,13 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const {t} = useI18n()
     const currentAnchor = readAnchor(config)
     const currentOpacity = readOpacity(config)
+    const currentSize = readSize(config)
 
     const debouncedOpacityChange = useDebouncedCallback((value: number) => {
         onChange({opacity: value})
+    }, 300)
+    const debouncedSizeChange = useDebouncedCallback((value: number) => {
+        onChange({size: value})
     }, 300)
 
     return (
@@ -149,6 +170,36 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                     data-testid="speech-bubble-opacity-value"
                 >
                     {currentOpacity.toFixed(2)}
+                </span>
+            </label>
+
+            <label className={styles.sliderLabel}>
+                <span className={styles.legend}>
+                    {t(
+                        "ui.page_editor.config.speech_bubble.size",
+                        "Größe",
+                    )}
+                </span>
+                <input
+                    type="range"
+                    min={SIZE_MIN}
+                    max={SIZE_MAX}
+                    step={SIZE_STEP}
+                    defaultValue={currentSize}
+                    onChange={(e) =>
+                        debouncedSizeChange(parseInt(e.target.value, 10))
+                    }
+                    data-testid="speech-bubble-size-slider"
+                    aria-label={t(
+                        "ui.page_editor.config.speech_bubble.size",
+                        "Größe",
+                    )}
+                />
+                <span
+                    className={styles.sliderValue}
+                    data-testid="speech-bubble-size-value"
+                >
+                    {currentSize}%
                 </span>
             </label>
         </div>
