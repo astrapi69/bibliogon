@@ -7,25 +7,47 @@
  * warrant a stable URL the user can navigate away from and return to.
  * See lessons-learned for the divergence rationale.
  *
- * State machine:
- *   idle -> uploading -> processing -> result
- *   result -> idle  (via "Weiteres ZIP importieren")
- *   uploading|processing -> idle on error (toast surfaces detail)
+ * State machine (MEDIUM-IMPORT-V2-01, dry-run preview workflow):
+ *
+ *   idle
+ *     | pick file + click "Vorschau & Auswahl"
+ *     v
+ *   uploading
+ *     | upload completes, backend parses
+ *     v
+ *   previewing  <----.
+ *     |              | onCancel  (DELETE /preview/{id}, clear state)
+ *     | click "Importieren ({n} ausgewählt)"
+ *     v              |
+ *   importing        |
+ *     |              |
+ *     v              |
+ *   result -> idle (via "Weiteres ZIP importieren")
+ *
+ * The v1 single-shot endpoint (api.mediumImport.importZip) is still
+ * exported for direct callers (curl, scripts) but the page only ever
+ * calls preview() + importSelected() + cancelPreview().
  */
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Home, Upload } from "lucide-react";
+import { ChevronLeft, Eye, Home, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
-import { api, ApiError, type MediumImportResponse } from "../api/client";
+import {
+    api,
+    ApiError,
+    type MediumImportPreviewResponse,
+    type MediumImportResponse,
+} from "../api/client";
 import { notify } from "../utils/notify";
 import MediumImportSettings from "../components/medium-import/MediumImportSettings";
 import MediumImportUploadZone from "../components/medium-import/MediumImportUploadZone";
 import MediumImportProgress from "../components/medium-import/MediumImportProgress";
 import MediumImportResult from "../components/medium-import/MediumImportResult";
+import MediumImportPreviewTable from "../components/medium-import/MediumImportPreviewTable";
 import styles from "./MediumImportPage.module.css";
 
-type Phase = "idle" | "uploading" | "processing";
+type Phase = "idle" | "uploading" | "previewing" | "importing";
 
 export default function MediumImportPage() {
     const navigate = useNavigate();
@@ -34,34 +56,64 @@ export default function MediumImportPage() {
     const [phase, setPhase] = useState<Phase>("idle");
     const [uploadLoaded, setUploadLoaded] = useState(0);
     const [uploadTotal, setUploadTotal] = useState(0);
+    const [preview, setPreview] = useState<MediumImportPreviewResponse | null>(
+        null,
+    );
+    const [selected, setSelected] = useState<Set<string>>(new Set());
     const [result, setResult] = useState<MediumImportResponse | null>(null);
 
     const isBusy = phase !== "idle";
+    const isUploading = phase === "uploading";
+    const isImporting = phase === "importing";
+    const inPreview = phase === "previewing" || phase === "importing";
 
-    const handleImport = useCallback(async () => {
+    const handleStartPreview = useCallback(async () => {
         if (!file) return;
         setResult(null);
+        setPreview(null);
+        setSelected(new Set());
         setUploadLoaded(0);
         setUploadTotal(file.size);
         setPhase("uploading");
         try {
-            const response = await api.mediumImport.importZip(file, (loaded, total) => {
+            const response = await api.mediumImport.preview(file, (loaded, total) => {
                 setUploadLoaded(loaded);
                 setUploadTotal(total);
-                if (loaded >= total) {
-                    setPhase("processing");
-                }
             });
+            setPreview(response);
+            // Default selection: everything checked. The user deselects what
+            // they want to skip. This matches the typical "I want most of
+            // it" use case better than the inverse default.
+            setSelected(new Set(response.items.map((item) => item.filename)));
+            setPhase("previewing");
+        } catch (err) {
+            setPhase("idle");
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.medium_import.toast.preview_failed",
+                          "Vorschau fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        }
+    }, [file, t]);
+
+    const handleImportSelection = useCallback(async () => {
+        if (!preview || selected.size === 0) return;
+        setPhase("importing");
+        try {
+            const response = await api.mediumImport.importSelected(
+                preview.preview_id,
+                Array.from(selected),
+            );
             setResult(response);
             setPhase("idle");
-            // Clear the file selection so the "Import starten" button
-            // becomes disabled (gated on `!file`). Without this, a user
-            // who clicks "Import starten" a second time would trigger a
-            // re-import of the same ZIP — backend dedupes safely, but
-            // the UX impression is "did it really import?".
-            // The result panel's "Weiteres ZIP importieren" then clears
-            // the result and the user is back in the idle state ready
-            // to pick a new file.
+            setPreview(null);
+            setSelected(new Set());
+            // Auto-clear the file on success so the page's empty-state
+            // returns cleanly (mirrors v1 behaviour pinned by the
+            // v0.32.0 regression test in MediumImportPage.test.tsx).
             setFile(null);
             const summary = t(
                 "ui.medium_import.toast.imported_summary",
@@ -76,7 +128,10 @@ export default function MediumImportPage() {
                 notify.success(summary);
             }
         } catch (err) {
-            setPhase("idle");
+            // Keep preview + selection so the user can retry without
+            // re-uploading. The backend leaves the cache intact on
+            // import failure for exactly this reason.
+            setPhase("previewing");
             const message =
                 err instanceof ApiError
                     ? err.detail
@@ -86,11 +141,52 @@ export default function MediumImportPage() {
                       );
             notify.error(message, err);
         }
-    }, [file, t]);
+    }, [preview, selected, t]);
+
+    const handleCancelPreview = useCallback(async () => {
+        // Fire-and-forget the cancel-cache call; the UI must NOT block
+        // on it (the user already wants to cancel). The backend's
+        // delete-by-id is idempotent so re-firing it on a missing id
+        // is harmless.
+        if (preview) {
+            void api.mediumImport.cancelPreview(preview.preview_id).catch(() => {
+                // Swallowed — TTL reaper will eventually catch the leak.
+            });
+        }
+        setPreview(null);
+        setSelected(new Set());
+        setPhase("idle");
+    }, [preview]);
+
+    const handleToggleAll = useCallback(
+        (checked: boolean) => {
+            if (!preview) return;
+            if (checked) {
+                setSelected(new Set(preview.items.map((item) => item.filename)));
+            } else {
+                setSelected(new Set());
+            }
+        },
+        [preview],
+    );
+
+    const handleToggleRow = useCallback((filename: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(filename)) {
+                next.delete(filename);
+            } else {
+                next.add(filename);
+            }
+            return next;
+        });
+    }, []);
 
     const handleReset = useCallback(() => {
         setFile(null);
         setResult(null);
+        setPreview(null);
+        setSelected(new Set());
         setUploadLoaded(0);
         setUploadTotal(0);
     }, []);
@@ -166,28 +262,107 @@ export default function MediumImportPage() {
                         onFileSelected={setFile}
                         disabled={isBusy}
                     />
-                    {isBusy && (
+                    {isUploading && (
                         <MediumImportProgress
-                            phase={phase === "uploading" ? "uploading" : "processing"}
+                            phase="uploading"
                             loaded={uploadLoaded}
                             total={uploadTotal}
                         />
                     )}
-                    <div>
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={handleImport}
-                            disabled={!file || isBusy}
-                            data-testid="medium-import-start"
-                        >
-                            <Upload size={14} />{" "}
-                            {isBusy
-                                ? t("ui.medium_import.upload.importing", "Importiert …")
-                                : t("ui.medium_import.upload.start", "Import starten")}
-                        </button>
-                    </div>
+                    {!inPreview && (
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleStartPreview}
+                                disabled={!file || isBusy}
+                                data-testid="medium-import-start"
+                            >
+                                <Eye size={14} />{" "}
+                                {isUploading
+                                    ? t(
+                                          "ui.medium_import.upload.previewing",
+                                          "Vorschau wird geladen …",
+                                      )
+                                    : t(
+                                          "ui.medium_import.upload.start",
+                                          "Vorschau & Auswahl",
+                                      )}
+                            </button>
+                        </div>
+                    )}
                 </section>
+
+                {preview && inPreview && (
+                    <section
+                        className={styles.card}
+                        data-testid="medium-import-preview-section"
+                    >
+                        <h2 className={styles.cardHeader}>
+                            {t(
+                                "ui.medium_import.preview.card_title",
+                                "Vorschau & Auswahl",
+                            )}
+                        </h2>
+                        <p className={styles.cardHint}>
+                            {t(
+                                "ui.medium_import.preview.card_hint",
+                                "Entferne die Häkchen vor Beiträgen, die du NICHT importieren möchtest. Standardmäßig sind alle ausgewählt.",
+                            )}
+                        </p>
+                        <MediumImportPreviewTable
+                            items={preview.items}
+                            errored={preview.errored}
+                            selected={selected}
+                            onToggleAll={handleToggleAll}
+                            onToggleRow={handleToggleRow}
+                            disabled={isImporting}
+                        />
+                        {isImporting && (
+                            <MediumImportProgress
+                                phase="processing"
+                                loaded={0}
+                                total={0}
+                            />
+                        )}
+                        <div className={styles.previewActions}>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleImportSelection}
+                                disabled={selected.size === 0 || isImporting}
+                                data-testid="medium-import-preview-import-btn"
+                            >
+                                <Upload size={14} />{" "}
+                                {isImporting
+                                    ? t(
+                                          "ui.medium_import.preview.importing",
+                                          "Importiert …",
+                                      )
+                                    : t(
+                                          "ui.medium_import.preview.import_selected",
+                                          "{count} Beiträge importieren",
+                                      ).replace(
+                                          "{count}",
+                                          String(selected.size),
+                                      )}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={handleCancelPreview}
+                                disabled={isImporting}
+                                data-testid="medium-import-preview-cancel-btn"
+                            >
+                                <X size={14} />{" "}
+                                {t(
+                                    "ui.medium_import.preview.cancel",
+                                    "Abbrechen",
+                                )}
+                            </button>
+                        </div>
+                    </section>
+                )}
 
                 {result && <MediumImportResult result={result} onReset={handleReset} />}
             </main>

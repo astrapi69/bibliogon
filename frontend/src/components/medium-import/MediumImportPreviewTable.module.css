@@ -1,0 +1,228 @@
+.wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+}
+
+.selectAllLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.counter {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.empty {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.tableScroll {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: auto;
+    max-height: 60vh;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    z-index: 1;
+}
+
+.row {
+    border-bottom: 1px solid var(--border);
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.row:hover {
+    background: var(--bg-hover);
+}
+
+.rowDeselected {
+    opacity: 0.55;
+}
+
+.table tbody td {
+    padding: 10px 12px;
+    vertical-align: top;
+}
+
+.colCheck {
+    width: 36px;
+}
+
+.colDate {
+    width: 110px;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.colLang {
+    width: 72px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.8125rem;
+}
+
+.colClass {
+    width: 110px;
+}
+
+.colBadges {
+    width: 200px;
+}
+
+.titleCell {
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.titleMeta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.badgeArticle {
+    color: var(--text-secondary);
+}
+
+.badgeComment {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.badgeDedup {
+    color: var(--text-secondary);
+    border-color: var(--border);
+}
+
+.badgeWarn {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.erroredSection {
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.erroredTrigger {
+    width: 100%;
+    background: var(--bg-card);
+    border: none;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--danger);
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.erroredTrigger:hover {
+    background: var(--bg-hover);
+}
+
+.erroredTriggerLeft {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.erroredContent {
+    padding: 8px 16px 12px 16px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.erroredRow {
+    padding: 8px 10px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+}
+
+.erroredFilename {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.erroredMessage {
+    font-size: 0.8125rem;
+    color: var(--danger);
+    word-break: break-word;
+    margin-top: 2px;
+}
