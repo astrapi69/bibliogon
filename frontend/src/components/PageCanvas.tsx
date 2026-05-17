@@ -102,6 +102,59 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                                 </span>
                             </div>
                         )}
+                        {/* Session 4c D2: on-image hover overlay for the
+                         *  upload/replace action. Notion-style top-right
+                         *  toolbar. Visible on hover (mouseenter on
+                         *  .regionImage) + on focus-within so keyboard
+                         *  users can tab into the action. Replaces the
+                         *  bottom-bar .imageActions row entirely. */}
+                        <button
+                            type="button"
+                            className={styles.imageReplaceBtn}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            data-testid="page-canvas-image-replace"
+                            title={
+                                hasImage
+                                    ? t(
+                                          "ui.page_editor.replace_image",
+                                          "Replace image",
+                                      )
+                                    : t(
+                                          "ui.page_editor.upload_image",
+                                          "Upload image",
+                                      )
+                            }
+                            aria-label={
+                                hasImage
+                                    ? t(
+                                          "ui.page_editor.replace_image",
+                                          "Replace image",
+                                      )
+                                    : t(
+                                          "ui.page_editor.upload_image",
+                                          "Upload image",
+                                      )
+                            }
+                        >
+                            {uploading ? (
+                                <span className={styles.imageReplaceLabel}>
+                                    {t("ui.page_editor.uploading", "Uploading...")}
+                                </span>
+                            ) : hasImage ? (
+                                <RefreshCw size={14} />
+                            ) : (
+                                <Upload size={14} />
+                            )}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept={ACCEPT}
+                            onChange={handleFileChange}
+                            className={styles.fileInput}
+                            data-testid="page-canvas-file-input"
+                        />
                     </div>
                 )}
                 <div
@@ -127,45 +180,6 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                     />
                 </div>
             </div>
-            {!isTextOnly && (
-                <div className={styles.imageActions}>
-                    <button
-                        type="button"
-                        className={styles.uploadBtn}
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        data-testid="page-canvas-upload-btn"
-                    >
-                        {hasImage ? (
-                            <>
-                                <RefreshCw size={14} />
-                                <span>
-                                    {uploading
-                                        ? t("ui.page_editor.uploading", "Uploading...")
-                                        : t("ui.page_editor.replace_image", "Replace image")}
-                                </span>
-                            </>
-                        ) : (
-                            <>
-                                <Upload size={14} />
-                                <span>
-                                    {uploading
-                                        ? t("ui.page_editor.uploading", "Uploading...")
-                                        : t("ui.page_editor.upload_image", "Upload image")}
-                                </span>
-                            </>
-                        )}
-                    </button>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={ACCEPT}
-                        onChange={handleFileChange}
-                        className={styles.fileInput}
-                        data-testid="page-canvas-file-input"
-                    />
-                </div>
-            )}
             {uploadError && (
                 <div
                     className={styles.uploadError}

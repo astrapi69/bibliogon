@@ -301,7 +301,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
                     page.getByTestId("page-canvas-image-area"),
                 ).toHaveCount(0)
                 await expect(
-                    page.getByTestId("page-canvas-upload-btn"),
+                    page.getByTestId("page-canvas-image-replace"),
                 ).toHaveCount(0)
                 await expect(
                     page.getByTestId("page-canvas-region-text"),
@@ -498,7 +498,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
             .toBe(true)
 
         // Upload affordance still present (non-text_only layout).
-        await expect(page.getByTestId("page-canvas-upload-btn")).toBeVisible()
+        await expect(page.getByTestId("page-canvas-image-replace")).toBeVisible()
 
         // Drag-reorder still works after the layout change.
         const pagesNow: {id: string; position: number}[] = await fetch(

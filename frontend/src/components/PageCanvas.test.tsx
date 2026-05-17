@@ -99,14 +99,21 @@ describe("PageCanvas - image area", () => {
 })
 
 describe("PageCanvas - upload flow", () => {
-    it("button label is 'Upload image' when no image is set", () => {
+    // Session 4c D2: the button is icon-only (Upload / RefreshCw)
+    // with the human-readable label in aria-label + title so screen
+    // readers and hover tooltips both surface it. The textContent
+    // assertion that worked on the bottom-bar variant moved to
+    // aria-label.
+    it("aria-label is 'Upload image' when no image is set", () => {
         render(<PageCanvas page={makePage()} bookId="b1" onUpdate={vi.fn()} />)
-        expect(screen.getByTestId("page-canvas-upload-btn").textContent).toContain(
-            "Upload image",
-        )
+        expect(
+            screen
+                .getByTestId("page-canvas-image-replace")
+                .getAttribute("aria-label"),
+        ).toBe("Upload image")
     })
 
-    it("button label is 'Replace image' when an image is set", () => {
+    it("aria-label is 'Replace image' when an image is set", () => {
         render(
             <PageCanvas
                 page={makePage({image_asset_id: "asset-1"})}
@@ -114,9 +121,11 @@ describe("PageCanvas - upload flow", () => {
                 onUpdate={vi.fn()}
             />,
         )
-        expect(screen.getByTestId("page-canvas-upload-btn").textContent).toContain(
-            "Replace image",
-        )
+        expect(
+            screen
+                .getByTestId("page-canvas-image-replace")
+                .getAttribute("aria-label"),
+        ).toBe("Replace image")
     })
 
     it("calls api.assets.upload with bookId + file + 'figure' when a file is picked", async () => {
@@ -324,7 +333,7 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
             />,
         )
         expect(screen.queryByTestId("page-canvas-image-area")).toBeNull()
-        expect(screen.queryByTestId("page-canvas-upload-btn")).toBeNull()
+        expect(screen.queryByTestId("page-canvas-image-replace")).toBeNull()
         expect(screen.queryByTestId("page-canvas-file-input")).toBeNull()
         // The text region is still the editable surface.
         expect(screen.getByTestId("page-canvas-region-text")).toBeTruthy()
@@ -402,7 +411,7 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
             />,
         )
         expect(screen.getByTestId("page-canvas-image")).toBeTruthy()
-        expect(screen.getByTestId("page-canvas-upload-btn")).toBeTruthy()
+        expect(screen.getByTestId("page-canvas-image-replace")).toBeTruthy()
         rerender(
             <PageCanvas
                 page={makePage({
@@ -415,7 +424,7 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
             />,
         )
         expect(screen.queryByTestId("page-canvas-image")).toBeNull()
-        expect(screen.queryByTestId("page-canvas-upload-btn")).toBeNull()
+        expect(screen.queryByTestId("page-canvas-image-replace")).toBeNull()
     })
 
     it("upload-action bar stays usable in every non-text_only layout", async () => {
@@ -557,5 +566,92 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
         // refactor that drops the bubble metaphor.
         expect(block).toMatch(/border-radius:/)
         expect(block).toMatch(/box-shadow:/)
+    })
+})
+
+// --- Session 4c Commit 2: on-image replace-button overlay ---
+
+describe("PageCanvas - on-image replace button overlay (Session 4c Commit 2)", () => {
+    const cssPath = path.resolve(__dirname, "./PageCanvas.module.css")
+    const css = fs.readFileSync(cssPath, "utf8")
+
+    it("replace button is rendered INSIDE the image region (not in a bottom bar)", () => {
+        render(
+            <PageCanvas
+                page={makePage({image_asset_id: "asset-1"})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        // The image-area is the parent; the replace button is a child.
+        const imageArea = screen.getByTestId("page-canvas-image-area")
+        const btn = screen.getByTestId("page-canvas-image-replace")
+        expect(imageArea.contains(btn)).toBe(true)
+    })
+
+    it("file input lives inside the image region too (button triggers via ref)", () => {
+        render(
+            <PageCanvas
+                page={makePage({image_asset_id: "asset-1"})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const imageArea = screen.getByTestId("page-canvas-image-area")
+        const input = screen.getByTestId("page-canvas-file-input")
+        expect(imageArea.contains(input)).toBe(true)
+    })
+
+    it("text_only: NO replace button + NO file input (no image to upload)", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "text_only"})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(screen.queryByTestId("page-canvas-image-replace")).toBeNull()
+        expect(screen.queryByTestId("page-canvas-file-input")).toBeNull()
+    })
+
+    it("CSS source pins the overlay positioning contract (top + right + position absolute)", () => {
+        // Structural assertion per the jsdom-cant-compute-layout
+        // discipline (see "Radix DropdownMenu + happy-dom is brittle"
+        // lessons-learned rule). The overlay is what makes the button
+        // visible-on-hover instead of permanent chrome below the
+        // canvas; the rule MUST exist for the UX contract.
+        const overlayBlock = css.match(/\.imageReplaceBtn\s*\{[^}]*\}/)
+        expect(overlayBlock).not.toBeNull()
+        expect(overlayBlock![0]).toMatch(/position:\s*absolute/)
+        expect(overlayBlock![0]).toMatch(/top:\s*8px/)
+        expect(overlayBlock![0]).toMatch(/right:\s*8px/)
+        expect(overlayBlock![0]).toMatch(/opacity:\s*0/)
+    })
+
+    it("CSS source pins the hover + focus-within reveal rule", () => {
+        // The reveal rule's three triggers — hover, focus-within,
+        // focus-visible — are the keyboard-accessibility contract.
+        // Without focus-within, a keyboard user tabbing to the
+        // button could never see it.
+        const revealBlock = css.match(
+            /\.regionImage:hover \.imageReplaceBtn,\s*\.regionImage:focus-within \.imageReplaceBtn,\s*\.imageReplaceBtn:focus-visible\s*\{[^}]*\}/,
+        )
+        expect(revealBlock).not.toBeNull()
+        expect(revealBlock![0]).toMatch(/opacity:\s*1/)
+        expect(revealBlock![0]).toMatch(/pointer-events:\s*auto/)
+    })
+
+    it("upload flow still calls api.assets.upload + onUpdate (regression after overlay refactor)", async () => {
+        mockUpload.mockResolvedValue(makeAsset({id: "asset-new"}))
+        const onUpdate = vi.fn().mockResolvedValue(undefined)
+        render(<PageCanvas page={makePage()} bookId="b1" onUpdate={onUpdate} />)
+        const file = new File(["x"], "img.png", {type: "image/png"})
+        fireEvent.change(
+            screen.getByTestId("page-canvas-file-input") as HTMLInputElement,
+            {target: {files: [file]}},
+        )
+        await waitFor(() =>
+            expect(onUpdate).toHaveBeenCalledWith({image_asset_id: "asset-new"}),
+        )
     })
 })

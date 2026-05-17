@@ -80,6 +80,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Session 4c D2: position: relative anchors the on-image
+     * replace-button overlay (top-right). */
+    position: relative;
 }
 
 .regionText {
@@ -204,34 +207,56 @@
     outline: none;
 }
 
-/* --- Image-upload actions (sit OUTSIDE the canvas frame) --- */
-
-.imageActions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.uploadBtn {
+/* Session 4c D2: on-image hover overlay for the upload/replace
+ * action. Notion-style top-right toolbar. Hidden by default
+ * (opacity 0 + pointer-events none) so it doesn't obscure the
+ * image. Revealed on hover (.regionImage:hover ~ .imageReplaceBtn)
+ * + on focus-within so keyboard users can tab in. */
+.imageReplaceBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 6px;
-    background: var(--bg-editor, var(--bg-app));
-    color: var(--text);
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+    z-index: 2;
 }
 
-.uploadBtn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--text) 8%, transparent);
+.regionImage:hover .imageReplaceBtn,
+.regionImage:focus-within .imageReplaceBtn,
+.imageReplaceBtn:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
 }
 
-.uploadBtn:disabled {
+.imageReplaceBtn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.imageReplaceBtn:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
+}
+
+.imageReplaceBtn:focus-visible {
+    outline: 2px solid var(--accent, white);
+    outline-offset: 2px;
+}
+
+.imageReplaceLabel {
+    font-size: 0.75rem;
+    line-height: 1;
 }
 
 .fileInput {
