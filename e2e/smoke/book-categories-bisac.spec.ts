@@ -208,4 +208,48 @@ test.describe("Book Categories + BISAC UI integration (Bug 9)", () => {
         expect(href).toContain("bisg.org")
         expect(href).toContain("bisac-subject-headings")
     })
+
+    // HOTFIX regression pin (Categories+BISAC tab-leak BLOCKER):
+    // forceMount on the Marketing Tabs.Content was making Categories
+    // + BISAC visible on EVERY tab. This test pins the fix end-to-
+    // end in a real browser, covering the round-trip path that
+    // jsdom can't (Radix Presence's unmount-via-animationend
+    // transition fires reliably only in real browsers).
+    test("tab-content-isolation: Categories + BISAC visible ONLY on Marketing tab", async ({page}) => {
+        const book = await createBook("Tab-Leak Regression Pin")
+        await page.goto(`/book/${book.id}?view=metadata`)
+
+        // Initial: default 'general' tab is active. Categories +
+        // BISAC inputs must NOT be visible.
+        await expect(page.getByTestId("metadata-tab-general")).toBeVisible()
+        await expect(page.getByTestId("metadata-categories-field")).toHaveCount(0)
+        await expect(page.getByTestId("metadata-bisac-field")).toHaveCount(0)
+        await expect(page.getByTestId("category-input")).toHaveCount(0)
+        await expect(page.getByTestId("bisac-input")).toHaveCount(0)
+
+        // Click Marketing → Categories + BISAC appear.
+        await page.getByTestId("metadata-tab-marketing").click()
+        await expect(page.getByTestId("metadata-categories-field")).toBeVisible()
+        await expect(page.getByTestId("metadata-bisac-field")).toBeVisible()
+        await expect(page.getByTestId("category-input")).toBeVisible()
+        await expect(page.getByTestId("bisac-input")).toBeVisible()
+
+        // Click General → Categories + BISAC disappear again.
+        // This is the path Vitest can't cover (jsdom doesn't run
+        // CSS animations so Radix Presence stays in
+        // 'unmountSuspended'). Playwright runs in a real browser
+        // where the animationend event fires and the state machine
+        // settles into 'unmounted'.
+        await page.getByTestId("metadata-tab-general").click()
+        await expect(page.getByTestId("metadata-categories-field")).toHaveCount(0)
+        await expect(page.getByTestId("metadata-bisac-field")).toHaveCount(0)
+
+        // Spot-check a few other tabs to confirm none leak.
+        await page.getByTestId("metadata-tab-publisher").click()
+        await expect(page.getByTestId("metadata-categories-field")).toHaveCount(0)
+        await page.getByTestId("metadata-tab-isbn").click()
+        await expect(page.getByTestId("metadata-categories-field")).toHaveCount(0)
+        await page.getByTestId("metadata-tab-design").click()
+        await expect(page.getByTestId("metadata-categories-field")).toHaveCount(0)
+    })
 })
