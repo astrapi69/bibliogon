@@ -523,4 +523,127 @@ test.describe("Picture-Book PageEditor smoke", () => {
             )
             .toBe("1,2")
     })
+
+    // PB-PHASE4 Session 4c E2E: per-layout configuration controls.
+    // Covers the round-trip from LayoutConfig{Variant} controls →
+    // optimistic state → api.pages.update → PageCanvas re-render
+    // → inline-style + data-attribute changes. The Vitest companion
+    // tests cover individual components; this spec pins the full
+    // user-visible flow in a real browser.
+    test("layout-config: speech_bubble anchor + opacity + size controls drive the canvas", async ({page}) => {
+        const book = await createPictureBook("Layout Config Speech Bubble", "Author")
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // Switch to speech_bubble layout. anchor_position is in the
+        // default-visible presets; no need to expand 'More layouts'.
+        await page.getByTestId("page-editor-layout-option-speech_bubble").click()
+        await expect(page.getByTestId("page-canvas-speech-bubble")).toBeVisible()
+        await expect(
+            page.getByTestId("layout-config-speech-bubble"),
+        ).toBeVisible()
+
+        // Pick the top-left anchor preset (discrete, immediate save).
+        await page.getByTestId("speech-bubble-anchor-top-left").click()
+        await expect(
+            page.getByTestId("page-canvas-speech-bubble"),
+        ).toHaveAttribute("data-anchor", "top-left")
+
+        // Drag the opacity slider (continuous, 300ms debounce). Use
+        // .fill to set the underlying value directly (Playwright's
+        // range-input convention).
+        await page
+            .getByTestId("speech-bubble-opacity-slider")
+            .fill("0.5")
+        // Wait for the debounce + API roundtrip + state refresh.
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return style?.includes("rgba(255, 255, 255, 0.5)")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // Drag the size slider (continuous, 300ms debounce).
+        await page.getByTestId("speech-bubble-size-slider").fill("30")
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return style?.includes("width: 30%")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+    })
+
+    test("layout-config: image_top_text_bottom + image_left_text_right + image_full_text_overlay controls", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("Layout Config Image-Row", "Author")
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+        // Default layout is image_top_text_bottom; the config component
+        // mounts directly.
+
+        // --- image_top_text_bottom: image_position radio ---
+        await expect(
+            page.getByTestId("layout-config-image-top-text-bottom"),
+        ).toBeVisible()
+        await page.getByTestId("image-position-right").click()
+        await expect(
+            page.getByTestId("page-canvas-root"),
+        ).toHaveAttribute("data-image-position", "right")
+
+        // --- image_left_text_right: split-ratio slider ---
+        const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
+        if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
+            await moreToggle.click()
+        }
+        await page
+            .getByTestId("page-editor-layout-option-image_left_text_right")
+            .click()
+        await expect(
+            page.getByTestId("layout-config-image-left-text-right"),
+        ).toBeVisible()
+        await page.getByTestId("image-left-split-ratio-slider").fill("65")
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-root")
+                        .getAttribute("style")
+                    return style?.includes("grid-template-columns: 65% 35%")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+        await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
+            "data-split-ratio",
+            "65",
+        )
+
+        // --- image_full_text_overlay: text-position dropdown + opacity ---
+        await page
+            .getByTestId("page-editor-layout-option-image_full_text_overlay")
+            .click()
+        await expect(
+            page.getByTestId("layout-config-image-full-text-overlay"),
+        ).toBeVisible()
+        await page
+            .getByTestId("image-full-text-position-select")
+            .selectOption("top")
+        await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
+            "data-text-position",
+            "top",
+        )
+    })
 })
