@@ -1975,3 +1975,4 @@ ui:
     uploading: "Lade hoch ..."
     text_label: "Seitentext"
     text_placeholder: "Schreibe hier den Seitentext ..."
+    show_metadata: "Metadaten"

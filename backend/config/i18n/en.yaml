@@ -1976,3 +1976,4 @@ ui:
     uploading: "Uploading..."
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
+    show_metadata: "Metadata"
