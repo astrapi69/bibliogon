@@ -1,7 +1,7 @@
 import {useState, useEffect, useCallback} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
-import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, Chapter, formatVoiceLabel} from "../api/client";
+import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -35,6 +35,18 @@ interface Props {
      *  ``useEffect`` on ``book`` resets state when a fresh book
      *  lands. */
     onRefresh?: () => void;
+}
+
+// PB-PHASE4 Session 5 Commit 1: the Audiobook + Quality tabs read
+// from ``book.chapters`` (AudiobookBookConfig + AudiobookDownloads
+// pass it through; QualityTab runs grammar/style on chapter text).
+// Picture-books and comic-books carry no chapters by design, so
+// exposing those tabs ships a write-surface without a consumer —
+// the half-wired-feature-lifecycle anti-pattern. Both tabs are
+// hidden for non-prose book_types. Prose flow is identical to
+// before this change (tabs all visible).
+function isChapterBasedBookType(bookType: BookType | undefined): boolean {
+    return bookType === undefined || bookType === "prose";
 }
 
 export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNavigateToIssue, onRefresh}: Props) {
@@ -211,13 +223,17 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             {/* Tabs */}
             <Tabs.Root defaultValue="general" style={{maxWidth: 800}}>
                 <Tabs.List className="radix-tabs-list" style={{marginBottom: 16}}>
-                    <Tabs.Trigger value="general" className="radix-tab-trigger">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
-                    <Tabs.Trigger value="publisher" className="radix-tab-trigger">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
-                    <Tabs.Trigger value="isbn" className="radix-tab-trigger">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
+                    <Tabs.Trigger value="general" className="radix-tab-trigger" data-testid="metadata-tab-general">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
+                    <Tabs.Trigger value="publisher" className="radix-tab-trigger" data-testid="metadata-tab-publisher">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
+                    <Tabs.Trigger value="isbn" className="radix-tab-trigger" data-testid="metadata-tab-isbn">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
                     <Tabs.Trigger value="marketing" className="radix-tab-trigger" data-testid="metadata-tab-marketing">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
-                    <Tabs.Trigger value="design" className="radix-tab-trigger">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
-                    <Tabs.Trigger value="audiobook" className="radix-tab-trigger">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
-                    <Tabs.Trigger value="quality" className="radix-tab-trigger">{t("ui.metadata.tab_quality", "Qualitaet")}</Tabs.Trigger>
+                    <Tabs.Trigger value="design" className="radix-tab-trigger" data-testid="metadata-tab-design">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
+                    {isChapterBasedBookType(book.book_type) && (
+                        <>
+                            <Tabs.Trigger value="audiobook" className="radix-tab-trigger" data-testid="metadata-tab-audiobook">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
+                            <Tabs.Trigger value="quality" className="radix-tab-trigger" data-testid="metadata-tab-quality">{t("ui.metadata.tab_quality", "Qualitaet")}</Tabs.Trigger>
+                        </>
+                    )}
                     <Tabs.Trigger
                         value="ai_template"
                         className="radix-tab-trigger"
@@ -421,36 +437,40 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     </div>
                 </Tabs.Content>
 
-                <Tabs.Content value="audiobook">
-                    <div className={styles.tabContent}>
-                        <AudiobookBookConfig
-                            bookLanguage={book.language}
-                            bookTitle={book.title}
-                            bookChapters={book.chapters || []}
-                            engine={form.tts_engine || ""}
-                            voice={form.tts_voice || ""}
-                            speed={form.tts_speed || "1.0"}
-                            merge={form.audiobook_merge || "merged"}
-                            customFilename={form.audiobook_filename || ""}
-                            overwriteExisting={audiobookOverwrite}
-                            skipChapterTypes={audiobookSkipTypes}
-                            onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
-                            onVoiceChange={(v: string) => set("tts_voice", v)}
-                            onSpeedChange={(v: string) => set("tts_speed", v)}
-                            onMergeChange={(v: string) => set("audiobook_merge", v)}
-                            onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
-                            onOverwriteExistingChange={setAudiobookOverwrite}
-                            onSkipChapterTypesChange={setAudiobookSkipTypes}
-                        />
-                        <AudiobookDownloads bookId={book.id} bookChapters={book.chapters || []}/>
-                    </div>
-                </Tabs.Content>
+                {isChapterBasedBookType(book.book_type) && (
+                    <>
+                        <Tabs.Content value="audiobook">
+                            <div className={styles.tabContent}>
+                                <AudiobookBookConfig
+                                    bookLanguage={book.language}
+                                    bookTitle={book.title}
+                                    bookChapters={book.chapters || []}
+                                    engine={form.tts_engine || ""}
+                                    voice={form.tts_voice || ""}
+                                    speed={form.tts_speed || "1.0"}
+                                    merge={form.audiobook_merge || "merged"}
+                                    customFilename={form.audiobook_filename || ""}
+                                    overwriteExisting={audiobookOverwrite}
+                                    skipChapterTypes={audiobookSkipTypes}
+                                    onEngineChange={(v: string) => { set("tts_engine", v); set("tts_voice", ""); }}
+                                    onVoiceChange={(v: string) => set("tts_voice", v)}
+                                    onSpeedChange={(v: string) => set("tts_speed", v)}
+                                    onMergeChange={(v: string) => set("audiobook_merge", v)}
+                                    onCustomFilenameChange={(v: string) => set("audiobook_filename", v)}
+                                    onOverwriteExistingChange={setAudiobookOverwrite}
+                                    onSkipChapterTypesChange={setAudiobookSkipTypes}
+                                />
+                                <AudiobookDownloads bookId={book.id} bookChapters={book.chapters || []}/>
+                            </div>
+                        </Tabs.Content>
 
-                <Tabs.Content value="quality">
-                    <div className={styles.tabContent}>
-                        <QualityTab bookId={book.id} onNavigateToIssue={onNavigateToIssue} />
-                    </div>
-                </Tabs.Content>
+                        <Tabs.Content value="quality">
+                            <div className={styles.tabContent}>
+                                <QualityTab bookId={book.id} onNavigateToIssue={onNavigateToIssue} />
+                            </div>
+                        </Tabs.Content>
+                    </>
+                )}
                 <Tabs.Content value="ai_template">
                     <div className={styles.tabContent}>
                         <AITemplatePanel

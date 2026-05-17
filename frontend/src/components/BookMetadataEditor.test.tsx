@@ -107,6 +107,7 @@ vi.mock("react-router-dom", async () => ({
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
   return {
     id: "book-1",
+    book_type: "prose",
     title: "Test Book",
     subtitle: "A Subtitle",
     author: "Author",
@@ -762,5 +763,88 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
         const savedData = localOnSave.mock.calls[0][0]
         expect(savedData.categories).toEqual(["Pre-existing Category"])
         expect(savedData.bisac_codes).toEqual(["FIC022020"])
+    })
+})
+
+// --- Session 5 Commit 1: book_type-aware tab filtering ---
+//
+// Picture-books and comic-books carry no chapters by design.
+// The Audiobook + Quality tabs both read from book.chapters
+// (AudiobookBookConfig + AudiobookDownloads + QualityTab) so
+// exposing them ships a write-surface without a consumer — the
+// half-wired-feature-lifecycle anti-pattern. Both tabs are
+// hidden for non-prose book_types. Prose-flow stays unchanged.
+
+describe("BookMetadataEditor — book_type tab filtering (Session 5 Commit 1)", () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const onBack = vi.fn()
+
+    beforeEach(() => {
+        onSave.mockClear()
+        onBack.mockClear()
+    })
+
+    function renderEditor(bookOverrides: Partial<BookDetail> = {}) {
+        return render(
+            <BookMetadataEditor
+                book={makeBook(bookOverrides)}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+    }
+
+    it("prose (default): all 8 tabs render", () => {
+        renderEditor({book_type: "prose"})
+        expect(screen.getByTestId("metadata-tab-general")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-design")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-audiobook")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-quality")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-ai-template")).toBeTruthy()
+    })
+
+    it("picture_book: Audiobook + Quality tabs hidden, other 6 visible", () => {
+        renderEditor({book_type: "picture_book", chapters: []})
+        expect(screen.getByTestId("metadata-tab-general")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-design")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-ai-template")).toBeTruthy()
+        expect(screen.queryByTestId("metadata-tab-audiobook")).toBeNull()
+        expect(screen.queryByTestId("metadata-tab-quality")).toBeNull()
+    })
+
+    it("comic_book: Audiobook + Quality tabs hidden (same as picture_book)", () => {
+        renderEditor({book_type: "comic_book", chapters: []})
+        expect(screen.getByTestId("metadata-tab-general")).toBeTruthy()
+        expect(screen.queryByTestId("metadata-tab-audiobook")).toBeNull()
+        expect(screen.queryByTestId("metadata-tab-quality")).toBeNull()
+    })
+
+    it("undefined book_type (defensive fallback): treated as prose, all 8 tabs render", () => {
+        // Pre-Session-3 rows wouldn't have a book_type field at all.
+        // The backend defaults it to 'prose' (BookOut schema line
+        // 393), but if a frontend test fixture or some import path
+        // strips the field, the editor must NOT silently hide tabs.
+        const book = makeBook({book_type: undefined as unknown as BookDetail["book_type"]})
+        render(<BookMetadataEditor book={book} onSave={onSave} onBack={onBack}/>)
+        expect(screen.getByTestId("metadata-tab-audiobook")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-quality")).toBeTruthy()
+    })
+
+    it("picture_book: marketing tab (Categories + BISAC from Bug 9) is still visible", () => {
+        // Picture-books gain Categories + BISAC for free via the
+        // shared Marketing tab. Asymmetry resolution: prior to this
+        // session, BookEditor (prose) exposed Marketing but
+        // BookEditor (picture_book) returned <PageEditor> with no
+        // metadata access at all. Tab visibility is the necessary
+        // condition for Bug 9's Categories + BISAC to reach picture-
+        // book authors.
+        renderEditor({book_type: "picture_book", chapters: []})
+        expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
     })
 })
