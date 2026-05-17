@@ -1,8 +1,9 @@
-import React, {useCallback, useEffect, useState} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {ChevronLeft} from "lucide-react"
 import {api, type Page, type PageLayout} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import PageThumbnails from "./PageThumbnails"
+import LayoutPicker from "./LayoutPicker"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -51,6 +52,22 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
             setPages(next)
         },
         [bookId],
+    )
+
+    const activePage = useMemo(
+        () => pages.find((p) => p.id === activePageId) ?? null,
+        [pages, activePageId],
+    )
+
+    const handleChangeLayout = useCallback(
+        async (newLayout: PageLayout) => {
+            if (!activePage) return
+            const updated = await api.pages.update(bookId, activePage.id, {
+                layout: newLayout,
+            })
+            setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        },
+        [bookId, activePage],
     )
 
     return (
@@ -108,7 +125,22 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
                     className={styles.properties}
                     aria-label={t("ui.page_editor.properties_pane", "Page properties")}
                 >
-                    {/* Commit 4: LayoutPicker + per-page properties. */}
+                    {activePage ? (
+                        <LayoutPicker
+                            selected={activePage.layout as PageLayout}
+                            onChange={handleChangeLayout}
+                        />
+                    ) : (
+                        <div
+                            data-testid="page-editor-properties-empty"
+                            className={styles.propertiesEmpty}
+                        >
+                            {t(
+                                "ui.page_editor.properties_empty",
+                                "Select a page to edit its properties.",
+                            )}
+                        </div>
+                    )}
                 </aside>
             </div>
         </div>

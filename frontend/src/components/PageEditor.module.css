@@ -83,3 +83,10 @@
     font-size: 0.875rem;
     margin-bottom: 12px;
 }
+
+.propertiesEmpty {
+    padding: 16px 14px;
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
+    text-align: center;
+}

@@ -34,6 +34,7 @@ vi.mock("../hooks/useI18n", () => ({
 const mockList = vi.fn()
 const mockCreate = vi.fn()
 const mockReorder = vi.fn()
+const mockUpdate = vi.fn()
 
 vi.mock("../api/client", () => ({
     api: {
@@ -41,6 +42,7 @@ vi.mock("../api/client", () => ({
             list: (...args: unknown[]) => mockList(...args),
             create: (...args: unknown[]) => mockCreate(...args),
             reorder: (...args: unknown[]) => mockReorder(...args),
+            update: (...args: unknown[]) => mockUpdate(...args),
         },
     },
 }))
@@ -64,6 +66,7 @@ beforeEach(() => {
     mockList.mockReset()
     mockCreate.mockReset()
     mockReorder.mockReset()
+    mockUpdate.mockReset()
     mockList.mockResolvedValue([])
 })
 
@@ -182,6 +185,88 @@ describe("PageEditor + PageThumbnails wiring (Commit 3)", () => {
         )
         expect(screen.getByTestId("page-editor-load-error").textContent).toContain(
             "Network down",
+        )
+    })
+})
+
+describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
+    it("shows the properties empty-state when no pages exist", async () => {
+        mockList.mockResolvedValue([])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-properties-empty")).toBeTruthy(),
+        )
+        expect(screen.queryByTestId("page-editor-layout-picker")).toBeNull()
+    })
+
+    it("renders the LayoutPicker for the active page", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1, layout: "speech_bubble"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        expect(
+            screen
+                .getByTestId("page-editor-layout-option-speech_bubble")
+                .getAttribute("data-selected"),
+        ).toBe("true")
+    })
+
+    it("invokes api.pages.update and refreshes the row's data-layout after a layout change", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1, layout: "speech_bubble"}),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({id: "p1", position: 1, layout: "image_top_text_bottom"}),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
+        )
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "image_top_text_bottom",
+            }),
+        )
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-page-row-p1")
+                    .getAttribute("data-layout"),
+            ).toBe("image_top_text_bottom"),
+        )
+    })
+
+    it("switching the active page reflects the new page's layout in the picker", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1, layout: "speech_bubble"}),
+            makePage({id: "p2", position: 2, layout: "text_only"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        // p1 is selected first; speech_bubble visible by default.
+        expect(
+            screen
+                .getByTestId("page-editor-layout-option-speech_bubble")
+                .getAttribute("data-selected"),
+        ).toBe("true")
+        // Switch to p2 (text_only sits behind "More layouts", but the
+        // picker still tracks the selected value internally).
+        fireEvent.click(screen.getByTestId("page-editor-page-row-p2"))
+        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-layout-option-text_only")
+                    .getAttribute("data-selected"),
+            ).toBe("true"),
         )
     })
 })
