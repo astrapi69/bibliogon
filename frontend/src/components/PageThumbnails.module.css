@@ -1,0 +1,111 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-sidebar) 8%, transparent);
+    flex-shrink: 0;
+}
+
+.headerLabel {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
+}
+
+.addBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-sidebar);
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 12%, transparent);
+}
+
+.empty {
+    padding: 16px 12px;
+    font-size: 0.8125rem;
+    color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
+    text-align: center;
+}
+
+.list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--text-sidebar) 4%, transparent);
+    color: var(--text-sidebar);
+    user-select: none;
+}
+
+.row:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 10%, transparent);
+}
+
+.rowActive {
+    background: color-mix(in srgb, var(--accent, var(--text-sidebar)) 22%, transparent);
+}
+
+.rowDragging {
+    opacity: 0.5;
+}
+
+.dragHandle {
+    display: flex;
+    align-items: center;
+    cursor: grab;
+    opacity: 0.4;
+}
+
+.dragHandle:hover {
+    opacity: 0.8;
+}
+
+.rowIcon {
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+}
+
+.rowLabel {
+    flex: 1;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rowPosition {
+    font-variant-numeric: tabular-nums;
+}

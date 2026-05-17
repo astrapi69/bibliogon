@@ -1,6 +1,8 @@
-import React from "react"
+import React, {useCallback, useEffect, useState} from "react"
 import {ChevronLeft} from "lucide-react"
+import {api, type Page, type PageLayout} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import PageThumbnails from "./PageThumbnails"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -9,8 +11,48 @@ interface Props {
     onBack: () => void
 }
 
+const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
+
 export default function PageEditor({bookId, bookTitle, onBack}: Props) {
     const {t} = useI18n()
+    const [pages, setPages] = useState<Page[]>([])
+    const [activePageId, setActivePageId] = useState<string | null>(null)
+    const [loadError, setLoadError] = useState<string | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        api.pages
+            .list(bookId)
+            .then((rows) => {
+                if (cancelled) return
+                setPages(rows)
+                if (rows.length > 0) setActivePageId(rows[0].id)
+            })
+            .catch((err: unknown) => {
+                if (cancelled) return
+                setLoadError(err instanceof Error ? err.message : String(err))
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [bookId])
+
+    const handleAddPage = useCallback(async () => {
+        const created = await api.pages.create(bookId, {
+            layout: DEFAULT_NEW_PAGE_LAYOUT,
+        })
+        setPages((prev) => [...prev, created])
+        setActivePageId(created.id)
+    }, [bookId])
+
+    const handleReorder = useCallback(
+        async (pageIds: string[]) => {
+            const next = await api.pages.reorder(bookId, pageIds)
+            setPages(next)
+        },
+        [bookId],
+    )
+
     return (
         <div
             data-testid="page-editor-root"
@@ -36,13 +78,29 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
                     className={styles.thumbnails}
                     aria-label={t("ui.page_editor.thumbnails_pane", "Pages")}
                 >
-                    {/* Commit 3: PageThumbnails (dnd-kit drag-reorder). */}
+                    <PageThumbnails
+                        pages={pages}
+                        activePageId={activePageId}
+                        onSelect={setActivePageId}
+                        onAddPage={handleAddPage}
+                        onReorder={handleReorder}
+                    />
                 </aside>
                 <main
                     data-testid="page-editor-canvas"
                     className={styles.canvas}
                     aria-label={t("ui.page_editor.canvas_pane", "Canvas")}
+                    data-active-page-id={activePageId ?? ""}
                 >
+                    {loadError && (
+                        <div
+                            data-testid="page-editor-load-error"
+                            className={styles.errorBanner}
+                            role="alert"
+                        >
+                            {loadError}
+                        </div>
+                    )}
                     {/* Commit 5: canvas content (image + text). */}
                 </main>
                 <aside
