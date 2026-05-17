@@ -2492,25 +2492,57 @@ Closed by Session 4 Commits 1-3: PageCanvas now consumes
 ``page.layout`` via a per-layout CSS-Module class + region
 wrappers, with per-layout structural + visual differentiation.
 
-**3. PB-PHASE4 ``speech_bubble_config`` field exists, NO UI
-   writes or reads it (frontend shape — read-path closed by
-   Session 4 D2a default, write-path tracked).** The
-``Page.speech_bubble_config`` JSON field has been schema-present
+**3. PB-PHASE4 ``layout_config`` (originally
+   ``speech_bubble_config``) field exists, NO UI writes or
+   reads it (frontend shape — fully closed by Session 4 D2a
+   default + Session 4c preset write-path).** The
+``Page.layout_config`` JSON field (renamed from
+``speech_bubble_config`` in Session 4c) has been schema-present
 since Session 2 (backend) and frontend-type-present since
-Session 3 Commit 1 (``api.pages``). No UI consumes it for
-rendering and no UI writes it. Session 4 audit surfaced this
+Session 3 Commit 1 (``api.pages``). No UI consumed it for
+rendering and no UI wrote it. Session 4 audit surfaced this
 during PageCanvas inspection — a third instance of the pattern
 caught BEFORE it became a user-visible bug, exactly the value of
 audit-first discipline.
 
-The Session 4 D2a decision closes the **read-path**: the
-speech_bubble layout renders a fixed bottom-center bubble at 40%
-width regardless of the JSON's anchor_position value. The
-**write-path** stays explicitly trigger-gated as
-``PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01`` in
-``docs/backlog.md``, with the trigger "user-feedback that the
-default bubble position doesn't match content OR first author
-requests reposition capability".
+**This is the FIRST canonical complete-cycle example of the
+pattern.** Both halves closed via two coordinated session steps:
+
+- **Read-path** closed by Session 4 D2a: PageCanvas reads
+  ``layout_config.anchor_position`` (with fallback to
+  bottom-center default) and renders the bubble at that
+  position. Without a write surface, this still rendered the
+  default for every existing row — the lifecycle was visibly
+  "wired" but the user couldn't change it.
+- **Write-path** closed by Session 4c: LayoutConfigSpeechBubble
+  component ships the 5-preset anchor radio + opacity slider +
+  size slider in PageEditor's properties pane. The dispatcher
+  routes to it whenever ``page.layout === "speech_bubble"``;
+  ``handleUpdateLayoutConfig`` in PageEditor merges partial
+  updates and persists via ``api.pages.update`` with optimistic
+  state refresh. Same write surface design extends to the 3
+  image-based layouts (image_top_text_bottom +
+  image_left_text_right + image_full_text_overlay) which got
+  their own per-layout configs in the same session.
+
+**Drag-to-position** (the broader interpretation of
+"reposition capability") remains as the narrower P5 backlog
+item
+``PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01``. That follow-
+up extends the persisted shape (`{x_pct, y_pct}` dict variant
+in addition to the preset string) without breaking the
+preset path. **Extended bubble properties** (color, border,
+typography, etc.) are tracked separately as
+``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`` (P3)
+— not part of the half-wired closure; they're a new feature
+adding more dimensions to the already-closed lifecycle.
+
+The closure pattern is instructive: an outer "complete the
+lifecycle" backlog item can naturally generate narrower
+follow-ups when the original scope was broader than the MVP
+needs. Filing both the original close + the narrower P5
+follow-up makes the closure auditable while preserving the
+deferred work as a tracked future task.
 
 ### Rule
 

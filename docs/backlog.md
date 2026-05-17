@@ -125,36 +125,119 @@ store.
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
 
-- **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01** (P3): build the
-  write-path UI for `Page.speech_bubble_config.anchor_position`
-  on picture-book pages that use the `speech_bubble` layout.
-  The JSON field has existed on the backend since PB-PHASE4
-  Session 2 and the frontend reads it through `api.pages`
-  shape, but **no UI surface writes it**. Session 4 D2a closed
-  the read-path with a fixed bottom-center default (40% width
-  over the image); this item closes the write-path.
-  Trigger: user-feedback that the default bubble position
-  doesn't match content OR first author requests reposition
-  capability. NOT session-completion-tied — the trigger is a
-  concrete user signal so the work lands when the gap is real,
-  not on a schedule.
-  Scope: drag-to-position the bubble on top of the canvas;
-  persist `{anchor_position: {x_pct, y_pct}}` (or similar
-  normalised shape) via `api.pages.update`; PageCanvas's
-  bubble-region picks up the position from
-  `page.speech_bubble_config` and applies inline style
-  (`left: x_pct%; top: y_pct%; transform: translate(-50%, -50%)`).
-  Optional follow-up: bubble tail direction picker, bubble
-  size adjustment. Add Vitest for the position-state plumbing
-  + an E2E that drags the bubble and asserts the persisted
-  config.
-  Effort: 3-5 commits depending on UX polish.
-  Pattern: this closes the third documented instance of the
-  half-wired-feature-lifecycle pattern (frontend shape:
-  state-write surface missing for an already-read field).
-  See `.claude/rules/lessons-learned.md` "Half-wired feature
-  lifecycle" for the full pattern + the two prior instances
-  (Bug 10 trash + Session 4 layout-render).
+- **PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01** (P5,
+  narrower follow-up to the closed POSITIONING-01): drag-to-
+  position UI for the speech-bubble. Session 4c shipped the
+  preset path (5 anchor presets — TL/TR/BL/BR/CENTER — plus
+  opacity + size sliders). This item adds free-form
+  positioning if the 5 presets aren't enough for an author's
+  use case.
+  Trigger: user requests bubble positioning beyond the 5
+  presets OR drag-to-position UX feedback from a real
+  picture-book authoring session. NOT schedule-tied.
+  Scope: pointer-drag handle on the bubble itself; persist
+  `{anchor_position: {x_pct, y_pct}}` shape (extending the
+  current string-preset shape, NOT replacing — preset names
+  stay as a quick-pick fallback); PageCanvas reads the dict
+  form when present and applies `left: x_pct%; top: y_pct%;
+  transform: translate(-50%, -50%)`. Vitest + E2E.
+  Effort: 2-4 commits depending on UX polish (snap-to-edge,
+  keyboard nudge, etc.).
+  Closure note: superseded the broader
+  PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 (closed by
+  Session 4c). That older item was filed at Session 4 close
+  as the entire "write-path closure"; Session 4c shipped the
+  preset write-path; this narrower item carries the
+  drag-positioning future-work forward.
+
+- **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01** (P3):
+  ship Tier 1 + Tier 2 extended properties for the speech-
+  bubble layout (11 properties total beyond the 3 Session 4c
+  shipped: anchor_position + opacity + size).
+
+  Tier 1 — Visual Style section:
+  - `background_color` (color picker, default white)
+  - `border_color` (color picker, default black)
+  - `border_width` (slider 0-8px, default 2px)
+  - `border_style` (dropdown: solid/dashed/dotted/none,
+    default solid)
+  - `border_radius` (slider 0-50%, default 50% round)
+  - `shadow` (toggle on/off + intensity slider, default on
+    medium)
+
+  Tier 2 — Typography section:
+  - `font_family` (dropdown of children-book-friendly fonts,
+    reuse Bibliogon font selection if available, default
+    app-default)
+  - `font_size` (slider 10-32pt, default 14pt)
+  - `font_weight` (dropdown: normal/bold)
+  - `text_color` (color picker, default black)
+  - `text_align` (dropdown: left/center/right, default
+    center)
+
+  Plus 4c-B Pre-Inspection adjustment (filed 2026-05-17):
+  replace the single `size` property with `bubble_width` +
+  `bubble_height` for finer control. Migration approach
+  (CC-chosen): NO data migration — keep reading `size` as
+  legacy fallback when `bubble_width` is absent. On next
+  write, the dispatcher always writes `bubble_width` +
+  `bubble_height`; the legacy `size` key naturally fades
+  out without backfill. Defaults: `bubble_width=40` (matches
+  Session 4 D2a), `bubble_height=30` (content-driven
+  alternative; could also let `bubble_height` be
+  auto-derived from text content — surface during
+  Pre-Inspection).
+
+  UI pattern: properties pane with collapsible-sections.
+  Three sections — Visual Style / Typography / Shape
+  (future Tier 3). Pattern-application note: the
+  collapsible-section component may apply to other future
+  config-heavy layouts (image_full_text_overlay
+  text-styling, etc.). Surface during Pre-Inspection
+  whether to extract it as a reusable
+  `<CollapsibleSection>` component.
+
+  Schema extension: `layout_config` dict gains nested keys
+  for bubble properties. Backward-compatible: existing
+  speech_bubble pages without extended props render with
+  defaults. Migration: NULL config falls back to defaults
+  per property.
+
+  Trigger: scheduled 4c-B session OR user-feedback that the
+  3-property MVP is insufficient.
+  Effort: 6-8 commits (Pre-Inspection + collapsible-section
+  helper + Visual Style section + Typography section +
+  PageCanvas integration + i18n + Vitest + E2E + width/height
+  migration).
+
+- **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01** (P3,
+  Tier 3 deferred from EXTENDED-PROPERTIES-01): shape
+  variants + tail configuration + padding + font-style.
+  Tier 3 from the user's 2026-05-17 extended-properties
+  specification.
+
+  Scope:
+  - Shape variants: oval / rectangle / cloud / explosion
+    (comic-strip-style). Likely uses SVG masks or CSS
+    clip-paths rather than border-radius. The rectangle
+    variant is the easiest first; cloud + explosion are
+    the visual stretch goals.
+  - Tail configuration: direction (8 octants), length, tip
+    offset.
+  - Padding (slider, per-side or uniform).
+  - font_style: italic/oblique toggle.
+
+  Trigger: Comic-Plugin work starts (panel + speech-bubble
+  shapes overlap with comic-book bubble shapes) OR user
+  requests bubble-shape variants beyond the oval default.
+  Effort: 6-10 commits depending on SVG-vs-CSS choice for
+  shape variants. Probably warrants its own Pre-Inspection
+  + design discussion before implementation.
+
+- **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01**: ✅
+  CLOSED by PB-PHASE4 Session 4c (preset write-path)
+  + remaining drag-position scope moved to
+  PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5).
 
 - **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
   hook that encapsulates the `location.key === 'default'` fallback
