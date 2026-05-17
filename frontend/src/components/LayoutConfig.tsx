@@ -1,5 +1,6 @@
 import React from "react"
 import type {Page} from "../api/client"
+import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
 
 interface Props {
     /** The currently active page. Its `page.layout` selects the
@@ -37,11 +38,15 @@ export default function LayoutConfig({page, onChange}: Props) {
             data-layout={page.layout}
             data-config-keys={Object.keys(page.layout_config ?? {}).join(",")}
         >
-            {/* Concrete LayoutConfig{Variant} bodies land in
-             *  Commits 4-5. Mounting the dispatcher now in Commit 3
-             *  lets PageEditor wire `onChange` (=
-             *  handleUpdateLayoutConfig) without restructuring its
-             *  JSX when the bodies arrive. */}
+            {page.layout === "speech_bubble" && (
+                <LayoutConfigSpeechBubble
+                    config={page.layout_config}
+                    onChange={onChange}
+                />
+            )}
+            {/* image_top_text_bottom + image_left_text_right +
+             *  image_full_text_overlay bodies arrive in Commit 5.
+             *  text_only has no config by design. */}
         </div>
     )
 }

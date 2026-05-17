@@ -16,6 +16,54 @@ function imageUrlFor(bookId: string, assetId: string): string {
     return `/api/books/${bookId}/assets/${assetId}/file`
 }
 
+/** PB-PHASE4 Session 4c Commit 4: derive the speech-bubble's
+ *  position + background-opacity inline style from
+ *  page.layout_config. Default (NULL config) is bottom-right + full
+ *  opacity, matching Session 4 D2a's behavior. */
+function speechBubbleInlineStyle(
+    config: Record<string, unknown> | null,
+): React.CSSProperties {
+    // Session 4 D2a default: fallback is bottom-center when no user
+    // preset has been picked. The 5 user-pickable presets (TL/TR/BL/
+    // BR/CENTER) override this default once persisted.
+    const anchor =
+        typeof config?.anchor_position === "string"
+            ? config.anchor_position
+            : "bottom-center"
+    const rawOpacity =
+        typeof config?.opacity === "number" ? config.opacity : 1
+    const opacity = Math.max(0.3, Math.min(1, rawOpacity))
+    const bg = `rgba(255, 255, 255, ${opacity})`
+    const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
+    switch (anchor) {
+        case "top-left":
+            return {...reset, top: 16, left: 16, transform: "none", background: bg}
+        case "top-right":
+            return {...reset, top: 16, right: 16, transform: "none", background: bg}
+        case "bottom-left":
+            return {...reset, bottom: 16, left: 16, transform: "none", background: bg}
+        case "bottom-right":
+            return {...reset, bottom: 16, right: 16, transform: "none", background: bg}
+        case "center":
+            return {
+                ...reset,
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                background: bg,
+            }
+        case "bottom-center":
+        default:
+            return {
+                ...reset,
+                bottom: 16,
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: bg,
+            }
+    }
+}
+
 // PB-PHASE4 Session 4 Commit 1: per-layout CSS-Module class. The
 // CSS defines grid-template-areas per layout; the JSX stays the
 // same (image + text region wrappers) and the styling makes the
@@ -68,6 +116,9 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
     const isSpeechBubble = page.layout === "speech_bubble"
     const isTextOnly = page.layout === "text_only"
+    const speechBubbleStyle = isSpeechBubble
+        ? speechBubbleInlineStyle(page.layout_config)
+        : undefined
 
     return (
         <div className={styles.canvasWrapper} data-testid="page-canvas-wrapper">
@@ -164,7 +215,14 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                             : "page-canvas-region-text"
                     }
                     data-region="text"
+                    data-anchor={
+                        isSpeechBubble
+                            ? ((page.layout_config?.anchor_position as string) ??
+                              "bottom-right")
+                            : undefined
+                    }
                     className={`${styles.region} ${styles.regionText}`}
+                    style={speechBubbleStyle}
                 >
                     <textarea
                         id={`page-canvas-text-${page.id}`}

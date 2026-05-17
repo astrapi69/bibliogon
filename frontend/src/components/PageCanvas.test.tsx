@@ -655,3 +655,195 @@ describe("PageCanvas - on-image replace button overlay (Session 4c Commit 2)", (
         )
     })
 })
+
+// --- Session 4c Commit 4: speech-bubble anchor + opacity from layout_config ---
+
+describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commit 4)", () => {
+    it("defaults to bottom-center anchor + opacity 1 when layout_config is NULL", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const bubble = screen.getByTestId("page-canvas-speech-bubble")
+        const style = bubble.getAttribute("style") || ""
+        expect(style).toContain("bottom: 16px")
+        expect(style).toContain("left: 50%")
+        expect(style).toContain("translateX(-50%)")
+        expect(style).toContain("rgba(255, 255, 255, 1)")
+    })
+
+    it("top-left anchor produces top:16 + left:16 + transform:none", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "top-left"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const bubble = screen.getByTestId("page-canvas-speech-bubble")
+        const style = bubble.getAttribute("style") || ""
+        expect(style).toContain("top: 16px")
+        expect(style).toContain("left: 16px")
+        expect(style).toContain("transform: none")
+        // bottom + right must be neutralised so they don't fight the
+        // CSS-Module's bottom: 16px default.
+        expect(style).toContain("bottom: auto")
+        expect(style).toContain("right: auto")
+    })
+
+    it("top-right anchor produces top:16 + right:16", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "top-right"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("top: 16px")
+        expect(style).toContain("right: 16px")
+        expect(style).toContain("bottom: auto")
+        expect(style).toContain("left: auto")
+    })
+
+    it("bottom-left anchor produces bottom:16 + left:16", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "bottom-left"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("bottom: 16px")
+        expect(style).toContain("left: 16px")
+        expect(style).toContain("top: auto")
+        expect(style).toContain("right: auto")
+    })
+
+    it("bottom-right anchor produces bottom:16 + right:16", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "bottom-right"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("bottom: 16px")
+        expect(style).toContain("right: 16px")
+        expect(style).toContain("top: auto")
+        expect(style).toContain("left: auto")
+    })
+
+    it("center anchor produces top:50% + left:50% + translate(-50%, -50%)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "center"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("top: 50%")
+        expect(style).toContain("left: 50%")
+        expect(style).toContain("translate(-50%, -50%)")
+    })
+
+    it("opacity 0.6 -> background rgba(255, 255, 255, 0.6)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {opacity: 0.6},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("rgba(255, 255, 255, 0.6)")
+    })
+
+    it("opacity is clamped into [0.3, 1] even if config carries an out-of-range value", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {opacity: 1.5},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ||
+            ""
+        expect(style).toContain("rgba(255, 255, 255, 1)")
+    })
+
+    it("data-anchor on the bubble div reflects the persisted anchor (E2E targeting)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {anchor_position: "top-left"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen
+                .getByTestId("page-canvas-speech-bubble")
+                .getAttribute("data-anchor"),
+        ).toBe("top-left")
+    })
+
+    it("non-speech-bubble layouts: no inline style on the text region", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_top_text_bottom",
+                    layout_config: {anchor_position: "top-left"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        // page-canvas-region-text gets no inline style (the layout_config
+        // for non-speech-bubble layouts is consumed by Commit 5's
+        // image-position / split-ratio / text-position controls).
+        const text = screen.getByTestId("page-canvas-region-text")
+        expect(text.getAttribute("style")).toBeNull()
+        expect(text.getAttribute("data-anchor")).toBeNull()
+    })
+})

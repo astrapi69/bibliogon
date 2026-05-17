@@ -1,0 +1,115 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--text-sidebar) 10%, transparent);
+}
+
+.heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
+}
+
+.anchorFieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.legend {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--text-sidebar) 80%, transparent);
+}
+
+.anchorGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 28px);
+    gap: 4px;
+    width: max-content;
+}
+
+.anchorCell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 14%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-sidebar) 4%, transparent);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+}
+
+.anchorCell:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 10%, transparent);
+}
+
+.anchorCellSelected {
+    background: color-mix(in srgb, var(--accent, var(--text-sidebar)) 28%, transparent);
+    border-color: color-mix(in srgb, var(--accent, var(--text-sidebar)) 55%, transparent);
+}
+
+/* 3x3 placement: 4 corners + center active; 4 edge midpoints empty. */
+.anchorCell[data-cell="top-left"] {
+    grid-column: 1;
+    grid-row: 1;
+}
+.anchorCell[data-cell="top-right"] {
+    grid-column: 3;
+    grid-row: 1;
+}
+.anchorCell[data-cell="center"] {
+    grid-column: 2;
+    grid-row: 2;
+}
+.anchorCell[data-cell="bottom-left"] {
+    grid-column: 1;
+    grid-row: 3;
+}
+.anchorCell[data-cell="bottom-right"] {
+    grid-column: 3;
+    grid-row: 3;
+}
+
+.anchorInput {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.anchorDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-sidebar);
+    opacity: 0.65;
+}
+
+.anchorCellSelected .anchorDot {
+    opacity: 1;
+    background: var(--accent, var(--text-sidebar));
+}
+
+.sliderLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sliderValue {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
+    align-self: flex-end;
+}
