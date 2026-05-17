@@ -13,6 +13,15 @@ pluginforge = "^0.5.0"
 manuscripta = "^0.9.0"
 fastapi = "^0.136.0"
 pyyaml = "^6.0"
+# PB-PHASE4 Session 6: picture-book PDF rendering. WeasyPrint takes
+# HTML+CSS in and produces print-ready PDF. CSS Grid + paged-media
+# native (matches Session 4c's PageCanvas layout primitives so
+# rendering ports cleanly). BSD-3-clause license — MIT-compatible.
+# Runtime deps include Pango (text shaping) on Linux; standard in
+# most Python Docker images. The chapter-based pipeline keeps using
+# manuscripta + Pandoc; the dispatcher in routes.py routes picture-
+# books to this new generator.
+weasyprint = "^66.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
