@@ -1,0 +1,106 @@
+.canvas {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.imageArea {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.imagePlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: color-mix(in srgb, var(--text) 50%, transparent);
+    font-size: 0.875rem;
+}
+
+.imageActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.uploadBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    border-radius: 6px;
+    background: var(--bg-editor, var(--bg-app));
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.uploadBtn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.uploadBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadError {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--danger, #c0392b) 18%, transparent);
+    color: var(--danger, #c0392b);
+    font-size: 0.875rem;
+}
+
+.textArea {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.textLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+.textInput {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    border-radius: 6px;
+    background: var(--bg-editor, var(--bg-app));
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.textInput:focus {
+    outline: none;
+    border-color: var(--accent, color-mix(in srgb, var(--text) 30%, transparent));
+}

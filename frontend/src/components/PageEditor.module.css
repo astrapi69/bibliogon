@@ -90,3 +90,10 @@
     color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
     text-align: center;
 }
+
+.canvasEmpty {
+    padding: 48px 24px;
+    text-align: center;
+    color: color-mix(in srgb, var(--text) 55%, transparent);
+    font-size: 0.9375rem;
+}

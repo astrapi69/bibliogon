@@ -1,9 +1,10 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {ChevronLeft} from "lucide-react"
-import {api, type Page, type PageLayout} from "../api/client"
+import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
+import PageCanvas from "./PageCanvas"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -70,6 +71,15 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
         [bookId, activePage],
     )
 
+    const handleUpdateActivePage = useCallback(
+        async (updates: PageUpdate) => {
+            if (!activePage) return
+            const updated = await api.pages.update(bookId, activePage.id, updates)
+            setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        },
+        [bookId, activePage],
+    )
+
     return (
         <div
             data-testid="page-editor-root"
@@ -118,7 +128,26 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
                             {loadError}
                         </div>
                     )}
-                    {/* Commit 5: canvas content (image + text). */}
+                    {activePage ? (
+                        <PageCanvas
+                            key={activePage.id}
+                            page={activePage}
+                            bookId={bookId}
+                            onUpdate={handleUpdateActivePage}
+                        />
+                    ) : (
+                        !loadError && (
+                            <div
+                                data-testid="page-editor-canvas-empty"
+                                className={styles.canvasEmpty}
+                            >
+                                {t(
+                                    "ui.page_editor.canvas_empty",
+                                    "Add a page from the sidebar to start authoring.",
+                                )}
+                            </div>
+                        )
+                    )}
                 </main>
                 <aside
                     data-testid="page-editor-properties"

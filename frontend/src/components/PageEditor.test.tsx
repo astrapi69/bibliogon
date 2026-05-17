@@ -35,6 +35,7 @@ const mockList = vi.fn()
 const mockCreate = vi.fn()
 const mockReorder = vi.fn()
 const mockUpdate = vi.fn()
+const mockUploadAsset = vi.fn()
 
 vi.mock("../api/client", () => ({
     api: {
@@ -43,6 +44,9 @@ vi.mock("../api/client", () => ({
             create: (...args: unknown[]) => mockCreate(...args),
             reorder: (...args: unknown[]) => mockReorder(...args),
             update: (...args: unknown[]) => mockUpdate(...args),
+        },
+        assets: {
+            upload: (...args: unknown[]) => mockUploadAsset(...args),
         },
     },
 }))
@@ -67,6 +71,7 @@ beforeEach(() => {
     mockCreate.mockReset()
     mockReorder.mockReset()
     mockUpdate.mockReset()
+    mockUploadAsset.mockReset()
     mockList.mockResolvedValue([])
 })
 
@@ -239,6 +244,43 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
                     .getByTestId("page-editor-page-row-p1")
                     .getAttribute("data-layout"),
             ).toBe("image_top_text_bottom"),
+        )
+    })
+
+    it("shows the canvas-empty state when no pages exist", async () => {
+        mockList.mockResolvedValue([])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-canvas-empty")).toBeTruthy(),
+        )
+        expect(screen.queryByTestId("page-canvas-root")).toBeNull()
+    })
+
+    it("renders PageCanvas for the active page", async () => {
+        mockList.mockResolvedValue([makePage({id: "p1", position: 1})])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() => expect(screen.getByTestId("page-canvas-root")).toBeTruthy())
+        expect(
+            screen.getByTestId("page-canvas-root").getAttribute("data-page-id"),
+        ).toBe("p1")
+    })
+
+    it("text-blur updates the page via api.pages.update", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1, text_content: null}),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({id: "p1", position: 1, text_content: "Hello"}),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() => expect(screen.getByTestId("page-canvas-root")).toBeTruthy())
+        const ta = screen.getByTestId("page-canvas-text-input") as HTMLTextAreaElement
+        fireEvent.change(ta, {target: {value: "Hello"}})
+        fireEvent.blur(ta)
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                text_content: "Hello",
+            }),
         )
     })
 
