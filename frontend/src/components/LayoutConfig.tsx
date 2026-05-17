@@ -1,6 +1,11 @@
 import React from "react"
 import type {Page} from "../api/client"
 import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
+import {
+    LayoutConfigImageTopTextBottom,
+    LayoutConfigImageLeftTextRight,
+    LayoutConfigImageFullTextOverlay,
+} from "./LayoutConfigImageRow"
 
 interface Props {
     /** The currently active page. Its `page.layout` selects the
@@ -44,9 +49,25 @@ export default function LayoutConfig({page, onChange}: Props) {
                     onChange={onChange}
                 />
             )}
-            {/* image_top_text_bottom + image_left_text_right +
-             *  image_full_text_overlay bodies arrive in Commit 5.
-             *  text_only has no config by design. */}
+            {page.layout === "image_top_text_bottom" && (
+                <LayoutConfigImageTopTextBottom
+                    config={page.layout_config}
+                    onChange={onChange}
+                />
+            )}
+            {page.layout === "image_left_text_right" && (
+                <LayoutConfigImageLeftTextRight
+                    config={page.layout_config}
+                    onChange={onChange}
+                />
+            )}
+            {page.layout === "image_full_text_overlay" && (
+                <LayoutConfigImageFullTextOverlay
+                    config={page.layout_config}
+                    onChange={onChange}
+                />
+            )}
+            {/* text_only has no config by design. */}
         </div>
     )
 }

@@ -1,0 +1,87 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--text-sidebar) 10%, transparent);
+}
+
+.heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
+}
+
+.legend {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--text-sidebar) 80%, transparent);
+}
+
+.fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.radioRow {
+    display: flex;
+    gap: 4px;
+}
+
+.radioCell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 14%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-sidebar) 4%, transparent);
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.radioCell:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 10%, transparent);
+}
+
+.radioCellSelected {
+    background: color-mix(in srgb, var(--accent, var(--text-sidebar)) 28%, transparent);
+    border-color: color-mix(in srgb, var(--accent, var(--text-sidebar)) 55%, transparent);
+}
+
+.radioInput {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.select {
+    padding: 6px 8px;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 14%, transparent);
+    border-radius: 4px;
+    background: var(--bg-editor, var(--bg-app));
+    color: var(--text-sidebar);
+    font-size: 0.8125rem;
+}
+
+.sliderValue {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
+    align-self: flex-end;
+}

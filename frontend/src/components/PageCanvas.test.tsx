@@ -828,7 +828,7 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
         ).toBe("top-left")
     })
 
-    it("non-speech-bubble layouts: no inline style on the text region", () => {
+    it("non-speech-bubble layouts: speech-bubble inline style does NOT apply", () => {
         render(
             <PageCanvas
                 page={makePage({
@@ -839,11 +839,179 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
                 onUpdate={vi.fn()}
             />,
         )
-        // page-canvas-region-text gets no inline style (the layout_config
-        // for non-speech-bubble layouts is consumed by Commit 5's
-        // image-position / split-ratio / text-position controls).
+        // No data-anchor on non-speech-bubble layouts (the anchor
+        // concept is bubble-specific).
         const text = screen.getByTestId("page-canvas-region-text")
-        expect(text.getAttribute("style")).toBeNull()
         expect(text.getAttribute("data-anchor")).toBeNull()
+    })
+})
+
+// --- Session 4c Commit 5: image_top_text_bottom / image_left_text_right /
+//     image_full_text_overlay layout_config integration ---
+
+describe("PageCanvas - image_top_text_bottom config (Session 4c Commit 5)", () => {
+    it("defaults: data-image-position='center', data-image-fit='contain'", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "image_top_text_bottom", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const root = screen.getByTestId("page-canvas-root")
+        expect(root.getAttribute("data-image-position")).toBe("center")
+        expect(root.getAttribute("data-image-fit")).toBe("contain")
+    })
+
+    it("image_position='left' justifies the image region flex-start", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_top_text_bottom",
+                    image_asset_id: "asset-1",
+                    layout_config: {image_position: "left"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const imgArea = screen.getByTestId("page-canvas-image-area")
+        expect(imgArea.getAttribute("style")).toContain(
+            "justify-content: flex-start",
+        )
+    })
+
+    it("image_fit='cover' applies object-fit:cover to the <img>", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_top_text_bottom",
+                    image_asset_id: "asset-1",
+                    layout_config: {image_fit: "cover"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const img = screen.getByTestId("page-canvas-image")
+        expect(img.getAttribute("style")).toContain("object-fit: cover")
+    })
+})
+
+describe("PageCanvas - image_left_text_right config (Session 4c Commit 5)", () => {
+    it("defaults: data-split-ratio='60'", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "image_left_text_right", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-root").getAttribute("data-split-ratio"),
+        ).toBe("60")
+    })
+
+    it("split_ratio=65 produces grid-template-columns '65% 35%'", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_left_text_right",
+                    layout_config: {split_ratio: 65},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const root = screen.getByTestId("page-canvas-root")
+        expect(root.getAttribute("style")).toContain(
+            "grid-template-columns: 65% 35%",
+        )
+        expect(root.getAttribute("data-split-ratio")).toBe("65")
+    })
+
+    it("clamps split_ratio out-of-range value into [50, 70]", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_left_text_right",
+                    layout_config: {split_ratio: 90},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-root").getAttribute("data-split-ratio"),
+        ).toBe("70")
+    })
+})
+
+describe("PageCanvas - image_full_text_overlay config (Session 4c Commit 5)", () => {
+    it("defaults: data-text-position='bottom', backdrop opacity 0.45", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    layout_config: null,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const root = screen.getByTestId("page-canvas-root")
+        expect(root.getAttribute("data-text-position")).toBe("bottom")
+        const style = screen.getByTestId("page-canvas-region-text").getAttribute("style") || ""
+        expect(style).toContain("rgba(0, 0, 0, 0.45)")
+        expect(style).toContain("top: auto")
+        expect(style).toContain("bottom: 0")
+    })
+
+    it("text_position='top' positions the overlay at the top of the canvas", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    layout_config: {text_position: "top"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style = screen.getByTestId("page-canvas-region-text").getAttribute("style") || ""
+        expect(style).toContain("top: 0")
+        expect(style).toContain("bottom: auto")
+    })
+
+    it("text_position='middle' uses 50% top + translateY(-50%) centering", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    layout_config: {text_position: "middle"},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style = screen.getByTestId("page-canvas-region-text").getAttribute("style") || ""
+        expect(style).toContain("top: 50%")
+        expect(style).toContain("translateY(-50%)")
+    })
+
+    it("text_backdrop_opacity=0.7 produces rgba(0,0,0,0.7) background", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    layout_config: {text_backdrop_opacity: 0.7},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-region-text").getAttribute("style"),
+        ).toContain("rgba(0, 0, 0, 0.7)")
     })
 })

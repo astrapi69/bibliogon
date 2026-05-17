@@ -120,19 +120,101 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
         ? speechBubbleInlineStyle(page.layout_config)
         : undefined
 
+    // Session 4c Commit 5: image_top_text_bottom +
+    // image_left_text_right + image_full_text_overlay configs.
+    const layoutConfig = page.layout_config ?? {}
+    const imagePosition =
+        typeof layoutConfig.image_position === "string" &&
+        ["left", "center", "right"].includes(layoutConfig.image_position as string)
+            ? (layoutConfig.image_position as "left" | "center" | "right")
+            : "center"
+    const imageFit =
+        typeof layoutConfig.image_fit === "string" &&
+        ["contain", "cover"].includes(layoutConfig.image_fit as string)
+            ? (layoutConfig.image_fit as "contain" | "cover")
+            : page.layout === "speech_bubble"
+              ? "cover"
+              : "contain"
+    const splitRatio =
+        typeof layoutConfig.split_ratio === "number"
+            ? Math.max(50, Math.min(70, layoutConfig.split_ratio as number))
+            : 60
+    const textPosition =
+        typeof layoutConfig.text_position === "string" &&
+        ["top", "middle", "bottom"].includes(layoutConfig.text_position as string)
+            ? (layoutConfig.text_position as "top" | "middle" | "bottom")
+            : "bottom"
+    const textBackdropOpacity =
+        typeof layoutConfig.text_backdrop_opacity === "number"
+            ? Math.max(0.3, Math.min(0.8, layoutConfig.text_backdrop_opacity as number))
+            : 0.45
+
+    // Compute the inline style for non-speech-bubble layouts.
+    const canvasInlineStyle: React.CSSProperties = {}
+    if (page.layout === "image_left_text_right") {
+        canvasInlineStyle.gridTemplateColumns = `${splitRatio}% ${100 - splitRatio}%`
+    }
+    const regionImageInlineStyle: React.CSSProperties = {}
+    if (page.layout === "image_top_text_bottom") {
+        if (imagePosition === "left") regionImageInlineStyle.justifyContent = "flex-start"
+        else if (imagePosition === "right") regionImageInlineStyle.justifyContent = "flex-end"
+        else regionImageInlineStyle.justifyContent = "center"
+    }
+    const imageInlineStyle: React.CSSProperties = {}
+    if (page.layout === "image_top_text_bottom" || page.layout === "image_left_text_right") {
+        imageInlineStyle.objectFit = imageFit
+    }
+    const overlayTextStyle: React.CSSProperties = {}
+    if (page.layout === "image_full_text_overlay") {
+        overlayTextStyle.background = `rgba(0, 0, 0, ${textBackdropOpacity})`
+        // Use individual properties (not `inset` shorthand) so the
+        // serialized inline style is testable in jsdom.
+        overlayTextStyle.left = 0
+        overlayTextStyle.right = 0
+        if (textPosition === "top") {
+            overlayTextStyle.top = 0
+            overlayTextStyle.bottom = "auto"
+        } else if (textPosition === "middle") {
+            overlayTextStyle.top = "50%"
+            overlayTextStyle.bottom = "auto"
+            overlayTextStyle.transform = "translateY(-50%)"
+            overlayTextStyle.maxHeight = "70%"
+        } else {
+            overlayTextStyle.top = "auto"
+            overlayTextStyle.bottom = 0
+        }
+    }
+
     return (
         <div className={styles.canvasWrapper} data-testid="page-canvas-wrapper">
             <div
                 data-testid="page-canvas-root"
                 data-page-id={page.id}
                 data-layout={page.layout}
+                data-image-position={
+                    page.layout === "image_top_text_bottom" ? imagePosition : undefined
+                }
+                data-image-fit={
+                    page.layout === "image_top_text_bottom" ||
+                    page.layout === "image_left_text_right"
+                        ? imageFit
+                        : undefined
+                }
+                data-split-ratio={
+                    page.layout === "image_left_text_right" ? splitRatio : undefined
+                }
+                data-text-position={
+                    page.layout === "image_full_text_overlay" ? textPosition : undefined
+                }
                 className={`${styles.canvas} ${layoutClass}`}
+                style={canvasInlineStyle}
             >
                 {!isTextOnly && (
                     <div
                         data-testid="page-canvas-image-area"
                         data-region="image"
                         className={`${styles.region} ${styles.regionImage}`}
+                        style={regionImageInlineStyle}
                     >
                         {hasImage ? (
                             <img
@@ -140,6 +222,7 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                                 src={imageUrlFor(bookId, page.image_asset_id!)}
                                 alt=""
                                 className={styles.image}
+                                style={imageInlineStyle}
                                 data-testid="page-canvas-image"
                             />
                         ) : (
@@ -218,11 +301,17 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                     data-anchor={
                         isSpeechBubble
                             ? ((page.layout_config?.anchor_position as string) ??
-                              "bottom-right")
+                              "bottom-center")
                             : undefined
                     }
                     className={`${styles.region} ${styles.regionText}`}
-                    style={speechBubbleStyle}
+                    style={
+                        isSpeechBubble
+                            ? speechBubbleStyle
+                            : page.layout === "image_full_text_overlay"
+                              ? overlayTextStyle
+                              : undefined
+                    }
                 >
                     <textarea
                         id={`page-canvas-text-${page.id}`}
