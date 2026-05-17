@@ -173,6 +173,24 @@
     object-fit: cover;
 }
 
+/* Session 4c-A Bug B fix: image_full_text_overlay also defaults
+ * to cover so the image fills the canvas. Without this, an image
+ * whose aspect ratio differs from 4:3 letterboxes inside its
+ * region; the absolutely-positioned text-region (left:0 right:0)
+ * then extends past the visible image bounds. User reported "text
+ * container overlaps image plus is wider than image". cover fills
+ * the canvas so left:0 right:0 = aligned-to-image-edges.
+ *
+ * Like speech_bubble's same override, this is a CSS-level default;
+ * a future image_fit knob in LayoutConfigImageRow would override
+ * via the inline-style path. Currently image_full_text_overlay
+ * has NO image_fit dropdown (see D5 spec: text_position +
+ * text_backdrop_opacity only); the configurability lives in
+ * Bug D backlog at PICTURE-BOOK-TEXT-CONFIGURATION-01. */
+.canvasLayoutImageFullTextOverlay .image {
+    object-fit: cover;
+}
+
 .imagePlaceholder {
     display: flex;
     flex-direction: column;

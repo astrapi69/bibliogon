@@ -558,6 +558,20 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
         )
     })
 
+    // Session 4c-A Bug B regression pin: image_full_text_overlay
+    // image defaults to object-fit: cover so it fills the canvas.
+    // Without this, letterbox bars expose the gap between the
+    // image's visible bounds and the absolutely-positioned text
+    // region (which uses left: 0; right: 0 to span the canvas
+    // width). The fix mirrors speech_bubble's same override.
+    it("Bug B fix: image_full_text_overlay defaults image to object-fit: cover", () => {
+        const block = css.match(
+            /\.canvasLayoutImageFullTextOverlay\s+\.image\s*\{[^}]*\}/,
+        )
+        expect(block).not.toBeNull()
+        expect(block![0]).toMatch(/object-fit:\s*cover/)
+    })
+
     it("speech_bubble: bubble keeps its dedicated visual styling (radius + shadow)", () => {
         const block = blockFor(".canvasLayoutSpeechBubble .regionText")
         expect(block).not.toBe("")
