@@ -4,6 +4,7 @@ import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from 
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
 import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
+import PageEditor from "../components/PageEditor";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import GitBackupDialog from "../components/GitBackupDialog";
@@ -472,6 +473,20 @@ export default function BookEditor() {
             <div className={styles.loading} data-testid="book-editor-not-found">
                 <p>{t("ui.editor.book_not_found", "Buch nicht gefunden.")}</p>
             </div>
+        );
+    }
+
+    // PB-PHASE4 Session 3 Commit 6: picture-books mount the page-based
+    // editor instead of the chapter-based flow. Existing prose flow
+    // stays exactly as-is; comic_book books fall through to the
+    // chapter editor until plugin-comics ships its own surface.
+    if (book.book_type === "picture_book") {
+        return (
+            <PageEditor
+                bookId={book.id}
+                bookTitle={book.title}
+                onBack={() => navigate("/")}
+            />
         );
     }
 

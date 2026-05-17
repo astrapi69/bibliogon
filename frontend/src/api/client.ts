@@ -28,8 +28,21 @@ export type ChapterType =
     | "excerpt"
     | "call_to_action";
 
+/** PB-PHASE4: discriminator for the book's authoring shape.
+ *  ``prose`` keeps the existing Chapter-based editor; ``picture_book``
+ *  routes into PageEditor; ``comic_book`` is reserved for a future
+ *  plugin-comics package and currently unsupported in the UI.
+ *  Defaults to ``prose`` server-side. Immutable after create per
+ *  the Session-2 PATCH /api/books/{id} guard. */
+export type BookType = "prose" | "picture_book" | "comic_book";
+
 export interface Book {
     id: string;
+    /** ``prose`` for the existing chapter-based authoring flow;
+     *  ``picture_book`` mounts the page-based PageEditor instead.
+     *  Defaults to ``prose`` for legacy rows (the backend's
+     *  Pydantic default). */
+    book_type: BookType;
     title: string;
     subtitle: string | null;
     /** Nullable when the user enabled

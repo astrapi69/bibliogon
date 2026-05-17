@@ -18,6 +18,7 @@ import type {Book} from "../api/client";
 function makeBook(overrides: Partial<Book> = {}): Book {
     return {
         id: "b1",
+        book_type: "prose",
         title: "Default Title",
         subtitle: null,
         author: "Default Author",

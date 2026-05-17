@@ -60,6 +60,7 @@ vi.mock("../utils/notify", () => ({
 
 const FAKE_BOOK: BookDetail = {
   id: "book-1",
+  book_type: "prose",
   title: "My Memoir",
   subtitle: null,
   author: "Aster",
