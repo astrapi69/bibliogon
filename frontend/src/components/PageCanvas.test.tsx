@@ -16,6 +16,8 @@
 import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
+import fs from "node:fs"
+import path from "node:path"
 
 import PageCanvas from "./PageCanvas"
 import type {Page, Asset} from "../api/client"
@@ -471,5 +473,89 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
             )
             unmount()
         }
+    })
+})
+
+// --- Session 4 Commit 2: visual containers (CSS-Module pins) ---
+//
+// Per the ChapterSidebar precedent + the "Radix DropdownMenu +
+// happy-dom is brittle for Vitest" lessons-learned rule: jsdom
+// does not compute layout (no `getComputedStyle` for rules from
+// stylesheets), so we pin the source CSS instead. The rules below
+// are the visual-container contract that makes the standard
+// layouts spatially clear at a glance; rotting any one of them
+// resurfaces the Session-3 user-validation complaint
+// ("Visual abgrenzung Text vs Image is unclear").
+
+describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)", () => {
+    const cssPath = path.resolve(__dirname, "./PageCanvas.module.css")
+    const css = fs.readFileSync(cssPath, "utf8")
+
+    function blockFor(selector: string): string {
+        // Match a CSS-Module rule block. We need a regex that
+        // captures everything between `<selector> {` and the
+        // matching `}` on a balanced-braces basis. The CSS in this
+        // module has no nested braces inside rules, so a non-greedy
+        // [^}]* is sufficient.
+        const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        const re = new RegExp(`${escaped}\\s*\\{[^}]*\\}`)
+        const match = css.match(re)
+        return match ? match[0] : ""
+    }
+
+    it("the .canvas rule applies an outer frame border", () => {
+        const block = blockFor(".canvas")
+        expect(block).not.toBe("")
+        expect(block).toMatch(/border:\s*1px\s+solid/)
+    })
+
+    it("image_top_text_bottom: image region has border-bottom (horizontal divider)", () => {
+        const block = blockFor(".canvasLayoutImageTopTextBottom .regionImage")
+        expect(block).not.toBe("")
+        expect(block).toMatch(/border-bottom:\s*1px\s+solid/)
+    })
+
+    it("image_left_text_right: image region has border-right (vertical divider)", () => {
+        const block = blockFor(".canvasLayoutImageLeftTextRight .regionImage")
+        expect(block).not.toBe("")
+        expect(block).toMatch(/border-right:\s*1px\s+solid/)
+    })
+
+    it("standard layouts: text region has a background tint to separate from image", () => {
+        // The three standard layouts that show a text region above /
+        // beside / inside the canvas frame (not overlaid, not in a
+        // speech bubble) share one rule that applies a subtle tint.
+        // The blockFor helper is shaped for simple selectors; for a
+        // grouped selector across three classes we match the source
+        // directly.
+        const grouped = css.match(
+            /\.canvasLayoutImageTopTextBottom \.regionText,\s*\.canvasLayoutImageLeftTextRight \.regionText,\s*\.canvasLayoutTextOnly \.regionText\s*\{[^}]*\}/,
+        )
+        expect(grouped).not.toBeNull()
+        expect(grouped![0]).toMatch(/background:/)
+    })
+
+    it("image_full_text_overlay: text region renders WITHOUT a border (full-bleed image preserved)", () => {
+        // The overlay text region uses position: absolute + a dark
+        // backdrop rather than an outlined container. The grouped
+        // 'standard layouts' selector above MUST NOT pick up
+        // imageFullTextOverlay — assert by NOT finding the overlay
+        // selector among the rules that apply a region border.
+        expect(css).not.toMatch(
+            /\.canvasLayoutImageFullTextOverlay\s+\.regionImage\s*\{[^}]*border:/,
+        )
+        expect(css).not.toMatch(
+            /\.canvasLayoutImageFullTextOverlay\s+\.regionText\s*\{[^}]*border:/,
+        )
+    })
+
+    it("speech_bubble: bubble keeps its dedicated visual styling (radius + shadow)", () => {
+        const block = blockFor(".canvasLayoutSpeechBubble .regionText")
+        expect(block).not.toBe("")
+        // The bubble's defining visual cues: pill-shaped radius +
+        // depth shadow. Pinning both protects the look from a future
+        // refactor that drops the bubble metaphor.
+        expect(block).toMatch(/border-radius:/)
+        expect(block).toMatch(/box-shadow:/)
     })
 })

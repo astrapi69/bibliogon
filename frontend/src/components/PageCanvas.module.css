@@ -26,6 +26,9 @@
     border-radius: 8px;
     overflow: hidden;
     background: color-mix(in srgb, var(--text) 4%, transparent);
+    /* Session 4 Commit 2: outer frame border. Defines the page
+     * boundary against the editor background. */
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
     position: relative;
 }
 
@@ -77,6 +80,28 @@
     grid-area: text;
     display: flex;
     flex-direction: column;
+}
+
+/* Session 4 Commit 2: visual containers (D+E hybrid — borders +
+ * subtle background tints) for spatial clarity in the standard
+ * stacked / split layouts. Author needs to see at a glance where
+ * the image region ends and the text region begins. Overlay-mode
+ * and speech-bubble layouts intentionally skip the region
+ * borders (their text region is positioned over the image and
+ * has its own backdrop / bubble styling). */
+
+.canvasLayoutImageTopTextBottom .regionImage {
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+}
+
+.canvasLayoutImageLeftTextRight .regionImage {
+    border-right: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+}
+
+.canvasLayoutImageTopTextBottom .regionText,
+.canvasLayoutImageLeftTextRight .regionText,
+.canvasLayoutTextOnly .regionText {
+    background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 /* --- Overlay-mode text region --- */
