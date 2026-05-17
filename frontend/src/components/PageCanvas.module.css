@@ -1,21 +1,124 @@
-.canvas {
+/* PB-PHASE4 Session 4 Commit 1: layout-aware canvas rendering.
+ *
+ * Each PageLayout enum value gets its own CSS-Module class
+ * applied to the canvas root via LAYOUT_CLASS in PageCanvas.tsx.
+ * The JSX stays single — CSS Grid templates handle the spatial
+ * differences, and two layouts (speech_bubble +
+ * image_full_text_overlay) overlay the text region via
+ * position: absolute on top of the image.
+ *
+ * Visual containers (per-region borders + background tints +
+ * overlay/text-only special-case styling) land in Commit 2.
+ */
+
+.canvasWrapper {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     max-width: 720px;
     margin: 0 auto;
 }
 
-.imageArea {
-    width: 100%;
+.canvas {
+    display: grid;
     aspect-ratio: 4 / 3;
-    background: color-mix(in srgb, var(--text) 6%, transparent);
+    width: 100%;
     border-radius: 8px;
     overflow: hidden;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    position: relative;
+}
+
+/* --- Per-layout grid templates --- */
+
+.canvasLayoutImageTopTextBottom {
+    grid-template-areas:
+        "image"
+        "text";
+    grid-template-columns: 1fr;
+    grid-template-rows: 60% 40%;
+}
+
+.canvasLayoutImageLeftTextRight {
+    grid-template-areas: "image text";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.canvasLayoutImageFullTextOverlay,
+.canvasLayoutSpeechBubble {
+    grid-template-areas: "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.canvasLayoutTextOnly {
+    grid-template-areas: "text";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+/* --- Region defaults --- */
+
+.region {
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+}
+
+.regionImage {
+    grid-area: image;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
+.regionText {
+    grid-area: text;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Overlay-mode text region --- */
+
+.canvasLayoutImageFullTextOverlay .regionText {
+    grid-area: unset;
+    position: absolute;
+    inset: auto 0 0 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    padding: 12px 16px;
+    max-height: 50%;
+}
+
+.canvasLayoutImageFullTextOverlay .regionText .textInput {
+    color: white;
+}
+
+.canvasLayoutImageFullTextOverlay .regionText .textInput::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Speech-bubble text region (D2a: bottom-center, ~40% width,
+ *      no anchor-position UI; future repositioning tracked via
+ *      PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 in backlog). --- */
+
+.canvasLayoutSpeechBubble .regionText {
+    grid-area: unset;
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    min-width: 180px;
+    background: white;
+    color: black;
+    padding: 10px 14px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* --- Image + placeholder --- */
 
 .image {
     width: 100%;
@@ -31,6 +134,33 @@
     color: color-mix(in srgb, var(--text) 50%, transparent);
     font-size: 0.875rem;
 }
+
+/* --- Textarea: fills its region in every layout --- */
+
+.textInput {
+    flex: 1;
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    resize: none;
+}
+
+.canvasLayoutSpeechBubble .regionText .textInput,
+.canvasLayoutImageFullTextOverlay .regionText .textInput {
+    padding: 0;
+}
+
+.textInput:focus {
+    outline: none;
+}
+
+/* --- Image-upload actions (sit OUTSIDE the canvas frame) --- */
 
 .imageActions {
     display: flex;
@@ -70,37 +200,4 @@
     background: color-mix(in srgb, var(--danger, #c0392b) 18%, transparent);
     color: var(--danger, #c0392b);
     font-size: 0.875rem;
-}
-
-.textArea {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.textLabel {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: color-mix(in srgb, var(--text) 70%, transparent);
-}
-
-.textInput {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
-    border-radius: 6px;
-    background: var(--bg-editor, var(--bg-app));
-    color: var(--text);
-    font-family: inherit;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    resize: vertical;
-    min-height: 100px;
-}
-
-.textInput:focus {
-    outline: none;
-    border-color: var(--accent, color-mix(in srgb, var(--text) 30%, transparent));
 }

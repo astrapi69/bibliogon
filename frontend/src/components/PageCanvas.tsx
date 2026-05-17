@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from "react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
-import {api, type Page, type PageUpdate} from "../api/client"
+import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import styles from "./PageCanvas.module.css"
 
@@ -16,6 +16,19 @@ function imageUrlFor(bookId: string, assetId: string): string {
     return `/api/books/${bookId}/assets/${assetId}/file`
 }
 
+// PB-PHASE4 Session 4 Commit 1: per-layout CSS-Module class. The
+// CSS defines grid-template-areas per layout; the JSX stays the
+// same (image + text region wrappers) and the styling makes the
+// spatial difference visible. Switch-cascade in JSX deliberately
+// avoided per coding-standards.md "no if/elif cascades for type".
+const LAYOUT_CLASS: Record<PageLayout, string> = {
+    speech_bubble: styles.canvasLayoutSpeechBubble,
+    image_top_text_bottom: styles.canvasLayoutImageTopTextBottom,
+    image_left_text_right: styles.canvasLayoutImageLeftTextRight,
+    image_full_text_overlay: styles.canvasLayoutImageFullTextOverlay,
+    text_only: styles.canvasLayoutTextOnly,
+}
+
 export default function PageCanvas({page, bookId, onUpdate}: Props) {
     const {t} = useI18n()
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -23,7 +36,6 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
     const [uploadError, setUploadError] = useState<string | null>(null)
     const [textDraft, setTextDraft] = useState(page.text_content ?? "")
 
-    // Keep the textarea in sync when the active page changes.
     useEffect(() => {
         setTextDraft(page.text_content ?? "")
         setUploadError(null)
@@ -53,71 +65,107 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
     }
 
     const hasImage = Boolean(page.image_asset_id)
+    const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
+    const isSpeechBubble = page.layout === "speech_bubble"
+    const isTextOnly = page.layout === "text_only"
 
     return (
-        <div
-            data-testid="page-canvas-root"
-            data-page-id={page.id}
-            className={styles.canvas}
-        >
-            <div className={styles.imageArea} data-testid="page-canvas-image-area">
-                {hasImage ? (
-                    <img
-                        key={page.image_asset_id ?? ""}
-                        src={imageUrlFor(bookId, page.image_asset_id!)}
-                        alt=""
-                        className={styles.image}
-                        data-testid="page-canvas-image"
-                    />
-                ) : (
+        <div className={styles.canvasWrapper} data-testid="page-canvas-wrapper">
+            <div
+                data-testid="page-canvas-root"
+                data-page-id={page.id}
+                data-layout={page.layout}
+                className={`${styles.canvas} ${layoutClass}`}
+            >
+                {!isTextOnly && (
                     <div
-                        className={styles.imagePlaceholder}
-                        data-testid="page-canvas-image-placeholder"
+                        data-testid="page-canvas-image-area"
+                        data-region="image"
+                        className={`${styles.region} ${styles.regionImage}`}
                     >
-                        <ImageIcon size={40} aria-hidden />
-                        <span>
-                            {t("ui.page_editor.no_image", "No image yet")}
-                        </span>
+                        {hasImage ? (
+                            <img
+                                key={page.image_asset_id ?? ""}
+                                src={imageUrlFor(bookId, page.image_asset_id!)}
+                                alt=""
+                                className={styles.image}
+                                data-testid="page-canvas-image"
+                            />
+                        ) : (
+                            <div
+                                className={styles.imagePlaceholder}
+                                data-testid="page-canvas-image-placeholder"
+                            >
+                                <ImageIcon size={40} aria-hidden />
+                                <span>
+                                    {t("ui.page_editor.no_image", "No image yet")}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
-            <div className={styles.imageActions}>
-                <button
-                    type="button"
-                    className={styles.uploadBtn}
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    data-testid="page-canvas-upload-btn"
+                <div
+                    data-testid={
+                        isSpeechBubble
+                            ? "page-canvas-speech-bubble"
+                            : "page-canvas-region-text"
+                    }
+                    data-region="text"
+                    className={`${styles.region} ${styles.regionText}`}
                 >
-                    {hasImage ? (
-                        <>
-                            <RefreshCw size={14} />
-                            <span>
-                                {uploading
-                                    ? t("ui.page_editor.uploading", "Uploading...")
-                                    : t("ui.page_editor.replace_image", "Replace image")}
-                            </span>
-                        </>
-                    ) : (
-                        <>
-                            <Upload size={14} />
-                            <span>
-                                {uploading
-                                    ? t("ui.page_editor.uploading", "Uploading...")
-                                    : t("ui.page_editor.upload_image", "Upload image")}
-                            </span>
-                        </>
-                    )}
-                </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={ACCEPT}
-                    onChange={handleFileChange}
-                    className={styles.fileInput}
-                    data-testid="page-canvas-file-input"
-                />
+                    <textarea
+                        id={`page-canvas-text-${page.id}`}
+                        className={styles.textInput}
+                        value={textDraft}
+                        onChange={(e) => setTextDraft(e.target.value)}
+                        onBlur={handleTextBlur}
+                        placeholder={t(
+                            "ui.page_editor.text_placeholder",
+                            "Write the page text here...",
+                        )}
+                        data-testid="page-canvas-text-input"
+                    />
+                </div>
             </div>
+            {!isTextOnly && (
+                <div className={styles.imageActions}>
+                    <button
+                        type="button"
+                        className={styles.uploadBtn}
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        data-testid="page-canvas-upload-btn"
+                    >
+                        {hasImage ? (
+                            <>
+                                <RefreshCw size={14} />
+                                <span>
+                                    {uploading
+                                        ? t("ui.page_editor.uploading", "Uploading...")
+                                        : t("ui.page_editor.replace_image", "Replace image")}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <Upload size={14} />
+                                <span>
+                                    {uploading
+                                        ? t("ui.page_editor.uploading", "Uploading...")
+                                        : t("ui.page_editor.upload_image", "Upload image")}
+                                </span>
+                            </>
+                        )}
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={ACCEPT}
+                        onChange={handleFileChange}
+                        className={styles.fileInput}
+                        data-testid="page-canvas-file-input"
+                    />
+                </div>
+            )}
             {uploadError && (
                 <div
                     className={styles.uploadError}
@@ -127,27 +175,6 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                     {uploadError}
                 </div>
             )}
-            <div className={styles.textArea}>
-                <label
-                    htmlFor={`page-canvas-text-${page.id}`}
-                    className={styles.textLabel}
-                >
-                    {t("ui.page_editor.text_label", "Page text")}
-                </label>
-                <textarea
-                    id={`page-canvas-text-${page.id}`}
-                    className={styles.textInput}
-                    value={textDraft}
-                    onChange={(e) => setTextDraft(e.target.value)}
-                    onBlur={handleTextBlur}
-                    placeholder={t(
-                        "ui.page_editor.text_placeholder",
-                        "Write the page text here...",
-                    )}
-                    rows={6}
-                    data-testid="page-canvas-text-input"
-                />
-            </div>
         </div>
     )
 }
