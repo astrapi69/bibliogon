@@ -235,4 +235,170 @@ test.describe("Picture-Book PageEditor smoke", () => {
         expect(created).toBeDefined()
         expect(created!.book_type).toBe("prose")
     })
+
+    // PB-PHASE4 Session 4 Commit 3: cycle through all 5 layouts and
+    // assert the canvas renders distinctly each time. Closes the
+    // half-wired-feature-lifecycle gap that the Session 3 manual
+    // smoke surfaced (LayoutPicker selected the layout but
+    // PageCanvas ignored it). The data-layout attribute is the
+    // load-bearing E2E pin; the per-layout testids assert the
+    // structural changes the user can see at a glance.
+    test("layout-render: cycle through all 5 PageLayout variants in PageCanvas", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("Layout Cycle Book", "Author")
+        await page.goto(`/book/${book.id}`)
+
+        // Seed one page so the canvas + picker + properties pane
+        // mount with an active page.
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // Default new-page layout (DEFAULT_NEW_PAGE_LAYOUT in
+        // PageEditor.tsx) is image_top_text_bottom. From there, walk
+        // through all 5 variants so a regression on ANY of them
+        // surfaces here.
+        const layouts = [
+            "image_top_text_bottom",
+            "image_left_text_right",
+            "speech_bubble",
+            "image_full_text_overlay",
+            "text_only",
+        ] as const
+
+        for (const layout of layouts) {
+            // Expand the disclosure if the target layout sits behind
+            // it. The 3 default-visible layouts are speech_bubble +
+            // image_top_text_bottom; the rest are under "More layouts".
+            const inDefault =
+                layout === "speech_bubble" || layout === "image_top_text_bottom"
+            if (!inDefault) {
+                const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
+                if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
+                    await moreToggle.click()
+                }
+            }
+            await page.getByTestId(`page-editor-layout-option-${layout}`).click()
+
+            // The picker reflects the selection.
+            await expect(
+                page.getByTestId(`page-editor-layout-option-${layout}`),
+            ).toHaveAttribute("data-selected", "true")
+
+            // The canvas re-renders with the new data-layout. This
+            // is the explicit closure of the Session-3 half-wired
+            // gap: LayoutPicker WRITES the layout (it did before
+            // Session 4 too), AND PageCanvas now READS + RENDERS it.
+            await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
+                "data-layout",
+                layout,
+            )
+
+            // Per-layout structural assertions:
+            if (layout === "text_only") {
+                // No image region, no upload-action bar.
+                await expect(
+                    page.getByTestId("page-canvas-image-area"),
+                ).toHaveCount(0)
+                await expect(
+                    page.getByTestId("page-canvas-upload-btn"),
+                ).toHaveCount(0)
+                await expect(
+                    page.getByTestId("page-canvas-region-text"),
+                ).toBeVisible()
+            } else if (layout === "speech_bubble") {
+                // Bubble wrapper renders (not page-canvas-region-text).
+                await expect(
+                    page.getByTestId("page-canvas-speech-bubble"),
+                ).toBeVisible()
+                await expect(
+                    page.getByTestId("page-canvas-region-text"),
+                ).toHaveCount(0)
+                await expect(
+                    page.getByTestId("page-canvas-image-area"),
+                ).toBeVisible()
+            } else {
+                // Standard layouts: both regions visible + textarea + image area.
+                await expect(
+                    page.getByTestId("page-canvas-image-area"),
+                ).toBeVisible()
+                await expect(
+                    page.getByTestId("page-canvas-region-text"),
+                ).toBeVisible()
+            }
+        }
+    })
+
+    // PB-PHASE4 Session 4 Commit 3 (regression pin): existing
+    // interactions still work after a layout change. The user can
+    // pick any layout AND type text AND drag-reorder AND still see
+    // the upload affordance (in non-text_only layouts).
+    test("regression: text-edit + add-page + reorder still work after a layout change", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("Layout Regression Book", "Author")
+        await page.goto(`/book/${book.id}`)
+
+        // Two pages.
+        await page.getByTestId("page-editor-add-page").click()
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(
+            page.locator('[data-testid^="page-editor-page-row-"]'),
+        ).toHaveCount(2)
+
+        // Switch the active page's layout to image_left_text_right.
+        const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
+        if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
+            await moreToggle.click()
+        }
+        await page.getByTestId("page-editor-layout-option-image_left_text_right").click()
+        await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
+            "data-layout",
+            "image_left_text_right",
+        )
+
+        // Text-input still saves.
+        const textarea = page.getByTestId("page-canvas-text-input")
+        await textarea.fill("Side-by-side layout text")
+        await textarea.blur()
+        await expect
+            .poll(
+                async () => {
+                    const pages: {text_content: string | null}[] = await fetch(
+                        `${API}/books/${book.id}/pages`,
+                    ).then((r) => r.json())
+                    return pages.some(
+                        (p) => p.text_content === "Side-by-side layout text",
+                    )
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // Upload affordance still present (non-text_only layout).
+        await expect(page.getByTestId("page-canvas-upload-btn")).toBeVisible()
+
+        // Drag-reorder still works after the layout change.
+        const pagesNow: {id: string; position: number}[] = await fetch(
+            `${API}/books/${book.id}/pages`,
+        ).then((r) => r.json())
+        const [p1, p2] = pagesNow.sort((a, b) => a.position - b.position)
+        const handle2 = page.getByTestId(`page-editor-drag-handle-${p2.id}`)
+        const target1 = page.getByTestId(`page-editor-page-row-${p1.id}`)
+        await handle2.dragTo(target1)
+        await expect
+            .poll(
+                async () => {
+                    const after: {id: string; position: number}[] = await fetch(
+                        `${API}/books/${book.id}/pages`,
+                    ).then((r) => r.json())
+                    const byId = Object.fromEntries(
+                        after.map((p) => [p.id, p.position]),
+                    )
+                    return `${byId[p2.id]},${byId[p1.id]}`
+                },
+                {timeout: 5000},
+            )
+            .toBe("1,2")
+    })
 })
