@@ -4,72 +4,166 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
-## [0.33.1] - 2026-05-16
+## [0.34.0] - 2026-05-17
 
-The "Comments-Trash recovery + Authors-Database foundation"
-point release. Patch bump closing two open items.
+The "Picture-Book Phase 4 foundation + Categories/BISAC +
+Authors-Database completion + Medium-import v2 preview"
+release. Supersedes the pre-drafted v0.33.1
+(Comments-Trash recovery + Authors-Database Phase 1) which
+was never tagged — its content is fully absorbed below.
+~100 commits since v0.33.0.
 
 ### Added
 
-- **Comments trash-lifecycle (Bug 10 fix).** Comments shipped
-  soft-delete in v0.32.0 but the counterparts (list-trashed,
-  restore, permanent-delete-from-trash, empty-trash, bulk-
-  restore) were filed as "v2" in the original commit docstring
-  and never picked up. Production smoke surfaced 61 user-
-  trashed comments stuck in invisible purgatory. Closed with:
-  - 5 new backend endpoints under ``/api/comments/trash/*`` +
-    ``POST /api/comments/trash/bulk-restore``.
-  - A new view-mode toggle on Settings → Comments
-    (``comments-active-toggle`` / ``comments-trash-toggle``),
-    a trash badge with live count, per-row Restore +
-    Permanent-Delete actions, an Empty-Trash CTA, plus a
-    dedicated trash-view bulk-action bar with bulk-Restore +
-    bulk-Permanent-Delete affordances.
-  - 22 new backend pytest cases + 22 new frontend Vitest
-    cases + 4 Playwright smoke specs covering the full
-    user-visible flow.
+- **Picture-Book Phase 4 foundation (PB-PHASE4 Sessions 2–6
+  Commit 1).** ``book_type`` discriminator on ``Book``
+  (Literal ``"prose"`` | ``"picture_book"``, immutable
+  after create) + new ``pages`` table +
+  ``/api/books/{id}/pages`` CRUD (list/create/update/delete/
+  reorder). Dashboard split-button with "Create Picture-Book"
+  affordance. BookEditor ``book_type``-routes picture-books
+  into a new three-pane ``PageEditor`` (thumbnails sidebar
+  with @dnd-kit drag-reorder + canvas + properties pane).
+  Five distinct ``PageLayout`` variants — ``speech_bubble``,
+  ``image_top_text_bottom`` (70/30 vertical),
+  ``image_left_text_right`` (60/40 horizontal),
+  ``image_full_text_overlay``, ``text_only`` — each
+  rendering through dedicated CSS-Module classes. Per-page
+  ``layout_config`` (JSON column; renamed from the initial
+  ``speech_bubble_config`` to generalise) drives
+  speech-bubble anchor + opacity + size and image-row
+  positioning + fit + split-ratio + text backdrop opacity.
+  On-image hover overlay for the image-replace button.
+  WeasyPrint ``^66.0`` added to the export plugin + initial
+  ``picture_book_pdf`` generator skeleton (route dispatch +
+  UI ships in v0.35.0).
 
-- **Authors-Database foundation (Bug 8 Phase 1).** New
+- **Books-only Categories + BISAC subject metadata (Bug 9).**
+  New ``Book.categories`` (JSON list, KDP-aligned) +
+  ``Book.bisac_codes`` (BISAC 9-char codes, regex
+  ``^[A-Z]{3}[0-9]{6}$``). Marketing-tab wires both with
+  shared ``CategoryInput`` + ``BisacCodeInput`` components.
+  KDP plugin metadata-checker extension validates BISAC
+  format and warns on missing categories. Documented
+  intentional asymmetry vs. Articles (which use ``topic`` +
+  ``tags``).
+
+- **Authors-Database (Bug 8 Phase 1 + Phase 2).** New
   standalone ``authors`` table + ``/api/authors`` CRUD + a
   new Settings "Autoren-Datenbank" / "Authors Database" tab
   sibling to the existing personal-identity "Autor" tab.
   Decoupled from existing free-text ``Book.author`` /
   ``Article.author`` columns (no FK, no backfill — opt-in
-  suggestion layer). Wizard datalist integration ships in
-  Bug 8 Phase 2 in a follow-up release. Slug auto-generation
-  handles German + Nordic diacritics + general Latin NFKD-
-  fold + emoji fallback. Coverage: 52 backend pytest cases,
-  24 frontend Vitest cases, 16 i18n keys across all 8
-  catalogs.
+  suggestion layer). Slug auto-generation handles German +
+  Nordic diacritics + general Latin NFKD-fold + emoji
+  fallback. Wizard datalist integration on Article-to-Book
+  conversion Step-1 author field with multi-article pre-fill
+  + add-to-DB checkbox on submit. Coverage: 52 backend
+  pytest cases (Phase 1) + Vitest + Playwright smoke.
+
+- **Medium-import v2 preview-table (Phases 1–4).** Upload
+  → preview a checkbox table of every detected post →
+  uncheck the ones to skip → import the selection. Backend
+  preview + selection endpoints, frontend preview-table
+  component + v2 state machine, per-post badges (Article /
+  Comment / Duplicate / Warnings), 8-language i18n,
+  Playwright smoke.
+
+- **Comments trash-lifecycle (Bug 10 fix).** Comments
+  shipped soft-delete in v0.32.0 but the counterparts
+  (list-trashed, restore, permanent-delete-from-trash,
+  empty-trash, bulk-restore) were filed as "v2" in the
+  original commit docstring and never picked up.
+  Production smoke surfaced 61 user-trashed comments stuck
+  in invisible purgatory. Closed with 5 new backend
+  endpoints under ``/api/comments/trash/*`` + ``POST
+  /api/comments/trash/bulk-restore``; a new view-mode toggle
+  on Settings → Comments with badge + per-row Restore +
+  Permanent-Delete actions + Empty-Trash CTA + a dedicated
+  trash-view bulk-action bar; 22 new backend pytest + 22
+  new Vitest + 4 Playwright smoke specs.
 
 ### Fixed
+
+- **Categories + BISAC Marketing-tab leak hotfix.** Removed
+  ``forceMount`` on the Marketing ``Tabs.Content`` —
+  ``forceMount`` actively prevents Radix from applying the
+  ``hidden`` attribute on non-active tabs, so the new
+  Categories + BISAC panel was rendering on every tab.
+  Vitests switched from ``fireEvent.click`` to
+  ``fireEvent.mouseDown`` (Radix ``Tabs.Trigger`` uses
+  ``onMouseDown`` internally). New tab-content-isolation
+  Playwright spec pins the regression.
+
+- **Picture-Book Bug B**: ``image_full_text_overlay`` image
+  defaults to ``object-fit: cover`` so the absolutely-
+  positioned text band aligns to the visible image edges
+  (was letterboxing past container bounds when source
+  aspect ratio diverged from 4:3).
+
+- **Picture-Book Bug A + Bug C**: purge ``layout_config``
+  on layout switch (Fix A). The flat JSON dict was
+  accumulating heterogeneous keys from every layout the
+  page had ever worn; switching ``speech_bubble →
+  image_full_text_overlay`` left the bubble's ``image_fit:
+  "cover"`` co-resident with new keys and cropped the photo
+  unexpectedly. Fix B (namespace per layout for
+  switch-survival) deferred to 4c-B.
+
+- **Bug 1**: Settings/Help/GetStarted back-button uses
+  browser history (not hardcoded ``/``).
+- **Bug 3**: independent view-mode defaults for AD-Trash +
+  BD-Trash (previously inherited a single default).
+- **Bug 4a–c**: Comments-Admin bulk-delete +
+  ``CommentPreviewModal`` with click-row-to-open + Reclassify
+  refactored to live only in the preview modal + 8-language
+  i18n + Playwright smoke.
+- **Bug 6**: menu items must not ``preventDefault`` on
+  dialog-trigger — let the menu close before the dialog
+  mounts; fixed across 6 callsites + Playwright regression
+  pin.
+- **Bug 7**: mock-contract repair for ``ArticleList`` trash
+  view-mode test (new-hook + new-mock-key contract drift).
+- **Bug 11**: BookDashboard list-view selection checkboxes
+  (parity with Articles list-view; previously the
+  bulk-action bar was unreachable in BD list mode).
 
 - **Trash data is retrievable again.** Users who pressed
   "Move to Trash" on comments in v0.32.0 / v0.33.0 will see
   their previously-trashed rows under Settings → Comments →
-  Papierkorb / Trash after upgrading. Per-row Restore +
-  bulk-Restore both available.
+  Papierkorb / Trash after upgrading.
 
 ### Changed
 
-- Articles-vs-Books parallel-surface asymmetry tally promoted
-  to 8 confirmed instances (Bug 10 = #8; Bug 4a = #7).
+- ``Page.speech_bubble_config`` → ``Page.layout_config``
+  (Alembic column rename via ``batch_alter_table``).
+- ``image_top_text_bottom`` re-proportioned from initial
+  50/50 → 60/40 → final 70/30 (user-feedback iteration on
+  picture-book typography).
+- Articles-vs-Books parallel-surface asymmetry tally
+  promoted to 8 confirmed instances (Bug 10 = #8;
+  Bug 4a = #7). Two new entries in the "Documented
+  intentional asymmetries" register: Categories+BISAC and
+  the Wizard Author-Dropdown — both Books-only by design.
 
-### Lessons learned (2 new rules)
+### Lessons learned (3 new rules)
 
+- **"Half-wired feature lifecycle"** extended to cover the
+  frontend shape — state-write without state-consumer
+  (renderer/reader) is purgatory just like backend
+  soft-delete without restore.
 - **"Half-wired trash lifecycle"**: soft-delete shipped
   without the restore-surface is data purgatory, not a
-  feature. Deferred-half work MUST be filed as a load-bearing
-  backlog item with a real ID, not as docstring prose.
-  Detection grep:
+  feature. Deferred-half work MUST be filed as a
+  load-bearing backlog item with a real ID, not as
+  docstring prose. Detection grep:
   ``grep -rnE 'out of scope|v2 ships|deferred to v2'``.
 - **"Test-isolation discipline"**: never run integration
   smoke-tests outside pytest. The harness's three-layer
   isolation (``BIBLIOGON_TEST=1``, ``:memory:`` DB URL,
   ``.bibliogon-production`` marker tripwire) only fires
   under pytest. A bare ``poetry run python -c "from
-  app.main import app"`` bypasses every guard and points
-  at the real DB.
+  app.main import app"`` bypasses every guard.
 
 ## [0.33.0] - 2026-05-16
 
