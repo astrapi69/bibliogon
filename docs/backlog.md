@@ -191,11 +191,17 @@ store.
   UI pattern: properties pane with collapsible-sections.
   Three sections — Visual Style / Typography / Shape
   (future Tier 3). Pattern-application note: the
-  collapsible-section component may apply to other future
-  config-heavy layouts (image_full_text_overlay
-  text-styling, etc.). Surface during Pre-Inspection
-  whether to extract it as a reusable
-  `<CollapsibleSection>` component.
+  collapsible-section component IS reusable for the
+  sibling `PICTURE-BOOK-TEXT-CONFIGURATION-01` item which
+  covers parallel Tier 1+2 properties for image-based
+  layouts (image_left_text_right + image_top_text_bottom
+  + image_full_text_overlay text typography). 4c-B
+  Pre-Inspection should frame the session as
+  "Tier-Property Pattern Application across Bubble +
+  Text" — extract `<CollapsibleSection>` (and possibly a
+  parameterized `<TierPropertiesEditor>`) once; reuse
+  across both layouts' configs to drop total commit
+  count below naive Bubble + Text = 2 × spec sum.
 
   Schema extension: `layout_config` dict gains nested keys
   for bubble properties. Backward-compatible: existing
@@ -238,6 +244,78 @@ store.
   CLOSED by PB-PHASE4 Session 4c (preset write-path)
   + remaining drag-position scope moved to
   PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5).
+
+- **PICTURE-BOOK-TEXT-CONFIGURATION-01** (P3): ship Tier 1 +
+  Tier 2 text-configuration properties across image-based
+  layouts (parallel to the bubble extended-properties work
+  in `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`).
+  User-reported during Session 4c-A manual smoke: text
+  typography is insufficient for picture-book context across
+  image_left_text_right + image_top_text_bottom +
+  image_full_text_overlay. User wants the same
+  configurability pattern that the speech-bubble's Tier
+  properties get.
+
+  Proposed Tier 1 — Visual Style section (per layout):
+  - `text_background_color` (color picker)
+  - `text_padding` (slider)
+  - `text_opacity` (slider 0.3-1.0)
+
+  Proposed Tier 2 — Typography section (per layout):
+  - `font_family` (dropdown of children-book-friendly fonts;
+    reuse the same font catalog the speech-bubble item plans)
+  - `font_size` (slider 10-32pt)
+  - `font_weight` (dropdown: normal/bold)
+  - `text_color` (color picker)
+  - `text_align` (dropdown: left/center/right)
+  - `line_height` (slider 1.2-2.0)
+
+  Bug D scope-add covered by this item: `image_full_text_overlay`
+  needs `text_container_width` + `text_container_height` sliders
+  (text-region dimensions as % of canvas). Same Tier-Property
+  pattern as the speech-bubble `bubble_width` + `bubble_height`
+  filed under `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`.
+  Bug B was closed by the CSS default change (image_fit cover)
+  — Bug D's `width + height` configurability is the next
+  refinement, NOT a regression of Bug B.
+
+  UI pattern: collapsible-sections matching the speech-bubble
+  item's pattern. The `<CollapsibleSection>` helper noted there
+  is the natural reusable; this item is a primary motivator
+  for extracting it. Three sections per text-region:
+  Visual Style / Typography / Sizing (only on
+  image_full_text_overlay).
+
+  Schema extension: `layout_config` dict gains nested keys
+  for text properties (`text_*` prefix to disambiguate from
+  speech-bubble's bubble-level keys). Same JSON-as-Text
+  column; same migration approach (NO data migration; defaults
+  apply when keys absent).
+
+  Trigger: scheduled 4c-B session covers BOTH this item AND
+  `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01` in one
+  Tier-Property-Pattern Application session OR user-feedback
+  that the typography defaults are still poor after 4c-A
+  push.
+  Effort: 6-9 commits (Pre-Inspection +
+  CollapsibleSection extraction + Visual Style section +
+  Typography section + Sizing section for
+  image_full_text_overlay + PageCanvas integration + i18n
+  + Vitest + E2E + dispatcher updates in LayoutConfigImageRow).
+
+  Strategic note: 4c-B Pre-Inspection should frame the
+  session as "Tier-Property Pattern Application across
+  Bubble + Text" — Bubble and Text share the
+  Visual-Style + Typography spec almost 1:1. The reusable
+  `<CollapsibleSection>` + a shared typography/visual-style
+  control-kit drops total commit count below the naive
+  Bubble + Text = 2 × spec sum. Surface during 4c-B
+  Pre-Inspection whether to extract a single
+  `<TierPropertiesEditor>` parameterized by layout.
+
+  Pairs with: `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`
+  (sibling), `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01`
+  (Tier 3 for bubble; no text equivalent yet).
 
 - **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
   hook that encapsulates the `location.key === 'default'` fallback
