@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ChevronLeft} from "lucide-react"
+import {ChevronLeft, FileText} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import PageThumbnails from "./PageThumbnails"
@@ -11,11 +11,18 @@ interface Props {
     bookId: string
     bookTitle: string
     onBack: () => void
+    /** PB-PHASE4 Session 5 Commit 2: entry-point into BookMetadataEditor.
+     *  When provided, the header shows a Metadata button that calls this
+     *  callback. The parent (BookEditor) flips its showMetadata state
+     *  and re-renders BookMetadataEditor in place of PageEditor — same
+     *  URL-routed pattern as prose-flow. Optional so PageEditor can
+     *  still be unit-tested standalone without a parent that wires it. */
+    onShowMetadata?: () => void
 }
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 
-export default function PageEditor({bookId, bookTitle, onBack}: Props) {
+export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: Props) {
     const {t} = useI18n()
     const [pages, setPages] = useState<Page[]>([])
     const [activePageId, setActivePageId] = useState<string | null>(null)
@@ -98,6 +105,26 @@ export default function PageEditor({bookId, bookTitle, onBack}: Props) {
                     <ChevronLeft size={18} />
                 </button>
                 <h1 className={styles.title}>{bookTitle}</h1>
+                {onShowMetadata && (
+                    <button
+                        type="button"
+                        onClick={onShowMetadata}
+                        data-testid="page-editor-show-metadata"
+                        className={styles.metadataBtn}
+                        title={t(
+                            "ui.page_editor.show_metadata",
+                            "Open book metadata",
+                        )}
+                    >
+                        <FileText size={14} />
+                        <span>
+                            {t(
+                                "ui.page_editor.show_metadata",
+                                "Open book metadata",
+                            )}
+                        </span>
+                    </button>
+                )}
             </header>
             <div className={styles.body}>
                 <aside

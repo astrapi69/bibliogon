@@ -37,12 +37,30 @@
 
 .title {
     margin: 0;
+    flex: 1;
     font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.metadataBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 14%, transparent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-sidebar);
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.metadataBtn:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 8%, transparent);
 }
 
 .body {

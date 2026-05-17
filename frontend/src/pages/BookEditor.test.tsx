@@ -23,6 +23,7 @@ import type {BookDetail} from "../api/client";
 
 const navigateMock = vi.fn();
 const getBookMock = vi.fn<(id: string) => Promise<BookDetail>>();
+const updateBookMock = vi.fn();
 const listPagesMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
@@ -72,6 +73,7 @@ vi.mock("../api/client", async () => {
             books: {
                 ...actual.api.books,
                 get: (id: string) => getBookMock(id),
+                update: (...args: unknown[]) => updateBookMock(...args),
                 list: vi.fn(async () => []),
             },
             settings: {
@@ -189,6 +191,7 @@ function renderEditor(bookId: string) {
 beforeEach(() => {
     navigateMock.mockReset();
     getBookMock.mockReset();
+    updateBookMock.mockReset();
     listPagesMock.mockReset();
     listPagesMock.mockResolvedValue([]);
 });
@@ -248,6 +251,79 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
         renderEditor("missing");
         await waitFor(() =>
             expect(screen.getByTestId("book-editor-not-found")).toBeTruthy(),
+        );
+    });
+});
+
+// --- Session 5 Commit 2: picture-book metadata routing ---
+//
+// Picture-books now reach BookMetadataEditor via the same
+// ?view=metadata URL pattern as prose-books. PageEditor exposes
+// an onShowMetadata callback that flips BookEditor's showMetadata
+// state; BookMetadataEditor renders in place of PageEditor; the
+// metadata onBack returns to PageEditor (NOT all the way to the
+// dashboard). Closes the same-component-discriminator asymmetry
+// between prose and picture_book metadata access.
+
+function renderEditorAtPath(bookId: string, search = "") {
+    return render(
+        <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
+            <Routes>
+                <Route path="/book/:bookId" element={<BookEditor />} />
+            </Routes>
+        </MemoryRouter>,
+    );
+}
+
+describe("BookEditor - picture-book metadata routing (Session 5 Commit 2)", () => {
+    it("picture_book without ?view=metadata: renders PageEditor with the show-metadata button", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+        );
+        renderEditor("pb1");
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
+        );
+        expect(screen.getByTestId("page-editor-show-metadata")).toBeTruthy();
+        expect(screen.queryByTestId("book-metadata-editor-stub")).toBeNull();
+    });
+
+    it("picture_book + ?view=metadata: renders BookMetadataEditor (not PageEditor)", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+        );
+        renderEditorAtPath("pb1", "?view=metadata");
+        await waitFor(() =>
+            expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy(),
+        );
+        expect(screen.queryByTestId("page-editor-root")).toBeNull();
+    });
+
+    it("prose flow unaffected: chapter editor still renders without ?view=metadata", async () => {
+        // Regression pin — Session 5 must not touch the prose
+        // BookEditor flow.
+        getBookMock.mockResolvedValue(
+            makeBook({id: "b1", book_type: "prose", title: "Prose"}),
+        );
+        renderEditor("b1");
+        await waitFor(() =>
+            expect(screen.getByTestId("book-editor")).toBeTruthy(),
+        );
+        expect(screen.queryByTestId("page-editor-root")).toBeNull();
+    });
+
+    it("prose flow with ?view=metadata: chapter wrapper still mounts (its own metadata-toggle is internal)", async () => {
+        // Regression pin: the prose flow's existing showMetadata
+        // pattern is unchanged. The chapter wrapper (book-editor
+        // div) is the parent; the BookMetadataEditor mounts INSIDE
+        // it for prose. The chapter wrapper testid is therefore
+        // present in both views.
+        getBookMock.mockResolvedValue(
+            makeBook({id: "b1", book_type: "prose", title: "Prose"}),
+        );
+        renderEditorAtPath("b1", "?view=metadata");
+        await waitFor(() =>
+            expect(screen.getByTestId("book-editor")).toBeTruthy(),
         );
     });
 });

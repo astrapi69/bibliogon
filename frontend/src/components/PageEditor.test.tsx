@@ -76,6 +76,38 @@ beforeEach(() => {
 })
 
 describe("PageEditor scaffold (Commit 2)", () => {
+    it("does NOT render the Metadata button when onShowMetadata prop is not provided", () => {
+        render(<PageEditor bookId="b1" bookTitle="My Picture Book" onBack={vi.fn()} />)
+        expect(screen.queryByTestId("page-editor-show-metadata")).toBeNull()
+    })
+
+    it("renders the Metadata button when onShowMetadata prop is provided", () => {
+        const onShowMetadata = vi.fn()
+        render(
+            <PageEditor
+                bookId="b1"
+                bookTitle="My Picture Book"
+                onBack={vi.fn()}
+                onShowMetadata={onShowMetadata}
+            />,
+        )
+        expect(screen.getByTestId("page-editor-show-metadata")).toBeTruthy()
+    })
+
+    it("invokes onShowMetadata when the Metadata button is clicked", () => {
+        const onShowMetadata = vi.fn()
+        render(
+            <PageEditor
+                bookId="b1"
+                bookTitle="My Picture Book"
+                onBack={vi.fn()}
+                onShowMetadata={onShowMetadata}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("page-editor-show-metadata"))
+        expect(onShowMetadata).toHaveBeenCalledTimes(1)
+    })
+
     it("renders the root and exposes data-book-id", async () => {
         render(<PageEditor bookId="b1" bookTitle="My Picture Book" onBack={vi.fn()} />)
         const root = screen.getByTestId("page-editor-root")

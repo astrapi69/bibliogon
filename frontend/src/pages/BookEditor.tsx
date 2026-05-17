@@ -480,12 +480,38 @@ export default function BookEditor() {
     // editor instead of the chapter-based flow. Existing prose flow
     // stays exactly as-is; comic_book books fall through to the
     // chapter editor until plugin-comics ships its own surface.
+    //
+    // PB-PHASE4 Session 5 Commit 2: when ?view=metadata is set (or
+    // PageEditor's "Open metadata" button fires), render
+    // BookMetadataEditor in place of PageEditor — same URL-routed
+    // pattern as the prose flow. onBack from metadata clears the
+    // showMetadata flag so the user returns to PageEditor, not all
+    // the way to the dashboard.
     if (book.book_type === "picture_book") {
+        if (showMetadata) {
+            return (
+                <BookMetadataEditor
+                    book={book}
+                    onSave={async (data) => {
+                        const updated = await api.books.update(book.id, data);
+                        setBook((prev) => prev ? {...prev, ...updated} as BookDetail : prev);
+                    }}
+                    onBack={() => _setShowMetadata(false)}
+                    allBooks={allBooks}
+                    onRefresh={async () => {
+                        if (!bookId) return;
+                        const fresh = await api.books.get(bookId);
+                        setBook(fresh);
+                    }}
+                />
+            );
+        }
         return (
             <PageEditor
                 bookId={book.id}
                 bookTitle={book.title}
                 onBack={() => navigate("/")}
+                onShowMetadata={() => _setShowMetadata(true)}
             />
         );
     }
