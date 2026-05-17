@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import {api, ApiError, BookCreate, BookFromTemplateCreate, BookTemplate} from "../api/client";
+import {api, ApiError, BookCreate, BookFromTemplateCreate, BookTemplate, BookType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
@@ -34,9 +34,16 @@ interface Props {
     onClose: () => void;
     onCreate: (data: BookCreate) => void;
     onCreateFromTemplate?: (data: BookFromTemplateCreate) => void;
+    /** PB-PHASE4 Session 3 Commit 9: when "picture_book", the modal
+     *  submits with book_type set, hides the Template tab (no
+     *  picture-book templates exist yet), and uses a distinct
+     *  i18n title. Defaults to "prose" so existing callers
+     *  (Dashboard's primary button + empty-state button) behave
+     *  exactly as before. */
+    bookType?: BookType;
 }
 
-export default function CreateBookModal({open, onClose, onCreate, onCreateFromTemplate}: Props) {
+export default function CreateBookModal({open, onClose, onCreate, onCreateFromTemplate, bookType = "prose"}: Props) {
     const {t} = useI18n();
     const dialog = useDialog();
     const GENRE_KEYS = [
@@ -180,6 +187,10 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                 description: description.trim() || undefined,
                 series: series.trim() || undefined,
                 series_index: seriesIndex ? parseInt(seriesIndex, 10) : undefined,
+                // Only thread book_type through when the caller asked
+                // for a non-default type; keeps the API payload clean
+                // for the 99% prose-book case.
+                ...(bookType !== "prose" ? {book_type: bookType} : {}),
             });
         }
         resetForm();
@@ -196,26 +207,41 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                 <Dialog.Overlay className="dialog-overlay"/>
                 <Dialog.Content className="dialog-content dialog-content-wide">
                     <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">{t("ui.create_book.title", "Neues Buch")}</Dialog.Title>
+                        <Dialog.Title
+                            className="dialog-title"
+                            data-testid={`create-book-title-${bookType}`}
+                        >
+                            {bookType === "picture_book"
+                                ? t(
+                                      "ui.create_book.title_picture_book",
+                                      "Neues Bilderbuch",
+                                  )
+                                : t("ui.create_book.title", "Neues Buch")}
+                        </Dialog.Title>
                     </div>
 
                     <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                        <Tabs.List className="radix-tabs-list" style={{marginBottom: 12}}>
-                            <Tabs.Trigger
-                                value="blank"
-                                className="radix-tab-trigger"
-                                data-testid="create-book-mode-blank"
-                            >
-                                {t("ui.create_book.mode_blank", "Leer")}
-                            </Tabs.Trigger>
-                            <Tabs.Trigger
-                                value="template"
-                                className="radix-tab-trigger"
-                                data-testid="create-book-mode-template"
-                            >
-                                {t("ui.create_book.mode_template", "Aus Vorlage")}
-                            </Tabs.Trigger>
-                        </Tabs.List>
+                        {/* Picture-books have no template catalog yet —
+                         *  hide the tab list so the user lands directly
+                         *  in the blank-form path. */}
+                        {bookType === "prose" && (
+                            <Tabs.List className="radix-tabs-list" style={{marginBottom: 12}}>
+                                <Tabs.Trigger
+                                    value="blank"
+                                    className="radix-tab-trigger"
+                                    data-testid="create-book-mode-blank"
+                                >
+                                    {t("ui.create_book.mode_blank", "Leer")}
+                                </Tabs.Trigger>
+                                <Tabs.Trigger
+                                    value="template"
+                                    className="radix-tab-trigger"
+                                    data-testid="create-book-mode-template"
+                                >
+                                    {t("ui.create_book.mode_template", "Aus Vorlage")}
+                                </Tabs.Trigger>
+                            </Tabs.List>
+                        )}
 
                         <Tabs.Content value="template">
                             <div className={styles.templatePickerHeader}>

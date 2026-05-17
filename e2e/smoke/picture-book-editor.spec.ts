@@ -19,6 +19,12 @@ import {test, expect, createPictureBook} from "../fixtures/base"
 
 const API = "http://localhost:8000/api"
 
+interface BookRow {
+    id: string
+    title: string
+    book_type: string
+}
+
 interface PageRow {
     id: string
     position: number
@@ -147,5 +153,86 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await expect(
             page.getByTestId("page-editor-layout-option-text_only"),
         ).toBeVisible()
+    })
+
+    // PB-PHASE4 Session 3 Commit 9: Dashboard split-button entry path.
+    // Verifies the user can create a picture-book WITHOUT a curl call —
+    // the user-validation gate's actual user flow starts from the
+    // Dashboard click.
+    test("Dashboard split-button -> Create Picture Book -> PageEditor mounts", async ({
+        page,
+    }) => {
+        await page.goto("/")
+        await expect(page.getByTestId("dashboard-empty-create-book")).toBeVisible()
+
+        // Open the chevron menu next to the primary "Neues Buch" button.
+        await page.getByTestId("new-book-chevron").click()
+        await expect(
+            page.getByTestId("new-book-menu-item-picture-book"),
+        ).toBeVisible()
+        await page.getByTestId("new-book-menu-item-picture-book").click()
+
+        // The modal opens with the picture-book title + no Template tab.
+        await expect(
+            page.getByTestId("create-book-title-picture_book"),
+        ).toBeVisible()
+        await expect(page.getByTestId("create-book-mode-template")).toHaveCount(0)
+
+        // Fill the required fields + submit.
+        await page
+            .getByPlaceholder("Der Titel deines Buches")
+            .fill("Smoke Picture Book")
+        await page
+            .getByPlaceholder("Autorenname oder Pen Name")
+            .fill("Smoke Author")
+        await page.getByText("Erstellen").click()
+
+        // PageEditor mounts at /book/{id}.
+        await expect(page.getByTestId("page-editor-root")).toBeVisible()
+        await expect(
+            page.getByTestId("page-editor-thumbnails-empty"),
+        ).toBeVisible()
+
+        // Verify the new row exists with book_type='picture_book' so
+        // future refactors that drop the book_type from the create
+        // payload fail loudly here.
+        const list: BookRow[] = await fetch(`${API}/books`).then((r) => r.json())
+        const created = list.find((b) => b.title === "Smoke Picture Book")
+        expect(created).toBeDefined()
+        expect(created!.book_type).toBe("picture_book")
+    })
+
+    // PB-PHASE4 Session 3 Commit 9: regression pin — the primary
+    // "Neues Buch" button still creates a prose book (testid
+    // 'new-book-btn' preserved by the split-button refactor).
+    test("Dashboard primary button -> prose book (regression pin)", async ({
+        page,
+    }) => {
+        await page.goto("/")
+        await expect(page.getByTestId("new-book-btn")).toBeVisible()
+        await page.getByTestId("new-book-btn").click()
+
+        // The modal opens with the prose title + Template tab visible.
+        await expect(page.getByTestId("create-book-title-prose")).toBeVisible()
+        await expect(
+            page.getByTestId("create-book-mode-template"),
+        ).toBeVisible()
+
+        await page
+            .getByPlaceholder("Der Titel deines Buches")
+            .fill("Smoke Prose Book")
+        await page
+            .getByPlaceholder("Autorenname oder Pen Name")
+            .fill("Smoke Author")
+        await page.getByText("Erstellen").click()
+
+        // Prose books stay on the Dashboard (no auto-navigate).
+        await expect(page.getByTestId("dashboard-loading")).toHaveCount(0)
+        await expect(page.getByText("Smoke Prose Book")).toBeVisible()
+
+        const list: BookRow[] = await fetch(`${API}/books`).then((r) => r.json())
+        const created = list.find((b) => b.title === "Smoke Prose Book")
+        expect(created).toBeDefined()
+        expect(created!.book_type).toBe("prose")
     })
 })

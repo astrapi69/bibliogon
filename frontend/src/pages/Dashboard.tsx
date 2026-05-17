@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {api, ApiError, Book, BookCreate, BookFromTemplateCreate} from "../api/client";
+import {api, ApiError, Book, BookCreate, BookFromTemplateCreate, BookType} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
@@ -55,6 +55,11 @@ export default function Dashboard() {
     const [backupHistory, setBackupHistory] = useState<{timestamp: string; action: string; book_count: number; filename: string}[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    // PB-PHASE4 Session 3 Commit 9: which book_type the open Create
+    // Book modal is creating. "prose" for the primary button + the
+    // empty-state button; "picture_book" when the split-button's
+    // chevron menu picked the picture-book item.
+    const [createBookType, setCreateBookType] = useState<BookType>("prose");
     const [showCompareDialog, setShowCompareDialog] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
@@ -315,7 +320,20 @@ export default function Dashboard() {
         const book = await api.books.create(data);
         setBooks((prev) => [book, ...prev]);
         setShowModal(false);
+        // PB-PHASE4 Session 3 Commit 9: picture-books need their
+        // page-based editor immediately — the dashboard view doesn't
+        // surface their content. Prose books stay on the dashboard
+        // (unchanged behavior).
+        if (data.book_type === "picture_book") {
+            navigate(`/book/${book.id}`);
+            return;
+        }
         maybeShowDonationOnboarding(wasFirstBook);
+    };
+
+    const openCreate = (bookType: BookType) => {
+        setCreateBookType(bookType);
+        setShowModal(true);
     };
 
     const handleCreateFromTemplate = async (data: BookFromTemplateCreate) => {
@@ -407,10 +425,61 @@ export default function Dashboard() {
                         <h1 className={styles.logoText}>Bibliogon</h1>
                     </div>
                     <div className={styles.headerActions}>
-                        {/* Always visible */}
-                        <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="new-book-btn">
-                            <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
-                        </button>
+                        {/* Always visible. Split-button: the primary
+                         *  click keeps the existing 'new prose book'
+                         *  flow (testid 'new-book-btn' preserved for
+                         *  the 90% case); the chevron exposes
+                         *  picture-book (+ future comic). Pattern
+                         *  mirrors the Toolbar Copy split-button per
+                         *  the 'split-button (default + chevron
+                         *  disclosure)' lessons-learned rule. */}
+                        <div className={styles.newBookGroup} data-testid="new-book-group">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => openCreate("prose")}
+                                data-testid="new-book-btn"
+                            >
+                                <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
+                            </button>
+                            <DropdownMenu.Root>
+                                <DropdownMenu.Trigger asChild>
+                                    <button
+                                        type="button"
+                                        className={`btn btn-primary ${styles.newBookChevron}`}
+                                        data-testid="new-book-chevron"
+                                        title={t(
+                                            "ui.dashboard.new_book_more_tooltip",
+                                            "Weitere Buch-Arten",
+                                        )}
+                                        aria-label={t(
+                                            "ui.dashboard.new_book_more_tooltip",
+                                            "Weitere Buch-Arten",
+                                        )}
+                                    >
+                                        <ChevronDown size={14}/>
+                                    </button>
+                                </DropdownMenu.Trigger>
+                                <DropdownMenu.Portal>
+                                    <DropdownMenu.Content
+                                        className="hamburger-menu-content"
+                                        align="end"
+                                        sideOffset={4}
+                                    >
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            data-testid="new-book-menu-item-picture-book"
+                                            onSelect={() => openCreate("picture_book")}
+                                        >
+                                            <BookOpen size={14} style={{marginRight: 6}}/>
+                                            {t(
+                                                "ui.dashboard.new_picture_book",
+                                                "Bilderbuch",
+                                            )}
+                                        </DropdownMenu.Item>
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                        </div>
                         <NewFromTemplateButton
                             kind="book"
                             defaultLanguage="de"
@@ -613,7 +682,7 @@ export default function Dashboard() {
                             <>
                                 <button
                                     className="btn btn-primary"
-                                    onClick={() => setShowModal(true)}
+                                    onClick={() => openCreate("prose")}
                                     data-testid="dashboard-empty-create-book"
                                 >
                                     <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
@@ -830,6 +899,7 @@ export default function Dashboard() {
                 onClose={() => setShowModal(false)}
                 onCreate={handleCreate}
                 onCreateFromTemplate={handleCreateFromTemplate}
+                bookType={createBookType}
             />
             <BackupCompareDialog
                 open={showCompareDialog}

@@ -71,13 +71,14 @@ describe("CreateBookModal", () => {
     mockConfirm.mockReset()
   })
 
-  function renderModal(open = true) {
+  function renderModal(open = true, bookType?: "prose" | "picture_book") {
     return render(
       <CreateBookModal
         open={open}
         onClose={onClose}
         onCreate={onCreate}
         onCreateFromTemplate={onCreateFromTemplate}
+        bookType={bookType}
       />,
     )
   }
@@ -451,5 +452,66 @@ describe("CreateBookModal", () => {
     expect(mockDeleteTemplate).not.toHaveBeenCalled()
     // Card still rendered
     expect(screen.getByText("My Custom")).toBeTruthy()
+  })
+
+  // --- PB-PHASE4 Session 3 Commit 9: bookType prop ---
+
+  describe("bookType prop (picture-book branch)", () => {
+    it("defaults to prose: title is 'Neues Buch' + Template tab visible", async () => {
+      renderModal()
+      await waitFor(() =>
+        expect(screen.getByTestId("create-book-title-prose")).toBeTruthy(),
+      )
+      expect(screen.getByText("Neues Buch")).toBeTruthy()
+      expect(screen.getByTestId("create-book-mode-template")).toBeTruthy()
+    })
+
+    it("with bookType='picture_book': title switches + Template tab hides", async () => {
+      renderModal(true, "picture_book")
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("create-book-title-picture_book"),
+        ).toBeTruthy(),
+      )
+      expect(screen.getByText("Neues Bilderbuch")).toBeTruthy()
+      expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
+      expect(screen.queryByTestId("create-book-mode-blank")).toBeNull()
+    })
+
+    it("submit with bookType='picture_book' threads book_type='picture_book' into onCreate", async () => {
+      renderModal(true, "picture_book")
+      await waitFor(() =>
+        expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
+      )
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "My PB"},
+      })
+      fireEvent.change(screen.getByPlaceholderText("Autorenname oder Pen Name"), {
+        target: {value: "Author"},
+      })
+      fireEvent.click(screen.getByText("Erstellen"))
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      const payload = onCreate.mock.calls[0][0] as Record<string, unknown>
+      expect(payload.title).toBe("My PB")
+      expect(payload.author).toBe("Author")
+      expect(payload.book_type).toBe("picture_book")
+    })
+
+    it("submit with default (prose) does NOT include book_type in the payload", async () => {
+      renderModal()
+      await waitFor(() =>
+        expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
+      )
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "Prose"},
+      })
+      fireEvent.change(screen.getByPlaceholderText("Autorenname oder Pen Name"), {
+        target: {value: "A"},
+      })
+      fireEvent.click(screen.getByText("Erstellen"))
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      const payload = onCreate.mock.calls[0][0] as Record<string, unknown>
+      expect(payload.book_type).toBeUndefined()
+    })
   })
 })

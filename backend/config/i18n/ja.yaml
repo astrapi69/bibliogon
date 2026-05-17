@@ -30,6 +30,8 @@ ui:
     books_nav: "本"
     books_nav_tooltip: "本を管理"
     new_book: "新しい本"
+    new_picture_book: "Picture Book"
+    new_book_more_tooltip: "More book types"
     no_books: "まだ本がありません"
     book_no_author: "—"
     confirm_delete: "この本を本当に削除しますか?"
@@ -432,6 +434,7 @@ ui:
     audiobook_desc: "TTS生成オーディオブック"
   create_book:
     title: "新しい本"
+    title_picture_book: "New picture book"
     book_title: "タイトル"
     book_title_placeholder: "本のタイトル"
     author: "著者"

@@ -30,6 +30,8 @@ ui:
     books_nav: "Kitaplar"
     books_nav_tooltip: "Kitaplari yonet"
     new_book: "Yeni kitap"
+    new_picture_book: "Picture Book"
+    new_book_more_tooltip: "More book types"
     no_books: "Henuz kitap yok"
     book_no_author: "—"
     confirm_delete: "Bu kitabi silmek istediginizden emin misiniz?"
@@ -446,6 +448,7 @@ ui:
     audiobook_desc: "TTS ile olusturulan sesli kitap"
   create_book:
     title: "Yeni kitap"
+    title_picture_book: "New picture book"
     book_title: "Baslik"
     book_title_placeholder: "Kitabinizin basligi"
     author: "Yazar"

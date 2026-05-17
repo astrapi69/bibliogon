@@ -30,6 +30,8 @@ ui:
     books_nav: "Libros"
     books_nav_tooltip: "Gestionar libros"
     new_book: "Nuevo libro"
+    new_picture_book: "Picture Book"
+    new_book_more_tooltip: "More book types"
     no_books: "Aun no hay libros"
     book_no_author: "—"
     confirm_delete: "Seguro que quieres eliminar este libro?"
@@ -446,6 +448,7 @@ ui:
     audiobook_desc: "Audiolibro generado por TTS"
   create_book:
     title: "Nuevo libro"
+    title_picture_book: "New picture book"
     book_title: "Titulo"
     book_title_placeholder: "El titulo de tu libro"
     author: "Autor"

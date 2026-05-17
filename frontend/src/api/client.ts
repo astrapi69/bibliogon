@@ -660,6 +660,10 @@ export interface BookCreate {
     series?: string;
     series_index?: number;
     description?: string;
+    /** PB-PHASE4: omit to default 'prose' (backend default). Pass
+     *  'picture_book' from the dashboard's split-button menu to
+     *  route the new book straight into PageEditor. */
+    book_type?: "prose" | "picture_book" | "comic_book";
 }
 
 export interface BookFromTemplateCreate extends BookCreate {

@@ -30,6 +30,8 @@ ui:
     books_nav: "Βιβλία"
     books_nav_tooltip: "Διαχείριση βιβλίων"
     new_book: "Νέο βιβλίο"
+    new_picture_book: "Picture Book"
+    new_book_more_tooltip: "More book types"
     no_books: "Δεν υπάρχουν βιβλία ακόμα"
     book_no_author: "—"
     confirm_delete: "Θέλετε σίγουρα να διαγράψετε αυτό το βιβλίο;"
@@ -432,6 +434,7 @@ ui:
     audiobook_desc: "Ηχητικό βιβλίο TTS"
   create_book:
     title: "Νέο βιβλίο"
+    title_picture_book: "New picture book"
     book_title: "Τίτλος"
     book_title_placeholder: "Ο τίτλος του βιβλίου σας"
     author: "Συγγραφέας"
