@@ -68,11 +68,32 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
         [pages, activePageId],
     )
 
+    /**
+     * PB-PHASE4 Session 4c-A bug-fix (v0.33.1): purge layout_config on
+     * layout switch.
+     *
+     * Why: layout_config is a single JSON dict that holds heterogeneous
+     * keys from EVERY layout the page has ever worn. Without a purge,
+     * switching speech_bubble → image_full_text_overlay → image_top
+     * leaves anchor_position, opacity, bubble_size_*, image_fit,
+     * text_position, text_backdrop_opacity, image_position, split_ratio
+     * all co-resident. Stale keys then bleed into the renderer: e.g. a
+     * speech_bubble's image_fit:"cover" survives the switch to
+     * image_full_text_overlay and crops the photo unexpectedly (Bug A
+     * + Bug C of the 2026-05-17 manual smoke).
+     *
+     * Trade-off: this discards the user's per-layout config when they
+     * switch. The follow-up "Fix B" (namespace layout_config per
+     * layout, e.g. {speech_bubble: {...}, image_top_text_bottom: {...}})
+     * preserves both layouts' settings independently — tracked under
+     * PICTURE-BOOK-TEXT-CONFIGURATION-01 (4c-B sub-item).
+     */
     const handleChangeLayout = useCallback(
         async (newLayout: PageLayout) => {
             if (!activePage) return
             const updated = await api.pages.update(bookId, activePage.id, {
                 layout: newLayout,
+                layout_config: null,
             })
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },

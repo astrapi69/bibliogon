@@ -313,6 +313,35 @@ store.
   Pre-Inspection whether to extract a single
   `<TierPropertiesEditor>` parameterized by layout.
 
+  4c-B sub-item — `layout_config` namespace per layout
+  (Fix B for Session 4c-A Bug A + Bug C): the current
+  `Page.layout_config` is a single flat dict that
+  accumulates keys from every layout the page has worn.
+  v0.33.1 ships the conservative **Fix A** (purge
+  `layout_config` to `null` on layout switch in
+  `PageEditor.handleChangeLayout`), which trades
+  per-layout-config-preservation for correctness. The
+  follow-up Fix B namespaces the dict by layout:
+  ```json
+  {
+    "speech_bubble": {"anchor_position": "...", "opacity": ...},
+    "image_top_text_bottom": {"text_align": "...", ...},
+    "image_full_text_overlay": {"text_position": "...", ...}
+  }
+  ```
+  Per-layout configs survive a switch + return-to-previous;
+  the renderer reads `layout_config[page.layout]` instead
+  of `layout_config` directly. Migration: convert existing
+  flat dicts into the active layout's namespace on first
+  read (best-effort heuristic on existing key prefixes,
+  e.g. `anchor_*` → `speech_bubble`, `text_*` →
+  text-region layouts, `image_*` → image-region layouts).
+  Schedule: bundle with 4c-B so the new typography keys
+  land in the namespaced shape from day one rather than
+  requiring a second migration. Tests must include a
+  switch → switch-back assertion that prior config
+  re-applies after returning to a layout.
+
   Pairs with: `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`
   (sibling), `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01`
   (Tier 3 for bubble; no text equivalent yet).

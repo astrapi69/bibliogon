@@ -268,6 +268,7 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         await waitFor(() =>
             expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
                 layout: "image_top_text_bottom",
+                layout_config: null,
             }),
         )
         await waitFor(() =>
@@ -277,6 +278,62 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
                     .getAttribute("data-layout"),
             ).toBe("image_top_text_bottom"),
         )
+    })
+
+    /**
+     * PB-PHASE4 Session 4c-A regression pin: purge layout_config on
+     * layout switch (v0.33.1). Before the fix, the update payload was
+     * just {layout: <new>}, leaving stale layout_config keys from the
+     * previous layout — e.g. speech_bubble's image_fit:"cover" survived
+     * a switch to image_full_text_overlay and cropped the image
+     * unexpectedly. The fix sets layout_config: null in the same
+     * payload so the dict is purged atomically with the layout flip.
+     */
+    it("purges layout_config to null when the layout changes (Session 4c-A Bug A + Bug C regression pin)", async () => {
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "speech_bubble",
+                layout_config: {
+                    anchor_position: "top-right",
+                    opacity: 0.7,
+                    image_fit: "cover",
+                    bubble_size_width_pct: 50,
+                },
+            }),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "image_full_text_overlay",
+                layout_config: null,
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        // image_full_text_overlay sits behind the "More layouts" disclosure.
+        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_full_text_overlay"),
+        )
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "image_full_text_overlay",
+                layout_config: null,
+            }),
+        )
+        // After the round-trip resolves, the optimistic state reflects
+        // the canonical updated row with layout_config null.
+        await waitFor(() => {
+            const keys = screen
+                .getByTestId("layout-config-root")
+                .getAttribute("data-config-keys")
+            expect(keys === "" || keys === null).toBe(true)
+        })
     })
 
     it("shows the canvas-empty state when no pages exist", async () => {
