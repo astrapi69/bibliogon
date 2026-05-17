@@ -99,6 +99,52 @@ export interface Chapter {
     version: number;
 }
 
+// --- Page (PB-PHASE4: picture-book pages) ---
+// Mirrors the backend's ``app.schemas.PageOut`` + ``PageCreate`` +
+// ``PageUpdate`` + ``PagesReorder``. Books with
+// ``book_type === "picture_book"`` carry N Page rows instead of
+// Chapter rows; the kinderbuch plugin's PageEditor consumes this
+// shape. Layout names are also validated server-side; the union
+// here is the authoritative client list (keep in sync with the
+// Pydantic ``PageLayout`` Literal).
+
+export type PageLayout =
+    | "speech_bubble"
+    | "image_top_text_bottom"
+    | "image_left_text_right"
+    | "image_full_text_overlay"
+    | "text_only"
+
+export interface Page {
+    id: string
+    book_id: string
+    position: number
+    layout: PageLayout
+    text_content: string | null
+    image_asset_id: string | null
+    /** JSON object stored as text on the backend; decoded for the
+     *  API. Carries the speech-bubble anchor position for Layout A
+     *  (``speech_bubble``). Shape is renderer-driven and intentionally
+     *  loose at this layer. */
+    speech_bubble_config: Record<string, unknown> | null
+    created_at: string
+    updated_at: string
+}
+
+export interface PageCreate {
+    layout: PageLayout
+    text_content?: string | null
+    image_asset_id?: string | null
+    speech_bubble_config?: Record<string, unknown> | null
+}
+
+export interface PageUpdate {
+    layout?: PageLayout
+    text_content?: string | null
+    image_asset_id?: string | null
+    speech_bubble_config?: Record<string, unknown> | null
+}
+
 export interface StyleFinding {
     type: string;
     word: string;
@@ -2202,6 +2248,51 @@ export const api = {
                 broken: {text: string; anchor: string; toc_chapter_id: string}[];
                 valid_anchors: string[];
             }>(`/books/${bookId}/chapters/validate-toc`, {method: "POST"}),
+    },
+
+    /** PB-PHASE4 picture-book pages CRUD. Endpoints come from the
+     *  kinderbuch plugin's ``pages.py`` router (mounted under
+     *  ``/api/books/{book_id}/pages*``). Domain conventions
+     *  intentionally diverge from ``api.chapters`` in two ways:
+     *
+     *    - No abort-controller on ``update`` (Page fields are
+     *      manually-saved, not auto-saved per keystroke like
+     *      Chapter content).
+     *    - ``reorder`` is POST, not PUT (honours the deployed
+     *      backend — the Session-2 router shipped with POST).
+     *
+     *  These are deliberate domain-specific patterns, not
+     *  inconsistencies; see PB-PHASE4 Session 3 handover. */
+    pages: {
+        list: (bookId: string) =>
+            request<Page[]>(`/books/${bookId}/pages`),
+
+        create: (bookId: string, data: PageCreate) =>
+            request<Page>(`/books/${bookId}/pages`, {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+
+        update: (bookId: string, pageId: string, data: PageUpdate) =>
+            request<Page>(`/books/${bookId}/pages/${pageId}`, {
+                method: "PATCH",
+                body: JSON.stringify(data),
+            }),
+
+        delete: (bookId: string, pageId: string) =>
+            request<void>(`/books/${bookId}/pages/${pageId}`, {
+                method: "DELETE",
+            }),
+
+        /** Bulk-reorder by full id-list. Backend runs the position
+         *  updates in a single transaction; partial failure leaves
+         *  no half-reordered state. Returns the post-reorder
+         *  ordered list. */
+        reorder: (bookId: string, pageIds: string[]) =>
+            request<Page[]>(`/books/${bookId}/pages/reorder`, {
+                method: "POST",
+                body: JSON.stringify({page_ids: pageIds}),
+            }),
     },
 
     assets: {
