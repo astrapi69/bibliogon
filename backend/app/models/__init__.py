@@ -265,10 +265,22 @@ class Page(Base):
     plain text (one to three sentences per page); no TipTap roundtrip.
     ``layout`` is the layout-key string (e.g. "speech_bubble",
     "image_top_text_bottom") validated at the Pydantic schema layer,
-    matching the Chapter.chapter_type pattern. ``speech_bubble_config``
-    holds the anchor variant + position for Layout-A pages and is a
-    JSON-encoded string (same pattern as books.keywords /
-    books.chapter_summaries).
+    matching the Chapter.chapter_type pattern. ``layout_config`` holds
+    per-page layout configuration as a JSON-encoded string (same
+    pattern as books.keywords / books.chapter_summaries). Schema is
+    layout-specific:
+
+    - speech_bubble: {anchor_position, opacity}
+    - image_top_text_bottom: {image_position, image_fit}
+    - image_left_text_right: {split_ratio, image_fit}
+    - image_full_text_overlay: {text_position, text_backdrop_opacity}
+    - text_only: {} (no config keys)
+
+    Renamed from speech_bubble_config in PB-PHASE4 Session 4c when the
+    field was generalized beyond Layout-A. Schema-level "use what
+    already exists": future plugin-comics stores comic-specific
+    layout configs in the same column without per-book-type schema
+    fragmentation.
     """
 
     __tablename__ = "pages"
@@ -281,7 +293,7 @@ class Page(Base):
     image_asset_id: Mapped[str | None] = mapped_column(
         ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
     )
-    speech_bubble_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    layout_config: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow

@@ -52,8 +52,12 @@ def _get_picture_book_or_400(book_id: str, db: Session) -> Book:
     return book
 
 
-def _serialize_speech_bubble_config(config: dict[str, Any] | None) -> str | None:
-    """Encode the dict for the JSON-as-Text DB column."""
+def _serialize_layout_config(config: dict[str, Any] | None) -> str | None:
+    """Encode the dict for the JSON-as-Text DB column.
+
+    Renamed from _serialize_speech_bubble_config in PB-PHASE4
+    Session 4c when the column was generalized beyond Layout-A.
+    """
     if config is None:
         return None
     return json.dumps(config)
@@ -96,7 +100,7 @@ def create_page(book_id: str, payload: PageCreate, db: Session = Depends(get_db)
         layout=payload.layout,
         text_content=payload.text_content,
         image_asset_id=payload.image_asset_id,
-        speech_bubble_config=_serialize_speech_bubble_config(payload.speech_bubble_config),
+        layout_config=_serialize_layout_config(payload.layout_config),
     )
     db.add(page)
     db.commit()
@@ -121,9 +125,9 @@ def update_page(
     if not page:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
     update_data = payload.model_dump(exclude_unset=True)
-    if "speech_bubble_config" in update_data:
-        update_data["speech_bubble_config"] = _serialize_speech_bubble_config(
-            update_data["speech_bubble_config"]
+    if "layout_config" in update_data:
+        update_data["layout_config"] = _serialize_layout_config(
+            update_data["layout_config"]
         )
     for key, value in update_data.items():
         setattr(page, key, value)

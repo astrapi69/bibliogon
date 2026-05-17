@@ -223,10 +223,10 @@ class TestPagesCRUD:
             book["id"],
             layout="speech_bubble",
             text_content="Hello world",
-            speech_bubble_config={"anchor_position": "top-left"},
+            layout_config={"anchor_position": "top-left"},
         )
         assert page["text_content"] == "Hello world"
-        assert page["speech_bubble_config"] == {"anchor_position": "top-left"}
+        assert page["layout_config"] == {"anchor_position": "top-left"}
 
     def test_invalid_layout_rejected(self, client):
         book = _create_book(client, "CRUD4", book_type="picture_book")
@@ -256,21 +256,21 @@ class TestPagesCRUD:
         assert r.json()["layout"] == "text_only"
         assert r.json()["text_content"] == "Just text"
 
-    def test_patch_speech_bubble_config_roundtrips(self, client):
+    def test_patch_layout_config_roundtrips(self, client):
         book = _create_book(client, "CRUD7", book_type="picture_book")
         page = _create_page(client, book["id"], "speech_bubble")
         r = client.patch(
             f"/api/books/{book['id']}/pages/{page['id']}",
-            json={"speech_bubble_config": {"anchor_position": "center", "size": "lg"}},
+            json={"layout_config": {"anchor_position": "center", "size": "lg"}},
         )
         assert r.status_code == 200
-        assert r.json()["speech_bubble_config"] == {
+        assert r.json()["layout_config"] == {
             "anchor_position": "center",
             "size": "lg",
         }
         # Re-read confirms persistence.
         r = client.get(f"/api/books/{book['id']}/pages")
-        assert r.json()[0]["speech_bubble_config"]["size"] == "lg"
+        assert r.json()[0]["layout_config"]["size"] == "lg"
 
     def test_patch_unknown_page_returns_404(self, client):
         book = _create_book(client, "CRUD8", book_type="picture_book")

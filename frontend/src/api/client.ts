@@ -136,10 +136,15 @@ export interface Page {
     text_content: string | null
     image_asset_id: string | null
     /** JSON object stored as text on the backend; decoded for the
-     *  API. Carries the speech-bubble anchor position for Layout A
-     *  (``speech_bubble``). Shape is renderer-driven and intentionally
-     *  loose at this layer. */
-    speech_bubble_config: Record<string, unknown> | null
+     *  API. Per-page layout configuration. Keys are layout-specific
+     *  (anchor_position + opacity for speech_bubble; image_position +
+     *  image_fit for image_top_text_bottom; split_ratio for
+     *  image_left_text_right; text_position + text_backdrop_opacity
+     *  for image_full_text_overlay; empty for text_only). NULL falls
+     *  back to per-layout defaults in PageCanvas. Renamed from
+     *  speech_bubble_config in PB-PHASE4 Session 4c when the column
+     *  was generalized beyond Layout-A. */
+    layout_config: Record<string, unknown> | null
     created_at: string
     updated_at: string
 }
@@ -148,14 +153,14 @@ export interface PageCreate {
     layout: PageLayout
     text_content?: string | null
     image_asset_id?: string | null
-    speech_bubble_config?: Record<string, unknown> | null
+    layout_config?: Record<string, unknown> | null
 }
 
 export interface PageUpdate {
     layout?: PageLayout
     text_content?: string | null
     image_asset_id?: string | null
-    speech_bubble_config?: Record<string, unknown> | null
+    layout_config?: Record<string, unknown> | null
 }
 
 export interface StyleFinding {

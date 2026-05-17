@@ -56,7 +56,7 @@ describe("api.pages", () => {
                     layout: "speech_bubble",
                     text_content: "Hello",
                     image_asset_id: null,
-                    speech_bubble_config: null,
+                    layout_config: null,
                     created_at: "2026-05-17T00:00:00Z",
                     updated_at: "2026-05-17T00:00:00Z",
                 },
@@ -80,7 +80,7 @@ describe("api.pages", () => {
                 layout: "image_top_text_bottom",
                 text_content: null,
                 image_asset_id: null,
-                speech_bubble_config: null,
+                layout_config: null,
                 created_at: "2026-05-17T00:00:00Z",
                 updated_at: "2026-05-17T00:00:00Z",
             }),
@@ -107,7 +107,7 @@ describe("api.pages", () => {
                 layout: "text_only",
                 text_content: "Updated",
                 image_asset_id: null,
-                speech_bubble_config: null,
+                layout_config: null,
                 created_at: "2026-05-17T00:00:00Z",
                 updated_at: "2026-05-17T00:01:00Z",
             }),
@@ -148,7 +148,7 @@ describe("api.pages", () => {
                     layout: "speech_bubble",
                     text_content: null,
                     image_asset_id: null,
-                    speech_bubble_config: null,
+                    layout_config: null,
                     created_at: "2026-05-17T00:00:00Z",
                     updated_at: "2026-05-17T00:01:00Z",
                 },
@@ -159,7 +159,7 @@ describe("api.pages", () => {
                     layout: "speech_bubble",
                     text_content: null,
                     image_asset_id: null,
-                    speech_bubble_config: null,
+                    layout_config: null,
                     created_at: "2026-05-17T00:00:00Z",
                     updated_at: "2026-05-17T00:01:00Z",
                 },
@@ -178,11 +178,12 @@ describe("api.pages", () => {
         )
     })
 
-    it("update supports the speech_bubble_config nested object on Layout-A pages", async () => {
-        // Pins that the speech_bubble_config field round-trips as a
-        // nested object (not a JSON-stringified blob like the
-        // backend stores). The PageEditor's Layout-A properties
-        // pane writes here.
+    it("update supports the layout_config nested object on Layout-A pages", async () => {
+        // Pins that the layout_config field round-trips as a nested
+        // object (not a JSON-stringified blob like the backend
+        // stores). The PageEditor's Layout-A properties pane writes
+        // here. Renamed from speech_bubble_config in PB-PHASE4
+        // Session 4c when the column was generalized beyond Layout-A.
         const cfg = {anchor_position: "bottom-right", offset: 12}
         mockFetch.mockReturnValue(
             jsonResponse({
@@ -192,20 +193,20 @@ describe("api.pages", () => {
                 layout: "speech_bubble",
                 text_content: null,
                 image_asset_id: null,
-                speech_bubble_config: cfg,
+                layout_config: cfg,
                 created_at: "2026-05-17T00:00:00Z",
                 updated_at: "2026-05-17T00:01:00Z",
             }),
         )
         const updated = await api.pages.update("b1", "p1", {
-            speech_bubble_config: cfg,
+            layout_config: cfg,
         })
-        expect(updated.speech_bubble_config).toEqual(cfg)
+        expect(updated.layout_config).toEqual(cfg)
         expect(mockFetch).toHaveBeenCalledWith(
             "/api/books/b1/pages/p1",
             expect.objectContaining({
                 method: "PATCH",
-                body: JSON.stringify({speech_bubble_config: cfg}),
+                body: JSON.stringify({layout_config: cfg}),
             }),
         )
     })

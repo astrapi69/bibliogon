@@ -59,7 +59,7 @@ function makePage(overrides: Partial<Page> = {}): Page {
         layout: "image_top_text_bottom",
         text_content: null,
         image_asset_id: null,
-        speech_bubble_config: null,
+        layout_config: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         ...overrides,

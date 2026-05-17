@@ -980,9 +980,12 @@ class PageCreate(BaseModel):
     layout: PageLayout
     text_content: str | None = None
     image_asset_id: str | None = None
-    # JSON-encoded {anchor_position, ...} for Picture-Book Layout A.
-    # Passed through verbatim to the DB; renderer reads at export time.
-    speech_bubble_config: dict[str, Any] | None = None
+    # JSON-encoded layout-specific configuration. Keys are layout-
+    # dependent (anchor_position + opacity for speech_bubble;
+    # image_position + image_fit for image_top_text_bottom; etc.).
+    # Passed through verbatim to the DB; renderer reads at render time.
+    # Renamed from speech_bubble_config in PB-PHASE4 Session 4c.
+    layout_config: dict[str, Any] | None = None
 
 
 class PageUpdate(BaseModel):
@@ -997,7 +1000,7 @@ class PageUpdate(BaseModel):
     layout: PageLayout | None = None
     text_content: str | None = None
     image_asset_id: str | None = None
-    speech_bubble_config: dict[str, Any] | None = None
+    layout_config: dict[str, Any] | None = None
 
 
 class PageOut(BaseModel):
@@ -1009,16 +1012,17 @@ class PageOut(BaseModel):
     layout: str
     text_content: str | None = None
     image_asset_id: str | None = None
-    # speech_bubble_config is stored as JSON-encoded Text in the DB.
-    # Decoded for the API per the books.keywords / chapter_summaries
-    # convention.
-    speech_bubble_config: dict[str, Any] | None = None
+    # layout_config is stored as JSON-encoded Text in the DB. Decoded
+    # for the API per the books.keywords / chapter_summaries
+    # convention. Renamed from speech_bubble_config in PB-PHASE4
+    # Session 4c when the column was generalized beyond Layout-A.
+    layout_config: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("speech_bubble_config", mode="before")
+    @field_validator("layout_config", mode="before")
     @classmethod
-    def _decode_speech_bubble_config(cls, value: Any) -> dict[str, Any] | None:
+    def _decode_layout_config(cls, value: Any) -> dict[str, Any] | None:
         if value is None or value == "":
             return None
         if isinstance(value, dict):
