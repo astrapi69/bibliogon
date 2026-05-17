@@ -96,7 +96,7 @@ have shipped fixes.
 |---|---|---|---|
 | Articles-vs-Books parallel-surface asymmetry | 8 (Bug 1 fix is not an asymmetry; Bug 2 = #6; Bug 4a = #7; Bug 10 = #8; earlier 5 from 2026-05 audits) | Yes | `lessons-learned.md` § "Articles-vs-Books parallel-surface asymmetry" |
 | Intentional asymmetry between Articles and Books | 2 (Bug 8 Authors-DB wizard-only, Bug 9 Categories+BISAC Books-only) | Yes (canonical examples documented) | `lessons-learned.md` § "Intentional asymmetry between Articles and Books must be documented" |
-| Half-wired trash lifecycle (soft-delete without restore-surface) | 1 (Bug 10 — Comments shipped half-contract, restore + permanent-delete + empty-trash deferred to "v2" docstring + never picked up) | Yes | `lessons-learned.md` § "Half-wired trash lifecycle" |
+| Half-wired feature lifecycle (state-write without inverse-mutation OR state-consumer) | 3 (Bug 10 Comments-Trash — backend shape, closed by Bug 10 fix; PB-PHASE4 Session 4 Layout-Picker without renderer — frontend shape, closed by Session 4 Commits 1-3; PB-PHASE4 `speech_bubble_config` field without UI — frontend shape near-miss, read-path closed via D2a default-position, write-path tracked as `PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01` P3) | Yes | `lessons-learned.md` § "Half-wired feature lifecycle" |
 | Menu-Dialog Lifecycle (preventDefault in onSelect keeps menu behind dialog) | 1 (Bug 6 — 6 callsites in one fix) | Yes | `lessons-learned.md` § "Menu-Dialog Lifecycle: do not preventDefault inside onSelect" |
 | New-hook + new-mock-key contract drift in EXISTING test files | 1 (Bug 7) | Yes | `lessons-learned.md` § "New-hook + new-mock-key contract drift in EXISTING test files" |
 | Settings-Granularity (Class B) | 1 (Bug 3) | No (single-instance; per discipline a formalized pattern needs 2 instances) | — |
@@ -115,6 +115,7 @@ trigger-gated — none start until the trigger fires.
 | AUTHOR-DATALIST-EXTEND-EDITORS-01 | P3 | Bug 8 Phase 2 (filed 2026-05-17) | Extend Wizard's `<input>` + `<datalist>` + Add-to-Authors-DB pattern to ArticleEditor + BookEditor + BookEditor backpage author-bio | User feedback on editor-typing friction OR positive Wizard-pattern validation |
 | BISAC-DATABASE-LOOKUP-01 | P5 | Bug 9 (filed 2026-05-17) | Bundled BISAC catalogue + autocomplete + code-existence validation (vs current free-text + format-only check) | Bibliogon obtains BISG license OR user requests autocomplete strongly enough to justify ~$590/year cost |
 | KDP-CATEGORIES-CATALOG-SYNC-01 | P3 | Bug 9 (filed 2026-05-17) | Sync KDP plugin's 25-category yaml with the 10-category subset hardcoded in routes.py | Scheduled Settings-Polish-Session OR user reports KDP categories mismatch |
+| PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 | P3 | PB-PHASE4 Session 4 Pre-Inspection audit (filed 2026-05-17) | Drag-to-position UI for `Page.speech_bubble_config.anchor_position` (closes the write-path of the field whose read-path Session 4 D2a closed with a fixed bottom-center default) | User-feedback that default bubble position doesn't match content OR first author requests reposition capability |
 
 ## Session cross-references
 

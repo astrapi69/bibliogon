@@ -87,6 +87,37 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01** (P3): build the
+  write-path UI for `Page.speech_bubble_config.anchor_position`
+  on picture-book pages that use the `speech_bubble` layout.
+  The JSON field has existed on the backend since PB-PHASE4
+  Session 2 and the frontend reads it through `api.pages`
+  shape, but **no UI surface writes it**. Session 4 D2a closed
+  the read-path with a fixed bottom-center default (40% width
+  over the image); this item closes the write-path.
+  Trigger: user-feedback that the default bubble position
+  doesn't match content OR first author requests reposition
+  capability. NOT session-completion-tied — the trigger is a
+  concrete user signal so the work lands when the gap is real,
+  not on a schedule.
+  Scope: drag-to-position the bubble on top of the canvas;
+  persist `{anchor_position: {x_pct, y_pct}}` (or similar
+  normalised shape) via `api.pages.update`; PageCanvas's
+  bubble-region picks up the position from
+  `page.speech_bubble_config` and applies inline style
+  (`left: x_pct%; top: y_pct%; transform: translate(-50%, -50%)`).
+  Optional follow-up: bubble tail direction picker, bubble
+  size adjustment. Add Vitest for the position-state plumbing
+  + an E2E that drags the bubble and asserts the persisted
+  config.
+  Effort: 3-5 commits depending on UX polish.
+  Pattern: this closes the third documented instance of the
+  half-wired-feature-lifecycle pattern (frontend shape:
+  state-write surface missing for an already-read field).
+  See `.claude/rules/lessons-learned.md` "Half-wired feature
+  lifecycle" for the full pattern + the two prior instances
+  (Bug 10 trash + Session 4 layout-render).
+
 - **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
   hook that encapsulates the `location.key === 'default'` fallback
   pattern, and migrate the current hardcoded `navigate(-1)` /

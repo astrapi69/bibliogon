@@ -2381,8 +2381,9 @@ no update at all.
    ``/api/comments/trash/empty``, ``/api/comments/trash/{id}``,
    ``/api/comments/trash/bulk-restore`` endpoints + a
    ``viewMode`` toggle on CommentsAdminSection + the trash-view
-   bulk-action bar. See the "Half-wired trash lifecycle" rule
-   below for the generalized pattern.
+   bulk-action bar. See the "Half-wired feature lifecycle" rule
+   below for the generalized pattern (now extended with the
+   frontend-shape variant from PB-PHASE4 Session 4).
 
 > **Footnote on Bug 3 (Trash-View-Mode-Settings):** an earlier
 > mid-session report tagged Bug 3 as occurrence #7 of this
@@ -2434,54 +2435,113 @@ The 2026-05-15 audit's Articles-vs-Books parity matrix
 13 features compared, 3 confirmed asymmetries documented + 2
 historical resolutions noted.
 
-## Half-wired trash lifecycle: soft-delete shipped without the restore-surface is purgatory, not a feature
+## Half-wired feature lifecycle: a state-write without its inverse-mutation OR its state-consumer is purgatory, not a feature
 
-When a feature ships the "move to trash" half of a soft-delete
-lifecycle (the DELETE endpoint that flips ``deleted_at``) but
-NOT the "see + restore + permanent-delete-from-trash" half (the
-``/trash/list`` + ``/trash/{id}/restore`` + ``/trash/{id}`` +
-``/trash/empty`` endpoints), the user experiences silent data
-purgatory: their data still exists in the DB but they can't
-find it, restore it, or finally delete it. The feature was
-**half-shipped**; the partial implementation actively destroys
-trust because the word "trash" implies "I can go look at it".
+A "half-wired" feature ships one half of a lifecycle and leaves
+the other half (the inverse mutation, the data consumer, or the
+renderer) deferred. The user perceives the working half — they
+click the button, the API succeeds, the toast confirms — but the
+expected downstream effect is invisible, missing, or stuck. The
+word for the half-shipped state is **purgatory**: data still
+exists, the user already paid the cognitive cost of the action,
+but the next step the action implies isn't there.
 
-### Concrete occurrence
+This pattern has **two distinct shapes**:
 
-The MEDIUM-COMMENTS-IMPORT-01 v1 admin surface (2026-05)
-shipped soft-delete on ``DELETE /api/comments/{id}`` and bulk-
-soft-delete on ``POST /api/comments/bulk-delete`` (``permanent
-= false``). The original commit's docstring even called it
-out: *"Hard-delete and re-linkage endpoints are out of scope
-for v1; v2 ships them when MEDIUM-COMMENTS-UI-01 builds the
-admin view."* The "v2" work was filed in prose, NOT in a
-load-bearing backlog item; nobody picked it up. Production
-smoke at the v0.33.0 release surfaced **61 user-trashed
-comments stuck in invisible purgatory** — the user had to
-ask "where did my comments go?" before the gap was visible.
-Closed by Bug 10 in this same session.
+- **Backend shape — state-mutation without inverse-mutation
+  surface.** Soft-delete shipped without restore. Archive without
+  un-archive. Schedule without "see scheduled".
+- **Frontend shape — state-write without state-consumer
+  (renderer or reader).** Picker writes a field, renderer ignores
+  the field. Form persists a value, no UI surface reads it.
+
+Both shapes destroy trust the same way: the user thinks they
+acted on the system, and the system appears to ignore them.
+
+### Concrete instances
+
+**1. Bug 10 — Comments soft-delete shipped, restore-UI deferred
+   (backend shape).** The MEDIUM-COMMENTS-IMPORT-01 v1 admin
+surface (2026-05) shipped soft-delete on ``DELETE /api/comments/
+{id}`` and bulk-soft-delete on ``POST /api/comments/bulk-delete``
+(``permanent=false``). The original commit's docstring called it
+out: *"Hard-delete and re-linkage endpoints are out of scope for
+v1; v2 ships them when MEDIUM-COMMENTS-UI-01 builds the admin
+view."* The "v2" work was filed in prose, NOT in a load-bearing
+backlog item. Production smoke at v0.33.0 surfaced **61 user-
+trashed comments stuck in invisible purgatory** — the user had
+to ask "where did my comments go?" before the gap was visible.
+Closed by Bug 10.
+
+**2. PB-PHASE4 Layout-Picker shipped, layout-renderer deferred
+   (frontend shape — closed by Session 4).** Session 3 Commit 4
+   shipped LayoutPicker writing the layout field through
+``api.pages.update``. PageCanvas (Commit 5) was authored against
+a fixed vertical-stack JSX with no per-layout branching; it read
+``page.image_asset_id`` and ``page.text_content`` but ignored
+``page.layout`` entirely. Visual smoke during the Session 3
+go/no-go gate surfaced this as the #1 blocker:
+
+> "Layout-Picker is visual-only, has NO render effect in editor.
+> User selects different layouts (image-top-text-bottom,
+> image-left-text-right, etc.). Editor displays SAME layout
+> regardless of selection. Backend stores layout field, frontend
+> renderer ignores it."
+
+Closed by Session 4 Commits 1-3: PageCanvas now consumes
+``page.layout`` via a per-layout CSS-Module class + region
+wrappers, with per-layout structural + visual differentiation.
+
+**3. PB-PHASE4 ``speech_bubble_config`` field exists, NO UI
+   writes or reads it (frontend shape — read-path closed by
+   Session 4 D2a default, write-path tracked).** The
+``Page.speech_bubble_config`` JSON field has been schema-present
+since Session 2 (backend) and frontend-type-present since
+Session 3 Commit 1 (``api.pages``). No UI consumes it for
+rendering and no UI writes it. Session 4 audit surfaced this
+during PageCanvas inspection — a third instance of the pattern
+caught BEFORE it became a user-visible bug, exactly the value of
+audit-first discipline.
+
+The Session 4 D2a decision closes the **read-path**: the
+speech_bubble layout renders a fixed bottom-center bubble at 40%
+width regardless of the JSON's anchor_position value. The
+**write-path** stays explicitly trigger-gated as
+``PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01`` in
+``docs/backlog.md``, with the trigger "user-feedback that the
+default bubble position doesn't match content OR first author
+requests reposition capability".
 
 ### Rule
 
-When a feature ships any half of a lifecycle (soft-delete
-without restore-surface, "save draft" without "see drafts",
-"schedule" without "see scheduled", "archive" without "see
-archive", etc.), the deferred half MUST be filed as a
-**load-bearing backlog item** with an explicit blocker
-relationship to the shipping half:
+When a feature ships ANY half of a lifecycle, the deferred half
+MUST be filed as a **load-bearing backlog item** with an explicit
+blocker relationship to the shipping half:
 
-1. Open a P-tier backlog entry (NOT just a docstring TODO)
-   with ID + scope + trigger.
-2. Cross-reference in the docstring of the shipping half —
-   so anyone reading the code sees the backlog reference,
-   not just the prose "v2 will do it".
+1. Open a P-tier backlog entry (NOT just a docstring TODO) with
+   ID + scope + trigger.
+2. Cross-reference in the docstring of the shipping half — so
+   anyone reading the code sees the backlog reference, not just
+   the prose "v2 will do it".
 3. Set the trigger to be **observable from real use** (user
-   reports the gap, monitor alert, follow-up audit), not a
-   silent "we'll get to it".
+   reports the gap, monitor alert, follow-up audit), not a silent
+   "we'll get to it".
 
-### Detection grep
+Concretely for the two shapes:
 
-Audit existing partial implementations:
+- **Backend shape**: every state mutation that introduces a
+  "trash"-like intermediate state MUST ship its inverse-mutation
+  surface in the same release, OR file an explicit backlog item
+  with a trigger.
+- **Frontend shape**: every form, picker, or input that WRITES a
+  field via API MUST have a renderer/reader that CONSUMES that
+  field, OR file an explicit backlog item with a trigger. A
+  field that no UI reads after a write is purgatory — the user
+  clicked the picker and the choice "disappeared".
+
+### Detection greps
+
+**Backend shape (deferral-in-prose hunt):**
 
 ```bash
 grep -rnE 'out of scope|v2 ships|deferred to v2|filed for v2|TODO.*v2' \
@@ -2489,27 +2549,69 @@ grep -rnE 'out of scope|v2 ships|deferred to v2|filed for v2|TODO.*v2' \
   --include='*.py' --include='*.tsx' --include='*.ts'
 ```
 
-Each hit is a candidate for the half-wired pattern. Cross-
-check whether the deferred half is in the backlog with a
-real ID; if not, file one now.
+Each hit is a candidate. Cross-check whether the deferred half
+is in the backlog with a real ID; if not, file one now.
+
+**Frontend shape (picker-without-renderer hunt):**
+
+For every form/picker/input that writes a field via api,
+verify the field is READ somewhere (a renderer, a derived
+display, an export pipeline):
+
+```bash
+# Step 1: find every field written by the frontend api client.
+grep -rnE 'api\.[a-z]+\.update\(|api\.[a-z]+\.create\(' frontend/src/ \
+  --include='*.tsx' --include='*.ts' | grep -v test
+
+# Step 2: for each field name in the request payload, grep for
+# CONSUMERS of that field (read sites, NOT write sites) in the
+# component tree:
+grep -rn '\.<field>\b' frontend/src/components/ frontend/src/pages/ \
+  --include='*.tsx' --include='*.ts'
+```
+
+A field that surfaces in step 1 (write site) but has no consumer
+in step 2 (read site) outside its own form/picker is a candidate
+for half-wired-frontend purgatory. File a backlog item if no
+renderer is planned.
+
+### Audit-first value
+
+Instances #2 and #3 above were both surfaced by audit/smoke
+processes BEFORE escalating to user-data-loss-class incidents.
+The Session 3 user-validation gate surfaced #2 in the very flow
+the gate was designed to surface; the Session 4 Pre-Inspection
+audit surfaced #3 as a near-miss before another release cycle
+could ship it as a third user-visible bug.
+
+**The pattern: half-wired features hide behind successful API
+responses + green tests.** The tests assert WRITE returns 200;
+the renderer / consumer / inverse-mutation is the only place
+the user sees the result. A test that exercises the user's
+expected downstream effect (not just the API write) is what
+catches the gap.
 
 ### Anti-pattern
 
-The original ``v1 ships half, v2 ships the other half``
-docstring is fine **IF** v2 has an open backlog item with an
-ID that anyone scanning the backlog can find. The failure
-mode is the docstring-only deferral that never makes it into
-``docs/backlog.md``, ``docs/ROADMAP.md``, or any other
-tracked list. Out of sight, out of mind, in production for a
-release cycle, user reports "data loss".
+The ``v1 ships half, v2 ships the other half`` docstring is fine
+**IF** v2 has an open backlog item with an ID that anyone
+scanning the backlog can find. The failure mode is the docstring-
+only deferral that never makes it into ``docs/backlog.md``,
+``docs/ROADMAP.md``, or any other tracked list. Out of sight,
+out of mind, in production for a release cycle, user reports
+"this doesn't work" / "where did my data go" / "the picker has
+no effect".
 
 ### Pairs with
 
-- "Articles-vs-Books parallel-surface asymmetry" — the Bug 10
-  case appears under BOTH patterns. The asymmetry rule fires
-  on "Articles + Books have it, Comments doesn't"; this rule
-  fires on "Comments shipped half the contract". Same fix,
-  two different audit lenses.
+- "Articles-vs-Books parallel-surface asymmetry" — Bug 10 fires
+  under BOTH patterns. The asymmetry rule fires on "Articles +
+  Books have it, Comments doesn't"; this rule fires on "Comments
+  shipped half the contract". Same fix, two audit lenses.
+- "End-to-end behavior tests are not 'kwarg passes through' tests"
+  — the test that catches half-wired-frontend is the one
+  asserting on the OBSERVABLE OUTPUT of the entire chain (picker
+  → write → render), not just the API write.
 
 ## Test-isolation discipline: never run integration smoke-tests outside pytest
 
