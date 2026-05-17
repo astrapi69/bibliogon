@@ -1253,6 +1253,64 @@ export interface MediumImportResponse {
     errored: MediumImportErroredItem[];
 }
 
+// --- Medium Import v2 (dry-run preview workflow) ---
+
+/** One row in the v2 preview table. Mirrors the backend's
+ *  ``_PreviewItemOut`` Pydantic model field-for-field. */
+export interface MediumImportPreviewItem {
+    filename: string;
+    title: string;
+    subtitle: string;
+    author: string;
+    published_at: string | null;
+    canonical_url: string;
+    detected_language: string | null;
+    /** "article" or "comment" — drives the badge in the preview row. */
+    classification: string;
+    /** When non-null, an existing Article carries the same
+     *  canonical_url. The v2 wizard renders a "would skip" badge
+     *  for these rows so the user knows re-selecting them is a
+     *  no-op under ``skip_existing_canonical_urls=true``. */
+    existing_article_id: string | null;
+    /** First ~120 chars of body text for comment rows; empty for
+     *  article rows. Mirrors ``ImportedComment.body_preview``
+     *  semantics so the preview and post-import result UIs surface
+     *  the same snippet for the same row. */
+    body_preview: string;
+    warnings: string[];
+}
+
+/** A post the walker couldn't parse during the preview pass.
+ *  Surfaced separately so the user understands "I see 198 rows
+ *  but the ZIP had 200 posts". */
+export interface MediumImportPreviewErroredItem {
+    filename: string;
+    error: string;
+}
+
+/** Response of POST /api/medium-import/preview. ``preview_id`` is
+ *  the token the import endpoint reads to look up the cached ZIP.
+ *  ``expires_at`` is the Unix timestamp at which the cache entry
+ *  will be reaped server-side (default TTL 30 minutes); the
+ *  frontend uses it to warn the user before submitting a stale
+ *  selection. */
+export interface MediumImportPreviewResponse {
+    preview_id: string;
+    total_posts: number;
+    items: MediumImportPreviewItem[];
+    errored: MediumImportPreviewErroredItem[];
+    expires_at: number;
+}
+
+/** Response of DELETE /api/medium-import/preview/{preview_id}.
+ *  ``deleted: false`` means the id was unknown (already expired
+ *  or never existed); the response is still 200 because the
+ *  caller's intent ("forget this preview") is satisfied either
+ *  way. */
+export interface MediumImportCancelPreviewResponse {
+    deleted: boolean;
+}
+
 // --- Books ---
 
 export const api = {
@@ -2901,6 +2959,106 @@ export const api = {
                 xhr.send(formData);
             });
         },
+
+        /** MEDIUM-IMPORT-V2-01: Phase 1 of the dry-run preview
+         *  workflow. Uploads the ZIP, returns the per-post table
+         *  + a ``preview_id`` token without persisting anything.
+         *  Same XHR shape as ``importZip`` because the upload is
+         *  still the slow part for typical Medium archives. */
+        preview: (
+            file: File,
+            onUploadProgress?: (loaded: number, total: number) => void,
+        ): Promise<MediumImportPreviewResponse> => {
+            const endpoint = `${BASE}/medium-import/preview`;
+            const formData = new FormData();
+            formData.append("file", file);
+
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", endpoint);
+
+                if (onUploadProgress) {
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            onUploadProgress(event.loaded, event.total);
+                        }
+                    };
+                }
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            resolve(JSON.parse(xhr.responseText) as MediumImportPreviewResponse);
+                        } catch (parseError) {
+                            reject(
+                                new ApiError(
+                                    xhr.status,
+                                    "Antwort konnte nicht geparst werden",
+                                    endpoint,
+                                    "POST",
+                                    String(parseError),
+                                ),
+                            );
+                        }
+                        return;
+                    }
+                    let detail = xhr.statusText || "Vorschau fehlgeschlagen";
+                    let stacktrace = "";
+                    try {
+                        const body = JSON.parse(xhr.responseText) as {
+                            detail?: string;
+                            stacktrace?: string;
+                        };
+                        if (body.detail) detail = body.detail;
+                        if (body.stacktrace) stacktrace = body.stacktrace;
+                    } catch {
+                        // Non-JSON body; surface the raw status text above.
+                    }
+                    reject(new ApiError(xhr.status, detail, endpoint, "POST", stacktrace));
+                };
+
+                xhr.onerror = () => {
+                    reject(
+                        new ApiError(
+                            0,
+                            "Netzwerkfehler beim Upload",
+                            endpoint,
+                            "POST",
+                            "",
+                        ),
+                    );
+                };
+
+                xhr.send(formData);
+            });
+        },
+
+        /** MEDIUM-IMPORT-V2-01: Phase 2 of the dry-run preview
+         *  workflow. Triggers the actual import of the
+         *  user-selected rows from a previously-previewed ZIP.
+         *  The backend reads the cached ZIP for ``previewId``,
+         *  passes ``selected_filenames`` through to ``import_zip``,
+         *  and reaps the cache on success. 404 when the preview
+         *  has expired (TTL 30 min) — the wizard surfaces a
+         *  "please upload again" toast in that case. */
+        importSelected: (
+            previewId: string,
+            selectedFilenames: string[],
+        ): Promise<MediumImportResponse> =>
+            request<MediumImportResponse>(`/medium-import/import/${previewId}`, {
+                method: "POST",
+                body: JSON.stringify({selected_filenames: selectedFilenames}),
+            }),
+
+        /** MEDIUM-IMPORT-V2-01: explicit cancel-from-UI. Reaps the
+         *  cached ZIP for ``previewId`` so it doesn't sit on disk
+         *  until the TTL fires. Idempotent — unknown ids return
+         *  ``{deleted: false}`` with HTTP 200, not 404. */
+        cancelPreview: (previewId: string): Promise<MediumImportCancelPreviewResponse> =>
+            request<MediumImportCancelPreviewResponse>(
+                `/medium-import/preview/${previewId}`,
+                {method: "DELETE"},
+            ),
     },
 
     msTools: {
