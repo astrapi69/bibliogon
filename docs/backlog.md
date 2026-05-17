@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-12 (Dependency audit + phased update landed: audit at docs/audits/dep-update-2026-05-12.md. Phases 1+2+4 shipped (8 commits): 15 backend low-risk patches + 4 frontend patches + 6 of 7 medium-risk packages. Phase 3 surfaced make lock-all-plugins is a no-op without pyproject changes; deferred plugin Pydantic alignment as PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5). click 8.1.8 -> 8.3.3 blocked by gtts <8.2 upstream pin; filed as CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). python-multipart 0.0.27 -> 0.0.28 needs paired plugin bump (medium-import also pins ^0.0.27); deferred. Net 5 new backlog entries: CRYPTOGRAPHY-V48-MIGRATION-01 (P3), MYPY-V2-MIGRATION-01 (P4), STARLETTE-V1-AWAIT-FASTAPI-01 (P5 BLOCKED), PLUGIN-PYDANTIC-COORDINATED-BUMP-01 (P5), CLICK-V8-3-AWAIT-GTTS-01 (P5 BLOCKED). ELEVENLABS 0.2.27 -> 2.x already covered by existing DEP-05.)
 Current version: v0.33.0
-Open tasks: 49 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 50 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -499,6 +499,25 @@ store.
   scope; routes.py + yaml have coexisted in this drifted state
   since the KDP plugin shipped. Filed for the next polish
   session.
+
+- **MEDIUM-IMPORT-RESPONSE-INTERFACE-SYNC-01** (P3): the
+  ``MediumImportResponse`` TypeScript interface in
+  ``frontend/src/api/client.ts`` is missing the comment-routing
+  fields the backend has been emitting since v0.31.0
+  (MEDIUM-COMMENTS-IMPORT-01): ``imported_comments_count``,
+  ``skipped_comments_count``, ``imported_comments[]``,
+  ``skipped_comments[]``. ``MediumImportResult.tsx`` consequently
+  does not surface the comment counts to the user, even though
+  the backend returns them. Pre-existing drift surfaced during
+  the MEDIUM-IMPORT-V2-01 Pre-Inspection 2026-05-17.
+  Trigger: next Medium-Import work touching client.ts / result UI,
+  OR user reports comment counts not visible after import. Scope:
+  extend the TS interface to mirror the backend Pydantic shape +
+  render the two extra counts + the per-comment expandable list
+  in ``MediumImportResult``. i18n strings for the count labels
+  (8 catalogs). Effort: S (1-2 commits). Not v2 scope - kept as
+  a separate fix per user instruction to avoid bundle creep on
+  the v2 work.
 
 
 ---

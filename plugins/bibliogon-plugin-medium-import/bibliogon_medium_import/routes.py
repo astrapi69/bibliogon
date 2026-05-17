@@ -18,6 +18,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .importer import DEFAULT_TIMEOUT_SECONDS, ImportResult, import_zip
+from .preview import PreviewItem, build_preview, get_default_cache
 
 router = APIRouter(prefix="/medium-import", tags=["medium-import"])
 
@@ -141,6 +142,73 @@ class ImportZipResponse(BaseModel):
     skipped_comments: list[_SkippedCommentOut] = Field(default_factory=list)
 
 
+# ---------------------------------------------------------------------------
+# MEDIUM-IMPORT-V2-01: dry-run preview workflow.
+# ---------------------------------------------------------------------------
+
+
+class _PreviewItemOut(BaseModel):
+    """One row in the preview table the v2 wizard renders before
+    the user picks what to import. Mirrors ``preview.PreviewItem``
+    one-to-one so the route handler can hand the dataclass list
+    straight through ``model_validate`` without re-mapping."""
+
+    filename: str
+    title: str
+    subtitle: str
+    author: str
+    published_at: str | None = None
+    canonical_url: str
+    detected_language: str | None = None
+    classification: str  # "article" | "comment"
+    existing_article_id: str | None = None
+    body_preview: str = ""
+    warnings: list[str] = Field(default_factory=list)
+
+
+class _PreviewErroredOut(BaseModel):
+    """A post in the archive that the walker couldn't parse during
+    the preview pass. The user sees these in a separate panel so
+    the row count discrepancy (N posts in ZIP vs M items in table)
+    is explained."""
+
+    filename: str
+    error: str
+
+
+class PreviewResponse(BaseModel):
+    """Response of ``POST /api/medium-import/preview``. The
+    ``preview_id`` is the token the import endpoint reads."""
+
+    preview_id: str
+    total_posts: int
+    items: list[_PreviewItemOut]
+    errored: list[_PreviewErroredOut] = Field(default_factory=list)
+    expires_at: float
+
+
+class ImportSelectionRequest(BaseModel):
+    """Request body for ``POST /api/medium-import/import/{preview_id}``.
+
+    ``selected_filenames`` are the base names (``"01_oldest_tech.html"``,
+    not ``"posts/01_oldest_tech.html"``) the user kept checked in the
+    preview UI. Empty list = nothing to import (the UI gates the
+    button on this, but the backend defends in depth)."""
+
+    selected_filenames: list[str] = Field(default_factory=list)
+
+
+class CancelPreviewResponse(BaseModel):
+    """Response of ``DELETE /api/medium-import/preview/{preview_id}``.
+
+    ``deleted`` is ``True`` when an on-disk preview was reaped,
+    ``False`` when the id was unknown (already expired, never
+    existed). Either way the response is 200 — the caller's intent
+    ("forget this preview") is satisfied in both cases."""
+
+    deleted: bool
+
+
 def _serialize(result: ImportResult) -> ImportZipResponse:
     return ImportZipResponse(
         imported_count=len(result.imported),
@@ -195,6 +263,12 @@ async def import_zip_endpoint(file: UploadFile = File(...)) -> ImportZipResponse
     Returns a per-file outcome summary (imported / skipped / errored).
     Per-post failures are recorded but never abort the batch; a single
     bad post should not waste the user's other 200 imports.
+
+    v1 surface: imports everything in the ZIP in one pass. The v2
+    wizard uses ``/preview`` + ``/import/{preview_id}`` to let the
+    user deselect rows pre-import. This endpoint stays for back-
+    compat (direct curl users, the existing test suites, future
+    scripted integrations).
     """
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
@@ -214,3 +288,114 @@ async def import_zip_endpoint(file: UploadFile = File(...)) -> ImportZipResponse
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return _serialize(result)
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-IMPORT-V2-01: dry-run preview endpoints.
+# ---------------------------------------------------------------------------
+
+
+def _preview_item_to_out(item: PreviewItem) -> _PreviewItemOut:
+    return _PreviewItemOut(
+        filename=item.filename,
+        title=item.title,
+        subtitle=item.subtitle,
+        author=item.author,
+        published_at=item.published_at,
+        canonical_url=item.canonical_url,
+        detected_language=item.detected_language,
+        classification=item.classification,
+        existing_article_id=item.existing_article_id,
+        body_preview=item.body_preview,
+        warnings=list(item.warnings),
+    )
+
+
+@router.post("/preview", response_model=PreviewResponse)
+async def preview_zip_endpoint(file: UploadFile = File(...)) -> PreviewResponse:
+    """Parse the uploaded ZIP and return the per-post preview table.
+
+    Caches the ZIP under ``get_data_dir() / "tmp" /
+    "medium-import-previews"`` so the follow-up import endpoint can
+    re-read it without forcing the user to upload twice. No DB
+    writes happen here; the only DB touch is a single SELECT that
+    pre-loads existing ``canonical_url`` values for the dedup badge.
+    """
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be a .zip Medium export",
+        )
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+
+    try:
+        result = build_preview(contents)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return PreviewResponse(
+        preview_id=result.preview_id,
+        total_posts=result.total_posts,
+        items=[_preview_item_to_out(item) for item in result.items],
+        errored=[_PreviewErroredOut(**err) for err in result.errored],
+        expires_at=result.expires_at,
+    )
+
+
+@router.post("/import/{preview_id}", response_model=ImportZipResponse)
+def import_selection_endpoint(
+    preview_id: str,
+    selection: ImportSelectionRequest,
+) -> ImportZipResponse:
+    """Import the user's selection from a previously-previewed ZIP.
+
+    Reads the cached ZIP for ``preview_id``, calls ``import_zip``
+    with ``selected_filenames=set(selection.selected_filenames)``,
+    and deletes the cache entry on success. 404 when the preview
+    is unknown or expired (the cache returns ``None`` for both;
+    that is intentional - the UI tells the user "preview expired,
+    please upload again" either way).
+    """
+    cache = get_default_cache()
+    zip_bytes = cache.load(preview_id)
+    if zip_bytes is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Preview not found or expired; please upload again",
+        )
+
+    if not selection.selected_filenames:
+        # The wizard disables the Import button on empty selection,
+        # but a direct API caller might still try; 400 keeps the
+        # contract honest and the cache entry intact for a retry.
+        raise HTTPException(
+            status_code=400,
+            detail="selected_filenames must contain at least one entry",
+        )
+
+    try:
+        result = import_zip(
+            zip_bytes,
+            selected_filenames=set(selection.selected_filenames),
+            **_settings_kwargs(),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # Successful imports reap the cache; failures leave it so the
+    # user can retry without re-uploading.
+    cache.delete(preview_id)
+    return _serialize(result)
+
+
+@router.delete("/preview/{preview_id}", response_model=CancelPreviewResponse)
+def cancel_preview_endpoint(preview_id: str) -> CancelPreviewResponse:
+    """Explicit cancel-from-UI. Idempotent: unknown ids return
+    ``{deleted: False}`` with HTTP 200 (not 404) so the caller's
+    intent ("forget this preview") is satisfied regardless of
+    whether the cache entry still existed."""
+    deleted = get_default_cache().delete(preview_id)
+    return CancelPreviewResponse(deleted=deleted)

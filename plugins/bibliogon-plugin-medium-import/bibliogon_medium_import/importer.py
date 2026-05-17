@@ -125,6 +125,15 @@ def import_zip(
     #   orphan_comment_handling: "store" | "skip"
     import_comments_mode: str = "as_comments",
     orphan_comment_handling: str = "store",
+    # MEDIUM-IMPORT-V2-01: when not None, only ``posts/<name>.html``
+    # entries whose base name (the ``Path.name``) is in the set get
+    # processed; the rest are silently skipped (not added to any
+    # result list, not counted as skipped or errored). Set membership
+    # is tested against ``path.name`` so the caller passes plain
+    # filenames as they appear in the preview's per-row payload.
+    # ``None`` keeps the legacy "import everything" behaviour the v1
+    # endpoint depends on.
+    selected_filenames: set[str] | None = None,
     http_client: httpx.Client | None = None,
 ) -> ImportResult:
     """Import every ``posts/*.html`` from the given Medium ZIP."""
@@ -151,6 +160,16 @@ def import_zip(
         post_files = sorted(posts_dir.glob("*.html"))
         if not post_files:
             return result  # empty archive; nothing imported, no error
+
+        if selected_filenames is not None:
+            post_files = [p for p in post_files if p.name in selected_filenames]
+            if not post_files:
+                # All filenames filtered out. The v2 wizard normally
+                # disables the Import button when the selection is
+                # empty, so we should not see this in practice; the
+                # empty-result return keeps the contract honest if it
+                # does happen.
+                return result
 
         for path in post_files:
             try:
