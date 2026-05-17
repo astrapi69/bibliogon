@@ -296,15 +296,19 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     </div>
                 </Tabs.Content>
 
-                {/* ``forceMount`` keeps the Marketing tab's children in the
-                    DOM even when inactive so happy-dom-based Vitests can
-                    query the Bug-9 Categories + BISAC chip inputs without
-                    fighting Radix's default mount-on-activate behaviour
-                    (see "Radix DropdownMenu + happy-dom is brittle"
-                    lessons-learned entry — same family of issue).
-                    Real-user visibility still gated by ``data-state``
-                    + ``hidden`` attributes Radix sets automatically. */}
-                <Tabs.Content value="marketing" forceMount>
+                {/* HOTFIX (Categories+BISAC tab-leak bug): the previous
+                    ``forceMount`` was added in Bug 9 so happy-dom-based
+                    Vitests could query the Marketing-tab Categories +
+                    BISAC chip inputs without first clicking the tab.
+                    The comment claimed Radix still hides the content
+                    via the ``hidden`` attribute — wrong. Radix's
+                    Tabs.Content explicitly sets ``hidden: !present``,
+                    and with forceMount, ``present`` stays true ALWAYS
+                    (see node_modules/@radix-ui/react-tabs source).
+                    Result: Marketing content was visible on every tab.
+                    Vitests have been updated to click the Marketing
+                    tab BEFORE querying its content. */}
+                <Tabs.Content value="marketing">
                     <div className={styles.tabContent}>
                         {book.ai_tokens_used > 0 && (
                             <div style={{

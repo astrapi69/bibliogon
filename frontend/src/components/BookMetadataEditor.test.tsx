@@ -688,24 +688,64 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
     })
 
     function renderBookMeta(overrides: Partial<BookDetail> = {}) {
-        return render(
+        const result = render(
             <BookMetadataEditor
                 book={makeBook(overrides)}
                 onSave={localOnSave}
                 onBack={localOnBack}
             />,
         )
+        // HOTFIX (Categories+BISAC tab-leak bug): forceMount was
+        // removed from the Marketing Tabs.Content, so inactive
+        // tabs no longer render their content in the DOM. Click
+        // the Marketing tab once after mount so Bug 9 testids
+        // (metadata-categories-field, metadata-bisac-field,
+        // category-input, bisac-input, etc.) are queryable.
+        // Radix Tabs.Trigger uses onMouseDown (NOT onClick) for tab
+        // activation. fireEvent.click is a no-op on the trigger.
+        fireEvent.mouseDown(screen.getByTestId("metadata-tab-marketing"))
+        return result
     }
 
-    it("renders both fields in the Marketing tab", () => {
+    it("renders both fields in the Marketing tab (after selecting it)", () => {
         renderBookMeta()
-        // Radix Tabs.Content renders inactive panels in the DOM
-        // too, so testid queries find the marketing-tab children
-        // without needing to fire a click on the trigger first.
         expect(screen.getByTestId("metadata-categories-field")).toBeTruthy()
         expect(screen.getByTestId("metadata-bisac-field")).toBeTruthy()
         expect(screen.getByTestId("category-input")).toBeTruthy()
         expect(screen.getByTestId("bisac-input")).toBeTruthy()
+    })
+
+    // HOTFIX regression pin: Categories + BISAC must NOT render on
+    // initial mount when the default tab is 'general'. The leak
+    // that prompted this fix was forceMount keeping the Marketing
+    // content visible on every tab; removing forceMount + verifying
+    // initial-mount absence + post-click presence proves the fix.
+    //
+    // The "switch BACK to general unmounts them" path is
+    // intentionally NOT tested in Vitest. Radix Presence transitions
+    // through an "unmountSuspended" state driven by CSS animationend
+    // events that jsdom does not fire reliably. The Playwright E2E
+    // spec covers the round-trip path in a real browser.
+    it("does NOT render Categories + BISAC on initial mount (default 'general' tab)", () => {
+        // Render the editor at its default 'general' tab (skip the
+        // renderBookMeta helper so we don't auto-click Marketing).
+        render(
+            <BookMetadataEditor
+                book={makeBook()}
+                onSave={localOnSave}
+                onBack={localOnBack}
+            />,
+        )
+        expect(screen.queryByTestId("metadata-categories-field")).toBeNull()
+        expect(screen.queryByTestId("metadata-bisac-field")).toBeNull()
+        expect(screen.queryByTestId("category-input")).toBeNull()
+        expect(screen.queryByTestId("bisac-input")).toBeNull()
+        // Switching to Marketing mounts them. Radix Tabs.Trigger
+        // listens to onMouseDown (NOT onClick); fireEvent.click is
+        // a no-op on the trigger.
+        fireEvent.mouseDown(screen.getByTestId("metadata-tab-marketing"))
+        expect(screen.getByTestId("metadata-categories-field")).toBeTruthy()
+        expect(screen.getByTestId("metadata-bisac-field")).toBeTruthy()
     })
 
     it("seeds CategoryInput + BisacCodeInput from book.categories + book.bisac_codes", () => {
