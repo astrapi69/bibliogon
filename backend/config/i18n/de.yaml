@@ -1976,3 +1976,27 @@ ui:
     text_label: "Seitentext"
     text_placeholder: "Schreibe hier den Seitentext ..."
     show_metadata: "Metadaten"
+    config:
+      speech_bubble:
+        heading: "Sprechblase"
+        anchor: "Position"
+        opacity: "Deckkraft"
+      image_top_text_bottom:
+        heading: "Bild oben, Text unten"
+      image_left_text_right:
+        heading: "Bild links, Text rechts"
+      image_full_text_overlay:
+        heading: "Vollbild mit Text-Overlay"
+      image_position: "Bildposition"
+      image_position_left: "Links"
+      image_position_center: "Zentriert"
+      image_position_right: "Rechts"
+      image_fit: "Bildanpassung"
+      image_fit_contain: "Einpassen"
+      image_fit_cover: "Ausfüllen"
+      split_ratio: "Aufteilung (Bild %)"
+      text_position: "Textposition"
+      text_position_top: "Oben"
+      text_position_middle: "Mitte"
+      text_position_bottom: "Unten"
+      text_backdrop_opacity: "Hintergrund-Deckkraft"

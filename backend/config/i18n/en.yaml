@@ -1977,3 +1977,27 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    config:
+      speech_bubble:
+        heading: "Speech bubble"
+        anchor: "Position"
+        opacity: "Opacity"
+      image_top_text_bottom:
+        heading: "Image top, text bottom"
+      image_left_text_right:
+        heading: "Image left, text right"
+      image_full_text_overlay:
+        heading: "Full-bleed image, text overlay"
+      image_position: "Image position"
+      image_position_left: "Left"
+      image_position_center: "Center"
+      image_position_right: "Right"
+      image_fit: "Image fit"
+      image_fit_contain: "Contain"
+      image_fit_cover: "Cover"
+      split_ratio: "Split ratio (image %)"
+      text_position: "Text position"
+      text_position_top: "Top"
+      text_position_middle: "Middle"
+      text_position_bottom: "Bottom"
+      text_backdrop_opacity: "Backdrop opacity"
