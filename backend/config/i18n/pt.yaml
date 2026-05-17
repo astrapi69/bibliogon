@@ -8,6 +8,7 @@ _meta:
     - bulk_ai_fill
     - comments
     - convert_to_book
+    - page_editor
 
 ui:
   dashboard:
@@ -1953,3 +1954,29 @@ ui:
     review_confirm: "Create book"
     step_indicator_aria: "Wizard progress"
     success_view_book: "View book"
+  # PB-PHASE4 Session 3: picture-book PageEditor surface. Passthru
+  # English pending native-speaker review (see _meta.pending_namespaces).
+  page_editor:
+    back: "Back to dashboard"
+    thumbnails_pane: "Pages"
+    canvas_pane: "Canvas"
+    properties_pane: "Page properties"
+    pages_label: "Pages"
+    add_page: "Add page"
+    empty_state: "No pages yet. Click + to add the first page."
+    canvas_empty: "Add a page from the sidebar to start authoring."
+    properties_empty: "Select a page to edit its properties."
+    layout_heading: "Layout"
+    more_layouts: "More layouts"
+    layout:
+      speech_bubble: "Speech bubble"
+      image_top_text_bottom: "Image top, text bottom"
+      image_left_text_right: "Image left, text right"
+      image_full_text_overlay: "Full image with text overlay"
+      text_only: "Text only"
+    no_image: "No image yet"
+    upload_image: "Upload image"
+    replace_image: "Replace image"
+    uploading: "Uploading..."
+    text_label: "Page text"
+    text_placeholder: "Write the page text here..."

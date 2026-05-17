@@ -1945,3 +1945,30 @@ ui:
     review_confirm: "Buch erstellen"
     step_indicator_aria: "Assistent-Fortschritt"
     success_view_book: "Buch öffnen"
+  # PB-PHASE4 Session 3: Bilderbuch-Editor. Wird von
+  # frontend/src/components/{PageEditor,PageThumbnails,LayoutPicker,
+  # PageCanvas}.tsx über useI18n(t) konsumiert.
+  page_editor:
+    back: "Zurück zum Dashboard"
+    thumbnails_pane: "Seiten"
+    canvas_pane: "Arbeitsfläche"
+    properties_pane: "Seiten-Eigenschaften"
+    pages_label: "Seiten"
+    add_page: "Seite hinzufügen"
+    empty_state: "Noch keine Seiten. Klicke auf +, um die erste Seite anzulegen."
+    canvas_empty: "Lege in der Seitenleiste eine Seite an, um mit dem Schreiben zu beginnen."
+    properties_empty: "Wähle eine Seite aus, um ihre Eigenschaften zu bearbeiten."
+    layout_heading: "Layout"
+    more_layouts: "Weitere Layouts"
+    layout:
+      speech_bubble: "Sprechblase"
+      image_top_text_bottom: "Bild oben, Text unten"
+      image_left_text_right: "Bild links, Text rechts"
+      image_full_text_overlay: "Vollbild mit Text-Overlay"
+      text_only: "Nur Text"
+    no_image: "Noch kein Bild"
+    upload_image: "Bild hochladen"
+    replace_image: "Bild ersetzen"
+    uploading: "Lade hoch ..."
+    text_label: "Seitentext"
+    text_placeholder: "Schreibe hier den Seitentext ..."
