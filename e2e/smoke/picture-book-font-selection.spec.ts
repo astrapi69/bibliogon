@@ -107,9 +107,13 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         ).toHaveCount(0)
     })
 
-    test("Picking Andika writes a textStyle.fontFamily mark on the persisted TipTap doc", async ({
+    test("Bug 3: picking Andika WITHOUT a prior selection writes the mark across the whole document", async ({
         page,
     }) => {
+        // Picture-book convention is one page one consistent font.
+        // The dropdown wraps (un)setFontFamily in selectAll() so a
+        // user who just clicks the picker without first selecting
+        // text still gets the font applied to the entire page.
         const book = await createPictureBook("Font Persist", "T. Tester")
         const pageRow = await createPicturePageViaAPI(
             book.id,
@@ -122,14 +126,17 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         )
         await expect(editor).toBeVisible()
 
-        // Type some text.
+        // Type multiple paragraphs (two paragraphs ensures the
+        // assertion catches per-mark vs document-wide application
+        // — without selectAll, only one paragraph would carry the
+        // mark).
         await editor.click()
-        await page.keyboard.type("Andika sample")
+        await page.keyboard.type("First sentence.")
+        await page.keyboard.press("Enter")
+        await page.keyboard.type("Second sentence.")
 
-        // Select all → pick the font.
-        await page.keyboard.press(
-            process.platform === "darwin" ? "Meta+A" : "Control+A",
-        )
+        // No explicit Ctrl/Cmd+A. The dropdown's onChange must
+        // auto-select-all before applying the font.
         await page
             .getByTestId("page-editor-toolbar-font-family")
             .selectOption("Andika")
@@ -150,6 +157,13 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
             content: unknown[]
         }
         expect(doc.type).toBe("doc")
+        // Bug 3: BOTH paragraphs carry the Andika mark (2 occurrences
+        // in the serialised JSON). Without auto-select-all, only one
+        // would have it.
+        const occurrences = (
+            serialised.match(/"fontFamily":"Andika"/g) || []
+        ).length
+        expect(occurrences).toBe(2)
     })
 
     test("Picking the Default sentinel removes the fontFamily mark (round-trip)", async ({

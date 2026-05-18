@@ -110,6 +110,36 @@ store.
   (D7=Option 1 WYSIWYG contract relies on the PDF
   honoring marks).
 
+- **PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01** (P3, filed
+  2026-05-18 from 4c-B-1 smoke Bug 3): allow per-character
+  / per-span font overrides on a picture-book page.
+
+  Current state (post-Bug-3): the Font dropdown applies
+  the selected font to the ENTIRE document via an
+  auto-select-all in the onChange handler. Picture-book
+  convention is one page one consistent font, so this is
+  the right MVP. A future "advanced" mode could surface
+  a per-mark override (e.g. a quoted line in a different
+  font, or a single onomatopoeia word in Comic Neue while
+  the rest of the page uses Atkinson Hyperlegible).
+
+  Scope: a toggle in Settings or a modifier-key behavior
+  on the Font dropdown that lets the picker apply to the
+  current selection ONLY (the original TipTap default
+  behavior pre-Bug-3). The G4 PDF walker already supports
+  per-mark fontFamily — only the editor's apply-scope
+  needs the conditional branch.
+
+  Trigger: explicit user request for per-mark font
+  control on a picture-book page OR Comic-Foundation
+  Session needs per-bubble font variation (each bubble
+  could carry its own font without affecting other
+  bubbles on the same page).
+
+  Effort: 1-2 commits (toggle + branch in the onChange
+  handler + Vitest pin + a help-doc note explaining
+  when to use it).
+
 - **PICTURE-BOOK-PDF-KDP-FORMATS-01** (P3): extend picture-book
   PDF export beyond the v0.35.0 MVP 8.5×8.5 square. Audit
   finding 2026-05-17 D3 documented the canonical KDP picture-

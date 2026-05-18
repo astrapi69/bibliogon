@@ -356,6 +356,119 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
         )
     })
 
+    // PB-PHASE4 Session 4c-B-1 smoke Bug 3 (2026-05-18):
+    // picking a font WITHOUT a prior selection must still apply
+    // the font to the ENTIRE document. Picture-book convention is
+    // one page one consistent font; per-character variation isn't
+    // meaningful. The dropdown's onChange handler now wraps the
+    // (un)setFontFamily call in selectAll() to enforce that.
+    it("Bug 3: picking a font with NO prior selection applies it to the entire document", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <Host
+                initialContent={{
+                    type: "doc",
+                    content: [
+                        {
+                            type: "paragraph",
+                            content: [
+                                {type: "text", text: "first paragraph"},
+                            ],
+                        },
+                        {
+                            type: "paragraph",
+                            content: [
+                                {type: "text", text: "second paragraph"},
+                            ],
+                        },
+                    ],
+                }}
+                onEditorRef={(e) => {
+                    editorRef = e
+                }}
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+        // Place the caret at the very start of the doc — NO range
+        // selection. Without the Bug 3 auto-select-all, setFontFamily
+        // would land as a zero-width mark + apply only to text typed
+        // after the caret. With Bug 3 the dropdown wraps in
+        // selectAll() so both paragraphs get the mark.
+        act(() => {
+            editorRef!.commands.setTextSelection(0)
+        })
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "Andika"}})
+
+        const json = JSON.stringify(editorRef!.getJSON())
+        // Both text runs must carry the fontFamily=Andika mark.
+        // Counting occurrences: 2 paragraphs × 1 text node each =
+        // 2 textStyle marks with fontFamily=Andika.
+        const matches = json.match(/"fontFamily":"Andika"/g) || []
+        expect(matches.length).toBe(2)
+    })
+
+    it("Bug 3: picking the Default sentinel with NO prior selection clears the mark from the entire document", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <Host
+                initialContent={{
+                    type: "doc",
+                    content: [
+                        {
+                            type: "paragraph",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "first",
+                                    marks: [
+                                        {
+                                            type: "textStyle",
+                                            attrs: {fontFamily: "Lexend"},
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            type: "paragraph",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "second",
+                                    marks: [
+                                        {
+                                            type: "textStyle",
+                                            attrs: {fontFamily: "Lexend"},
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                }}
+                onEditorRef={(e) => {
+                    editorRef = e
+                }}
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+        // Caret at position 0 — no range selection.
+        act(() => {
+            editorRef!.commands.setTextSelection(0)
+        })
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "__default__"}})
+
+        const json = JSON.stringify(editorRef!.getJSON())
+        // Marks gone from BOTH paragraphs (the entire document).
+        expect(json).not.toContain('"fontFamily"')
+    })
+
     it("dropdown reflects the active fontFamily mark when one is set", async () => {
         let editorRef: Editor | null = null
         render(

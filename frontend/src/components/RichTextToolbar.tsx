@@ -246,14 +246,35 @@ export default function RichTextToolbar({
              *  Reads the current fontFamily via getAttributes('textStyle'),
              *  falling back to the sentinel when no mark is present
              *  (D11 backward-compat: existing pages without marks render
-             *  with the hardcoded Atkinson default in the PDF). */}
+             *  with the hardcoded Atkinson default in the PDF).
+             *
+             *  Bug 3 (2026-05-18): picture-book convention is one page
+             *  one consistent font. Per-character font variation isn't
+             *  meaningful for picture-book typography. The change-handler
+             *  applies the font to the ENTIRE document via a transient
+             *  selectAll() before the (un)setFontFamily call. The
+             *  focus()/selectAll() chain in TipTap is non-destructive —
+             *  the editor's caret position is restored implicitly after
+             *  the selection-based mark applies. Future per-mark override
+             *  for fine-grained control is filed as
+             *  PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01 (P3 backlog). */}
             <select
                 onChange={(e) => {
                     const value = e.target.value
                     if (value === FONT_DEFAULT_SENTINEL) {
-                        editor.chain().focus().unsetFontFamily().run()
+                        editor
+                            .chain()
+                            .focus()
+                            .selectAll()
+                            .unsetFontFamily()
+                            .run()
                     } else {
-                        editor.chain().focus().setFontFamily(value).run()
+                        editor
+                            .chain()
+                            .focus()
+                            .selectAll()
+                            .setFontFamily(value)
+                            .run()
                     }
                 }}
                 value={
