@@ -54,6 +54,7 @@ from app.routers import (
     plugin_install,
     publications,
     settings,
+    system,
     templates,
     translations,
 )
@@ -584,6 +585,7 @@ app.include_router(backup.router, prefix="/api")
 app.include_router(import_orchestrator.router, prefix="/api")
 app.include_router(licenses.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(system.router, prefix="/api")
 app.include_router(plugin_install.router, prefix="/api")
 app.include_router(templates.router, prefix="/api")
 app.include_router(chapter_templates.router, prefix="/api")

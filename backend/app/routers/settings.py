@@ -255,6 +255,15 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
         cfg = config_overlay.read_plugin_config_merged(name)
         tier = _resolve_license_tier(cfg)
         has_license = _check_plugin_license(name, tier)
+        # About-Dialog (2026-05-18): include display_name (i18n dict)
+        # + version + description from the canonical plugin config.
+        # Empty/missing fields surface as ``None`` / ``{}`` so the
+        # frontend renders the slug or hides the row gracefully.
+        # Backward-compatible addition — existing consumers
+        # (PluginSettings.tsx) ignore extra fields.
+        plugin_meta = (
+            cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
+        )
         result.append(
             {
                 "name": name,
@@ -263,6 +272,9 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
                 "loaded": name in active,
                 "license_tier": tier,
                 "has_license": has_license,
+                "display_name": plugin_meta.get("display_name") or {},
+                "description": plugin_meta.get("description") or {},
+                "version": plugin_meta.get("version") or None,
             }
         )
     return result
