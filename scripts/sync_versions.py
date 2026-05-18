@@ -85,6 +85,84 @@ def update_package_json_version(
     return True
 
 
+def update_package_lock_version(
+    path: Path, new_version: str, dry_run: bool
+) -> bool:
+    """Update package-lock.json's TWO top-level version fields.
+
+    npm-generated locks carry the host project's version in two
+    places at the top of the file:
+
+    - top-level ``"version": "..."`` (document-root metadata)
+    - ``packages[""]["version"]`` (the root package entry)
+
+    Both must match ``package.json``'s version. npm only re-syncs
+    them when ``npm install`` runs; a sync-versions invocation that
+    edits ``package.json`` directly leaves the lock-file out of sync
+    (Tier-5 drift; see docs/audits/release-automation-audit-2026-
+    05-19.md).
+
+    Surgical regex on the first 2 occurrences of ``"version": "..."``
+    in the file. In npm-generated locks the top-level + packages[""]
+    entries are always the first two ``"version":`` lines; every
+    subsequent occurrence is a nested dependency entry that MUST
+    NOT be touched.
+    """
+    if not path.is_file():
+        return False
+    content = path.read_text(encoding="utf-8")
+    # Validate via JSON parse that the file is well-formed and that
+    # the two expected fields exist. If the lock-file shape ever
+    # changes, fail loud rather than mangle the file.
+    data = json.loads(content)
+    top_version = data.get("version")
+    root_pkg_version = data.get("packages", {}).get("", {}).get("version")
+    if top_version is None or root_pkg_version is None:
+        print(
+            f"WARN: {_display_path(path)} missing top-level or "
+            f"packages[''] version field; skipping",
+            file=sys.stderr,
+        )
+        return False
+    if top_version == new_version and root_pkg_version == new_version:
+        return False
+    # Surgical regex: anchor on `"version":` with whitespace prefix
+    # then quoted value. count=2 hits the two top-level locations
+    # without touching the hundreds of nested dependency `"version":`
+    # entries that follow.
+    pattern = re.compile(r'^(\s*"version":\s*)"[^"]+"', re.MULTILINE)
+    new_content, n = pattern.subn(
+        rf'\g<1>"{new_version}"', content, count=2
+    )
+    if n != 2:
+        print(
+            f"WARN: {_display_path(path)} expected 2 version "
+            f"matches, got {n}; skipping",
+            file=sys.stderr,
+        )
+        return False
+    if not dry_run:
+        path.write_text(new_content, encoding="utf-8")
+    old = top_version if top_version == root_pkg_version else (
+        f"top={top_version},root={root_pkg_version}"
+    )
+    print(f"  {_display_path(path)}: {old} -> {new_version}")
+    return True
+
+
+def _display_path(path: Path) -> str:
+    """Format a path for user-facing output.
+
+    Prefers repo-relative when the path lives inside REPO (the
+    production case); falls back to the bare filename when the
+    path is outside REPO (e.g. tempfile-based unit tests).
+    """
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        return path.name
+
+
 def update_spec_plist(
     path: Path, new_version: str, dry_run: bool
 ) -> bool:
@@ -246,10 +324,11 @@ def regenerate_install_sh(dry_run: bool) -> bool:
 
 def collect_targets() -> list[tuple[Path, str]]:
     """Return list of (file, kind). Kinds: pyproject, package_json,
-    spec, init_literal."""
+    package_lock, spec, init_literal."""
     targets: list[tuple[Path, str]] = []
 
     targets.append((REPO / "frontend" / "package.json", "package_json"))
+    targets.append((REPO / "frontend" / "package-lock.json", "package_lock"))
 
     targets.append((REPO / "launcher" / "pyproject.toml", "pyproject"))
     targets.append(
@@ -275,6 +354,7 @@ def collect_targets() -> list[tuple[Path, str]]:
 HANDLERS = {
     "pyproject": update_pyproject_version,
     "package_json": update_package_json_version,
+    "package_lock": update_package_lock_version,
     "spec": update_spec_plist,
     "init_literal": update_init_version_literal,
 }
