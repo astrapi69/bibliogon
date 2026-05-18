@@ -99,13 +99,24 @@
  * borders (their text region is positioned over the image and
  * has its own backdrop / bubble styling). */
 
-/* PB-PHASE4 Session 4c-B-1 manual smoke Finding B: bumped
- * border opacity 14% -> 25% and regionText background tint 5%
- * -> 10% on the 2 layouts where image + text coexist as
- * siblings. The original 14% / 5% values were too subtle on
- * light themes — user reported "visual separator missing"
- * because the RichTextEditor's inherited 10px padding from
- * .textInput visually swallowed the 14% border.
+/* PB-PHASE4 Session 4c-B-1 manual smoke Bug 2 (2026-05-18):
+ * the Finding B fix (border 14% -> 25% opacity-mix) was still
+ * too subtle in user re-smoke. Switched to the dedicated
+ * ``--border-strong`` theme token + 2px width — purpose-built
+ * for visible dividers, defined in every palette (Classic /
+ * Cool / Nord / Studio / Notebook x light/dark = 10 variants).
+ * No more opacity-mix off ``--text`` (which goes nearly
+ * invisible at low opacities on light themes); the dedicated
+ * token has the right contrast across all 10 theme variants.
+ *
+ * Width bumped from 1px to 2px for clear visual weight against
+ * the RichTextEditor's 10px text padding that was visually
+ * swallowing the original 1px border.
+ *
+ * History:
+ *   - Session 4 Commit 2: 1px solid 14% opacity-mix (original)
+ *   - Finding B (a69a54d): 1px solid 25% opacity-mix
+ *   - Bug 2 (this commit): 2px solid var(--border-strong)
  *
  * Applies ONLY to image_top_text_bottom + image_left_text_right.
  * speech_bubble + image_full_text_overlay layouts intentionally
@@ -114,11 +125,11 @@
  * text_only has no image region to separate from.
  */
 .canvasLayoutImageTopTextBottom .regionImage {
-    border-bottom: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+    border-bottom: 2px solid var(--border-strong);
 }
 
 .canvasLayoutImageLeftTextRight .regionImage {
-    border-right: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+    border-right: 2px solid var(--border-strong);
 }
 
 .canvasLayoutImageTopTextBottom .regionText,

@@ -553,15 +553,16 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
     })
 
     it("image_top_text_bottom: image region has border-bottom (horizontal divider)", () => {
+        // Bug 2 (2026-05-18): bumped 1px -> 2px for visual weight.
         const block = blockFor(".canvasLayoutImageTopTextBottom .regionImage")
         expect(block).not.toBe("")
-        expect(block).toMatch(/border-bottom:\s*1px\s+solid/)
+        expect(block).toMatch(/border-bottom:\s*2px\s+solid/)
     })
 
     it("image_left_text_right: image region has border-right (vertical divider)", () => {
         const block = blockFor(".canvasLayoutImageLeftTextRight .regionImage")
         expect(block).not.toBe("")
-        expect(block).toMatch(/border-right:\s*1px\s+solid/)
+        expect(block).toMatch(/border-right:\s*2px\s+solid/)
     })
 
     it("standard layouts: text region has a background tint to separate from image", () => {
@@ -590,17 +591,22 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
         expect(textOnlyRule![0]).toMatch(/var\(--text\)\s+5%/)
     })
 
-    it("Fix B: image+text-coexist layouts use 25%-opacity region border (bumped from 14%)", () => {
-        // Post-Fix-B: border opacity bumped to 25% for clearer
-        // visual separation between image region and text region.
-        // Pre-Fix-B value was 14% — explicitly assert the new
-        // value to pin the contract.
+    it("Bug 2: image+text-coexist layouts use 2px solid var(--border-strong) for the region border", () => {
+        // Bug 2 (2026-05-18): the prior Fix B (border 1px solid
+        // 25%-opacity-mix) was still too subtle in user re-smoke.
+        // Switched to the dedicated --border-strong theme token
+        // (purpose-built for visible dividers, defined in all 10
+        // theme variants) + bumped from 1px to 2px for clear
+        // visual weight against the RichTextEditor's text padding.
+        // History: 14% (orig) -> 25% (Fix B) -> var(--border-strong)
+        // 2px (Bug 2). Token-driven so dark + light themes both
+        // carry the appropriate contrast.
         const topBottom = css.match(
             /\.canvasLayoutImageTopTextBottom \.regionImage\s*\{[^}]*\}/,
         )
         expect(topBottom).not.toBeNull()
         expect(topBottom![0]).toMatch(
-            /border-bottom:\s*1px solid color-mix\(in srgb, var\(--text\)\s+25%/,
+            /border-bottom:\s*2px solid var\(--border-strong\)/,
         )
 
         const leftRight = css.match(
@@ -608,7 +614,7 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
         )
         expect(leftRight).not.toBeNull()
         expect(leftRight![0]).toMatch(
-            /border-right:\s*1px solid color-mix\(in srgb, var\(--text\)\s+25%/,
+            /border-right:\s*2px solid var\(--border-strong\)/,
         )
     })
 
