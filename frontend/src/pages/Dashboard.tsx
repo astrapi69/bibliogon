@@ -23,10 +23,9 @@ import {useBookFilters} from "../hooks/useBookFilters";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, History, ChevronDown, ChevronUp, GitCompare, SlidersHorizontal,
+    Menu, Search, ChevronDown, SlidersHorizontal,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import BackupCompareDialog from "../components/BackupCompareDialog";
 import { ImportWizardModal } from "../components/import-wizard";
 import TrashCard from "../components/trash/TrashCard";
 import styles from "./Dashboard.module.css";
@@ -53,8 +52,6 @@ export default function Dashboard() {
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
-    const [backupHistory, setBackupHistory] = useState<{timestamp: string; action: string; book_count: number; filename: string}[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     // PB-PHASE4 Session 3 Commit 9: which book_type the open Create
@@ -62,7 +59,6 @@ export default function Dashboard() {
     // empty-state button; "picture_book" when the split-button's
     // chevron menu picked the picture-book item.
     const [createBookType, setCreateBookType] = useState<BookType>("prose");
-    const [showCompareDialog, setShowCompareDialog] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
@@ -303,12 +299,6 @@ export default function Dashboard() {
             })
             .catch(() => {});
     }, []);
-
-    useEffect(() => {
-        if (showHistory) {
-            api.backup.history(20).then(setBackupHistory).catch(() => {});
-        }
-    }, [showHistory]);
 
     const maybeShowDonationOnboarding = (wasFirstBook: boolean) => {
         if (!wasFirstBook) return;
@@ -848,66 +838,6 @@ export default function Dashboard() {
                         )}
                     </>
                 )}
-                {/* Version History */}
-                <div style={{marginTop: 32}}>
-                    <div className="icon-row">
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setShowHistory(!showHistory)}
-                            style={{gap: 6}}
-                        >
-                            {showHistory ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                            <History size={14}/> {t("ui.dashboard.version_history", "Versionsgeschichte")}
-                            {backupHistory.length > 0 && ` (${backupHistory.length})`}
-                        </button>
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setShowCompareDialog(true)}
-                            style={{gap: 6}}
-                            title={t("ui.dashboard.compare_backups_tooltip", "Zwei .bgb-Dateien aus dem Dateisystem vergleichen")}
-                        >
-                            <GitCompare size={14}/> {t("ui.dashboard.compare_backups", "Backups vergleichen")}
-                        </button>
-                    </div>
-                    {showHistory && (
-                        <div style={{marginTop: 8}}>
-                            {backupHistory.length === 0 ? (
-                                <p style={{color: "var(--text-muted)", fontSize: "0.875rem", padding: "8px 0"}}>
-                                    {t("ui.dashboard.no_history", "Noch keine Backups erstellt.")}
-                                </p>
-                            ) : (
-                                <div style={{display: "flex", flexDirection: "column", gap: 4}}>
-                                    {backupHistory.map((entry, i) => (
-                                        <div key={i} style={{
-                                            display: "flex", alignItems: "center", gap: 12,
-                                            padding: "8px 12px", borderRadius: "var(--radius-sm)",
-                                            background: "var(--bg-card)", border: "1px solid var(--border)",
-                                            fontSize: "0.8125rem",
-                                        }}>
-                                            <span style={{
-                                                padding: "2px 6px", borderRadius: 3, fontSize: "0.6875rem",
-                                                fontWeight: 600, textTransform: "uppercase",
-                                                background: entry.action === "backup" ? "var(--accent-light)" : "rgba(34,197,94,0.12)",
-                                                color: entry.action === "backup" ? "var(--accent)" : "#16a34a",
-                                            }}>
-                                                {entry.action}
-                                            </span>
-                                            <span style={{color: "var(--text-secondary)"}}>
-                                                {new Date(entry.timestamp).toLocaleString()}
-                                            </span>
-                                            <span>{entry.book_count} {t("ui.dashboard.book_plural", "Bücher")}</span>
-                                            {entry.filename && (
-                                                <span style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                                                    {entry.filename}
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
             </main>
 
             <CreateBookModal
@@ -916,10 +846,6 @@ export default function Dashboard() {
                 onCreate={handleCreate}
                 onCreateFromTemplate={handleCreateFromTemplate}
                 bookType={createBookType}
-            />
-            <BackupCompareDialog
-                open={showCompareDialog}
-                onClose={() => setShowCompareDialog(false)}
             />
             <ImportWizardModal
                 open={importWizardOpen}
