@@ -2844,7 +2844,7 @@ export const api = {
         listPlugins: () => request<Record<string, unknown>>("/settings/plugins"),
 
         discoveredPlugins: () =>
-            request<{name: string; has_config: boolean; enabled: boolean; loaded: boolean}[]>("/settings/plugins/discovered"),
+            request<DiscoveredPlugin[]>("/settings/plugins/discovered"),
 
         getPlugin: (name: string) => request<Record<string, unknown>>(`/settings/plugins/${name}`),
 
@@ -3446,6 +3446,14 @@ export const api = {
     comics: {
         getInfo: () => request<ComicsPluginInfo>("/comics/info"),
     },
+
+    /** About-Dialog backend client. Single cohesive payload — app
+     *  identity + Python runtime + bundled dependency versions —
+     *  fetched on Settings > About tab mount. Stable shape per the
+     *  D1.A decision (2026-05-18 audit). */
+    system: {
+        info: () => request<SystemInfo>("/system/info"),
+    },
 };
 
 /** Identity returned by GET /api/comics/info. Stable shape through
@@ -3691,4 +3699,49 @@ export interface TranslationMultiBranchImportResult {
     /** PGS-04-FU-01: empty list on a clean import; non-empty when
      *  some branches could not be imported. */
     skipped: TranslationSkippedBranch[]
+}
+
+/** Returned by GET /api/settings/plugins/discovered. Includes the
+ *  6 pre-existing activation-state fields PLUS the 3 About-Dialog
+ *  metadata fields added in C1 (2026-05-18). The display_name and
+ *  description dicts are localized; pass through ``getLocalized``
+ *  to render. */
+export interface DiscoveredPlugin {
+    name: string
+    has_config: boolean
+    enabled: boolean
+    loaded: boolean
+    license_tier: string
+    has_license: boolean
+    display_name: Record<string, string>
+    description: Record<string, string>
+    version: string | null
+}
+
+/** Returned by GET /api/system/info. Aggregates app identity +
+ *  Python runtime + bundled-dependency versions for the About-
+ *  Dialog payload. Stable shape per the 2026-05-18 audit D1.A
+ *  decision; dependency entries can be ``null`` when a module
+ *  isn't importable so the renderer can degrade gracefully. */
+export interface SystemInfo {
+    app: {
+        name: string
+        version: string
+        license: string
+        authors: string[]
+        repository_url: string
+        issues_url: string
+    }
+    runtime: {
+        python_version: string
+        platform_system: string
+        platform_release: string
+        platform_machine: string
+    }
+    dependencies: {
+        fastapi: string | null
+        sqlalchemy: string | null
+        pydantic: string | null
+        pluginforge: string | null
+    }
 }

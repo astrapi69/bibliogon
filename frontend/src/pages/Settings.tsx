@@ -15,9 +15,10 @@ import {AuthorSettings} from "../components/settings/AuthorSettings";
 import {AuthorsDatabase} from "../components/settings/AuthorsDatabase";
 import {TopicsSettings} from "../components/settings/TopicsSettings";
 import {PluginSettings} from "../components/settings/PluginSettings";
+import {AboutSettings} from "../components/settings/AboutSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "support"] as const;
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "support", "about"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -140,6 +141,7 @@ export default function Settings() {
                         ...(getDonationsConfig(appConfig)
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
                             : []),
+                        {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
                     ];
                     const activeLabel = tabDefs.find((d) => d.value === activeTab)?.label ?? "";
                     return (
@@ -326,6 +328,9 @@ export default function Settings() {
                         <SupportSection config={getDonationsConfig(appConfig)!} />
                     </Tabs.Content>
                 ) : null}
+                <Tabs.Content value="about">
+                    <AboutSettings appConfig={appConfig} />
+                </Tabs.Content>
             </main>
             </Tabs.Root>
         </div>
