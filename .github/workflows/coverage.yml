@@ -64,6 +64,8 @@ jobs:
         include:
           - plugin: bibliogon-plugin-audiobook
             package: bibliogon_audiobook
+          - plugin: bibliogon-plugin-comics
+            package: bibliogon_comics
           - plugin: bibliogon-plugin-export
             package: bibliogon_export
           - plugin: bibliogon-plugin-getstarted

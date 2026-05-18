@@ -35,11 +35,14 @@ class ComicsPlugin(BasePlugin):
     def get_routes(self) -> list[Any]:
         """Return FastAPI routers contributed by this plugin.
 
-        Session 1 ships no routes. Session 2 adds the comic-page +
-        comic-panel + comic-bubble CRUD endpoints; the import here
-        will switch to a real router at that point.
+        Session 1 ships only ``GET /api/comics/info`` as a
+        plugin-mounted gate (see routes.py docstring). Session 2
+        adds the comic-page + comic-panel + comic-bubble CRUD
+        endpoints under the same prefix.
         """
-        return []
+        from .routes import router
+
+        return [router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         """Frontend manifest consumed by ``/api/plugins/manifests``.

@@ -16,6 +16,7 @@ pyyaml = "^6.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
 pytest-cov = "^7.1.0"
+httpx = "^0.28.0"
 
 [tool.poetry.plugins."bibliogon.plugins"]
 comics = "bibliogon_comics.plugin:ComicsPlugin"

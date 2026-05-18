@@ -286,7 +286,7 @@ lxml = ["lxml"]
 
 [[package]]
 name = "bibliogon-plugin-audiobook"
-version = "0.33.0"
+version = "0.35.1"
 description = "Audiobook generation plugin for Bibliogon: TTS-based chapter-by-chapter audio."
 optional = false
 python-versions = "^3.11"
@@ -306,8 +306,27 @@ type = "directory"
 url = "../plugins/bibliogon-plugin-audiobook"
 
 [[package]]
+name = "bibliogon-plugin-comics"
+version = "0.35.1"
+description = "Comics plugin for Bibliogon - panel-based pages, multi-bubble, comic-specific layouts (Phase 1: scaffolding)"
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastapi = "^0.136.0"
+pluginforge = "^0.5.0"
+pyyaml = "^6.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-comics"
+
+[[package]]
 name = "bibliogon-plugin-export"
-version = "0.33.0"
+version = "0.35.1"
 description = "EPUB, PDF and project structure export plugin for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -328,7 +347,7 @@ url = "../plugins/bibliogon-plugin-export"
 
 [[package]]
 name = "bibliogon-plugin-getstarted"
-version = "0.33.0"
+version = "0.35.1"
 description = "Onboarding and getting started guide for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -346,7 +365,7 @@ url = "../plugins/bibliogon-plugin-getstarted"
 
 [[package]]
 name = "bibliogon-plugin-git-sync"
-version = "0.33.0"
+version = "0.35.1"
 description = "Import plugin for write-book-template git repositories. Clones a public git URL, stages the repo, and delegates to the core WbtImportHandler."
 optional = false
 python-versions = "^3.11"
@@ -366,7 +385,7 @@ url = "../plugins/bibliogon-plugin-git-sync"
 
 [[package]]
 name = "bibliogon-plugin-grammar"
-version = "0.33.0"
+version = "0.35.1"
 description = "Grammar check plugin for Bibliogon via LanguageTool"
 optional = false
 python-versions = "^3.11"
@@ -385,7 +404,7 @@ url = "../plugins/bibliogon-plugin-grammar"
 
 [[package]]
 name = "bibliogon-plugin-help"
-version = "0.33.0"
+version = "0.35.1"
 description = "In-app help, keyboard shortcuts, and FAQ for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -403,7 +422,7 @@ url = "../plugins/bibliogon-plugin-help"
 
 [[package]]
 name = "bibliogon-plugin-kdp"
-version = "0.33.0"
+version = "0.35.1"
 description = "Amazon KDP plugin for Bibliogon - metadata export, cover validation, preview"
 optional = false
 python-versions = "^3.11"
@@ -423,7 +442,7 @@ url = "../plugins/bibliogon-plugin-kdp"
 
 [[package]]
 name = "bibliogon-plugin-kinderbuch"
-version = "0.33.0"
+version = "0.35.1"
 description = "Children's book plugin for Bibliogon - picture-per-page layout and special templates"
 optional = false
 python-versions = "^3.11"
@@ -443,7 +462,7 @@ url = "../plugins/bibliogon-plugin-kinderbuch"
 
 [[package]]
 name = "bibliogon-plugin-medium-import"
-version = "0.33.0"
+version = "0.35.1"
 description = "Medium archive importer for Bibliogon - converts Medium HTML export to Articles + Publications"
 optional = false
 python-versions = "^3.11"
@@ -466,7 +485,7 @@ url = "../plugins/bibliogon-plugin-medium-import"
 
 [[package]]
 name = "bibliogon-plugin-ms-tools"
-version = "0.33.0"
+version = "0.35.1"
 description = "Manuscript quality tools: style checks, sanitization, readability metrics."
 optional = false
 python-versions = "^3.11"
@@ -484,7 +503,7 @@ url = "../plugins/bibliogon-plugin-ms-tools"
 
 [[package]]
 name = "bibliogon-plugin-translation"
-version = "0.33.0"
+version = "0.35.1"
 description = "Translation plugin for Bibliogon: DeepL and local LLM (LMStudio) integration."
 optional = false
 python-versions = "^3.11"
@@ -8959,4 +8978,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "bb5cb22db092e75d286592ac2b49c312e3032961816180f72ccb34fe86841a0e"
+content-hash = "fcb4bd4a123fc038a0ddb738a050e5d82a33ae4fc57e9331b6eaf41cf1019043"

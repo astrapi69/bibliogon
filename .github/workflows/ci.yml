@@ -71,6 +71,7 @@ jobs:
       matrix:
         plugin:
           - bibliogon-plugin-audiobook
+          - bibliogon-plugin-comics
           - bibliogon-plugin-export
           - bibliogon-plugin-getstarted
           - bibliogon-plugin-grammar

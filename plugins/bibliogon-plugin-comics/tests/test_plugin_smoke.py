@@ -51,12 +51,17 @@ class TestComicsPluginLifecycle:
         plugin = self._make_plugin({"settings": {"reading_direction": "ltr"}})
         assert plugin.settings == {"reading_direction": "ltr"}
 
-    def test_get_routes_is_empty_in_session_1(self) -> None:
-        # Session 1 ships no FastAPI routes. Session 2 changes this;
-        # the regression-pin will fire when the first comic route lands
-        # and the test will be updated to assert the router presence.
+    def test_get_routes_returns_comics_router(self) -> None:
+        # Session 1 ships the /comics router with a single /info
+        # endpoint. Session 2 adds CRUD sub-routes under the same
+        # router; this test stays as the "at least one router is
+        # mounted" regression pin.
         plugin = self._make_plugin()
-        assert plugin.get_routes() == []
+        routers = plugin.get_routes()
+        assert len(routers) == 1
+        # APIRouter's prefix attribute is the immediate path; the
+        # /api global prefix is added by pluginforge.mount_plugin_routes.
+        assert routers[0].prefix == "/comics"
 
     def test_get_frontend_manifest_is_minimal(self) -> None:
         plugin = self._make_plugin({"settings": {}})

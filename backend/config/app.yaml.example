@@ -68,6 +68,7 @@ plugins:
   - grammar
   - git-sync
   - medium-import
+  - comics
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg

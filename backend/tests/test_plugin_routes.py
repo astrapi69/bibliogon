@@ -1,4 +1,4 @@
-"""Integration tests for dynamically mounted plugin routes (Kinderbuch, KDP).
+"""Integration tests for dynamically mounted plugin routes (Kinderbuch, KDP, Comics).
 
 These plugins are registered during the FastAPI lifespan, so the TestClient
 MUST be used as a context manager to trigger lifespan events.
@@ -163,3 +163,35 @@ class TestKdpMetadata:
         resp = client.post("/api/kdp/metadata", json=body)
         assert resp.status_code == 200
         assert len(resp.json()["keywords"]) == 7
+
+
+# ---------------------------------------------------------------------------
+# Comics plugin routes (Session 1: scaffolding)
+# ---------------------------------------------------------------------------
+
+
+class TestComicsInfo:
+    """Tests for GET /api/comics/info.
+
+    The route exists primarily as a backend-tier gate: if this endpoint
+    is missing, the backend's combined poetry.lock has lost the
+    plugin-comics path-dep. Per the "Two installation paths" rule
+    (.claude/rules/lessons-learned.md), both the backend lock and the
+    per-plugin lock must be green; this test is the backend-lock half.
+    """
+
+    def test_comics_info_returns_200(self, client: TestClient) -> None:
+        resp = client.get("/api/comics/info")
+        assert resp.status_code == 200
+
+    def test_comics_info_identity(self, client: TestClient) -> None:
+        body = client.get("/api/comics/info").json()
+        assert body["name"] == "comics"
+        assert body["version"] == "1.0.0"
+
+    def test_comics_info_session_phase(self, client: TestClient) -> None:
+        # Session-1 marker pin. If a future commit ships Session-2
+        # work, this test must update along with the plugin's status.
+        body = client.get("/api/comics/info").json()
+        assert body["session"] == 1
+        assert body["status"] == "scaffolding"

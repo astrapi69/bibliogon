@@ -26,6 +26,7 @@ bibliogon-plugin-kinderbuch = {path = "../plugins/bibliogon-plugin-kinderbuch", 
 bibliogon-plugin-translation = {path = "../plugins/bibliogon-plugin-translation", develop = true}
 bibliogon-plugin-git-sync = {path = "../plugins/bibliogon-plugin-git-sync", develop = true}
 bibliogon-plugin-medium-import = {path = "../plugins/bibliogon-plugin-medium-import", develop = true}
+bibliogon-plugin-comics = {path = "../plugins/bibliogon-plugin-comics", develop = true}
 markdown = "^3.10.2"
 alembic = "^1.18.4"
 pillow = "^12.0.0"
