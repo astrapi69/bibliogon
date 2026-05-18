@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-18 (Backlog consistency audit + sweep: 2 CLOSED stubs archived to docs/roadmap-archive/2026-05.md (PICTURE-BOOK-PDF-TIPTAP-RENDER-01 closed by Finding G4, PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 closed by Session 4c); STARLETTE-V1-AWAIT-FASTAPI-01 + CLICK-V8-3-AWAIT-GTTS-01 reclassified from P5 to Blocked/Upstream Wait with full bodies in a new "Backlog-only blocked items" sub-section under the summary table (they were labeled `(BLOCKED, upstream)` but living in P5 — tier-misclassification surfaced by today's consistency audit). Counts refreshed.)
+Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
 Current version: v0.35.1
-Open tasks: 54 active (P2..P5) + 4 BLOCKED-on-upstream entries
+Open tasks: 53 active (P2..P5) + 4 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -426,44 +426,6 @@ store.
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
 
-- **PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01** (P5,
-  narrower follow-up to the closed POSITIONING-01): drag-to-
-  position UI for the speech-bubble. Session 4c shipped the
-  preset path (5 anchor presets — TL/TR/BL/BR/CENTER — plus
-  opacity + size sliders); 4c-B-1 Fix A extended to the full
-  9-position anchor grid. This item adds free-form positioning
-  if the 9 presets aren't enough for an author's use case.
-
-  Multi-Bubble context (added 2026-05-19 from Finding E):
-  drag-to-position becomes substantially more valuable once
-  ``PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`` ships — multiple
-  bubbles on a single scene want fine-grained per-bubble
-  positioning (presets feel coarse when 3+ bubbles overlap).
-  Schedule this item as part of the Comic-Foundation Session
-  alongside MULTI-BUBBLE-01 + TAIL-01 rather than as an
-  isolated drag-only commit; the three together form one
-  coherent bubble-system upgrade.
-
-  Trigger: user requests bubble positioning beyond the 9
-  presets OR drag-to-position UX feedback from a real
-  picture-book authoring session OR Comic-Foundation
-  Session starts. NOT schedule-tied as a standalone item.
-  Scope: pointer-drag handle on the bubble itself; persist
-  `{anchor_position: {x_pct, y_pct}}` shape (extending the
-  current string-preset shape, NOT replacing — preset names
-  stay as a quick-pick fallback); PageCanvas reads the dict
-  form when present and applies `left: x_pct%; top: y_pct%;
-  transform: translate(-50%, -50%)`. Vitest + E2E.
-  Effort: 2-4 commits standalone; folded into the Comic-
-  Foundation Session as one of the three bubble-system
-  commits, the marginal cost drops to ~1-2 commits.
-  Closure note: superseded the broader
-  PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 (closed by
-  Session 4c). That older item was filed at Session 4 close
-  as the entire "write-path closure"; Session 4c shipped the
-  preset write-path; this narrower item carries the
-  drag-positioning future-work forward.
-
 - **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01** (P3):
   ship Tier 1 + Tier 2 extended properties for the speech-
   bubble layout (11 properties total beyond the 3 Session 4c
@@ -558,76 +520,78 @@ store.
   shape variants. Probably warrants its own Pre-Inspection
   + design discussion before implementation.
 
-- **PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01** (P3, filed
-  2026-05-19 from Finding E manual smoke): support multiple
-  speech-bubbles per page instead of the single-bubble
-  shape that Sessions 4c + 4c-B-1 + 4c-B-2 ship.
+- **PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01** (P3,
+  trigger-gated, filed 2026-05-18 from Comic-Foundation
+  reframe): scaffold the `plugin-comics` plugin under the
+  existing `Book.book_type = "comic_book"` reservation
+  in [backend/app/models/__init__.py:72-75](../../backend/app/models/__init__.py#L72-L75).
 
-  Schema change: ``layout_config.speech_bubbles[]`` array
-  replaces the current flat single-bubble dict. Each
-  array entry carries the per-bubble Tier-Properties
-  (background_color, border_*, font_*, anchor_position,
-  size, opacity, plus the new tail config from TAIL-01).
-  Backward compatibility: when reading a row with the
-  legacy single-bubble dict shape, the canvas + editor
-  treat it as a one-entry array; on next write the
-  dispatcher always serializes the array form. No data
-  migration; legacy shape naturally fades out as users
-  edit pages.
+  Substantial scope (16-22 commits across 3-4 sessions);
+  full architectural analysis + multi-session roadmap +
+  half-wired risks + accessibility + competitor study
+  lives in
+  [`docs/explorations/comic-foundation.md`](../explorations/comic-foundation.md).
+  This backlog entry is the lightweight tracker; the
+  exploration doc is the spec.
 
-  Scope:
-  - Schema migration shim in PageCanvas + properties pane
-    (read-side: array OR legacy dict)
-  - Add-bubble UI affordance (button in properties pane)
-  - Delete-bubble UI (per-bubble remove button)
-  - Active-bubble selector in properties pane (one bubble
-    config is shown / editable at a time; click another
-    bubble on the canvas to switch active)
-  - PDF export walker handles the array
-  - i18n + Vitest + E2E
+  Scope summary:
+  - Session 0 (optional): tail-triangle on picture-book
+    single bubble (SVG `<path>` primitive). Tracked
+    separately as `PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`
+    in active backlog.
+  - Session 1: plugin-comics package + `ComicsPlugin
+    (BasePlugin)` + `comic_pages` Alembic migration +
+    `comic_book` book_type wired in book-create flow.
+  - Session 2: `comic_panels` + `comic_bubbles` tables
+    + panel-grid layouts + add/delete/active-bubble UI
+    + bubble-type variants + tail rendering + PDF walker.
+  - Session 3: drag-to-position + snap-to-preset +
+    keyboard nudge + per-bubble undo + reading direction
+    (LTR/RTL) + z-order controls + i18n × 8 + E2E.
 
-  Strategic note: this is the architectural anchor of the
-  post-v0.35.0 **Comic-Foundation Session**. Establishes
-  the multi-bubble + tail + drag pattern that a future
-  Comic-Plugin reuses verbatim — one bubble-system,
-  multiple usage contexts (single-page picture-book scene
-  vs. multi-panel comic page). Matches the Single-Source-
-  of-Truth discipline: extract the bubble component once,
-  not twice.
+  Migrated items (closed in picture-book scope, moved
+  here):
+  - `PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01` (P3, was) —
+    archived 2026-05-18; multi-bubble belongs to plugin-
+    comics.
+  - `PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01` (P5,
+    was) — archived 2026-05-18; drag belongs to plugin-
+    comics Session 3.
 
-  Pairs with:
-  - ``PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`` (sibling Comic-
-    Foundation item; tail-configurability per bubble)
-  - ``PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01`` (P5;
-    drag-to-position per bubble; gains real value once
-    multiple bubbles coexist)
-  - ``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01``
-    (the 4c-B-2 Tier-Properties become per-bubble; each
-    array entry carries its own Tier-1 + Tier-2 dict)
+  Trigger:
+  - Picture-Book Phase 4 fully closed (4c-B-2 +
+    EXTENDED-SHAPE-01 + PDF-KDP-FORMATS-01 +
+    PDF-BLEED-MARKS-01 + remaining picture-book items
+    at `[x]`), OR
+  - Explicit user-go-ahead to start plugin-comics
+    before Picture-Book Phase 4 close.
 
-  Schema-decision (defer to Pre-Inspection of Comic-
-  Foundation Session): does the multi-bubble shape stay
-  under the existing ``speech_bubble`` PageLayout, OR
-  does a new ``comic_bubble`` PageLayout (or a future
-  ``comic_panel`` layout in a Comic-Plugin) carry the
-  multi-bubble shape with a different surface entirely?
-  The user's framing: "quasi Comic for one page within
-  Picture-Book Layout" — points at the
-  "extend speech_bubble" path for the picture-book MVP
-  and a separate comic_panel layout later for true
-  multi-panel comic work. Resolve at Comic-Foundation
-  Pre-Inspection time.
+  Cross-references:
+  - `comic_book` book_type reserved in
+    `backend/app/models/__init__.py` (no migration
+    needed at the books table level).
+  - `children-book-plugin.md` established the per-
+    book-type plugin-ownership pattern.
+  - Comic-Foundation exploration is the spec; do not
+    re-derive at session-1 Pre-Inspection time.
 
-  Trigger: Comic-Foundation Session (post-v0.35.0,
-  scheduled after the 4-stream v0.35.0 bundle closes)
-  OR earlier user request for multi-bubble on a single
-  picture-book page. Effort: 5-8 commits if extending
-  speech_bubble; 8-12 if introducing a new layout.
+  Effort: 16-22 commits across 3-4 sessions. Within
+  session stop-condition (5-9 commits / session).
 
 - **PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01** (P3, filed
-  2026-05-19 from Finding E manual smoke): speech-bubble
+  2026-05-19 from Finding E manual smoke; re-scoped
+  2026-05-18 to picture-book polish): speech-bubble
   with a configurable tail-triangle pointing to the
-  speaking character. Sibling Comic-Foundation item.
+  speaking character.
+
+  **Scope clarification (2026-05-18)**: per the Comic-
+  Foundation reframe, this item now stays in picture-
+  book scope as OPTIONAL polish on the existing single
+  bubble. The visual primitive (SVG `<path>` tail
+  renderer) is reusable in plugin-comics regardless of
+  when picture-book ships it — making this a useful
+  Session 0 in the plugin-comics roadmap OR a stand-
+  alone picture-book improvement.
 
   Scope:
   - tail-direction: 8 octants (N / NE / E / SE / S / SW /
@@ -644,24 +608,28 @@ store.
     to author but doesn't anti-alias as well.
 
   Pairs with:
-  - ``PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`` (each
-    bubble in the array carries its own tail config)
+  - ``PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01`` — the
+    SVG-tail visual primitive shipped here is reusable
+    by plugin-comics (Session 2 multi-bubble work
+    inherits it).
   - ``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01``
     (broader Tier-3 shape work; tail was originally a
     sub-scope there, promoted out to this dedicated item
-    on 2026-05-19)
+    on 2026-05-19).
 
-  Strategic note: ships alongside MULTI-BUBBLE-01 in the
-  Comic-Foundation Session. The two together establish
-  the "bubble-system" reusable for the future Comic-
-  Plugin. Tail-direction is the visual cue that
-  distinguishes "bubble for character A" from "bubble
-  for character B" on the same scene — without it,
-  multi-bubble is just multi-text-box.
+  Strategic note (2026-05-18 reframe): the SVG tail
+  primitive is small enough to ship as picture-book
+  polish on the existing single bubble. If shipped
+  before plugin-comics work begins, plugin-comics
+  Session 2 inherits the primitive rather than
+  re-deriving it. If picture-book defers, plugin-comics
+  ships the primitive in Session 2 (or as a Session 0
+  pre-step).
 
-  Trigger: Comic-Foundation Session OR user requests
-  tail-bubble visual on a single-bubble page. Effort:
-  3-5 commits (SVG render + properties-pane controls +
+  Trigger: picture-book authoring polish OR plugin-
+  comics session-1 Pre-Inspection prefers to have the
+  primitive battle-tested before multi-bubble. Effort:
+  2-3 commits (SVG render + properties-pane controls +
   i18n + Vitest + E2E).
 
 - **PICTURE-BOOK-STORYBOARD-VIEW-01** (P3, filed
@@ -732,13 +700,17 @@ store.
     pattern (Multi-Book-Type migration target).
 
   Pairs with / cross-references:
-  - `PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`
-    (Comic-Foundation Session anchor)
+  - `PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01`
+    (multi-bubble + panel work, replaces the
+    earlier "Comic-Foundation Session" framing
+    that lived in picture-book; reframed
+    2026-05-18 to plugin-comics scope)
   - `PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`
-    (Comic-Foundation Session anchor)
-  - Candidate for a Combined-Storyboard-Plus-Comic-
-    Foundation Session post-v0.35.0 if scheduling
-    aligns.
+    (optional picture-book polish; SVG-tail
+    primitive reusable in plugin-comics)
+  - Candidate for a Combined-Storyboard-plus-
+    plugin-comics-session sequencing if both
+    land in the same v0.36.x cycle.
 
   Schema-Foundation-Pre-Commitment question for
   4c-B-2 Tier-Property scope: if Storyboard later

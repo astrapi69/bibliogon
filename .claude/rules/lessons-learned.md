@@ -3423,3 +3423,128 @@ both `useViewMode` and the new `useTrashViewMode` simultaneously).
 - "End-to-end behavior tests are not 'kwarg passes through'
   tests" — both rules pin "test the OBSERVABLE OUTPUT through
   the full component tree", not just the new code's inputs.
+
+## Exploration docs need a Pre-audit section before any architecture proposal
+
+Surfaced 2026-05-18 from the Comic-Foundation exploration
+reframe. The first-draft `docs/explorations/comic-foundation.md`
+(stub commit `de83dcc`) proposed extending the Picture-Book
+`speech_bubble` PageLayout with a multi-bubble array. The user
+critique caught a foundational conflict: `Book.book_type`
+already reserves `"comic_book"` at the schema layer for a
+future separate `plugin-comics` (see
+[backend/app/models/__init__.py:72-75](../../backend/app/models/__init__.py)
++ [docs/explorations/children-book-plugin.md:13-23](../../docs/explorations/children-book-plugin.md)).
+The reframe moved Comic-Foundation work to plugin-comics scope.
+
+The architectural conflict was visible in the codebase in two
+places (the model comment + the parent exploration doc). The
+stub doc was 95 lines and skipped both. The canonical
+exploration-doc structure (per `children-book-plugin.md`)
+opens with a **Pre-audit: current state of the moving parts**
+section precisely to surface these constraints. The stub
+had no Pre-audit section.
+
+### Rule
+
+Any exploration doc that proposes a NEW architecture / NEW
+schema / NEW plugin / NEW feature surface MUST include a
+**Pre-audit section** before any proposal. Concrete
+requirements:
+
+1. **Audit the existing schema** (`backend/app/models/__init__.py`,
+   relevant plugins' models, Alembic migrations) for
+   reservations, discriminators, or fields that constrain the
+   proposed shape. Quote the constraints with file:line
+   citations.
+2. **Audit parent exploration docs** (cross-referenced in
+   the new doc's domain) for prior decisions that the new
+   work inherits OR conflicts with.
+3. **Audit related backlog items** for the architectural
+   commitments they imply.
+4. **Audit the lessons-learned rules** for prior incidents
+   in the same area.
+5. State the audit findings BEFORE the architecture proposal.
+   If a conflict is found, the proposal section explicitly
+   reconciles with the constraint OR documents why the
+   constraint is being overridden.
+
+The Pre-audit section is to architecture proposals what the
+Pre-Inspection step is to feature implementations: a forcing
+function to check the existing state before committing to a
+new direction.
+
+### Detection heuristic
+
+When reviewing an exploration doc:
+
+- Does it have a "Pre-audit" or equivalent section?
+- Does it cite specific file:line references for prior
+  architectural commitments?
+- Does the architecture proposal reconcile with those
+  commitments?
+- Are related rules / memory entries / lessons cross-
+  referenced?
+
+If any answer is "no", the doc is at risk of repeating the
+2026-05-18 Comic-Foundation reframe pattern: ship a thin
+stub, propose a direction, get critiqued, reframe.
+
+### Concrete cost saved by the Pre-audit step
+
+The Comic-Foundation reframe required:
+
+- One critique pass (~30 min) to catch the conflict
+- One doc rewrite (95 lines → 736 lines) to install proper
+  framing
+- One backlog migration (2 items archived, 1 item re-scoped,
+  1 new item filed)
+
+All of which would have been avoided if the stub had opened
+with: "Pre-audit finds `book_type = 'comic_book'` reservation;
+multi-bubble work must live in plugin-comics, not extend
+picture-book." That sentence is a 30-second grep at the
+moment of writing — vs a half-day of rework after the fact.
+
+### Multi-tool collaboration amplifier
+
+The 2026-05-18 incident also illustrates the multi-tool
+collaboration drift pattern (per the existing
+"Multi-tool collaboration tracking" rule). The stub was
+drafted from a Strategic-Advisor session ("Claude in chat",
+parallel to the execution session). The execution session
+had visibility into the codebase but accepted the chat-
+session's framing without running the Pre-audit. Both
+sessions missed the `comic_book` reservation; only the
+critique pass caught it.
+
+Implication: when a parallel-agent / chat-session hands off
+a spec for an exploration doc, the execution session MUST
+NOT skip the Pre-audit on the assumption that the chat-
+session already did it. Each session validates its own
+audit independently.
+
+### Pairs with
+
+- "Multi-tool collaboration tracking: re-sync before
+  accepting new orders" — same family. Multi-tool drift
+  amplifies this risk: a parallel-planning agent may not
+  have visibility into the schema reservations the
+  execution agent has.
+- "Real-world data audit BEFORE implementation prevents
+  spec-vs-reality drift" — runtime-data analog of this
+  schema-state analog.
+- "Schema 'preserved' / 'always set' claims must survive
+  real-data audit before becoming spec" — schema-claim
+  analog.
+- `ai-workflow.md` Pre-Inspection step — implementation
+  analog. Pre-audit is the doc-writing analog.
+
+### Anti-pattern
+
+Treating an exploration doc as a brainstorm-dump that
+someone else will audit later. The audit IS the doc's job.
+A 95-line "brainstorm dump" stub that pushes the audit cost
+downstream generates more total work than a 400-line proper
+doc with the audit upfront — by the cost ratio observed in
+this incident (30 seconds vs. half a day).
