@@ -1,0 +1,29 @@
+plugin:
+  name: "git-sync"
+  display_name:
+    de: "Git-Sync"
+    en: "Git Sync"
+    es: "Sincronización Git"
+    fr: "Synchronisation Git"
+    el: "Συγχρονισμός Git"
+    pt: "Sincronização Git"
+    tr: "Git Senkronizasyonu"
+    ja: "Git 同期"
+  description:
+    de: "Importiert Bücher aus write-book-template Git-Repositories über die Import-Wizard URL-Eingabe."
+    en: "Imports books from write-book-template git repositories via the import wizard's URL input."
+    es: "Importa libros desde repositorios git de write-book-template mediante la entrada de URL del asistente de importación."
+    fr: "Importe des livres depuis les dépôts git write-book-template via le champ URL de l'assistant d'importation."
+    el: "Εισάγει βιβλία από αποθετήρια git write-book-template μέσω της εισόδου URL του οδηγού εισαγωγής."
+    pt: "Importa livros de repositórios git write-book-template através da entrada de URL do assistente de importação."
+    tr: "İçe aktarma sihirbazının URL girişi aracılığıyla write-book-template git depolarından kitap içe aktarır."
+    ja: "インポートウィザードの URL 入力を介して write-book-template の Git リポジトリから書籍をインポートします。"
+  version: "1.0.0"
+  license_tier: core
+  depends_on: []
+  api_version: "1"
+  entry_point: bibliogon_git_sync.plugin:GitSyncPlugin
+
+# No user-editable settings. git-sync's behavior is fully driven by
+# the per-import-request URL (no global configuration).
+settings: {}

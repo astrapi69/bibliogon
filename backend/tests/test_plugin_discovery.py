@@ -54,3 +54,34 @@ def test_plugin_configs_includes_kdp():
     assert resp.status_code == 200
     names = set(resp.json().keys())
     assert "kdp" in names
+
+
+def test_git_sync_yaml_loads_with_display_name():
+    """git-sync ships backend/config/plugins/git-sync.yaml with i18n.
+
+    Regression-pin for the 2026-05-18 plugin-metadata pattern audit
+    Sub-finding A.1: git-sync was the only plugin lacking a
+    canonical config file, so the Settings UI rendered the raw
+    slug instead of a localized display name. The running backend
+    logged the gap every startup:
+        DEBUG [pluginforge.config] Config file not found, using
+        empty defaults: backend/config/plugins/git-sync.yaml
+
+    This test asserts the yaml is now present + carries i18n
+    metadata in at least de + en. Future contributors removing the
+    file or stripping languages back to 0 will fire this test.
+    """
+    from app import config_overlay
+
+    cfg = config_overlay.read_plugin_config_merged("git-sync")
+    plugin_block = cfg.get("plugin", {})
+    assert plugin_block, "git-sync.yaml plugin block must be present"
+    assert plugin_block.get("name") == "git-sync"
+    display_name = plugin_block.get("display_name") or {}
+    assert "de" in display_name, "git-sync display_name must include German"
+    assert "en" in display_name, "git-sync display_name must include English"
+    assert display_name["en"] == "Git Sync"
+    description = plugin_block.get("description") or {}
+    assert "de" in description and "en" in description, (
+        "git-sync description must include de + en at minimum"
+    )
