@@ -61,6 +61,254 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01** (P3, FEATURE-REQUEST,
+  filed 2026-05-18 from real-user-smoke during Picture-Book +
+  Article-conversion workflow): Alt+Z keyboard shortcut is not
+  functional in any of Bibliogon's editor surfaces. User
+  expectation matches the industry-standard convention from
+  VS Code / Sublime / IntelliJ where Alt+Z toggles word-wrap.
+
+  Affected surfaces:
+  1. RichTextEditor wrapper (Picture-Book D6-C properties pane,
+     ``frontend/src/components/RichTextEditor.tsx``)
+  2. ArticleEditor (TipTap, ``pages/ArticleEditor.tsx``)
+  3. BookEditor (TipTap, ``pages/BookEditor.tsx``)
+  4. Markdown editor (if a separate surface — verify in
+     Pre-Inspection)
+
+  Expected behavior:
+  - Alt+Z toggles a word-wrap mode on the active editor's
+    content surface
+  - Behaviour consistent across all 4 surfaces (one shared
+    handler if extracted)
+  - ``aria-keyshortcuts`` attribute on the editor root for
+    a11y discovery
+  - Per-user preference for word-wrap default (Settings, OR
+    persist last toggle to localStorage)
+  - Visual feedback (line wrap state change is its own signal,
+    no toast needed)
+
+  Fix scope (estimated 1-2 commits):
+  - Add Alt+Z handler to RichTextEditor (the D6-C wrapper)
+  - Plus Add handler to ArticleEditor + BookEditor (TipTap)
+  - Plus add to Markdown editor if separate
+  - Plus optional Settings preference for default state
+  - Plus Vitest regression-pin for handler invocation
+  - Plus aria-keyshortcuts attribute
+
+  Pre-Inspection scope-expansion candidates: identify other
+  industry-standard editor shortcuts currently missing
+  (Ctrl+/ comment-toggle, Ctrl+D duplicate-line, Ctrl+Shift+K
+  delete-line, etc.) — if multiple are missing, consider one
+  coordinated keyboard-shortcuts session rather than 4
+  single-shortcut sessions.
+
+  Recurring-Component-Unification check: the 4 editor surfaces
+  are exactly the kind of UI pattern (>2 sites with the same
+  conceptual handler) that the 2026-05-19 rule fires on. If
+  this lands as a real session, extract the handler as a
+  shared hook (``useEditorShortcuts`` or similar) in the SAME
+  session rather than adding 4 inline implementations. Tracked
+  separately as ``KEYBOARD-SHORTCUTS-SHARED-EXTRACTION-01``
+  (P3, scope-expansion candidate) if and when this lands.
+
+  Trigger: separate Future-Session for editor keyboard-
+  shortcuts polish, OR user follow-up if Alt+Z absence becomes
+  a daily-use irritant.
+
+- **CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01** (P3, UX-BUG,
+  filed 2026-05-18 from real-user-smoke during article-to-book
+  conversion workflow): the ConvertToBookWizard dialog
+  ([frontend/src/components/ConvertToBookWizard.tsx](../frontend/src/components/ConvertToBookWizard.tsx))
+  has two distinct layout-instability bugs that break user
+  muscle-memory and visual continuity across the wizard's
+  steps.
+
+  Concrete issues:
+  1. **Dialog jumping**: dialog dimensions change between
+     steps based on content amount. The visual jump breaks
+     the impression of a stable container the user is
+     navigating through.
+  2. **Action-button position shift**: the final-step
+     "Create Book" button appears in a different position
+     than the "Weiter / Next" button on previous steps. The
+     user's mouse / cursor / keyboard-Tab muscle-memory
+     misses on the last click.
+
+  Expected behavior:
+  - Dialog dimensions stable across all wizard steps (set
+    ``min-height`` and ``max-height`` constraints; pin the
+    width with the existing CSS-Module pattern)
+  - Action button (Weiter / Next / Create Book) sits in the
+    same slot in the dialog footer across all steps — the
+    label changes, the position does not
+  - Matches the layout-stability pattern already in use by
+    other Bibliogon dialogs (audit ``CreateBookModal``,
+    ``ExportDialog``, ``ImportWizardModal`` for the
+    canonical shape)
+
+  Fix scope (estimated 2-3 commits):
+  - Audit dialog-height behaviour per step + identify the
+    fixed dimensions that fit all steps' content
+  - CSS ``min-height`` + ``max-height`` constraint to
+    prevent jumping (overflow-y: auto inside the content
+    region for content that exceeds max-height)
+  - Action-button consistent positioning: "Create Book"
+    inherits the "Weiter" button slot in the dialog footer
+  - Vitest regression-pin for dialog stability (rendered
+    dimensions across steps within a tolerance band)
+  - E2E Playwright pin walking all wizard steps + asserting
+    the action-button data-testid resolves at the same
+    bounding-box position
+
+  Recurring-Component-Unification check: do
+  ConvertToBookWizard + CreateBookModal + ImportWizardModal
+  + ExportDialog + AppDialog share a dialog-stability
+  pattern that could be extracted to a shared dialog shell?
+  If yes, file separate
+  ``DIALOG-SHELL-EXTRACTION-01`` (P3) per the 2-surface
+  threshold rule. If no, the fix is wizard-local.
+
+  Trigger: separate Future-Session for
+  ConvertToBookWizard UX polish.
+
+- **BOOKDASHBOARD-CLEANUP-01** (P3, UX, filed 2026-05-18 from
+  real-user-smoke during Picture-Book authoring): three legacy
+  UI elements on BookDashboard
+  ([frontend/src/pages/Dashboard.tsx](../frontend/src/pages/Dashboard.tsx))
+  became redundant after the Picture-Book Phase 4 split-button
+  shipped (v0.34.0). User-feedback identifies all three as
+  cleanup candidates.
+
+  Concrete cleanup targets:
+
+  1. **"Version history" button** — REMOVE (pending
+     Pre-Inspection track C below). Functionality reason TBD;
+     may be obsolete OR may need relocation.
+  2. **"Compare backups" button** — RELOCATE. User
+     direction: "in Settings OR best-practice location per
+     audit". Final location decided after Pre-Inspection
+     track B below.
+  3. **"+ Create Book" centre button** — REMOVE. Redundant
+     with the Picture-Book Phase 4 split-button at the
+     top-right (v0.34.0). The split-button already covers
+     prose-book + picture-book creation paths; comic-book
+     creation lands when plugin-comics Session 1 ships.
+
+  Pre-Inspection STOP gate before any code:
+
+  - **Track A — audit current BookDashboard**: identify the
+    3 buttons and their wiring, capture when each shipped
+    (git history), document current functionality + user
+    flow each supports.
+  - **Track B — Compare-Backups relocation best-practice**:
+    survey industry pattern for backup features in similar
+    tools (Notion, Bear, Evernote, Affinity Publisher,
+    Scrivener). Plus survey Bibliogon's existing utility-
+    feature placements (Settings tabs, hamburger menus,
+    book-editor context-menus). Evaluate the candidate
+    locations:
+    a) New Settings "Backups" tab
+    b) Settings → Allgemein → Backups section
+    c) Book-Editor header context-menu (per-book scope)
+    d) Dashboard footer / sidebar utility area
+    e) Tools menu (if such a surface exists)
+    Surface the recommendation with rationale; the user
+    picks before any code.
+  - **Track C — Version-History removal verification**:
+    determine what the button currently does. If
+    functionality obsolete: confirm safe-to-remove. If
+    still-valuable: surface as a relocation decision
+    rather than a removal.
+  - **Track D — +Create-Book centre button verification**:
+    confirm the split-button at top-right covers all
+    creation entry points. Check for any flows
+    (onboarding, tutorial, deep-link, keyboard-shortcut)
+    that depend on the centre button.
+
+  Fix scope (after Pre-Inspection, estimated 2-4 commits):
+  - BookDashboard cleanup (remove or relocate the 3 elements)
+  - Compare-Backups relocation (separate commit per
+    target-location decision)
+  - Vitest regression-pin for removed buttons
+  - E2E Playwright pin for the new Compare-Backups location
+  - Accessibility: any aria-labels or keyboard-shortcuts
+    that referenced the removed buttons get cleaned up
+
+  Trigger: separate Future-Session for BookDashboard
+  UX-Polish, ideally paired with the
+  ``ARTICLEFILTERBAR-EXTRACT-01`` / Dashboard-extraction work
+  if the audit surfaces overlap.
+
+- **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P3, DOC/ONBOARDING,
+  filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
+  architecture work that landed across v0.34.0 + v0.35.0 +
+  plugin-comics Foundation): the
+  ``plugin-getstarted`` onboarding flow was built before
+  Picture-Book and Comic-Book existed. It now needs to introduce
+  all 3 book types currently available (prose, picture-book,
+  comic-book — pending plugin-comics Session 1 close).
+
+  Concrete gaps:
+  1. Get-Started doesn't explain Prose vs Picture-Book vs
+     Comic-Book differences
+  2. Plus doesn't guide the user to the appropriate book
+     type for their project
+  3. Plus doesn't introduce new features that landed after
+     the plugin was last touched (PDF Export, Categories +
+     BISAC, picture-book layouts, RichTextEditor, etc.)
+
+  Expected behavior:
+  - Get-Started introduces 3 book types with use-case
+    guidance ("write a novel? → Prose. Write a children's
+    book? → Picture-Book. Write a comic? → Comic-Book")
+  - Visual examples per book type (sample cover + one page
+    rendered in the style of each)
+  - Links to relevant help docs per book type
+  - Matches existing plugin-getstarted UI patterns rather
+    than introducing a new visual language
+
+  Fix scope (estimated 3-4 commits):
+  - Get-Started content rewrite (1-2 commits)
+  - i18n in EN + DE per the existing exploration-doc
+    pattern (NOT 8 catalogs — prose limited to EN + DE per
+    the lessons-learned rule for onboarding/help docs)
+  - Vitest for new screens
+  - E2E Playwright for the full onboarding flow
+
+  Scope-expansion candidates (consider one coordinated
+  session):
+  - v0.36.0 Doc-Sweep (the 4c-B-1-DOCS tentative session)
+    could include the Get-Started update if both touch
+    plugin-getstarted
+  - Picture-Book + Comic-Book help-doc parity sweep can
+    ride along if the Get-Started rewrite surfaces gaps
+
+  Recurring-Component-Unification check: a "book-type card"
+  component could be shared across Get-Started + Dashboard
+  (the future CreateBookModal flow that picks book type
+  before opening the wizard). If both surfaces converge on
+  the same card shape, extract once. Filed as scope-
+  expansion candidate, not a separate item.
+
+  Single-Source-of-Truth check: the 3 book-type definitions
+  (label, description, sample, help-doc link) should live in
+  ONE config (e.g.
+  ``backend/config/book-types.yaml`` or a Python module
+  read by both the backend and the frontend onboarding) so
+  adding a 4th book type later updates one file, not three.
+
+  Half-Wired-Prevention check: onboarding must introduce
+  ALL 3 book types when it ships — not 2 with comics "coming
+  soon". Plugin-comics Session 1 needs to be closed before
+  this work begins, OR the onboarding ships gated behind
+  ``plugin-comics`` activation status with a fallback for
+  the 2-book-type case.
+
+  Trigger: 4c-B-1-DOCS coordinated session, OR separate
+  onboarding-focused session once plugin-comics Session 1
+  ships.
+
 - **REMINDER-PANEL-GENERIC-EXTRACTION-01** (P3, filed
   2026-05-18 from v0.35.1 donation tuning): extract a
   generic ``ReminderPanel`` component from the existing
