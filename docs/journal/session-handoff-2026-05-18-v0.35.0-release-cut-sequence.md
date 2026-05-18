@@ -17,17 +17,56 @@ This doc is the focused next-action gate.
 
 ## The v0.35.0 sequence (user directive)
 
+**REVISED 2026-05-19:** Author-select extraction + Recurring-
+Component audit are POST-v0.35.0 work, NOT bundled in the
+release. v0.35.0 bundles only the three picture-book + import
+streams.
+
 ```
 1. Session 4c-B (Picture-Book Editor TipTap + Tier-Properties)
 2. Async-Import Phase 3 (i18n + Playwright)
-3. AUTHOR-SELECT-INPUT-EXTRACT-01
-   + RECURRING-COMPONENT-AUDIT-01 (coordinated session)
-4. v0.35.0 release cut
+3. v0.35.0 release cut (bundles S6 PDF + Async-Import + 4c-B)
+4. AUTHOR-SELECT-INPUT-EXTRACT-01
+   + RECURRING-COMPONENT-AUDIT-01 (coordinated session, post-release)
+5. Future sessions per backlog priorities
 ```
 
 **Discipline**: user runs manual smoke after each session
-close before authorizing the next. All four work-streams
-ship together as v0.35.0.
+close before authorizing the next. Three work-streams (S6 PDF,
+Async-Import Phase 3, 4c-B) ship together as v0.35.0; the
+extraction-plus-audit work runs AFTER the release as its own
+coordinated session.
+
+## Session 4c-B Pre-Inspection (2026-05-19)
+
+S6 PDF Export closed at commit `9f7177f` (8/8 audit commits).
+4c-B Pre-Inspection ran 2026-05-19 with tracks:
+
+- **Track A**: TipTap-Pattern audit — Editor.tsx mounts 20+
+  extensions + StarterKit, controlled JSON content, 800 ms
+  autosave + 2000 ms IndexedDB draft, fixed-top Toolbar,
+  NO read-only render variant. Reuse-assessment: NEW
+  `RichTextEditor` wrapper recommended (chapter-system
+  hardcoding in current Editor blocks direct reuse for
+  page contexts).
+- **Track B**: `page.text_content` schema — same `Text`
+  column as `Chapter.content` (which already stores JSON).
+  No Alembic migration needed; backward-compat on read
+  wraps legacy plain text into TipTap doc.
+- **Track C**: Tier-Property scope — Bubble grows 3→13
+  properties, Overlay-Text grows 2→~12. Shared subcomponents
+  per Recurring-Component Unification Rule:
+  `CollapsibleSection` + `TypographyEditor` + `ColorPicker` +
+  `DimensionSlider`.
+- **Track D**: Editor placement — hybrid (inline TipTap mount
+  in PageCanvas `regionText`, properties-pane Toolbar). Matches
+  the existing fixed-top Toolbar pattern, preserves WYSIWYG.
+
+D1-D6 recommendations + commit estimate landed in the
+Pre-Inspection surface message. Awaiting user GO. Total
+estimate 13-17 commits → **session-split contingency triggers**:
+4c-B-1 (TipTap-Integration, 6-8 commits) + 4c-B-2 (Tier-
+Property, 6-9 commits).
 
 ---
 
