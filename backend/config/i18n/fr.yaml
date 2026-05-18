@@ -1095,6 +1095,9 @@ ui:
     cover_image: "Couverture"
     characters: "caracteres"
     custom_css: "CSS personnalise"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     copy_from: "Copier d'un livre"
     copy_hint: "Copie editeur, bio auteur et CSS d'un autre livre:"
     copy_success: "Informations editeur et auteur appliquees"
@@ -1619,6 +1622,12 @@ ui:
       uploading: "Téléversement …"
       uploading_aria: "Progression du téléversement"
       processing: "Traitement sur le serveur. Les archives volumineuses peuvent prendre plus de temps."
+      async_aria: "Progression de l'import"
+      async_counter: "{current} sur {total} publications"
+      async_tally_imported: "{count} importés"
+      async_tally_skipped: "{count} ignorés"
+      async_tally_errored: "{count} erreurs"
+      async_tally_comments: "{count} commentaires"
     preview:
       card_title: "Aperçu et sélection"
       card_hint: "Décochez les cases des publications que vous NE voulez PAS importer. Toutes sont sélectionnées par défaut."
@@ -1639,6 +1648,7 @@ ui:
       badge_dedup_tooltip: "Un article avec la même URL existe déjà."
       badge_warnings: "{count} avertissements"
       cancel: "Annuler"
+      cancel_import: "Annuler l'import"
       import_selected: "Importer {count} publications"
       importing: "Importation …"
     result:
@@ -2009,6 +2019,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     config:
       speech_bubble:
         heading: "Speech bubble"

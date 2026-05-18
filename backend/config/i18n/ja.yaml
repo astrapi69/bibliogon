@@ -1059,6 +1059,9 @@ ui:
     cover_image: "表紙"
     characters: "文字"
     custom_css: "カスタムCSS"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     copy_from: "書籍からコピー"
     copy_hint: "出版社、略歴、CSSをコピー："
     copy_success: "出版社と著者情報を適用しました"
@@ -1619,6 +1622,12 @@ ui:
       uploading: "アップロード中 …"
       uploading_aria: "アップロードの進行状況"
       processing: "サーバーで処理中。大きなアーカイブでは時間がかかる場合があります。"
+      async_aria: "インポートの進行状況"
+      async_counter: "{total} 件中 {current} 件"
+      async_tally_imported: "{count} 件をインポート"
+      async_tally_skipped: "{count} 件をスキップ"
+      async_tally_errored: "{count} 件のエラー"
+      async_tally_comments: "{count} 件のコメント"
     preview:
       card_title: "プレビューと選択"
       card_hint: "インポートしたくない投稿のチェックを外してください。既定ではすべて選択されています。"
@@ -1639,6 +1648,7 @@ ui:
       badge_dedup_tooltip: "同じ URL の記事がすでに存在します。"
       badge_warnings: "{count} 件の警告"
       cancel: "キャンセル"
+      cancel_import: "インポートを中止"
       import_selected: "{count} 件の投稿をインポート"
       importing: "インポート中 …"
     result:
@@ -2009,6 +2019,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     config:
       speech_bubble:
         heading: "Speech bubble"

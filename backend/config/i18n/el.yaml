@@ -1059,6 +1059,9 @@ ui:
     cover_image: "Εξώφυλλο"
     characters: "χαρακτήρες"
     custom_css: "Προσαρμοσμένο CSS"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     copy_from: "Αντιγραφή από βιβλίο"
     copy_hint: "Αντιγράφει εκδότη, βιογραφικό και CSS:"
     copy_success: "Πληροφορίες εκδότη και συγγραφέα εφαρμόστηκαν"
@@ -1619,6 +1622,12 @@ ui:
       uploading: "Μεταφόρτωση …"
       uploading_aria: "Πρόοδος μεταφόρτωσης"
       processing: "Επεξεργασία στον διακομιστή. Τα μεγάλα αρχεία μπορεί να χρειαστούν περισσότερο χρόνο."
+      async_aria: "Πρόοδος εισαγωγής"
+      async_counter: "{current} από {total} δημοσιεύσεις"
+      async_tally_imported: "{count} εισήχθησαν"
+      async_tally_skipped: "{count} παραλείφθηκαν"
+      async_tally_errored: "{count} σφάλματα"
+      async_tally_comments: "{count} σχόλια"
     preview:
       card_title: "Προεπισκόπηση & επιλογή"
       card_hint: "Καταργήστε την επιλογή για τις δημοσιεύσεις που ΔΕΝ θέλετε να εισάγετε. Όλες είναι επιλεγμένες από προεπιλογή."
@@ -1639,6 +1648,7 @@ ui:
       badge_dedup_tooltip: "Υπάρχει ήδη άρθρο με την ίδια URL."
       badge_warnings: "{count} προειδοποιήσεις"
       cancel: "Άκυρο"
+      cancel_import: "Ακύρωση εισαγωγής"
       import_selected: "Εισαγωγή {count} δημοσιεύσεων"
       importing: "Εισαγωγή …"
     result:
@@ -2009,6 +2019,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     config:
       speech_bubble:
         heading: "Speech bubble"

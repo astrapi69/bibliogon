@@ -1050,6 +1050,9 @@ ui:
     cover_image: "Cover"
     characters: "Zeichen"
     custom_css: "Custom CSS (EPUB-Styles)"
+    export_pdf: "Als PDF exportieren"
+    exporting_pdf: "Wird exportiert..."
+    export_pdf_error: "PDF-Export fehlgeschlagen"
     copy_from: "Von Buch übernehmen"
     copy_hint: "Übernimmt Verlag, Autoren-Bio und CSS von einem anderen Buch:"
     copy_success: "Verlag und Autoren-Info übernommen"
@@ -1610,6 +1613,12 @@ ui:
       uploading: "Upload läuft …"
       uploading_aria: "Upload-Fortschritt"
       processing: "Verarbeitung auf dem Server. Bei großen Archiven kann das länger dauern."
+      async_aria: "Import-Fortschritt"
+      async_counter: "{current} von {total} Beiträgen"
+      async_tally_imported: "{count} importiert"
+      async_tally_skipped: "{count} übersprungen"
+      async_tally_errored: "{count} Fehler"
+      async_tally_comments: "{count} Kommentare"
     preview:
       card_title: "Vorschau & Auswahl"
       card_hint: "Entferne die Häkchen vor Beiträgen, die du NICHT importieren möchtest. Standardmäßig sind alle ausgewählt."
@@ -1630,6 +1639,7 @@ ui:
       badge_dedup_tooltip: "Ein Artikel mit derselben URL existiert bereits."
       badge_warnings: "{count} Warnungen"
       cancel: "Abbrechen"
+      cancel_import: "Import abbrechen"
       import_selected: "{count} Beiträge importieren"
       importing: "Importiert …"
     result:
@@ -2001,6 +2011,9 @@ ui:
     text_label: "Seitentext"
     text_placeholder: "Schreibe hier den Seitentext ..."
     show_metadata: "Metadaten"
+    export_pdf: "Als PDF exportieren"
+    exporting_pdf: "Wird exportiert..."
+    export_pdf_error: "PDF-Export fehlgeschlagen"
     config:
       speech_bubble:
         heading: "Sprechblase"

@@ -1051,6 +1051,9 @@ ui:
     cover_image: "Cover"
     characters: "characters"
     custom_css: "Custom CSS (EPUB Styles)"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     copy_from: "Copy from Book"
     copy_hint: "Copies publisher, author bio and CSS from another book:"
     copy_success: "Publisher and author info applied"
@@ -1611,6 +1614,12 @@ ui:
       uploading: "Uploading …"
       uploading_aria: "Upload progress"
       processing: "Processing on the server. Larger archives may take longer."
+      async_aria: "Import progress"
+      async_counter: "{current} of {total} posts"
+      async_tally_imported: "{count} imported"
+      async_tally_skipped: "{count} skipped"
+      async_tally_errored: "{count} errors"
+      async_tally_comments: "{count} comments"
     preview:
       card_title: "Preview & select"
       card_hint: "Uncheck the boxes for posts you do NOT want to import. All posts are selected by default."
@@ -1631,6 +1640,7 @@ ui:
       badge_dedup_tooltip: "An article with the same URL already exists."
       badge_warnings: "{count} warnings"
       cancel: "Cancel"
+      cancel_import: "Cancel import"
       import_selected: "Import {count} posts"
       importing: "Importing …"
     result:
@@ -2002,6 +2012,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    export_pdf: "Export as PDF"
+    exporting_pdf: "Exporting..."
+    export_pdf_error: "PDF export failed"
     config:
       speech_bubble:
         heading: "Speech bubble"
