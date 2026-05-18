@@ -25,9 +25,11 @@ errored; the rest of the batch continues.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import zipfile
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +44,13 @@ from .walker import MediumWalker, ParsedPost
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 30.0
+
+# ASYNC-IMPORT-PROGRESS-01: callback signature mirrors the audiobook
+# precedent (``generate_audiobook(progress_callback=...)``). Each
+# (event_type, payload) tuple is the same shape that gets published
+# to ``job_store`` so the route worker can pass the store's
+# ``publish_event`` directly without an adapter layer.
+ProgressCallback = Callable[[str, dict[str, Any]], Awaitable[None]] | None
 
 
 @dataclass
@@ -109,7 +118,7 @@ class ImportResult:
     skipped_comments: list[SkippedComment] = field(default_factory=list)
 
 
-def import_zip(
+async def import_zip(
     zip_bytes: bytes,
     *,
     download_images_enabled: bool = True,
@@ -134,9 +143,30 @@ def import_zip(
     # ``None`` keeps the legacy "import everything" behaviour the v1
     # endpoint depends on.
     selected_filenames: set[str] | None = None,
+    # ASYNC-IMPORT-PROGRESS-01: optional progress sink. When set, the
+    # orchestrator fires the same event sequence the audiobook
+    # generator emits (``start`` -> per-post events -> ``done``) so
+    # the async job worker can publish them to ``job_store``. When
+    # None, the loop runs silently (mirrors the v1 + sync-v2
+    # endpoint behaviour). Per-post events:
+    #   ``post_start``   {index, total, filename}
+    #   ``post_done``    {index, filename, article_id, title}
+    #   ``post_skipped`` {index, filename, reason: "dedup",
+    #                     existing_article_id, canonical_url}
+    #   ``post_errored`` {index, filename, error}
+    #   ``comment_done`` {index, filename, comment_id, body_preview}
+    #   ``comment_skipped`` {index, filename, reason}
+    progress_callback: ProgressCallback = None,
     http_client: httpx.Client | None = None,
 ) -> ImportResult:
-    """Import every ``posts/*.html`` from the given Medium ZIP."""
+    """Import every ``posts/*.html`` from the given Medium ZIP.
+
+    Cooperative cancellation: between each post we ``await
+    asyncio.sleep(0)`` so the asyncio loop can deliver a
+    ``CancelledError`` if the surrounding ``job_store.cancel()`` was
+    called. The DB write of the in-progress post still completes
+    (no rollback mid-post), but no subsequent posts run.
+    """
     import tempfile
 
     result = ImportResult()
@@ -159,6 +189,8 @@ def import_zip(
         # Sort for deterministic processing order.
         post_files = sorted(posts_dir.glob("*.html"))
         if not post_files:
+            await _emit(progress_callback, "start", {"total": 0})
+            await _emit(progress_callback, "done", _summary(result))
             return result  # empty archive; nothing imported, no error
 
         if selected_filenames is not None:
@@ -169,9 +201,26 @@ def import_zip(
                 # empty, so we should not see this in practice; the
                 # empty-result return keeps the contract honest if it
                 # does happen.
+                await _emit(progress_callback, "start", {"total": 0})
+                await _emit(progress_callback, "done", _summary(result))
                 return result
 
-        for path in post_files:
+        total = len(post_files)
+        await _emit(progress_callback, "start", {"total": total})
+
+        for index, path in enumerate(post_files, start=1):
+            # Cooperative cancellation point. Cheap when nothing is
+            # awaiting cancellation; raises CancelledError when the
+            # surrounding job_store.cancel() fired. The exception
+            # propagates out of import_zip, the job is marked
+            # CANCELLED by job_store.cancel(), and no further posts
+            # run.
+            await asyncio.sleep(0)
+            await _emit(
+                progress_callback,
+                "post_start",
+                {"index": index, "total": total, "filename": path.name},
+            )
             try:
                 _import_one_post(
                     path,
@@ -189,8 +238,132 @@ def import_zip(
             except Exception as exc:  # noqa: BLE001 - boundary handler
                 logger.exception("medium-import: failed on %s", path.name)
                 result.errored.append(ErroredArticle(filename=path.name, error=str(exc)))
+                await _emit(
+                    progress_callback,
+                    "post_errored",
+                    {"index": index, "filename": path.name, "error": str(exc)},
+                )
+                continue
+
+            # Classify what _import_one_post did with the file so we
+            # emit the matching per-post event. The result lists are
+            # the source of truth - we walk them in append order which
+            # mirrors the orchestrator's per-post path.
+            await _emit_post_outcome(progress_callback, index, path.name, result)
+
+        await _emit(progress_callback, "done", _summary(result))
 
     return result
+
+
+async def _emit(callback: ProgressCallback, event_type: str, data: dict[str, Any]) -> None:
+    """Fire ``callback`` if set; swallow its errors so a broken
+    subscriber never kills a real import.
+
+    Mirrors the audiobook generator's defensive wrapping: a progress
+    callback is a diagnostic affordance, not a critical path.
+    """
+    if callback is None:
+        return
+    try:
+        await callback(event_type, data)
+    except Exception as exc:  # noqa: BLE001 - defensive
+        logger.warning("medium-import progress callback raised on %s: %s", event_type, exc)
+
+
+async def _emit_post_outcome(
+    callback: ProgressCallback,
+    index: int,
+    filename: str,
+    result: ImportResult,
+) -> None:
+    """Inspect ``result`` after a successful ``_import_one_post`` call
+    and emit the matching per-post event.
+
+    Detection: each branch of the orchestrator appends to exactly one
+    of the result lists, and we know the most-recently-appended entry
+    is ours iff its ``filename`` matches.
+    """
+    if result.errored and result.errored[-1].filename == filename:
+        # Already emitted as post_errored from the except block above;
+        # shouldn't reach here in practice.
+        return
+    if result.skipped and result.skipped[-1].filename == filename:
+        skip = result.skipped[-1]
+        await _emit(
+            callback,
+            "post_skipped",
+            {
+                "index": index,
+                "filename": filename,
+                "reason": "dedup",
+                "existing_article_id": skip.existing_article_id,
+                "canonical_url": skip.canonical_url,
+            },
+        )
+        return
+    if result.imported and result.imported[-1].canonical_url:
+        # The article path appends to ``result.imported`` AFTER all
+        # DB writes succeed. We can't pin a filename here because
+        # ImportedArticle doesn't carry one; we rely on the
+        # by-construction guarantee that this loop iteration's post
+        # is the most-recently-imported one when no comment branch
+        # fired.
+        article = result.imported[-1]
+        await _emit(
+            callback,
+            "post_done",
+            {
+                "index": index,
+                "filename": filename,
+                "article_id": article.id,
+                "title": article.title,
+                "canonical_url": article.canonical_url,
+            },
+        )
+        return
+    if (
+        result.imported_comments
+        and result.imported_comments[-1].filename == filename
+    ):
+        comment = result.imported_comments[-1]
+        await _emit(
+            callback,
+            "comment_done",
+            {
+                "index": index,
+                "filename": filename,
+                "comment_id": comment.id,
+                "body_preview": comment.body_preview,
+            },
+        )
+        return
+    if (
+        result.skipped_comments
+        and result.skipped_comments[-1].filename == filename
+    ):
+        skip_comment = result.skipped_comments[-1]
+        await _emit(
+            callback,
+            "comment_skipped",
+            {
+                "index": index,
+                "filename": filename,
+                "reason": skip_comment.reason,
+            },
+        )
+        return
+
+
+def _summary(result: ImportResult) -> dict[str, int]:
+    """Compact counter dict for the ``done`` event payload."""
+    return {
+        "imported_count": len(result.imported),
+        "skipped_count": len(result.skipped),
+        "errored_count": len(result.errored),
+        "imported_comments_count": len(result.imported_comments),
+        "skipped_comments_count": len(result.skipped_comments),
+    }
 
 
 def _import_one_post(

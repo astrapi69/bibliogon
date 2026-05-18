@@ -14,11 +14,16 @@ passes the values through to ``importer.import_zip`` as kwargs.
 
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .importer import DEFAULT_TIMEOUT_SECONDS, ImportResult, import_zip
 from .preview import PreviewItem, build_preview, get_default_cache
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/medium-import", tags=["medium-import"])
 
@@ -281,7 +286,7 @@ async def import_zip_endpoint(file: UploadFile = File(...)) -> ImportZipResponse
         raise HTTPException(status_code=400, detail="Uploaded file is empty")
 
     try:
-        result = import_zip(contents, **_settings_kwargs())
+        result = await import_zip(contents, **_settings_kwargs())
     except ValueError as exc:
         # Bad ZIP / no posts/ dir -> 400 so the frontend can surface
         # the message verbatim instead of a generic 500.
@@ -346,7 +351,7 @@ async def preview_zip_endpoint(file: UploadFile = File(...)) -> PreviewResponse:
 
 
 @router.post("/import/{preview_id}", response_model=ImportZipResponse)
-def import_selection_endpoint(
+async def import_selection_endpoint(
     preview_id: str,
     selection: ImportSelectionRequest,
 ) -> ImportZipResponse:
@@ -377,7 +382,7 @@ def import_selection_endpoint(
         )
 
     try:
-        result = import_zip(
+        result = await import_zip(
             zip_bytes,
             selected_filenames=set(selection.selected_filenames),
             **_settings_kwargs(),
@@ -399,3 +404,96 @@ def cancel_preview_endpoint(preview_id: str) -> CancelPreviewResponse:
     whether the cache entry still existed."""
     deleted = get_default_cache().delete(preview_id)
     return CancelPreviewResponse(deleted=deleted)
+
+
+# ---------------------------------------------------------------------------
+# ASYNC-IMPORT-PROGRESS-01: async dry-run import with SSE progress.
+#
+# The sync ``POST /import/{preview_id}`` above stays for back-compat
+# (direct API callers, the existing test suites). The new endpoint
+# below submits the same work as an async job and returns a job_id
+# the frontend uses to subscribe to /api/export/jobs/{id}/stream for
+# per-post progress events. Per Q2 of the Pre-Inspection, we reuse
+# the existing generic export-jobs router rather than carving out
+# a parallel medium-import jobs namespace.
+# ---------------------------------------------------------------------------
+
+
+class AsyncJobStartedResponse(BaseModel):
+    """Response of ``POST /api/medium-import/import/async/{preview_id}``.
+
+    The frontend uses ``job_id`` to subscribe to
+    ``GET /api/export/jobs/{job_id}/stream`` (SSE) for per-post
+    progress, and fetches the final ``ImportResult`` from
+    ``GET /api/export/jobs/{job_id}`` once ``stream_end`` arrives.
+    """
+
+    job_id: str
+    status: str = "pending"
+
+
+@router.post(
+    "/import/async/{preview_id}",
+    response_model=AsyncJobStartedResponse,
+    status_code=202,
+)
+async def import_selection_async_endpoint(
+    preview_id: str,
+    selection: ImportSelectionRequest,
+) -> AsyncJobStartedResponse:
+    """Start an async import job for the user's selection.
+
+    The 404/400 gates mirror the sync sibling above. On success
+    returns 202 + the job_id so the frontend can open the SSE
+    stream immediately. The cache entry is reaped by the worker on
+    a successful import (matching the sync endpoint's contract);
+    on failure the cache stays so the user can retry.
+    """
+    try:
+        from app.job_store import job_store
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=500, detail="Job store not available"
+        ) from exc
+
+    cache = get_default_cache()
+    zip_bytes = cache.load(preview_id)
+    if zip_bytes is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Preview not found or expired; please upload again",
+        )
+
+    if not selection.selected_filenames:
+        raise HTTPException(
+            status_code=400,
+            detail="selected_filenames must contain at least one entry",
+        )
+
+    selected_set = set(selection.selected_filenames)
+    settings_kwargs = _settings_kwargs()
+
+    async def _run(job_id: str) -> dict[str, Any]:
+        async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
+            job_store.publish_event(job_id, event_type, payload)
+
+        result = await import_zip(
+            zip_bytes,
+            selected_filenames=selected_set,
+            progress_callback=progress_cb,
+            **settings_kwargs,
+        )
+        # Cache reap matches the sync endpoint's success contract.
+        # Cancellation raises before reaching this line, so the
+        # cache stays for a retry. An import failure also bubbles
+        # out before this line.
+        cache.delete(preview_id)
+        # The result payload exposed via GET /api/export/jobs/{id}
+        # mirrors the sync endpoint's ImportZipResponse shape so
+        # the frontend can render the existing MediumImportResult
+        # panel directly from job.result.
+        return _serialize(result).model_dump()
+
+    job_id = job_store.submit(_run)
+    logger.info("medium-import async job %s started: preview=%s", job_id, preview_id)
+    return AsyncJobStartedResponse(job_id=job_id)
