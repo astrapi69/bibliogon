@@ -16,7 +16,8 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import BookMetadataEditor from "./BookMetadataEditor"
-import type {BookDetail, Book} from "../api/client"
+import {ApiError, type BookDetail, type Book} from "../api/client"
+import {notify} from "../utils/notify"
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -55,6 +56,8 @@ vi.mock("../hooks/useAuthorProfile", () => ({
 const assetsListMock = vi.fn().mockResolvedValue([])
 const assetsDeleteMock = vi.fn().mockResolvedValue(undefined)
 
+const documentExportDownloadMock = vi.fn()
+
 vi.mock("../api/client", () => ({
   api: {
     audiobook: {
@@ -82,12 +85,32 @@ vi.mock("../api/client", () => ({
     books: {
       list: vi.fn().mockResolvedValue([]),
     },
+    documentExport: {
+      download: (...args: unknown[]) => documentExportDownloadMock(...args),
+    },
   },
   ApiError: class extends Error {
+    status: number
     detail: string
-    constructor(s: number, d: string) {
+    endpoint: string
+    method: string
+    stacktrace: string
+    timestamp: string
+    constructor(
+      s: number,
+      d: string,
+      endpoint: string = "",
+      method: string = "GET",
+      stacktrace: string = "",
+      timestamp: string = "",
+    ) {
       super(d)
+      this.status = s
       this.detail = d
+      this.endpoint = endpoint
+      this.method = method
+      this.stacktrace = stacktrace
+      this.timestamp = timestamp
     }
   },
   formatVoiceLabel: (v: {id: string}) => v.id,
@@ -886,5 +909,124 @@ describe("BookMetadataEditor — book_type tab filtering (Session 5 Commit 1)", 
         // book authors.
         renderEditor({book_type: "picture_book", chapters: []})
         expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
+    })
+})
+
+// --- PB-PHASE4 Session 6 Commit 5: Design-tab Export-PDF button ---
+
+describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", () => {
+    const onSave = vi.fn()
+    const onBack = vi.fn()
+
+    beforeEach(() => {
+        onSave.mockClear()
+        onBack.mockClear()
+        documentExportDownloadMock.mockReset()
+        documentExportDownloadMock.mockResolvedValue(undefined)
+        ;(notify.error as ReturnType<typeof vi.fn>).mockClear()
+    })
+
+    function renderEditor(bookOverrides: Partial<BookDetail> = {}) {
+        return render(
+            <BookMetadataEditor
+                book={makeBook(bookOverrides)}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+    }
+
+    /**
+     * Switch to the Design tab. Radix Tabs.Trigger uses
+     * `onMouseDown` internally (per the "Radix Tabs onMouseDown
+     * not onClick" lessons-learned rule), so `fireEvent.click`
+     * is a no-op. Use `fireEvent.mouseDown` to activate the tab.
+     */
+    function activateDesignTab() {
+        fireEvent.mouseDown(screen.getByTestId("metadata-tab-design"))
+    }
+
+    it("picture_book: Export-PDF button is rendered in the Design tab", async () => {
+        renderEditor({book_type: "picture_book", chapters: []})
+        activateDesignTab()
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("metadata-export-picture-pdf"),
+            ).toBeTruthy(),
+        )
+    })
+
+    it("prose: Export-PDF button is NOT rendered in the Design tab (picture-book-only feature)", async () => {
+        renderEditor({book_type: "prose"})
+        activateDesignTab()
+        // Allow async mount of the Design tab content; THEN assert
+        // the picture-book-only button stays absent.
+        await new Promise((resolve) => setTimeout(resolve, 30))
+        expect(
+            screen.queryByTestId("metadata-export-picture-pdf"),
+        ).toBeNull()
+    })
+
+    it("clicking Export-PDF calls api.documentExport.download with bookId + 'pdf' + empty URLSearchParams", async () => {
+        renderEditor({book_type: "picture_book", chapters: []})
+        activateDesignTab()
+        const btn = await screen.findByTestId(
+            "metadata-export-picture-pdf",
+        )
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(documentExportDownloadMock).toHaveBeenCalledTimes(1),
+        )
+        const [bookId, fmt, params] = documentExportDownloadMock.mock.calls[0]
+        expect(bookId).toBe("book-1")
+        expect(fmt).toBe("pdf")
+        expect(params).toBeInstanceOf(URLSearchParams)
+        expect(params.toString()).toBe("")
+    })
+
+    it("ApiError surfaces as notify.error with the server's detail", async () => {
+        documentExportDownloadMock.mockRejectedValue(
+            new ApiError(
+                500,
+                "Picture-book PDF generation failed: WeasyPrint crashed",
+                "/books/book-1/export/pdf",
+                "GET",
+            ),
+        )
+        renderEditor({book_type: "picture_book", chapters: []})
+        activateDesignTab()
+        const btn = await screen.findByTestId(
+            "metadata-export-picture-pdf",
+        )
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(notify.error).toHaveBeenCalledTimes(1),
+        )
+        const firstArg = (notify.error as ReturnType<typeof vi.fn>).mock
+            .calls[0][0]
+        expect(firstArg).toContain("Picture-book PDF generation failed")
+    })
+
+    it("re-click while exporting is a no-op", async () => {
+        let resolveDownload: ((value: undefined) => void) | undefined
+        documentExportDownloadMock.mockReturnValue(
+            new Promise<undefined>((resolve) => {
+                resolveDownload = resolve
+            }),
+        )
+        renderEditor({book_type: "picture_book", chapters: []})
+        activateDesignTab()
+        const btn = await screen.findByTestId(
+            "metadata-export-picture-pdf",
+        )
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(documentExportDownloadMock).toHaveBeenCalledTimes(1),
+        )
+        // Second click while first is pending — no-op.
+        fireEvent.click(btn)
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        expect(documentExportDownloadMock).toHaveBeenCalledTimes(1)
+        resolveDownload?.(undefined)
     })
 })

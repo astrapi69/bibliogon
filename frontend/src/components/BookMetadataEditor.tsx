@@ -2,7 +2,7 @@ import {useState, useEffect, useCallback} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
-import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause} from "lucide-react";
+import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
@@ -60,6 +60,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
@@ -125,6 +126,43 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         }
         setSaving(false);
     };
+
+    /**
+     * PB-PHASE4 Session 6 Commit 5: picture-book PDF export from
+     * the Design tab. Parallel entry-point to PageEditor's
+     * Export-PDF button (Commit 4); the user's workflow may sit in
+     * the metadata editor when they decide to export, so we surface
+     * the action there too. Both paths invoke the same
+     * ``api.documentExport.download`` helper that exists on the
+     * prose side; the dispatch lives entirely in the backend.
+     *
+     * Picture-book PDF render is 1-3 s sync (per Commit 2's route);
+     * loading state on the button is the right UX (no modal — see
+     * Commit 4's commit message for the AudioExportProgress
+     * divergence rationale).
+     */
+    const handleExportPicturePdf = useCallback(async () => {
+        if (exportingPdf) return;
+        setExportingPdf(true);
+        try {
+            await api.documentExport.download(
+                book.id,
+                "pdf",
+                new URLSearchParams(),
+            );
+        } catch (err) {
+            const detail =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.metadata.export_pdf_error",
+                          "PDF-Export fehlgeschlagen",
+                      );
+            notify.error(detail);
+        } finally {
+            setExportingPdf(false);
+        }
+    }, [book.id, exportingPdf, t]);
 
     const handleCopyFrom = (sourceBook: Book) => {
         setForm((prev) => ({
@@ -435,6 +473,60 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             coverImage={form.cover_image ?? null}
                             onChange={(newPath) => set("cover_image", newPath ?? "")}
                         />
+                        {/* PB-PHASE4 Session 6 Commit 5: picture-
+                            book PDF export entry from the Design
+                            tab. Picture-book-only — prose books
+                            export via the chapter pipeline +
+                            ExportDialog. Mirrors PageEditor's
+                            header button (Commit 4) so the user
+                            workflow can trigger PDF from either
+                            surface. */}
+                        {book.book_type === "picture_book" && (
+                            <div className={styles.row}>
+                                <button
+                                    type="button"
+                                    onClick={handleExportPicturePdf}
+                                    disabled={exportingPdf}
+                                    data-testid="metadata-export-picture-pdf"
+                                    className="button button-primary"
+                                    title={t(
+                                        "ui.metadata.export_pdf",
+                                        "Export as PDF",
+                                    )}
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                    }}
+                                >
+                                    {exportingPdf ? (
+                                        <Loader2
+                                            size={14}
+                                            style={{
+                                                animation:
+                                                    "bookMetaSpin 1s linear infinite",
+                                            }}
+                                        />
+                                    ) : (
+                                        <Download size={14} />
+                                    )}
+                                    <span>
+                                        {exportingPdf
+                                            ? t(
+                                                  "ui.metadata.exporting_pdf",
+                                                  "Exporting...",
+                                              )
+                                            : t(
+                                                  "ui.metadata.export_pdf",
+                                                  "Export as PDF",
+                                              )}
+                                    </span>
+                                </button>
+                                <style>
+                                    {`@keyframes bookMetaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+                                </style>
+                            </div>
+                        )}
                         <AuthorAssetsPanel bookId={book.id}/>
                         <Field label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")} value={form.custom_css} onChange={(v) => set("custom_css", v)}
                             multiline mono fullscreen/>
