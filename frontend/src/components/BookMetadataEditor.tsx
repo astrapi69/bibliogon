@@ -158,7 +158,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                           "ui.metadata.export_pdf_error",
                           "PDF-Export fehlgeschlagen",
                       );
-            notify.error(detail);
+            notify.error(detail, err);
         } finally {
             setExportingPdf(false);
         }

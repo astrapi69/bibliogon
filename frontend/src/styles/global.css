@@ -169,6 +169,17 @@
     --text-muted: #78716c;
     --text-inverse: #faf8f5;
     --text-sidebar: #3d2817;
+    /* PB-PHASE4 Session 4c-B-1 v0.35.0 release-test (2026-05-18):
+     * ``--text`` is a foundational token referenced by both
+     * pre-existing modules (PageEditor.module.css,
+     * BookListView.module.css, etc.) AND the new RichTextToolbar
+     * + PageCanvas modules. Aliasing to --text-primary makes
+     * every ``var(--text)`` callsite theme-aware via var()
+     * lexical-at-use semantics: the per-palette
+     * ``--text-primary`` override propagates through this alias
+     * to every descendant. Closes the theme-token-completeness
+     * audit gap for --text across all 10 theme variants. */
+    --text: var(--text-primary);
 
     --accent: #b45309;
     --accent-hover: #92400e;

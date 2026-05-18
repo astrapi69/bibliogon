@@ -113,6 +113,6 @@ prompt short and stable across future updates.
   - `PICTURE-BOOK-PDF-TIPTAP-RENDER-01` (proper TipTap-to-HTML
     walker in PDF)
   - 5 P3 items filed in Session 6 Commit 8 (`9f7177f`)
-- **v0.35.0 sequence**: 
+- **v0.35.0 sequence**:
   `docs/journal/session-handoff-2026-05-18-v0.35.0-release-cut-sequence.md`
   (corrected at `2a970c0` to "alles vor release")

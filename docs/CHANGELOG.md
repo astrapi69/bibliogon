@@ -4,6 +4,157 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-05-18
+
+The second Picture-Book release. TipTap rich-text editing for 3
+of the 5 picture-book layouts; printable picture-book PDF export
+with KDP-grade font embedding; 5 OFL fonts curated for children's
+typography; speech-bubble width + height + 9-position anchor +
+opacity; document-wide font application; visible region separator
+across all 10 theme variants. Plus the medium-import async path
+(SSE-driven progress + F5-recovery + Run-in-background dock). Plus
+the release-automation audit shipped its four scopes (aggregate
+Makefile targets, package-lock.json sync, open-set version-literal
+discovery, CI release-gate extension). v0.35.0 is the first release
+cut entirely through the new automation pipeline.
+
+### Added
+
+- **Picture-Book TipTap rich-text editing** (4c-B-1): the 3
+  layouts where text shape is unbounded
+  (`image_top_text_bottom`, `image_left_text_right`, `text_only`)
+  now mount a TipTap-backed `RichTextEditor` instead of a
+  textarea. D1 MVP extension set: StarterKit + TextAlign +
+  Underline + TextStyle + Color + FontFamily. The 2 Tier-Property
+  layouts (`speech_bubble`, `image_full_text_overlay`) keep
+  textareas — their text shape is bubble/overlay-driven, not
+  document-driven.
+- **RichTextToolbar in PageEditor properties pane** (D6-C
+  hybrid): 11 D1 MVP buttons (Bold / Italic / Underline / H1-3 /
+  Bullet list / Ordered list / Align L/C/R) + Font dropdown.
+  Hidden for Tier-Property layouts.
+- **5-font OFL catalog for picture-book typography**: Atkinson
+  Hyperlegible (default) + Andika + Comic Neue + Lexend +
+  OpenDyslexic. All font files bundled under
+  `plugins/bibliogon-plugin-export/fonts/` with full OFL
+  attribution. Total bundle ~1.1 MB.
+- **Picture-Book PDF export pipeline** (Session 6): WeasyPrint-
+  backed 8.5×8.5 KDP-ready PDF with embedded `@font-face` rules
+  for all 5 OFL fonts, TipTap-walker rendering preserving
+  bold/italic/underline/font-family marks + alignment + headings
+  1-3 + lists, full PDF metadata embedding (Title / Author /
+  Description / Generator / Lang). Export-PDF button in both
+  PageEditor header and Book Metadata Design tab.
+- **Speech-bubble full 9-position anchor grid**: all 9 cells of
+  the 3×3 grid clickable (was 5 — the 4 edge-midpoints are new).
+  Each cell has its own i18n label + aria-label.
+- **Speech-bubble `bubble_width` + `bubble_height` sliders**:
+  independent width (20-80%) + height (15-60%) replace the single
+  `size` knob. Backward-compat: legacy `size` reads as fallback
+  for `bubble_width`.
+- **PageEditor ThemeToggle**: dark/light mode switch in the
+  picture-book editor header. Closed the 9th confirmed instance
+  of the Articles-vs-Books parallel-surface asymmetry rule —
+  every other top-level surface already had the toggle.
+- **Medium-import async path** (ASYNC-IMPORT-PROGRESS-01): SSE-
+  driven progress UI replaces the synchronous Phase-1
+  spinner. Run-in-background dock + go-to-comments link +
+  F5-recovery via context-backed state. UI surfaces v0.31.0's
+  comment-routing fields (parent-article matching + orphan
+  detection).
+- **Authors-Database in CreateBookModal**: the modal now uses the
+  Authors-DB datalist + add-to-DB checkbox, matching the wizard
+  pattern. Closes the pre-vs-post-AuthorsDB CreateBookModal
+  asymmetry.
+- **Release-automation pipeline**: 6 aggregate Makefile targets
+  (`release-state` / `release-outdated` / `release-test` /
+  `release-build` / `release-tag VERSION=` / `release-publish
+  VERSION=`); `sync-versions` now syncs `package-lock.json`
+  top-level version; `release-discover` scans for hardcoded
+  version literals outside `collect_targets()`; CI release-gate
+  extended with `verify-plugin-locks` + `verify-docs-discipline`
+  + launcher build smoke. Reference doc:
+  `docs/development/release-automation.md`.
+
+### Changed
+
+- **PDF font-embedding strategy**: `@font-face` rules switched
+  from `src: local(...)` (fragile in containers) to `src:
+  url(file://...)` pointing at the bundled font files.
+  KDP-grade embedded fonts requirement met.
+- **Region separator** on `image_top_text_bottom` +
+  `image_left_text_right` layouts: 1px opacity-mix border
+  replaced by 2px `var(--border-strong)`. Purpose-built theme
+  token visible across all 10 theme variants (was nearly
+  invisible at low opacities on light themes).
+- **Picture-Book font picker** auto-applies the selected font to
+  the ENTIRE page (auto-select-all in the dropdown's onChange
+  handler). Picture-book convention is one page, one consistent
+  font; per-mark override filed as
+  `PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01` (P3) for future.
+- **Speech-bubble inline-style** + backend `_speech_bubble_style`
+  now emit `width:` AND `height:` properties (was `width:` only).
+
+### Fixed
+
+- **Picture-Book PDF on the 3 new anchor positions**: the
+  backend `_speech_bubble_style` positions dict was silently
+  missing `top-center`, `middle-left`, `middle-right` (added in
+  Finding A's frontend). PDF would have fallen back to
+  bottom-center for those 3 anchors. Now mirrored end-to-end.
+- **Tier-Property layout JSON leakage**: the textarea on
+  speech_bubble + image_full_text_overlay layouts showed raw
+  TipTap JSON when switched from a TipTap-rich layout. New
+  defensive `extractPlainText` (frontend) + `_extract_plain_text`
+  (backend) unwrap the JSON for plain-text display + PDF render.
+
+### Lessons-learned
+
+3 new rules + 1 memory entry filed:
+
+- **Recurring-Component Unification Rule** (coding-standards.md):
+  UI patterns shared across 2+ surfaces extract NOW, not after
+  3-duplicate threshold; UI duplication compounds visually +
+  drives i18n + test churn. Stricter than the generic 3-DRY rule.
+- **Single-source-of-truth for cross-cutting concerns**
+  (lessons-learned.md): closed-set vs open-set discovery; the
+  package-lock.json drift incident as the canonical example.
+- **Half-wired-feature-lifecycle pattern**: extended with the
+  4th instance (the dead `kinderbuch.css` template).
+- **Smoke-findings = direct-action default** (memory): smoke
+  findings get fixed in the current session unless the user
+  explicitly defers; prior-session roadmap entries do not
+  override.
+
+### Verification
+
+Backend pytest 1926 + 1 skipped (`--ignore=mutants`); plugin
+pytest 185; Vitest 1555/1555; Playwright smoke spec for
+font-selection ships; tsc clean; ruff + mypy clean; pre-commit
+clean; `make verify-docs-discipline` clean; `make
+verify-plugin-locks` clean; launcher PyInstaller build smoke
+passes.
+
+### Deferred to v0.36.0
+
+- **4c-B-1-DOCS**: user-facing help-docs for the entire Picture-
+  Book feature stream (docs/help/{en,de}/ pages for picture-
+  books, fonts, PDF export, Authors-Database, Categories+BISAC,
+  async medium-import). 0 pages currently exist for these
+  features; release-workflow.md Step 4c documentation-sweep
+  proposal also defers to v0.36.0.
+- **4c-B-2 Tier-Property scope**: extended bubble + overlay
+  properties (Visual Style + Typography subsections via the
+  CollapsibleSection extraction). `PICTURE-BOOK-SPEECH-BUBBLE-
+  EXTENDED-PROPERTIES-01` + `PICTURE-BOOK-OVERLAY-TEXT-TIER-
+  PROPERTIES-01` remain open.
+- **AUTHOR-SELECT-INPUT-EXTRACT + RECURRING-COMPONENT-AUDIT**:
+  the Recurring-Component Unification Rule's canonical first
+  application + frontend-wide audit for follow-up extractions.
+- All dependency major-bump tracks (elevenlabs 2.x, mypy 2.x,
+  weasyprint 68, TipTap 3, @types/node 25, @vitejs/plugin-react
+  6, tiptap-footnotes 3, click 8.3, starlette 1, cryptography 48).
+
 ## [0.34.1] - 2026-05-18
 
 Routine dependency refresh. Pure lock-file refresh; no

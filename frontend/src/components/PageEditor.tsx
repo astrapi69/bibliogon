@@ -192,7 +192,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                           "ui.page_editor.export_pdf_error",
                           "PDF-Export fehlgeschlagen",
                       )
-            notify.error(detail)
+            notify.error(detail, err)
         } finally {
             setExporting(false)
         }

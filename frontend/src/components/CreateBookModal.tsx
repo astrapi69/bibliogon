@@ -250,7 +250,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                               "ui.create_book.add_to_authors_error",
                               "Autor konnte nicht zur Datenbank hinzugefügt werden.",
                           );
-                notify.error(detail);
+                notify.error(detail, err);
                 // Continue to book create regardless — fail-soft.
             }
         }
