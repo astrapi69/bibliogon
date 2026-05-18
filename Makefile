@@ -544,6 +544,18 @@ endif
 	@echo ""
 	@echo "Tag pushed. Next: make release-publish VERSION=$(VERSION)"
 
+release-discover: ## Discover version-shape literals outside the sync-versions target list (advisory)
+	@echo "=== Version-literal discovery ==="
+	@echo "Scanning for X.Y.Z literals in version-assignment contexts"
+	@echo "outside the known sync-versions targets + Tier-4 manual files."
+	@echo ""
+	@output=$$(bash scripts/discover_version_literals.sh); \
+	if [ -z "$$output" ]; then \
+		echo "Clean. No unknown version literals."; \
+	else \
+		echo "$$output"; \
+	fi
+
 release-publish: ## Create GitHub Release from changelog/releases/vX.Y.Z.md. Usage: make release-publish VERSION=0.X.Y
 ifndef VERSION
 	$(error VERSION is required, e.g. make release-publish VERSION=0.35.0)

@@ -191,6 +191,21 @@ echo "backend/pyproject.toml + plugins/*/pyproject.toml manually"
 echo "at release time per release-workflow.md Step 4."
 echo
 
+# -------- Discovery: open-set version literal warn-grep --------
+#
+# Closes the closed-set blind spot the regression detectors above
+# don't see: a future feature adding a NEW file with a version
+# literal slips past every gate (release-automation audit Track D).
+# Output is ADVISORY (does not exit 1) — discovery findings are
+# candidates for review, not gates.
+discovery_output=$(bash "$ROOT/scripts/discover_version_literals.sh" 2>&1 || true)
+if [[ -n "$discovery_output" ]]; then
+    echo "WARN: unknown version literals found outside the sync-versions"
+    echo "      target list (advisory; not a tagging blocker):"
+    echo "$discovery_output" | sed 's/^/  /'
+    echo
+fi
+
 if [[ $errors -gt 0 ]]; then
     echo "$errors version-pin issue(s) found. Fix before tagging."
     exit 1
