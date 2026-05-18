@@ -92,6 +92,19 @@ vi.mock("../api/client", async () => {
                 ...actual.api.pages,
                 list: (...args: unknown[]) => listPagesMock(...args),
             },
+            comics: {
+                ...actual.api.comics,
+                // ComicBookEditor (plugin-comics Session 1) fetches
+                // /api/comics/info on mount; stub a resolved value so
+                // the placeholder renders deterministically in tests.
+                getInfo: vi.fn(async () => ({
+                    name: "comics",
+                    version: "1.0.0",
+                    session: 1,
+                    status: "scaffolding",
+                    description: "Test stub.",
+                })),
+            },
         },
     };
 });
@@ -235,14 +248,22 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
 
-    it("falls through to the chapter editor when book_type === 'comic_book' (reserved, not yet supported)", async () => {
+    it("mounts <ComicBookEditor> when book.book_type === 'comic_book' (plugin-comics Session 1)", async () => {
         getBookMock.mockResolvedValue(
             makeBook({id: "cb1", book_type: "comic_book", title: "Comic Book"}),
         );
         renderEditor("cb1");
+        // The comic-book editor placeholder mounts; neither the
+        // chapter-side wrapper nor the page-editor surface should.
         await waitFor(() =>
-            expect(screen.getByTestId("book-editor")).toBeTruthy(),
+            expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy(),
         );
+        expect(
+            screen
+                .getByTestId("comic-book-editor-root")
+                .getAttribute("data-book-id"),
+        ).toBe("cb1");
+        expect(screen.queryByTestId("book-editor")).toBeNull();
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
 

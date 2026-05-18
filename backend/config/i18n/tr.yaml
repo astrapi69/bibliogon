@@ -31,6 +31,7 @@ ui:
     books_nav_tooltip: "Kitaplari yonet"
     new_book: "Yeni kitap"
     new_picture_book: "Picture Book"
+    new_comic_book: "Comic Book"
     new_book_more_tooltip: "More book types"
     no_books: "Henuz kitap yok"
     book_no_author: "—"
@@ -449,6 +450,7 @@ ui:
   create_book:
     title: "Yeni kitap"
     title_picture_book: "New picture book"
+    title_comic_book: "New comic book"
     book_title: "Baslik"
     book_title_placeholder: "Kitabinizin basligi"
     author: "Yazar"
@@ -2089,3 +2091,10 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  comic_book_editor:
+    back: "Back"
+    placeholder_title: "Comic editor in preparation"
+    placeholder_message: "The comics plugin is installed. The full editor with panels and speech bubbles ships in Session 2."
+    plugin_label: "Plugin"
+    session_label: "Session"
+    plugin_unreachable: "The comics plugin is unreachable:"

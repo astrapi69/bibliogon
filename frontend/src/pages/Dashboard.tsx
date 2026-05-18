@@ -325,8 +325,13 @@ export default function Dashboard() {
         // PB-PHASE4 Session 3 Commit 9: picture-books need their
         // page-based editor immediately — the dashboard view doesn't
         // surface their content. Prose books stay on the dashboard
-        // (unchanged behavior).
-        if (data.book_type === "picture_book") {
+        // (unchanged behavior). plugin-comics Session 1: comic_book
+        // gets the same treatment — open the (placeholder) editor
+        // immediately so the user verifies the plugin is mounted.
+        if (
+            data.book_type === "picture_book" ||
+            data.book_type === "comic_book"
+        ) {
             navigate(`/book/${book.id}`);
             return;
         }
@@ -476,6 +481,17 @@ export default function Dashboard() {
                                             {t(
                                                 "ui.dashboard.new_picture_book",
                                                 "Bilderbuch",
+                                            )}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            data-testid="new-book-menu-item-comic-book"
+                                            onSelect={() => openCreate("comic_book")}
+                                        >
+                                            <BookOpen size={14} style={{marginRight: 6}}/>
+                                            {t(
+                                                "ui.dashboard.new_comic_book",
+                                                "Comic",
                                             )}
                                         </DropdownMenu.Item>
                                     </DropdownMenu.Content>

@@ -31,6 +31,7 @@ ui:
     books_nav_tooltip: "本を管理"
     new_book: "新しい本"
     new_picture_book: "Picture Book"
+    new_comic_book: "Comic Book"
     new_book_more_tooltip: "More book types"
     no_books: "まだ本がありません"
     book_no_author: "—"
@@ -435,6 +436,7 @@ ui:
   create_book:
     title: "新しい本"
     title_picture_book: "New picture book"
+    title_comic_book: "New comic book"
     book_title: "タイトル"
     book_title_placeholder: "本のタイトル"
     author: "著者"
@@ -2089,3 +2091,10 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  comic_book_editor:
+    back: "Back"
+    placeholder_title: "Comic editor in preparation"
+    placeholder_message: "The comics plugin is installed. The full editor with panels and speech bubbles ships in Session 2."
+    plugin_label: "Plugin"
+    session_label: "Session"
+    plugin_unreachable: "The comics plugin is unreachable:"

@@ -3437,7 +3437,27 @@ export const api = {
 
         remove: () => request<void>("/ssh", {method: "DELETE"}),
     },
+
+    /** plugin-comics Session 1 client. Only the /info gate ships in
+     *  Session 1 — the ComicBookEditor placeholder reads it to verify
+     *  the plugin is mounted before rendering. Session 2 extends this
+     *  surface with the comic-page + comic-panel + comic-bubble CRUD
+     *  endpoints. */
+    comics: {
+        getInfo: () => request<ComicsPluginInfo>("/comics/info"),
+    },
 };
+
+/** Identity returned by GET /api/comics/info. Stable shape through
+ *  Session 1; Session 2 extends with the list of mounted sub-routes
+ *  once panels + bubbles ship. */
+export interface ComicsPluginInfo {
+    name: string
+    version: string
+    session: number
+    status: string
+    description: string
+}
 
 export interface GitCommitEntry {
     hash: string

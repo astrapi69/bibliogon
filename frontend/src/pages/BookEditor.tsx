@@ -5,6 +5,7 @@ import ConflictResolutionDialog, {type ConflictInfo} from "../components/Conflic
 import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import PageEditor from "../components/PageEditor";
+import ComicBookEditor from "../components/ComicBookEditor";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import GitBackupDialog from "../components/GitBackupDialog";
@@ -478,8 +479,9 @@ export default function BookEditor() {
 
     // PB-PHASE4 Session 3 Commit 6: picture-books mount the page-based
     // editor instead of the chapter-based flow. Existing prose flow
-    // stays exactly as-is; comic_book books fall through to the
-    // chapter editor until plugin-comics ships its own surface.
+    // stays exactly as-is. comic_book books route to the placeholder
+    // ComicBookEditor shipped by plugin-comics Session 1; Session 2
+    // replaces that with the panel + multi-bubble editor.
     //
     // PB-PHASE4 Session 5 Commit 2: when ?view=metadata is set (or
     // PageEditor's "Open metadata" button fires), render
@@ -512,6 +514,19 @@ export default function BookEditor() {
                 bookTitle={book.title}
                 onBack={() => navigate("/")}
                 onShowMetadata={() => _setShowMetadata(true)}
+            />
+        );
+    }
+
+    // plugin-comics Session 1: route comic_book books to the
+    // placeholder editor. Session 2 replaces ComicBookEditor with
+    // the full panel + multi-bubble surface.
+    if (book.book_type === "comic_book") {
+        return (
+            <ComicBookEditor
+                bookId={book.id}
+                bookTitle={book.title}
+                onBack={() => navigate("/")}
             />
         );
     }

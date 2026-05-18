@@ -307,7 +307,12 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                                       "ui.create_book.title_picture_book",
                                       "Neues Bilderbuch",
                                   )
-                                : t("ui.create_book.title", "Neues Buch")}
+                                : bookType === "comic_book"
+                                  ? t(
+                                        "ui.create_book.title_comic_book",
+                                        "Neuer Comic",
+                                    )
+                                  : t("ui.create_book.title", "Neues Buch")}
                         </Dialog.Title>
                     </div>
 
