@@ -505,6 +505,36 @@ async def lifespan(app: FastAPI):
     finally:
         _ct_db.close()
     _load_installed_plugins()
+
+    # USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 (P2, 2026-05-18):
+    # Append project-tree plugins missing from the user-overlay's
+    # enabled list. Closes the silent feature-invisibility class
+    # that surfaced as the plugin-comics Session 1 smoke 404 — the
+    # user-overlay's stale list silently filters out new plugins
+    # because deep_merge treats lists as REPLACE. The migration
+    # extends the user-overlay's enabled list (respecting any
+    # explicit disabled entries) BEFORE discover_plugins reads
+    # the merged config.
+    from app import config_overlay
+
+    global _startup_config
+    _migrated, _did_write = config_overlay.migrate_user_overlay_enabled_list()
+    if _did_write:
+        # Refresh the snapshot so _enabled_plugins_from_config()
+        # returns the post-migration list to the diagnostics +
+        # discovery code below.
+        _startup_config = _load_app_config()
+    # Re-sync the manager's _app_config with the (possibly post-
+    # migration) merged view, AFTER any migration write. Module-
+    # import time already ran _sync_manager_with_overlay once; this
+    # second call ensures discover_plugins reads the migrated list
+    # in the same lifespan it was migrated. Also runs the no-op-
+    # cheap case where the migration did NOT write (e.g. when a
+    # user explicitly opted comics out via plugins.disabled) — the
+    # re-sync still picks up any other overlay changes that landed
+    # between module-import and lifespan start.
+    _sync_manager_with_overlay()
+
     _log_plugin_diagnostics_pre(enabled_in_config=_enabled_plugins_from_config())
 
     manager.discover_plugins()
