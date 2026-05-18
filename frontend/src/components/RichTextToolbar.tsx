@@ -46,7 +46,14 @@ import {
 } from "lucide-react"
 import {useEffect, useState} from "react"
 import {useI18n} from "../hooks/useI18n"
+import {PICTURE_BOOK_FONTS} from "../data/picture-book-fonts"
 import styles from "./RichTextToolbar.module.css"
+
+/** Sentinel value for the "Default font" <option>. Distinct from
+ *  any real font id so the change handler can branch cleanly:
+ *  this value → unsetFontFamily; any other value → setFontFamily.
+ *  Underscore prefix matches no real OFL font name. */
+const FONT_DEFAULT_SENTINEL = "__default__"
 
 interface Props {
     /** The TipTap ``Editor`` instance. ``null`` (no active TipTap
@@ -229,6 +236,49 @@ export default function RichTextToolbar({
             >
                 <AlignRight size={14} />
             </button>
+
+            <span className={styles.divider} aria-hidden="true" />
+
+            {/* PB-PHASE4 Session 4c-B-1 Finding G (G2): Font dropdown.
+             *  Native <select> per the Radix-DropdownMenu-in-happy-dom
+             *  lessons-learned rule. Sentinel "__default__" → no
+             *  fontFamily mark; any other value → setFontFamily.
+             *  Reads the current fontFamily via getAttributes('textStyle'),
+             *  falling back to the sentinel when no mark is present
+             *  (D11 backward-compat: existing pages without marks render
+             *  with the hardcoded Atkinson default in the PDF). */}
+            <select
+                onChange={(e) => {
+                    const value = e.target.value
+                    if (value === FONT_DEFAULT_SENTINEL) {
+                        editor.chain().focus().unsetFontFamily().run()
+                    } else {
+                        editor.chain().focus().setFontFamily(value).run()
+                    }
+                }}
+                value={
+                    (editor.getAttributes("textStyle").fontFamily as
+                        | string
+                        | undefined) ?? FONT_DEFAULT_SENTINEL
+                }
+                disabled={disabled}
+                data-testid={`${testidNamespace}-font-family`}
+                title={t("ui.page_editor.toolbar.font_family", "Font")}
+                aria-label={t("ui.page_editor.toolbar.font_family", "Font")}
+                className={styles.fontSelect}
+            >
+                <option value={FONT_DEFAULT_SENTINEL}>
+                    {t(
+                        "ui.page_editor.toolbar.font_family_default",
+                        "Default",
+                    )}
+                </option>
+                {PICTURE_BOOK_FONTS.map((font) => (
+                    <option key={font.id} value={font.id}>
+                        {font.label}
+                    </option>
+                ))}
+            </select>
         </div>
     )
 }

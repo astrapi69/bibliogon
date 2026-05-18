@@ -2039,6 +2039,8 @@ ui:
       align_left: "Linksbündig"
       align_center: "Zentriert"
       align_right: "Rechtsbündig"
+      font_family: "Schrift"
+      font_family_default: "Standard"
     export_pdf: "Als PDF exportieren"
     exporting_pdf: "Wird exportiert..."
     export_pdf_error: "PDF-Export fehlgeschlagen"

@@ -271,3 +271,110 @@ describe("RichTextToolbar — D1 MVP buttons render against a live editor", () =
         expect(root.getAttribute("aria-label")).toBe("Text formatting")
     })
 })
+
+// PB-PHASE4 Session 4c-B-1 Finding G (G2): RichTextToolbar Font
+// dropdown. Native <select> over Radix DropdownMenu per the
+// lessons-learned rule on Radix-in-happy-dom brittleness; tests
+// can drive it via fireEvent.change cleanly.
+describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
+    it("renders the font dropdown with the Default sentinel + 5 OFL fonts", async () => {
+        render(<Host />)
+        await waitFor(() => expect(screen.getByTestId("tb-root")).toBeTruthy())
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        expect(select).toBeTruthy()
+        // 1 Default sentinel + 5 fonts (Atkinson Hyperlegible,
+        // Andika, Comic Neue, Lexend, OpenDyslexic) = 6 options.
+        expect(select.options.length).toBe(6)
+        // First option is the Default sentinel.
+        expect(select.options[0].value).toBe("__default__")
+        // Atkinson Hyperlegible is the first real font option
+        // (D11 backward-compat default).
+        expect(select.options[1].value).toBe("Atkinson Hyperlegible")
+    })
+
+    it("default selection is the Default sentinel when no fontFamily mark is set", async () => {
+        render(<Host />)
+        await waitFor(() => expect(screen.getByTestId("tb-root")).toBeTruthy())
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        expect(select.value).toBe("__default__")
+    })
+
+    it("changing the dropdown to Andika sets the fontFamily mark on the current selection", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <Host
+                onEditorRef={(e) => {
+                    editorRef = e
+                }}
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+        // Select the whole doc so the change applies broadly.
+        act(() => {
+            editorRef!.commands.selectAll()
+        })
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "Andika"}})
+        // The contract the G4 PDF walker depends on: the JSON
+        // carries a textStyle mark with fontFamily=Andika.
+        const json = editorRef!.getJSON()
+        expect(JSON.stringify(json)).toContain('"fontFamily":"Andika"')
+    })
+
+    it("changing the dropdown to the Default sentinel removes the fontFamily mark", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <Host
+                onEditorRef={(e) => {
+                    editorRef = e
+                }}
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+        // First apply a font.
+        act(() => {
+            editorRef!.commands.selectAll()
+            editorRef!.commands.setFontFamily("Lexend")
+        })
+        expect(JSON.stringify(editorRef!.getJSON())).toContain(
+            '"fontFamily":"Lexend"',
+        )
+        // Then revert via the dropdown.
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "__default__"}})
+        // Mark should be gone.
+        expect(JSON.stringify(editorRef!.getJSON())).not.toContain(
+            '"fontFamily"',
+        )
+    })
+
+    it("dropdown reflects the active fontFamily mark when one is set", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <Host
+                onEditorRef={(e) => {
+                    editorRef = e
+                }}
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+        act(() => {
+            editorRef!.commands.selectAll()
+            editorRef!.commands.setFontFamily("Comic Neue")
+        })
+        const select = screen.getByTestId(
+            "tb-font-family",
+        ) as HTMLSelectElement
+        // The select's value tracks the active mark via
+        // getAttributes('textStyle').fontFamily.
+        await waitFor(() => expect(select.value).toBe("Comic Neue"))
+    })
+})

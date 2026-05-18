@@ -2047,6 +2047,8 @@ ui:
       align_left: "Align left"
       align_center: "Align center"
       align_right: "Align right"
+      font_family: "Yazı tipi"
+      font_family_default: "Varsayılan"
     export_pdf: "Export as PDF"
     exporting_pdf: "Exporting..."
     export_pdf_error: "PDF export failed"

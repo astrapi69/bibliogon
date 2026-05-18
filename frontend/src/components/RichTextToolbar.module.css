@@ -64,3 +64,35 @@
     background: color-mix(in srgb, var(--text, #333) 18%, transparent);
     margin: 0 2px;
 }
+
+/* PB-PHASE4 Session 4c-B-1 Finding G (G2): native <select>
+ * for the Font picker. Matches .btn styling proportions so
+ * the dropdown blends with the surrounding button row. Native
+ * <select> over Radix DropdownMenu because happy-dom + Radix
+ * portals are brittle for Vitest (lessons-learned rule); a
+ * <select> resolves cleanly via fireEvent.change. */
+.fontSelect {
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid color-mix(in srgb, var(--text, #333) 12%, transparent);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text, #333);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    max-width: 130px;
+}
+
+.fontSelect:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--text, #333) 8%, transparent);
+}
+
+.fontSelect:focus-visible {
+    outline: 2px solid var(--accent, #2563eb);
+    outline-offset: 1px;
+}
+
+.fontSelect:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}

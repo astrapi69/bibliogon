@@ -2040,6 +2040,8 @@ ui:
       align_left: "Align left"
       align_center: "Align center"
       align_right: "Align right"
+      font_family: "Font"
+      font_family_default: "Default"
     export_pdf: "Export as PDF"
     exporting_pdf: "Exporting..."
     export_pdf_error: "PDF export failed"
