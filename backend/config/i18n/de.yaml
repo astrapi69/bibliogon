@@ -1640,6 +1640,8 @@ ui:
       badge_warnings: "{count} Warnungen"
       cancel: "Abbrechen"
       cancel_import: "Import abbrechen"
+      run_in_background: "Im Hintergrund weiterlaufen"
+      run_in_background_hint: "Import läuft im Hintergrund weiter; ein Badge zeigt den Fortschritt."
       import_selected: "{count} Beiträge importieren"
       importing: "Importiert …"
     result:
@@ -1650,6 +1652,7 @@ ui:
       imported_comments_count: "{count} Kommentare importiert"
       skipped_comments_count: "{count} Kommentare übersprungen"
       go_to_articles: "Zu den Artikeln"
+      go_to_comments: "Zu den Kommentaren"
       import_another: "Weiteres ZIP importieren"
       show_imported: "Importierte Artikel anzeigen ({count})"
       show_skipped: "Übersprungene anzeigen ({count})"
@@ -1682,6 +1685,12 @@ ui:
       imported_summary: "Import abgeschlossen: {imported} importiert, {skipped} übersprungen, {errored} Fehler."
       import_failed: "Import fehlgeschlagen"
       preview_failed: "Vorschau fehlgeschlagen"
+    gate:
+      running: "Medium-Import läuft …"
+      completed: "Medium-Import fertig"
+      failed: "Medium-Import fehlgeschlagen"
+      cancelled: "Medium-Import abgebrochen"
+      expand_hint: "Klicken, um zur Medium-Import-Seite zurückzukehren"
   bulk_delete:
     delete_button: "Löschen"
     disabled_min_two: "Mindestens 2 Einträge auswählen"

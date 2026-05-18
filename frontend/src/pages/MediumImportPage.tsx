@@ -34,7 +34,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Eye, Home, Upload, X } from "lucide-react";
+import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
 import {
@@ -423,6 +423,24 @@ export default function MediumImportPage() {
                                           "Abbrechen",
                                       )}
                             </button>
+                            {isImporting && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => navigate("/articles")}
+                                    data-testid="medium-import-preview-background-btn"
+                                    title={t(
+                                        "ui.medium_import.preview.run_in_background_hint",
+                                        "Import läuft im Hintergrund weiter; ein Badge zeigt den Fortschritt.",
+                                    )}
+                                >
+                                    <Minimize2 size={14} />{" "}
+                                    {t(
+                                        "ui.medium_import.preview.run_in_background",
+                                        "Im Hintergrund weiterlaufen",
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </section>
                 )}

@@ -1649,6 +1649,8 @@ ui:
       badge_warnings: "{count} προειδοποιήσεις"
       cancel: "Άκυρο"
       cancel_import: "Ακύρωση εισαγωγής"
+      run_in_background: "Εκτέλεση στο παρασκήνιο"
+      run_in_background_hint: "Η εισαγωγή συνεχίζεται στο παρασκήνιο· ένα σήμα εμφανίζει την πρόοδο."
       import_selected: "Εισαγωγή {count} δημοσιεύσεων"
       importing: "Εισαγωγή …"
     result:
@@ -1659,6 +1661,7 @@ ui:
       imported_comments_count: "{count} σχόλια εισήχθησαν"
       skipped_comments_count: "{count} σχόλια παραλείφθηκαν"
       go_to_articles: "Στα άρθρα"
+      go_to_comments: "Στα σχόλια"
       import_another: "Εισαγωγή άλλου ZIP"
       show_imported: "Εμφάνιση εισηγμένων άρθρων ({count})"
       show_skipped: "Εμφάνιση παραλειφθέντων ({count})"
@@ -1691,6 +1694,12 @@ ui:
       imported_summary: "Η εισαγωγή ολοκληρώθηκε: {imported} εισήχθησαν, {skipped} παραλείφθηκαν, {errored} σφάλματα."
       import_failed: "Η εισαγωγή απέτυχε"
       preview_failed: "Η προεπισκόπηση απέτυχε"
+    gate:
+      running: "Εισαγωγή Medium σε εξέλιξη …"
+      completed: "Η εισαγωγή Medium ολοκληρώθηκε"
+      failed: "Η εισαγωγή Medium απέτυχε"
+      cancelled: "Η εισαγωγή Medium ακυρώθηκε"
+      expand_hint: "Κάντε κλικ για να επιστρέψετε στη σελίδα εισαγωγής Medium"
   bulk_delete:
     delete_button: "Διαγραφή"
     disabled_min_two: "Επιλέξτε τουλάχιστον 2 εγγραφές"

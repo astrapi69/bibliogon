@@ -1649,6 +1649,8 @@ ui:
       badge_warnings: "{count} 件の警告"
       cancel: "キャンセル"
       cancel_import: "インポートを中止"
+      run_in_background: "バックグラウンドで継続"
+      run_in_background_hint: "インポートはバックグラウンドで継続されます。バッジが進行状況を表示します。"
       import_selected: "{count} 件の投稿をインポート"
       importing: "インポート中 …"
     result:
@@ -1659,6 +1661,7 @@ ui:
       imported_comments_count: "{count} 件のコメントをインポート"
       skipped_comments_count: "{count} 件のコメントをスキップ"
       go_to_articles: "記事一覧へ"
+      go_to_comments: "コメント一覧へ"
       import_another: "別の ZIP をインポート"
       show_imported: "インポートした記事を表示（{count}）"
       show_skipped: "スキップした項目を表示（{count}）"
@@ -1691,6 +1694,12 @@ ui:
       imported_summary: "インポート完了: {imported} 件をインポート、{skipped} 件をスキップ、{errored} 件のエラー。"
       import_failed: "インポートに失敗しました"
       preview_failed: "プレビューに失敗しました"
+    gate:
+      running: "Medium インポート実行中 …"
+      completed: "Medium インポート完了"
+      failed: "Medium インポートに失敗しました"
+      cancelled: "Medium インポートを中止しました"
+      expand_hint: "Medium インポートページに戻るにはクリック"
   bulk_delete:
     delete_button: "削除"
     disabled_min_two: "2 件以上のエントリを選択してください"

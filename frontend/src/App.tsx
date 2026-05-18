@@ -12,6 +12,7 @@ import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
 import {DialogProvider} from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
+import MediumImportGate from "./components/MediumImportGate";
 import OfflineBanner from "./components/OfflineBanner";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
 import {BulkAiFillJobProvider} from "./contexts/BulkAiFillJobContext";
@@ -97,6 +98,7 @@ export default function App() {
             </Routes>
             <EventRecorderSetup/>
             <AudioExportGate/>
+            <MediumImportGate/>
             <BulkAiFillDock/>
             <HelpPanel/>
             <ErrorReportDialog

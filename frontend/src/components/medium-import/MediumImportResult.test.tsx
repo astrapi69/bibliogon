@@ -175,6 +175,37 @@ describe("MediumImportResult", () => {
         expect(rows[1].textContent).toContain("orphan_skip");
     });
 
+    it("does NOT render the go-to-comments button when imported_comments_count is 0", () => {
+        withRouter(<MediumImportResult result={baseResponse} onReset={vi.fn()} />);
+        expect(
+            screen.queryByTestId("medium-import-result-go-comments"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders the go-to-comments link when imported_comments_count > 0", () => {
+        withRouter(
+            <MediumImportResult
+                result={{
+                    ...baseResponse,
+                    imported_comments_count: 3,
+                    imported_comments: [
+                        {
+                            id: "cmt-1",
+                            filename: "posts/a.html",
+                            body_preview: "x",
+                            responds_to_article_id: null,
+                        },
+                    ],
+                }}
+                onReset={vi.fn()}
+            />,
+        );
+        const link = screen.getByTestId("medium-import-result-go-comments");
+        expect(link).toBeInTheDocument();
+        // Links to the Settings comments-admin tab.
+        expect(link).toHaveAttribute("href", "/settings?tab=comments");
+    });
+
     it("renders all three article sections AND both comment sections when all counts > 0", () => {
         withRouter(
             <MediumImportResult

@@ -1649,6 +1649,8 @@ ui:
       badge_warnings: "{count} avisos"
       cancel: "Cancelar"
       cancel_import: "Cancelar importação"
+      run_in_background: "Executar em segundo plano"
+      run_in_background_hint: "A importação continua em segundo plano; um emblema mostra o progresso."
       import_selected: "Importar {count} publicações"
       importing: "A importar …"
     result:
@@ -1659,6 +1661,7 @@ ui:
       imported_comments_count: "{count} comentários importados"
       skipped_comments_count: "{count} comentários ignorados"
       go_to_articles: "Ir para artigos"
+      go_to_comments: "Ir para comentários"
       import_another: "Importar outro ZIP"
       show_imported: "Mostrar artigos importados ({count})"
       show_skipped: "Mostrar ignorados ({count})"
@@ -1691,6 +1694,12 @@ ui:
       imported_summary: "Importação concluída: {imported} importados, {skipped} ignorados, {errored} erros."
       import_failed: "A importação falhou"
       preview_failed: "Pré-visualização falhou"
+    gate:
+      running: "Importação do Medium em curso …"
+      completed: "Importação do Medium concluída"
+      failed: "A importação do Medium falhou"
+      cancelled: "A importação do Medium foi cancelada"
+      expand_hint: "Clicar para voltar à página de importação do Medium"
   bulk_delete:
     delete_button: "Eliminar"
     disabled_min_two: "Selecione pelo menos 2 entradas"

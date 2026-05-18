@@ -1641,6 +1641,8 @@ ui:
       badge_warnings: "{count} warnings"
       cancel: "Cancel"
       cancel_import: "Cancel import"
+      run_in_background: "Run in background"
+      run_in_background_hint: "Import continues in the background; a badge shows progress."
       import_selected: "Import {count} posts"
       importing: "Importing …"
     result:
@@ -1651,6 +1653,7 @@ ui:
       imported_comments_count: "{count} comments imported"
       skipped_comments_count: "{count} comments skipped"
       go_to_articles: "Go to articles"
+      go_to_comments: "Go to comments"
       import_another: "Import another ZIP"
       show_imported: "Show imported articles ({count})"
       show_skipped: "Show skipped ({count})"
@@ -1683,6 +1686,12 @@ ui:
       imported_summary: "Import complete: {imported} imported, {skipped} skipped, {errored} errors."
       import_failed: "Import failed"
       preview_failed: "Preview failed"
+    gate:
+      running: "Medium import running …"
+      completed: "Medium import done"
+      failed: "Medium import failed"
+      cancelled: "Medium import cancelled"
+      expand_hint: "Click to return to the Medium-import page"
   bulk_delete:
     delete_button: "Delete"
     disabled_min_two: "Select at least 2 entries"

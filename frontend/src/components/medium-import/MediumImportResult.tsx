@@ -118,6 +118,18 @@ export default function MediumImportResult({ result, onReset }: MediumImportResu
                     >
                         {t("ui.medium_import.result.go_to_articles", "Zu den Artikeln")}
                     </Link>
+                    {importedCommentsCount > 0 && (
+                        <Link
+                            to="/settings?tab=comments"
+                            className="btn btn-secondary btn-sm"
+                            data-testid="medium-import-result-go-comments"
+                        >
+                            {t(
+                                "ui.medium_import.result.go_to_comments",
+                                "Zu den Kommentaren",
+                            )}
+                        </Link>
+                    )}
                     <button
                         type="button"
                         className="btn btn-secondary btn-sm"
