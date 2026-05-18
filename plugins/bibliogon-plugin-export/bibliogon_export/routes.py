@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -87,6 +88,158 @@ def _load_book(book_id: str) -> tuple[dict[str, Any], list[dict[str, Any]], list
         _close_db(db_gen)
 
 
+def _load_picture_book_pages(book_id: str) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load picture-book data for the WeasyPrint generator.
+
+    Returns ``(book_data, pages, assets)`` mirroring ``_load_book``'s
+    shape but with pages (position-ordered) instead of chapters AND
+    asset entries that include ``id`` (so the generator can match
+    ``Page.image_asset_id`` to the asset list). The existing
+    ``_load_book`` does NOT include ``id`` in its asset serialization
+    because the chapter-based pipeline references assets by filename;
+    keeping the two loaders separate avoids touching the prose path.
+
+    Raises HTTPException 404 if the book does not exist, or 400 if
+    the book's content discriminator is not ``picture_book`` (i.e.
+    the dispatch above wrongly routed a prose book here).
+    """
+    from app.models import Asset, Page
+
+    db_gen, db = _require_db()
+    try:
+        if _book_model is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Export plugin not properly configured",
+            )
+        Book = _book_model
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+        content_type = getattr(book, "book_type", "prose")
+        if content_type != "picture_book":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Book {book_id} is not a picture book "
+                    f"(book_type={content_type!r})"
+                ),
+            )
+        book_data = _serialize_book(book)
+        pages = (
+            db.query(Page)
+            .filter(Page.book_id == book_id)
+            .order_by(Page.position.asc())
+            .all()
+        )
+        pages_data = [_serialize_page(p) for p in pages]
+        assets_data = [
+            {
+                "id": a.id,
+                "filename": a.filename,
+                "asset_type": a.asset_type,
+                "path": a.path,
+            }
+            for a in db.query(Asset).filter(Asset.book_id == book_id).all()
+        ]
+        return book_data, pages_data, assets_data
+    finally:
+        _close_db(db_gen)
+
+
+def _serialize_page(page: Any) -> dict[str, Any]:
+    """Serialize a Page ORM object to the PageOut-shaped dict the
+    WeasyPrint generator consumes.
+
+    Decodes ``layout_config`` from its JSON-encoded Text-column form
+    to a parsed dict before returning. The generator at
+    ``picture_book_pdf.generate_picture_book_pdf`` expects the
+    parsed shape (anchor_position / opacity / image_position / etc.
+    as keys, not as a JSON string). Malformed JSON degrades to an
+    empty dict — defensive against legacy rows from the
+    speech_bubble_config -> layout_config rename in Session 4c.
+    """
+    raw_config = getattr(page, "layout_config", None)
+    layout_config: dict[str, Any] | None
+    if raw_config:
+        try:
+            layout_config = json.loads(raw_config)
+        except (json.JSONDecodeError, TypeError):
+            layout_config = {}
+    else:
+        layout_config = None
+    return {
+        "id": page.id,
+        "book_id": page.book_id,
+        "position": page.position,
+        "layout": page.layout,
+        "text_content": page.text_content,
+        "image_asset_id": page.image_asset_id,
+        "layout_config": layout_config,
+    }
+
+
+def _export_picture_book_pdf(
+    book_data: dict[str, Any],
+    pages: list[dict[str, Any]],
+    assets: list[dict[str, Any]],
+) -> FileResponse:
+    """Render a picture-book to PDF via the WeasyPrint generator
+    and return a ``FileResponse``.
+
+    Resolves ``upload_dir`` from ``app.paths.get_upload_dir()`` per
+    the filesystem-isolation rule (NEVER use CWD-relative paths) +
+    appends the book id to scope assets to the right directory.
+    Creates a process-scoped temp dir for the output PDF; the
+    FileResponse caller owns deletion semantics.
+
+    Caller MUST have verified ``book_data["book_type"] ==
+    "picture_book"`` and ``fmt == "pdf"`` before calling.
+    """
+    from app.paths import get_upload_dir
+
+    from .picture_book_pdf import generate_picture_book_pdf
+
+    title = (book_data.get("title") or "picture-book").strip()
+    # Lightweight slugifier — picture-book filenames don't need
+    # manuscripta's print-edition suffix (book_type query param)
+    # because the print-edition concept doesn't apply here. Same
+    # ASCII-fold + hyphen-collapse pattern manuscripta uses.
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "picture-book"
+
+    upload_dir = get_upload_dir() / book_data["id"]
+    tmp_dir = Path(tempfile.mkdtemp(prefix="picture_book_pdf_"))
+    output_path = tmp_dir / f"{slug}.pdf"
+
+    try:
+        generate_picture_book_pdf(
+            book_data=book_data,
+            pages=pages,
+            assets=assets,
+            upload_dir=upload_dir,
+            output_path=output_path,
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "WeasyPrint is not installed in the export plugin's "
+                f"environment: {e}"
+            ),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Picture-book PDF generation failed: {e}",
+        ) from e
+
+    return FileResponse(
+        path=str(output_path),
+        filename=f"{slug}.pdf",
+        media_type="application/pdf",
+    )
+
+
 def _load_book_overwrite_flag(book_id: str) -> bool:
     """Read only the ``audiobook_overwrite_existing`` column for one book.
 
@@ -110,6 +263,7 @@ def _load_book_overwrite_flag(book_id: str) -> bool:
 def _query_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Query book data from DB and return as dicts."""
     from sqlalchemy.orm import joinedload
+
     from app.models import Asset
 
     if _book_model is None:
@@ -148,6 +302,16 @@ def _serialize_book(book: Any) -> dict[str, Any]:
         "audiobook_skip_chapter_types": _decode_skip_chapter_types(
             getattr(book, "audiobook_skip_chapter_types", None)
         ),
+        # PB-PHASE4 Session 6: surface the content discriminator
+        # for export-route dispatch. NAMING COLLISION WARNING:
+        # this `book_type` is Bibliogon's CONTENT discriminator
+        # (prose | picture_book | future comic_book). The export
+        # route's same-named query parameter `book_type` is
+        # manuscripta's PRINT-EDITION concept (ebook | paperback
+        # | hardcover | audiobook). Different namespaces, same
+        # name. Disambiguate by source: model field = content;
+        # query param = print edition.
+        "book_type": getattr(book, "book_type", "prose"),
     }
 
 
@@ -195,7 +359,7 @@ def _load_export_config() -> tuple[dict[str, Any], dict[str, Any]]:
     config_path = Path("config/plugins/export.yaml")
     config: dict[str, Any] = {}
     if config_path.exists():
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
     return config, config.get("settings", {})
 
@@ -284,7 +448,7 @@ def _read_audiobook_merge_setting() -> str:
     config_path = Path("config/plugins/audiobook.yaml")
     if config_path.exists():
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 cfg = yaml.safe_load(f) or {}
             return normalize_merge_mode(cfg.get("settings", {}).get("merge"))
         except Exception:
@@ -316,7 +480,7 @@ def _read_audiobook_settings() -> dict[str, Any]:
     if not config_path.exists():
         return {}
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
     except Exception:
         return {}
@@ -406,11 +570,57 @@ def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: b
 
 @router.get("/{fmt}")
 def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0, use_manual_toc: bool | None = None, db: Any = Depends(lambda: None)):
-    """Export a book. Dispatches to format-specific handler."""
+    """Export a book. Dispatches to format-specific handler.
+
+    PB-PHASE4 Session 6: when Book.book_type == "picture_book"
+    (the Bibliogon CONTENT discriminator), dispatches to the
+    WeasyPrint-based generator instead of the chapter/manuscripta
+    pipeline.
+
+    Naming-collision note: the ``book_type`` query parameter above
+    is manuscripta's PRINT-EDITION concept (ebook | paperback |
+    hardcover | audiobook). The dispatch below reads
+    ``Book.book_type`` (the content discriminator: prose |
+    picture_book | future comic_book). Different namespaces, same
+    name — disambiguate by source (model field = content; query
+    param = print edition).
+    """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}")
 
     book_data, chapters, assets = _load_book(book_id)
+
+    # Branch on content discriminator BEFORE scaffolding (which
+    # assumes the chapter-based shape and would fail or produce
+    # garbage for picture-books).
+    if book_data.get("book_type") == "picture_book":
+        if fmt != "pdf":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Picture-books only support PDF export in this "
+                    f"release; got fmt={fmt!r}. EPUB + other formats "
+                    f"land with PICTURE-BOOK-PDF-KDP-FORMATS-01 (P3) "
+                    f"and follow-ups."
+                ),
+            )
+        # Re-query through the picture-book loader: the chapter-
+        # based _load_book above doesn't include asset.id (chapter
+        # pipeline references assets by filename) and doesn't query
+        # pages at all. _load_picture_book_pages also re-validates
+        # the content discriminator as a defensive sanity check.
+        pb_book_data, pages, pb_assets = _load_picture_book_pages(book_id)
+        try:
+            return _export_picture_book_pdf(pb_book_data, pages, pb_assets)
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Picture-book export failed: {e}",
+            ) from e
+
+    # Prose path (unchanged from pre-Session-6 behavior).
     tmp_dir, project_dir, config, settings = _scaffold_and_prepare(book_data, chapters, assets, toc_depth)
     base_name = _build_filename(project_dir.name, book_type, settings)
     manual_toc = use_manual_toc if use_manual_toc is not None else _detect_manual_toc(chapters)
@@ -561,9 +771,10 @@ async def _run_audiobook_job(
     the SSE endpoint then fans out to subscribers.
     """
     try:
-        from app.job_store import job_store
         from bibliogon_audiobook import audiobook_storage
         from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
+
+        from app.job_store import job_store
     except ImportError:
         raise RuntimeError("Audiobook plugin not installed.")
 
@@ -645,7 +856,9 @@ async def _run_audiobook_job(
     if generation_mode in ("missing_only", "outdated_only") and book_id:
         try:
             from bibliogon_audiobook.generator import (
-                _slugify, extract_plain_text, should_regenerate,
+                _slugify,
+                extract_plain_text,
+                should_regenerate,
             )
             chapters_dir = audiobook_storage.audiobook_dir(book_id) / "chapters"
             sorted_chs = sorted(chapters, key=lambda c: c.get("position", 0))
