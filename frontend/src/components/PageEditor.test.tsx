@@ -176,6 +176,17 @@ describe("PageEditor scaffold (Commit 2)", () => {
         fireEvent.click(screen.getByTestId("page-editor-back"))
         expect(onBack).toHaveBeenCalledTimes(1)
     })
+
+    // PB-PHASE4 Session 4c-B-1 manual smoke Finding D regression pin:
+    // every top-level surface (Dashboard, ArticleList, ArticleEditor,
+    // Settings, Help, GetStarted, MediumImportPage, ChapterSidebar)
+    // mounts ThemeToggle. PageEditor was the 9th confirmed parallel-
+    // surface asymmetry instance — pin the toggle's presence here so
+    // a future refactor cannot silently drop it again.
+    it("renders ThemeToggle in the header (Finding D)", () => {
+        render(<PageEditor bookId="b1" bookTitle="My Picture Book" onBack={vi.fn()} />)
+        expect(screen.getByTestId("theme-toggle")).toBeTruthy()
+    })
 })
 
 describe("PageEditor + PageThumbnails wiring (Commit 3)", () => {

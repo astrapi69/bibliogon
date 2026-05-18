@@ -391,20 +391,33 @@ store.
   narrower follow-up to the closed POSITIONING-01): drag-to-
   position UI for the speech-bubble. Session 4c shipped the
   preset path (5 anchor presets — TL/TR/BL/BR/CENTER — plus
-  opacity + size sliders). This item adds free-form
-  positioning if the 5 presets aren't enough for an author's
-  use case.
-  Trigger: user requests bubble positioning beyond the 5
+  opacity + size sliders); 4c-B-1 Fix A extended to the full
+  9-position anchor grid. This item adds free-form positioning
+  if the 9 presets aren't enough for an author's use case.
+
+  Multi-Bubble context (added 2026-05-19 from Finding E):
+  drag-to-position becomes substantially more valuable once
+  ``PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`` ships — multiple
+  bubbles on a single scene want fine-grained per-bubble
+  positioning (presets feel coarse when 3+ bubbles overlap).
+  Schedule this item as part of the Comic-Foundation Session
+  alongside MULTI-BUBBLE-01 + TAIL-01 rather than as an
+  isolated drag-only commit; the three together form one
+  coherent bubble-system upgrade.
+
+  Trigger: user requests bubble positioning beyond the 9
   presets OR drag-to-position UX feedback from a real
-  picture-book authoring session. NOT schedule-tied.
+  picture-book authoring session OR Comic-Foundation
+  Session starts. NOT schedule-tied as a standalone item.
   Scope: pointer-drag handle on the bubble itself; persist
   `{anchor_position: {x_pct, y_pct}}` shape (extending the
   current string-preset shape, NOT replacing — preset names
   stay as a quick-pick fallback); PageCanvas reads the dict
   form when present and applies `left: x_pct%; top: y_pct%;
   transform: translate(-50%, -50%)`. Vitest + E2E.
-  Effort: 2-4 commits depending on UX polish (snap-to-edge,
-  keyboard nudge, etc.).
+  Effort: 2-4 commits standalone; folded into the Comic-
+  Foundation Session as one of the three bubble-system
+  commits, the marginal cost drops to ~1-2 commits.
   Closure note: superseded the broader
   PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 (closed by
   Session 4c). That older item was filed at Session 4 close
@@ -491,7 +504,11 @@ store.
     variant is the easiest first; cloud + explosion are
     the visual stretch goals.
   - Tail configuration: direction (8 octants), length, tip
-    offset.
+    offset. **Note (2026-05-19):** the tail-configuration
+    sub-scope was promoted to its own item,
+    ``PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`` (Finding E /
+    Comic-Foundation grouping). Keep here as a Tier-3
+    aspirational mention; the dedicated home is TAIL-01.
   - Padding (slider, per-side or uniform).
   - font_style: italic/oblique toggle.
 
@@ -501,6 +518,112 @@ store.
   Effort: 6-10 commits depending on SVG-vs-CSS choice for
   shape variants. Probably warrants its own Pre-Inspection
   + design discussion before implementation.
+
+- **PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01** (P3, filed
+  2026-05-19 from Finding E manual smoke): support multiple
+  speech-bubbles per page instead of the single-bubble
+  shape that Sessions 4c + 4c-B-1 + 4c-B-2 ship.
+
+  Schema change: ``layout_config.speech_bubbles[]`` array
+  replaces the current flat single-bubble dict. Each
+  array entry carries the per-bubble Tier-Properties
+  (background_color, border_*, font_*, anchor_position,
+  size, opacity, plus the new tail config from TAIL-01).
+  Backward compatibility: when reading a row with the
+  legacy single-bubble dict shape, the canvas + editor
+  treat it as a one-entry array; on next write the
+  dispatcher always serializes the array form. No data
+  migration; legacy shape naturally fades out as users
+  edit pages.
+
+  Scope:
+  - Schema migration shim in PageCanvas + properties pane
+    (read-side: array OR legacy dict)
+  - Add-bubble UI affordance (button in properties pane)
+  - Delete-bubble UI (per-bubble remove button)
+  - Active-bubble selector in properties pane (one bubble
+    config is shown / editable at a time; click another
+    bubble on the canvas to switch active)
+  - PDF export walker handles the array
+  - i18n + Vitest + E2E
+
+  Strategic note: this is the architectural anchor of the
+  post-v0.35.0 **Comic-Foundation Session**. Establishes
+  the multi-bubble + tail + drag pattern that a future
+  Comic-Plugin reuses verbatim — one bubble-system,
+  multiple usage contexts (single-page picture-book scene
+  vs. multi-panel comic page). Matches the Single-Source-
+  of-Truth discipline: extract the bubble component once,
+  not twice.
+
+  Pairs with:
+  - ``PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`` (sibling Comic-
+    Foundation item; tail-configurability per bubble)
+  - ``PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01`` (P5;
+    drag-to-position per bubble; gains real value once
+    multiple bubbles coexist)
+  - ``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01``
+    (the 4c-B-2 Tier-Properties become per-bubble; each
+    array entry carries its own Tier-1 + Tier-2 dict)
+
+  Schema-decision (defer to Pre-Inspection of Comic-
+  Foundation Session): does the multi-bubble shape stay
+  under the existing ``speech_bubble`` PageLayout, OR
+  does a new ``comic_bubble`` PageLayout (or a future
+  ``comic_panel`` layout in a Comic-Plugin) carry the
+  multi-bubble shape with a different surface entirely?
+  The user's framing: "quasi Comic for one page within
+  Picture-Book Layout" — points at the
+  "extend speech_bubble" path for the picture-book MVP
+  and a separate comic_panel layout later for true
+  multi-panel comic work. Resolve at Comic-Foundation
+  Pre-Inspection time.
+
+  Trigger: Comic-Foundation Session (post-v0.35.0,
+  scheduled after the 4-stream v0.35.0 bundle closes)
+  OR earlier user request for multi-bubble on a single
+  picture-book page. Effort: 5-8 commits if extending
+  speech_bubble; 8-12 if introducing a new layout.
+
+- **PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01** (P3, filed
+  2026-05-19 from Finding E manual smoke): speech-bubble
+  with a configurable tail-triangle pointing to the
+  speaking character. Sibling Comic-Foundation item.
+
+  Scope:
+  - tail-direction: 8 octants (N / NE / E / SE / S / SW /
+    W / NW) plus "none" / "auto" (auto picks the nearest
+    edge to the bubble's anchor_position)
+  - tail-position relative to the bubble's edge: slider
+    0-100% along the chosen edge (e.g. SE direction with
+    position 30% = tail near the top of the right-bottom
+    edge)
+  - tail-length slider (8-32px default range)
+  - Render: SVG ``<path>`` (preferred) or CSS clip-path
+    on a pseudo-element. SVG path approach gives clean
+    rendering at any zoom; clip-path approach is simpler
+    to author but doesn't anti-alias as well.
+
+  Pairs with:
+  - ``PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`` (each
+    bubble in the array carries its own tail config)
+  - ``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01``
+    (broader Tier-3 shape work; tail was originally a
+    sub-scope there, promoted out to this dedicated item
+    on 2026-05-19)
+
+  Strategic note: ships alongside MULTI-BUBBLE-01 in the
+  Comic-Foundation Session. The two together establish
+  the "bubble-system" reusable for the future Comic-
+  Plugin. Tail-direction is the visual cue that
+  distinguishes "bubble for character A" from "bubble
+  for character B" on the same scene — without it,
+  multi-bubble is just multi-text-box.
+
+  Trigger: Comic-Foundation Session OR user requests
+  tail-bubble visual on a single-bubble page. Effort:
+  3-5 commits (SVG render + properties-pane controls +
+  i18n + Vitest + E2E).
 
 - **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01**: ✅
   CLOSED by PB-PHASE4 Session 4c (preset write-path)

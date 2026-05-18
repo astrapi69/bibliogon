@@ -9,6 +9,7 @@ import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas from "./PageCanvas"
 import RichTextToolbar from "./RichTextToolbar"
+import ThemeToggle from "./ThemeToggle"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -235,6 +236,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                         </span>
                     </button>
                 )}
+                <ThemeToggle variant="dark" />
                 <button
                     type="button"
                     onClick={handleExportPdf}

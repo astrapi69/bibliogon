@@ -22,56 +22,235 @@ next. The 4 streams ship together as v0.35.0.
 
 ---
 
-## CURRENT GATE: user re-smoke of 4c-B-1 fixes
+## CURRENT GATE: user re-smoke of 4c-B-1 fixes + Finding D fix
 
-3 fix commits shipped today against 4c-B-1 manual-smoke findings;
-**user re-smoke is the blocker for 4c-B-2 starting**.
+4-step fix sequence (updated 2026-05-19 with Finding D + Finding E
+from re-smoke). **A/B/C re-smoke green per the user's report**;
+**Finding D Pre-Inspection complete, Commit 4 pending GO**;
+**Finding E strategically deferred to post-v0.35.0 Comic-Foundation
+Session — backlog items filed, no code in this fix sequence**.
 
-### What to re-smoke
+### Updated 4c-B-1 fix sequence (5 commits — within 5-9 stop-condition)
 
-1. **Finding C (BUG) — JSON in textarea after layout switch**
-   - Repro the original: author text in a TipTap layout
-     (image_top_text_bottom / image_left_text_right / text_only),
-     switch to a Tier-Property layout (speech_bubble /
-     image_full_text_overlay).
-   - Expected: textarea shows the **plain text**, NOT the raw
-     JSON.
-   - Same for the **printed PDF** (export PDF, open in viewer):
-     the rendered text should be plain text, not raw JSON.
-   - Commit: `a731c30`.
+| # | Item | Status | Commit |
+|---|------|--------|--------|
+| 1 | Bug C: defensive plain-text extraction | ✅ shipped | `a731c30` |
+| 2 | Finding A: 5→9 anchor presets | ✅ shipped | `ed87d50` |
+| 3 | Finding B: visual separator opacity bump | ✅ shipped | `a69a54d` |
+| 4 | Finding D: dark/light-mode toggle in PageEditor surface | ⏳ ready (audit done, GO given) | — |
+| 5 | Finding G: Font-configuration (audit-first, surface options) | ⏳ audit pending | — |
 
-2. **Finding A — 9-position anchor grid for speech_bubble**
-   - Open a `speech_bubble` page's properties pane.
-   - Expected: all **9 cells** of the 3×3 grid are clickable
-     (previously only 5 — the 4 edge-midpoints were empty).
-   - The 4 new positions: `top-center`, `middle-left`,
-     `middle-right`, `bottom-center`.
-   - Each cell has an aria-label tooltip (hover) + screen-reader
-     label.
-   - Commit: `ed87d50`.
+### Finding F — acknowledged, no action this session
 
-3. **Finding B — visual separator more visible**
-   - Open a page with `image_top_text_bottom` or
-     `image_left_text_right` layout.
-   - Expected: clear visual boundary between image region and
-     text region (border 14% → 25% opacity, regionText
-     background 5% → 10%).
-   - `speech_bubble` + `image_full_text_overlay` intentionally
-     unchanged (own backdrop styling).
-   - `text_only` keeps the 5% tint (no image region to
-     separate from).
-   - Commit: `a69a54d`.
+User-reminder during re-smoke: speech-bubble `width` +
+`height` still missing in 4c-B-1. Already accounted for in
+`PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01`'s
+4c-B Pre-Inspection adjustment (2026-05-17): replace the
+single `size` property with `bubble_width` + `bubble_height`
+for finer control. Lands in 4c-B-2 with the rest of the
+Tier-Property work. NO action in this fix sequence.
 
-### Verification status
+Strategic note (user-added 2026-05-19): bubble width +
+height is ALSO relevant for the future Comic-Foundation
+Session — same reusable bubble-system pattern. Matches
+Single-Source-of-Truth discipline: one bubble component
+serving both single-bubble (4c-B-2 Picture-Book) and
+multi-bubble-per-page (Comic-Foundation) contexts.
 
-All 3 fixes are pushed to `origin/main`. Local test gate:
+### Finding D — Pre-Inspection (audit-first, complete)
 
-- Vitest: **1534 / 1534** passed
-- Backend pytest (pages-routes + i18n + picture_book_pdf):
-  **116 + 75 + 68** all passed
-- tsc: clean
+**Diagnosis: FEATURE-GAP (UI affordance missing), NOT bug.**
 
-### If re-smoke surfaces more findings
+What the audit found:
+
+1. **Global theme system is correctly wired at app root.**
+   `App.tsx:34` calls `useTheme()` which writes `data-theme`
+   (light/dark) AND `data-app-theme` (palette) to
+   `document.documentElement` (`<html>`). The toggle is
+   global — every component everywhere in the app inherits.
+
+2. **PageEditor + PageCanvas CSS modules consume theme tokens
+   correctly.**
+   - `PageEditor.module.css` uses `var(--bg-app)`, `var(--text)`,
+     `var(--bg-sidebar)`, `var(--text-sidebar)`,
+     `var(--font-display)`, `var(--danger)`, plus `color-mix(in
+     srgb, var(--text) ...)` for derived opacities.
+   - `PageCanvas.module.css` uses `var(--text)`,
+     `var(--bg-editor, var(--bg-app))`, `color-mix(...)`.
+   - **Intentional exceptions** (these DO NOT theme-flip,
+     and that's correct):
+     - `.canvasLayoutImageFullTextOverlay .regionText`:
+       hardcoded `background: rgba(0,0,0,0.45); color: white;`
+       — overlay band needs contrast against any image
+       regardless of theme.
+     - `.canvasLayoutSpeechBubble .regionText`: hardcoded
+       `background: white; color: black;` — traditional comic
+       bubble; should not theme-flip.
+     - `.imageReplaceBtn`: hardcoded over-image button styling.
+
+3. **PageEditor does NOT mount `ThemeToggle`.**
+   - All other top-level surfaces mount it: Dashboard,
+     ArticleList, ArticleEditor, Settings, Help, GetStarted,
+     MediumImportPage, plus ChapterSidebar (prose BookEditor).
+   - PageEditor has its own header chrome (back / book title /
+     Metadata / Export PDF) but no theme toggle.
+   - User in Picture-Book editor cannot toggle dark/light
+     without navigating away. **This is the gap.**
+
+4. **Asymmetry parity classification**: per the "Articles-vs-
+   Books parallel-surface asymmetry" lessons-learned rule,
+   this is the 9th confirmed instance of the pattern class —
+   prose BookEditor (via ChapterSidebar) has the toggle,
+   Picture-Book PageEditor doesn't. Reasonably treated as
+   accidental drift, not intentional asymmetry (no documented
+   reason in the bubble cluster of intentional Books-only
+   asymmetries).
+
+### Proposed Commit 4 — Finding D fix plan
+
+Small, self-contained, low-risk:
+
+- **Frontend** (`frontend/src/components/PageEditor.tsx`):
+  add `import ThemeToggle from "./ThemeToggle"` and mount
+  `<ThemeToggle variant="dark"/>` in the header (between
+  Metadata + Export PDF buttons — keeps the existing chrome
+  order intact). `variant="dark"` matches `ChapterSidebar`'s
+  precedent for sidebar-bg-tinted headers.
+- **Tests** (`PageEditor.test.tsx`): add 1 Vitest
+  asserting `data-testid="theme-toggle"` renders in the
+  PageEditor chrome.
+- **i18n**: zero new keys (ThemeToggle uses native `title`
+  attributes wired internally).
+- **CSS**: zero changes (ThemeToggle is self-contained
+  inline-styled per its component).
+- **Backend / Playwright**: zero changes.
+
+**Test gate per atomic-green discipline:**
+- Vitest (full frontend) green
+- tsc clean
+- No backend test changes needed
+
+**Stop-conditions** (none expected, but pre-registered):
+- If `<ThemeToggle variant="dark"/>` clashes visually with
+  the PageEditor header chrome (the only existing call-site
+  using `variant="dark"` is `ChapterSidebar`, same
+  `--bg-sidebar` + `--text-sidebar` token pair as
+  PageEditor's header — should be visually equivalent) →
+  surface, decide between `variant="dark"` vs the default.
+- If commit count grows beyond 1 (e.g. discovers a deeper
+  theme-architecture issue mid-implementation) → surface.
+
+**Estimated**: 1 commit, ~10 LOC change + 1 Vitest case.
+
+### Finding E (Multi-Bubble with Tails) — strategically deferred
+
+NOT in 4c-B-1 fix sequence. **No code in this stream.**
+Backlog items filed for the post-v0.35.0 Comic-Foundation
+Session:
+
+- **PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01** (P3, NEW) —
+  multi-bubble array shape + add/delete bubble UI.
+  Architectural anchor of the Comic-Foundation Session.
+- **PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01** (P3, NEW) —
+  tail-triangle with direction + position + length config.
+  Promoted from a Tier-3 sub-scope under EXTENDED-SHAPE-01
+  to its own dedicated item.
+- **PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01** (P5,
+  UPDATED) — Multi-Bubble context added; folds into the
+  Comic-Foundation Session as one of the three bubble-
+  system commits.
+
+Strategic note recorded in MULTI-BUBBLE-01: *"Comic-
+Foundation Session establishes Multi-Bubble + Tail + Drag
+pattern that future Comic-Plugin will reuse. Plus matches
+Single-Source-of-Truth discipline — one bubble-system,
+multiple usage contexts."*
+
+Schema-decision deferred to Comic-Foundation Pre-Inspection:
+extend `speech_bubble` PageLayout with array shape, OR
+introduce a new `comic_bubble` / `comic_panel` layout.
+
+### Finding G — Font-configuration (Audit-First, pending)
+
+Surfaced 2026-05-19 from re-smoke. User-want: author can
+choose fonts in the editor; fonts propagate to PDF export;
+editor sets fonts + CSS stores them for export;
+matches KDP picture-book typography control.
+
+**Decision rule: Audit-First (Option 4 in the original
+finding framing) — surface options + sub-decisions D7-D12
+before any code.**
+
+#### Audit scope
+
+- **Track A** — Existing Bibliogon Font-Pattern: how do
+  ArticleEditor + prose BookEditor handle fonts? Is the
+  TipTap FontFamily extension already in use anywhere?
+  How does the existing Session-6 picture-book PDF
+  export handle fonts (WeasyPrint + Atkinson Hyperlegible
+  per S6 audit)?
+- **Track B** — TipTap FontFamily / FontSize Extension
+  feasibility: availability, integration with the
+  4c-B-1 RichTextEditor wrapper, storage shape in TipTap
+  JSON (mark with font-family attribute).
+- **Track C** — WeasyPrint CSS pipeline for fonts:
+  how Session 6 PDF-export renders fonts today; `@font-face`
+  for embedded fonts; how TipTap JSON font-family marks
+  could propagate to PDF CSS; font-availability for
+  KDP-PDF (embedded fonts required).
+- **Track D** — Architecture options to surface:
+  - Option 1 (WYSIWYG): TipTap FontFamily extension →
+    JSON marks → PDF reads marks → applies CSS. Pros:
+    what-you-see-is-what-you-get. Cons: per-page-level
+    control only.
+  - Option 2 (Separate Editor-vs-Print): editor uses
+    default font; Book-Metadata holds Print-CSS config;
+    PDF uses Print-CSS, ignores editor font. Cons:
+    WYSIWYG broken.
+  - Option 3 (Hybrid): Book-Metadata holds default font
+    for the whole book; per-page font-override via
+    TipTap marks; PDF prefers per-page override,
+    falls back to book default. Pros: book-level
+    consistency + per-page flexibility. Cons: most
+    complex.
+- **Track E** — Picture-Book vs Article + Book parity:
+  should Picture-Book's font-choice match existing
+  Article + Book pattern OR diverge? Bibliogon-
+  consistency check; future Comic-Plugin should reuse
+  the same pattern.
+
+#### Sub-decisions to surface after audit
+
+- **D7** — Architecture (Option 1 / 2 / 3)
+- **D8** — Font catalog scope (which fonts available —
+  children-book-friendly: Atkinson Hyperlegible, Andika,
+  Comic Neue, Open Dyslexic, etc.)
+- **D9** — Font-storage shape (TipTap-mark vs page-level
+  metadata vs book-level metadata)
+- **D10** — PDF font-embedding strategy
+- **D11** — Backward-compat for existing picture-books
+  without font-config
+- **D12** — Apply to all 3 TipTap layouts only
+  (RichTextEditor) OR also to Tier-Property layouts?
+
+#### Stop-conditions for Finding G
+
+- If audit reveals a Font-Pipeline-Architecture pivot is
+  needed → surface, propose split (Font may need its own
+  session — could be moved OUT of 4c-B-1 to a dedicated
+  pre-v0.35.0 surface, or deferred to v0.36.x).
+- If Finding G alone exceeds 4 commits → surface for
+  re-scoping.
+- If implementation complexity exceeds initial estimate
+  → surface for re-scoping.
+
+#### Estimated effort
+
+Audit only: 1 read-only pass, no code. Implementation
+estimate to be set after Track A/B/C audit completes
++ user picks the option.
+
+### If Finding D or Finding G implementation surfaces more findings
 
 Each new finding → its own Pre-Inspection STOP gate + user GO
 before code. Same discipline as the original 3 findings.
