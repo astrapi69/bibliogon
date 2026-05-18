@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
 Current version: v0.35.1
-Open tasks: 62 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 63 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -1623,6 +1623,64 @@ store.
   Pairs with: future Pre-Inspection-Checklist update
   living in ``.claude/rules/ai-workflow.md`` (proposed
   as part of this item's closure).
+
+- **PLUGIN-METADATA-I18N-PARITY-01** (P3, Plugin-
+  Infrastructure, filed 2026-05-18 from plugin metadata
+  pattern audit Sub-finding A.2): i18n coverage across
+  ``backend/config/plugins/<name>.yaml`` is wildly
+  uneven. Bringing every plugin to 8-language parity
+  (de, en, es, fr, el, pt, tr, ja) — matching the
+  comics + medium-import + git-sync precedent — closes
+  the silent-feature-invisibility for non-de/non-en
+  users.
+
+  Current state (verified 2026-05-18 against audit
+  Table A.1):
+
+  | Plugin | display_name langs | description langs |
+  |---|---|---|
+  | audiobook | 5 (de, en, es, fr, el) | 5 |
+  | comics | 8 ✓ | 8 ✓ |
+  | export | 4 (de, en, es, fr) | 2 (de, en) |
+  | getstarted | 2 (de, en) | 2 |
+  | git-sync | 8 ✓ (shipped today in d825bbf) | 8 ✓ |
+  | grammar | 2 (de, en) | 2 |
+  | help | 2 (de, en) | 2 |
+  | kdp | 5 (de, en, es, fr, el) | 5 |
+  | kinderbuch | 5 | 5 |
+  | medium-import | 8 ✓ (merged today in d08c1fd) | 8 ✓ |
+  | ms-tools | 2 (de, en) | 2 |
+  | translation | 2 (de, en) | 2 |
+
+  Gap = 9 plugins need extending. Scope:
+  - audiobook, kdp, kinderbuch: from 5 to 8 (+3 langs
+    each)
+  - export: from 4 to 8 for display_name, from 2 to 8
+    for description (+4/+6)
+  - getstarted, grammar, help, ms-tools, translation:
+    from 2 to 8 (+6 each)
+
+  Effort: M. The translations should match the existing
+  i18n catalog convention from the umlauts-discipline
+  lessons-learned rule — REAL diacritics (umlauts in
+  de + ES; cedillas in fr; tildes in es + pt), NOT
+  ASCII transliterations. Worth running the existing
+  ``scripts/find_umlaut_candidates.py`` against the
+  output to verify.
+
+  Trigger: next plugin-metadata sweep, OR a non-de/
+  non-en user reports raw-slug display in Settings UI,
+  OR opportunistic as part of plugin-specific work
+  (e.g. while editing export plugin's settings yaml,
+  also extend its i18n coverage).
+
+  Pairs with: today's i18n drift catches via the
+  deduplication commit d08c1fd (which surfaced + kept
+  the umlaut-correct strings while discarding ASCII
+  transliterations in 3 plugin yamls). The umlauts-
+  discipline rule fires during translation authoring.
+
+  Filed by plugin metadata pattern audit 2026-05-18.
 
 ---
 
