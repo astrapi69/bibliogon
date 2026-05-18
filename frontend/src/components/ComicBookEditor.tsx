@@ -17,8 +17,11 @@
  */
 
 import {useEffect, useState} from "react";
+import {Maximize2, Minimize2} from "lucide-react";
 import {api, ApiError, type ComicsPluginInfo} from "../api/client";
+import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
 import {useI18n} from "../hooks/useI18n";
+import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
 
 interface Props {
     bookId: string;
@@ -30,6 +33,17 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
     const {t} = useI18n();
     const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // EDITOR-FULLSCREEN-NATIVE-01: browser-native fullscreen
+    // toggle. Placeholder gets the same affordance as the four
+    // shipped editor surfaces - Session 2 inherits it when this
+    // component is replaced with the full multi-panel editor.
+    const fullscreen = useFullscreenToggle();
+    useKeyboardShortcuts(
+        fullscreen.isSupported
+            ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
+            : [],
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -72,10 +86,42 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 </button>
                 <h1
                     data-testid="comic-book-editor-title"
-                    style={{margin: 0, fontSize: "1.4rem"}}
+                    style={{margin: 0, fontSize: "1.4rem", flex: 1}}
                 >
                     {bookTitle}
                 </h1>
+                {fullscreen.isSupported && (
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        data-testid="comic-book-editor-fullscreen"
+                        onClick={() => void fullscreen.toggle()}
+                        aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
+                        aria-keyshortcuts="F11 Control+Shift+F"
+                        title={
+                            fullscreen.isFullscreen
+                                ? t("ui.toolbar.exit_fullscreen", "Vollbild verlassen") +
+                                  " (F11 / Ctrl+Shift+F)"
+                                : t("ui.toolbar.fullscreen", "Vollbild") +
+                                  " (F11 / Ctrl+Shift+F)"
+                        }
+                        style={{display: "inline-flex", alignItems: "center", gap: 6}}
+                    >
+                        {fullscreen.isFullscreen ? (
+                            <Minimize2 size={14} />
+                        ) : (
+                            <Maximize2 size={14} />
+                        )}
+                        <span>
+                            {fullscreen.isFullscreen
+                                ? t(
+                                      "ui.toolbar.exit_fullscreen",
+                                      "Vollbild verlassen",
+                                  )
+                                : t("ui.toolbar.fullscreen", "Vollbild")}
+                        </span>
+                    </button>
+                )}
             </header>
 
             <section
