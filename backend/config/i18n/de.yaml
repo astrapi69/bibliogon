@@ -2048,6 +2048,16 @@ ui:
         anchor: "Position"
         opacity: "Deckkraft"
         size: "Größe"
+        anchor_position:
+          top_left: "Oben links"
+          top_center: "Oben mittig"
+          top_right: "Oben rechts"
+          middle_left: "Mitte links"
+          center: "Zentriert"
+          middle_right: "Mitte rechts"
+          bottom_left: "Unten links"
+          bottom_center: "Unten mittig"
+          bottom_right: "Unten rechts"
       image_top_text_bottom:
         heading: "Bild oben, Text unten"
       image_left_text_right:

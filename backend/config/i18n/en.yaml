@@ -2049,6 +2049,16 @@ ui:
         anchor: "Position"
         opacity: "Opacity"
         size: "Size"
+        anchor_position:
+          top_left: "Top left"
+          top_center: "Top center"
+          top_right: "Top right"
+          middle_left: "Middle left"
+          center: "Center"
+          middle_right: "Middle right"
+          bottom_left: "Bottom left"
+          bottom_center: "Bottom center"
+          bottom_right: "Bottom right"
       image_top_text_bottom:
         heading: "Image top, text bottom"
       image_left_text_right:

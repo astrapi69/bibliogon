@@ -276,3 +276,78 @@ describe("LayoutConfigSpeechBubble - size slider", () => {
         ).toBe("50%")
     })
 })
+
+// --- PB-PHASE4 Session 4c-B-1 manual smoke Finding A: 9-cell anchor grid ---
+
+describe("LayoutConfigSpeechBubble - 9-cell anchor grid (Finding A)", () => {
+    const ALL_PRESETS = [
+        "top-left",
+        "top-center",
+        "top-right",
+        "middle-left",
+        "center",
+        "middle-right",
+        "bottom-left",
+        "bottom-center",
+        "bottom-right",
+    ] as const
+
+    it("renders all 9 anchor cells", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={null}
+                onChange={vi.fn()}
+            />,
+        )
+        for (const preset of ALL_PRESETS) {
+            expect(
+                screen.getByTestId(`speech-bubble-anchor-${preset}`),
+            ).toBeTruthy()
+        }
+    })
+
+    it.each(ALL_PRESETS)(
+        "clicking %s preset persists anchor_position via onChange",
+        (preset) => {
+            const onChange = vi.fn()
+            render(
+                <LayoutConfigSpeechBubble
+                    config={null}
+                    onChange={onChange}
+                />,
+            )
+            fireEvent.click(screen.getByTestId(`speech-bubble-anchor-${preset}`))
+            expect(onChange).toHaveBeenCalledWith({anchor_position: preset})
+        },
+    )
+
+    it("pre-filled middle-left anchor reflects as selected (new edge-midpoint preset)", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{anchor_position: "middle-left"}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen
+                .getByTestId("speech-bubble-anchor-middle-left")
+                .closest("label")
+                ?.className,
+        ).toContain("anchorCellSelected")
+    })
+
+    it("pre-filled top-center anchor reflects as selected (new edge-midpoint preset)", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{anchor_position: "top-center"}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen
+                .getByTestId("speech-bubble-anchor-top-center")
+                .closest("label")
+                ?.className,
+        ).toContain("anchorCellSelected")
+    })
+})

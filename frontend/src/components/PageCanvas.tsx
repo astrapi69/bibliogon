@@ -199,8 +199,38 @@ function speechBubbleInlineStyle(
     switch (anchor) {
         case "top-left":
             return {...reset, top: 16, left: 16, transform: "none", background: bg, width}
+        case "top-center":
+            // Session 4c-B-1 manual smoke Finding A: new preset.
+            return {
+                ...reset,
+                top: 16,
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: bg,
+                width,
+            }
         case "top-right":
             return {...reset, top: 16, right: 16, transform: "none", background: bg, width}
+        case "middle-left":
+            // Session 4c-B-1 manual smoke Finding A: new preset.
+            return {
+                ...reset,
+                top: "50%",
+                left: 16,
+                transform: "translateY(-50%)",
+                background: bg,
+                width,
+            }
+        case "middle-right":
+            // Session 4c-B-1 manual smoke Finding A: new preset.
+            return {
+                ...reset,
+                top: "50%",
+                right: 16,
+                transform: "translateY(-50%)",
+                background: bg,
+                width,
+            }
         case "bottom-left":
             return {...reset, bottom: 16, left: 16, transform: "none", background: bg, width}
         case "bottom-right":

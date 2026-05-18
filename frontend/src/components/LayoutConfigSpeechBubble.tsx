@@ -13,23 +13,33 @@ interface Props {
     onChange: (partial: Record<string, unknown>) => void
 }
 
-/** PB-PHASE4 Session 4c D4: 5 anchor presets — 4 corners + center.
- *  Layout grid is 3×3 with the 4 corners + center cell active; the
- *  4 edge-midpoint cells are intentionally empty. Drag-to-position
- *  is the deferred follow-up
+/** PB-PHASE4 Session 4c-B-1 manual smoke Finding A: extended to a
+ *  full 9-cell anchor grid (3×3) per user expectation. Original
+ *  Session 4c D4 shipped 5 presets (4 corners + center, 4 edge-
+ *  midpoints intentionally empty); user smoke surfaced the missing
+ *  positions as friction. Now: all 9 cells selectable. Drag-to-
+ *  position is the deferred follow-up
  *  (PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 P5). */
 type AnchorPreset =
     | "top-left"
+    | "top-center"
     | "top-right"
+    | "middle-left"
     | "center"
+    | "middle-right"
     | "bottom-left"
+    | "bottom-center"
     | "bottom-right"
 
 const ANCHOR_PRESETS: readonly AnchorPreset[] = [
     "top-left",
+    "top-center",
     "top-right",
+    "middle-left",
     "center",
+    "middle-right",
     "bottom-left",
+    "bottom-center",
     "bottom-right",
 ]
 
@@ -116,6 +126,21 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                 <div className={styles.anchorGrid}>
                     {ANCHOR_PRESETS.map((preset) => {
                         const selected = preset === currentAnchor
+                        // PB-PHASE4 Session 4c-B-1 manual smoke Finding A:
+                        // a11y label per cell. i18n key uses underscore-
+                        // form (top_left) since YAML keys cannot contain
+                        // hyphens cleanly. TypeScript preset is the
+                        // canonical value (hyphenated to match the
+                        // anchor_position stored values).
+                        const i18nKey = preset.replace(/-/g, "_")
+                        const fallback = preset
+                            .split("-")
+                            .map((p) => p[0].toUpperCase() + p.slice(1))
+                            .join(" ")
+                        const label = t(
+                            `ui.page_editor.config.speech_bubble.anchor_position.${i18nKey}`,
+                            fallback,
+                        )
                         return (
                             <label
                                 key={preset}
@@ -126,6 +151,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                                     .filter(Boolean)
                                     .join(" ")}
                                 data-cell={preset}
+                                title={label}
                             >
                                 <input
                                     type="radio"
@@ -135,6 +161,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                                     onChange={() => onChange({anchor_position: preset})}
                                     data-testid={`speech-bubble-anchor-${preset}`}
                                     className={styles.anchorInput}
+                                    aria-label={label}
                                 />
                                 <span className={styles.anchorDot} aria-hidden />
                             </label>
