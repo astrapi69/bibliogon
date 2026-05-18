@@ -16,9 +16,10 @@ import {AuthorsDatabase} from "../components/settings/AuthorsDatabase";
 import {TopicsSettings} from "../components/settings/TopicsSettings";
 import {PluginSettings} from "../components/settings/PluginSettings";
 import {AboutSettings} from "../components/settings/AboutSettings";
+import {BackupsSettings} from "../components/settings/BackupsSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "support", "about"] as const;
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -138,6 +139,7 @@ export default function Settings() {
                         {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
                         {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                         {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
+                        {value: "backups", label: t("ui.settings.tab_backups", "Backups"), testId: "settings-tab-backups"},
                         ...(getDonationsConfig(appConfig)
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
                             : []),
@@ -322,6 +324,9 @@ export default function Settings() {
                 </Tabs.Content>
                 <Tabs.Content value="comments">
                     <CommentsAdminSection />
+                </Tabs.Content>
+                <Tabs.Content value="backups">
+                    <BackupsSettings />
                 </Tabs.Content>
                 {getDonationsConfig(appConfig) ? (
                     <Tabs.Content value="support">
