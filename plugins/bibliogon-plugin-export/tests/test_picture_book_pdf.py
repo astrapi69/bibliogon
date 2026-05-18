@@ -699,3 +699,153 @@ def test_render_page_keeps_plain_text_unchanged() -> None:
     }
     html = _render_page(page, {})
     assert "Bubble text!" in html
+
+
+# --- PB-PHASE4 Session 4c-B-1 Finding G3: OFL font bundle ---
+#
+# Tests for the 5-font catalog that ships under
+# ``plugins/bibliogon-plugin-export/fonts/`` and the @font-face
+# generator that embeds them into the picture-book PDF CSS via
+# ``src: url(file://...)``. KDP-grade embedded fonts per D10.
+
+
+def test_picture_book_fonts_catalog_has_five_entries() -> None:
+    """The D8-locked set: Atkinson + Andika + Comic Neue +
+    Lexend + OpenDyslexic. Pins the catalog size + canonical ids
+    against accidental drift between the TS + Python sides."""
+    from bibliogon_export.picture_book_fonts import PICTURE_BOOK_FONTS
+
+    assert len(PICTURE_BOOK_FONTS) == 5
+    ids = [f.id for f in PICTURE_BOOK_FONTS]
+    assert ids == [
+        "Atkinson Hyperlegible",
+        "Andika",
+        "Comic Neue",
+        "Lexend",
+        "OpenDyslexic",
+    ]
+
+
+def test_picture_book_fonts_default_is_atkinson() -> None:
+    """D11 backward-compat: pages without a fontFamily mark
+    render with Atkinson Hyperlegible (the pre-Finding-G
+    hardcoded default).
+    """
+    from bibliogon_export.picture_book_fonts import (
+        DEFAULT_PICTURE_BOOK_FONT_ID,
+    )
+
+    assert DEFAULT_PICTURE_BOOK_FONT_ID == "Atkinson Hyperlegible"
+
+
+def test_picture_book_fonts_files_exist_on_disk() -> None:
+    """Every catalog entry's ``file_name`` MUST resolve to a real
+    file under :data:`FONTS_DIR`. Catches accidental deletion of
+    a font bundle file before it bites the PDF generator at
+    render-time (font_face_css raises FileNotFoundError then —
+    this test makes the failure visible at test-time instead).
+    """
+    from bibliogon_export.picture_book_fonts import (
+        FONTS_DIR,
+        PICTURE_BOOK_FONTS,
+    )
+
+    for font in PICTURE_BOOK_FONTS:
+        font_path = FONTS_DIR / font.file_name
+        assert font_path.is_file(), (
+            f"Bundled font file missing for {font.id!r}: {font_path}"
+        )
+        # File-magic check: TTF starts with 0x00010000 or "OTTO"
+        # / "true"; OTF starts with "OTTO". Reject empty / HTML-
+        # 404 / corrupt files. Reading 4 bytes is enough.
+        with open(font_path, "rb") as f:
+            magic = f.read(4)
+        assert magic in (
+            b"\x00\x01\x00\x00",  # TTF
+            b"OTTO",  # OTF
+            b"true",  # legacy TTF
+        ), f"Bundled font {font.file_name!r} has non-font magic: {magic!r}"
+
+
+def test_font_face_css_emits_one_rule_per_font() -> None:
+    """The CSS generator must produce 5 @font-face blocks, one
+    per shipped font. Catches under/over-generation regressions
+    in :func:`font_face_css`."""
+    from bibliogon_export.picture_book_fonts import font_face_css
+
+    css = font_face_css()
+    # 5 @font-face rules.
+    assert css.count("@font-face") == 5
+    # Each canonical id appears as a font-family value.
+    for font_id in [
+        "Atkinson Hyperlegible",
+        "Andika",
+        "Comic Neue",
+        "Lexend",
+        "OpenDyslexic",
+    ]:
+        assert f'font-family: "{font_id}"' in css
+
+
+def test_font_face_css_uses_file_url_for_kdp_embedding() -> None:
+    """D10: every @font-face must use ``src: url(file://...)``,
+    NOT ``src: local(...)``. The url() form forces WeasyPrint
+    to embed the font bytes into the PDF; local() relies on
+    the system font cache (KDP-print-fragile)."""
+    from bibliogon_export.picture_book_fonts import font_face_css
+
+    css = font_face_css()
+    # At least one file:// url per font.
+    assert css.count("src: url(\"file://") == 5
+    # And NO local() references (rule is exclusive).
+    assert "src: local(" not in css
+
+
+def test_is_known_font_matches_catalog_ids() -> None:
+    """The G4 walker uses this predicate to decide whether to
+    honor a TipTap fontFamily mark or fall back to the default.
+    Pins the contract: case-sensitive match against the 5
+    canonical ids; ``None`` + unknowns return False."""
+    from bibliogon_export.picture_book_fonts import is_known_font
+
+    for known in [
+        "Atkinson Hyperlegible",
+        "Andika",
+        "Comic Neue",
+        "Lexend",
+        "OpenDyslexic",
+    ]:
+        assert is_known_font(known) is True
+    # Unknown / fuzzy / None all reject.
+    assert is_known_font(None) is False
+    assert is_known_font("") is False
+    assert is_known_font("Helvetica") is False
+    assert is_known_font("atkinson hyperlegible") is False  # case-sensitive
+
+
+def test_build_html_includes_font_face_block() -> None:
+    """End-to-end: the picture-book PDF HTML must contain the
+    @font-face declarations BEFORE the static _BASE_CSS rules
+    (so the in-PDF @page + html, body rules can reference the
+    embedded fonts). Pins the wiring at the _build_html call
+    site, which is the actual PDF render path."""
+    html = _build_html(
+        book_data={"title": "Test", "author": "Author", "language": "en"},
+        pages=[],
+        assets_map={},
+    )
+    # 5 @font-face rule blocks landed. Counting "@font-face {"
+    # (the actual rule opener) rather than the bare token — the
+    # static _BASE_CSS comment block also references "@font-face"
+    # in prose, which is a happy false positive for a bare count.
+    assert html.count("@font-face {") == 5
+    # Embeds the 5 ids
+    assert 'font-family: "Atkinson Hyperlegible"' in html
+    assert 'font-family: "OpenDyslexic"' in html
+    # Static _BASE_CSS rules also still present (the @page rule
+    # is the load-bearing one for the PDF dimensions).
+    assert "@page" in html
+    assert "size: 8.5in 8.5in" in html
+    # Order: the first @font-face rule precedes the @page rule
+    # (the dynamic block is prepended ahead of _BASE_CSS).
+    assert html.index("@font-face {") < html.index("@page")

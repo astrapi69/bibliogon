@@ -37,6 +37,8 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
+from bibliogon_export.picture_book_fonts import font_face_css
+
 # WeasyPrint is imported lazily inside generate_picture_book_pdf
 # so the rest of the plugin (chapter-based pipeline) stays
 # importable when WeasyPrint's native dependencies are missing.
@@ -61,12 +63,15 @@ _BASE_CSS = """
     margin: 0.5in;
 }
 
-@font-face {
-    font-family: "Atkinson Hyperlegible";
-    src: local("Atkinson Hyperlegible Regular"),
-         local("AtkinsonHyperlegible-Regular");
-    font-display: swap;
-}
+/* PB-PHASE4 Session 4c-B-1 Finding G3 (2026-05-19): the
+ * @font-face rules for the 5 OFL fonts are now BUILT
+ * DYNAMICALLY by ``picture_book_fonts.font_face_css()`` and
+ * concatenated below this static block at render-time. They
+ * use ``src: url(file://...)`` pointing at the bundled font
+ * files under ``../fonts/`` for KDP-grade embedded fonts
+ * (D10). Pre-Finding-G code shipped a single hardcoded
+ * @font-face for Atkinson Hyperlegible with ``src: local()``
+ * — fragile in containers without the font installed. */
 
 html, body {
     margin: 0;
@@ -494,6 +499,13 @@ def _build_html(
     meta_html = "".join(meta_tags)
 
     pages_html = "\n".join(_render_page(p, assets_map) for p in pages)
+    # PB-PHASE4 Session 4c-B-1 Finding G3: prepend the 5
+    # dynamically-generated @font-face rules to the static CSS
+    # block. Calling font_face_css() here (NOT at module import
+    # time) defers the disk-read of font file paths until a PDF
+    # is actually rendered, which keeps the module importable in
+    # environments without the bundled fonts (e.g. test fixtures).
+    style_css = f"{font_face_css()}\n{_BASE_CSS}"
     return (
         "<!DOCTYPE html>"
         f'<html lang="{escape(language)}">'
@@ -501,7 +513,7 @@ def _build_html(
         '<meta charset="utf-8" />'
         f"<title>{title}</title>"
         f"{meta_html}"
-        f"<style>{_BASE_CSS}</style>"
+        f"<style>{style_css}</style>"
         "</head>"
         "<body>"
         f"{pages_html}"
