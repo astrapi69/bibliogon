@@ -1,0 +1,26 @@
+plugin:
+  name: comics
+  version: "1.0.0"
+  license_tier: core
+  depends_on:
+    - export
+  min_app_version: "0.36.0"
+  entry_point: bibliogon_comics.plugin:ComicsPlugin
+  display_name:
+    de: "Comic"
+    en: "Comics"
+    es: "Cómics"
+    fr: "Bandes dessinées"
+    el: "Κόμικς"
+    pt: "Quadrinhos"
+    tr: "Çizgi roman"
+    ja: "コミック"
+  description:
+    de: "Comic-Authoring mit Panels und Sprechblasen (Phase 1: Grundgerüst)"
+    en: "Comic authoring with panels and speech bubbles (Phase 1: scaffolding)"
+    es: "Creación de cómics con paneles y bocadillos (Fase 1: andamiaje)"
+    fr: "Création de bandes dessinées avec cases et bulles (Phase 1: échafaudage)"
+    el: "Δημιουργία κόμικς με πάνελ και συννεφάκια ομιλίας (Φάση 1: σκαλωσιά)"
+    pt: "Criação de quadrinhos com painéis e balões de fala (Fase 1: andaime)"
+    tr: "Panel ve konuşma balonları ile çizgi roman oluşturma (Aşama 1: iskelet)"
+    ja: "パネルと吹き出しによるコミック制作 (フェーズ1: 基盤)"
