@@ -14,8 +14,10 @@
 
 import {useEffect, useState} from "react";
 import {ExternalLink} from "lucide-react";
-import {api, ApiError, type SystemInfo} from "../../api/client";
+import {api, ApiError, type DiscoveredPlugin, type SystemInfo} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
+import {getLocalized} from "./utils";
+import SupportSection, {getDonationsConfig} from "../SupportSection";
 
 interface Props {
     appConfig: Record<string, unknown>;
@@ -36,19 +38,21 @@ const dlStyle: React.CSSProperties = {
     margin: 0,
 };
 
-export function AboutSettings({appConfig: _appConfig}: Props) {
-    const {t} = useI18n();
+export function AboutSettings({appConfig}: Props) {
+    const {t, lang} = useI18n();
     const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+    const [plugins, setPlugins] = useState<DiscoveredPlugin[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const donationsConfig = getDonationsConfig(appConfig);
 
     useEffect(() => {
         let cancelled = false;
-        api.system
-            .info()
-            .then((info) => {
+        Promise.all([api.system.info(), api.settings.discoveredPlugins()])
+            .then(([info, pluginList]) => {
                 if (cancelled) return;
                 setSystemInfo(info);
+                setPlugins(pluginList);
                 setLoading(false);
             })
             .catch((err) => {
@@ -105,6 +109,15 @@ export function AboutSettings({appConfig: _appConfig}: Props) {
                 >
                     <VersionSection info={systemInfo} t={t} />
                     <CreditsSection info={systemInfo} t={t} />
+                    <PluginListSection plugins={plugins} t={t} lang={lang} />
+                    {donationsConfig ? (
+                        <article
+                            data-testid="about-donations-section"
+                            style={sectionStyle}
+                        >
+                            <SupportSection config={donationsConfig} />
+                        </article>
+                    ) : null}
                     <SystemInfoSection info={systemInfo} t={t} />
                 </div>
             )}
@@ -194,6 +207,98 @@ function CreditsSection({
                     </a>
                 </dd>
             </dl>
+        </article>
+    );
+}
+
+/** Active plugin list: localized display_name + version + tier
+ *  badge. Reads /api/settings/plugins/discovered's extended
+ *  payload (C1 — added display_name + description + version
+ *  fields). Filters to plugins that are ENABLED in the config —
+ *  matches the user-overlay activation semantics so the About
+ *  list only shows what's actually mounted. */
+function PluginListSection({
+    plugins,
+    t,
+    lang,
+}: {
+    plugins: DiscoveredPlugin[];
+    t: (key: string, fallback: string) => string;
+    lang: string;
+}) {
+    const active = plugins
+        .filter((p) => p.enabled && p.loaded)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    return (
+        <article data-testid="about-plugins-section" style={sectionStyle}>
+            <h3 style={{marginTop: 0, marginBottom: 12}}>
+                {t("ui.about.plugins_heading", "Plugins")}
+            </h3>
+            {active.length === 0 ? (
+                <p
+                    data-testid="about-plugins-empty"
+                    style={{color: "var(--text-muted)", margin: 0}}
+                >
+                    {t("ui.about.plugins_empty", "Keine Plugins aktiv.")}
+                </p>
+            ) : (
+                <ul
+                    data-testid="about-plugins-list"
+                    style={{listStyle: "none", padding: 0, margin: 0}}
+                >
+                    {active.map((p) => {
+                        const displayName = getLocalized(
+                            p.display_name,
+                            p.name,
+                            lang,
+                        );
+                        const description = getLocalized(p.description, "", lang);
+                        return (
+                            <li
+                                key={p.name}
+                                data-testid={`about-plugin-row-${p.name}`}
+                                style={{
+                                    padding: "8px 0",
+                                    borderBottom: "1px solid var(--border)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                    }}
+                                >
+                                    <strong>{displayName}</strong>
+                                    {p.version ? (
+                                        <span
+                                            style={{
+                                                color: "var(--text-muted)",
+                                                fontSize: "0.85rem",
+                                            }}
+                                        >
+                                            v{p.version}
+                                        </span>
+                                    ) : null}
+                                </div>
+                                {description ? (
+                                    <span
+                                        style={{
+                                            color: "var(--text-muted)",
+                                            fontSize: "0.85rem",
+                                        }}
+                                    >
+                                        {description}
+                                    </span>
+                                ) : null}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
         </article>
     );
 }

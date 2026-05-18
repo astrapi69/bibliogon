@@ -29,11 +29,15 @@ vi.mock("../../api/client", async () => {
             system: {
                 info: vi.fn(),
             },
+            settings: {
+                ...actual.api.settings,
+                discoveredPlugins: vi.fn(),
+            },
         },
     };
 });
 
-import {api} from "../../api/client";
+import {api, type DiscoveredPlugin} from "../../api/client";
 
 const FIXTURE = {
     app: {
@@ -58,13 +62,53 @@ const FIXTURE = {
     },
 };
 
+const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
+    {
+        name: "comics",
+        has_config: true,
+        enabled: true,
+        loaded: true,
+        license_tier: "core",
+        has_license: true,
+        display_name: {de: "Comic", en: "Comics"},
+        description: {de: "Comic-Authoring", en: "Comic authoring"},
+        version: "1.0.0",
+    },
+    {
+        name: "kdp",
+        has_config: true,
+        enabled: true,
+        loaded: true,
+        license_tier: "core",
+        has_license: true,
+        display_name: {en: "Amazon KDP"},
+        description: {en: "KDP metadata + cover validation"},
+        version: "1.0.0",
+    },
+    {
+        name: "comments",
+        has_config: true,
+        enabled: false,
+        loaded: false,
+        license_tier: "core",
+        has_license: true,
+        display_name: {en: "Comments"},
+        description: {},
+        version: "1.0.0",
+    },
+];
+
 describe("AboutSettings", () => {
     beforeEach(() => {
         vi.mocked(api.system.info).mockImplementation(async () => FIXTURE);
+        vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+            async () => PLUGINS_FIXTURE,
+        );
     });
 
     afterEach(() => {
         vi.mocked(api.system.info).mockClear();
+        vi.mocked(api.settings.discoveredPlugins).mockClear();
     });
 
     it("renders loading state initially", () => {
@@ -163,6 +207,84 @@ describe("AboutSettings", () => {
             // Fallback uses i18n "Unbekannt"; test mock returns
             // the fallback string verbatim.
             expect(dep.textContent).toBe("Unbekannt");
+        });
+    });
+
+    describe("Plugin-List section", () => {
+        it("renders only enabled+loaded plugins, sorted by slug", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            await screen.findByTestId("about-plugins-section");
+            // comics + kdp are enabled+loaded; comments is filtered out.
+            expect(screen.getByTestId("about-plugin-row-comics")).toBeTruthy();
+            expect(screen.getByTestId("about-plugin-row-kdp")).toBeTruthy();
+            expect(screen.queryByTestId("about-plugin-row-comments")).toBeNull();
+        });
+
+        it("renders localized display_name + version", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const comicsRow = await screen.findByTestId(
+                "about-plugin-row-comics",
+            );
+            // useI18n mock uses lang='en'; getLocalized resolves
+            // english key from the dict.
+            expect(comicsRow.textContent).toContain("Comics");
+            expect(comicsRow.textContent).toContain("v1.0.0");
+        });
+
+        it("falls back to slug when display_name dict is empty", async () => {
+            vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+                async () => [
+                    {
+                        ...PLUGINS_FIXTURE[0],
+                        name: "noname",
+                        display_name: {},
+                    },
+                ],
+            );
+            render(<AboutSettings appConfig={{}} />);
+            const row = await screen.findByTestId("about-plugin-row-noname");
+            expect(row.textContent).toContain("noname");
+        });
+
+        it("renders empty-state when no plugins active", async () => {
+            vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+                async () => [],
+            );
+            render(<AboutSettings appConfig={{}} />);
+            const empty = await screen.findByTestId("about-plugins-empty");
+            expect(empty.textContent).toBe("Keine Plugins aktiv.");
+        });
+    });
+
+    describe("Donations section", () => {
+        const DONATIONS_CONFIG = {
+            donations: {
+                enabled: true,
+                landing_page_url: null,
+                channels: [
+                    {
+                        name: "Liberapay",
+                        url: "https://liberapay.com/astrapi69/donate",
+                        recommended: true,
+                    },
+                ],
+            },
+        };
+
+        it("renders donations wrapper when donations.enabled === true", async () => {
+            render(<AboutSettings appConfig={DONATIONS_CONFIG} />);
+            await screen.findByTestId("about-plugins-section");
+            expect(screen.getByTestId("about-donations-section")).toBeTruthy();
+        });
+
+        it("does NOT render donations wrapper when donations.enabled is false", async () => {
+            render(
+                <AboutSettings
+                    appConfig={{donations: {enabled: false, channels: []}}}
+                />,
+            );
+            await screen.findByTestId("about-plugins-section");
+            expect(screen.queryByTestId("about-donations-section")).toBeNull();
         });
     });
 
