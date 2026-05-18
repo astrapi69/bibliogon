@@ -159,4 +159,23 @@ describe("MediumImportGate", () => {
         fireEvent.click(button)
         expect(navigateMock).toHaveBeenCalledWith("/articles/import/medium")
     })
+
+    it("badge click does NOT clear the job (result must persist for browser-back navigation)", () => {
+        jobState.active = true
+        jobState.phase = "completed"
+        jobState.jobId = "j1"
+        useLocationMock.mockReturnValue({pathname: "/articles"})
+        renderGate()
+
+        const button = screen.getByTestId("medium-import-gate-badge")
+            .firstChild as HTMLButtonElement
+        fireEvent.click(button)
+        // Click navigates, but does NOT call job.clear() — the
+        // result panel on the destination page reads from job.result
+        // and must still have it. This is the 2026-05-19 bug-fix
+        // contract: only handleReset (Page's "Import another ZIP"
+        // button) calls clear().
+        expect(navigateMock).toHaveBeenCalledWith("/articles/import/medium")
+        expect(jobState.clear).not.toHaveBeenCalled()
+    })
 })

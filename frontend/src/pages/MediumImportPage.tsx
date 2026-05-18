@@ -41,7 +41,6 @@ import {
     api,
     ApiError,
     type MediumImportPreviewResponse,
-    type MediumImportResponse,
 } from "../api/client";
 import { notify } from "../utils/notify";
 import { useMediumImportJob } from "../contexts/MediumImportJobContext";
@@ -64,7 +63,10 @@ export default function MediumImportPage() {
         // If a job was running when the user came back (F5 / re-nav),
         // the context auto-reconnects and we drop straight into the
         // importing phase so the progress UI replaces the dropzone.
-        job.active ? "importing" : "idle",
+        // Result-on-mount is rendered from job.result (context-backed)
+        // so phase stays "idle" in that case — the result panel mounts
+        // alongside the idle upload card.
+        job.active && job.phase === "running" ? "importing" : "idle",
     );
     const [uploadLoaded, setUploadLoaded] = useState(0);
     const [uploadTotal, setUploadTotal] = useState(0);
@@ -72,7 +74,13 @@ export default function MediumImportPage() {
         null,
     );
     const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [result, setResult] = useState<MediumImportResponse | null>(null);
+
+    // MediumImportJobContext.result is the source of truth for the
+    // result panel. Reading from context (not local useState) means
+    // the result survives navigation — user can click "Go to comments"
+    // → Settings → browser-back and still see the result panel,
+    // matching their mental model of "this should still be here".
+    const result = job.result;
 
     const isBusy = phase !== "idle";
     const isUploading = phase === "uploading";
@@ -81,7 +89,10 @@ export default function MediumImportPage() {
 
     const handleStartPreview = useCallback(async () => {
         if (!file) return;
-        setResult(null);
+        // Starting a new preview implicitly discards any previous
+        // result panel + cached job (the user is committing to a
+        // new flow). job.clear() drops both.
+        job.clear();
         setPreview(null);
         setSelected(new Set());
         setUploadLoaded(0);
@@ -106,7 +117,7 @@ export default function MediumImportPage() {
                       );
             notify.error(message, err);
         }
-    }, [file, t]);
+    }, [file, t, job]);
 
     const handleImportSelection = useCallback(async () => {
         if (!preview || selected.size === 0) return;
@@ -140,16 +151,19 @@ export default function MediumImportPage() {
     // Watch the context for SSE-driven phase changes. When the
     // active job terminates, drive the page's own transitions:
     //
-    //   completed -> render MediumImportResult, clear file +
-    //                preview + selection, toast summary, return
-    //                phase to idle.
-    //   failed    -> return to previewing for retry; toast detail.
-    //   cancelled -> return to previewing; no toast (user-initiated).
+    //   completed -> clear file + preview + selection, toast summary,
+    //                return phase to idle. job.result stays in
+    //                context so the result panel keeps rendering
+    //                across navigation; user clears explicitly via
+    //                handleReset ("Import another ZIP").
+    //   failed    -> return to previewing for retry; toast detail;
+    //                job.clear() so the failure doesn't leak across
+    //                attempts.
+    //   cancelled -> return to previewing; job.clear().
     useEffect(() => {
         if (phase !== "importing") return;
         if (job.phase === "completed" && job.result) {
             const response = job.result;
-            setResult(response);
             setPhase("idle");
             setPreview(null);
             setSelected(new Set());
@@ -166,7 +180,11 @@ export default function MediumImportPage() {
             } else {
                 notify.success(summary);
             }
-            job.clear();
+            // Intentionally NOT calling job.clear() here: the result
+            // must persist in context across navigation so the user
+            // can navigate to /settings?tab=comments and back without
+            // losing the result panel. handleReset is the only path
+            // that clears the job.
         } else if (job.phase === "failed") {
             setPhase("previewing");
             const message =
@@ -229,12 +247,16 @@ export default function MediumImportPage() {
 
     const handleReset = useCallback(() => {
         setFile(null);
-        setResult(null);
         setPreview(null);
         setSelected(new Set());
         setUploadLoaded(0);
         setUploadTotal(0);
-    }, []);
+        // job.clear() drops the result from context too; the result
+        // panel unmounts and the page returns to a clean dropzone
+        // state. This is the user's "I'm done with this import,
+        // start fresh" path.
+        job.clear();
+    }, [job]);
 
     return (
         <div className={styles.container}>
@@ -279,65 +301,14 @@ export default function MediumImportPage() {
                     )}
                 </p>
 
-                <section className={styles.card}>
-                    <h2 className={styles.cardHeader}>
-                        {t("ui.medium_import.settings.card_title", "Einstellungen")}
-                    </h2>
-                    <p className={styles.cardHint}>
-                        {t(
-                            "ui.medium_import.settings.card_hint",
-                            "Diese Einstellungen gelten für alle künftigen Importe. Pro Buch oder pro Artikel sind sie nicht überschreibbar.",
-                        )}
-                    </p>
-                    <MediumImportSettings />
-                </section>
-
-                <section className={styles.card}>
-                    <h2 className={styles.cardHeader}>
-                        {t("ui.medium_import.upload.card_title", "Archiv hochladen")}
-                    </h2>
-                    <p className={styles.cardHint}>
-                        {t(
-                            "ui.medium_import.upload.card_hint",
-                            "Wähle die ZIP-Datei aus, die Medium dir per E-Mail geschickt hat. Maximum 200 MB.",
-                        )}
-                    </p>
-                    <MediumImportUploadZone
-                        file={file}
-                        onFileSelected={setFile}
-                        disabled={isBusy}
-                    />
-                    {isUploading && (
-                        <MediumImportProgress
-                            phase="uploading"
-                            loaded={uploadLoaded}
-                            total={uploadTotal}
-                        />
-                    )}
-                    {!inPreview && (
-                        <div>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={handleStartPreview}
-                                disabled={!file || isBusy}
-                                data-testid="medium-import-start"
-                            >
-                                <Eye size={14} />{" "}
-                                {isUploading
-                                    ? t(
-                                          "ui.medium_import.upload.previewing",
-                                          "Vorschau wird geladen …",
-                                      )
-                                    : t(
-                                          "ui.medium_import.upload.start",
-                                          "Vorschau & Auswahl",
-                                      )}
-                            </button>
-                        </div>
-                    )}
-                </section>
-
+                {/*
+                  Active-flow content (preview / importing /
+                  result) is rendered ABOVE the operating cards
+                  (settings + upload) so a user who navigates back
+                  to the page lands directly on the running import
+                  or the just-finished result, without having to
+                  scroll past Settings.
+                */}
                 {(preview || isImporting) && inPreview && (
                     <section
                         className={styles.card}
@@ -460,6 +431,65 @@ export default function MediumImportPage() {
                 )}
 
                 {result && <MediumImportResult result={result} onReset={handleReset} />}
+
+                <section className={styles.card}>
+                    <h2 className={styles.cardHeader}>
+                        {t("ui.medium_import.settings.card_title", "Einstellungen")}
+                    </h2>
+                    <p className={styles.cardHint}>
+                        {t(
+                            "ui.medium_import.settings.card_hint",
+                            "Diese Einstellungen gelten für alle künftigen Importe. Pro Buch oder pro Artikel sind sie nicht überschreibbar.",
+                        )}
+                    </p>
+                    <MediumImportSettings />
+                </section>
+
+                <section className={styles.card}>
+                    <h2 className={styles.cardHeader}>
+                        {t("ui.medium_import.upload.card_title", "Archiv hochladen")}
+                    </h2>
+                    <p className={styles.cardHint}>
+                        {t(
+                            "ui.medium_import.upload.card_hint",
+                            "Wähle die ZIP-Datei aus, die Medium dir per E-Mail geschickt hat. Maximum 200 MB.",
+                        )}
+                    </p>
+                    <MediumImportUploadZone
+                        file={file}
+                        onFileSelected={setFile}
+                        disabled={isBusy}
+                    />
+                    {isUploading && (
+                        <MediumImportProgress
+                            phase="uploading"
+                            loaded={uploadLoaded}
+                            total={uploadTotal}
+                        />
+                    )}
+                    {!inPreview && (
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleStartPreview}
+                                disabled={!file || isBusy}
+                                data-testid="medium-import-start"
+                            >
+                                <Eye size={14} />{" "}
+                                {isUploading
+                                    ? t(
+                                          "ui.medium_import.upload.previewing",
+                                          "Vorschau wird geladen …",
+                                      )
+                                    : t(
+                                          "ui.medium_import.upload.start",
+                                          "Vorschau & Auswahl",
+                                      )}
+                            </button>
+                        </div>
+                    )}
+                </section>
             </main>
         </div>
     );

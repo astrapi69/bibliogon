@@ -222,6 +222,13 @@ describe("MediumImportPage async state machine", () => {
         // And handed the job_id to the context.
         await waitFor(() => expect(jobState.start).toHaveBeenCalledWith("job-1"));
 
+        // Reset the clear-mock to isolate the post-completion
+        // assertion: handleStartPreview legitimately calls clear()
+        // at the start to drop any previous result, which we don't
+        // care about here. What we DO care about: the watcher's
+        // completion-handling branch must NOT call clear().
+        jobState.clear.mockClear();
+
         // Simulate SSE-driven completion: the context flips to
         // completed + populates result. Re-render so the watcher
         // useEffect picks up the new context value.
@@ -241,7 +248,45 @@ describe("MediumImportPage async state machine", () => {
         expect(screen.queryByTestId("medium-import-upload-selected")).toBeNull();
         // Preview section unmounted.
         expect(screen.queryByTestId("medium-import-preview-section")).toBeNull();
-        // Context.clear() fired so localStorage and ref are dropped.
+        // job.clear() is NOT called on completion — the result must
+        // persist in context across navigation so the user can click
+        // "Go to comments" -> Settings -> browser-back and still see
+        // the result panel. Only handleReset ("Import another ZIP")
+        // clears the job. This is the smoke-bug fix from 2026-05-19.
+        expect(jobState.clear).not.toHaveBeenCalled();
+    });
+
+    it("result panel persists after navigation (regression-pin for browser-back lose-result bug)", () => {
+        // Setup: job already completed in context (simulating the
+        // user landing on the page from a different route, e.g.
+        // browser-back from /settings?tab=comments).
+        jobState = makeIdleJob();
+        jobState.active = true;
+        jobState.phase = "completed";
+        jobState.result = sampleImportResult;
+        jobState.jobId = "j-done";
+
+        withRouter(<MediumImportPage />);
+
+        // Result panel renders from job.result (NOT from local state).
+        expect(screen.getByTestId("medium-import-result")).toBeInTheDocument();
+        // Page is in idle (upload card visible) since job.phase isn't "running".
+        expect(screen.getByTestId("medium-import-start")).toBeInTheDocument();
+    });
+
+    it("handleReset (Import another ZIP) clears the job from context", async () => {
+        jobState = makeIdleJob();
+        jobState.active = true;
+        jobState.phase = "completed";
+        jobState.result = sampleImportResult;
+        jobState.jobId = "j-done";
+
+        withRouter(<MediumImportPage />);
+
+        expect(screen.getByTestId("medium-import-result")).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("medium-import-result-reset"));
+        // clear() is the ONLY thing that drops the result; called
+        // here, not on completion.
         expect(jobState.clear).toHaveBeenCalled();
     });
 

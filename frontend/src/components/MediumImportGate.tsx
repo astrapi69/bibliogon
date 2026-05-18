@@ -49,17 +49,26 @@ export default function MediumImportGate() {
     const {t} = useI18n();
     const dismissTimer = useRef<number | null>(null);
     const lastPhase = useRef(job.phase);
-    const [autoDismissActive, setAutoDismissActive] = useState(false);
+    // ``badgeDismissed`` hides the badge after the 10 s auto-dismiss
+    // window without clearing the underlying job — the result panel
+    // on the page must still render when the user navigates back.
+    // The Page's handleReset is the only thing that calls job.clear().
+    const [badgeDismissed, setBadgeDismissed] = useState(false);
 
-    // Auto-dismiss on successful completion (matches audiobook
-    // gate behaviour). Failures / cancellations stay until user
-    // clicks them.
+    // Auto-dismiss the BADGE on successful completion (mirrors
+    // AudioExportGate timing). Failures / cancellations keep the
+    // badge until the user clicks it. The job.result stays in
+    // context regardless so the result panel persists across
+    // navigation.
     useEffect(() => {
+        // Reset the dismissed flag whenever a new running phase
+        // begins (a new job displaced an old one).
+        if (lastPhase.current !== "running" && job.phase === "running") {
+            setBadgeDismissed(false);
+        }
         if (lastPhase.current !== "completed" && job.phase === "completed") {
-            setAutoDismissActive(true);
             dismissTimer.current = window.setTimeout(() => {
-                job.clear();
-                setAutoDismissActive(false);
+                setBadgeDismissed(true);
             }, AUTO_DISMISS_MS);
         }
         lastPhase.current = job.phase;
@@ -69,23 +78,23 @@ export default function MediumImportGate() {
                 dismissTimer.current = null;
             }
         };
-    }, [job.phase, job]);
+    }, [job.phase]);
 
     // Suppress the badge while the user is already on the import
-    // page (the in-line progress UI is the surface there).
+    // page (the in-line progress UI is the surface there). Also
+    // suppress after the auto-dismiss timer flipped the local flag.
     if (!job.active) return null;
+    if (badgeDismissed) return null;
     if (location.pathname === PAGE_PATH) return null;
 
     const handleClick = () => {
-        if (job.phase === "completed" || job.phase === "failed" || job.phase === "cancelled") {
-            // Terminal: clear + navigate to the page so the user
-            // sees the result panel (or the idle state on cancel).
-            if (dismissTimer.current !== null) {
-                window.clearTimeout(dismissTimer.current);
-                dismissTimer.current = null;
-            }
-            navigate(PAGE_PATH);
-            return;
+        // Any click cancels a pending auto-dismiss and navigates
+        // back to the page. The page reads job.result for the
+        // result panel; the badge disappears next render because
+        // pathname now matches PAGE_PATH.
+        if (dismissTimer.current !== null) {
+            window.clearTimeout(dismissTimer.current);
+            dismissTimer.current = null;
         }
         navigate(PAGE_PATH);
     };
@@ -144,7 +153,7 @@ export default function MediumImportGate() {
                     cursor: "pointer",
                     fontWeight: 500,
                     fontSize: "0.875rem",
-                    opacity: autoDismissActive ? 0.85 : 1,
+                    opacity: 1,
                 }}
             >
                 <Download size={14} aria-hidden="true" />
