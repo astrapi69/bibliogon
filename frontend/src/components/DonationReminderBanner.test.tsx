@@ -70,21 +70,27 @@ describe("shouldShowReminder", () => {
     expect(shouldShowReminder(baseConfig)).toBe(false);
   });
 
-  it("returns false when first-use is less than 90 days ago", () => {
+  it("returns false when first-use is less than 7 days ago (grace gate, v0.35.1 user-direction)", () => {
+    // v0.35.1: GRACE_PERIOD_DAYS bumped from 90 to 7 per user-spec.
+    // Pre-v0.35.1 behavior was "no donation hint for the first
+    // 90 days" — too long for a project at Bibliogon's stage;
+    // new users never saw the reminder. 7 days is a short
+    // post-install grace that still avoids ask-on-first-launch.
     localStorage.setItem(DONATION_ONBOARDING_SEEN_KEY, "true");
-    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(30).toISOString());
+    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(3).toISOString());
     expect(shouldShowReminder(baseConfig)).toBe(false);
   });
 
-  it("returns true when 90+ days elapsed and no cooldown set", () => {
+  it("returns true when 7+ days elapsed and no cooldown set", () => {
+    // 10 days > 7-day grace gate.
     localStorage.setItem(DONATION_ONBOARDING_SEEN_KEY, "true");
-    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(100).toISOString());
+    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(10).toISOString());
     expect(shouldShowReminder(baseConfig)).toBe(true);
   });
 
   it("respects an active next-allowed cooldown", () => {
     localStorage.setItem(DONATION_ONBOARDING_SEEN_KEY, "true");
-    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(100).toISOString());
+    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(30).toISOString());
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
     localStorage.setItem(REMINDER_NEXT_ALLOWED_KEY, futureDate.toISOString());
@@ -93,7 +99,7 @@ describe("shouldShowReminder", () => {
 
   it("returns true when cooldown is in the past", () => {
     localStorage.setItem(DONATION_ONBOARDING_SEEN_KEY, "true");
-    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(100).toISOString());
+    localStorage.setItem(FIRST_USE_DATE_KEY, daysAgo(30).toISOString());
     localStorage.setItem(REMINDER_NEXT_ALLOWED_KEY, daysAgo(5).toISOString());
     expect(shouldShowReminder(baseConfig)).toBe(true);
   });

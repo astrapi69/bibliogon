@@ -61,6 +61,69 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **REMINDER-PANEL-GENERIC-EXTRACTION-01** (P3, filed
+  2026-05-18 from v0.35.1 donation tuning): extract a
+  generic ``ReminderPanel`` component from the existing
+  ``DonationReminderBanner``. Per the Recurring-
+  Component-Unification Rule (formalised in
+  ``.claude/rules/coding-standards.md`` 2026-05-19), a
+  UI pattern shared across 2+ surfaces extracts NOW
+  rather than after the 3-duplicate threshold. The
+  donation banner is currently single-site; this filing
+  pre-registers the extraction for the SECOND surface
+  that needs the same shape.
+
+  Likely future second-sites that would trigger the
+  extraction:
+  - **Update reminder**: "v0.36.0 is available — review
+    changelog?". Same layout (icon + body + 2 buttons +
+    close-X), same 90-day-style cooldown semantics,
+    same App-level mount placement.
+  - **Survey reminder**: "Help us improve Bibliogon —
+    optional 2-minute survey?". Same shape.
+  - **Backup reminder**: "It has been 30 days since
+    your last backup. Run one now?". Same shape with
+    a different cooldown.
+
+  Scope when triggered:
+  - Extract ``ReminderPanel`` to
+    ``frontend/src/components/ReminderPanel.tsx`` with
+    props: ``icon``, ``title?``, ``body``, ``primaryCta:
+    {label, onClick} | {label, href, onClick?}``,
+    ``secondaryDismissLabel``, ``onPrimary``,
+    ``onDismiss``, ``aria-label``.
+  - Refactor ``DonationReminderBanner`` to consume
+    ``ReminderPanel`` (keeping the donation-specific
+    schedule/cooldown logic outside the generic shell).
+  - Migrate the SECOND site at the same time per the
+    rule's "2-surfaces threshold + same-session
+    migration" requirement.
+  - i18n keys stay per-feature (donation strings stay
+    under ``ui.donations.*``; update-reminder strings
+    would live under ``ui.update_reminder.*``, etc.).
+  - Vitest covering the ReminderPanel shape + per-
+    feature wrappers.
+
+  Trigger: the second feature that needs a reminder-
+  shaped affordance lands. NOT speculative — wait for
+  a real second-site.
+
+  Effort estimate: 4-6 commits (extract + 2-site
+  migration + Vitest + E2E + i18n + lessons-learned
+  reference).
+
+  Pairs with: ``RECURRING-COMPONENT-AUDIT-01``
+  (frontend-wide audit, separate filing). This entry
+  is the donation-specific component's planned
+  extraction; the audit-01 entry is the broader sweep
+  for ALL candidates.
+
+  Closes prior P0-escalation thread (DONATION-
+  REMINDER-PANEL-01): v0.35.1 tuned the existing
+  Bibliogon donation infrastructure rather than
+  building a new generic ReminderPanel; generic
+  extraction defers here.
+
 - **PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01** (P3):
   active conversion of ``page.text_content`` when the user
   switches a page's layout between a TipTap layout (JSON-

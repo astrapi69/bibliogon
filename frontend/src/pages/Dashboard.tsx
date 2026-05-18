@@ -39,7 +39,9 @@ import {useI18n} from "../hooks/useI18n";
 import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
-import DonationReminderBanner, {shouldShowReminder} from "../components/DonationReminderBanner";
+// v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
+// to App.tsx (App-level mount per user-direction "panel ganz oben am
+// Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
 import {EmptyState} from "../components/EmptyState";
 import {LoadingIndicator} from "../components/LoadingIndicator";
 
@@ -64,7 +66,6 @@ export default function Dashboard() {
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
-    const [reminderVisible, setReminderVisible] = useState(false);
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const filters = useBookFilters(books, t);
@@ -291,13 +292,14 @@ export default function Dashboard() {
     useEffect(() => {
         loadBooks();
         loadTrash();
-        // Load donation config once per mount for S-02 / S-03 logic.
-        // Failure is non-critical; donations stay hidden if it fails.
+        // Load donation config once per mount for S-02 OnboardingDialog
+        // logic. The S-03 reminder banner moved to App-level mount in
+        // v0.35.1 and has its own config fetch. Failure is non-critical;
+        // OnboardingDialog stays hidden if it fails.
         api.settings.getApp()
             .then((config) => {
                 const donations = getDonationsConfig(config);
                 setDonationsConfig(donations);
-                setReminderVisible(shouldShowReminder(donations));
             })
             .catch(() => {});
     }, []);
@@ -584,12 +586,10 @@ export default function Dashboard() {
 
             {/* Content */}
             <main className={styles.main}>
-                {donationsConfig && reminderVisible && !showTrash ? (
-                    <DonationReminderBanner
-                        donations={donationsConfig}
-                        onDismiss={() => setReminderVisible(false)}
-                    />
-                ) : null}
+                {/* v0.35.1 (2026-05-18): DonationReminderBanner lifted
+                 *  to App.tsx — App-level mount above <Routes>. The
+                 *  banner now persists across navigation (every page
+                 *  shows it) until the user actively dismisses. */}
                 {showTrash ? (
                     /* Trash view */
                     <div data-testid="trash-view">

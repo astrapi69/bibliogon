@@ -23,7 +23,14 @@ import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
 import ErrorReportDialog from "./components/ErrorReportDialog";
 import AiSetupWizard, {shouldShowAiWizard} from "./components/AiSetupWizard";
-import {ensureFirstUseDate} from "./components/DonationReminderBanner";
+import DonationReminderBanner, {
+    ensureFirstUseDate,
+    shouldShowReminder,
+} from "./components/DonationReminderBanner";
+import {
+    getDonationsConfig,
+    type DonationsConfig,
+} from "./components/SupportSection";
 import ShortcutCheatsheet from "./components/ShortcutCheatsheet";
 import {useKeyboardShortcuts, Shortcut} from "./hooks/useKeyboardShortcuts";
 import {api, ApiError} from "./api/client";
@@ -40,6 +47,17 @@ export default function App() {
     // ``_secrets_managed_externally`` meta-flag on the app-config payload.
     // Wizard hides the API-key input + skips its validation in that case.
     const [secretsExternal, setSecretsExternal] = useState(false);
+    // v0.35.1 (2026-05-18): S-03 donation reminder lifted from
+    // Dashboard-only mount to App-level mount per user-direction
+    // ("panel ganz oben am Anfang"). Banner is visible across every
+    // page (Articles, Books, Picture-Books, Settings, etc.) until
+    // the user explicitly dismisses via Support / Not now / X / Esc.
+    // Each dismiss path sets the appropriate cooldown (90/180 days)
+    // per industry-research-confirmed defaults (Mastodon / Blender /
+    // Signal medians).
+    const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
+    const [reminderVisible, setReminderVisible] = useState(false);
+
     useEffect(() => {
         ensureFirstUseDate();
         api.settings.getApp()
@@ -50,6 +68,11 @@ export default function App() {
                         (config as Record<string, unknown>)._secrets_managed_externally,
                     ),
                 );
+                // Same fetch piggybacks the donations config so the
+                // App-level banner doesn't need its own API call.
+                const donations = getDonationsConfig(config);
+                setDonationsConfig(donations);
+                setReminderVisible(shouldShowReminder(donations));
             })
             .catch(() => {}); // Config load failure is not critical for the wizard
     }, []);
@@ -86,6 +109,19 @@ export default function App() {
         <MediumImportJobProvider>
         <HelpProvider>
             <OfflineBanner />
+            {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.
+             *  Renders above Routes so the banner sits at the top
+             *  of every page (Dashboard, BookEditor, ArticleEditor,
+             *  Settings, etc.). Persists across navigation until the
+             *  user actively dismisses via Support / Not now / X /
+             *  Escape — each path sets the appropriate cooldown
+             *  (90 days dismissed, 180 days donated). */}
+            {donationsConfig && reminderVisible ? (
+                <DonationReminderBanner
+                    donations={donationsConfig}
+                    onDismiss={() => setReminderVisible(false)}
+                />
+            ) : null}
             <Routes>
                 <Route path="/" element={<Dashboard/>}/>
                 <Route path="/book/:bookId" element={<BookEditor/>}/>

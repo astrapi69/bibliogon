@@ -13,7 +13,7 @@
  * Storage is local only. No tracking, no backend calls.
  */
 
-import {useMemo} from "react";
+import {useEffect, useMemo} from "react";
 import {Heart, X, ExternalLink} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import type {DonationsConfig} from "./SupportSection";
@@ -23,8 +23,25 @@ import styles from "./DonationReminderBanner.module.css";
 export const FIRST_USE_DATE_KEY = "bibliogon-first-use-date";
 export const REMINDER_NEXT_ALLOWED_KEY = "bibliogon-donation-reminder-next-allowed";
 
-const DAYS_90 = 90;
-const DAYS_180 = 180;
+// v0.35.1 (2026-05-18 user-direction): explicit constants
+// replace the prior single ``DAYS_90`` that double-served as both
+// grace gate AND dismissed-cooldown. Three independent knobs now:
+// - GRACE_PERIOD_DAYS: time after first-use before the reminder
+//   may fire. Bumped down from 90 days to 7 days per user-spec
+//   "Bibliogon currently has no donation-hint visible" — 7 days
+//   is a short post-install grace that still avoids ask-on-first-
+//   launch (the "form an opinion" buffer Phylax cites at 90 days
+//   is too long for a project at Bibliogon's stage; new users
+//   would never see a donation hint).
+// - COOLDOWN_DISMISSED_DAYS: re-show interval after the user
+//   dismisses (90 days = ≈ 3 months per user-spec).
+// - COOLDOWN_DONATED_DAYS: re-show interval after a donation
+//   click-through (180 days = 6 months; preserve from prior
+//   ship — donor doesn't need a reminder for 6 months per user
+//   reasoning).
+const GRACE_PERIOD_DAYS = 7;
+const COOLDOWN_DISMISSED_DAYS = 90;
+const COOLDOWN_DONATED_DAYS = 180;
 
 /**
  * Set the first-use date if it has not been recorded yet. Idempotent:
@@ -75,7 +92,7 @@ export function shouldShowReminder(
   }
   const firstUse = readDate(FIRST_USE_DATE_KEY);
   if (!firstUse) return false;
-  if (daysBetween(firstUse, now) < DAYS_90) return false;
+  if (daysBetween(firstUse, now) < GRACE_PERIOD_DAYS) return false;
   const nextAllowed = readDate(REMINDER_NEXT_ALLOWED_KEY);
   if (nextAllowed && nextAllowed.getTime() > now.getTime()) return false;
   return true;
@@ -106,17 +123,48 @@ export default function DonationReminderBanner({donations, onDismiss}: Props) {
   }, [donations]);
 
   const handleSupport = () => {
-    setCooldown(DAYS_180);
+    setCooldown(COOLDOWN_DONATED_DAYS);
     onDismiss();
   };
 
   const handleNotNow = () => {
-    setCooldown(DAYS_90);
+    setCooldown(COOLDOWN_DISMISSED_DAYS);
     onDismiss();
   };
 
+  // v0.35.1 a11y addition: Escape key dismisses the banner with the
+  // same semantics as "Not now" / close-X (90-day cooldown). The
+  // banner is App-level mounted in v0.35.1, so the Escape handler
+  // is global; bind on document via window event. No risk of
+  // double-firing with other Esc consumers because each dismiss
+  // call to onDismiss unmounts the banner — subsequent Esc presses
+  // fall through to whatever else is listening.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        handleNotNow();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // handleNotNow is stable enough (closes over onDismiss + cooldown
+    // setter); intentionally not in deps to avoid re-binding on every
+    // render. Same pattern used in HelpPanel + ShortcutCheatsheet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div role="region" aria-label="Bibliogon support reminder" className={styles.banner} data-testid="donation-reminder">
+    <div
+      role="region"
+      // v0.35.1 a11y: aria-live=polite for the App-level banner so
+      // screen readers announce the reminder when it first appears
+      // without stealing focus. Polite (not assertive) because the
+      // banner is non-urgent.
+      aria-live="polite"
+      aria-label="Bibliogon support reminder"
+      className={styles.banner}
+      data-testid="donation-reminder"
+    >
       <Heart size={16} aria-hidden className={styles.icon} />
       <span className={styles.text}>
         {t("ui.donations.reminder_body", "Du nutzt Bibliogon seit drei Monaten. Wenn dir das Projekt gefällt:")}
