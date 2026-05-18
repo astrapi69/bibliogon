@@ -18,9 +18,12 @@ from typing import Any
 
 import pytest
 
+import json as _json
+
 from bibliogon_export.picture_book_pdf import (
     _build_assets_map,
     _build_html,
+    _extract_plain_text,
     _image_layout_style,
     _layout_class,
     _render_page,
@@ -503,3 +506,196 @@ def test_generate_picture_book_pdf_produces_pdf_file(tmp_path: Path) -> None:
     assert out.stat().st_size > 1000  # non-trivial PDF
     # Sanity: PDF magic bytes.
     assert out.read_bytes()[:4] == b"%PDF"
+
+
+# --- PB-PHASE4 Session 4c-B-1 Fix C: defensive plain-text extraction ---
+
+
+def test_extract_plain_text_returns_empty_for_none_and_empty() -> None:
+    assert _extract_plain_text(None) == ""
+    assert _extract_plain_text("") == ""
+
+
+def test_extract_plain_text_returns_plain_as_is() -> None:
+    """Legacy plain-text rows (Tier-Property layouts pre-Session-
+    4c-B-1) round-trip unchanged."""
+    assert _extract_plain_text("Hello world") == "Hello world"
+    assert _extract_plain_text("Multi\nline") == "Multi\nline"
+    # Leading whitespace that does NOT start with '{' stays as-is.
+    assert _extract_plain_text("  leading spaces") == "  leading spaces"
+
+
+def test_extract_plain_text_unwraps_single_paragraph_tiptap_doc() -> None:
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Once upon a time."}],
+                }
+            ],
+        }
+    )
+    assert _extract_plain_text(doc) == "Once upon a time."
+
+
+def test_extract_plain_text_joins_multi_paragraph_with_newlines() -> None:
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "First."}],
+                },
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Second."}],
+                },
+            ],
+        }
+    )
+    assert _extract_plain_text(doc) == "First.\nSecond."
+
+
+def test_extract_plain_text_drops_formatting_marks() -> None:
+    """Bold + italic marks degrade to plain text in the PDF render.
+    Proper TipTap-to-HTML walking (preserving <strong>/<em>) lands
+    as PICTURE-BOOK-PDF-TIPTAP-RENDER-01 (P3)."""
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {"type": "text", "text": "plain "},
+                        {"type": "text", "marks": [{"type": "bold"}], "text": "bold"},
+                        {"type": "text", "text": " more"},
+                    ],
+                }
+            ],
+        }
+    )
+    assert _extract_plain_text(doc) == "plain bold more"
+
+
+def test_extract_plain_text_heading_blocks_get_newline_boundary() -> None:
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "heading",
+                    "attrs": {"level": 2},
+                    "content": [{"type": "text", "text": "Chapter One"}],
+                },
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Once upon a time."}],
+                },
+            ],
+        }
+    )
+    assert _extract_plain_text(doc) == "Chapter One\nOnce upon a time."
+
+
+def test_extract_plain_text_falls_back_on_malformed_json() -> None:
+    """Defensive: a string starting with '{' but failing to parse
+    returns as-is rather than raising."""
+    malformed = "{not valid json"
+    assert _extract_plain_text(malformed) == malformed
+
+
+def test_extract_plain_text_falls_back_on_non_tiptap_json() -> None:
+    """A JSON object that parses but isn't a TipTap doc returns
+    as-is. Defensive against any future text_content shape change."""
+    other = '{"foo": "bar"}'
+    assert _extract_plain_text(other) == other
+
+
+def test_extract_plain_text_handles_nested_lists() -> None:
+    """Bullet lists land in TipTap JSON as nested
+    bulletList > listItem > paragraph > text. The walker
+    recursively descends."""
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "bulletList",
+                    "content": [
+                        {
+                            "type": "listItem",
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {"type": "text", "text": "Item 1"}
+                                    ],
+                                }
+                            ],
+                        },
+                        {
+                            "type": "listItem",
+                            "content": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {"type": "text", "text": "Item 2"}
+                                    ],
+                                }
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+    assert _extract_plain_text(doc) == "Item 1\nItem 2"
+
+
+def test_render_page_uses_extracted_plain_text_for_tiptap_json() -> None:
+    """Regression pin for the v0.34.0+v0.35.0-bound regression: a
+    TipTap-layout page with JSON-shaped text_content must render the
+    EXTRACTED text in the <p>, not the raw JSON. Otherwise the
+    printed PDF shows users their text as ``{"type":"doc",...}``."""
+    doc = _json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "Authored in TipTap"}],
+                }
+            ],
+        }
+    )
+    page = {
+        "id": "p1",
+        "position": 1,
+        "layout": "image_top_text_bottom",
+        "text_content": doc,
+        "image_asset_id": None,
+        "layout_config": None,
+    }
+    html = _render_page(page, {})
+    assert "Authored in TipTap" in html
+    assert '"type":"doc"' not in html
+    # The raw JSON braces also must NOT leak through.
+    assert '{"type"' not in html
+
+
+def test_render_page_keeps_plain_text_unchanged() -> None:
+    """Legacy plain-text Tier-Property pages render unchanged."""
+    page = {
+        "id": "p2",
+        "position": 1,
+        "layout": "speech_bubble",
+        "text_content": "Bubble text!",
+        "image_asset_id": None,
+        "layout_config": None,
+    }
+    html = _render_page(page, {})
+    assert "Bubble text!" in html

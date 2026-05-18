@@ -87,6 +87,68 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01** (P3):
+  active conversion of ``page.text_content`` when the user
+  switches a page's layout between a TipTap layout (JSON-
+  serialized doc shape) and a Tier-Property layout (plain
+  string shape). Currently (post-Session 4c-B-1 Fix C) a
+  defensive read in PageCanvas + ``picture_book_pdf._render_page``
+  unwraps any JSON-shaped text_content into plain text on
+  display, so the user never sees raw JSON. But the DB shape
+  remains "dirty" (a Tier-Property page may carry a JSON
+  string in text_content from a prior TipTap session) until
+  the next user edit overwrites it.
+
+  Active-conversion proposal: on layout-switch in
+  ``PageEditor.handleChangeLayout``, when transitioning FROM
+  a TipTap layout TO a Tier-Property layout, also send
+  ``text_content: <extracted-plain-text>`` in the same PATCH
+  that flips the layout (alongside the existing
+  ``layout_config: null`` purge from v0.34.0 Fix A).
+  Symmetric direction (Tier-Property → TipTap) doesn't need
+  active conversion because ``parseTextContentToJson`` already
+  wraps plain text into a minimal TipTap doc on read.
+
+  Scope: 1 small commit + Vitest pin (extends the existing
+  layout-switch test in PageEditor.test.tsx). The defensive
+  read stays in place as a belt-and-braces safety net for any
+  pre-conversion dirty rows that exist in the wild.
+
+  Trigger: a backend consumer that depends on
+  ``text_content`` shape matching the layout type (e.g. a
+  future export pipeline that requires "pure plain text for
+  Tier-Property layouts"), OR an explicit data-hygiene sweep
+  on existing books. Filed during the 4c-B-1 Fix C close-out
+  (2026-05-19).
+
+- **PICTURE-BOOK-PDF-TIPTAP-RENDER-01** (P3): proper TipTap-
+  JSON-to-HTML walker in ``picture_book_pdf.py`` that preserves
+  bold/italic/underline marks + heading levels + lists in the
+  printed PDF. v0.35.0 ships defensive plain-text extraction
+  (PB-PHASE4 Session 4c-B-1 Fix C): the picture-book PDF
+  renders the extracted text but drops formatting. For the
+  picture-book MVP this is acceptable — picture-book typography
+  is primarily a Tier-Property concern (the Bubble + Overlay
+  Tier-Properties handle the styling 4c-B-2 ships), not an
+  inline-mark concern. Future refinement: walk the TipTap doc
+  + emit ``<strong>``/``<em>``/``<u>``/``<h1>``-``<h6>``/
+  ``<ul>``/``<ol>`` with text-align styles per node.
+
+  Scope: 2-3 commits. New ``_render_tiptap_doc(doc) -> str``
+  helper in picture_book_pdf.py; per-mark + per-node
+  conversion table; pytest covering every D1 MVP shape
+  (Bold/Italic/Underline + H1-H3 + lists + align L/C/R);
+  visual smoke that a multi-mark page round-trips through
+  WeasyPrint to a PDF where the formatting renders.
+
+  Trigger: user feedback that picture-book PDFs need to
+  preserve TipTap formatting OR a contributor decides to
+  unify the in-editor + printed shapes.
+
+  Pairs with: ``PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01``
+  (sibling fix-track for the same Session 4c-B-1 Fix C
+  follow-up).
+
 - **PICTURE-BOOK-PDF-KDP-FORMATS-01** (P3): extend picture-book
   PDF export beyond the v0.35.0 MVP 8.5×8.5 square. Audit
   finding 2026-05-17 D3 documented the canonical KDP picture-

@@ -73,6 +73,81 @@ function serializeJsonToText(json: JSONContent | null): string | null {
     return JSON.stringify(json)
 }
 
+/**
+ * Defensive: extract plain text from a ``page.text_content`` value
+ * regardless of whether it's a legacy plain string OR a JSON-shaped
+ * TipTap doc.
+ *
+ * Closes the 4c-B-1 manual-smoke "Finding C" bug: switching a page
+ * from a TipTap layout to a Tier-Property layout via the LayoutPicker
+ * preserves ``text_content`` (per the Fix A purge-on-switch behavior
+ * shipped in v0.34.0, which only purges ``layout_config``). The
+ * Tier-Property layout's textarea then renders the raw JSON string
+ * as visible text. This helper extracts the plain-text content from
+ * any JSON-shaped value before the textarea sees it.
+ *
+ * Walking strategy: recursively descend ``content`` arrays, harvest
+ * every ``text`` field on text-node entries, join paragraph
+ * boundaries with newlines. Lossy by design — formatting marks
+ * (bold/italic/heading-level/etc.) are dropped, which is the
+ * correct shape for the Tier-Property textarea (a small plain
+ * input). The TipTap render path on TipTap layouts continues to
+ * use ``parseTextContentToJson`` and preserves the full doc.
+ *
+ * On non-JSON input OR malformed JSON: return the string as-is.
+ * The fallback covers legacy plain-text rows + any future shape
+ * we haven't anticipated.
+ *
+ * Filed as a P3 backlog follow-up:
+ * PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 covers the
+ * complementary active-conversion-on-switch path. Defensive read
+ * (this helper) handles existing dirty data + every future
+ * switch read; active conversion would clean the data at switch
+ * time so subsequent reads don't pay the parse cost.
+ */
+export function extractPlainText(textContent: string | null | undefined): string {
+    if (!textContent) return ""
+    const trimmed = textContent.trimStart()
+    if (!trimmed.startsWith("{")) return textContent
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(textContent)
+    } catch {
+        return textContent
+    }
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        (parsed as {type?: unknown}).type !== "doc"
+    ) {
+        return textContent
+    }
+    const pieces: string[] = []
+    const walk = (node: unknown): void => {
+        if (!node || typeof node !== "object") return
+        const n = node as {
+            type?: string
+            text?: string
+            content?: unknown[]
+        }
+        if (n.type === "text" && typeof n.text === "string") {
+            pieces.push(n.text)
+            return
+        }
+        if (Array.isArray(n.content)) {
+            const before = pieces.length
+            for (const child of n.content) walk(child)
+            // Insert a newline between paragraph-shaped children
+            // so the textarea preserves visual block boundaries.
+            if (n.type === "paragraph" || n.type?.startsWith("heading")) {
+                if (pieces.length > before) pieces.push("\n")
+            }
+        }
+    }
+    walk(parsed)
+    return pieces.join("").replace(/\n+$/, "")
+}
+
 interface Props {
     page: Page
     bookId: string
@@ -170,7 +245,17 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
-    const [textDraft, setTextDraft] = useState(page.text_content ?? "")
+    // PB-PHASE4 Session 4c-B-1 fix C: defensive plain-text
+    // extraction. Switching a page from a TipTap layout to a
+    // Tier-Property layout preserves text_content (per v0.34.0
+    // Fix A which only purges layout_config). The textarea then
+    // renders whatever string is there; without this defense,
+    // a JSON-shaped string from the prior TipTap edits would
+    // display literally. extractPlainText handles both legacy
+    // plain text AND JSON-shaped strings transparently.
+    const [textDraft, setTextDraft] = useState(() =>
+        extractPlainText(page.text_content),
+    )
     // PB-PHASE4 Session 4c-B-1 Commit 2: per-layout TipTap state.
     // TIPTAP_LAYOUTS render through RichTextEditor; their content
     // is a parsed JSONContent (legacy plain text auto-wraps on
@@ -181,7 +266,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     )
 
     useEffect(() => {
-        setTextDraft(page.text_content ?? "")
+        setTextDraft(extractPlainText(page.text_content))
         setTextJson(parseTextContentToJson(page.text_content))
         setUploadError(null)
     }, [page.id, page.text_content])

@@ -19,7 +19,7 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 import fs from "node:fs"
 import path from "node:path"
 
-import PageCanvas from "./PageCanvas"
+import PageCanvas, {extractPlainText} from "./PageCanvas"
 import type {Page, Asset} from "../api/client"
 
 vi.mock("../hooks/useI18n", () => ({
@@ -1317,5 +1317,225 @@ describe("PageCanvas - TipTap layouts render via RichTextEditor", () => {
             ).toBeTruthy(),
         )
         expect(screen.queryByTestId("page-canvas-text-input")).toBeNull()
+    })
+})
+
+// --- PB-PHASE4 Session 4c-B-1 Fix C: defensive plain-text extraction ---
+
+describe("extractPlainText helper", () => {
+    it("returns empty string for null / undefined / empty", () => {
+        expect(extractPlainText(null)).toBe("")
+        expect(extractPlainText(undefined)).toBe("")
+        expect(extractPlainText("")).toBe("")
+    })
+
+    it("returns plain text as-is when input does NOT start with '{'", () => {
+        expect(extractPlainText("Hello world")).toBe("Hello world")
+        expect(extractPlainText("  leading whitespace OK  ")).toBe(
+            "  leading whitespace OK  ",
+        )
+        expect(extractPlainText("Multi\nline\ntext")).toBe("Multi\nline\ntext")
+    })
+
+    it("extracts plain text from a single-paragraph TipTap doc", () => {
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Once upon a time."}],
+                },
+            ],
+        })
+        expect(extractPlainText(doc)).toBe("Once upon a time.")
+    })
+
+    it("joins multi-paragraph TipTap doc with newlines", () => {
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "First paragraph."}],
+                },
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Second paragraph."}],
+                },
+            ],
+        })
+        expect(extractPlainText(doc)).toBe("First paragraph.\nSecond paragraph.")
+    })
+
+    it("drops formatting marks (bold/italic become plain text)", () => {
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [
+                        {type: "text", text: "plain "},
+                        {type: "text", marks: [{type: "bold"}], text: "bold"},
+                        {type: "text", text: " more plain"},
+                    ],
+                },
+            ],
+        })
+        expect(extractPlainText(doc)).toBe("plain bold more plain")
+    })
+
+    it("extracts text from heading nodes (preserves block boundary)", () => {
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "heading",
+                    attrs: {level: 2},
+                    content: [{type: "text", text: "Chapter One"}],
+                },
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Once upon a time."}],
+                },
+            ],
+        })
+        expect(extractPlainText(doc)).toBe("Chapter One\nOnce upon a time.")
+    })
+
+    it("falls back to the original string on malformed JSON starting with '{'", () => {
+        const malformed = "{not valid json"
+        expect(extractPlainText(malformed)).toBe(malformed)
+    })
+
+    it("falls back to the original string on JSON that is NOT a TipTap doc", () => {
+        const otherJson = '{"foo": "bar"}'
+        expect(extractPlainText(otherJson)).toBe(otherJson)
+    })
+
+    it("handles deeply-nested lists", () => {
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "bulletList",
+                    content: [
+                        {
+                            type: "listItem",
+                            content: [
+                                {
+                                    type: "paragraph",
+                                    content: [{type: "text", text: "Item 1"}],
+                                },
+                            ],
+                        },
+                        {
+                            type: "listItem",
+                            content: [
+                                {
+                                    type: "paragraph",
+                                    content: [{type: "text", text: "Item 2"}],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(extractPlainText(doc)).toBe("Item 1\nItem 2")
+    })
+})
+
+// --- PB-PHASE4 Session 4c-B-1 Fix C: regression-pin for textarea-shows-JSON bug ---
+
+describe("PageCanvas - Tier-Property textarea defends against JSON-shaped text_content (Fix C)", () => {
+    const TIPTAP_DOC = JSON.stringify({
+        type: "doc",
+        content: [
+            {
+                type: "paragraph",
+                content: [{type: "text", text: "Authored in TipTap"}],
+            },
+        ],
+    })
+
+    it("speech_bubble: textarea shows extracted plain text, NOT raw JSON", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-bubble",
+                    layout: "speech_bubble",
+                    text_content: TIPTAP_DOC,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const ta = screen.getByTestId(
+            "page-canvas-text-input",
+        ) as HTMLTextAreaElement
+        expect(ta.value).toBe("Authored in TipTap")
+        expect(ta.value).not.toContain('"type":"doc"')
+    })
+
+    it("image_full_text_overlay: textarea shows extracted plain text, NOT raw JSON", () => {
+        // This is the exact bug from the 4c-B-1 manual smoke: user
+        // authors in image_top_text_bottom (TipTap), switches to
+        // image_full_text_overlay (Tier-Property), textarea then
+        // displays the raw JSON. After Fix C, textarea shows the
+        // extracted plain text.
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-overlay",
+                    layout: "image_full_text_overlay",
+                    text_content: TIPTAP_DOC,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const ta = screen.getByTestId(
+            "page-canvas-text-input",
+        ) as HTMLTextAreaElement
+        expect(ta.value).toBe("Authored in TipTap")
+        expect(ta.value).not.toContain('"type":"doc"')
+    })
+
+    it("malformed JSON in text_content falls back to literal display (defensive)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-bad",
+                    layout: "speech_bubble",
+                    text_content: "{broken",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const ta = screen.getByTestId(
+            "page-canvas-text-input",
+        ) as HTMLTextAreaElement
+        // Falls back to literal string rather than crashing or
+        // truncating the user's content.
+        expect(ta.value).toBe("{broken")
+    })
+
+    it("plain legacy text_content displays unchanged (no false extraction)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-legacy",
+                    layout: "speech_bubble",
+                    text_content: "Bubble text!",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const ta = screen.getByTestId(
+            "page-canvas-text-input",
+        ) as HTMLTextAreaElement
+        expect(ta.value).toBe("Bubble text!")
     })
 })

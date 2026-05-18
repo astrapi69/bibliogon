@@ -32,6 +32,7 @@ ships fresh here.
 
 from __future__ import annotations
 
+import json
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -319,15 +320,87 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
     }
 
 
+def _extract_plain_text(text_content: str | None) -> str:
+    """Defensive plain-text extraction from a ``page.text_content``
+    value that may be a legacy plain string OR a JSON-shaped TipTap
+    document.
+
+    Mirrors the frontend ``extractPlainText`` helper in
+    ``frontend/src/components/PageCanvas.tsx``. Same lossy-extraction
+    semantics: walk the TipTap doc, harvest every ``text`` field,
+    join paragraph boundaries with newlines. Formatting marks
+    (bold/italic/heading-level/etc.) are dropped — the PDF render
+    in this MVP path emits plain text. A future
+    ``PICTURE-BOOK-PDF-TIPTAP-RENDER-01`` (P3) backlog item builds a
+    proper TipTap-to-HTML walker that surfaces bold/italic/headings
+    as ``<strong>``/``<em>``/``<h*>`` in the printed PDF.
+
+    Why this helper exists: PB-PHASE4 Session 4c-B-1 introduced
+    TipTap rich-text editing for 3 picture-book layouts
+    (image_top_text_bottom, image_left_text_right, text_only).
+    Those layouts persist ``text_content`` as a JSON-serialized
+    TipTap doc. Without this defensive read, the PDF generator
+    would emit the raw JSON string inside ``<p>``, showing the
+    user something like ``{"type":"doc","content":[...]}``
+    instead of their authored text. The frontend Tier-Property
+    branch has the same issue (textarea displays raw JSON);
+    fixed there too via the same shape of helper.
+    """
+    if not text_content:
+        return ""
+    stripped = text_content.lstrip()
+    if not stripped.startswith("{"):
+        return text_content
+    try:
+        parsed = json.loads(text_content)
+    except (json.JSONDecodeError, TypeError):
+        return text_content
+    if not isinstance(parsed, dict) or parsed.get("type") != "doc":
+        return text_content
+
+    pieces: list[str] = []
+
+    def _walk(node: Any) -> None:
+        if not isinstance(node, dict):
+            return
+        node_type = node.get("type")
+        if node_type == "text" and isinstance(node.get("text"), str):
+            pieces.append(node["text"])
+            return
+        children = node.get("content")
+        if isinstance(children, list):
+            before = len(pieces)
+            for child in children:
+                _walk(child)
+            # Block-level boundaries (paragraph + heading) get a
+            # newline between siblings so the rendered text
+            # preserves block structure visually.
+            if node_type == "paragraph" or (
+                isinstance(node_type, str) and node_type.startswith("heading")
+            ):
+                if len(pieces) > before:
+                    pieces.append("\n")
+
+    _walk(parsed)
+    return "".join(pieces).rstrip("\n")
+
+
 def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     """Render one picture-book page as an HTML <section>.
 
     ``page`` is the API shape (PageOut deserialized): id, position,
     layout, text_content, image_asset_id, layout_config.
     ``assets_map`` maps asset_id -> file:// URL for WeasyPrint.
+
+    PB-PHASE4 Session 4c-B-1 fix C: ``text_content`` for TipTap
+    layouts is a JSON-serialized TipTap doc. We defensively
+    extract plain text via ``_extract_plain_text`` so the PDF
+    emits the user's authored text instead of raw JSON. Proper
+    TipTap-to-HTML rendering (preserving bold/italic/headings)
+    lands as PICTURE-BOOK-PDF-TIPTAP-RENDER-01 (P3).
     """
     layout = page.get("layout", "image_top_text_bottom")
-    text_content = escape(page.get("text_content") or "")
+    text_content = escape(_extract_plain_text(page.get("text_content")))
     image_asset_id = page.get("image_asset_id")
     config = page.get("layout_config")
     css_class = _layout_class(layout)
