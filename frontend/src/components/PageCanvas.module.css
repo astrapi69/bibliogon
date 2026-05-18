@@ -99,16 +99,37 @@
  * borders (their text region is positioned over the image and
  * has its own backdrop / bubble styling). */
 
+/* PB-PHASE4 Session 4c-B-1 manual smoke Finding B: bumped
+ * border opacity 14% -> 25% and regionText background tint 5%
+ * -> 10% on the 2 layouts where image + text coexist as
+ * siblings. The original 14% / 5% values were too subtle on
+ * light themes — user reported "visual separator missing"
+ * because the RichTextEditor's inherited 10px padding from
+ * .textInput visually swallowed the 14% border.
+ *
+ * Applies ONLY to image_top_text_bottom + image_left_text_right.
+ * speech_bubble + image_full_text_overlay layouts intentionally
+ * keep their existing positioned-text styling (bubble has its
+ * own backdrop + drop-shadow; overlay has its own dark band).
+ * text_only has no image region to separate from.
+ */
 .canvasLayoutImageTopTextBottom .regionImage {
-    border-bottom: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
 }
 
 .canvasLayoutImageLeftTextRight .regionImage {
-    border-right: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
 }
 
 .canvasLayoutImageTopTextBottom .regionText,
-.canvasLayoutImageLeftTextRight .regionText,
+.canvasLayoutImageLeftTextRight .regionText {
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+/* text_only keeps the lower 5% tint — there's no image region
+ * to separate from, so the tint is purely "this is the text
+ * surface" decoration. Bumping it to 10% here would just feel
+ * heavier without solving any separator problem. */
 .canvasLayoutTextOnly .regionText {
     background: color-mix(in srgb, var(--text) 5%, transparent);
 }

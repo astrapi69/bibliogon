@@ -565,17 +565,51 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
     })
 
     it("standard layouts: text region has a background tint to separate from image", () => {
-        // The three standard layouts that show a text region above /
-        // beside / inside the canvas frame (not overlaid, not in a
-        // speech bubble) share one rule that applies a subtle tint.
-        // The blockFor helper is shaped for simple selectors; for a
-        // grouped selector across three classes we match the source
-        // directly.
-        const grouped = css.match(
-            /\.canvasLayoutImageTopTextBottom \.regionText,\s*\.canvasLayoutImageLeftTextRight \.regionText,\s*\.canvasLayoutTextOnly \.regionText\s*\{[^}]*\}/,
+        // Post-Fix-B (4c-B-1 manual smoke): the 2 image+text-coexist
+        // layouts (image_top_text_bottom + image_left_text_right) share
+        // one rule with the BUMPED 10% background tint (was 5%). The
+        // text_only layout keeps the original 5% tint in its own rule.
+        // Both rules must carry a ``background:`` declaration.
+        const imageTextGroup = css.match(
+            /\.canvasLayoutImageTopTextBottom \.regionText,\s*\.canvasLayoutImageLeftTextRight \.regionText\s*\{[^}]*\}/,
         )
-        expect(grouped).not.toBeNull()
-        expect(grouped![0]).toMatch(/background:/)
+        expect(imageTextGroup).not.toBeNull()
+        expect(imageTextGroup![0]).toMatch(/background:/)
+        // Fix B: 10% opacity (bumped from 5%) on image+text layouts
+        // for visual separator clarity. The exact CSS value is part
+        // of the visual contract; assert the percentage explicitly.
+        expect(imageTextGroup![0]).toMatch(/var\(--text\)\s+10%/)
+
+        const textOnlyRule = css.match(
+            /\.canvasLayoutTextOnly \.regionText\s*\{[^}]*\}/,
+        )
+        expect(textOnlyRule).not.toBeNull()
+        expect(textOnlyRule![0]).toMatch(/background:/)
+        // text_only intentionally keeps the 5% tint (no image region
+        // to separate from; tint is decoration not separation).
+        expect(textOnlyRule![0]).toMatch(/var\(--text\)\s+5%/)
+    })
+
+    it("Fix B: image+text-coexist layouts use 25%-opacity region border (bumped from 14%)", () => {
+        // Post-Fix-B: border opacity bumped to 25% for clearer
+        // visual separation between image region and text region.
+        // Pre-Fix-B value was 14% — explicitly assert the new
+        // value to pin the contract.
+        const topBottom = css.match(
+            /\.canvasLayoutImageTopTextBottom \.regionImage\s*\{[^}]*\}/,
+        )
+        expect(topBottom).not.toBeNull()
+        expect(topBottom![0]).toMatch(
+            /border-bottom:\s*1px solid color-mix\(in srgb, var\(--text\)\s+25%/,
+        )
+
+        const leftRight = css.match(
+            /\.canvasLayoutImageLeftTextRight \.regionImage\s*\{[^}]*\}/,
+        )
+        expect(leftRight).not.toBeNull()
+        expect(leftRight![0]).toMatch(
+            /border-right:\s*1px solid color-mix\(in srgb, var\(--text\)\s+25%/,
+        )
     })
 
     it("image_full_text_overlay: text region renders WITHOUT a border (full-bleed image preserved)", () => {
