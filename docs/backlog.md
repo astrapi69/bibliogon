@@ -243,73 +243,62 @@ store.
   Trigger: separate Future-Session for
   ConvertToBookWizard UX polish.
 
-- **BOOKDASHBOARD-CLEANUP-01** (P3, UX, filed 2026-05-18 from
-  real-user-smoke during Picture-Book authoring): three legacy
-  UI elements on BookDashboard
-  ([frontend/src/pages/Dashboard.tsx](../frontend/src/pages/Dashboard.tsx))
-  became redundant after the Picture-Book Phase 4 split-button
-  shipped (v0.34.0). User-feedback identifies all three as
-  cleanup candidates.
+- **EDITOR-FULLSCREEN-NATIVE-01** (P3, FEATURE-REQUEST,
+  filed 2026-05-18 from real-user-smoke during editor use):
+  Bibliogon's editor surfaces lack a browser-native fullscreen
+  affordance. User expectation matches the F11 / Fullscreen-API
+  convention: trigger entire-window fullscreen with browser
+  chrome hidden; Escape exits.
 
-  Concrete cleanup targets:
+  Affected surfaces:
+  1. ArticleEditor (TipTap-based)
+  2. BookEditor (TipTap-based)
+  3. Picture-Book PageEditor (RichTextEditor + Image + Bubble
+     configuration)
+  4. Markdown editor (if a separate surface exists - verify in
+     Pre-Inspection)
+  5. Future ComicBookEditor (plugin-comics Session 2+)
 
-  1. **"Version history" button** — REMOVE (pending
-     Pre-Inspection track C below). Functionality reason TBD;
-     may be obsolete OR may need relocation.
-  2. **"Compare backups" button** — RELOCATE. User
-     direction: "in Settings OR best-practice location per
-     audit". Final location decided after Pre-Inspection
-     track B below.
-  3. **"+ Create Book" centre button** — REMOVE. Redundant
-     with the Picture-Book Phase 4 split-button at the
-     top-right (v0.34.0). The split-button already covers
-     prose-book + picture-book creation paths; comic-book
-     creation lands when plugin-comics Session 1 ships.
+  Expected behavior:
+  - F11 keyboard shortcut triggers browser-native fullscreen via
+    ``document.documentElement.requestFullscreen()``
+  - Matches browser-default behaviour (chrome / address bar
+    hidden)
+  - Escape exits fullscreen (browser-default)
+  - Optional toolbar button for explicit Fullscreen-Toggle
+  - ``aria-keyshortcuts`` attribute on the editor root for a11y
+    discovery
 
-  Pre-Inspection STOP gate before any code:
+  Implementation note: the MDN Fullscreen API is supported by
+  modern Chrome / Firefox / Safari / Edge with zero browser-
+  specific code needed. State managed via
+  ``document.fullscreenElement`` (browser-managed SSoT).
 
-  - **Track A — audit current BookDashboard**: identify the
-    3 buttons and their wiring, capture when each shipped
-    (git history), document current functionality + user
-    flow each supports.
-  - **Track B — Compare-Backups relocation best-practice**:
-    survey industry pattern for backup features in similar
-    tools (Notion, Bear, Evernote, Affinity Publisher,
-    Scrivener). Plus survey Bibliogon's existing utility-
-    feature placements (Settings tabs, hamburger menus,
-    book-editor context-menus). Evaluate the candidate
-    locations:
-    a) New Settings "Backups" tab
-    b) Settings → Allgemein → Backups section
-    c) Book-Editor header context-menu (per-book scope)
-    d) Dashboard footer / sidebar utility area
-    e) Tools menu (if such a surface exists)
-    Surface the recommendation with rationale; the user
-    picks before any code.
-  - **Track C — Version-History removal verification**:
-    determine what the button currently does. If
-    functionality obsolete: confirm safe-to-remove. If
-    still-valuable: surface as a relocation decision
-    rather than a removal.
-  - **Track D — +Create-Book centre button verification**:
-    confirm the split-button at top-right covers all
-    creation entry points. Check for any flows
-    (onboarding, tutorial, deep-link, keyboard-shortcut)
-    that depend on the centre button.
+  Fix scope (estimated 2-3 commits):
+  - Fullscreen-Toggle handler in a shared utility / hook
+  - Toolbar button OR settings shortcut per editor surface
+  - F11 keyboard-shortcut handler
+  - Vitest for Fullscreen-API calls (mocked)
+  - aria-keyshortcuts attribute on each surface
 
-  Fix scope (after Pre-Inspection, estimated 2-4 commits):
-  - BookDashboard cleanup (remove or relocate the 3 elements)
-  - Compare-Backups relocation (separate commit per
-    target-location decision)
-  - Vitest regression-pin for removed buttons
-  - E2E Playwright pin for the new Compare-Backups location
-  - Accessibility: any aria-labels or keyboard-shortcuts
-    that referenced the removed buttons get cleaned up
+  Recurring-Component-Unification check: 5 editor surfaces with
+  the same conceptual handler is exactly the 2+ threshold the
+  2026-05-19 rule fires on. Extract a shared
+  ``useFullscreenToggle`` hook in the same session as the first
+  surface lands; do NOT add 5 inline implementations. Pairs
+  conceptually with ``EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01`` and
+  the broader ``KEYBOARD-SHORTCUTS-SHARED-EXTRACTION-01``
+  scope-expansion candidate.
 
-  Trigger: separate Future-Session for BookDashboard
-  UX-Polish, ideally paired with the
-  ``ARTICLEFILTERBAR-EXTRACT-01`` / Dashboard-extraction work
-  if the audit surfaces overlap.
+  Scope-expansion candidate: a Distraction-Free-Mode (app-
+  internal fullscreen with sidebar + toolbar hidden) is a
+  separate, larger feature. File as a follow-up only if user
+  feedback explicitly requests it; the browser-native path is
+  the cheaper, higher-coverage win first.
+
+  Trigger: separate Future-Session for editor UX-polish, OR
+  coordinated UX-Polish-Sprint combined with the other
+  editor-shortcut items (ALT-Z, fullscreen, etc.).
 
 - **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P3, DOC/ONBOARDING,
   filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
