@@ -1,8 +1,10 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
-import {ChevronLeft, Download, FileText, Loader2} from "lucide-react"
+import {ChevronLeft, Download, FileText, Loader2, Maximize2, Minimize2} from "lucide-react"
 import {api, ApiError, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
+import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
 import {notify} from "../utils/notify"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
@@ -32,6 +34,19 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
     const [pages, setPages] = useState<Page[]>([])
     const [activePageId, setActivePageId] = useState<string | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
+
+    // EDITOR-FULLSCREEN-NATIVE-01: browser-native fullscreen
+    // toggle, hosted in the page-editor header alongside Theme +
+    // Export-PDF. Picture-Book pages have a non-text-formatting
+    // toolbar (LayoutPicker + LayoutConfig + RichTextToolbar);
+    // fullscreen as a *page-level* affordance fits the header
+    // better than the inline text toolbar.
+    const fullscreen = useFullscreenToggle()
+    useKeyboardShortcuts(
+        fullscreen.isSupported
+            ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
+            : [],
+    )
 
     useEffect(() => {
         let cancelled = false
@@ -237,6 +252,37 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                     </button>
                 )}
                 <ThemeToggle variant="dark" />
+                {fullscreen.isSupported && (
+                    <button
+                        type="button"
+                        onClick={() => void fullscreen.toggle()}
+                        data-testid="page-editor-fullscreen"
+                        className={styles.metadataBtn}
+                        aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
+                        aria-keyshortcuts="F11 Control+Shift+F"
+                        title={
+                            fullscreen.isFullscreen
+                                ? t("ui.toolbar.exit_fullscreen", "Vollbild verlassen") +
+                                  " (F11 / Ctrl+Shift+F)"
+                                : t("ui.toolbar.fullscreen", "Vollbild") +
+                                  " (F11 / Ctrl+Shift+F)"
+                        }
+                    >
+                        {fullscreen.isFullscreen ? (
+                            <Minimize2 size={14} />
+                        ) : (
+                            <Maximize2 size={14} />
+                        )}
+                        <span>
+                            {fullscreen.isFullscreen
+                                ? t(
+                                      "ui.toolbar.exit_fullscreen",
+                                      "Vollbild verlassen",
+                                  )
+                                : t("ui.toolbar.fullscreen", "Vollbild")}
+                        </span>
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={handleExportPdf}
