@@ -17,25 +17,30 @@ This doc is the focused next-action gate.
 
 ## The v0.35.0 sequence (user directive)
 
-**REVISED 2026-05-19:** Author-select extraction + Recurring-
-Component audit are POST-v0.35.0 work, NOT bundled in the
-release. v0.35.0 bundles only the three picture-book + import
-streams.
+**REVISED 2026-05-19 (correction):** Author-select extraction
++ Recurring-Component audit are PRE-v0.35.0 work, bundled in
+the release (not post-release as a prior draft of this doc
+stated). User direction: "alles vor release" — all four
+streams ship together as v0.35.0.
 
 ```
-1. Session 4c-B (Picture-Book Editor TipTap + Tier-Properties)
-2. Async-Import Phase 3 (i18n + Playwright)
-3. v0.35.0 release cut (bundles S6 PDF + Async-Import + 4c-B)
+1. Session 4c-B-1 (TipTap-Integration foundation)
+2. Session 4c-B-2 (Tier-Property built on 4c-B-1)
+3. Async-Import Phase 3 (i18n + Playwright)
 4. AUTHOR-SELECT-INPUT-EXTRACT-01
-   + RECURRING-COMPONENT-AUDIT-01 (coordinated session, post-release)
-5. Future sessions per backlog priorities
+   + RECURRING-COMPONENT-AUDIT-01 (coordinated session)
+5. v0.35.0 release cut (bundles all four)
 ```
 
 **Discipline**: user runs manual smoke after each session
-close before authorizing the next. Three work-streams (S6 PDF,
-Async-Import Phase 3, 4c-B) ship together as v0.35.0; the
-extraction-plus-audit work runs AFTER the release as its own
-coordinated session.
+close before authorizing the next. ALL FOUR work-streams
+(4c-B-1 + 4c-B-2, Async-Import Phase 3, Extraction + Audit)
+ship together as v0.35.0.
+
+Session 4c is split into 4c-B-1 (TipTap-Integration, 6-8
+commits) + 4c-B-2 (Tier-Property, 6-9 commits) per the
+12-commit stop-condition; the combined scope of 13-17 commits
+exceeds the threshold.
 
 ## Session 4c-B Pre-Inspection (2026-05-19)
 
