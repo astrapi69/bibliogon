@@ -354,4 +354,53 @@ describe("RichTextEditor", () => {
         // The doc should now contain a heading node.
         expect(JSON.stringify(json)).toContain('"heading"')
     })
+
+    // PB-PHASE4 Session 4c-B-1 Finding G (G1): FontFamily extension
+    // wire-up. D7=Option 1 stores the font choice as a TipTap mark
+    // on text spans; the PDF walker (G4) reads those marks.
+    it("supports Finding G FontFamily extension wire-up: setFontFamily command exists", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <RichTextEditor
+                content={makeDoc("text")}
+                onEditorReady={(e) => {
+                    editorRef = e
+                }}
+                testidNamespace="rt-test"
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+
+        // setFontFamily / unsetFontFamily come from the FontFamily
+        // extension; both require TextStyle as a dependency. Both
+        // must register for the G2 Toolbar dropdown to wire up.
+        expect(typeof editorRef!.commands.setFontFamily).toBe("function")
+        expect(typeof editorRef!.commands.unsetFontFamily).toBe("function")
+    })
+
+    it("Finding G FontFamily extension roundtrip: setFontFamily writes a textStyle mark with fontFamily attr", async () => {
+        let editorRef: Editor | null = null
+        render(
+            <RichTextEditor
+                content={makeDoc("Hello picture-book.")}
+                onEditorReady={(e) => {
+                    editorRef = e
+                }}
+                testidNamespace="rt-test"
+            />,
+        )
+        await waitFor(() => expect(editorRef).not.toBeNull())
+
+        // Select the whole doc and apply a font. The resulting JSON
+        // must carry a textStyle mark with the fontFamily attribute,
+        // which is the contract the G4 PDF walker depends on.
+        act(() => {
+            editorRef!.commands.selectAll()
+            editorRef!.commands.setFontFamily("Andika")
+        })
+        const json = editorRef!.getJSON()
+        const serialised = JSON.stringify(json)
+        expect(serialised).toContain('"textStyle"')
+        expect(serialised).toContain('"fontFamily":"Andika"')
+    })
 })

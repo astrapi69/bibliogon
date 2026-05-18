@@ -36,6 +36,7 @@ import TextAlign from "@tiptap/extension-text-align"
 import Underline from "@tiptap/extension-underline"
 import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
+import FontFamily from "@tiptap/extension-font-family"
 import type {JSONContent} from "@tiptap/core"
 import {useEffect, useRef} from "react"
 
@@ -81,8 +82,15 @@ export default function RichTextEditor({
 }: Props) {
     // The D1 MVP extension set. Order matches Editor.tsx's
     // convention (StarterKit first, then individual extensions).
-    // Color requires TextStyle as a dependency per TipTap docs;
-    // both included.
+    // Color + FontFamily both require TextStyle as a dependency
+    // per TipTap docs; TextStyle MUST precede them.
+    //
+    // FontFamily added 2026-05-19 for PB-PHASE4 Finding G (D7=
+    // Option 1: WYSIWYG via TipTap marks). Stores ``fontFamily``
+    // mark attribute on text spans; the PDF walker (G4) reads
+    // those marks and emits ``<span style="font-family">``.
+    // Default (no mark) renders Atkinson Hyperlegible per D11
+    // backward-compat.
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -90,6 +98,7 @@ export default function RichTextEditor({
             Underline,
             TextStyle,
             Color,
+            FontFamily,
         ],
         content: content ?? "",
         editable,
