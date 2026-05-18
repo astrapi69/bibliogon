@@ -94,4 +94,145 @@ describe("MediumImportResult", () => {
         fireEvent.click(screen.getByTestId("medium-import-result-reset"));
         expect(onReset).toHaveBeenCalledTimes(1);
     });
+
+    // MEDIUM-IMPORT-RESPONSE-INTERFACE-SYNC-01: comment-routing
+    // surface added so the v0.31.0+ backend response is honestly
+    // rendered. The summary counts + collapsible sections only
+    // appear when their respective counts are > 0 (no visual
+    // noise on plain-article archives).
+
+    it("does NOT render comment counts in the summary when both are 0", () => {
+        withRouter(<MediumImportResult result={baseResponse} onReset={vi.fn()} />);
+        expect(
+            screen.queryByTestId("medium-import-result-imported-comments-count"),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId("medium-import-result-skipped-comments-count"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders the imported-comments count + collapsible section when count > 0", () => {
+        withRouter(
+            <MediumImportResult
+                result={{
+                    ...baseResponse,
+                    imported_comments_count: 2,
+                    imported_comments: [
+                        {
+                            id: "cmt-1",
+                            filename: "posts/reply-1.html",
+                            body_preview: "Thanks for pointing that out.",
+                            responds_to_article_id: null,
+                        },
+                        {
+                            id: "cmt-2",
+                            filename: "posts/reply-2.html",
+                            body_preview: "",
+                            responds_to_article_id: null,
+                        },
+                    ],
+                }}
+                onReset={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("medium-import-result-imported-comments-count"),
+        ).toBeInTheDocument();
+        const trigger = screen.getByTestId(
+            "medium-import-result-imported-comments-trigger",
+        );
+        fireEvent.click(trigger);
+        const rows = screen.getAllByTestId("medium-import-result-imported-comment-row");
+        expect(rows).toHaveLength(2);
+        // Empty body_preview falls back to "—" (the row stays visually present).
+        expect(rows[1].textContent).toContain("—");
+        expect(rows[0].textContent).toContain("Thanks for pointing that out.");
+    });
+
+    it("renders the skipped-comments count + collapsible section + reason per row", () => {
+        withRouter(
+            <MediumImportResult
+                result={{
+                    ...baseResponse,
+                    skipped_comments_count: 2,
+                    skipped_comments: [
+                        { filename: "posts/cmt-a.html", reason: "mode_skip" },
+                        { filename: "posts/cmt-b.html", reason: "orphan_skip" },
+                    ],
+                }}
+                onReset={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("medium-import-result-skipped-comments-count"),
+        ).toBeInTheDocument();
+        fireEvent.click(
+            screen.getByTestId("medium-import-result-skipped-comments-trigger"),
+        );
+        const rows = screen.getAllByTestId("medium-import-result-skipped-comment-row");
+        expect(rows).toHaveLength(2);
+        expect(rows[0].textContent).toContain("mode_skip");
+        expect(rows[1].textContent).toContain("orphan_skip");
+    });
+
+    it("renders all three article sections AND both comment sections when all counts > 0", () => {
+        withRouter(
+            <MediumImportResult
+                result={{
+                    imported_count: 1,
+                    skipped_count: 1,
+                    errored_count: 1,
+                    imported_comments_count: 1,
+                    skipped_comments_count: 1,
+                    imported: [
+                        {
+                            id: "art-1",
+                            title: "Article A",
+                            canonical_url: "https://x/a",
+                            warnings: [],
+                        },
+                    ],
+                    skipped: [
+                        {
+                            filename: "posts/dup.html",
+                            canonical_url: "https://x/dup",
+                            existing_article_id: "art-99",
+                        },
+                    ],
+                    errored: [
+                        { filename: "posts/broken.html", error: "parse failed" },
+                    ],
+                    imported_comments: [
+                        {
+                            id: "cmt-1",
+                            filename: "posts/cmt.html",
+                            body_preview: "nice",
+                            responds_to_article_id: null,
+                        },
+                    ],
+                    skipped_comments: [
+                        { filename: "posts/scmt.html", reason: "mode_skip" },
+                    ],
+                }}
+                onReset={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("medium-import-result-imported-trigger"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("medium-import-result-skipped-trigger"),
+        ).toBeInTheDocument();
+        // Errored section is expanded-by-default so no separate trigger
+        // is needed for its rows to be visible.
+        expect(
+            screen.getByTestId("medium-import-result-errored-row"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("medium-import-result-imported-comments-trigger"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("medium-import-result-skipped-comments-trigger"),
+        ).toBeInTheDocument();
+    });
 });

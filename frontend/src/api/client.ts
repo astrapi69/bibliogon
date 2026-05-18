@@ -1242,8 +1242,44 @@ export interface MediumImportErroredItem {
     error: string;
 }
 
+/** MEDIUM-COMMENTS-IMPORT-01 (v0.31.0+): a post the walker
+ *  classified as comment-shaped and the importer routed to the
+ *  ``article_comments`` table instead of ``articles``. The
+ *  ``responds_to_article_id`` is currently always null for Medium
+ *  imports because Medium's HTML export carries no parent-reference
+ *  data (see lessons-learned "Schema 'preserved' / 'always set'
+ *  claims must survive real-data audit"). The field stays in the
+ *  interface so future importers that DO carry parent-references
+ *  (e.g. a future Twitter / Bluesky importer) can populate it. */
+export interface MediumImportImportedCommentItem {
+    id: string;
+    filename: string;
+    body_preview: string;
+    responds_to_article_id: string | null;
+}
+
+/** MEDIUM-COMMENTS-IMPORT-01: a comment-shaped post that was
+ *  dropped without persisting. ``reason`` is one of:
+ *    - ``"mode_skip"``: the plugin's ``import_comments_mode`` setting
+ *      was ``"skip"``.
+ *    - ``"orphan_skip"``: the plugin's ``orphan_comment_handling``
+ *      setting was ``"skip"`` (Medium comments are always orphans
+ *      so this discards every detected comment).
+ */
+export interface MediumImportSkippedCommentItem {
+    filename: string;
+    reason: string;
+}
+
 /** Response of POST /api/medium-import/import. Counts mirror the
- *  array lengths so consumers can render a summary without iterating. */
+ *  array lengths so consumers can render a summary without iterating.
+ *
+ *  MEDIUM-IMPORT-RESPONSE-INTERFACE-SYNC-01: the four comment-routing
+ *  fields (``imported_comments_count``, ``skipped_comments_count``,
+ *  ``imported_comments[]``, ``skipped_comments[]``) were added in
+ *  v0.31.0 to mirror the backend ``ImportZipResponse`` Pydantic
+ *  shape. They default to 0 / empty so consumers that don't render
+ *  comment surfaces don't need defensive checks. */
 export interface MediumImportResponse {
     imported_count: number;
     skipped_count: number;
@@ -1251,6 +1287,10 @@ export interface MediumImportResponse {
     imported: MediumImportImportedItem[];
     skipped: MediumImportSkippedItem[];
     errored: MediumImportErroredItem[];
+    imported_comments_count?: number;
+    skipped_comments_count?: number;
+    imported_comments?: MediumImportImportedCommentItem[];
+    skipped_comments?: MediumImportSkippedCommentItem[];
 }
 
 // --- Medium Import v2 (dry-run preview workflow) ---
