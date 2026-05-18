@@ -371,6 +371,48 @@ describe("MediumImportPage async state machine", () => {
         ).toBeInTheDocument();
     });
 
+    it("remount during importing (after Run-in-background + return): renders the progress UI even when local preview state is empty", async () => {
+        // Regression pin for the smoke-bug where clicking
+        // "Run in background" → /articles → back to import page
+        // landed the user on the idle dropzone instead of the
+        // in-flight progress UI. The page's local ``preview``
+        // useState dies on unmount but the job context survives.
+        // Fix: render the importing section when (preview || isImporting).
+        jobState = makeIdleJob();
+        jobState.active = true;
+        jobState.phase = "running";
+        jobState.jobId = "job-bg";
+        jobState.total = 5;
+        jobState.current = 2;
+        jobState.importedCount = 2;
+
+        withRouter(<MediumImportPage />);
+
+        // Even though local `preview` is null (would be wiped by the
+        // navigate-away), the preview section renders because
+        // isImporting is derived from the context-backed phase.
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("medium-import-preview-section"),
+            ).toBeInTheDocument(),
+        );
+        // Progress UI present.
+        expect(
+            screen.getByTestId("medium-import-progress-async"),
+        ).toBeInTheDocument();
+        // Cancel + Run-in-background buttons present.
+        expect(
+            screen.getByTestId("medium-import-preview-cancel-btn"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("medium-import-preview-background-btn"),
+        ).toBeInTheDocument();
+        // Import button NOT present (no preview to import against).
+        expect(
+            screen.queryByTestId("medium-import-preview-import-btn"),
+        ).not.toBeInTheDocument();
+    });
+
     it("cancel during import: clicking the button calls job.cancel() not cancelPreview()", async () => {
         previewMock.mockResolvedValue(makePreview(["a.html"]));
         importSelectedAsyncMock.mockResolvedValue({

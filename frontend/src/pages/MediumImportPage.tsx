@@ -338,31 +338,43 @@ export default function MediumImportPage() {
                     )}
                 </section>
 
-                {preview && inPreview && (
+                {(preview || isImporting) && inPreview && (
                     <section
                         className={styles.card}
                         data-testid="medium-import-preview-section"
                     >
                         <h2 className={styles.cardHeader}>
-                            {t(
-                                "ui.medium_import.preview.card_title",
-                                "Vorschau & Auswahl",
-                            )}
+                            {preview
+                                ? t(
+                                      "ui.medium_import.preview.card_title",
+                                      "Vorschau & Auswahl",
+                                  )
+                                : t(
+                                      "ui.medium_import.preview.in_progress_card_title",
+                                      "Import läuft",
+                                  )}
                         </h2>
                         <p className={styles.cardHint}>
-                            {t(
-                                "ui.medium_import.preview.card_hint",
-                                "Entferne die Häkchen vor Beiträgen, die du NICHT importieren möchtest. Standardmäßig sind alle ausgewählt.",
-                            )}
+                            {preview
+                                ? t(
+                                      "ui.medium_import.preview.card_hint",
+                                      "Entferne die Häkchen vor Beiträgen, die du NICHT importieren möchtest. Standardmäßig sind alle ausgewählt.",
+                                  )
+                                : t(
+                                      "ui.medium_import.preview.in_progress_card_hint",
+                                      "Der Import läuft im Hintergrund. Du kannst die Seite verlassen — der Badge unten links zeigt den Fortschritt und bringt dich zurück.",
+                                  )}
                         </p>
-                        <MediumImportPreviewTable
-                            items={preview.items}
-                            errored={preview.errored}
-                            selected={selected}
-                            onToggleAll={handleToggleAll}
-                            onToggleRow={handleToggleRow}
-                            disabled={isImporting}
-                        />
+                        {preview && (
+                            <MediumImportPreviewTable
+                                items={preview.items}
+                                errored={preview.errored}
+                                selected={selected}
+                                onToggleAll={handleToggleAll}
+                                onToggleRow={handleToggleRow}
+                                disabled={isImporting}
+                            />
+                        )}
                         {isImporting && (
                             <MediumImportProgress
                                 phase="processing-async"
@@ -381,27 +393,29 @@ export default function MediumImportPage() {
                             />
                         )}
                         <div className={styles.previewActions}>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={handleImportSelection}
-                                disabled={selected.size === 0 || isImporting}
-                                data-testid="medium-import-preview-import-btn"
-                            >
-                                <Upload size={14} />{" "}
-                                {isImporting
-                                    ? t(
-                                          "ui.medium_import.preview.importing",
-                                          "Importiert …",
-                                      )
-                                    : t(
-                                          "ui.medium_import.preview.import_selected",
-                                          "{count} Beiträge importieren",
-                                      ).replace(
-                                          "{count}",
-                                          String(selected.size),
-                                      )}
-                            </button>
+                            {preview && (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleImportSelection}
+                                    disabled={selected.size === 0 || isImporting}
+                                    data-testid="medium-import-preview-import-btn"
+                                >
+                                    <Upload size={14} />{" "}
+                                    {isImporting
+                                        ? t(
+                                              "ui.medium_import.preview.importing",
+                                              "Importiert …",
+                                          )
+                                        : t(
+                                              "ui.medium_import.preview.import_selected",
+                                              "{count} Beiträge importieren",
+                                          ).replace(
+                                              "{count}",
+                                              String(selected.size),
+                                          )}
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 className="btn btn-secondary"

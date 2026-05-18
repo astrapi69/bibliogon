@@ -1633,8 +1633,6 @@ ui:
       card_hint: "Desmarca las casillas de las publicaciones que NO quieras importar. Todas están seleccionadas por defecto."
       in_progress_card_title: "Importación en curso"
       in_progress_card_hint: "La importación se ejecuta en segundo plano. Puedes salir de esta página — la insignia en la esquina inferior izquierda muestra el progreso y te trae de vuelta."
-      in_progress_card_title: "Import in progress"
-      in_progress_card_hint: "The import runs in the background. You can leave this page — the badge in the bottom-left shows progress and brings you back."
       select_all_label: "Seleccionar todo"
       select_all_aria: "Seleccionar todo"
       count_format: "{selected} de {total} seleccionados"

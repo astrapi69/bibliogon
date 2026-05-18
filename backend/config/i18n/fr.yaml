@@ -1631,8 +1631,8 @@ ui:
     preview:
       card_title: "Aperçu et sélection"
       card_hint: "Décochez les cases des publications que vous NE voulez PAS importer. Toutes sont sélectionnées par défaut."
-      in_progress_card_title: "Import in progress"
-      in_progress_card_hint: "The import runs in the background. You can leave this page — the badge in the bottom-left shows progress and brings you back."
+      in_progress_card_title: "Import en cours"
+      in_progress_card_hint: "L'import s'exécute en arrière-plan. Vous pouvez quitter cette page — le badge en bas à gauche indique la progression et vous y ramène."
       select_all_label: "Tout sélectionner"
       select_all_aria: "Tout sélectionner"
       count_format: "{selected} sur {total} sélectionnés"
