@@ -172,63 +172,6 @@ store.
   Trigger: separate Future-Session for
   ConvertToBookWizard UX polish.
 
-- **EDITOR-FULLSCREEN-NATIVE-01** (P3, FEATURE-REQUEST,
-  filed 2026-05-18 from real-user-smoke during editor use):
-  Bibliogon's editor surfaces lack a browser-native fullscreen
-  affordance. User expectation matches the F11 / Fullscreen-API
-  convention: trigger entire-window fullscreen with browser
-  chrome hidden; Escape exits.
-
-  Affected surfaces:
-  1. ArticleEditor (TipTap-based)
-  2. BookEditor (TipTap-based)
-  3. Picture-Book PageEditor (RichTextEditor + Image + Bubble
-     configuration)
-  4. Markdown editor (if a separate surface exists - verify in
-     Pre-Inspection)
-  5. Future ComicBookEditor (plugin-comics Session 2+)
-
-  Expected behavior:
-  - F11 keyboard shortcut triggers browser-native fullscreen via
-    ``document.documentElement.requestFullscreen()``
-  - Matches browser-default behaviour (chrome / address bar
-    hidden)
-  - Escape exits fullscreen (browser-default)
-  - Optional toolbar button for explicit Fullscreen-Toggle
-  - ``aria-keyshortcuts`` attribute on the editor root for a11y
-    discovery
-
-  Implementation note: the MDN Fullscreen API is supported by
-  modern Chrome / Firefox / Safari / Edge with zero browser-
-  specific code needed. State managed via
-  ``document.fullscreenElement`` (browser-managed SSoT).
-
-  Fix scope (estimated 2-3 commits):
-  - Fullscreen-Toggle handler in a shared utility / hook
-  - Toolbar button OR settings shortcut per editor surface
-  - F11 keyboard-shortcut handler
-  - Vitest for Fullscreen-API calls (mocked)
-  - aria-keyshortcuts attribute on each surface
-
-  Recurring-Component-Unification check: 5 editor surfaces with
-  the same conceptual handler is exactly the 2+ threshold the
-  2026-05-19 rule fires on. Extract a shared
-  ``useFullscreenToggle`` hook in the same session as the first
-  surface lands; do NOT add 5 inline implementations. Pairs
-  conceptually with ``EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01`` and
-  the broader ``KEYBOARD-SHORTCUTS-SHARED-EXTRACTION-01``
-  scope-expansion candidate.
-
-  Scope-expansion candidate: a Distraction-Free-Mode (app-
-  internal fullscreen with sidebar + toolbar hidden) is a
-  separate, larger feature. File as a follow-up only if user
-  feedback explicitly requests it; the browser-native path is
-  the cheaper, higher-coverage win first.
-
-  Trigger: separate Future-Session for editor UX-polish, OR
-  coordinated UX-Polish-Sprint combined with the other
-  editor-shortcut items (ALT-Z, fullscreen, etc.).
-
 - **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P3, DOC/ONBOARDING,
   filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
   architecture work that landed across v0.34.0 + v0.35.0 +
@@ -1603,6 +1546,68 @@ store.
 ---
 
 ## P4 - Roadmap / Future Phases
+
+- **FULLSCREEN-PATTERN-RECONCILE-01** (P4, REFACTOR, filed
+  2026-05-18 by the EDITOR-FULLSCREEN-NATIVE-01 closure):
+  Bibliogon now has TWO distinct fullscreen patterns in
+  production. They serve different use-cases and coexist
+  deliberately per the F3 decision; this item tracks the
+  future reconcile when a third surface emerges OR
+  user-feedback identifies confusion.
+
+  - **State-CSS app-internal pattern**:
+    ``frontend/src/components/textarea/EnhancedTextarea.tsx``
+    (lines 101-222). Grows the textarea wrapper to fill its
+    parent (``width: 100%; height: 100%``); Escape exits.
+    Browser chrome stays visible; the user remains in the
+    app. Used by long-form textareas inside dialogs
+    (BookMetadata description, backpage, etc.).
+  - **Browser Fullscreen API pattern**:
+    ``frontend/src/hooks/useFullscreenToggle.ts`` shipped
+    2026-05-18. Calls
+    ``document.documentElement.requestFullscreen()``; F11 /
+    Escape / Ctrl+Shift+F all work; browser chrome hidden.
+    Used by editor surfaces (Editor.tsx Toolbar, PageEditor,
+    ComicBookEditor).
+
+  Why they coexist today:
+  - The textarea pattern is intentional for in-dialog editing
+    where you DON'T want the whole window to fullscreen; the
+    user is doing a quick metadata edit, not a writing
+    session.
+  - The hook pattern is intentional for editor surfaces where
+    the user IS writing and wants maximum screen real estate.
+  - Different semantics, different placements, both correct
+    for their context.
+
+  Reconcile-trigger conditions:
+  - **2-surfaces rule** (Recurring-Component-Unification):
+    fires when a third surface needs fullscreen. A
+    distraction-free mode (per the original filing's
+    scope-expansion candidate) would be the natural third
+    surface. If that lands, extract a unified
+    ``fullscreenStrategy: "browser" | "wrapper" |
+    "distraction-free"`` API.
+  - **User-feedback signal**: if users start confusing the
+    two buttons (e.g. clicking EnhancedTextarea's fullscreen
+    and expecting browser-chrome to hide, or vice versa),
+    that's the trigger to either:
+    a) Rename one to disambiguate (e.g.
+       "Expand textarea" vs "Fullscreen window"), OR
+    b) Migrate one pattern onto the other.
+
+  Scope when triggered (estimated 2-4 commits):
+  - Decide the unified API (a hook factory + per-surface
+    config, OR two separate hooks with clear names)
+  - Migrate the loser pattern OR rename to disambiguate
+  - Vitest + E2E for the migrated/renamed surfaces
+  - lessons-learned entry documenting the decision
+
+  Defer reason: zero current pain. Both patterns work
+  correctly in their contexts. Premature unification would
+  force a one-size-fits-all UX that fits neither case.
+  Trigger-gated per the 2026-05-19 Recurring-Component-
+  Unification 2-surfaces threshold.
 
 - **MYPY-V2-MIGRATION-01**: bump ``mypy`` from 1.20.2 to
   2.x. Major bump of the type checker. mypy 2.0 changed
