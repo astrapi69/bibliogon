@@ -26,7 +26,14 @@ dev: ## Start backend + frontend (backend first, then frontend)
 		fi; \
 	fi
 	@echo "Starting Bibliogon..."
+	@# Background uvicorn AND save the PID so `make stop`/`dev-down`
+	@# can clean it up after the user Ctrl+C's the foreground frontend.
+	@# Without the PID file, Ctrl+C only kills npm (foreground); the
+	@# backgrounded uvicorn lingers and holds port 8000 until a manual
+	@# kill. The `dev` target previously left this gap; the `dev-bg`
+	@# target already had it right.
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000 &
+	@echo $$! > .pid-backend
 	@echo "Waiting for backend..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
 		curl -s http://localhost:8000/api/health > /dev/null 2>&1 && break; \
@@ -88,8 +95,23 @@ dev-bg-logs: ## Tail backend + frontend logs from a `make dev-bg` run
 dev-down: ## Stop background dev servers
 	@if [ -f .pid-backend ]; then kill $$(cat .pid-backend) 2>/dev/null; rm -f .pid-backend; echo "Backend stopped"; fi
 	@if [ -f .pid-frontend ]; then kill $$(cat .pid-frontend) 2>/dev/null; rm -f .pid-frontend; echo "Frontend stopped"; fi
-	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
-	@pkill -f "vite" 2>/dev/null || true
+	@# Port-based kill: catches orphans from a previous crashed run
+	@# AND uvicorn-reload's spawned worker (the parent's PID is in
+	@# .pid-backend; the worker has a different PID). `fuser -k` is
+	@# self-kill-safe: it identifies the holder by port, not by
+	@# command-line pattern (the old `pkill -f "uvicorn app.main:app"`
+	@# matched the shell running pkill itself because the pattern
+	@# string appears in the shell's argv, and `make stop` terminated
+	@# with "Beendet" / SIGTERM as a result).
+	@# Two-pass: TERM first for clean shutdown, then KILL for any
+	@# stragglers - uvicorn's reload supervisor sometimes ignores
+	@# SIGTERM and keeps the port bound (observed live 2026-05-18,
+	@# orphan PID 14917 survived `fuser -k -TERM` for >1s).
+	@fuser -k -TERM 8000/tcp 2>/dev/null || true
+	@fuser -k -TERM 5173/tcp 2>/dev/null || true
+	@sleep 1
+	@fuser -k -KILL 8000/tcp 2>/dev/null || true
+	@fuser -k -KILL 5173/tcp 2>/dev/null || true
 	@echo "Done"
 
 stop: dev-down ## Alias for dev-down (stop dev servers)
