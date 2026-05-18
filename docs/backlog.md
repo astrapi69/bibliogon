@@ -87,6 +87,79 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
+  for duplicate UI patterns (component shapes, hook
+  compositions, styling clusters) that violate the new
+  Recurring-Component Unification Rule (filed 2026-05-19 in
+  ``.claude/rules/coding-standards.md``). The rule fires at
+  2-surfaces threshold (stricter than the generic
+  3-duplicates DRY rule); the codebase has accumulated
+  multiple known candidates before the rule was formalised,
+  so a one-time sweep is warranted.
+
+  Known candidates at filing time:
+  - **AUTHOR-SELECT-INPUT-EXTRACT-01** (the rule's canonical
+    first-application; closes together with
+    ``AUTHOR-DATALIST-EXTEND-EDITORS-01``)
+  - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (ArticleRow +
+    BookListView row shape duplication)
+  - **ARTICLEFILTERBAR-EXTRACT-01** (UX-Full-Audit G2-F1;
+    Articles uses an inline 200-LOC FilterBar where Books
+    uses the shared DashboardFilterBar)
+  - **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (Settings.tsx
+    2338 LOC monolith with inline PluginSettings +
+    AuthorSettings — extraction would enable per-tab E2E
+    testid coverage too)
+
+  Audit scope:
+  1. **Component-shape sweep:** grep for distinctive JSX +
+     prop combinations across ``frontend/src/components/``
+     and ``frontend/src/pages/``. Recipes in coding-
+     standards.md "Pre-Inspection for new UI components".
+     Output: candidate list with file:line citations.
+  2. **Hook-composition sweep:** identify hooks reused for
+     similar purposes across 2+ surfaces (``useSelection``
+     variants, ``useViewMode`` variants, etc.). Some
+     already extracted (e.g. ``useTrashViewMode`` after
+     Bug 3); the audit confirms no remaining duplicates.
+  3. **Styling-cluster sweep:** grep for repeated
+     className combinations across components. CSS module
+     duplication is harder to detect mechanically; manual
+     review of e.g. bulk-action-bar / filter-bar / toast-
+     variant styling.
+  4. **i18n key duplication:** secondary check — duplicate
+     UI patterns often grow duplicate i18n keys (e.g.
+     ``ui.create_book.author`` + ``ui.convert_to_book
+     .metadata_author``). Worth surfacing during the
+     extraction sessions for each candidate.
+
+  Deliverable: audit doc at
+  ``docs/audits/recurring-component-audit-YYYY-MM-DD.md``
+  with categorised candidate list (HIGH / MEDIUM / LOW
+  refactor value) + recommended ordering of extraction
+  sessions. Each HIGH-value candidate gets its own backlog
+  item (or extends an existing one) with the standard
+  extraction-plus-migration session shape from coding-
+  standards.md.
+
+  Defer reason: the audit itself is read-only and would
+  take 1-2 hours; the deliverable feeds N follow-up
+  extraction sessions that each ship as their own focused
+  work. Splitting audit-from-implementation matches the
+  established "audit-first" Bibliogon discipline.
+
+  Trigger: any time before v0.36.0 (extraction sessions
+  can run in parallel with v0.35.0 PDF Export + S6
+  closing). OR: a third recurring-component candidate
+  surfaces in everyday work, prompting "audit all of them
+  rather than chase individually".
+
+  Pairs with: every existing component-extraction backlog
+  item (``AUTHOR-SELECT-INPUT-EXTRACT-01``,
+  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``,
+  ``ARTICLEFILTERBAR-EXTRACT-01``,
+  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``).
+
 - **PICTURE-BOOK-KDP-SPECIFIC-FIELDS-01** (P3): add three KDP-
   specific metadata fields for picture-books (and likely future
   comic-books): `age_range` (e.g. "3-6", "4-8"), `page_count`
@@ -681,17 +754,28 @@ store.
   (user feedback on editor friction OR positive Wizard
   validation), OR a fifth usage site appears in the audit.
 
-  Defer reason: coding-standards.md "Three duplicates:
-  refactor immediately" threshold — at the 2026-05-19
-  CreateBookModal fix we were at TWO duplicates. The
-  third + fourth surfaces (editors) haven't shipped yet;
-  designing the shared component when 3+ concrete
-  instances exist gives a real abstraction surface rather
-  than a hypothetical-fit API. Filed during the
-  CreateBookModal-fix close-out.
+  Original defer reason (2026-05-19 morning): coding-
+  standards.md "Three duplicates: refactor immediately"
+  threshold — at the CreateBookModal fix we were at TWO
+  duplicates.
+
+  **Updated 2026-05-19 afternoon (post Recurring-Component
+  Unification Rule):** the new UI-specific rule has a
+  STRICTER threshold of 2 surfaces, not 3. This item is
+  now the canonical first-application of that rule — the
+  earlier defer reason is superseded. Promote scheduling
+  priority: this should ship as the NEXT extraction-plus-
+  migration session after current in-flight work (Session
+  6 PDF Export + v0.35.0 cut). The Pre-Inspection step in
+  the new rule requires an audit-first commit before
+  component construction, which fits naturally with the
+  user-requested audit-first scope expansion captured in
+  this entry.
 
   Pairs with: ``AUTHOR-DATALIST-EXTEND-EDITORS-01``
-  (closes together).
+  (closes together) + ``RECURRING-COMPONENT-AUDIT-01``
+  (broader frontend sweep that may surface additional
+  related candidates).
 
 - **KDP-CATEGORIES-CATALOG-SYNC-01** (P3, IMPROVEMENT): sync the
   KDP plugin's 25-category catalog in

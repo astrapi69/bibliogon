@@ -132,6 +132,80 @@ def find_cover_image(project_dir: Path) -> str | None: ...
 - Same constants in two places: move them into a central file.
 - Three duplicates: refactor immediately, not later.
 
+**Specialisation for UI components: see "Recurring-Component Unification Rule" below.** The 3-duplicates threshold above is the general case; UI patterns get a stricter 2-surfaces threshold.
+
+## Recurring-Component Unification Rule
+
+Filed 2026-05-19 as a project-wide discipline. Supersedes the generic 3-duplicates threshold for UI patterns specifically.
+
+**Rule:** when a UI pattern (component shape, hook composition, styling cluster) appears in 2+ surfaces, extract as a shared component AND migrate ALL existing usage-sites in the SAME coordinated session. No half-migration; no parallel implementations of the same pattern.
+
+The threshold is **2 surfaces, not 3**, because UI duplication compounds visually: users notice when "the same thing" looks slightly different across screens. Test-fixture-only code-level duplicates may tolerate the 3-threshold (the original DRY rule); user-facing UI patterns do not.
+
+### Why stricter than the general DRY rule
+
+- **Visual drift cost:** the same author-select pattern with subtly different padding / dropdown ordering / checkbox-label across two surfaces looks like a bug to users, even when the code-level behavior is identical.
+- **Test churn cost:** every duplicate Vitest covering the same pattern is repeated effort. Extraction lets the test live next to the component and cover all sites at once.
+- **i18n drift cost:** duplicate UI patterns tend to grow duplicate i18n keys ("modal_author_label" vs "wizard_author_label"). A shared component has shared i18n keys.
+- **Refactor inertia:** waiting for a 3rd usage to land means 2 sites are already migrated under the new pattern when extraction starts. Extracting at site #2 means only 1 site needs migration.
+
+### What counts as a UI pattern
+
+- A component shape with 2+ usage-sites that take the same conceptual props (e.g. `<AuthorSelectInput value={} onChange={} suggestions={} addToDbChecked={} ...>` across the create-modal + wizard + editors).
+- A hook composition reused for the same purpose (e.g. `useTrashViewMode` + `viewMode` toggle UI pattern across Articles + Books).
+- A styling cluster that's been copy-pasted into multiple components (e.g. the bulk-action-bar layout across Article + Book + Comment dashboards).
+
+### What does NOT count (the rule does not fire)
+
+- Two surfaces with similar SHAPE but genuinely different SEMANTICS (e.g. the AD `BulkActionBar` and a hypothetical Comments-Admin `EmptyState` — different concerns, similar visual layout).
+- One-off components in test fixtures or development tooling.
+- Backend pattern duplication (covered by the generic DRY rule).
+
+### Pre-Inspection for new UI components
+
+Before adding ANY new UI component:
+
+1. **Grep the codebase for similar patterns.** Recipes:
+   ```bash
+   # Component shape: search for distinctive JSX + state combos
+   grep -rln "useState.*[Aa]uthor\|<input.*list=" frontend/src --include="*.tsx"
+   # Hook composition: search for distinctive hook chains
+   grep -rln "useSelection\|useViewMode" frontend/src --include="*.tsx"
+   # Styling cluster: search for distinctive class combinations
+   grep -rln "bulkActionBar\|filterBar" frontend/src --include="*.tsx"
+   ```
+2. **If a similar pattern exists in 1+ surface:** extract first (per this rule), THEN apply at the new surface. Do not add a second instance.
+3. **If no similar pattern exists:** ship the component as a single-site implementation. The 2-surfaces threshold fires when the SECOND surface needs it.
+4. **Document the audit step** in the session journal or commit message so future contributors can verify the Pre-Inspection happened.
+
+This is the same "use what already exists" principle applied at component-level. Same intent as the architecture rule "Before writing custom code, ALWAYS check whether an official TipTap extension exists".
+
+### Session shape for extraction-plus-migration
+
+When the rule fires at the second-site landing:
+
+1. **Audit commit (docs-only):** grep for all surfaces, list candidates, document the API surface inferred from all sites' use cases.
+2. **Component commit:** new shared component + Vitest covering the component in isolation.
+3. **Migration commits (one per surface):** rewrite each site to use the new component. Existing site-level tests should still pass; updated where shape changed.
+4. **E2E commit:** Playwright smoke that exercises all migrated surfaces.
+5. **Backlog filing:** if the audit surfaced related candidates, file them as separate items so the next contributor knows about them.
+
+Typical shape: 4–7 commits. The 5-commit stop-condition in `release-workflow.md` may be exceeded for extraction-plus-migration work because half-migration is forbidden by this rule — better to ship 7 coherent commits than 5 leaving the codebase in mixed state.
+
+### Detection backlog
+
+Audit candidates already known at filing time:
+
+- `AUTHOR-SELECT-INPUT-EXTRACT-01` (P3) — closes together with `AUTHOR-DATALIST-EXTEND-EDITORS-01` (P3). This rule's canonical first-application.
+- `LIST-VIEW-ROW-SHARED-EXTRACTION-01` (P3) — duplicate ArticleRow + BookListView row shape.
+- `ARTICLEFILTERBAR-EXTRACT-01` — extract Articles-side inline filter bar to a shared component (currently 200-LOC inline duplicate of `DashboardFilterBar`).
+
+A broader `RECURRING-COMPONENT-AUDIT-01` (filed alongside this rule) sweeps the frontend for additional candidates.
+
+### Tension with "Don't add features beyond what the task requires"
+
+The general system prompt rule "Don't add features, refactor, or introduce abstractions beyond what the task requires" still applies — but ONLY when there are zero existing usage-sites. The Recurring-Component Unification Rule fires when there ARE existing sites; in that case the "use what already exists" principle takes precedence over the "don't add abstractions" principle. The abstraction isn't speculative when 2+ concrete instances drive the API.
+
 ## Boy Scout Rule
 
 - Leave code cleaner than you found it. Small improvements on every change.
