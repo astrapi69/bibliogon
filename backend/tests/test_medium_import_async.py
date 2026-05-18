@@ -280,6 +280,67 @@ def test_async_empty_selection_returns_400(client: TestClient) -> None:
     assert retry.status_code == 202
 
 
+def test_async_job_result_endpoint_returns_full_import_response(
+    client: TestClient,
+) -> None:
+    """After ``stream_end`` arrives, the frontend fetches the full
+    ImportZipResponse via ``GET /api/medium-import/jobs/{id}/result``
+    (the existing generic /api/export/jobs/{id} polling endpoint
+    doesn't surface the worker's structured return value)."""
+    preview = _post_preview(client, _build_zip(["01_oldest_tech.html"]))
+    with _fake_download_patch():
+        started = _start_async_import(
+            client, preview["preview_id"], ["01_oldest_tech.html"]
+        )
+        final = _poll_for_terminal_status(client, started["job_id"])
+    assert final["status"] == "completed"
+
+    result_resp = client.get(
+        f"/api/medium-import/jobs/{started['job_id']}/result"
+    )
+    assert result_resp.status_code == 200
+    body = result_resp.json()
+    # Shape mirrors the sync /import/{preview_id} response - same
+    # Pydantic model.
+    assert body["imported_count"] == 1
+    assert body["errored_count"] == 0
+    assert body["skipped_count"] == 0
+    assert len(body["imported"]) == 1
+    assert body["imported"][0]["title"] == "Migrate a maven project to Gradle"
+
+
+def test_async_job_result_endpoint_404_on_unknown_job(client: TestClient) -> None:
+    resp = client.get("/api/medium-import/jobs/never-existed/result")
+    assert resp.status_code == 404
+
+
+def test_async_job_result_endpoint_409_when_not_completed(
+    client: TestClient,
+) -> None:
+    """Mid-flight or failed jobs return 409 so the frontend can
+    decide whether to retry-poll or surface an error. We force the
+    failed case via the synthetic worker failure path."""
+    preview = _post_preview(client, _build_zip(["01_oldest_tech.html"]))
+
+    async def _exploding_import_zip(*args, **kwargs):  # noqa: ANN001, ANN002
+        raise RuntimeError("synthetic worker failure")
+
+    with patch(
+        "bibliogon_medium_import.routes.import_zip", _exploding_import_zip
+    ):
+        started = _start_async_import(
+            client, preview["preview_id"], ["01_oldest_tech.html"]
+        )
+        final = _poll_for_terminal_status(client, started["job_id"])
+    assert final["status"] == "failed"
+
+    resp = client.get(f"/api/medium-import/jobs/{started['job_id']}/result")
+    assert resp.status_code == 409
+    detail = resp.json()["detail"]
+    assert detail["code"] == "job_not_completed"
+    assert detail["status"] == "failed"
+
+
 def test_async_job_keeps_cache_on_worker_failure(client: TestClient) -> None:
     """When the worker raises, the job lands in FAILED and the
     preview_id stays usable so the user can retry without re-

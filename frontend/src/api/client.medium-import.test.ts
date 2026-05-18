@@ -405,3 +405,136 @@ describe("api.mediumImport.cancelPreview", () => {
         expect(result.deleted).toBe(false);
     });
 });
+
+// ---------------------------------------------------------------------------
+// ASYNC-IMPORT-PROGRESS-01 Phase 2: importSelectedAsync / getJobResult /
+// cancelJob
+// ---------------------------------------------------------------------------
+
+describe("api.mediumImport.importSelectedAsync", () => {
+    it("POSTs the selection to /import/async/{previewId} and returns {job_id, status}", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 202,
+            json: async () => ({ job_id: "job-123", status: "pending" }),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const result = await api.mediumImport.importSelectedAsync("preview-x", [
+            "a.html",
+            "b.html",
+        ]);
+
+        expect(result).toEqual({ job_id: "job-123", status: "pending" });
+        const [url, opts] = fetchMock.mock.calls[0];
+        expect(url).toBe("/api/medium-import/import/async/preview-x");
+        expect(opts.method).toBe("POST");
+        expect(JSON.parse(opts.body as string)).toEqual({
+            selected_filenames: ["a.html", "b.html"],
+        });
+    });
+
+    it("rejects with ApiError on 404 expired preview", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 404,
+            statusText: "Not Found",
+            json: async () => ({ detail: "Preview not found or expired" }),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            api.mediumImport.importSelectedAsync("expired", ["a.html"]),
+        ).rejects.toBeInstanceOf(ApiError);
+    });
+});
+
+describe("api.mediumImport.getJobResult", () => {
+    it("GETs /jobs/{id}/result and returns the parsed ImportResponse", async () => {
+        const responseBody = {
+            imported_count: 1,
+            skipped_count: 0,
+            errored_count: 0,
+            imported: [
+                {
+                    id: "art-1",
+                    title: "Hello",
+                    canonical_url: "https://x",
+                    warnings: [],
+                },
+            ],
+            skipped: [],
+            errored: [],
+        };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => responseBody,
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const result = await api.mediumImport.getJobResult("job-77");
+        expect(result).toEqual(responseBody);
+        const [url, opts] = fetchMock.mock.calls[0];
+        expect(url).toBe("/api/medium-import/jobs/job-77/result");
+        expect(opts?.method || "GET").toBe("GET");
+    });
+
+    it("rejects with ApiError on 409 not-yet-completed", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 409,
+            statusText: "Conflict",
+            json: async () => ({
+                detail: {
+                    code: "job_not_completed",
+                    message: "Job is running",
+                    status: "running",
+                },
+            }),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await api.mediumImport.getJobResult("job-busy").catch((err: ApiError) => {
+            expect(err.status).toBe(409);
+            // The conflict-payload shape is preserved via detailBody.
+            expect(err.detailBody).toEqual({
+                code: "job_not_completed",
+                message: "Job is running",
+                status: "running",
+            });
+        });
+    });
+});
+
+describe("api.mediumImport.cancelJob", () => {
+    it("DELETEs the generic /export/jobs/{id} endpoint (NOT a medium-import-specific path)", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 204,
+            json: async () => ({}),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await api.mediumImport.cancelJob("job-cx");
+        const [url, opts] = fetchMock.mock.calls[0];
+        // Critical: cancelJob hits the shared export-jobs route,
+        // NOT a medium-import-namespaced one.
+        expect(url).toBe("/api/export/jobs/job-cx");
+        expect(opts.method).toBe("DELETE");
+    });
+
+    it("rejects with ApiError on 404 unknown job", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 404,
+            statusText: "Not Found",
+            json: async () => ({ detail: "Job not found" }),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            api.mediumImport.cancelJob("missing"),
+        ).rejects.toBeInstanceOf(ApiError);
+    });
+});

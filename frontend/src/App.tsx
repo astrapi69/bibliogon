@@ -15,6 +15,7 @@ import AudioExportGate from "./components/AudioExportGate";
 import OfflineBanner from "./components/OfflineBanner";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
 import {BulkAiFillJobProvider} from "./contexts/BulkAiFillJobContext";
+import {MediumImportJobProvider} from "./contexts/MediumImportJobContext";
 import BulkAiFillDock from "./components/BulkAiFillDock";
 import {HelpProvider} from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
@@ -81,6 +82,7 @@ export default function App() {
         <DialogProvider>
         <AudiobookJobProvider>
         <BulkAiFillJobProvider>
+        <MediumImportJobProvider>
         <HelpProvider>
             <OfflineBanner />
             <Routes>
@@ -119,6 +121,7 @@ export default function App() {
                 theme="colored"
             />
         </HelpProvider>
+        </MediumImportJobProvider>
         </BulkAiFillJobProvider>
         </AudiobookJobProvider>
         </DialogProvider>

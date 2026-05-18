@@ -7,7 +7,7 @@
  * warrant a stable URL the user can navigate away from and return to.
  * See lessons-learned for the divergence rationale.
  *
- * State machine (MEDIUM-IMPORT-V2-01, dry-run preview workflow):
+ * State machine (ASYNC-IMPORT-PROGRESS-01):
  *
  *   idle
  *     | pick file + click "Vorschau & Auswahl"
@@ -19,16 +19,20 @@
  *     |              | onCancel  (DELETE /preview/{id}, clear state)
  *     | click "Importieren ({n} ausgewählt)"
  *     v              |
- *   importing        |
- *     |              |
- *     v              |
+ *   importing -------+
+ *     | SSE events flow via MediumImportJobContext
+ *     | stream_end success -> fetch /jobs/{id}/result -> render
+ *     |     MediumImportResult; file/preview/selection cleared
+ *     | stream_end failed   -> back to previewing for retry
+ *     | stream_end cancelled-> back to previewing
+ *     v
  *   result -> idle (via "Weiteres ZIP importieren")
  *
- * The v1 single-shot endpoint (api.mediumImport.importZip) is still
- * exported for direct callers (curl, scripts) but the page only ever
- * calls preview() + importSelected() + cancelPreview().
+ * Per Q5 the SSE state lives in MediumImportJobContext (provider
+ * mounted at App level) so F5 mid-import re-attaches to the
+ * running job instead of dropping the progress UI.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
@@ -40,6 +44,7 @@ import {
     type MediumImportResponse,
 } from "../api/client";
 import { notify } from "../utils/notify";
+import { useMediumImportJob } from "../contexts/MediumImportJobContext";
 import MediumImportSettings from "../components/medium-import/MediumImportSettings";
 import MediumImportUploadZone from "../components/medium-import/MediumImportUploadZone";
 import MediumImportProgress from "../components/medium-import/MediumImportProgress";
@@ -52,8 +57,15 @@ type Phase = "idle" | "uploading" | "previewing" | "importing";
 export default function MediumImportPage() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    const job = useMediumImportJob();
+
     const [file, setFile] = useState<File | null>(null);
-    const [phase, setPhase] = useState<Phase>("idle");
+    const [phase, setPhase] = useState<Phase>(
+        // If a job was running when the user came back (F5 / re-nav),
+        // the context auto-reconnects and we drop straight into the
+        // importing phase so the progress UI replaces the dropzone.
+        job.active ? "importing" : "idle",
+    );
     const [uploadLoaded, setUploadLoaded] = useState(0);
     const [uploadTotal, setUploadTotal] = useState(0);
     const [preview, setPreview] = useState<MediumImportPreviewResponse | null>(
@@ -81,9 +93,6 @@ export default function MediumImportPage() {
                 setUploadTotal(total);
             });
             setPreview(response);
-            // Default selection: everything checked. The user deselects what
-            // they want to skip. This matches the typical "I want most of
-            // it" use case better than the inverse default.
             setSelected(new Set(response.items.map((item) => item.filename)));
             setPhase("previewing");
         } catch (err) {
@@ -103,17 +112,47 @@ export default function MediumImportPage() {
         if (!preview || selected.size === 0) return;
         setPhase("importing");
         try {
-            const response = await api.mediumImport.importSelected(
+            const started = await api.mediumImport.importSelectedAsync(
                 preview.preview_id,
                 Array.from(selected),
             );
+            // Hand the job_id to the context; it opens the SSE
+            // stream and folds per-post events into live counters.
+            // The page transitions back to idle (or stays in
+            // previewing on failure) via the watcher useEffect
+            // below, driven by job.phase / job.result.
+            job.start(started.job_id);
+        } catch (err) {
+            // Submission failed before the job started. Rewind to
+            // previewing so the user can retry without re-uploading.
+            setPhase("previewing");
+            const message =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.medium_import.toast.import_failed",
+                          "Import fehlgeschlagen",
+                      );
+            notify.error(message, err);
+        }
+    }, [preview, selected, t, job]);
+
+    // Watch the context for SSE-driven phase changes. When the
+    // active job terminates, drive the page's own transitions:
+    //
+    //   completed -> render MediumImportResult, clear file +
+    //                preview + selection, toast summary, return
+    //                phase to idle.
+    //   failed    -> return to previewing for retry; toast detail.
+    //   cancelled -> return to previewing; no toast (user-initiated).
+    useEffect(() => {
+        if (phase !== "importing") return;
+        if (job.phase === "completed" && job.result) {
+            const response = job.result;
             setResult(response);
             setPhase("idle");
             setPreview(null);
             setSelected(new Set());
-            // Auto-clear the file on success so the page's empty-state
-            // returns cleanly (mirrors v1 behaviour pinned by the
-            // v0.32.0 regression test in MediumImportPage.test.tsx).
             setFile(null);
             const summary = t(
                 "ui.medium_import.toast.imported_summary",
@@ -127,36 +166,42 @@ export default function MediumImportPage() {
             } else {
                 notify.success(summary);
             }
-        } catch (err) {
-            // Keep preview + selection so the user can retry without
-            // re-uploading. The backend leaves the cache intact on
-            // import failure for exactly this reason.
+            job.clear();
+        } else if (job.phase === "failed") {
             setPhase("previewing");
             const message =
-                err instanceof ApiError
-                    ? err.detail
-                    : t(
-                          "ui.medium_import.toast.import_failed",
-                          "Import fehlgeschlagen",
-                      );
-            notify.error(message, err);
+                job.errorMessage ||
+                t(
+                    "ui.medium_import.toast.import_failed",
+                    "Import fehlgeschlagen",
+                );
+            notify.error(message);
+            job.clear();
+        } else if (job.phase === "cancelled") {
+            setPhase("previewing");
+            job.clear();
         }
-    }, [preview, selected, t]);
+    }, [job.phase, job.result, job.errorMessage, phase, t, job]);
 
     const handleCancelPreview = useCallback(async () => {
-        // Fire-and-forget the cancel-cache call; the UI must NOT block
-        // on it (the user already wants to cancel). The backend's
-        // delete-by-id is idempotent so re-firing it on a missing id
-        // is harmless.
         if (preview) {
             void api.mediumImport.cancelPreview(preview.preview_id).catch(() => {
-                // Swallowed — TTL reaper will eventually catch the leak.
+                // Swallowed - TTL reaper will catch any leak.
             });
         }
         setPreview(null);
         setSelected(new Set());
         setPhase("idle");
     }, [preview]);
+
+    const handleCancelImport = useCallback(async () => {
+        // Cancel the in-flight async job. The SSE stream emits
+        // stream_end with status=cancelled and the watcher
+        // useEffect above rewinds to previewing. The preview
+        // cache stays intact so the user can retry the same
+        // selection without re-uploading.
+        await job.cancel();
+    }, [job]);
 
     const handleToggleAll = useCallback(
         (checked: boolean) => {
@@ -320,9 +365,19 @@ export default function MediumImportPage() {
                         />
                         {isImporting && (
                             <MediumImportProgress
-                                phase="processing"
-                                loaded={0}
-                                total={0}
+                                phase="processing-async"
+                                asyncCurrent={job.current}
+                                asyncTotal={job.total}
+                                asyncCurrentFilename={job.currentFilename}
+                                asyncImported={job.importedCount}
+                                asyncSkipped={job.skippedCount}
+                                asyncErrored={job.erroredCount}
+                                asyncImportedComments={
+                                    job.importedCommentsCount
+                                }
+                                asyncSkippedComments={
+                                    job.skippedCommentsCount
+                                }
                             />
                         )}
                         <div className={styles.previewActions}>
@@ -350,15 +405,23 @@ export default function MediumImportPage() {
                             <button
                                 type="button"
                                 className="btn btn-secondary"
-                                onClick={handleCancelPreview}
-                                disabled={isImporting}
+                                onClick={
+                                    isImporting
+                                        ? handleCancelImport
+                                        : handleCancelPreview
+                                }
                                 data-testid="medium-import-preview-cancel-btn"
                             >
                                 <X size={14} />{" "}
-                                {t(
-                                    "ui.medium_import.preview.cancel",
-                                    "Abbrechen",
-                                )}
+                                {isImporting
+                                    ? t(
+                                          "ui.medium_import.preview.cancel_import",
+                                          "Import abbrechen",
+                                      )
+                                    : t(
+                                          "ui.medium_import.preview.cancel",
+                                          "Abbrechen",
+                                      )}
                             </button>
                         </div>
                     </section>

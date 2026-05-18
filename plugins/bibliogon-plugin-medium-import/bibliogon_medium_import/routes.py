@@ -497,3 +497,52 @@ async def import_selection_async_endpoint(
     job_id = job_store.submit(_run)
     logger.info("medium-import async job %s started: preview=%s", job_id, preview_id)
     return AsyncJobStartedResponse(job_id=job_id)
+
+
+@router.get("/jobs/{job_id}/result", response_model=ImportZipResponse)
+def get_async_job_result(job_id: str) -> ImportZipResponse:
+    """Return the full ``ImportZipResponse`` payload for a completed
+    async import job.
+
+    The existing generic ``GET /api/export/jobs/{id}`` polling
+    endpoint surfaces ``status`` + ``progress`` + recent ``events``
+    but does NOT generically expose the worker's full return value
+    (it only handles the export-specific ``filename`` /
+    ``download_url`` / ``chapter_files`` keys). Medium-import jobs
+    return the structured ImportResponse instead, so the frontend
+    fetches it from this dedicated endpoint once the SSE stream
+    emits ``stream_end``.
+
+    Status codes:
+      - 200 + body: job exists and completed; payload is the
+        same shape as the sync /import/{preview_id} response.
+      - 404: job id unknown (already TTL-expired or never existed).
+      - 409: job exists but is not yet completed (still pending /
+        running / cancelled / failed). The body's ``detail.status``
+        carries the actual state so the frontend can decide
+        whether to retry-poll or surface an error toast.
+    """
+    try:
+        from app.job_store import job_store
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=500, detail="Job store not available"
+        ) from exc
+
+    job = job_store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status.value != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "job_not_completed",
+                "message": f"Job is {job.status.value}; result not available",
+                "status": job.status.value,
+            },
+        )
+    # The worker returned ``_serialize(result).model_dump()`` so the
+    # stored job.result IS the ImportZipResponse shape. Re-parse via
+    # the model so FastAPI's response_model validation has something
+    # honest to assert against, instead of trusting the worker.
+    return ImportZipResponse.model_validate(job.result)

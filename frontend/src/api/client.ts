@@ -3059,6 +3059,45 @@ export const api = {
                 `/medium-import/preview/${previewId}`,
                 {method: "DELETE"},
             ),
+
+        /** ASYNC-IMPORT-PROGRESS-01: kick off an async import job
+         *  for the user's selection. Returns immediately (HTTP 202)
+         *  with the job_id; per-post progress streams via SSE at
+         *  /api/export/jobs/{job_id}/stream and the final
+         *  ImportResponse is fetched via getJobResult once
+         *  stream_end arrives. */
+        importSelectedAsync: (
+            previewId: string,
+            selectedFilenames: string[],
+        ): Promise<{job_id: string; status: string}> =>
+            request<{job_id: string; status: string}>(
+                `/medium-import/import/async/${previewId}`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({selected_filenames: selectedFilenames}),
+                },
+            ),
+
+        /** ASYNC-IMPORT-PROGRESS-01: fetch the full ImportResponse
+         *  for a completed async job. The MediumImportJobContext
+         *  calls this when SSE stream_end fires with status=completed.
+         *  Returns 404 (unknown job) or 409 (not yet completed); see
+         *  the route docstring in the plugin for the per-status
+         *  decision table. */
+        getJobResult: (jobId: string): Promise<MediumImportResponse> =>
+            request<MediumImportResponse>(
+                `/medium-import/jobs/${jobId}/result`,
+            ),
+
+        /** ASYNC-IMPORT-PROGRESS-01: cancel an in-flight async
+         *  import job. Reuses the generic
+         *  DELETE /api/export/jobs/{id} endpoint that the export
+         *  plugin owns - the job_store cancel path is generic, the
+         *  worker stops at the next ``await asyncio.sleep(0)``
+         *  yield-point between posts. Idempotent: returns 204 for
+         *  running jobs, 409 for already-terminal jobs. */
+        cancelJob: (jobId: string): Promise<void> =>
+            request<void>(`/export/jobs/${jobId}`, {method: "DELETE"}),
     },
 
     msTools: {
