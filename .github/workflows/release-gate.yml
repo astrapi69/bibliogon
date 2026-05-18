@@ -85,3 +85,71 @@ jobs:
         run: |
           chmod +x scripts/sync_versions.py
           python3 scripts/sync_versions.py --check
+
+  verify-build-infra:
+    name: Verify build infrastructure
+    # Closes the gap identified by the release-automation audit
+    # (docs/audits/release-automation-audit-2026-05-19.md Track D4):
+    # release-workflow.md Step 5 mandates verify-plugin-locks +
+    # verify-docs-discipline + launcher PyInstaller build smoke as
+    # pre-tag gates, but the previous release-gate only checked
+    # version-pin lock-step. A forgotten Step 5 check could ship to
+    # main with no CI coverage. This job adds the build-infra
+    # checks. Runs in parallel with verify-versions for faster
+    # wall-clock; either job's failure blocks the gate.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        # tkinter is not bundled with the manylinux Python wheels used
+        # by actions/setup-python on Linux runners. Required by the
+        # launcher build smoke (mirrors launcher-linux.yml's pattern).
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Verify plugin locks
+        # Catches the v0.30.0-style drift where the backend's combined
+        # lock and the per-plugin locks diverge after a shared-dep pin
+        # bump. The local pre-push hook + make verify-plugin-locks
+        # also run this; CI is the backstop.
+        run: make verify-plugin-locks
+
+      - name: Install docs deps
+        # MkDocs runs in its own Poetry env (docs/pyproject.toml).
+        working-directory: docs
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Verify docs discipline
+        # Aggregates verify-mkdocs-nav (single-source-of-truth check
+        # against docs/help/_meta.yaml) + check-mkdocs-orphans
+        # (adversarial grep on `mkdocs build --strict` for orphan
+        # pages). Mandatory since v0.30.0+ MKDOCS-DISCIPLINE-01.
+        run: make verify-docs-discipline
+
+      - name: Install launcher deps
+        # PyInstaller + tkinter come from the launcher's poetry env.
+        working-directory: launcher
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Launcher PyInstaller build smoke
+        # Catches spec errors that only surface when the spec is
+        # exec'd by pyinstaller (not when imported as Python — see
+        # the v0.26.x hotfix cluster). The downstream
+        # launcher-{linux,macos,windows}.yml workflows also do this
+        # build on `release: created`, but release-gate runs on tag
+        # push (which fires BEFORE the release event), so this is
+        # the earlier signal.
+        working-directory: launcher
+        run: poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm
