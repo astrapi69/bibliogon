@@ -307,6 +307,119 @@ def test_build_html_renders_one_page_per_page_entry() -> None:
     assert len(re.findall(r'class="page', html)) == 3
 
 
+# --- PDF metadata embedding (PB-PHASE4 Session 6 Commit 3) ---
+
+
+def test_build_html_includes_author_meta_when_author_set() -> None:
+    """``<meta name="author">`` lands in head when book has an
+    author. WeasyPrint reads this into the PDF's /Author field."""
+    html = _build_html(
+        {"title": "Book", "author": "T. Tester"}, [], {}
+    )
+    assert '<meta name="author" content="T. Tester" />' in html
+
+
+def test_build_html_omits_author_meta_when_author_empty() -> None:
+    """Empty author -> NO meta tag emitted. Avoids an empty-string
+    PDF /Author field that would look like authored-by-nobody."""
+    html = _build_html({"title": "Book", "author": ""}, [], {})
+    assert 'name="author"' not in html
+
+
+def test_build_html_omits_author_meta_when_author_whitespace_only() -> None:
+    html = _build_html({"title": "Book", "author": "   "}, [], {})
+    assert 'name="author"' not in html
+
+
+def test_build_html_omits_author_meta_when_author_missing() -> None:
+    html = _build_html({"title": "Book"}, [], {})
+    assert 'name="author"' not in html
+
+
+def test_build_html_includes_description_meta_when_description_set() -> None:
+    """Description -> PDF /Subject field via the description meta tag."""
+    html = _build_html(
+        {"title": "Book", "description": "A whimsical tale."}, [], {}
+    )
+    assert '<meta name="description" content="A whimsical tale." />' in html
+
+
+def test_build_html_omits_description_meta_when_description_empty() -> None:
+    html = _build_html(
+        {"title": "Book", "description": ""}, [], {}
+    )
+    assert 'name="description"' not in html
+
+
+def test_build_html_always_includes_generator_meta() -> None:
+    """Generator meta lands unconditionally (no per-book toggle).
+    Surfaces in PDF /Producer field as "Bibliogon picture-book PDF"
+    + the WeasyPrint version (WeasyPrint appends itself)."""
+    html = _build_html({"title": "Book"}, [], {})
+    assert '<meta name="generator" content="Bibliogon picture-book PDF" />' in html
+
+
+def test_build_html_escapes_author_in_meta_tag() -> None:
+    """Defense against XSS-style author values + plain attribute
+    escape (a name containing '"' would break the attribute)."""
+    html = _build_html(
+        {"title": "Book", "author": 'Evil "quoted" Author'}, [], {}
+    )
+    assert '<meta name="author" content="Evil &quot;quoted&quot; Author" />' in html
+
+
+def test_build_html_escapes_description_in_meta_tag() -> None:
+    html = _build_html(
+        {"title": "Book", "description": "<script>alert(1)</script>"}, [], {}
+    )
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_build_html_lang_from_book_data_language() -> None:
+    """``<html lang="...">`` reflects book language (PDF
+    accessibility metadata)."""
+    html = _build_html(
+        {"title": "Book", "language": "en"}, [], {}
+    )
+    assert '<html lang="en">' in html
+
+
+def test_build_html_lang_defaults_de_when_language_absent() -> None:
+    """No language field on book_data -> defaults to "de" (Bibliogon's
+    primary authoring language). Matches pre-Commit-3 behavior."""
+    html = _build_html({"title": "Book"}, [], {})
+    assert '<html lang="de">' in html
+
+
+def test_build_html_lang_defaults_de_when_language_empty_string() -> None:
+    """Empty-string language coerces to "de" (the same fallback as
+    missing). Defensive against legacy rows."""
+    html = _build_html(
+        {"title": "Book", "language": ""}, [], {}
+    )
+    assert '<html lang="de">' in html
+
+
+def test_build_html_emits_meta_tags_in_head_section() -> None:
+    """Sanity: the metadata meta tags live inside <head>, not
+    floating between <body> tags. PDF readers only parse the head
+    for metadata."""
+    html = _build_html(
+        {
+            "title": "Book",
+            "author": "T. Tester",
+            "description": "Desc",
+        },
+        [],
+        {},
+    )
+    head_section = html.split("</head>")[0]
+    assert '<meta name="author"' in head_section
+    assert '<meta name="description"' in head_section
+    assert '<meta name="generator"' in head_section
+
+
 # --- _build_assets_map ---
 
 

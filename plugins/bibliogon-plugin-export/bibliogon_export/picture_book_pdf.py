@@ -389,15 +389,45 @@ def _build_html(
     pages: list[dict[str, Any]],
     assets_map: dict[str, str],
 ) -> str:
-    """Build the full HTML document for WeasyPrint."""
+    """Build the full HTML document for WeasyPrint.
+
+    PDF metadata embedding (PB-PHASE4 Session 6 Commit 3):
+    WeasyPrint reads the following HTML head fields into the
+    generated PDF's metadata dictionary:
+
+    - ``<title>``                       -> PDF Title
+    - ``<meta name="author">``          -> PDF Author
+    - ``<meta name="description">``     -> PDF Subject (Description)
+    - ``<meta name="generator">``       -> PDF Producer
+    - ``<html lang="...">``             -> PDF /Lang (accessibility)
+
+    Empty/missing values are omitted entirely (NOT rendered as
+    empty meta tags) so the resulting PDF metadata stays clean
+    rather than carrying empty-string artifacts.
+    """
     title = escape(book_data.get("title") or "Picture Book")
+    author = (book_data.get("author") or "").strip()
+    description = (book_data.get("description") or "").strip()
+    language = (book_data.get("language") or "de").strip() or "de"
+
+    meta_tags: list[str] = []
+    if author:
+        meta_tags.append(f'<meta name="author" content="{escape(author)}" />')
+    if description:
+        meta_tags.append(
+            f'<meta name="description" content="{escape(description)}" />'
+        )
+    meta_tags.append('<meta name="generator" content="Bibliogon picture-book PDF" />')
+    meta_html = "".join(meta_tags)
+
     pages_html = "\n".join(_render_page(p, assets_map) for p in pages)
     return (
         "<!DOCTYPE html>"
-        "<html lang=\"de\">"
+        f'<html lang="{escape(language)}">'
         "<head>"
-        "<meta charset=\"utf-8\" />"
+        '<meta charset="utf-8" />'
         f"<title>{title}</title>"
+        f"{meta_html}"
         f"<style>{_BASE_CSS}</style>"
         "</head>"
         "<body>"
