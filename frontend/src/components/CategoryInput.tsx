@@ -2,11 +2,9 @@
  * CategoryInput — chip-style multi-value input for Book.categories.
  *
  * Bug 9 (Books-only subject categorisation). Free-text entry with
- * an optional suggestion list pulled from the KDP plugin's
- * ``config/kdp.yaml`` catalogue (25 canonical names). Any string
- * is valid; the column accepts arbitrary user text because
- * retailers beyond KDP (Apple Books, Kobo, Ingram) have their own
- * taxonomies.
+ * an optional suggestion list. Any string is valid; the column
+ * accepts arbitrary user text because retailers beyond KDP
+ * (Apple Books, Kobo, Ingram) have their own taxonomies.
  *
  * Shape: simpler sibling of ``KeywordInput`` — no drag-reorder
  * (categories have no semantically-meaningful order), no validation
@@ -25,10 +23,12 @@ import {useI18n} from "../hooks/useI18n";
 interface Props {
     categories: string[];
     onChange: (next: string[]) => void;
-    /** Optional suggestion pool surfaced via ``<datalist>``. KDP
-     *  plugin's ``config/kdp.yaml`` ships 25 canonical entries;
-     *  callers fetch them via ``api.kdp.listCategories()`` and
-     *  pass them here. Empty list = no datalist rendered. */
+    /** Optional suggestion pool surfaced via ``<datalist>``. The
+     *  KDP plugin exposes its 26-entry catalogue via
+     *  ``GET /api/kdp/categories``; the wiring from that endpoint
+     *  to this prop is tracked under
+     *  ``KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01``. Empty list =
+     *  no datalist rendered. */
     suggestions?: string[];
 }
 

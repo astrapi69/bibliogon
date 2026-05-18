@@ -1198,26 +1198,6 @@ store.
   (broader frontend sweep that may surface additional
   related candidates).
 
-- **KDP-CATEGORIES-CATALOG-SYNC-01** (P3, IMPROVEMENT): sync the
-  KDP plugin's 25-category catalog in
-  ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` with the
-  10-category subset hardcoded in
-  ``plugins/bibliogon-plugin-kdp/bibliogon_kdp/routes.py``.
-  Trigger: a scheduled Settings-Polish-Session OR a user report
-  that the KDP categories shown in the UI don't match what the
-  request handler accepts.
-  Scope: pick one source-of-truth (the yaml is the natural
-  choice — it's the user-editable catalog), drop the inline
-  subset in routes.py, route validation through a helper that
-  reads the yaml. Single-commit fix; ship paired with a
-  regression test that flags any future divergence.
-  Defer reason: pre-existing minor drift surfaced during the
-  Bug-9 Pre-Inspection audit. Not blocking Bug 8 or Bug 9
-  scope; routes.py + yaml have coexisted in this drifted state
-  since the KDP plugin shipped. Filed for the next polish
-  session.
-
-
 ---
 
 ## P4 - Roadmap / Future Phases
@@ -1275,6 +1255,32 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01** (P5, FEATURE):
+  wire the ``CategoryInput`` component (Bug 9, free-text chips
+  for ``Book.categories``) to the existing
+  ``GET /api/kdp/categories`` endpoint so the 26-entry KDP
+  catalog surfaces as a ``<datalist>`` autocomplete pool. The
+  backend endpoint is already live and pinned by
+  ``test_kdp_categories_returns_full_26_catalog``; the frontend
+  ``CategoryInput`` accepts a ``suggestions`` prop that is
+  currently passed as ``[]`` from
+  ``BookMetadataEditor``. Wiring adds (a) an
+  ``api.kdp.listCategories()`` method in
+  ``frontend/src/api/client.ts``, (b) a one-shot fetch in
+  ``BookMetadataEditor`` (cached for the editor lifetime —
+  catalog is dictated by Amazon and won't change between mounts),
+  (c) passing the result into the existing ``suggestions`` prop.
+  Trigger: user requests autocomplete in the Categories field,
+  OR Picture-Book authoring feedback that authors don't know
+  KDP's canonical category names, OR
+  ``RECURRING-COMPONENT-AUDIT-01`` flags this as a Pre-Inspection
+  target.
+  Effort: S (1 commit). Filed by KDP-CATEGORIES-CATALOG-SYNC-01
+  (2026-05-18) — the JSDoc on ``CategoryInput.tsx`` previously
+  referenced an ``api.kdp.listCategories()`` method that did not
+  exist; the dead reference was removed in the same commit and
+  this item tracks the legitimate wire-up that was implied.
 
 - **COMIC-BOOK-PLUGIN-01** (P5): build a separate
   `bibliogon-plugin-comics` to own `book_type == "comic_book"`.

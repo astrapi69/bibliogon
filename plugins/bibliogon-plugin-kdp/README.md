@@ -6,7 +6,7 @@ Amazon Kindle Direct Publishing plugin for [Bibliogon](https://github.com/astrap
 
 - KDP-compatible metadata generation (title, author, categories, keywords)
 - Cover image validation (dimensions, DPI, aspect ratio, file size, format)
-- KDP category browser (25 categories)
+- KDP category browser (26 categories)
 - Language mapping to KDP format
 
 ## Installation

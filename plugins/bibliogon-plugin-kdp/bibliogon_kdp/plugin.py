@@ -20,7 +20,8 @@ class KdpPlugin(BasePlugin):
         return [router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
-        categories = getattr(self, "_settings", {}).get("categories", [])
+        from .routes import KDP_CATEGORIES
+
         return {
             "sidebar_actions": [
                 {
@@ -34,13 +35,5 @@ class KdpPlugin(BasePlugin):
                     "icon": "image-check",
                 },
             ],
-            "categories": categories,
+            "categories": list(KDP_CATEGORIES),
         }
-
-    @property
-    def cover_requirements(self) -> dict[str, Any]:
-        return getattr(self, "_settings", {}).get("cover", {})
-
-    @property
-    def manuscript_requirements(self) -> dict[str, Any]:
-        return getattr(self, "_settings", {}).get("manuscript", {})

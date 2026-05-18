@@ -83,7 +83,15 @@ class TestKinderbuchPreview:
 
 
 class TestKdpCategories:
-    """Tests for GET /api/kdp/categories."""
+    """Tests for GET /api/kdp/categories.
+
+    Regression-pin palette for KDP-CATEGORIES-CATALOG-SYNC-01
+    (2026-05-18): the pre-fix routes.py shipped a 10-entry hardcoded
+    subset while the bundled config/kdp.yaml carried 26 entries and
+    the canonical backend/config/plugins/kdp.yaml carried zero. Single
+    source of truth is now ``KDP_CATEGORIES`` in
+    plugins/bibliogon-plugin-kdp/bibliogon_kdp/routes.py.
+    """
 
     def test_kdp_categories_returns_list(self, client: TestClient) -> None:
         """GET /api/kdp/categories returns 200 with a non-empty list of strings."""
@@ -93,6 +101,81 @@ class TestKdpCategories:
         assert isinstance(categories, list)
         assert len(categories) > 0
         assert all(isinstance(cat, str) for cat in categories)
+
+    def test_kdp_categories_returns_full_26_catalog(self, client: TestClient) -> None:
+        """Endpoint serves the full 26-entry KDP_CATEGORIES catalog.
+
+        Pre-fix the endpoint returned only 10 entries (Arts & Photography,
+        Biographies & Memoirs, Business & Money, Children's eBooks, Comics
+        & Graphic Novels, Literature & Fiction, Mystery..., Romance,
+        Science Fiction & Fantasy, Self-Help). High-value entries that
+        were missing - and which this test pins for regression -
+        include Cookbooks, Education & Teaching, Travel and Religion &
+        Spirituality.
+        """
+        resp = client.get("/api/kdp/categories")
+        assert resp.status_code == 200
+        categories = resp.json()
+        assert len(categories) == 26, (
+            f"Expected 26 KDP categories, got {len(categories)}. "
+            "Sync KDP_CATEGORIES in plugins/bibliogon-plugin-kdp/"
+            "bibliogon_kdp/routes.py."
+        )
+        # Pre-fix subset (must still be present).
+        for canonical in [
+            "Arts & Photography",
+            "Children's eBooks",
+            "Comics & Graphic Novels",
+            "Literature & Fiction",
+            "Romance",
+            "Self-Help",
+        ]:
+            assert canonical in categories, (
+                f"Pre-fix entry missing from catalog: {canonical!r}"
+            )
+        # Entries the pre-fix subset was missing (regression pins for
+        # the drift that this bug closed).
+        for restored in [
+            "Cookbooks, Food & Wine",
+            "Education & Teaching",
+            "Religion & Spirituality",
+            "Travel",
+            "Teen & Young Adult",
+            "Reference",
+        ]:
+            assert restored in categories, (
+                f"Drift-regression entry missing from catalog: {restored!r}"
+            )
+
+    def test_kdp_plugin_manifest_categories_match_routes(
+        self, client: TestClient
+    ) -> None:
+        """KdpPlugin.get_frontend_manifest() exposes the same catalog
+        as GET /api/kdp/categories.
+
+        Pre-fix the manifest read ``_settings.get("categories", [])``
+        from a YAML that had no categories block at runtime, so the
+        manifest shipped ``[]`` while the endpoint shipped a 10-entry
+        subset. This test pins the two sources to a single catalog so
+        any future drift fires immediately, not silently.
+        """
+        from bibliogon_kdp.plugin import KdpPlugin
+
+        plugin = KdpPlugin()
+        plugin.activate()
+        manifest = plugin.get_frontend_manifest()
+        assert manifest is not None
+        manifest_categories = manifest["categories"]
+
+        resp = client.get("/api/kdp/categories")
+        assert resp.status_code == 200
+        endpoint_categories = resp.json()
+
+        assert manifest_categories == endpoint_categories, (
+            "KdpPlugin manifest categories diverged from "
+            "/api/kdp/categories. Both must read from "
+            "KDP_CATEGORIES in bibliogon_kdp.routes."
+        )
 
 
 class TestKdpCheckMetadata:

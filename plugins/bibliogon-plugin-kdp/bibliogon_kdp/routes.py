@@ -40,6 +40,50 @@ KDP_COVER_REQUIREMENTS: dict[str, Any] = {
 }
 
 
+# --- Amazon KDP category catalog ---
+#
+# The canonical KDP top-level category names. Dictated by Amazon, NOT
+# user-editable - the same rationale as KDP_COVER_REQUIREMENTS above.
+# Sourced from the KDP category browser; alphabetical order matches
+# Amazon's own UI listing.
+#
+# KDP-CATEGORIES-CATALOG-SYNC-01 (2026-05-18) collapsed three drifted
+# sources into this constant: routes.py had a 10-entry subset, the
+# bundled plugins/bibliogon-plugin-kdp/config/kdp.yaml had 26 entries,
+# and the canonical backend/config/plugins/kdp.yaml had none. The
+# bundled YAML's settings block was stripped in the same commit; the
+# canonical YAML never carried categories because they are not a user
+# preference.
+KDP_CATEGORIES: list[str] = [
+    "Arts & Photography",
+    "Biographies & Memoirs",
+    "Business & Money",
+    "Children's eBooks",
+    "Comics & Graphic Novels",
+    "Computers & Technology",
+    "Cookbooks, Food & Wine",
+    "Education & Teaching",
+    "Engineering & Transportation",
+    "Health, Fitness & Dieting",
+    "History",
+    "Humor & Entertainment",
+    "Law",
+    "Literature & Fiction",
+    "Mystery, Thriller & Suspense",
+    "Parenting & Relationships",
+    "Politics & Social Sciences",
+    "Reference",
+    "Religion & Spirituality",
+    "Romance",
+    "Science & Math",
+    "Science Fiction & Fantasy",
+    "Self-Help",
+    "Sports & Outdoors",
+    "Teen & Young Adult",
+    "Travel",
+]
+
+
 class MetadataRequest(BaseModel):
     title: str
     subtitle: str | None = None
@@ -92,18 +136,7 @@ def validate_cover_endpoint(file: UploadFile) -> dict[str, Any]:
 @router.get("/categories")
 def list_categories() -> list[str]:
     """List available KDP categories."""
-    return [
-        "Arts & Photography",
-        "Biographies & Memoirs",
-        "Business & Money",
-        "Children's eBooks",
-        "Comics & Graphic Novels",
-        "Literature & Fiction",
-        "Mystery, Thriller & Suspense",
-        "Romance",
-        "Science Fiction & Fantasy",
-        "Self-Help",
-    ]
+    return list(KDP_CATEGORIES)
 
 
 class CheckMetadataRequest(BaseModel):
