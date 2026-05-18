@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
 Current version: v0.35.1
-Open tasks: 53 active (P2..P5) + 4 BLOCKED-on-upstream entries
+Open tasks: 60 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -1496,6 +1496,57 @@ store.
   Effort: 1-2 sessions. Defer: no concrete user demand and
   current safeguard already protects against installing a
   stale Bibliogon.
+
+- **PLUGIN-DEV-SERVER-RESTART-HELPER-01**: backend dev server
+  doesn't auto-detect when a plugin is installed or
+  uninstalled. The long-running uvicorn process reads
+  entry-points via ``importlib.metadata`` once during
+  lifespan startup; a subsequent ``poetry install`` of a new
+  plugin updates the venv's ``.dist-info/entry_points.txt``
+  but the running process never re-reads the registry.
+  Demonstrated 2026-05-18 during plugin-comics Session 1
+  smoke: pytest + per-plugin tier green, but
+  ``GET /api/comics/info`` 404'd against the live dev
+  server until a manual ``make dev-down && make dev``
+  cycle. Concrete fix: a
+  ``make dev-restart-on-plugin-change`` target that
+  compares the dev server's start-time against the mtime
+  of ``backend/pyproject.toml`` + every
+  ``plugins/*/pyproject.toml``; warn (or auto-restart)
+  when a pyproject post-dates the server. Effort: S-M
+  (single Makefile target + a one-liner mtime check via
+  ``stat``). Trigger: plugin-development cadence
+  increases, OR similar operational gap re-emerges, OR
+  developer-onboarding feedback flags the gap. Filed by
+  plugin-comics Session 1 smoke 2026-05-18.
+
+- **PLUGIN-COMICS-E2E-SMOKE-01**: live-dev-server E2E
+  Playwright spec for plugin-comics. Would have caught
+  today's 404 BEFORE the user's manual smoke. Concrete
+  scope: a spec under ``e2e/smoke/`` that creates a
+  ``book_type = "comic_book"`` book, opens the editor,
+  asserts the green plugin-info panel renders with
+  ``name = "comics"`` + ``session = 1``, and asserts NO
+  ``role="alert"`` plugin-unreachable error element
+  appears. Effort: S (~30-60 min in advance, or natural
+  fit at Session-2 landing). Strategic note: this is a
+  broader pattern. Backend pytest with TestClient
+  triggers a fresh FastAPI lifespan per session, so it
+  masks an entire class of operational issues that
+  long-running uvicorn surfaces — stale plugin
+  discovery, env-var absence, filesystem state drift,
+  cross-process cache poisoning. Filing under plugin-
+  comics scope per the "single instance is incident,
+  not pattern" discipline. If a SECOND plugin needs the
+  same pattern, extract a shared
+  ``LIVE-DEV-SMOKE-INFRASTRUCTURE-01`` (P4) per the
+  Recurring-Component-Unification rule's 2-surfaces
+  threshold — do NOT pre-emptively file the
+  infrastructure item now. Trigger: plugin-comics
+  Session 2 starts, OR another plugin needs live-dev
+  E2E smoke (which would also trigger the
+  infrastructure extraction). Filed by plugin-comics
+  Session 1 smoke 2026-05-18.
 
 (D-05 closed as won't-fix 2026-05-05; archived in
 [docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
