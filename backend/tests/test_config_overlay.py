@@ -53,6 +53,36 @@ def test_deep_merge_lists_replace():
     assert out == {"plugins": ["c"]}
 
 
+def test_plugins_enabled_list_replace_regression_pin():
+    """Plugins.enabled list REPLACES, does NOT union.
+
+    Regression-pin for USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 (P2,
+    backlog 2026-05-18). When a stale user-overlay has fewer
+    plugins than the project-tree's enabled list, the user-overlay
+    silently filters the new plugins out — they're discovered but
+    never activated. The plugin-comics Session 1 smoke surfaced
+    this as a 404 on /api/comics/info against the live backend
+    despite green pytest (which uses a tmpdir-overlay).
+
+    THIS TEST PINS THE CURRENT (replace) semantics. When the
+    migration option is implemented (per backlog item:
+    options A/B/C), this test must update in lockstep to assert
+    the new semantics. Updating this test in the same commit as
+    the semantics change prevents silent drift.
+    """
+    project = {"plugins": {"enabled": ["export", "kdp", "comics"]}}
+    user_overlay = {"plugins": {"enabled": ["export", "kdp"]}}  # stale, missing comics
+    merged = config_overlay.deep_merge(project, user_overlay)
+    # Today: user-overlay replaces project list. comics filtered out.
+    assert merged["plugins"]["enabled"] == ["export", "kdp"]
+    assert "comics" not in merged["plugins"]["enabled"], (
+        "Current semantics: user-overlay enabled list replaces the "
+        "project-tree's list. If this assertion fails, the merge "
+        "semantics changed; update both this test and the "
+        "USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 backlog item."
+    )
+
+
 def test_deep_merge_scalar_override():
     out = config_overlay.deep_merge({"theme": "warm"}, {"theme": "nord"})
     assert out == {"theme": "nord"}
