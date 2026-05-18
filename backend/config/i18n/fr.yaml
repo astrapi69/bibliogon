@@ -454,6 +454,8 @@ ui:
     author: "Auteur"
     author_placeholder: "Nom de l'auteur ou pseudonyme"
     author_select: "Selectionner l'auteur..."
+    add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     subtitle: "Sous-titre"
     subtitle_placeholder: "Facultatif"
     language: "Langue"

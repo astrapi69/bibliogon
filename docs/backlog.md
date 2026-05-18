@@ -588,6 +588,111 @@ store.
   across three more editor surfaces. Filed during the Bug 8
   Phase 2 close-out.
 
+  **Update 2026-05-19 (post-CreateBookModal fix):** scope
+  expanded to also include extraction of a shared
+  ``AuthorSelectInput`` component — see the new sibling item
+  ``AUTHOR-SELECT-INPUT-EXTRACT-01`` below. The two items
+  should ship together in one coordinated session: the
+  extraction lands first (audit-first across all 4+ usage
+  sites, then build the component, then migrate each site
+  in turn). At session close, BOTH items mark
+  ``[x]``-complete simultaneously. Closes the
+  Wizard+CreateBookModal duplication created by the
+  2026-05-19 CreateBookModal fix.
+
+- **AUTHOR-SELECT-INPUT-EXTRACT-01** (P3): extract the
+  Author-Selection pattern (``<input>`` + ``<datalist>`` +
+  "Add to Authors-Database" checkbox) into a shared
+  ``AuthorSelectInput`` component, then migrate ALL usage
+  sites in one coordinated session.
+
+  Known usage sites at filing time (2026-05-19):
+  - ``ConvertToBookWizard.tsx`` (Step-2 author field, with
+    ``computeAuthorSuggestions(selectedArticles,
+    globalAuthors)`` suggestion source)
+  - ``CreateBookModal.tsx`` (author field, with
+    ``authorChoices`` (user-identity) ∪ ``globalAuthors``
+    suggestion source) — shipped 2026-05-19 as the
+    pre-vs-post-AuthorsDB pattern bug fix
+  - ``ArticleEditor.tsx`` (article author field, future
+    AUTHOR-DATALIST-EXTEND-EDITORS-01 work)
+  - ``BookEditor.tsx`` (book author field, same backlog
+    item)
+  - ``BookEditor.tsx`` backpage author-bio sidebar (same
+    backlog item)
+
+  **Audit-First requirement:** before extraction, grep the
+  entire codebase for any other free-text author-input
+  surface. Possible candidates: backup-import wizards,
+  manuscript-template forms, future picture-book-specific
+  metadata fields. The audit's findings determine the
+  final API surface of ``AuthorSelectInput``.
+
+  Component API (proposed; pending audit refinement):
+  ```tsx
+  interface AuthorSelectInputProps {
+    value: string;
+    onChange: (next: string) => void;
+    suggestions: string[];  // pre-computed union, caller decides
+    addToDbChecked: boolean;
+    onAddToDbCheckedChange: (next: boolean) => void;
+    addToDbVisible: boolean;  // caller computes from
+                              // globalAuthors-vs-typed-name match
+    testidNamespace: string;  // e.g. "create-book-author" /
+                              // "convert-to-book-wizard-author"
+    labelKey?: string;        // default "ui.shared.author"
+    placeholderKey?: string;  // default "ui.shared.author_placeholder"
+  }
+  ```
+  The caller stays responsible for:
+  - Computing ``suggestions`` (different per surface:
+    Wizard uses article-context-driven; modal uses
+    user-identity-driven; editors use globalAuthors-only)
+  - Computing ``addToDbVisible`` (typed name not in
+    globalAuthors)
+  - Calling ``api.authors.create`` on submit when
+    ``addToDbChecked`` is true (the fail-soft pattern)
+
+  The component just renders the shared visuals + emits
+  the events.
+
+  **Coordination:** ships AS A coordinated session that
+  closes BOTH ``AUTHOR-SELECT-INPUT-EXTRACT-01`` AND
+  ``AUTHOR-DATALIST-EXTEND-EDITORS-01`` simultaneously.
+  Session shape:
+  1. Audit grep (1 commit, docs-only)
+  2. Component + Vitest (1 commit)
+  3. Migrate ConvertToBookWizard (1 commit)
+  4. Migrate CreateBookModal (1 commit)
+  5. Migrate ArticleEditor (1 commit) — closes
+     AUTHOR-DATALIST-EXTEND-EDITORS-01 partially
+  6. Migrate BookEditor author + backpage_author_bio
+     (1 commit) — closes AUTHOR-DATALIST-EXTEND-EDITORS-01
+     fully
+  7. Playwright smoke for all migrated surfaces (1 commit)
+
+  ~7 commits total. Above 5-commit stop-threshold but
+  acceptable because the extraction is intrinsically
+  multi-site coordinated work; splitting it across
+  multiple sessions would leave mixed-pattern state in
+  the codebase between sessions.
+
+  Trigger: AUTHOR-DATALIST-EXTEND-EDITORS-01 trigger fires
+  (user feedback on editor friction OR positive Wizard
+  validation), OR a fifth usage site appears in the audit.
+
+  Defer reason: coding-standards.md "Three duplicates:
+  refactor immediately" threshold — at the 2026-05-19
+  CreateBookModal fix we were at TWO duplicates. The
+  third + fourth surfaces (editors) haven't shipped yet;
+  designing the shared component when 3+ concrete
+  instances exist gives a real abstraction surface rather
+  than a hypothetical-fit API. Filed during the
+  CreateBookModal-fix close-out.
+
+  Pairs with: ``AUTHOR-DATALIST-EXTEND-EDITORS-01``
+  (closes together).
+
 - **KDP-CATEGORIES-CATALOG-SYNC-01** (P3, IMPROVEMENT): sync the
   KDP plugin's 25-category catalog in
   ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` with the

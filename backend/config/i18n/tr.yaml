@@ -454,6 +454,8 @@ ui:
     author: "Yazar"
     author_placeholder: "Yazar adi veya takma ad"
     author_select: "Yazar sec..."
+    add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     subtitle: "Alt baslik"
     subtitle_placeholder: "Istege bagli"
     language: "Dil"

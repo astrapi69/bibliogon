@@ -428,6 +428,8 @@ ui:
     author: "Author"
     author_placeholder: "Author name or pen name"
     author_select: "Select author..."
+    add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     subtitle: "Subtitle"
     subtitle_placeholder: "Optional"
     language: "Language"

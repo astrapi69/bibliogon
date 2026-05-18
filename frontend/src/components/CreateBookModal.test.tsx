@@ -23,6 +23,8 @@ vi.mock("../hooks/useI18n", () => ({
 const mockListTemplates = vi.fn()
 const mockDeleteTemplate = vi.fn()
 const mockConfirm = vi.fn()
+const mockListAuthors = vi.fn()
+const mockCreateAuthor = vi.fn()
 
 vi.mock("../api/client", () => ({
   api: {
@@ -32,6 +34,10 @@ vi.mock("../api/client", () => ({
     templates: {
       list: () => mockListTemplates(),
       delete: (id: string) => mockDeleteTemplate(id),
+    },
+    authors: {
+      list: (...args: unknown[]) => mockListAuthors(...args),
+      create: (...args: unknown[]) => mockCreateAuthor(...args),
     },
   },
   ApiError: class ApiError extends Error {
@@ -69,6 +75,20 @@ describe("CreateBookModal", () => {
     mockListTemplates.mockReset()
     mockDeleteTemplate.mockReset()
     mockConfirm.mockReset()
+    mockListAuthors.mockReset()
+    mockCreateAuthor.mockReset()
+    // Default: Authors-DB is empty; create returns whatever was sent.
+    mockListAuthors.mockResolvedValue([])
+    mockCreateAuthor.mockImplementation((data) =>
+      Promise.resolve({
+        id: "new-author-id",
+        name: data.name,
+        slug: data.name.toLowerCase().replace(/\s+/g, "-"),
+        bio: null,
+        created_at: "2026-05-19T00:00:00Z",
+        updated_at: "2026-05-19T00:00:00Z",
+      }),
+    )
   })
 
   function renderModal(open = true, bookType?: "prose" | "picture_book") {
@@ -119,7 +139,9 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
-    expect(onCreate).toHaveBeenCalledTimes(1)
+    // handleSubmit is async now (Authors-DB create runs before
+    // onCreate); wait for the chain to resolve.
+    await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
     const arg = onCreate.mock.calls[0][0]
     expect(arg.title).toBe("My Book")
     expect(arg.author).toBe("Author Name")
@@ -215,6 +237,7 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
+    await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
     const arg = onCreate.mock.calls[0][0]
     expect(arg.genre).toBe("fantasy") // mapped to key
     expect(arg.subtitle).toBe("A Subtitle")
@@ -232,11 +255,14 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
-    // After submit, fields should be reset
-    const titleInput = screen.getByPlaceholderText(
-      "Der Titel deines Buches",
-    ) as HTMLInputElement
-    expect(titleInput.value).toBe("")
+    // After submit, fields should be reset (handleSubmit is async
+    // now; resetForm runs after the awaited author + book POST chain).
+    await waitFor(() => {
+      const titleInput = screen.getByPlaceholderText(
+        "Der Titel deines Buches",
+      ) as HTMLInputElement
+      expect(titleInput.value).toBe("")
+    })
   })
 
   // --- Template mode ---
@@ -351,7 +377,7 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
-    expect(onCreateFromTemplate).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onCreateFromTemplate).toHaveBeenCalledTimes(1))
     expect(onCreate).not.toHaveBeenCalled()
     const arg = onCreateFromTemplate.mock.calls[0][0]
     expect(arg.template_id).toBe("tpl-memoir")
@@ -512,6 +538,189 @@ describe("CreateBookModal", () => {
       await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
       const payload = onCreate.mock.calls[0][0] as Record<string, unknown>
       expect(payload.book_type).toBeUndefined()
+    })
+  })
+
+  /**
+   * Bug-fix 2026-05-19: Authors-Database integration (closes the
+   * pre-vs-post-AuthorsDB pattern gap where CreateBookModal still
+   * used the older user-identity-only choices even after Authors-DB
+   * shipped in v0.34.0). Mirrors the ConvertToBookWizard's Bug 8
+   * Phase 2 pattern.
+   */
+  describe("Authors-Database integration", () => {
+    it("fetches global Authors-DB on open and exposes datalist", async () => {
+      mockListAuthors.mockResolvedValue([
+        {
+          id: "a1",
+          name: "Aster Raptis",
+          slug: "aster-raptis",
+          bio: null,
+          created_at: "2026-05-19T00:00:00Z",
+          updated_at: "2026-05-19T00:00:00Z",
+        },
+      ])
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      await waitFor(() =>
+        expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
+      )
+      // Suggestion option for the seeded author renders inside the
+      // datalist (browser shows it as a dropdown; happy-dom exposes
+      // the <option> elements).
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("create-book-author-suggestion-Aster Raptis"),
+        ).toBeTruthy(),
+      )
+    })
+
+    it("Add-to-Authors-DB checkbox is VISIBLE when typed author is new", async () => {
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Brand New Name"}},
+      )
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("create-book-add-to-authors-checkbox"),
+        ).toBeTruthy(),
+      )
+    })
+
+    it("Add-to-Authors-DB checkbox is HIDDEN when typed author already in DB", async () => {
+      mockListAuthors.mockResolvedValue([
+        {
+          id: "a1",
+          name: "Existing Author",
+          slug: "existing-author",
+          bio: null,
+          created_at: "2026-05-19T00:00:00Z",
+          updated_at: "2026-05-19T00:00:00Z",
+        },
+      ])
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Existing Author"}},
+      )
+      // Checkbox disappears when name matches existing entry
+      // (case-insensitive + trim).
+      await waitFor(() =>
+        expect(
+          screen.queryByTestId("create-book-add-to-authors-checkbox"),
+        ).toBeNull(),
+      )
+    })
+
+    it("Add-to-DB checkbox hidden also when name matches case-insensitively", async () => {
+      mockListAuthors.mockResolvedValue([
+        {
+          id: "a1",
+          name: "Aster Raptis",
+          slug: "aster-raptis",
+          bio: null,
+          created_at: "2026-05-19T00:00:00Z",
+          updated_at: "2026-05-19T00:00:00Z",
+        },
+      ])
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "  aster raptis  "}},
+      )
+      await waitFor(() =>
+        expect(
+          screen.queryByTestId("create-book-add-to-authors-checkbox"),
+        ).toBeNull(),
+      )
+    })
+
+    it("on submit, creates author in Authors-DB BEFORE book POST when checkbox checked + name is new", async () => {
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "My Book"},
+      })
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Fresh Author"}},
+      )
+      // Default-checked; just click submit.
+      fireEvent.click(screen.getByText("Erstellen"))
+      await waitFor(() => expect(mockCreateAuthor).toHaveBeenCalledTimes(1))
+      expect(mockCreateAuthor.mock.calls[0][0]).toEqual({name: "Fresh Author"})
+      // Book create still fires after the author create:
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      expect(onCreate.mock.calls[0][0].author).toBe("Fresh Author")
+    })
+
+    it("on submit with checkbox UNchecked, skips author create but still creates book", async () => {
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "My Book"},
+      })
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Anonymous Pen Name"}},
+      )
+      // Uncheck the checkbox before submitting:
+      const checkbox = await screen.findByTestId(
+        "create-book-add-to-authors-checkbox",
+      )
+      fireEvent.click(checkbox)
+      fireEvent.click(screen.getByText("Erstellen"))
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      expect(mockCreateAuthor).not.toHaveBeenCalled()
+    })
+
+    it("on submit when author already in DB, skips create (no checkbox to check)", async () => {
+      mockListAuthors.mockResolvedValue([
+        {
+          id: "a1",
+          name: "Existing Author",
+          slug: "existing-author",
+          bio: null,
+          created_at: "2026-05-19T00:00:00Z",
+          updated_at: "2026-05-19T00:00:00Z",
+        },
+      ])
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "My Book"},
+      })
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Existing Author"}},
+      )
+      fireEvent.click(screen.getByText("Erstellen"))
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      // No author create — the name already exists in the DB.
+      expect(mockCreateAuthor).not.toHaveBeenCalled()
+    })
+
+    it("on author-create failure, book create still proceeds (fail-soft pattern)", async () => {
+      mockCreateAuthor.mockRejectedValue(new Error("Network down"))
+      renderModal()
+      await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
+      fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+        target: {value: "My Book"},
+      })
+      fireEvent.change(
+        screen.getByPlaceholderText("Autorenname oder Pen Name"),
+        {target: {value: "Fresh Author"}},
+      )
+      fireEvent.click(screen.getByText("Erstellen"))
+      // Author create was attempted...
+      await waitFor(() => expect(mockCreateAuthor).toHaveBeenCalledTimes(1))
+      // ...but the book create still fires regardless.
+      await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
+      expect(onCreate.mock.calls[0][0].author).toBe("Fresh Author")
     })
   })
 })

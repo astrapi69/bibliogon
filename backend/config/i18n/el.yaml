@@ -440,6 +440,8 @@ ui:
     author: "Συγγραφέας"
     author_placeholder: "Όνομα συγγραφέα ή ψευδώνυμο"
     author_select: "Επιλογή συγγραφέα..."
+    add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     subtitle: "Υπότιτλος"
     subtitle_placeholder: "Προαιρετικό"
     language: "Γλώσσα"

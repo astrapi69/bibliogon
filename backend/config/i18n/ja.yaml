@@ -440,6 +440,8 @@ ui:
     author: "著者"
     author_placeholder: "著者名またはペンネーム"
     author_select: "著者を選択..."
+    add_to_authors_db: "Add \"{name}\" to the Authors database"
+    add_to_authors_error: "Could not add the author to the database."
     subtitle: "サブタイトル"
     subtitle_placeholder: "任意"
     language: "言語"

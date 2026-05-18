@@ -1,5 +1,5 @@
-import {useState, useEffect} from "react";
-import {api, ApiError, BookCreate, BookFromTemplateCreate, BookTemplate, BookType} from "../api/client";
+import {useState, useEffect, useMemo} from "react";
+import {api, ApiError, Author, BookCreate, BookFromTemplateCreate, BookTemplate, BookType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
@@ -59,6 +59,15 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [authorChoices, setAuthorChoices] = useState<string[]>([]);
+    // Authors-DB integration (mirrors ConvertToBookWizard's Bug 8 Phase 2
+    // pattern; bug-fix 2026-05-19 closes the create-flow gap where this
+    // modal still used the pre-Authors-DB pattern even though Authors-DB
+    // shipped in v0.34.0). globalAuthors powers the datalist alongside
+    // authorChoices; addToAuthorsDb checkbox creates the typed name in
+    // the global DB before the book POST (non-blocking — defensive
+    // pattern, book create still proceeds on author-create failure).
+    const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
+    const [addToAuthorsDb, setAddToAuthorsDb] = useState(true);
     // Stage 2: Optional (collapsed by default)
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [genre, setGenre] = useState("");
@@ -114,6 +123,62 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
         }).catch(() => {});
     }, [open]);
 
+    // Bug-fix 2026-05-19: load global Authors-Database snapshot on
+    // open. Powers the author-field datalist alongside authorChoices.
+    // Non-blocking; silent fallback on fetch error — the datalist
+    // still works from authorChoices alone.
+    useEffect(() => {
+        if (!open) return;
+        let cancelled = false;
+        api.authors
+            .list({})
+            .then((rows) => {
+                if (!cancelled) setGlobalAuthors(rows);
+            })
+            .catch(() => {
+                /* non-critical; datalist degrades to authorChoices only */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [open]);
+
+    // Union of authorChoices + globalAuthors.name, deduped + ordered
+    // (user-identity choices first so the dropdown UX matches the
+    // pre-Authors-DB behavior). Powers the <datalist> below.
+    const authorSuggestions = useMemo(() => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const c of authorChoices) {
+            const trimmed = c.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        for (const a of globalAuthors) {
+            const trimmed = a.name.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        return out;
+    }, [authorChoices, globalAuthors]);
+
+    // True when the typed author matches an existing Authors-DB entry
+    // (trim + case-insensitive). Controls the visibility of the
+    // "Add to Authors-Database" checkbox: hidden when the entry
+    // already exists.
+    const authorAlreadyInDb = useMemo(() => {
+        const trimmed = author.trim().toLowerCase();
+        if (!trimmed) return true;
+        return globalAuthors.some(
+            (a) => a.name.trim().toLowerCase() === trimmed,
+        );
+    }, [author, globalAuthors]);
+    const showAddToAuthorsCheckbox = !authorAlreadyInDb;
+
     // Fetch templates the first time the user switches into template mode
     useEffect(() => {
         if (mode !== "template" || templates !== null) return;
@@ -152,7 +217,7 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
         setMode("blank");
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!title.trim() || !author.trim()) return;
 
         // Map translated genre back to key (e.g. "Roman" -> "novel")
@@ -162,6 +227,32 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                 (k) => t(`ui.genres.${k}`, k).toLowerCase() === genreValue.toLowerCase()
             );
             if (matchedKey) genreValue = matchedKey;
+        }
+
+        // Bug-fix 2026-05-19: optionally create the typed author in
+        // the global Authors-Database BEFORE the book create. Non-
+        // blocking: a failed author POST surfaces an error toast but
+        // the book create still proceeds with the free-text author.
+        // Slug is server-generated + collision-suffixed; we only
+        // need to send the name. Defensive pattern mirrors
+        // ConvertToBookWizard's handleSubmit (Bug 8 Phase 2).
+        if (showAddToAuthorsCheckbox && addToAuthorsDb && author.trim()) {
+            try {
+                const created = await api.authors.create({
+                    name: author.trim(),
+                });
+                setGlobalAuthors((prev) => [...prev, created]);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError
+                        ? err.detail
+                        : t(
+                              "ui.create_book.add_to_authors_error",
+                              "Autor konnte nicht zur Datenbank hinzugefügt werden.",
+                          );
+                notify.error(detail);
+                // Continue to book create regardless — fail-soft.
+            }
         }
 
         if (mode === "template") {
@@ -356,36 +447,71 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                         </div>
 
                         <div className="field">
-                            <label className="label">{t("ui.create_book.author", "Autor")} *</label>
-                            {authorChoices.length > 0 ? (
-                                <Select.Root value={author} onValueChange={setAuthor}>
-                                    <Select.Trigger
-                                        className="radix-select-trigger"
-                                        data-testid="create-book-author-select"
-                                    >
-                                        <Select.Value placeholder={t("ui.create_book.author_select", "Autor wählen...")}/>
-                                        <Select.Icon><ChevronDown size={14}/></Select.Icon>
-                                    </Select.Trigger>
-                                    <Select.Portal>
-                                        <Select.Content className="radix-select-content" position="popper" sideOffset={4}>
-                                            <Select.Viewport>
-                                                {authorChoices.map((name) => (
-                                                    <Select.Item key={name} value={name} className="radix-select-item">
-                                                        <Select.ItemText>{name}</Select.ItemText>
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Viewport>
-                                        </Select.Content>
-                                    </Select.Portal>
-                                </Select.Root>
-                            ) : (
-                                <input
-                                    className="input"
-                                    value={author}
-                                    onChange={(e) => setAuthor(e.target.value)}
-                                    placeholder={t("ui.create_book.author_placeholder", "Autorenname oder Pen Name")}
-                                    data-testid="create-book-author"
-                                />
+                            <label className="label" htmlFor="create-book-author">
+                                {t("ui.create_book.author", "Autor")} *
+                            </label>
+                            {/* Bug-fix 2026-05-19: replaced the
+                                Select-or-input conditional with a
+                                unified input + datalist. Sources:
+                                user-identity choices (settings) +
+                                global Authors-Database. Free-text
+                                entry allowed (picture-book pen
+                                names, ghostwritten works). Mirrors
+                                ConvertToBookWizard's Step-2 pattern. */}
+                            <input
+                                id="create-book-author"
+                                className="input"
+                                value={author}
+                                onChange={(e) => setAuthor(e.target.value)}
+                                placeholder={t("ui.create_book.author_placeholder", "Autorenname oder Pen Name")}
+                                list="create-book-author-suggestions"
+                                autoComplete="off"
+                                data-testid="create-book-author"
+                            />
+                            <datalist
+                                id="create-book-author-suggestions"
+                                data-testid="create-book-author-datalist"
+                            >
+                                {authorSuggestions.map((name) => (
+                                    <option
+                                        key={name}
+                                        value={name}
+                                        data-testid={`create-book-author-suggestion-${name}`}
+                                    />
+                                ))}
+                            </datalist>
+                            {/* Bug-fix 2026-05-19: Add-to-Authors-DB
+                                checkbox. Default-checked. Visible
+                                only when the typed name is NOT
+                                already in the global DB (so the
+                                user is not prompted to "add" a name
+                                that's already there). Submit-flow
+                                handles the create (graceful
+                                fallback if author-create fails). */}
+                            {showAddToAuthorsCheckbox && (
+                                <label
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        marginTop: 8,
+                                        fontSize: "0.875rem",
+                                        color: "var(--text-secondary)",
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={addToAuthorsDb}
+                                        onChange={(e) => setAddToAuthorsDb(e.target.checked)}
+                                        data-testid="create-book-add-to-authors-checkbox"
+                                    />
+                                    <span>
+                                        {t(
+                                            "ui.create_book.add_to_authors_db",
+                                            "„{name}\" zur Autoren-Datenbank hinzufügen",
+                                        ).replace("{name}", author.trim())}
+                                    </span>
+                                </label>
                             )}
                         </div>
 
