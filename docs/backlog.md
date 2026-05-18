@@ -1599,28 +1599,82 @@ store.
   current safeguard already protects against installing a
   stale Bibliogon.
 
-- **PLUGIN-DEV-SERVER-RESTART-HELPER-01**: backend dev server
-  doesn't auto-detect when a plugin is installed or
-  uninstalled. The long-running uvicorn process reads
-  entry-points via ``importlib.metadata`` once during
-  lifespan startup; a subsequent ``poetry install`` of a new
-  plugin updates the venv's ``.dist-info/entry_points.txt``
-  but the running process never re-reads the registry.
+- **PLUGIN-DEV-SERVER-RESTART-HELPER-01**: neither the
+  long-running ``make dev`` uvicorn process nor the
+  ``make prod`` Docker image auto-detects when a plugin
+  is added, installed, or uninstalled. Both surfaces are
+  the same operational-gap class — a stale runtime
+  diverging from the source tree's actual plugin set.
+  Single P4 item covers both per the extend-rather-than-
+  fragment Backlog-Hygiene discipline.
+
+  **Surface A — `make dev` (dev-server stale):** the
+  long-running uvicorn process reads entry-points via
+  ``importlib.metadata`` once during lifespan startup. A
+  subsequent ``poetry install`` of a new plugin updates
+  the venv's ``.dist-info/entry_points.txt`` but the
+  running process never re-reads the registry.
   Demonstrated 2026-05-18 during plugin-comics Session 1
   smoke: pytest + per-plugin tier green, but
-  ``GET /api/comics/info`` 404'd against the live dev
-  server until a manual ``make dev-down && make dev``
-  cycle. Concrete fix: a
-  ``make dev-restart-on-plugin-change`` target that
-  compares the dev server's start-time against the mtime
-  of ``backend/pyproject.toml`` + every
+  ``GET /api/comics/info`` would 404 against a live
+  ``make dev`` started before ``poetry install`` ran.
+  Fix: a ``make dev-restart-on-plugin-change`` target
+  that compares the dev server's start-time against the
+  mtime of ``backend/pyproject.toml`` + every
   ``plugins/*/pyproject.toml``; warn (or auto-restart)
-  when a pyproject post-dates the server. Effort: S-M
-  (single Makefile target + a one-liner mtime check via
-  ``stat``). Trigger: plugin-development cadence
-  increases, OR similar operational gap re-emerges, OR
-  developer-onboarding feedback flags the gap. Filed by
-  plugin-comics Session 1 smoke 2026-05-18.
+  when a pyproject post-dates the server.
+
+  **Surface B — `make prod` (Docker image stale):** the
+  prod Docker image bakes the plugin set in at build
+  time via the ``plugins/bibliogon-plugin-*`` glob in
+  ``backend/Dockerfile`` (line 14 COPY + line 24 install
+  loop). Once built, the running container's venv is
+  frozen. ``docker compose restart`` re-launches the
+  SAME image — no new plugins are picked up. Only a
+  ``docker compose build`` reads the current source
+  tree. Demonstrated 2026-05-18 during plugin-comics
+  Session 1 smoke against ``localhost:7880``: image
+  created 2026-05-06 (12 days stale relative to today's
+  plugin-comics ship), 9 plugins in the container venv,
+  comics absent, ``/api/comics/info`` 404'd. Fix: a
+  ``make prod-rebuild-on-plugin-change`` target that
+  inspects ``docker inspect astrapi69-backend
+  --format='{{.Created}}'`` against the same pyproject
+  mtimes; warn (or auto-rebuild) when a pyproject
+  post-dates the image. Bonus: surface a clearer error
+  in the frontend when ``/api/{plugin}/info`` 404's
+  with text along the lines of "Plugin shipped in
+  source but not in the running image; rebuild?".
+
+  **Why one item instead of two:**
+  - Both surfaces solve the same operational-gap class
+    (stale runtime vs source tree).
+  - Same mtime-comparison primitive serves both — only
+    the "what does running" probe differs (lockfile of
+    dev start vs ``docker inspect``).
+  - Same Makefile-target shape (both are
+    ``make <mode>-X-on-plugin-change`` aliases).
+  - Single future-session can ship both targets +
+    factor out the shared mtime helper.
+  - Aligns with extend-rather-than-fragment from the
+    backlog-hygiene discipline; sibling-item filing
+    would force the future session to re-derive the
+    shared design.
+
+  Effort: M (one shared helper + 2 Makefile targets +
+  optional frontend error-detection enhancement). Stop-
+  condition: if the frontend error-detection enhancement
+  exceeds 1 commit, surface as
+  ``PLUGIN-RUNTIME-STALENESS-FRONTEND-DETECTION-01``.
+
+  Trigger: plugin-development cadence increases, OR
+  similar operational gap re-emerges, OR developer-
+  onboarding feedback flags the gap, OR a Docker-prod
+  user reports the same 404 class. Filed by plugin-
+  comics Session 1 smoke 2026-05-18 (Surface A);
+  extended same day to cover Surface B after live
+  smoke against ``:7880`` reproduced the 404 in the
+  Docker-prod surface.
 
 - **PLUGIN-COMICS-E2E-SMOKE-01**: live-dev-server E2E
   Playwright spec for plugin-comics. Would have caught
