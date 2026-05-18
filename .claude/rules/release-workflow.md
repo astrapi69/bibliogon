@@ -17,6 +17,26 @@ Prompt triggers: "release new version", "new release", "deploy new version"
 
 ---
 
+## Aggregate Makefile targets (reduce manual-step surface)
+
+Since the 2026-05-19 release-automation audit, six aggregate targets cover the mechanical steps of this workflow. Use them where applicable; the hand-driven commands below each Step block stay valid for cases where targets don't fit.
+
+| Target | Replaces |
+|---|---|
+| `make release-state` | Step 1 manual git tag/log/diff invocations |
+| `make release-outdated` | Step 4b manual `poetry show --outdated` × 3 surfaces + `npm outdated` |
+| `make release-test` | Step 5 mandatory chain (make test + tsc + ruff + mypy + pre-commit + verify-docs-discipline + verify-plugin-locks + launcher build smoke). NOT Playwright smoke (needs running app) |
+| `make release-build` | Step 6 conditional `poetry build` + `npm run build` |
+| `make release-tag VERSION=X.Y.Z` | Step 7 `verify_version_pins.sh` + `git tag -a` + push main + push tag |
+| `make release-publish VERSION=X.Y.Z` | Step 8 `gh release create` with notes file |
+| `make release-discover` | Discovery scan for version literals outside the sync-versions target list (advisory) |
+
+What stays MANUAL: Step 2 SemVer classification, Step 3 CHANGELOG draft + per-release notes composition, Step 11 CLAUDE.md prose + journal entry. These need LLM/human judgment per release; automation provides no value.
+
+Reference: [docs/development/release-automation.md](../../docs/development/release-automation.md) for the full SSoT architecture + tooling reference.
+
+---
+
 ## Step 1: Capture the current state
 
 Before doing anything, show the current state:

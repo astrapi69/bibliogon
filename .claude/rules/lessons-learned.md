@@ -610,6 +610,68 @@ Architecture goal (Java/Maven precedent): ONE version per subsystem in a canonic
 
 **Never** add a hardcoded version constant "for convenience" (e.g. for use in a GitHub-Issue body template, a footer string, or an OpenAPI metadata field). Always reference the derived single source.
 
+## Single-source-of-truth for cross-cutting concerns: closed-set vs open-set discovery
+
+The version-pin SSoT pattern above generalises: any cross-cutting concern (i18n keys across catalogs, plugin manifests cross-referencing the backend hookspec API, asset paths referenced from multiple components, etc.) reduces human-error during synchronisation IF AND ONLY IF the propagation mechanism is paired with a discovery mechanism for NEW references introduced by future features.
+
+The 2026-05-19 release-automation audit (`docs/audits/release-automation-audit-2026-05-19.md`) made the pattern explicit. Bibliogon's release-cycle automation is the canonical example.
+
+### Two distinct failure modes
+
+**1. Closed-set drift — files we KNOW need updating, but didn't.** The original version-pin SSoT pattern above addresses this: `sync_versions.py`'s `collect_targets()` enumerates the known propagation targets; `verify_version_pins.sh` checks them. Adding a new propagated file means adding it to BOTH lists.
+
+**2. Open-set drift — files we DID NOT KNOW needed updating.** A future feature adds a file with a hardcoded version literal in a new shape (e.g. a generated artifact, a config snippet, an embedded constant) and there's no enforcement that it gets added to `collect_targets()`. The closed-set verifier passes; the new file silently drifts on every release.
+
+### Concrete Bibliogon example: `frontend/package-lock.json` top-level version
+
+For multiple release cycles before the 2026-05-19 audit, `frontend/package-lock.json` carried a stale top-level `"version": "..."` field. `sync_versions.py` edited `package.json` but not the lock. Only `npm install` re-synced the lock. The drift was invisible to:
+
+- `make sync-versions-check` — doesn't enumerate the lock
+- `verify_version_pins.sh` regression detectors — didn't grep package-lock
+- The author at release time — package.json LOOKED right; the lock was hidden in 11,000 lines
+
+The audit caught it at v0.34.1; the closed-set fix added the lock to `collect_targets()`; the open-set fix added `scripts/discover_version_literals.sh` which would have surfaced the drift on the very next `make release-discover` invocation.
+
+### Two enforcement mechanisms (use both)
+
+For any cross-cutting concern with a SSoT pattern, ship BOTH:
+
+**Closed-set enforcement (mandatory):**
+- A propagation script (`sync_*`) that writes the known derived locations
+- A verifier (`verify_*`) that diffs the derived state against canonical and exits non-zero on drift
+- A `collect_targets()` (or equivalent) function listing the known derived files
+- Regression detectors in the verifier that fail if a hardcoded literal reappears in the "DO NOT EDIT" tier
+
+**Open-set discovery (advisory):**
+- A discovery script that greps for the cross-cutting pattern across the repo, excludes the known-target set + legitimate one-off literals, and reports any survivors
+- Hooked into the verifier as a non-fatal WARN at the end of the chain (advisory, not a gate — false positives are real and shouldn't block tags)
+- Hooked into a release-prep Makefile target (`make release-discover` in Bibliogon) for on-demand inspection
+- Survivor handling: either add the file to `collect_targets()` (it's a new sync target) or add to `KNOWN_FILES` in the discovery script (it's a legitimate one-off)
+
+### When this pattern applies
+
+This is not just for version pins. The pattern generalises to:
+
+- **i18n keys**: `backend/config/i18n/*.yaml` × 8 catalogs. A `verify_i18n_keys.py` script could check key-parity + discovery-grep for hardcoded user-facing strings outside the catalog system.
+- **Plugin manifest cross-references**: hookspecs in `backend/app/hookspecs.py` vs plugin `get_frontend_manifest()` returns. Drift here would be `i18n` slot names that don't exist on the backend.
+- **Asset path references**: `book.cover_image` references that need URL rewriting on import/export — known callsites can be enumerated; new callsites need open-set discovery.
+- **Feature-flag tests**: every `Book.audiobook_overwrite_existing`-style flag needs at least one test that flips it and asserts an observable behavioral difference (per the existing "End-to-end behavior tests are not 'kwarg passes through' tests" lessons-learned rule). The discovery mechanism: grep for `audiobook_overwrite_existing` callsites; verify each consumer has a paired test.
+
+### When NOT to apply this pattern
+
+If the cross-cutting concern is fundamentally LLM/human-narrative (CHANGELOG entries, release notes, prose summaries, journal entries), automation provides no value. The author is composing per-instance content — Tier 4 in the version-pin tier model. The SSoT pattern is for the MECHANICAL propagation of a single canonical value, not for the narrative around it.
+
+### Maintenance discipline
+
+When adding a new propagated file:
+1. Add to the propagator's `collect_targets()`
+2. Add to the closed-set verifier's regression detectors if applicable
+3. Add to the open-set discovery script's `KNOWN_FILES` (so it doesn't show up as a discovery warning)
+4. Add a test asserting the new propagation handler works
+5. Update the docs that explain the SSoT tooling (e.g. `docs/development/release-automation.md`)
+
+When `make release-discover` (or the verifier's open-set WARN) surfaces an unknown file: triage as either new-sync-target (recipe above) or legitimate-one-off (add to `KNOWN_FILES`). Don't ignore the warning — that defeats the open-set discipline's purpose.
+
 ## Hotfix cluster tag policy
 
 When a release tag fails CI for a mechanical reason (chmod bit
