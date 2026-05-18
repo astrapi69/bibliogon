@@ -4,6 +4,64 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.35.1] - 2026-05-18
+
+Fast-follow patch for the v0.35.0 donation-visibility gap. The
+S-03 reminder banner shipped in v0.19.0 had been functionally
+invisible to new users because the 90-day grace gate meant no
+banner fired until day 91. Bibliogon's donation-based
+sustainability model needs visibility from week one, not month
+four.
+
+Three changes:
+
+### Changed
+
+- **DonationReminderBanner grace period: 90 → 7 days.** New
+  users see the reminder after a one-week settling-in window
+  instead of after three months. Industry-research synthesis
+  (Wikipedia / Mozilla / Mastodon / Signal / Blender) confirms
+  Bibliogon's existing 90-day dismissed + 180-day donated
+  cooldowns sit in the median band; unchanged. The single
+  ``DAYS_90`` constant that double-served as grace gate +
+  dismissed-cooldown split into 3 explicit constants
+  (``GRACE_PERIOD_DAYS = 7``, ``COOLDOWN_DISMISSED_DAYS = 90``,
+  ``COOLDOWN_DONATED_DAYS = 180``).
+- **S-03 reminder mounts at App-level** (was Dashboard-only).
+  Banner now appears at the top of every page (Dashboard, Book
+  Editor, Article Editor, Settings, Help, etc.) and persists
+  across navigation until the user actively dismisses via
+  Support / Not now / X / Escape. Dashboard keeps the S-02
+  Onboarding Dialog mount + DonationsConfig fetch.
+
+### Added
+
+- **Escape keyboard dismiss** + **aria-live=polite** on the
+  banner root. Screen readers announce the reminder without
+  stealing focus; Escape behaves like Not-now (90-day cooldown).
+- Backlog filing: ``REMINDER-PANEL-GENERIC-EXTRACTION-01`` (P3)
+  for the eventual generic ReminderPanel extraction per the
+  Recurring-Component Unification Rule. Triggers when a second
+  reminder-shaped affordance (update / survey / backup) needs
+  the same layout.
+
+### Verification
+
+Backend pytest 1926 + 1 skipped (`--ignore=mutants`); plugin
+pytest 185; Vitest 1555/1555; new Playwright smoke spec
+``donation-reminder-app-level.spec.ts`` ships (5 pins: grace
+gate + App-level persistence + Escape dismiss + a11y attrs);
+tsc clean; full ``make release-test`` gate green.
+
+### Notes
+
+i18n strings unchanged (the existing German body text says
+"drei Monaten" which is slightly misleading at the new 7-day
+grace; deferred to a future i18n-touch commit per the
+explicit user-direction "i18n untouched"). Cooldowns unchanged
+at 90/180 per industry-research synthesis. S-01 Settings
+section + S-02 Dashboard onboarding dialog unchanged.
+
 ## [0.35.0] - 2026-05-18
 
 The second Picture-Book release. TipTap rich-text editing for 3
