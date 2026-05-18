@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
 Current version: v0.35.1
-Open tasks: 60 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 61 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -1445,6 +1445,108 @@ store.
   (closes together) + ``RECURRING-COMPONENT-AUDIT-01``
   (broader frontend sweep that may surface additional
   related candidates).
+
+- **PLUGIN-COMICS-MAKEFILE-INTEGRATION-01** (P3, Plugin-
+  Infrastructure, filed 2026-05-18 from plugin-comics
+  Session 1 retrospective): plugin-comics shipped at
+  Session 1 (commits ab9da0c / 5fdb786 / 84954a3) with
+  the package + path-dep + CI matrix entries + i18n in
+  place, but the repo-root ``Makefile`` was NOT updated.
+  Half-Wired-Feature-Lifecycle Prevention rule applies:
+  the developer-facing test surface is half-shipped
+  (CI's per-plugin matrix runs comics, the per-developer
+  ``make test-plugins`` does NOT).
+
+  Verified gaps in [Makefile](../Makefile):
+  - ``test-plugins`` aggregate (line 154): 10 plugin
+    dependencies; ``test-plugin-comics`` absent.
+  - ``test-coverage-plugins`` aggregate (line 222): 9
+    plugin dependencies; ``test-coverage-plugin-comics``
+    absent.
+  - Per-plugin target ``test-plugin-comics``: missing.
+  - Per-plugin target ``test-coverage-plugin-comics``:
+    missing.
+  - The MAKEFLAGS header (line 4) listing parallel-
+    runnable plugin targets is also missing comics.
+
+  Concrete fix (single commit):
+  1. Add ``test-plugin-comics`` mirroring
+     ``test-plugin-kinderbuch`` (lines 171-174) — ``cd``
+     into the plugin dir + ``poetry env use python3.12
+     -q 2>/dev/null; poetry run pytest tests/ -v``.
+  2. Add ``test-coverage-plugin-comics`` mirroring
+     ``test-coverage-plugin-kinderbuch`` (lines 244-247).
+  3. Append ``test-plugin-comics`` to the ``test-plugins``
+     dependency list (line 154).
+  4. Append ``test-coverage-plugin-comics`` to
+     ``test-coverage-plugins`` (line 222).
+  5. Append ``test-plugin-comics`` to the MAKEFLAGS
+     header at line 4 so parallel ``-j`` runs include it.
+  6. Verify ``make test-plugins`` exits 0 with comics
+     included (regression-pin).
+
+  Effort: S (15-30 min — pure mechanical mirror of the
+  kinderbuch pattern × 5 lines touched in Makefile).
+
+  Pre-Inspection-Checklist update (proposed): when a
+  new plugin ships, the Pre-Inspection MUST verify
+  ALL integration surfaces — not just Python code +
+  entry-points. Concrete checklist additions for
+  future plugin-shipping Pre-Inspections:
+  - ``backend/pyproject.toml`` path-dep ✓
+  - ``backend/config/app.yaml.example`` enable-list ✓
+  - ``backend/config/plugins/<name>.yaml`` defaults ✓
+  - ``.github/workflows/ci.yml`` plugin-matrix entry ✓
+  - ``.github/workflows/coverage.yml`` plugin-matrix
+    entry ✓
+  - ``Makefile``'s ``test-plugins`` aggregate ❌ MISSED
+  - ``Makefile``'s ``test-coverage-plugins`` aggregate
+    ❌ MISSED
+  - ``Makefile`` per-plugin ``test-plugin-<name>`` target
+    ❌ MISSED
+  - ``Makefile`` per-plugin
+    ``test-coverage-plugin-<name>`` target ❌ MISSED
+  - i18n catalog entries × 8 ✓
+  - At least one TestClient-tier integration test ✓
+
+  The ❌-MISSED items above are exactly the gap this
+  filing closes. Future plugin-shipping sessions should
+  walk the full checklist explicitly at Pre-Inspection
+  time, not just at retrospective time.
+
+  Strategic note — broader pattern discovery: the audit
+  for THIS filing surfaced TWO related drifts in the
+  same Makefile (NOT in scope for this item, but worth
+  recording so a future hygiene sweep can close them
+  together):
+  - ``medium-import``: NO Makefile targets at all (no
+    ``test-plugin-medium-import``, no coverage target,
+    not in the ``test-plugins`` aggregate). Predates
+    today's Session 1 work; landed when medium-import
+    shipped in v0.31.0+.
+  - ``git-sync``: ``test-plugin-git-sync`` exists (line
+    201) but ``test-coverage-plugin-git-sync`` does
+    NOT, and it is absent from the
+    ``test-coverage-plugins`` aggregate (line 222).
+
+  If a P3 hygiene sweep wants to close ALL Makefile-
+  integration gaps at once, extend the scope of this
+  filing or open a sibling
+  ``PLUGIN-MAKEFILE-INTEGRATION-AUDIT-01`` covering
+  medium-import + git-sync + comics together. Filing
+  comics-only here per the user's direction; the
+  related drifts are surfaced for downstream triage.
+
+  Trigger: separate future-session for plugin-comics
+  infrastructure-completion, OR before plugin-comics
+  Session 2 starts (so developers running ``make
+  test-plugins`` locally exercise the comics path),
+  OR a P3 Makefile-integration sweep picks up the
+  full pattern.
+
+  Pairs with: future Pre-Inspection-Checklist update
+  living in ``.claude/rules/ai-workflow.md`` (proposed
+  as part of this item's closure).
 
 ---
 
