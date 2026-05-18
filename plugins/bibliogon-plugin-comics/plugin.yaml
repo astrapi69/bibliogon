@@ -4,7 +4,7 @@ plugin:
   license_tier: core
   depends_on:
     - export
-  min_app_version: "0.36.0"
+  min_app_version: "0.35.0"
   entry_point: bibliogon_comics.plugin:ComicsPlugin
   display_name:
     de: "Comic"
