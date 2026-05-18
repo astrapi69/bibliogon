@@ -3548,3 +3548,180 @@ A 95-line "brainstorm dump" stub that pushes the audit cost
 downstream generates more total work than a 400-line proper
 doc with the audit upfront — by the cost ratio observed in
 this incident (30 seconds vs. half a day).
+
+## User-overlay merge semantics + migration discipline for config-version changes
+
+When a config-overlay system uses "lists replace, dicts deep-
+merge" semantics (the broadly-correct default for letting users
+fully override specific values without losing other defaults),
+**list-shaped fields that grow over a release lifecycle silently
+filter out their new additions for upgrading users**. The fix is
+NOT to change the merge semantics globally — that breaks the
+contract for users who deliberately curated a shorter list. The
+fix is a STARTUP-TIME MIGRATION that augments the user-overlay's
+copy of the list with project-tree additions, respecting any
+explicit opt-out signal.
+
+### Concrete incident (2026-05-18, USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01)
+
+Bibliogon's `backend/config/app.yaml` ships with a
+`plugins.enabled` list that grew from 11 → 12 entries when
+plugin-comics landed in v0.35.1. Existing users had a stale
+user-overlay at `~/.local/share/bibliogon/config/app.yaml` (or
+`/app/data/config/app.yaml` in the Docker prod named volume)
+written under the v0.35.0 schema with 11 entries. The
+`deep_merge` (lists replace) silently took the user-overlay's
+11-entry list, filtered comics out, and the running backend's
+plugin manager never activated it. Symptom: `/api/comics/info`
+returned HTTP 404 against the live backend even though pytest
+with TestClient passed (because pytest's `conftest.py` sets
+`BIBLIOGON_DATA_DIR` to a fresh tmpdir, so no user-overlay
+file existed during tests → migration was trivially no-op,
+merge fell through to the full project list → comics activated).
+
+### Pattern
+
+For any list-shaped configuration value that:
+
+1. ships with a project-tree default,
+2. can be overridden by a user-overlay,
+3. **grows** over the application's release lifecycle (new
+   plugins, new endpoints, new feature-flags, new keyboard
+   shortcuts, etc.),
+4. has an explicit OPT-OUT mechanism (e.g. a sibling `disabled`
+   list, or a `null` / `false` value for individual entries):
+
+ship a **detect-and-append migration helper** that runs at
+application startup. The helper:
+
+- reads the project-tree's list AND the user-overlay's list,
+- computes the set difference (project minus user, minus
+  explicit-opt-out),
+- if non-empty, atomically appends the new entries to the
+  user-overlay's list and writes it back,
+- logs the migration (per-name) at INFO level,
+- refreshes any module-level snapshots that depend on the
+  merged config,
+- is **idempotent**: a second run with no diff is a no-op
+  + no disk write.
+
+### Test palette for this pattern (3 tiers)
+
+Each tier catches a different class of regression. Ship ALL
+THREE per the same commit that lands the migration code:
+
+1. **Unit tests** for the migration helper as a pure function.
+   Seed project + user inputs, assert the returned tuple +
+   the disk state. Cover the canonical paths (append, in-sync
+   no-op, opt-out respected, malformed-input graceful-no-op,
+   idempotent second run, fresh-install no-op).
+2. **Integration test** via TestClient + lifespan. Seed a
+   stale user-overlay file in the conftest's data dir, refresh
+   the application's startup snapshot, boot the app, assert
+   the migration ran by checking BOTH the disk state AND the
+   plugin/config-manager's internal state (NOT the HTTP layer
+   — see below for the FastAPI route-mount-stickiness
+   caveat).
+3. **Live-dev E2E smoke** via Playwright (or curl-against-
+   running-server). Seeds a stale user-overlay on the real
+   filesystem, restarts the dev server, asserts the
+   feature-that-was-silently-invisible is now reachable.
+   Sister to PLUGIN-COMICS-E2E-SMOKE-01.
+
+### FastAPI route-mount stickiness — DON'T assert via HTTP
+
+FastAPI's `app.include_router(...)` is **one-directional**.
+There's no `app.exclude_router(...)`. Once a plugin's router
+is mounted in one TestClient lifespan, it stays mounted for
+the entire pytest session — even after `manager.deactivate_all()`
+runs at shutdown. Consequence: a test that asserts "comics
+plugin opt-out works because /api/comics/info returns 404"
+will FAIL falsely if a prior test in the same session
+activated comics + mounted its router.
+
+For the lifespan integration tests, assert on:
+- `manager.get_active_plugins()` set (the manager-level
+  contract — does pluginforge's `filter_plugins` include this
+  plugin?)
+- `manager._app_config["plugins"]["enabled"]` + `disabled`
+  contents (does the merged config reflect the user-overlay?)
+- the disk state of the user-overlay file (did the migration
+  persist correctly?)
+
+Reserve HTTP-layer assertions for tests that POSITIVELY
+exercise the route (after activation), NOT for tests that
+verify opt-out (where the route's persistence from prior
+mounts will confound the test).
+
+### Sync the manager AFTER the migration writes
+
+The same lifespan ordering bug bit twice during this work:
+
+1. The plugin manager is initialized at module-import time
+   with a cached `_app_config` snapshot.
+2. The first `_sync_manager_with_overlay()` runs at module-
+   import time. At that moment, the user-overlay file may not
+   exist yet (fresh install).
+3. The migration runs INSIDE the lifespan, AFTER module-
+   import. It writes to the user-overlay file.
+4. **Without a second `_sync_manager_with_overlay()` call
+   AFTER the migration**, the manager's `_app_config` still
+   has the pre-migration view. `discover_plugins()` reads
+   `_app_config` and filters per the stale list.
+
+The fix is a SECOND sync immediately after the migration
+helper runs, unconditional (covers both the migration-wrote
+and migration-no-op cases; the second case is cheap because
+the overlay didn't change).
+
+### Why "change the merge semantics globally" is wrong
+
+The instinct is to make `plugins.enabled` a UNION (project ∪
+user). Don't. Today's contract — "user-overlay enabled list
+replaces the project-tree's" — lets a user deliberately curate
+a SHORTER list and have ONLY those plugins active. Changing
+the merge silently expands their list every release. The
+migration is the right shape because it's a one-time-per-
+new-plugin event that respects the user's explicit opt-out
+signal.
+
+### Why "one-shot CLI" is wrong
+
+A `bibliogon plugins sync-enabled` command works, but the
+user discovers the bug FIRST (the 404, the missing feature),
+THEN reads the release note that mentions the CLI. The
+startup-time migration closes the loop without user
+intervention. Reserve the CLI shape for migrations that
+require user input or are too risky to auto-apply.
+
+### When this rule fires
+
+Any future config-version change that adds a new entry to a
+list-shaped field with the "lists replace" merge contract.
+Concrete candidates already in Bibliogon's config:
+
+- `plugins.enabled` — closed by this incident's fix.
+- `plugins.disabled` — same shape; the migration as written
+  doesn't touch disabled. A user pre-emptively opting out of
+  a not-yet-shipped plugin would be unusual but conceivable;
+  the disabled-list-additions case has no observed need yet.
+- `ui.themes` — currently project-tree only; if user-overlay
+  customization ever lands, the same pattern applies.
+- `donations.channels` — project-tree only today; same.
+
+When adding a new list-shaped config field that may grow
+across releases, walk this rule and decide whether a
+migration helper is needed at design time, NOT at first-bug
+time.
+
+### Cross-references
+
+- `backend/app/config_overlay.py::migrate_user_overlay_enabled_list`
+  — the canonical implementation.
+- `backend/tests/test_config_overlay.py` — 9 unit cases.
+- `backend/tests/test_user_overlay_migration_lifespan.py` —
+  4 integration cases.
+- `e2e/smoke/user-overlay-migration.spec.ts` — live-dev smoke.
+- `docs/roadmap-archive/2026-05.md` —
+  "Archived 2026-05-18 (USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01)"
+  for the close-out artifact.

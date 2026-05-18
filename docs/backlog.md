@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
 Current version: v0.35.1
-Open tasks: 63 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 62 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -56,77 +56,6 @@ store.
   S-M depending on tag-quality bar. Trigger: first user report
   asking for it OR v01 ships and the manual-tagging step is a
   visible bottleneck in feedback.
-
-- **USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01** (P2, filed 2026-05-18
-  from plugin-comics Session 1 smoke): when the project-tree's
-  ``backend/config/app.yaml.example`` adds a NEW plugin to its
-  ``plugins.enabled`` list, the user-overlay's ``enabled`` list
-  must be migrated to include the new plugin, otherwise the
-  feature is silently invisible to every existing user.
-
-  **Mechanism of today's bug:** the config-overlay system
-  (``backend/app/config_overlay.py``) merges project-tree +
-  user-overlay with "dicts deep-merge; **lists replace**"
-  semantics. The user-overlay's stale ``enabled`` list
-  completely replaces the project-tree's updated list. The
-  comics plugin's entry-point is discovered, but it's filtered
-  out before activation. Result: ``/api/comics/info`` 404s
-  against the live backend even though pytest with TestClient
-  passes (the test conftest sets ``BIBLIOGON_DATA_DIR=tmpdir``
-  which redirects the overlay search to an empty dir).
-
-  **Why P2 not P3:** this affects EVERY user upgrading across
-  any release that adds a plugin. Silent feature-invisibility
-  class. Currently the only mitigation is manual user-overlay
-  editing (today: ``~/.local/share/bibliogon/config/app.yaml``
-  for local dev + ``/app/data/config/app.yaml`` inside the
-  Docker prod volume).
-
-  **Both surfaces affected:**
-  - Local dev: user-overlay at ``{platformdirs.user_data_dir}/
-    config/app.yaml`` (Linux: ``~/.local/share/bibliogon/``).
-  - Docker prod: ``/app/data/config/app.yaml`` inside the named
-    volume ``bibliogon-data`` — **persists across image
-    rebuilds**, so the Docker image rebuild alone doesn't
-    resolve the gap.
-
-  **Three fix options (Pre-Inspection at implementation time
-  decides):**
-
-  - **A.** Change merge semantics so ``plugins.enabled`` is a
-    UNION (project ∪ user) with explicit ``plugins.disabled``
-    overriding. Most consistent with user intent ("disable
-    means disable; everything else stays enabled"). Risk:
-    behavior change for users who deliberately curated their
-    enabled list expecting "replace" semantics.
-
-  - **B.** On startup, detect NEW plugins (in project-tree-not-
-    in-user-overlay) and append to user-overlay's
-    ``enabled`` list once. Preserves the "lists replace" rule
-    globally but adds a migration step for ``plugins.enabled``
-    specifically. Detect-once semantics avoid clobbering
-    deliberate disables. Recommended for least-surprise.
-
-  - **C.** Add a one-shot CLI: ``bibliogon plugins
-    sync-enabled`` referenced from every release-note for
-    new-plugin releases. Most explicit; lowest implementation
-    cost; highest friction for users.
-
-  **Effort:** S-M depending on option chosen. A is M (semantics
-  change + migration helpers + tests). B is S-M (startup-time
-  detect + idempotent append + Pre-Inspection test palette).
-  C is S (CLI + release-note convention).
-
-  **Triggers:** next plugin shipping (would re-create today's
-  silent 404 for every upgrading user), OR user report that
-  a freshly-added plugin doesn't appear, OR a P2 sweep for
-  config-overlay semantics.
-
-  **Regression-pin test pinned in same commit as this filing:**
-  ``backend/tests/test_config_overlay.py`` adds a test that
-  verifies the CURRENT (replace) semantics so a future fix
-  must update the test in lockstep, preventing silent
-  semantics drift.
 
 ---
 
