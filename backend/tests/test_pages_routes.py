@@ -447,3 +447,135 @@ class TestBookOutShape:
         r = client.get(f"/api/books/{book['id']}")
         assert r.status_code == 200
         assert r.json()["book_type"] == "prose"
+
+
+# --- PB-PHASE4 Session 4c-B-1 Commit 4: TipTap JSON-as-string roundtrip ---
+
+
+class TestTipTapTextContentRoundtrip:
+    """Storage flow for the 3 TipTap layouts (image_top_text_bottom,
+    image_left_text_right, text_only).
+
+    Per the 4c-B Pre-Inspection D2 decision: ``Page.text_content`` is
+    a ``Text`` column that accepts either plain string (Tier-Property
+    layouts) OR a JSON-serialized TipTap doc (TipTap layouts). The
+    per-layout discriminator lives entirely on the frontend (parse on
+    read, serialize on write); the backend is transparent.
+
+    These tests pin the transparent-storage contract: the backend
+    must NOT modify, validate, or restructure the text_content value
+    when it happens to be a JSON-shaped string. The frontend owns
+    the per-layout discriminator + the backward-compat parsing.
+    """
+
+    TIPTAP_DOC_JSON = (
+        '{"type":"doc","content":[{"type":"paragraph","content":'
+        '[{"type":"text","text":"Once upon a time."}]}]}'
+    )
+
+    def test_create_page_with_tiptap_json_text_content_roundtrips(self, client):
+        """POST + GET round-trip preserves the JSON string verbatim."""
+        book = _create_book(client, "TipTap1", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="text_only",
+            text_content=self.TIPTAP_DOC_JSON,
+        )
+        assert page["text_content"] == self.TIPTAP_DOC_JSON
+        # GET round-trip
+        r = client.get(f"/api/books/{book['id']}/pages")
+        assert r.status_code == 200
+        assert r.json()[0]["text_content"] == self.TIPTAP_DOC_JSON
+
+    def test_patch_page_with_tiptap_json_text_content(self, client):
+        """PATCH replaces the text_content string verbatim — no
+        JSON-aware merging or coercion on the backend."""
+        book = _create_book(client, "TipTap2", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="image_top_text_bottom",
+            text_content="legacy plain text",
+        )
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"text_content": self.TIPTAP_DOC_JSON},
+        )
+        assert r.status_code == 200
+        assert r.json()["text_content"] == self.TIPTAP_DOC_JSON
+
+    def test_layout_switch_does_not_touch_text_content_format(self, client):
+        """Switching a page from a TipTap layout to a Tier-Property
+        layout (or vice versa) leaves ``text_content`` UNCHANGED by
+        the backend. The frontend's parser handles the per-layout
+        discriminator on the next read.
+
+        Regression pin: if backend ever grows JSON-aware coercion
+        keyed on layout (e.g. "unwrap to plain text when layout
+        switches to speech_bubble"), this test fires."""
+        book = _create_book(client, "TipTap3", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="text_only",
+            text_content=self.TIPTAP_DOC_JSON,
+        )
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"layout": "speech_bubble"},
+        )
+        assert r.status_code == 200
+        # text_content remained unchanged across the layout switch.
+        assert r.json()["text_content"] == self.TIPTAP_DOC_JSON
+
+    def test_tier_property_layouts_keep_plain_string_text_content(self, client):
+        """Plain-string text_content on Tier-Property layouts works
+        as before (no JSON shape required)."""
+        book = _create_book(client, "TipTap4", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="speech_bubble",
+            text_content="Hello bubble!",
+        )
+        assert page["text_content"] == "Hello bubble!"
+        # Round-trip remains plain.
+        r = client.get(f"/api/books/{book['id']}/pages")
+        assert r.json()[0]["text_content"] == "Hello bubble!"
+
+    def test_tiptap_json_with_unicode_roundtrips(self, client):
+        """German + emoji content survives the JSON-as-string
+        roundtrip. Picture-books are i18n-heavy + the user's German
+        + emoji content matters."""
+        unicode_doc = (
+            '{"type":"doc","content":[{"type":"paragraph","content":'
+            '[{"type":"text","text":"Hänsel und Gretel \\ud83c\\udf2a"}]}]}'
+        )
+        book = _create_book(client, "TipTap5", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="text_only",
+            text_content=unicode_doc,
+        )
+        assert page["text_content"] == unicode_doc
+
+    def test_empty_text_content_persisted_as_null(self, client):
+        """Frontend normalises empty docs to ``null`` before sending;
+        backend accepts ``null`` for text_content unchanged."""
+        book = _create_book(client, "TipTap6", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="text_only",
+            text_content=None,
+        )
+        assert page["text_content"] is None
+        # PATCH to null also accepted.
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"text_content": None},
+        )
+        assert r.status_code == 200
+        assert r.json()["text_content"] is None

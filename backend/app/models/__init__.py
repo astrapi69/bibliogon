@@ -261,14 +261,12 @@ class Page(Base):
     """A single page in a picture book (Book.book_type == "picture_book").
 
     A picture book has zero Chapter rows and N Page rows. Page 1 is the
-    cover (no separate Cover entity). ``text_content`` stores short
-    plain text (one to three sentences per page); no TipTap roundtrip.
-    ``layout`` is the layout-key string (e.g. "speech_bubble",
-    "image_top_text_bottom") validated at the Pydantic schema layer,
-    matching the Chapter.chapter_type pattern. ``layout_config`` holds
-    per-page layout configuration as a JSON-encoded string (same
-    pattern as books.keywords / books.chapter_summaries). Schema is
-    layout-specific:
+    cover (no separate Cover entity). ``layout`` is the layout-key
+    string (e.g. "speech_bubble", "image_top_text_bottom") validated
+    at the Pydantic schema layer, matching the Chapter.chapter_type
+    pattern. ``layout_config`` holds per-page layout configuration as
+    a JSON-encoded string (same pattern as books.keywords /
+    books.chapter_summaries). Schema is layout-specific:
 
     - speech_bubble: {anchor_position, opacity}
     - image_top_text_bottom: {image_position, image_fit}
@@ -281,6 +279,33 @@ class Page(Base):
     already exists": future plugin-comics stores comic-specific
     layout configs in the same column without per-book-type schema
     fragmentation.
+
+    ``text_content`` is a ``Text`` column storing the page's text in
+    one of TWO shapes, discriminated by ``layout`` on the FRONTEND
+    (NOT in the DB schema). This is the PB-PHASE4 Session 4c-B-1 D2
+    decision — "per-layout discriminator without schema fragmentation":
+
+    - **Tier-Property layouts** (``speech_bubble``,
+      ``image_full_text_overlay``) — plain string. Short text where
+      formatting is controlled by the surrounding Tier-Property
+      configuration (font, color, etc.) rather than inline marks.
+
+    - **TipTap layouts** (``image_top_text_bottom``,
+      ``image_left_text_right``, ``text_only``) — JSON-serialized
+      TipTap document (``{"type":"doc","content":[...]}``). The
+      column stores it as a string; the frontend's
+      ``parseTextContentToJson`` decodes it on read and the
+      ``RichTextEditor`` round-trips edits back through
+      ``JSON.stringify``.
+
+    The backend is INTENTIONALLY transparent: text_content is stored
+    + returned verbatim, with no JSON-aware coercion or layout-keyed
+    transformation. A future feature wanting per-layout validation
+    would live at the Pydantic schema layer (a custom validator
+    keyed on ``layout``), NOT here. Backward compatibility on read
+    lives entirely on the frontend: legacy plain-text rows for
+    TipTap layouts auto-wrap into a minimal TipTap doc on first
+    read.
     """
 
     __tablename__ = "pages"

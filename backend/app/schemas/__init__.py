@@ -975,6 +975,14 @@ class PageCreate(BaseModel):
     Position is NOT in the create payload: a new page appends to the
     end of the book (next available position). Use POST .../reorder
     to move pages around after creation.
+
+    ``text_content`` is layout-discriminated by the FRONTEND (PB-PHASE4
+    Session 4c-B-1 D2 decision): Tier-Property layouts (speech_bubble +
+    image_full_text_overlay) send plain string; TipTap layouts
+    (image_top_text_bottom + image_left_text_right + text_only) send
+    a JSON-serialized TipTap doc as a string. The backend stores both
+    shapes transparently in the same column — see ``Page`` model
+    docstring for the storage convention.
     """
 
     layout: PageLayout
