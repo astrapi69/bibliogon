@@ -2606,6 +2606,58 @@ needs. Filing both the original close + the narrower P5
 follow-up makes the closure auditable while preserving the
 deferred work as a tracked future task.
 
+**4. PB-PHASE4 ``kinderbuch.css`` shipped, NO code consumed it
+   (frontend shape — closed by PB-PHASE4 Session 6 Commit 1
+   at 4f3d47d).** The kinderbuch plugin shipped a
+``plugins/bibliogon-plugin-kinderbuch/bibliogon_kinderbuch/
+templates/kinderbuch.css`` file with CSS rules for 4 of the
+5 picture-book layouts. Zero code referenced it (grep
+confirmed zero ``.py`` / ``.yaml`` consumers); the file used
+HYPHENATED layout names (``image-top-text-bottom``) while the
+backend schema used UNDERSCORES (``image_top_text_bottom``)
+which would have prevented any future generator from finding
+the rules; the file was missing the ``speech_bubble`` layout
+(added later in Session 4); and the font choice was Comic
+Sans MS, which would not have embedded properly for PDF
+output anyway.
+
+Surfaced by the Session 6 Pre-Inspection audit
+(``docs/audits/session-6-pdf-export-audit-2026-05-17.md``);
+closed by Session 6 Commit 1 (``4f3d47d``) which deleted the
+file and fresh-wrote the WeasyPrint-targeted CSS inline in
+``picture_book_pdf.py``. The pattern is the same shape as
+instance #3 (data-without-consumer) but with an extra layer:
+the file existed AS A consumer-shaped artifact (a CSS
+template) but no code path ever rendered HTML that referenced
+it. Worse than no-consumer: an opaque-consumer that LOOKED
+like the right answer to a future contributor.
+
+This instance crystallises the broader pattern: **a UI /
+templating asset shipped without a code path that loads
++ applies it is purgatory of the worst kind**, because the
+file's existence creates a false signal that the feature
+is wired (especially against a 6-month-later contributor who
+finds the file via grep). Detection mechanism:
+
+```bash
+# Find templating assets with no grep matches in their plugin
+# Python / YAML / TypeScript:
+find plugins/ -name "*.css" -o -name "*.html" -o -name "*.tex" \
+  | while read f; do
+      basename=$(basename "$f")
+      hits=$(grep -rln "$basename" "$(dirname "$(dirname "$f")")" \
+        --include="*.py" --include="*.yaml" --include="*.ts" \
+        --include="*.tsx" 2>/dev/null | wc -l)
+      [ "$hits" -eq 0 ] && echo "DEAD: $f"
+    done
+```
+
+Future audits at session-start should grep the touched
+plugins for this pattern. The kinderbuch.css case shipped
+in v0.13.0 (kinderbuch plugin first release) and lay dormant
+through 12+ release cycles before the Session 6 audit caught
+it.
+
 ### Rule
 
 When a feature ships ANY half of a lifecycle, the deferred half

@@ -87,6 +87,133 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **PICTURE-BOOK-PDF-KDP-FORMATS-01** (P3): extend picture-book
+  PDF export beyond the v0.35.0 MVP 8.5×8.5 square. Audit
+  finding 2026-05-17 D3 documented the canonical KDP picture-
+  book formats:
+  - 8×10 (portrait)
+  - 8.5×11 (portrait, larger)
+  - 11×8.5 (landscape)
+  - 10×8 (landscape, smaller)
+  Each format = a new ``@page { size: ... }`` rule in the
+  WeasyPrint generator + a UI selector. Scope:
+  - Backend: `picture_book_pdf.py` accepts a ``format`` arg;
+    routes.py threads it through the dispatch as a query param.
+  - Frontend: PageEditor + BookMetadataEditor buttons gain a
+    format selector dropdown (default 8.5×8.5 to preserve the
+    MVP UX); a future Settings field for the per-book default.
+  - i18n + Vitest + Playwright per surface.
+  Trigger: user requests 8×10 / 8.5×11 / landscape OR Aster's
+  second picture-book book has different dimensions OR a KDP
+  upload reveals a missing-format gap. Approx 5-7 commits.
+  Filed per audit D3 reservation at S6 close.
+
+- **PICTURE-BOOK-PDF-BLEED-MARKS-01** (P3): add KDP-quality
+  bleed marks (0.125" bleed + crop marks) to picture-book PDFs
+  for print-shop submission. v0.35.0 MVP ships trim-only PDFs
+  (acceptable per KDP's print-on-demand requirements per the
+  audit D4 finding); print-shop quality requires the explicit
+  bleed marks. Scope:
+  - CSS: ``@page { marks: crop bleed; bleed: 3mm; }`` in the
+    generator + a per-book toggle.
+  - UI: a checkbox in the BookMetadataEditor Design tab to
+    opt in.
+  - PDF metadata: a marker that downstream tools can detect.
+  Trigger: user reports KDP rejects the file for missing
+  bleed OR Aster requests print-shop quality. Approx 3-4
+  commits. Filed per audit D4 reservation at S6 close.
+
+- **PICTURE-BOOK-PDF-FRONT-MATTER-01** (P3): author-controlled
+  front-matter pages (dedication / copyright / imprint) in
+  the generated picture-book PDF. v0.35.0 MVP omits front-
+  matter entirely (KDP auto-inserts a copyright line during
+  print processing per the audit D5 finding); explicit
+  authored front-matter is the next refinement. Scope:
+  - Schema: new ``Book.picture_book_front_matter`` JSON column
+    (or per-Book columns ``dedication``, ``copyright_notice``,
+    ``imprint``) — design TBD at session-start.
+  - Backend: generator inserts the front-matter pages BEFORE
+    the cover page (or between cover + Page 1 — TBD).
+  - UI: a dedicated section in the BookMetadataEditor's
+    Design tab for the picture-book front-matter editor.
+  - i18n + Vitest + Playwright.
+  Trigger: user requests author-controlled front-matter OR
+  Aster's second book needs an imprint page. Approx 5-7
+  commits. Filed per audit D5 reservation at S6 close.
+
+- **PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01** (P3): wire
+  TipTap rich-text editing into picture-book page text regions
+  (image_top_text_bottom + image_left_text_right + text_only).
+  v0.34.0 + v0.35.0 ship picture-book text as plain string
+  ``Page.text_content``; rich-text formatting (bold, italic,
+  lists, headings) is deferred to the hybrid 4c-B work the
+  user scoped 2026-05-18.
+
+  Scope per the 4c-B Pre-Inspection (2026-05-17 discussion +
+  queued 2026-05-18):
+  - **Track A audit (Pre-Inspection step):** grep Bibliogon's
+    existing TipTap-pattern across ArticleEditor + BookEditor
+    chapter mode. Document Extensions configured, content
+    storage shape, read-only render, Toolbar placement.
+    Findings feed D1-D6.
+  - **D1 — TipTap Extensions Configuration:** MVP set for
+    picture-book pages (recommend: Bold + Italic + BulletList
+    + OrderedList + Heading H1-H3 + TextAlign).
+  - **D2 — Storage Schema:** ``Page.text_content`` as TipTap
+    JSON for rich-text layouts vs. plain string for Tier-
+    Property layouts (speech_bubble + image_full_text_overlay).
+    Migration approach for existing rows.
+  - **D3 — Toolbar Placement:** sticky vs floating-bubble-menu
+    vs on-focus. Match Bibliogon's existing Editor pattern
+    found in Track A.
+  - **D4 — Migration Strategy:** existing plain-string
+    ``Page.text_content`` rows wrapped in TipTap JSON for the
+    rich-text layouts; backward-compatible read; idempotent
+    SQL UPDATE on backend.
+  - **D5 — read-only render:** PageCanvas needs to render the
+    TipTap JSON for the rich-text layouts; existing components
+    in ArticleEditor / chapter-editor provide the pattern.
+  - **D6 — Editor placement:** in-PageCanvas vs adjacent panel.
+
+  Pairs with: ``PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01``
+  (same session per the user's 2026-05-18 confirmation).
+  Per the Recurring-Component Unification Rule, ANY shared
+  CollapsibleSection helper for the Tier-Property layouts
+  gets extracted in the same session.
+
+  Trigger: scheduled 4c-B session (post-S6 PDF Export close;
+  before v0.36.0). Approx 6-9 commits if pure-TipTap. If
+  bundled with the Tier-Property sibling: 10-13 commits;
+  split per the stop-condition rule into 4c-B-1 + 4c-B-2.
+
+- **PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01** (P3): apply
+  the Tier-Property pattern (from
+  ``PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01``) to the
+  ``image_full_text_overlay`` text band — sibling to the bubble
+  configurability work but for the overlay text region. ~10-12
+  properties:
+  - font-size + font-family + font-weight
+  - text-color + text-align
+  - background-color + opacity
+  - width + height (the user's earlier scope-add for v0.34.0
+    that deferred to this session)
+  - line-height + padding
+
+  Pairs with: ``PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01``
+  (same session; the hybrid approach: TipTap for image_top /
+  image_left / text_only; Tier-Property for speech_bubble +
+  image_full_text_overlay per the user's 2026-05-18
+  confirmation). Recurring-Component Unification Rule applies:
+  shared ``CollapsibleSection`` helper extracted from the
+  bubble work used here too. Possible further extraction:
+  a ``<TierPropertiesEditor>`` parameterised by layout, if the
+  Bubble + Overlay-Text shape converges enough.
+
+  Trigger: scheduled 4c-B session (same as the TipTap-
+  integration sibling). Approx 4-6 commits if standalone;
+  bundled with TipTap-integration: 10-13 (split per stop-
+  condition).
+
 - **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
   for duplicate UI patterns (component shapes, hook
   compositions, styling clusters) that violate the new
