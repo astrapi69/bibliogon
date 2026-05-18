@@ -36,6 +36,8 @@ const mockCreate = vi.fn()
 const mockReorder = vi.fn()
 const mockUpdate = vi.fn()
 const mockUploadAsset = vi.fn()
+const mockDocumentExportDownload = vi.fn()
+const mockNotifyError = vi.fn()
 
 vi.mock("../api/client", () => ({
     api: {
@@ -48,6 +50,44 @@ vi.mock("../api/client", () => ({
         assets: {
             upload: (...args: unknown[]) => mockUploadAsset(...args),
         },
+        documentExport: {
+            download: (...args: unknown[]) =>
+                mockDocumentExportDownload(...args),
+        },
+    },
+    ApiError: class ApiError extends Error {
+        status: number
+        detail: string
+        endpoint: string
+        method: string
+        stacktrace: string
+        timestamp: string
+        constructor(
+            status: number,
+            detail: string,
+            endpoint: string = "",
+            method: string = "GET",
+            stacktrace: string = "",
+            timestamp: string = "",
+        ) {
+            super(detail)
+            this.status = status
+            this.detail = detail
+            this.endpoint = endpoint
+            this.method = method
+            this.stacktrace = stacktrace
+            this.timestamp = timestamp
+            this.name = "ApiError"
+        }
+    },
+}))
+
+vi.mock("../utils/notify", () => ({
+    notify: {
+        error: (...args: unknown[]) => mockNotifyError(...args),
+        success: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
     },
 }))
 
@@ -72,7 +112,10 @@ beforeEach(() => {
     mockReorder.mockReset()
     mockUpdate.mockReset()
     mockUploadAsset.mockReset()
+    mockDocumentExportDownload.mockReset()
+    mockNotifyError.mockReset()
     mockList.mockResolvedValue([])
+    mockDocumentExportDownload.mockResolvedValue(undefined)
 })
 
 describe("PageEditor scaffold (Commit 2)", () => {
@@ -472,5 +515,113 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
                 .sort()
             expect(keys).toEqual(["anchor_position", "opacity"])
         })
+    })
+})
+
+// --- PB-PHASE4 Session 6 Commit 4: Export-PDF button ---
+
+import {ApiError} from "../api/client"
+
+describe("PageEditor Export-PDF button (Session 6 Commit 4)", () => {
+    it("renders the Export PDF button in the header (always visible)", () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        expect(screen.getByTestId("page-editor-export-pdf")).toBeTruthy()
+    })
+
+    it("clicking Export PDF calls api.documentExport.download with bookId, 'pdf', and URLSearchParams", async () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
+        )
+        const [bookId, fmt, params] = mockDocumentExportDownload.mock.calls[0]
+        expect(bookId).toBe("b1")
+        expect(fmt).toBe("pdf")
+        // URLSearchParams instance, intentionally empty (no toc_depth /
+        // use_manual_toc / book_type query params apply to picture-books).
+        expect(params).toBeInstanceOf(URLSearchParams)
+        expect(params.toString()).toBe("")
+    })
+
+    it("button disables while export is in flight + re-enables on success", async () => {
+        let resolveDownload: ((value: undefined) => void) | undefined
+        mockDocumentExportDownload.mockReturnValue(
+            new Promise<undefined>((resolve) => {
+                resolveDownload = resolve
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const btn = screen.getByTestId("page-editor-export-pdf") as HTMLButtonElement
+        fireEvent.click(btn)
+        // While in-flight, the button is disabled.
+        await waitFor(() => expect(btn.disabled).toBe(true))
+        // Resolve the in-flight promise; button re-enables.
+        resolveDownload?.(undefined)
+        await waitFor(() => expect(btn.disabled).toBe(false))
+    })
+
+    it("re-click while exporting is a no-op (does not fire a second API call)", async () => {
+        let resolveDownload: ((value: undefined) => void) | undefined
+        mockDocumentExportDownload.mockReturnValue(
+            new Promise<undefined>((resolve) => {
+                resolveDownload = resolve
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const btn = screen.getByTestId("page-editor-export-pdf")
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
+        )
+        // Second click while the first is still pending — guarded
+        // by the `disabled` attribute AND the in-callback exporting
+        // check. Either gate prevents a duplicate API call.
+        fireEvent.click(btn)
+        // Brief tick to allow any spurious second invocation to land.
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1)
+        resolveDownload?.(undefined)
+    })
+
+    it("ApiError from the route surfaces as notify.error with the server's detail", async () => {
+        mockDocumentExportDownload.mockRejectedValue(
+            new ApiError(
+                400,
+                "Picture-books only support PDF export in this release; got fmt='epub'",
+                "/books/b1/export/epub",
+                "GET",
+            ),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
+        expect(mockNotifyError.mock.calls[0][0]).toContain(
+            "Picture-books only support PDF",
+        )
+    })
+
+    it("button re-enables after an error so the user can retry", async () => {
+        mockDocumentExportDownload.mockRejectedValue(
+            new ApiError(500, "Generator failed", "/books/b1/export/pdf", "GET"),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const btn = screen.getByTestId("page-editor-export-pdf") as HTMLButtonElement
+        fireEvent.click(btn)
+        await waitFor(() => expect(mockNotifyError).toHaveBeenCalled())
+        // Finally block must re-enable the button.
+        await waitFor(() => expect(btn.disabled).toBe(false))
+    })
+
+    it("non-ApiError rejection still surfaces a fallback error toast", async () => {
+        mockDocumentExportDownload.mockRejectedValue(
+            new Error("Network down"),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
+        // The fallback uses the i18n fallback string ("PDF-Export
+        // fehlgeschlagen"); not the raw error message (which would
+        // leak technical detail to the user).
+        expect(mockNotifyError.mock.calls[0][0]).toBe("PDF-Export fehlgeschlagen")
     })
 })

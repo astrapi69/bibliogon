@@ -1,7 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ChevronLeft, FileText} from "lucide-react"
-import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {ChevronLeft, Download, FileText, Loader2} from "lucide-react"
+import {api, ApiError, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {notify} from "../utils/notify"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
@@ -139,6 +140,41 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
         [bookId, activePage],
     )
 
+    /**
+     * PB-PHASE4 Session 6 Commit 4: trigger picture-book PDF export.
+     *
+     * Picture-book PDF render is fast (1-3s sync via the route
+     * shipped in S6 Commit 2), so the UX is button-with-loading-
+     * state + blob download — NOT the AudioExportProgress modal
+     * the audit anticipated. AudioExportProgress is for the
+     * multi-minute TTS work; using it for a 1-3s operation would
+     * be UX overkill (modal opens + closes near-instantly).
+     *
+     * Defensive: on failure, show an error toast with the server's
+     * detail. The route returns 400 (wrong fmt for picture-book),
+     * 404 (book missing), or 500 (WeasyPrint or generator error);
+     * ApiError carries `.detail` for each.
+     */
+    const [exporting, setExporting] = useState(false)
+    const handleExportPdf = useCallback(async () => {
+        if (exporting) return
+        setExporting(true)
+        try {
+            await api.documentExport.download(bookId, "pdf", new URLSearchParams())
+        } catch (err) {
+            const detail =
+                err instanceof ApiError
+                    ? err.detail
+                    : t(
+                          "ui.page_editor.export_pdf_error",
+                          "PDF-Export fehlgeschlagen",
+                      )
+            notify.error(detail)
+        } finally {
+            setExporting(false)
+        }
+    }, [bookId, exporting, t])
+
     return (
         <div
             data-testid="page-editor-root"
@@ -177,6 +213,34 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                         </span>
                     </button>
                 )}
+                <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    disabled={exporting}
+                    data-testid="page-editor-export-pdf"
+                    className={styles.metadataBtn}
+                    title={t(
+                        "ui.page_editor.export_pdf",
+                        "Export as PDF",
+                    )}
+                >
+                    {exporting ? (
+                        <Loader2 size={14} className={styles.spinner} />
+                    ) : (
+                        <Download size={14} />
+                    )}
+                    <span>
+                        {exporting
+                            ? t(
+                                  "ui.page_editor.exporting_pdf",
+                                  "Exporting...",
+                              )
+                            : t(
+                                  "ui.page_editor.export_pdf",
+                                  "Export as PDF",
+                              )}
+                    </span>
+                </button>
             </header>
             <div className={styles.body}>
                 <aside

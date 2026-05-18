@@ -63,6 +63,28 @@
     background: color-mix(in srgb, var(--text-sidebar) 8%, transparent);
 }
 
+.metadataBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* PB-PHASE4 Session 6 Commit 4: spinner for the Export PDF
+ * button's loading state (1-3 s during WeasyPrint render).
+ * Uses lucide's Loader2 icon + a simple CSS rotation; same
+ * pattern Bibliogon uses elsewhere for in-flight async work. */
+.spinner {
+    animation: pageEditorSpin 1s linear infinite;
+}
+
+@keyframes pageEditorSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .body {
     display: grid;
     grid-template-columns: 200px 1fr 280px;
