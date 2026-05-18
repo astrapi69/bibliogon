@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-19 (Medium-import async-progress family closed: MEDIUM-IMPORT-V2-01 + ASYNC-IMPORT-PROGRESS-01 + MEDIUM-IMPORT-RESPONSE-INTERFACE-SYNC-01 archived to docs/roadmap-archive/2026-05.md. All shipped to origin/main across 11 commits (e5ef73d..3c53054) + 1 smoke doc + 1 handoff. Test delta: +14 backend + +11 plugin + +47 frontend Vitest + 4 Playwright + ~80 i18n keys. Two lessons-learned candidates surfaced (shared-working-tree commit bundling; page-local state vs context-backed state across navigation) — deferred to next docs-only touch.)
-Current version: v0.34.1
-Open tasks: 48 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Last updated: 2026-05-18 (Backlog consistency audit + sweep: 2 CLOSED stubs archived to docs/roadmap-archive/2026-05.md (PICTURE-BOOK-PDF-TIPTAP-RENDER-01 closed by Finding G4, PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01 closed by Session 4c); STARLETTE-V1-AWAIT-FASTAPI-01 + CLICK-V8-3-AWAIT-GTTS-01 reclassified from P5 to Blocked/Upstream Wait with full bodies in a new "Backlog-only blocked items" sub-section under the summary table (they were labeled `(BLOCKED, upstream)` but living in P5 — tier-misclassification surfaced by today's consistency audit). Counts refreshed.)
+Current version: v0.35.1
+Open tasks: 54 active (P2..P5) + 4 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -157,21 +157,6 @@ store.
   Tier-Property layouts"), OR an explicit data-hygiene sweep
   on existing books. Filed during the 4c-B-1 Fix C close-out
   (2026-05-19).
-
-- **PICTURE-BOOK-PDF-TIPTAP-RENDER-01**: ✅ CLOSED by
-  PB-PHASE4 Session 4c-B-1 Finding G4 (2026-05-19).
-  ``_render_tiptap_doc`` walks the TipTap JSON + emits
-  proper structured HTML preserving the D1 MVP marks
-  (bold / italic / underline / fontFamily) + alignment +
-  headings 1-3 + lists. 18 new pytest cases cover every
-  mark + alignment + heading-level + list shape + the
-  end-to-end ``_render_page`` integration.
-
-  Was promoted into Finding G's scope as Risk-Path (a):
-  shipping the Font dropdown without a font-aware PDF
-  walker would have produced a perceived-broken bug-class
-  (D7=Option 1 WYSIWYG contract relies on the PDF
-  honoring marks).
 
 - **PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01** (P3, filed
   2026-05-18 from 4c-B-1 smoke Bug 3): allow per-character
@@ -678,11 +663,6 @@ store.
   tail-bubble visual on a single-bubble page. Effort:
   3-5 commits (SVG render + properties-pane controls +
   i18n + Vitest + E2E).
-
-- **PICTURE-BOOK-SPEECH-BUBBLE-POSITIONING-01**: ✅
-  CLOSED by PB-PHASE4 Session 4c (preset write-path)
-  + remaining drag-position scope moved to
-  PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5).
 
 - **PICTURE-BOOK-STORYBOARD-VIEW-01** (P3, filed
   2026-05-18): storyboard view for Picture-Book
@@ -1449,22 +1429,6 @@ store.
   S per bump (single sed + commit each). Filed by the 2026-05-14
   full-audit session.
 
-- **STARLETTE-V1-AWAIT-FASTAPI-01** (BLOCKED, upstream):
-  bump ``starlette`` from 0.46.2 to 1.0.0 across the
-  backend + 11 plugins. Blocked on FastAPI shipping a
-  release whose upper-bound for starlette opens to
-  ``>=1.0``. Surfaced during the dep-update audit
-  2026-05-12 Phase 3: ``poetry update`` (bare) on a
-  plugin pulled starlette 1.0.0 because fastapi 0.136.1
-  apparently relaxed its starlette range. We reverted
-  that plugin's lock; the starlette 1.0 upgrade is a
-  cross-surface coordinated bump (FastAPI + Starlette +
-  all 11 plugins + backend, all at once) and should not
-  ship piecemeal. Trigger: FastAPI ships a release that
-  pins ``starlette = ">=1.0"`` as its lower bound (not
-  just relaxes the upper bound), making the bump a
-  forced upgrade. Filed by dep-update audit 2026-05-12.
-
 - **PLUGIN-PYDANTIC-COORDINATED-BUMP-01**: realign
   plugin Pydantic versions with the backend. Audit
   2026-05-12 found 9 of 11 plugins still at pydantic
@@ -1486,17 +1450,6 @@ store.
   coordinated dep-update session is planned (where
   starlette + FastAPI + Pydantic bump together as a
   unit). Filed by dep-update audit 2026-05-12 Phase 3.
-
-- **CLICK-V8-3-AWAIT-GTTS-01** (BLOCKED, upstream):
-  bump ``click`` from 8.1.8 to 8.3.3 in the backend
-  (and transitively across plugins). Blocked on gtts
-  (Google Text-to-Speech) opening its pin
-  ``click >=7.1,<8.2``. Used by the audiobook plugin's
-  TTS adapter path. Trigger: gtts releases a version
-  that opens its click upper bound to ``<9`` or
-  ``<8.4``. Filed by dep-update audit 2026-05-12
-  Phase 4.5 (click was in the medium-risk batch but
-  poetry refused to move it due to the upstream pin).
 
 - **MEDIUM-COMMENT-MANUAL-ENTRY-01**: manual "Add
   comment" UI in the article editor that creates an
@@ -1675,9 +1628,45 @@ summary.
 | DEP-02 (TipTap 3) | Upstream npm publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0` | npm publish (default); path B (`prosemirror-search` adapter ~50-80 LOC) available on explicit go-ahead |
 | DEP-05 (elevenlabs 2.x) | Real paid-API verification (substantial 0.2.27 -> 2.45.0 jump, careful audit required) | Schedule a dedicated audiobook test session with a live ElevenLabs key |
 | PGS-04-FU-01 | First user report of cross-language structural divergence | User report |
+| STARLETTE-V1-AWAIT-FASTAPI-01 | FastAPI release pinning `starlette = ">=1.0"` (not just relaxing the upper bound) | FastAPI release; full scope below |
+| CLICK-V8-3-AWAIT-GTTS-01 | gtts opens its click upper bound to `<9` or `<8.4` | gtts release; full scope below |
 | Manual launcher smoke tests (#2/#3/#4) | Real hardware (Windows / macOS / Linux) availability | Hardware access |
 | Manual content-safety smoke (#8 Part 2 beforeunload) | Aster's local browser | Manual run |
 | Manual UI smoke (#5) | Aster's local browser | Manual run |
+
+### Backlog-only blocked items — full scope
+
+ROADMAP-tracked blocked items (DEP-02, DEP-05) have their full
+bodies in ROADMAP; the table above is sufficient for them. The
+following entries are backlog-only (no ROADMAP entry) and so
+their full descriptions live here.
+
+- **STARLETTE-V1-AWAIT-FASTAPI-01** (BLOCKED, upstream):
+  bump ``starlette`` from 0.46.2 to 1.0.0 across the
+  backend + 11 plugins. Blocked on FastAPI shipping a
+  release whose upper-bound for starlette opens to
+  ``>=1.0``. Surfaced during the dep-update audit
+  2026-05-12 Phase 3: ``poetry update`` (bare) on a
+  plugin pulled starlette 1.0.0 because fastapi 0.136.1
+  apparently relaxed its starlette range. We reverted
+  that plugin's lock; the starlette 1.0 upgrade is a
+  cross-surface coordinated bump (FastAPI + Starlette +
+  all 11 plugins + backend, all at once) and should not
+  ship piecemeal. Trigger: FastAPI ships a release that
+  pins ``starlette = ">=1.0"`` as its lower bound (not
+  just relaxes the upper bound), making the bump a
+  forced upgrade. Filed by dep-update audit 2026-05-12.
+
+- **CLICK-V8-3-AWAIT-GTTS-01** (BLOCKED, upstream):
+  bump ``click`` from 8.1.8 to 8.3.3 in the backend
+  (and transitively across plugins). Blocked on gtts
+  (Google Text-to-Speech) opening its pin
+  ``click >=7.1,<8.2``. Used by the audiobook plugin's
+  TTS adapter path. Trigger: gtts releases a version
+  that opens its click upper bound to ``<9`` or
+  ``<8.4``. Filed by dep-update audit 2026-05-12
+  Phase 4.5 (click was in the medium-risk batch but
+  poetry refused to move it due to the upstream pin).
 
 ---
 
