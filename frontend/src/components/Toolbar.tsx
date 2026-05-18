@@ -45,6 +45,8 @@ import {
     Wrench,
     Copy,
     ChevronDown,
+    Maximize2,
+    Minimize2,
 } from "lucide-react";
 
 interface Props {
@@ -54,6 +56,14 @@ interface Props {
     onToggleSearch?: () => void;
     focusMode?: boolean;
     onToggleFocus?: () => void;
+    /** EDITOR-FULLSCREEN-NATIVE-01: when defined, renders a
+     *  browser-native fullscreen toggle in the toolbar.
+     *  ``isFullscreen`` syncs with document.fullscreenElement
+     *  via the useFullscreenToggle hook in the parent.
+     *  Omitted (undefined) -> button is not rendered, e.g. when
+     *  the browser doesn't support the Fullscreen API. */
+    isFullscreen?: boolean;
+    onToggleFullscreen?: () => void;
     spellcheckActive?: boolean;
     onToggleSpellcheck?: () => void;
     onPreviewAudio?: () => void;
@@ -80,7 +90,7 @@ interface Props {
     documentSubtitle?: string;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, isFullscreen, onToggleFullscreen, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
     const {t} = useI18n();
     if (!editor) return null;
 
@@ -462,6 +472,34 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     className={cx(styles.button, focusMode && styles.buttonActive)}
                 >
                     <Focus size={16}/>
+                </button>
+            )}
+
+            {/* Browser-native fullscreen toggle
+                (EDITOR-FULLSCREEN-NATIVE-01). Hidden when the
+                parent doesn't pass onToggleFullscreen (e.g.
+                browser lacks Fullscreen API support). F11 is
+                browser-default; the JS shortcut is Ctrl+Shift+F.
+                aria-keyshortcuts declares both per W3C ARIA. */}
+            {onToggleFullscreen && (
+                <button
+                    onClick={onToggleFullscreen}
+                    title={
+                        isFullscreen
+                            ? t("ui.toolbar.exit_fullscreen", "Vollbild verlassen") + " (F11 / Ctrl+Shift+F)"
+                            : t("ui.toolbar.fullscreen", "Vollbild") + " (F11 / Ctrl+Shift+F)"
+                    }
+                    aria-label={
+                        isFullscreen
+                            ? t("ui.toolbar.exit_fullscreen", "Vollbild verlassen")
+                            : t("ui.toolbar.fullscreen", "Vollbild")
+                    }
+                    aria-pressed={isFullscreen ? "true" : "false"}
+                    aria-keyshortcuts="F11 Control+Shift+F"
+                    data-testid="toolbar-fullscreen"
+                    className={cx(styles.button, isFullscreen && styles.buttonActive)}
+                >
+                    {isFullscreen ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
                 </button>
             )}
 

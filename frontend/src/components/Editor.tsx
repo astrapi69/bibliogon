@@ -1,6 +1,8 @@
 import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
+import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
+import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
 import {reviewString, NON_PROSE_CHAPTER_TYPES} from "../data/ai-review-strings";
@@ -171,6 +173,18 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, []);
+
+    // EDITOR-FULLSCREEN-NATIVE-01: browser-native fullscreen
+    // toggle via the toolbar button + Ctrl+Shift+F shortcut.
+    // F11 stays browser-default (page-fullscreen) and is the
+    // primary keyboard path; Ctrl+Shift+F is the secondary
+    // JS-controlled path that goes through requestFullscreen().
+    const fullscreen = useFullscreenToggle();
+    useKeyboardShortcuts(
+        fullscreen.isSupported
+            ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
+            : [],
+    );
 
     const lastAttemptedJson = useRef<string | null>(null);
 
@@ -968,6 +982,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 onToggleSearch={() => setShowSearch(!showSearch)}
                 focusMode={focusMode}
                 onToggleFocus={() => setFocusMode(!focusMode)}
+                isFullscreen={fullscreen.isFullscreen}
+                onToggleFullscreen={
+                    fullscreen.isSupported ? () => void fullscreen.toggle() : undefined
+                }
                 spellcheckActive={showSpellcheck}
                 onToggleSpellcheck={isPluginAvailable(pluginStatus, "grammar") ? handleToggleSpellcheck : undefined}
                 onPreviewAudio={gates.showAudiobook && isPluginAvailable(pluginStatus, "audiobook") ? handlePreviewAudio : undefined}
