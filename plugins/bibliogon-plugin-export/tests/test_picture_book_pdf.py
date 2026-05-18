@@ -89,10 +89,57 @@ def test_speech_bubble_opacity_clamped_into_range() -> None:
     assert "rgba(255, 255, 255, 1.0)" in style_high or "rgba(255, 255, 255, 1)" in style_high
 
 
-def test_speech_bubble_size_clamped_into_range() -> None:
+def test_speech_bubble_legacy_size_falls_through_to_width() -> None:
+    """PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
+    pre-Bug-1 pages persisted ``size``; the new code reads it as
+    a legacy fallback for ``bubble_width``. Clamp range expanded
+    to [20, 80]."""
     assert "width: 20%" in _speech_bubble_style({"size": 10})
-    assert "width: 60%" in _speech_bubble_style({"size": 90})
+    assert "width: 80%" in _speech_bubble_style({"size": 90})
     assert "width: 30%" in _speech_bubble_style({"size": 30})
+
+
+def test_speech_bubble_bubble_width_takes_precedence_over_size() -> None:
+    """When both keys are present, ``bubble_width`` wins. The
+    legacy key fades out as the dispatcher overwrites with the
+    new key on the next user edit."""
+    style = _speech_bubble_style({"bubble_width": 65, "size": 30})
+    assert "width: 65%" in style
+
+
+def test_speech_bubble_bubble_height_default_and_clamp() -> None:
+    """Default height is 30% when not configured; clamp is
+    [15, 60] (separate from width's [20, 80] range)."""
+    default = _speech_bubble_style({})
+    assert "height: 30%" in default
+    explicit = _speech_bubble_style({"bubble_height": 45})
+    assert "height: 45%" in explicit
+    clamped_high = _speech_bubble_style({"bubble_height": 99})
+    assert "height: 60%" in clamped_high
+    clamped_low = _speech_bubble_style({"bubble_height": 5})
+    assert "height: 15%" in clamped_low
+
+
+def test_speech_bubble_finding_a_anchors_now_emit_correct_positions() -> None:
+    """Finding A added 3 new edge-midpoint anchors
+    (top-center, middle-left, middle-right) to the frontend.
+    Bug 1 closes the parallel gap in the backend's positions
+    dict: those 3 anchors must now emit their distinct CSS
+    rather than silently falling back to bottom-center."""
+    top_center = _speech_bubble_style({"anchor_position": "top-center"})
+    assert "top: 16pt" in top_center
+    assert "left: 50%" in top_center
+    assert "translateX(-50%)" in top_center
+
+    middle_left = _speech_bubble_style({"anchor_position": "middle-left"})
+    assert "top: 50%" in middle_left
+    assert "left: 16pt" in middle_left
+    assert "translateY(-50%)" in middle_left
+
+    middle_right = _speech_bubble_style({"anchor_position": "middle-right"})
+    assert "top: 50%" in middle_right
+    assert "right: 16pt" in middle_right
+    assert "translateY(-50%)" in middle_right
 
 
 def test_speech_bubble_unknown_anchor_falls_back_to_bottom_center() -> None:

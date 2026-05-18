@@ -189,16 +189,36 @@ function speechBubbleInlineStyle(
         typeof config?.opacity === "number" ? config.opacity : 1
     const opacity = Math.max(0.3, Math.min(1, rawOpacity))
     const bg = `rgba(255, 255, 255, ${opacity})`
-    // Session 4c refinement: bubble-size slider. Default 40% matches
-    // the Session 4 D2a width; clamped to [20, 60].
-    const rawSize =
-        typeof config?.size === "number" ? config.size : 40
-    const sizePct = Math.max(20, Math.min(60, rawSize))
-    const width = `${sizePct}%`
+    // PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
+    // bubble_width replaces ``size`` as the canonical width key,
+    // bubble_height is the new height knob. Per the user's
+    // 2026-05-17 Tier-Property Pre-Inspection adjustment + the
+    // 2026-05-18 smoke direct-action: a single ``size`` slider is
+    // insufficient — bubbles need independent width + height
+    // for picture-book + comic-style use. Backward-compat: read
+    // ``size`` as legacy fallback for ``bubble_width`` when the
+    // new key is absent; on next write the dispatcher writes
+    // ``bubble_width`` so legacy ``size`` fades out without a
+    // backfill. ``bubble_height`` has no legacy fallback (new key);
+    // defaults to 30%.
+    const rawWidth =
+        typeof config?.bubble_width === "number"
+            ? config.bubble_width
+            : typeof config?.size === "number"
+              ? config.size
+              : 40
+    const widthPct = Math.max(20, Math.min(80, rawWidth))
+    const width = `${widthPct}%`
+    const rawHeight =
+        typeof config?.bubble_height === "number"
+            ? config.bubble_height
+            : 30
+    const heightPct = Math.max(15, Math.min(60, rawHeight))
+    const height = `${heightPct}%`
     const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
     switch (anchor) {
         case "top-left":
-            return {...reset, top: 16, left: 16, transform: "none", background: bg, width}
+            return {...reset, top: 16, left: 16, transform: "none", background: bg, width, height}
         case "top-center":
             // Session 4c-B-1 manual smoke Finding A: new preset.
             return {
@@ -208,9 +228,10 @@ function speechBubbleInlineStyle(
                 transform: "translateX(-50%)",
                 background: bg,
                 width,
+                height,
             }
         case "top-right":
-            return {...reset, top: 16, right: 16, transform: "none", background: bg, width}
+            return {...reset, top: 16, right: 16, transform: "none", background: bg, width, height}
         case "middle-left":
             // Session 4c-B-1 manual smoke Finding A: new preset.
             return {
@@ -220,6 +241,7 @@ function speechBubbleInlineStyle(
                 transform: "translateY(-50%)",
                 background: bg,
                 width,
+                height,
             }
         case "middle-right":
             // Session 4c-B-1 manual smoke Finding A: new preset.
@@ -230,11 +252,12 @@ function speechBubbleInlineStyle(
                 transform: "translateY(-50%)",
                 background: bg,
                 width,
+                height,
             }
         case "bottom-left":
-            return {...reset, bottom: 16, left: 16, transform: "none", background: bg, width}
+            return {...reset, bottom: 16, left: 16, transform: "none", background: bg, width, height}
         case "bottom-right":
-            return {...reset, bottom: 16, right: 16, transform: "none", background: bg, width}
+            return {...reset, bottom: 16, right: 16, transform: "none", background: bg, width, height}
         case "center":
             return {
                 ...reset,
@@ -243,6 +266,7 @@ function speechBubbleInlineStyle(
                 transform: "translate(-50%, -50%)",
                 background: bg,
                 width,
+                height,
             }
         case "bottom-center":
         default:
@@ -253,6 +277,7 @@ function speechBubbleInlineStyle(
                 transform: "translateX(-50%)",
                 background: bg,
                 width,
+                height,
             }
     }
 }

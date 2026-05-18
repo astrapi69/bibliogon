@@ -2058,6 +2058,8 @@ ui:
         anchor: "Position"
         opacity: "Opacity"
         size: "Size"
+        width: "Largura"
+        height: "Altura"
         anchor_position:
           top_left: "Top left"
           top_center: "Top center"

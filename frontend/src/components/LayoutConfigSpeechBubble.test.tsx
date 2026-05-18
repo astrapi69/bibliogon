@@ -214,57 +214,76 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
     })
 })
 
-// --- Session 4c refinement: bubble-size slider ---
+// --- PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18) ---
+//
+// bubble_width + bubble_height replace the legacy size knob.
+// Backward-compat: a config carrying only `size` (no bubble_width)
+// renders + clamps as the width.
 
-describe("LayoutConfigSpeechBubble - size slider", () => {
-    it("renders the size slider + value display", () => {
+describe("LayoutConfigSpeechBubble - width slider (Bug 1)", () => {
+    it("renders the width slider + value display", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
         const slider = screen.getByTestId(
-            "speech-bubble-size-slider",
+            "speech-bubble-width-slider",
         ) as HTMLInputElement
         expect(slider.type).toBe("range")
         expect(slider.min).toBe("20")
-        expect(slider.max).toBe("60")
+        expect(slider.max).toBe("80")
         expect(slider.step).toBe("5")
-        expect(screen.getByTestId("speech-bubble-size-value")).toBeTruthy()
+        expect(screen.getByTestId("speech-bubble-width-value")).toBeTruthy()
     })
 
-    it("default size is 40% when config is NULL", () => {
+    it("default width is 40% when config is NULL", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
         expect(
-            screen.getByTestId("speech-bubble-size-value").textContent,
+            screen.getByTestId("speech-bubble-width-value").textContent,
         ).toBe("40%")
     })
 
-    it("dragging the size slider fires onChange DEBOUNCED (300ms)", () => {
+    it("dragging the width slider fires onChange DEBOUNCED (300ms) with bubble_width key", () => {
         const onChange = vi.fn()
         render(
             <LayoutConfigSpeechBubble config={null} onChange={onChange} />,
         )
         const slider = screen.getByTestId(
-            "speech-bubble-size-slider",
+            "speech-bubble-width-slider",
         ) as HTMLInputElement
-        fireEvent.change(slider, {target: {value: "30"}})
+        fireEvent.change(slider, {target: {value: "70"}})
         expect(onChange).not.toHaveBeenCalled()
         act(() => {
             vi.advanceTimersByTime(300)
         })
-        expect(onChange).toHaveBeenCalledWith({size: 30})
+        expect(onChange).toHaveBeenCalledWith({bubble_width: 70})
     })
 
-    it("clamps out-of-range size into [20, 60] for display", () => {
+    it("clamps out-of-range width into [20, 80] for display", () => {
         render(
             <LayoutConfigSpeechBubble
-                config={{size: 90}}
+                config={{bubble_width: 100}}
                 onChange={vi.fn()}
             />,
         )
         expect(
-            screen.getByTestId("speech-bubble-size-value").textContent,
-        ).toBe("60%")
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("80%")
     })
 
-    it("pre-filled size echoes the persisted value", () => {
+    it("pre-filled bubble_width echoes the persisted value", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubble_width: 55}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("55%")
+    })
+
+    it("legacy `size` key falls through as the width when bubble_width is absent (backward-compat)", () => {
+        // Pre-Bug-1 pages persist `size`. The width slider must
+        // read it as the legacy width so existing bubbles don't
+        // visually pop on the first open after the upgrade.
         render(
             <LayoutConfigSpeechBubble
                 config={{size: 50}}
@@ -272,7 +291,80 @@ describe("LayoutConfigSpeechBubble - size slider", () => {
             />,
         )
         expect(
-            screen.getByTestId("speech-bubble-size-value").textContent,
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("50%")
+    })
+
+    it("bubble_width takes precedence over legacy `size` when both are set", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubble_width: 70, size: 30}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("70%")
+    })
+})
+
+describe("LayoutConfigSpeechBubble - height slider (Bug 1)", () => {
+    it("renders the height slider + value display", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        const slider = screen.getByTestId(
+            "speech-bubble-height-slider",
+        ) as HTMLInputElement
+        expect(slider.type).toBe("range")
+        expect(slider.min).toBe("15")
+        expect(slider.max).toBe("60")
+        expect(slider.step).toBe("5")
+        expect(screen.getByTestId("speech-bubble-height-value")).toBeTruthy()
+    })
+
+    it("default height is 30% when config is NULL", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        expect(
+            screen.getByTestId("speech-bubble-height-value").textContent,
+        ).toBe("30%")
+    })
+
+    it("dragging the height slider fires onChange DEBOUNCED (300ms) with bubble_height key", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigSpeechBubble config={null} onChange={onChange} />,
+        )
+        const slider = screen.getByTestId(
+            "speech-bubble-height-slider",
+        ) as HTMLInputElement
+        fireEvent.change(slider, {target: {value: "45"}})
+        expect(onChange).not.toHaveBeenCalled()
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({bubble_height: 45})
+    })
+
+    it("clamps out-of-range height into [15, 60] for display", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubble_height: 99}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-height-value").textContent,
+        ).toBe("60%")
+    })
+
+    it("pre-filled bubble_height echoes the persisted value", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubble_height: 50}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-height-value").textContent,
         ).toBe("50%")
     })
 })

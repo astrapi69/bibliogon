@@ -923,7 +923,7 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
         ).toContain("width: 40%")
     })
 
-    it("size=30 produces width:30% in the inline style", () => {
+    it("legacy `size`=30 falls through as width:30% (backward-compat for pre-Bug-1 pages)", () => {
         render(
             <PageCanvas
                 page={makePage({
@@ -939,7 +939,10 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
         ).toContain("width: 30%")
     })
 
-    it("size out-of-range clamps to [20, 60] in the inline style", () => {
+    // Bug 1 (2026-05-18): bubble_width clamp expanded to [20, 80]
+    // (was [20, 60] when `size` was the only width knob). Legacy
+    // size values out of the new range clamp to 80% (was 60%).
+    it("width out-of-range clamps to [20, 80] in the inline style", () => {
         render(
             <PageCanvas
                 page={makePage({
@@ -952,7 +955,70 @@ describe("PageCanvas - speech_bubble layout_config integration (Session 4c Commi
         )
         expect(
             screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
-        ).toContain("width: 60%")
+        ).toContain("width: 80%")
+    })
+
+    // --- Bug 1: bubble_width + bubble_height (2026-05-18) ---
+
+    it("bubble_width takes precedence over legacy `size` when both present", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubble_width: 65, size: 30},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("width: 65%")
+    })
+
+    it("default height is 30% when layout_config has no bubble_height key", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("height: 30%")
+    })
+
+    it("bubble_height=45 produces height:45% in the inline style", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubble_height: 45},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("height: 45%")
+    })
+
+    it("bubble_height out-of-range clamps to [15, 60] in the inline style", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubble_height: 99},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style"),
+        ).toContain("height: 60%")
     })
 
     it("non-speech-bubble layouts: speech-bubble inline style does NOT apply", () => {

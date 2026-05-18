@@ -2050,6 +2050,8 @@ ui:
         anchor: "Position"
         opacity: "Deckkraft"
         size: "Größe"
+        width: "Breite"
+        height: "Höhe"
         anchor_position:
           top_left: "Oben links"
           top_center: "Oben mittig"

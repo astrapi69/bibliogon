@@ -236,30 +236,61 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         opacity = max(0.3, min(1.0, float(opacity_raw)))
     else:
         opacity = 1.0
-    size_raw = config.get("size")
-    if isinstance(size_raw, (int, float)):
-        size_pct = max(20, min(60, int(size_raw)))
+    # PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
+    # bubble_width replaces legacy ``size`` as the canonical width
+    # key; bubble_height is the new height knob. Backward-compat:
+    # read ``size`` as a fallback for bubble_width when the new
+    # key is absent. bubble_height has no legacy fallback (new
+    # property; default 30).
+    width_raw = config.get("bubble_width")
+    if not isinstance(width_raw, (int, float)):
+        width_raw = config.get("size")
+    if isinstance(width_raw, (int, float)):
+        width_pct = max(20, min(80, int(width_raw)))
     else:
-        size_pct = 40
+        width_pct = 40
+    height_raw = config.get("bubble_height")
+    if isinstance(height_raw, (int, float)):
+        height_pct = max(15, min(60, int(height_raw)))
+    else:
+        height_pct = 30
 
     bg = f"rgba(255, 255, 255, {opacity})"
-    width = f"width: {size_pct}%;"
+    width = f"width: {width_pct}%;"
+    height = f"height: {height_pct}%;"
 
     reset = "top: auto; right: auto; bottom: auto; left: auto;"
+    # PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18): added
+    # the 3 edge-midpoint positions (top-center, middle-left,
+    # middle-right) that Finding A's frontend shipped but the
+    # backend silently kept missing — would have rendered as
+    # bottom-center in the PDF for those 3 anchors. Mirrors
+    # the frontend switch in PageCanvas.tsx::speechBubbleInlineStyle.
     positions = {
         "top-left": "top: 16pt; left: 16pt; transform: none;",
+        "top-center": (
+            "top: 16pt; left: 50%; transform: translateX(-50%);"
+        ),
         "top-right": "top: 16pt; right: 16pt; transform: none;",
-        "bottom-left": "bottom: 16pt; left: 16pt; transform: none;",
-        "bottom-right": "bottom: 16pt; right: 16pt; transform: none;",
+        "middle-left": (
+            "top: 50%; left: 16pt; transform: translateY(-50%);"
+        ),
         "center": (
             "top: 50%; left: 50%; transform: translate(-50%, -50%);"
         ),
+        "middle-right": (
+            "top: 50%; right: 16pt; transform: translateY(-50%);"
+        ),
+        "bottom-left": "bottom: 16pt; left: 16pt; transform: none;",
         "bottom-center": (
             "bottom: 16pt; left: 50%; transform: translateX(-50%);"
         ),
+        "bottom-right": (
+            "bottom: 16pt; right: 16pt; transform: none;"
+        ),
     }
     pos = positions.get(anchor, positions["bottom-center"])
-    return f"{reset} {pos} background: {bg}; {width}"
+    return f"{reset} {pos} background: {bg}; {width} {height}"
 
 
 def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str, str]:
