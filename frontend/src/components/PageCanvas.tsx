@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react"
 import type {JSONContent} from "@tiptap/core"
+import type {Editor} from "@tiptap/react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
@@ -76,6 +77,17 @@ interface Props {
     page: Page
     bookId: string
     onUpdate: (updates: PageUpdate) => Promise<void> | void
+    /** PB-PHASE4 Session 4c-B-1 Commit 3: D6-C properties-pane
+     *  Toolbar placement. PageCanvas mounts the TipTap editor
+     *  inline (in the page-region); the Toolbar mounts SEPARATELY
+     *  in PageEditor's properties pane. To wire the two, PageCanvas
+     *  hands the editor instance UP via this callback. ``null``
+     *  signals "active layout is a Tier-Property layout — no
+     *  editor instance available" (so the parent unmounts the
+     *  Toolbar). Caller MUST treat the editor as scoped to the
+     *  current page; on page-switch the parent clears its own
+     *  reference + re-receives the new page's editor. */
+    onEditorReady?: (editor: Editor | null) => void
 }
 
 const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif"
@@ -153,7 +165,7 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     text_only: styles.canvasLayoutTextOnly,
 }
 
-export default function PageCanvas({page, bookId, onUpdate}: Props) {
+export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {
     const {t} = useI18n()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
@@ -246,6 +258,21 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
         },
         [persistTextJsonDebounced],
     )
+
+    /**
+     * PB-PHASE4 Session 4c-B-1 Commit 3: signal "no editor"
+     * to the parent when the active layout is a Tier-Property
+     * layout (so the properties-pane Toolbar unmounts). For
+     * TipTap layouts, the RichTextEditor below fires
+     * onEditorReady with the actual instance directly to the
+     * parent through the prop pass-through.
+     */
+    useEffect(() => {
+        if (!onEditorReady) return
+        if (!isTipTapLayout(page.layout as PageLayout)) {
+            onEditorReady(null)
+        }
+    }, [page.layout, onEditorReady])
 
     const hasImage = Boolean(page.image_asset_id)
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
@@ -452,6 +479,7 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                         <RichTextEditor
                             content={textJson}
                             onChange={handleRichTextChange}
+                            onEditorReady={onEditorReady}
                             placeholder={t(
                                 "ui.page_editor.text_placeholder",
                                 "Write the page text here...",

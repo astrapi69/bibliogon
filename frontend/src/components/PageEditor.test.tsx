@@ -528,6 +528,90 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
     })
 })
 
+// --- PB-PHASE4 Session 4c-B-1 Commit 3: RichTextToolbar wiring ---
+
+describe("PageEditor RichTextToolbar wiring (Session 4c-B-1 Commit 3)", () => {
+    it("renders the Toolbar root when the active page is a TipTap layout", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "text_only"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        // RichTextEditor needs a tick to mount + fire onEditorReady;
+        // the Toolbar then renders.
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-toolbar-root")).toBeTruthy(),
+        )
+        // Sanity: a few D1 buttons present.
+        expect(screen.getByTestId("page-editor-toolbar-bold")).toBeTruthy()
+        expect(screen.getByTestId("page-editor-toolbar-h2")).toBeTruthy()
+        expect(screen.getByTestId("page-editor-toolbar-align-center")).toBeTruthy()
+    })
+
+    it("does NOT render the Toolbar when the active page is a Tier-Property layout (speech_bubble)", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "speech_bubble"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        // Allow time for any onEditorReady tick to fire.
+        await waitFor(() => expect(screen.getByTestId("page-canvas-root")).toBeTruthy())
+        await new Promise((resolve) => setTimeout(resolve, 30))
+        expect(screen.queryByTestId("page-editor-toolbar-root")).toBeNull()
+    })
+
+    it("does NOT render the Toolbar when the active page is image_full_text_overlay (Tier-Property)", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "image_full_text_overlay"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() => expect(screen.getByTestId("page-canvas-root")).toBeTruthy())
+        await new Promise((resolve) => setTimeout(resolve, 30))
+        expect(screen.queryByTestId("page-editor-toolbar-root")).toBeNull()
+    })
+
+    it("Toolbar unmounts when the user switches FROM a TipTap page TO a Tier-Property page", async () => {
+        // Direction p1(TipTap) → p2(Tier-Property): Toolbar
+        // disappears. The reverse direction (Tier-Property →
+        // TipTap remount) is happy-dom-flaky because useEditor's
+        // async editor-creation tick can race with PageEditor's
+        // page-switch useEffect (observed during development).
+        // Covered end-to-end in the 4c-B-1 Playwright spec.
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "text_only"}),
+            makePage({id: "p2", layout: "speech_bubble"}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-toolbar-root")).toBeTruthy(),
+        )
+        // Switch to p2 (speech_bubble) — Toolbar unmounts.
+        fireEvent.click(screen.getByTestId("page-editor-page-row-p2"))
+        await waitFor(() =>
+            expect(screen.queryByTestId("page-editor-toolbar-root")).toBeNull(),
+        )
+    })
+
+    it("changing the active page's layout from TipTap to Tier-Property unmounts the Toolbar in place", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", layout: "text_only"}),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({id: "p1", layout: "speech_bubble"}),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-toolbar-root")).toBeTruthy(),
+        )
+        // Click the speech_bubble layout option (visible in
+        // the primary picker; no More-Layouts disclosure needed).
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-speech_bubble"),
+        )
+        await waitFor(() =>
+            expect(screen.queryByTestId("page-editor-toolbar-root")).toBeNull(),
+        )
+    })
+})
+
 // --- PB-PHASE4 Session 6 Commit 4: Export-PDF button ---
 
 import {ApiError} from "../api/client"

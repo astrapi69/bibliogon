@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
+import type {Editor} from "@tiptap/react"
 import {ChevronLeft, Download, FileText, Loader2} from "lucide-react"
 import {api, ApiError, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
@@ -7,6 +8,7 @@ import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas from "./PageCanvas"
+import RichTextToolbar from "./RichTextToolbar"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -155,6 +157,26 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
      * 404 (book missing), or 500 (WeasyPrint or generator error);
      * ApiError carries `.detail` for each.
      */
+    /**
+     * PB-PHASE4 Session 4c-B-1 Commit 3: D6-C properties-pane
+     * Toolbar. PageCanvas mounts the TipTap editor inline in the
+     * page region; this state holds the editor instance so the
+     * Toolbar (in the properties pane) can wire its buttons to
+     * the same editor. PageCanvas signals ``null`` for Tier-Property
+     * layouts (no editor instance available) — the Toolbar then
+     * renders nothing.
+     *
+     * Cleared on activePage.id change: the old page's editor
+     * instance unmounts with its PageCanvas; the new page's
+     * PageCanvas calls onEditorReady once its editor mounts.
+     */
+    const [tipTapEditor, setTipTapEditor] = useState<Editor | null>(null)
+    useEffect(() => {
+        // Page switched — clear the stale editor reference until
+        // the new page's RichTextEditor mounts + calls back.
+        setTipTapEditor(null)
+    }, [activePageId])
+
     const [exporting, setExporting] = useState(false)
     const handleExportPdf = useCallback(async () => {
         if (exporting) return
@@ -277,6 +299,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                             page={activePage}
                             bookId={bookId}
                             onUpdate={handleUpdateActivePage}
+                            onEditorReady={setTipTapEditor}
                         />
                     ) : (
                         !loadError && (
@@ -306,6 +329,15 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                             <LayoutConfig
                                 page={activePage}
                                 onChange={handleUpdateLayoutConfig}
+                            />
+                            {/* PB-PHASE4 Session 4c-B-1 Commit 3:
+                                D6-C properties-pane Toolbar. Renders
+                                nothing when ``tipTapEditor`` is null
+                                (Tier-Property layouts; PageCanvas
+                                signals null via onEditorReady). */}
+                            <RichTextToolbar
+                                editor={tipTapEditor}
+                                testidNamespace="page-editor-toolbar"
                             />
                         </>
                     ) : (
