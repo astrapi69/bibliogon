@@ -849,3 +849,410 @@ def test_build_html_includes_font_face_block() -> None:
     # Order: the first @font-face rule precedes the @page rule
     # (the dynamic block is prepended ahead of _BASE_CSS).
     assert html.index("@font-face {") < html.index("@page")
+
+
+# --- PB-PHASE4 Session 4c-B-1 Finding G4: TipTap walker ---
+#
+# Closes PICTURE-BOOK-PDF-TIPTAP-RENDER-01. _render_tiptap_doc
+# walks a TipTap JSON doc + emits structured HTML preserving
+# the D1 MVP marks (bold/italic/underline/fontFamily) +
+# alignment + headings 1-3 + lists. Plain-string text_content
+# (Tier-Property layouts) passes through as <p>{escaped}</p>.
+
+
+def _make_tiptap_doc(*paragraphs: dict[str, Any]) -> str:
+    """Build a serialized TipTap doc JSON. Each ``paragraphs``
+    arg is a fully-formed paragraph or heading node dict."""
+    return _json.dumps({"type": "doc", "content": list(paragraphs)})
+
+
+def test_render_tiptap_doc_none_returns_empty_string() -> None:
+    """D11 backward-compat: an empty/None text_content renders
+    no content at all (not even an empty <p>)."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    assert _render_tiptap_doc(None) == ""
+    assert _render_tiptap_doc("") == ""
+
+
+def test_render_tiptap_doc_plain_string_wraps_in_single_p() -> None:
+    """Tier-Property layouts store text_content as a plain
+    string. The walker must wrap it in a single <p> with the
+    text escaped — same shape as the pre-Finding-G output."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    assert _render_tiptap_doc("Hello world") == "<p>Hello world</p>"
+    # HTML-special chars must be escaped.
+    assert (
+        _render_tiptap_doc("a < b & c") == "<p>a &lt; b &amp; c</p>"
+    )
+
+
+def test_render_tiptap_doc_malformed_json_falls_back_to_plain() -> None:
+    """A text_content value that starts with '{' but is NOT
+    valid JSON falls back to the plain-string wrap. Defensive
+    path; should never happen in practice but matches the
+    pre-Finding-G defensive read behavior."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    assert _render_tiptap_doc("{not valid json") == (
+        "<p>{not valid json</p>"
+    )
+
+
+def test_render_tiptap_doc_basic_paragraph() -> None:
+    """A minimal TipTap doc with one paragraph + plain text
+    renders as a single <p>."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [{"type": "text", "text": "Hello"}],
+    })
+    assert _render_tiptap_doc(doc) == "<p>Hello</p>"
+
+
+def test_render_tiptap_doc_multiple_paragraphs() -> None:
+    """Multiple top-level paragraphs render as separate <p>
+    elements. This is a structural improvement over the
+    pre-Finding-G path that flattened everything into one
+    paragraph joined by newlines."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc(
+        {
+            "type": "paragraph",
+            "content": [{"type": "text", "text": "First"}],
+        },
+        {
+            "type": "paragraph",
+            "content": [{"type": "text", "text": "Second"}],
+        },
+    )
+    assert _render_tiptap_doc(doc) == "<p>First</p><p>Second</p>"
+
+
+def test_render_tiptap_doc_bold_mark() -> None:
+    """Text with a ``bold`` mark wraps in ``<strong>``."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "loud",
+                "marks": [{"type": "bold"}],
+            }
+        ],
+    })
+    assert _render_tiptap_doc(doc) == "<p><strong>loud</strong></p>"
+
+
+def test_render_tiptap_doc_italic_mark() -> None:
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "leaning",
+                "marks": [{"type": "italic"}],
+            }
+        ],
+    })
+    assert _render_tiptap_doc(doc) == "<p><em>leaning</em></p>"
+
+
+def test_render_tiptap_doc_underline_mark() -> None:
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "lined",
+                "marks": [{"type": "underline"}],
+            }
+        ],
+    })
+    assert _render_tiptap_doc(doc) == "<p><u>lined</u></p>"
+
+
+def test_render_tiptap_doc_combined_marks_stable_order() -> None:
+    """Multiple marks on the same text node nest in a stable
+    order: bold (outer) → italic → underline → fontFamily
+    (inner). Test asserts the exact nesting so a refactor
+    that flips the order is caught."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "all",
+                "marks": [
+                    {"type": "bold"},
+                    {"type": "italic"},
+                    {"type": "underline"},
+                    {
+                        "type": "textStyle",
+                        "attrs": {"fontFamily": "Andika"},
+                    },
+                ],
+            }
+        ],
+    })
+    assert _render_tiptap_doc(doc) == (
+        "<p><strong><em><u>"
+        '<span style="font-family: \'Andika\'">all</span>'
+        "</u></em></strong></p>"
+    )
+
+
+def test_render_tiptap_doc_known_font_emits_span() -> None:
+    """Every one of the 5 catalog fonts wraps in a
+    font-family span. Pins the contract that the walker
+    honors the full D8 set."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    for font_id in [
+        "Atkinson Hyperlegible",
+        "Andika",
+        "Comic Neue",
+        "Lexend",
+        "OpenDyslexic",
+    ]:
+        doc = _make_tiptap_doc({
+            "type": "paragraph",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "x",
+                    "marks": [
+                        {
+                            "type": "textStyle",
+                            "attrs": {"fontFamily": font_id},
+                        }
+                    ],
+                }
+            ],
+        })
+        rendered = _render_tiptap_doc(doc)
+        assert (
+            f'<span style="font-family: \'{font_id}\'">x</span>'
+            in rendered
+        )
+
+
+def test_render_tiptap_doc_unknown_font_falls_through_silently() -> None:
+    """Unknown fontFamily values (e.g. injected via malformed
+    JSON or a future TipTap upgrade) are silently dropped.
+    D11 backward-compat: the rendered HTML carries no
+    font-family span; the html, body default Atkinson
+    Hyperlegible takes over."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "x",
+                "marks": [
+                    {
+                        "type": "textStyle",
+                        "attrs": {"fontFamily": "Helvetica"},
+                    }
+                ],
+            }
+        ],
+    })
+    rendered = _render_tiptap_doc(doc)
+    assert "font-family" not in rendered
+    assert rendered == "<p>x</p>"
+
+
+def test_render_tiptap_doc_heading_levels() -> None:
+    """D1 MVP supports heading levels 1-3 via the toolbar.
+    The walker emits <h1>/<h2>/<h3> for those. Levels 4-6
+    pass through (TipTap supports them via the API even if
+    the toolbar doesn't expose them); levels out of range
+    clamp."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    for level in [1, 2, 3, 4, 5, 6]:
+        doc = _make_tiptap_doc({
+            "type": "heading",
+            "attrs": {"level": level},
+            "content": [{"type": "text", "text": "T"}],
+        })
+        assert _render_tiptap_doc(doc) == f"<h{level}>T</h{level}>"
+
+
+def test_render_tiptap_doc_heading_level_out_of_range_clamps() -> None:
+    """Level 0 clamps up to 1; level 99 clamps down to 6.
+    Defensive against malformed input + future upstream changes."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc_low = _make_tiptap_doc({
+        "type": "heading",
+        "attrs": {"level": 0},
+        "content": [{"type": "text", "text": "T"}],
+    })
+    assert _render_tiptap_doc(doc_low) == "<h1>T</h1>"
+    doc_high = _make_tiptap_doc({
+        "type": "heading",
+        "attrs": {"level": 99},
+        "content": [{"type": "text", "text": "T"}],
+    })
+    assert _render_tiptap_doc(doc_high) == "<h6>T</h6>"
+
+
+def test_render_tiptap_doc_text_align() -> None:
+    """Paragraph + heading nodes carry a ``textAlign`` attr that
+    the walker emits as ``style="text-align: ..."``. Values
+    outside the 4-value enum are dropped (defensive)."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    for align in ["left", "center", "right", "justify"]:
+        doc = _make_tiptap_doc({
+            "type": "paragraph",
+            "attrs": {"textAlign": align},
+            "content": [{"type": "text", "text": "T"}],
+        })
+        assert (
+            _render_tiptap_doc(doc)
+            == f'<p style="text-align: {align}">T</p>'
+        )
+
+    # Unknown value silently dropped.
+    doc_bogus = _make_tiptap_doc({
+        "type": "paragraph",
+        "attrs": {"textAlign": "diagonal"},
+        "content": [{"type": "text", "text": "T"}],
+    })
+    assert _render_tiptap_doc(doc_bogus) == "<p>T</p>"
+
+
+def test_render_tiptap_doc_lists() -> None:
+    """Bullet + ordered lists with list items."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc(
+        {
+            "type": "bulletList",
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {"type": "text", "text": "a"}
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {"type": "text", "text": "b"}
+                            ],
+                        }
+                    ],
+                },
+            ],
+        },
+    )
+    assert _render_tiptap_doc(doc) == (
+        "<ul>"
+        "<li><p>a</p></li>"
+        "<li><p>b</p></li>"
+        "</ul>"
+    )
+
+
+def test_render_tiptap_doc_escapes_html_special_chars() -> None:
+    """User text containing HTML special chars (``<``, ``>``,
+    ``&``, etc.) must be escaped before insertion. Defensive
+    against any text-injection class issue at the PDF render
+    layer."""
+    from bibliogon_export.picture_book_pdf import _render_tiptap_doc
+
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {"type": "text", "text": "a < b & <script>x</script>"}
+        ],
+    })
+    rendered = _render_tiptap_doc(doc)
+    assert "<script>" not in rendered
+    assert "&lt;script&gt;" in rendered
+    assert "&amp;" in rendered
+
+
+def test_render_page_uses_tiptap_walker_for_json_text_content() -> None:
+    """End-to-end at the _render_page level: a TipTap-shaped
+    text_content with bold + a known font renders inside the
+    region-text div as proper HTML. Pins the integration of
+    _render_page → _render_tiptap_doc."""
+    doc = _make_tiptap_doc({
+        "type": "paragraph",
+        "content": [
+            {
+                "type": "text",
+                "text": "Hello",
+                "marks": [
+                    {"type": "bold"},
+                    {
+                        "type": "textStyle",
+                        "attrs": {"fontFamily": "Comic Neue"},
+                    },
+                ],
+            }
+        ],
+    })
+    page = {
+        "id": "p1",
+        "position": 1,
+        "layout": "image_top_text_bottom",
+        "text_content": doc,
+        "image_asset_id": None,
+        "layout_config": None,
+    }
+    html = _render_page(page, {})
+    # The walker output sits inside the region-text div.
+    assert (
+        '<div class="region region-text"'
+        in html
+    )
+    assert "<strong>" in html
+    assert '<span style="font-family: \'Comic Neue\'">Hello</span>' in html
+    # And NOT the raw JSON.
+    assert '"type":"doc"' not in html
+
+
+def test_render_page_tier_property_layout_plain_text_unchanged() -> None:
+    """Tier-Property layouts (speech_bubble +
+    image_full_text_overlay) store text_content as a plain
+    string. The walker preserves the pre-Finding-G shape:
+    ``<p>{escaped}</p>``. Pins backward-compat for those
+    layouts."""
+    page = {
+        "id": "p1",
+        "position": 1,
+        "layout": "speech_bubble",
+        "text_content": "Bubble & text!",
+        "image_asset_id": None,
+        "layout_config": None,
+    }
+    html = _render_page(page, {})
+    # Exact match for the text-bearing fragment.
+    assert "<p>Bubble &amp; text!</p>" in html

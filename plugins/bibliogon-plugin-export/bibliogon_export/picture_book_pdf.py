@@ -37,7 +37,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from bibliogon_export.picture_book_fonts import font_face_css
+from bibliogon_export.picture_book_fonts import font_face_css, is_known_font
 
 # WeasyPrint is imported lazily inside generate_picture_book_pdf
 # so the rest of the plugin (chapter-based pipeline) stays
@@ -390,6 +390,207 @@ def _extract_plain_text(text_content: str | None) -> str:
     return "".join(pieces).rstrip("\n")
 
 
+def _render_tiptap_doc(text_content: str | None) -> str:
+    """Render a ``page.text_content`` value as printable HTML.
+
+    PB-PHASE4 Session 4c-B-1 Finding G4 (closes
+    ``PICTURE-BOOK-PDF-TIPTAP-RENDER-01``). Replaces the bare
+    ``escape(_extract_plain_text(...))`` path with a proper
+    TipTap walker that preserves the D1 MVP marks shipped in
+    Finding G1 + G2:
+
+    - ``textStyle`` mark with ``fontFamily`` attr → ``<span
+      style="font-family: ...">``. Only honors the 5 canonical
+      OFL font ids via :func:`is_known_font`; unknown values
+      fall through silently (defensive against malformed
+      marks reaching the renderer, e.g. from manual JSON edits
+      OR a future upstream-TipTap change).
+    - ``bold`` mark → ``<strong>``
+    - ``italic`` mark → ``<em>``
+    - ``underline`` mark → ``<u>``
+    - ``textAlign`` attr on ``paragraph`` / ``heading`` →
+      ``style="text-align: <value>"`` on the wrapping element.
+    - Heading level 1-3 (D1 MVP) → ``<h1>`` / ``<h2>`` / ``<h3>``.
+      Levels 4-6 fall back to ``<h6>`` (TipTap's max).
+    - ``bulletList`` → ``<ul>`` / ``orderedList`` → ``<ol>``.
+      ``listItem`` → ``<li>``. Nested lists are supported.
+
+    Three input shapes accepted (D11 backward-compat):
+
+    1. ``None`` or empty → empty string. Pages without text
+       render the region without children; the surrounding
+       ``<div class="region region-text">`` carries no
+       content.
+    2. Plain string (Tier-Property layouts:
+       speech_bubble + image_full_text_overlay store text as
+       a raw string) → wrapped in a single ``<p>``. Same
+       output as the pre-Finding-G ``<p>{escaped}</p>``
+       behavior.
+    3. JSON-serialized TipTap doc (TipTap layouts:
+       image_top_text_bottom + image_left_text_right +
+       text_only) → walked + emitted as proper structured
+       HTML with marks + alignment + headings + lists
+       preserved.
+
+    Mark precedence + nesting: the walker wraps mark tags in
+    a stable order from outer to inner — bold → italic →
+    underline → fontFamily span. Different orderings would
+    produce visually identical PDFs (HTML cascade is
+    commutative for these properties) but the stable order
+    keeps the rendered HTML diffable + the per-mark test
+    assertions deterministic.
+
+    Unknown node types degrade to a ``<div>`` with the
+    recursively-rendered children. Defensive: a future TipTap
+    upgrade introducing a new node type produces best-effort
+    output rather than dropping content silently.
+    """
+    if not text_content:
+        return ""
+
+    # Plain-string input (Tier-Property layouts + D11 legacy
+    # pages from before TipTap-rich layouts existed): wrap in
+    # a single <p> and escape. Matches the pre-Finding-G shape
+    # so existing pytest assertions on Tier-Property pages
+    # continue to hold.
+    stripped = text_content.lstrip()
+    if not stripped.startswith("{"):
+        return f"<p>{escape(text_content)}</p>"
+
+    try:
+        parsed = json.loads(text_content)
+    except (json.JSONDecodeError, TypeError):
+        return f"<p>{escape(text_content)}</p>"
+    if not isinstance(parsed, dict) or parsed.get("type") != "doc":
+        return f"<p>{escape(text_content)}</p>"
+
+    return _render_tiptap_node(parsed)
+
+
+def _render_tiptap_node(node: Any) -> str:
+    """Recursive walker. Top-level call is on the ``doc``
+    node; recursion descends into ``content`` arrays.
+
+    Returns the HTML for ``node`` + its descendants. Does NOT
+    escape — text nodes escape their own ``text`` field, and
+    structural tags emit fixed HTML without user input. Mark
+    wrappers also emit fixed tag names (``<strong>``, etc.).
+    """
+    if not isinstance(node, dict):
+        return ""
+    node_type = node.get("type", "")
+
+    # Text node: emit text + wrap in mark tags.
+    if node_type == "text":
+        text = node.get("text")
+        if not isinstance(text, str):
+            return ""
+        return _wrap_text_with_marks(text, node.get("marks") or [])
+
+    # Container: render children + wrap in appropriate tag.
+    children = node.get("content")
+    inner = (
+        "".join(_render_tiptap_node(c) for c in children)
+        if isinstance(children, list)
+        else ""
+    )
+
+    # Top-level doc: just emit inner (no wrapper tag — the
+    # caller's <div class="region-text"> is the container).
+    if node_type == "doc":
+        return inner
+
+    # Heading: clamp level into 1-6 + style with textAlign.
+    if node_type == "heading":
+        attrs = node.get("attrs") or {}
+        level_raw = attrs.get("level")
+        try:
+            level = int(level_raw) if level_raw is not None else 1
+        except (TypeError, ValueError):
+            level = 1
+        level = max(1, min(6, level))
+        align_attr = _text_align_attr(attrs.get("textAlign"))
+        return f"<h{level}{align_attr}>{inner}</h{level}>"
+
+    # Paragraph: textAlign attr → inline style.
+    if node_type == "paragraph":
+        attrs = node.get("attrs") or {}
+        align_attr = _text_align_attr(attrs.get("textAlign"))
+        return f"<p{align_attr}>{inner}</p>"
+
+    # Lists.
+    if node_type == "bulletList":
+        return f"<ul>{inner}</ul>"
+    if node_type == "orderedList":
+        return f"<ol>{inner}</ol>"
+    if node_type == "listItem":
+        return f"<li>{inner}</li>"
+
+    # Hard break (line break within a paragraph).
+    if node_type == "hardBreak":
+        return "<br />"
+
+    # Unknown / future node types: fall through with a <div>
+    # so content is preserved + future TipTap upgrades don't
+    # silently drop nodes. The <div> is a safer default than
+    # <p> because some new TipTap nodes (e.g. tables) carry
+    # block-level children that would be invalid inside <p>.
+    return f"<div>{inner}</div>"
+
+
+def _wrap_text_with_marks(text: str, marks: list[Any]) -> str:
+    """Wrap ``text`` in the appropriate mark tags.
+
+    Order: bold (outer) → italic → underline → fontFamily
+    (inner). Stable ordering keeps test assertions
+    deterministic + matches typical TipTap mark precedence.
+    """
+    escaped = escape(text)
+    has_bold = False
+    has_italic = False
+    has_underline = False
+    font_family: str | None = None
+
+    for mark in marks:
+        if not isinstance(mark, dict):
+            continue
+        mark_type = mark.get("type")
+        if mark_type == "bold":
+            has_bold = True
+        elif mark_type == "italic":
+            has_italic = True
+        elif mark_type == "underline":
+            has_underline = True
+        elif mark_type == "textStyle":
+            attrs = mark.get("attrs") or {}
+            candidate = attrs.get("fontFamily")
+            # Defensive: honor only known catalog ids. Unknown
+            # font ids (e.g. "Helvetica" injected via malformed
+            # JSON) fall through to the default render. D11
+            # backward-compat path.
+            if isinstance(candidate, str) and is_known_font(candidate):
+                font_family = candidate
+
+    inner = escaped
+    if font_family:
+        inner = f'<span style="font-family: \'{font_family}\'">{inner}</span>'
+    if has_underline:
+        inner = f"<u>{inner}</u>"
+    if has_italic:
+        inner = f"<em>{inner}</em>"
+    if has_bold:
+        inner = f"<strong>{inner}</strong>"
+    return inner
+
+
+def _text_align_attr(value: Any) -> str:
+    """Build the ``style="text-align: ..."`` attribute fragment,
+    or empty string when no alignment is set / value is invalid."""
+    if value not in {"left", "center", "right", "justify"}:
+        return ""
+    return f' style="text-align: {value}"'
+
+
 def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     """Render one picture-book page as an HTML <section>.
 
@@ -397,15 +598,20 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     layout, text_content, image_asset_id, layout_config.
     ``assets_map`` maps asset_id -> file:// URL for WeasyPrint.
 
-    PB-PHASE4 Session 4c-B-1 fix C: ``text_content`` for TipTap
-    layouts is a JSON-serialized TipTap doc. We defensively
-    extract plain text via ``_extract_plain_text`` so the PDF
-    emits the user's authored text instead of raw JSON. Proper
-    TipTap-to-HTML rendering (preserving bold/italic/headings)
-    lands as PICTURE-BOOK-PDF-TIPTAP-RENDER-01 (P3).
+    PB-PHASE4 Session 4c-B-1 Finding G4 (closes
+    ``PICTURE-BOOK-PDF-TIPTAP-RENDER-01``): ``text_content`` for
+    TipTap layouts is a JSON-serialized TipTap doc. We render it
+    via :func:`_render_tiptap_doc` which walks the doc + emits
+    proper structured HTML preserving bold/italic/underline +
+    headings 1-3 + lists + alignment + font-family marks (the
+    full D1 MVP mark set). Plain-string ``text_content`` (Tier-
+    Property layouts: speech_bubble + image_full_text_overlay)
+    pass through as ``<p>{escaped}</p>`` — same shape as the
+    pre-Finding-G output, so existing pytest assertions on
+    those layouts continue to hold.
     """
     layout = page.get("layout", "image_top_text_bottom")
-    text_content = escape(_extract_plain_text(page.get("text_content")))
+    text_html = _render_tiptap_doc(page.get("text_content"))
     image_asset_id = page.get("image_asset_id")
     config = page.get("layout_config")
     css_class = _layout_class(layout)
@@ -456,7 +662,7 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
         f'<section class="page {css_class}"{canvas_attr}>'
         f'{image_region_html}'
         f'<div class="region region-text"{text_attr}>'
-        f'<p>{text_content}</p>'
+        f'{text_html}'
         f'</div>'
         f'</section>'
     )

@@ -95,33 +95,20 @@ store.
   on existing books. Filed during the 4c-B-1 Fix C close-out
   (2026-05-19).
 
-- **PICTURE-BOOK-PDF-TIPTAP-RENDER-01** (P3): proper TipTap-
-  JSON-to-HTML walker in ``picture_book_pdf.py`` that preserves
-  bold/italic/underline marks + heading levels + lists in the
-  printed PDF. v0.35.0 ships defensive plain-text extraction
-  (PB-PHASE4 Session 4c-B-1 Fix C): the picture-book PDF
-  renders the extracted text but drops formatting. For the
-  picture-book MVP this is acceptable — picture-book typography
-  is primarily a Tier-Property concern (the Bubble + Overlay
-  Tier-Properties handle the styling 4c-B-2 ships), not an
-  inline-mark concern. Future refinement: walk the TipTap doc
-  + emit ``<strong>``/``<em>``/``<u>``/``<h1>``-``<h6>``/
-  ``<ul>``/``<ol>`` with text-align styles per node.
+- **PICTURE-BOOK-PDF-TIPTAP-RENDER-01**: ✅ CLOSED by
+  PB-PHASE4 Session 4c-B-1 Finding G4 (2026-05-19).
+  ``_render_tiptap_doc`` walks the TipTap JSON + emits
+  proper structured HTML preserving the D1 MVP marks
+  (bold / italic / underline / fontFamily) + alignment +
+  headings 1-3 + lists. 18 new pytest cases cover every
+  mark + alignment + heading-level + list shape + the
+  end-to-end ``_render_page`` integration.
 
-  Scope: 2-3 commits. New ``_render_tiptap_doc(doc) -> str``
-  helper in picture_book_pdf.py; per-mark + per-node
-  conversion table; pytest covering every D1 MVP shape
-  (Bold/Italic/Underline + H1-H3 + lists + align L/C/R);
-  visual smoke that a multi-mark page round-trips through
-  WeasyPrint to a PDF where the formatting renders.
-
-  Trigger: user feedback that picture-book PDFs need to
-  preserve TipTap formatting OR a contributor decides to
-  unify the in-editor + printed shapes.
-
-  Pairs with: ``PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01``
-  (sibling fix-track for the same Session 4c-B-1 Fix C
-  follow-up).
+  Was promoted into Finding G's scope as Risk-Path (a):
+  shipping the Font dropdown without a font-aware PDF
+  walker would have produced a perceived-broken bug-class
+  (D7=Option 1 WYSIWYG contract relies on the PDF
+  honoring marks).
 
 - **PICTURE-BOOK-PDF-KDP-FORMATS-01** (P3): extend picture-book
   PDF export beyond the v0.35.0 MVP 8.5×8.5 square. Audit
