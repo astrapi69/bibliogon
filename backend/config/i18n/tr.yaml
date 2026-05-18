@@ -1223,6 +1223,8 @@ ui:
     redo: "Yinele"
     search: "Bul ve degistir"
     focus_mode: "Odak modu"
+    fullscreen: "Tam ekran"
+    exit_fullscreen: "Tam ekrandan cik"
     style_check: "Stil kontrolu"
     spellcheck: "Yazim denetimi (LanguageTool)"
     tts_preview: "Dinle (TTS)"

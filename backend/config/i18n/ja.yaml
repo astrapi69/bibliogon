@@ -1187,6 +1187,8 @@ ui:
     redo: "やり直し"
     search: "検索と置換"
     focus_mode: "集中モード"
+    fullscreen: "全画面表示"
+    exit_fullscreen: "全画面表示を終了"
     style_check: "文体チェック"
     spellcheck: "スペルチェック (LanguageTool)"
     tts_preview: "試聴 (TTS)"

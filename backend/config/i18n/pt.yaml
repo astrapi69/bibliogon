@@ -1187,6 +1187,8 @@ ui:
     redo: "Refazer"
     search: "Buscar e substituir"
     focus_mode: "Modo foco"
+    fullscreen: "Ecra inteiro"
+    exit_fullscreen: "Sair do ecra inteiro"
     style_check: "Verificacao de estilo"
     spellcheck: "Verificacao ortografica (LanguageTool)"
     tts_preview: "Ouvir (TTS)"

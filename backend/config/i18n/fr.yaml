@@ -1223,6 +1223,8 @@ ui:
     redo: "Retablir"
     search: "Rechercher et remplacer"
     focus_mode: "Mode focus"
+    fullscreen: "Plein ecran"
+    exit_fullscreen: "Quitter le plein ecran"
     style_check: "Verification du style"
     spellcheck: "Correcteur orthographique (LanguageTool)"
     tts_preview: "Ecouter (TTS)"

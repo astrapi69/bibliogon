@@ -1192,6 +1192,8 @@ ui:
     redo: "Wiederholen"
     search: "Suchen & Ersetzen"
     focus_mode: "Fokus-Modus"
+    fullscreen: "Vollbild"
+    exit_fullscreen: "Vollbild verlassen"
     style_check: "Stilprüfung"
     spellcheck: "Rechtschreibprüfung (LanguageTool)"
     tts_preview: "Vorhören (TTS)"

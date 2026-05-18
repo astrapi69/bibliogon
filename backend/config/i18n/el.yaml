@@ -1187,6 +1187,8 @@ ui:
     redo: "Επανάληψη"
     search: "Αναζήτηση και αντικατάσταση"
     focus_mode: "Λειτουργία εστίασης"
+    fullscreen: "Πλήρης οθόνη"
+    exit_fullscreen: "Έξοδος από πλήρη οθόνη"
     style_check: "Έλεγχος ύφους"
     spellcheck: "Ορθογραφικός έλεγχος (LanguageTool)"
     tts_preview: "Ακρόαση (TTS)"

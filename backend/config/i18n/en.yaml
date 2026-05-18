@@ -1193,6 +1193,8 @@ ui:
     redo: "Redo"
     search: "Search & Replace"
     focus_mode: "Focus mode"
+    fullscreen: "Fullscreen"
+    exit_fullscreen: "Exit fullscreen"
     style_check: "Style check"
     spellcheck: "Spellcheck (LanguageTool)"
     tts_preview: "Listen (TTS)"
