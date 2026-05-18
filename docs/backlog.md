@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-19 (Medium-import async-progress family closed: MEDIUM-IMPORT-V2-01 + ASYNC-IMPORT-PROGRESS-01 + MEDIUM-IMPORT-RESPONSE-INTERFACE-SYNC-01 archived to docs/roadmap-archive/2026-05.md. All shipped to origin/main across 11 commits (e5ef73d..3c53054) + 1 smoke doc + 1 handoff. Test delta: +14 backend + +11 plugin + +47 frontend Vitest + 4 Playwright + ~80 i18n keys. Two lessons-learned candidates surfaced (shared-working-tree commit bundling; page-local state vs context-backed state across navigation) — deferred to next docs-only touch.)
 Current version: v0.34.1
-Open tasks: 47 active (P2..P5) + 2 BLOCKED-on-upstream pointers
+Open tasks: 48 active (P2..P5) + 2 BLOCKED-on-upstream pointers
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -590,6 +590,109 @@ store.
   CLOSED by PB-PHASE4 Session 4c (preset write-path)
   + remaining drag-position scope moved to
   PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5).
+
+- **PICTURE-BOOK-STORYBOARD-VIEW-01** (P3, filed
+  2026-05-18): storyboard view for Picture-Book
+  authoring. Lets the author see the entire story-flow
+  at a glance, drag-reorder pages, and manage the
+  narrative arc across all pages with structure
+  annotations. Substantial Author-Workflow improvement
+  driven by the real KDP picture-book workflow (32 or
+  40 pages industry standard — needs mental overview
+  of pacing). Brainstorming captured here for future
+  Pre-Inspection; no immediate action needed.
+
+  Scope MVP (Picture-Book only initially):
+  - Separate view alongside PageEditor (PageEditor
+    stays the detail-work surface; Storyboard is the
+    additional overview surface)
+  - Entry-point: button in PageEditor header next to
+    Metadata + Export-PDF buttons
+  - Grid-view of all pages as thumbnails
+  - Per-page summary (title + first line + layout
+    preview)
+  - Drag-reorder pages (reuse @dnd-kit pattern from
+    the existing thumbnail sidebar)
+  - Add-page-inbetween + duplicate-page + split-page
+    + merge-pages operations
+
+  Story-structure annotations (MVP):
+  - Page-Notes field (author-memo, not user-visible
+    in the rendered book)
+  - Optional Story-Beat tag per page (Setup /
+    Inciting / Rising / Climax / Falling /
+    Resolution)
+  - Optional Color-Coding for mood/tone
+  - Optional Act/Chapter grouping
+
+  Deferred to follow-up sessions:
+  - Tree-View / Branching for Choose-Your-Adventure
+  - Beat-Sheet templates (Save-the-Cat, Hero's
+    Journey, etc.)
+  - Character-Tracking across pages
+  - Plot-Threads multi-storyline visualization
+  - Print-Storyboard export
+  - Multi-Book-Type migration (Comic + Prose)
+
+  Schema implications (new optional columns on
+  `Page` model, all nullable, backward-compat by
+  default-NULL):
+  - `notes` (text)
+  - `story_beat` (enum)
+  - `mood_color` (string)
+  - `act_group` (string)
+  - Alembic migration to add the columns
+  - Existing pages: NULL across the board, no
+    rendering impact
+
+  Established disciplines to apply:
+  - Single-Source-of-Truth: `page.position` already
+    exists; Storyboard reuses the same field for
+    ordering — no parallel ordering shape.
+  - Recurring-Component-Unification: the
+    PageThumbnail component is reusable between the
+    existing thumbnail sidebar and the new
+    Storyboard grid. Per the 2-surfaces rule in
+    coding-standards.md, extract first + migrate
+    both sites in the same session.
+  - Future Comic-Plugin will reuse the Storyboard
+    pattern (Multi-Book-Type migration target).
+
+  Pairs with / cross-references:
+  - `PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01`
+    (Comic-Foundation Session anchor)
+  - `PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`
+    (Comic-Foundation Session anchor)
+  - Candidate for a Combined-Storyboard-Plus-Comic-
+    Foundation Session post-v0.35.0 if scheduling
+    aligns.
+
+  Schema-Foundation-Pre-Commitment question for
+  4c-B-2 Tier-Property scope: if Storyboard later
+  needs Page-Notes + Story-Beat columns, should
+  4c-B-2 add the Schema-Foundation now (NULL
+  columns) so Storyboard ships frontend-only, OR
+  should the Storyboard Session add them later
+  alongside its own UI? CC decides whether to
+  surface this in the 4c-B-2 Pre-Inspection or
+  defer entirely.
+
+  User-real-workflow rationale: KDP picture-books
+  typically run 32 or 40 pages; the author needs a
+  mental overview of pacing across all pages.
+  Storyboard is the ideal surface for the
+  outline/iteration phase. Matches the
+  Real-Author-Workflow ("outline + storyboard
+  first, then detail-work in PageEditor") that
+  picture-book authors already follow in print.
+
+  Trigger: post-v0.35.0 dedicated session OR user
+  requests Storyboard during real Picture-Book
+  authoring with existing Kinderbücher. Effort:
+  10-15 commits (substantial session — schema
+  migration + Storyboard component family +
+  drag-reorder wiring + annotations panel +
+  i18n × 8 + Vitest + E2E + help docs).
 
 - **PICTURE-BOOK-TEXT-CONFIGURATION-01** (P3): ship Tier 1 +
   Tier 2 text-configuration properties across image-based
