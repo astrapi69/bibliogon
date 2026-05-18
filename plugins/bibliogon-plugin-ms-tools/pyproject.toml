@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-ms-tools"
-version = "0.34.0"
+version = "0.34.1"
 description = "Manuscript quality tools: style checks, sanitization, readability metrics."
 authors = ["Asterios Raptis"]
 license = "MIT"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-git-sync"
-version = "0.34.0"
+version = "0.34.1"
 description = "Import plugin for write-book-template git repositories. Clones a public git URL, stages the repo, and delegates to the core WbtImportHandler."
 authors = ["astrapi69"]
 license = "MIT"

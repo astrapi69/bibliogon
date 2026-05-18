@@ -4,6 +4,48 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.34.1] - 2026-05-18
+
+Routine dependency refresh. Pure lock-file refresh; no
+`pyproject.toml` / `package.json` edits; no API changes; no
+user-visible behavior changes. Closes the dep-refresh track
+deliberately deferred from the v0.34.0 release cycle.
+
+### Changed
+
+- Backend deps (via `poetry update <allowlist>` per the
+  "never blind bulk apply" discipline; 6 of 9 candidate
+  packages moved within existing pin constraints): pip
+  26.0.1 → 26.1.1, numpy 2.4.4 → 2.4.5, pandas 3.0.2 →
+  3.0.3, requests 2.34.0 → 2.34.2, decorator 5.2.1 →
+  5.3.0, librt 0.9.0 → 0.11.0 (mypy transitive).
+- Launcher deps: packaging 26.1 → 26.2,
+  pyinstaller-hooks-contrib 2026.4 → 2026.5.
+- Frontend: dompurify 3.4.3 → 3.4.4 (package.json
+  unchanged; `^3.4.0` caret already permitted the patch).
+
+### Deferred
+
+- Backend majors (own tracks): elevenlabs 0.2 → 2.47,
+  mypy 1.20 → 2.1, weasyprint 66 → 68 (just landed 66 in
+  v0.34.0).
+- Backend pin-loosenings: uvicorn 0.46 → 0.47 and
+  python-multipart 0.0.27 → 0.0.29 are blocked by the
+  caret constraints in `backend/pyproject.toml`. Loosening
+  a pin is a separate decision class from a lock-file
+  refresh.
+- Frontend: TipTap 2 → 3 across ~25 packages (DEP-02),
+  @types/node 24 → 25, @vitejs/plugin-react 5 → 6,
+  tiptap-footnotes 2 → 3.
+
+### Verification
+
+Backend pytest 1891/1891 + 1 skipped; Vitest 1405/1405;
+launcher PyInstaller build successful; `make
+verify-plugin-locks` confirmed zero plugin drift (no
+plugin pyproject shares any of the bumped packages
+directly).
+
 ## [0.34.0] - 2026-05-17
 
 The "Picture-Book Phase 4 foundation + Categories/BISAC +
