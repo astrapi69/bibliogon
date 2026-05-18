@@ -1,8 +1,76 @@
-import React, {useEffect, useRef, useState} from "react"
+import React, {useCallback, useEffect, useRef, useState} from "react"
+import type {JSONContent} from "@tiptap/core"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
+import RichTextEditor from "./RichTextEditor"
 import styles from "./PageCanvas.module.css"
+
+/**
+ * PB-PHASE4 Session 4c-B-1 Commit 2: per-layout discriminator.
+ *
+ * D2 storage decision: TipTap JSON for these three layouts (large
+ * text regions where rich formatting actually matters); plain
+ * string for speech_bubble + image_full_text_overlay (Tier-Property
+ * surfaces handle text styling via the layout_config, NOT inline).
+ */
+const TIPTAP_LAYOUTS: ReadonlySet<PageLayout> = new Set([
+    "image_top_text_bottom",
+    "image_left_text_right",
+    "text_only",
+])
+
+function isTipTapLayout(layout: PageLayout): boolean {
+    return TIPTAP_LAYOUTS.has(layout)
+}
+
+/**
+ * Parse ``page.text_content`` (stringified) into a TipTap JSON
+ * doc per the D4 migration strategy: legacy plain-text rows get
+ * wrapped into a minimal TipTap doc on first read. No Alembic
+ * migration; backward-compat lives here.
+ */
+function parseTextContentToJson(
+    textContent: string | null | undefined,
+): JSONContent | null {
+    if (!textContent) return null
+    // Heuristic: TipTap JSON always starts with ``{`` (it's an
+    // object literal). Anything else is legacy plain text.
+    const trimmed = textContent.trimStart()
+    if (trimmed.startsWith("{")) {
+        try {
+            const parsed = JSON.parse(textContent)
+            if (
+                parsed &&
+                typeof parsed === "object" &&
+                parsed.type === "doc"
+            ) {
+                return parsed as JSONContent
+            }
+            // Fall through to wrap: parsed but doesn't look like
+            // a TipTap doc — rare edge case (e.g. somebody hand-
+            // wrote ``{"foo": "bar"}`` into the field).
+        } catch {
+            // Fall through to wrap: invalid JSON.
+        }
+    }
+    // Wrap as a minimal TipTap doc.
+    return {
+        type: "doc",
+        content: [
+            {
+                type: "paragraph",
+                content: [{type: "text", text: textContent}],
+            },
+        ],
+    }
+}
+
+function serializeJsonToText(json: JSONContent | null): string | null {
+    if (!json) return null
+    return JSON.stringify(json)
+}
 
 interface Props {
     page: Page
@@ -91,9 +159,18 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
     const [textDraft, setTextDraft] = useState(page.text_content ?? "")
+    // PB-PHASE4 Session 4c-B-1 Commit 2: per-layout TipTap state.
+    // TIPTAP_LAYOUTS render through RichTextEditor; their content
+    // is a parsed JSONContent (legacy plain text auto-wraps on
+    // read per D4 backward-compat). The non-TipTap layouts keep
+    // using textDraft above.
+    const [textJson, setTextJson] = useState<JSONContent | null>(() =>
+        parseTextContentToJson(page.text_content),
+    )
 
     useEffect(() => {
         setTextDraft(page.text_content ?? "")
+        setTextJson(parseTextContentToJson(page.text_content))
         setUploadError(null)
     }, [page.id, page.text_content])
 
@@ -119,6 +196,56 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
         if (trimmed === original) return
         await onUpdate({text_content: trimmed.length === 0 ? null : trimmed})
     }
+
+    /**
+     * PB-PHASE4 Session 4c-B-1 Commit 2: persist TipTap JSON.
+     *
+     * Fires on every TipTap onChange tick (every keystroke).
+     * Debounced 800 ms so the API isn't hammered — matches the
+     * existing chapter-editor autosave cadence (Editor.tsx).
+     * The serialized JSON string lands in ``page.text_content``;
+     * the per-layout discriminator on read (parseTextContentToJson)
+     * decodes it back on the next mount / page-switch.
+     *
+     * Empty doc (no content nodes) is normalised to ``null`` so
+     * the empty-page case matches the legacy textarea behavior.
+     *
+     * No-op guard: if the serialized value equals what's already
+     * in ``page.text_content``, skip the API call entirely. Catches
+     * the mount-time onChange that TipTap's React adapter fires
+     * during the editor's initial transaction (observed in
+     * happy-dom during 4c-B-1 Commit 2 test development) — and
+     * any other "user typed → backspaced → exactly back to the
+     * persisted state" edge.
+     */
+    const persistTextJson = useCallback(
+        async (next: JSONContent | null): Promise<void> => {
+            // Detect "doc with no text" and persist as null so an
+            // emptied-out page reads back as empty on next mount.
+            const serialized = (() => {
+                if (!next) return null
+                const docHasText = JSON.stringify(next).includes('"text"')
+                if (!docHasText) return null
+                return serializeJsonToText(next)
+            })()
+            if (serialized === page.text_content) return
+            await onUpdate({text_content: serialized})
+        },
+        [onUpdate, page.text_content],
+    )
+
+    const persistTextJsonDebounced = useDebouncedCallback(
+        persistTextJson,
+        800,
+    )
+
+    const handleRichTextChange = useCallback(
+        (next: JSONContent) => {
+            setTextJson(next)
+            persistTextJsonDebounced(next)
+        },
+        [persistTextJsonDebounced],
+    )
 
     const hasImage = Boolean(page.image_asset_id)
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
@@ -321,18 +448,31 @@ export default function PageCanvas({page, bookId, onUpdate}: Props) {
                               : undefined
                     }
                 >
-                    <textarea
-                        id={`page-canvas-text-${page.id}`}
-                        className={styles.textInput}
-                        value={textDraft}
-                        onChange={(e) => setTextDraft(e.target.value)}
-                        onBlur={handleTextBlur}
-                        placeholder={t(
-                            "ui.page_editor.text_placeholder",
-                            "Write the page text here...",
-                        )}
-                        data-testid="page-canvas-text-input"
-                    />
+                    {isTipTapLayout(page.layout as PageLayout) ? (
+                        <RichTextEditor
+                            content={textJson}
+                            onChange={handleRichTextChange}
+                            placeholder={t(
+                                "ui.page_editor.text_placeholder",
+                                "Write the page text here...",
+                            )}
+                            testidNamespace={`page-canvas-richtext-${page.id}`}
+                            className={styles.textInput}
+                        />
+                    ) : (
+                        <textarea
+                            id={`page-canvas-text-${page.id}`}
+                            className={styles.textInput}
+                            value={textDraft}
+                            onChange={(e) => setTextDraft(e.target.value)}
+                            onBlur={handleTextBlur}
+                            placeholder={t(
+                                "ui.page_editor.text_placeholder",
+                                "Write the page text here...",
+                            )}
+                            data-testid="page-canvas-text-input"
+                        />
+                    )}
                 </div>
             </div>
             {uploadError && (

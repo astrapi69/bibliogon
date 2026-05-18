@@ -172,11 +172,20 @@ describe("PageCanvas - upload flow", () => {
     })
 })
 
-describe("PageCanvas - text area", () => {
+describe("PageCanvas - text area (Tier-Property layouts: speech_bubble + image_full_text_overlay)", () => {
+    // PB-PHASE4 Session 4c-B-1 Commit 2: existing textarea tests
+    // pivoted to a Tier-Property layout. After Commit 2, the
+    // makePage() default ``image_top_text_bottom`` is a TipTap
+    // layout (renders via RichTextEditor, NOT textarea). These
+    // tests still pin the textarea behavior for the two layouts
+    // that KEEP using it (speech_bubble + image_full_text_overlay).
+    const TIER_PROPERTY_PAGE = (overrides: Partial<Page> = {}) =>
+        makePage({layout: "speech_bubble", ...overrides})
+
     it("seeds the textarea from page.text_content", () => {
         render(
             <PageCanvas
-                page={makePage({text_content: "Hello world"})}
+                page={TIER_PROPERTY_PAGE({text_content: "Hello world"})}
                 bookId="b1"
                 onUpdate={vi.fn()}
             />,
@@ -188,7 +197,7 @@ describe("PageCanvas - text area", () => {
 
     it("invokes onUpdate({text_content}) on blur when the draft changed", async () => {
         const onUpdate = vi.fn().mockResolvedValue(undefined)
-        render(<PageCanvas page={makePage()} bookId="b1" onUpdate={onUpdate} />)
+        render(<PageCanvas page={TIER_PROPERTY_PAGE()} bookId="b1" onUpdate={onUpdate} />)
         const ta = screen.getByTestId("page-canvas-text-input") as HTMLTextAreaElement
         fireEvent.change(ta, {target: {value: "New text"}})
         fireEvent.blur(ta)
@@ -201,7 +210,7 @@ describe("PageCanvas - text area", () => {
         const onUpdate = vi.fn().mockResolvedValue(undefined)
         render(
             <PageCanvas
-                page={makePage({text_content: "Previous"})}
+                page={TIER_PROPERTY_PAGE({text_content: "Previous"})}
                 bookId="b1"
                 onUpdate={onUpdate}
             />,
@@ -218,7 +227,7 @@ describe("PageCanvas - text area", () => {
         const onUpdate = vi.fn()
         render(
             <PageCanvas
-                page={makePage({text_content: "Same"})}
+                page={TIER_PROPERTY_PAGE({text_content: "Same"})}
                 bookId="b1"
                 onUpdate={onUpdate}
             />,
@@ -232,7 +241,7 @@ describe("PageCanvas - text area", () => {
         const onUpdate = vi.fn()
         const {rerender} = render(
             <PageCanvas
-                page={makePage({id: "p1", text_content: "First page"})}
+                page={TIER_PROPERTY_PAGE({id: "p1", text_content: "First page"})}
                 bookId="b1"
                 onUpdate={onUpdate}
             />,
@@ -242,7 +251,7 @@ describe("PageCanvas - text area", () => {
         ).toBe("First page")
         rerender(
             <PageCanvas
-                page={makePage({id: "p2", text_content: "Second page"})}
+                page={TIER_PROPERTY_PAGE({id: "p2", text_content: "Second page"})}
                 bookId="b1"
                 onUpdate={onUpdate}
             />,
@@ -250,6 +259,24 @@ describe("PageCanvas - text area", () => {
         expect(
             (screen.getByTestId("page-canvas-text-input") as HTMLTextAreaElement).value,
         ).toBe("Second page")
+    })
+
+    it("image_full_text_overlay (the OTHER Tier-Property layout) also keeps textarea", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    text_content: "Overlay text",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(screen.getByTestId("page-canvas-text-input")).toBeTruthy()
+        // No RichTextEditor for Tier-Property layouts.
+        expect(
+            screen.queryByTestId(/^page-canvas-richtext-/),
+        ).toBeNull()
     })
 })
 
@@ -335,9 +362,15 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
         expect(screen.queryByTestId("page-canvas-image-area")).toBeNull()
         expect(screen.queryByTestId("page-canvas-image-replace")).toBeNull()
         expect(screen.queryByTestId("page-canvas-file-input")).toBeNull()
-        // The text region is still the editable surface.
+        // The text region is still the editable surface. Post-
+        // Commit 2: text_only is a TipTap layout, so the editable
+        // surface is the RichTextEditor's root container (NOT a
+        // textarea). The region wrapper is still present.
         expect(screen.getByTestId("page-canvas-region-text")).toBeTruthy()
-        expect(screen.getByTestId("page-canvas-text-input")).toBeTruthy()
+        expect(
+            screen.getByTestId("page-canvas-richtext-p1-root"),
+        ).toBeTruthy()
+        expect(screen.queryByTestId("page-canvas-text-input")).toBeNull()
     })
 
     it("speech_bubble: renders page-canvas-speech-bubble (not page-canvas-region-text)", () => {
@@ -456,13 +489,14 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
         }
     })
 
-    it("text-blur saves text_content in every layout (including speech_bubble + overlay + text_only)", async () => {
+    it("text-blur saves text_content in Tier-Property layouts (speech_bubble + image_full_text_overlay)", async () => {
+        // PB-PHASE4 Session 4c-B-1 Commit 2: TipTap layouts
+        // (image_top_text_bottom, image_left_text_right, text_only)
+        // no longer use the textarea — they save via the debounced
+        // RichTextEditor onChange path tested separately below.
         for (const layout of [
             "speech_bubble",
-            "image_top_text_bottom",
-            "image_left_text_right",
             "image_full_text_overlay",
-            "text_only",
         ] as const) {
             const onUpdate = vi.fn().mockResolvedValue(undefined)
             const {unmount} = render(
@@ -1072,5 +1106,216 @@ describe("PageCanvas - image_full_text_overlay config (Session 4c Commit 5)", ()
         expect(
             screen.getByTestId("page-canvas-region-text").getAttribute("style"),
         ).toContain("rgba(0, 0, 0, 0.7)")
+    })
+})
+
+// --- PB-PHASE4 Session 4c-B-1 Commit 2: TipTap layouts ---
+
+describe("PageCanvas - TipTap layouts render via RichTextEditor", () => {
+    const TIPTAP_LAYOUTS = [
+        "image_top_text_bottom",
+        "image_left_text_right",
+        "text_only",
+    ] as const
+
+    it.each(TIPTAP_LAYOUTS)(
+        "%s: renders RichTextEditor (not textarea)",
+        async (layout) => {
+            render(
+                <PageCanvas
+                    page={makePage({layout, text_content: null})}
+                    bookId="b1"
+                    onUpdate={vi.fn()}
+                />,
+            )
+            // Anchor on -root explicitly so it doesn't also match
+            // ``-content`` (both share the prefix; would multi-match).
+            await waitFor(() =>
+                expect(screen.getByTestId("page-canvas-richtext-p1-root")).toBeTruthy(),
+            )
+            // No textarea on TipTap layouts.
+            expect(screen.queryByTestId("page-canvas-text-input")).toBeNull()
+        },
+    )
+
+    it("parses legacy plain-text content into a TipTap doc on first read", async () => {
+        // Backward-compat per D4 migration: existing rows with
+        // plain-text page.text_content auto-wrap into a TipTap doc
+        // on read for TipTap layouts. The user sees their text
+        // intact + can now apply formatting on top.
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-legacy",
+                    layout: "image_top_text_bottom",
+                    text_content: "Legacy plain text body",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("page-canvas-richtext-p-legacy-content")
+                    .textContent,
+            ).toContain("Legacy plain text body"),
+        )
+    })
+
+    it("renders JSON-formatted text_content directly (no double-wrap)", async () => {
+        // Already-migrated rows store a TipTap JSON string. They
+        // get parsed + rendered as-is, NOT re-wrapped in an extra
+        // doc level.
+        const doc = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Already JSON"}],
+                },
+            ],
+        })
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-json",
+                    layout: "text_only",
+                    text_content: doc,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("page-canvas-richtext-p-json-content")
+                    .textContent,
+            ).toContain("Already JSON"),
+        )
+    })
+
+    it("malformed JSON falls back to plain-text wrap (defensive)", async () => {
+        // Defensive: a row with text_content starting with ``{``
+        // but invalid JSON should NOT crash the parse. Fall back
+        // to wrap-as-plain-text instead.
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-bad",
+                    layout: "text_only",
+                    text_content: "{not valid json at all",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("page-canvas-richtext-p-bad-content")
+                    .textContent,
+            ).toContain("{not valid json"),
+        )
+    })
+
+    it("mount does NOT fire onUpdate (debounce + no-spurious-save guarantee)", async () => {
+        // The debounced-onChange path is exercised end-to-end in
+        // the Session 4c-B-1 Playwright spec (Commit 6). At unit
+        // level the actionable assertion is: simply rendering the
+        // editor must NOT call onUpdate. Without that guarantee, a
+        // user switching pages would auto-save the active page
+        // every navigation tick.
+        const onUpdate = vi.fn().mockResolvedValue(undefined)
+        render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-mount",
+                    layout: "text_only",
+                    text_content: null,
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        )
+        // Let useEditor's mount effects + the debounce timer
+        // window pass; no edit happened, so no onUpdate should
+        // fire (real timers; 1s window > the 800 ms debounce).
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        expect(onUpdate).not.toHaveBeenCalled()
+    })
+
+    it("page switch re-mounts the RichTextEditor with the new page's testid namespace", async () => {
+        // The richtext testidNamespace is per-page (``page-canvas-
+        // richtext-{id}``). Switching pages renders the editor with
+        // a fresh namespace; the previous-page testid disappears.
+        // Content-level assertions live in the RichTextEditor unit
+        // tests; this integration test pins the per-page mount.
+        const {rerender} = render(
+            <PageCanvas
+                page={makePage({
+                    id: "p1",
+                    layout: "text_only",
+                    text_content: "First page",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(screen.getByTestId("page-canvas-richtext-p1-root")).toBeTruthy(),
+        )
+        rerender(
+            <PageCanvas
+                page={makePage({
+                    id: "p2",
+                    layout: "text_only",
+                    text_content: "Second page",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(screen.getByTestId("page-canvas-richtext-p2-root")).toBeTruthy(),
+        )
+        expect(screen.queryByTestId("page-canvas-richtext-p1-root")).toBeNull()
+    })
+
+    it("layout switch from Tier-Property to TipTap swaps textarea for RichTextEditor", async () => {
+        const {rerender} = render(
+            <PageCanvas
+                page={makePage({
+                    id: "p-swap",
+                    layout: "speech_bubble",
+                    text_content: "Bubble text",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        // Tier-Property: textarea present, no RichTextEditor.
+        expect(screen.getByTestId("page-canvas-text-input")).toBeTruthy()
+        expect(
+            screen.queryByTestId("page-canvas-richtext-p-swap-root"),
+        ).toBeNull()
+
+        // Swap layout to a TipTap one — textarea disappears,
+        // RichTextEditor mounts in its place.
+        rerender(
+            <PageCanvas
+                page={makePage({
+                    id: "p-swap",
+                    layout: "text_only",
+                    text_content: "Bubble text",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("page-canvas-richtext-p-swap-root"),
+            ).toBeTruthy(),
+        )
+        expect(screen.queryByTestId("page-canvas-text-input")).toBeNull()
     })
 })

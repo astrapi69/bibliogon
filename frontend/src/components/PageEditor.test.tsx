@@ -397,9 +397,19 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         ).toBe("p1")
     })
 
-    it("text-blur updates the page via api.pages.update", async () => {
+    it("text-blur updates the page via api.pages.update (Tier-Property layout)", async () => {
+        // PB-PHASE4 Session 4c-B-1 Commit 2: textarea blur-to-
+        // save behavior now applies only to Tier-Property layouts
+        // (speech_bubble + image_full_text_overlay). TipTap layouts
+        // save via the debounced RichTextEditor onChange path —
+        // exercised in the 4c-B-1 Playwright spec (Commit 6).
         mockList.mockResolvedValue([
-            makePage({id: "p1", position: 1, text_content: null}),
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "speech_bubble",
+                text_content: null,
+            }),
         ])
         mockUpdate.mockResolvedValue(
             makePage({id: "p1", position: 1, text_content: "Hello"}),

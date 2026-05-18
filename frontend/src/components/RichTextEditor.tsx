@@ -37,7 +37,7 @@ import Underline from "@tiptap/extension-underline"
 import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import type {JSONContent} from "@tiptap/core"
-import {useEffect} from "react"
+import {useEffect, useRef} from "react"
 
 interface Props {
     /** The current TipTap document. ``null`` renders an empty
@@ -110,8 +110,22 @@ export default function RichTextEditor({
     // active page) into the editor. Cheap shallow JSON compare
     // avoids setContent on every render (each setContent is a
     // ProseMirror transaction with non-zero cost).
+    //
+    // Skip the FIRST run: useEditor already initialised the
+    // editor with the prop's content (the ``content`` field in
+    // the useEditor config above). The first useEffect tick
+    // would otherwise call setContent redundantly + can cause
+    // ProseMirror to emit an update event in happy-dom even
+    // with emitUpdate=false (observed during 4c-B-1 Commit 2
+    // PageCanvas test development). The hadFirstSync ref is
+    // the canonical fix.
+    const hadFirstSync = useRef(false)
     useEffect(() => {
         if (!editor) return
+        if (!hadFirstSync.current) {
+            hadFirstSync.current = true
+            return
+        }
         const current = editor.getJSON()
         const next = content ?? ""
         if (JSON.stringify(current) !== JSON.stringify(next)) {
