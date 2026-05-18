@@ -244,6 +244,92 @@ def has_user_plugin_config(name: str) -> bool:
     return _user_plugin_path(name).exists()
 
 
+def migrate_user_overlay_enabled_list() -> tuple[list[str], bool]:
+    """Append project-tree plugins missing from user-overlay's enabled list.
+
+    Closes USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 (P2 backlog 2026-05-18).
+    Background: ``deep_merge`` treats lists as REPLACE, not union. So when
+    a user-overlay's ``plugins.enabled`` was written BEFORE a new plugin
+    shipped, the stale list silently filters the new plugin out — its
+    entry-point is discovered but it's never activated. This was the
+    plugin-comics Session 1 smoke's 404 root cause.
+
+    Semantics:
+
+    - For each plugin in the project-tree's ``enabled`` list:
+
+      - If NOT in user-overlay's ``enabled`` AND NOT in user-overlay's
+        ``disabled``: append to user-overlay's ``enabled``.
+      - If in user-overlay's ``disabled``: respect the explicit opt-out;
+        do NOT add to ``enabled``.
+
+    - Atomic write: all newly-appended plugins land in a single write,
+      or none do (no partial migration on disk).
+    - No-op when the user-overlay file does NOT exist: fresh installs
+      get the full enabled list from the project-tree's ``app.yaml``
+      (auto-created from ``app.yaml.example`` on first start), so no
+      migration is needed.
+    - Idempotent: running this function twice in a row produces the
+      same result on disk + zero additional writes.
+
+    Returns ``(newly_added, did_write)``:
+
+    - ``newly_added``: list of plugin names appended to the user-overlay
+      ``enabled`` list in this call (empty when the diff was empty).
+    - ``did_write``: True iff this call actually mutated the user-overlay
+      file on disk. ``newly_added == []`` implies ``did_write is False``.
+    """
+    if not user_app_config_exists():
+        return [], False
+
+    project = _read_yaml(_project_app_path())
+    user = _read_yaml(_user_app_path())
+
+    project_enabled = list(project.get("plugins", {}).get("enabled") or [])
+    user_plugins = user.setdefault("plugins", {})
+    if not isinstance(user_plugins, dict):
+        # Malformed overlay; do not attempt repair, just no-op.
+        return [], False
+    user_enabled = list(user_plugins.get("enabled") or [])
+    user_disabled = set(user_plugins.get("disabled") or [])
+
+    user_enabled_set = set(user_enabled)
+    newly_added = [
+        name
+        for name in project_enabled
+        if name not in user_enabled_set and name not in user_disabled
+    ]
+    if not newly_added:
+        return [], False
+
+    user_plugins["enabled"] = user_enabled + newly_added
+    # Use load_app_config_for_edit to preserve any comments + quote styles
+    # in the user-overlay yaml (the user may have hand-edited it).
+    editable = load_app_config_for_edit()
+    if isinstance(editable, dict):
+        editable_plugins = editable.setdefault("plugins", {})
+        if isinstance(editable_plugins, dict):
+            existing = list(editable_plugins.get("enabled") or [])
+            for name in newly_added:
+                if name not in existing:
+                    existing.append(name)
+            editable_plugins["enabled"] = existing
+            write_yaml_roundtrip(_user_app_path(), editable)
+            logger.info(
+                "User-overlay enabled-list migration: appended %s",
+                ", ".join(newly_added),
+            )
+            return newly_added, True
+
+    # Fallback if load_app_config_for_edit returned an unexpected shape.
+    write_user_app_config(user)
+    logger.info(
+        "User-overlay enabled-list migration (fallback): appended %s",
+        ", ".join(newly_added),
+    )
+    return newly_added, True
+
+
 def list_merged_plugin_names() -> list[str]:
     """Return all plugin names known via either project or user layer.
 

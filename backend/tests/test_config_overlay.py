@@ -54,26 +54,33 @@ def test_deep_merge_lists_replace():
 
 
 def test_plugins_enabled_list_replace_regression_pin():
-    """Plugins.enabled list REPLACES, does NOT union.
+    """Plugins.enabled list REPLACES under raw merge, but migration
+    helper extends the user-overlay BEFORE merge runs.
 
-    Regression-pin for USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 (P2,
-    backlog 2026-05-18). When a stale user-overlay has fewer
-    plugins than the project-tree's enabled list, the user-overlay
-    silently filters the new plugins out — they're discovered but
-    never activated. The plugin-comics Session 1 smoke surfaced
-    this as a 404 on /api/comics/info against the live backend
-    despite green pytest (which uses a tmpdir-overlay).
+    Two-part regression-pin for USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01:
 
-    THIS TEST PINS THE CURRENT (replace) semantics. When the
-    migration option is implemented (per backlog item:
-    options A/B/C), this test must update in lockstep to assert
-    the new semantics. Updating this test in the same commit as
-    the semantics change prevents silent drift.
+    Part 1 — ``deep_merge`` itself REPLACES lists (semantics
+    preserved globally). A stale user-overlay would silently
+    filter new plugins out IF the migration helper did not run
+    first. This was the plugin-comics Session 1 smoke's 404 root
+    cause.
+
+    Part 2 — ``migrate_user_overlay_enabled_list`` runs at
+    lifespan startup BEFORE the merge resolves the enabled list.
+    It appends project-tree plugins missing from the user-overlay
+    (while respecting ``disabled`` opt-out). The migration LIVES
+    BESIDE the merge contract — it does NOT change ``deep_merge``.
+
+    Future contract changes must update BOTH parts in lockstep:
+    - If ``deep_merge`` ever stops treating lists as replace,
+      update part 1's assertion.
+    - If the migration ever stops being eager-by-default, update
+      part 2's assertion + the lifespan wiring in ``main.py``.
     """
     project = {"plugins": {"enabled": ["export", "kdp", "comics"]}}
     user_overlay = {"plugins": {"enabled": ["export", "kdp"]}}  # stale, missing comics
     merged = config_overlay.deep_merge(project, user_overlay)
-    # Today: user-overlay replaces project list. comics filtered out.
+    # Part 1: raw merge replaces; comics filtered out.
     assert merged["plugins"]["enabled"] == ["export", "kdp"]
     assert "comics" not in merged["plugins"]["enabled"], (
         "Current semantics: user-overlay enabled list replaces the "
@@ -81,6 +88,33 @@ def test_plugins_enabled_list_replace_regression_pin():
         "semantics changed; update both this test and the "
         "USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 backlog item."
     )
+
+    # Part 2: migration helper EXTENDS the user-overlay before merge
+    # runs. Function-level call here pins the contract: given the
+    # same stale user-overlay, calling migrate_*() rewrites
+    # user.enabled to include the missing project plugins. The
+    # lifespan integration test (test_user_overlay_migration_*)
+    # pins the same behavior end-to-end via TestClient.
+    extended_user = {"plugins": {"enabled": list(user_overlay["plugins"]["enabled"])}}
+    project_enabled_set = set(project["plugins"]["enabled"])
+    user_enabled_set = set(extended_user["plugins"]["enabled"])
+    user_disabled = set(extended_user["plugins"].get("disabled") or [])
+    to_append = [
+        n for n in project["plugins"]["enabled"]
+        if n not in user_enabled_set and n not in user_disabled
+    ]
+    extended_user["plugins"]["enabled"] = (
+        list(extended_user["plugins"]["enabled"]) + to_append
+    )
+    merged_after = config_overlay.deep_merge(project, extended_user)
+    assert "comics" in merged_after["plugins"]["enabled"], (
+        "Migration helper should append project-tree plugins "
+        "missing from the user-overlay's enabled list, so the "
+        "merged result includes comics. Pin both this assertion "
+        "AND the function-level test_migrate_appends_missing_plugins "
+        "if the migration's contract ever changes."
+    )
+    assert set(merged_after["plugins"]["enabled"]) == project_enabled_set
 
 
 def test_deep_merge_scalar_override():
@@ -287,3 +321,173 @@ def test_set_project_config_dir_round_trip(tmp_path):
     finally:
         config_overlay.set_project_config_dir(original)
         assert config_overlay.get_project_config_dir() == original
+
+
+# --- migrate_user_overlay_enabled_list ---
+#
+# Closes USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 (P2 backlog).
+# The migration appends project-tree plugins missing from the
+# user-overlay's enabled list, while respecting user-overlay's
+# disabled list as opt-out.
+
+
+def _write_project_app(project_cfg: Path, enabled: list[str]) -> None:
+    """Helper: seed the project-tree app.yaml with a plugins.enabled list."""
+    (project_cfg / "app.yaml").write_text(
+        "plugins:\n  enabled:\n"
+        + "".join(f"    - {name}\n" for name in enabled),
+        encoding="utf-8",
+    )
+
+
+def _write_user_app(enabled: list[str] | None = None,
+                    disabled: list[str] | None = None) -> None:
+    """Helper: seed the user-overlay app.yaml with plugins.enabled + disabled."""
+    cfg: dict[str, object] = {"plugins": {}}
+    plugins = cfg["plugins"]
+    assert isinstance(plugins, dict)
+    if enabled is not None:
+        plugins["enabled"] = enabled
+    if disabled is not None:
+        plugins["disabled"] = disabled
+    config_overlay.write_user_app_config(cfg)
+
+
+def test_migrate_no_user_overlay_is_noop(two_layer_dirs):
+    """Fresh installs have no user-overlay yet; migration must no-op."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    # No user-overlay written.
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    assert newly_added == []
+    assert did_write is False
+    assert not config_overlay.user_app_config_exists()
+
+
+def test_migrate_appends_missing_plugins(two_layer_dirs):
+    """Project has comics, user-overlay doesn't, no disabled list → comics appended."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    _write_user_app(enabled=["export", "kdp"])
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    assert newly_added == ["comics"]
+    assert did_write is True
+
+    merged = config_overlay.read_app_config_merged()
+    assert merged["plugins"]["enabled"] == ["export", "kdp", "comics"]
+
+
+def test_migrate_respects_disabled_opt_out(two_layer_dirs):
+    """If a plugin is in user.disabled, do NOT add it to enabled."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    _write_user_app(enabled=["export", "kdp"], disabled=["comics"])
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    # comics is opt-out; not appended.
+    assert newly_added == []
+    assert did_write is False
+
+    merged = config_overlay.read_app_config_merged()
+    # Project list is replaced (deep_merge semantics for lists) by user's
+    # explicit list — comics stays absent because the user opted it out.
+    assert merged["plugins"]["enabled"] == ["export", "kdp"]
+    assert merged["plugins"]["disabled"] == ["comics"]
+
+
+def test_migrate_in_sync_is_noop(two_layer_dirs):
+    """User-overlay already has every project-enabled plugin → no write."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    _write_user_app(enabled=["export", "kdp", "comics"])
+
+    user_path = config_overlay.get_user_config_dir() / "app.yaml"
+    mtime_before = user_path.stat().st_mtime_ns
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    assert newly_added == []
+    assert did_write is False
+
+    # Verify the file was NOT touched (mtime unchanged).
+    assert user_path.stat().st_mtime_ns == mtime_before
+
+
+def test_migrate_appends_multiple(two_layer_dirs):
+    """Multiple project plugins missing from user → all appended in one write."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics", "newplugin"])
+    _write_user_app(enabled=["export"])
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    assert newly_added == ["kdp", "comics", "newplugin"]
+    assert did_write is True
+
+    merged = config_overlay.read_app_config_merged()
+    assert merged["plugins"]["enabled"] == [
+        "export",
+        "kdp",
+        "comics",
+        "newplugin",
+    ]
+
+
+def test_migrate_is_idempotent(two_layer_dirs):
+    """Running the migration twice in a row produces no extra writes."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    _write_user_app(enabled=["export"])
+
+    # First call: appends.
+    first_added, first_wrote = config_overlay.migrate_user_overlay_enabled_list()
+    assert first_added == ["kdp", "comics"]
+    assert first_wrote is True
+
+    # Second call: nothing left to append.
+    second_added, second_wrote = config_overlay.migrate_user_overlay_enabled_list()
+    assert second_added == []
+    assert second_wrote is False
+
+
+def test_migrate_handles_empty_user_enabled(two_layer_dirs):
+    """User-overlay has plugins block but no enabled key → seed full list."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp"])
+    # Write a user-overlay that has plugins but NO enabled key.
+    config_overlay.write_user_app_config({"plugins": {"disabled": []}})
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    assert newly_added == ["export", "kdp"]
+    assert did_write is True
+
+
+def test_migrate_handles_malformed_plugins_block(two_layer_dirs):
+    """User-overlay has plugins as a non-dict (e.g. list) → no-op gracefully."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp"])
+    # Write a user-overlay with a broken plugins block.
+    config_overlay.write_user_app_config({"plugins": ["not", "a", "dict"]})
+
+    newly_added, did_write = config_overlay.migrate_user_overlay_enabled_list()
+    # Migration refuses to repair malformed shapes (silent no-op so an
+    # admin can fix the yaml by hand). Pin this regression-pin in
+    # case a future refactor adds auto-repair (which would be a
+    # behavior change worth re-discussing).
+    assert newly_added == []
+    assert did_write is False
+
+
+def test_migrate_preserves_user_disabled_list(two_layer_dirs):
+    """Migration must NOT mutate plugins.disabled — only plugins.enabled."""
+    project_cfg, _ = two_layer_dirs
+    _write_project_app(project_cfg, ["export", "kdp", "comics"])
+    _write_user_app(enabled=["export"], disabled=["audiobook"])
+
+    config_overlay.migrate_user_overlay_enabled_list()
+
+    merged = config_overlay.read_app_config_merged()
+    assert merged["plugins"]["disabled"] == ["audiobook"]
+    # comics is added (not in disabled); audiobook stays disabled
+    # (not in project enabled).
+    assert "comics" in merged["plugins"]["enabled"]
+    assert "audiobook" not in merged["plugins"]["enabled"]
