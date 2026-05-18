@@ -75,10 +75,6 @@ ui:
     import_project: "Proje iceri aktar"
     moved_to_trash: "Cop kutusuna tasindi"
     deleted_permanently: "Kitap kalici olarak silindi"
-    version_history: "Surum gecmisi"
-    no_history: "Henuz yedekleme olusturulmadi."
-    compare_backups: "Yedekleri karsilastir"
-    compare_backups_tooltip: "Dosya sisteminizdeki iki .bgb dosyasini karsilastirin"
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
@@ -91,6 +87,11 @@ ui:
       limit_warning_50: "Selecting more than 50 books may take a while."
       limit_error_200: "Maximum 200 books per export."
       export_failed: "Bulk book export failed"
+  backups:
+    version_history: "Surum gecmisi"
+    no_history: "Henuz yedekleme olusturulmadi."
+    compare_backups: "Yedekleri karsilastir"
+    compare_backups_tooltip: "Dosya sisteminizdeki iki .bgb dosyasini karsilastirin"
   backup:
     compare:
       title: "Yedekleri karsilastir"
@@ -609,6 +610,7 @@ ui:
     tab_author: "Yazar"
     tab_plugins: "Eklentiler"
     tab_comments: "Comments"
+    tab_backups: "Backups"
     tab_about: "About"
     open_tab_menu: "Sekme menüsünü aç"
     tab_topics: "Konular"

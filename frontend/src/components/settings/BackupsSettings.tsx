@@ -67,7 +67,7 @@ export function BackupsSettings() {
             <div style={sectionStyle}>
                 <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>
                     <h3 style={{margin: 0, fontSize: "1rem"}}>
-                        {t("ui.dashboard.compare_backups", "Backups vergleichen")}
+                        {t("ui.backups.compare_backups", "Backups vergleichen")}
                     </h3>
                     <button
                         className="btn btn-secondary btn-sm"
@@ -75,17 +75,17 @@ export function BackupsSettings() {
                         data-testid="backups-compare-btn"
                         style={{gap: 6}}
                         title={t(
-                            "ui.dashboard.compare_backups_tooltip",
+                            "ui.backups.compare_backups_tooltip",
                             "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
                         )}
                     >
                         <GitCompare size={14}/>
-                        {t("ui.dashboard.compare_backups", "Backups vergleichen")}
+                        {t("ui.backups.compare_backups", "Backups vergleichen")}
                     </button>
                 </div>
                 <p style={{margin: 0, color: "var(--text-muted)", fontSize: "0.875rem"}}>
                     {t(
-                        "ui.dashboard.compare_backups_tooltip",
+                        "ui.backups.compare_backups_tooltip",
                         "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
                     )}
                 </p>
@@ -93,7 +93,7 @@ export function BackupsSettings() {
 
             <div style={sectionStyle} data-testid="backups-history-section">
                 <h3 style={{margin: "0 0 12px 0", fontSize: "1rem"}}>
-                    {t("ui.dashboard.version_history", "Versionsgeschichte")}
+                    {t("ui.backups.version_history", "Versionsgeschichte")}
                     {backupHistory.length > 0 && ` (${backupHistory.length})`}
                 </h3>
                 {backupHistory.length === 0 ? (
@@ -101,7 +101,7 @@ export function BackupsSettings() {
                         data-testid="backups-history-empty"
                         style={{margin: 0, color: "var(--text-muted)", fontSize: "0.875rem"}}
                     >
-                        {t("ui.dashboard.no_history", "Noch keine Backups erstellt.")}
+                        {t("ui.backups.no_history", "Noch keine Backups erstellt.")}
                     </p>
                 ) : (
                     <div

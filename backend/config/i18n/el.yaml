@@ -75,10 +75,6 @@ ui:
     import_project: "Εισαγωγή έργου"
     moved_to_trash: "Μεταφέρθηκε στον κάδο"
     deleted_permanently: "Το βιβλίο διαγράφηκε οριστικά"
-    version_history: "Ιστορικό εκδόσεων"
-    no_history: "Δεν έχουν δημιουργηθεί αντίγραφα ασφαλείας."
-    compare_backups: "Σύγκριση αντιγράφων ασφαλείας"
-    compare_backups_tooltip: "Σύγκριση δύο αρχείων .bgb από το σύστημα αρχείων"
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
@@ -91,6 +87,11 @@ ui:
       limit_warning_50: "Selecting more than 50 books may take a while."
       limit_error_200: "Maximum 200 books per export."
       export_failed: "Bulk book export failed"
+  backups:
+    version_history: "Ιστορικό εκδόσεων"
+    no_history: "Δεν έχουν δημιουργηθεί αντίγραφα ασφαλείας."
+    compare_backups: "Σύγκριση αντιγράφων ασφαλείας"
+    compare_backups_tooltip: "Σύγκριση δύο αρχείων .bgb από το σύστημα αρχείων"
   backup:
     compare:
       title: "Σύγκριση αντιγράφων ασφαλείας"
@@ -595,6 +596,7 @@ ui:
     tab_author: "Συγγραφέας"
     tab_plugins: "Plugins"
     tab_comments: "Comments"
+    tab_backups: "Backups"
     tab_about: "About"
     open_tab_menu: "Άνοιγμα μενού καρτελών"
     tab_topics: "Θέματα"

@@ -75,10 +75,6 @@ ui:
     import_project: "プロジェクトをインポート"
     moved_to_trash: "ゴミ箱に移動しました"
     deleted_permanently: "本を完全に削除しました"
-    version_history: "バージョン履歴"
-    no_history: "まだバックアップが作成されていません。"
-    compare_backups: "バックアップを比較"
-    compare_backups_tooltip: "ファイルシステムから 2 つの .bgb ファイルを比較します"
     dark_mode: Dark Mode
     light_mode: Light Mode
     move_to_trash: Move to trash
@@ -91,6 +87,11 @@ ui:
       limit_warning_50: "Selecting more than 50 books may take a while."
       limit_error_200: "Maximum 200 books per export."
       export_failed: "Bulk book export failed"
+  backups:
+    version_history: "バージョン履歴"
+    no_history: "まだバックアップが作成されていません。"
+    compare_backups: "バックアップを比較"
+    compare_backups_tooltip: "ファイルシステムから 2 つの .bgb ファイルを比較します"
   backup:
     compare:
       title: "バックアップの比較"
@@ -595,6 +596,7 @@ ui:
     tab_author: "著者"
     tab_plugins: "プラグイン"
     tab_comments: "Comments"
+    tab_backups: "Backups"
     tab_about: "About"
     open_tab_menu: "タブメニューを開く"
     tab_topics: "トピック"
