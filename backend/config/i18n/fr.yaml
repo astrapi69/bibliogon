@@ -2059,6 +2059,13 @@ ui:
     export_pdf: "Export as PDF"
     exporting_pdf: "Exporting..."
     export_pdf_error: "PDF export failed"
+    pdf_format_label: "Format PDF"
+    pdf_format:
+      8_5x8_5: "8,5×8,5 (Carré)"
+      8x10: "8×10 (Portrait)"
+      8_5x11: "8,5×11 (Portrait, grand)"
+      11x8_5: "11×8,5 (Paysage)"
+      10x8: "10×8 (Paysage, petit)"
     config:
       speech_bubble:
         heading: "Speech bubble"

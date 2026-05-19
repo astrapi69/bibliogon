@@ -810,4 +810,63 @@ test.describe("Picture-Book PageEditor smoke", () => {
         expect(styleAfterReload).toContain("padding: 24px")
         expect(styleAfterReload).toContain("font-style: italic")
     })
+
+    // PDF-KDP-FORMATS-01 C3: format dropdown + localStorage round-
+    // trip + filename suffix on download. Five KDP trim sizes shipped
+    // in C1+C2; this spec covers user-flow selection + persistence
+    // via reload + the filename Content-Disposition contract.
+    test("export-pdf: format dropdown round-trip with filename suffix + reload persistence", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("KDP Format Smoke", "Author")
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // Dropdown is visible next to Export-PDF in the header.
+        await expect(
+            page.getByTestId("page-editor-pdf-format-select"),
+        ).toBeVisible()
+
+        // Default-state assertion: 8.5x8.5 selected on fresh load.
+        await expect(
+            page.getByTestId("page-editor-pdf-format-select"),
+        ).toHaveValue("8.5x8.5")
+
+        // Switch to 11x8.5 (landscape).
+        await page
+            .getByTestId("page-editor-pdf-format-select")
+            .selectOption("11x8.5")
+        await expect(
+            page.getByTestId("page-editor-pdf-format-select"),
+        ).toHaveValue("11x8.5")
+
+        // Reload preserves selection via localStorage.
+        await page.reload()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+        await expect(
+            page.getByTestId("page-editor-pdf-format-select"),
+        ).toHaveValue("11x8.5")
+
+        // Click Export — capture the download and confirm the
+        // filename carries the non-default format suffix.
+        const downloadPromise = page.waitForEvent("download")
+        await page.getByTestId("page-editor-export-pdf").click()
+        const download = await downloadPromise
+        const filename = download.suggestedFilename()
+        expect(filename).toContain("11x8.5")
+        expect(filename).toMatch(/\.pdf$/)
+
+        // Switch back to default 8.5x8.5 — filename suffix drops
+        // (back-compat for legacy export behavior).
+        await page
+            .getByTestId("page-editor-pdf-format-select")
+            .selectOption("8.5x8.5")
+        const defaultDownloadPromise = page.waitForEvent("download")
+        await page.getByTestId("page-editor-export-pdf").click()
+        const defaultDownload = await defaultDownloadPromise
+        const defaultFilename = defaultDownload.suggestedFilename()
+        expect(defaultFilename).not.toContain("8.5x8.5")
+        expect(defaultFilename).toMatch(/\.pdf$/)
+    })
 })

@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-19 (PADDING-FONT-STYLE-01 closed in 3 atomic-green commits as the trimmed-scope of the original EXTENDED-SHAPE-01. Shape-variants (oval/rectangle/cloud/explosion) deferred to plugin-comics scope per NQ1 commitment in docs/explorations/comic-foundation.md; already covered by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 Session 2 bubble_type variants (speech/thought/narration/shout/whisper/sound_effect). EXTENDED-SHAPE-01 closed-as-superseded with same archive precedent as MULTI-BUBBLE-PER-PAGE-01 + DRAG-POSITION-01. Commits: 0782209 + fa2fc33 + this archive. 1651 / 1651 Vitest + 133 / 133 plugin-export pytest passing.)
+Last updated: 2026-05-19 (PICTURE-BOOK-PDF-KDP-FORMATS-01 closed in 3 atomic-green commits. Five KDP picture-book trim sizes shipped (8.5x8.5 + 8x10 + 8.5x11 + 11x8.5 + 10x8) via picture_book_format query param. CSS-variable-driven @page sizing keeps the Python<->CSS boundary clean. localStorage-persisted dropdown next to Export-PDF in PageEditor. Default-on-read gamma-shim pattern (matches 4421f02 bubbles[0] precedent) on both ends. Filename suffix policy: <slug>.pdf for default 8.5x8.5 (back-compat); <slug>-<format>.pdf for non-default. 4 of 5 named Phase 4 trigger-set items now closed; only PDF-BLEED-MARKS-01 + optional TAIL-01 remain before plugin-comics Session 2 trigger fires. Commits: 60ff913 + c96a1fc + this archive. 1659 / 1659 Vitest + 159 / 159 plugin-export pytest + 22 / 22 integration tests + 75 / 75 i18n tests passing.)
 Current version: v0.35.1
-Open tasks: 64 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 63 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -515,27 +515,6 @@ store.
   Effort: 1-2 commits (toggle + branch in the onChange
   handler + Vitest pin + a help-doc note explaining
   when to use it).
-
-- **PICTURE-BOOK-PDF-KDP-FORMATS-01** (P3): extend picture-book
-  PDF export beyond the v0.35.0 MVP 8.5×8.5 square. Audit
-  finding 2026-05-17 D3 documented the canonical KDP picture-
-  book formats:
-  - 8×10 (portrait)
-  - 8.5×11 (portrait, larger)
-  - 11×8.5 (landscape)
-  - 10×8 (landscape, smaller)
-  Each format = a new ``@page { size: ... }`` rule in the
-  WeasyPrint generator + a UI selector. Scope:
-  - Backend: `picture_book_pdf.py` accepts a ``format`` arg;
-    routes.py threads it through the dispatch as a query param.
-  - Frontend: PageEditor + BookMetadataEditor buttons gain a
-    format selector dropdown (default 8.5×8.5 to preserve the
-    MVP UX); a future Settings field for the per-book default.
-  - i18n + Vitest + Playwright per surface.
-  Trigger: user requests 8×10 / 8.5×11 / landscape OR Aster's
-  second picture-book book has different dimensions OR a KDP
-  upload reveals a missing-format gap. Approx 5-7 commits.
-  Filed per audit D3 reservation at S6 close.
 
 - **PICTURE-BOOK-PDF-BLEED-MARKS-01** (P3): add KDP-quality
   bleed marks (0.125" bleed + crop marks) to picture-book PDFs

@@ -2051,6 +2051,13 @@ ui:
     export_pdf: "Als PDF exportieren"
     exporting_pdf: "Wird exportiert..."
     export_pdf_error: "PDF-Export fehlgeschlagen"
+    pdf_format_label: "PDF-Format"
+    pdf_format:
+      8_5x8_5: "8,5×8,5 (Quadratisch)"
+      8x10: "8×10 (Hochformat)"
+      8_5x11: "8,5×11 (Hochformat, groß)"
+      11x8_5: "11×8,5 (Querformat)"
+      10x8: "10×8 (Querformat, klein)"
     config:
       speech_bubble:
         heading: "Sprechblase"

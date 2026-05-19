@@ -2059,6 +2059,13 @@ ui:
     export_pdf: "Export as PDF"
     exporting_pdf: "Exporting..."
     export_pdf_error: "PDF export failed"
+    pdf_format_label: "PDFフォーマット"
+    pdf_format:
+      8_5x8_5: "8.5×8.5 (スクエア)"
+      8x10: "8×10 (縦長)"
+      8_5x11: "8.5×11 (縦長、大)"
+      11x8_5: "11×8.5 (横長)"
+      10x8: "10×8 (横長、小)"
     config:
       speech_bubble:
         heading: "Speech bubble"
