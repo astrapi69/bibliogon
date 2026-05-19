@@ -96,6 +96,18 @@ const SHADOW_INTENSITY_MAX = 10
 const SHADOW_INTENSITY_STEP = 1
 const DEFAULT_SHADOW_INTENSITY = 5
 
+// PADDING-FONT-STYLE-01 C1: uniform padding slider. Default 12 px
+// is the mean of the legacy CSS-module rule ``padding: 10px 14px``
+// (vertical 10 + horizontal 14), chosen for visual continuity:
+// any uniform value is "regression by some metric" relative to
+// the prior asymmetric default, and 12 sits at the midpoint.
+// Per-side padding is deferred (no user-demand signal); enum
+// upgrade is a future item if/when needed.
+const PADDING_MIN = 0
+const PADDING_MAX = 32
+const PADDING_STEP = 1
+const DEFAULT_PADDING = 12
+
 const DEFAULT_BACKGROUND_COLOR = "#ffffff"
 const DEFAULT_BORDER_COLOR = "#000000"
 const DEFAULT_BORDER_STYLE: BorderStyle = "solid"
@@ -274,6 +286,14 @@ function readShadowIntensity(config: Record<string, unknown> | null): number {
     return DEFAULT_SHADOW_INTENSITY
 }
 
+function readPadding(config: Record<string, unknown> | null): number {
+    const value = readBubbleConfig(config).padding
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(PADDING_MIN, Math.min(PADDING_MAX, value))
+    }
+    return DEFAULT_PADDING
+}
+
 // --- 4c-B-2 C3: Tier 2 reads ---
 
 function readFontFamily(config: Record<string, unknown> | null): string {
@@ -338,6 +358,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const currentBorderRadius = readBorderRadius(config)
     const currentShadow = readShadow(config)
     const currentShadowIntensity = readShadowIntensity(config)
+    const currentPadding = readPadding(config)
     const currentFontFamily = readFontFamily(config)
     const currentFontSize = readFontSize(config)
     const currentFontWeight = readFontWeight(config)
@@ -404,6 +425,9 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
         },
         300,
     )
+    const debouncedPaddingChange = useDebouncedCallback((value: number) => {
+        writeBubble({padding: value})
+    }, 300)
     const debouncedFontSizeChange = useDebouncedCallback((value: number) => {
         writeBubble({font_size: value})
     }, 300)
@@ -788,6 +812,41 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                             data-testid="speech-bubble-shadow-intensity-value"
                         >
                             {currentShadowIntensity}
+                        </span>
+                    </label>
+
+                    {/* PADDING-FONT-STYLE-01 C1: uniform padding slider.
+                     *  Per-side padding deferred without backlog filing —
+                     *  file only on user-demand signal. */}
+                    <label className={styles.sliderLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.padding",
+                                "Innenabstand",
+                            )}
+                        </span>
+                        <input
+                            type="range"
+                            min={PADDING_MIN}
+                            max={PADDING_MAX}
+                            step={PADDING_STEP}
+                            defaultValue={currentPadding}
+                            onChange={(e) =>
+                                debouncedPaddingChange(
+                                    parseInt(e.target.value, 10),
+                                )
+                            }
+                            data-testid="speech-bubble-padding-slider"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.padding",
+                                "Innenabstand",
+                            )}
+                        />
+                        <span
+                            className={styles.sliderValue}
+                            data-testid="speech-bubble-padding-value"
+                        >
+                            {currentPadding}px
                         </span>
                     </label>
                 </Collapsible.Content>

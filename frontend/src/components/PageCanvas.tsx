@@ -324,6 +324,16 @@ function speechBubbleInlineStyle(
             ? textAlignRaw
             : "center"
 
+    // PADDING-FONT-STYLE-01 C1: uniform padding emit. Overrides the
+    // CSS-module rule ``.canvasLayoutSpeechBubble .regionText {
+    // padding: 10px 14px }`` by inline-style specificity. Default
+    // 12 px keeps pre-C1 bubbles visually close to the asymmetric
+    // 10px / 14px rule (mean-midpoint).
+    const paddingRaw =
+        typeof merged.padding === "number" ? merged.padding : 12
+    const paddingPx = Math.max(0, Math.min(32, paddingRaw))
+    const padding = `${paddingPx}px`
+
     const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
     const tier1: React.CSSProperties = {
         background: bg,
@@ -332,6 +342,7 @@ function speechBubbleInlineStyle(
         border,
         borderRadius,
         boxShadow,
+        padding,
         fontFamily,
         fontSize,
         fontWeight,

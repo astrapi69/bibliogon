@@ -338,6 +338,47 @@ def test_tier1_malformed_hex_color_falls_back_to_default() -> None:
     assert "border: 2px solid rgb(0, 0, 0)" in style
 
 
+# --- PADDING-FONT-STYLE-01 C1: uniform padding emit ---
+#
+# Padding lands in the inline-style on the .region-text element.
+# Mirrors PageCanvas.tsx speechBubbleInlineStyle. Default 12 pt is
+# the mean of the static CSS rule ``padding: 10pt 14pt`` (which
+# the inline-style overrides by specificity).
+
+
+def test_padding_default_is_12pt() -> None:
+    style = _speech_bubble_style(None)
+    assert "padding: 12pt" in style
+
+
+def test_padding_custom_value_emits() -> None:
+    style = _speech_bubble_style({"bubbles": [{"padding": 24}]})
+    assert "padding: 24pt" in style
+
+
+def test_padding_clamps_into_range() -> None:
+    high = _speech_bubble_style({"bubbles": [{"padding": 99}]})
+    assert "padding: 32pt" in high
+    low = _speech_bubble_style({"bubbles": [{"padding": -5}]})
+    assert "padding: 0pt" in low
+
+
+def test_padding_zero_emits_no_padding() -> None:
+    style = _speech_bubble_style({"bubbles": [{"padding": 0}]})
+    assert "padding: 0pt" in style
+
+
+def test_padding_honours_bubbles_zero_precedence() -> None:
+    style = _speech_bubble_style({"padding": 5, "bubbles": [{"padding": 22}]})
+    assert "padding: 22pt" in style
+    assert "padding: 5pt" not in style
+
+
+def test_padding_malformed_value_falls_back_to_default() -> None:
+    style = _speech_bubble_style({"bubbles": [{"padding": "not-a-number"}]})
+    assert "padding: 12pt" in style
+
+
 # --- 4c-B-2 C3: Tier 2 Typography emit ---
 #
 # Five typography properties land in the inline-style on the

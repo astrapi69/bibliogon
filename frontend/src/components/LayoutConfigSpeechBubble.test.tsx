@@ -775,6 +775,65 @@ describe("LayoutConfigSpeechBubble - Tier 1 Visual Style (4c-B-2 C2)", () => {
         })
     })
 
+    // PADDING-FONT-STYLE-01 C1: padding slider (uniform).
+    it("padding slider renders inside Tier 1 with 0-32 px range, default 12", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-padding-slider",
+        ) as HTMLInputElement
+        expect(slider.type).toBe("range")
+        expect(slider.min).toBe("0")
+        expect(slider.max).toBe("32")
+        expect(slider.step).toBe("1")
+        expect(
+            screen.getByTestId("speech-bubble-padding-value").textContent,
+        ).toBe("12px")
+    })
+
+    it("padding slider writes bubbles[0].padding (debounced, 0-32 px)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-padding-slider",
+        ) as HTMLInputElement
+        fireEvent.change(slider, {target: {value: "20"}})
+        expect(onChange).not.toHaveBeenCalled()
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{padding: 20}],
+        })
+    })
+
+    it("padding clamps out-of-range values into [0, 32] for display", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubbles: [{padding: 99}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        expect(
+            screen.getByTestId("speech-bubble-padding-value").textContent,
+        ).toBe("32px")
+    })
+
+    it("padding read honours bubbles[0] precedence over flat", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{padding: 5, bubbles: [{padding: 22}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        expect(
+            screen.getByTestId("speech-bubble-padding-value").textContent,
+        ).toBe("22px")
+    })
+
     it("Tier 1 reads honour bubbles[0] precedence over flat (background_color)", () => {
         render(
             <LayoutConfigSpeechBubble

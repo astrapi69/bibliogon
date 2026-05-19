@@ -335,10 +335,21 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         )
     else:
         box_shadow = "none"
+    # PADDING-FONT-STYLE-01 C1: uniform padding emit. Default 12 pt
+    # mirrors the TS default; overrides the static CSS rule
+    # ``.page--speech_bubble .region-text { padding: 10pt 14pt }``
+    # by inline-style specificity.
+    padding_raw = merged.get("padding")
+    if isinstance(padding_raw, (int, float)):
+        padding_px = max(0, min(32, int(padding_raw)))
+    else:
+        padding_px = 12
+
     tier1 = (
         f"border: {border_width_px}px {border_style} {border_color_css};"
         f" border-radius: {border_radius_pct}%;"
         f" box-shadow: {box_shadow};"
+        f" padding: {padding_px}pt;"
     )
 
     # 4c-B-2 C3: Tier 2 Typography emit. Mirrors PageCanvas.tsx

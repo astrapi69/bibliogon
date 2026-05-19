@@ -1910,6 +1910,59 @@ describe("PageCanvas - Tier 1 Visual Style render (4c-B-2 C2)", () => {
         expect(style).toContain("box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3)")
     })
 
+    // PADDING-FONT-STYLE-01 C1: padding (uniform) render path.
+    it("default bubble emits padding: 12px (mean of legacy 10px / 14px asymmetric default)", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("padding: 12px")
+    })
+
+    it("custom padding value emits in the inline style (clamped to 0-32)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{padding: 24}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("padding: 24px")
+    })
+
+    it("padding clamps out-of-range values for the inline style", () => {
+        const highStyle = (() => {
+            const {container} = render(
+                <PageCanvas
+                    page={makePage({
+                        layout: "speech_bubble",
+                        layout_config: {bubbles: [{padding: 99}]},
+                    })}
+                    bookId="b1"
+                    onUpdate={vi.fn()}
+                />,
+            )
+            return (
+                container
+                    .querySelector("[data-testid=page-canvas-speech-bubble]")
+                    ?.getAttribute("style") ?? ""
+            )
+        })()
+        expect(highStyle).toContain("padding: 32px")
+    })
+
     it("border_style none + radius 0 emits a square bubble with no border", () => {
         render(
             <PageCanvas
