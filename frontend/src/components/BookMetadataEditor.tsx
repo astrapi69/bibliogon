@@ -13,6 +13,7 @@ import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
+import PictureBookPdfExportControls from "./PictureBookPdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "./CoverUpload";
@@ -60,7 +61,6 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
-    const [exportingPdf, setExportingPdf] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
@@ -127,42 +127,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         setSaving(false);
     };
 
-    /**
-     * PB-PHASE4 Session 6 Commit 5: picture-book PDF export from
-     * the Design tab. Parallel entry-point to PageEditor's
-     * Export-PDF button (Commit 4); the user's workflow may sit in
-     * the metadata editor when they decide to export, so we surface
-     * the action there too. Both paths invoke the same
-     * ``api.documentExport.download`` helper that exists on the
-     * prose side; the dispatch lives entirely in the backend.
-     *
-     * Picture-book PDF render is 1-3 s sync (per Commit 2's route);
-     * loading state on the button is the right UX (no modal — see
-     * Commit 4's commit message for the AudioExportProgress
-     * divergence rationale).
-     */
-    const handleExportPicturePdf = useCallback(async () => {
-        if (exportingPdf) return;
-        setExportingPdf(true);
-        try {
-            await api.documentExport.download(
-                book.id,
-                "pdf",
-                new URLSearchParams(),
-            );
-        } catch (err) {
-            const detail =
-                err instanceof ApiError
-                    ? err.detail
-                    : t(
-                          "ui.metadata.export_pdf_error",
-                          "PDF-Export fehlgeschlagen",
-                      );
-            notify.error(detail, err);
-        } finally {
-            setExportingPdf(false);
-        }
-    }, [book.id, exportingPdf, t]);
+    // PDF-BLEED-MARKS-01 C2: the Design-tab Export-PDF button +
+    // its state were the half-wired surface that PDF-KDP-FORMATS-01
+    // silently left behind (the button ignored the format dropdown
+    // selection because the dropdown only lived in PageEditor).
+    // Replaced with PictureBookPdfExportControls (mounted in the
+    // Design tab JSX below); state ownership + handler + format +
+    // bleed all live in the shared component now.
 
     const handleCopyFrom = (sourceBook: Book) => {
         setForm((prev) => ({
@@ -473,57 +444,25 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             coverImage={form.cover_image ?? null}
                             onChange={(newPath) => set("cover_image", newPath ?? "")}
                         />
-                        {/* PB-PHASE4 Session 6 Commit 5: picture-
-                            book PDF export entry from the Design
-                            tab. Picture-book-only — prose books
-                            export via the chapter pipeline +
-                            ExportDialog. Mirrors PageEditor's
-                            header button (Commit 4) so the user
-                            workflow can trigger PDF from either
-                            surface. */}
+                        {/* PDF-BLEED-MARKS-01 C2: picture-book PDF
+                            export controls. Shared component with
+                            PageEditor's header (closes the
+                            PDF-KDP-FORMATS-01 half-wired surface
+                            per the Recurring-Component-Unification
+                            Rule's canonical 2-site extract-plus-
+                            migrate). Picture-book-only — prose
+                            books export via the chapter pipeline +
+                            ExportDialog. */}
                         {book.book_type === "picture_book" && (
                             <div className={styles.row}>
-                                <button
-                                    type="button"
-                                    onClick={handleExportPicturePdf}
-                                    disabled={exportingPdf}
-                                    data-testid="metadata-export-picture-pdf"
-                                    className="button button-primary"
-                                    title={t(
-                                        "ui.metadata.export_pdf",
-                                        "Export as PDF",
-                                    )}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                    }}
-                                >
-                                    {exportingPdf ? (
-                                        <Loader2
-                                            size={14}
-                                            style={{
-                                                animation:
-                                                    "bookMetaSpin 1s linear infinite",
-                                            }}
-                                        />
-                                    ) : (
-                                        <Download size={14} />
-                                    )}
-                                    <span>
-                                        {exportingPdf
-                                            ? t(
-                                                  "ui.metadata.exporting_pdf",
-                                                  "Exporting...",
-                                              )
-                                            : t(
-                                                  "ui.metadata.export_pdf",
-                                                  "Export as PDF",
-                                              )}
-                                    </span>
-                                </button>
+                                <PictureBookPdfExportControls
+                                    bookId={book.id}
+                                    testidPrefix="metadata"
+                                    exportButtonClassName="button button-primary"
+                                    spinnerClassName="bookMetaSpin"
+                                />
                                 <style>
-                                    {`@keyframes bookMetaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+                                    {`@keyframes bookMetaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .bookMetaSpin { animation: bookMetaSpin 1s linear infinite; }`}
                                 </style>
                             </div>
                         )}

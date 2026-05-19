@@ -1,15 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
-import {ChevronLeft, Download, FileText, Loader2, Maximize2, Minimize2} from "lucide-react"
-import {api, ApiError, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {ChevronLeft, FileText, Maximize2, Minimize2} from "lucide-react"
+import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
-import {notify} from "../utils/notify"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas from "./PageCanvas"
+import PictureBookPdfExportControls from "./PictureBookPdfExportControls"
 import RichTextToolbar from "./RichTextToolbar"
 import ThemeToggle from "./ThemeToggle"
 import styles from "./PageEditor.module.css"
@@ -29,40 +29,13 @@ interface Props {
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 
-// PDF-KDP-FORMATS-01 C2: KDP picture-book trim sizes. Keep in
-// sync with PICTURE_BOOK_FORMATS in the Python module
-// bibliogon_export/picture_book_pdf.py — both ends serialize the
-// same format-id strings across the API.
-const PICTURE_BOOK_FORMATS = [
-    "8.5x8.5",
-    "8x10",
-    "8.5x11",
-    "11x8.5",
-    "10x8",
-] as const
-type PictureBookFormat = (typeof PICTURE_BOOK_FORMATS)[number]
-const DEFAULT_PICTURE_BOOK_FORMAT: PictureBookFormat = "8.5x8.5"
-const PICTURE_BOOK_FORMAT_STORAGE_KEY = "bibliogon-picture-book-format"
-
-function readStoredFormat(): PictureBookFormat {
-    // Q6 decision: localStorage-persisted format selection. Survives
-    // page reloads; per-browser, not per-book. Defensive read:
-    // localStorage access can throw in privacy-mode browsers, and
-    // unknown stored values fall back to the default (gamma-shim
-    // pattern matching the backend).
-    try {
-        const stored = localStorage.getItem(PICTURE_BOOK_FORMAT_STORAGE_KEY)
-        if (
-            stored !== null &&
-            (PICTURE_BOOK_FORMATS as readonly string[]).includes(stored)
-        ) {
-            return stored as PictureBookFormat
-        }
-    } catch {
-        // SSR or privacy-mode browser; keep default.
-    }
-    return DEFAULT_PICTURE_BOOK_FORMAT
-}
+// PDF-BLEED-MARKS-01 C2: format dropdown + bleed checkbox + Export
+// PDF button are all encapsulated in the
+// ``PictureBookPdfExportControls`` shared component (mounted both
+// here AND in BookMetadataEditor's Design tab). Format constants
+// + localStorage helpers + state ownership all live in the shared
+// component now; this file only mounts it. PDF-KDP-FORMATS-01's
+// inline state + readStoredFormat helper relocated out of here.
 
 export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: Props) {
     const {t} = useI18n()
@@ -228,47 +201,8 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
         setTipTapEditor(null)
     }, [activePageId])
 
-    const [exporting, setExporting] = useState(false)
-    const [pictureBookFormat, setPictureBookFormat] = useState<PictureBookFormat>(
-        readStoredFormat,
-    )
-    const handleFormatChange = useCallback(
-        (next: PictureBookFormat) => {
-            setPictureBookFormat(next)
-            try {
-                localStorage.setItem(PICTURE_BOOK_FORMAT_STORAGE_KEY, next)
-            } catch {
-                // Privacy-mode browsers reject setItem; selection still
-                // applies for the current session via React state.
-            }
-        },
-        [],
-    )
-    const handleExportPdf = useCallback(async () => {
-        if (exporting) return
-        setExporting(true)
-        try {
-            // PDF-KDP-FORMATS-01 C2: thread the picked format as a
-            // query param. Default 8.5x8.5 keeps the legacy filename
-            // (<slug>.pdf) and the MVP rendering.
-            const params = new URLSearchParams()
-            if (pictureBookFormat !== DEFAULT_PICTURE_BOOK_FORMAT) {
-                params.set("picture_book_format", pictureBookFormat)
-            }
-            await api.documentExport.download(bookId, "pdf", params)
-        } catch (err) {
-            const detail =
-                err instanceof ApiError
-                    ? err.detail
-                    : t(
-                          "ui.page_editor.export_pdf_error",
-                          "PDF-Export fehlgeschlagen",
-                      )
-            notify.error(detail, err)
-        } finally {
-            setExporting(false)
-        }
-    }, [bookId, exporting, pictureBookFormat, t])
+    // PDF-BLEED-MARKS-01 C2: state + handlers extracted into the
+    // shared ``PictureBookPdfExportControls`` component.
 
     return (
         <div
@@ -340,63 +274,19 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                         </span>
                     </button>
                 )}
-                {/* PDF-KDP-FORMATS-01 C2: format dropdown next to
-                 *  Export-PDF. Q3 decision: persistent dropdown over
-                 *  split-button; format choice is configuration, not
-                 *  action. */}
-                <select
-                    value={pictureBookFormat}
-                    onChange={(e) =>
-                        handleFormatChange(e.target.value as PictureBookFormat)
-                    }
-                    data-testid="page-editor-pdf-format-select"
-                    className={styles.metadataBtn}
-                    aria-label={t(
-                        "ui.page_editor.pdf_format_label",
-                        "PDF format",
-                    )}
-                    title={t(
-                        "ui.page_editor.pdf_format_label",
-                        "PDF format",
-                    )}
-                >
-                    {PICTURE_BOOK_FORMATS.map((fmt) => (
-                        <option key={fmt} value={fmt}>
-                            {t(
-                                `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
-                                fmt,
-                            )}
-                        </option>
-                    ))}
-                </select>
-                <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    disabled={exporting}
-                    data-testid="page-editor-export-pdf"
-                    className={styles.metadataBtn}
-                    title={t(
-                        "ui.page_editor.export_pdf",
-                        "Export as PDF",
-                    )}
-                >
-                    {exporting ? (
-                        <Loader2 size={14} className={styles.spinner} />
-                    ) : (
-                        <Download size={14} />
-                    )}
-                    <span>
-                        {exporting
-                            ? t(
-                                  "ui.page_editor.exporting_pdf",
-                                  "Exporting...",
-                              )
-                            : t(
-                                  "ui.page_editor.export_pdf",
-                                  "Export as PDF",
-                              )}
-                    </span>
-                </button>
+                {/* PDF-BLEED-MARKS-01 C2: shared component carries
+                 *  format dropdown + bleed checkbox + Export PDF
+                 *  button. Same component mounts in
+                 *  BookMetadataEditor's Design tab — closes the
+                 *  PDF-KDP-FORMATS-01 half-wired surface as a side-
+                 *  effect (per the Recurring-Component-Unification
+                 *  Rule's canonical 2-site extract-plus-migrate). */}
+                <PictureBookPdfExportControls
+                    bookId={bookId}
+                    testidPrefix="page-editor"
+                    controlClassName={styles.metadataBtn}
+                    spinnerClassName={styles.spinner}
+                />
             </header>
             <div className={styles.body}>
                 <aside

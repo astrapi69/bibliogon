@@ -951,7 +951,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         activateDesignTab()
         await waitFor(() =>
             expect(
-                screen.getByTestId("metadata-export-picture-pdf"),
+                screen.getByTestId("metadata-export-pdf"),
             ).toBeTruthy(),
         )
     })
@@ -963,7 +963,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         // the picture-book-only button stays absent.
         await new Promise((resolve) => setTimeout(resolve, 30))
         expect(
-            screen.queryByTestId("metadata-export-picture-pdf"),
+            screen.queryByTestId("metadata-export-pdf"),
         ).toBeNull()
     })
 
@@ -971,7 +971,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         renderEditor({book_type: "picture_book", chapters: []})
         activateDesignTab()
         const btn = await screen.findByTestId(
-            "metadata-export-picture-pdf",
+            "metadata-export-pdf",
         )
         fireEvent.click(btn)
         await waitFor(() =>
@@ -996,7 +996,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         renderEditor({book_type: "picture_book", chapters: []})
         activateDesignTab()
         const btn = await screen.findByTestId(
-            "metadata-export-picture-pdf",
+            "metadata-export-pdf",
         )
         fireEvent.click(btn)
         await waitFor(() =>
@@ -1017,7 +1017,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         renderEditor({book_type: "picture_book", chapters: []})
         activateDesignTab()
         const btn = await screen.findByTestId(
-            "metadata-export-picture-pdf",
+            "metadata-export-pdf",
         )
         fireEvent.click(btn)
         await waitFor(() =>
