@@ -1936,3 +1936,122 @@ describe("PageCanvas - Tier 1 Visual Style render (4c-B-2 C2)", () => {
         expect(style).toContain("border-radius: 0%")
     })
 })
+
+// --- 4c-B-2 C3: Tier 2 Typography render path ---
+//
+// speechBubbleInlineStyle emits CSS for the 5 Tier 2 properties on
+// the parent bubble element; ``.textInput`` inside inherits via
+// the CSS-module override (font-family / font-size / font-weight /
+// color / text-align all set to ``inherit`` for speech_bubble's
+// textInput). Mirrors the Python parallel in test_picture_book_pdf.py.
+
+describe("PageCanvas - Tier 2 Typography render (4c-B-2 C3)", () => {
+    it("default bubble emits Atkinson Hyperlegible 14pt normal black centered", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        // browser may normalize " quotes; just check the family name.
+        expect(style).toContain("font-family")
+        expect(style).toContain("Atkinson Hyperlegible")
+        expect(style).toContain("font-size: 14pt")
+        expect(style).toContain("font-weight: normal")
+        expect(style).toContain("text-align: center")
+        // color: default #000000 -> rgb(0, 0, 0)
+        expect(style).toContain("color: rgb(0, 0, 0)")
+    })
+
+    it("font_family emits the selected catalog font", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{font_family: "Comic Neue"}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("Comic Neue")
+    })
+
+    it("font_size clamps to 10-32 pt range", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{font_size: 24}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("font-size: 24pt")
+    })
+
+    it("font_weight=bold emits font-weight: bold", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{font_weight: "bold"}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("font-weight: bold")
+    })
+
+    it("text_color hex emits rgb(...) on the parent element", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{text_color: "#aa1122"}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("color: rgb(170, 17, 34)")
+    })
+
+    it("text_align variants all emit", () => {
+        for (const align of ["left", "right", "center"] as const) {
+            const {container} = render(
+                <PageCanvas
+                    page={makePage({
+                        layout: "speech_bubble",
+                        layout_config: {bubbles: [{text_align: align}]},
+                    })}
+                    bookId="b1"
+                    onUpdate={vi.fn()}
+                />,
+            )
+            const style =
+                container
+                    .querySelector("[data-testid=page-canvas-speech-bubble]")
+                    ?.getAttribute("style") ?? ""
+            expect(style).toContain(`text-align: ${align}`)
+        }
+    })
+})

@@ -296,6 +296,34 @@ function speechBubbleInlineStyle(
         ? `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
         : "none"
 
+    // 4c-B-2 C3: Tier 2 Typography. Emitted on the parent
+    // ``.region-text`` element; ``.textInput`` inside inherits via
+    // the CSS-module override (font-family: inherit etc.). Defaults
+    // mirror picture-book conventions (Atkinson Hyperlegible 14pt
+    // normal black centered) so pre-C3 pages render identically.
+    const fontFamilyRaw = merged.font_family
+    const fontFamily =
+        typeof fontFamilyRaw === "string" && fontFamilyRaw.length > 0
+            ? fontFamilyRaw
+            : "Atkinson Hyperlegible"
+    const fontSizeRaw =
+        typeof merged.font_size === "number" ? merged.font_size : 14
+    const fontSize = `${Math.max(10, Math.min(32, fontSizeRaw))}pt`
+    const fontWeightRaw = merged.font_weight
+    const fontWeight =
+        fontWeightRaw === "bold" || fontWeightRaw === "normal"
+            ? fontWeightRaw
+            : "normal"
+    const textColorRgb = hexToRgb(merged.text_color) ?? {r: 0, g: 0, b: 0}
+    const textColor = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
+    const textAlignRaw = merged.text_align
+    const textAlign: "left" | "center" | "right" =
+        textAlignRaw === "left" ||
+        textAlignRaw === "center" ||
+        textAlignRaw === "right"
+            ? textAlignRaw
+            : "center"
+
     const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
     const tier1: React.CSSProperties = {
         background: bg,
@@ -304,6 +332,11 @@ function speechBubbleInlineStyle(
         border,
         borderRadius,
         boxShadow,
+        fontFamily,
+        fontSize,
+        fontWeight,
+        color: textColor,
+        textAlign,
     }
     switch (anchor) {
         case "top-left":

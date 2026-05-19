@@ -253,6 +253,17 @@
     padding: 0;
 }
 
+/* 4c-B-2 C3: Tier 2 Typography inherits from the bubble's
+ * inline-style emitted by speechBubbleInlineStyle. font-family +
+ * color already inherit via .textInput; font-size, font-weight,
+ * text-align need explicit ``inherit`` overrides because the
+ * defaults above hardcode them. */
+.canvasLayoutSpeechBubble .regionText .textInput {
+    font-size: inherit;
+    font-weight: inherit;
+    text-align: inherit;
+}
+
 .textInput:focus {
     outline: none;
 }

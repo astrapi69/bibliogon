@@ -793,3 +793,150 @@ describe("LayoutConfigSpeechBubble - Tier 1 Visual Style (4c-B-2 C2)", () => {
     })
 })
 
+// --- 4c-B-2 C3: Tier 2 Typography (5 fields) ---
+//
+// Five per-bubble typography properties: font_family, font_size,
+// font_weight, text_color, text_align. Font catalog reuses the
+// v0.35.0 5-font OFL set (Q4 decision). All land under bubbles[0]
+// via writeBubble per C1's wrapper-shape decision.
+
+describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
+    it("renders the Tier 2 collapsible section trigger", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        expect(screen.getByTestId("speech-bubble-tier2-trigger")).toBeTruthy()
+    })
+
+    it("Tier 2 section is collapsed by default (controls not rendered)", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        expect(
+            screen.queryByTestId("speech-bubble-font-family-select"),
+        ).toBeNull()
+    })
+
+    it("clicking the Tier 2 trigger reveals the 5 controls", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        expect(
+            screen.getByTestId("speech-bubble-font-family-select"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-font-size-slider"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-font-weight-select"),
+        ).toBeTruthy()
+        expect(screen.getByTestId("speech-bubble-text-color")).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-text-align-select"),
+        ).toBeTruthy()
+    })
+
+    it("font_family dropdown lists the 5 OFL fonts from v0.35.0 (Q4 decision)", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const select = screen.getByTestId(
+            "speech-bubble-font-family-select",
+        ) as HTMLSelectElement
+        const values = Array.from(select.options).map((o) => o.value)
+        expect(values).toEqual([
+            "Atkinson Hyperlegible",
+            "Andika",
+            "Comic Neue",
+            "Lexend",
+            "OpenDyslexic",
+        ])
+    })
+
+    it("font_family select writes bubbles[0].font_family (immediate)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const select = screen.getByTestId(
+            "speech-bubble-font-family-select",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "Comic Neue"}})
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{font_family: "Comic Neue"}],
+        })
+    })
+
+    it("font_size slider writes bubbles[0].font_size (debounced, 10-32 pt)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-font-size-slider",
+        ) as HTMLInputElement
+        expect(slider.min).toBe("10")
+        expect(slider.max).toBe("32")
+        fireEvent.change(slider, {target: {value: "20"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{font_size: 20}],
+        })
+    })
+
+    it("font_weight select writes bubbles[0].font_weight (immediate, both values)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const select = screen.getByTestId(
+            "speech-bubble-font-weight-select",
+        ) as HTMLSelectElement
+        for (const weight of ["bold", "normal"]) {
+            onChange.mockClear()
+            fireEvent.change(select, {target: {value: weight}})
+            expect(onChange).toHaveBeenCalledWith({
+                bubbles: [{font_weight: weight}],
+            })
+        }
+    })
+
+    it("text_color picker writes bubbles[0].text_color (debounced)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const picker = screen.getByTestId(
+            "speech-bubble-text-color",
+        ) as HTMLInputElement
+        fireEvent.change(picker, {target: {value: "#aa1122"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{text_color: "#aa1122"}],
+        })
+    })
+
+    it("text_align select writes bubbles[0].text_align (immediate, all 3 values)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const select = screen.getByTestId(
+            "speech-bubble-text-align-select",
+        ) as HTMLSelectElement
+        for (const align of ["left", "right", "center"]) {
+            onChange.mockClear()
+            fireEvent.change(select, {target: {value: align}})
+            expect(onChange).toHaveBeenCalledWith({
+                bubbles: [{text_align: align}],
+            })
+        }
+    })
+
+    it("Tier 2 reads honour bubbles[0] precedence over flat (font_size)", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{font_size: 10, bubbles: [{font_size: 22}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        expect(
+            screen.getByTestId("speech-bubble-font-size-value").textContent,
+        ).toBe("22pt")
+    })
+})
+

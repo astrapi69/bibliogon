@@ -341,6 +341,45 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         f" box-shadow: {box_shadow};"
     )
 
+    # 4c-B-2 C3: Tier 2 Typography emit. Mirrors PageCanvas.tsx
+    # speechBubbleInlineStyle so the printed PDF matches the
+    # in-editor view. Defaults: Atkinson Hyperlegible 14 pt normal
+    # black centered.
+    font_family_raw = merged.get("font_family")
+    font_family = (
+        font_family_raw
+        if isinstance(font_family_raw, str) and font_family_raw
+        else "Atkinson Hyperlegible"
+    )
+    font_size_raw = merged.get("font_size")
+    if isinstance(font_size_raw, (int, float)):
+        font_size_pt = max(10, min(32, int(font_size_raw)))
+    else:
+        font_size_pt = 14
+    font_weight_raw = merged.get("font_weight")
+    font_weight = (
+        font_weight_raw
+        if font_weight_raw in {"normal", "bold"}
+        else "normal"
+    )
+    text_color_rgb = _hex_to_rgb(merged.get("text_color")) or (0, 0, 0)
+    text_color_css = (
+        f"rgb({text_color_rgb[0]}, {text_color_rgb[1]}, {text_color_rgb[2]})"
+    )
+    text_align_raw = merged.get("text_align")
+    text_align = (
+        text_align_raw
+        if text_align_raw in {"left", "center", "right"}
+        else "center"
+    )
+    tier2 = (
+        f"font-family: '{font_family}', sans-serif;"
+        f" font-size: {font_size_pt}pt;"
+        f" font-weight: {font_weight};"
+        f" color: {text_color_css};"
+        f" text-align: {text_align};"
+    )
+
     reset = "top: auto; right: auto; bottom: auto; left: auto;"
     # PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18): added
     # the 3 edge-midpoint positions (top-center, middle-left,
@@ -372,7 +411,7 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         ),
     }
     pos = positions.get(anchor, positions["bottom-center"])
-    return f"{reset} {pos} background: {bg}; {width} {height} {tier1}"
+    return f"{reset} {pos} background: {bg}; {width} {height} {tier1} {tier2}"
 
 
 def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str, str]:

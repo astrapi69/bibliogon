@@ -2,6 +2,10 @@ import React from "react"
 import * as Collapsible from "@radix-ui/react-collapsible"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
+import {
+    PICTURE_BOOK_FONTS,
+    DEFAULT_PICTURE_BOOK_FONT_ID,
+} from "../data/picture-book-fonts"
 import styles from "./LayoutConfigSpeechBubble.module.css"
 
 interface Props {
@@ -104,6 +108,23 @@ const BORDER_STYLES: readonly BorderStyle[] = [
     "dotted",
     "none",
 ]
+
+// --- 4c-B-2 C3: Tier 2 Typography ---
+
+const FONT_SIZE_MIN = 10
+const FONT_SIZE_MAX = 32
+const FONT_SIZE_STEP = 1
+const DEFAULT_FONT_SIZE = 14
+
+type FontWeight = "normal" | "bold"
+const FONT_WEIGHTS: readonly FontWeight[] = ["normal", "bold"]
+const DEFAULT_FONT_WEIGHT: FontWeight = "normal"
+
+type TextAlign = "left" | "center" | "right"
+const TEXT_ALIGNS: readonly TextAlign[] = ["left", "center", "right"]
+const DEFAULT_TEXT_ALIGN: TextAlign = "center"
+
+const DEFAULT_TEXT_COLOR = "#000000"
 
 /** 4c-B-2 C1 (Q1 decision γ — Inclusive-on-write, flat-fallback-on-read):
  *  per-bubble fields are stored under ``layout_config.bubbles[0]``.
@@ -253,6 +274,49 @@ function readShadowIntensity(config: Record<string, unknown> | null): number {
     return DEFAULT_SHADOW_INTENSITY
 }
 
+// --- 4c-B-2 C3: Tier 2 reads ---
+
+function readFontFamily(config: Record<string, unknown> | null): string {
+    const value = readBubbleConfig(config).font_family
+    if (
+        typeof value === "string" &&
+        PICTURE_BOOK_FONTS.some((f) => f.id === value)
+    ) {
+        return value
+    }
+    return DEFAULT_PICTURE_BOOK_FONT_ID
+}
+
+function readFontSize(config: Record<string, unknown> | null): number {
+    const value = readBubbleConfig(config).font_size
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, value))
+    }
+    return DEFAULT_FONT_SIZE
+}
+
+function readFontWeight(config: Record<string, unknown> | null): FontWeight {
+    const value = readBubbleConfig(config).font_weight
+    if (
+        typeof value === "string" &&
+        (FONT_WEIGHTS as readonly string[]).includes(value)
+    ) {
+        return value as FontWeight
+    }
+    return DEFAULT_FONT_WEIGHT
+}
+
+function readTextAlign(config: Record<string, unknown> | null): TextAlign {
+    const value = readBubbleConfig(config).text_align
+    if (
+        typeof value === "string" &&
+        (TEXT_ALIGNS as readonly string[]).includes(value)
+    ) {
+        return value as TextAlign
+    }
+    return DEFAULT_TEXT_ALIGN
+}
+
 export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const {t} = useI18n()
     const currentAnchor = readAnchor(config)
@@ -274,7 +338,17 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const currentBorderRadius = readBorderRadius(config)
     const currentShadow = readShadow(config)
     const currentShadowIntensity = readShadowIntensity(config)
+    const currentFontFamily = readFontFamily(config)
+    const currentFontSize = readFontSize(config)
+    const currentFontWeight = readFontWeight(config)
+    const currentTextColor = readHexColor(
+        config,
+        "text_color",
+        DEFAULT_TEXT_COLOR,
+    )
+    const currentTextAlign = readTextAlign(config)
     const [tier1Open, setTier1Open] = React.useState(false)
+    const [tier2Open, setTier2Open] = React.useState(false)
 
     /** 4c-B-2 C1: every write goes through bubbles[0]. The
      *  prior per-bubble state (from readBubbleConfig — which
@@ -330,6 +404,12 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
         },
         300,
     )
+    const debouncedFontSizeChange = useDebouncedCallback((value: number) => {
+        writeBubble({font_size: value})
+    }, 300)
+    const debouncedTextColorChange = useDebouncedCallback((value: string) => {
+        writeBubble({text_color: value})
+    }, 300)
 
     return (
         <div
@@ -709,6 +789,178 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                         >
                             {currentShadowIntensity}
                         </span>
+                    </label>
+                </Collapsible.Content>
+            </Collapsible.Root>
+
+            {/* --- 4c-B-2 C3: Tier 2 Typography --- */}
+            <Collapsible.Root
+                open={tier2Open}
+                onOpenChange={setTier2Open}
+                data-testid="speech-bubble-tier2-section"
+            >
+                <Collapsible.Trigger asChild>
+                    <button
+                        type="button"
+                        className={styles.sectionTrigger}
+                        data-testid="speech-bubble-tier2-trigger"
+                        aria-expanded={tier2Open}
+                    >
+                        <span className={styles.sectionChevron} aria-hidden>
+                            {tier2Open ? "▾" : "▸"}
+                        </span>
+                        {t(
+                            "ui.page_editor.config.speech_bubble.tier2.heading",
+                            "Typografie",
+                        )}
+                    </button>
+                </Collapsible.Trigger>
+                <Collapsible.Content className={styles.sectionContent}>
+                    <label className={styles.selectLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_family",
+                                "Schriftart",
+                            )}
+                        </span>
+                        <select
+                            value={currentFontFamily}
+                            onChange={(e) =>
+                                writeBubble({font_family: e.target.value})
+                            }
+                            data-testid="speech-bubble-font-family-select"
+                            className={styles.selectInput}
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_family",
+                                "Schriftart",
+                            )}
+                        >
+                            {PICTURE_BOOK_FONTS.map((font) => (
+                                <option key={font.id} value={font.id}>
+                                    {font.label}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label className={styles.sliderLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_size",
+                                "Schriftgröße",
+                            )}
+                        </span>
+                        <input
+                            type="range"
+                            min={FONT_SIZE_MIN}
+                            max={FONT_SIZE_MAX}
+                            step={FONT_SIZE_STEP}
+                            defaultValue={currentFontSize}
+                            onChange={(e) =>
+                                debouncedFontSizeChange(
+                                    parseInt(e.target.value, 10),
+                                )
+                            }
+                            data-testid="speech-bubble-font-size-slider"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_size",
+                                "Schriftgröße",
+                            )}
+                        />
+                        <span
+                            className={styles.sliderValue}
+                            data-testid="speech-bubble-font-size-value"
+                        >
+                            {currentFontSize}pt
+                        </span>
+                    </label>
+
+                    <label className={styles.selectLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_weight",
+                                "Schriftstärke",
+                            )}
+                        </span>
+                        <select
+                            value={currentFontWeight}
+                            onChange={(e) =>
+                                writeBubble({
+                                    font_weight: e.target.value as FontWeight,
+                                })
+                            }
+                            data-testid="speech-bubble-font-weight-select"
+                            className={styles.selectInput}
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.font_weight",
+                                "Schriftstärke",
+                            )}
+                        >
+                            {FONT_WEIGHTS.map((weight) => (
+                                <option key={weight} value={weight}>
+                                    {t(
+                                        `ui.page_editor.config.speech_bubble.tier2.font_weight_${weight}`,
+                                        weight.charAt(0).toUpperCase() +
+                                            weight.slice(1),
+                                    )}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label className={styles.colorLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.text_color",
+                                "Textfarbe",
+                            )}
+                        </span>
+                        <input
+                            type="color"
+                            value={currentTextColor}
+                            onChange={(e) =>
+                                debouncedTextColorChange(e.target.value)
+                            }
+                            data-testid="speech-bubble-text-color"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.text_color",
+                                "Textfarbe",
+                            )}
+                            className={styles.colorInput}
+                        />
+                    </label>
+
+                    <label className={styles.selectLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.text_align",
+                                "Textausrichtung",
+                            )}
+                        </span>
+                        <select
+                            value={currentTextAlign}
+                            onChange={(e) =>
+                                writeBubble({
+                                    text_align: e.target.value as TextAlign,
+                                })
+                            }
+                            data-testid="speech-bubble-text-align-select"
+                            className={styles.selectInput}
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.text_align",
+                                "Textausrichtung",
+                            )}
+                        >
+                            {TEXT_ALIGNS.map((align) => (
+                                <option key={align} value={align}>
+                                    {t(
+                                        `ui.page_editor.config.speech_bubble.tier2.text_align_${align}`,
+                                        align.charAt(0).toUpperCase() +
+                                            align.slice(1),
+                                    )}
+                                </option>
+                            ))}
+                        </select>
                     </label>
                 </Collapsible.Content>
             </Collapsible.Root>

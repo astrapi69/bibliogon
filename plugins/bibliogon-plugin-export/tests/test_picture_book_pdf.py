@@ -338,6 +338,69 @@ def test_tier1_malformed_hex_color_falls_back_to_default() -> None:
     assert "border: 2px solid rgb(0, 0, 0)" in style
 
 
+# --- 4c-B-2 C3: Tier 2 Typography emit ---
+#
+# Five typography properties land in the inline-style on the
+# .region-text element. Mirrors PageCanvas.tsx speechBubbleInlineStyle.
+
+
+def test_tier2_default_emits_atkinson_hyperlegible_14pt_normal_black_center() -> None:
+    style = _speech_bubble_style(None)
+    assert "font-family: 'Atkinson Hyperlegible'" in style
+    assert "font-size: 14pt" in style
+    assert "font-weight: normal" in style
+    assert "color: rgb(0, 0, 0)" in style
+    assert "text-align: center" in style
+
+
+def test_tier2_font_family_emits_selected_font() -> None:
+    style = _speech_bubble_style({"bubbles": [{"font_family": "Comic Neue"}]})
+    assert "font-family: 'Comic Neue'" in style
+
+
+def test_tier2_font_size_emits_pt_unit() -> None:
+    style = _speech_bubble_style({"bubbles": [{"font_size": 24}]})
+    assert "font-size: 24pt" in style
+
+
+def test_tier2_font_size_clamps_into_range() -> None:
+    high = _speech_bubble_style({"bubbles": [{"font_size": 99}]})
+    assert "font-size: 32pt" in high
+    low = _speech_bubble_style({"bubbles": [{"font_size": 5}]})
+    assert "font-size: 10pt" in low
+
+
+def test_tier2_font_weight_bold_emits() -> None:
+    style = _speech_bubble_style({"bubbles": [{"font_weight": "bold"}]})
+    assert "font-weight: bold" in style
+
+
+def test_tier2_text_color_hex_emits_rgb() -> None:
+    style = _speech_bubble_style({"bubbles": [{"text_color": "#aa1122"}]})
+    assert "color: rgb(170, 17, 34)" in style
+
+
+def test_tier2_text_align_variants_all_emit() -> None:
+    for align in ("left", "right", "center"):
+        style = _speech_bubble_style({"bubbles": [{"text_align": align}]})
+        assert f"text-align: {align}" in style
+
+
+def test_tier2_unknown_text_align_falls_back_to_center() -> None:
+    style = _speech_bubble_style({"bubbles": [{"text_align": "garbage"}]})
+    assert "text-align: center" in style
+
+
+def test_tier2_unknown_font_weight_falls_back_to_normal() -> None:
+    style = _speech_bubble_style({"bubbles": [{"font_weight": "garbage"}]})
+    assert "font-weight: normal" in style
+
+
+def test_tier2_malformed_text_color_falls_back_to_black() -> None:
+    style = _speech_bubble_style({"bubbles": [{"text_color": "not-a-hex"}]})
+    assert "color: rgb(0, 0, 0)" in style
+
+
 # --- _image_layout_style ---
 
 
