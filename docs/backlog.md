@@ -41,11 +41,101 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-(none)
+- **PLUGINFORGE-V070-ADOPTION-01** (P1, UPSTREAM-ADOPTION, filed
+  2026-05-19 from the PluginForge v0.7.0 cross-CC handover at
+  [docs/journal/pluginforge-v0.7.0-adoption-handover-2026-05-19.md](journal/pluginforge-v0.7.0-adoption-handover-2026-05-19.md)):
+  consume PluginForge v0.7.0's application-identity API.
+  Bibliogon currently pins `pluginforge ^0.5.0`; upgrade to
+  `^0.7.0` and adopt the three new surfaces.
+
+  Scope:
+  - Bump `pluginforge ^0.5.0` → `^0.7.0` across backend +
+    12 plugin pyproject.toml files; regenerate locks via
+    `make lock-all-plugins` + backend `poetry lock`.
+  - Add `target_application = "bibliogon"` class attribute on
+    every BasePlugin subclass (12 plugins: audiobook, comics,
+    export, getstarted, git-sync, grammar, help, kdp,
+    kinderbuch, medium-import, ms-tools, translation).
+  - Pass `app_id="bibliogon"` to `PluginManager(...)` at
+    [backend/app/main.py:308](../backend/app/main.py#L308) —
+    single construction site, verified by grep.
+  - Add severity filtering on every `DiscoveryResult.errors`
+    consumer once V060-ADOPTION introduces them. v0.7.0
+    widened the errors channel to carry `severity="warning"`
+    entries (deprecation warning for missing
+    `target_application`); unfiltered consumers would surface
+    those as failures in the PluginCard UI.
+
+  Race-window discipline: `target_application` + `app_id` must
+  land in a SINGLE commit AFTER the pin bump. Between the pin
+  bump and the adoption commit, plugins emit deprecation
+  warnings into `result.errors`; Bibliogon currently ignores
+  those returns, so the impact is contained, but the window
+  must be minimized.
+
+  Effort: M (~5-8 commits, ~2 hours focused). Pre-requisite:
+  PLUGINFORGE-V060-ADOPTION-01 (provides clean consumption
+  surface for v0.7.0's errors-channel widening).
+
+  Trigger: in-flight (2026-05-19 session). Unblocks PluginForge
+  v0.8.0 (hard-filter for missing `target_application`).
 
 ---
 
 ## P2 - High-Value User Features
+
+- **PLUGINFORGE-V060-ADOPTION-01** (P2, UPSTREAM-ADOPTION, filed
+  2026-05-19 from the cross-CC handover at
+  [docs/journal/pluginforge-v0.6.0-cross-cc-handover-2026-05-19.md](journal/pluginforge-v0.6.0-cross-cc-handover-2026-05-19.md)):
+  consume PluginForge v0.6.0's lifecycle API. Replaces private-
+  state pokes + hand-rolled diagnostics with the structured
+  DiscoveryResult / refresh_config surface.
+
+  Scope:
+  - Replace private-state pokes (`manager._app_config = merged`)
+    with `manager.refresh_config(merged)` at 3 sites:
+    [backend/app/main.py:332](../backend/app/main.py#L332),
+    [backend/app/routers/plugin_install.py:326](../backend/app/routers/plugin_install.py#L326),
+    [backend/app/routers/settings.py:511](../backend/app/routers/settings.py#L511).
+    Drop the paired `# type: ignore[attr-defined]` and
+    `# noqa: BLE001` comments. (V060 brief said 2 sites; 3 is
+    the verified count.)
+  - Replace `_log_plugin_diagnostics_pre/_post` (~80 LOC) at
+    [backend/app/main.py:399-440](../backend/app/main.py#L399)
+    with a single `DiscoveryResult` consumer. Capture the
+    return value from `manager.discover_plugins()` at
+    [main.py:540](../backend/app/main.py#L540) and emit one
+    structured INFO. Severity filtering on `result.errors`
+    folds in here per V070-ADOPTION.
+  - `min_app_version` audit across all plugin configs against
+    current host version (0.35.1). Known declarations:
+    `comics.yaml` → "0.35.0" (passes), `kinderbuch.yaml` →
+    "0.9.0" (passes), `medium-import.yaml` → "0.30.0" (passes);
+    others undeclared (gate-pass). Confirm at adoption commit.
+  - Add admin/rediscover endpoint: `POST /api/admin/rediscover`
+    calls `manager.rediscover()` and returns the
+    `DiscoveryDiff` as JSON. Subsumes the deferred
+    PLUGIN-DEV-SERVER-RESTART-HELPER-01 (P4) work.
+  - Update PluginCard error rendering to consume
+    `PluginError.user_facing_message` instead of raw
+    `str(load_error)`.
+
+  Architecture-discipline notes:
+  - The `manager._app_config = merged` poke smell has been in
+    Bibliogon since v0.x; the V060 surface is the right
+    architectural fix. Per coding-standards.md: services don't
+    reach into framework internals.
+  - DiscoveryDiff field shape verified post-implementation:
+    `added`/`removed`/`unchanged`/`states`/`errors` (NOT the
+    original cross-CC spec's 4-list shape). Bibliogon consumer
+    code walks `diff.states` for per-plugin filter reasons.
+
+  Effort: M (~4-6 commits). Pre-requisite for
+  PLUGINFORGE-V070-ADOPTION-01 (clean consumer base for v0.7.0's
+  errors-channel widening).
+
+  Trigger: in-flight (2026-05-19 session, lands after V070
+  steps 1+2 pass checkpoint).
 
 - **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
   Medium's HTML export strips tags. v1 imports articles with an
@@ -161,6 +251,67 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **PLUGIN-FILTERREASON-I18N-MAP-01** (P3, UPSTREAM-ADOPTION-UI,
+  filed 2026-05-19): map PluginForge `FilterReason` enum values
+  to Bibliogon-localized strings for the Settings UI PluginCard.
+
+  Scope:
+  - 8 v0.6.0 enum values + 1 v0.7.0 value (`wrong_application`)
+    need i18n keys in `backend/config/i18n/{lang}.yaml` × 8
+    languages.
+  - Mapping uses PluginForge's `user_facing_message` as English
+    default; localized variants for the other 7 languages.
+  - Special mapping: `pre_activate_rejected` →
+    `plugin_status.license_check_failed` (semantically a
+    Bibliogon license-check rejection; PluginForge naming is
+    intentionally application-agnostic).
+  - Special mapping: `wrong_application` →
+    `plugin_status.wrong_application` (new in v0.7.0; fires
+    when a third-party plugin built for a different
+    `app_id` is installed by mistake).
+
+  Architecture-discipline notes:
+  - Bibliogon-side i18n only; no PluginForge code change.
+  - 9 enum values × 8 languages = 72 new i18n string slots.
+    Mechanical translation work from the English defaults.
+
+  Effort: S (1 commit, ~30 min). Trigger: after V070-ADOPTION
+  closes (the PluginCard consumer rendering the strings is
+  introduced by V060-ADOPTION, surfacing of `wrong_application`
+  is V070).
+
+- **PLUGIN-REDISCOVER-INTEGRATION-TEST-01** (P3,
+  UPSTREAM-ADOPTION-TEST, filed 2026-05-19): real-world
+  integration test for `manager.rediscover()`.
+
+  Scope:
+  - New test file
+    `backend/tests/test_plugin_rediscover_integration.py`.
+  - Set up a tmp venv with a fixture plugin distribution
+    (smallest possible BasePlugin subclass with a unique
+    entry_point name).
+  - Call `manager.rediscover()` BEFORE installing the fixture;
+    assert empty `DiscoveryDiff.added`.
+  - Run `poetry install` (or pip-equivalent) of the fixture
+    into the venv from inside the test.
+  - Call `manager.rediscover()` AFTER install; assert the
+    fixture's name appears in `diff.added` and
+    `diff.states[name].activated == True`.
+  - Exercises `importlib.invalidate_caches()` +
+    `MetadataPathFinder.invalidate_caches()` against actual
+    on-disk dist-info — validates PluginForge's unit-test mock
+    (which patches `importlib.invalidate_caches`).
+
+  Architecture-discipline notes:
+  - PluginForge unit test exists but mocks the cache
+    invalidation. This test owns the real-world half — closes
+    the open question from PluginForge's v0.6.0 design doc.
+  - Tmp-venv setup adds test infra; cleanup via tmp_path fixture
+    and `poetry env remove`.
+
+  Effort: S-M (1-2 commits). Trigger: after V070-ADOPTION
+  closes.
 
 - **WRITING-GOALS-PROGRESS-TRACKING-01** (P3, FEATURE-REQUEST,
   filed 2026-05-19 from the

@@ -300,13 +300,31 @@ Once PluginForge ships v0.6.0, Bibliogon-side adoption work:
    POST `/api/admin/rediscover`. Sketch:
 
    ```python
+   # Field-name correction 2026-05-19 (post-implementation):
+   # the original 4-list spec (newly_discovered / newly_lost /
+   # newly_activated / newly_deactivated) was consolidated in
+   # the actual v0.6.0 release to a richer 5-field shape.
+   # Adoption code uses the as-shipped fields.
    @router.post("/admin/rediscover")
-   def rediscover() -> dict[str, list[str]]:
+   def rediscover() -> dict[str, Any]:
        diff = manager.rediscover()
        return {
-           "newly_discovered": diff.newly_discovered,
-           "newly_activated": diff.newly_activated,
-           ...
+           "added": diff.added,            # newly discovered AND activated
+           "removed": diff.removed,        # was active, no longer discoverable
+           "unchanged": diff.unchanged,    # still active, no change
+           "states": {
+               name: {
+                   "activated": s.activated,
+                   "filter_reason": s.filter_reason,
+               }
+               for name, s in diff.states.items()
+           },
+           "errors": [
+               {"name": e.name, "message": e.user_facing_message,
+                "severity": e.severity}
+               for e in diff.errors
+               if e.severity == "error"  # filter warnings per v0.7.0
+           ],
        }
    ```
 
