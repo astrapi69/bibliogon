@@ -820,3 +820,110 @@ describe("PageEditor Export-PDF button (Session 6 Commit 4)", () => {
         expect(mockNotifyError.mock.calls[0][0]).toBe("PDF-Export fehlgeschlagen")
     })
 })
+
+// --- PDF-KDP-FORMATS-01 C2: format dropdown + localStorage ---
+
+describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
+    beforeEach(() => {
+        // Clean slate per test: format selection is browser-scoped.
+        // happy-dom recreates localStorage per test file by default,
+        // but explicit clear avoids cross-test leakage WITHIN this
+        // describe block.
+        localStorage.clear()
+    })
+
+    it("renders the format dropdown next to Export PDF with the 5 KDP formats", () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        const values = Array.from(select.options).map((o) => o.value)
+        expect(values).toEqual([
+            "8.5x8.5",
+            "8x10",
+            "8.5x11",
+            "11x8.5",
+            "10x8",
+        ])
+    })
+
+    it("defaults to 8.5x8.5 when localStorage is empty (MVP back-compat)", () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        expect(select.value).toBe("8.5x8.5")
+    })
+
+    it("Export PDF with default 8.5x8.5 sends empty params (back-compat)", async () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
+        )
+        const [, , params] = mockDocumentExportDownload.mock.calls[0]
+        expect(params.toString()).toBe("")
+    })
+
+    it("changing format to a non-default value writes localStorage + persists to React state", () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "8.5x11"}})
+        expect(select.value).toBe("8.5x11")
+        expect(localStorage.getItem("bibliogon-picture-book-format")).toBe(
+            "8.5x11",
+        )
+    })
+
+    it("Export PDF with non-default format passes picture_book_format query param", async () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        fireEvent.change(select, {target: {value: "11x8.5"}})
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
+        )
+        const [, , params] = mockDocumentExportDownload.mock.calls[0]
+        expect(params.get("picture_book_format")).toBe("11x8.5")
+    })
+
+    it("persisted localStorage value initialises the dropdown on mount", () => {
+        // Seed localStorage BEFORE PageEditor mounts to exercise
+        // the readStoredFormat path.
+        localStorage.setItem("bibliogon-picture-book-format", "10x8")
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        expect(select.value).toBe("10x8")
+    })
+
+    it("unknown localStorage value falls back to 8.5x8.5 default (gamma-shim)", () => {
+        localStorage.setItem("bibliogon-picture-book-format", "garbage")
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        expect(select.value).toBe("8.5x8.5")
+    })
+
+    it("changing back to default 8.5x8.5 returns to empty-params export", async () => {
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        const select = screen.getByTestId(
+            "page-editor-pdf-format-select",
+        ) as HTMLSelectElement
+        // Flip away from default + back.
+        fireEvent.change(select, {target: {value: "8x10"}})
+        fireEvent.change(select, {target: {value: "8.5x8.5"}})
+        fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
+        )
+        const [, , params] = mockDocumentExportDownload.mock.calls[0]
+        expect(params.toString()).toBe("")
+    })
+})

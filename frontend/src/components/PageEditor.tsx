@@ -29,6 +29,41 @@ interface Props {
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 
+// PDF-KDP-FORMATS-01 C2: KDP picture-book trim sizes. Keep in
+// sync with PICTURE_BOOK_FORMATS in the Python module
+// bibliogon_export/picture_book_pdf.py — both ends serialize the
+// same format-id strings across the API.
+const PICTURE_BOOK_FORMATS = [
+    "8.5x8.5",
+    "8x10",
+    "8.5x11",
+    "11x8.5",
+    "10x8",
+] as const
+type PictureBookFormat = (typeof PICTURE_BOOK_FORMATS)[number]
+const DEFAULT_PICTURE_BOOK_FORMAT: PictureBookFormat = "8.5x8.5"
+const PICTURE_BOOK_FORMAT_STORAGE_KEY = "bibliogon-picture-book-format"
+
+function readStoredFormat(): PictureBookFormat {
+    // Q6 decision: localStorage-persisted format selection. Survives
+    // page reloads; per-browser, not per-book. Defensive read:
+    // localStorage access can throw in privacy-mode browsers, and
+    // unknown stored values fall back to the default (gamma-shim
+    // pattern matching the backend).
+    try {
+        const stored = localStorage.getItem(PICTURE_BOOK_FORMAT_STORAGE_KEY)
+        if (
+            stored !== null &&
+            (PICTURE_BOOK_FORMATS as readonly string[]).includes(stored)
+        ) {
+            return stored as PictureBookFormat
+        }
+    } catch {
+        // SSR or privacy-mode browser; keep default.
+    }
+    return DEFAULT_PICTURE_BOOK_FORMAT
+}
+
 export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: Props) {
     const {t} = useI18n()
     const [pages, setPages] = useState<Page[]>([])
@@ -194,11 +229,33 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
     }, [activePageId])
 
     const [exporting, setExporting] = useState(false)
+    const [pictureBookFormat, setPictureBookFormat] = useState<PictureBookFormat>(
+        readStoredFormat,
+    )
+    const handleFormatChange = useCallback(
+        (next: PictureBookFormat) => {
+            setPictureBookFormat(next)
+            try {
+                localStorage.setItem(PICTURE_BOOK_FORMAT_STORAGE_KEY, next)
+            } catch {
+                // Privacy-mode browsers reject setItem; selection still
+                // applies for the current session via React state.
+            }
+        },
+        [],
+    )
     const handleExportPdf = useCallback(async () => {
         if (exporting) return
         setExporting(true)
         try {
-            await api.documentExport.download(bookId, "pdf", new URLSearchParams())
+            // PDF-KDP-FORMATS-01 C2: thread the picked format as a
+            // query param. Default 8.5x8.5 keeps the legacy filename
+            // (<slug>.pdf) and the MVP rendering.
+            const params = new URLSearchParams()
+            if (pictureBookFormat !== DEFAULT_PICTURE_BOOK_FORMAT) {
+                params.set("picture_book_format", pictureBookFormat)
+            }
+            await api.documentExport.download(bookId, "pdf", params)
         } catch (err) {
             const detail =
                 err instanceof ApiError
@@ -211,7 +268,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
         } finally {
             setExporting(false)
         }
-    }, [bookId, exporting, t])
+    }, [bookId, exporting, pictureBookFormat, t])
 
     return (
         <div
@@ -283,6 +340,35 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                         </span>
                     </button>
                 )}
+                {/* PDF-KDP-FORMATS-01 C2: format dropdown next to
+                 *  Export-PDF. Q3 decision: persistent dropdown over
+                 *  split-button; format choice is configuration, not
+                 *  action. */}
+                <select
+                    value={pictureBookFormat}
+                    onChange={(e) =>
+                        handleFormatChange(e.target.value as PictureBookFormat)
+                    }
+                    data-testid="page-editor-pdf-format-select"
+                    className={styles.metadataBtn}
+                    aria-label={t(
+                        "ui.page_editor.pdf_format_label",
+                        "PDF format",
+                    )}
+                    title={t(
+                        "ui.page_editor.pdf_format_label",
+                        "PDF format",
+                    )}
+                >
+                    {PICTURE_BOOK_FORMATS.map((fmt) => (
+                        <option key={fmt} value={fmt}>
+                            {t(
+                                `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
+                                fmt,
+                            )}
+                        </option>
+                    ))}
+                </select>
                 <button
                     type="button"
                     onClick={handleExportPdf}
