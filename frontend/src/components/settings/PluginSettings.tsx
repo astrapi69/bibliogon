@@ -54,9 +54,21 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
 
     // Inactive plugins: only show plugins that are NOT active core plugins
     const [loadedPlugins, setLoadedPlugins] = useState<Set<string>>(new Set());
+    // V060: per-plugin filter_reason + load_error_message for the
+    // status badge on each PluginCard (sourced from PluginForge's
+    // last DiscoveryResult via /api/settings/plugins/discovered).
+    const [pluginStates, setPluginStates] = useState<Record<string, {filterReason: string | null; loadErrorMessage: string | null}>>({});
     useEffect(() => {
         api.settings.discoveredPlugins().then((discovered) => {
             setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
+            const states: Record<string, {filterReason: string | null; loadErrorMessage: string | null}> = {};
+            for (const p of discovered) {
+                states[p.name] = {
+                    filterReason: p.filter_reason,
+                    loadErrorMessage: p.load_error_message,
+                };
+            }
+            setPluginStates(states);
         }).catch(() => {});
     }, [configs]);
 
@@ -161,6 +173,8 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
                         version={(pluginMeta.version as string) || ""}
                         enabled={enabled.has(name) && !disabled.has(name)}
                         settings={settings}
+                        filterReason={pluginStates[name]?.filterReason ?? null}
+                        loadErrorMessage={pluginStates[name]?.loadErrorMessage ?? null}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
                         onRemove={async () => {

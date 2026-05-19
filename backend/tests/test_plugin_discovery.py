@@ -28,6 +28,41 @@ def test_discovered_plugins_includes_all():
     assert "kdp" in names
 
 
+def test_discovered_plugins_carries_v060_state_fields():
+    """V060 C5: the endpoint surfaces ``filter_reason`` +
+    ``load_error_message`` from PluginForge's last DiscoveryResult.
+    Both should be null for all 12 first-party plugins on a clean
+    test boot (they all activate cleanly), but the keys MUST exist
+    on every row so the frontend can pin the contract.
+    """
+    with TestClient(app):
+        resp = client.get("/api/settings/plugins/discovered")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload, "expected at least one discovered plugin"
+    for p in payload:
+        assert "filter_reason" in p, (
+            f"plugin '{p['name']}' missing filter_reason; the V060 C5 "
+            "contract requires both filter_reason + load_error_message "
+            "keys on every row"
+        )
+        assert "load_error_message" in p, (
+            f"plugin '{p['name']}' missing load_error_message"
+        )
+        # Clean test boot: every first-party plugin activates, so
+        # both fields are null. A non-null filter_reason for any of
+        # the 12 first-party plugins would be a real regression in
+        # plugin loading.
+        assert p["filter_reason"] is None, (
+            f"plugin '{p['name']}' unexpectedly filtered with "
+            f"reason={p['filter_reason']!r}; should be null"
+        )
+        assert p["load_error_message"] is None, (
+            f"plugin '{p['name']}' unexpectedly has load error: "
+            f"{p['load_error_message']!r}"
+        )
+
+
 def test_core_plugins_have_core_tier():
     """Core plugins should have license_tier='core' and has_license=True."""
     resp = client.get("/api/settings/plugins/discovered")

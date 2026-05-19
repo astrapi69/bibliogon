@@ -73,6 +73,8 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         display_name: {de: "Comic", en: "Comics"},
         description: {de: "Comic-Authoring", en: "Comic authoring"},
         version: "1.0.0",
+        filter_reason: null,
+        load_error_message: null,
     },
     {
         name: "kdp",
@@ -84,6 +86,8 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         display_name: {en: "Amazon KDP"},
         description: {en: "KDP metadata + cover validation"},
         version: "1.0.0",
+        filter_reason: null,
+        load_error_message: null,
     },
     {
         name: "comments",
@@ -95,6 +99,8 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         display_name: {en: "Comments"},
         description: {},
         version: "1.0.0",
+        filter_reason: null,
+        load_error_message: null,
     },
 ];
 

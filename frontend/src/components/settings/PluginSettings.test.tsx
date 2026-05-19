@@ -24,9 +24,13 @@ vi.mock("../../utils/notify", () => ({
 }));
 
 const discoveredPlugins = vi.fn(async () => [
-    {name: "export", loaded: true},
-    {name: "audiobook", loaded: true},
-    {name: "newone", loaded: true},
+    // V060 C5: filter_reason + load_error_message are part of the
+    // DiscoveredPlugin contract. Set to null for happy-path fixtures
+    // so the existing assertions still hold; PluginCard.test.tsx
+    // exercises the populated-status branches separately.
+    {name: "export", loaded: true, filter_reason: null, load_error_message: null},
+    {name: "audiobook", loaded: true, filter_reason: null, load_error_message: null},
+    {name: "newone", loaded: true, filter_reason: null, load_error_message: null},
 ]);
 
 vi.mock("../../api/client", () => ({

@@ -3716,6 +3716,16 @@ export interface DiscoveredPlugin {
     display_name: Record<string, string>
     description: Record<string, string>
     version: string | null
+    /** PluginForge v0.6.0 FilterReason for non-activated plugins.
+     *  Null when the plugin activated cleanly. Maps to
+     *  ``settings.plugin_status_*`` i18n keys for status-column
+     *  rendering in the Plugins tab. */
+    filter_reason: string | null
+    /** PluginForge v0.6.0 ``PluginError.user_facing_message`` from
+     *  the structured load error. Null unless the plugin failed
+     *  with an exception during init/activate (filter_reason =
+     *  ``load_failed``). */
+    load_error_message: string | null
 }
 
 /** Returned by GET /api/system/info. Aggregates app identity +

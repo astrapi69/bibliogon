@@ -248,6 +248,15 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     active = _active_plugin_names()
     available = _collect_available_plugins(active)
 
+    # V060: per-plugin DiscoveryResult.states from PluginForge's last
+    # discovery pass (pluginforge v0.6.0+). Carries filter_reason +
+    # structured load_error.user_facing_message for the Settings UI
+    # status column. Returns None before the first discover; in that
+    # case the new fields surface as None and the frontend renders
+    # the row without a status badge.
+    last_result = _manager.get_last_discovery_result()
+    pf_states = last_result.states if last_result is not None else {}
+
     result = []
     for name in config_overlay.list_merged_plugin_names():
         if name not in available:
@@ -264,6 +273,7 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
         plugin_meta = (
             cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
         )
+        pf_state = pf_states.get(name)
         result.append(
             {
                 "name": name,
@@ -275,6 +285,14 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
                 "display_name": plugin_meta.get("display_name") or {},
                 "description": plugin_meta.get("description") or {},
                 "version": plugin_meta.get("version") or None,
+                "filter_reason": (
+                    pf_state.filter_reason if pf_state is not None else None
+                ),
+                "load_error_message": (
+                    pf_state.load_error.user_facing_message
+                    if pf_state is not None and pf_state.load_error is not None
+                    else None
+                ),
             }
         )
     return result

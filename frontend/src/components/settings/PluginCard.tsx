@@ -12,13 +12,38 @@ import {isSectionOrder} from "./utils";
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
-export function PluginCard({name, displayName, description, version, enabled, settings, onSave, onToggle, onRemove}: {
+/** PluginForge v0.6.0 FilterReason → settings.plugin_status_* i18n
+ *  key. Bibliogon maps the application-agnostic
+ *  ``pre_activate_rejected`` to ``license_check_failed`` because
+ *  that's the only consumer of the pre_activate hook in
+ *  Bibliogon today (per ``app.main._check_license``). */
+const FILTER_REASON_TO_I18N: Record<string, string> = {
+    not_discovered: "ui.settings.plugin_status_not_discovered",
+    not_enabled: "ui.settings.plugin_status_not_enabled",
+    disabled: "ui.settings.plugin_status_disabled",
+    incompatible_api_version: "ui.settings.plugin_status_incompatible_api_version",
+    incompatible_app_version: "ui.settings.plugin_status_incompatible_app_version",
+    dependency_unmet: "ui.settings.plugin_status_dependency_unmet",
+    pre_activate_rejected: "ui.settings.plugin_status_license_check_failed",
+    load_failed: "ui.settings.plugin_status_load_failed",
+    wrong_application: "ui.settings.plugin_status_wrong_application",
+};
+
+export function PluginCard({name, displayName, description, version, enabled, settings, filterReason, loadErrorMessage, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
     description: string;
     version: string;
     enabled: boolean;
     settings: Record<string, unknown>;
+    /** PluginForge v0.6.0 FilterReason for non-activated plugins.
+     *  Null when the plugin activated cleanly. Drives the status
+     *  badge rendering. */
+    filterReason?: string | null;
+    /** PluginForge v0.6.0 ``PluginError.user_facing_message`` for
+     *  load failures. Renders below the description when set so
+     *  the user can act (rebuild container, fix YAML, etc.). */
+    loadErrorMessage?: string | null;
     onSave: (settings: Record<string, unknown>) => void;
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
@@ -81,6 +106,18 @@ export function PluginCard({name, displayName, description, version, enabled, se
                         }}>
                             {enabled ? t("ui.settings.active", "Aktiv") : t("ui.settings.inactive", "Inaktiv")}
                         </span>
+                        {filterReason && FILTER_REASON_TO_I18N[filterReason] && (
+                            <span
+                                className={styles.badge}
+                                data-testid={`plugin-status-${name}`}
+                                style={{
+                                    background: "rgba(239,68,68,0.12)",
+                                    color: "#dc2626",
+                                }}
+                            >
+                                {t(FILTER_REASON_TO_I18N[filterReason], filterReason)}
+                            </span>
+                        )}
                         {isCore && (
                             <span className={styles.badge} style={{
                                 background: "rgba(59,130,246,0.12)",
@@ -91,6 +128,14 @@ export function PluginCard({name, displayName, description, version, enabled, se
                         )}
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
+                    {loadErrorMessage && (
+                        <p
+                            data-testid={`plugin-status-detail-${name}`}
+                            style={{color: "#dc2626", fontSize: "0.8125rem", marginTop: 4}}
+                        >
+                            {loadErrorMessage}
+                        </p>
+                    )}
                 </div>
                 <div style={{display: "flex", alignItems: "center", gap: 6, flexShrink: 0}}>
                     {hasSettings && (
