@@ -299,7 +299,7 @@ cryptography = "^48.0.0"
 fastapi = "^0.136.0"
 manuscripta = "^0.9.0"
 mutagen = "^1.47.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -317,7 +317,7 @@ develop = true
 
 [package.dependencies]
 fastapi = "^0.136.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 pyyaml = "^6.0"
 
 [package.source]
@@ -337,7 +337,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 manuscripta = "^0.9.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 pyyaml = "^6.0"
 weasyprint = "^66.0"
 
@@ -357,7 +357,7 @@ develop = true
 
 [package.dependencies]
 fastapi = "^0.136.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -377,7 +377,7 @@ develop = true
 bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
 fastapi = "^0.136.0"
 gitpython = "^3.1.40"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -396,7 +396,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 httpx = "^0.28.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -414,7 +414,7 @@ develop = true
 
 [package.dependencies]
 fastapi = "^0.136.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -433,7 +433,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 pillow = "^12.0.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 pyyaml = "^6.0"
 
 [package.source]
@@ -453,7 +453,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 pillow = "^12.0.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 pyyaml = "^6.0"
 
 [package.source]
@@ -475,7 +475,7 @@ beautifulsoup4 = "^4.14.3"
 fastapi = "^0.136.0"
 httpx = "^0.28.0"
 langdetect = "^1.0.9"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 python-multipart = "^0.0.27"
 pyyaml = "^6.0"
 
@@ -495,7 +495,7 @@ develop = true
 
 [package.dependencies]
 fastapi = "^0.136.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -514,7 +514,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 httpx = "^0.28.0"
-pluginforge = "^0.5.0"
+pluginforge = "^0.7.0"
 
 [package.source]
 type = "directory"
@@ -3047,7 +3047,7 @@ version = "26.2"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "packaging-26.2-py3-none-any.whl", hash = "sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e"},
     {file = "packaging-26.2.tar.gz", hash = "sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"},
@@ -3411,19 +3411,20 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginforge"
-version = "0.5.0"
+version = "0.7.0"
 description = "Application-agnostic plugin framework built on pluggy"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "pluginforge-0.5.0-py3-none-any.whl", hash = "sha256:e120818bfbb93e915f494383a4b17a3c67ba4af8a4e4453a816fa1d752d3d8f2"},
-    {file = "pluginforge-0.5.0.tar.gz", hash = "sha256:65ae7d4bb2f5fe69757224553d43f356260fe863bf1e1c3eaca6c202e0a2e01f"},
+    {file = "pluginforge-0.7.0-py3-none-any.whl", hash = "sha256:c3e64ab9d3c55ba1ffce95eb7d9ce92d3059115eaf11a84c1f5c00e9e0266a4f"},
+    {file = "pluginforge-0.7.0.tar.gz", hash = "sha256:524c0e80a771d55d07f3db0653564641669baa186321a8dd51213b236be932c7"},
 ]
 
 [package.dependencies]
+packaging = ">=21.0"
 pluggy = ">=1.5.0,<2.0.0"
-pyyaml = ">=6.0,<7.0"
+pyyaml = ">=6.0,<7.0.0"
 
 [[package]]
 name = "pre-commit"
@@ -8978,4 +8979,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "fcb4bd4a123fc038a0ddb738a050e5d82a33ae4fc57e9331b6eaf41cf1019043"
+content-hash = "29cc2090e73270914d28b365b709624da4bf8a2f4ba0c24957b9e98b984e6ecb"
