@@ -261,3 +261,94 @@ def test_picture_book_pdf_with_zero_pages_returns_a_pdf(client: TestClient):
         f"Empty picture-book wrongly returned 400 "
         f"({resp.status_code} {resp.text[:200]})"
     )
+
+
+# --- PDF-KDP-FORMATS-01: picture_book_format query-param ---
+
+
+@pytest.mark.parametrize(
+    "fmt_id",
+    ["8.5x8.5", "8x10", "8.5x11", "11x8.5", "10x8"],
+)
+def test_picture_book_pdf_export_accepts_all_5_kdp_formats(
+    client: TestClient, fmt_id: str
+):
+    """Each of the 5 KDP trim sizes round-trips end-to-end through
+    the export route to a valid PDF."""
+    book_id = _create_picture_book(client, title=f"PB Format {fmt_id}")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_format": fmt_id},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content.startswith(b"%PDF")
+
+
+def test_picture_book_pdf_export_default_format_keeps_legacy_filename(
+    client: TestClient,
+):
+    """8.5x8.5 default -> filename stays ``<slug>.pdf`` (no format
+    suffix) so back-compat with existing exports is preserved."""
+    book_id = _create_picture_book(client, title="Square Default")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    # Default format (no query param); explicit query also valid.
+    resp = client.get(f"/api/books/{book_id}/export/pdf")
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert "square-default.pdf" in cd
+    assert "8.5x8.5" not in cd
+
+    resp2 = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_format": "8.5x8.5"},
+    )
+    assert resp2.status_code == 200
+    cd2 = resp2.headers.get("content-disposition", "")
+    assert "square-default.pdf" in cd2
+    assert "8.5x8.5" not in cd2
+
+
+@pytest.mark.parametrize(
+    "fmt_id",
+    ["8x10", "8.5x11", "11x8.5", "10x8"],
+)
+def test_picture_book_pdf_export_non_default_format_suffixes_filename(
+    client: TestClient, fmt_id: str
+):
+    """Non-default formats append ``-<format>`` to the filename so
+    the author can export multiple formats of the same book without
+    overwriting downloads."""
+    book_id = _create_picture_book(client, title="Suffix Test")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_format": fmt_id},
+    )
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert f"suffix-test-{fmt_id}.pdf" in cd
+
+
+def test_picture_book_pdf_export_unknown_format_falls_back_to_default(
+    client: TestClient,
+):
+    """Unknown format query value silently falls back to 8.5x8.5
+    (Q2 default contract). NOT a 400 — that would surprise callers
+    that mis-formed the query."""
+    book_id = _create_picture_book(client, title="Unknown Format")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_format": "garbage"},
+    )
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    # Falls back to default -> no suffix in filename.
+    assert "unknown-format.pdf" in cd
+    assert "garbage" not in cd

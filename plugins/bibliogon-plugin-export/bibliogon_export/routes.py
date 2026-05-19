@@ -183,6 +183,7 @@ def _export_picture_book_pdf(
     book_data: dict[str, Any],
     pages: list[dict[str, Any]],
     assets: list[dict[str, Any]],
+    picture_book_format: str | None = None,
 ) -> FileResponse:
     """Render a picture-book to PDF via the WeasyPrint generator
     and return a ``FileResponse``.
@@ -193,12 +194,22 @@ def _export_picture_book_pdf(
     Creates a process-scoped temp dir for the output PDF; the
     FileResponse caller owns deletion semantics.
 
+    Filename suffix policy (PDF-KDP-FORMATS-01 Q7): the default
+    ``8.5x8.5`` keeps the back-compat filename ``<slug>.pdf``;
+    non-default formats append the format id as a suffix
+    (``<slug>-<format>.pdf``) so an author exporting multiple
+    formats of the same book gets disambiguated downloads.
+
     Caller MUST have verified ``book_data["book_type"] ==
     "picture_book"`` and ``fmt == "pdf"`` before calling.
     """
     from app.paths import get_upload_dir
 
-    from .picture_book_pdf import generate_picture_book_pdf
+    from .picture_book_pdf import (
+        DEFAULT_PICTURE_BOOK_FORMAT,
+        _resolve_picture_book_format,
+        generate_picture_book_pdf,
+    )
 
     title = (book_data.get("title") or "picture-book").strip()
     # Lightweight slugifier — picture-book filenames don't need
@@ -207,9 +218,17 @@ def _export_picture_book_pdf(
     # ASCII-fold + hyphen-collapse pattern manuscripta uses.
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "picture-book"
 
+    canonical_format, _w, _h = _resolve_picture_book_format(
+        picture_book_format,
+    )
+    if canonical_format == DEFAULT_PICTURE_BOOK_FORMAT:
+        filename = f"{slug}.pdf"
+    else:
+        filename = f"{slug}-{canonical_format}.pdf"
+
     upload_dir = get_upload_dir() / book_data["id"]
     tmp_dir = Path(tempfile.mkdtemp(prefix="picture_book_pdf_"))
-    output_path = tmp_dir / f"{slug}.pdf"
+    output_path = tmp_dir / filename
 
     try:
         generate_picture_book_pdf(
@@ -218,6 +237,7 @@ def _export_picture_book_pdf(
             assets=assets,
             upload_dir=upload_dir,
             output_path=output_path,
+            picture_book_format=canonical_format,
         )
     except ImportError as e:
         raise HTTPException(
@@ -235,7 +255,7 @@ def _export_picture_book_pdf(
 
     return FileResponse(
         path=str(output_path),
-        filename=f"{slug}.pdf",
+        filename=filename,
         media_type="application/pdf",
     )
 
@@ -569,7 +589,15 @@ def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: b
 
 
 @router.get("/{fmt}")
-def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0, use_manual_toc: bool | None = None, db: Any = Depends(lambda: None)):
+def export(
+    book_id: str,
+    fmt: str,
+    book_type: str = "ebook",
+    toc_depth: int = 0,
+    use_manual_toc: bool | None = None,
+    picture_book_format: str | None = None,
+    db: Any = Depends(lambda: None),
+):
     """Export a book. Dispatches to format-specific handler.
 
     PB-PHASE4 Session 6: when Book.book_type == "picture_book"
@@ -584,6 +612,12 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
     picture_book | future comic_book). Different namespaces, same
     name — disambiguate by source (model field = content; query
     param = print edition).
+
+    PDF-KDP-FORMATS-01: ``picture_book_format`` query param picks the
+    KDP trim size (one of the 5 entries in
+    ``picture_book_pdf.PICTURE_BOOK_FORMATS``). Missing / null /
+    empty / unknown values silently fall back to 8.5x8.5 (the v0.35.0
+    MVP default). Other ``Book.book_type`` paths ignore this param.
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}")
@@ -599,9 +633,9 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
                 status_code=400,
                 detail=(
                     f"Picture-books only support PDF export in this "
-                    f"release; got fmt={fmt!r}. EPUB + other formats "
-                    f"land with PICTURE-BOOK-PDF-KDP-FORMATS-01 (P3) "
-                    f"and follow-ups."
+                    f"release; got fmt={fmt!r}. EPUB-for-picture-books "
+                    f"is not yet filed; consider opening an issue if "
+                    f"needed."
                 ),
             )
         # Re-query through the picture-book loader: the chapter-
@@ -611,7 +645,12 @@ def export(book_id: str, fmt: str, book_type: str = "ebook", toc_depth: int = 0,
         # the content discriminator as a defensive sanity check.
         pb_book_data, pages, pb_assets = _load_picture_book_pages(book_id)
         try:
-            return _export_picture_book_pdf(pb_book_data, pages, pb_assets)
+            return _export_picture_book_pdf(
+                pb_book_data,
+                pages,
+                pb_assets,
+                picture_book_format=picture_book_format,
+            )
         except HTTPException:
             raise
         except Exception as e:

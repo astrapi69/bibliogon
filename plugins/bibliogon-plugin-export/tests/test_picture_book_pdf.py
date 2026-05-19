@@ -21,12 +21,16 @@ import pytest
 import json as _json
 
 from bibliogon_export.picture_book_pdf import (
+    DEFAULT_PICTURE_BOOK_FORMAT,
+    PICTURE_BOOK_FORMATS,
     _build_assets_map,
     _build_html,
     _extract_plain_text,
+    _format_css,
     _image_layout_style,
     _layout_class,
     _render_page,
+    _resolve_picture_book_format,
     _speech_bubble_style,
     generate_picture_book_pdf,
 )
@@ -1628,3 +1632,135 @@ def test_render_page_tier_property_layout_plain_text_unchanged() -> None:
     html = _render_page(page, {})
     # Exact match for the text-bearing fragment.
     assert "<p>Bubble &amp; text!</p>" in html
+
+
+# --- PDF-KDP-FORMATS-01: format constants + resolver + CSS emit ---
+
+
+def test_picture_book_formats_dict_carries_exact_5_kdp_formats() -> None:
+    # Pin the canonical KDP-format set per the backlog spec
+    # (8.5x8.5 + 8x10 + 8.5x11 + 11x8.5 + 10x8). A future addition
+    # would need to be filed as a separate item.
+    assert set(PICTURE_BOOK_FORMATS.keys()) == {
+        "8.5x8.5",
+        "8x10",
+        "8.5x11",
+        "11x8.5",
+        "10x8",
+    }
+
+
+def test_picture_book_formats_default_is_square() -> None:
+    # The MVP UX from v0.35.0 was 8.5x8.5; the default-on-read
+    # contract preserves it for legacy API consumers.
+    assert DEFAULT_PICTURE_BOOK_FORMAT == "8.5x8.5"
+    assert PICTURE_BOOK_FORMATS[DEFAULT_PICTURE_BOOK_FORMAT] == (8.5, 8.5)
+
+
+def test_picture_book_formats_dimensions_match_kdp_spec() -> None:
+    # Inches-tuple correctness per the backlog enumeration.
+    assert PICTURE_BOOK_FORMATS["8x10"] == (8.0, 10.0)
+    assert PICTURE_BOOK_FORMATS["8.5x11"] == (8.5, 11.0)
+    assert PICTURE_BOOK_FORMATS["11x8.5"] == (11.0, 8.5)
+    assert PICTURE_BOOK_FORMATS["10x8"] == (10.0, 8.0)
+
+
+@pytest.mark.parametrize(
+    "fmt_id,expected_w,expected_h",
+    [
+        ("8.5x8.5", 8.5, 8.5),
+        ("8x10", 8.0, 10.0),
+        ("8.5x11", 8.5, 11.0),
+        ("11x8.5", 11.0, 8.5),
+        ("10x8", 10.0, 8.0),
+    ],
+)
+def test_resolve_picture_book_format_returns_dimensions(
+    fmt_id: str, expected_w: float, expected_h: float
+) -> None:
+    canonical, w, h = _resolve_picture_book_format(fmt_id)
+    assert canonical == fmt_id
+    assert w == expected_w
+    assert h == expected_h
+
+
+@pytest.mark.parametrize(
+    "garbage",
+    [None, "", "garbage", "8.5", "9x9", "foo", "  8.5x8.5  "],
+)
+def test_resolve_picture_book_format_falls_back_to_default(garbage: Any) -> None:
+    # Q2 default contract: missing / null / empty / unknown / mis-
+    # formatted -> 8.5x8.5 silently. Whitespace is NOT trimmed; the
+    # format id is the exact key, not a normalised one.
+    canonical, w, h = _resolve_picture_book_format(garbage)
+    assert canonical == DEFAULT_PICTURE_BOOK_FORMAT
+    assert (w, h) == (8.5, 8.5)
+
+
+@pytest.mark.parametrize(
+    "fmt_id,expected_size",
+    [
+        ("8.5x8.5", "size: 8.5in 8.5in"),
+        ("8x10", "size: 8.0in 10.0in"),
+        ("8.5x11", "size: 8.5in 11.0in"),
+        ("11x8.5", "size: 11.0in 8.5in"),
+        ("10x8", "size: 10.0in 8.0in"),
+    ],
+)
+def test_format_css_emits_correct_page_size(fmt_id: str, expected_size: str) -> None:
+    css = _format_css(fmt_id)
+    assert expected_size in css
+    # Margin is uniform across all formats per Q4.
+    assert "margin: 0.5in" in css
+
+
+def test_format_css_emits_css_variables_for_element_level_use() -> None:
+    css = _format_css("8x10")
+    # :root carries the page + content variables; content-h =
+    # page-h - 2 * 0.5in margin.
+    assert "--page-w: 8.0in" in css
+    assert "--page-h: 10.0in" in css
+    assert "--content-h: 9.0in" in css
+
+
+def test_format_css_content_h_subtracts_both_margins() -> None:
+    # 11x8.5 landscape: content-h = 8.5 - 1.0 = 7.5.
+    css = _format_css("11x8.5")
+    assert "--content-h: 7.5in" in css
+
+
+def test_format_css_unknown_format_falls_back_to_default_dimensions() -> None:
+    # Unknown id -> defaults emit the 8.5x8.5 block.
+    css = _format_css("not-a-format")
+    assert "size: 8.5in 8.5in" in css
+    assert "--content-h: 7.5in" in css
+
+
+# --- PDF-KDP-FORMATS-01: _build_html threads the format ---
+
+
+def test_build_html_default_format_emits_8_5x8_5_page_rule() -> None:
+    html = _build_html({"title": "T"}, [], {})
+    assert "size: 8.5in 8.5in" in html
+    assert "--content-h: 7.5in" in html
+
+
+def test_build_html_custom_format_emits_chosen_page_rule() -> None:
+    html = _build_html(
+        {"title": "T"},
+        [],
+        {},
+        picture_book_format="8.5x11",
+    )
+    assert "size: 8.5in 11.0in" in html
+    assert "--content-h: 10.0in" in html
+
+
+def test_build_html_unknown_format_falls_back_to_default() -> None:
+    html = _build_html(
+        {"title": "T"},
+        [],
+        {},
+        picture_book_format="garbage",
+    )
+    assert "size: 8.5in 8.5in" in html

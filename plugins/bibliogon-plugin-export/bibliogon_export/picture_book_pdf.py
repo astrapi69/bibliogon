@@ -47,6 +47,77 @@ from bibliogon_export.picture_book_fonts import font_face_css, is_known_font
 # load cost either.
 
 
+# --- KDP picture-book formats (PDF-KDP-FORMATS-01) ---
+
+# Five KDP picture-book trim sizes shipped here. Format IDs use the
+# inches-tuple convention (Q1 decision: short, self-describing,
+# decoupled from KDP marketing rename risk). 8.5x8.5 is the MVP
+# default; the other four extend the picture-book PDF pipeline beyond
+# the v0.35.0 square-only shipping.
+#
+# Per-format margin tuning is intentionally NOT shipped here
+# (Q4 decision): uniform 0.5in margin across all formats keeps the
+# scope tight + matches KDP's conservative-safe recommendation. If a
+# real submission rejection surfaces with a margin-related cause,
+# file a follow-up item.
+PICTURE_BOOK_FORMATS: dict[str, tuple[float, float]] = {
+    "8.5x8.5": (8.5, 8.5),  # square (MVP default)
+    "8x10": (8.0, 10.0),  # portrait
+    "8.5x11": (8.5, 11.0),  # portrait, larger
+    "11x8.5": (11.0, 8.5),  # landscape
+    "10x8": (10.0, 8.0),  # landscape, smaller
+}
+
+DEFAULT_PICTURE_BOOK_FORMAT = "8.5x8.5"
+_PAGE_MARGIN_IN = 0.5
+
+
+def _resolve_picture_book_format(
+    format_id: str | None,
+) -> tuple[str, float, float]:
+    """Resolve a format id to ``(canonical_id, width_in, height_in)``.
+
+    Falls back silently to ``DEFAULT_PICTURE_BOOK_FORMAT`` on missing,
+    null, empty, or unknown values (Q2 decision: same gamma-shim
+    default-on-read pattern as the bubbles[0] wrapper from 4c-B-2).
+    The canonical id is what callers use for filename suffixes; the
+    dimensions feed the CSS emit.
+    """
+    if isinstance(format_id, str) and format_id in PICTURE_BOOK_FORMATS:
+        w, h = PICTURE_BOOK_FORMATS[format_id]
+        return format_id, w, h
+    w, h = PICTURE_BOOK_FORMATS[DEFAULT_PICTURE_BOOK_FORMAT]
+    return DEFAULT_PICTURE_BOOK_FORMAT, w, h
+
+
+def _format_css(format_id: str) -> str:
+    """Build the format-specific CSS block.
+
+    Emits:
+    - ``@page { size: <w>in <h>in; margin: 0.5in }``
+    - ``:root { --page-w / --page-h / --content-h }`` for element-
+      level use in the static CSS (Q5 decision: CSS variables over
+      direct substitution).
+
+    The static ``_BASE_CSS`` references ``var(--content-h)`` on the
+    ``.page`` rule so per-format height stays decoupled from the
+    Python template.
+    """
+    _id, w, h = _resolve_picture_book_format(format_id)
+    content_h = h - 2 * _PAGE_MARGIN_IN
+    return (
+        ":root {\n"
+        f"    --page-w: {w}in;\n"
+        f"    --page-h: {h}in;\n"
+        f"    --content-h: {content_h}in;\n"
+        "}\n"
+        "@page {\n"
+        f"    size: {w}in {h}in;\n"
+        f"    margin: {_PAGE_MARGIN_IN}in;\n"
+        "}\n"
+    )
+
+
 # --- CSS rendering ---
 
 
@@ -57,12 +128,14 @@ _BASE_CSS = """
  * decisions. Mirror, not duplicate: the editor's
  * .module.css is the source of truth for the in-app render;
  * this CSS is the print-render of the same model.
+ *
+ * PDF-KDP-FORMATS-01 (2026-05-19): the ``@page { size: ... }``
+ * rule + the ``.page`` content-height are emitted DYNAMICALLY by
+ * ``_format_css(format_id)`` and prepended below this static block
+ * at render-time. The static block references ``var(--content-h)``
+ * for the element-level coupling; the dynamic block sets that
+ * variable per format.
  */
-
-@page {
-    size: 8.5in 8.5in;
-    margin: 0.5in;
-}
 
 /* PB-PHASE4 Session 4c-B-1 Finding G3 (2026-05-19): the
  * @font-face rules for the 5 OFL fonts are now BUILT
@@ -87,7 +160,7 @@ html, body {
 .page {
     page-break-after: always;
     width: 100%;
-    height: 7.5in;  /* 8.5in - 2 * 0.5in margin */
+    height: var(--content-h);  /* set by _format_css per PDF-KDP-FORMATS-01 */
     display: grid;
     position: relative;
     overflow: hidden;
@@ -839,6 +912,7 @@ def _build_html(
     book_data: dict[str, Any],
     pages: list[dict[str, Any]],
     assets_map: dict[str, str],
+    picture_book_format: str = DEFAULT_PICTURE_BOOK_FORMAT,
 ) -> str:
     """Build the full HTML document for WeasyPrint.
 
@@ -878,7 +952,14 @@ def _build_html(
     # time) defers the disk-read of font file paths until a PDF
     # is actually rendered, which keeps the module importable in
     # environments without the bundled fonts (e.g. test fixtures).
-    style_css = f"{font_face_css()}\n{_BASE_CSS}"
+    # PDF-KDP-FORMATS-01: prepend the format-specific @page rule +
+    # CSS variables for content sizing. Default 8.5x8.5 keeps the
+    # MVP rendering unchanged. Ordering: @font-face first (per the
+    # existing G3 test contract), then the format block, then the
+    # static base. The at-rules are order-independent for cascade
+    # purposes; the test contract is the constraint that pins
+    # ordering here.
+    style_css = f"{font_face_css()}\n{_format_css(picture_book_format)}\n{_BASE_CSS}"
     return (
         "<!DOCTYPE html>"
         f'<html lang="{escape(language)}">'
@@ -927,6 +1008,7 @@ def generate_picture_book_pdf(
     assets: list[dict[str, Any]],
     upload_dir: Path,
     output_path: Path,
+    picture_book_format: str = DEFAULT_PICTURE_BOOK_FORMAT,
 ) -> Path:
     """Render a picture-book to PDF via WeasyPrint.
 
@@ -945,6 +1027,11 @@ def generate_picture_book_pdf(
             paths to absolute file://-URIs.
         output_path: Where to write the PDF. Caller owns the temp
             dir lifecycle.
+        picture_book_format: KDP trim size key (one of the 5
+            entries in ``PICTURE_BOOK_FORMATS``). Missing, null,
+            empty, or unknown values silently fall back to
+            ``DEFAULT_PICTURE_BOOK_FORMAT`` (Q2 gamma-shim
+            default-on-read pattern).
 
     Returns:
         ``output_path`` after WeasyPrint has written the PDF.
@@ -961,7 +1048,7 @@ def generate_picture_book_pdf(
     from weasyprint import HTML  # noqa: PLC0415
 
     assets_map = _build_assets_map(assets, upload_dir)
-    html_str = _build_html(book_data, pages, assets_map)
+    html_str = _build_html(book_data, pages, assets_map, picture_book_format)
     HTML(string=html_str, base_url=str(upload_dir)).write_pdf(
         target=str(output_path),
     )
