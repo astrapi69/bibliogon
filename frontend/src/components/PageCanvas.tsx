@@ -314,6 +314,10 @@ function speechBubbleInlineStyle(
         fontWeightRaw === "bold" || fontWeightRaw === "normal"
             ? fontWeightRaw
             : "normal"
+    // PADDING-FONT-STYLE-01 C2: italic boolean -> CSS font-style.
+    const italic =
+        typeof merged.italic === "boolean" ? merged.italic : false
+    const fontStyle: "italic" | "normal" = italic ? "italic" : "normal"
     const textColorRgb = hexToRgb(merged.text_color) ?? {r: 0, g: 0, b: 0}
     const textColor = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
     const textAlignRaw = merged.text_align
@@ -346,6 +350,7 @@ function speechBubbleInlineStyle(
         fontFamily,
         fontSize,
         fontWeight,
+        fontStyle,
         color: textColor,
         textAlign,
     }

@@ -138,6 +138,12 @@ const DEFAULT_TEXT_ALIGN: TextAlign = "center"
 
 const DEFAULT_TEXT_COLOR = "#000000"
 
+// PADDING-FONT-STYLE-01 C2: italic toggle (boolean per Q4
+// decision). Maps to CSS ``font-style: italic`` when true,
+// ``font-style: normal`` when false. Enum upgrade (oblique
+// variant) is deferred — file only on demand signal.
+const DEFAULT_ITALIC = false
+
 /** 4c-B-2 C1 (Q1 decision γ — Inclusive-on-write, flat-fallback-on-read):
  *  per-bubble fields are stored under ``layout_config.bubbles[0]``.
  *  Flat top-level keys are accepted as a legacy fallback so pages
@@ -337,6 +343,12 @@ function readTextAlign(config: Record<string, unknown> | null): TextAlign {
     return DEFAULT_TEXT_ALIGN
 }
 
+function readItalic(config: Record<string, unknown> | null): boolean {
+    const value = readBubbleConfig(config).italic
+    if (typeof value === "boolean") return value
+    return DEFAULT_ITALIC
+}
+
 export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const {t} = useI18n()
     const currentAnchor = readAnchor(config)
@@ -368,6 +380,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
         DEFAULT_TEXT_COLOR,
     )
     const currentTextAlign = readTextAlign(config)
+    const currentItalic = readItalic(config)
     const [tier1Open, setTier1Open] = React.useState(false)
     const [tier2Open, setTier2Open] = React.useState(false)
 
@@ -1020,6 +1033,31 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                                 </option>
                             ))}
                         </select>
+                    </label>
+
+                    {/* PADDING-FONT-STYLE-01 C2: italic toggle (boolean).
+                     *  Q4 decision: NOT an enum. Maps to CSS
+                     *  ``font-style: italic`` when true, ``normal`` when
+                     *  false. Oblique variant deferred without backlog. */}
+                    <label className={styles.checkboxLabel}>
+                        <input
+                            type="checkbox"
+                            checked={currentItalic}
+                            onChange={(e) =>
+                                writeBubble({italic: e.target.checked})
+                            }
+                            data-testid="speech-bubble-italic-toggle"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier2.italic",
+                                "Kursiv",
+                            )}
+                        />
+                        <span>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier2.italic",
+                                "Kursiv",
+                            )}
+                        </span>
                     </label>
                 </Collapsible.Content>
             </Collapsible.Root>

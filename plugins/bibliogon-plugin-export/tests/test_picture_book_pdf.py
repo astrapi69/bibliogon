@@ -379,6 +379,37 @@ def test_padding_malformed_value_falls_back_to_default() -> None:
     assert "padding: 12pt" in style
 
 
+# --- PADDING-FONT-STYLE-01 C2: italic boolean -> font-style emit ---
+
+
+def test_italic_default_emits_font_style_normal() -> None:
+    style = _speech_bubble_style(None)
+    assert "font-style: normal" in style
+
+
+def test_italic_true_emits_font_style_italic() -> None:
+    style = _speech_bubble_style({"bubbles": [{"italic": True}]})
+    assert "font-style: italic" in style
+
+
+def test_italic_false_emits_font_style_normal() -> None:
+    style = _speech_bubble_style({"bubbles": [{"italic": False}]})
+    assert "font-style: normal" in style
+
+
+def test_italic_honours_bubbles_zero_precedence() -> None:
+    style = _speech_bubble_style(
+        {"italic": False, "bubbles": [{"italic": True}]}
+    )
+    assert "font-style: italic" in style
+
+
+def test_italic_malformed_value_falls_back_to_normal() -> None:
+    # Non-boolean must not flip the toggle by truthy-coerce.
+    style = _speech_bubble_style({"bubbles": [{"italic": "yes"}]})
+    assert "font-style: normal" in style
+
+
 # --- 4c-B-2 C3: Tier 2 Typography emit ---
 #
 # Five typography properties land in the inline-style on the

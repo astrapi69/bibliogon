@@ -257,11 +257,15 @@
  * inline-style emitted by speechBubbleInlineStyle. font-family +
  * color already inherit via .textInput; font-size, font-weight,
  * text-align need explicit ``inherit`` overrides because the
- * defaults above hardcode them. */
+ * defaults above hardcode them.
+ * PADDING-FONT-STYLE-01 C2: font-style also added so the italic
+ * toggle cascades from the parent into the textarea (browser
+ * default for textarea is font-style: normal). */
 .canvasLayoutSpeechBubble .regionText .textInput {
     font-size: inherit;
     font-weight: inherit;
     text-align: inherit;
+    font-style: inherit;
 }
 
 .textInput:focus {

@@ -373,6 +373,9 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         if font_weight_raw in {"normal", "bold"}
         else "normal"
     )
+    # PADDING-FONT-STYLE-01 C2: italic boolean -> CSS font-style.
+    italic_raw = merged.get("italic")
+    font_style = "italic" if italic_raw is True else "normal"
     text_color_rgb = _hex_to_rgb(merged.get("text_color")) or (0, 0, 0)
     text_color_css = (
         f"rgb({text_color_rgb[0]}, {text_color_rgb[1]}, {text_color_rgb[2]})"
@@ -387,6 +390,7 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         f"font-family: '{font_family}', sans-serif;"
         f" font-size: {font_size_pt}pt;"
         f" font-weight: {font_weight};"
+        f" font-style: {font_style};"
         f" color: {text_color_css};"
         f" text-align: {text_align};"
     )

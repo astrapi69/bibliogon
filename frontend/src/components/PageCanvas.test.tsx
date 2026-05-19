@@ -2088,6 +2088,38 @@ describe("PageCanvas - Tier 2 Typography render (4c-B-2 C3)", () => {
         expect(style).toContain("color: rgb(170, 17, 34)")
     })
 
+    // PADDING-FONT-STYLE-01 C2: italic boolean -> font-style emit.
+    it("default bubble emits font-style: normal (italic toggle off)", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("font-style: normal")
+    })
+
+    it("italic=true emits font-style: italic", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{italic: true}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("font-style: italic")
+    })
+
     it("text_align variants all emit", () => {
         for (const align of ["left", "right", "center"] as const) {
             const {container} = render(

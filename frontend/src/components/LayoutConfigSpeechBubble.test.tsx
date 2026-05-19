@@ -985,6 +985,70 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         }
     })
 
+    // PADDING-FONT-STYLE-01 C2: italic toggle (boolean).
+    it("italic toggle renders inside Tier 2 (default off)", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const toggle = screen.getByTestId(
+            "speech-bubble-italic-toggle",
+        ) as HTMLInputElement
+        expect(toggle.type).toBe("checkbox")
+        expect(toggle.checked).toBe(false)
+    })
+
+    it("italic toggle writes bubbles[0].italic boolean (immediate)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        fireEvent.click(screen.getByTestId("speech-bubble-italic-toggle"))
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{italic: true}],
+        })
+    })
+
+    it("italic toggle reflects persisted bubbles[0].italic=true", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubbles: [{italic: true}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const toggle = screen.getByTestId(
+            "speech-bubble-italic-toggle",
+        ) as HTMLInputElement
+        expect(toggle.checked).toBe(true)
+    })
+
+    it("italic toggle flips persisted true back to false (immediate)", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubbles: [{italic: true}]}}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        fireEvent.click(screen.getByTestId("speech-bubble-italic-toggle"))
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{italic: false}],
+        })
+    })
+
+    it("italic read honours bubbles[0] precedence over flat", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{italic: false, bubbles: [{italic: true}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
+        const toggle = screen.getByTestId(
+            "speech-bubble-italic-toggle",
+        ) as HTMLInputElement
+        expect(toggle.checked).toBe(true)
+    })
+
     it("Tier 2 reads honour bubbles[0] precedence over flat (font_size)", () => {
         render(
             <LayoutConfigSpeechBubble
