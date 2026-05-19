@@ -869,4 +869,84 @@ test.describe("Picture-Book PageEditor smoke", () => {
         expect(defaultFilename).not.toContain("8.5x8.5")
         expect(defaultFilename).toMatch(/\.pdf$/)
     })
+
+    // PDF-BLEED-MARKS-01 C4: bleed toggle round-trip + dual-surface
+    // (PageEditor header + BookMetadataEditor Design tab share the
+    // PictureBookPdfExportControls component) + reload persistence
+    // + filename suffix verification.
+    test("export-pdf: bleed toggle round-trip with filename suffix + reload persistence + dual-surface parity", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("KDP Bleed Smoke", "Author")
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // --- PageEditor header surface ---
+        await expect(
+            page.getByTestId("page-editor-pdf-bleed-toggle"),
+        ).toBeVisible()
+        // Default state: bleed=false (unchecked).
+        await expect(
+            page.getByTestId("page-editor-pdf-bleed-toggle"),
+        ).not.toBeChecked()
+
+        // Flip bleed on; reload preserves it via localStorage.
+        await page.getByTestId("page-editor-pdf-bleed-toggle").check()
+        await expect(
+            page.getByTestId("page-editor-pdf-bleed-toggle"),
+        ).toBeChecked()
+        await page.reload()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+        await expect(
+            page.getByTestId("page-editor-pdf-bleed-toggle"),
+        ).toBeChecked()
+
+        // Export from PageEditor with bleed=true + default format
+        // -> filename carries -bleed suffix.
+        const blPromise = page.waitForEvent("download")
+        await page.getByTestId("page-editor-export-pdf").click()
+        const blDownload = await blPromise
+        const blFilename = blDownload.suggestedFilename()
+        expect(blFilename).toContain("-bleed.pdf")
+        expect(blFilename).not.toContain("8.5x8.5")
+
+        // Combine with a non-default format (Q4 ordering pin:
+        // format-first-then-bleed).
+        await page
+            .getByTestId("page-editor-pdf-format-select")
+            .selectOption("11x8.5")
+        const comboPromise = page.waitForEvent("download")
+        await page.getByTestId("page-editor-export-pdf").click()
+        const comboDownload = await comboPromise
+        const comboFilename = comboDownload.suggestedFilename()
+        expect(comboFilename).toContain("-11x8.5-bleed.pdf")
+
+        // --- Dual-surface parity: BookMetadataEditor Design tab ---
+        // Recurring-Component-Unification side-effect: format +
+        // bleed selection from PageEditor cascade to the Design-
+        // tab Export-PDF surface (same component, same
+        // localStorage).
+        await page.getByTestId("page-editor-show-metadata").click()
+        await expect(page.getByTestId("metadata-tab-design")).toBeVisible()
+        // Click the Design tab.
+        await page.getByTestId("metadata-tab-design").click()
+        // The shared component mounts here too: format dropdown +
+        // bleed toggle + Export-PDF button all present.
+        await expect(
+            page.getByTestId("metadata-pdf-format-select"),
+        ).toBeVisible()
+        await expect(
+            page.getByTestId("metadata-pdf-bleed-toggle"),
+        ).toBeVisible()
+        await expect(page.getByTestId("metadata-export-pdf")).toBeVisible()
+        // State reflects what PageEditor wrote to localStorage:
+        // 11x8.5 + bleed=true.
+        await expect(
+            page.getByTestId("metadata-pdf-format-select"),
+        ).toHaveValue("11x8.5")
+        await expect(
+            page.getByTestId("metadata-pdf-bleed-toggle"),
+        ).toBeChecked()
+    })
 })

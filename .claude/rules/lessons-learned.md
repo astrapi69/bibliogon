@@ -3725,3 +3725,109 @@ time.
 - `docs/roadmap-archive/2026-05.md` —
   "Archived 2026-05-18 (USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01)"
   for the close-out artifact.
+
+
+## Pre-Inspection MUST audit all callers of a touched endpoint, not just the primary surface
+
+Surfaced 2026-05-19 during the PDF-BLEED-MARKS-01 Pre-Inspection
+when a half-wired surface from the just-shipped PDF-KDP-FORMATS-01
+was discovered: BookMetadataEditor's Design-tab Export-PDF button
+called the same export endpoint but passed empty query params,
+silently ignoring the format dropdown that PDF-KDP-FORMATS-01 had
+added to PageEditor. PDF-KDP-FORMATS-01's own Pre-Inspection had
+scoped the feature-area (PageEditor + the dropdown) but had NOT
+grep'd for ALL call sites of `api.documentExport.download(bookId,
+"pdf", ...)`. The second caller existed in BookMetadataEditor's
+Design tab since Session 6 Commit 5 (2026-05-17); the dropdown's
+new query-param contract bypassed it because PDF-KDP-FORMATS-01
+shipped the dropdown ONLY at PageEditor.
+
+This is a class of half-wired bug that the existing "Half-wired
+feature lifecycle" rule doesn't fully cover. That rule fires
+when a state-WRITE has no consumer, OR a state-MUTATION has no
+inverse. This new class fires when a NEW query param on an
+EXISTING endpoint is wired at SOME callers but not ALL — the API
+keeps working at the un-updated caller (empty params silently
+fall back to defaults), but the user-visible feature is invisible
+from that surface.
+
+### Rule
+
+Pre-Inspection for any feature that adds a new query param to an
+existing API endpoint (or extends an endpoint's contract) MUST
+explicitly grep for ALL call sites of that endpoint and report
+them in the audit findings. Each caller is classified as:
+
+- **Will-receive-feature:** caller updated in the same session to
+  thread the new param.
+- **Half-wired risk:** caller NOT updated; new feature silently
+  invisible from that surface. Surface as STOP-condition trigger
+  for explicit triage.
+
+### Detection grep at Pre-Inspection time
+
+For any new query-param feature on the export endpoint:
+```
+grep -rn "api\.documentExport\.download\|api\.<endpoint>\.<method>" \
+  frontend/src/ --include='*.tsx' --include='*.ts' | grep -v '\.test\.'
+```
+
+For any new query-param on a non-API surface (e.g. shell-pipeline,
+queue worker, scheduled job), grep for the function-name or the
+endpoint URL string equivalently.
+
+### Mitigation strategies
+
+- **(Preferred when 2+ surfaces exist) Extract a shared
+  component / helper FIRST**, then ship the new feature at the
+  shared site. The Recurring-Component-Unification Rule from
+  coding-standards.md applies here — 2 callers of the same
+  endpoint shape often share enough UI to extract. PDF-BLEED-
+  MARKS-01 C2 demonstrated this: `PictureBookPdfExportControls`
+  encapsulated the format dropdown + bleed checkbox + Export-PDF
+  button, mounted at BOTH PageEditor + BookMetadataEditor in the
+  same session.
+- **(When extraction isn't justified) Ship the new query param at
+  every caller in the same session**, even if the secondary
+  caller's UI is minimal. Half-wired callers shipping after the
+  primary creates the silent-fall-through bug class.
+- **(When extraction must be deferred) File an explicit follow-up
+  backlog item with a load-bearing trigger.** Per the
+  "Half-wired feature lifecycle" rule: the deferred work needs
+  a tracked ID + concrete trigger, NOT a docstring TODO.
+
+### Generalises to
+
+- New query params on ANY existing endpoint.
+- New kwargs on ANY existing service function.
+- New required headers / metadata on ANY existing API call shape.
+- New CLI flags on ANY existing command (multiple call sites in
+  the codebase wrap subprocess invocations).
+
+The discipline: Pre-Inspection's grep step is non-optional when
+the work touches an existing contract. Anything less ships a
+half-wired secondary surface as a side-effect.
+
+### Concrete artefact
+
+- PDF-KDP-FORMATS-01 (commits `60ff913` + `c96a1fc` + `b6eaf2c`):
+  shipped the format dropdown in PageEditor only. Half-wired
+  surface latent at `BookMetadataEditor.tsx:144-165` +
+  `:484-528`.
+- PDF-BLEED-MARKS-01 (this session) Pre-Inspection discovered the
+  surface + the C2 extraction closed it as a Recurring-Component-
+  Unification side-effect. Same shared component now serves
+  PageEditor + BookMetadataEditor; format AND bleed selections
+  cascade between the two surfaces via localStorage.
+
+### Pairs with
+
+- "Half-wired feature lifecycle" — covers the state-write-without-
+  consumer family. This rule covers the new-query-param-with-
+  partial-caller-coverage family.
+- "Articles-vs-Books parallel-surface asymmetry" — covers same-
+  named feature at 2 surfaces drifting. This rule covers a SHARED
+  feature at 2 surfaces but the new contract only being honoured
+  by one.
+- Recurring-Component-Unification Rule in coding-standards.md —
+  often the right tool for the mitigation.

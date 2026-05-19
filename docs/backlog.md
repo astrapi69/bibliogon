@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-19 (PICTURE-BOOK-PDF-KDP-FORMATS-01 closed in 3 atomic-green commits. Five KDP picture-book trim sizes shipped (8.5x8.5 + 8x10 + 8.5x11 + 11x8.5 + 10x8) via picture_book_format query param. CSS-variable-driven @page sizing keeps the Python<->CSS boundary clean. localStorage-persisted dropdown next to Export-PDF in PageEditor. Default-on-read gamma-shim pattern (matches 4421f02 bubbles[0] precedent) on both ends. Filename suffix policy: <slug>.pdf for default 8.5x8.5 (back-compat); <slug>-<format>.pdf for non-default. 4 of 5 named Phase 4 trigger-set items now closed; only PDF-BLEED-MARKS-01 + optional TAIL-01 remain before plugin-comics Session 2 trigger fires. Commits: 60ff913 + c96a1fc + this archive. 1659 / 1659 Vitest + 159 / 159 plugin-export pytest + 22 / 22 integration tests + 75 / 75 i18n tests passing.)
+Last updated: 2026-05-19 (PICTURE-BOOK-PDF-BLEED-MARKS-01 closed in 4 atomic-green commits. KDP-spec 0.125in bleed + crop marks via picture_book_bleed_marks query param. WeasyPrint @page bleed/marks native support; CSS-variable @page system from PDF-KDP-FORMATS-01 extended without redesign. PictureBookPdfExportControls shared component extracted per Recurring-Component-Unification Rule canonical 2-site extract-plus-migrate (PageEditor header + BookMetadataEditor Design tab); CLOSES PDF-KDP-FORMATS-01 half-wired surface as side-effect (Design-tab Export-PDF now respects format dropdown). Filename suffix policy: format-first-then-bleed. PDF Producer metadata extended with "(bleed)" suffix when on. PHASE 4 HARD-GATE TRIGGER-SET 100% CLOSED. TAIL-01 remains optional + plugin-comics-absorbable. Commits: cdb8705 (C1 backend) + 28a2f3e (C2 shared component) + 222ebca (C3 i18n) + this archive. 1679 / 1679 Vitest + 173 / 173 plugin-export pytest + 31 / 31 integration tests + 75 / 75 i18n tests passing.)
 Current version: v0.35.1
-Open tasks: 63 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 62 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -515,21 +515,6 @@ store.
   Effort: 1-2 commits (toggle + branch in the onChange
   handler + Vitest pin + a help-doc note explaining
   when to use it).
-
-- **PICTURE-BOOK-PDF-BLEED-MARKS-01** (P3): add KDP-quality
-  bleed marks (0.125" bleed + crop marks) to picture-book PDFs
-  for print-shop submission. v0.35.0 MVP ships trim-only PDFs
-  (acceptable per KDP's print-on-demand requirements per the
-  audit D4 finding); print-shop quality requires the explicit
-  bleed marks. Scope:
-  - CSS: ``@page { marks: crop bleed; bleed: 3mm; }`` in the
-    generator + a per-book toggle.
-  - UI: a checkbox in the BookMetadataEditor Design tab to
-    opt in.
-  - PDF metadata: a marker that downstream tools can detect.
-  Trigger: user reports KDP rejects the file for missing
-  bleed OR Aster requests print-shop quality. Approx 3-4
-  commits. Filed per audit D4 reservation at S6 close.
 
 - **PICTURE-BOOK-PDF-FRONT-MATTER-01** (P3): author-controlled
   front-matter pages (dedication / copyright / imprint) in
