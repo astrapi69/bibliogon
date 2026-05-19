@@ -113,3 +113,84 @@
     color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
     align-self: flex-end;
 }
+
+/* --- 4c-B-2 C2: Tier 1 Visual Style section --- */
+
+.sectionTrigger {
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
+    text-align: left;
+}
+
+.sectionTrigger:hover {
+    color: var(--text-sidebar);
+}
+
+.sectionChevron {
+    display: inline-block;
+    width: 0.8em;
+    font-weight: normal;
+    color: color-mix(in srgb, var(--text-sidebar) 55%, transparent);
+}
+
+.sectionContent {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 8px;
+}
+
+.colorLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.colorInput {
+    width: 36px;
+    height: 22px;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 18%, transparent);
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+}
+
+.selectLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.selectInput {
+    appearance: auto;
+    padding: 4px 6px;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 18%, transparent);
+    border-radius: 4px;
+    background: var(--surface-1, transparent);
+    color: var(--text-sidebar);
+    font-size: 0.85rem;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-sidebar);
+    cursor: pointer;
+}

@@ -1762,7 +1762,7 @@ describe("PageCanvas - bubbles[0] wrapper read-path (4c-B-2 C1)", () => {
         expect(style).toContain("height: 40%")
     })
 
-    it("empty bubbles array does NOT shadow flat keys", () => {
+    it("empty bubbles array does NOT shadow flat keys (regression-pin)", () => {
         // Defensive: a write that produced `bubbles: []` (zero
         // entries) must NOT discard the flat fallback values; the
         // shim treats the missing first element as "no override".
@@ -1784,5 +1784,155 @@ describe("PageCanvas - bubbles[0] wrapper read-path (4c-B-2 C1)", () => {
                 .getByTestId("page-canvas-speech-bubble")
                 .getAttribute("data-anchor"),
         ).toBe("top-left")
+    })
+})
+
+// --- 4c-B-2 C2: Tier 1 Visual Style render path ---
+//
+// speechBubbleInlineStyle emits CSS for the 6 Tier 1 properties.
+// Mirrors the Python parallel in test_picture_book_pdf.py.
+
+describe("PageCanvas - Tier 1 Visual Style render (4c-B-2 C2)", () => {
+    it("default bubble emits white rgba background composed with full opacity", () => {
+        render(
+            <PageCanvas
+                page={makePage({layout: "speech_bubble", layout_config: null})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        // Default: white background, full opacity, 2px solid black
+        // border, 50% radius, shadow on.
+        expect(style).toContain("rgba(255, 255, 255, 1)")
+        expect(style).toContain("border: 2px solid")
+        expect(style).toContain("border-radius: 50%")
+        expect(style).toContain("box-shadow")
+    })
+
+    it("background_color hex composes with opacity into rgba()", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        bubbles: [{background_color: "#ff8800", opacity: 0.5}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("rgba(255, 136, 0, 0.5)")
+    })
+
+    it("border_color + border_width + border_style emit a composed border", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        bubbles: [
+                            {
+                                border_color: "#0000ff",
+                                border_width: 4,
+                                border_style: "dashed",
+                            },
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("border: 4px dashed rgb(0, 0, 255)")
+    })
+
+    it("border_radius emits a percentage value", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{border_radius: 20}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("border-radius: 20%")
+    })
+
+    it("shadow=false emits box-shadow: none", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {bubbles: [{shadow: false}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("box-shadow: none")
+    })
+
+    it("shadow_intensity scales the box-shadow blur (intensity*2 px)", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        bubbles: [{shadow: true, shadow_intensity: 10}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        // intensity 10 -> offset_y = 10/2 = 5 px, blur = 10*2 = 20 px.
+        expect(style).toContain("box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3)")
+    })
+
+    it("border_style none + radius 0 emits a square bubble with no border", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        bubbles: [
+                            {
+                                border_style: "none",
+                                border_width: 0,
+                                border_radius: 0,
+                            },
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("border: 0px none")
+        expect(style).toContain("border-radius: 0%")
     })
 })

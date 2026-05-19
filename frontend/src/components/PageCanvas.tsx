@@ -194,6 +194,20 @@ function readBubbleConfig(
     return {...flat, ...bubblesZero}
 }
 
+/** 4c-B-2 C2: parse ``#rrggbb`` / ``rrggbb`` to RGB. Returns
+ *  ``null`` for any shape we don't recognise so the caller can
+ *  fall back to a default. Mirrors ``_hex_to_rgb`` in
+ *  ``picture_book_pdf.py``. */
+function hexToRgb(
+    hex: unknown,
+): {r: number; g: number; b: number} | null {
+    if (typeof hex !== "string") return null
+    const m = /^#?([a-fA-F0-9]{6})$/.exec(hex.trim())
+    if (!m) return null
+    const v = parseInt(m[1], 16)
+    return {r: (v >> 16) & 0xff, g: (v >> 8) & 0xff, b: v & 0xff}
+}
+
 /** PB-PHASE4 Session 4c Commit 4: derive the speech-bubble's
  *  position + background-opacity inline style from
  *  page.layout_config. Default (NULL config) is bottom-right + full
@@ -213,7 +227,11 @@ function speechBubbleInlineStyle(
     const rawOpacity =
         typeof merged.opacity === "number" ? merged.opacity : 1
     const opacity = Math.max(0.3, Math.min(1, rawOpacity))
-    const bg = `rgba(255, 255, 255, ${opacity})`
+    // 4c-B-2 C2: Tier 1 ``background_color`` composes with
+    // ``opacity`` into a single rgba() value. Default white keeps
+    // pre-C2 pages rendering identically.
+    const bgRgb = hexToRgb(merged.background_color) ?? {r: 255, g: 255, b: 255}
+    const bg = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${opacity})`
     // PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
     // bubble_width replaces ``size`` as the canonical width key,
     // bubble_height is the new height knob. Per the user's
@@ -240,10 +258,56 @@ function speechBubbleInlineStyle(
             : 30
     const heightPct = Math.max(15, Math.min(60, rawHeight))
     const height = `${heightPct}%`
+
+    // 4c-B-2 C2: Tier 1 Visual Style. Read border + radius +
+    // shadow from the merged bubble config, fall back to the
+    // CSS-module defaults (.canvasLayoutSpeechBubble .regionText)
+    // when keys are absent. Inline-style wins over the CSS class
+    // by specificity, so emitting these properties from C2 onward
+    // gives the user full visual control.
+    const borderColorRgb = hexToRgb(merged.border_color) ?? {r: 0, g: 0, b: 0}
+    const borderColor = `rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
+    const borderWidthRaw =
+        typeof merged.border_width === "number" ? merged.border_width : 2
+    const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
+    const borderStyleRaw = merged.border_style
+    const borderStyle =
+        borderStyleRaw === "solid" ||
+        borderStyleRaw === "dashed" ||
+        borderStyleRaw === "dotted" ||
+        borderStyleRaw === "none"
+            ? borderStyleRaw
+            : "solid"
+    const borderRadiusRaw =
+        typeof merged.border_radius === "number" ? merged.border_radius : 50
+    const borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
+    const border = `${borderWidth}px ${borderStyle} ${borderColor}`
+
+    const shadowOn =
+        typeof merged.shadow === "boolean" ? merged.shadow : true
+    const shadowIntensityRaw =
+        typeof merged.shadow_intensity === "number"
+            ? merged.shadow_intensity
+            : 5
+    const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
+    // Shadow intensity 0-10 maps to a soft drop-shadow:
+    // offset_y = intensity/2 px, blur = intensity*2 px, 30% black.
+    const boxShadow = shadowOn
+        ? `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
+        : "none"
+
     const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
+    const tier1: React.CSSProperties = {
+        background: bg,
+        width,
+        height,
+        border,
+        borderRadius,
+        boxShadow,
+    }
     switch (anchor) {
         case "top-left":
-            return {...reset, top: 16, left: 16, transform: "none", background: bg, width, height}
+            return {...reset, top: 16, left: 16, transform: "none", ...tier1}
         case "top-center":
             // Session 4c-B-1 manual smoke Finding A: new preset.
             return {
@@ -251,12 +315,10 @@ function speechBubbleInlineStyle(
                 top: 16,
                 left: "50%",
                 transform: "translateX(-50%)",
-                background: bg,
-                width,
-                height,
+                ...tier1,
             }
         case "top-right":
-            return {...reset, top: 16, right: 16, transform: "none", background: bg, width, height}
+            return {...reset, top: 16, right: 16, transform: "none", ...tier1}
         case "middle-left":
             // Session 4c-B-1 manual smoke Finding A: new preset.
             return {
@@ -264,9 +326,7 @@ function speechBubbleInlineStyle(
                 top: "50%",
                 left: 16,
                 transform: "translateY(-50%)",
-                background: bg,
-                width,
-                height,
+                ...tier1,
             }
         case "middle-right":
             // Session 4c-B-1 manual smoke Finding A: new preset.
@@ -275,23 +335,19 @@ function speechBubbleInlineStyle(
                 top: "50%",
                 right: 16,
                 transform: "translateY(-50%)",
-                background: bg,
-                width,
-                height,
+                ...tier1,
             }
         case "bottom-left":
-            return {...reset, bottom: 16, left: 16, transform: "none", background: bg, width, height}
+            return {...reset, bottom: 16, left: 16, transform: "none", ...tier1}
         case "bottom-right":
-            return {...reset, bottom: 16, right: 16, transform: "none", background: bg, width, height}
+            return {...reset, bottom: 16, right: 16, transform: "none", ...tier1}
         case "center":
             return {
                 ...reset,
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                background: bg,
-                width,
-                height,
+                ...tier1,
             }
         case "bottom-center":
         default:
@@ -300,9 +356,7 @@ function speechBubbleInlineStyle(
                 bottom: 16,
                 left: "50%",
                 transform: "translateX(-50%)",
-                background: bg,
-                width,
-                height,
+                ...tier1,
             }
     }
 }

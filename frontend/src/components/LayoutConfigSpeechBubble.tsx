@@ -1,4 +1,5 @@
 import React from "react"
+import * as Collapsible from "@radix-ui/react-collapsible"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
 import styles from "./LayoutConfigSpeechBubble.module.css"
@@ -66,6 +67,43 @@ const HEIGHT_MIN = 15
 const HEIGHT_MAX = 60
 const HEIGHT_STEP = 5
 const DEFAULT_HEIGHT = 30
+
+// --- 4c-B-2 C2: Tier 1 Visual Style ---
+//
+// Six per-bubble visual-style properties land here. Field names
+// match the comic_bubbles.bubble_config keys per
+// docs/explorations/comic-foundation.md (NQ2 scope-anticipate):
+// plugin-comics Session 2 reads the same key set from its own
+// schema, so picture-book single-bubble + comics multi-bubble
+// share the same property names.
+
+const BORDER_WIDTH_MIN = 0
+const BORDER_WIDTH_MAX = 8
+const BORDER_WIDTH_STEP = 1
+const DEFAULT_BORDER_WIDTH = 2
+
+const BORDER_RADIUS_MIN = 0
+const BORDER_RADIUS_MAX = 50
+const BORDER_RADIUS_STEP = 5
+const DEFAULT_BORDER_RADIUS = 50
+
+const SHADOW_INTENSITY_MIN = 0
+const SHADOW_INTENSITY_MAX = 10
+const SHADOW_INTENSITY_STEP = 1
+const DEFAULT_SHADOW_INTENSITY = 5
+
+const DEFAULT_BACKGROUND_COLOR = "#ffffff"
+const DEFAULT_BORDER_COLOR = "#000000"
+const DEFAULT_BORDER_STYLE: BorderStyle = "solid"
+const DEFAULT_SHADOW = true
+
+type BorderStyle = "solid" | "dashed" | "dotted" | "none"
+const BORDER_STYLES: readonly BorderStyle[] = [
+    "solid",
+    "dashed",
+    "dotted",
+    "none",
+]
 
 /** 4c-B-2 C1 (Q1 decision γ — Inclusive-on-write, flat-fallback-on-read):
  *  per-bubble fields are stored under ``layout_config.bubbles[0]``.
@@ -147,12 +185,96 @@ function readOpacity(config: Record<string, unknown> | null): number {
     return DEFAULT_OPACITY
 }
 
+// --- 4c-B-2 C2: Tier 1 reads ---
+
+/** Hex colors only (``#rrggbb`` or ``rrggbb``). Unknown shapes
+ *  fall back to the default. The renderer uses the same hex shape
+ *  to compose ``rgba(r, g, b, opacity)``. */
+function readHexColor(
+    config: Record<string, unknown> | null,
+    key: string,
+    fallback: string,
+): string {
+    const value = readBubbleConfig(config)[key]
+    if (
+        typeof value === "string" &&
+        /^#?[a-fA-F0-9]{6}$/.test(value.trim())
+    ) {
+        const trimmed = value.trim()
+        return trimmed.startsWith("#") ? trimmed : `#${trimmed}`
+    }
+    return fallback
+}
+
+function readBorderWidth(config: Record<string, unknown> | null): number {
+    const value = readBubbleConfig(config).border_width
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(BORDER_WIDTH_MIN, Math.min(BORDER_WIDTH_MAX, value))
+    }
+    return DEFAULT_BORDER_WIDTH
+}
+
+function readBorderStyle(config: Record<string, unknown> | null): BorderStyle {
+    const value = readBubbleConfig(config).border_style
+    if (
+        typeof value === "string" &&
+        (BORDER_STYLES as readonly string[]).includes(value)
+    ) {
+        return value as BorderStyle
+    }
+    return DEFAULT_BORDER_STYLE
+}
+
+function readBorderRadius(config: Record<string, unknown> | null): number {
+    const value = readBubbleConfig(config).border_radius
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(
+            BORDER_RADIUS_MIN,
+            Math.min(BORDER_RADIUS_MAX, value),
+        )
+    }
+    return DEFAULT_BORDER_RADIUS
+}
+
+function readShadow(config: Record<string, unknown> | null): boolean {
+    const value = readBubbleConfig(config).shadow
+    if (typeof value === "boolean") return value
+    return DEFAULT_SHADOW
+}
+
+function readShadowIntensity(config: Record<string, unknown> | null): number {
+    const value = readBubbleConfig(config).shadow_intensity
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(
+            SHADOW_INTENSITY_MIN,
+            Math.min(SHADOW_INTENSITY_MAX, value),
+        )
+    }
+    return DEFAULT_SHADOW_INTENSITY
+}
+
 export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const {t} = useI18n()
     const currentAnchor = readAnchor(config)
     const currentOpacity = readOpacity(config)
     const currentWidth = readBubbleWidth(config)
     const currentHeight = readBubbleHeight(config)
+    const currentBackgroundColor = readHexColor(
+        config,
+        "background_color",
+        DEFAULT_BACKGROUND_COLOR,
+    )
+    const currentBorderColor = readHexColor(
+        config,
+        "border_color",
+        DEFAULT_BORDER_COLOR,
+    )
+    const currentBorderWidth = readBorderWidth(config)
+    const currentBorderStyle = readBorderStyle(config)
+    const currentBorderRadius = readBorderRadius(config)
+    const currentShadow = readShadow(config)
+    const currentShadowIntensity = readShadowIntensity(config)
+    const [tier1Open, setTier1Open] = React.useState(false)
 
     /** 4c-B-2 C1: every write goes through bubbles[0]. The
      *  prior per-bubble state (from readBubbleConfig — which
@@ -178,6 +300,36 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const debouncedHeightChange = useDebouncedCallback((value: number) => {
         writeBubble({bubble_height: value})
     }, 300)
+    const debouncedBorderWidthChange = useDebouncedCallback(
+        (value: number) => {
+            writeBubble({border_width: value})
+        },
+        300,
+    )
+    const debouncedBorderRadiusChange = useDebouncedCallback(
+        (value: number) => {
+            writeBubble({border_radius: value})
+        },
+        300,
+    )
+    const debouncedShadowIntensityChange = useDebouncedCallback(
+        (value: number) => {
+            writeBubble({shadow_intensity: value})
+        },
+        300,
+    )
+    const debouncedBackgroundColorChange = useDebouncedCallback(
+        (value: string) => {
+            writeBubble({background_color: value})
+        },
+        300,
+    )
+    const debouncedBorderColorChange = useDebouncedCallback(
+        (value: string) => {
+            writeBubble({border_color: value})
+        },
+        300,
+    )
 
     return (
         <div
@@ -336,6 +488,230 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                     {currentHeight}%
                 </span>
             </label>
+
+            {/* --- 4c-B-2 C2: Tier 1 Visual Style --- */}
+            <Collapsible.Root
+                open={tier1Open}
+                onOpenChange={setTier1Open}
+                data-testid="speech-bubble-tier1-section"
+            >
+                <Collapsible.Trigger asChild>
+                    <button
+                        type="button"
+                        className={styles.sectionTrigger}
+                        data-testid="speech-bubble-tier1-trigger"
+                        aria-expanded={tier1Open}
+                    >
+                        <span className={styles.sectionChevron} aria-hidden>
+                            {tier1Open ? "▾" : "▸"}
+                        </span>
+                        {t(
+                            "ui.page_editor.config.speech_bubble.tier1.heading",
+                            "Visueller Stil",
+                        )}
+                    </button>
+                </Collapsible.Trigger>
+                <Collapsible.Content className={styles.sectionContent}>
+                    <label className={styles.colorLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.background_color",
+                                "Hintergrundfarbe",
+                            )}
+                        </span>
+                        <input
+                            type="color"
+                            value={currentBackgroundColor}
+                            onChange={(e) =>
+                                debouncedBackgroundColorChange(e.target.value)
+                            }
+                            data-testid="speech-bubble-background-color"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.background_color",
+                                "Hintergrundfarbe",
+                            )}
+                            className={styles.colorInput}
+                        />
+                    </label>
+
+                    <label className={styles.colorLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_color",
+                                "Rahmenfarbe",
+                            )}
+                        </span>
+                        <input
+                            type="color"
+                            value={currentBorderColor}
+                            onChange={(e) =>
+                                debouncedBorderColorChange(e.target.value)
+                            }
+                            data-testid="speech-bubble-border-color"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_color",
+                                "Rahmenfarbe",
+                            )}
+                            className={styles.colorInput}
+                        />
+                    </label>
+
+                    <label className={styles.sliderLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_width",
+                                "Rahmenbreite",
+                            )}
+                        </span>
+                        <input
+                            type="range"
+                            min={BORDER_WIDTH_MIN}
+                            max={BORDER_WIDTH_MAX}
+                            step={BORDER_WIDTH_STEP}
+                            defaultValue={currentBorderWidth}
+                            onChange={(e) =>
+                                debouncedBorderWidthChange(
+                                    parseInt(e.target.value, 10),
+                                )
+                            }
+                            data-testid="speech-bubble-border-width-slider"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_width",
+                                "Rahmenbreite",
+                            )}
+                        />
+                        <span
+                            className={styles.sliderValue}
+                            data-testid="speech-bubble-border-width-value"
+                        >
+                            {currentBorderWidth}px
+                        </span>
+                    </label>
+
+                    <label className={styles.selectLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_style",
+                                "Rahmenstil",
+                            )}
+                        </span>
+                        <select
+                            value={currentBorderStyle}
+                            onChange={(e) =>
+                                writeBubble({
+                                    border_style: e.target.value as BorderStyle,
+                                })
+                            }
+                            data-testid="speech-bubble-border-style-select"
+                            className={styles.selectInput}
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_style",
+                                "Rahmenstil",
+                            )}
+                        >
+                            {BORDER_STYLES.map((style) => (
+                                <option key={style} value={style}>
+                                    {t(
+                                        `ui.page_editor.config.speech_bubble.tier1.border_style_${style}`,
+                                        style.charAt(0).toUpperCase() +
+                                            style.slice(1),
+                                    )}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label className={styles.sliderLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_radius",
+                                "Eckenradius",
+                            )}
+                        </span>
+                        <input
+                            type="range"
+                            min={BORDER_RADIUS_MIN}
+                            max={BORDER_RADIUS_MAX}
+                            step={BORDER_RADIUS_STEP}
+                            defaultValue={currentBorderRadius}
+                            onChange={(e) =>
+                                debouncedBorderRadiusChange(
+                                    parseInt(e.target.value, 10),
+                                )
+                            }
+                            data-testid="speech-bubble-border-radius-slider"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.border_radius",
+                                "Eckenradius",
+                            )}
+                        />
+                        <span
+                            className={styles.sliderValue}
+                            data-testid="speech-bubble-border-radius-value"
+                        >
+                            {currentBorderRadius}%
+                        </span>
+                    </label>
+
+                    {/* Shadow toggle + intensity. Q3 decision (a):
+                     *  intensity stays visible but disabled when
+                     *  shadow=false, preserving last value so the
+                     *  user can flip back without losing their pick. */}
+                    <label className={styles.checkboxLabel}>
+                        <input
+                            type="checkbox"
+                            checked={currentShadow}
+                            onChange={(e) =>
+                                writeBubble({shadow: e.target.checked})
+                            }
+                            data-testid="speech-bubble-shadow-toggle"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.shadow",
+                                "Schatten",
+                            )}
+                        />
+                        <span>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.shadow",
+                                "Schatten",
+                            )}
+                        </span>
+                    </label>
+
+                    <label className={styles.sliderLabel}>
+                        <span className={styles.legend}>
+                            {t(
+                                "ui.page_editor.config.speech_bubble.tier1.shadow_intensity",
+                                "Schattenintensität",
+                            )}
+                        </span>
+                        <input
+                            type="range"
+                            min={SHADOW_INTENSITY_MIN}
+                            max={SHADOW_INTENSITY_MAX}
+                            step={SHADOW_INTENSITY_STEP}
+                            defaultValue={currentShadowIntensity}
+                            disabled={!currentShadow}
+                            onChange={(e) =>
+                                debouncedShadowIntensityChange(
+                                    parseInt(e.target.value, 10),
+                                )
+                            }
+                            data-testid="speech-bubble-shadow-intensity-slider"
+                            aria-label={t(
+                                "ui.page_editor.config.speech_bubble.tier1.shadow_intensity",
+                                "Schattenintensität",
+                            )}
+                        />
+                        <span
+                            className={styles.sliderValue}
+                            data-testid="speech-bubble-shadow-intensity-value"
+                        >
+                            {currentShadowIntensity}
+                        </span>
+                    </label>
+                </Collapsible.Content>
+            </Collapsible.Root>
         </div>
     )
 }

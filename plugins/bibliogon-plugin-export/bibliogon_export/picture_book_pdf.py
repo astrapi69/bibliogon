@@ -33,6 +33,7 @@ ships fresh here.
 from __future__ import annotations
 
 import json
+import re
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -233,6 +234,20 @@ def _read_bubble_config(config: dict[str, Any] | None) -> dict[str, Any]:
     return {**flat, **bubbles_zero}
 
 
+def _hex_to_rgb(hex_str: Any) -> tuple[int, int, int] | None:
+    """4c-B-2 C2: parse ``#rrggbb`` / ``rrggbb`` to an RGB triple.
+    Mirrors the TypeScript ``hexToRgb`` in ``PageCanvas.tsx`` so
+    in-editor + PDF render the same composed ``rgba(...)`` values.
+    """
+    if not isinstance(hex_str, str):
+        return None
+    match = re.match(r"^#?([a-fA-F0-9]{6})$", hex_str.strip())
+    if not match:
+        return None
+    value = int(match.group(1), 16)
+    return ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
+
+
 def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     """Compute the inline-style for a speech_bubble page's bubble.
 
@@ -273,9 +288,58 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     else:
         height_pct = 30
 
-    bg = f"rgba(255, 255, 255, {opacity})"
+    # 4c-B-2 C2: Tier 1 ``background_color`` composes with
+    # ``opacity`` into a single rgba() value. Default white keeps
+    # pre-C2 pages rendering identically.
+    bg_rgb = _hex_to_rgb(merged.get("background_color")) or (255, 255, 255)
+    bg = f"rgba({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]}, {opacity})"
     width = f"width: {width_pct}%;"
     height = f"height: {height_pct}%;"
+
+    # 4c-B-2 C2: Tier 1 Visual Style emit. Mirrors the TypeScript
+    # branch in PageCanvas.tsx::speechBubbleInlineStyle so the
+    # printed PDF + the in-editor view stay visually in sync.
+    border_color_rgb = _hex_to_rgb(merged.get("border_color")) or (0, 0, 0)
+    border_color_css = (
+        f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]})"
+    )
+    border_width_raw = merged.get("border_width")
+    if isinstance(border_width_raw, (int, float)):
+        border_width_px = max(0, min(8, int(border_width_raw)))
+    else:
+        border_width_px = 2
+    border_style_raw = merged.get("border_style")
+    border_style = (
+        border_style_raw
+        if border_style_raw in {"solid", "dashed", "dotted", "none"}
+        else "solid"
+    )
+    border_radius_raw = merged.get("border_radius")
+    if isinstance(border_radius_raw, (int, float)):
+        border_radius_pct = max(0, min(50, int(border_radius_raw)))
+    else:
+        border_radius_pct = 50
+    shadow_on = merged.get("shadow")
+    shadow_on = shadow_on if isinstance(shadow_on, bool) else True
+    shadow_intensity_raw = merged.get("shadow_intensity")
+    if isinstance(shadow_intensity_raw, (int, float)):
+        shadow_intensity = max(0, min(10, int(shadow_intensity_raw)))
+    else:
+        shadow_intensity = 5
+    # Shadow intensity 0-10 maps to offset_y = intensity/2 px,
+    # blur = intensity*2 px, 30% black drop-shadow.
+    if shadow_on:
+        box_shadow = (
+            f"0 {shadow_intensity / 2}px {shadow_intensity * 2}px "
+            "rgba(0, 0, 0, 0.3)"
+        )
+    else:
+        box_shadow = "none"
+    tier1 = (
+        f"border: {border_width_px}px {border_style} {border_color_css};"
+        f" border-radius: {border_radius_pct}%;"
+        f" box-shadow: {box_shadow};"
+    )
 
     reset = "top: auto; right: auto; bottom: auto; left: auto;"
     # PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18): added
@@ -308,7 +372,7 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
         ),
     }
     pos = positions.get(anchor, positions["bottom-center"])
-    return f"{reset} {pos} background: {bg}; {width} {height}"
+    return f"{reset} {pos} background: {bg}; {width} {height} {tier1}"
 
 
 def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str, str]:

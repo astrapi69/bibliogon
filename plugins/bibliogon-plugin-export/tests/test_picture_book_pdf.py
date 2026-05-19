@@ -246,6 +246,98 @@ def test_bubbles_zero_partial_override_merges_with_flat() -> None:
     assert "width: 65%" in style
 
 
+# --- 4c-B-2 C2: Tier 1 Visual Style emit ---
+#
+# Six per-bubble visual properties land in the inline-style on the
+# bubble element. Mirrors PageCanvas.tsx speechBubbleInlineStyle so
+# the printed PDF + the in-editor view stay visually in sync.
+
+
+def test_tier1_default_bubble_emits_white_rgba_with_full_opacity() -> None:
+    # NULL config: defaults are white bg / full opacity / 2px solid
+    # black / 50% radius / shadow on intensity 5.
+    style = _speech_bubble_style(None)
+    assert "rgba(255, 255, 255, 1.0)" in style or "rgba(255, 255, 255, 1)" in style
+    assert "border: 2px solid rgb(0, 0, 0)" in style
+    assert "border-radius: 50%" in style
+    assert "box-shadow: 0 2.5px 10.0px rgba(0, 0, 0, 0.3)" in style or (
+        "box-shadow: 0 2.5px 10px rgba(0, 0, 0, 0.3)" in style
+    )
+
+
+def test_tier1_background_color_composes_with_opacity_into_rgba() -> None:
+    style = _speech_bubble_style(
+        {"bubbles": [{"background_color": "#ff8800", "opacity": 0.5}]}
+    )
+    assert "rgba(255, 136, 0, 0.5)" in style
+
+
+def test_tier1_border_emits_composed_color_width_style() -> None:
+    style = _speech_bubble_style(
+        {
+            "bubbles": [
+                {
+                    "border_color": "#0000ff",
+                    "border_width": 4,
+                    "border_style": "dashed",
+                }
+            ]
+        }
+    )
+    assert "border: 4px dashed rgb(0, 0, 255)" in style
+
+
+def test_tier1_border_radius_emits_percentage() -> None:
+    style = _speech_bubble_style({"bubbles": [{"border_radius": 20}]})
+    assert "border-radius: 20%" in style
+
+
+def test_tier1_shadow_off_emits_box_shadow_none() -> None:
+    style = _speech_bubble_style({"bubbles": [{"shadow": False}]})
+    assert "box-shadow: none" in style
+
+
+def test_tier1_shadow_intensity_scales_blur() -> None:
+    # intensity 10 -> offset_y = 5 px, blur = 20 px.
+    style = _speech_bubble_style(
+        {"bubbles": [{"shadow": True, "shadow_intensity": 10}]}
+    )
+    assert "box-shadow: 0 5.0px 20px rgba(0, 0, 0, 0.3)" in style or (
+        "box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3)" in style
+    )
+
+
+def test_tier1_border_style_none_emits_no_border() -> None:
+    style = _speech_bubble_style(
+        {
+            "bubbles": [
+                {
+                    "border_style": "none",
+                    "border_width": 0,
+                    "border_radius": 0,
+                }
+            ]
+        }
+    )
+    assert "border: 0px none rgb(0, 0, 0)" in style
+    assert "border-radius: 0%" in style
+
+
+def test_tier1_unknown_border_style_falls_back_to_solid() -> None:
+    style = _speech_bubble_style({"bubbles": [{"border_style": "garbage"}]})
+    # Defensive: an unknown enum value must not break rendering.
+    assert "border: 2px solid rgb(0, 0, 0)" in style
+
+
+def test_tier1_malformed_hex_color_falls_back_to_default() -> None:
+    style = _speech_bubble_style(
+        {"bubbles": [{"background_color": "not-a-hex", "border_color": "#zzzzzz"}]}
+    )
+    # background falls back to white, border falls back to black.
+    assert "rgba(255, 255, 255," in style
+    assert "border: 2px solid rgb(0, 0, 0)" in style
+
+
 # --- _image_layout_style ---
 
 

@@ -584,3 +584,212 @@ describe("LayoutConfigSpeechBubble - bubbles[0] wrapper (4c-B-2 C1)", () => {
     })
 })
 
+// --- 4c-B-2 C2: Tier 1 Visual Style (6 fields) ---
+//
+// Six per-bubble visual-style properties: background_color,
+// border_color, border_width, border_style, border_radius,
+// shadow + shadow_intensity. All land under bubbles[0] via
+// writeBubble per C1's wrapper-shape decision. Field-name parity
+// with comic_bubbles.bubble_config (docs/explorations/
+// comic-foundation.md NQ2).
+
+describe("LayoutConfigSpeechBubble - Tier 1 Visual Style (4c-B-2 C2)", () => {
+    it("renders the Tier 1 collapsible section trigger", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        expect(screen.getByTestId("speech-bubble-tier1-trigger")).toBeTruthy()
+    })
+
+    it("Tier 1 section is collapsed by default (controls not rendered)", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        // Radix Collapsible mounts Content lazily; before the
+        // trigger is clicked, the inner controls are not in the DOM.
+        expect(
+            screen.queryByTestId("speech-bubble-background-color"),
+        ).toBeNull()
+    })
+
+    it("clicking the Tier 1 trigger reveals the 6 controls", () => {
+        render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        expect(
+            screen.getByTestId("speech-bubble-background-color"),
+        ).toBeTruthy()
+        expect(screen.getByTestId("speech-bubble-border-color")).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-border-width-slider"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-border-style-select"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-border-radius-slider"),
+        ).toBeTruthy()
+        expect(screen.getByTestId("speech-bubble-shadow-toggle")).toBeTruthy()
+        expect(
+            screen.getByTestId("speech-bubble-shadow-intensity-slider"),
+        ).toBeTruthy()
+    })
+
+    it("background_color picker writes bubbles[0].background_color (debounced)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const picker = screen.getByTestId(
+            "speech-bubble-background-color",
+        ) as HTMLInputElement
+        fireEvent.change(picker, {target: {value: "#ff8800"}})
+        expect(onChange).not.toHaveBeenCalled()
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{background_color: "#ff8800"}],
+        })
+    })
+
+    it("border_color picker writes bubbles[0].border_color (debounced)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const picker = screen.getByTestId(
+            "speech-bubble-border-color",
+        ) as HTMLInputElement
+        fireEvent.change(picker, {target: {value: "#00aaff"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{border_color: "#00aaff"}],
+        })
+    })
+
+    it("border_width slider writes bubbles[0].border_width (debounced, clamped to 0-8)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-border-width-slider",
+        ) as HTMLInputElement
+        expect(slider.min).toBe("0")
+        expect(slider.max).toBe("8")
+        fireEvent.change(slider, {target: {value: "5"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{border_width: 5}],
+        })
+    })
+
+    it("border_style select writes bubbles[0].border_style (immediate, all 4 values)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const select = screen.getByTestId(
+            "speech-bubble-border-style-select",
+        ) as HTMLSelectElement
+        for (const style of ["solid", "dashed", "dotted", "none"]) {
+            onChange.mockClear()
+            fireEvent.change(select, {target: {value: style}})
+            expect(onChange).toHaveBeenCalledWith({
+                bubbles: [{border_style: style}],
+            })
+        }
+    })
+
+    it("border_radius slider writes bubbles[0].border_radius (debounced, 0-50%)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-border-radius-slider",
+        ) as HTMLInputElement
+        expect(slider.min).toBe("0")
+        expect(slider.max).toBe("50")
+        fireEvent.change(slider, {target: {value: "25"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{border_radius: 25}],
+        })
+    })
+
+    it("shadow toggle writes bubbles[0].shadow (immediate boolean)", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubbles: [{shadow: true}]}}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const toggle = screen.getByTestId(
+            "speech-bubble-shadow-toggle",
+        ) as HTMLInputElement
+        fireEvent.click(toggle)
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{shadow: false}],
+        })
+    })
+
+    it("Q3 (a): shadow_intensity slider is DISABLED when shadow is off", () => {
+        // Q3 decision: intensity stays visible but disabled when
+        // shadow=false. Preserves last value so the user can flip
+        // back without losing their pick.
+        render(
+            <LayoutConfigSpeechBubble
+                config={{bubbles: [{shadow: false, shadow_intensity: 7}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-shadow-intensity-slider",
+        ) as HTMLInputElement
+        expect(slider.disabled).toBe(true)
+        // Value display still echoes the persisted intensity.
+        expect(
+            screen.getByTestId("speech-bubble-shadow-intensity-value")
+                .textContent,
+        ).toBe("7")
+    })
+
+    it("shadow_intensity slider writes bubbles[0].shadow_intensity (debounced, 0-10)", () => {
+        const onChange = vi.fn()
+        render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const slider = screen.getByTestId(
+            "speech-bubble-shadow-intensity-slider",
+        ) as HTMLInputElement
+        expect(slider.min).toBe("0")
+        expect(slider.max).toBe("10")
+        // Shadow is ON by default so the slider is enabled.
+        expect(slider.disabled).toBe(false)
+        fireEvent.change(slider, {target: {value: "8"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{shadow_intensity: 8}],
+        })
+    })
+
+    it("Tier 1 reads honour bubbles[0] precedence over flat (background_color)", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    background_color: "#000000",
+                    bubbles: [{background_color: "#ff00ff"}],
+                }}
+                onChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
+        const picker = screen.getByTestId(
+            "speech-bubble-background-color",
+        ) as HTMLInputElement
+        expect(picker.value).toBe("#ff00ff")
+    })
+})
+
