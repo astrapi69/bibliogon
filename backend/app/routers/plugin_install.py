@@ -308,24 +308,27 @@ def list_installed_plugins() -> list[dict[str, Any]]:
 
 
 def _refresh_manager_app_config() -> None:
-    """Reload + re-merge the plugin manager's app-config snapshot.
+    """Re-merge the plugin manager's app-config snapshot.
 
     Mirrors ``settings._refresh_manager_app_config`` so plugin
     install / uninstall updates take effect without a restart.
-    Best-effort: reload failures + manager-API drift log a warning
-    but never raise.
+
+    Uses ``PluginManager.refresh_config`` (pluginforge v0.6.0 public
+    API), which replaces the snapshot in-place AND notifies active
+    plugins via ``on_config_changed(old, new)``. The previous
+    two-step (``reload_config()`` from disk then private-attribute
+    poke) is collapsed: ``refresh_config(merged)`` writes the
+    merged overlay directly, so a disk re-read would just be
+    overwritten anyway.
     """
     if not _manager:
         return
-    try:
-        _manager.reload_config()
-    except Exception:  # noqa: BLE001 - reload best-effort
-        logger.exception("Plugin manager reload_config() failed; continuing.")
     merged = config_overlay.read_app_config_merged()
-    try:
-        _manager._app_config = merged  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001 - manager API change protection
+    errors = _manager.refresh_config(merged)
+    for err in errors:
         logger.warning(
-            "Could not patch _manager._app_config after overlay write; "
-            "the manager's view may be stale until the next restart."
+            "Plugin '%s' on_config_changed raised (%s): %s",
+            err.name,
+            err.phase,
+            err.user_facing_message,
         )

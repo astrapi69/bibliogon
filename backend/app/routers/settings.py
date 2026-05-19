@@ -492,25 +492,23 @@ def disable_plugin(plugin_name: str) -> dict[str, str]:
 
 
 def _refresh_manager_app_config() -> None:
-    """Reload the plugin manager's app-config snapshot.
+    """Re-merge the plugin manager's app-config snapshot.
 
-    The manager's ``reload_config()`` reads from its own
-    ``_config_path`` (project app.yaml); after a write to the user
-    overlay we then overwrite the in-memory snapshot with the merged
-    view so subsequent ``manager.get_app_config()`` callers see the
-    user's changes without a backend restart.
+    Uses ``PluginManager.refresh_config`` (pluginforge v0.6.0 public
+    API), which replaces the snapshot in-place AND notifies active
+    plugins via ``on_config_changed(old, new)``. After a write to
+    the user overlay, callers of ``manager.get_app_config()`` see
+    the merged view without a backend restart. Plugins that do not
+    override the hook keep the no-op default.
     """
     if not _manager:
         return
-    try:
-        _manager.reload_config()
-    except Exception:  # noqa: BLE001 - diagnostic only; reload best-effort
-        logger.exception("Plugin manager reload_config() failed; continuing.")
     merged = config_overlay.read_app_config_merged()
-    try:
-        _manager._app_config = merged  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001 - manager API change protection
+    errors = _manager.refresh_config(merged)
+    for err in errors:
         logger.warning(
-            "Could not patch _manager._app_config after overlay write; "
-            "the manager's view may be stale until the next restart."
+            "Plugin '%s' on_config_changed raised (%s): %s",
+            err.name,
+            err.phase,
+            err.user_facing_message,
         )

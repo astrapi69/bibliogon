@@ -315,7 +315,7 @@ manager.register_hookspecs(BibliogonHookSpec)
 
 
 def _sync_manager_with_overlay() -> None:
-    """Overwrite ``manager._app_config`` with the merged overlay view.
+    """Replace the manager's app-config snapshot with the merged overlay view.
 
     Pluginforge's ``PluginManager`` reads its app config snapshot
     directly from ``_config_path`` (project app.yaml). Bibliogon
@@ -325,16 +325,22 @@ def _sync_manager_with_overlay() -> None:
     ``discover_plugins`` runs so the enabled / disabled lists
     reflect Settings-UI changes made on a previous run, and again
     after any reload to keep state coherent.
+
+    Uses ``PluginManager.refresh_config`` (pluginforge v0.6.0 public
+    API), which both updates the manager's snapshot AND notifies
+    each active plugin via ``on_config_changed(old, new)``. Plugins
+    that do not override the hook keep the no-op default.
     """
     from app import config_overlay
 
     merged = config_overlay.read_app_config_merged()
-    try:
-        manager._app_config = merged  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001 - pluginforge API change protection
+    errors = manager.refresh_config(merged)
+    for err in errors:
         logger.warning(
-            "Could not patch PluginManager._app_config with overlay view; "
-            "Settings-UI changes will not take effect until next restart."
+            "Plugin '%s' on_config_changed raised (%s): %s",
+            err.name,
+            err.phase,
+            err.user_facing_message,
         )
 
 
