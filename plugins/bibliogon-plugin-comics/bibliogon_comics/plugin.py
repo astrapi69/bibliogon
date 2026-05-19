@@ -20,6 +20,7 @@ class ComicsPlugin(BasePlugin):
     version = "1.0.0"
     api_version = "1"
     target_application = "bibliogon"
+    min_app_version = "0.35.0"
     license_tier = "core"
     depends_on = ["export"]
 

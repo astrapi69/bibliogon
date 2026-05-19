@@ -10,6 +10,7 @@ class KinderbuchPlugin(BasePlugin):
     version = "1.0.0"
     api_version = "1"
     target_application = "bibliogon"
+    min_app_version = "0.9.0"
     license_tier = "core"
     depends_on = ["export"]
 
