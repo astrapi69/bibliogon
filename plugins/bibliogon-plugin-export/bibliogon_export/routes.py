@@ -184,6 +184,7 @@ def _export_picture_book_pdf(
     pages: list[dict[str, Any]],
     assets: list[dict[str, Any]],
     picture_book_format: str | None = None,
+    picture_book_bleed_marks: bool = False,
 ) -> FileResponse:
     """Render a picture-book to PDF via the WeasyPrint generator
     and return a ``FileResponse``.
@@ -194,11 +195,18 @@ def _export_picture_book_pdf(
     Creates a process-scoped temp dir for the output PDF; the
     FileResponse caller owns deletion semantics.
 
-    Filename suffix policy (PDF-KDP-FORMATS-01 Q7): the default
-    ``8.5x8.5`` keeps the back-compat filename ``<slug>.pdf``;
-    non-default formats append the format id as a suffix
-    (``<slug>-<format>.pdf``) so an author exporting multiple
-    formats of the same book gets disambiguated downloads.
+    Filename suffix policy:
+    - PDF-KDP-FORMATS-01 Q7: the default ``8.5x8.5`` keeps the
+      back-compat filename ``<slug>.pdf``; non-default formats
+      append the format id as a suffix (``<slug>-<format>.pdf``).
+    - PDF-BLEED-MARKS-01 Q4: when ``bleed=true``, append ``-bleed``
+      AFTER the format suffix. Combinations:
+        default + bleed=false    -> ``<slug>.pdf``
+        default + bleed=true     -> ``<slug>-bleed.pdf``
+        non-default + bleed=false -> ``<slug>-<format>.pdf``
+        non-default + bleed=true -> ``<slug>-<format>-bleed.pdf``
+      Format first, bleed flag second — nominal grouping in
+      directory listings.
 
     Caller MUST have verified ``book_data["book_type"] ==
     "picture_book"`` and ``fmt == "pdf"`` before calling.
@@ -221,10 +229,12 @@ def _export_picture_book_pdf(
     canonical_format, _w, _h = _resolve_picture_book_format(
         picture_book_format,
     )
-    if canonical_format == DEFAULT_PICTURE_BOOK_FORMAT:
-        filename = f"{slug}.pdf"
-    else:
-        filename = f"{slug}-{canonical_format}.pdf"
+    parts = [slug]
+    if canonical_format != DEFAULT_PICTURE_BOOK_FORMAT:
+        parts.append(canonical_format)
+    if picture_book_bleed_marks:
+        parts.append("bleed")
+    filename = "-".join(parts) + ".pdf"
 
     upload_dir = get_upload_dir() / book_data["id"]
     tmp_dir = Path(tempfile.mkdtemp(prefix="picture_book_pdf_"))
@@ -238,6 +248,7 @@ def _export_picture_book_pdf(
             upload_dir=upload_dir,
             output_path=output_path,
             picture_book_format=canonical_format,
+            picture_book_bleed_marks=picture_book_bleed_marks,
         )
     except ImportError as e:
         raise HTTPException(
@@ -596,6 +607,7 @@ def export(
     toc_depth: int = 0,
     use_manual_toc: bool | None = None,
     picture_book_format: str | None = None,
+    picture_book_bleed_marks: bool = False,
     db: Any = Depends(lambda: None),
 ):
     """Export a book. Dispatches to format-specific handler.
@@ -618,6 +630,12 @@ def export(
     ``picture_book_pdf.PICTURE_BOOK_FORMATS``). Missing / null /
     empty / unknown values silently fall back to 8.5x8.5 (the v0.35.0
     MVP default). Other ``Book.book_type`` paths ignore this param.
+
+    PDF-BLEED-MARKS-01: ``picture_book_bleed_marks`` query param
+    (bool) toggles the KDP-spec 0.125in bleed extension + crop
+    marks on the rendered PDF. Default False keeps the back-compat
+    trim-only emit. Other ``Book.book_type`` paths ignore this
+    param.
     """
     if fmt not in SUPPORTED_FORMATS:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}")
@@ -650,6 +668,7 @@ def export(
                 pages,
                 pb_assets,
                 picture_book_format=picture_book_format,
+                picture_book_bleed_marks=picture_book_bleed_marks,
             )
         except HTTPException:
             raise

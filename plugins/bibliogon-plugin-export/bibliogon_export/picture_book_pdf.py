@@ -71,6 +71,15 @@ PICTURE_BOOK_FORMATS: dict[str, tuple[float, float]] = {
 DEFAULT_PICTURE_BOOK_FORMAT = "8.5x8.5"
 _PAGE_MARGIN_IN = 0.5
 
+# PDF-BLEED-MARKS-01: KDP bleed dimension is 0.125in (3 mm) uniform
+# across all 5 picture-book formats. CSS Paged Media spec syntax:
+# ``@page { bleed: 3mm; marks: crop; }``. WeasyPrint (66.0+, we
+# pin to that range) emits the crop marks at the trim-box corners
+# automatically. Q2 decision: marks-only ship; background-extends-
+# into-bleed deferred to a follow-up filing if real print-shop
+# demand surfaces.
+_BLEED_MM = 3.0
+
 
 def _resolve_picture_book_format(
     format_id: str | None,
@@ -90,7 +99,7 @@ def _resolve_picture_book_format(
     return DEFAULT_PICTURE_BOOK_FORMAT, w, h
 
 
-def _format_css(format_id: str) -> str:
+def _format_css(format_id: str, bleed_marks: bool = False) -> str:
     """Build the format-specific CSS block.
 
     Emits:
@@ -98,6 +107,12 @@ def _format_css(format_id: str) -> str:
     - ``:root { --page-w / --page-h / --content-h }`` for element-
       level use in the static CSS (Q5 decision: CSS variables over
       direct substitution).
+    - When ``bleed_marks=True``: appends ``bleed: 3mm; marks: crop;``
+      to the ``@page`` rule (PDF-BLEED-MARKS-01). WeasyPrint emits
+      the crop marks at the trim-box corners + extends the painted
+      area into the 3 mm bleed region. Trim box stays at
+      ``<w>in <h>in`` — bleed is OUTSIDE that box per CSS Paged
+      Media spec, so ``--content-h`` and the margin stay unchanged.
 
     The static ``_BASE_CSS`` references ``var(--content-h)`` on the
     ``.page`` rule so per-format height stays decoupled from the
@@ -105,6 +120,11 @@ def _format_css(format_id: str) -> str:
     """
     _id, w, h = _resolve_picture_book_format(format_id)
     content_h = h - 2 * _PAGE_MARGIN_IN
+    bleed_block = (
+        f"    bleed: {_BLEED_MM}mm;\n    marks: crop;\n"
+        if bleed_marks
+        else ""
+    )
     return (
         ":root {\n"
         f"    --page-w: {w}in;\n"
@@ -114,6 +134,7 @@ def _format_css(format_id: str) -> str:
         "@page {\n"
         f"    size: {w}in {h}in;\n"
         f"    margin: {_PAGE_MARGIN_IN}in;\n"
+        f"{bleed_block}"
         "}\n"
     )
 
@@ -913,6 +934,7 @@ def _build_html(
     pages: list[dict[str, Any]],
     assets_map: dict[str, str],
     picture_book_format: str = DEFAULT_PICTURE_BOOK_FORMAT,
+    picture_book_bleed_marks: bool = False,
 ) -> str:
     """Build the full HTML document for WeasyPrint.
 
@@ -942,7 +964,18 @@ def _build_html(
         meta_tags.append(
             f'<meta name="description" content="{escape(description)}" />'
         )
-    meta_tags.append('<meta name="generator" content="Bibliogon picture-book PDF" />')
+    # PDF-BLEED-MARKS-01 Q3: extend the Producer metadata with a
+    # ``(bleed)`` suffix when bleed is on. Downstream tools that
+    # inspect PDF metadata (KDP, print shops, archivers) see the
+    # marker without needing a custom field.
+    producer = (
+        "Bibliogon picture-book PDF (bleed)"
+        if picture_book_bleed_marks
+        else "Bibliogon picture-book PDF"
+    )
+    meta_tags.append(
+        f'<meta name="generator" content="{escape(producer)}" />'
+    )
     meta_html = "".join(meta_tags)
 
     pages_html = "\n".join(_render_page(p, assets_map) for p in pages)
@@ -959,7 +992,13 @@ def _build_html(
     # static base. The at-rules are order-independent for cascade
     # purposes; the test contract is the constraint that pins
     # ordering here.
-    style_css = f"{font_face_css()}\n{_format_css(picture_book_format)}\n{_BASE_CSS}"
+    # PDF-BLEED-MARKS-01: the same _format_css call accepts the
+    # bleed_marks flag. Default False keeps pre-C1 emit unchanged.
+    style_css = (
+        f"{font_face_css()}\n"
+        f"{_format_css(picture_book_format, picture_book_bleed_marks)}\n"
+        f"{_BASE_CSS}"
+    )
     return (
         "<!DOCTYPE html>"
         f'<html lang="{escape(language)}">'
@@ -1009,6 +1048,7 @@ def generate_picture_book_pdf(
     upload_dir: Path,
     output_path: Path,
     picture_book_format: str = DEFAULT_PICTURE_BOOK_FORMAT,
+    picture_book_bleed_marks: bool = False,
 ) -> Path:
     """Render a picture-book to PDF via WeasyPrint.
 
@@ -1048,7 +1088,13 @@ def generate_picture_book_pdf(
     from weasyprint import HTML  # noqa: PLC0415
 
     assets_map = _build_assets_map(assets, upload_dir)
-    html_str = _build_html(book_data, pages, assets_map, picture_book_format)
+    html_str = _build_html(
+        book_data,
+        pages,
+        assets_map,
+        picture_book_format,
+        picture_book_bleed_marks,
+    )
     HTML(string=html_str, base_url=str(upload_dir)).write_pdf(
         target=str(output_path),
     )

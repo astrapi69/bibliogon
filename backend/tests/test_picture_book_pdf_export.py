@@ -352,3 +352,100 @@ def test_picture_book_pdf_export_unknown_format_falls_back_to_default(
     # Falls back to default -> no suffix in filename.
     assert "unknown-format.pdf" in cd
     assert "garbage" not in cd
+
+
+# --- PDF-BLEED-MARKS-01: picture_book_bleed_marks query param ---
+
+
+def test_picture_book_pdf_export_bleed_false_keeps_legacy_filename(
+    client: TestClient,
+):
+    """Default bleed=false on default format -> back-compat
+    filename ``<slug>.pdf`` with no -bleed suffix. Existing
+    consumers that don't update see identical behavior."""
+    book_id = _create_picture_book(client, title="Bleed False Default")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(f"/api/books/{book_id}/export/pdf")
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert "bleed-false-default.pdf" in cd
+    assert "-bleed" not in cd
+
+
+def test_picture_book_pdf_export_bleed_true_default_format_suffix(
+    client: TestClient,
+):
+    """Q4: default format + bleed=true -> <slug>-bleed.pdf."""
+    book_id = _create_picture_book(client, title="Bleed True")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_bleed_marks": "true"},
+    )
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert "bleed-true-bleed.pdf" in cd
+
+
+def test_picture_book_pdf_export_bleed_true_non_default_format_suffix_order(
+    client: TestClient,
+):
+    """Q4: format first, then bleed flag. ``-11x8.5-bleed`` not
+    ``-bleed-11x8.5``."""
+    book_id = _create_picture_book(client, title="Both Nondefault")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={
+            "picture_book_format": "11x8.5",
+            "picture_book_bleed_marks": "true",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert "both-nondefault-11x8.5-bleed.pdf" in cd
+
+
+def test_picture_book_pdf_export_non_default_format_bleed_false_no_bleed_suffix(
+    client: TestClient,
+):
+    """Non-default format + bleed=false -> only format suffix,
+    no -bleed appended (regression pin for Q4 ordering)."""
+    book_id = _create_picture_book(client, title="Format Only")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={"picture_book_format": "8x10"},
+    )
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers.get("content-disposition", "")
+    assert "format-only-8x10.pdf" in cd
+    assert "-bleed" not in cd
+
+
+@pytest.mark.parametrize(
+    "fmt_id",
+    ["8.5x8.5", "8x10", "8.5x11", "11x8.5", "10x8"],
+)
+def test_picture_book_pdf_export_bleed_works_for_each_format(
+    client: TestClient, fmt_id: str
+):
+    """Each of the 5 KDP trim sizes accepts the bleed flag and
+    produces a valid PDF end-to-end."""
+    book_id = _create_picture_book(client, title=f"Bleed {fmt_id}")
+    _add_page(client, book_id, layout="text_only", text="Body.")
+
+    resp = client.get(
+        f"/api/books/{book_id}/export/pdf",
+        params={
+            "picture_book_format": fmt_id,
+            "picture_book_bleed_marks": "true",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content.startswith(b"%PDF")

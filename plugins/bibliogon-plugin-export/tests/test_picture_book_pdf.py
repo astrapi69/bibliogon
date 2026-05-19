@@ -1764,3 +1764,119 @@ def test_build_html_unknown_format_falls_back_to_default() -> None:
         picture_book_format="garbage",
     )
     assert "size: 8.5in 8.5in" in html
+
+
+# --- PDF-BLEED-MARKS-01: @page bleed + marks emit ---
+
+
+def test_format_css_default_does_not_emit_bleed_or_marks() -> None:
+    # Q5 default: bleed=False keeps pre-C1 emit unchanged. The
+    # rendered @page block must NOT carry bleed or marks
+    # properties — back-compat for trim-only KDP submissions.
+    css = _format_css("8.5x8.5")
+    assert "bleed:" not in css
+    assert "marks:" not in css
+
+
+def test_format_css_bleed_true_emits_3mm_bleed_and_crop_marks() -> None:
+    css = _format_css("8.5x8.5", bleed_marks=True)
+    assert "bleed: 3.0mm" in css
+    assert "marks: crop" in css
+
+
+@pytest.mark.parametrize(
+    "fmt_id",
+    ["8.5x8.5", "8x10", "8.5x11", "11x8.5", "10x8"],
+)
+def test_format_css_bleed_uniform_across_all_5_formats(fmt_id: str) -> None:
+    # Q6: 0.125in (3mm) bleed is uniform across all 5 picture-book
+    # formats per KDP spec. No per-format override.
+    css = _format_css(fmt_id, bleed_marks=True)
+    assert "bleed: 3.0mm" in css
+    assert "marks: crop" in css
+
+
+def test_format_css_bleed_does_not_change_trim_size() -> None:
+    # Trim box stays at <size>; bleed is OUTSIDE that box per CSS
+    # Paged Media spec. --content-h + margin unchanged. WeasyPrint
+    # paints the 3mm bleed region around the trim box.
+    css = _format_css("8.5x11", bleed_marks=True)
+    assert "size: 8.5in 11.0in" in css
+    assert "margin: 0.5in" in css
+    assert "--content-h: 10.0in" in css
+
+
+def test_format_css_unknown_format_with_bleed_emits_default_size_plus_bleed() -> None:
+    # Unknown format -> defaults emit 8.5x8.5; bleed flag still
+    # respected since fallback only affects dimensions, not the
+    # bleed orthogonal axis.
+    css = _format_css("not-a-format", bleed_marks=True)
+    assert "size: 8.5in 8.5in" in css
+    assert "bleed: 3.0mm" in css
+    assert "marks: crop" in css
+
+
+def test_format_css_falsy_bleed_values_do_not_emit_bleed() -> None:
+    # Defensive: any falsy bleed_marks value (False, default) keeps
+    # the trim-only emit. Truthy semantics are bool-only via the
+    # signature; the route handler coerces query strings to bool.
+    css = _format_css("8.5x8.5", bleed_marks=False)
+    assert "bleed:" not in css
+
+
+# --- PDF-BLEED-MARKS-01: _build_html metadata + CSS threading ---
+
+
+def test_build_html_default_producer_does_not_carry_bleed_marker() -> None:
+    # Q3 default: Producer metadata stays "Bibliogon picture-book
+    # PDF" when bleed=False; back-compat for non-bleed exports.
+    html = _build_html({"title": "T"}, [], {})
+    assert (
+        '<meta name="generator" content="Bibliogon picture-book PDF" />'
+        in html
+    )
+    assert "(bleed)" not in html
+
+
+def test_build_html_bleed_true_extends_producer_with_bleed_marker() -> None:
+    # Q3 decision: append ``(bleed)`` to the Producer metadata
+    # when bleed=True. Downstream tools (KDP, print shops,
+    # archivers) detect the marker via PDF metadata inspection.
+    html = _build_html(
+        {"title": "T"},
+        [],
+        {},
+        picture_book_bleed_marks=True,
+    )
+    assert (
+        '<meta name="generator" content="Bibliogon picture-book PDF (bleed)" />'
+        in html
+    )
+
+
+def test_build_html_bleed_true_emits_css_bleed_block() -> None:
+    # End-to-end: the html string carries the @page bleed + marks
+    # CSS from _format_css.
+    html = _build_html(
+        {"title": "T"},
+        [],
+        {},
+        picture_book_bleed_marks=True,
+    )
+    assert "bleed: 3.0mm" in html
+    assert "marks: crop" in html
+
+
+def test_build_html_bleed_combines_with_non_default_format() -> None:
+    # Cross-axis: non-default format + bleed=true. Both signals
+    # carry through to the rendered html.
+    html = _build_html(
+        {"title": "T"},
+        [],
+        {},
+        picture_book_format="11x8.5",
+        picture_book_bleed_marks=True,
+    )
+    assert "size: 11.0in 8.5in" in html
+    assert "bleed: 3.0mm" in html
+    assert "(bleed)" in html
