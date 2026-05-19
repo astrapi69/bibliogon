@@ -539,6 +539,96 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
     })
 })
 
+// --- 4c-B-2 C5: handleUpdateLayoutConfig + bubbles[0] wrapper ---
+//
+// Each write from LayoutConfigSpeechBubble carries the full
+// bubble (writeBubble merges prior fields with the partial).
+// PageEditor's handleUpdateLayoutConfig does a shallow merge at
+// the top level — bubbles[] gets replaced as a whole, which is
+// correct because we always send the full bubble. These tests
+// pin that contract so any future refactor to handleUpdateLayoutConfig
+// (deep-merge, replace-vs-merge change, etc.) is caught.
+
+describe("PageEditor handleUpdateLayoutConfig + bubbles[0] (4c-B-2 C5)", () => {
+    it("anchor click writes bubbles[0] with prior bubble fields preserved", async () => {
+        const initial = makePage({
+            id: "p1",
+            layout: "speech_bubble",
+            layout_config: {
+                bubbles: [
+                    {
+                        anchor_position: "bottom-center",
+                        opacity: 0.6,
+                        bubble_width: 55,
+                    },
+                ],
+            },
+        })
+        mockList.mockResolvedValue([initial])
+        mockUpdate.mockImplementation(async (_bookId, _pageId, updates) => ({
+            ...initial,
+            ...updates,
+        }))
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("speech-bubble-anchor-top-left")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-anchor-top-left"))
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled())
+        const [, , updates] = mockUpdate.mock.calls[0]
+        // The merged layout_config sent to the API carries
+        // bubbles[0] with the new anchor + the preserved
+        // opacity + bubble_width.
+        expect(updates.layout_config).toBeTruthy()
+        expect(updates.layout_config.bubbles).toHaveLength(1)
+        expect(updates.layout_config.bubbles[0].anchor_position).toBe("top-left")
+        expect(updates.layout_config.bubbles[0].opacity).toBe(0.6)
+        expect(updates.layout_config.bubbles[0].bubble_width).toBe(55)
+    })
+
+    it("legacy flat-shape page promoted to bubbles[0] on first edit", async () => {
+        // Pre-C1 picture-book pages persist flat. The first edit
+        // through writeBubble pulls those flat fields into
+        // bubbles[0] (per readBubbleConfig's merge), so the
+        // outgoing write carries the FULL prior state under
+        // the wrapper.
+        const legacy = makePage({
+            id: "p1",
+            layout: "speech_bubble",
+            layout_config: {
+                anchor_position: "center",
+                opacity: 0.8,
+                bubble_width: 45,
+                bubble_height: 35,
+            },
+        })
+        mockList.mockResolvedValue([legacy])
+        mockUpdate.mockImplementation(async (_bookId, _pageId, updates) => ({
+            ...legacy,
+            ...updates,
+        }))
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("speech-bubble-anchor-top-right"),
+            ).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-anchor-top-right"))
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled())
+        const [, , updates] = mockUpdate.mock.calls[0]
+        // The OLD flat keys persist on the layout_config top
+        // level (PageEditor shallow-merge); the NEW bubbles[0]
+        // holds the canonical new state. Read-path shim then
+        // honours bubbles[0] precedence.
+        expect(updates.layout_config.bubbles).toHaveLength(1)
+        const written = updates.layout_config.bubbles[0]
+        expect(written.anchor_position).toBe("top-right")
+        expect(written.opacity).toBe(0.8)
+        expect(written.bubble_width).toBe(45)
+        expect(written.bubble_height).toBe(35)
+    })
+})
+
 // --- PB-PHASE4 Session 4c-B-1 Commit 3: RichTextToolbar wiring ---
 
 describe("PageEditor RichTextToolbar wiring (Session 4c-B-1 Commit 3)", () => {

@@ -646,4 +646,102 @@ test.describe("Picture-Book PageEditor smoke", () => {
             "top",
         )
     })
+
+    // 4c-B-2 C5: Tier-Property end-to-end smoke. Covers the round-
+    // trip from Tier 1 + Tier 2 collapsible sections → writeBubble
+    // → handleUpdateLayoutConfig → api.pages.update →
+    // PageCanvas re-render → inline-style on the bubble.
+    // Persistence is verified by a full page reload between
+    // edit and assertion.
+    test("layout-config: Tier 1 + Tier 2 properties drive the bubble and persist across reload", async ({
+        page,
+    }) => {
+        const book = await createPictureBook("Tier 1+2 Smoke", "Author")
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // Switch to speech_bubble.
+        await page
+            .getByTestId("page-editor-layout-option-speech_bubble")
+            .click()
+        await expect(page.getByTestId("page-canvas-speech-bubble")).toBeVisible()
+
+        // --- Tier 1: open collapsible, change border_color +
+        //     border_width + border_style + shadow ---
+        await page.getByTestId("speech-bubble-tier1-trigger").click()
+        await expect(
+            page.getByTestId("speech-bubble-background-color"),
+        ).toBeVisible()
+
+        // Change border to a recognizable blue / 4 px / dashed.
+        // <input type=color> stores hex.
+        await page
+            .getByTestId("speech-bubble-border-color")
+            .fill("#0033cc")
+        await page
+            .getByTestId("speech-bubble-border-width-slider")
+            .fill("4")
+        await page
+            .getByTestId("speech-bubble-border-style-select")
+            .selectOption("dashed")
+        // Wait for the composed border to land in the inline style.
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return style?.includes("border: 4px dashed")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // --- Tier 2: open collapsible, change font_family +
+        //     font_size + text_align ---
+        await page.getByTestId("speech-bubble-tier2-trigger").click()
+        await expect(
+            page.getByTestId("speech-bubble-font-family-select"),
+        ).toBeVisible()
+        await page
+            .getByTestId("speech-bubble-font-family-select")
+            .selectOption("Comic Neue")
+        await page
+            .getByTestId("speech-bubble-font-size-slider")
+            .fill("22")
+        await page
+            .getByTestId("speech-bubble-text-align-select")
+            .selectOption("left")
+
+        // Wait for Tier 2 emit to surface on the bubble's
+        // inline style (debounced font_size + immediate
+        // font_family + text_align).
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return (
+                        style?.includes("Comic Neue") &&
+                        style?.includes("font-size: 22pt") &&
+                        style?.includes("text-align: left")
+                    )
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // --- Reload to confirm persistence ---
+        await page.reload()
+        await expect(page.getByTestId("page-canvas-speech-bubble")).toBeVisible()
+        const styleAfterReload = await page
+            .getByTestId("page-canvas-speech-bubble")
+            .getAttribute("style")
+        expect(styleAfterReload).toContain("border: 4px dashed")
+        expect(styleAfterReload).toContain("Comic Neue")
+        expect(styleAfterReload).toContain("font-size: 22pt")
+        expect(styleAfterReload).toContain("text-align: left")
+    })
 })
