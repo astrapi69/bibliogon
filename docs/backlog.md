@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-18 (Comic-Foundation reframe: docs/explorations/comic-foundation.md rewritten from 95-line stub to 736-line proper exploration after CC critique caught the missed Pre-audit step (the comic_book book_type reservation in models/__init__.py conflicted with the stub's "extend speech_bubble" framing). Two picture-book items migrated to plugin-comics scope: PICTURE-BOOK-MULTI-BUBBLE-PER-PAGE-01 (P3, archived) + PICTURE-BOOK-SPEECH-BUBBLE-DRAG-POSITION-01 (P5, archived); both succeeded by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 (P3, trigger-gated). PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 (P3) kept as optional picture-book polish. New lessons-learned rule filed: "Exploration docs need a Pre-audit section before any architecture proposal". Earlier today (separate commit b4fc4b4): consistency audit + sweep (2 CLOSED stubs archived; STARLETTE + CLICK reclassified to Blocked).)
+Last updated: 2026-05-19 (PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01 closed in 6 atomic-green commits; first named member of the Phase 4 close trigger gate. Tier 1 Visual Style + Tier 2 Typography + bubbles[0] wrapper-shape per the NQ2 scope-anticipate decision from docs/explorations/comic-foundation.md. Plugin-comics Session 2 will inherit the per-bubble shape via the comic_bubbles schema without an explicit migration. Commits: 4421f02 + e5ac3bf + 149ad35 + 9f0a4c4 + 93f7e72 + this archive. 1637 / 1637 Vitest + 122 / 122 plugin-export pytest + 75 / 75 i18n + 52 / 52 backend pytest passing.)
 Current version: v0.35.1
-Open tasks: 62 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 65 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -753,72 +753,6 @@ store.
   comic-book editor likely has similar specific KDP needs
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
-
-- **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01** (P3):
-  ship Tier 1 + Tier 2 extended properties for the speech-
-  bubble layout (11 properties total beyond the 3 Session 4c
-  shipped: anchor_position + opacity + size).
-
-  Tier 1 — Visual Style section:
-  - `background_color` (color picker, default white)
-  - `border_color` (color picker, default black)
-  - `border_width` (slider 0-8px, default 2px)
-  - `border_style` (dropdown: solid/dashed/dotted/none,
-    default solid)
-  - `border_radius` (slider 0-50%, default 50% round)
-  - `shadow` (toggle on/off + intensity slider, default on
-    medium)
-
-  Tier 2 — Typography section:
-  - `font_family` (dropdown of children-book-friendly fonts,
-    reuse Bibliogon font selection if available, default
-    app-default)
-  - `font_size` (slider 10-32pt, default 14pt)
-  - `font_weight` (dropdown: normal/bold)
-  - `text_color` (color picker, default black)
-  - `text_align` (dropdown: left/center/right, default
-    center)
-
-  Plus 4c-B Pre-Inspection adjustment (filed 2026-05-17):
-  replace the single `size` property with `bubble_width` +
-  `bubble_height` for finer control. Migration approach
-  (CC-chosen): NO data migration — keep reading `size` as
-  legacy fallback when `bubble_width` is absent. On next
-  write, the dispatcher always writes `bubble_width` +
-  `bubble_height`; the legacy `size` key naturally fades
-  out without backfill. Defaults: `bubble_width=40` (matches
-  Session 4 D2a), `bubble_height=30` (content-driven
-  alternative; could also let `bubble_height` be
-  auto-derived from text content — surface during
-  Pre-Inspection).
-
-  UI pattern: properties pane with collapsible-sections.
-  Three sections — Visual Style / Typography / Shape
-  (future Tier 3). Pattern-application note: the
-  collapsible-section component IS reusable for the
-  sibling `PICTURE-BOOK-TEXT-CONFIGURATION-01` item which
-  covers parallel Tier 1+2 properties for image-based
-  layouts (image_left_text_right + image_top_text_bottom
-  + image_full_text_overlay text typography). 4c-B
-  Pre-Inspection should frame the session as
-  "Tier-Property Pattern Application across Bubble +
-  Text" — extract `<CollapsibleSection>` (and possibly a
-  parameterized `<TierPropertiesEditor>`) once; reuse
-  across both layouts' configs to drop total commit
-  count below naive Bubble + Text = 2 × spec sum.
-
-  Schema extension: `layout_config` dict gains nested keys
-  for bubble properties. Backward-compatible: existing
-  speech_bubble pages without extended props render with
-  defaults. Migration: NULL config falls back to defaults
-  per property.
-
-  Trigger: scheduled 4c-B session OR user-feedback that the
-  3-property MVP is insufficient.
-  Effort: 6-8 commits (Pre-Inspection + collapsible-section
-  helper + Visual Style section + Typography section +
-  PageCanvas integration + i18n + Vitest + E2E + width/height
-  migration).
 
 - **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01** (P3,
   Tier 3 deferred from EXTENDED-PROPERTIES-01): shape
