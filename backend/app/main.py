@@ -14,7 +14,7 @@ from app.logging_config import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
-from pluginforge import BasePlugin, PluginManager
+from pluginforge import BasePlugin, DiscoveryResult, PluginManager
 from pluginforge.config import load_i18n
 
 # Side-effect import: register core import handlers with the plugin
@@ -386,32 +386,48 @@ def _enabled_plugins_from_config() -> list[str]:
     return list(_startup_config.get("plugins", {}).get("enabled") or [])
 
 
-def _discovered_entry_points() -> list[str]:
-    """Names of all plugins registered under the ``bibliogon.plugins``
-    entry-point group.
+def _log_discovery_result(result: DiscoveryResult) -> None:
+    """Emit structured startup logging from a ``DiscoveryResult``.
 
-    Distinguishes 'plugin not in entry-point set' (= not installed,
-    container needs rebuild, package name typo) from 'plugin in
-    entry-point set but not enabled in config'. The two failure
-    modes look identical without this snapshot.
+    Single source of truth for the post-discovery view: per-plugin
+    state correlated by ``pluginforge.PluginManager``, not by
+    Bibliogon's hand-rolled correlation. Replaces the previous
+    ``_log_plugin_diagnostics_pre`` + ``_log_plugin_diagnostics_post``
+    pair (the v0.6.0 ``DiscoveryResult.states`` carries every signal
+    the pre-log + post-log used to emit, in one snapshot).
+
+    Severity discipline (PluginForge v0.7.0 widened
+    ``DiscoveryResult.errors`` to include ``severity="warning"``
+    entries from the identity deprecation channel):
+
+    - ``severity="error"`` entries log at WARNING with a "failed"
+      framing. The plugin was filtered out (not in ``activated``).
+    - ``severity="warning"`` entries log at INFO with a "notice"
+      framing. The plugin DID activate; PluginForge is surfacing a
+      non-blocking concern (e.g. missing ``target_application``).
+      Treating these as failures would falsely flag third-party
+      plugins during the v0.7.0 deprecation cycle.
+
+    Three log lines plus per-entry detail:
+
+    1. INFO "Plugin discovery: <N> entry points discovered: ..."
+    2. INFO "Plugins enabled in config (<N>): ..."
+    3. INFO "Plugins loaded (<X>/<Y> enabled): ..."
+    4. WARNING per ``severity="error"`` entry — failure surface.
+    5. INFO per ``severity="warning"`` entry — notice surface.
+    6. WARNING "Plugins enabled in config but not loaded ...
+       rebuild the container / `poetry install` ..." — only when
+       there are plugins with ``filter_reason="not_discovered"``,
+       i.e. enabled-in-config but no entry point installed.
     """
-    try:
-        from importlib.metadata import entry_points
+    discovered = sorted(name for name, state in result.states.items() if state.discovered)
+    enabled_in_config = sorted(
+        name for name, state in result.states.items() if state.enabled_in_config
+    )
+    active = sorted(result.activated)
 
-        return sorted(ep.name for ep in entry_points(group="bibliogon.plugins"))
-    except Exception:  # noqa: BLE001 - diagnostic only
-        return []
-
-
-def _log_plugin_diagnostics_pre(*, enabled_in_config: list[str]) -> None:
-    """Log the discovery state BEFORE PluginManager filters by config.
-
-    Surfaces the entry-point set so a user reading the startup log
-    can immediately tell whether their plugin is even installed.
-    """
-    discovered = _discovered_entry_points()
     logger.info(
-        "Plugin discovery: %d entry points found via 'bibliogon.plugins' group: %s",
+        "Plugin discovery: %d entry points discovered: %s",
         len(discovered),
         ", ".join(discovered) if discovered else "none",
     )
@@ -420,45 +436,36 @@ def _log_plugin_diagnostics_pre(*, enabled_in_config: list[str]) -> None:
         len(enabled_in_config),
         ", ".join(enabled_in_config) if enabled_in_config else "none",
     )
-
-
-def _log_plugin_diagnostics_post(
-    *,
-    active: list[str],
-    load_errors: dict[str, object],
-    enabled_in_config: list[str],
-) -> None:
-    """Log the post-discovery state: what loaded, what errored, what's
-    expected but missing.
-
-    Three branches:
-
-    1. INFO 'Plugins loaded (X/Y enabled): ...' - always.
-    2. WARNING per plugin in load_errors - only when errors exist.
-       Surfaces pluginforge load failures so they're visible
-       without debug logging.
-    3. WARNING with rebuild hint - only when enabled_in_config has
-       names that are neither in active nor in load_errors. That's
-       the 'enabled but not discoverable' bug class (entry point
-       not registered, package not installed, container not rebuilt
-       after a path-dep change).
-    """
     logger.info(
         "Plugins loaded (%d/%d enabled): %s",
         len(active),
         len(enabled_in_config),
         ", ".join(active) if active else "none",
     )
-    for plugin_name, err in load_errors.items():
-        logger.warning("Plugin '%s' failed to load: %s", plugin_name, err)
 
-    missing = set(enabled_in_config) - set(active) - set(load_errors)
-    if missing:
+    for err in result.errors:
+        if err.severity == "error":
+            logger.warning(
+                "Plugin '%s' failed (%s): %s",
+                err.name,
+                err.phase,
+                err.user_facing_message,
+            )
+        else:
+            logger.info(
+                "Plugin '%s' notice (%s): %s",
+                err.name,
+                err.phase,
+                err.user_facing_message,
+            )
+
+    not_discovered = sorted(result.by_filter_reason("not_discovered"))
+    if not_discovered:
         logger.warning(
             "Plugins enabled in config but not loaded (no entry point / not installed): %s. "
             "If this is unexpected, rebuild the container or run "
             "`poetry install` in backend/ to refresh path-dep installs.",
-            ", ".join(sorted(missing)),
+            ", ".join(not_discovered),
         )
 
 
@@ -527,9 +534,8 @@ async def lifespan(app: FastAPI):
     global _startup_config
     _migrated, _did_write = config_overlay.migrate_user_overlay_enabled_list()
     if _did_write:
-        # Refresh the snapshot so _enabled_plugins_from_config()
-        # returns the post-migration list to the diagnostics +
-        # discovery code below.
+        # Refresh the snapshot so the lifespan reads the post-
+        # migration list when it runs the sync + discovery below.
         _startup_config = _load_app_config()
     # Re-sync the manager's _app_config with the (possibly post-
     # migration) merged view, AFTER any migration write. Module-
@@ -542,15 +548,9 @@ async def lifespan(app: FastAPI):
     # between module-import and lifespan start.
     _sync_manager_with_overlay()
 
-    _log_plugin_diagnostics_pre(enabled_in_config=_enabled_plugins_from_config())
-
-    manager.discover_plugins()
+    discovery_result = manager.discover_plugins()
     manager.mount_routes(app)
-    _log_plugin_diagnostics_post(
-        active=[p.name for p in manager.get_active_plugins()],
-        load_errors=dict(manager.get_load_errors()),
-        enabled_in_config=_enabled_plugins_from_config(),
-    )
+    _log_discovery_result(discovery_result)
 
     yield
     logger.info("Shutting down Bibliogon")
