@@ -148,6 +148,104 @@ def test_speech_bubble_unknown_anchor_falls_back_to_bottom_center() -> None:
     assert "left: 50%" in style
 
 
+# --- 4c-B-2 C1: bubbles[0] wrapper-shape (NQ2 scope-anticipate) ---
+#
+# ``_speech_bubble_style`` resolves identically whether per-bubble
+# fields live under ``bubbles[0]`` (canonical) or at the top level
+# (legacy fallback). Mirrors the TypeScript ``readBubbleConfig``
+# in ``frontend/src/components/PageCanvas.tsx`` so the in-editor
+# view + the printed PDF agree.
+
+
+def test_bubbles_zero_anchor_position_overrides_flat() -> None:
+    style = _speech_bubble_style(
+        {
+            "anchor_position": "top-left",
+            "bubbles": [{"anchor_position": "bottom-right"}],
+        }
+    )
+    assert "bottom: 16pt" in style
+    assert "right: 16pt" in style
+    # top-left would have emitted ``top: 16pt`` / ``left: 16pt``.
+    assert "top: 16pt" not in style
+    assert "left: 16pt" not in style
+
+
+def test_bubbles_zero_opacity_overrides_flat() -> None:
+    style = _speech_bubble_style(
+        {"opacity": 0.4, "bubbles": [{"opacity": 0.9}]}
+    )
+    assert "rgba(255, 255, 255, 0.9)" in style
+    assert "rgba(255, 255, 255, 0.4)" not in style
+
+
+def test_bubbles_zero_bubble_width_overrides_flat_and_legacy_size() -> None:
+    style = _speech_bubble_style(
+        {
+            "size": 30,
+            "bubble_width": 50,
+            "bubbles": [{"bubble_width": 70}],
+        }
+    )
+    assert "width: 70%" in style
+    assert "width: 50%" not in style
+    assert "width: 30%" not in style
+
+
+def test_bubbles_zero_bubble_height_overrides_flat() -> None:
+    style = _speech_bubble_style(
+        {"bubble_height": 20, "bubbles": [{"bubble_height": 55}]}
+    )
+    assert "height: 55%" in style
+    assert "height: 20%" not in style
+
+
+def test_flat_top_level_keys_still_work_when_bubbles_absent() -> None:
+    # Pre-C1 picture-books carry flat shape. The PDF walker's shim
+    # must keep them rendering correctly.
+    style = _speech_bubble_style(
+        {
+            "anchor_position": "center",
+            "opacity": 0.5,
+            "bubble_width": 60,
+            "bubble_height": 40,
+        }
+    )
+    assert "top: 50%" in style
+    assert "translate(-50%, -50%)" in style
+    assert "rgba(255, 255, 255, 0.5)" in style
+    assert "width: 60%" in style
+    assert "height: 40%" in style
+
+
+def test_empty_bubbles_array_does_not_shadow_flat_keys() -> None:
+    # Defensive: a write that produced ``bubbles: []`` must NOT
+    # discard the flat fallback values; the shim treats the missing
+    # first element as "no override".
+    style = _speech_bubble_style(
+        {"anchor_position": "top-left", "bubbles": []}
+    )
+    assert "top: 16pt" in style
+    assert "left: 16pt" in style
+
+
+def test_bubbles_zero_partial_override_merges_with_flat() -> None:
+    # ``bubbles[0]`` may carry only a subset of per-bubble fields;
+    # the rest come from the flat fallback (mid-migration shape).
+    style = _speech_bubble_style(
+        {
+            "anchor_position": "top-left",
+            "opacity": 0.6,
+            "bubbles": [{"bubble_width": 65}],
+        }
+    )
+    # bubbles[0] only sets width; anchor + opacity come from flat.
+    assert "top: 16pt" in style
+    assert "left: 16pt" in style
+    assert "rgba(255, 255, 255, 0.6)" in style
+    assert "width: 65%" in style
+
+
 # --- _image_layout_style ---
 
 

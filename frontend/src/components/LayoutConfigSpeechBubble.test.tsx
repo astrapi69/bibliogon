@@ -149,7 +149,10 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
             <LayoutConfigSpeechBubble config={null} onChange={onChange} />,
         )
         fireEvent.click(screen.getByTestId("speech-bubble-anchor-top-left"))
-        expect(onChange).toHaveBeenCalledWith({anchor_position: "top-left"})
+        // 4c-B-2 C1: writes go through bubbles[0] wrapper.
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{anchor_position: "top-left"}],
+        })
     })
 
     it("changing each anchor preset persists the right value", () => {
@@ -168,7 +171,9 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
             fireEvent.click(
                 screen.getByTestId(`speech-bubble-anchor-${preset}`),
             )
-            expect(onChange).toHaveBeenCalledWith({anchor_position: preset})
+            expect(onChange).toHaveBeenCalledWith({
+                bubbles: [{anchor_position: preset}],
+            })
         }
     })
 
@@ -185,7 +190,7 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
         act(() => {
             vi.advanceTimersByTime(300)
         })
-        expect(onChange).toHaveBeenCalledWith({opacity: 0.5})
+        expect(onChange).toHaveBeenCalledWith({bubbles: [{opacity: 0.5}]})
     })
 
     it("consecutive slider changes within 300ms collapse into one onChange call (last value)", () => {
@@ -210,7 +215,7 @@ describe("LayoutConfigSpeechBubble - onChange flow", () => {
             vi.advanceTimersByTime(300)
         })
         expect(onChange).toHaveBeenCalledTimes(1)
-        expect(onChange).toHaveBeenCalledWith({opacity: 0.85})
+        expect(onChange).toHaveBeenCalledWith({bubbles: [{opacity: 0.85}]})
     })
 })
 
@@ -253,7 +258,9 @@ describe("LayoutConfigSpeechBubble - width slider (Bug 1)", () => {
         act(() => {
             vi.advanceTimersByTime(300)
         })
-        expect(onChange).toHaveBeenCalledWith({bubble_width: 70})
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{bubble_width: 70}],
+        })
     })
 
     it("clamps out-of-range width into [20, 80] for display", () => {
@@ -341,7 +348,9 @@ describe("LayoutConfigSpeechBubble - height slider (Bug 1)", () => {
         act(() => {
             vi.advanceTimersByTime(300)
         })
-        expect(onChange).toHaveBeenCalledWith({bubble_height: 45})
+        expect(onChange).toHaveBeenCalledWith({
+            bubbles: [{bubble_height: 45}],
+        })
     })
 
     it("clamps out-of-range height into [15, 60] for display", () => {
@@ -409,7 +418,9 @@ describe("LayoutConfigSpeechBubble - 9-cell anchor grid (Finding A)", () => {
                 />,
             )
             fireEvent.click(screen.getByTestId(`speech-bubble-anchor-${preset}`))
-            expect(onChange).toHaveBeenCalledWith({anchor_position: preset})
+            expect(onChange).toHaveBeenCalledWith({
+                bubbles: [{anchor_position: preset}],
+            })
         },
     )
 
@@ -443,3 +454,133 @@ describe("LayoutConfigSpeechBubble - 9-cell anchor grid (Finding A)", () => {
         ).toContain("anchorCellSelected")
     })
 })
+
+// --- 4c-B-2 C1: bubbles[0] wrapper-shape (NQ2 scope-anticipate) ---
+//
+// Reads honour bubbles[0] precedence over flat top-level keys
+// (legacy fallback). Writes always go through bubbles[0]. Both
+// directions verified here so plugin-comics Session 2 can
+// inherit the wrapper shape without surprise.
+
+describe("LayoutConfigSpeechBubble - bubbles[0] wrapper (4c-B-2 C1)", () => {
+    it("reads anchor_position from bubbles[0] in preference over flat", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    anchor_position: "top-left",
+                    bubbles: [{anchor_position: "bottom-right"}],
+                }}
+                onChange={vi.fn()}
+            />,
+        )
+        const winner = screen.getByTestId(
+            "speech-bubble-anchor-bottom-right",
+        ) as HTMLInputElement
+        expect(winner.checked).toBe(true)
+        const loser = screen.getByTestId(
+            "speech-bubble-anchor-top-left",
+        ) as HTMLInputElement
+        expect(loser.checked).toBe(false)
+    })
+
+    it("reads opacity from bubbles[0] in preference over flat", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{opacity: 0.4, bubbles: [{opacity: 0.85}]}}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-opacity-value").textContent,
+        ).toBe("0.85")
+    })
+
+    it("reads bubble_width from bubbles[0] in preference over flat + legacy size", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    size: 30,
+                    bubble_width: 50,
+                    bubbles: [{bubble_width: 70}],
+                }}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("70%")
+    })
+
+    it("reads bubble_height from bubbles[0] in preference over flat", () => {
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    bubble_height: 20,
+                    bubbles: [{bubble_height: 55}],
+                }}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("speech-bubble-height-value").textContent,
+        ).toBe("55%")
+    })
+
+    it("falls back to flat top-level keys when bubbles[0] is empty / absent", () => {
+        // Pre-C1 picture-book pages have flat shape; the read-path
+        // shim must keep them rendering correctly.
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    anchor_position: "top-right",
+                    opacity: 0.65,
+                    bubble_width: 60,
+                    bubble_height: 25,
+                }}
+                onChange={vi.fn()}
+            />,
+        )
+        const selected = screen.getByTestId(
+            "speech-bubble-anchor-top-right",
+        ) as HTMLInputElement
+        expect(selected.checked).toBe(true)
+        expect(
+            screen.getByTestId("speech-bubble-opacity-value").textContent,
+        ).toBe("0.65")
+        expect(
+            screen.getByTestId("speech-bubble-width-value").textContent,
+        ).toBe("60%")
+        expect(
+            screen.getByTestId("speech-bubble-height-value").textContent,
+        ).toBe("25%")
+    })
+
+    it("writes preserve prior bubble fields when a single field is edited", () => {
+        // The dispatcher reads the prior bubble state (which honours
+        // flat fallback) and writes the merged bubble back. Editing
+        // anchor while opacity is set MUST NOT drop opacity.
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigSpeechBubble
+                config={{
+                    opacity: 0.6,
+                    bubble_width: 55,
+                    bubbles: [{anchor_position: "bottom-left"}],
+                }}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("speech-bubble-anchor-top-right"))
+        expect(onChange).toHaveBeenCalledTimes(1)
+        const [partial] = onChange.mock.calls[0]
+        expect(partial.bubbles).toHaveLength(1)
+        const written = partial.bubbles[0]
+        // New field is set.
+        expect(written.anchor_position).toBe("top-right")
+        // Prior bubble field preserved.
+        expect(written.opacity).toBe(0.6)
+        // Flat fallback field also pulled into the bubble.
+        expect(written.bubble_width).toBe(55)
+    })
+})
+

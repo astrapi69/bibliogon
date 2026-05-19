@@ -171,6 +171,29 @@ function imageUrlFor(bookId: string, assetId: string): string {
     return `/api/books/${bookId}/assets/${assetId}/file`
 }
 
+/** 4c-B-2 C1: read-path shim. ``layout_config.bubbles[0]`` takes
+ *  precedence over flat top-level keys (legacy fallback). Mirrors
+ *  the Python ``_read_bubble_config`` in ``picture_book_pdf.py`` so
+ *  in-editor + printed PDF resolve from the same shape. */
+function readBubbleConfig(
+    config: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+    if (!config) return {}
+    const flat: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(config)) {
+        if (k !== "bubbles") flat[k] = v
+    }
+    const bubbles = (config as Record<string, unknown>).bubbles
+    const bubblesZero =
+        Array.isArray(bubbles) &&
+        bubbles.length > 0 &&
+        typeof bubbles[0] === "object" &&
+        bubbles[0] !== null
+            ? (bubbles[0] as Record<string, unknown>)
+            : {}
+    return {...flat, ...bubblesZero}
+}
+
 /** PB-PHASE4 Session 4c Commit 4: derive the speech-bubble's
  *  position + background-opacity inline style from
  *  page.layout_config. Default (NULL config) is bottom-right + full
@@ -178,15 +201,17 @@ function imageUrlFor(bookId: string, assetId: string): string {
 function speechBubbleInlineStyle(
     config: Record<string, unknown> | null,
 ): React.CSSProperties {
+    // 4c-B-2 C1: read through bubbles[0] wrapper with flat fallback.
+    const merged = readBubbleConfig(config)
     // Session 4 D2a default: fallback is bottom-center when no user
     // preset has been picked. The 5 user-pickable presets (TL/TR/BL/
     // BR/CENTER) override this default once persisted.
     const anchor =
-        typeof config?.anchor_position === "string"
-            ? config.anchor_position
+        typeof merged.anchor_position === "string"
+            ? merged.anchor_position
             : "bottom-center"
     const rawOpacity =
-        typeof config?.opacity === "number" ? config.opacity : 1
+        typeof merged.opacity === "number" ? merged.opacity : 1
     const opacity = Math.max(0.3, Math.min(1, rawOpacity))
     const bg = `rgba(255, 255, 255, ${opacity})`
     // PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
@@ -202,16 +227,16 @@ function speechBubbleInlineStyle(
     // backfill. ``bubble_height`` has no legacy fallback (new key);
     // defaults to 30%.
     const rawWidth =
-        typeof config?.bubble_width === "number"
-            ? config.bubble_width
-            : typeof config?.size === "number"
-              ? config.size
+        typeof merged.bubble_width === "number"
+            ? merged.bubble_width
+            : typeof merged.size === "number"
+              ? merged.size
               : 40
     const widthPct = Math.max(20, Math.min(80, rawWidth))
     const width = `${widthPct}%`
     const rawHeight =
-        typeof config?.bubble_height === "number"
-            ? config.bubble_height
+        typeof merged.bubble_height === "number"
+            ? merged.bubble_height
             : 30
     const heightPct = Math.max(15, Math.min(60, rawHeight))
     const height = `${heightPct}%`
@@ -602,8 +627,12 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                     data-region="text"
                     data-anchor={
                         isSpeechBubble
-                            ? ((page.layout_config?.anchor_position as string) ??
-                              "bottom-center")
+                            ? ((readBubbleConfig(
+                                  page.layout_config as Record<
+                                      string,
+                                      unknown
+                                  > | null,
+                              ).anchor_position as string) ?? "bottom-center")
                             : undefined
                     }
                     className={`${styles.region} ${styles.regionText}`}

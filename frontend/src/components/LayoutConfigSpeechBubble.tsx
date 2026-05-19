@@ -67,6 +67,36 @@ const HEIGHT_MAX = 60
 const HEIGHT_STEP = 5
 const DEFAULT_HEIGHT = 30
 
+/** 4c-B-2 C1 (Q1 decision γ — Inclusive-on-write, flat-fallback-on-read):
+ *  per-bubble fields are stored under ``layout_config.bubbles[0]``.
+ *  Flat top-level keys are accepted as a legacy fallback so pages
+ *  authored before C1 continue to render. Read precedence:
+ *  ``bubbles[0].X`` overrides flat ``X``; write-path always writes
+ *  to ``bubbles[0]`` so the flat shape fades out naturally (same
+ *  template as ``size`` → ``bubble_width`` from c63db21).
+ *
+ *  Plugin-comics Session 2 inherits this single per-bubble shape
+ *  via the ``comic_bubbles`` schema (NQ2 scope-anticipate).
+ */
+export function readBubbleConfig(
+    config: Record<string, unknown> | null,
+): Record<string, unknown> {
+    if (!config) return {}
+    const flat: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(config)) {
+        if (k !== "bubbles") flat[k] = v
+    }
+    const bubbles = config.bubbles
+    const bubblesZero =
+        Array.isArray(bubbles) &&
+        bubbles.length > 0 &&
+        typeof bubbles[0] === "object" &&
+        bubbles[0] !== null
+            ? (bubbles[0] as Record<string, unknown>)
+            : {}
+    return {...flat, ...bubblesZero}
+}
+
 /** Returns the picked preset, or null when no preset has been
  *  chosen yet (PageCanvas falls back to "bottom-center" per
  *  Session 4 D2a default in that case). null means "no radio is
@@ -75,7 +105,7 @@ const DEFAULT_HEIGHT = 30
 function readAnchor(
     config: Record<string, unknown> | null,
 ): AnchorPreset | null {
-    const value = config?.anchor_position
+    const value = readBubbleConfig(config).anchor_position
     if (
         typeof value === "string" &&
         (ANCHOR_PRESETS as readonly string[]).includes(value)
@@ -89,11 +119,12 @@ function readBubbleWidth(config: Record<string, unknown> | null): number {
     // Prefer the new bubble_width key; fall back to the legacy
     // size key when bubble_width is absent. D11-style backward-
     // compat: pre-Bug-1 pages keep their authored width.
-    const primary = config?.bubble_width
+    const merged = readBubbleConfig(config)
+    const primary = merged.bubble_width
     if (typeof primary === "number" && Number.isFinite(primary)) {
         return Math.max(WIDTH_MIN, Math.min(WIDTH_MAX, primary))
     }
-    const legacy = config?.size
+    const legacy = merged.size
     if (typeof legacy === "number" && Number.isFinite(legacy)) {
         return Math.max(WIDTH_MIN, Math.min(WIDTH_MAX, legacy))
     }
@@ -101,7 +132,7 @@ function readBubbleWidth(config: Record<string, unknown> | null): number {
 }
 
 function readBubbleHeight(config: Record<string, unknown> | null): number {
-    const value = config?.bubble_height
+    const value = readBubbleConfig(config).bubble_height
     if (typeof value === "number" && Number.isFinite(value)) {
         return Math.max(HEIGHT_MIN, Math.min(HEIGHT_MAX, value))
     }
@@ -109,7 +140,7 @@ function readBubbleHeight(config: Record<string, unknown> | null): number {
 }
 
 function readOpacity(config: Record<string, unknown> | null): number {
-    const value = config?.opacity
+    const value = readBubbleConfig(config).opacity
     if (typeof value === "number" && Number.isFinite(value)) {
         return Math.max(OPACITY_MIN, Math.min(OPACITY_MAX, value))
     }
@@ -123,14 +154,29 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
     const currentWidth = readBubbleWidth(config)
     const currentHeight = readBubbleHeight(config)
 
+    /** 4c-B-2 C1: every write goes through bubbles[0]. The
+     *  prior per-bubble state (from readBubbleConfig — which
+     *  honours flat fallback) is preserved so a single-field
+     *  edit does not clobber siblings. PageEditor's
+     *  handleUpdateLayoutConfig still does a shallow merge at
+     *  the top level; bubbles[] is replaced as a whole, which
+     *  is correct because we always send the full bubble. */
+    const writeBubble = React.useCallback(
+        (fields: Record<string, unknown>): void => {
+            const prior = readBubbleConfig(config)
+            onChange({bubbles: [{...prior, ...fields}]})
+        },
+        [config, onChange],
+    )
+
     const debouncedOpacityChange = useDebouncedCallback((value: number) => {
-        onChange({opacity: value})
+        writeBubble({opacity: value})
     }, 300)
     const debouncedWidthChange = useDebouncedCallback((value: number) => {
-        onChange({bubble_width: value})
+        writeBubble({bubble_width: value})
     }, 300)
     const debouncedHeightChange = useDebouncedCallback((value: number) => {
-        onChange({bubble_height: value})
+        writeBubble({bubble_height: value})
     }, 300)
 
     return (
@@ -187,7 +233,9 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                                     name="speech_bubble_anchor"
                                     value={preset}
                                     checked={selected}
-                                    onChange={() => onChange({anchor_position: preset})}
+                                    onChange={() =>
+                                        writeBubble({anchor_position: preset})
+                                    }
                                     data-testid={`speech-bubble-anchor-${preset}`}
                                     className={styles.anchorInput}
                                     aria-label={label}

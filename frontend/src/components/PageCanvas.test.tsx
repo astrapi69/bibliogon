@@ -1645,3 +1645,144 @@ describe("PageCanvas - Tier-Property textarea defends against JSON-shaped text_c
         expect(ta.value).toBe("Bubble text!")
     })
 })
+
+// --- 4c-B-2 C1: bubbles[0] wrapper-shape (NQ2 scope-anticipate) ---
+//
+// PageCanvas's speechBubbleInlineStyle must resolve identically
+// whether per-bubble fields live under bubbles[0] (canonical) or
+// at the top level (legacy fallback). The Python parallel in
+// picture_book_pdf.py::_speech_bubble_style is pinned by
+// test_picture_book_pdf.py.
+
+describe("PageCanvas - bubbles[0] wrapper read-path (4c-B-2 C1)", () => {
+    it("bubbles[0].anchor_position overrides flat anchor_position", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        anchor_position: "top-left",
+                        bubbles: [{anchor_position: "bottom-right"}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const bubble = screen.getByTestId("page-canvas-speech-bubble")
+        const style = bubble.getAttribute("style") ?? ""
+        // bottom-right wins (16pt from bottom + 16pt from right)
+        expect(style).toContain("bottom: 16")
+        expect(style).toContain("right: 16")
+        // data-anchor surfaces the canonical value (used by E2E).
+        expect(bubble.getAttribute("data-anchor")).toBe("bottom-right")
+    })
+
+    it("bubbles[0].opacity overrides flat opacity", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {opacity: 0.4, bubbles: [{opacity: 0.9}]},
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("rgba(255, 255, 255, 0.9)")
+    })
+
+    it("bubbles[0].bubble_width overrides flat bubble_width and legacy size", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        size: 30,
+                        bubble_width: 50,
+                        bubbles: [{bubble_width: 70}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("width: 70%")
+    })
+
+    it("bubbles[0].bubble_height overrides flat bubble_height", () => {
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        bubble_height: 20,
+                        bubbles: [{bubble_height: 55}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const style =
+            screen.getByTestId("page-canvas-speech-bubble").getAttribute("style") ??
+            ""
+        expect(style).toContain("height: 55%")
+    })
+
+    it("falls back to flat top-level keys when bubbles[0] is absent (legacy pages)", () => {
+        // Pre-C1 picture-books carry flat shape. The shim must
+        // keep them rendering correctly under the new read-path.
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        anchor_position: "center",
+                        opacity: 0.5,
+                        bubble_width: 60,
+                        bubble_height: 40,
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const bubble = screen.getByTestId("page-canvas-speech-bubble")
+        const style = bubble.getAttribute("style") ?? ""
+        expect(bubble.getAttribute("data-anchor")).toBe("center")
+        expect(style).toContain("rgba(255, 255, 255, 0.5)")
+        expect(style).toContain("width: 60%")
+        expect(style).toContain("height: 40%")
+    })
+
+    it("empty bubbles array does NOT shadow flat keys", () => {
+        // Defensive: a write that produced `bubbles: []` (zero
+        // entries) must NOT discard the flat fallback values; the
+        // shim treats the missing first element as "no override".
+        render(
+            <PageCanvas
+                page={makePage({
+                    layout: "speech_bubble",
+                    layout_config: {
+                        anchor_position: "top-left",
+                        bubbles: [],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen
+                .getByTestId("page-canvas-speech-bubble")
+                .getAttribute("data-anchor"),
+        ).toBe("top-left")
+    })
+})

@@ -215,6 +215,24 @@ def _layout_class(layout: str) -> str:
     return f"page--{layout}"
 
 
+def _read_bubble_config(config: dict[str, Any] | None) -> dict[str, Any]:
+    """4c-B-2 C1 read-path shim. Mirrors the TypeScript
+    ``readBubbleConfig`` in ``frontend/src/components/PageCanvas.tsx``
+    and ``LayoutConfigSpeechBubble.tsx``: per-bubble fields live
+    under ``layout_config.bubbles[0]``; flat top-level keys are
+    honoured as a legacy fallback. ``bubbles[0]`` precedence is
+    enforced by spreading it AFTER the flat keys.
+    """
+    if not isinstance(config, dict):
+        return {}
+    flat = {k: v for k, v in config.items() if k != "bubbles"}
+    bubbles = config.get("bubbles")
+    bubbles_zero: dict[str, Any] = {}
+    if isinstance(bubbles, list) and bubbles and isinstance(bubbles[0], dict):
+        bubbles_zero = bubbles[0]
+    return {**flat, **bubbles_zero}
+
+
 def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     """Compute the inline-style for a speech_bubble page's bubble.
 
@@ -223,15 +241,15 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     position + opacity + size. anchor_position default is
     bottom-center (Session 4 D2a).
     """
-    if not isinstance(config, dict):
-        config = {}
-    anchor_raw = config.get("anchor_position")
+    # 4c-B-2 C1: read through bubbles[0] wrapper with flat fallback.
+    merged = _read_bubble_config(config)
+    anchor_raw = merged.get("anchor_position")
     anchor = (
         anchor_raw
         if isinstance(anchor_raw, str)
         else "bottom-center"
     )
-    opacity_raw = config.get("opacity")
+    opacity_raw = merged.get("opacity")
     if isinstance(opacity_raw, (int, float)):
         opacity = max(0.3, min(1.0, float(opacity_raw)))
     else:
@@ -242,14 +260,14 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     # read ``size`` as a fallback for bubble_width when the new
     # key is absent. bubble_height has no legacy fallback (new
     # property; default 30).
-    width_raw = config.get("bubble_width")
+    width_raw = merged.get("bubble_width")
     if not isinstance(width_raw, (int, float)):
-        width_raw = config.get("size")
+        width_raw = merged.get("size")
     if isinstance(width_raw, (int, float)):
         width_pct = max(20, min(80, int(width_raw)))
     else:
         width_pct = 40
-    height_raw = config.get("bubble_height")
+    height_raw = merged.get("bubble_height")
     if isinstance(height_raw, (int, float)):
         height_pct = max(15, min(60, int(height_raw)))
     else:
