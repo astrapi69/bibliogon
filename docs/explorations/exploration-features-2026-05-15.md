@@ -610,3 +610,49 @@ v0.31.0/v0.32.0 release cycle. Author-Workflow features (#1-3)
 plus Article-to-Book (#9) are most immediately actionable.
 Fiction-Workshop and KDP-Publishing are strategic multi-session
 commitments.
+
+---
+
+## Evaluated 2026-05-19
+
+Read-only triage of all 10 features against Bibliogon's shipped
+state + 65-item backlog + formalised architecture disciplines.
+
+**Audit doc:**
+[docs/audits/exploration-features-2026-05-15-evaluation.md](../audits/exploration-features-2026-05-15-evaluation.md)
+— captures the full 4-track Pre-Inspection.
+
+**Triage summary:** 3 ACCEPT · 5 DEFER · 1 REJECT · 1 EXTEND.
+Net backlog growth: +4 items (65 → 69).
+
+Per-feature decisions:
+
+| # | Feature | Decision | Backlog ID / Cross-Reference |
+|---|---------|----------|------------------------------|
+| 1 | Writing Goals + Progress Tracking | **ACCEPT** (P3) | `WRITING-GOALS-PROGRESS-TRACKING-01` |
+| 2 | Distraction-Free Writing Mode | **DEFER** (folded) | Covered by `FULLSCREEN-PATTERN-RECONCILE-01` (P4, 2026-05-18). Distraction-Free is the canonical 3rd-surface trigger for that P4 reconcile; no new backlog entry. |
+| 3 | Reading-Time Estimation | **DEFER** (slot-of-opportunity) | Trivial XS. No backlog row in advance per the doc's "don't clutter" guidance. Trigger: session slot opens with no higher-priority work + user requests reader-facing reading-time. |
+| 4 | Character/Setting Database Plugin (Story Bible) | **ACCEPT** (P2) | `STORY-BIBLE-PLUGIN-01` |
+| 5 | Outline/Structure View | **DEFER** (trigger-gated) | Coordinates with `PICTURE-BOOK-STORYBOARD-01` (P3, existing). Trigger: when Storyboard ships AND user requests a cross-book-type outline view OR a beat-sheet template. At that point, Recurring-Component-Unification fires; extract `OutlineTreeView` in the SAME session. |
+| 6 | KDP Publishing Workflow | **ACCEPT** (P2) | `KDP-PUBLISHING-WIZARD-01` — closes the K-03 + K-04 half of the original K-01..K-04 plan (K-01 + K-02 shipped via plugin-kdp). |
+| 7 | Multi-Language-Book Workflow | **DEFER** (post-P2-bandwidth) | XL scope + Half-Wired risk (translation-drift indicator must ship with side-by-side, not after). Trigger: when #4 OR #6 ships and real bandwidth is known, AND German-author-with-KDP-global demand surfaces. |
+| 8 | DOCX-Manuscript Export | **DEFER** (slot-of-opportunity) | Tightened out of the ACCEPT-3 per user F1. Trigger: user requests Beta-Reader workflow OR Traditional submission workflow OR manuscripta gains a Manuscript-format template upstream. |
+| 9 | Article-to-Book Conversion | **REJECT** (shipped) | `frontend/src/components/articles/ConvertToBookWizard.tsx` is in production. UX-polish tracked by existing `CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01` (P3, existing). No new entry. |
+| 10 | Backup-Comparison/Diff-View | **EXTEND** (P4) | `BACKUP-DIFF-DEEP-VARIANTS-01` — per-Article + per-Settings + selective-restore variants on top of the shipped `BackupCompareDialog`. |
+
+### Bundles re-evaluated
+
+- **Bundle A (Fiction-Workshop)**: #4 ACCEPT-P2 + #5 DEFER + #1 ACCEPT-P3. Half the bundle is filed, half is trigger-gated. Single coordinated session pairs `STORY-BIBLE-PLUGIN-01` with `PICTURE-BOOK-STORYBOARD-01` (the existing storyboard item) AND triggers #5 outline extraction.
+- **Bundle B (KDP-Publishing)**: #6 ACCEPT-P2 + #7 DEFER + #8 DEFER. Filed as a P2 strategic commitment; #7 + #8 wait for #6 to ship and bandwidth to be real.
+- **Bundle C (Author Productivity Daily-Drivers)**: #1 ACCEPT-P3 + #2 DEFER (folded) + #3 DEFER. Only #1 is filed; the others are trigger-gated.
+- **Bundle D (Quick Wins)**: #9 SHIPPED + #8 DEFER + #3 DEFER. Half the bundle already shipped; the remaining items are slot-of-opportunity.
+
+### Why the triage diverged from the doc's "1-3 features" guidance
+
+The doc's author cautioned against mass-filing on a 43-item
+backlog (line 600-603). The backlog has since grown to 65;
+adding 4 items (6.2% growth) is a moderate increase that
+preserves the high-strategic-fit P2 commitments + the polished
+P3 quality-of-life addition + the P4 extension. Tighter than
+"all 8 ACCEPTs"; looser than "1-3 features" — calibrated to
+the user's F1 decision after seeing the full triage.
