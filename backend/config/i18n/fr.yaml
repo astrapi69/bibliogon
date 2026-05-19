@@ -2090,6 +2090,7 @@ ui:
           border_radius: "Rayon des coins"
           shadow: "Ombre"
           shadow_intensity: "Intensité de l'ombre"
+          padding: "Marge intérieure"
         tier2:
           heading: "Typographie"
           font_family: "Police"
@@ -2102,6 +2103,7 @@ ui:
           text_align_left: "Gauche"
           text_align_center: "Centré"
           text_align_right: "Droite"
+          italic: "Italique"
       image_top_text_bottom:
         heading: "Image top, text bottom"
       image_left_text_right:

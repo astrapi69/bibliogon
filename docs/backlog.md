@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-19 (PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-PROPERTIES-01 closed in 6 atomic-green commits; first named member of the Phase 4 close trigger gate. Tier 1 Visual Style + Tier 2 Typography + bubbles[0] wrapper-shape per the NQ2 scope-anticipate decision from docs/explorations/comic-foundation.md. Plugin-comics Session 2 will inherit the per-bubble shape via the comic_bubbles schema without an explicit migration. Commits: 4421f02 + e5ac3bf + 149ad35 + 9f0a4c4 + 93f7e72 + this archive. 1637 / 1637 Vitest + 122 / 122 plugin-export pytest + 75 / 75 i18n + 52 / 52 backend pytest passing.)
+Last updated: 2026-05-19 (PADDING-FONT-STYLE-01 closed in 3 atomic-green commits as the trimmed-scope of the original EXTENDED-SHAPE-01. Shape-variants (oval/rectangle/cloud/explosion) deferred to plugin-comics scope per NQ1 commitment in docs/explorations/comic-foundation.md; already covered by PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 Session 2 bubble_type variants (speech/thought/narration/shout/whisper/sound_effect). EXTENDED-SHAPE-01 closed-as-superseded with same archive precedent as MULTI-BUBBLE-PER-PAGE-01 + DRAG-POSITION-01. Commits: 0782209 + fa2fc33 + this archive. 1651 / 1651 Vitest + 133 / 133 plugin-export pytest passing.)
 Current version: v0.35.1
-Open tasks: 65 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 64 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -753,34 +753,6 @@ store.
   comic-book editor likely has similar specific KDP needs
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
-
-- **PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01** (P3,
-  Tier 3 deferred from EXTENDED-PROPERTIES-01): shape
-  variants + tail configuration + padding + font-style.
-  Tier 3 from the user's 2026-05-17 extended-properties
-  specification.
-
-  Scope:
-  - Shape variants: oval / rectangle / cloud / explosion
-    (comic-strip-style). Likely uses SVG masks or CSS
-    clip-paths rather than border-radius. The rectangle
-    variant is the easiest first; cloud + explosion are
-    the visual stretch goals.
-  - Tail configuration: direction (8 octants), length, tip
-    offset. **Note (2026-05-19):** the tail-configuration
-    sub-scope was promoted to its own item,
-    ``PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`` (Finding E /
-    Comic-Foundation grouping). Keep here as a Tier-3
-    aspirational mention; the dedicated home is TAIL-01.
-  - Padding (slider, per-side or uniform).
-  - font_style: italic/oblique toggle.
-
-  Trigger: Comic-Plugin work starts (panel + speech-bubble
-  shapes overlap with comic-book bubble shapes) OR user
-  requests bubble-shape variants beyond the oval default.
-  Effort: 6-10 commits depending on SVG-vs-CSS choice for
-  shape variants. Probably warrants its own Pre-Inspection
-  + design discussion before implementation.
 
 - **PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01** (P3,
   trigger-gated, filed 2026-05-18 from Comic-Foundation

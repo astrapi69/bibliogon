@@ -2090,6 +2090,7 @@ ui:
           border_radius: "Radio de esquinas"
           shadow: "Sombra"
           shadow_intensity: "Intensidad de la sombra"
+          padding: "Relleno"
         tier2:
           heading: "Tipografía"
           font_family: "Familia tipográfica"
@@ -2102,6 +2103,7 @@ ui:
           text_align_left: "Izquierda"
           text_align_center: "Centrado"
           text_align_right: "Derecha"
+          italic: "Cursiva"
       image_top_text_bottom:
         heading: "Image top, text bottom"
       image_left_text_right:

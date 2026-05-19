@@ -744,4 +744,70 @@ test.describe("Picture-Book PageEditor smoke", () => {
         expect(styleAfterReload).toContain("font-size: 22pt")
         expect(styleAfterReload).toContain("text-align: left")
     })
+
+    // PADDING-FONT-STYLE-01 C3: padding + italic round-trip + reload
+    // persistence. Same shape as the 4c-B-2 C5 smoke; covers the
+    // Tier 3 trimmed scope (shape-variants deferred to plugin-comics).
+    test("layout-config: padding slider + italic toggle drive the bubble and persist across reload", async ({
+        page,
+    }) => {
+        const book = await createPictureBook(
+            "Padding+Italic Smoke",
+            "Author",
+        )
+        await page.goto(`/book/${book.id}`)
+        await page.getByTestId("page-editor-add-page").click()
+        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
+
+        // Switch to speech_bubble.
+        await page
+            .getByTestId("page-editor-layout-option-speech_bubble")
+            .click()
+        await expect(page.getByTestId("page-canvas-speech-bubble")).toBeVisible()
+
+        // --- Tier 1: open collapsible, set padding to 24 px ---
+        await page.getByTestId("speech-bubble-tier1-trigger").click()
+        await expect(
+            page.getByTestId("speech-bubble-padding-slider"),
+        ).toBeVisible()
+        await page.getByTestId("speech-bubble-padding-slider").fill("24")
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return style?.includes("padding: 24px")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // --- Tier 2: open collapsible, flip italic toggle ---
+        await page.getByTestId("speech-bubble-tier2-trigger").click()
+        await expect(
+            page.getByTestId("speech-bubble-italic-toggle"),
+        ).toBeVisible()
+        await page.getByTestId("speech-bubble-italic-toggle").click()
+        await expect
+            .poll(
+                async () => {
+                    const style = await page
+                        .getByTestId("page-canvas-speech-bubble")
+                        .getAttribute("style")
+                    return style?.includes("font-style: italic")
+                },
+                {timeout: 3000},
+            )
+            .toBe(true)
+
+        // --- Reload to confirm persistence ---
+        await page.reload()
+        await expect(page.getByTestId("page-canvas-speech-bubble")).toBeVisible()
+        const styleAfterReload = await page
+            .getByTestId("page-canvas-speech-bubble")
+            .getAttribute("style")
+        expect(styleAfterReload).toContain("padding: 24px")
+        expect(styleAfterReload).toContain("font-style: italic")
+    })
 })
