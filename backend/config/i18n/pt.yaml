@@ -2066,6 +2066,8 @@ ui:
       8_5x11: "8,5×11 (Retrato, grande)"
       11x8_5: "11×8,5 (Paisagem)"
       10x8: "10×8 (Paisagem, pequeno)"
+    pdf_bleed_label: "Marcas de sangria"
+    pdf_bleed_hint: "Adiciona 3 mm de sangria + marcas de corte para impressão"
     config:
       speech_bubble:
         heading: "Speech bubble"

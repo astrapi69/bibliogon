@@ -2066,6 +2066,8 @@ ui:
       8_5x11: "8.5×11 (縦長、大)"
       11x8_5: "11×8.5 (横長)"
       10x8: "10×8 (横長、小)"
+    pdf_bleed_label: "裁ち落とし"
+    pdf_bleed_hint: "印刷所用に3 mmの裁ち落としとトリムマークを追加します"
     config:
       speech_bubble:
         heading: "Speech bubble"

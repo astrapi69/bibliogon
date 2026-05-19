@@ -2066,6 +2066,8 @@ ui:
       8_5x11: "8,5×11 (Vertical, grande)"
       11x8_5: "11×8,5 (Horizontal)"
       10x8: "10×8 (Horizontal, pequeño)"
+    pdf_bleed_label: "Marcas de sangrado"
+    pdf_bleed_hint: "Añade 3 mm de sangrado y marcas de corte para imprenta"
     config:
       speech_bubble:
         heading: "Speech bubble"

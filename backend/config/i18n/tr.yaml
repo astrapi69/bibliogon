@@ -2066,6 +2066,8 @@ ui:
       8_5x11: "8,5×11 (Dikey, büyük)"
       11x8_5: "11×8,5 (Yatay)"
       10x8: "10×8 (Yatay, küçük)"
+    pdf_bleed_label: "Taşma payı işaretleri"
+    pdf_bleed_hint: "Matbaa için 3 mm taşma payı + kesim işaretleri ekler"
     config:
       speech_bubble:
         heading: "Speech bubble"

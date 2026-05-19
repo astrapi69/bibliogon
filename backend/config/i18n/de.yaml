@@ -2058,6 +2058,8 @@ ui:
       8_5x11: "8,5×11 (Hochformat, groß)"
       11x8_5: "11×8,5 (Querformat)"
       10x8: "10×8 (Querformat, klein)"
+    pdf_bleed_label: "Beschnittmarken"
+    pdf_bleed_hint: "Fügt 3 mm Beschnitt + Schnittmarken für den Druckereinsatz hinzu"
     config:
       speech_bubble:
         heading: "Sprechblase"

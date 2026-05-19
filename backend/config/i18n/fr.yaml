@@ -2066,6 +2066,8 @@ ui:
       8_5x11: "8,5×11 (Portrait, grand)"
       11x8_5: "11×8,5 (Paysage)"
       10x8: "10×8 (Paysage, petit)"
+    pdf_bleed_label: "Marques de coupe"
+    pdf_bleed_hint: "Ajoute 3 mm de fond perdu + marques de coupe pour l'impression"
     config:
       speech_bubble:
         heading: "Speech bubble"

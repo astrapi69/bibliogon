@@ -2059,6 +2059,8 @@ ui:
       8_5x11: "8.5×11 (Portrait, large)"
       11x8_5: "11×8.5 (Landscape)"
       10x8: "10×8 (Landscape, small)"
+    pdf_bleed_label: "Bleed marks"
+    pdf_bleed_hint: "Adds 3 mm bleed + crop marks for print-shop submission"
     config:
       speech_bubble:
         heading: "Speech bubble"
