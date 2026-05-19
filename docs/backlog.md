@@ -57,9 +57,157 @@ store.
   asking for it OR v01 ships and the manual-tagging step is a
   visible bottleneck in feedback.
 
+- **KDP-PUBLISHING-WIZARD-01** (P2, STRATEGIC, filed 2026-05-19
+  from the
+  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
+  triage of exploration feature #6): end-to-end KDP publishing
+  pipeline as a wizard on top of the already-shipped plugin-kdp
+  foundation. Closes the "K-03 + K-04" half of the original
+  K-01..K-04 plan (K-01 metadata generation + K-02 cover
+  validation are shipped; K-03 wizard + K-04 pricing/ARC/launch
+  are this filing).
+
+  Scope:
+  - Step-by-step wizard for first-time KDP launch
+  - Pre-launch checklist (categories selected, description
+    written, cover uploaded, BISAC codes valid, ISBN/ASIN
+    populated, etc.) - reads the existing metadata-checker
+    output as the gating signal
+  - Pricing strategy panel (KDP royalty calculations, region
+    pricing for US / EU / UK / JP / IN)
+  - ARC (Advance Reader Copy) management - track which
+    reviewers received which version, capture review
+    permalinks back into the book record
+  - Final-step export-package generation (KDP-ready ZIP
+    with manuscript + cover + metadata JSON)
+
+  Architecture-discipline notes (per audit
+  Track C):
+  - **Half-Wired-Lifecycle Prevention**: shipping wizard steps
+    without their export-pipeline consumers is the canonical
+    write-without-reader trap. Per-step Pre-Inspection required
+    when implementation starts: confirm the ARC list / pricing
+    decisions / launch-checklist results all have actual
+    consumers in the export package, not just UI surfaces.
+  - **3-Source-Plugin-Metadata-Pattern**: plugin-kdp's
+    ``backend/config/plugins/kdp.yaml`` will gain a
+    ``settings.wizard:`` block; the bundled
+    ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` must be
+    regenerated via ``make build-zip`` per the canonical-vs-
+    bundled rule.
+
+  Effort: XL (16+ commits, multi-session). Trigger: when
+  strategic-direction shifts toward KDP-publishing pipeline as
+  the primary differentiator (per the exploration doc's
+  Bundle B framing). Pairs with:
+  ``KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01`` (P5, existing) -
+  the wizard's category-picker step is the natural place to
+  wire the existing /api/kdp/categories endpoint into the
+  CategoryInput component.
+
+- **STORY-BIBLE-PLUGIN-01** (P2, STRATEGIC, filed 2026-05-19
+  from the
+  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
+  triage of exploration feature #4): plugin-based database for
+  fiction-writing entities (Characters, Settings, Plot-Points,
+  Items, Lore) with @-mention syntax in the editor for
+  cross-references.
+
+  Scope:
+  - New plugin: ``bibliogon-plugin-story-bible``
+  - DB: 5 entity types per-book-scoped (Character, Setting,
+    PlotPoint, Item, Lore) with rich-text descriptions +
+    optional photos
+  - TipTap extension: ``@-mention`` syntax with autocomplete
+    against existing entities
+  - Click-on-mention navigates to entity page
+  - AI-Template integration: per-entity-type prompts
+    (Character Profile, Setting Description, Plot-Point
+    structure)
+  - StoryBibleSidebar component in BookEditor (gated on
+    plugin activation)
+
+  Architecture-discipline notes (per audit
+  Track C):
+  - **3-Source-Plugin-Metadata-Pattern**: full pattern applies.
+    Canonical ``backend/config/plugins/story-bible.yaml`` (UI
+    metadata + settings defaults) + ``plugin.py`` class attrs
+    (identity + contract) + generated bundled YAML via
+    ``make build-zip``.
+  - **Recurring-Component-Unification**: 5 entity types x same
+    CRUD pattern -> extract ``EntityCRUDView`` in the SAME
+    session as the second entity type, NOT deferred. Per the
+    2-surfaces rule.
+  - **Single-Source-of-Truth**: cross-references between
+    entities + chapters must derive from the entity's
+    canonical record (DB row), not duplicate text into chapter
+    content. The TipTap extension stores the entity ID; the
+    editor renders the entity's current display-name on the
+    fly.
+  - **Half-Wired-Lifecycle Prevention**: the @-mention
+    autocomplete (write surface) and the click-to-navigate
+    affordance (read surface) MUST ship together. Half-wired
+    risk: shipping autocomplete without click-navigate creates
+    "I mentioned a character but can't get back to them"
+    purgatory.
+
+  Effort: XL (16+ commits, multi-session). Trigger: dedicated
+  Story-Bible session when Aster's next fiction-project
+  (SciFi continuation, new Kinderbuch series, comic) reaches
+  the point where character/setting tracking becomes a real
+  cognitive cost. Plugin model means non-fiction authors
+  never see it.
+
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **WRITING-GOALS-PROGRESS-TRACKING-01** (P3, FEATURE-REQUEST,
+  filed 2026-05-19 from the
+  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
+  triage of exploration feature #1): classic author-tool daily-
+  goal + streak + per-chapter word-count surface (Scrivener +
+  Ulysses precedent).
+
+  Scope:
+  - Daily word-count goal, configurable per user (default 500)
+  - Streak counter (consecutive days hitting goal)
+  - Per-chapter word-count visible in BookEditor sidebar
+  - Total-book word-count aggregate
+  - Visual progress widget on the Dashboard
+    ("Today: 347/500 words" with progress bar)
+  - Settings entry under "Author" tab for goal configuration
+
+  Architecture-discipline notes (per audit
+  Track C):
+  - **Single-Source-of-Truth**: per-session word-count storage
+    decision is non-trivial. Two options:
+    (a) DB ``WritingSession`` table with (date, words_written,
+        user_id) rows - persistent SSoT, survives backup/
+        restore, but adds a new DB migration.
+    (b) Computed-on-demand from ``Article.updated_at`` +
+        ``Book.updated_at`` + ``Chapter.updated_at`` diff
+        windows - no new schema, but "did I write today?"
+        becomes a derived query.
+    Pre-Inspection should surface this as a STOP-gate
+    decision before implementation. Recommend (a) for the
+    audit-trail clarity and the future-feature value
+    (per-day analytics, calendar view, streaks across
+    machines).
+  - **Reuses existing TipTap word-count infrastructure** via
+    ``@tiptap/extension-character-count`` - no new word-
+    counting logic needed at the editor layer.
+  - **Recurring-Component-Unification check**: the
+    ``WordCountWidget`` on Dashboard + the per-chapter count
+    in BookEditor sidebar are two surfaces using the same
+    progress-bar visual. Extract shared
+    ``DailyGoalProgressBar`` in the same session per the
+    2-surfaces rule.
+
+  Effort: M (6-10 commits). Trigger: when daily-writing-habit
+  reinforcement becomes a stated user need OR when the
+  Dashboard real estate is reorganised and a progress widget
+  fits naturally.
 
 - **EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01** (P3, FEATURE-REQUEST,
   filed 2026-05-18 from real-user-smoke during Picture-Book +
@@ -1546,6 +1694,55 @@ store.
 ---
 
 ## P4 - Roadmap / Future Phases
+
+- **BACKUP-DIFF-DEEP-VARIANTS-01** (P4, FEATURE-EXTENSION,
+  filed 2026-05-19 from the
+  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
+  triage of exploration feature #10): deep-variants of the
+  existing Backup-Comparison surface. Two-backup file compare
+  ships today via ``BackupCompareDialog`` (relocated to
+  Settings -> Backups by ``BOOKDASHBOARD-CLEANUP-01``,
+  2026-05-18). The exploration's per-Article / per-Settings /
+  selective-restore variants are user-feedback-gated.
+
+  Scope:
+  - **Per-Article diff**: drill from a backup snapshot into the
+    Article-level changes (added / removed / modified)
+  - **Per-Settings diff**: configuration-drift view comparing
+    plugin settings + app.yaml at two points in time
+  - **Selective restore**: pick specific changes from a diff
+    tree to roll back, leaving the rest untouched. Inverse of
+    "full backup restore" - "I want THIS chapter from last
+    week, but keep everything else current."
+
+  Architecture-discipline notes (per audit
+  Track C):
+  - **Recurring-Component-Unification**: the entity-diff
+    renderer needed for per-Article + per-Settings diffs is
+    the same shape as ``BackupCompareDialog``'s existing
+    per-field diff. Extract a reusable ``DiffRenderer``
+    component in the same session that lands the second
+    variant. The 2-surfaces threshold fires when the second
+    deep-variant ships.
+  - **Half-Wired risk for selective-restore**: shipping the
+    diff-tree UI without the selective-restore execution path
+    creates a half-wired feature (user sees changes, can
+    select them, but the "Restore selected" button is greyed
+    out). Pre-Inspection must confirm both halves ship
+    together.
+
+  Effort: M (per variant; ~3 variants = 9-12 commits total
+  if all three land). Trigger:
+  - **Granular-diff trigger**: user requests "what changed in
+    THIS article between these two backups?" OR
+    configuration-audit need surfaces
+  - **Selective-restore trigger**: a user reports a partial-
+    rollback need ("I lost just THIS chapter but everything
+    else is fine") - rare, defer until reported
+
+  Defer reason: zero current pain. Two-backup file compare
+  covers the present use-cases. Variants are nice-to-have
+  refinements that user feedback hasn't yet driven.
 
 - **FULLSCREEN-PATTERN-RECONCILE-01** (P4, REFACTOR, filed
   2026-05-18 by the EDITOR-FULLSCREEN-NATIVE-01 closure):
