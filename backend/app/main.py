@@ -375,17 +375,6 @@ def _load_installed_plugins() -> None:
                     sys.path.insert(0, path_str)
 
 
-def _enabled_plugins_from_config() -> list[str]:
-    """Return the plugin names listed under ``plugins.enabled`` in
-    the resolved app config.
-
-    Read fresh on every call so test overrides land. The list is
-    snapshotted by the diagnostic logger so a missing entry can be
-    diff-ed against the active set.
-    """
-    return list(_startup_config.get("plugins", {}).get("enabled") or [])
-
-
 def _log_discovery_result(result: DiscoveryResult) -> None:
     """Emit structured startup logging from a ``DiscoveryResult``.
 
@@ -531,12 +520,7 @@ async def lifespan(app: FastAPI):
     # the merged config.
     from app import config_overlay
 
-    global _startup_config
-    _migrated, _did_write = config_overlay.migrate_user_overlay_enabled_list()
-    if _did_write:
-        # Refresh the snapshot so the lifespan reads the post-
-        # migration list when it runs the sync + discovery below.
-        _startup_config = _load_app_config()
+    config_overlay.migrate_user_overlay_enabled_list()
     # Re-sync the manager's _app_config with the (possibly post-
     # migration) merged view, AFTER any migration write. Module-
     # import time already ran _sync_manager_with_overlay once; this
@@ -865,6 +849,69 @@ def get_plugin_health() -> dict[str, Any]:
 @app.get("/api/plugins/errors")
 def get_plugin_errors() -> dict[str, str]:
     return dict(manager.get_load_errors())
+
+
+@app.post("/api/admin/rediscover")
+def admin_rediscover() -> dict[str, Any]:
+    """Re-read plugin entry points without restarting the host.
+
+    Calls ``PluginManager.rediscover()`` (pluginforge v0.6.0
+    public API), which invalidates ``importlib`` and
+    ``importlib.metadata`` caches, activates newly-discovered
+    plugins, deactivates ones whose entry point has disappeared,
+    and leaves unchanged plugins untouched.
+
+    Subsumes the ``PLUGIN-DEV-SERVER-RESTART-HELPER-01`` workflow
+    item: a contributor adding a new ``plugins/bibliogon-plugin-foo/``
+    + running ``poetry install`` in ``backend/`` can hit this
+    endpoint instead of restarting uvicorn.
+
+    NOT relevant to ZIP-installed plugins (those go through
+    ``register_plugin()`` directly at install time; they do not
+    register entry points). Hot-reload there already happens
+    inside ``/api/plugins/install``.
+
+    Response shape mirrors ``DiscoveryDiff`` with severity
+    filtering on the errors channel: ``severity="error"``
+    entries land in ``errors``; ``severity="warning"`` entries
+    (e.g. v0.7.0 identity deprecation) land in ``notices``.
+    Consumers can render the two channels with different visual
+    treatment.
+    """
+    diff = manager.rediscover()
+    return {
+        "added": list(diff.added),
+        "removed": list(diff.removed),
+        "unchanged": list(diff.unchanged),
+        "states": {
+            name: {
+                "discovered": state.discovered,
+                "enabled_in_config": state.enabled_in_config,
+                "disabled_in_config": state.disabled_in_config,
+                "activated": state.activated,
+                "filter_reason": state.filter_reason,
+            }
+            for name, state in diff.states.items()
+        },
+        "errors": [
+            {
+                "name": err.name,
+                "phase": err.phase,
+                "user_facing_message": err.user_facing_message,
+            }
+            for err in diff.errors
+            if err.severity == "error"
+        ],
+        "notices": [
+            {
+                "name": err.name,
+                "phase": err.phase,
+                "user_facing_message": err.user_facing_message,
+            }
+            for err in diff.errors
+            if err.severity == "warning"
+        ],
+    }
 
 
 @app.get("/api/i18n/{lang}")
