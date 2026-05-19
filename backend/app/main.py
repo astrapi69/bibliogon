@@ -309,6 +309,7 @@ manager = PluginManager(
     config_path=str(CONFIG_PATH),
     pre_activate=_check_license,
     api_version="1",
+    app_id="bibliogon",
 )
 manager.register_hookspecs(BibliogonHookSpec)
 

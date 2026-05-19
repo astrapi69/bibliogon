@@ -11,6 +11,7 @@ class GitSyncPlugin(BasePlugin):
     name = "git-sync"
     version = "1.0.0"
     api_version = "1"
+    target_application = "bibliogon"
     license_tier = "core"
     description = "Import books from write-book-template git repositories."
 

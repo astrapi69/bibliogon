@@ -9,6 +9,7 @@ class GetStartedPlugin(BasePlugin):
     name = "getstarted"
     version = "1.0.0"
     api_version = "1"
+    target_application = "bibliogon"
     license_tier = "core"
 
     def activate(self) -> None:

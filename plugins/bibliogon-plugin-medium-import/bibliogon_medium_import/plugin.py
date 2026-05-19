@@ -9,6 +9,7 @@ class MediumImportPlugin(BasePlugin):
     name = "medium-import"
     version = "1.0.0"
     api_version = "1"
+    target_application = "bibliogon"
     license_tier = "core"
     depends_on: list[str] = []
 
