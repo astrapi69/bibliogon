@@ -20,9 +20,8 @@ class KinderbuchPlugin(BasePlugin):
         self._settings = self.config.get("settings", {})
 
     def get_routes(self) -> list[Any]:
-        from .pages import router as pages_router
         from .routes import router
-        return [router, pages_router]
+        return [router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         # ``editor_extensions`` slot will be re-added in Session 3 when the

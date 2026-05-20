@@ -51,6 +51,7 @@ from app.routers import (
     git_sync,
     import_orchestrator,
     licenses,
+    pages,
     plugin_install,
     publications,
     settings,
@@ -599,6 +600,7 @@ app.include_router(comments.router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")
 app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
+app.include_router(pages.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")
 app.include_router(covers.router, prefix="/api")
