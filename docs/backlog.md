@@ -41,101 +41,11 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-- **PLUGINFORGE-V070-ADOPTION-01** (P1, UPSTREAM-ADOPTION, filed
-  2026-05-19 from the PluginForge v0.7.0 cross-CC handover at
-  [docs/journal/pluginforge-v0.7.0-adoption-handover-2026-05-19.md](journal/pluginforge-v0.7.0-adoption-handover-2026-05-19.md)):
-  consume PluginForge v0.7.0's application-identity API.
-  Bibliogon currently pins `pluginforge ^0.5.0`; upgrade to
-  `^0.7.0` and adopt the three new surfaces.
-
-  Scope:
-  - Bump `pluginforge ^0.5.0` → `^0.7.0` across backend +
-    12 plugin pyproject.toml files; regenerate locks via
-    `make lock-all-plugins` + backend `poetry lock`.
-  - Add `target_application = "bibliogon"` class attribute on
-    every BasePlugin subclass (12 plugins: audiobook, comics,
-    export, getstarted, git-sync, grammar, help, kdp,
-    kinderbuch, medium-import, ms-tools, translation).
-  - Pass `app_id="bibliogon"` to `PluginManager(...)` at
-    [backend/app/main.py:308](../backend/app/main.py#L308) —
-    single construction site, verified by grep.
-  - Add severity filtering on every `DiscoveryResult.errors`
-    consumer once V060-ADOPTION introduces them. v0.7.0
-    widened the errors channel to carry `severity="warning"`
-    entries (deprecation warning for missing
-    `target_application`); unfiltered consumers would surface
-    those as failures in the PluginCard UI.
-
-  Race-window discipline: `target_application` + `app_id` must
-  land in a SINGLE commit AFTER the pin bump. Between the pin
-  bump and the adoption commit, plugins emit deprecation
-  warnings into `result.errors`; Bibliogon currently ignores
-  those returns, so the impact is contained, but the window
-  must be minimized.
-
-  Effort: M (~5-8 commits, ~2 hours focused). Pre-requisite:
-  PLUGINFORGE-V060-ADOPTION-01 (provides clean consumption
-  surface for v0.7.0's errors-channel widening).
-
-  Trigger: in-flight (2026-05-19 session). Unblocks PluginForge
-  v0.8.0 (hard-filter for missing `target_application`).
+(none)
 
 ---
 
 ## P2 - High-Value User Features
-
-- **PLUGINFORGE-V060-ADOPTION-01** (P2, UPSTREAM-ADOPTION, filed
-  2026-05-19 from the cross-CC handover at
-  [docs/journal/pluginforge-v0.6.0-cross-cc-handover-2026-05-19.md](journal/pluginforge-v0.6.0-cross-cc-handover-2026-05-19.md)):
-  consume PluginForge v0.6.0's lifecycle API. Replaces private-
-  state pokes + hand-rolled diagnostics with the structured
-  DiscoveryResult / refresh_config surface.
-
-  Scope:
-  - Replace private-state pokes (`manager._app_config = merged`)
-    with `manager.refresh_config(merged)` at 3 sites:
-    [backend/app/main.py:332](../backend/app/main.py#L332),
-    [backend/app/routers/plugin_install.py:326](../backend/app/routers/plugin_install.py#L326),
-    [backend/app/routers/settings.py:511](../backend/app/routers/settings.py#L511).
-    Drop the paired `# type: ignore[attr-defined]` and
-    `# noqa: BLE001` comments. (V060 brief said 2 sites; 3 is
-    the verified count.)
-  - Replace `_log_plugin_diagnostics_pre/_post` (~80 LOC) at
-    [backend/app/main.py:399-440](../backend/app/main.py#L399)
-    with a single `DiscoveryResult` consumer. Capture the
-    return value from `manager.discover_plugins()` at
-    [main.py:540](../backend/app/main.py#L540) and emit one
-    structured INFO. Severity filtering on `result.errors`
-    folds in here per V070-ADOPTION.
-  - `min_app_version` audit across all plugin configs against
-    current host version (0.35.1). Known declarations:
-    `comics.yaml` → "0.35.0" (passes), `kinderbuch.yaml` →
-    "0.9.0" (passes), `medium-import.yaml` → "0.30.0" (passes);
-    others undeclared (gate-pass). Confirm at adoption commit.
-  - Add admin/rediscover endpoint: `POST /api/admin/rediscover`
-    calls `manager.rediscover()` and returns the
-    `DiscoveryDiff` as JSON. Subsumes the deferred
-    PLUGIN-DEV-SERVER-RESTART-HELPER-01 (P4) work.
-  - Update PluginCard error rendering to consume
-    `PluginError.user_facing_message` instead of raw
-    `str(load_error)`.
-
-  Architecture-discipline notes:
-  - The `manager._app_config = merged` poke smell has been in
-    Bibliogon since v0.x; the V060 surface is the right
-    architectural fix. Per coding-standards.md: services don't
-    reach into framework internals.
-  - DiscoveryDiff field shape verified post-implementation:
-    `added`/`removed`/`unchanged`/`states`/`errors` (NOT the
-    original cross-CC spec's 4-list shape). Bibliogon consumer
-    code walks `diff.states` for per-plugin filter reasons.
-
-  Effort: M (~4-6 commits). Pre-requisite for
-  PLUGINFORGE-V070-ADOPTION-01 (clean consumer base for v0.7.0's
-  errors-channel widening).
-
-  Trigger: in-flight (2026-05-19 session, lands after V070
-  steps 1+2 pass checkpoint).
 
 - **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
   Medium's HTML export strips tags. v1 imports articles with an
@@ -252,66 +162,77 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **PLUGIN-FILTERREASON-I18N-MAP-01** (P3, UPSTREAM-ADOPTION-UI,
-  filed 2026-05-19): map PluginForge `FilterReason` enum values
-  to Bibliogon-localized strings for the Settings UI PluginCard.
+- **MAKEFILE-VERIFY-PLUGIN-LOCKS-PARSE-01** (P3,
+  TOOLING-INVESTIGATION, filed 2026-05-20 during V060
+  PLUGINFORGE-V060-ADOPTION-01 step 1 lockfile sweep): GNU Make
+  4.3 (German locale) fails to recognize ``verify-plugin-locks``
+  as a target rule despite a syntactically clean declaration at
+  Makefile line 462 + presence in the ``.PHONY`` list at line 14.
+  ``awk`` reads the target header cleanly; ``make --debug=b
+  verify-plugin-locks`` reports "Das Ziel ... existiert nicht.
+  Das Ziel ... muss neu erzeugt werden" then "Keine Regel".
+
+  Workaround during V060 was inlining the verify-plugin-locks
+  recipe directly in bash (a 3-line for-loop over the 12
+  plugins). Recipe at backlog-archive note for v0.7.0 adoption
+  step 1; works fine — make-target parse is the only thing
+  broken.
+
+  Investigation steps for future fix:
+  1. ``cat -A Makefile | sed -n '454,464p'`` — look for hidden
+     characters or trailing-backslash continuations on line 460
+     (``@echo "Re-locked $$(ls -d plugins/bibliogon-plugin-*/
+     | wc -l) plugin(s)."``).
+  2. ``make -p 2>&1 | grep -B 2 -A 2 "verify-plugin-locks"`` —
+     see whether make recorded the rule at all.
+  3. Move ``verify-plugin-locks`` higher in the file (above
+     ``lock-all-plugins``) to test ordering hypothesis.
+  4. Check whether the German locale ``LANG`` setting affects
+     make's parser (unlikely but worth ruling out).
+
+  Effort: S (~30 min once cause is identified). Trigger:
+  next time a developer needs to run ``make verify-plugin-locks``
+  AND has time to dig. Workaround works; no urgency.
+
+- **PLUGIN-VERSION-GATING-ENABLE-01** (P3, OPT-IN-FEATURE,
+  filed 2026-05-20 during V060 C3 β2 migration): enable
+  ``min_app_version`` gating by passing ``app_version=__version__``
+  to the ``PluginManager(...)`` ctor at
+  [backend/app/main.py:308](../backend/app/main.py#L308).
+  Currently the manager is constructed without ``app_version``,
+  so pluginforge's ``_check_app_version`` skip-shortcuts when
+  the host has not declared its version
+  ([pluginforge/manager.py:522](file:///media/astrapi69/T7_Shield/dev/git/hub/pluginforge/pluginforge/manager.py#L522)).
+  Class-attribute declarations on ``ComicsPlugin.min_app_version =
+  "0.35.0"`` and ``KinderbuchPlugin.min_app_version = "0.9.0"``
+  (from C3 commit ``997ca7d``) are documented but unenforced.
 
   Scope:
-  - 8 v0.6.0 enum values + 1 v0.7.0 value (`wrong_application`)
-    need i18n keys in `backend/config/i18n/{lang}.yaml` × 8
-    languages.
-  - Mapping uses PluginForge's `user_facing_message` as English
-    default; localized variants for the other 7 languages.
-  - Special mapping: `pre_activate_rejected` →
-    `plugin_status.license_check_failed` (semantically a
-    Bibliogon license-check rejection; PluginForge naming is
-    intentionally application-agnostic).
-  - Special mapping: `wrong_application` →
-    `plugin_status.wrong_application` (new in v0.7.0; fires
-    when a third-party plugin built for a different
-    `app_id` is installed by mistake).
+  - Add ``app_version=__version__`` to the
+    ``PluginManager(...)`` ctor at main.py:308.
+  - Audit current host version (0.35.1) against the 2 declared
+    minimums: comics 0.35.0 (passes), kinderbuch 0.9.0 (passes).
+    No first-party plugin fails the gate today.
+  - Document the upgrade path: when Bibliogon bumps to 0.36.0,
+    any plugin declaring ``min_app_version > 0.36.0`` would
+    fail to activate. Release-workflow gate: confirm no plugin
+    declarations exceed the target version before tagging.
+  - Add 1 regression test pinning gating behavior (synthetic
+    fixture plugin with ``min_app_version = "99.0.0"`` should
+    surface ``filter_reason="incompatible_app_version"``).
 
   Architecture-discipline notes:
-  - Bibliogon-side i18n only; no PluginForge code change.
-  - 9 enum values × 8 languages = 72 new i18n string slots.
-    Mechanical translation work from the English defaults.
+  - Pluginforge default ``app_version_severity="error"`` per
+    Decision #4 — version mismatch refuses activation, doesn't
+    warn. Severity is configurable per ctor kwarg.
+  - Gating enable is a behavior change visible to operators
+    (release-workflow gate point). Surface explicitly in the
+    release CHANGELOG when shipped.
 
-  Effort: S (1 commit, ~30 min). Trigger: after V070-ADOPTION
-  closes (the PluginCard consumer rendering the strings is
-  introduced by V060-ADOPTION, surfacing of `wrong_application`
-  is V070).
-
-- **PLUGIN-REDISCOVER-INTEGRATION-TEST-01** (P3,
-  UPSTREAM-ADOPTION-TEST, filed 2026-05-19): real-world
-  integration test for `manager.rediscover()`.
-
-  Scope:
-  - New test file
-    `backend/tests/test_plugin_rediscover_integration.py`.
-  - Set up a tmp venv with a fixture plugin distribution
-    (smallest possible BasePlugin subclass with a unique
-    entry_point name).
-  - Call `manager.rediscover()` BEFORE installing the fixture;
-    assert empty `DiscoveryDiff.added`.
-  - Run `poetry install` (or pip-equivalent) of the fixture
-    into the venv from inside the test.
-  - Call `manager.rediscover()` AFTER install; assert the
-    fixture's name appears in `diff.added` and
-    `diff.states[name].activated == True`.
-  - Exercises `importlib.invalidate_caches()` +
-    `MetadataPathFinder.invalidate_caches()` against actual
-    on-disk dist-info — validates PluginForge's unit-test mock
-    (which patches `importlib.invalidate_caches`).
-
-  Architecture-discipline notes:
-  - PluginForge unit test exists but mocks the cache
-    invalidation. This test owns the real-world half — closes
-    the open question from PluginForge's v0.6.0 design doc.
-  - Tmp-venv setup adds test infra; cleanup via tmp_path fixture
-    and `poetry env remove`.
-
-  Effort: S-M (1-2 commits). Trigger: after V070-ADOPTION
-  closes.
+  Effort: S (1 commit). Trigger: next time a plugin needs to
+  declare a real version requirement (e.g. depends on an
+  API surface added in a specific Bibliogon release), OR as
+  release-hardening work before v1.0.
 
 - **WRITING-GOALS-PROGRESS-TRACKING-01** (P3, FEATURE-REQUEST,
   filed 2026-05-19 from the
@@ -1883,21 +1804,14 @@ store.
   Single P4 item covers both per the extend-rather-than-
   fragment Backlog-Hygiene discipline.
 
-  **Surface A — `make dev` (dev-server stale):** the
-  long-running uvicorn process reads entry-points via
-  ``importlib.metadata`` once during lifespan startup. A
-  subsequent ``poetry install`` of a new plugin updates
-  the venv's ``.dist-info/entry_points.txt`` but the
-  running process never re-reads the registry.
-  Demonstrated 2026-05-18 during plugin-comics Session 1
-  smoke: pytest + per-plugin tier green, but
-  ``GET /api/comics/info`` would 404 against a live
-  ``make dev`` started before ``poetry install`` ran.
-  Fix: a ``make dev-restart-on-plugin-change`` target
-  that compares the dev server's start-time against the
-  mtime of ``backend/pyproject.toml`` + every
-  ``plugins/*/pyproject.toml``; warn (or auto-restart)
-  when a pyproject post-dates the server.
+  **Surface A — `make dev` (dev-server stale): CLOSED 2026-05-20**
+  by ``POST /api/admin/rediscover`` (commit ``b62c339``,
+  V060-ADOPTION C4). Contributors adding a new plugin can hit
+  the endpoint instead of restarting uvicorn; pluginforge
+  v0.6.0's ``manager.rediscover()`` invalidates importlib +
+  metadata caches and picks up the new entry point. Original
+  filing's ``make dev-restart-on-plugin-change`` target is
+  superseded — no Makefile work needed.
 
   **Surface B — `make prod` (Docker image stale):** the
   prod Docker image bakes the plugin set in at build

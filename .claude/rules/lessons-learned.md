@@ -3831,3 +3831,100 @@ half-wired secondary surface as a side-effect.
   by one.
 - Recurring-Component-Unification Rule in coding-standards.md —
   often the right tool for the mitigation.
+
+
+## Pre-Coding-Reality-Check: re-audit at the keystroke, not just the audit
+
+Audit-First Pre-Inspection is a strong discipline; it catches
+class of bug A (committed plan misses an existing-state
+constraint). But Pre-Inspection is necessarily LIMITED — the
+auditor has finite time and greps the obvious surfaces. Even a
+high-quality audit can ship a commit plan that, when reached
+during implementation, turns out to deviate from optimal
+reality in a small but meaningful way.
+
+The Pre-Coding-Reality-Check rule fires AT the keystroke: BEFORE
+writing the first line of code for a committed-plan step,
+re-grep the immediate touch-surface one more time. The marginal
+cost is seconds; the value is catching the cases the audit
+missed.
+
+### Three observed instances (2026-05-20 V060 adoption arc)
+
+| Instance | What the plan committed to | What the keystroke-time grep found |
+|---|---|---|
+| **PDF-KDP-FORMATS-01 → PDF-BLEED-MARKS-01** | Ship format dropdown at PageEditor only | BookMetadataEditor Design tab is a second caller of the same export endpoint with empty query params (half-wired surface) — closed via shared-component extraction |
+| **V060 C4: hot-reload on install/uninstall** | Wire `rediscover()` into `install_plugin` + `uninstall_plugin` | ZIP plugins bypass entry-point discovery entirely (go through `register_plugin()` directly). `rediscover()` would be a no-op there. Wiring is architecturally inapplicable. |
+| **V060 C5: extend errors vs new states endpoint** | Choose between `/api/plugins/errors` extension or new `/api/plugins/states` | `/api/settings/plugins/discovered` ALREADY exists and is conceptually the per-plugin-state endpoint; both audit-committed options would create parallel duplication. Third path (γ) extending the existing endpoint is strictly better. |
+
+Three instances in one session is sufficient recurrence to
+formalize the pattern.
+
+### Rule
+
+For any commit whose plan was committed during a prior audit
+(Pre-Inspection, design review, multi-session work, brief from a
+parallel agent), the FIRST action at implementation time is to
+re-grep the immediate touch-surface for:
+
+- **Existing endpoints / functions / components** whose name or
+  scope overlaps with what the plan proposes to create. (C5
+  pattern: a parallel surface already exists.)
+- **Architectural assumptions in the plan** that depend on how
+  upstream/downstream code paths flow. (C4 pattern: the wiring
+  the plan assumed is inapplicable.)
+- **Half-wired siblings** — other callers of the same contract
+  the plan is changing. (PDF-KDP-FORMATS-01 pattern: a second
+  caller exists and would be skipped without the audit step.)
+
+If the grep surfaces ANY of the three, STOP and surface to the
+user with the finding + a proposed scope revision. Do NOT
+silently descope or rescope; the user's commit-plan approval
+was based on the prior audit's information state.
+
+### Implementation: 30-60 seconds, not 30 minutes
+
+This is NOT a re-run of the full Pre-Inspection. It's a quick
+ground-truth check at the keystroke:
+
+```bash
+# Pattern for "is there a parallel surface I'm missing"
+grep -rln "<endpoint-name>\|<function-name>" backend/app/ frontend/src/
+
+# Pattern for "does the architectural assumption hold"
+grep -rln "<assumed-mechanism>" backend/app/ | head -5
+
+# Pattern for "what other callers exist"
+grep -rln "<api-call-name>" frontend/src/ --include="*.tsx" | grep -v test
+```
+
+Total time: under a minute per commit. If the greps return
+zero unexpected hits, proceed with the plan as committed.
+
+### Pairs with
+
+- "Pre-Inspection MUST audit all callers of a touched endpoint"
+  — that rule fires at AUDIT time (early). This rule fires at
+  CODE time (keystroke-time). Together they form a two-stage
+  filter: audit catches the obvious, keystroke catches the
+  audit's blind spots.
+- "Half-wired feature lifecycle" — instances #1 and #3 of the
+  three above both involve half-wired surfaces. The Pre-Coding
+  step is the cheap mechanism for spotting them BEFORE the
+  half-wired ships.
+- "Multi-tool collaboration tracking: re-sync before accepting
+  new orders" — same family of "audit-first; trust but verify"
+  discipline. Multi-tool work is especially prone to plan-vs-
+  reality drift because each agent has partial visibility.
+
+### Anti-pattern
+
+Treating the audit's commit plan as immutable. The audit is the
+starting point, not the contract. A keystroke-time grep finding
+that surfaces an architectural conflict is NOT scope creep — it's
+the audit's blind spot being caught one stage later. Silently
+descoping or rescoping to avoid the surface message produces
+either a half-wired ship (instance #1) or a parallel-duplicate
+ship (instance #3) or an inapplicable wiring ship (instance #2).
+All three are real regressions; the surface message is the
+cheap prevention.
