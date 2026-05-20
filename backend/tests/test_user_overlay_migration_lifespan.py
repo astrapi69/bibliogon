@@ -107,7 +107,10 @@ class TestUserOverlayMigrationOnLifespan:
             )
             body = resp.json()
             assert body["name"] == "comics"
-            assert body["version"] == "1.0.0"
+            # Comics-Session-2 (commit a33baf3) bumped plugin-comics
+            # to 1.1.0 with the full editor surface. Update on each
+            # plugin-comics version bump.
+            assert body["version"] == "1.1.0"
 
     def test_user_overlay_was_migrated_on_disk(
         self, stale_user_overlay: Path

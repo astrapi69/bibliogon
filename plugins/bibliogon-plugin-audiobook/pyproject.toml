@@ -9,7 +9,7 @@ packages = [{include = "bibliogon_audiobook"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pluginforge = "^0.7.0"
+pluginforge = "^0.8.0"
 fastapi = "^0.136.0"
 # manuscripta ^0.8.0 ships a full TTS adapter layer with factory, exception
 # hierarchy, retry logic (tenacity) and lazy-imported optional engines.
