@@ -1,16 +1,23 @@
-"""Pages CRUD routes for the Picture-Book plugin (Phase 4 Session 2).
+"""Pages CRUD routes (backend core).
 
 The routes live under ``/api/books/{book_id}/pages`` so they sit
 alongside the existing per-book subresources (``/chapters``,
 ``/assets``, ``/audiobook``). All page operations gate on
-``book.book_type == "picture_book"``. The schema reserves
-``"comic_book"`` for a future ``plugin-comics`` package that will
-own its own ``panels`` and ``speech_bubbles`` tables; this plugin
-handles ``picture_book`` only.
+``book.book_type IN {"picture_book", "comic_book"}`` — both
+page-based book types share this single CRUD surface against the
+core ``pages`` table.
 
-Per the data-model section of the exploration: a picture book has
-zero Chapter rows and N Page rows. Page 1 is the cover (no
-separate Cover entity).
+Originally shipped inside plugin-kinderbuch (PB-PHASE4 Session 2);
+relocated to backend core in PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01
+once Session-1 of plugin-comics established that comic-book pages
+reuse the same ``pages`` table. The Page model and Page schemas
+already lived in core; the router followed.
+
+Per the data-model section of the picture-book exploration: a
+page-based book has zero Chapter rows and N Page rows. Page 1 is
+the cover (no separate Cover entity). Comic-book pages add panel +
+bubble subresources owned by plugin-comics; picture-book pages
+render their content directly from the Page row.
 """
 
 import json
@@ -26,27 +33,28 @@ from app.schemas import PageCreate, PageOut, PagesReorder, PageUpdate
 router = APIRouter(prefix="/books", tags=["pages"])
 
 
-def _get_picture_book_or_400(book_id: str, db: Session) -> Book:
-    """Resolve the book and enforce the book_type gate.
+PAGEABLE_BOOK_TYPES: frozenset[str] = frozenset({"picture_book", "comic_book"})
+
+
+def _get_pageable_book_or_400(book_id: str, db: Session) -> Book:
+    """Resolve the book and enforce the page-based book_type gate.
 
     Returns the Book row when it exists, is not soft-deleted, and is
-    a picture book. Otherwise raises:
+    one of the page-based book types (``picture_book`` or
+    ``comic_book``). Otherwise raises:
       - 404 if the book does not exist or is soft-deleted.
-      - 400 if the book is prose or comic_book (pages are owned by
-        the picture-book plugin only; comic_book is reserved for a
-        future plugin-comics that ships its own panels +
-        speech_bubbles tables).
+      - 400 if the book is prose (or any future non-page-based type).
     """
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
         raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-    if book.book_type != "picture_book":
+    if book.book_type not in PAGEABLE_BOOK_TYPES:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Pages are only available on picture books "
-                f"(book_type='picture_book'). Book {book_id} is "
-                f"book_type='{book.book_type}'."
+                f"Pages are only available on page-based book types "
+                f"(book_type IN {sorted(PAGEABLE_BOOK_TYPES)}). Book "
+                f"{book_id} is book_type='{book.book_type}'."
             ),
         )
     return book
@@ -66,7 +74,7 @@ def _serialize_layout_config(config: dict[str, Any] | None) -> str | None:
 @router.get("/{book_id}/pages", response_model=list[PageOut])
 def list_pages(book_id: str, db: Session = Depends(get_db)) -> list[Page]:
     """List a book's pages ordered by position ascending."""
-    _get_picture_book_or_400(book_id, db)
+    _get_pageable_book_or_400(book_id, db)
     return (
         db.query(Page)
         .filter(Page.book_id == book_id)
@@ -86,7 +94,7 @@ def create_page(book_id: str, payload: PageCreate, db: Session = Depends(get_db)
     Position is the (max existing position + 1), or 1 if the book has
     no pages yet. Use POST .../reorder to move pages after creation.
     """
-    _get_picture_book_or_400(book_id, db)
+    _get_pageable_book_or_400(book_id, db)
     max_pos = (
         db.query(Page.position)
         .filter(Page.book_id == book_id)
@@ -120,7 +128,7 @@ def update_page(
     Position is NOT mutable here. Use POST .../reorder for position
     changes so the entire reorder runs in one atomic transaction.
     """
-    _get_picture_book_or_400(book_id, db)
+    _get_pageable_book_or_400(book_id, db)
     page = db.query(Page).filter(Page.id == page_id, Page.book_id == book_id).first()
     if not page:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
@@ -148,7 +156,7 @@ def delete_page(
     Runs in one transaction so a partial failure leaves no rows
     half-reordered.
     """
-    _get_picture_book_or_400(book_id, db)
+    _get_pageable_book_or_400(book_id, db)
     page = db.query(Page).filter(Page.id == page_id, Page.book_id == book_id).first()
     if not page:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
@@ -173,7 +181,7 @@ def reorder_pages(
     (any missing or extra id is a 400; this catches stale clients
     that submit a reorder against an out-of-date page set).
     """
-    _get_picture_book_or_400(book_id, db)
+    _get_pageable_book_or_400(book_id, db)
     pages = db.query(Page).filter(Page.book_id == book_id).all()
     existing_ids = {p.id for p in pages}
     requested_ids = set(payload.page_ids)

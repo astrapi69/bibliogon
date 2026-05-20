@@ -26,6 +26,10 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
     image_left_text_right: "Image left, text right",
     image_full_text_overlay: "Full image with text overlay",
     text_only: "Text only",
+    // Comic-book layout. Picture-book authors do not pick this from
+    // LayoutPicker (kept out of DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS);
+    // present only to satisfy the exhaustive Record<PageLayout, …> type.
+    comic_panel_grid: "Comic panel grid",
 }
 
 export default function LayoutPicker({selected, onChange, disabled}: Props) {

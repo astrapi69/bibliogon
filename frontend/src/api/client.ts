@@ -127,6 +127,7 @@ export type PageLayout =
     | "image_left_text_right"
     | "image_full_text_overlay"
     | "text_only"
+    | "comic_panel_grid"
 
 export interface Page {
     id: string

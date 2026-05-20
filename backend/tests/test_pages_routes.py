@@ -1,18 +1,29 @@
-"""Pages CRUD + book_type validation + cascade tests (Phase 4 Session 2).
+"""Pages CRUD + book_type validation + cascade tests.
 
-Covers the routes added in bibliogon_kinderbuch/pages.py plus the
-``book_type`` discriminator behaviour added in the backend Book model
-+ Pydantic schemas + the books PATCH handler.
+Covers the routes in ``backend/app/routers/pages.py`` (relocated
+from plugin-kinderbuch in PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01)
+plus the ``book_type`` discriminator behaviour in the backend
+Book model + Pydantic schemas + the books PATCH handler.
 
 Schema under test:
 
     book_type IN {prose, picture_book, comic_book}
 
-- ``prose``        — existing chapter-based path (default).
-- ``picture_book`` — v1 active; plugin-kinderbuch owns the pages.
-- ``comic_book``   — reserved for future plugin-comics; the value is
-                     accepted at the schema layer but the pages
-                     routes reject it (no comic plugin yet).
+- ``prose``        — chapter-based path (default); pages routes
+                     reject it.
+- ``picture_book`` — page-based; plugin-kinderbuch renders.
+- ``comic_book``   — page-based; plugin-comics renders pages
+                     plus owns the ``comic_panels`` and
+                     ``comic_bubbles`` subresources.
+
+Both picture_book and comic_book share the core ``pages`` table
+and the same CRUD routes. PageLayout values are layout-specific
+to the rendering plugin: picture-book layouts (``speech_bubble``,
+``image_top_text_bottom``, …) for picture_book pages,
+``comic_panel_grid`` for comic_book pages. The route layer does
+NOT cross-validate layout vs book_type — that's a frontend
+concern (pickers filter per book_type; comic_book's editor passes
+``comic_panel_grid`` directly).
 
 These tests exercise the route stack through TestClient (full
 FastAPI lifespan + plugin manager + alembic schema bootstrap) so a
@@ -96,10 +107,11 @@ class TestBookTypeDiscriminator:
         book = _create_book(client, "PicBook", book_type="picture_book")
         assert book["book_type"] == "picture_book"
 
-    def test_comic_book_reserved_accepted_by_schema(self, client):
-        # comic_book is a valid schema value (reserved for future plugin)
-        # even though the picture-book plugin won't serve pages for it.
-        book = _create_book(client, "ComicResv", book_type="comic_book")
+    def test_comic_book_accepted(self, client):
+        # comic_book is page-based and now serves pages through the
+        # same core router as picture_book (PLUGIN-COMICS-SESSION-3-
+        # PAGES-CRUD-01).
+        book = _create_book(client, "ComicAccept", book_type="comic_book")
         assert book["book_type"] == "comic_book"
 
     def test_visual_book_no_longer_a_valid_value(self, client):
@@ -169,18 +181,18 @@ class TestPagesGate:
         )
         assert r.status_code == 400
 
-    def test_create_page_rejects_comic_book(self, client):
-        # comic_book is reserved but has no plugin yet; pages routes
-        # belong to the picture-book plugin only. Forward-compat:
-        # future plugin-comics will mount /api/books/{id}/panels etc.
-        # under its own gate.
+    def test_create_page_accepts_comic_book(self, client):
+        # comic_book pages are accepted by the gate as of
+        # PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01. Closes the
+        # half-wired ComicBookEditor "no comic pages yet" state.
         book = _create_book(client, "ComicGate", book_type="comic_book")
         r = client.post(
             f"/api/books/{book['id']}/pages",
-            json={"layout": "speech_bubble"},
+            json={"layout": "comic_panel_grid"},
         )
-        assert r.status_code == 400
-        assert "picture_book" in r.json()["detail"]
+        assert r.status_code == 201, r.text
+        assert r.json()["layout"] == "comic_panel_grid"
+        assert r.json()["position"] == 1
 
     def test_list_pages_returns_404_for_missing_book(self, client):
         r = client.get("/api/books/does-not-exist/pages")
@@ -579,3 +591,103 @@ class TestTipTapTextContentRoundtrip:
         )
         assert r.status_code == 200
         assert r.json()["text_content"] is None
+
+
+# --- Comic-book pages CRUD ----------------------------------------------
+
+
+class TestComicBookPagesCRUD:
+    """Positive-path coverage for comic_book pages-CRUD.
+
+    PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 relaxed the gate from
+    ``book_type == "picture_book"`` to
+    ``book_type IN {"picture_book", "comic_book"}``. These cases pin
+    that each endpoint (list / create / update / delete / reorder)
+    now accepts comic_book. The picture_book happy-path tests above
+    continue to pin the picture_book contract; this class is the
+    parallel-surface insurance against future asymmetric drift.
+    """
+
+    def test_list_pages_empty_for_new_comic_book(self, client):
+        book = _create_book(client, "CB-Empty", book_type="comic_book")
+        r = client.get(f"/api/books/{book['id']}/pages")
+        assert r.status_code == 200
+        assert r.json() == []
+
+    def test_create_first_comic_page_gets_position_1(self, client):
+        book = _create_book(client, "CB-Create1", book_type="comic_book")
+        page = _create_page(client, book["id"], "comic_panel_grid")
+        assert page["position"] == 1
+        assert page["layout"] == "comic_panel_grid"
+        assert page["text_content"] is None
+
+    def test_create_comic_pages_auto_increment_position(self, client):
+        book = _create_book(client, "CB-Create2", book_type="comic_book")
+        positions = [
+            _create_page(client, book["id"], "comic_panel_grid")["position"]
+            for _ in range(4)
+        ]
+        assert positions == [1, 2, 3, 4]
+
+    def test_create_comic_page_with_layout_config(self, client):
+        # Comic-grid template lives in layout_config.comic_grid_template
+        # per the Session-1 sharing decision (verified in ComicPanel
+        # docstring at backend/app/models/__init__.py).
+        book = _create_book(client, "CB-Create3", book_type="comic_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="comic_panel_grid",
+            layout_config={"comic_grid_template": "grid_2x2"},
+        )
+        assert page["layout_config"] == {"comic_grid_template": "grid_2x2"}
+
+    def test_patch_comic_page(self, client):
+        book = _create_book(client, "CB-Patch", book_type="comic_book")
+        page = _create_page(client, book["id"], "comic_panel_grid")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"layout_config": {"comic_grid_template": "grid_3x3"}},
+        )
+        assert r.status_code == 200
+        assert r.json()["layout_config"] == {"comic_grid_template": "grid_3x3"}
+
+    def test_delete_comic_page_shifts_positions(self, client):
+        book = _create_book(client, "CB-Delete", book_type="comic_book")
+        pages = [_create_page(client, book["id"], "comic_panel_grid") for _ in range(3)]
+        r = client.delete(f"/api/books/{book['id']}/pages/{pages[0]['id']}")
+        assert r.status_code == 204
+        listed = client.get(f"/api/books/{book['id']}/pages").json()
+        assert [p["position"] for p in listed] == [1, 2]
+        assert pages[0]["id"] not in {p["id"] for p in listed}
+
+    def test_reorder_comic_pages(self, client):
+        book = _create_book(client, "CB-Reorder", book_type="comic_book")
+        pages = [_create_page(client, book["id"], "comic_panel_grid") for _ in range(3)]
+        new_order = [pages[2]["id"], pages[0]["id"], pages[1]["id"]]
+        r = client.post(
+            f"/api/books/{book['id']}/pages/reorder",
+            json={"page_ids": new_order},
+        )
+        assert r.status_code == 200
+        assert [p["id"] for p in r.json()] == new_order
+        assert [p["position"] for p in r.json()] == [1, 2, 3]
+
+    def test_picture_book_layout_accepted_on_comic_page(self, client):
+        # Route-level cross-validation between layout + book_type was
+        # explicitly deferred (accept-as-degenerate-case decision in
+        # the PAGES-CRUD-01 Pre-Inspection): the route accepts any
+        # PageLayout literal for any pageable book_type. Frontend
+        # pickers filter what's appropriate. Pin the current contract
+        # so a future tightening surfaces here.
+        book = _create_book(client, "CB-Cross", book_type="comic_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        assert page["layout"] == "speech_bubble"
+
+    def test_comic_panel_grid_layout_accepted_on_picture_book(self, client):
+        # Mirror of the above; pins symmetry. A future tightening of
+        # the route's layout-vs-book_type cross-validation would
+        # break this test on the picture_book side too.
+        book = _create_book(client, "PB-Cross", book_type="picture_book")
+        page = _create_page(client, book["id"], "comic_panel_grid")
+        assert page["layout"] == "comic_panel_grid"

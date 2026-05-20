@@ -958,14 +958,21 @@ class PlatformSchemaOut(BaseModel):
 # --- Page schemas (Phase 4 Session 2, picture-book plugin) ---
 
 
-# Picture-Book layout names. Future plugin-comics will define its own
-# panel-grid layouts on a separate Panel entity, not on Page.
+# Page layout names. The first 5 entries are picture-book layouts;
+# ``comic_panel_grid`` is the comic-book layout (added in
+# PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01). Comic-book pages store
+# the grid template (single_panel / grid_2x2 / grid_3x3) in
+# ``Page.layout_config.comic_grid_template``; the layout key itself
+# only signals "this page is rendered by the comic walker". Plugin-
+# comics owns its own ``comic_panels`` + ``comic_bubbles`` tables;
+# the shared ``pages`` table just discriminates the page's renderer.
 PageLayout = Literal[
     "speech_bubble",
     "image_top_text_bottom",
     "image_left_text_right",
     "image_full_text_overlay",
     "text_only",
+    "comic_panel_grid",
 ]
 
 

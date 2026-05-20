@@ -421,6 +421,13 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     image_left_text_right: styles.canvasLayoutImageLeftTextRight,
     image_full_text_overlay: styles.canvasLayoutImageFullTextOverlay,
     text_only: styles.canvasLayoutTextOnly,
+    // Comic-book layout. PageCanvas is the picture-book canvas; it
+    // never renders a comic_book page (those go through
+    // ComicPanelGrid). Fallback to image_top_text_bottom styling so
+    // the Record stays exhaustive without introducing an unused CSS
+    // class. Reached only via the ``LAYOUT_CLASS[page.layout] ?? …``
+    // safety net, never in practice.
+    comic_panel_grid: styles.canvasLayoutImageTopTextBottom,
 }
 
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {
