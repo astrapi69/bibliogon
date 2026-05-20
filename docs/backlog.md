@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-20 (Backlog re-prioritization audit + apply. 4-Axes scoring shipped audit doc 281a6f6; apply phase landed 7 promotions + 17 demotions + 3 archives + hygiene fixes per the Q1-Q7 adjudication. PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 promoted to P1 (Foundation-Override-Extended: Half-Wired-Visible-in-Production); RECURRING-COMPONENT-AUDIT-01 promoted to P2 (feeds 4+ extractions); 3 archives (PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 Sessions 1+2 shipped; COMIC-BOOK-PLUGIN-01 duplicate; PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 primitive shipped in plugin-comics C4). D-02 follow-ups split into LAUNCHER-MACOS-UNIVERSAL2-01 + LAUNCHER-CODE-SIGNING-01. New: MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01 (P3, β path post-exploration). Pre-audit Comics-Session-2 close still on main: plugin-comics v1.1.0 fully shipped, 7-commit arc c080974..80399cd. Backend baseline 20 fail + 13 err under PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 (still open; PluginForge 0.8.0 fixes).)
+Last updated: 2026-05-20 (PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 closed in 4 commits 879df22..00a18f8: Path A1 — pages router moved from plugin-kinderbuch to backend core; PageLayout enum extended with comic_panel_grid; gate relaxed to accept comic_book; ComicBookEditor empty-state replaces SQL-instruction with "Create first comic page" action button; 8 i18n catalogs + Playwright smoke updated. Closes Half-Wired-Visible-in-Production state surfaced by 2026-05-20 audit. Backend test_pages_routes 41→50 (+9 comic_book positives); Vitest 179→191 (+12 ComicBookEditor cases). Backend baseline 20 fail + 13 err unchanged (PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 still open). Prior 2026-05-20 close: Backlog re-prioritization audit + apply (4-Axes scoring 281a6f6; 7 promotions + 17 demotions + 3 archives + hygiene fixes per Q1-Q7 adjudication). Pre-audit Comics-Session-2 close: plugin-comics v1.1.0 shipped, 7-commit arc c080974..80399cd.)
 Current version: v0.35.1
-Open tasks: 65 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 65 active (P2..P5) + 1 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -173,40 +173,6 @@ store.
 
   Effort: 1-3 commits depending on fix-path choice. Pluginforge-
   side fix probably ships as 0.7.1 hotfix or 0.8.0 minor.
-
-- **PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01** (P1, filed 2026-05-20
-  from Comics-Session-2 C6 Pre-Coding-Reality-Check). The
-  Session-2 ComicBookEditor surfaces a degraded "no comic pages
-  yet" state because plugin-kinderbuch's ``/api/books/{id}/pages``
-  router gates strictly on ``book_type='picture_book'`` (see
-  ``plugins/bibliogon-plugin-kinderbuch/bibliogon_kinderbuch/pages.py:43``).
-  Comic books can have a Page row seeded via direct SQL (the C2
-  backend integration tests use this pattern) but there is no
-  public API for users to create pages from the editor.
-
-  Two viable paths:
-
-  - **(a) Relax the kinderbuch gate** to accept
-    ``book_type IN ('picture_book', 'comic_book')``. Two-line
-    helper rename + one new pytest case per existing endpoint.
-    Low risk because the Page model is already shared at the core
-    layer; the gate was a conservative narrowing, not a hard
-    architectural constraint.
-  - **(b) Add a parallel /comic-pages CRUD set to plugin-comics**.
-    Owns its own page CRUD; cleaner separation but ships more
-    code. Justified only if a meaningful divergence in comic-page
-    semantics emerges (e.g. spread-pairing, page-numbering
-    conventions specific to comics).
-
-  Recommendation: (a) is the minimum-friction path; (b) becomes
-  the right choice only if a comic-page-specific feature lands
-  later. (b) can be promoted from (a) without breaking changes.
-
-  Effort: 2-4 commits.
-
-  Trigger: first user-report that they cannot add pages from the
-  ComicBookEditor UI (the in-editor "no pages yet" message hints
-  at Session 3, but users will eventually want to act on it).
 
 ---
 
