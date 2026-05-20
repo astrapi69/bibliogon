@@ -4032,3 +4032,77 @@ adjudication BEFORE the Pre-Inspection commits to a design.
 - ``coding-standards.md`` Recurring-Component-Unification Rule
   — same family of "look at what already exists before adding
   parallel shapes" discipline.
+
+
+## CRUD shipping: List endpoint is non-optional
+
+Filed 2026-05-20 from Comics-Session-2 C6
+Pre-Coding-Reality-Check surfacing.
+
+Comics-Session-2 C2 (commit ``2ffaed8``) shipped bubble-CRUD as
+**Create + Update + Delete** with NO **List** endpoint. The gap
+was invisible during C2's own test sweep — the 8 dispatch tests
+that exercise the routes all targeted Create / Update / Delete
+paths; List was never called because no test needed it. Three
+commits later (C6, this session), the frontend full editor's
+``ComicPanelGrid`` needed a way to populate
+``panelBubblesMap`` and the gap surfaced as the **first
+integration-issue stop-condition** in the C6 Pre-Coding-Reality-
+Check.
+
+### Rule
+
+When shipping a "CRUD" set of endpoints, **List is mandatory**,
+even when the immediate consumer is a frontend that doesn't yet
+exist. The acronym is not a buffet — "CUD" is purgatory waiting
+to surface (per the existing "Half-wired feature lifecycle"
+rule).
+
+Concrete: any commit subject of the form
+``feat(X): N CRUD endpoints + tests`` MUST register all four
+verbs (Create, Read-list, Update, Delete) on its primary
+resource. Read-by-id can be deferred when ergonomic — usually
+inferable from a per-resource patch round-trip — but Read-list
+is the load-bearing one a consumer needs to populate any UI
+that displays the resource set.
+
+### Detection during Pre-Inspection
+
+When the next session's editor / page / dashboard / consumer-of-
+the-resource starts, the **Pre-Coding-Reality-Check MUST grep
+the existing routes for a list endpoint** before assuming the
+read path is wired. Recipe:
+
+```bash
+# For a resource shipped at /api/.../{resource}:
+grep -rn '@router\.\(get\|post\|patch\|delete\)' \
+  plugins/<plugin>/ backend/app/routers/ \
+  --include='*.py' | grep <resource>
+```
+
+If only ``@router.post``, ``@router.patch``, and
+``@router.delete`` show up — surface as Half-Wired-Lifecycle
+closure before the consumer ships. The C6 Pre-Coding-Reality-
+Check caught this same-session and added the missing List
+endpoint atomically.
+
+### Concrete artefact
+
+- Gap: C2 (commit ``2ffaed8``) shipped 3 of 4 verbs for
+  ``comic_bubbles``
+- Surface: C6 Pre-Coding-Reality-Check (this session)
+- Fix: ``GET /api/books/{book_id}/comic-panels/{panel_id}/bubbles``
+  added in C6 commit ``a33baf3`` with 4 paired pytest cases
+  (``TestComicBubbleList``) covering empty-state, position-
+  ordered, 400-on-non-comic-book, and 404-on-unknown-panel.
+
+### Pairs with
+
+- "Half-wired feature lifecycle" (this file) — same family.
+  The CRUD-missing-List shape is a special case of state-write-
+  without-state-consumer where the consumer is a future UI that
+  hasn't shipped yet.
+- "Pre-Coding-Reality-Check: re-audit at the keystroke" (this
+  file) — the discipline that catches this specific class.
+- "Pre-Inspection MUST audit all callers of a touched endpoint"
+  (this file) — producer-side analogue to caller-coverage.

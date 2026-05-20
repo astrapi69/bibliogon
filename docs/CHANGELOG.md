@@ -4,6 +4,94 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Added
+
+- **plugin-comics v1.1.0** (Session 2 close — commits C1
+  ``c080974`` through C7 (this release-cycle)). Multi-panel +
+  multi-bubble editor for ``book_type='comic_book'`` books with
+  the full panel-grid + bubble-config pipeline shipping in this
+  cycle:
+  - Backend schema + CRUD (Sessions 2 C1 + C2): new
+    ``comic_panels`` + ``comic_bubbles`` tables, Pydantic
+    schemas with 6-type ``BubbleType`` Literal + 10-direction
+    ``BubbleTailDirection`` Literal, 8 CRUD endpoints (Session
+    2 C6 added the missing ``GET .../comic-panels/{id}/bubbles``
+    list endpoint as the Half-Wired-Lifecycle closure that the
+    C6 Pre-Coding-Reality-Check surfaced)
+  - Backend PDF walker (Session 2 C3): WeasyPrint-driven
+    comic-book PDF export with 3 page-grid templates
+    (single_panel, grid_2x2, grid_3x3), 6 bubble-type CSS
+    variants (speech / thought / narration / shout / whisper /
+    sound_effect), and an SVG triangle tail primitive (8
+    octants + ``none`` + ``auto``). Dispatch from
+    plugin-export's ``export()`` route reuses the 5 KDP picture-
+    book trim sizes per Q4 a
+  - Frontend BubbleTail SVG primitive (Session 2 C4): editor-
+    side mirror of the walker's tail geometry, math
+    verbatim — the in-editor preview matches the rendered PDF
+  - Frontend comic editor components (Session 2 C5):
+    ``ComicBubble``, ``ComicPanel``, ``ComicPanelGrid``,
+    ``LayoutConfigComicBubble`` — RCU canonical 2-site
+    extraction of ``Tier1Section`` + ``Tier2Section`` from the
+    picture-book ``LayoutConfigSpeechBubble`` with same-session
+    migration of both surfaces (picture-book regression-pin
+    72/72 passing under the migration)
+  - Frontend full ``ComicBookEditor`` (Session 2 C6): replaces
+    the Session-1 placeholder with a working multi-panel editor
+    mounting the C5 components + the renamed
+    ``PdfExportControls`` (was ``PictureBookPdfExportControls``,
+    3rd caller surface). Graceful degraded "no pages yet" state
+    when comic pages are absent (page-CRUD for comic_book
+    deferred to ``PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01``)
+  - i18n × 8 catalogs (Session 2 C7): ~52 new strings per
+    catalog under ``ui.page_editor.config.comic_bubble.*`` and
+    ``ui.comic_book_editor.*``. EN canonical + DE proper
+    umlauts; ES/FR/EL/PT/TR/JA carry passthru-English for the
+    new namespaces per the established new-namespace pattern
+  - Playwright × 3 smoke specs (Session 2 C7):
+    ``comic-book-editor.spec.ts`` (router + editor mount +
+    degraded state + PdfExportControls under namespace),
+    ``comic-panel-bubble-crud.spec.ts`` (action-button surface +
+    PDF format dropdown 5-options pin),
+    ``comic-book-editor-a11y.spec.ts`` (heading + reachable
+    affordances + keyboard focus)
+  - New backlog filings: ``PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01``
+    (P2, page-CRUD opening), ``PLUGIN-COMICS-SESSION-3-EXTENDED-
+    FEATURES-01`` (P3, drag/snap/nudge/undo/RTL/z-order/gutter/
+    auto-tail-direction/full E2E matrix)
+  - New Lessons-Learned: "CRUD shipping: List endpoint is
+    non-optional" — same-session instance from C6 surfacing the
+    C2 missing-Read gap; reinforces Half-Wired-Lifecycle
+    Prevention rule
+
+### Changed
+
+- ``PictureBookPdfExportControls`` → ``PdfExportControls``.
+  3-surface rename (PageEditor + BookMetadataEditor + new
+  ComicBookEditor). The component picked up its third caller in
+  Session 2 C6 and the picture-book-specific name became a
+  misnomer; testidPrefix prop mechanism preserves all existing
+  test assertions verbatim across the rename.
+
+### Tests
+
+- Backend: 4 new ``TestComicBubbleList`` cases (Half-Wired-
+  Lifecycle closure for the C2 missing-Read gap); existing C2 +
+  C3 tests adjusted to the v1.1.0 / session=2 / status=active
+  surface (``test_plugin_routes.py`` + ``test_routes.py``).
+- Frontend Vitest: 1748 tests passing (139 files, +45 net vs
+  pre-Session-2 baseline). New comics/ component test suite
+  covers BubbleTail (22 cases), Tier1Section (7), Tier2Section
+  (6), ComicBubble (7), ComicPanel (5), ComicPanelGrid (6),
+  LayoutConfigComicBubble (7), ComicBookEditor (10) +
+  PdfExportControls regression-pin under the rename.
+- Backend baseline: 20 fail + 13 err under
+  ``PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01`` cascade-
+  recursion (vs 13+13 pre-Session-2 baseline). All +7 new
+  failures pass in isolation; verified at C3 / C5 / C6
+  commit boundaries. Ship-on-broken-baseline authorized by
+  the user under atomic-green-per-commit-delta discipline.
+
 ## [0.35.1] - 2026-05-18
 
 Fast-follow patch for the v0.35.0 donation-visibility gap. The

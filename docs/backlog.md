@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-20 (Comics-Session-2 halted per Strategic-Advisor option-b decision. Session 2 work parked on feature/comics-session-2 branch (commits c080974 C1 + 2ffaed8 C2); main reset to origin/main (e159604). Bisect (this session) corrected my earlier mis-attribution: V060 baseline IS clean (1986 passed); my own C2 commit introduces the recursion regression via cross-test FastAPI route-mount accumulation in the long pytest sweep — NOT the V060 work as I initially reported. Three new filings: PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 (P1, blocks Comics-Session-2 resumption + any further V060-adoption work that adds backend TestClient surface); MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01 (P3, evidence of Failure-Mode 6 + Failure-Mode 1 during this halt session); Lessons-Learned: "Single-Router-Per-Plugin Convention" (kinderbuch precedent + Pre-Inspection-Pattern-Audit mitigation).)
+Last updated: 2026-05-20 (Comics-Session-2 CLOSED. Sessions 1+2 of plugin-comics fully shipped on main (commits c080974 C1 + 2ffaed8 C2 + b8e8c82 C3 + b652942 C4 + bfeb408 C5 + a33baf3 C6 + (this commit) C7). Plugin version 1.1.0. Backend baseline 20 fail + 13 err (vs 13+13 pre-C3 baseline; +7 cascade-recursion under PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 still open — every new failure passes in isolation, verified at C3/C5/C6 boundaries). Ship-on-broken-baseline authorized by user under atomic-green-per-commit-delta discipline. Two new Session-3 filings: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 (P2, unblocks UI page-create — currently gated by kinderbuch's picture_book-only contract) + PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01 (P3, drag/snap/nudge/undo/RTL/z-order/gutter/auto-tail-direction/full E2E). One new Lessons-Learned: "CRUD shipping: List endpoint is non-optional" (filed from C6 Pre-Coding-Reality-Check that surfaced the C2 missing-Read gap for comic_bubbles, fixed atomically in C6).)
 Current version: v0.35.1
 Open tasks: 66 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -151,12 +151,25 @@ store.
     branch (commits ``c080974`` + ``2ffaed8``); ``main`` reset
     to ``origin/main`` (``e159604``).
 
-  ### Resumption gate
+  ### Resumption gate — UPDATE 2026-05-20 (post-Session-2 close)
 
-  Comics-Session-2 C3-C7 will NOT resume until this item ships
-  + the full backend sweep is restored to clean on a feature
-  branch carrying C2-like surface (7+ endpoints + ~25+ TestClient
-  tests).
+  ~~Comics-Session-2 C3-C7 will NOT resume until this item ships~~.
+  **Superseded:** the user explicitly authorized C3-C7 to ship on
+  the broken baseline under the atomic-green-per-commit-delta
+  discipline (new code introduces no new logic-level failures,
+  only cascade-widening within this known P1). Session 2 fully
+  closed in commits ``b8e8c82`` (C3) + ``b652942`` (C4) +
+  ``bfeb408`` (C5) + ``a33baf3`` (C6) + this commit (C7).
+  Post-Session-2 baseline: 20 fail + 13 err (vs. pre-Session-2
+  baseline 13 fail + 13 err). All +7 new failures are
+  cascade-recursion, each passing in isolation; verified by
+  targeted re-runs at C3/C5/C6 boundaries.
+
+  This P1 stays open + still blocks any FURTHER backend
+  TestClient-surface growth (the next plugin / endpoint /
+  test-class to land will need the fix). The fix-path
+  recommendation stays as Path (a): pluginforge-side idempotent
+  ``mount_plugin_routes``.
 
   Effort: 1-3 commits depending on fix-path choice. Pluginforge-
   side fix probably ships as 0.7.1 hotfix or 0.8.0 minor.
@@ -164,6 +177,74 @@ store.
 ---
 
 ## P2 - High-Value User Features
+
+- **PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01** (P2, filed 2026-05-20
+  from Comics-Session-2 C6 Pre-Coding-Reality-Check). The
+  Session-2 ComicBookEditor surfaces a degraded "no comic pages
+  yet" state because plugin-kinderbuch's ``/api/books/{id}/pages``
+  router gates strictly on ``book_type='picture_book'`` (see
+  ``plugins/bibliogon-plugin-kinderbuch/bibliogon_kinderbuch/pages.py:43``).
+  Comic books can have a Page row seeded via direct SQL (the C2
+  backend integration tests use this pattern) but there is no
+  public API for users to create pages from the editor.
+
+  Two viable paths:
+
+  - **(a) Relax the kinderbuch gate** to accept
+    ``book_type IN ('picture_book', 'comic_book')``. Two-line
+    helper rename + one new pytest case per existing endpoint.
+    Low risk because the Page model is already shared at the core
+    layer; the gate was a conservative narrowing, not a hard
+    architectural constraint.
+  - **(b) Add a parallel /comic-pages CRUD set to plugin-comics**.
+    Owns its own page CRUD; cleaner separation but ships more
+    code. Justified only if a meaningful divergence in comic-page
+    semantics emerges (e.g. spread-pairing, page-numbering
+    conventions specific to comics).
+
+  Recommendation: (a) is the minimum-friction path; (b) becomes
+  the right choice only if a comic-page-specific feature lands
+  later. (b) can be promoted from (a) without breaking changes.
+
+  Effort: 2-4 commits.
+
+  Trigger: first user-report that they cannot add pages from the
+  ComicBookEditor UI (the in-editor "no pages yet" message hints
+  at Session 3, but users will eventually want to act on it).
+
+- **PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01** (P3, filed
+  2026-05-20 from Comics-Session-2 close). Session-3 polish work
+  on the ComicBookEditor surface. Per the original Comic-
+  Foundation exploration (``docs/explorations/comic-foundation.md``)
+  Session-3 scope:
+
+  - **Drag-to-position** for bubbles within their panel
+    (anchor.x_pct / anchor.y_pct via pointer events)
+  - **Snap-to-grid** + **keyboard nudge** (arrow keys) for
+    fine-positioning
+  - **Per-bubble undo / redo** (separate from global undo)
+  - **Reading direction** (LTR / RTL) toggle on the comic_book
+    so right-to-left layouts (manga-style) get correct page-turn
+    + bubble-traversal order
+  - **z-order controls** (bring to front / send to back) for
+    overlapping bubbles within a panel
+  - **Panel gutter / spacing** controls in panel_config (already
+    has a stub field; UI not yet exposed)
+  - **TipTap-in-bubbles** (replacing the Q2 a plain-text default
+    with rich-text — defer to v2 of this item, no demand signal
+    yet)
+  - **Full Playwright E2E coverage matrix** (Session-2 shipped 3
+    smoke specs; Session-3 ships the long-suite full-regression)
+  - **Auto-tail-direction nearest-edge picker** (Session 2's
+    ``tail_direction="auto"`` currently gamma-shims to "S"; Session
+    3 picks the panel-edge closest to the speaker)
+
+  Effort: 8-12 commits across 1-2 sessions.
+
+  Trigger: Session-2 has shipped, ``PLUGIN-COMICS-SESSION-3-
+  PAGES-CRUD-01`` has shipped (so authors can actually exercise
+  the full editor in production), and at least one user-report
+  hits one of the missing affordances.
 
 - **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
   Medium's HTML export strips tags. v1 imports articles with an
@@ -975,10 +1056,19 @@ store.
   reduces future drift.
 
 - **PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01** (P3,
-  trigger-gated, filed 2026-05-18 from Comic-Foundation
-  reframe): scaffold the `plugin-comics` plugin under the
-  existing `Book.book_type = "comic_book"` reservation
-  in [backend/app/models/__init__.py:72-75](../../backend/app/models/__init__.py#L72-L75).
+  Sessions 1+2 SHIPPED 2026-05-20, Session 3 deferred to
+  ``PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01`` (P2) +
+  ``PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01`` (P3),
+  filed 2026-05-18 from Comic-Foundation reframe): scaffold the
+  `plugin-comics` plugin under the existing
+  `Book.book_type = "comic_book"` reservation in
+  [backend/app/models/__init__.py:72-75](../../backend/app/models/__init__.py#L72-L75).
+
+  Sessions 1+2 closed via commits ``e159604`` (V060 close + S1
+  prep) → ``c080974`` (S2 C1) → ``2ffaed8`` (S2 C2) →
+  ``b8e8c82`` (S2 C3) → ``b652942`` (S2 C4) → ``bfeb408`` (S2 C5)
+  → ``a33baf3`` (S2 C6) → (this commit) (S2 C7). Plugin version
+  ``1.1.0`` ships at the Session-2 boundary.
 
   Substantial scope (16-22 commits across 3-4 sessions);
   full architectural analysis + multi-session roadmap +

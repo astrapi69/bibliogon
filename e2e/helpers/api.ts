@@ -43,6 +43,22 @@ export async function createPictureBook(
     });
 }
 
+/**
+ * plugin-comics Session 2: create a comic_book.
+ * Comic books route into <ComicBookEditor> instead of the chapter
+ * editor; see frontend/src/pages/BookEditor.tsx for the routing
+ * branch.
+ */
+export async function createComicBook(
+    title: string,
+    author: string = "E2E Autor",
+): Promise<{id: string; title: string; book_type: string}> {
+    return request("/books", {
+        method: "POST",
+        body: JSON.stringify({title, author, book_type: "comic_book"}),
+    });
+}
+
 export async function createChapter(
     bookId: string,
     title: string,
