@@ -1,11 +1,11 @@
 /**
  * Vitest coverage for the full ComicBookEditor (plugin-comics
- * Session 2 C6).
+ * Session 2 C6 + PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 close).
  *
- * The Session-1 placeholder is gone. These tests pin the full
- * editor's read-side wiring (panels + bubbles list flow), CRUD
- * actions (add/delete panel + bubble), the degraded "no pages
- * yet" state, and the PdfExportControls mount under the
+ * Pins the full editor's read-side wiring (panels + bubbles list
+ * flow), CRUD actions (add/delete panel + bubble), the empty
+ * "no pages yet" state with its create-first-page action button
+ * (Session 3), and the PdfExportControls mount under the
  * comic-book-editor testid namespace.
  */
 
@@ -44,6 +44,7 @@ vi.mock("../api/client", async () => {
             pages: {
                 ...actual.api.pages,
                 list: vi.fn(),
+                create: vi.fn(),
             },
         },
     };
@@ -115,6 +116,7 @@ beforeEach(() => {
     vi.mocked(api.comics.deletePanel).mockImplementation(async () => undefined);
     vi.mocked(api.comics.deleteBubble).mockImplementation(async () => undefined);
     vi.mocked(api.pages.list).mockImplementation(async () => [fakePage]);
+    vi.mocked(api.pages.create).mockImplementation(async () => fakePage);
 });
 
 afterEach(() => {
@@ -151,7 +153,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         expect(onBack).toHaveBeenCalledOnce();
     });
 
-    it("surfaces the degraded 'no pages' state when pages.list returns []", async () => {
+    it("surfaces the empty-pages state with a create-first-page button when pages.list returns []", async () => {
         vi.mocked(api.pages.list).mockImplementation(async () => []);
         render(
             <ComicBookEditor
@@ -163,6 +165,67 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         expect(
             await screen.findByTestId("comic-book-editor-no-pages"),
         ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("comic-book-editor-create-first-page"),
+        ).toBeInTheDocument();
+    });
+
+    it("clicking create-first-page calls api.pages.create with comic_panel_grid + refreshes the page list", async () => {
+        // Closure-flag pattern (per lessons-learned "React 18 dev-mode
+        // double-effect-mount strands mockImplementationOnce"): both
+        // strict-mode mounts of the initial useEffect see an empty
+        // list; after create flips the flag, refreshPages sees the
+        // new row.
+        let hasCreated = false;
+        vi.mocked(api.pages.list).mockImplementation(async () =>
+            hasCreated ? [fakePage] : [],
+        );
+        vi.mocked(api.pages.create).mockImplementation(async () => {
+            hasCreated = true;
+            return fakePage;
+        });
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        const createButton = await screen.findByTestId(
+            "comic-book-editor-create-first-page",
+        );
+        fireEvent.click(createButton);
+        await waitFor(() => {
+            expect(api.pages.create).toHaveBeenCalledWith("book-1", {
+                layout: "comic_panel_grid",
+            });
+        });
+        // After the create + refresh, the page nav appears.
+        expect(
+            await screen.findByTestId("comic-book-editor-page-nav"),
+        ).toBeInTheDocument();
+    });
+
+    it("surfaces an error in the empty state when api.pages.create fails", async () => {
+        const {ApiError} = await import("../api/client");
+        vi.mocked(api.pages.list).mockImplementation(async () => []);
+        vi.mocked(api.pages.create).mockImplementation(async () => {
+            throw new ApiError(500, "creation failed", "/books/book-1/pages", "POST");
+        });
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        fireEvent.click(
+            await screen.findByTestId("comic-book-editor-create-first-page"),
+        );
+        const errorEl = await screen.findByTestId(
+            "comic-book-editor-pages-error",
+        );
+        expect(errorEl.textContent).toMatch(/creation failed/);
     });
 
     it("renders the page nav + grid when pages exist", async () => {

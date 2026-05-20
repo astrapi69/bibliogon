@@ -16,12 +16,13 @@
  * - Side pane: LayoutConfigComicBubble when a bubble is selected;
  *   instructions otherwise
  *
- * Backend page-CRUD for comic_book is gated by plugin-kinderbuch's
- * ``picture_book``-only contract — see PLUGIN-COMICS-SESSION-3-
- * PAGES-CRUD-01 (filed in C7 backlog). For comic books WITHOUT
- * pages, the editor surfaces a degraded "no pages yet" state with
- * a pointer to the Session 3 follow-up. Authors can still test the
- * editor against pages seeded via direct SQL.
+ * Backend page-CRUD for comic_book is enabled as of PLUGIN-COMICS-
+ * SESSION-3-PAGES-CRUD-01 (the pages router relocated from
+ * plugin-kinderbuch to backend core and now accepts both
+ * picture_book + comic_book). When the book has no pages yet, the
+ * empty state surfaces a "Create first comic page" action button
+ * that calls ``api.pages.create(bookId, {layout: "comic_panel_grid"})``
+ * + refreshes the pages list.
  */
 
 import {useCallback, useEffect, useMemo, useState} from "react";
@@ -92,10 +93,22 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
         };
     }, []);
 
-    // Load pages. The /pages endpoint is owned by plugin-kinderbuch
-    // and currently gates on book_type='picture_book'; comic_book
-    // returns 400. We catch that explicitly so the editor surfaces
-    // a degraded "no pages yet" state instead of bubbling the error.
+    // Load pages from the core /pages endpoint (relaxed in
+    // PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 to accept comic_book).
+    // Empty list is the normal first-time-author state; the empty-
+    // state action button creates the first page on click.
+    const refreshPages = useCallback(async () => {
+        try {
+            const rows = await api.pages.list(bookId);
+            setPages(rows);
+            return rows;
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+            return [] as Page[];
+        }
+    }, [bookId]);
+
     useEffect(() => {
         let cancelled = false;
         api.pages
@@ -115,6 +128,20 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
             cancelled = true;
         };
     }, [bookId]);
+
+    const handleCreateFirstPage = useCallback(async () => {
+        setPagesError(null);
+        try {
+            const newPage = await api.pages.create(bookId, {
+                layout: "comic_panel_grid",
+            });
+            const rows = await refreshPages();
+            setActivePageId(newPage.id ?? rows[0]?.id ?? null);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [bookId, refreshPages]);
 
     const refreshPanelsAndBubbles = useCallback(
         async (pageId: string) => {
@@ -332,9 +359,20 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                     <p>
                         {t(
                             "ui.comic_book_editor.no_pages_message",
-                            "Comic-Seiten werden in Session 3 direkt aus dem Editor erstellt. Im Moment muss eine Seite über die Datenbank gesetzt sein, damit der Editor Panels und Sprechblasen rendert.",
+                            "Erstelle deine erste Comic-Seite, um Panels und Sprechblasen zu platzieren.",
                         )}
                     </p>
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        data-testid="comic-book-editor-create-first-page"
+                        onClick={handleCreateFirstPage}
+                    >
+                        {t(
+                            "ui.comic_book_editor.create_first_page",
+                            "Erste Comic-Seite erstellen",
+                        )}
+                    </button>
                     {pagesError && (
                         <p
                             data-testid="comic-book-editor-pages-error"
