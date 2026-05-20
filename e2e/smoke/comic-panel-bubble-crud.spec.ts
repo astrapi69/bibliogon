@@ -1,47 +1,89 @@
 /**
- * Comic-book editor action-buttons + side-pane smoke
- * (plugin-comics Session 2 C7).
+ * Comic-book editor full Add/Delete CRUD cycle smoke (Session 3
+ * close: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 + perception-lag
+ * follow-up).
  *
- * Validates the action-button + side-pane wiring of the new
- * full ComicBookEditor (C6). Page-CRUD is gated by plugin-
- * kinderbuch's picture_book-only contract — filed as
- * PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 in C7 — so this spec
- * exercises the action-button presence + the no-pages degraded
- * state instead of the create-roundtrip flow.
+ * Closes the test-gap that made the user-report "Add panel button
+ * geht nicht" uncatchable by CI. The bug turned out to be a
+ * perception-lag class (newly-created panel is visually subtle on
+ * empty grid) — addressed by the auto-select follow-up. This spec
+ * pins the underlying functional contract: clicking each of the
+ * four action buttons (Add Panel, Add Bubble, Delete Bubble,
+ * Delete Panel) actually mutates DOM state.
  *
- * Once Session 3 ships the comic-page CRUD endpoint, the
- * full panel-create roundtrip becomes testable end-to-end (and
- * a Session-3 follow-up spec will extend this coverage). For
- * Session 2, the buttons + their disabled states pin the
- * editor's surface contract.
+ * The Session-2 predecessor (which only covered the "no pages
+ * yet" degraded state) is replaced here; that state is closed by
+ * the Create-First-Page button covered in comic-book-editor.spec.ts.
+ *
+ * Cycle exercised:
+ *   1. Create-First-Page → page nav appears
+ *   2. Add Panel        → panel count 0 → 1
+ *   3. Click the panel  → selectedPanelId set (panel-click is a
+ *                         no-op when the panel is already auto-
+ *                         selected post-C2; required pre-C2 to
+ *                         enable Add-Bubble)
+ *   4. Add Bubble       → bubble count 0 → 1
+ *   5. Click the bubble → selectedBubbleId set (same idempotent
+ *                         shape as the panel click)
+ *   6. Delete Bubble    → bubble count 1 → 0
+ *   7. Delete Panel     → panel count 1 → 0
  */
 
 import {test, expect, createComicBook} from "../fixtures/base";
 
-test.describe("Comic-book editor surface smoke", () => {
-    test("editor exposes Add/Delete Panel + Bubble buttons + side pane in degraded state", async ({
+test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
+    test("Add Panel + Add Bubble + Delete Bubble + Delete Panel round-trip", async ({
         page,
     }) => {
-        const book = await createComicBook("Buttons Test", "E2E Author");
+        const book = await createComicBook("CRUD Cycle Test", "E2E Author");
         await page.goto(`/book/${book.id}`);
 
-        await expect(
-            page.getByTestId("comic-book-editor-root"),
-        ).toBeVisible();
+        // Step 1: Create first page (closes the empty state).
+        await expect(page.getByTestId("comic-book-editor-root")).toBeVisible();
+        await page
+            .getByTestId("comic-book-editor-create-first-page")
+            .click();
+        await expect(page.getByTestId("comic-book-editor-page-nav")).toBeVisible();
 
-        // Degraded "no pages yet" state: the page-CRUD buttons are
-        // NOT rendered when pages.length === 0 (the editor enters
-        // a different layout branch). The Pdf controls + back are
-        // still present so the user has working header affordances.
+        // Step 2: Add Panel — panel count goes 0 → 1.
+        const panels = page.locator('[data-testid^="comic-panel-"]');
+        await expect(panels).toHaveCount(0);
+        await page.getByTestId("comic-book-editor-add-panel").click();
+        await expect(panels).toHaveCount(1);
+
+        // Step 3: select the panel so Add-Bubble enables. Idempotent
+        // when the panel is already selected (post-C2 auto-select)
+        // because onPanelClick is set-not-toggle.
+        await panels.first().click();
         await expect(
-            page.getByTestId("comic-book-editor-no-pages"),
-        ).toBeVisible();
-        await expect(
-            page.getByTestId("comic-book-editor-back"),
+            page.getByTestId("comic-book-editor-add-bubble"),
         ).toBeEnabled();
+
+        // Step 4: Add Bubble — bubble count goes 0 → 1.
+        const bubbles = page.locator('[data-testid^="comic-bubble-"]');
+        await expect(bubbles).toHaveCount(0);
+        await page.getByTestId("comic-book-editor-add-bubble").click();
+        await expect(bubbles).toHaveCount(1);
+
+        // Step 5: select the bubble so Delete-Bubble enables.
+        // Idempotent the same way as the panel click.
+        await bubbles.first().click();
         await expect(
-            page.getByTestId("comic-book-editor-pdf-format-select"),
-        ).toBeVisible();
+            page.getByTestId("comic-book-editor-delete-bubble"),
+        ).toBeEnabled();
+
+        // Step 6: Delete Bubble — bubble count goes 1 → 0.
+        await page.getByTestId("comic-book-editor-delete-bubble").click();
+        await expect(bubbles).toHaveCount(0);
+
+        // Step 7: Delete Panel — panel count goes 1 → 0. After
+        // delete-bubble the selectedPanelId stays set (only the
+        // bubble was deselected), so Delete Panel is enabled.
+        await expect(
+            page.getByTestId("comic-book-editor-delete-panel"),
+        ).toBeEnabled();
+        await page.getByTestId("comic-book-editor-delete-panel").click();
+        await expect(panels).toHaveCount(0);
     });
 
     test("PDF format dropdown carries the 5 KDP options", async ({page}) => {
