@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-20 (Comics-Session-2 CLOSED. Sessions 1+2 of plugin-comics fully shipped on main (commits c080974 C1 + 2ffaed8 C2 + b8e8c82 C3 + b652942 C4 + bfeb408 C5 + a33baf3 C6 + (this commit) C7). Plugin version 1.1.0. Backend baseline 20 fail + 13 err (vs 13+13 pre-C3 baseline; +7 cascade-recursion under PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 still open — every new failure passes in isolation, verified at C3/C5/C6 boundaries). Ship-on-broken-baseline authorized by user under atomic-green-per-commit-delta discipline. Two new Session-3 filings: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 (P2, unblocks UI page-create — currently gated by kinderbuch's picture_book-only contract) + PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01 (P3, drag/snap/nudge/undo/RTL/z-order/gutter/auto-tail-direction/full E2E). One new Lessons-Learned: "CRUD shipping: List endpoint is non-optional" (filed from C6 Pre-Coding-Reality-Check that surfaced the C2 missing-Read gap for comic_bubbles, fixed atomically in C6).)
+Last updated: 2026-05-20 (Backlog re-prioritization audit + apply. 4-Axes scoring shipped audit doc 281a6f6; apply phase landed 7 promotions + 17 demotions + 3 archives + hygiene fixes per the Q1-Q7 adjudication. PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 promoted to P1 (Foundation-Override-Extended: Half-Wired-Visible-in-Production); RECURRING-COMPONENT-AUDIT-01 promoted to P2 (feeds 4+ extractions); 3 archives (PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 Sessions 1+2 shipped; COMIC-BOOK-PLUGIN-01 duplicate; PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 primitive shipped in plugin-comics C4). D-02 follow-ups split into LAUNCHER-MACOS-UNIVERSAL2-01 + LAUNCHER-CODE-SIGNING-01. New: MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01 (P3, β path post-exploration). Pre-audit Comics-Session-2 close still on main: plugin-comics v1.1.0 fully shipped, 7-commit arc c080974..80399cd. Backend baseline 20 fail + 13 err under PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 (still open; PluginForge 0.8.0 fixes).)
 Current version: v0.35.1
-Open tasks: 66 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 64 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -339,19 +339,16 @@ store.
   multiple known candidates before the rule was formalised,
   so a one-time sweep is warranted.
 
-  Known candidates at filing time:
+  Known candidates at filing time (active as of 2026-05-20):
   - **AUTHOR-SELECT-INPUT-EXTRACT-01** (the rule's canonical
     first-application; closes together with
     ``AUTHOR-DATALIST-EXTEND-EDITORS-01``)
   - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (ArticleRow +
     BookListView row shape duplication)
-  - **ARTICLEFILTERBAR-EXTRACT-01** (UX-Full-Audit G2-F1;
-    Articles uses an inline 200-LOC FilterBar where Books
-    uses the shared DashboardFilterBar)
-  - **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (Settings.tsx
-    2338 LOC monolith with inline PluginSettings +
-    AuthorSettings — extraction would enable per-tab E2E
-    testid coverage too)
+
+  Closed candidates (moved to archive 2026-05-15):
+  - ``ARTICLEFILTERBAR-EXTRACT-01`` — shipped 2026-05-15
+  - ``PLUGIN-SETTINGS-TESTID-COVERAGE-01`` — shipped 2026-05-15
 
   Audit scope:
   1. **Component-shape sweep:** grep for distinctive JSX +
@@ -396,11 +393,12 @@ store.
   surfaces in everyday work, prompting "audit all of them
   rather than chase individually".
 
-  Pairs with: every existing component-extraction backlog
-  item (``AUTHOR-SELECT-INPUT-EXTRACT-01``,
-  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``,
-  ``ARTICLEFILTERBAR-EXTRACT-01``,
-  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``).
+  Pairs with: the remaining active component-extraction
+  backlog items (``AUTHOR-SELECT-INPUT-EXTRACT-01`` +
+  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``). Prior siblings
+  ``ARTICLEFILTERBAR-EXTRACT-01`` +
+  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01`` shipped 2026-05-15
+  and live in ``docs/roadmap-archive/2026-05.md``.
 
 ---
 
@@ -818,10 +816,20 @@ store.
 - **PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01** (P3): wire
   TipTap rich-text editing into picture-book page text regions
   (image_top_text_bottom + image_left_text_right + text_only).
-  v0.34.0 + v0.35.0 ship picture-book text as plain string
-  ``Page.text_content``; rich-text formatting (bold, italic,
-  lists, headings) is deferred to the hybrid 4c-B work the
-  user scoped 2026-05-18.
+
+  **Q1 status (2026-05-20 audit + adjudication):** D1 MVP
+  shipped in v0.35.0 via 4c-B-1 (commits ``f17a93d``, ``ba91f59``,
+  ``3fef46d``, ``a731c30``) — RichTextEditor wrapper for the 3
+  unbounded layouts with the D1 MVP extension set (StarterKit +
+  TextAlign + Underline + TextStyle + Color + FontFamily); 11-
+  button RichTextToolbar in D6-C properties-pane placement.
+  D2-D6 scope remains open: D2 storage-schema variants for
+  rich-text vs plain-text per-layout; D3 toolbar-placement
+  decisions for additional surfaces; D4 migration of legacy
+  plain-string rows to TipTap JSON; D5 read-only PDF render
+  consolidation; D6 editor-placement variants. Item KEPT active
+  per Q1 KEEP-decision (Half-Wired-Discipline: archive-with-
+  partial-scope-shipped produces latent-lost-work).
 
   Scope per the 4c-B Pre-Inspection (2026-05-17 discussion +
   queued 2026-05-18):
@@ -1998,7 +2006,7 @@ store.
   reviewer outreach.
   Filed by D3 pre-release UX audit 2026-05-12.
 
-- **BACKUP-PROJECT-IMPORT-MUTMUT-01** (P5): add direct unit
+- **BACKUP-PROJECT-IMPORT-MUTMUT-01** (P4): add direct unit
   tests for the per-asset / per-chapter helpers in
   ``app/services/backup/project_import.py`` (34 no-tests
   mutmut entries 2026-05-14). The helpers are transitively
@@ -2006,7 +2014,7 @@ store.
   per-function visibility is exact-match. Effort: S.
   Filed by ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
 
-- **BACKUP-SERIALIZER-MUTMUT-01** (P5): tighten the existing
+- **BACKUP-SERIALIZER-MUTMUT-01** (P4): tighten the existing
   backup-roundtrip tests in ``test_backup_articles.py``,
   ``test_backup_import_revive.py``, ``test_backup_utils.py``
   to assert exact field presence on the serialized output
@@ -2016,7 +2024,7 @@ store.
   the bulk in one pass. Effort: M. Filed by
   ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
 
-- **GIT-BACKUP-MUTMUT-01** (P5): triage the
+- **GIT-BACKUP-MUTMUT-01** (P4): triage the
   ``app/services/git_backup.py`` survivor pool (330
   survived + 57 no-tests; largest single-file pool in the
   services audit). Mix of cosmetic (git-config key
@@ -2360,8 +2368,23 @@ store.
   divergence bug surfaces in production. Filed by
   test-infrastructure audit 2026-05-12.
 
-- **D-02 follow-ups**: macOS Intel universal2 build + code signing.
-  Effort: M each. Deferred until user demand.
+- **LAUNCHER-MACOS-UNIVERSAL2-01** (P5, was part of D-02 follow-ups
+  before Q5 split 2026-05-20): build a macOS universal2 binary
+  (Intel x86_64 + Apple Silicon arm64) for the launcher rather
+  than the current arm64-only artefact. Trigger: first Intel-Mac
+  user report OR Apple Silicon migration becomes complete enough
+  that universal2 is the table-stakes default. Effort: M
+  (PyInstaller config + cross-arch CI matrix + smoke per arch).
+
+- **LAUNCHER-CODE-SIGNING-01** (P5, was part of D-02 follow-ups
+  before Q5 split 2026-05-20): Apple Developer ID code signing
+  + notarization for the macOS launcher binary, plus Windows
+  Authenticode signing for the .exe. Closes the Gatekeeper +
+  SmartScreen warnings that current unsigned builds trigger.
+  Trigger: substantial install-friction signal from end users OR
+  paid Developer ID becomes available. Effort: M (signing
+  certs + CI integration + notarization wait-loop + smoke on
+  fresh OS install).
 
 ---
 
