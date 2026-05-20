@@ -1,0 +1,72 @@
+/**
+ * Comic-bubble-type CSS variants — editor-side mirror of the
+ * walker's ``_BUBBLE_TYPE_CSS`` in
+ * ``plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py``.
+ *
+ * Visual approximations for the in-editor preview. Exact PDF
+ * fidelity is the WeasyPrint walker's job; this module gets the
+ * editor preview close enough that authors can tell at a glance
+ * which variant they picked.
+ *
+ * Six canonical bubble_type ids per ``BubbleType`` Literal at
+ * ``backend/app/schemas/__init__.py:1068-1075``.
+ */
+
+.bubble {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+/* speech — solid border, oval shape (the canonical default). */
+.speech {
+    border: 1.5px solid black;
+    border-radius: 50%;
+    background: white;
+}
+
+/* thought — double-outline rounded rectangle (cloud-like). */
+.thought {
+    border: 1px solid black;
+    border-radius: 30%;
+    background: white;
+    box-shadow: inset 0 0 0 2px white, inset 0 0 0 3px black;
+    padding: 4px 6px;
+}
+
+/* narration — rectangle, no border-radius, parchment fill. */
+.narration {
+    border: 1px solid black;
+    border-radius: 0;
+    background: #f5f5dc;
+}
+
+/* shout — jagged edges via clip-path star polygon. */
+.shout {
+    background: white;
+    border: 1.5px solid black;
+    clip-path: polygon(
+        0% 20%, 10% 0%, 25% 15%, 40% 0%, 55% 15%,
+        70% 0%, 85% 15%, 100% 20%, 90% 40%,
+        100% 60%, 85% 75%, 100% 90%, 75% 100%,
+        60% 85%, 45% 100%, 30% 85%, 15% 100%,
+        0% 80%, 10% 60%, 0% 40%
+    );
+}
+
+/* whisper — dashed border, semi-transparent background. */
+.whisper {
+    border: 1px dashed black;
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* sound_effect — typography-as-illustration. No bubble. */
+.soundEffect {
+    border: none;
+    background: transparent;
+    font-weight: 900;
+    font-style: italic;
+    text-shadow: 0 0 2px white, 0 0 4px white;
+}
