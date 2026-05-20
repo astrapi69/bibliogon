@@ -37,10 +37,17 @@ class ComicsPlugin(BasePlugin):
     def get_routes(self) -> list[Any]:
         """Return FastAPI routers contributed by this plugin.
 
-        Session 1 ships only ``GET /api/comics/info`` as a
-        plugin-mounted gate (see routes.py docstring). Session 2
-        adds the comic-page + comic-panel + comic-bubble CRUD
-        endpoints under the same prefix.
+        Session 1 shipped ``GET /api/comics/info`` (identity probe).
+        Session 2 adds comic-panel + comic-bubble CRUD endpoints
+        under the ``/api/books/{book_id}/...`` namespace. All
+        Session 2 sub-routers nest INSIDE the single top-level
+        router (via ``router.include_router(...)`` in routes.py).
+
+        Returning a SINGLE router (vs three separate routers) keeps
+        per-lifespan ASGI registration depth low — the Python
+        recursion limit (default 1000) is hit when many plugins ×
+        many routers each accumulate registration state across
+        consecutive TestClient lifespans in long test sweeps.
         """
         from .routes import router
 

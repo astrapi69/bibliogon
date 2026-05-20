@@ -1055,6 +1055,200 @@ class PagesReorder(BaseModel):
     page_ids: list[str]
 
 
+# --- Comic-book schemas (plugin-comics Session 2) ---
+#
+# Two plugin-owned tables (comic_panels + comic_bubbles) per the
+# Session 1 sharing decision (comic_book pages live in the existing
+# ``pages`` table with Book.book_type discriminator). All comic
+# enums + JSON validation live here at the Pydantic layer, NOT in
+# the DB schema — matches the Chapter.chapter_type + Page.layout
+# convention.
+
+# 6 bubble-type variants per comic-foundation.md:321-324.
+BubbleType = Literal[
+    "speech",
+    "thought",
+    "narration",
+    "shout",
+    "whisper",
+    "sound_effect",
+]
+
+# Tail-direction enum: 8 compass octants + none + auto.
+# ``auto`` defers to the renderer (picks the nearest panel edge).
+BubbleTailDirection = Literal[
+    "N",
+    "NE",
+    "E",
+    "SE",
+    "S",
+    "SW",
+    "W",
+    "NW",
+    "none",
+    "auto",
+]
+
+
+class ComicPanelCreate(BaseModel):
+    """Payload for POST .../pages/{page_id}/panels.
+
+    Position is server-assigned (appended to the page's panel list).
+    ``bounds`` is required — every panel must position itself within
+    the page's content area.
+    """
+
+    bounds: dict[str, Any]  # {x_pct, y_pct, width_pct, height_pct}
+    image_asset_id: str | None = None
+    panel_config: dict[str, Any] | None = None
+
+
+class ComicPanelUpdate(BaseModel):
+    """Payload for PATCH .../comic-panels/{panel_id}.
+
+    Position is NOT mutable through this schema; a future reorder
+    endpoint will handle bulk position changes atomically (mirrors
+    PagesReorder convention).
+    """
+
+    bounds: dict[str, Any] | None = None
+    image_asset_id: str | None = None
+    panel_config: dict[str, Any] | None = None
+
+
+class ComicPanelOut(BaseModel):
+    """Response shape for comic_panels rows.
+
+    JSON-as-Text columns (``bounds`` + ``panel_config``) are decoded
+    on read per the existing ``Page.layout_config`` convention.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    page_id: str
+    position: int
+    image_asset_id: str | None = None
+    bounds: dict[str, Any]
+    panel_config: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("bounds", mode="before")
+    @classmethod
+    def _decode_bounds(cls, value: Any) -> dict[str, Any]:
+        # bounds is NOT NULL at the DB layer; defensive on shape only.
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str) and value:
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+    @field_validator("panel_config", mode="before")
+    @classmethod
+    def _decode_panel_config(cls, value: Any) -> dict[str, Any] | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return None
+            return parsed if isinstance(parsed, dict) else None
+        return None
+
+
+class ComicBubbleCreate(BaseModel):
+    """Payload for POST .../comic-panels/{panel_id}/bubbles.
+
+    Position is server-assigned (appended). Tail fields default per
+    the migration server_default values (matched here for round-trip
+    consistency between API contract + DB schema).
+    """
+
+    bubble_type: BubbleType
+    anchor: dict[str, Any]  # {x_pct, y_pct} OR preset string wrapper
+    width_pct: int = Field(default=30, ge=10, le=100)
+    height_pct: int = Field(default=20, ge=5, le=100)
+    tail_direction: BubbleTailDirection = "none"
+    tail_position_pct: int = Field(default=50, ge=0, le=100)
+    tail_length_px: int = Field(default=16, ge=0, le=64)
+    bubble_config: dict[str, Any] | None = None
+    text_content: str | None = None
+
+
+class ComicBubbleUpdate(BaseModel):
+    """Payload for PATCH .../comic-bubbles/{bubble_id}."""
+
+    bubble_type: BubbleType | None = None
+    anchor: dict[str, Any] | None = None
+    width_pct: int | None = Field(default=None, ge=10, le=100)
+    height_pct: int | None = Field(default=None, ge=5, le=100)
+    tail_direction: BubbleTailDirection | None = None
+    tail_position_pct: int | None = Field(default=None, ge=0, le=100)
+    tail_length_px: int | None = Field(default=None, ge=0, le=64)
+    bubble_config: dict[str, Any] | None = None
+    text_content: str | None = None
+
+
+class ComicBubbleOut(BaseModel):
+    """Response shape for comic_bubbles rows. JSON-as-Text
+    decoded on read for ``anchor`` + ``bubble_config``; tail fields
+    are siblings (real columns) per comic-foundation.md:289-291.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    panel_id: str
+    position: int
+    bubble_type: str
+    anchor: dict[str, Any]
+    width_pct: int
+    height_pct: int
+    tail_direction: str
+    tail_position_pct: int
+    tail_length_px: int
+    bubble_config: dict[str, Any] | None = None
+    text_content: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("anchor", mode="before")
+    @classmethod
+    def _decode_anchor(cls, value: Any) -> dict[str, Any]:
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str) and value:
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+    @field_validator("bubble_config", mode="before")
+    @classmethod
+    def _decode_bubble_config(cls, value: Any) -> dict[str, Any] | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return None
+            return parsed if isinstance(parsed, dict) else None
+        return None
+
+
 # --- Author schemas (Bug 8 Phase 1) ---
 
 

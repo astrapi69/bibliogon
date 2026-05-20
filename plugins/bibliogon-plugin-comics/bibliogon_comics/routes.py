@@ -26,10 +26,42 @@ from typing import Any
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/comics", tags=["comics"])
+router = APIRouter(tags=["comics"])
+
+# Session-2 sub-routers (panels + bubbles) live under their own
+# ``/books/{book_id}/...`` prefix and are NESTED inside this
+# top-level router so the plugin manager only mounts ONE router
+# per plugin (avoids the per-lifespan recursion-depth accumulation
+# that hits Python's default limit during long test sweeps).
+def _include_session2_routers() -> None:
+    """Nest the panel + bubble routers under this top-level router.
+
+    Done lazily inside the function (not at module import) so the
+    plugin's isolated venv can still import this module for the
+    Session-1 ``/comics/info`` smoke without pulling in sqlalchemy
+    + app.models (which the sub-routers depend on).
+    """
+    try:
+        from .bubbles import router as bubbles_router
+        from .panels import router as panels_router
+
+        router.include_router(panels_router)
+        router.include_router(bubbles_router)
+    except ImportError:
+        # Plugin's standalone venv lacks sqlalchemy / app.models —
+        # Session-2 endpoints stay unmounted; that's the right
+        # behavior because the plugin only functions inside the
+        # backend's full app context.
+        pass
 
 
-@router.get("/info")
+_include_session2_routers()
+
+
+# The /info endpoint uses an explicit /comics prefix since the
+# router itself has no prefix (so nested sub-routers can carry
+# their own /books/{book_id} prefix without collision).
+@router.get("/comics/info")
 def get_plugin_info() -> dict[str, Any]:
     """Return plugin identity + roadmap-phase.
 
