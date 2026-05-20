@@ -174,11 +174,7 @@ store.
   Effort: 1-3 commits depending on fix-path choice. Pluginforge-
   side fix probably ships as 0.7.1 hotfix or 0.8.0 minor.
 
----
-
-## P2 - High-Value User Features
-
-- **PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01** (P2, filed 2026-05-20
+- **PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01** (P1, filed 2026-05-20
   from Comics-Session-2 C6 Pre-Coding-Reality-Check). The
   Session-2 ComicBookEditor surfaces a degraded "no comic pages
   yet" state because plugin-kinderbuch's ``/api/books/{id}/pages``
@@ -212,49 +208,9 @@ store.
   ComicBookEditor UI (the in-editor "no pages yet" message hints
   at Session 3, but users will eventually want to act on it).
 
-- **PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01** (P3, filed
-  2026-05-20 from Comics-Session-2 close). Session-3 polish work
-  on the ComicBookEditor surface. Per the original Comic-
-  Foundation exploration (``docs/explorations/comic-foundation.md``)
-  Session-3 scope:
+---
 
-  - **Drag-to-position** for bubbles within their panel
-    (anchor.x_pct / anchor.y_pct via pointer events)
-  - **Snap-to-grid** + **keyboard nudge** (arrow keys) for
-    fine-positioning
-  - **Per-bubble undo / redo** (separate from global undo)
-  - **Reading direction** (LTR / RTL) toggle on the comic_book
-    so right-to-left layouts (manga-style) get correct page-turn
-    + bubble-traversal order
-  - **z-order controls** (bring to front / send to back) for
-    overlapping bubbles within a panel
-  - **Panel gutter / spacing** controls in panel_config (already
-    has a stub field; UI not yet exposed)
-  - **TipTap-in-bubbles** (replacing the Q2 a plain-text default
-    with rich-text — defer to v2 of this item, no demand signal
-    yet)
-  - **Full Playwright E2E coverage matrix** (Session-2 shipped 3
-    smoke specs; Session-3 ships the long-suite full-regression)
-  - **Auto-tail-direction nearest-edge picker** (Session 2's
-    ``tail_direction="auto"`` currently gamma-shims to "S"; Session
-    3 picks the panel-edge closest to the speaker)
-
-  Effort: 8-12 commits across 1-2 sessions.
-
-  Trigger: Session-2 has shipped, ``PLUGIN-COMICS-SESSION-3-
-  PAGES-CRUD-01`` has shipped (so authors can actually exercise
-  the full editor in production), and at least one user-report
-  hits one of the missing affordances.
-
-- **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
-  Medium's HTML export strips tags. v1 imports articles with an
-  empty tag list and the user adds them manually. v2 should call
-  the existing `backend/app/ai/` core module per imported article
-  with title + first paragraph + body excerpt and propose 3-5
-  tags, surfaced for review in the dry-run table from v01. Effort:
-  S-M depending on tag-quality bar. Trigger: first user report
-  asking for it OR v01 ships and the manual-tagging step is a
-  visible bottleneck in feedback.
+## P2 - High-Value User Features
 
 - **KDP-PUBLISHING-WIZARD-01** (P2, STRATEGIC, filed 2026-05-19
   from the
@@ -304,58 +260,147 @@ store.
   wire the existing /api/kdp/categories endpoint into the
   CategoryInput component.
 
-- **STORY-BIBLE-PLUGIN-01** (P2, STRATEGIC, filed 2026-05-19
-  from the
-  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
-  triage of exploration feature #4): plugin-based database for
-  fiction-writing entities (Characters, Settings, Plot-Points,
-  Items, Lore) with @-mention syntax in the editor for
-  cross-references.
+- **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P2, DOC/ONBOARDING,
+  filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
+  architecture work that landed across v0.34.0 + v0.35.0 +
+  plugin-comics Foundation): the
+  ``plugin-getstarted`` onboarding flow was built before
+  Picture-Book and Comic-Book existed. It now needs to introduce
+  all 3 book types currently available (prose, picture-book,
+  comic-book — pending plugin-comics Session 1 close).
 
-  Scope:
-  - New plugin: ``bibliogon-plugin-story-bible``
-  - DB: 5 entity types per-book-scoped (Character, Setting,
-    PlotPoint, Item, Lore) with rich-text descriptions +
-    optional photos
-  - TipTap extension: ``@-mention`` syntax with autocomplete
-    against existing entities
-  - Click-on-mention navigates to entity page
-  - AI-Template integration: per-entity-type prompts
-    (Character Profile, Setting Description, Plot-Point
-    structure)
-  - StoryBibleSidebar component in BookEditor (gated on
-    plugin activation)
+  Concrete gaps:
+  1. Get-Started doesn't explain Prose vs Picture-Book vs
+     Comic-Book differences
+  2. Plus doesn't guide the user to the appropriate book
+     type for their project
+  3. Plus doesn't introduce new features that landed after
+     the plugin was last touched (PDF Export, Categories +
+     BISAC, picture-book layouts, RichTextEditor, etc.)
 
-  Architecture-discipline notes (per audit
-  Track C):
-  - **3-Source-Plugin-Metadata-Pattern**: full pattern applies.
-    Canonical ``backend/config/plugins/story-bible.yaml`` (UI
-    metadata + settings defaults) + ``plugin.py`` class attrs
-    (identity + contract) + generated bundled YAML via
-    ``make build-zip``.
-  - **Recurring-Component-Unification**: 5 entity types x same
-    CRUD pattern -> extract ``EntityCRUDView`` in the SAME
-    session as the second entity type, NOT deferred. Per the
-    2-surfaces rule.
-  - **Single-Source-of-Truth**: cross-references between
-    entities + chapters must derive from the entity's
-    canonical record (DB row), not duplicate text into chapter
-    content. The TipTap extension stores the entity ID; the
-    editor renders the entity's current display-name on the
-    fly.
-  - **Half-Wired-Lifecycle Prevention**: the @-mention
-    autocomplete (write surface) and the click-to-navigate
-    affordance (read surface) MUST ship together. Half-wired
-    risk: shipping autocomplete without click-navigate creates
-    "I mentioned a character but can't get back to them"
-    purgatory.
+  Expected behavior:
+  - Get-Started introduces 3 book types with use-case
+    guidance ("write a novel? → Prose. Write a children's
+    book? → Picture-Book. Write a comic? → Comic-Book")
+  - Visual examples per book type (sample cover + one page
+    rendered in the style of each)
+  - Links to relevant help docs per book type
+  - Matches existing plugin-getstarted UI patterns rather
+    than introducing a new visual language
 
-  Effort: XL (16+ commits, multi-session). Trigger: dedicated
-  Story-Bible session when Aster's next fiction-project
-  (SciFi continuation, new Kinderbuch series, comic) reaches
-  the point where character/setting tracking becomes a real
-  cognitive cost. Plugin model means non-fiction authors
-  never see it.
+  Fix scope (estimated 3-4 commits):
+  - Get-Started content rewrite (1-2 commits)
+  - i18n in EN + DE per the existing exploration-doc
+    pattern (NOT 8 catalogs — prose limited to EN + DE per
+    the lessons-learned rule for onboarding/help docs)
+  - Vitest for new screens
+  - E2E Playwright for the full onboarding flow
+
+  Scope-expansion candidates (consider one coordinated
+  session):
+  - v0.36.0 Doc-Sweep (the 4c-B-1-DOCS tentative session)
+    could include the Get-Started update if both touch
+    plugin-getstarted
+  - Picture-Book + Comic-Book help-doc parity sweep can
+    ride along if the Get-Started rewrite surfaces gaps
+
+  Recurring-Component-Unification check: a "book-type card"
+  component could be shared across Get-Started + Dashboard
+  (the future CreateBookModal flow that picks book type
+  before opening the wizard). If both surfaces converge on
+  the same card shape, extract once. Filed as scope-
+  expansion candidate, not a separate item.
+
+  Single-Source-of-Truth check: the 3 book-type definitions
+  (label, description, sample, help-doc link) should live in
+  ONE config (e.g.
+  ``backend/config/book-types.yaml`` or a Python module
+  read by both the backend and the frontend onboarding) so
+  adding a 4th book type later updates one file, not three.
+
+  Half-Wired-Prevention check: onboarding must introduce
+  ALL 3 book types when it ships — not 2 with comics "coming
+  soon". Plugin-comics Session 1 needs to be closed before
+  this work begins, OR the onboarding ships gated behind
+  ``plugin-comics`` activation status with a fallback for
+  the 2-book-type case.
+
+  Trigger: 4c-B-1-DOCS coordinated session, OR separate
+  onboarding-focused session once plugin-comics Session 1
+  ships.
+
+- **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
+  for duplicate UI patterns (component shapes, hook
+  compositions, styling clusters) that violate the new
+  Recurring-Component Unification Rule (filed 2026-05-19 in
+  ``.claude/rules/coding-standards.md``). The rule fires at
+  2-surfaces threshold (stricter than the generic
+  3-duplicates DRY rule); the codebase has accumulated
+  multiple known candidates before the rule was formalised,
+  so a one-time sweep is warranted.
+
+  Known candidates at filing time:
+  - **AUTHOR-SELECT-INPUT-EXTRACT-01** (the rule's canonical
+    first-application; closes together with
+    ``AUTHOR-DATALIST-EXTEND-EDITORS-01``)
+  - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (ArticleRow +
+    BookListView row shape duplication)
+  - **ARTICLEFILTERBAR-EXTRACT-01** (UX-Full-Audit G2-F1;
+    Articles uses an inline 200-LOC FilterBar where Books
+    uses the shared DashboardFilterBar)
+  - **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (Settings.tsx
+    2338 LOC monolith with inline PluginSettings +
+    AuthorSettings — extraction would enable per-tab E2E
+    testid coverage too)
+
+  Audit scope:
+  1. **Component-shape sweep:** grep for distinctive JSX +
+     prop combinations across ``frontend/src/components/``
+     and ``frontend/src/pages/``. Recipes in coding-
+     standards.md "Pre-Inspection for new UI components".
+     Output: candidate list with file:line citations.
+  2. **Hook-composition sweep:** identify hooks reused for
+     similar purposes across 2+ surfaces (``useSelection``
+     variants, ``useViewMode`` variants, etc.). Some
+     already extracted (e.g. ``useTrashViewMode`` after
+     Bug 3); the audit confirms no remaining duplicates.
+  3. **Styling-cluster sweep:** grep for repeated
+     className combinations across components. CSS module
+     duplication is harder to detect mechanically; manual
+     review of e.g. bulk-action-bar / filter-bar / toast-
+     variant styling.
+  4. **i18n key duplication:** secondary check — duplicate
+     UI patterns often grow duplicate i18n keys (e.g.
+     ``ui.create_book.author`` + ``ui.convert_to_book
+     .metadata_author``). Worth surfacing during the
+     extraction sessions for each candidate.
+
+  Deliverable: audit doc at
+  ``docs/audits/recurring-component-audit-YYYY-MM-DD.md``
+  with categorised candidate list (HIGH / MEDIUM / LOW
+  refactor value) + recommended ordering of extraction
+  sessions. Each HIGH-value candidate gets its own backlog
+  item (or extends an existing one) with the standard
+  extraction-plus-migration session shape from coding-
+  standards.md.
+
+  Defer reason: the audit itself is read-only and would
+  take 1-2 hours; the deliverable feeds N follow-up
+  extraction sessions that each ship as their own focused
+  work. Splitting audit-from-implementation matches the
+  established "audit-first" Bibliogon discipline.
+
+  Trigger: any time before v0.36.0 (extraction sessions
+  can run in parallel with v0.35.0 PDF Export + S6
+  closing). OR: a third recurring-component candidate
+  surfaces in everyday work, prompting "audit all of them
+  rather than chase individually".
+
+  Pairs with: every existing component-extraction backlog
+  item (``AUTHOR-SELECT-INPUT-EXTRACT-01``,
+  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``,
+  ``ARTICLEFILTERBAR-EXTRACT-01``,
+  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``).
 
 ---
 
@@ -426,38 +471,6 @@ store.
   of any of the 7 failure modes from the exploration. Effort:
   S-M (1-3 commits) — primarily docs / rule edits + a few
   workflow-discipline pins in ``.claude/rules/``.
-
-- **MAKEFILE-VERIFY-PLUGIN-LOCKS-PARSE-01** (P3,
-  TOOLING-INVESTIGATION, filed 2026-05-20 during V060
-  PLUGINFORGE-V060-ADOPTION-01 step 1 lockfile sweep): GNU Make
-  4.3 (German locale) fails to recognize ``verify-plugin-locks``
-  as a target rule despite a syntactically clean declaration at
-  Makefile line 462 + presence in the ``.PHONY`` list at line 14.
-  ``awk`` reads the target header cleanly; ``make --debug=b
-  verify-plugin-locks`` reports "Das Ziel ... existiert nicht.
-  Das Ziel ... muss neu erzeugt werden" then "Keine Regel".
-
-  Workaround during V060 was inlining the verify-plugin-locks
-  recipe directly in bash (a 3-line for-loop over the 12
-  plugins). Recipe at backlog-archive note for v0.7.0 adoption
-  step 1; works fine — make-target parse is the only thing
-  broken.
-
-  Investigation steps for future fix:
-  1. ``cat -A Makefile | sed -n '454,464p'`` — look for hidden
-     characters or trailing-backslash continuations on line 460
-     (``@echo "Re-locked $$(ls -d plugins/bibliogon-plugin-*/
-     | wc -l) plugin(s)."``).
-  2. ``make -p 2>&1 | grep -B 2 -A 2 "verify-plugin-locks"`` —
-     see whether make recorded the rule at all.
-  3. Move ``verify-plugin-locks`` higher in the file (above
-     ``lock-all-plugins``) to test ordering hypothesis.
-  4. Check whether the German locale ``LANG`` setting affects
-     make's parser (unlikely but worth ruling out).
-
-  Effort: S (~30 min once cause is identified). Trigger:
-  next time a developer needs to run ``make verify-plugin-locks``
-  AND has time to dig. Workaround works; no urgency.
 
 - **PLUGIN-VERSION-GATING-ENABLE-01** (P3, OPT-IN-FEATURE,
   filed 2026-05-20 during V060 C3 β2 migration): enable
@@ -656,75 +669,6 @@ store.
 
   Trigger: separate Future-Session for
   ConvertToBookWizard UX polish.
-
-- **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P3, DOC/ONBOARDING,
-  filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
-  architecture work that landed across v0.34.0 + v0.35.0 +
-  plugin-comics Foundation): the
-  ``plugin-getstarted`` onboarding flow was built before
-  Picture-Book and Comic-Book existed. It now needs to introduce
-  all 3 book types currently available (prose, picture-book,
-  comic-book — pending plugin-comics Session 1 close).
-
-  Concrete gaps:
-  1. Get-Started doesn't explain Prose vs Picture-Book vs
-     Comic-Book differences
-  2. Plus doesn't guide the user to the appropriate book
-     type for their project
-  3. Plus doesn't introduce new features that landed after
-     the plugin was last touched (PDF Export, Categories +
-     BISAC, picture-book layouts, RichTextEditor, etc.)
-
-  Expected behavior:
-  - Get-Started introduces 3 book types with use-case
-    guidance ("write a novel? → Prose. Write a children's
-    book? → Picture-Book. Write a comic? → Comic-Book")
-  - Visual examples per book type (sample cover + one page
-    rendered in the style of each)
-  - Links to relevant help docs per book type
-  - Matches existing plugin-getstarted UI patterns rather
-    than introducing a new visual language
-
-  Fix scope (estimated 3-4 commits):
-  - Get-Started content rewrite (1-2 commits)
-  - i18n in EN + DE per the existing exploration-doc
-    pattern (NOT 8 catalogs — prose limited to EN + DE per
-    the lessons-learned rule for onboarding/help docs)
-  - Vitest for new screens
-  - E2E Playwright for the full onboarding flow
-
-  Scope-expansion candidates (consider one coordinated
-  session):
-  - v0.36.0 Doc-Sweep (the 4c-B-1-DOCS tentative session)
-    could include the Get-Started update if both touch
-    plugin-getstarted
-  - Picture-Book + Comic-Book help-doc parity sweep can
-    ride along if the Get-Started rewrite surfaces gaps
-
-  Recurring-Component-Unification check: a "book-type card"
-  component could be shared across Get-Started + Dashboard
-  (the future CreateBookModal flow that picks book type
-  before opening the wizard). If both surfaces converge on
-  the same card shape, extract once. Filed as scope-
-  expansion candidate, not a separate item.
-
-  Single-Source-of-Truth check: the 3 book-type definitions
-  (label, description, sample, help-doc link) should live in
-  ONE config (e.g.
-  ``backend/config/book-types.yaml`` or a Python module
-  read by both the backend and the frontend onboarding) so
-  adding a 4th book type later updates one file, not three.
-
-  Half-Wired-Prevention check: onboarding must introduce
-  ALL 3 book types when it ships — not 2 with comics "coming
-  soon". Plugin-comics Session 1 needs to be closed before
-  this work begins, OR the onboarding ships gated behind
-  ``plugin-comics`` activation status with a fallback for
-  the 2-book-type case.
-
-  Trigger: 4c-B-1-DOCS coordinated session, OR separate
-  onboarding-focused session once plugin-comics Session 1
-  ships.
 
 - **REMINDER-PANEL-GENERIC-EXTRACTION-01** (P3, filed
   2026-05-18 from v0.35.1 donation tuning): extract a
@@ -943,79 +887,6 @@ store.
   integration sibling). Approx 4-6 commits if standalone;
   bundled with TipTap-integration: 10-13 (split per stop-
   condition).
-
-- **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
-  for duplicate UI patterns (component shapes, hook
-  compositions, styling clusters) that violate the new
-  Recurring-Component Unification Rule (filed 2026-05-19 in
-  ``.claude/rules/coding-standards.md``). The rule fires at
-  2-surfaces threshold (stricter than the generic
-  3-duplicates DRY rule); the codebase has accumulated
-  multiple known candidates before the rule was formalised,
-  so a one-time sweep is warranted.
-
-  Known candidates at filing time:
-  - **AUTHOR-SELECT-INPUT-EXTRACT-01** (the rule's canonical
-    first-application; closes together with
-    ``AUTHOR-DATALIST-EXTEND-EDITORS-01``)
-  - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (ArticleRow +
-    BookListView row shape duplication)
-  - **ARTICLEFILTERBAR-EXTRACT-01** (UX-Full-Audit G2-F1;
-    Articles uses an inline 200-LOC FilterBar where Books
-    uses the shared DashboardFilterBar)
-  - **PLUGIN-SETTINGS-TESTID-COVERAGE-01** (Settings.tsx
-    2338 LOC monolith with inline PluginSettings +
-    AuthorSettings — extraction would enable per-tab E2E
-    testid coverage too)
-
-  Audit scope:
-  1. **Component-shape sweep:** grep for distinctive JSX +
-     prop combinations across ``frontend/src/components/``
-     and ``frontend/src/pages/``. Recipes in coding-
-     standards.md "Pre-Inspection for new UI components".
-     Output: candidate list with file:line citations.
-  2. **Hook-composition sweep:** identify hooks reused for
-     similar purposes across 2+ surfaces (``useSelection``
-     variants, ``useViewMode`` variants, etc.). Some
-     already extracted (e.g. ``useTrashViewMode`` after
-     Bug 3); the audit confirms no remaining duplicates.
-  3. **Styling-cluster sweep:** grep for repeated
-     className combinations across components. CSS module
-     duplication is harder to detect mechanically; manual
-     review of e.g. bulk-action-bar / filter-bar / toast-
-     variant styling.
-  4. **i18n key duplication:** secondary check — duplicate
-     UI patterns often grow duplicate i18n keys (e.g.
-     ``ui.create_book.author`` + ``ui.convert_to_book
-     .metadata_author``). Worth surfacing during the
-     extraction sessions for each candidate.
-
-  Deliverable: audit doc at
-  ``docs/audits/recurring-component-audit-YYYY-MM-DD.md``
-  with categorised candidate list (HIGH / MEDIUM / LOW
-  refactor value) + recommended ordering of extraction
-  sessions. Each HIGH-value candidate gets its own backlog
-  item (or extends an existing one) with the standard
-  extraction-plus-migration session shape from coding-
-  standards.md.
-
-  Defer reason: the audit itself is read-only and would
-  take 1-2 hours; the deliverable feeds N follow-up
-  extraction sessions that each ship as their own focused
-  work. Splitting audit-from-implementation matches the
-  established "audit-first" Bibliogon discipline.
-
-  Trigger: any time before v0.36.0 (extraction sessions
-  can run in parallel with v0.35.0 PDF Export + S6
-  closing). OR: a third recurring-component candidate
-  surfaces in everyday work, prompting "audit all of them
-  rather than chase individually".
-
-  Pairs with: every existing component-extraction backlog
-  item (``AUTHOR-SELECT-INPUT-EXTRACT-01``,
-  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``,
-  ``ARTICLEFILTERBAR-EXTRACT-01``,
-  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``).
 
 - **PICTURE-BOOK-KDP-SPECIFIC-FIELDS-01** (P3): add three KDP-
   specific metadata fields for picture-books (and likely future
@@ -1384,22 +1255,6 @@ store.
   (sibling), `PICTURE-BOOK-SPEECH-BUBBLE-EXTENDED-SHAPE-01`
   (Tier 3 for bubble; no text equivalent yet).
 
-- **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
-  hook that encapsulates the `location.key === 'default'` fallback
-  pattern, and migrate the current hardcoded `navigate(-1)` /
-  `navigate('/')` sites to use it.
-  Trigger: a fourth 'global' page (i.e. one reachable from both
-  AD and BD) appears with a back-button, OR a contributor adds a
-  new top-level page that needs origin-tracking.
-  Scope: extract the helper into `frontend/src/hooks/`; refactor
-  Settings, Help, GetStarted to call it; add Vitest for the
-  helper. Drop-in replacement; no user-visible behavior change.
-  Effort: 3-5 commits.
-  Deferred reason: the current 3-page direct-`navigate(-1)` form
-  is acceptable. Utility extraction adds value at scale (4+ sites),
-  not at 3. Filed during the v0.33.0 Bug 1 hotfix where the
-  pattern emerged across Settings + Help + GetStarted.
-
 - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (P3): extract a shared
   `<ListViewRow>` base component that `ArticleRow` and
   `BookListRow` can both consume.
@@ -1441,116 +1296,9 @@ store.
   acceptable while we have zero broken-image reports. Filed by
   Phase 1 Q9 deferral, 2026-05-15.
 
-- **COMMENTS-ADMIN-PAGINATION-01** (P3, IMPROVEMENT): filed
-  by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
-  renders all comments in a single DOM table without
-  pagination or virtualization. At current scale (49) it's
-  fine; at 500+ comments the initial render and DOM weight
-  will degrade. Add pagination OR virtualization OR a hard
-  cap with "Show all" affordance. Effort: S-M. Trigger:
-  first user >200 comments OR Settings sluggishness
-  complaint.
-
-- **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
-  three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
-  ``comments``) that ship passthru-English in es / fr / el / pt /
-  tr / ja. Each affected catalog carries a top-level ``_meta:``
-  block with ``review_status``, ``translator``,
-  ``translation_date``, ``reference_lang``, and the explicit
-  ``pending_namespaces`` list.
-  ``backend/config/i18n/REVIEW_STATUS.md`` documents the
-  per-language status and the PR-based correction submission
-  flow (parallel to the v0.30.0 launcher precedent in
-  ``launcher/bibliogon_launcher/locales/REVIEW_STATUS.md``).
-  Trigger: native-speaker contact for any of the six pending
-  languages, OR pair with LAUNCHER-I18N-NATIVE-REVIEW-01's
-  reviewer outreach.
-  Filed by D3 pre-release UX audit 2026-05-12.
-
-- **BACKUP-PROJECT-IMPORT-MUTMUT-01** (P5): add direct unit
-  tests for the per-asset / per-chapter helpers in
-  ``app/services/backup/project_import.py`` (34 no-tests
-  mutmut entries 2026-05-14). The helpers are transitively
-  covered by ``test_import_handler_wbt.py`` but mutmut's
-  per-function visibility is exact-match. Effort: S.
-  Filed by ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
-
-- **BACKUP-SERIALIZER-MUTMUT-01** (P5): tighten the existing
-  backup-roundtrip tests in ``test_backup_articles.py``,
-  ``test_backup_import_revive.py``, ``test_backup_utils.py``
-  to assert exact field presence on the serialized output
-  (~162 surviving + 10 no-tests mutmut entries on
-  ``backup.serializer`` 2026-05-14, mostly XX-wrap and
-  case-flip on output-key strings). Tightening should kill
-  the bulk in one pass. Effort: M. Filed by
-  ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
-
-- **GIT-BACKUP-MUTMUT-01** (P5): triage the
-  ``app/services/git_backup.py`` survivor pool (330
-  survived + 57 no-tests; largest single-file pool in the
-  services audit). Mix of cosmetic (git-config key
-  strings, e.g. ``"user.name"`` / ``"user.email"``) and
-  real (error-classification helpers with no direct
-  coverage). Triage in its own session like the office +
-  wbt audit. Effort: M. Filed by ``MUTMUT-EXPAND-SCOPE-01``
-  2026-05-14 audit.
-
-- **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the six
-  one-shot retro-fix scripts under `scripts/` into a generic
-  framework. Existing scripts:
-  `fix_medium_import_image_nodes.py`,
-  `fix_medium_import_featured_images.py`,
-  `fix_medium_import_truncation.py`,
-  `fix_medium_import_language.py`,
-  `fix_medium_import_seo.py`.
-  They share a common shape:
-  scope query (Article join ArticleImportSource), per-row
-  predicate, per-row mutation, dry-run vs --apply, idempotent
-  re-run reports zero changes. The same pattern is the
-  obvious target for any future Bibliogon data-fix work
-  (book imports, asset migrations, etc.). Effort: M (extract
-  base class + per-fix subclass + tests). Defer until a
-  fifth one-shot is needed; ship the four as one-shots first
-  so the abstraction is informed by real cases. Trigger: 5th
-  one-shot OR a new contributor needs to write one.
-
-- **D-06-VALIDATION-01**: fresh-machine validation of the
-  v0.28.0 cross-platform installer scripts (`install.command`,
-  `install.ps1`, `install.cmd`). The scripts shipped unsigned
-  per launch decision and were not exercised on a fresh macOS
-  user account or fresh Windows 11 install before tagging.
-  Trigger: first user report OR access to a clean test machine.
-  Effort: S (run each wrapper, capture any Gatekeeper /
-  SmartScreen / ExecutionPolicy edge cases). Folds into the
-  next point release.
-
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
-
-- **AR-BULK-SERIES-HIERARCHY-01**: parent/child series for the
-  bulk-export filter. The 2026-05-06 bulk-export ship landed
-  series as a flat free-string field on Article (mirrors
-  `Book.series`). Hierarchical series ("Cosmos > Astrophysics >
-  Stars") was deferred because no user has asked for it and a
-  Series model + M2M migration is a multi-session investment.
-  Trigger: first concrete user request for sub-series. Effort:
-  1-2 sessions for the model + migration + filter UI nesting.
-  See `docs/help/{en,de}/articles/bulk-export.md` "Series" note.
-
-- **I18N-DIACRITICS-01**: auto-translated non-DE i18n YAMLs (es,
-  pt, tr, possibly fr) ship with inconsistent diacritic coverage —
-  some entries use proper Unicode (`géneros`, `Décroissant`,
-  `gêneros`), others ASCII-substitute (`Titulo`, `Baslik`). Found
-  in Test Phase Session 3 (2026-04-28) cross-language audit while
-  fixing DE umlauts. Severity: Medium (readable but inconsistent +
-  non-native). Effort: M per language. Cause: `AUTO_TRANSLATED.md`
-  banner in `backend/config/i18n/` indicates DeepL/LMStudio passes
-  with mixed quality. Fix: re-run translation with current DE
-  source as canonical (DE was just cleaned up of all ASCII
-  substitutes), human-review each for native diacritic use. Defer
-  until DE i18n stable + a native speaker is available per
-  language for review.
 
 - **SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01** (P3, IMPROVEMENT):
   Settings → "Allgemein" tab requires scroll to reach all
@@ -1849,63 +1597,221 @@ store.
   living in ``.claude/rules/ai-workflow.md`` (proposed
   as part of this item's closure).
 
-- **PLUGIN-METADATA-I18N-PARITY-01** (P3, Plugin-
-  Infrastructure, filed 2026-05-18 from plugin metadata
-  pattern audit Sub-finding A.2): i18n coverage across
-  ``backend/config/plugins/<name>.yaml`` is wildly
-  uneven. Bringing every plugin to 8-language parity
-  (de, en, es, fr, el, pt, tr, ja) — matching the
-  comics + medium-import + git-sync precedent — closes
-  the silent-feature-invisibility for non-de/non-en
-  users.
+- **PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01** (P3, filed
+  2026-05-20 from Comics-Session-2 close). Session-3 polish work
+  on the ComicBookEditor surface. Per the original Comic-
+  Foundation exploration (``docs/explorations/comic-foundation.md``)
+  Session-3 scope:
 
-  Current state (verified 2026-05-18 against audit
-  Table A.1):
+  - **Drag-to-position** for bubbles within their panel
+    (anchor.x_pct / anchor.y_pct via pointer events)
+  - **Snap-to-grid** + **keyboard nudge** (arrow keys) for
+    fine-positioning
+  - **Per-bubble undo / redo** (separate from global undo)
+  - **Reading direction** (LTR / RTL) toggle on the comic_book
+    so right-to-left layouts (manga-style) get correct page-turn
+    + bubble-traversal order
+  - **z-order controls** (bring to front / send to back) for
+    overlapping bubbles within a panel
+  - **Panel gutter / spacing** controls in panel_config (already
+    has a stub field; UI not yet exposed)
+  - **TipTap-in-bubbles** (replacing the Q2 a plain-text default
+    with rich-text — defer to v2 of this item, no demand signal
+    yet)
+  - **Full Playwright E2E coverage matrix** (Session-2 shipped 3
+    smoke specs; Session-3 ships the long-suite full-regression)
+  - **Auto-tail-direction nearest-edge picker** (Session 2's
+    ``tail_direction="auto"`` currently gamma-shims to "S"; Session
+    3 picks the panel-edge closest to the speaker)
 
-  | Plugin | display_name langs | description langs |
-  |---|---|---|
-  | audiobook | 5 (de, en, es, fr, el) | 5 |
-  | comics | 8 ✓ | 8 ✓ |
-  | export | 4 (de, en, es, fr) | 2 (de, en) |
-  | getstarted | 2 (de, en) | 2 |
-  | git-sync | 8 ✓ (shipped today in d825bbf) | 8 ✓ |
-  | grammar | 2 (de, en) | 2 |
-  | help | 2 (de, en) | 2 |
-  | kdp | 5 (de, en, es, fr, el) | 5 |
-  | kinderbuch | 5 | 5 |
-  | medium-import | 8 ✓ (merged today in d08c1fd) | 8 ✓ |
-  | ms-tools | 2 (de, en) | 2 |
-  | translation | 2 (de, en) | 2 |
+  Effort: 8-12 commits across 1-2 sessions.
 
-  Gap = 9 plugins need extending. Scope:
-  - audiobook, kdp, kinderbuch: from 5 to 8 (+3 langs
-    each)
-  - export: from 4 to 8 for display_name, from 2 to 8
-    for description (+4/+6)
-  - getstarted, grammar, help, ms-tools, translation:
-    from 2 to 8 (+6 each)
+  Trigger: Session-2 has shipped, ``PLUGIN-COMICS-SESSION-3-
+  PAGES-CRUD-01`` has shipped (so authors can actually exercise
+  the full editor in production), and at least one user-report
+  hits one of the missing affordances.
 
-  Effort: M. The translations should match the existing
-  i18n catalog convention from the umlauts-discipline
-  lessons-learned rule — REAL diacritics (umlauts in
-  de + ES; cedillas in fr; tildes in es + pt), NOT
-  ASCII transliterations. Worth running the existing
-  ``scripts/find_umlaut_candidates.py`` against the
-  output to verify.
+- **MEDIUM-IMPORT-V2-02**: AI tag inference for imported articles.
+  Medium's HTML export strips tags. v1 imports articles with an
+  empty tag list and the user adds them manually. v2 should call
+  the existing `backend/app/ai/` core module per imported article
+  with title + first paragraph + body excerpt and propose 3-5
+  tags, surfaced for review in the dry-run table from v01. Effort:
+  S-M depending on tag-quality bar. Trigger: first user report
+  asking for it OR v01 ships and the manual-tagging step is a
+  visible bottleneck in feedback.
 
-  Trigger: next plugin-metadata sweep, OR a non-de/
-  non-en user reports raw-slug display in Settings UI,
-  OR opportunistic as part of plugin-specific work
-  (e.g. while editing export plugin's settings yaml,
-  also extend its i18n coverage).
+- **STORY-BIBLE-PLUGIN-01** (P3, STRATEGIC, filed 2026-05-19
+  from the
+  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
+  triage of exploration feature #4): plugin-based database for
+  fiction-writing entities (Characters, Settings, Plot-Points,
+  Items, Lore) with @-mention syntax in the editor for
+  cross-references.
 
-  Pairs with: today's i18n drift catches via the
-  deduplication commit d08c1fd (which surfaced + kept
-  the umlaut-correct strings while discarding ASCII
-  transliterations in 3 plugin yamls). The umlauts-
-  discipline rule fires during translation authoring.
+  Scope:
+  - New plugin: ``bibliogon-plugin-story-bible``
+  - DB: 5 entity types per-book-scoped (Character, Setting,
+    PlotPoint, Item, Lore) with rich-text descriptions +
+    optional photos
+  - TipTap extension: ``@-mention`` syntax with autocomplete
+    against existing entities
+  - Click-on-mention navigates to entity page
+  - AI-Template integration: per-entity-type prompts
+    (Character Profile, Setting Description, Plot-Point
+    structure)
+  - StoryBibleSidebar component in BookEditor (gated on
+    plugin activation)
 
-  Filed by plugin metadata pattern audit 2026-05-18.
+  Architecture-discipline notes (per audit
+  Track C):
+  - **3-Source-Plugin-Metadata-Pattern**: full pattern applies.
+    Canonical ``backend/config/plugins/story-bible.yaml`` (UI
+    metadata + settings defaults) + ``plugin.py`` class attrs
+    (identity + contract) + generated bundled YAML via
+    ``make build-zip``.
+  - **Recurring-Component-Unification**: 5 entity types x same
+    CRUD pattern -> extract ``EntityCRUDView`` in the SAME
+    session as the second entity type, NOT deferred. Per the
+    2-surfaces rule.
+  - **Single-Source-of-Truth**: cross-references between
+    entities + chapters must derive from the entity's
+    canonical record (DB row), not duplicate text into chapter
+    content. The TipTap extension stores the entity ID; the
+    editor renders the entity's current display-name on the
+    fly.
+  - **Half-Wired-Lifecycle Prevention**: the @-mention
+    autocomplete (write surface) and the click-to-navigate
+    affordance (read surface) MUST ship together. Half-wired
+    risk: shipping autocomplete without click-navigate creates
+    "I mentioned a character but can't get back to them"
+    purgatory.
+
+  Effort: XL (16+ commits, multi-session). Trigger: dedicated
+  Story-Bible session when Aster's next fiction-project
+  (SciFi continuation, new Kinderbuch series, comic) reaches
+  the point where character/setting tracking becomes a real
+  cognitive cost. Plugin model means non-fiction authors
+  never see it.
+
+- **PLUGIN-COMICS-E2E-SMOKE-01**: live-dev-server E2E
+  Playwright spec for plugin-comics. Would have caught
+  today's 404 BEFORE the user's manual smoke. Concrete
+  scope: a spec under ``e2e/smoke/`` that creates a
+  ``book_type = "comic_book"`` book, opens the editor,
+  asserts the green plugin-info panel renders with
+  ``name = "comics"`` + ``session = 1``, and asserts NO
+  ``role="alert"`` plugin-unreachable error element
+  appears. Effort: S (~30-60 min in advance, or natural
+  fit at Session-2 landing). Strategic note: this is a
+  broader pattern. Backend pytest with TestClient
+  triggers a fresh FastAPI lifespan per session, so it
+  masks an entire class of operational issues that
+  long-running uvicorn surfaces — stale plugin
+  discovery, env-var absence, filesystem state drift,
+  cross-process cache poisoning. Filing under plugin-
+  comics scope per the "single instance is incident,
+  not pattern" discipline. If a SECOND plugin needs the
+  same pattern, extract a shared
+  ``LIVE-DEV-SMOKE-INFRASTRUCTURE-01`` (P4) per the
+  Recurring-Component-Unification rule's 2-surfaces
+  threshold — do NOT pre-emptively file the
+  infrastructure item now. Trigger: plugin-comics
+  Session 2 starts, OR another plugin needs live-dev
+  E2E smoke (which would also trigger the
+  infrastructure extraction). Filed by plugin-comics
+  Session 1 smoke 2026-05-18.
+
+(D-05 closed as won't-fix 2026-05-05; archived in
+[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
+
+- **KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01** (P3, FEATURE):
+  wire the ``CategoryInput`` component (Bug 9, free-text chips
+  for ``Book.categories``) to the existing
+  ``GET /api/kdp/categories`` endpoint so the 26-entry KDP
+  catalog surfaces as a ``<datalist>`` autocomplete pool. The
+  backend endpoint is already live and pinned by
+  ``test_kdp_categories_returns_full_26_catalog``; the frontend
+  ``CategoryInput`` accepts a ``suggestions`` prop that is
+  currently passed as ``[]`` from
+  ``BookMetadataEditor``. Wiring adds (a) an
+  ``api.kdp.listCategories()`` method in
+  ``frontend/src/api/client.ts``, (b) a one-shot fetch in
+  ``BookMetadataEditor`` (cached for the editor lifetime —
+  catalog is dictated by Amazon and won't change between mounts),
+  (c) passing the result into the existing ``suggestions`` prop.
+  Trigger: user requests autocomplete in the Categories field,
+  OR Picture-Book authoring feedback that authors don't know
+  KDP's canonical category names, OR
+  ``RECURRING-COMPONENT-AUDIT-01`` flags this as a Pre-Inspection
+  target.
+  Effort: S (1 commit). Filed by KDP-CATEGORIES-CATALOG-SYNC-01
+  (2026-05-18) — the JSDoc on ``CategoryInput.tsx`` previously
+  referenced an ``api.kdp.listCategories()`` method that did not
+  exist; the dead reference was removed in the same commit and
+  this item tracks the legitimate wire-up that was implied.
+
+- **GH-ACTIONS-PERIODIC-AUDIT-01**: recurring CI-hygiene audit
+  for GitHub Actions version drift. The 2026-05-14 sweep
+  found that within 6 months of GitHub's 2025-09-19 Node 20
+  deprecation, EVERY standard action we use released a new
+  major. The pattern (deprecation announcement → cascade of
+  major bumps across actions/* + common third-parties) is
+  predictable, not exceptional. Filing it explicitly prevents
+  the "we should have checked sooner" surprise on the next
+  cycle.
+  Trigger: 3 months since the last full CI-hygiene audit
+  (last: 2026-05-14 → next due 2026-08-14), OR any Node
+  runtime / platform deprecation announcement from GitHub
+  before then (subscribe-able via
+  https://github.blog/changelog/?tag=actions).
+  Scope: re-run the full audit per the methodology in
+  `.claude/rules/lessons-learned.md` "External GitHub Action
+  major-version drift" — specifically the **action.yml
+  `runs.using:` read**, not release-note prose (per the trap
+  documented in the same lesson). Includes the deferred
+  `GH-ACTIONS-OPTIONAL-BUMPS-01` items if their triggers have
+  fired by then.
+  Effort: S-M depending on what's drifted. Filed by the
+  2026-05-14 CI-hygiene session as the explicit
+  next-touchpoint.
+
+- **MEDIUM-COMMENT-MANUAL-ENTRY-01**: manual "Add
+  comment" UI in the article editor that creates an
+  ``ArticleComment`` with ``imported_from = "manual"``
+  rather than ``"medium"``. The schema already supports
+  this via the ``imported_from String(50)`` column; no
+  migration needed. Trigger: user demand for capturing
+  comments-on-my-articles in Bibliogon for archival.
+  Surfaced 2026-05-12 after the user verified Medium's
+  HTML export is "your data only" by design — replies
+  others left on the user's articles are not included
+  in the export, and Bibliogon cannot import what
+  Medium doesn't expose. The manual-entry workflow is
+  the only forward-compatible path to archive incoming
+  comments. Scope hint: editor sidebar gains an "Add
+  comment" button next to the existing
+  ``ArticleCommentsPanel`` heading; on click opens a
+  small modal collecting author + body_text +
+  optional published_at + optional responds_to_url
+  (the URL of the source thread the user is
+  transcribing from). The ``responds_to_article_id``
+  is pre-filled with the open article's id. Effort: S
+  (one new component + one POST endpoint that the
+  comments router currently lacks; the GET / DELETE
+  paths exist already).
+
+- **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
+  ``Article.excerpt`` on Medium import, mirroring the existing
+  seo_title / seo_description defaults shipped in commit
+  ``2062393``. Trade-off: excerpt is conceptually similar to
+  seo_description (both summarize the article), so duplicating
+  the subtitle into both might feel redundant; alternatively,
+  excerpt could derive from the first paragraph of body text
+  with the existing heuristic-fallback rejection we applied to
+  seo_description. No user complaint yet — the seo_description
+  default covers the dashboard-tile use case. Promote to P2 if
+  a user reports an empty-excerpt issue on imported articles.
 
 ---
 
@@ -2139,90 +2045,218 @@ store.
   smoke against ``:7880`` reproduced the 404 in the
   Docker-prod surface.
 
-- **PLUGIN-COMICS-E2E-SMOKE-01**: live-dev-server E2E
-  Playwright spec for plugin-comics. Would have caught
-  today's 404 BEFORE the user's manual smoke. Concrete
-  scope: a spec under ``e2e/smoke/`` that creates a
-  ``book_type = "comic_book"`` book, opens the editor,
-  asserts the green plugin-info panel renders with
-  ``name = "comics"`` + ``session = 1``, and asserts NO
-  ``role="alert"`` plugin-unreachable error element
-  appears. Effort: S (~30-60 min in advance, or natural
-  fit at Session-2 landing). Strategic note: this is a
-  broader pattern. Backend pytest with TestClient
-  triggers a fresh FastAPI lifespan per session, so it
-  masks an entire class of operational issues that
-  long-running uvicorn surfaces — stale plugin
-  discovery, env-var absence, filesystem state drift,
-  cross-process cache poisoning. Filing under plugin-
-  comics scope per the "single instance is incident,
-  not pattern" discipline. If a SECOND plugin needs the
-  same pattern, extract a shared
-  ``LIVE-DEV-SMOKE-INFRASTRUCTURE-01`` (P4) per the
-  Recurring-Component-Unification rule's 2-surfaces
-  threshold — do NOT pre-emptively file the
-  infrastructure item now. Trigger: plugin-comics
-  Session 2 starts, OR another plugin needs live-dev
-  E2E smoke (which would also trigger the
-  infrastructure extraction). Filed by plugin-comics
-  Session 1 smoke 2026-05-18.
+- **MAKEFILE-VERIFY-PLUGIN-LOCKS-PARSE-01** (P4,
+  TOOLING-INVESTIGATION, filed 2026-05-20 during V060
+  PLUGINFORGE-V060-ADOPTION-01 step 1 lockfile sweep): GNU Make
+  4.3 (German locale) fails to recognize ``verify-plugin-locks``
+  as a target rule despite a syntactically clean declaration at
+  Makefile line 462 + presence in the ``.PHONY`` list at line 14.
+  ``awk`` reads the target header cleanly; ``make --debug=b
+  verify-plugin-locks`` reports "Das Ziel ... existiert nicht.
+  Das Ziel ... muss neu erzeugt werden" then "Keine Regel".
 
-(D-05 closed as won't-fix 2026-05-05; archived in
-[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
+  Workaround during V060 was inlining the verify-plugin-locks
+  recipe directly in bash (a 3-line for-loop over the 12
+  plugins). Recipe at backlog-archive note for v0.7.0 adoption
+  step 1; works fine — make-target parse is the only thing
+  broken.
 
----
+  Investigation steps for future fix:
+  1. ``cat -A Makefile | sed -n '454,464p'`` — look for hidden
+     characters or trailing-backslash continuations on line 460
+     (``@echo "Re-locked $$(ls -d plugins/bibliogon-plugin-*/
+     | wc -l) plugin(s)."``).
+  2. ``make -p 2>&1 | grep -B 2 -A 2 "verify-plugin-locks"`` —
+     see whether make recorded the rule at all.
+  3. Move ``verify-plugin-locks`` higher in the file (above
+     ``lock-all-plugins``) to test ordering hypothesis.
+  4. Check whether the German locale ``LANG`` setting affects
+     make's parser (unlikely but worth ruling out).
 
-## P5 - Speculative / Nice-to-have
+  Effort: S (~30 min once cause is identified). Trigger:
+  next time a developer needs to run ``make verify-plugin-locks``
+  AND has time to dig. Workaround works; no urgency.
 
-- **KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01** (P5, FEATURE):
-  wire the ``CategoryInput`` component (Bug 9, free-text chips
-  for ``Book.categories``) to the existing
-  ``GET /api/kdp/categories`` endpoint so the 26-entry KDP
-  catalog surfaces as a ``<datalist>`` autocomplete pool. The
-  backend endpoint is already live and pinned by
-  ``test_kdp_categories_returns_full_26_catalog``; the frontend
-  ``CategoryInput`` accepts a ``suggestions`` prop that is
-  currently passed as ``[]`` from
-  ``BookMetadataEditor``. Wiring adds (a) an
-  ``api.kdp.listCategories()`` method in
-  ``frontend/src/api/client.ts``, (b) a one-shot fetch in
-  ``BookMetadataEditor`` (cached for the editor lifetime —
-  catalog is dictated by Amazon and won't change between mounts),
-  (c) passing the result into the existing ``suggestions`` prop.
-  Trigger: user requests autocomplete in the Categories field,
-  OR Picture-Book authoring feedback that authors don't know
-  KDP's canonical category names, OR
-  ``RECURRING-COMPONENT-AUDIT-01`` flags this as a Pre-Inspection
-  target.
-  Effort: S (1 commit). Filed by KDP-CATEGORIES-CATALOG-SYNC-01
-  (2026-05-18) — the JSDoc on ``CategoryInput.tsx`` previously
-  referenced an ``api.kdp.listCategories()`` method that did not
-  exist; the dead reference was removed in the same commit and
-  this item tracks the legitimate wire-up that was implied.
+- **NAVIGATION-ORIGIN-TRACKING-01** (P3): extract a `useBackNavigate`
+  hook that encapsulates the `location.key === 'default'` fallback
+  pattern, and migrate the current hardcoded `navigate(-1)` /
+  `navigate('/')` sites to use it.
+  Trigger: a fourth 'global' page (i.e. one reachable from both
+  AD and BD) appears with a back-button, OR a contributor adds a
+  new top-level page that needs origin-tracking.
+  Scope: extract the helper into `frontend/src/hooks/`; refactor
+  Settings, Help, GetStarted to call it; add Vitest for the
+  helper. Drop-in replacement; no user-visible behavior change.
+  Effort: 3-5 commits.
+  Deferred reason: the current 3-page direct-`navigate(-1)` form
+  is acceptable. Utility extraction adds value at scale (4+ sites),
+  not at 3. Filed during the v0.33.0 Bug 1 hotfix where the
+  pattern emerged across Settings + Help + GetStarted.
 
-- **COMIC-BOOK-PLUGIN-01** (P5): build a separate
-  `bibliogon-plugin-comics` to own `book_type == "comic_book"`.
-  The value is already reserved at the Pydantic schema layer
-  (PB-PHASE4 Session 2) so the comics plugin can ship its own
-  migration adding `panels` and `speech_bubbles` tables WITHOUT
-  re-migrating the `book_type` column.
-  Trigger: 3+ Comic-book authoring sessions reported, OR user
-  pre-commits to a comics project, OR a contributor steps up
-  with intent to build the plugin.
-  Scope: new `plugin-comics` package + Panel entity migration
-  (per-page panel rows, panel_grid_4 / panel_grid_6 / panel_grid_9
-  layouts) + SpeechBubble entity migration (with page-OR-panel
-  XOR CHECK constraint) + CRUD routes under
-  `/api/books/{id}/{panels,speech_bubbles}` + comic-specific
-  Playwright renderer for KDP / Comic-archive (CBZ) export.
-  Frontend variant follows after the Picture-Book PageEditor lands
-  in PB-PHASE4 Session 3. Plugin-discriminator is `book_type ==
-  "comic_book"` (no umbrella required).
-  Deferred reason: no current Comic-book authoring demand.
-  PB-PHASE4 (Picture-Book) is the active user need; building two
-  plugins in parallel splits attention and risks shipping neither
-  well. Reserve the schema value, ship the picture-book MVP,
-  validate it end-to-end with Aster, then revisit.
+- **COMMENTS-ADMIN-PAGINATION-01** (P4, IMPROVEMENT): filed
+  by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
+  renders all comments in a single DOM table without
+  pagination or virtualization. At current scale (49) it's
+  fine; at 500+ comments the initial render and DOM weight
+  will degrade. Add pagination OR virtualization OR a hard
+  cap with "Show all" affordance. Effort: S-M. Trigger:
+  first user >200 comments OR Settings sluggishness
+  complaint.
+
+- **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
+  three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
+  ``comments``) that ship passthru-English in es / fr / el / pt /
+  tr / ja. Each affected catalog carries a top-level ``_meta:``
+  block with ``review_status``, ``translator``,
+  ``translation_date``, ``reference_lang``, and the explicit
+  ``pending_namespaces`` list.
+  ``backend/config/i18n/REVIEW_STATUS.md`` documents the
+  per-language status and the PR-based correction submission
+  flow (parallel to the v0.30.0 launcher precedent in
+  ``launcher/bibliogon_launcher/locales/REVIEW_STATUS.md``).
+  Trigger: native-speaker contact for any of the six pending
+  languages, OR pair with LAUNCHER-I18N-NATIVE-REVIEW-01's
+  reviewer outreach.
+  Filed by D3 pre-release UX audit 2026-05-12.
+
+- **BACKUP-PROJECT-IMPORT-MUTMUT-01** (P5): add direct unit
+  tests for the per-asset / per-chapter helpers in
+  ``app/services/backup/project_import.py`` (34 no-tests
+  mutmut entries 2026-05-14). The helpers are transitively
+  covered by ``test_import_handler_wbt.py`` but mutmut's
+  per-function visibility is exact-match. Effort: S.
+  Filed by ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
+
+- **BACKUP-SERIALIZER-MUTMUT-01** (P5): tighten the existing
+  backup-roundtrip tests in ``test_backup_articles.py``,
+  ``test_backup_import_revive.py``, ``test_backup_utils.py``
+  to assert exact field presence on the serialized output
+  (~162 surviving + 10 no-tests mutmut entries on
+  ``backup.serializer`` 2026-05-14, mostly XX-wrap and
+  case-flip on output-key strings). Tightening should kill
+  the bulk in one pass. Effort: M. Filed by
+  ``MUTMUT-EXPAND-SCOPE-01`` 2026-05-14 audit.
+
+- **GIT-BACKUP-MUTMUT-01** (P5): triage the
+  ``app/services/git_backup.py`` survivor pool (330
+  survived + 57 no-tests; largest single-file pool in the
+  services audit). Mix of cosmetic (git-config key
+  strings, e.g. ``"user.name"`` / ``"user.email"``) and
+  real (error-classification helpers with no direct
+  coverage). Triage in its own session like the office +
+  wbt audit. Effort: M. Filed by ``MUTMUT-EXPAND-SCOPE-01``
+  2026-05-14 audit.
+
+- **BIBLIOGON-DATA-FIX-FRAMEWORK-01**: refactor the six
+  one-shot retro-fix scripts under `scripts/` into a generic
+  framework. Existing scripts:
+  `fix_medium_import_image_nodes.py`,
+  `fix_medium_import_featured_images.py`,
+  `fix_medium_import_truncation.py`,
+  `fix_medium_import_language.py`,
+  `fix_medium_import_seo.py`.
+  They share a common shape:
+  scope query (Article join ArticleImportSource), per-row
+  predicate, per-row mutation, dry-run vs --apply, idempotent
+  re-run reports zero changes. The same pattern is the
+  obvious target for any future Bibliogon data-fix work
+  (book imports, asset migrations, etc.). Effort: M (extract
+  base class + per-fix subclass + tests). Defer until a
+  fifth one-shot is needed; ship the four as one-shots first
+  so the abstraction is informed by real cases. Trigger: 5th
+  one-shot OR a new contributor needs to write one.
+
+- **D-06-VALIDATION-01**: fresh-machine validation of the
+  v0.28.0 cross-platform installer scripts (`install.command`,
+  `install.ps1`, `install.cmd`). The scripts shipped unsigned
+  per launch decision and were not exercised on a fresh macOS
+  user account or fresh Windows 11 install before tagging.
+  Trigger: first user report OR access to a clean test machine.
+  Effort: S (run each wrapper, capture any Gatekeeper /
+  SmartScreen / ExecutionPolicy edge cases). Folds into the
+  next point release.
+
+- **AR-BULK-SERIES-HIERARCHY-01**: parent/child series for the
+  bulk-export filter. The 2026-05-06 bulk-export ship landed
+  series as a flat free-string field on Article (mirrors
+  `Book.series`). Hierarchical series ("Cosmos > Astrophysics >
+  Stars") was deferred because no user has asked for it and a
+  Series model + M2M migration is a multi-session investment.
+  Trigger: first concrete user request for sub-series. Effort:
+  1-2 sessions for the model + migration + filter UI nesting.
+  See `docs/help/{en,de}/articles/bulk-export.md` "Series" note.
+
+- **I18N-DIACRITICS-01**: auto-translated non-DE i18n YAMLs (es,
+  pt, tr, possibly fr) ship with inconsistent diacritic coverage —
+  some entries use proper Unicode (`géneros`, `Décroissant`,
+  `gêneros`), others ASCII-substitute (`Titulo`, `Baslik`). Found
+  in Test Phase Session 3 (2026-04-28) cross-language audit while
+  fixing DE umlauts. Severity: Medium (readable but inconsistent +
+  non-native). Effort: M per language. Cause: `AUTO_TRANSLATED.md`
+  banner in `backend/config/i18n/` indicates DeepL/LMStudio passes
+  with mixed quality. Fix: re-run translation with current DE
+  source as canonical (DE was just cleaned up of all ASCII
+  substitutes), human-review each for native diacritic use. Defer
+  until DE i18n stable + a native speaker is available per
+  language for review.
+
+- **PLUGIN-METADATA-I18N-PARITY-01** (P4, Plugin-
+  Infrastructure, filed 2026-05-18 from plugin metadata
+  pattern audit Sub-finding A.2): i18n coverage across
+  ``backend/config/plugins/<name>.yaml`` is wildly
+  uneven. Bringing every plugin to 8-language parity
+  (de, en, es, fr, el, pt, tr, ja) — matching the
+  comics + medium-import + git-sync precedent — closes
+  the silent-feature-invisibility for non-de/non-en
+  users.
+
+  Current state (verified 2026-05-18 against audit
+  Table A.1):
+
+  | Plugin | display_name langs | description langs |
+  |---|---|---|
+  | audiobook | 5 (de, en, es, fr, el) | 5 |
+  | comics | 8 ✓ | 8 ✓ |
+  | export | 4 (de, en, es, fr) | 2 (de, en) |
+  | getstarted | 2 (de, en) | 2 |
+  | git-sync | 8 ✓ (shipped today in d825bbf) | 8 ✓ |
+  | grammar | 2 (de, en) | 2 |
+  | help | 2 (de, en) | 2 |
+  | kdp | 5 (de, en, es, fr, el) | 5 |
+  | kinderbuch | 5 | 5 |
+  | medium-import | 8 ✓ (merged today in d08c1fd) | 8 ✓ |
+  | ms-tools | 2 (de, en) | 2 |
+  | translation | 2 (de, en) | 2 |
+
+  Gap = 9 plugins need extending. Scope:
+  - audiobook, kdp, kinderbuch: from 5 to 8 (+3 langs
+    each)
+  - export: from 4 to 8 for display_name, from 2 to 8
+    for description (+4/+6)
+  - getstarted, grammar, help, ms-tools, translation:
+    from 2 to 8 (+6 each)
+
+  Effort: M. The translations should match the existing
+  i18n catalog convention from the umlauts-discipline
+  lessons-learned rule — REAL diacritics (umlauts in
+  de + ES; cedillas in fr; tildes in es + pt), NOT
+  ASCII transliterations. Worth running the existing
+  ``scripts/find_umlaut_candidates.py`` against the
+  output to verify.
+
+  Trigger: next plugin-metadata sweep, OR a non-de/
+  non-en user reports raw-slug display in Settings UI,
+  OR opportunistic as part of plugin-specific work
+  (e.g. while editing export plugin's settings yaml,
+  also extend its i18n coverage).
+
+  Pairs with: today's i18n drift catches via the
+  deduplication commit d08c1fd (which surfaced + kept
+  the umlaut-correct strings while discarding ASCII
+  transliterations in 3 plugin yamls). The umlauts-
+  discipline rule fires during translation authoring.
+
+  Filed by plugin metadata pattern audit 2026-05-18.
 
 - **CONVERT-TO-BOOK-REVERSE-LINK-01** (P5): restore the
   `preserve_article_id_metadata` setting that Phase 1 dropped
@@ -2281,31 +2315,6 @@ store.
   manuscripta export). Filed by Phase 1 Q17 deferral,
   2026-05-15.
 
-- **GH-ACTIONS-PERIODIC-AUDIT-01**: recurring CI-hygiene audit
-  for GitHub Actions version drift. The 2026-05-14 sweep
-  found that within 6 months of GitHub's 2025-09-19 Node 20
-  deprecation, EVERY standard action we use released a new
-  major. The pattern (deprecation announcement → cascade of
-  major bumps across actions/* + common third-parties) is
-  predictable, not exceptional. Filing it explicitly prevents
-  the "we should have checked sooner" surprise on the next
-  cycle.
-  Trigger: 3 months since the last full CI-hygiene audit
-  (last: 2026-05-14 → next due 2026-08-14), OR any Node
-  runtime / platform deprecation announcement from GitHub
-  before then (subscribe-able via
-  https://github.blog/changelog/?tag=actions).
-  Scope: re-run the full audit per the methodology in
-  `.claude/rules/lessons-learned.md` "External GitHub Action
-  major-version drift" — specifically the **action.yml
-  `runs.using:` read**, not release-note prose (per the trap
-  documented in the same lesson). Includes the deferred
-  `GH-ACTIONS-OPTIONAL-BUMPS-01` items if their triggers have
-  fired by then.
-  Effort: S-M depending on what's drifted. Filed by the
-  2026-05-14 CI-hygiene session as the explicit
-  next-touchpoint.
-
 - **GH-ACTIONS-OPTIONAL-BUMPS-01**: two optional standard-action
   bumps deferred from the 2026-05-14 CI-hygiene full audit
   (neither blocks Node-24 coverage; both are already on Node 24
@@ -2324,53 +2333,6 @@ store.
   frontend starts using npm via the auto-cache path). Effort:
   S per bump (single sed + commit each). Filed by the 2026-05-14
   full-audit session.
-
-- **PLUGIN-PYDANTIC-COORDINATED-BUMP-01**: realign
-  plugin Pydantic versions with the backend. Audit
-  2026-05-12 found 9 of 11 plugins still at pydantic
-  2.12.5 while backend is at 2.13.3 (now 2.13.4 after
-  the medium-import plugin's lock got re-resolved
-  during the audit). Not a runtime conflict (both 2.x
-  compatible), just a "plugins lag backend" doc
-  finding. The naive fix (``make lock-all-plugins``)
-  is a no-op when nothing in plugin pyprojects
-  changed; ``poetry update`` (bare) per plugin pulls
-  the latest pydantic BUT also surfaces high-risk
-  transitives like starlette 1.0 via fastapi 0.136.1.
-  Mandatory: per-plugin ``poetry update pydantic
-  pydantic-core`` (allowlist subset, NOT bare). 11
-  plugins × 2 packages = 11 commits or one bundled
-  commit. Trigger: ANY of (a) plugin CI fails due to
-  pydantic version drift, (b) a backend feature needs
-  a pydantic 2.13+ API that plugins also need, (c) a
-  coordinated dep-update session is planned (where
-  starlette + FastAPI + Pydantic bump together as a
-  unit). Filed by dep-update audit 2026-05-12 Phase 3.
-
-- **MEDIUM-COMMENT-MANUAL-ENTRY-01**: manual "Add
-  comment" UI in the article editor that creates an
-  ``ArticleComment`` with ``imported_from = "manual"``
-  rather than ``"medium"``. The schema already supports
-  this via the ``imported_from String(50)`` column; no
-  migration needed. Trigger: user demand for capturing
-  comments-on-my-articles in Bibliogon for archival.
-  Surfaced 2026-05-12 after the user verified Medium's
-  HTML export is "your data only" by design — replies
-  others left on the user's articles are not included
-  in the export, and Bibliogon cannot import what
-  Medium doesn't expose. The manual-entry workflow is
-  the only forward-compatible path to archive incoming
-  comments. Scope hint: editor sidebar gains an "Add
-  comment" button next to the existing
-  ``ArticleCommentsPanel`` heading; on click opens a
-  small modal collecting author + body_text +
-  optional published_at + optional responds_to_url
-  (the URL of the source thread the user is
-  transcribing from). The ``responds_to_article_id``
-  is pre-filled with the open article's id. Effort: S
-  (one new component + one POST endpoint that the
-  comments router currently lacks; the GET / DELETE
-  paths exist already).
 
 - **COMMENTS-COUNT-PERF-01**: switch
   ``Article.comments_count`` from a ``len()``-on-relationship
@@ -2401,47 +2363,6 @@ store.
   session-scope clients). Filed by test-infrastructure
   audit 2026-05-12.
 
-- **WALKER-HYPOTHESIS-01**: introduce Hypothesis
-  property-based tests for the Medium-import walker
-  (``plugins/bibliogon-plugin-medium-import/bibliogon_medium_import/walker.py``).
-  Test-infrastructure audit 2026-05-12 finding 0.7
-  (Hypothesis option): zero ``@given`` usages today; the
-  walker's example-based + regression-pin coverage is
-  adequate. Candidate invariants if promoted:
-  ``imageFigure`` count equals source ``<img>`` count;
-  body-text length never changes more than 1% across
-  re-parses; ``ParsedPost.is_comment`` is stable across
-  whitespace-only HTML variations. Trigger: a third
-  walker bug class slips through example-based tests
-  (already had two: ``find`` vs ``find_all``,
-  ``imageFigure`` vs ``image``). Effort: M, payoff
-  dependent on bug rate. Filed by test-infrastructure
-  audit 2026-05-12.
-
-- **TESTCONTAINERS-EVAL-01**: evaluate Postgres-via-
-  Testcontainers for backend integration tests.
-  Test-infrastructure audit 2026-05-12 finding 0.7
-  (Testcontainers option): Bibliogon ships SQLite as
-  default and intended production DB (CLAUDE.md); no bug
-  history of SQLite-vs-Postgres divergence; adopting
-  Testcontainers would add 5-30s startup per CI run for
-  zero documented payoff. Trigger: production-DB
-  migration to Postgres, OR a documented SQLite-vs-Postgres
-  divergence bug surfaces in production. Filed by
-  test-infrastructure audit 2026-05-12.
-
-- **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
-  ``Article.excerpt`` on Medium import, mirroring the existing
-  seo_title / seo_description defaults shipped in commit
-  ``2062393``. Trade-off: excerpt is conceptually similar to
-  seo_description (both summarize the article), so duplicating
-  the subtitle into both might feel redundant; alternatively,
-  excerpt could derive from the first paragraph of body text
-  with the existing heuristic-fallback rejection we applied to
-  seo_description. No user complaint yet — the seo_description
-  default covers the dashboard-tile use case. Promote to P2 if
-  a user reports an empty-excerpt issue on imported articles.
-
 - **AR-BULK-ASYNC-PROGRESS-01**: async bulk export with progress
   UI for selections >50 articles. The 2026-05-06 ship runs the
   request synchronously with a 180s server-side Pandoc timeout,
@@ -2452,9 +2373,6 @@ store.
   stream + persisted artifact). Effort: 1-2 sessions. Trigger:
   first user report of perceived hang, OR a real-world selection
   that exceeds 180s.
-
-- **D-02 follow-ups**: macOS Intel universal2 build + code signing.
-  Effort: M each. Deferred until user demand.
 
 - **LAUNCHER-I18N-NATIVE-REVIEW-01**: native-speaker review for
   the three pending-review launcher i18n catalogs (pt, tr, ja)
@@ -2507,6 +2425,88 @@ store.
   the Bug 8 + Bug 9 Pre-Inspection so the deferred
   enhancement-path is visible if the licensing landscape
   shifts.
+
+---
+
+## P5 - Speculative / Nice-to-have
+
+- **COMIC-BOOK-PLUGIN-01** (P5): build a separate
+  `bibliogon-plugin-comics` to own `book_type == "comic_book"`.
+  The value is already reserved at the Pydantic schema layer
+  (PB-PHASE4 Session 2) so the comics plugin can ship its own
+  migration adding `panels` and `speech_bubbles` tables WITHOUT
+  re-migrating the `book_type` column.
+  Trigger: 3+ Comic-book authoring sessions reported, OR user
+  pre-commits to a comics project, OR a contributor steps up
+  with intent to build the plugin.
+  Scope: new `plugin-comics` package + Panel entity migration
+  (per-page panel rows, panel_grid_4 / panel_grid_6 / panel_grid_9
+  layouts) + SpeechBubble entity migration (with page-OR-panel
+  XOR CHECK constraint) + CRUD routes under
+  `/api/books/{id}/{panels,speech_bubbles}` + comic-specific
+  Playwright renderer for KDP / Comic-archive (CBZ) export.
+  Frontend variant follows after the Picture-Book PageEditor lands
+  in PB-PHASE4 Session 3. Plugin-discriminator is `book_type ==
+  "comic_book"` (no umbrella required).
+  Deferred reason: no current Comic-book authoring demand.
+  PB-PHASE4 (Picture-Book) is the active user need; building two
+  plugins in parallel splits attention and risks shipping neither
+  well. Reserve the schema value, ship the picture-book MVP,
+  validate it end-to-end with Aster, then revisit.
+
+- **PLUGIN-PYDANTIC-COORDINATED-BUMP-01**: realign
+  plugin Pydantic versions with the backend. Audit
+  2026-05-12 found 9 of 11 plugins still at pydantic
+  2.12.5 while backend is at 2.13.3 (now 2.13.4 after
+  the medium-import plugin's lock got re-resolved
+  during the audit). Not a runtime conflict (both 2.x
+  compatible), just a "plugins lag backend" doc
+  finding. The naive fix (``make lock-all-plugins``)
+  is a no-op when nothing in plugin pyprojects
+  changed; ``poetry update`` (bare) per plugin pulls
+  the latest pydantic BUT also surfaces high-risk
+  transitives like starlette 1.0 via fastapi 0.136.1.
+  Mandatory: per-plugin ``poetry update pydantic
+  pydantic-core`` (allowlist subset, NOT bare). 11
+  plugins × 2 packages = 11 commits or one bundled
+  commit. Trigger: ANY of (a) plugin CI fails due to
+  pydantic version drift, (b) a backend feature needs
+  a pydantic 2.13+ API that plugins also need, (c) a
+  coordinated dep-update session is planned (where
+  starlette + FastAPI + Pydantic bump together as a
+  unit). Filed by dep-update audit 2026-05-12 Phase 3.
+
+- **WALKER-HYPOTHESIS-01**: introduce Hypothesis
+  property-based tests for the Medium-import walker
+  (``plugins/bibliogon-plugin-medium-import/bibliogon_medium_import/walker.py``).
+  Test-infrastructure audit 2026-05-12 finding 0.7
+  (Hypothesis option): zero ``@given`` usages today; the
+  walker's example-based + regression-pin coverage is
+  adequate. Candidate invariants if promoted:
+  ``imageFigure`` count equals source ``<img>`` count;
+  body-text length never changes more than 1% across
+  re-parses; ``ParsedPost.is_comment`` is stable across
+  whitespace-only HTML variations. Trigger: a third
+  walker bug class slips through example-based tests
+  (already had two: ``find`` vs ``find_all``,
+  ``imageFigure`` vs ``image``). Effort: M, payoff
+  dependent on bug rate. Filed by test-infrastructure
+  audit 2026-05-12.
+
+- **TESTCONTAINERS-EVAL-01**: evaluate Postgres-via-
+  Testcontainers for backend integration tests.
+  Test-infrastructure audit 2026-05-12 finding 0.7
+  (Testcontainers option): Bibliogon ships SQLite as
+  default and intended production DB (CLAUDE.md); no bug
+  history of SQLite-vs-Postgres divergence; adopting
+  Testcontainers would add 5-30s startup per CI run for
+  zero documented payoff. Trigger: production-DB
+  migration to Postgres, OR a documented SQLite-vs-Postgres
+  divergence bug surfaces in production. Filed by
+  test-infrastructure audit 2026-05-12.
+
+- **D-02 follow-ups**: macOS Intel universal2 build + code signing.
+  Effort: M each. Deferred until user demand.
 
 ---
 
