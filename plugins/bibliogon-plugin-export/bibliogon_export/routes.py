@@ -147,6 +147,162 @@ def _load_picture_book_pages(book_id: str) -> tuple[dict[str, Any], list[dict[st
         _close_db(db_gen)
 
 
+def _load_comic_book_data(
+    book_id: str,
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
+    """Load comic-book data for the comic-book PDF walker.
+
+    Comic-book Session 1 sharing decision: comic pages live in the
+    existing ``pages`` table (Book.book_type discriminator). Session
+    2 adds ``comic_panels`` (page_id FK) + ``comic_bubbles``
+    (panel_id FK) plugin-owned tables.
+
+    Returns ``(book_data, pages, panels, bubbles, assets)``. All four
+    list shapes match their respective ``XxxOut`` Pydantic schemas
+    so the comic_book_pdf walker can consume them directly without
+    additional ORM coupling.
+
+    Raises HTTPException 404 if the book does not exist, or 400 if
+    the book is not a comic_book.
+    """
+    from app.models import Asset, ComicBubble, ComicPanel, Page
+
+    db_gen, db = _require_db()
+    try:
+        if _book_model is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Export plugin not properly configured",
+            )
+        Book = _book_model
+        book = db.query(Book).filter(Book.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+        content_type = getattr(book, "book_type", "prose")
+        if content_type != "comic_book":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Book {book_id} is not a comic book "
+                    f"(book_type={content_type!r})"
+                ),
+            )
+        book_data = _serialize_book(book)
+        pages = (
+            db.query(Page)
+            .filter(Page.book_id == book_id)
+            .order_by(Page.position.asc())
+            .all()
+        )
+        pages_data = [_serialize_page(p) for p in pages]
+        page_ids = [p.id for p in pages]
+        if page_ids:
+            panels = (
+                db.query(ComicPanel)
+                .filter(ComicPanel.page_id.in_(page_ids))
+                .order_by(ComicPanel.position.asc())
+                .all()
+            )
+        else:
+            panels = []
+        panel_ids = [p.id for p in panels]
+        if panel_ids:
+            bubbles = (
+                db.query(ComicBubble)
+                .filter(ComicBubble.panel_id.in_(panel_ids))
+                .order_by(ComicBubble.position.asc())
+                .all()
+            )
+        else:
+            bubbles = []
+        panels_data = [_serialize_comic_panel(p) for p in panels]
+        bubbles_data = [_serialize_comic_bubble(b) for b in bubbles]
+        assets_data = [
+            {
+                "id": a.id,
+                "filename": a.filename,
+                "asset_type": a.asset_type,
+                "path": a.path,
+            }
+            for a in db.query(Asset).filter(Asset.book_id == book_id).all()
+        ]
+        return book_data, pages_data, panels_data, bubbles_data, assets_data
+    finally:
+        _close_db(db_gen)
+
+
+def _serialize_comic_panel(panel: Any) -> dict[str, Any]:
+    """Serialize a ComicPanel ORM row to a dict matching the
+    ``ComicPanelOut`` schema. JSON-as-Text columns (``bounds`` +
+    ``panel_config``) decoded on read; malformed JSON degrades to
+    an empty dict (defensive against future hand-edited rows).
+    """
+    raw_bounds = getattr(panel, "bounds", None) or ""
+    try:
+        bounds = json.loads(raw_bounds) if raw_bounds else {}
+    except (json.JSONDecodeError, TypeError):
+        bounds = {}
+    raw_config = getattr(panel, "panel_config", None)
+    panel_config: dict[str, Any] | None
+    if raw_config:
+        try:
+            panel_config = json.loads(raw_config)
+        except (json.JSONDecodeError, TypeError):
+            panel_config = {}
+    else:
+        panel_config = None
+    return {
+        "id": panel.id,
+        "page_id": panel.page_id,
+        "position": panel.position,
+        "image_asset_id": panel.image_asset_id,
+        "bounds": bounds if isinstance(bounds, dict) else {},
+        "panel_config": panel_config,
+    }
+
+
+def _serialize_comic_bubble(bubble: Any) -> dict[str, Any]:
+    """Serialize a ComicBubble ORM row to a dict matching the
+    ``ComicBubbleOut`` schema. Tail fields are sibling columns
+    (NOT inside bubble_config); ``anchor`` + ``bubble_config`` are
+    JSON-as-Text, decoded on read.
+    """
+    raw_anchor = getattr(bubble, "anchor", None) or ""
+    try:
+        anchor = json.loads(raw_anchor) if raw_anchor else {}
+    except (json.JSONDecodeError, TypeError):
+        anchor = {}
+    raw_config = getattr(bubble, "bubble_config", None)
+    bubble_config: dict[str, Any] | None
+    if raw_config:
+        try:
+            bubble_config = json.loads(raw_config)
+        except (json.JSONDecodeError, TypeError):
+            bubble_config = {}
+    else:
+        bubble_config = None
+    return {
+        "id": bubble.id,
+        "panel_id": bubble.panel_id,
+        "position": bubble.position,
+        "bubble_type": bubble.bubble_type,
+        "anchor": anchor if isinstance(anchor, dict) else {},
+        "width_pct": bubble.width_pct,
+        "height_pct": bubble.height_pct,
+        "tail_direction": bubble.tail_direction,
+        "tail_position_pct": bubble.tail_position_pct,
+        "tail_length_px": bubble.tail_length_px,
+        "bubble_config": bubble_config,
+        "text_content": bubble.text_content,
+    }
+
+
 def _serialize_page(page: Any) -> dict[str, Any]:
     """Serialize a Page ORM object to the PageOut-shaped dict the
     WeasyPrint generator consumes.
@@ -177,6 +333,89 @@ def _serialize_page(page: Any) -> dict[str, Any]:
         "image_asset_id": page.image_asset_id,
         "layout_config": layout_config,
     }
+
+
+def _export_comic_book_pdf(
+    book_data: dict[str, Any],
+    pages: list[dict[str, Any]],
+    panels: list[dict[str, Any]],
+    bubbles: list[dict[str, Any]],
+    assets: list[dict[str, Any]],
+    picture_book_format: str | None = None,
+    picture_book_bleed_marks: bool = False,
+) -> FileResponse:
+    """Render a comic book to PDF via the comic_book_pdf walker
+    and return a ``FileResponse``.
+
+    Lazy-imports ``bibliogon_comics.comic_book_pdf`` so plugin-
+    export does NOT carry a top-level dependency on plugin-comics
+    (keeps the dependency direction one-way: plugin-comics
+    ``depends_on = ["export"]``; export does NOT depend on comics).
+
+    Filename suffix policy: same as picture-book per Q4 a (reuse
+    picture-book formats + bleed flag). ``<slug>.pdf`` for default
+    format + no bleed; ``-<format>`` + ``-bleed`` suffixes
+    composed in the same order (format-first-then-bleed).
+
+    Caller MUST have verified ``book_data["book_type"] ==
+    "comic_book"`` and ``fmt == "pdf"`` before calling.
+    """
+    from app.paths import get_upload_dir
+
+    from bibliogon_comics.comic_book_pdf import (
+        DEFAULT_PICTURE_BOOK_FORMAT,
+        generate_comic_book_pdf,
+    )
+    from bibliogon_export.picture_book_pdf import _resolve_picture_book_format
+
+    title = (book_data.get("title") or "comic-book").strip()
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "comic-book"
+
+    canonical_format, _w, _h = _resolve_picture_book_format(
+        picture_book_format,
+    )
+    parts = [slug]
+    if canonical_format != DEFAULT_PICTURE_BOOK_FORMAT:
+        parts.append(canonical_format)
+    if picture_book_bleed_marks:
+        parts.append("bleed")
+    filename = "-".join(parts) + ".pdf"
+
+    upload_dir = get_upload_dir() / book_data["id"]
+    tmp_dir = Path(tempfile.mkdtemp(prefix="comic_book_pdf_"))
+    output_path = tmp_dir / filename
+
+    try:
+        generate_comic_book_pdf(
+            book_data=book_data,
+            pages=pages,
+            panels=panels,
+            bubbles=bubbles,
+            assets=assets,
+            upload_dir=upload_dir,
+            output_path=output_path,
+            picture_book_format=canonical_format,
+            picture_book_bleed_marks=picture_book_bleed_marks,
+        )
+    except ImportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "WeasyPrint is not installed in the export plugin's "
+                f"environment: {e}"
+            ),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Comic-book PDF generation failed: {e}",
+        ) from e
+
+    return FileResponse(
+        path=str(output_path),
+        filename=filename,
+        media_type="application/pdf",
+    )
 
 
 def _export_picture_book_pdf(
@@ -676,6 +915,36 @@ def export(
             raise HTTPException(
                 status_code=500,
                 detail=f"Picture-book export failed: {e}",
+            ) from e
+
+    if book_data.get("book_type") == "comic_book":
+        if fmt != "pdf":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Comic-books only support PDF export in this "
+                    f"release; got fmt={fmt!r}."
+                ),
+            )
+        cb_book_data, cb_pages, cb_panels, cb_bubbles, cb_assets = (
+            _load_comic_book_data(book_id)
+        )
+        try:
+            return _export_comic_book_pdf(
+                cb_book_data,
+                cb_pages,
+                cb_panels,
+                cb_bubbles,
+                cb_assets,
+                picture_book_format=picture_book_format,
+                picture_book_bleed_marks=picture_book_bleed_marks,
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Comic-book export failed: {e}",
             ) from e
 
     # Prose path (unchanged from pre-Session-6 behavior).

@@ -1,0 +1,527 @@
+"""Tests for comic_book_pdf walker (plugin-comics Session 2 C3).
+
+Lives in backend/tests/ (not the plugin's own tests/) because the
+walker imports from bibliogon_export.* which is NOT in the
+per-plugin isolated venv. The backend's combined poetry.lock has
+both plugins as path-deps so the walker is importable here.
+
+Coverage scope (pre-WeasyPrint, no actual PDF render):
+- Grid-template resolution (3 ids + default + invalid + missing).
+- Bubble-type CSS variants (6 types + unknown falls back to speech).
+- SVG tail emit (4 octant directions + none + auto + invalid).
+- Single-bubble HTML emit (text + position + width/height +
+  bubble_config Tier 1+2 overrides + tail).
+- Single-panel HTML emit (image_asset_id resolution + bubbles
+  nested + panel_config overrides).
+- Page render (CSS Grid template from layout_config + panels in
+  position order).
+- Full HTML doc emit (metadata + font CSS + format CSS + pages).
+- Assets map resolution (file:// URLs + missing files skipped).
+- Filename suffix policy (format-first-then-bleed; default +
+  bleed + non-default combinations) — covered indirectly via
+  _export_comic_book_pdf integration test in test_comic_routes.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from bibliogon_comics.comic_book_pdf import (
+    COMIC_GRID_TEMPLATES,
+    DEFAULT_COMIC_GRID_TEMPLATE,
+    _BUBBLE_TYPE_CSS,
+    _build_assets_map,
+    _build_comic_html,
+    _bubble_type_style,
+    _render_bubble_tail_svg,
+    _render_comic_bubble,
+    _render_comic_page,
+    _render_comic_panel,
+    _resolve_comic_grid_template,
+    generate_comic_book_pdf,
+)
+
+
+# --- Grid-template resolution ---
+
+
+@pytest.mark.parametrize("template_id", list(COMIC_GRID_TEMPLATES))
+def test_resolve_comic_grid_template_accepts_each_valid_id(template_id: str) -> None:
+    assert _resolve_comic_grid_template({"comic_grid_template": template_id}) == template_id
+
+
+def test_resolve_comic_grid_template_falls_back_for_missing_key() -> None:
+    assert _resolve_comic_grid_template({}) == DEFAULT_COMIC_GRID_TEMPLATE
+
+
+def test_resolve_comic_grid_template_falls_back_for_none_input() -> None:
+    assert _resolve_comic_grid_template(None) == DEFAULT_COMIC_GRID_TEMPLATE
+
+
+def test_resolve_comic_grid_template_falls_back_for_unknown_value() -> None:
+    assert (
+        _resolve_comic_grid_template({"comic_grid_template": "garbage"})
+        == DEFAULT_COMIC_GRID_TEMPLATE
+    )
+
+
+def test_resolve_comic_grid_template_default_is_single_panel() -> None:
+    assert DEFAULT_COMIC_GRID_TEMPLATE == "single_panel"
+
+
+# --- Bubble-type CSS variants ---
+
+
+@pytest.mark.parametrize(
+    "bubble_type",
+    ["speech", "thought", "narration", "shout", "whisper", "sound_effect"],
+)
+def test_bubble_type_style_returns_distinct_css_for_each_type(bubble_type: str) -> None:
+    style = _bubble_type_style(bubble_type)
+    assert style == _BUBBLE_TYPE_CSS[bubble_type]
+    assert len(style) > 0
+
+
+def test_bubble_type_style_falls_back_to_speech_for_unknown() -> None:
+    assert _bubble_type_style("garbage") == _BUBBLE_TYPE_CSS["speech"]
+
+
+def test_bubble_type_speech_uses_border_radius_50_percent() -> None:
+    assert "border-radius: 50%" in _BUBBLE_TYPE_CSS["speech"]
+
+
+def test_bubble_type_thought_carries_cloud_box_shadow_inset() -> None:
+    assert "box-shadow" in _BUBBLE_TYPE_CSS["thought"]
+
+
+def test_bubble_type_shout_uses_clip_path_polygon() -> None:
+    assert "clip-path: polygon" in _BUBBLE_TYPE_CSS["shout"]
+
+
+def test_bubble_type_whisper_uses_dashed_border() -> None:
+    assert "dashed" in _BUBBLE_TYPE_CSS["whisper"]
+
+
+def test_bubble_type_sound_effect_has_no_border() -> None:
+    assert "border: none" in _BUBBLE_TYPE_CSS["sound_effect"]
+
+
+# --- SVG tail primitive ---
+
+
+def test_tail_svg_empty_for_none_direction() -> None:
+    assert _render_bubble_tail_svg("none", 50, 16) == ""
+
+
+def test_tail_svg_auto_emits_south_shape_by_default() -> None:
+    auto = _render_bubble_tail_svg("auto", 50, 16)
+    south = _render_bubble_tail_svg("S", 50, 16)
+    assert auto == south
+    assert "<svg" in auto
+    assert "<polygon" in auto
+
+
+@pytest.mark.parametrize("direction", ["N", "NE", "E", "SE", "S", "SW", "W", "NW"])
+def test_tail_svg_emits_polygon_for_each_octant(direction: str) -> None:
+    svg = _render_bubble_tail_svg(direction, 50, 16)
+    assert svg.startswith("<svg")
+    assert "<polygon" in svg
+    assert 'fill="white"' in svg
+    assert 'stroke="black"' in svg
+
+
+def test_tail_svg_returns_empty_for_invalid_direction() -> None:
+    assert _render_bubble_tail_svg("XYZ", 50, 16) == ""
+
+
+def test_tail_svg_position_pct_clamps_to_0_100() -> None:
+    low = _render_bubble_tail_svg("S", -10, 16)
+    high = _render_bubble_tail_svg("S", 200, 16)
+    assert "left: 0%" in low
+    assert "left: 100%" in high
+
+
+# --- Single-bubble render ---
+
+
+def _make_bubble(**overrides: Any) -> dict[str, Any]:
+    base = {
+        "id": "bub-1",
+        "panel_id": "panel-1",
+        "position": 1,
+        "bubble_type": "speech",
+        "anchor": {"x_pct": 50, "y_pct": 50},
+        "width_pct": 30,
+        "height_pct": 20,
+        "tail_direction": "S",
+        "tail_position_pct": 50,
+        "tail_length_px": 16,
+        "bubble_config": None,
+        "text_content": "Hello world",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_render_comic_bubble_includes_text_content() -> None:
+    html = _render_comic_bubble(_make_bubble(text_content="Wow!"))
+    assert "Wow!" in html
+
+
+def test_render_comic_bubble_escapes_html_in_text() -> None:
+    html = _render_comic_bubble(_make_bubble(text_content="<script>alert(1)</script>"))
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_render_comic_bubble_positions_via_anchor() -> None:
+    html = _render_comic_bubble(_make_bubble(anchor={"x_pct": 25, "y_pct": 75}))
+    assert "left: 25%" in html
+    assert "top: 75%" in html
+
+
+def test_render_comic_bubble_carries_bubble_type_in_data_attr() -> None:
+    html = _render_comic_bubble(_make_bubble(bubble_type="thought"))
+    assert 'data-bubble-type="thought"' in html
+
+
+def test_render_comic_bubble_includes_tail_svg_when_direction_set() -> None:
+    html = _render_comic_bubble(_make_bubble(tail_direction="S"))
+    assert "<svg" in html
+    assert "bubble-tail" in html
+
+
+def test_render_comic_bubble_no_tail_for_direction_none() -> None:
+    html = _render_comic_bubble(_make_bubble(tail_direction="none"))
+    assert "bubble-tail" not in html
+
+
+def test_render_comic_bubble_applies_bubble_config_background_color() -> None:
+    html = _render_comic_bubble(
+        _make_bubble(bubble_config={"background_color": "#ff0000"})
+    )
+    assert "background-color: #ff0000" in html
+
+
+def test_render_comic_bubble_applies_bubble_config_typography_overrides() -> None:
+    html = _render_comic_bubble(
+        _make_bubble(
+            bubble_config={
+                "font_family": "Comic Neue",
+                "font_size": 14,
+                "font_weight": "bold",
+                "text_align": "center",
+                "italic": True,
+                "text_color": "#0000ff",
+            }
+        )
+    )
+    assert "font-family: 'Comic Neue'" in html
+    assert "font-size: 14pt" in html
+    assert "font-weight: bold" in html
+    assert "text-align: center" in html
+    assert "font-style: italic" in html
+    assert "color: #0000ff" in html
+
+
+def test_render_comic_bubble_handles_anchor_as_json_string() -> None:
+    # Defensive: ORM serializer should decode anchor before passing
+    # it in, but the walker should tolerate string anchors.
+    html = _render_comic_bubble(_make_bubble(anchor='{"x_pct": 10, "y_pct": 20}'))
+    assert "left: 10%" in html
+    assert "top: 20%" in html
+
+
+def test_render_comic_bubble_defaults_when_anchor_is_invalid_json() -> None:
+    html = _render_comic_bubble(_make_bubble(anchor="not-json"))
+    # Default 50/50 from .get(..., 50).
+    assert "left: 50%" in html
+
+
+# --- Single-panel render ---
+
+
+def _make_panel(**overrides: Any) -> dict[str, Any]:
+    base = {
+        "id": "panel-1",
+        "page_id": "page-1",
+        "position": 1,
+        "image_asset_id": None,
+        "bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 100, "height_pct": 100},
+        "panel_config": None,
+    }
+    base.update(overrides)
+    return base
+
+
+def test_render_comic_panel_no_image_when_image_asset_id_missing() -> None:
+    html = _render_comic_panel(_make_panel(image_asset_id=None), [], {})
+    assert "<img" not in html
+
+
+def test_render_comic_panel_renders_image_when_asset_resolved() -> None:
+    panel = _make_panel(image_asset_id="asset-42")
+    assets_map = {"asset-42": "file:///tmp/img.png"}
+    html = _render_comic_panel(panel, [], assets_map)
+    assert "<img" in html
+    assert "file:///tmp/img.png" in html
+
+
+def test_render_comic_panel_skips_image_when_asset_id_unresolved() -> None:
+    panel = _make_panel(image_asset_id="missing-asset")
+    html = _render_comic_panel(panel, [], {})
+    assert "<img" not in html
+
+
+def test_render_comic_panel_nests_bubbles() -> None:
+    bubbles = [_make_bubble(id="b1", text_content="One"), _make_bubble(id="b2", text_content="Two")]
+    html = _render_comic_panel(_make_panel(), bubbles, {})
+    assert "One" in html
+    assert "Two" in html
+    assert html.count("comic-bubble") == 2
+
+
+def test_render_comic_panel_default_border_style_solid() -> None:
+    html = _render_comic_panel(_make_panel(), [], {})
+    assert "border: 1pt solid black" in html
+
+
+def test_render_comic_panel_config_border_style_override() -> None:
+    html = _render_comic_panel(
+        _make_panel(panel_config={"border_style": "dashed"}),
+        [],
+        {},
+    )
+    assert "border: 1pt dashed black" in html
+
+
+# --- Page-level render ---
+
+
+def _make_page(**overrides: Any) -> dict[str, Any]:
+    base = {
+        "id": "page-1",
+        "book_id": "book-1",
+        "position": 1,
+        "layout": "single_panel",
+        "text_content": None,
+        "image_asset_id": None,
+        "layout_config": {"comic_grid_template": "single_panel"},
+    }
+    base.update(overrides)
+    return base
+
+
+def test_render_comic_page_uses_grid_template_from_layout_config() -> None:
+    page = _make_page(layout_config={"comic_grid_template": "grid_2x2"})
+    html = _render_comic_page(page, [], {}, {})
+    assert 'data-grid-template="grid_2x2"' in html
+    assert "grid-template-columns: repeat(2, 1fr)" in html
+
+
+def test_render_comic_page_falls_back_to_single_panel_without_config() -> None:
+    page = _make_page(layout_config=None)
+    html = _render_comic_page(page, [], {}, {})
+    assert 'data-grid-template="single_panel"' in html
+
+
+def test_render_comic_page_renders_panels_in_position_order() -> None:
+    page = _make_page()
+    panels = [
+        _make_panel(id="p1", position=1),
+        _make_panel(id="p2", position=2),
+    ]
+    panel_bubbles_map = {
+        "p1": [_make_bubble(id="b1", panel_id="p1", text_content="FirstP")],
+        "p2": [_make_bubble(id="b2", panel_id="p2", text_content="SecondP")],
+    }
+    html = _render_comic_page(page, panels, panel_bubbles_map, {})
+    # Both panels' bubbles present.
+    assert "FirstP" in html
+    assert "SecondP" in html
+    # Order respected (p1 panel comes before p2 panel).
+    assert html.find("FirstP") < html.find("SecondP")
+
+
+def test_render_comic_page_handles_layout_config_as_json_string() -> None:
+    # Defensive: the page serializer at routes.py:_serialize_page
+    # decodes layout_config, but the walker should tolerate strings.
+    page = _make_page(layout_config='{"comic_grid_template": "grid_3x3"}')
+    html = _render_comic_page(page, [], {}, {})
+    assert 'data-grid-template="grid_3x3"' in html
+
+
+# --- Full HTML doc emit ---
+
+
+def test_build_comic_html_includes_title() -> None:
+    book_data = {"id": "b1", "title": "My Comic", "author": "", "language": "en"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert "<title>My Comic</title>" in html
+
+
+def test_build_comic_html_carries_author_metadata() -> None:
+    book_data = {"id": "b1", "title": "X", "author": "J. Author", "language": "en"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert '<meta name="author" content="J. Author"' in html
+
+
+def test_build_comic_html_omits_author_meta_when_empty() -> None:
+    book_data = {"id": "b1", "title": "X", "author": "", "language": "en"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert '<meta name="author"' not in html
+
+
+def test_build_comic_html_includes_description_meta_when_set() -> None:
+    book_data = {
+        "id": "b1",
+        "title": "X",
+        "author": "",
+        "language": "en",
+        "description": "A test comic.",
+    }
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert '<meta name="description" content="A test comic."' in html
+
+
+def test_build_comic_html_generator_meta_basic() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert 'content="Bibliogon comic-book PDF"' in html
+
+
+def test_build_comic_html_generator_meta_bleed_suffix() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(
+        book_data, [], [], [], {}, picture_book_bleed_marks=True
+    )
+    assert 'content="Bibliogon comic-book PDF (bleed)"' in html
+
+
+def test_build_comic_html_lang_defaults_to_de_when_missing() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert '<html lang="de">' in html
+
+
+def test_build_comic_html_respects_explicit_language() -> None:
+    book_data = {"id": "b1", "title": "X", "language": "ja"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    assert '<html lang="ja">' in html
+
+
+def test_build_comic_html_groups_panels_by_page_id() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    pages = [_make_page(id="page-A"), _make_page(id="page-B", position=2)]
+    panels = [
+        _make_panel(id="pa", page_id="page-A", position=1),
+        _make_panel(id="pb", page_id="page-B", position=1),
+    ]
+    bubbles = [
+        _make_bubble(id="b1", panel_id="pa", text_content="OnA"),
+        _make_bubble(id="b2", panel_id="pb", text_content="OnB"),
+    ]
+    html = _build_comic_html(book_data, pages, panels, bubbles, {})
+    assert "OnA" in html
+    assert "OnB" in html
+    # Each bubble appears inside its own page section in order.
+    assert html.find("OnA") < html.find("OnB")
+
+
+def test_build_comic_html_carries_font_face_block() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    # The fonts CSS comes from bibliogon_export.picture_book_fonts;
+    # we just assert the @font-face emit is present so font
+    # embedding cannot regress silently.
+    assert "@font-face" in html
+
+
+def test_build_comic_html_carries_format_css() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(book_data, [], [], [], {})
+    # _format_css emits the @page rule + CSS variables. Default
+    # format is 8.5x8.5 = 21.59cm × 21.59cm or equivalent.
+    assert "@page" in html
+    assert "--page-w" in html
+
+
+def test_build_comic_html_bleed_marks_added_when_enabled() -> None:
+    book_data = {"id": "b1", "title": "X"}
+    html = _build_comic_html(
+        book_data, [], [], [], {}, picture_book_bleed_marks=True
+    )
+    # _format_css emits marks: crop + bleed when enabled.
+    assert "marks: crop" in html
+    assert "bleed:" in html
+
+
+# --- _build_assets_map ---
+
+
+def test_build_assets_map_resolves_existing_file(tmp_path: Path) -> None:
+    # Create an asset file in tmp.
+    img = tmp_path / "img.png"
+    img.write_bytes(b"\x89PNG\r\n")
+    assets = [{"id": "asset-1", "path": "img.png"}]
+    out = _build_assets_map(assets, tmp_path)
+    assert "asset-1" in out
+    assert out["asset-1"].startswith("file://")
+    assert out["asset-1"].endswith("/img.png")
+
+
+def test_build_assets_map_skips_missing_file(tmp_path: Path) -> None:
+    assets = [{"id": "asset-x", "path": "nonexistent.png"}]
+    out = _build_assets_map(assets, tmp_path)
+    assert out == {}
+
+
+def test_build_assets_map_skips_entries_without_id() -> None:
+    assets = [{"id": None, "path": "img.png"}]
+    out = _build_assets_map(assets, Path("/tmp"))
+    assert out == {}
+
+
+def test_build_assets_map_skips_entries_without_path() -> None:
+    assets = [{"id": "a", "path": ""}]
+    out = _build_assets_map(assets, Path("/tmp"))
+    assert out == {}
+
+
+# --- End-to-end smoke (requires WeasyPrint) ---
+
+
+def test_generate_comic_book_pdf_writes_pdf_file(tmp_path: Path) -> None:
+    """Smoke: minimal comic book renders to a non-empty PDF.
+
+    Verifies the full chain (HTML build + CSS emit + WeasyPrint)
+    runs without raising. Detailed CSS / visual fidelity is covered
+    by the string-level tests above; this one just pins the
+    integration with WeasyPrint.
+    """
+    pytest.importorskip("weasyprint")
+    book_data = {"id": "b-smoke", "title": "Smoke Comic", "language": "en"}
+    pages = [_make_page(id="page-1")]
+    panels = [_make_panel(id="panel-1", page_id="page-1")]
+    bubbles = [
+        _make_bubble(id="b1", panel_id="panel-1", text_content="Hello"),
+    ]
+    output = tmp_path / "out.pdf"
+    upload_dir = tmp_path / "uploads"
+    upload_dir.mkdir()
+    result = generate_comic_book_pdf(
+        book_data=book_data,
+        pages=pages,
+        panels=panels,
+        bubbles=bubbles,
+        assets=[],
+        upload_dir=upload_dir,
+        output_path=output,
+    )
+    assert result == output
+    assert output.exists()
+    # PDFs start with the magic bytes %PDF.
+    assert output.read_bytes()[:4] == b"%PDF"

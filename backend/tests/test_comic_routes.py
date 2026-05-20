@@ -458,3 +458,158 @@ class TestComicBubbleDelete:
         book_id = _create_comic_book(client)
         resp = client.delete(f"/api/books/{book_id}/comic-bubbles/does-not-exist")
         assert resp.status_code == 404
+
+
+# --- Export dispatch (C3) ---
+
+
+@pytest.fixture(scope="class")
+def shared_client():
+    """Class-scoped TestClient to reduce cumulative lifespan cycles.
+
+    The P1 baseline issue (PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01)
+    is driven by module-level singleton state accumulating per
+    TestClient lifespan. The class fixture keeps the 8 dispatch
+    tests on a single client lifespan rather than 8 separate ones.
+    """
+    with TestClient(app) as c:
+        yield c
+
+
+class TestComicBookExportDispatch:
+    """Pins the comic_book branch of plugin-export's ``export()``
+    route. The dispatch site reads ``Book.book_type`` and branches
+    to ``_export_comic_book_pdf`` which lazy-imports the
+    plugin-comics walker."""
+
+    def test_comic_book_export_pdf_returns_200_with_pdf_content_type(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Export Smoke")
+        page_id = _add_comic_page(client, book_id)
+        panel = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+            json={
+                "bounds": {
+                    "x_pct": 0,
+                    "y_pct": 0,
+                    "width_pct": 100,
+                    "height_pct": 100,
+                }
+            },
+        ).json()
+        client.post(
+            f"/api/books/{book_id}/comic-panels/{panel['id']}/bubbles",
+            json={
+                "bubble_type": "speech",
+                "anchor": {"x_pct": 50, "y_pct": 50},
+                "text_content": "Hello",
+            },
+        )
+        resp = client.get(f"/api/books/{book_id}/export/pdf")
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"] == "application/pdf"
+        # PDF magic bytes -- verifies the dispatch reached the
+        # walker and the walker reached WeasyPrint, not just that
+        # some 200-status default body got returned.
+        assert resp.content[:4] == b"%PDF"
+
+    def test_comic_book_export_rejects_non_pdf_format(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        book_id = _create_comic_book(client)
+        resp = client.get(f"/api/books/{book_id}/export/epub")
+        assert resp.status_code == 400
+        assert "Comic-book" in resp.json()["detail"] or "comic" in resp.json()["detail"].lower()
+
+    def test_comic_book_export_filename_default_format(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Filename Test")
+        _add_comic_page(client, book_id)
+        resp = client.get(f"/api/books/{book_id}/export/pdf")
+        assert resp.status_code == 200
+        # Default format + bleed=false -> <slug>.pdf (no suffix).
+        cd = resp.headers.get("content-disposition", "")
+        assert "filename-test.pdf" in cd
+        assert "-8.5x8.5" not in cd
+        assert "-bleed" not in cd
+
+    def test_comic_book_export_filename_non_default_format_appended(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Bigger")
+        _add_comic_page(client, book_id)
+        resp = client.get(
+            f"/api/books/{book_id}/export/pdf?picture_book_format=11x8.5"
+        )
+        assert resp.status_code == 200
+        cd = resp.headers.get("content-disposition", "")
+        assert "bigger-11x8.5.pdf" in cd
+
+    def test_comic_book_export_filename_bleed_appended(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Marks")
+        _add_comic_page(client, book_id)
+        resp = client.get(
+            f"/api/books/{book_id}/export/pdf?picture_book_bleed_marks=true"
+        )
+        assert resp.status_code == 200
+        cd = resp.headers.get("content-disposition", "")
+        assert "marks-bleed.pdf" in cd
+
+    def test_comic_book_export_filename_format_and_bleed_combined(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Both")
+        _add_comic_page(client, book_id)
+        resp = client.get(
+            f"/api/books/{book_id}/export/pdf"
+            "?picture_book_format=11x8.5&picture_book_bleed_marks=true"
+        )
+        assert resp.status_code == 200
+        cd = resp.headers.get("content-disposition", "")
+        # Format-first-then-bleed order per Q4.
+        assert "both-11x8.5-bleed.pdf" in cd
+
+    def test_comic_book_export_handles_empty_book_without_pages(
+        self, shared_client: TestClient
+    ) -> None:
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Empty")
+        # No pages, no panels, no bubbles.
+        resp = client.get(f"/api/books/{book_id}/export/pdf")
+        # Walker tolerates empty pages list -- output is a one-page
+        # blank PDF. 200 + application/pdf still expected.
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"] == "application/pdf"
+
+    def test_picture_book_export_still_works_after_comic_branch(
+        self, shared_client: TestClient
+    ) -> None:
+        """Regression-pin: the comic_book elif branch must not
+        accidentally short-circuit picture-book dispatch."""
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_picture_book(client, title="Still Works")
+        # Picture-book uses the existing /pages endpoint.
+        client.post(
+            f"/api/books/{book_id}/pages",
+            json={"layout": "text_only", "text_content": "Hi"},
+        )
+        resp = client.get(f"/api/books/{book_id}/export/pdf")
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"] == "application/pdf"
