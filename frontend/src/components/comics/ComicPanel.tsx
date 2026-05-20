@@ -1,0 +1,102 @@
+/**
+ * ComicPanel — renders one comic_panels row as a CSS-Grid cell.
+ *
+ * Comics-Session-2 C5. Editor-side mirror of the walker's
+ * ``_render_comic_panel`` in
+ * ``plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py``.
+ *
+ * Each panel hosts N bubbles via N ``ComicBubble`` children. The
+ * panel's image (if ``image_asset_id`` is set) fills the cell as
+ * the background; bubbles render absolutely on top.
+ *
+ * The panel itself is ``position: relative`` so its absolutely-
+ * positioned bubble children resolve correctly.
+ */
+
+import type {CSSProperties} from "react";
+
+import {ComicBubble, type ComicBubbleData} from "./ComicBubble";
+
+export interface ComicPanelData {
+    id: string;
+    page_id: string;
+    position: number;
+    image_asset_id?: string | null;
+    bounds: Record<string, unknown>;
+    panel_config?: Record<string, unknown> | null;
+}
+
+interface ComicPanelProps {
+    panel: ComicPanelData;
+    bubbles: ComicBubbleData[];
+    imageUrl?: string | null;
+    selected?: boolean;
+    onClick?: () => void;
+    onBubbleClick?: (bubbleId: string) => void;
+    selectedBubbleId?: string | null;
+}
+
+export function ComicPanel({
+    panel,
+    bubbles,
+    imageUrl,
+    selected,
+    onClick,
+    onBubbleClick,
+    selectedBubbleId,
+}: ComicPanelProps) {
+    const config = panel.panel_config ?? {};
+    const borderStyle =
+        typeof config.border_style === "string" ? config.border_style : "solid";
+
+    const style: CSSProperties = {
+        position: "relative",
+        border: `1px ${borderStyle} black`,
+        overflow: "hidden",
+        boxSizing: "border-box",
+        background: "white",
+        outline: selected ? "2px solid var(--accent, #b45309)" : "none",
+        outlineOffset: "2px",
+        cursor: onClick ? "pointer" : "default",
+        width: "100%",
+        height: "100%",
+    };
+
+    const sortedBubbles = [...bubbles].sort(
+        (a, b) => (a.position ?? 0) - (b.position ?? 0),
+    );
+
+    return (
+        <div
+            data-testid={`comic-panel-${panel.id}`}
+            style={style}
+            onClick={onClick}
+            role={onClick ? "button" : undefined}
+        >
+            {imageUrl ? (
+                <img
+                    src={imageUrl}
+                    alt=""
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                    }}
+                />
+            ) : null}
+            {sortedBubbles.map((bubble) => (
+                <ComicBubble
+                    key={bubble.id}
+                    bubble={bubble}
+                    selected={selectedBubbleId === bubble.id}
+                    onClick={
+                        onBubbleClick ? () => onBubbleClick(bubble.id) : undefined
+                    }
+                />
+            ))}
+        </div>
+    );
+}
+
+export default ComicPanel;
