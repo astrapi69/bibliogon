@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-20 (PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 closed in 4 commits 879df22..00a18f8: Path A1 — pages router moved from plugin-kinderbuch to backend core; PageLayout enum extended with comic_panel_grid; gate relaxed to accept comic_book; ComicBookEditor empty-state replaces SQL-instruction with "Create first comic page" action button; 8 i18n catalogs + Playwright smoke updated. Closes Half-Wired-Visible-in-Production state surfaced by 2026-05-20 audit. Backend test_pages_routes 41→50 (+9 comic_book positives); Vitest 179→191 (+12 ComicBookEditor cases). Backend baseline 20 fail + 13 err unchanged (PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 still open). Prior 2026-05-20 close: Backlog re-prioritization audit + apply (4-Axes scoring 281a6f6; 7 promotions + 17 demotions + 3 archives + hygiene fixes per Q1-Q7 adjudication). Pre-audit Comics-Session-2 close: plugin-comics v1.1.0 shipped, 7-commit arc c080974..80399cd.)
+Last updated: 2026-05-20 (PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 closed via pluginforge 0.8.0 bump in commit 3fe8633. Recursion regression that Comics-Session-2 C2 introduced is fully resolved: backend sweep 2116/2116 passing (was 1 failed pre-bump on a stale plugin-comics version assertion; the originally-filed 13+13 baseline had already drifted before this work). All 12 pyproject.toml pinned to ^0.8.0, lockfiles re-synced via make lock-all-plugins, make verify-plugin-locks OK. P1 tier now empty. Follow-up filed: PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01 (P3) for pluginforge 0.8.0 deprecation warning on export plugin's 3-router shape (becomes error in v0.10.0). Prior 2026-05-20 close: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 in 4 commits 879df22..00a18f8 (Path A1 — pages router moved from plugin-kinderbuch to backend core; PageLayout enum extended with comic_panel_grid; ComicBookEditor empty-state action button; 8 i18n catalogs + Playwright smoke updated). Add-Panel diagnostic cycle closed via auto-select fix (commit 2a83aed) + stale-bundle LL filing (commit 534bea9).)
 Current version: v0.35.1
-Open tasks: 65 active (P2..P5) + 1 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 66 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -41,138 +41,7 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-- **PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01** (P1, filed
-  2026-05-20 during halted Comics-Session-2):
-  **Blocks Comics-Session-2 resumption + any further
-  V060-adoption work that adds backend test surface using
-  TestClient.**
-
-  ### Symptom
-
-  Full backend pytest sweep fails with **13 failed + 13 errored**
-  when a feature branch adds substantial new TestClient-using
-  tests on top of the V060-adoption baseline. Each failure /
-  error eventually surfaces as ``RecursionError: maximum
-  recursion depth exceeded`` during
-  ``starlette.testclient.TestClient.wait_startup``. Individual
-  tests pass in isolation — the failure is cross-test state
-  accumulation.
-
-  ### Bisect (confirmed via this halted session)
-
-  | Commit                          | Sweep result |
-  |---------------------------------|--------------|
-  | cf76904 (Phase 4 close, pre-V060) | 1986 passed |
-  | 1678b5c (V060 refresh_config refactor) | 1976 passed (clean) |
-  | de98679 (DiscoveryResult consumer) | 1974 passed (clean) |
-  | b62c339 (admin/rediscover endpoint) | 1980 passed (clean) |
-  | f59df1a (FilterReason mapping) | 1981 passed (clean) |
-  | 953eb2f (integration tests + smoke) | 1986 passed (clean) |
-  | e159604 (V060 close, current origin/main HEAD) | 1986 passed (clean) |
-  | c080974 (Comics-Session-2 C1 — schema + models only) | 2001 passed (clean) |
-  | 2ffaed8 (Comics-Session-2 C2 — service modules + 7 routes + tests) | **13 failed + 13 errored** |
-
-  The introducer is the Comics-Session-2 C2 commit. **V060
-  baseline is clean. The earlier halt-session report that
-  fingered V060 as the regression source was wrong** — see
-  ``MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`` (P3) for
-  the coordination-discipline followup.
-
-  ### Bandaid (confirmed effective)
-
-  ``sys.setrecursionlimit(5000)`` in either
-  ``backend/app/main.py`` (module-import time) or
-  ``backend/tests/conftest.py`` (test-setup time) restores the
-  sweep to green. Python's default limit (1000) is exceeded; 5000
-  is well within common practice for big async + ASGI stacks. The
-  bandaid hides the underlying state-accumulation issue but
-  unblocks the sweep.
-
-  ### Root cause hypothesis
-
-  1. **Module-level singleton.**
-     ``backend/app/main.py:308`` creates a global
-     ``manager = PluginManager(...)`` at module import time.
-     Every ``TestClient(app)`` lifespan in the sweep reuses the
-     same manager instance.
-
-  2. **FastAPI route-mount stickiness** (per the existing
-     ``lessons-learned.md`` rule "FastAPI route-mount stickiness
-     — DON'T assert via HTTP"): ``app.include_router(...)`` is
-     one-directional; plugin deactivation logs at lifespan
-     shutdown but the underlying FastAPI ``app.routes`` retains
-     the registered routes. Each subsequent lifespan re-mounts
-     the same routes via pluginforge's ``mount_plugin_routes``.
-
-  3. **N-test sweep × M-routes-per-plugin accumulation**: with
-     V060's expanded per-plugin route footprint (admin/rediscover
-     endpoint + extended /api/settings/plugins/discovered etc.)
-     plus C2's 7 new comic-panel + comic-bubble endpoints +
-     26 new TestClient-using tests, the ``app.routes`` list
-     grows past the threshold where FastAPI's recursive route
-     resolution exceeds Python's default recursion limit.
-
-  4. **Why the regression appeared at C2 specifically**: C1
-     added 15 SQLAlchemy-model tests that DON'T use
-     ``TestClient(app)`` (they hit ``SessionLocal`` directly).
-     C2 added 26 ``with TestClient(app)`` tests; each one
-     triggers a fresh lifespan that re-mounts every plugin's
-     routes. 26 × (all-plugin routes) tipped the route-registry
-     past the recursion ceiling.
-
-  ### Proposed fix paths (Strategic-Advisor decides)
-
-  - **(a) Idempotency in pluginforge's mount_plugin_routes**.
-    Check whether ``app.routes`` already contains a route with
-    matching ``path + methods`` before adding. Fix lives in
-    pluginforge 0.7.x or 0.8.0. **Recommended** — addresses the
-    root cause without test-fixture churn or production-side
-    runtime cost.
-  - **(b) Test-fixture-level fresh FastAPI app per TestClient**.
-    Replace the module-level ``app`` import with a fixture that
-    creates a new app per test. Big test churn (hundreds of
-    files). Cleanest semantically but expensive.
-  - **(c) ``sys.setrecursionlimit(5000)`` in main.py**. Permanent
-    bandaid. Defensible if pluginforge fix is out of scope. Hides
-    a real memory leak (manager state grows across tests in long
-    sweeps; production never sees N TestClient lifespans but
-    long-running uvicorn workers theoretically could if hot-
-    reload + admin/rediscover cycles often).
-
-  ### Filed-with notes
-
-  - Symptom verified via repeated full-sweep runs (3+ min each)
-    at 9 commit boundaries via ``git checkout <sha>`` + ``pytest tests/``.
-  - Bisect transcript lives in this halted-session's reasoning
-    log; reproduce by ``git checkout 2ffaed8`` (or equivalent feature
-    branch ``feature/comics-session-2``) and running
-    ``BIBLIOGON_TEST=1 poetry run pytest tests/``.
-  - Comics-Session-2 work parked on ``feature/comics-session-2``
-    branch (commits ``c080974`` + ``2ffaed8``); ``main`` reset
-    to ``origin/main`` (``e159604``).
-
-  ### Resumption gate — UPDATE 2026-05-20 (post-Session-2 close)
-
-  ~~Comics-Session-2 C3-C7 will NOT resume until this item ships~~.
-  **Superseded:** the user explicitly authorized C3-C7 to ship on
-  the broken baseline under the atomic-green-per-commit-delta
-  discipline (new code introduces no new logic-level failures,
-  only cascade-widening within this known P1). Session 2 fully
-  closed in commits ``b8e8c82`` (C3) + ``b652942`` (C4) +
-  ``bfeb408`` (C5) + ``a33baf3`` (C6) + this commit (C7).
-  Post-Session-2 baseline: 20 fail + 13 err (vs. pre-Session-2
-  baseline 13 fail + 13 err). All +7 new failures are
-  cascade-recursion, each passing in isolation; verified by
-  targeted re-runs at C3/C5/C6 boundaries.
-
-  This P1 stays open + still blocks any FURTHER backend
-  TestClient-surface growth (the next plugin / endpoint /
-  test-class to land will need the fix). The fix-path
-  recommendation stays as Path (a): pluginforge-side idempotent
-  ``mount_plugin_routes``.
-
-  Effort: 1-3 commits depending on fix-path choice. Pluginforge-
-  side fix probably ships as 0.7.1 hotfix or 0.8.0 minor.
+(none)
 
 ---
 
@@ -1434,6 +1303,36 @@ store.
   (closes together) + ``RECURRING-COMPONENT-AUDIT-01``
   (broader frontend sweep that may surface additional
   related candidates).
+
+- **PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01** (P3, filed
+  2026-05-20 from the pluginforge 0.8.0 bump's deprecation
+  warning). plugin-export's ``get_routes()`` returns 3 separate
+  routers; pluginforge 0.8.0 logs a DeprecationWarning advising
+  the Single-Router-Per-Plugin convention (one parent router with
+  ``router.include_router(...)`` to nest sub-routers). Supported
+  in 0.8.0 + 0.9.0; may become an error in 0.10.0.
+
+  Scope: refactor
+  ``plugins/bibliogon-plugin-export/bibliogon_export/plugin.py``
+  to return a single parent router that nests the existing 3
+  sub-routers via ``include_router``. Mirror the canonical shape
+  already used by plugin-kinderbuch + plugin-comics. Update any
+  per-plugin test fixtures that assert on the get_routes return
+  shape. Verify no route-prefix or URL change post-refactor.
+
+  Effort: S (1-2 commits).
+
+  Trigger: any of (i) pluginforge 0.10.0 release approaching,
+  (ii) any new plugin needs an export-plugin pattern as
+  reference and the 3-router shape would propagate the
+  anti-pattern, (iii) the deprecation warning becomes noisy
+  enough to mask other test output.
+
+  Cross-references:
+  - `.claude/rules/lessons-learned.md` "Single-Router-Per-Plugin
+    convention" (this filing is the concrete refactor work that
+    rule's existence implies).
+  - pluginforge 0.8.0 release notes (the deprecation source).
 
 - **PLUGIN-COMICS-MAKEFILE-INTEGRATION-01** (P3, Plugin-
   Infrastructure, filed 2026-05-18 from plugin-comics
